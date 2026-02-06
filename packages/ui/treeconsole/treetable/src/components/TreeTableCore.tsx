@@ -50,6 +50,7 @@ export function TreeTableCore({
   treeId,
   selectAllPersistence = 'page',
   selectionIdPrefix = 'row-selection',
+  buildSessionIndicator,
 }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
@@ -184,7 +185,7 @@ export function TreeTableCore({
           const draftData = (n as { draftData?: unknown }).draftData;
           const draftMetadata = (n as { draftMetadata?: unknown }).draftMetadata;
           return (
-            draftData !== null && draftData !== undefined
+            draftData !== undefined
           ) || (
             draftMetadata !== null && draftMetadata !== undefined
           );
@@ -271,8 +272,9 @@ export function TreeTableCore({
         descriptionEdit: commonT('treeTable.placeholders.descriptionConfirm', 'Press Ctrl+Enter to confirm / Esc to cancel'),
       },
       emptyValue: commonT('treeTable.emptyCell', '-'),
+      buildSessionIndicator,
     });
-  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix]);
+  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix, buildSessionIndicator]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};

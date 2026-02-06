@@ -12,7 +12,7 @@ import {
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeEntity } from '../../common/types/index.js';
+import type { ShapeEntityPayload } from '../../common/types/index.js';
 import {
   buildRawDataDataSourceCacheKey,
   type RetryConfig,
@@ -34,7 +34,7 @@ export interface GADMRawData {
 }
 
 //  GADM
-export interface GADMProcessedData extends Array<ShapeEntity> {
+export interface GADMProcessedData extends Array<ShapeEntityPayload> {
   metadata?: {
     source: 'gadm';
     processedAt: string;
@@ -236,7 +236,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       }
 
       //  ShapeEntity
-      const entities = features.map((feature: GADMFeature, index: number) => {
+      const entities: ShapeEntityPayload[] = features.map((feature: GADMFeature, index: number) => {
         const properties = feature.properties ?? {};
         const processedAt = new Date().toISOString();
 

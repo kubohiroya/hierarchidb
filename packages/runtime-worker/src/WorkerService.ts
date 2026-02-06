@@ -1,5 +1,5 @@
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
+import type { TreeTableExpandedAPI, TreeNodeData } from '@hierarchidb/tree-api';
 import type {
   TreeMutationAPI,
   TreeNodeUpdaterAPI,
@@ -122,10 +122,10 @@ export class WorkerService {
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
-      const importExportService: ImportExportAPI =
-        await ImportExportLifecycleService.getSingleton(iePort);
+      const importExportService: ImportExportAPI<TreeNodeData> =
+        await ImportExportLifecycleService.getSingleton<TreeNodeData>(iePort);
 
-      const treeNodeUpdaterService: TreeNodeUpdaterAPI = new TreeNodeUpdaterService(
+      const treeNodeUpdaterService: TreeNodeUpdaterAPI<TreeNodeData> = new TreeNodeUpdaterService(
         coreDB,
         commandProcessor
       );
@@ -189,8 +189,8 @@ export class WorkerService {
     private queryService: TreeQueryAPI,
     private mutationService: TreeMutationAPI,
     private subscriptionService: TreeSubscriptionAPI,
-    private importExportService: ImportExportAPI,
-    private treeNodeUpdaterService: TreeNodeUpdaterAPI,
+    private importExportService: ImportExportAPI<TreeNodeData>,
+    private treeNodeUpdaterService: TreeNodeUpdaterAPI<TreeNodeData>,
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,

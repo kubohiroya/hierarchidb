@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { TreeNodeUpdaterAPI, TreeSubscriptionAPI } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeUpdaterAPI, TreeSubscriptionAPI } from '@hierarchidb/tree-api';
 import type { TreeMutationAPI, TreeQueryAPI } from '@hierarchidb/tree-api';
 import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
@@ -12,7 +12,7 @@ type TestWorkerAPI = {
   getQueryAPI(): Promise<TreeQueryAPI>;
   getMutationAPI(): Promise<TreeMutationAPI>;
   getSubscriptionAPI(): Promise<TreeSubscriptionAPI>;
-  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
+  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI<TreeNodeData>>;
 };
 
 describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
@@ -61,7 +61,7 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
     expect(commitRes.status).toBe('ok');
 
     const canonical = await queryAPI.getNode(wcId);
-    expect(canonical?.draftData).toBeNull();
+    expect(canonical?.draftData).toBeUndefined();
     expect(canonical?.data).toEqual({
       mapStyle: { style: 'streets' },
       viewport: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 },

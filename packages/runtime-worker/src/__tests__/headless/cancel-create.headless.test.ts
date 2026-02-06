@@ -23,7 +23,7 @@ describe('create dialog cancel discards draft nodes', () => {
       metadata: { name: 'Root', description: undefined, tags: [] },
       draftMetadata: null,
       data: null,
-      draftData: null,
+      draftData: undefined,
       depth: 0,
       visible: true,
       createdAt: now,

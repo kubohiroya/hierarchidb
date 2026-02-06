@@ -1,3 +1,191 @@
+2548) fix/plugin-ui-sdk/peerentity-workerapi-generic-args (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/plugin-ui-sdk/peerentity-workerapi-generic-args
+- 依存: なし
+- 受け入れ基準: plugin-ui-sdk の PeerEntity/TreeNodeUpdaterAPI/WorkerAPI 型引数不足が解消される／pnpm --filter @hierarchidb/plugin-ui-sdk typecheck と build:types が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-sdk/src/**`, `packages/ui/worker-provider/dist/index.d.ts`
+- ロールバック手順: 型引数修正と dist の差分を revert する
+- チェックリスト:
+  - PeerEntity/TreeNodeUpdaterAPI/WorkerAPI の型引数指定を追加する
+  - ui-worker-provider の d.ts 参照エラーを解消する
+  - typecheck と build:types を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:05 JST plugin-ui-sdk の型エラー修正に着手。
+
+2547) fix/resolver-plugin/entity-service-type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/resolver-plugin/entity-service-type-errors
+- 依存: なし
+- 受け入れ基準: ResolverEntityService の型エラー(TS2783/TS2352/TS2353)が解消される／pnpm --filter @hierarchidb/resolver-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/resolver-plugin/src/worker/ResolverEntityService.ts`
+- ロールバック手順: entity data のマージ/削除処理の差分を revert する
+- チェックリスト:
+  - ResolverEntity へのマージ順序とプロパティ衝突を解消する
+  - 不要な nodeId フィールドを排除する
+  - unsafe cast を安全な型に置き換える
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:02 JST ResolverEntityService の型エラー修正に着手。
+  - update: 2026-02-06 21:03 JST ResolverEntity マージ順序と name/description 分離を修正。
+  - done: 2026-02-06 21:04 JST pnpm --filter @hierarchidb/resolver-plugin typecheck exit 0 を確認。
+
+2546) fix/linker-plugin/workerapi-generic-args (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/linker-plugin/workerapi-generic-args
+- 依存: なし
+- 受け入れ基準: linker-plugin の WorkerAPI 型引数不足が解消される／pnpm --filter @hierarchidb/linker-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/linker-plugin/src/ui/steps/AggregatedList.tsx`
+- ロールバック手順: WorkerAPI の型引数修正を revert する
+- チェックリスト:
+  - WorkerAPI の型引数指定を追加する
+  - Remote の参照先を統一する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 20:52 JST linker-plugin の WorkerAPI 型引数修正に着手。
+  - update: 2026-02-06 21:00 JST WorkerAPI<TreeNodeData> を AggregatedList で統一。
+  - done: 2026-02-06 21:01 JST pnpm --filter @hierarchidb/linker-plugin typecheck exit 0 を確認。
+
+2545) fix/ui-worker-provider/workerapi-generic-args (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/ui-worker-provider/workerapi-generic-args
+- 依存: なし
+- 受け入れ基準: ui-worker-provider の WorkerAPI 型引数不足が解消される／pnpm --filter @hierarchidb/ui-worker-provider typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/worker-provider/src/**`, `packages/ui/worker-provider/tsconfig.json`, `packages/ui/worker-provider/package.json`
+- ロールバック手順: WorkerAPI の型引数修正と tsconfig/package.json の差分を revert する
+- チェックリスト:
+  - WorkerAPI の型引数指定を追加する
+  - Remote/型エイリアスの参照先を統一する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 19:59 JST ui-worker-provider の WorkerAPI 型引数修正に着手。
+  - update: 2026-02-06 20:49 JST WorkerAPI<TreeNodeData> を provider/hooks で統一し、tree-api 依存を追加。
+  - update: 2026-02-06 20:51 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 20:51 JST tsconfig の baseUrl/paths 上書きを撤去。
+  - done: 2026-02-06 20:52 JST pnpm --filter @hierarchidb/ui-worker-provider typecheck exit 0 を確認。
+
+2544) fix/ui-worker-client/workerapi-generic-args (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/ui-worker-client/workerapi-generic-args
+- 依存: なし
+- 受け入れ基準: ui-worker-client の WorkerAPI 型引数不足が解消される／pnpm --filter @hierarchidb/ui-worker-client typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/worker-client/src/workerBridge.ts`
+- ロールバック手順: WorkerAPI の型引数修正を revert する
+- チェックリスト:
+  - WorkerAPI の型引数指定を追加する
+  - Remote/ReturnType の参照先を統一する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 19:26 JST workerBridge の WorkerAPI 型引数修正に着手。
+  - update: 2026-02-06 19:57 JST WorkerAPI<TreeNodeData> を WorkerBridge で統一。
+  - done: 2026-02-06 19:58 JST pnpm --filter @hierarchidb/ui-worker-client typecheck exit 0 を確認。
+
+2543) fix/ui-treeconsole-base/crudresult-mismatch (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/ui-treeconsole-base/crudresult-mismatch
+- 依存: なし
+- 受け入れ基準: useTreeViewController の CRUDResult 型不一致が解消される／pnpm --filter @hierarchidb/ui-treeconsole-base typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/base/src/**`
+- ロールバック手順: 変更した型定義・戻り値の差分を revert する
+- チェックリスト:
+  - useTreeViewController の CRUDResult 戻り値を型定義に合わせる
+  - CRUDResult の import/定義のズレを解消する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 18:57 JST useTreeViewController の CRUDResult 型不一致修正に着手。
+  - update: 2026-02-06 19:24 JST CRUDResult を result ベースで統一し、data を型に反映。
+  - update: 2026-02-06 19:25 JST useCRUDOperations の戻り値と tests の mock を result に更新。
+  - done: 2026-02-06 19:26 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+
+2542) fix/runtime-worker/generic-type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/runtime-worker/generic-type-errors
+- 依存: なし
+- 受け入れ基準: runtime-worker の generic 型引数エラー(TS2314/TS2552)が解消される／pnpm --filter @hierarchidb/runtime-worker typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/**`
+- ロールバック手順: 該当ファイルの型引数修正を revert する
+- チェックリスト:
+  - PeerEntity/ImportExportAPI/TreeNodeUpdaterAPI/CommitDraftRequest などの型引数不足を修正する
+  - TreeNodeData の未定義参照を解消する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 18:47 JST ジェネリクス型引数エラー修正に着手。
+  - update: 2026-02-06 18:56 JST PeerEntity/ImportExportAPI/TreeNodeUpdaterAPI/ImportData などの型引数補完と TreeNodeData 参照を修正。
+  - update: 2026-02-06 18:57 JST ImportExportLifecycleService の型引数整合を修正。
+  - done: 2026-02-06 18:57 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+
+2541) investigate/vaadin-usage-statistics (P2) — 進行中 (2026-02-07)
+- ブランチ名: investigate/vaadin-usage-statistics
+- 依存: なし
+- 受け入れ基準: @vaadin/vaadin-usage-statistics の初期化/送信経路を特定する／依存元と挙動を説明する／無効化可能な設定があれば提示する／TASKS.md に運用ログを記載する
+- 影響範囲: `pnpm-lock.yaml`（調査のみ）
+- ロールバック手順: 調査のみ（コード変更なし）
+- チェックリスト:
+  - 依存元（@vaadin/component-base など）を特定する
+  - リポジトリ内での初期化/呼び出し有無を確認する
+  - 無効化手段の有無を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 00:10 JST vaadin-usage-statistics の挙動調査に着手。
+  - update: 2026-02-07 00:18 JST @vaadin/component-base の element-mixin が dev mode で usageStatistics() を呼ぶ実装を確認。
+  - update: 2026-02-07 00:18 JST vaadin-usage-statistics は localStorage と XHR(https://tools.vaadin.com/usage-stats/submit) 送信を行い、opt-out は package.json の vaadin.disableUsageStatistics または npm config で可能。
+
+2540) fix/app/build-unloadable-deps (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/app/build-unloadable-deps
+- 依存: なし
+- 受け入れ基準: @hierarchidb/download/@hierarchidb/auth/@hierarchidb/tabular-source-xlsx の app build 失敗が解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/vite.config.ts`
+- ロールバック手順: vite alias のパス変更を revert する
+- チェックリスト:
+  - app/vite.config.ts のパス解決を正しい packages 配下へ修正する
+  - app build を実行しエラーが解消されることを確認する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 23:59 JST app build の UNLOADABLE_DEPENDENCY 解消に着手。
+  - update: 2026-02-07 00:05 JST app/vite.config.ts の packages パスを実体に合わせて修正。
+  - update: 2026-02-07 00:06 JST pnpm --filter @hierarchidb/app build exit 0 を確認（tsdown define 警告あり、vite chunk size 警告あり）。
+
+2539) fix/shape-build/save-draft-keep-build (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/save-draft-keep-build
+- 依存: なし
+- 受け入れ基準: 「下書きを保存」でダイアログを閉じても build が停止しない／BuildSessionLauncherButtons が active/inactive を経て消えない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts`（必要に応じて追加）
+- ロールバック手順: build の suspend 判定を元の cleanup 実装に戻す
+- チェックリスト:
+  - ダイアログ unmount 時に build が停止する経路を特定する
+  - 停止を回避する修正を実装する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 23:55 JST 「下書きを保存」でダイアログを閉じると build が停止する問題の調査に着手。
+  - update: 2026-02-06 23:59 JST ダイアログ unmount 時の pause 呼び出しを撤去し、build 継続へ修正。
+  - update: 2026-02-06 23:59 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2538) fix/shape-build/ui-notification-loop (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/ui-notification-loop
+- 依存: なし
+- 受け入れ基準: progress 通知は値が増加したときのみ反映される／progress=100 より tasks 完了を優先して確定状態に反映する／UI 更新は 1 フレーム 1 回に統制され Maximum update depth exceeded が再現しない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/BuildSessionLauncherButtons.tsx`, `packages/batch/src/progress/useBatchProgress.ts`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTiming.ts`（必要に応じて追加）
+- ロールバック手順: 追加したガード/バッファ/更新制御を revert して元の実装に戻す
+- チェックリスト:
+  - progress 通知の単調増加ガードを追加する
+  - tasks 完了優先の反映順を明示する
+  - 1 フレーム 1 回の更新に統制する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 22:10 JST UI 通知ループ（Maximum update depth exceeded）の抑止対応に着手。
+  - update: 2026-02-06 22:24 JST progress の単調増加ガード、tasks 完了優先、UI 更新の rAF 統制、onChange の安定化を反映。
+  - update: 2026-02-06 22:25 JST pnpm --filter @hierarchidb/batch typecheck exit 0 を確認。
+  - update: 2026-02-06 22:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 22:27 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build の define 警告あり）を確認。
+  - update: 2026-02-06 22:32 JST BuildSessionLauncherButtons の Tooltip ref 警告を forwardRef 化で解消。
+  - update: 2026-02-06 22:40 JST BuildSessionLauncherButtons 未表示のため、Worker 初期化を useBuildSessionSnapshots で明示実行し、rAF 更新のシグネチャ抑止を撤去。
+  - update: 2026-02-06 22:41 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build の define 警告あり）を確認。
+  - update: 2026-02-06 22:49 JST draftData が空のとき committed data からシードする条件を追加し、国選択の復元経路を強化。
+  - update: 2026-02-06 22:50 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
+  - update: 2026-02-06 23:03 JST ビルド時の draftData/data 参照経路と国選択が空になる要因（draftData 空のまま残る）を確認。
+  - update: 2026-02-07 09:10 JST draftData を Partial<PeerEntity> へ統一する型修正に着手。
+
 2537) investigate/shape-build/multipolygon-merge-hypothesis (P1) — 進行中 (2026-02-06)
 - ブランチ名: investigate/shape-build/multipolygon-merge-hypothesis
 - 依存: なし
@@ -13,6 +201,16 @@
 - 運用ログ:
   - start: 2026-02-06 21:00 JST shape build の multipolygon 分割仮説の検証と改善案作成に着手。
   - update: 2026-02-06 21:05 JST shapeFetchStage の GeoBoundaries マージ条件と transform の頂点数/tolerance ロジックを確認。
+  - update: 2026-02-06 21:20 JST GeoBoundaries ADM0 検証用のネットワーク統合テストを追加（HDB_NETWORK_TESTS=1 で有効化）。
+  - blocked: 2026-02-06 21:23 JST vitest 実行時に @hierarchidb/download が解決できず失敗。
+  - update: 2026-02-06 21:25 JST vitest alias を packages/download/src/index.ts に修正し、pnpm --filter @hierarchidb/download build を実行。
+  - blocked: 2026-02-06 21:27 JST GeoBoundaries fetch で AbortSignal 互換エラーが発生。
+  - update: 2026-02-06 21:29 JST テストを Node 環境で実行するよう切替し、GeoBoundaries ADM0 の実データ検証を完了。
+  - update: 2026-02-06 21:35 JST 大面積国で頂点数上限を引き上げる方針の実装準備（適用条件と上限値の確認待ち）。
+  - update: 2026-02-06 21:45 JST Processing Configuration の Next 無効化対策として validateBatchConfig を既定値マージに変更。
+  - update: 2026-02-06 21:55 JST Processing Configuration の Next 判定を buildConfig 未初期化でも既定値で有効化。
+  - update: 2026-02-06 22:10 JST build progress の進捗リセット表示をステージ平均で単調増加に補正。
+  - update: 2026-02-06 22:20 JST build progress の表示を前回値以下に落ちないよう単調化（running時のみ）。
 
 2535) fix/dialog/url-step-overwrite-init (P1) — 進行中 (2026-02-06)
 - ブランチ名: fix/dialog/url-step-overwrite-init
@@ -301,6 +499,12 @@
   - update: 2026-02-06 13:10 JST ビルド開始/再開/完了で sessions を更新する方針で実装着手。
   - update: 2026-02-06 13:18 JST shape worker で build session を upsert/update する経路を追加。
   - update: 2026-02-06 13:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 22:55 JST TreeTable/TreeNodeInfoPanel のビルド実行中インジケータ追加に着手。
+  - update: 2026-02-06 23:05 JST TreeTable/TreeNodeInfoPanel のビルド中インジケータを buildSessionIndicator と共通 hook で連携。
+  - update: 2026-02-06 23:06 JST pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck exit 0 を確認。
+  - update: 2026-02-06 23:07 JST pnpm --filter @hierarchidb/ui-treeconsole-treetable build exit 0（define 警告あり）を確認。
+  - update: 2026-02-06 23:08 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - update: 2026-02-06 23:09 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build の define 警告あり）を確認。
 
 2525) fix/shape-create/default-world-level0 (P1) — 進行中 (2026-02-06)
 - ブランチ名: fix/shape-create/default-world-level0
@@ -929,6 +1133,10 @@
   - update: 2026-02-06 13:48 JST pnpm-workspace.yaml から packages/features/* を削除し、残存参照を全置換。
   - update: 2026-02-06 13:49 JST packages/features が空であることを確認し、pnpm install を再実行。
   - done: 2026-02-06 13:49 JST features → packages 再編の移行と参照整理を完了。
+  - blocked: 2026-02-06 14:10 JST `pnpm typecheck` が route-plugin の @hierarchidb/batch 解決エラーで失敗。
+  - update: 2026-02-06 14:18 JST tsconfig.base.json の packages//dist パスを packages/<name>/dist に修正。
+  - update: 2026-02-06 14:19 JST route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 14:24 JST `pnpm typecheck` exit 0 を確認。
   - done: 2026-02-06 10:12 JST features → packages 再編の計画整理（移行対象・依存・順序・検証・ロールバック）を完了。
 2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-memory-logs-tiling
@@ -13712,6 +13920,18 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-02-06 03:20 JST タブ間セッション調停と AppBar 表示制御の調査に着手。
+  - update: 2026-02-06 22:40 JST AppBar で shape/route 両方のビルドセッション表示が出ない問題の調査に着手。
+  - update: 2026-02-06 23:30 JST AppBar を BroadcastChannel セッション配信ベースで再構成し、shape の running セッション購読と統合して表示対象を補完。
+  - update: 2026-02-06 23:31 JST transform の計画タスク総数を記録し、進捗の total を計画値で補正するよう worker 側の進捗集計を更新。
+  - update: 2026-02-06 23:31 JST fetch のタスク削除を delete イベント発火付きに変更し、タスク更新の sequence リセット不足を解消。
+  - update: 2026-02-06 23:32 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-06 23:32 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 23:33 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build は tsdown define 警告あり）を確認。
+  - update: 2026-02-06 23:45 JST AppBar が queryAPI 取得失敗で空になる経路を修正し、shape buildConfig 欠如時の getBatchSessionStatus 例外を回避。
+  - update: 2026-02-06 23:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 23:47 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build は tsdown define 警告あり）を確認。
+  - update: 2026-02-06 23:50 JST AppBar の BroadcastChannel 受信状況を確認するために一時ログを追加し、pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build は tsdown define 警告あり）。
+  - update: 2026-02-06 23:53 JST 同一タブの broadcast を AppBar に反映するよう修正し、pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build は tsdown define 警告あり）。
 2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/route/reference-node-links
 - 依存: なし

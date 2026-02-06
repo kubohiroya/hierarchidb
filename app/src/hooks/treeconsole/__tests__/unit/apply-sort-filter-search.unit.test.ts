@@ -21,7 +21,7 @@ const baseNode = (
   metadata: { name, description, tags: [] },
   draftMetadata: null,
   data: null,
-  draftData: null,
+  draftData: undefined,
   depth: 1,
   visible: true,
   createdAt: Date.now() as Timestamp,

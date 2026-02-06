@@ -1,5 +1,5 @@
-import type { NodeId, TagId } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeTagAssociation, TagEntity, TagId } from '@hierarchidb/tag-api';
 
 export interface TagDBPort {
   createTag(tag: TagEntity): Promise<void>;

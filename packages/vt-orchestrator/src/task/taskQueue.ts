@@ -175,7 +175,16 @@ export async function deleteTasksByNode(
   db: VtTaskQueueDb,
   nodeId: NodeId
 ): Promise<void> {
+  const tasks = await db.tasks.where('nodeId').equals(nodeId).toArray();
+  if (tasks.length === 0) return;
   await db.tasks.where('nodeId').equals(nodeId).delete();
+  const seen = new Set<string>();
+  tasks.forEach((task) => {
+    if (!task) return;
+    if (seen.has(task.taskId)) return;
+    seen.add(task.taskId);
+    emitTaskDeleteEvent(task.nodeId, task.taskId);
+  });
 }
 
 export async function deleteTasksByIds(

@@ -50,9 +50,9 @@ export interface TreeTableOrchestratorResult {
  * const { selectedNodeIds, isLoading } = orchestrator;
  * ```
   */
-export function useTreeTableOrchestrator(
+export function useTreeTableOrchestrator<T>(
   controller: TreeViewController | null,
-  workerAPI?: WorkerAPI,
+  workerAPI: WorkerAPI<T>,
   _options?: {
     enableSubscription?: boolean;
     subscriptionDepth?: number;
@@ -67,7 +67,7 @@ export function useTreeTableOrchestrator(
   const editing = useEditingOrchestrator(controller);
   const dragDrop = useDragDropOrchestrator(controller, tableData);
   const search = useSearchOrchestrator(controller);
-  const subscription = useSubscriptionOrchestrator(workerAPI!);
+  const subscription = useSubscriptionOrchestrator(workerAPI);
 
   // Create facade result
   const result = useMemo<TreeTableOrchestratorResult>(

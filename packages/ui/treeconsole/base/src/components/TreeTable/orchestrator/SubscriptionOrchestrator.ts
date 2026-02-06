@@ -37,7 +37,7 @@ export interface SubscriptionOrchestratorResult {
 /**
   * SubTree
   */
-export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionOrchestratorResult {
+export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): SubscriptionOrchestratorResult {
   // State atoms
   const [subscribedRootNodeId, setSubscribedRootNodeId] = useAtom(subscribedRootNodeIdAtom);
   const [subscriptionId, setSubscriptionId] = useAtom(subscriptionIdAtom);
@@ -66,13 +66,13 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
         });
         const idxMap = new Map(mergedData.map((n, i) => [n.id, i] as const));
 
-        if (update.removed && update.removed.length) {
+        if (update.removed?.length) {
           const removed = new Set(update.removed);
           mergedData = mergedData.filter((n) => !removed.has(n.id));
           for (const id of removed) idxMap.delete(id as NodeId);
         }
 
-        if (update.added && update.added.length) {
+        if (update.added?.length) {
           for (const n of update.added) {
             const id = n.id as NodeId;
             const i = idxMap.get(id);
@@ -82,14 +82,14 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
           }
         }
 
-        if (update.updated && update.updated.length) {
+        if (update.updated?.length) {
           for (const { nodeId, changes } of update.updated) {
             const i = idxMap.get(nodeId as NodeId);
             if (i != null) mergedData[i] = { ...mergedData[i], ...(changes as Partial<TreeNode>) } as TreeNode;
           }
         }
 
-        if (update.moved && update.moved.length) {
+        if (update.moved?.length) {
           for (const move of update.moved) {
             const i = idxMap.get(move.nodeId as NodeId);
             if (i != null) {

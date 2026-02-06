@@ -373,9 +373,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
           const draftData = coerceRecord(
             (draft as { draftData?: unknown } | undefined)?.draftData ??
-              (draft as { data?: unknown } | undefined)?.data ??
-              (fallbackNode as { draftData?: unknown } | undefined)?.draftData ??
-              (fallbackNode as { data?: unknown } | undefined)?.data
+              (fallbackNode as { draftData?: unknown } | undefined)?.draftData
           );
           const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
           const payloads = downloadTaskPayloads ?? [];

@@ -2,7 +2,7 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
+import type { TreeTableExpandedAPI, TreeNodeData } from '@hierarchidb/tree-api';
 import type {
   TreeMutationAPI,
   TreeNodeUpdaterAPI,
@@ -29,8 +29,9 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getQueryAPI: (): TreeQueryAPI => proxy(svc.getQueryAPI()),
     getMutationAPI: (): TreeMutationAPI => proxy(svc.getMutationAPI()),
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
-    getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
-    getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI => proxy(svc.getTreeNodeUpdaterAPI()),
+    getImportExportAPI: (): ImportExportAPI<TreeNodeData> => proxy(svc.getImportExportAPI()),
+    getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI<TreeNodeData> =>
+      proxy(svc.getTreeNodeUpdaterAPI()),
     getTreeTableExpandedAPI: (): TreeTableExpandedAPI => proxy(svc.getTreeTableExpandedAPI()),
     getStyleQueryAPI: (): StyleQueryAPI => proxy(svc.getStyleQueryAPI()),
     getStyleMutationAPI: (): StyleMutationAPI => proxy(svc.getStyleMutationAPI()),

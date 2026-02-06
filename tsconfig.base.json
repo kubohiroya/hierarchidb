@@ -14,10 +14,10 @@
         "app/src/*"
       ],
       "@hierarchidb/auth": [
-        "packages//dist/index.d.ts"
+        "packages/auth/dist/index.d.ts"
       ],
       "@hierarchidb/auth/*": [
-        "packages//dist/*"
+        "packages/auth/dist/*"
       ],
       "@hierarchidb/auth-api": [
         "packages/auth-api/dist/index.d.ts"
@@ -35,10 +35,10 @@
         "plugins/basemap-plugin/dist/*"
       ],
       "@hierarchidb/batch": [
-        "packages//dist/index.d.ts"
+        "packages/batch/dist/index.d.ts"
       ],
       "@hierarchidb/batch/*": [
-        "packages//dist/*"
+        "packages/batch/dist/*"
       ],
       "@hierarchidb/batch-runtime-services": [
         "packages/batch-runtime-services/dist/index.d.ts"
@@ -71,22 +71,22 @@
         "packages/backend/cors-proxy/dist/*"
       ],
       "@hierarchidb/download": [
-        "packages//dist/index.d.ts"
+        "packages/download/dist/index.d.ts"
       ],
       "@hierarchidb/download/*": [
-        "packages//dist/*"
+        "packages/download/dist/*"
       ],
       "@hierarchidb/chunk-store": [
-        "packages//dist/index.d.ts"
+        "packages/chunk-store/dist/index.d.ts"
       ],
       "@hierarchidb/chunk-store/*": [
-        "packages//dist/*"
+        "packages/chunk-store/dist/*"
       ],
       "@hierarchidb/location-store": [
-        "packages//dist/index.d.ts"
+        "packages/location-store/dist/index.d.ts"
       ],
       "@hierarchidb/location-store/*": [
-        "packages//dist/*"
+        "packages/location-store/dist/*"
       ],
       "@hierarchidb/location-api": [
         "packages/location-api/dist/index.d.ts"
@@ -131,10 +131,10 @@
         "packages/style-api/dist/*"
       ],
       "@hierarchidb/shape-store": [
-        "packages//dist/index.d.ts"
+        "packages/shape-store/dist/index.d.ts"
       ],
       "@hierarchidb/shape-store/*": [
-        "packages//dist/*"
+        "packages/shape-store/dist/*"
       ],
       "@hierarchidb/worker-api": [
         "packages/worker-api/dist/index.d.ts"
@@ -143,16 +143,16 @@
         "packages/worker-api/dist/*"
       ],
       "@hierarchidb/styler-store": [
-        "packages//dist/index.d.ts"
+        "packages/styler-store/dist/index.d.ts"
       ],
       "@hierarchidb/styler-store/*": [
-        "packages//dist/*"
+        "packages/styler-store/dist/*"
       ],
       "@hierarchidb/spreadsheet-store": [
-        "packages//dist/index.d.ts"
+        "packages/spreadsheet-store/dist/index.d.ts"
       ],
       "@hierarchidb/spreadsheet-store/*": [
-        "packages//dist/*"
+        "packages/spreadsheet-store/dist/*"
       ],
       "@hierarchidb/memory": [
         "packages/memory/dist/index.d.ts"
@@ -161,10 +161,10 @@
         "packages/memory/dist/*"
       ],
       "@hierarchidb/gis-sdk": [
-        "packages//dist/index.d.ts"
+        "packages/gis-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/gis-sdk/*": [
-        "packages//dist/*"
+        "packages/gis-sdk/dist/*"
       ],
       "@hierarchidb/folder-plugin": [
         "plugins/folder-plugin/dist/index.d.ts"
@@ -173,10 +173,10 @@
         "plugins/folder-plugin/dist/*"
       ],
       "@hierarchidb/import-export": [
-        "packages//dist/index.d.ts"
+        "packages/import-export/dist/index.d.ts"
       ],
       "@hierarchidb/import-export/*": [
-        "packages//dist/*"
+        "packages/import-export/dist/*"
       ],
       "@hierarchidb/linker-plugin": [
         "plugins/linker-plugin/dist/index.d.ts"
@@ -191,10 +191,10 @@
         "plugins/location-plugin/dist/*"
       ],
       "@hierarchidb/map-adapter": [
-        "packages//dist/index.d.ts"
+        "packages/map-adapter/dist/index.d.ts"
       ],
       "@hierarchidb/map-adapter/*": [
-        "packages//dist/*"
+        "packages/map-adapter/dist/*"
       ],
       "@hierarchidb/map-source": [
         "packages/map-source/dist/index.d.ts"
@@ -260,34 +260,34 @@
         "packages/route-resolver/dist/*"
       ],
       "@hierarchidb/route-engine": [
-        "packages//dist/index.d.ts"
+        "packages/route-engine/dist/index.d.ts"
       ],
       "@hierarchidb/route-engine/*": [
-        "packages//dist/*"
+        "packages/route-engine/dist/*"
       ],
       "@hierarchidb/route-searoute": [
-        "packages//dist/index.d.ts"
+        "packages/route-searoute/dist/index.d.ts"
       ],
       "@hierarchidb/route-searoute/*": [
-        "packages//dist/*"
+        "packages/route-searoute/dist/*"
       ],
       "@hierarchidb/route-store": [
-        "packages//dist/index.d.ts"
+        "packages/route-store/dist/index.d.ts"
       ],
       "@hierarchidb/route-store/*": [
-        "packages//dist/*"
+        "packages/route-store/dist/*"
       ],
       "@hierarchidb/route-api": [
-        "packages//dist/index.d.ts"
+        "packages/route-api/dist/index.d.ts"
       ],
       "@hierarchidb/route-api/*": [
-        "packages//dist/*"
+        "packages/route-api/dist/*"
       ],
       "@hierarchidb/vectortile-store": [
-        "packages//dist/index.d.ts"
+        "packages/vectortile-store/dist/index.d.ts"
       ],
       "@hierarchidb/vectortile-store/*": [
-        "packages//dist/*"
+        "packages/vectortile-store/dist/*"
       ],
       "@hierarchidb/vt-orchestrator": [
         "packages/vt-orchestrator/dist/index.d.ts"
@@ -359,10 +359,10 @@
         "packages/tabular-source/dist/*"
       ],
       "@hierarchidb/tag": [
-        "packages//dist/index.d.ts"
+        "packages/tag/dist/index.d.ts"
       ],
       "@hierarchidb/tag/*": [
-        "packages//dist/*"
+        "packages/tag/dist/*"
       ],
       "@hierarchidb/timeline-plugin": [
         "plugins/timeline-plugin/dist/index.d.ts"

@@ -12,6 +12,6 @@ export interface PackageJson {
   devDependencies?: Record<string, string>;
   /** Plugin-specific configuration */
   hierarchidb?: {
-    plugin?: Partial<PluginDefinition>;
+    plugin?: Partial<PluginDefinition<unknown>>;
   };
 }

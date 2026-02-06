@@ -1,4 +1,4 @@
-import { Box, Checkbox, Chip, IconButton, TextField, Tooltip } from '@mui/material';
+import { Box, Checkbox, Chip, CircularProgress, IconButton, TextField, Tooltip } from '@mui/material';
 import {
   ChevronRight as ChevronRightIcon,
   DragIndicator as DragIndicatorIcon,
@@ -10,7 +10,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
-import type { TreeNodeInUI } from '../../types.js';
+import type { BuildSessionIndicator, TreeNodeInUI } from '../../types.js';
 import {
   buildTreeConsoleLinkHref,
   getPluginIconColor,
@@ -102,6 +102,7 @@ export interface ColumnBuilderParams {
     descriptionEdit: string;
   };
   emptyValue: string;
+  buildSessionIndicator?: BuildSessionIndicator;
 }
 
 const SparkleAnimation: React.FC<{ showSparkle: boolean; duration?: number }> = ({
@@ -186,6 +187,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     validationMessages,
     placeholders,
     emptyValue,
+    buildSessionIndicator,
   } = params;
   const selectionCheckboxPrefix = selectionIdPrefix || 'row-selection';
   const selectionAllCheckboxId = `${selectionCheckboxPrefix}-all`;
@@ -295,13 +297,19 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
       const hasSelfDraft =
         params.draftFlags.hasDraft.has(node.id as NodeId) ||
-        draftData !== null && draftData !== undefined ||
+        draftData !== undefined ||
         draftMetadata !== null && draftMetadata !== undefined;
       const descendantDraftCount = collectDescendantIds(node.id as NodeId).reduce(
         (count, id) => (params.draftFlags.hasDraft.has(id as NodeId) ? count + 1 : count),
         0,
       );
       const hasDescendantDraft = descendantDraftCount > 0;
+      const isBuildRunning = Boolean(
+        buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
+      );
+      const isBuildActive = isBuildRunning
+        && buildSessionIndicator?.isRunnerTab
+        && String(buildSessionIndicator.activeSessionId ?? '') === String(node.id);
       const descendantDraftLabel = descendantDraftCount === 1
         ? params.draftChipLabels.descendant.singular
         : params.draftChipLabels.descendant.plural;
@@ -537,6 +545,14 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                     variant="outlined"
                     sx={{ height: 20 }}
                     onClick={(e) => e.stopPropagation()}
+                  />
+                ) : null}
+                {isBuildRunning ? (
+                  <CircularProgress
+                    size={14}
+                    thickness={5}
+                    color={isBuildActive ? 'primary' : 'inherit'}
+                    sx={{ ml: 0.25 }}
                   />
                 ) : null}
                 {extractTags(node).map((tag, idx) => (

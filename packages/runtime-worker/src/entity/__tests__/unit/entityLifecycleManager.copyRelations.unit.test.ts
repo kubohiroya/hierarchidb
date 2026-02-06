@@ -18,7 +18,7 @@ describe('EntityLifecycleManager.copyRelationsByMapping', () => {
       metadata: { name: String(id), description: undefined, tags: [] },
       draftMetadata: null,
       data: {},
-      draftData: null,
+      draftData: undefined,
       depth: 1,
       visible: true,
       createdAt: Date.now(),

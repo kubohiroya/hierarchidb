@@ -1,4 +1,4 @@
-import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export interface TimelineFrameViewState {
@@ -15,15 +15,14 @@ export interface TimelineFrame {
   viewState?: TimelineFrameViewState;
 }
 
-export interface TimelineEntity extends BaseEntity<NodeId> {
-  id: NodeId;
+export interface TimelineEntityPayload {
   name: string;
   description?: string;
   tags?: string[];
   frames: TimelineFrame[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
 }
 
-export type TimelineDraft = TreeNodeUpdaterPayload<Partial<TimelineEntity>>;
+export type TimelineEntity = PeerEntity<TimelineEntityPayload>;
+
+export type TimelineDraft = TreeNodeUpdaterPayload<TimelineEntity>;
 export type TimelineDraftPatch = Partial<TimelineDraft>;

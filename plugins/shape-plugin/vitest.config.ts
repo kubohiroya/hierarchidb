@@ -105,7 +105,7 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/download',
-        replacement: path.resolve(__dirname, '../../packages//src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/download/src/index.ts'),
       },
       {
         find: '@hierarchidb/shape-store',

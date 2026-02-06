@@ -4,7 +4,12 @@ export type { ShapeBuildConfig } from './build.ts';
 export * from './validation.js';
 export * from './create-update.js';
 export * from './constants.js';
-export type { ShapeEntity, ShapePreviewMapView, SelectedArrayByCountries } from './ShapeEntity.js';
+export type {
+  ShapeEntity,
+  ShapeEntityPayload,
+  ShapePreviewMapView,
+  SelectedArrayByCountries,
+} from './ShapeEntity.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
 export type { VectorTileEntity } from './VectorTileEntity.js';
 export type {

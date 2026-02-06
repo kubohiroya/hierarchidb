@@ -1,5 +1,5 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
@@ -9,6 +9,7 @@ import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts'
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
+import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
@@ -118,6 +119,18 @@ export function useTreeConsoleIntegrationInner({
     [location.searchStr]
   );
 
+  const buildSessionNodeType = 'shape' as NodeType;
+  const {
+    sessions: buildSessions,
+    isRunnerTab,
+    activeSessionId,
+  } = useBuildSessionSnapshots(buildSessionNodeType);
+  const buildSessionIndicator = useMemo(() => ({
+    runningNodeIds: new Set(buildSessions.map((session) => session.nodeId as NodeId)),
+    activeSessionId: activeSessionId ? (activeSessionId as NodeId) : null,
+    isRunnerTab,
+  }), [activeSessionId, buildSessions, isRunnerTab]);
+
   const resolvePreviewGuardStateForNode = useCallback(
     async (node: HierarchicalTreeNode) => {
       if (!client) return { canOpen: true };
@@ -199,7 +212,7 @@ export function useTreeConsoleIntegrationInner({
         visible: breadcrumbNode.visible,
         draftMetadata: null,
         data: null,
-        draftData: null,
+        draftData: undefined,
         parentId: parentFallback ? (parentFallback as NodeId) : (pageNodeId as NodeId | undefined),
         depth: breadcrumbNode.depth ?? 1,
         createdAt: Date.now(),
@@ -338,6 +351,7 @@ export function useTreeConsoleIntegrationInner({
     resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
+    buildSessionIndicator,
     useTrashColumns: isTrashPage,
     speedDialSuppressed,
     setSpeedDialSuppressed,

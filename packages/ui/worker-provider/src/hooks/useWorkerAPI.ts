@@ -1,9 +1,12 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { getWorkerClientHook, type WorkerClientRef } from '../ui/workerClientHook.js';
 
+type WorkerApi = WorkerAPI<TreeNodeData>;
+
 export interface UseWorkerAPIResult {
-  api: Remote<WorkerAPI> | null;
+  api: Remote<WorkerApi> | null;
   loading: boolean;
   error: Error | null;
   initialize: () => Promise<void>;
@@ -35,7 +38,7 @@ export function useWorkerAPI(): UseWorkerAPIResult {
     } satisfies UseWorkerAPIResult;
   }
 
-  let api: Remote<WorkerAPI> | null = null;
+  let api: Remote<WorkerApi> | null = null;
   try {
     api = client.client ?? client.getAPI();
   } catch (error) {

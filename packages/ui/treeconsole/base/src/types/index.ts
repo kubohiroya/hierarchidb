@@ -19,7 +19,7 @@ export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
 /**
  * TreeTableConsolePanel Props
  */
-export interface TreeTableConsolePanelProps {
+export interface TreeTableConsolePanelProps<T> {
   rootNodeId: NodeId;
   nodeId: NodeId;
   displayExpandedNode?: boolean;
@@ -36,7 +36,7 @@ export interface TreeTableConsolePanelProps {
   handleStartTour: () => void;
   footerHeight?: number;
   mode?: 'restore' | 'dispose';
-  workerClient?: WorkerAPI; // Optional WorkerAPIClient for standalone usage
+  workerClient?: WorkerAPI<T>; // Optional WorkerAPIClient for standalone usage
   hideDragHandler?: boolean;
 }
 
@@ -209,6 +209,8 @@ export interface UndoRedoResult {
   restoredNodes?: TreeNode[];
 }
 
+export type CRUDResult = { result: boolean; error?: string; data?: Partial<TreeNode> };
+
 /**
  * TreeViewController useTreeViewController
  */
@@ -237,9 +239,10 @@ export interface TreeViewController {
   collapseNode: (nodeId: NodeId) => void;
 
   //  CRUD - WorkerAPI
-  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  moveNode: (nodeId: NodeId, targetParentId: NodeId) => Promise<CRUDResult>;
+  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
   trashNodes: (nodeIds: NodeId[]) => Promise<void>;
-  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 
   //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
@@ -372,7 +375,7 @@ export type ExpandedStateChange = unknown; // TODO: Define proper type
 export type SubTreeChange = unknown; // TODO: Define proper type
 
 //  Props
-export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
+export interface TreeConsolePanelProps<T> extends TreeTableConsolePanelProps<T> {
   readonly subtreeRootId?: NodeId;
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   readonly selectAllIdPrefix?: string;

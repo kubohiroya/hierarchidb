@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, PeerEntity, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
@@ -26,7 +26,7 @@ describe('Draft commit E2E (holder-less)', () => {
     nodeType: NodeType;
     parentId: NodeId;
     metadata?: Partial<TreeNodeMetadata>;
-    draftData?: Record<string, unknown>;
+    draftData?: Partial<PeerEntity<TreeNodeData>>;
   }): Promise<TreeNode> {
     const draftNode = await draftService.initTreeNode(params.nodeType, params.parentId, {
       metadata: params.metadata as TreeNode['metadata'],
@@ -60,7 +60,7 @@ describe('Draft commit E2E (holder-less)', () => {
     const commitResult = await draftService.commitDraft(draft.id);
     assertCommitOk(commitResult, 'commit basemap draft');
     const node = await core.nodes.get(commitResult.nodeId as NodeId);
-    expect(node?.draftData).toBeNull();
+    expect(node?.draftData).toBeUndefined();
     expect(node?.data).toEqual(draftPayload);
   });
 
@@ -93,7 +93,7 @@ describe('Draft commit E2E (holder-less)', () => {
     const res = await draftService.commitDraft(draft.id);
     assertCommitOk(res, 'commitDraft');
     const committed = await core.nodes.get(res.nodeId);
-    expect(committed?.draftData).toBeNull();
+    expect(committed?.draftData).toBeUndefined();
     expect(committed?.data).toBeTruthy();
     expect(committed?.version).toBe((draft.version ?? 1) + 1);
   });

@@ -20,7 +20,7 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
         Partial<TreeNode> & { name?: string }
     ): TreeNode => ({
       data: {},
-      draftData: null,
+      draftData: undefined,
       metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
       draftMetadata: null,
       visible: node.visible ?? true,

@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../common/types/index.js';
+import type { ShapeEntityPayload } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type JSZip from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
@@ -30,7 +30,7 @@ export interface NaturalEarthRawData {
 }
 
 //  Natural Earth
-export interface NaturalEarthProcessedData extends Array<ShapeEntity> {
+export interface NaturalEarthProcessedData extends Array<ShapeEntityPayload> {
   metadata?: {
     source: 'natural-earth';
     processedAt: string;
@@ -211,7 +211,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       }
 
       //  ShapeEntity
-      const entities: ShapeEntity[] = features.map((feature, index) => {
+      const entities: ShapeEntityPayload[] = features.map((feature, index) => {
         const properties = feature.properties ?? {};
         const entityId = this.generateEntityId(properties, index) as NodeId;
         const nodeId = this.generateNodeId(properties, index) as NodeId;

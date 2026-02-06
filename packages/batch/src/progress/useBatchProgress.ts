@@ -19,7 +19,6 @@ export function useBatchProgress(
   const pendingRef = useRef<UnifiedProgressInfo | null>(null);
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
-  const lastTimestampRef = useRef<number | null>(null);
   const lastProgressRef = useRef<UnifiedProgressInfo | null>(null);
 
   useEffect(() => {
@@ -31,24 +30,21 @@ export function useBatchProgress(
     const next = pendingRef.current;
     pendingRef.current = null;
     if (next) {
-      const nextTimestamp = typeof next.timestamp === 'number' ? next.timestamp : null;
-      if (nextTimestamp !== null && lastTimestampRef.current === nextTimestamp) {
+      const prev = lastProgressRef.current;
+      if (prev && prev.stage === next.stage && next.percentage < prev.percentage) {
         return;
       }
-      const prev = lastProgressRef.current;
-      const isSame = prev
+      const isSame = Boolean(
+        prev
         && prev.stage === next.stage
         && prev.phase === next.phase
         && prev.percentage === next.percentage
         && prev.completed === next.completed
         && prev.failed === next.failed
         && prev.total === next.total
-        && prev.message === next.message;
-      if (isSame) {
-        lastTimestampRef.current = nextTimestamp;
-        return;
-      }
-      lastTimestampRef.current = nextTimestamp;
+        && prev.message === next.message
+      );
+      if (isSame) return;
       lastProgressRef.current = next;
       setProgress(next);
     }

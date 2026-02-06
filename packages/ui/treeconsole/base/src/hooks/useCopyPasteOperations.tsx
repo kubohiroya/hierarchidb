@@ -27,13 +27,13 @@ export interface ClipboardData {
   timestamp: number;
 }
 
-export interface UseCopyPasteOperationsOptions {
+export interface UseCopyPasteOperationsOptions<T> {
   /**
    * State manager ()
    */
   stateManager?: unknown;
   /** Worker API adapter */
-  workerAdapter?: WorkerAPIAdapter;
+  workerAdapter?: WorkerAPIAdapter<T>;
   /** Loading atoms setter */
   setIsLoading?: (loading: boolean) => void;
 }
@@ -63,8 +63,8 @@ type StateManagerCopyPasteLike = Partial<{
   canPasteToTarget: (targetParentId: NodeId) => boolean;
 }>;
 
-export function useCopyPasteOperations(
-  options: UseCopyPasteOperationsOptions = {},
+export function useCopyPasteOperations<T>(
+  options: UseCopyPasteOperationsOptions<T> = {},
 ): UseCopyPasteOperationsReturn {
   const { stateManager, workerAdapter, setIsLoading } = options;
   const sm = stateManager as StateManagerCopyPasteLike | undefined;

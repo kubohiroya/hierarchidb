@@ -2,18 +2,19 @@ import { useCallback } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { WorkerAPIAdapter } from '../adapters/index.js';
+import type { CRUDResult } from '../types/index.js';
 
 type StateManagerLike = Partial<{
-  moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<void> | void;
+  moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<CRUDResult> | void;
   trashNode: (nodeId: NodeId) => Promise<void> | void;
   deleteNode: (nodeId: NodeId) => Promise<void> | void;
-  duplicateNode: (nodeId: NodeId) => Promise<void> | void;
+  duplicateNode: (nodeId: NodeId) => Promise<CRUDResult> | void;
 }>;
 
-export interface UseCRUDOperationsOptions {
+export interface UseCRUDOperationsOptions<T> {
   stateManager?: StateManagerLike;
   /** Worker API adapter */
-  workerAdapter?: WorkerAPIAdapter;
+  workerAdapter?: WorkerAPIAdapter<T>;
   /** Loading atoms setter */
   setIsLoading?: (loading: boolean) => void;
   /** Callback to update selected nodes */
@@ -26,19 +27,19 @@ export interface UseCRUDOperationsOptions {
 
 export interface UseCRUDOperationsReturn {
   //  CRUD
-  moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
-  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<CRUDResult>;
+  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
   trashNode: (nodeId: NodeId) => Promise<void>;
   trashNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
-  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 
   //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
   startCreate: (parentId: NodeId, name: string) => Promise<void>;
 }
 
-export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCRUDOperationsReturn {
+export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}): UseCRUDOperationsReturn {
   const {
     stateManager,
     workerAdapter,
@@ -50,7 +51,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
 
   //  CRUDWorkerAPIAdapter
   const moveNode = useCallback(
-    async (nodeId: NodeId, targetParentId: NodeId, _index?: number) => {
+    async (nodeId: NodeId, targetParentId: NodeId, _index?: number): Promise<CRUDResult> => {
       if (workerAdapter) {
         setIsLoading?.(true);
         try {
@@ -70,22 +71,26 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         if (!canMove) throw new Error('No adapter available for move operation');
         setIsLoading?.(true);
         try {
-          const res: any = await stateManager.moveNode!(nodeId, targetParentId, _index ?? 0);
-          if (res && typeof res === 'object' && 'success' in res && res.success === false) {
+          const res = await stateManager.moveNode?.(nodeId, targetParentId, _index ?? 0);
+          if (res && typeof res === 'object' && 'result' in res && res.result === false) {
             if (res.error) console.error('Failed to move node:', res.error);
-            return;
+            return {
+              result: false,
+              error: res.error ?? 'Unknown error',
+            };
           }
           onExpandedNodesChange?.((prev) => (prev.includes(targetParentId) ? prev : [...prev, targetParentId]));
         } finally {
           setIsLoading?.(false);
         }
       }
+      return { result: true };
     },
     [workerAdapter, stateManager, setIsLoading, onExpandedNodesChange],
   );
 
   const moveNodes = useCallback(
-    async (nodeIds: NodeId[], targetParentId: NodeId) => {
+    async (nodeIds: NodeId[], targetParentId: NodeId): Promise<CRUDResult> => {
       if (!workerAdapter) {
         throw new Error('WorkerAPIAdapter not available');
       }
@@ -103,6 +108,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
       } finally {
         setIsLoading?.(false);
       }
+      return { result: true };
     },
     [workerAdapter, setIsLoading, onExpandedNodesChange],
   );
@@ -179,7 +185,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         if (!canDup) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          const result: any = await stateManager.duplicateNode!(nodeId);
+          const result = await stateManager.duplicateNode?.(nodeId);
           const duplicated: Partial<TreeNode> | undefined = result?.data;
 
           // Update selection to include original and duplicated node
@@ -233,6 +239,8 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
       } finally {
         setIsLoading?.(false);
       }
+
+      return { result: true };
     },
     [workerAdapter, setIsLoading, onExpandedNodesChange],
   );

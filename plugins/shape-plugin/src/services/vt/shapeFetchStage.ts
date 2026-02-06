@@ -25,7 +25,7 @@ import type {
   DataSourceName,
   FetchTaskPayload,
   SelectedArrayByCountries,
-  ShapeEntity,
+  ShapeEntityPayload,
 } from '../../common/types/index.js';
 import { generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
@@ -432,7 +432,7 @@ const putFetchCache = async (params: {
 };
 
 const buildFetchFeatureCollection = (
-  entities: ShapeEntity[],
+  entities: ShapeEntityPayload[],
   originKey: string
 ): FeatureCollection => {
   const features: Feature[] = [];
@@ -1028,10 +1028,8 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   if (!resumeExistingTasks) {
-    await params.taskQueue.tasks
-      .where('[nodeId+taskType]')
-      .equals([params.nodeId, 'fetch'])
-      .delete();
+    const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
+    await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
   }
   const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')

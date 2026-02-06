@@ -1,7 +1,7 @@
-import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type { DialogUIState } from './dialog-state.js';
 import type { OnNameConflict } from './command-types.js';
-import type { TreeNode, TreeNodeData, TreeNodeMetadata } from './tree-node-types.js';
+import type { TreeNode, TreeNodeMetadata } from './tree-node-types.js';
 
 export interface CommandMeta {
   commandId: string;
@@ -67,14 +67,14 @@ export type RedoPayload = {
   groupId?: string;
 };
 
-export type CreateDraftPayload = {
+export type CreateDraftPayload<T> = {
   nodeId: NodeId;
   draftMetadata?: Partial<TreeNodeMetadata> | null;
-  draftData?: TreeNodeData | null;
+  draftData?: Partial<PeerEntity<T>>;
   dialogUIState?: DialogUIState | null;
 };
 
-export type CreateDraftForCreatePayload = {
+export type CreateDraftForCreatePayload<T> = {
   draftOf: NodeId;
   parentId: NodeId;
   nodeType: NodeType;
@@ -82,7 +82,7 @@ export type CreateDraftForCreatePayload = {
   description?: string;
   treeId?: TreeId;
   draftMetadata?: Partial<TreeNodeMetadata> | null;
-  draftData?: TreeNodeData | null;
+  draftData?: Partial<PeerEntity<T>>;
   dialogUIState?: DialogUIState | null;
 };
 

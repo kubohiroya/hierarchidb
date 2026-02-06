@@ -1,16 +1,16 @@
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, TreeId } from '@hierarchidb/core-types';
 
 /**
  * Import/Export API for data transfer operations
  * Provides functionality for importing and exporting console nodes in various formats
  */
-export interface ImportExportAPI {
+export interface ImportExportAPI<T> {
   /**
    * Import nodes from structured data
    * @param params - Import parameters
    * @returns Result of import operation including created node IDs
    */
-  importNodes(params: ImportNodesParams): Promise<ImportResult>;
+  importNodes(params: ImportNodesParams<T>): Promise<ImportResult>;
 
   /**
    * Export nodes to structured data
@@ -36,7 +36,7 @@ export interface ImportExportAPI {
    * @param params - Validation parameters
    * @returns Validation result with any errors found
    */
-  validateImportData(params: ValidateImportParams): Promise<ImportValidationResult>;
+  validateImportData(params: ValidateImportParams<T>): Promise<ImportValidationResult>;
 
   /**
    * Get import/export operation status
@@ -56,7 +56,7 @@ export interface ImportExportAPI {
 /**
  * Parameters for node import operation
  */
-export interface ImportNodesParams {
+export interface ImportNodesParams<T> {
   /** Target console for import */
   treeId: TreeId;
 
@@ -64,7 +64,7 @@ export interface ImportNodesParams {
   targetParentId: NodeId;
 
   /** Data to import */
-  data: ImportData;
+  data: ImportData<T>;
 
   /** Import format */
   format: 'json' | 'csv' | 'xml';
@@ -82,7 +82,7 @@ export interface ImportNodesParams {
 /**
  * Import data structure
  */
-export interface ImportData {
+export interface ImportData<T> {
   /** Nodes to import */
   nodes: Array<{
     name: string;
@@ -91,12 +91,12 @@ export interface ImportData {
     /** Tree-level metadata (name/description/tags 等)。name/description は上位フィールドが優先される。 */
     metadata?: Record<string, unknown>;
     /** Persisted data payload for the node. */
-    data?: Record<string, unknown> | null;
+    data?: PeerEntity<T>;
     /** Draft payload for the node (optional). */
-    draftData?: Record<string, unknown> | null;
+    draftData?: Partial<PeerEntity<T>>;
     /** Draft metadata for the node (optional). */
     draftMetadata?: Record<string, unknown> | null;
-    children?: ImportData['nodes'];
+    children?: ImportData<T>['nodes'];
   }>;
 
   /** Additional metadata */
@@ -182,9 +182,9 @@ export interface ExportResult {
 /**
  * Import data validation parameters
  */
-export interface ValidateImportParams {
+export interface ValidateImportParams<T> {
   /** Data to validate */
-  data: ImportData;
+  data: ImportData<T>;
 
   /** Expected format */
   format: 'json' | 'csv' | 'xml';

@@ -6,17 +6,17 @@ import type {
   TabularProcessingConfig,
 } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft, SpreadSheetDataSourceType } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';
 
-const coerceDialogData = (value: unknown): SpreadsheetEntity =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
+const coerceDialogData = (value: unknown): SpreadsheetDraft =>
+  (typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {});
 
 type ImportMethod = 'file' | 'url';
 
 export type UseTabularDataSourceParams = Pick<
-  PluginStepProps<SpreadsheetEntity>,
+  PluginStepProps<SpreadsheetDraft>,
   'data' | 'onChange' | 'setValid' | 'setError' | 'nodeId'
 > & { dialogRef?: RefObject<HTMLElement | null>; missingDatasetMessage?: string };
 
@@ -26,7 +26,7 @@ type ExtendedImportProps = TabularDataImportProps & {
 };
 
 export interface UseTabularDataSourceResult {
-  dialogData: SpreadsheetEntity;
+  dialogData: SpreadsheetDraft;
   tabularApi: ReturnType<typeof createSpreadsheetTabularApi>;
   menuContainer: Element | null;
   importAccordion: {
@@ -64,7 +64,7 @@ export const useTabularDataSource = ({
   dialogRef,
   missingDatasetMessage = 'select or download a data file before continuing.',
 }: UseTabularDataSourceParams): UseTabularDataSourceResult => {
-  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
+  const dialogData = useMemo<SpreadsheetDraft>(() => coerceDialogData(data), [data]);
 
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
   const derivedImportMethod: ImportMethod =

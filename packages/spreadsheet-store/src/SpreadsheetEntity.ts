@@ -1,4 +1,4 @@
-import type { Timestamp } from '@hierarchidb/core-types';
+import type { PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 
@@ -19,7 +19,7 @@ export interface SpreadSheetDataSourceType {
   contentHash?: string;
 }
 
-export interface SpreadsheetEntity {
+export interface SpreadsheetEntityPayload {
   spreadsheetMetadataId?: string;
   dataSource?: SpreadSheetDataSourceType;
   filters?: TabularFilterRule[];
@@ -32,3 +32,5 @@ export interface SpreadsheetEntity {
   /** Optional preview rows cache to reuse across steps (small subset) */
   previewRows?: Record<string, unknown>[];
 }
+
+export type SpreadsheetEntity = PeerEntity<SpreadsheetEntityPayload>;

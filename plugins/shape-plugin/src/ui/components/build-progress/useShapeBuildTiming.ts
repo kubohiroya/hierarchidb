@@ -37,6 +37,7 @@ export const useShapeBuildTiming = ({
   monitorKey,
   onChange,
 }: Args) => {
+  const onChangeRef = useRef(onChange);
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
   const totalElapsedMsRef = useRef(0);
   const stageElapsedMsRef = useRef(0);
@@ -45,6 +46,10 @@ export const useShapeBuildTiming = ({
   const buildStartRequestedRef = useRef<string | null>(null);
   const [timingSnapshot, setTimingSnapshot] = useState({ totalMs: 0, stageMs: 0 });
   const lastTimingSnapshotRef = useRef({ totalMs: 0, stageMs: 0 });
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     if (lastBuildStartedAtRef.current !== data?.buildStartedAt) {
@@ -148,11 +153,11 @@ export const useShapeBuildTiming = ({
     if (!key) return;
     if (buildStartRequestedRef.current === key) return;
     buildStartRequestedRef.current = key;
-    onChange({
+    onChangeRef.current({
       buildStartedAt: Date.now(),
       buildFinishedAt: undefined,
     });
-  }, [buildStatus, data?.buildStartedAt, data?.nodeId, nodeId, onChange]);
+  }, [buildStatus, data?.buildStartedAt, data?.nodeId, nodeId]);
 
   useEffect(() => {
     if (!monitorKey) return;
@@ -178,10 +183,10 @@ export const useShapeBuildTiming = ({
     if (!monitorKey) return;
     if (!['completed', 'failed'].includes(buildStatus)) return;
     if (!data?.buildFinishedAt) {
-      onChange({ buildFinishedAt: Date.now() });
+      onChangeRef.current({ buildFinishedAt: Date.now() });
     }
     recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
-  }, [buildStatus, data?.buildFinishedAt, monitorKey, onChange]);
+  }, [buildStatus, data?.buildFinishedAt, monitorKey]);
 
   return {
     timingSnapshot,

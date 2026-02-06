@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, ValidationResult } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, ValidationResult } from '@hierarchidb/core-types';
 import type { OnNameConflict } from './command-types.js';
 import type { CommitResult } from './commit-types.js';
 import type { DialogUIState } from './dialog-state.js';
@@ -10,7 +10,7 @@ import type { TreeNode, TreeNodeMetadata } from './tree-node-types.js';
  * Provides isolated editing capabilities through drafts that can be committed
  * or discarded without touching the committed tree node until requested.
  */
-export interface TreeNodeUpdaterAPI {
+export interface TreeNodeUpdaterAPI<T> {
   initTreeNode(
     nodeType: NodeType,
     parentId: NodeId,
@@ -21,7 +21,7 @@ export interface TreeNodeUpdaterAPI {
 
   updateTreeNodeDraftMetadata(nodeId: NodeId, updater: Partial<TreeNodeMetadata>): Promise<void>;
 
-  updateTreeNodeDraftData(nodeId: NodeId, updater: Record<string, unknown>): Promise<void>;
+  updateTreeNodeDraftData(nodeId: NodeId, updater: Partial<PeerEntity<T>>): Promise<void>;
 
   listDrafts(): Promise<TreeNode[]>;
 
@@ -33,10 +33,10 @@ export interface TreeNodeUpdaterAPI {
    * - `mode: 'save'` (default) optionally applies provided draft payloads/UI atoms
    *   and commits the draft.
    */
-  updateTreeNode(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;
+  updateTreeNode(nodeId: NodeId, request?: CommitDraftRequest<T>): Promise<CommitResult>;
 
   /** @deprecated use updateTreeNode */
-  commitDraft(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;
+  commitDraft(nodeId: NodeId, request?: CommitDraftRequest<T>): Promise<CommitResult>;
 
   discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void>;
 
@@ -49,9 +49,9 @@ export interface TreeNodeUpdaterAPI {
 
 export type CommitDraftMode = 'save-draft' | 'save';
 
-export interface CommitDraftRequest<TData = Record<string, unknown>> {
+export interface CommitDraftRequest<TData> {
   draftMetadata?: Partial<TreeNodeMetadata> | null;
-  draftData?: TData | null;
+  draftData?: Partial<TData>;
   dialogUIState?: DialogUIState | null;
   data?: TData | null;
   metadata?: Partial<TreeNodeMetadata> | null;
@@ -63,7 +63,7 @@ export interface CommitDraftRequest<TData = Record<string, unknown>> {
   onNameConflict?: OnNameConflict;
 }
 
-export type CommitDraftOptions = Pick<CommitDraftRequest, 'onNameConflict'>;
+export type CommitDraftOptions<TData> = Pick<CommitDraftRequest<TData>, 'onNameConflict'>;
 
 export interface DiscardDraftOptions {
   /**

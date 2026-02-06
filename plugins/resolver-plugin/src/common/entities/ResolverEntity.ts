@@ -1,4 +1,5 @@
-import type { TreeNodeData, TreeNodeUpdaterPayload, DialogUIState } from '@hierarchidb/tree-api';
+import type { PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeUpdaterPayload, DialogUIState } from '@hierarchidb/tree-api';
 
 export interface PropertyMappingRule {
   id: string;
@@ -61,7 +62,7 @@ export interface MappingValidationResult {
   coverage?: number;
 }
 
-export type ResolverEntity = {
+export type ResolverEntityPayload = {
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;
   mappingRules: PropertyMappingRule[];
@@ -74,7 +75,9 @@ export type ResolverEntity = {
   compiledFunction?: string;
   compiledMetadata?: Record<string, unknown>;
   lastValidation?: MappingValidationResult | null;
-} & TreeNodeData;
+};
+
+export type ResolverEntity = PeerEntity<ResolverEntityPayload>;
 
 export interface MappingPreviewResult {
   success?: boolean;
@@ -109,7 +112,7 @@ export interface StylerIntegration {
   styleId?: string;
 }
 
-export type ResolverUpdaterPayload = TreeNodeUpdaterPayload<Partial<ResolverEntity>> & {
+export type ResolverUpdaterPayload = TreeNodeUpdaterPayload<ResolverEntity> & {
   dialogUIState: DialogUIState;
   lastValidation?: MappingValidationResult | null;
 };

@@ -20,6 +20,7 @@ import type {
   PasteNodesPayload,
   RedoPayload,
   RestoreFromTrashPayload,
+  TreeNodeData,
   UndoPayload,
 } from '@hierarchidb/tree-api';
 
@@ -64,10 +65,10 @@ export interface CommandMap {
 
   // Draft lifecycle (v1)
   createDraftForCreate: {
-    payload: CreateDraftForCreatePayload;
+    payload: CreateDraftForCreatePayload<TreeNodeData>;
     result: CoreCommandResult;
   };
-  createDraft: { payload: CreateDraftPayload; result: CoreCommandResult };
+  createDraft: { payload: CreateDraftPayload<TreeNodeData>; result: CoreCommandResult };
   discardDraft: { payload: DiscardDraftPayload; result: CoreCommandResult };
   commitDraftForCreate: {
     payload: CommitDraftForCreatePayload;

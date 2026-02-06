@@ -48,7 +48,7 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   const rawData = (node as { data?: unknown }).data;
   const rawDraftData = (node as { draftData?: unknown }).draftData;
   const data = (rawData ?? null) as NodePayload;
-  const draftData = (rawDraftData ?? null) as NodePayload;
+  const draftData = rawDraftData as NodePayload | undefined;
 
   const dialogWindow =
     (node as { dialogUIState?: DialogUIState | null }).dialogUIState?.dialogWindow ?? null;
@@ -161,10 +161,7 @@ export class CoreDB extends Dexie {
             (node as { holderTargetId?: string }).holderTargetId = undefined;
             (node as { holderMetaParentId?: string }).holderMetaParentId = undefined;
           }
-          if (
-            (node as { draftData?: unknown }).draftData !== null &&
-            (node as { draftData?: unknown }).draftData !== undefined
-          ) {
+          if (typeof (node as { draftData?: unknown }).draftData !== 'undefined') {
             // keep draftData if present; no special handling needed
           }
         });
@@ -230,7 +227,7 @@ export class CoreDB extends Dexie {
               },
               draftMetadata: null,
               data: null,
-              draftData: null,
+              draftData: undefined,
             } as unknown as TreeNode,
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
@@ -247,7 +244,7 @@ export class CoreDB extends Dexie {
               },
               draftMetadata: null,
               data: null,
-              draftData: null,
+              draftData: undefined,
             } as unknown as TreeNode,
           ])
         );
@@ -696,7 +693,7 @@ export class CoreDB extends Dexie {
       (node): TreeNode => ({
         ...node,
         data: node.data ?? null,
-        draftData: node.draftData ?? null,
+        draftData: node.draftData,
         draftMetadata: node.draftMetadata ?? null,
         metadata: node.metadata,
         ...(node.references && { references: node.references }),

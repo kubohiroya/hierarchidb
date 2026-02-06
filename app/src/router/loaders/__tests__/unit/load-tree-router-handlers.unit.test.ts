@@ -63,7 +63,7 @@ function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
     metadata: { name: nameOverride ?? 'Mock Node', description: descOverride ?? '', tags: [] },
     draftMetadata: null,
     data: null,
-    draftData: null,
+    draftData: undefined,
     depth: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { CommitDraftMode, DialogProgressState, DialogUIState, TreeNodeData } from '@hierarchidb/tree-api';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { CommitDraftMode, DialogProgressState, DialogUIState } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { StepNavigationEvent } from '@hierarchidb/ui-dialog';
 import type { DialogActionInFlight } from '../types.js';
 
-type UseStepNavigationArgs<TData extends TreeNodeData> = {
+type UseStepNavigationArgs<TData extends PeerEntity> = {
   activeStepIndex: number;
   stepsLength: number;
   setActiveStepIndex: (index: number) => void;
@@ -17,16 +17,16 @@ type UseStepNavigationArgs<TData extends TreeNodeData> = {
   getPersistableDialogUIState: () => DialogUIState | null;
   commitTreeNodeUpdater?: (
     mode: CommitDraftMode,
-    payload: TreeNodeUpdaterState<Partial<TData>>
+    payload: TreeNodeUpdaterState<TData>
   ) => Promise<NodeId>;
   nodeId: NodeId;
   nodeType: string;
   treeUpdaterTreeNodeId?: NodeId;
-  treeUpdaterDraftMetadata: TreeNodeUpdaterState<Partial<TData>>['draftMetadata'] | null | undefined;
+  treeUpdaterDraftMetadata: TreeNodeUpdaterState<TData>['draftMetadata'] | null | undefined;
   localDraftDataRef: React.MutableRefObject<Partial<TData>>;
 };
 
-export const useStepNavigation = <TData extends TreeNodeData>(
+export const useStepNavigation = <TData extends PeerEntity>(
   args: UseStepNavigationArgs<TData>
 ) => {
   const {
@@ -149,10 +149,10 @@ export const useStepNavigation = <TData extends TreeNodeData>(
             dialogProgress: { activeStepIndex: toPersistedStepIndex(nextIndex) },
           };
           const targetId = (treeUpdaterTreeNodeIdRef.current ?? nodeId) as NodeId;
-          const payload: TreeNodeUpdaterState<Partial<TData>> = {
+          const payload: TreeNodeUpdaterState<TData> = {
             treeNodeId: targetId,
             draftMetadata: treeUpdaterDraftMetadataRef.current ?? null,
-            draftData: nodeType === 'folder' ? null : { ...(localDraftDataRef.current ?? {}) },
+            draftData: nodeType === 'folder' ? undefined : { ...(localDraftDataRef.current ?? {}) },
             dialogUIState: persistState,
           };
           try {

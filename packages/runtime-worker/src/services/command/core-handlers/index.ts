@@ -86,7 +86,7 @@ async function handleCreateNode(
       updatedAt: createdAt,
       version: 1,
       data: {},
-      draftData: null,
+      draftData: undefined,
       ...(payload.metadata.description ? { description: payload.metadata.description } : {}),
     })) as NodeId;
 

@@ -1,22 +1,19 @@
 import type {
   NodeId,
-  TagId,
 } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity } from './tag-entity-types.js';
+import type { NodeTagAssociation, TagEntity, TagId } from './tag-entity-types.js';
 import type { TagSuggestion } from './TagTypes.js';
 
 export interface CreateTagRequest {
   name: string;
   color: string;
   description?: string;
-  category: 'system' | 'user' | 'auto';
 }
 
 export interface UpdateTagRequest {
   name?: string;
   color?: string;
   description?: string;
-  category?: 'system' | 'user' | 'auto';
   usageCount: number;
 }
 

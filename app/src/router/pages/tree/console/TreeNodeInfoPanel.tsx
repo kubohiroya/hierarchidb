@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   NodeContextMenu,
@@ -18,6 +18,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -30,6 +31,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
@@ -64,6 +67,18 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     openSteps,
     openStepsLoading,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
+  const buildSessionNodeType = 'shape' as NodeType;
+  const { sessions: buildSessions, isRunnerTab, activeSessionId } = useBuildSessionSnapshots(buildSessionNodeType);
+  const runningNodeIds = useMemo(
+    () => new Set(buildSessions.map((session) => session.nodeId as NodeId)),
+    [buildSessions]
+  );
+  const isBuildRunning = currentNode?.id
+    ? runningNodeIds.has(currentNode.id as NodeId)
+    : false;
+  const isBuildActive = isBuildRunning
+    && isRunnerTab
+    && String(activeSessionId ?? '') === String(currentNode?.id ?? '');
   const isVisible = currentNode?.visible !== false;
   const parentNodeId = currentNode?.parentId;
   const isStylerNode = currentNode?.nodeType === 'styler';
@@ -146,14 +161,25 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           >
             {currentNode.metadata?.name || labels.unnamedNodeLabel}
           </Typography>
-          {isDraft && (
-            <Chip
-              label={labels.draftLabel}
-              size="small"
-              color="error"
-              variant="filled"
-              sx={{ height: 20 }}
-            />
+          {(isDraft || isBuildRunning) && (
+            <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
+              {isDraft && (
+                <Chip
+                  label={labels.draftLabel}
+                  size="small"
+                  color="error"
+                  variant="filled"
+                  sx={{ height: 20 }}
+                />
+              )}
+              {isBuildRunning && (
+                <CircularProgress
+                  size={16}
+                  thickness={5}
+                  color={isBuildActive ? 'primary' : 'inherit'}
+                />
+              )}
+            </Stack>
           )}
           <Typography variant="body2" color="text.secondary">
             {labels.nodeTypeCaption}

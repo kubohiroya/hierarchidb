@@ -96,14 +96,19 @@ export function buildBaseMapEntityFromNode(
   const viewport = coerceViewport(data.viewport) ?? { ...DEFAULT_VIEWPORT };
   const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
   const committedMetadata = (node as { metadata?: unknown }).metadata;
+  const createdAt = (node as { createdAt?: number }).createdAt ?? Date.now();
+  const updatedAt = (node as { updatedAt?: number }).updatedAt ?? createdAt;
+  const version = (node as { version?: number }).version ?? 1;
   return {
+    id: node.id as NodeId,
+    nodeId: node.id as NodeId,
     mapStyle,
     viewport,
     draftMetadata: (draftMetadata ||
       committedMetadata || { name: '', description: '', tags: [] }) as TreeNodeMetadata,
-    createdAt: (node as { createdAt?: number }).createdAt,
-    updatedAt: (node as { updatedAt?: number }).updatedAt,
-    version: (node as { version?: number }).version,
+    createdAt,
+    updatedAt,
+    version,
   };
 }
 

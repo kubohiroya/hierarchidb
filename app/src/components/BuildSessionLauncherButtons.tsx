@@ -1,4 +1,13 @@
-import { createElement, useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import {
+  createElement,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from 'react';
 import {
   Box,
   Button,
@@ -12,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { BuildStage } from '@hierarchidb/components';
+import type { BuildSessionSnapshot } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
@@ -22,12 +32,10 @@ import {
   Layers as LayersIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { proxy } from 'comlink';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow.ts';
 import { openInNewTab } from '~/utils/openInNewTab.ts';
-import { useSessionCoordinator } from '@hierarchidb/ui-session-coordinator';
+import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
 
 type BuildSessionLauncherButtonsProps = {
   treeId?: TreeId;
@@ -35,7 +43,7 @@ type BuildSessionLauncherButtonsProps = {
 };
 
 type BuildSessionEntry = {
-  session: ShapeBuildSessionRecord;
+  session: BuildSessionSnapshot;
   node: TreeNode | null;
   nodePath: string;
 };
@@ -51,7 +59,8 @@ type ProgressSummary = {
 
 type LoadingButtonProps = ComponentProps<typeof Button> & { loading?: boolean };
 
-const LoadingButton = ({ loading = false, disabled, endIcon, ...rest }: LoadingButtonProps) => {
+const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
+  ({ loading = false, disabled, endIcon, ...rest }, ref) => {
   const spinner = (
     <CircularProgress
       size={16}
@@ -62,12 +71,14 @@ const LoadingButton = ({ loading = false, disabled, endIcon, ...rest }: LoadingB
   return (
     <Button
       {...rest}
+      ref={ref}
       disabled={disabled}
       endIcon={loading ? spinner : endIcon}
       aria-busy={loading ? 'true' : undefined}
     />
   );
-};
+});
+LoadingButton.displayName = 'LoadingButton';
 
 const isProgressSummary = (value: unknown): value is ProgressSummary => {
   if (!value || typeof value !== 'object') return false;
@@ -77,6 +88,49 @@ const isProgressSummary = (value: unknown): value is ProgressSummary => {
     && Number.isFinite(record.failed)
     && Number.isFinite(record.skipped)
     && Number.isFinite(record.percentage);
+};
+
+const resolveProgressSummary = (value: unknown): ProgressSummary | null => {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const percentage = Number.isFinite(record.percentage) ? Number(record.percentage) : null;
+  if (percentage === null) return null;
+  const total = Number.isFinite(record.total) ? Number(record.total) : 0;
+  const completed = Number.isFinite(record.completed) ? Number(record.completed) : 0;
+  const failed = Number.isFinite(record.failed) ? Number(record.failed) : 0;
+  const skipped = Number.isFinite(record.skipped) ? Number(record.skipped) : 0;
+  const taskType = typeof record.taskType === 'string' ? record.taskType : undefined;
+  return {
+    total,
+    completed,
+    failed,
+    skipped,
+    percentage,
+    taskType,
+  };
+};
+
+const normalizeSessionStatus = (value: unknown): 'idle' | 'running' | 'paused' | 'completed' | 'failed' => {
+  const status = (() => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+      const candidate = (value as Record<string, unknown>).status;
+      if (typeof candidate === 'string') return candidate;
+    }
+    return 'idle';
+  })();
+  switch (status) {
+    case 'processing':
+    case 'queued':
+      return 'running';
+    case 'running':
+    case 'paused':
+    case 'completed':
+    case 'failed':
+      return status;
+    default:
+      return 'idle';
+  }
 };
 
 const toNodePathLabel = (nodes: TreeNode[]): string =>
@@ -116,128 +170,94 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   const { client: workerClient } = useWorker();
   const { t } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
-  const coordinator = useSessionCoordinator();
   const shapeNodeType = 'shape' as NodeType;
+  const { sessions, isRunnerTab, activeSessionId } = useBuildSessionSnapshots(shapeNodeType);
   const stages = useBuildStages(t);
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
   const [entries, setEntries] = useState<BuildSessionEntry[]>([]);
   const nodeCacheRef = useRef<Map<string, { node: TreeNode | null; nodePath: string }>>(new Map());
-  const tabIdRef = useRef<string>(coordinator.getTabId());
-  const channelRef = useRef<BroadcastChannel | null>(null);
-  const [isRunnerTab, setIsRunnerTab] = useState(false);
+  const refreshIdRef = useRef(0);
+  const pendingEntriesRef = useRef<BuildSessionEntry[] | null>(null);
+  const entriesFrameRef = useRef<number | null>(null);
+  const entriesScheduledRef = useRef(false);
   const location = useRouterState({ select: (state) => state.location });
   const returnTo = useMemo(() => `${location.pathname}${location.searchStr ?? ''}`, [location.pathname, location.searchStr]);
 
   useEffect(() => {
+    return () => {
+      if (entriesFrameRef.current !== null) {
+        window.cancelAnimationFrame(entriesFrameRef.current);
+        entriesFrameRef.current = null;
+      }
+    };
+  }, []);
+
+  const scheduleEntriesUpdate = useCallback((next: BuildSessionEntry[]) => {
+    pendingEntriesRef.current = next;
+    if (entriesScheduledRef.current) return;
+    entriesScheduledRef.current = true;
+    entriesFrameRef.current = window.requestAnimationFrame(() => {
+      entriesScheduledRef.current = false;
+      entriesFrameRef.current = null;
+      const pending = pendingEntriesRef.current;
+      pendingEntriesRef.current = null;
+      if (!pending) return;
+      setEntries(pending);
+    });
+  }, []);
+
+  const refreshEntries = useCallback(async (sessionSnapshots: BuildSessionSnapshot[]) => {
     if (!workerClient) {
-      setEntries([]);
+      scheduleEntriesUpdate([]);
       return;
     }
-    let active = true;
-    let unsubscribe: (() => void) | null = null;
-    const subscribe = async () => {
-      const queryAPI = await workerClient.getQueryAPI().catch(() => null);
-      if (!queryAPI) return;
-      const unsub = await workerClient.subscribeBuildSessionRecordsByStatus(
-        shapeNodeType,
-        ['running'],
-        proxy(async (sessions: ShapeBuildSessionRecord[]) => {
-          if (!active) return;
-          const nodeIds = Array.from(new Set(sessions.map((session) => String(session.nodeId))));
-          const updatedCache = new Map(nodeCacheRef.current);
-          await Promise.all(
-            nodeIds.map(async (nodeId) => {
-              if (updatedCache.has(nodeId)) return;
-              const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
-              if (pathNodes.length === 0) return;
-              const node = pathNodes[pathNodes.length - 1] ?? null;
-              const nodePath = toNodePathLabel(pathNodes);
-              updatedCache.set(nodeId, { node, nodePath });
-            })
-          );
-          nodeCacheRef.current = updatedCache;
-          const nextEntries = sessions.map((session) => {
-            const nodeKey = String(session.nodeId);
-            const cached = updatedCache.get(nodeKey);
-            return {
-              session,
-              node: cached?.node ?? null,
-              nodePath: cached?.nodePath ?? '',
-            };
-          });
-          setEntries(nextEntries);
-        })
-      );
-      unsubscribe = () => {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
+    if (sessionSnapshots.length === 0) {
+      scheduleEntriesUpdate([]);
+      return;
+    }
+    const currentRefreshId = refreshIdRef.current + 1;
+    refreshIdRef.current = currentRefreshId;
+    const queryAPI = await workerClient.getQueryAPI().catch(() => null);
+    if (!queryAPI) {
+      if (currentRefreshId === refreshIdRef.current) {
+        const fallbackEntries = sessionSnapshots.map((session) => ({
+          session,
+          node: null,
+          nodePath: String(session.nodeId),
+        }));
+        scheduleEntriesUpdate(fallbackEntries);
+      }
+      return;
+    }
+    const nodeIds = Array.from(new Set(sessionSnapshots.map((session) => String(session.nodeId))));
+    const updatedCache = new Map(nodeCacheRef.current);
+    await Promise.all(
+      nodeIds.map(async (nodeId) => {
+        if (updatedCache.has(nodeId)) return;
+        const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
+        if (pathNodes.length === 0) return;
+        const node = pathNodes[pathNodes.length - 1] ?? null;
+        const nodePath = toNodePathLabel(pathNodes);
+        updatedCache.set(nodeId, { node, nodePath });
+      })
+    );
+    if (currentRefreshId !== refreshIdRef.current) return;
+    nodeCacheRef.current = updatedCache;
+    const nextEntries = sessionSnapshots.map((session) => {
+      const nodeKey = String(session.nodeId);
+      const cached = updatedCache.get(nodeKey);
+      return {
+        session,
+        node: cached?.node ?? null,
+        nodePath: cached?.nodePath ?? '',
       };
-    };
-    void subscribe();
-    return () => {
-      active = false;
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [workerClient]);
-
-  const sendAck = useCallback((sessionId: string, receivedTabId: string) => {
-    const channel = channelRef.current;
-    if (!channel) return;
-    coordinator.sendAck(channel, sessionId, receivedTabId);
-  }, [coordinator]);
+    }).sort((a, b) => a.nodePath.localeCompare(b.nodePath));
+    scheduleEntriesUpdate(nextEntries);
+  }, [scheduleEntriesUpdate, workerClient]);
 
   useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = coordinator.openChannel();
-    channelRef.current = channel;
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (!coordinator.isSessionChannelMessage(message)) return;
-      if (message.tabId === tabIdRef.current) return;
-      sendAck(message.sessionId, message.tabId);
-    };
-    channel.addEventListener('message', handleMessage);
-    return () => {
-      channel.removeEventListener('message', handleMessage);
-      channel.close();
-      if (channelRef.current === channel) {
-        channelRef.current = null;
-      }
-    };
-  }, [coordinator, sendAck]);
-
-  useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    if (entries.length === 0) return;
-    const tick = () => {
-      const now = Date.now();
-      entries.forEach((entry) => {
-        coordinator.sendPoll(channel, String(entry.session.nodeId), now);
-      });
-    };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator, entries]);
-
-  useEffect(() => {
-    const updateRunner = () => {
-      const now = Date.now();
-      setIsRunnerTab(coordinator.isRunnerTab(now));
-    };
-    updateRunner();
-    const intervalId = setInterval(updateRunner, 1000);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator]);
+    void refreshEntries(sessions);
+  }, [refreshEntries, sessions]);
 
   const handleNavigateToBuild = useCallback(
     async (entry: BuildSessionEntry, options?: { openInNewTab?: boolean }) => {
@@ -265,7 +285,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
     return entries.map((entry) => {
       const progressSummary = isProgressSummary(entry.session.progress)
         ? entry.session.progress
-        : null;
+        : resolveProgressSummary(entry.session.progress);
       const counts = progressSummary
         ? {
           total: progressSummary.total,
@@ -282,7 +302,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
       const percentage = progressSummary?.percentage ?? 0;
       const stageId = progressSummary?.taskType;
       const stageTitle = stageId ? stageById.get(stageId)?.title ?? stageId : undefined;
-      const status = entry.session.status ?? 'idle';
+      const status = normalizeSessionStatus(entry.session.status);
       const rawCounts = counts.total > 0 ? counts : counts;
       const stageLabel = stageTitle ?? (() => {
         if (status === 'running') return t('stage.progress.unknownStage', 'processing');
@@ -319,8 +339,6 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   }, [entries, stageById, t]);
 
   if (resolvedEntries.length === 0) return null;
-  const activeSessionId = coordinator.readActiveSessionId();
-
   return (
     <Card
       variant="outlined"

@@ -140,6 +140,11 @@ export interface TreeTableCoreProps {
   rowClickAction?: 'Select/Navigate' | 'Edit';
 
   /**
+   * Build session indicator state for row-level status.
+   */
+  buildSessionIndicator?: BuildSessionIndicator;
+
+  /**
    * Plugin System (Extension Points)
    */
   plugins?: TreeTablePlugin[];
@@ -158,6 +163,12 @@ export interface TreeTableCoreProps {
   onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => void;
 }
+
+export type BuildSessionIndicator = {
+  runningNodeIds: Set<NodeId>;
+  activeSessionId: NodeId | null;
+  isRunnerTab: boolean;
+};
 
 // Column configuration
 export interface TreeTableColumn {

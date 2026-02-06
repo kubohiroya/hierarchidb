@@ -1,6 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,10 +12,10 @@ export function useConflictGuard(params: {
   draftVersion?: number;
   discardDraft: (opts?: { forceDelete?: boolean }) => Promise<void>;
   onClose: () => void;
-  updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<TreeNodeData>>) => void;
+  updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<PeerEntity>>) => void;
   getLocalDraftSnapshot?: () => {
     draftMetadata?: TreeNodeMetadata | null;
-    draftData?: TreeNodeData | null;
+    draftData?: Partial<PeerEntity>;
   } | null;
 }) {
   const {
@@ -81,7 +81,7 @@ export function useConflictGuard(params: {
     if (latest.version > localVersion) {
       const localSnapshot = getLocalDraftSnapshot?.() ?? null;
       const latestDraftData =
-        (latest.latest as { draftData?: TreeNodeData | null }).draftData ?? null;
+        (latest.latest as { draftData?: Partial<PeerEntity> }).draftData;
       const latestDraftMetadata =
         (latest.latest as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
       const isSameContent = compareDraftSnapshots(localSnapshot, {
@@ -147,14 +147,14 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | nul
 function compareDraftSnapshots(
   localSnapshot: {
     draftMetadata?: TreeNodeMetadata | null;
-    draftData?: TreeNodeData | null;
+    draftData?: Partial<PeerEntity>;
   } | null,
-  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null }
+  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: Partial<PeerEntity> }
 ): boolean {
   const localMeta = localSnapshot?.draftMetadata ?? null;
-  const localData = localSnapshot?.draftData ?? null;
+  const localData = localSnapshot?.draftData;
   const remoteMeta = remoteSnapshot.draftMetadata ?? null;
-  const remoteData = remoteSnapshot.draftData ?? null;
+  const remoteData = remoteSnapshot.draftData;
   return (
     JSON.stringify(localMeta) === JSON.stringify(remoteMeta) &&
     JSON.stringify(localData) === JSON.stringify(remoteData)

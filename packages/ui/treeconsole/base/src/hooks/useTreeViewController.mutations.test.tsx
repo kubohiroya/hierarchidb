@@ -215,7 +215,7 @@ describe('useTreeViewController', () => {
       };
 
       mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
-        success: true,
+        result: true,
         data: duplicatedNode,
       });
 
@@ -237,7 +237,7 @@ describe('useTreeViewController', () => {
       };
 
       mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
-        success: true,
+        result: true,
         data: duplicatedNode,
       });
 
@@ -260,7 +260,7 @@ describe('useTreeViewController', () => {
       };
 
       mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
-        success: true,
+        result: true,
         data: duplicatedNode,
       });
 
@@ -283,7 +283,7 @@ describe('useTreeViewController', () => {
       };
 
       mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
-        success: true,
+        result: true,
         data: duplicatedNode,
       });
       mockStateManager.getNode = vi.fn().mockResolvedValue(duplicatedNode);

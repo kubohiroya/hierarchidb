@@ -16,18 +16,18 @@ import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, Worker
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
-export class WorkerAPIAdapter {
-  private workerAPI: WorkerAPI;
+export class WorkerAPIAdapter<T> {
+  private workerAPI: WorkerAPI<T>;
   private viewId: string;
   private defaultOnNameConflict: OnNameConflict;
 
   // Individual adapters
   // private _observableAdapter: TreeObservableAdapter; // Currently unused - remove until needed
-  private mutationAdapter: TreeMutationCommandsAdapter;
-  private draftAdapter: DraftCommandsAdapter;
-  private subscriptionManager: SubscriptionManager;
+  private mutationAdapter: TreeMutationCommandsAdapter<T>;
+  private draftAdapter: DraftCommandsAdapter<T>;
+  private subscriptionManager: SubscriptionManager<T>;
 
-  constructor(config: WorkerAPIAdapterConfig) {
+  constructor(config: WorkerAPIAdapterConfig<T>) {
     this.workerAPI = config.workerAPI;
     this.viewId = config.defaultViewId;
     this.defaultOnNameConflict = config.defaultOnNameConflict ?? 'auto-rename';
@@ -250,7 +250,7 @@ export class WorkerAPIAdapter {
   getAdapterInfo(): {
     viewId: string;
     defaultOnNameConflict: OnNameConflict;
-    subscriptionStats: ReturnType<SubscriptionManager['getSubscriptionStats']>;
+    subscriptionStats: ReturnType<SubscriptionManager<T>['getSubscriptionStats']>;
   } {
     return {
       viewId: this.viewId,

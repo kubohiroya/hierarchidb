@@ -1,8 +1,9 @@
 import 'fake-indexeddb/auto';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/import-export-api';
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -11,15 +12,17 @@ import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
-  getImportExportAPI(): Promise<import('@hierarchidb/import-export-api').ImportExportAPI>;
+  getImportExportAPI(): Promise<
+    import('@hierarchidb/import-export-api').ImportExportAPI<TreeNodeData>
+  >;
 };
 
 type TemplateNode = {
   nodeType: string;
   metadata?: { name?: string; description?: string } | Record<string, unknown>;
-  draftData?: Record<string, unknown> | null;
-  draftMetadata?: Record<string, unknown> | null;
-  data?: Record<string, unknown> | null;
+  draftData?: Partial<PeerEntity<TreeNodeData>>;
+  draftMetadata?: Record<string, unknown> | undefined;
+  data?: Record<string, unknown> | undefined;
   children?: TemplateNode[];
 };
 
@@ -37,8 +40,8 @@ async function loadTemplate(): Promise<TemplateFile> {
   return JSON.parse(raw) as TemplateFile;
 }
 
-function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
-  const toImportNode = (node: TemplateNode): ImportData['nodes'][number] => {
+function buildImportNodes(data: TemplateFile): ImportData<TreeNodeData>['nodes'] {
+  const toImportNode = (node: TemplateNode): ImportData<TreeNodeData>['nodes'][number] => {
     const metadata =
       node.metadata && typeof node.metadata === 'object'
         ? (node.metadata as Record<string, unknown>)
@@ -58,7 +61,7 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
     const children =
       node.children
         ?.map((child) => toImportNode(child))
-        .filter((child): child is ImportData['nodes'][number] => !!child) ?? [];
+        .filter((child): child is ImportData<TreeNodeData>['nodes'][number] => !!child) ?? [];
 
     return {
       name: (metadata as { name?: string })?.name ?? 'Untitled',

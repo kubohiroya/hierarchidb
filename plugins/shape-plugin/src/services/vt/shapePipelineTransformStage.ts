@@ -16,6 +16,7 @@ import {
   shouldStopAfterStage,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
+import { clearStagePlan, setTransformPlannedTotal } from './shapeProgressPlan.ts';
 import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformStageParams = {
@@ -172,19 +173,90 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   ));
   const desiredTransformTasks = [...desiredLargeTasks, ...desiredSmallTasks];
 
-  if (params.resumeExistingTasks && existingTransformByBandTasks.length > 0) {
-    existingTransformByBandTasks = await filterObsoleteTasks(
-      params.taskQueue,
-      existingTransformByBandTasks,
-      desiredTransformTasks,
-    );
-    const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
-    const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
-    if (missingTransformTasks.length > 0) {
-      await putTasks(params.taskQueue, missingTransformTasks);
-    }
-    if (existingTransformByBandTasks.length === 0 && missingTransformTasks.length === 0) {
-      return false;
+  const plannedTransformTotal = desiredTransformTasks.length;
+  if (plannedTransformTotal > 0) {
+    setTransformPlannedTotal(params.nodeId, plannedTransformTotal);
+  } else {
+    clearStagePlan(params.nodeId);
+  }
+
+  try {
+    if (params.resumeExistingTasks && existingTransformByBandTasks.length > 0) {
+      existingTransformByBandTasks = await filterObsoleteTasks(
+        params.taskQueue,
+        existingTransformByBandTasks,
+        desiredTransformTasks,
+      );
+      const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
+      const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
+      if (missingTransformTasks.length > 0) {
+        await putTasks(params.taskQueue, missingTransformTasks);
+      }
+      if (existingTransformByBandTasks.length === 0 && missingTransformTasks.length === 0) {
+        return false;
+      }
+
+      await params.waitIfPaused?.();
+      await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
+
+      const transformByBandAbortController = new AbortController();
+      const transformByBandHandler = createTransformByBandHandler({
+        ephemeralDB: params.ephemeralStore,
+        transformConfig: resolveTransformConfig(params.buildConfig),
+        bands: params.bands,
+        featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
+        abortSignal: transformByBandAbortController.signal,
+      });
+
+      try {
+        await runStageTasks({
+          nodeId: params.nodeId,
+          stage: 'transform',
+          handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+          waitIfPaused: params.waitIfPaused,
+          maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+          failureHandling: params.failureHandling,
+          abortController: transformByBandAbortController,
+        });
+      } catch (error) {
+        const baseMessage = error instanceof Error ? error.message : String(error);
+        const failedTaskId = error && typeof error === 'object'
+          ? (error as { taskId?: string }).taskId
+          : undefined;
+        const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+        await finalizePendingStageTasks(
+          params.taskQueue,
+          params.nodeId,
+          'transform',
+          `aborted: ${reason}`,
+          '[ShapeTransform][PipelineDiagnostics] transform stage aborted',
+          params.pipelineRunId,
+        );
+        throw error;
+      }
+      console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'transform'),
+      }));
+      await finalizePendingStageTasks(
+        params.taskQueue,
+        params.nodeId,
+        'transform',
+        'aborted: transform stage completed with pending tasks',
+        '[ShapeTransform][PipelineDiagnostics] transform stage finalized pending tasks',
+        params.pipelineRunId,
+      );
+      const shouldStop = shouldStopAfterStage(
+        params.buildContinuationPolicy,
+        await getFailedTaskCount(params.taskQueue, params.nodeId, 'transform'),
+      );
+      if (params.buildConfig.fetchConfig.deleteOnComplete) {
+        await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
+          await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+        });
+      }
+      return shouldStop;
     }
 
     await params.waitIfPaused?.();
@@ -198,17 +270,38 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
       abortSignal: transformByBandAbortController.signal,
     });
-
-    try {
+    const runTransformTasks = async (maxConcurrent: number) => {
       await runStageTasks({
         nodeId: params.nodeId,
         stage: 'transform',
         handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
         waitIfPaused: params.waitIfPaused,
-        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+        maxConcurrent,
         failureHandling: params.failureHandling,
         abortController: transformByBandAbortController,
       });
+    };
+
+    const runPhase = async (countryOrder: string[], maxConcurrent: number) => {
+      for (let countryIndex = 0; countryIndex < countryOrder.length; countryIndex += 1) {
+        const countryKey = countryOrder[countryIndex];
+        if (!countryKey) continue;
+        for (const band of bandsAscending) {
+          const tasks = buildTasksForCountryBand(countryKey, countryIndex, band);
+          if (tasks.length == 0) continue;
+          await putTasks(params.taskQueue, tasks);
+          await runTransformTasks(maxConcurrent);
+        }
+      }
+    };
+
+    try {
+      if (largeCountryOrder.length > 0) {
+        await runPhase(largeCountryOrder, 1);
+      }
+      if (smallCountryOrder.length > 0) {
+        await runPhase(smallCountryOrder, params.buildConfig.transformConfig.maxConcurrent);
+      }
     } catch (error) {
       const baseMessage = error instanceof Error ? error.message : String(error);
       const failedTaskId = error && typeof error === 'object'
@@ -225,6 +318,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       );
       throw error;
     }
+
     console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
@@ -248,91 +342,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       });
     }
     return shouldStop;
+  } finally {
+    clearStagePlan(params.nodeId);
   }
-
-  await params.waitIfPaused?.();
-  await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
-
-  const transformByBandAbortController = new AbortController();
-  const transformByBandHandler = createTransformByBandHandler({
-    ephemeralDB: params.ephemeralStore,
-    transformConfig: resolveTransformConfig(params.buildConfig),
-    bands: params.bands,
-    featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
-    abortSignal: transformByBandAbortController.signal,
-  });
-  const runTransformTasks = async (maxConcurrent: number) => {
-    await runStageTasks({
-      nodeId: params.nodeId,
-      stage: 'transform',
-      handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
-      waitIfPaused: params.waitIfPaused,
-      maxConcurrent,
-      failureHandling: params.failureHandling,
-      abortController: transformByBandAbortController,
-    });
-  };
-
-  const runPhase = async (countryOrder: string[], maxConcurrent: number) => {
-    for (let countryIndex = 0; countryIndex < countryOrder.length; countryIndex += 1) {
-      const countryKey = countryOrder[countryIndex];
-      if (!countryKey) continue;
-      for (const band of bandsAscending) {
-        const tasks = buildTasksForCountryBand(countryKey, countryIndex, band);
-        if (tasks.length == 0) continue;
-        await putTasks(params.taskQueue, tasks);
-        await runTransformTasks(maxConcurrent);
-      }
-    }
-  };
-
-  try {
-    if (largeCountryOrder.length > 0) {
-      await runPhase(largeCountryOrder, 1);
-    }
-    if (smallCountryOrder.length > 0) {
-      await runPhase(smallCountryOrder, params.buildConfig.transformConfig.maxConcurrent);
-    }
-  } catch (error) {
-    const baseMessage = error instanceof Error ? error.message : String(error);
-    const failedTaskId = error && typeof error === 'object'
-      ? (error as { taskId?: string }).taskId
-      : undefined;
-    const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
-    await finalizePendingStageTasks(
-      params.taskQueue,
-      params.nodeId,
-      'transform',
-      `aborted: ${reason}`,
-      '[ShapeTransform][PipelineDiagnostics] transform stage aborted',
-      params.pipelineRunId,
-    );
-    throw error;
-  }
-
-  console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'transform'),
-  }));
-  await finalizePendingStageTasks(
-    params.taskQueue,
-    params.nodeId,
-    'transform',
-    'aborted: transform stage completed with pending tasks',
-    '[ShapeTransform][PipelineDiagnostics] transform stage finalized pending tasks',
-    params.pipelineRunId,
-  );
-  const shouldStop = shouldStopAfterStage(
-    params.buildContinuationPolicy,
-    await getFailedTaskCount(params.taskQueue, params.nodeId, 'transform'),
-  );
-  if (params.buildConfig.fetchConfig.deleteOnComplete) {
-    await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
-      await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
-    });
-  }
-  return shouldStop;
 };
-
 

@@ -43,7 +43,7 @@ export type CommandProcessorAPI = {
 } & Record<string, unknown>;
 
 // Core Worker API exposed to UI / hosts
-export interface WorkerAPI {
+export interface WorkerAPI<T> {
   ping(): Promise<{ response: 'pong'; timestamp: number }>;
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
@@ -62,9 +62,9 @@ export interface WorkerAPI {
   getMutationAPI(): Promise<TreeMutationAPI>;
   getQueryAPI(): Promise<TreeQueryAPI>;
   getSubscriptionAPI(): Promise<TreeSubscriptionAPI>;
-  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
+  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI<T>>;
   getTreeTableExpandedAPI(): Promise<TreeTableExpandedAPI>;
-  getImportExportAPI(): Promise<ImportExportAPI>;
+  getImportExportAPI(): Promise<ImportExportAPI<T>>;
   getTagAPI(): Promise<TagAPI>;
   getStyleQueryAPI(): Promise<StyleQueryAPI>;
   getStyleMutationAPI(): Promise<StyleMutationAPI>;

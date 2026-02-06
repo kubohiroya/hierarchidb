@@ -1,5 +1,5 @@
-import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
-import type { NodeId } from '@hierarchidb/core-types';
+import type { SpreadsheetEntityPayload, SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 import type { StepData } from '@hierarchidb/plugin-base';
@@ -313,7 +313,7 @@ export type StylerStepData = StylerDialogData &
   stylerConfig?: StylerConfig;
 };
 
-export interface StylerEntity extends SpreadsheetEntity {
+export interface StylerEntityPayload extends SpreadsheetEntityPayload {
   //  - spreadsheetMetadataId?: string (SpreadsheetEntity)
   //  - dataSource: object (SpreadsheetEntity)
   //  - filters?: object (SpreadsheetEntity)
@@ -334,6 +334,8 @@ export interface StylerEntity extends SpreadsheetEntity {
   };
 
 }
+
+export type StylerEntity = PeerEntity<StylerEntityPayload>;
 
 // Working copies live on TreeNode data/draftData; no dedicated worker store.
 

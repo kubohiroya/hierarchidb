@@ -15,11 +15,11 @@ import { createCommand } from '../utils.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
-export class TreeObservableAdapter {
+export class TreeObservableAdapter<T> {
   private subscriptions = new Map<string, () => void>();
-  private proxiedCallbacks = new Map<string, any>();
+  private proxiedCallbacks = new Map<string, unknown>();
 
-  constructor(private workerAPI: WorkerAPI) {
+  constructor(private workerAPI: WorkerAPI<T>) {
   }
 
   /**
@@ -56,7 +56,7 @@ export class TreeObservableAdapter {
           includeInitialSnapshot: true,
         }, { groupId: context.groupId, sourceViewId: context.viewId });
 
-        const observable: any = await maybeObserve(envelope);
+        const observable = await maybeObserve(envelope);
         const sub = observable.subscribe((event: TreeNodeEvent) => setTimeout(() => callback(event), 0));
 
         const wrappedUnsubscribe = () => {

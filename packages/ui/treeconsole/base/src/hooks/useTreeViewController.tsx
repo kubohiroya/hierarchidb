@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '../adapters/index.js';
-import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
+import type { CRUDResult, SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
@@ -25,10 +25,10 @@ export interface TreeViewControllerProps {
   onStateChange?: (state: unknown) => void;
 }
 
-export interface UseTreeViewControllerOptions {
+export interface UseTreeViewControllerOptions<T> {
   rootNodeId?: NodeId;
   initialExpandedNodeIds?: NodeId[];
-  workerService?: WorkerAPIAdapter | null;
+  workerService?: WorkerAPIAdapter<T> | null;
   workerClient?: unknown;
 }
 
@@ -61,12 +61,12 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   collapseNode: (nodeId: NodeId) => void;
 
   //  CRUD
-  moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
-  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  moveNode: (nodeId: NodeId, targetParentId: NodeId) => Promise<CRUDResult>;
+  moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
   trashNode: (nodeId: NodeId) => Promise<void>;
   trashNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
-  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
+  duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 
   //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
@@ -96,8 +96,8 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
 /**
   * TreeViewController hook
     */
-export function useTreeViewController(
-  props: TreeViewControllerProps & UseTreeViewControllerOptions = { treeId: '' },
+export function useTreeViewController<T>(
+  props: TreeViewControllerProps & UseTreeViewControllerOptions<T> = { treeId: '' },
 ): UseTreeViewControllerReturn {
   const {
     rootNodeId: _rootNodeId,
@@ -113,11 +113,11 @@ export function useTreeViewController(
   const workerClient = providedWorkerClient || null;
 
   // Type guard for workerClient with getAPI method
-  const hasGetAPI = (client: unknown): client is { getAPI(): WorkerAPI } => {
+  const hasGetAPI = (client: unknown): client is { getAPI(): WorkerAPI<T> } => {
     return client != null && typeof client === 'object' && 'getAPI' in client;
   };
 
-  const api: WorkerAPI | null = hasGetAPI(workerClient)
+  const api: WorkerAPI<T> | null = hasGetAPI(workerClient)
     ? workerClient.getAPI()
     : null;
 
@@ -128,7 +128,7 @@ export function useTreeViewController(
     }
 
     // Type guard to check if api is WorkerAPI
-    const isWorkerAPI = (obj: unknown): obj is WorkerAPI => {
+    const isWorkerAPI = (obj: unknown): obj is WorkerAPI<T> => {
       return obj != null && typeof obj === 'object' && 'getQueryAPI' in obj;
     };
 
@@ -167,7 +167,7 @@ export function useTreeViewController(
     });
   }, []);
 
-  type QueryAPI = Awaited<ReturnType<WorkerAPI['getQueryAPI']>>;
+  type QueryAPI = Awaited<ReturnType<WorkerAPI<T>['getQueryAPI']>>;
   const queryAPIRef = useRef<QueryAPI | null>(null);
   const subscriptionCleanupRef = useRef<(() => void) | null>(null);
 
@@ -223,7 +223,7 @@ export function useTreeViewController(
   //  hooks: CRUDhook
   const crudOps = useCRUDOperations({
     // Narrow unknown -> StateManagerLike accepted by CRUD hook
-    stateManager: stateManager as UseCRUDOperationsOptions['stateManager'],
+    stateManager: stateManager as UseCRUDOperationsOptions<T>['stateManager'],
     workerAdapter: workerAdapter || undefined,
     setIsLoading,
     onSelectedNodesChange: setSelectedNodes,
@@ -497,7 +497,6 @@ export function useTreeViewController(
     workerAdapter,
     _rootNodeId,
     updateData,
-    setExpandedNodes,
   ]);
 
   return {

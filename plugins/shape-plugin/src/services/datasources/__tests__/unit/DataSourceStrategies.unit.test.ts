@@ -7,7 +7,7 @@ import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type Sa
 import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
-import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
+import type { ShapeEntityPayload } from '../../../common/types/ShapeEntity.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -83,7 +83,7 @@ const minimalBatchConfig = {
   },
 };
 
-class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
+class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntityPayload[]> {
   readonly id = 'test-strategy';
   readonly name = 'Test Strategy';
   readonly config: DataSourceConfig = {
@@ -105,13 +105,9 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
     return { test: 'data', options };
   }
 
-  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeEntity[]> {
-    // Minimal valid ShapeEntity per current type definition
-    const entity: ShapeEntity = {
-      // Cast string to branded ids for test purposes
-      id: 'test-entity-1' as unknown as any,
-      nodeId: 'test-node-1' as unknown as any,
-      batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
+  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeEntityPayload[]> {
+    const entity: ShapeEntityPayload = {
+      buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
       licenseAgreement: true,
       selectedArrayByCountries: { US: [true] },
     };
@@ -155,16 +151,12 @@ describe('DataSourceStrategy', () => {
 
       const result = await strategy.processData(rawData, options);
       expect(result).toHaveLength(1);
-      expect(result[0]?.id).toBe('test-entity-1');
-      // ShapeEntity no longer carries display name; ensure id exists
-      expect(result[0]?.id).toBeDefined();
+      expect(result[0]?.buildConfig).toBeDefined();
     });
 
     it('should validate data successfully', async () => {
-      const data: ShapeEntity[] = [{
-        id: 'test' as unknown as any,
-        nodeId: 'node' as unknown as any,
-        batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
+      const data: ShapeEntityPayload[] = [{
+        buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
       }];
@@ -182,12 +174,10 @@ describe('DataSourceStrategy', () => {
 
     it('should save data successfully', async () => {
       const data = [{
-        id: 'test' as unknown as any,
-        nodeId: 'node' as unknown as any,
-        batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
+        buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
-      }] as ShapeEntity[];
+      }] as ShapeEntityPayload[];
       const target: SaveTarget = {
         type: 'hierarchidb',
         entityType: 'shape',
@@ -440,7 +430,7 @@ describe('Integration Tests', () => {
     const saveSpy = vi.spyOn(strategy, 'saveData').mockRejectedValue(new Error('Save failed'));
 
     try {
-      await strategy.saveData([] as unknown as ShapeEntity[], { type: 'hierarchidb' });
+      await strategy.saveData([] as unknown as ShapeEntityPayload[], { type: 'hierarchidb' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }

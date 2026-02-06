@@ -1,6 +1,6 @@
 import type { ImportNodesParams, ImportResult } from '@hierarchidb/import-export-api';
 import type { Timestamp } from '@hierarchidb/core-types';
-import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/tree-api';
+import type { CommandEnvelope, ImportNodesPayload, TreeNodeData } from '@hierarchidb/tree-api';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -8,10 +8,12 @@ import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import type { CoreDB } from './CoreDB.js';
 
 // Augment base ImportExportService with lifecycle notifications.
-export class ImportExportLifecycleService extends BaseImportExportService {
+export class ImportExportLifecycleService<T = TreeNodeData> extends BaseImportExportService<T> {
   private readonly coreDB: CoreDB | null;
 
-  static async getSingleton(db: ImportExportDBPort): Promise<ImportExportLifecycleService> {
+  static async getSingleton<T = TreeNodeData>(
+    db: ImportExportDBPort
+  ): Promise<ImportExportLifecycleService<T>> {
     return SingletonMixin.getSingleton(
       'ImportExportLifecycleService',
       () => new ImportExportLifecycleService(db)
@@ -24,7 +26,7 @@ export class ImportExportLifecycleService extends BaseImportExportService {
     this.coreDB = typeof adapter.getCoreDB === 'function' ? adapter.getCoreDB() : null;
   }
 
-  async importNodes(params: ImportNodesParams): Promise<ImportResult> {
+  async importNodes(params: ImportNodesParams<T>): Promise<ImportResult> {
     const result = await super.importNodes(params);
     if (result?.success) {
       this.notifyLifecycle(params, result);
@@ -32,7 +34,7 @@ export class ImportExportLifecycleService extends BaseImportExportService {
     return result;
   }
 
-  private notifyLifecycle(params: ImportNodesParams, result: ImportResult): void {
+  private notifyLifecycle(params: ImportNodesParams<T>, result: ImportResult): void {
     if (!this.coreDB) return;
     try {
       const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);

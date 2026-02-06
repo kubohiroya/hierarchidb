@@ -1,4 +1,4 @@
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   ExportNodesParams,
@@ -15,21 +15,21 @@ import type {
 import { SingletonMixin, generateUUID } from '@hierarchidb/util';
 import type { ImportExportDBPort } from './ports.js';
 
-type ImportNodeInput = ImportData['nodes'][number];
+type ImportNodeInput<T> = ImportData<T>['nodes'][number];
 type ValidationIssue = ImportValidationIssue;
 
-export class ImportExportService implements ImportExportAPI {
+export class ImportExportService<T> implements ImportExportAPI<T> {
   private operations = new Map<string, OperationStatus>();
   private abortControllers = new Map<string, AbortController>();
 
-  static async getSingleton(db: ImportExportDBPort): Promise<ImportExportService> {
+  static async getSingleton<T>(db: ImportExportDBPort): Promise<ImportExportService<T>> {
     return SingletonMixin.getSingleton('ImportExportService', () => new ImportExportService(db));
   }
 
   constructor(private db: ImportExportDBPort) {
   }
 
-  async importNodes(params: ImportNodesParams): Promise<ImportResult> {
+  async importNodes(params: ImportNodesParams<T>): Promise<ImportResult> {
     const operationId = this.generateOperationId();
     const abortController = new AbortController();
     this.abortControllers.set(operationId, abortController);
@@ -99,10 +99,10 @@ export class ImportExportService implements ImportExportAPI {
         return depth;
       };
 
-      const toCreate: { node: TreeNode; children?: ImportNodeInput[] }[] = [];
+      const toCreate: { node: TreeNode; children?: ImportNodeInput<T>[] }[] = [];
       for (let i = 0; i < nodes.length; i++) {
         if (abortController.signal.aborted) throw new Error('Import operation cancelled');
-        const nodeData = nodes[i] as ImportNodeInput | undefined;
+        const nodeData = nodes[i] as ImportNodeInput<T> | undefined;
         if (!nodeData) continue;
         try {
           if (params.conflictResolution === 'skip') {
@@ -140,10 +140,7 @@ export class ImportExportService implements ImportExportAPI {
             tags: sourceTags,
           };
           const draftDataFromTemplate =
-            ((nodeData as { draftData?: Record<string, unknown> | null }).draftData as
-              | Record<string, unknown>
-              | null
-              | undefined) ?? null;
+            (nodeData as { draftData?: Partial<PeerEntity<T>> }).draftData;
 
           const node: TreeNode = {
             id: nodeId,
@@ -160,7 +157,7 @@ export class ImportExportService implements ImportExportAPI {
             data:
               ((nodeData as { data?: Record<string, unknown> | null }).data as Record<string, unknown> | null | undefined) ??
               null,
-            draftData: draftDataFromTemplate ?? null,
+            draftData: draftDataFromTemplate,
             visible: true,
           };
           toCreate.push({ node, children: nodeData.children });
@@ -309,18 +306,18 @@ export class ImportExportService implements ImportExportAPI {
     return ['json' as NodeType, 'csv' as NodeType];
   }
 
-  async validateImportData(params: ValidateImportParams): Promise<ImportValidationResult> {
+  async validateImportData(params: ValidateImportParams<T>): Promise<ImportValidationResult> {
     const issues: ValidationIssue[] = [];
     const nodeTypes = new Map<string, number>();
     let maxDepth = 0;
 
-    const validateNode = (node: ImportNodeInput, path: string, depth: number) => {
+    const validateNode = (node: ImportNodeInput<T>, path: string, depth: number) => {
       maxDepth = Math.max(maxDepth, depth);
       if (!node.name) issues.push({ code: 'MISSING_NAME', message: 'Node name is required', path });
       const nodeType = node.nodeType || 'folder';
       nodeTypes.set(nodeType, (nodeTypes.get(nodeType) || 0) + 1);
       if (node.children && Array.isArray(node.children)) {
-        node.children.forEach((child: ImportNodeInput, index: number) => {
+        node.children.forEach((child: ImportNodeInput<T>, index: number) => {
           validateNode(child, `${path}.children[${index}]`, depth + 1);
         });
       }
@@ -331,7 +328,7 @@ export class ImportExportService implements ImportExportAPI {
     } else if (!Array.isArray(params.data.nodes)) {
       issues.push({ code: 'INVALID_NODES', message: 'Nodes must be an array', path: 'nodes' });
     } else {
-      params.data.nodes.forEach((node: ImportNodeInput, index: number) => validateNode(node, `nodes[${index}]`, 0));
+      params.data.nodes.map((node: ImportNodeInput<T>, index: number) => validateNode(node, `nodes[${index}]`, 0));
     }
 
     if (issues.length === 0) {

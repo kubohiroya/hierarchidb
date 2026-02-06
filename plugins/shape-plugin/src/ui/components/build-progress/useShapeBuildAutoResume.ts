@@ -84,8 +84,6 @@ export const useShapeBuildAutoResume = ({
     return () => {
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (!activeNodeIdRef.current) return;
-      suspendIfRunningRef.current?.();
     };
   }, []);
 

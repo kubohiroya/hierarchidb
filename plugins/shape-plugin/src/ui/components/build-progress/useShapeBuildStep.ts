@@ -134,12 +134,21 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
+  const tasksCompletionStatus = useMemo<BuildStatus | null>(() => {
+    if (displayTasks.length === 0) return null;
+    if (hasInFlightTasks) return null;
+    const hasFailed = displayTasks.some((task) => task.status === 'failed');
+    return hasFailed ? 'failed' : 'completed';
+  }, [displayTasks, hasInFlightTasks]);
   const buildStatus = useMemo<BuildStatus>(() => {
+    if (tasksCompletionStatus) {
+      return tasksCompletionStatus;
+    }
     if (baseBuildStatus === 'completed' && hasInFlightTasks) {
       return 'running';
     }
     return baseBuildStatus;
-  }, [baseBuildStatus, hasInFlightTasks]);
+  }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
   useEffect(() => {
     if (!isPausePending) return;
     if (buildStatus !== 'running') {

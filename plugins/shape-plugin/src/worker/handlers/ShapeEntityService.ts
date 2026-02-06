@@ -40,8 +40,7 @@ export class ShapeEntityService {
     if (!node) {
       return null;
     }
-    const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
-      typeof (node as { draftData?: unknown }).draftData !== 'undefined';
+    const hasDraft = typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
     const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     if (isRecord(targetValue)) {
@@ -59,8 +58,7 @@ export class ShapeEntityService {
     if (!node) {
       throw new Error(`TreeNode not found: ${nodeId}`);
     }
-    const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
-      typeof (node as { draftData?: unknown }).draftData !== 'undefined';
+    const hasDraft = typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
     const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     const payload = isRecord(targetValue)
@@ -86,8 +84,7 @@ export class ShapeEntityService {
     if (!node) {
       throw new Error(`TreeNode not found: ${nodeId}`);
     }
-    const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
-      typeof (node as { draftData?: unknown }).draftData !== 'undefined';
+    const hasDraft = typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
     const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     const payload = isRecord(targetValue)

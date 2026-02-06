@@ -5,7 +5,8 @@ import type { APIMethodArgs, APIMethodReturn, WorkerAPIMethod } from './api-type
  * Plugin API extension interface defining custom worker-facing methods.
  */
 export interface PluginExtensionAPI<
-  TMethods extends Record<string, WorkerAPIMethod> = Record<string, WorkerAPIMethod>,
+  PeerEntity,
+  TMethods extends Record<string, WorkerAPIMethod<PeerEntity>> = Record<string, WorkerAPIMethod<PeerEntity>>,
 > {
   readonly nodeType: NodeType;
   readonly methods: TMethods;
@@ -15,10 +16,11 @@ export interface PluginExtensionAPI<
  * Extract the resolved return type of a plugin extension method.
  */
 export type InvokeResult<
-  T extends PluginExtensionAPI,
+  PeerEntity,
+  T extends PluginExtensionAPI<PeerEntity>,
   M extends keyof T['methods'],
 > = T['methods'][M] extends (...args: APIMethodArgs) => Promise<infer R>
-  ? R extends APIMethodReturn
+  ? R extends APIMethodReturn<PeerEntity>
     ? R
     : never
   : never;

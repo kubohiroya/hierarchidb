@@ -11,9 +11,6 @@ export type TreeId = string & { readonly __brand: 'TreeId' };
 // Working Copy ID is the same as NodeId (uses the same ID as original)
 export type DraftId = NodeId;
 
-// Tag IDs (currently same shape as NodeId; branded separately in higher layers if needed)
-export type TagId = string & { readonly __brand: 'TagId' };
-
 /**
  * Type identifier for console nodes (e.g., 'folder-plugin', 'document', 'styler-plugin', etc.)
  */

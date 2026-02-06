@@ -23,8 +23,8 @@ function genId(prefix: string = 'wc'): NodeId {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}` as NodeId;
 }
 
-export class WorkerAPIImpl {
-  private store = new Map<NodeId, TreeNodeUpdater & { nodeType?: string }>();
+export class WorkerAPIImpl<T> {
+  private store = new Map<NodeId, TreeNodeUpdater<T> & { nodeType?: string }>();
 
   constructor(private readonly namespace: string) {
     void this.namespace;
@@ -38,10 +38,10 @@ export class WorkerAPIImpl {
     this.store.clear();
   }
 
-  getPluginDialogAPI(): PluginDialogAPI {
+  getPluginDialogAPI(): PluginDialogAPI<T> {
     const self = this;
 
-    async function requireDraft(id: NodeId): Promise<TreeNodeUpdater & { nodeType?: string }> {
+    async function requireDraft(id: NodeId): Promise<TreeNodeUpdater<T> & { nodeType?: string }> {
       const wc = self.store.get(id);
       if (!wc) throw new Error('Working copy not found');
       return wc;
@@ -67,12 +67,12 @@ export class WorkerAPIImpl {
           throw new Error(`No handler found for node type: ${nodeType}`);
         }
         const id = genId();
-        const payload: TreeNodeUpdaterPayload = {
+        const payload: TreeNodeUpdaterPayload<T> = {
           treeNodeId: id,
           draftMetadata: { name: '', description: '', tags: [] },
           draftData: {},
         };
-        const wc: TreeNodeUpdater & { nodeType?: string } = {
+        const wc: TreeNodeUpdater<T> & { nodeType?: string } = {
           payload,
           parentNodeId: parentNodeId ?? ('root' as NodeId),
           dialogUIState: undefined,
@@ -83,16 +83,16 @@ export class WorkerAPIImpl {
         return id;
       },
 
-      async getDraft(draftId: NodeId): Promise<TreeNodeUpdater | undefined> {
+      async getDraft(draftId: NodeId): Promise<TreeNodeUpdater<T> | undefined> {
         return self.store.get(draftId);
       },
 
       async updateDraft(
         draftId: NodeId,
-        updates: Partial<TreeNodeUpdater>
-      ): Promise<TreeNodeUpdater> {
+        updates: Partial<TreeNodeUpdater<T>>
+      ): Promise<TreeNodeUpdater<T>> {
         const wc = await requireDraft(draftId);
-        const nextPayload: TreeNodeUpdaterPayload = {
+        const nextPayload: TreeNodeUpdaterPayload<T> = {
           ...wc.payload,
           treeNodeId: wc.payload.treeNodeId ?? draftId,
           draftMetadata: updates.payload?.draftMetadata
@@ -102,7 +102,7 @@ export class WorkerAPIImpl {
             ? { ...(wc.payload.draftData ?? {}), ...updates.payload.draftData }
             : wc.payload.draftData ?? {},
         };
-        const next: TreeNodeUpdater & { nodeType?: string } = {
+        const next: TreeNodeUpdater<T> & { nodeType?: string } = {
           ...wc,
           payload: nextPayload,
           parentNodeId: updates.parentNodeId ?? wc.parentNodeId,
@@ -295,6 +295,6 @@ export class WorkerAPIImpl {
         await requireDraft(draftId);
         return draftId;
       },
-    } satisfies PluginDialogAPI;
+    } satisfies PluginDialogAPI<T>;
   }
 }

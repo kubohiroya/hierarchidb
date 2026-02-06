@@ -30,7 +30,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       }
   ): TreeNode => ({
     data: {},
-    draftData: null,
+    draftData: undefined,
     metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
     draftMetadata: null,
     visible: node.visible ?? true,
@@ -54,7 +54,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       metadata: { name: 'A', description: undefined, tags: [] },
       draftMetadata: null,
       data: {},
-      draftData: null,
+      draftData: undefined,
       visible: true,
     };
     await core.createNode(aNode);
@@ -74,7 +74,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       updatedAt: Date.now(),
       version: 1,
       data: {},
-      draftData: null,
+      draftData: undefined,
     });
     // Create WC child under holder
     await core.createNode({
@@ -89,7 +89,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       updatedAt: Date.now(),
       version: 1,
       data: {},
-      draftData: null,
+      draftData: undefined,
     });
 
     // Try move A to a new parent -> should be blocked

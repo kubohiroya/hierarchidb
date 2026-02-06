@@ -268,7 +268,7 @@ graph TB
 補足:
 - Draft の生成・編集は DraftAPI（initTreeNode / updateTreeNodeDraftMetadata / updateTreeNodeDraftData / commitDraft）を経由する。createDraftBase 系は廃止済み。
 - Basic Info の初期表示は draftMetadata を優先し、fallback として metadata を参照する。payload は draftData を優先し data は読み取り専用。
-- 保存後は draftMetadata/draftData を null クリアし、metadata/data に反映するのが正規の commit フロー。
+- 保存後は draftMetadata を null クリアし、draftData は undefined クリアして metadata/data に反映するのが正規の commit フロー。
 
 
 ## 🔎 Tabular Preview（Location/Shape/Route 共通）

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   composeStepConfigs,
@@ -25,7 +25,7 @@ import {
 } from '../controller/step-guards.js';
 import type { BasicInfoMeta, DialogUiState, StepCompositionResult } from './data-types.js';
 
-type PluginDefinedEntity = Record<string, unknown>;
+type PluginDefinedEntity = PeerEntity;
 
 type StepContextSnapshot = {
   mode: 'create' | 'edit';

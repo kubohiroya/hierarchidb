@@ -11,7 +11,7 @@ const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
   metadata: { name, description: undefined, tags: [] },
   draftMetadata: null,
   data: {},
-  draftData: null,
+  draftData: undefined,
   depth: 1,
   visible: true,
   createdAt: Date.now(),

@@ -23,7 +23,7 @@ describe('TreeQueryService.listAncestors', () => {
       metadata: { name: options.name, description: undefined, tags: [] },
       draftMetadata: null,
       data: {},
-      draftData: null,
+      draftData: undefined,
       depth: options.depth,
       visible: true,
       createdAt: now,

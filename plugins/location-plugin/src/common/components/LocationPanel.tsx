@@ -24,6 +24,9 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     licenseAgreement: true,
     selectedArrayByCountries: {},
     concurrentDownloads: 2,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    version: 1,
   }), [nodeId]);
 
   return (

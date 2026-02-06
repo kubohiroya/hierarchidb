@@ -12,7 +12,7 @@ import type {
   TreeNodeData,
   TreeNodeMetadata,
 } from '@hierarchidb/tree-api';
-import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, TreeId, ValidationResult } from '@hierarchidb/core-types';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
@@ -29,7 +29,7 @@ import {
  * DraftService - minimal implementation backed by CoreDB TreeNodes.
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
-export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
+export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> {
   constructor(
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor
@@ -45,7 +45,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   /**
    * Returns a copy of the node normalized for TreeNodeUpdaterAPI consumers:
    * - draftMetadata: never null (falls back to metadata/default)
-   * - draftData: never null (uses draftData, else data clone, else empty object)
+   * - draftData: uses draftData when available, otherwise empty for known types
    * - dialogUIState: never null (uses stored or default)
    *
    * Does NOT persist changes; QueryAPI/SubscriptionAPI are untouched.
@@ -64,24 +64,12 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? {
       ...metadata,
     };
-    const dataVal = (node as { data?: unknown }).data;
     const draftDataVal = (node as { draftData?: unknown }).draftData;
-    let draftData: Record<string, unknown>;
+    let draftData: Record<string, unknown> | undefined;
     if (draftDataVal && typeof draftDataVal === 'object') {
       draftData = { ...(draftDataVal as Record<string, unknown>) };
-    } else if (dataVal && typeof dataVal === 'object') {
-      draftData = { ...(dataVal as Record<string, unknown>) };
     } else if (node.nodeType in emptyDraftDataByType) {
       draftData = { ...emptyDraftDataByType[node.nodeType] };
-    } else {
-      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-        console.warn(
-          `[TreeNodeUpdaterService] draftData/data missing for node ${String(
-            node.id ?? node.nodeType
-          )}; using empty draftData`
-        );
-      }
-      draftData = {};
     }
     const dialogUIState =
       (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? this.defaultDialogUIState;
@@ -212,7 +200,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
 
   async updateTreeNodeDraftData(
     nodeId: NodeId,
-    updater: Record<string, unknown> | null
+    updater: Partial<PeerEntity<TreeNodeData>>
   ): Promise<void> {
     await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
   }
@@ -220,7 +208,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   async listDrafts(): Promise<TreeNode[]> {
     // Drafts are nodes with draftData present
     const allNodes = await this.coreDB.nodes.toArray();
-    return allNodes.filter((node) => node.draftData !== null && node.draftData !== undefined);
+    return allNodes.filter((node) => node.draftData !== undefined);
   }
 
   async hasDraft(nodeId: NodeId): Promise<boolean> {
@@ -228,7 +216,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     return !!wc;
   }
 
-  async updateTreeNode(draftId: NodeId, request?: CommitDraftRequest): Promise<CommitResult> {
+  async updateTreeNode(
+    draftId: NodeId,
+    request?: CommitDraftRequest<TreeNodeData>
+  ): Promise<CommitResult> {
     const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'error';
     const mode: CommitDraftMode = request?.mode ?? 'save';
 
@@ -240,7 +231,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       updates.draftMetadata = (request?.draftMetadata ?? null) as TreeNodeMetadata | null;
     }
     if ('draftData' in (request ?? {})) {
-      updates.draftData = request?.draftData ?? null;
+      updates.draftData = request?.draftData ?? undefined;
     }
     if ('dialogUIState' in (request ?? {})) {
       updates.dialogUIState = request?.dialogUIState ?? undefined;
@@ -284,7 +275,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       if (shouldLogDebug) {
         const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
-        const draftData = (node as { draftData?: Record<string, unknown> | null })?.draftData;
+        const draftData = (node as { draftData?: Record<string, unknown> })?.draftData;
         const dialogUIState = (node as { dialogUIState?: DialogUIState | null })?.dialogUIState;
         console.debug('[DraftService] commitDraft save-draft result', {
           nodeId: draftId,
@@ -318,7 +309,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
         (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
-      const draftData = (node as { draftData?: Record<string, unknown> | null })?.draftData;
+      const draftData = (node as { draftData?: Record<string, unknown> })?.draftData;
       console.debug('[DraftService] commitDraft result', {
         status: result.status,
         nodeId: result.status === 'ok' ? result.nodeId : undefined,
@@ -370,7 +361,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   }
 
   /** @deprecated use updateTreeNode */
-  async commitDraft(draftId: NodeId, request?: CommitDraftRequest): Promise<CommitResult> {
+  async commitDraft(
+    draftId: NodeId,
+    request?: CommitDraftRequest<TreeNodeData>
+  ): Promise<CommitResult> {
     return this.updateTreeNode(draftId, request);
   }
 

@@ -26,7 +26,7 @@ function createTreeNode(options: {
     version: 1,
     visible: true,
     data: {},
-    draftData: null,
+    draftData: undefined,
   };
 }
 

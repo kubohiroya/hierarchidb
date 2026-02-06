@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
-import type { TreeNodeEvent } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeEvent } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -13,7 +13,9 @@ type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
   getSubscriptionAPI(): Promise<import('@hierarchidb/tree-api').TreeSubscriptionAPI>;
-  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/tree-api').TreeNodeUpdaterAPI>;
+  getTreeNodeUpdaterAPI(): Promise<
+    import('@hierarchidb/tree-api').TreeNodeUpdaterAPI<TreeNodeData>
+  >;
 };
 
 type SubscriptionEvent = TreeNodeEvent;

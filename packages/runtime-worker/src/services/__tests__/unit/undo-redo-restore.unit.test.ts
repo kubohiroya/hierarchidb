@@ -34,7 +34,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     metadata: { name, description: '', tags: [] },
     draftMetadata: null,
     data: {},
-    draftData: null,
+    draftData: undefined,
     depth: 1,
     visible: true,
     createdAt: Date.now(),

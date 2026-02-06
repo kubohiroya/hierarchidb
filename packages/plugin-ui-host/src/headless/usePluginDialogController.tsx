@@ -3,13 +3,12 @@
  * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
   DialogSize,
   DialogState,
-  TreeNodeData,
   DialogUIState,
   DialogWindowState,
 } from '@hierarchidb/tree-api';
@@ -90,7 +89,7 @@ export interface PluginDialogFooterOptions {
   saveDraftLabel?: string;
 }
 
-type PluginDefinedEntity = TreeNodeData;
+type PluginDefinedEntity = PeerEntity;
 type LocalTreeNodeUpdaterState = TreeNodeUpdaterState<PluginDefinedEntity> & {
   dialogUIState?: DialogUIState | null;
 };
@@ -251,7 +250,7 @@ export function usePluginDialogController(
       return {
         mapStyle: { style: 'streets' },
         viewport: undefined,
-      } as TreeNodeData;
+      } as Partial<PluginDefinedEntity>;
     }
     return undefined;
   }, [stepMode, nodeType]);
@@ -265,7 +264,7 @@ export function usePluginDialogController(
     saveDraft,
     loading,
     error,
-  } = useTreeNodeUpdater<Partial<PluginDefinedEntity>>({
+  } = useTreeNodeUpdater<PluginDefinedEntity>({
     mode: stepMode,
     nodeType,
     nodeId,
@@ -284,7 +283,7 @@ export function usePluginDialogController(
         ? {
             treeNodeId: draft.treeNodeId,
             draftMetadata: draft.draftMetadata ?? null,
-            draftData: draft.draftData ?? null,
+            draftData: draft.draftData,
           }
         : null,
     [draft]
@@ -369,7 +368,7 @@ export function usePluginDialogController(
   }, [getPersistableDialogUIState, dialogUIStateRef]);
 
   const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
-    () => (toRecord(draft?.draftData ?? null) as Partial<PluginDefinedEntity>) ?? {},
+    () => (toRecord(draft?.draftData) as Partial<PluginDefinedEntity>) ?? {},
     [draft?.draftData]
   );
 
@@ -604,7 +603,7 @@ export function usePluginDialogController(
     updateTreeNodeUpdater,
     getLocalDraftSnapshot: () => ({
       draftMetadata: treeUpdater?.draftMetadata ?? null,
-      draftData: treeUpdater?.draftData ?? null,
+      draftData: treeUpdater?.draftData,
     }),
   });
 
@@ -618,7 +617,7 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: nodeType === 'folder' ? null : { ...(localDraftDataRef.current ?? {}) },
+      draftData: nodeType === 'folder' ? undefined : { ...(localDraftDataRef.current ?? {}) },
       dialogUIState: getPersistableDialogUIState(),
     };
     updateTreeNodeUpdater(nextPatch);
@@ -729,7 +728,7 @@ export function usePluginDialogController(
         nodeType === 'folder'
           ? null
           : dialogData && Object.keys(dialogData).length > 0
-            ? (dialogData as TreeNodeData)
+            ? (dialogData as Partial<PluginDefinedEntity>)
             : null;
 
       const savePayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
@@ -739,7 +738,7 @@ export function usePluginDialogController(
           description: basicInfo.description,
           tags: basicInfo.tags,
         },
-        draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
+        draftData: nodeType === 'folder' ? undefined : normalizedData ?? undefined,
         dialogUIState: buildDialogUIStateForCommit(activeStepIndex),
       };
       const savedNodeId = await commitTreeNodeUpdater('save', savePayload);
@@ -778,7 +777,7 @@ export function usePluginDialogController(
       await updateLocalDraft();
       const draftPayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
         treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
-        draftData: nodeType === 'folder' ? null : (dialogData as TreeNodeData),
+        draftData: nodeType === 'folder' ? undefined : (dialogData as Partial<PluginDefinedEntity>),
         draftMetadata: {
           ...(treeUpdater?.draftMetadata ?? {}),
           name: basicInfo.name,
@@ -953,7 +952,7 @@ export function usePluginDialogController(
       const payload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
         treeNodeId,
         draftMetadata: treeUpdater?.draftMetadata ?? null,
-        draftData: nodeType === 'folder' ? null : (treeUpdater?.draftData ?? null),
+        draftData: nodeType === 'folder' ? undefined : treeUpdater?.draftData,
         dialogUIState: buildDialogUIStateForPersist(),
       };
       await commitTreeNodeUpdater('save-draft', payload);

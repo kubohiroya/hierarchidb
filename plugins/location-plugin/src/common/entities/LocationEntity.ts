@@ -1,5 +1,4 @@
-import type { ISO2, Timestamp } from '@hierarchidb/core-types';
-import type { TreeNodeData } from '@hierarchidb/tree-api';
+import type { ISO2, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type {
   IdeGsmSourceEntry,
   LocationBatchFilterCriteria,
@@ -27,7 +26,7 @@ export type {
   IdeGsmSourceEntry,
 } from '@hierarchidb/location-api';
 
-export interface LocationEntity extends TreeNodeData {
+export interface LocationEntityPayload {
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
@@ -48,6 +47,8 @@ export interface LocationEntity extends TreeNodeData {
   iconConfig?: LocationIconConfig;
   labelConfig?: LocationLabelConfig;
 }
+
+export type LocationEntity = PeerEntity<LocationEntityPayload>;
 
 export interface LocationBatchConfig {
   searchConfigs: LocationSearchConfig[];

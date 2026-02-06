@@ -50,11 +50,11 @@ export interface CommandAdapterOptions {
 
 /**
     */
-export interface WorkerAPIAdapterConfig {
+export interface WorkerAPIAdapterConfig<T> {
   /**
    * WorkerAPI
    */
-  workerAPI: WorkerAPI;
+  workerAPI: WorkerAPI<T>;
   /**
    * ID
    */

@@ -1,7 +1,17 @@
-import { toTagId, type NodeId, type TagId, type Timestamp } from '@hierarchidb/core-types';
-import type { CreateTagRequest, TagAPI, TagAssociationRequest, TagSuggestion, UpdateTagRequest, NodeTagAssociation, NodeTagAssociationId, TagEntity } from '@hierarchidb/tag-api';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import {
+  type CreateTagRequest,
+  type TagId,
+  type TagAPI,
+  type TagAssociationRequest,
+  type TagSuggestion,
+  type UpdateTagRequest,
+  type NodeTagAssociation,
+  type NodeTagAssociationId,
+  type TagEntity, toTagId } from '@hierarchidb/tag-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
+import crypto from 'crypto';
 
 /**
  * TagService - generic tagging service using a DB port.
@@ -18,18 +28,15 @@ export class TagService implements TagAPI {
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
     const now = Date.now() as Timestamp;
     const tag: TagEntity = {
-      id: this.generateTagId(),
+      id: crypto.randomUUID() as TagId,
       name: request.name.trim(),
       color: request.color,
       description: request.description?.trim(),
-      category: request.category,
       usageCount: 0,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
       nodeIds: [],
       referenceCount: 0,
       lastAccessedAt: now,
+      createdAt: now,
     };
 
     await this.db.createTag(tag);
@@ -48,7 +55,6 @@ export class TagService implements TagAPI {
       ...existing,
       ...updates,
       updatedAt: Date.now(),
-      version: (existing.version || 0) + 1,
     } as TagEntity;
 
     await this.db.updateTag(updated);

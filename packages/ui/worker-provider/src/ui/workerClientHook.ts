@@ -6,11 +6,14 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
+
+type WorkerApi = WorkerAPI<TreeNodeData>;
 
 export interface WorkerClientRef {
   /** Active WorkerAPI proxy when initialized */
-  client: Remote<WorkerAPI> | null;
+  client: Remote<WorkerApi> | null;
   /** Whether the shared worker finished initialization */
   isInitialized: boolean;
   /** Alias for UI components that only check connectivity */
@@ -26,7 +29,7 @@ export interface WorkerClientRef {
   /** Reset the shared worker atoms and clear cached proxies */
   reset: () => void;
   /** Convenience accessor that enforces the presence of the WorkerAPI proxy */
-  getAPI: () => Remote<WorkerAPI>;
+  getAPI: () => Remote<WorkerApi>;
 }
 
 export type WorkerClientHook<T = WorkerClientRef> = () => T;

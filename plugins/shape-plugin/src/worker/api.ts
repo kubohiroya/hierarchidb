@@ -58,6 +58,7 @@ import {
   resolveTaskProcessingTimestamp,
   selectLatestTaskBySequence,
 } from './taskOrdering.ts';
+import { getStagePlan } from '../services/vt/shapeProgressPlan.ts';
 
 type DraftLike = {
   nodeId?: NodeId;
@@ -117,13 +118,18 @@ const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | u
   const taskQueue = new VtTaskQueueDb();
   const vtTasks = await listTasks(taskQueue, nodeId);
   if (vtTasks.length > 0) {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntity(nodeId);
-    if (!entity?.buildConfig) {
-      throw new Error('[shapeBatchAPI] buildConfig is required for build session');
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+    const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
+    let config: BuildSessionConfig | null = buildSession?.config ?? null;
+    if (!config) {
+      const handler = getShapeEntityHandler();
+      const entity = await handler.getEntity(nodeId);
+      if (!entity?.buildConfig) {
+        throw new Error('[shapeBatchAPI] buildConfig is required for build session');
+      }
+      config = buildBuildSessionConfig(entity.buildConfig);
     }
-    const config = buildBuildSessionConfig(entity.buildConfig);
-    const summary = await buildTaskQueueSummary(vtTasks);
+    const summary = await buildTaskQueueSummary(nodeId, vtTasks);
     const paused = getPauseState(nodeId).paused;
     const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
     return {
@@ -551,6 +557,7 @@ const buildTaskWeightMapSafe = async (
 };
 
 const summarizeTaskQueueProgress = async (
+  nodeId: NodeId,
   tasks: TaskQueueRecord[],
   taskType?: TaskQueueRecord['stage'],
 ): Promise<ProgressInfo> => {
@@ -573,6 +580,12 @@ const summarizeTaskQueueProgress = async (
       completed += 1;
     }
   });
+  const plan = getStagePlan(nodeId);
+  if (plan?.transformTotal) {
+    const transformTasks = tasks.filter((task) => task.stage === 'transform');
+    const planned = Math.max(plan.transformTotal, transformTasks.length);
+    total = total - transformTasks.length + planned;
+  }
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   return {
@@ -585,9 +598,9 @@ const summarizeTaskQueueProgress = async (
   };
 };
 
-const buildTaskQueueSummary = async (tasks: TaskQueueRecord[]) => {
+const buildTaskQueueSummary = async (nodeId: NodeId, tasks: TaskQueueRecord[]) => {
   const statusSummary = summarizeTaskQueueStatus(tasks);
-  const progress = await summarizeTaskQueueProgress(tasks, statusSummary.taskType);
+  const progress = await summarizeTaskQueueProgress(nodeId, tasks, statusSummary.taskType);
   return {
     status: statusSummary.status,
     progress,
@@ -604,9 +617,10 @@ const buildTaskSummarySnapshot = async (
 };
 
 const buildProgressPayloadFromTasks = async (
+  nodeId: NodeId,
   tasks: TaskQueueRecord[],
 ): Promise<BatchProgressPayload> => {
-  const summary = await summarizeTaskQueueProgress(tasks, resolveTaskType(tasks));
+  const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
   return {
     total: summary.total,
     completed: summary.completed,
@@ -619,8 +633,9 @@ const isTaskStageValue = (value: unknown): value is TaskQueueRecord['stage'] => 
   value === 'fetch' || value === 'transform' || value === 'vt'
 );
 
-const buildStageStatus = (tasks: TaskQueueRecord[]): StageStatus => {
-  const total = tasks.length;
+const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): StageStatus => {
+  const actualTotal = tasks.length;
+  const total = typeof plannedTotal === 'number' ? Math.max(plannedTotal, actualTotal) : actualTotal;
   let completed = 0;
   let failed = 0;
   let skipped = 0;
@@ -661,11 +676,17 @@ const buildStageStatus = (tasks: TaskQueueRecord[]): StageStatus => {
   };
 };
 
-const buildStageStatusMap = (tasks: TaskQueueRecord[]): Record<TaskQueueRecord['stage'], StageStatus> => ({
-  fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch')),
-  transform: buildStageStatus(tasks.filter((task) => task.stage === 'transform')),
-  vt: buildStageStatus(tasks.filter((task) => task.stage === 'vt')),
-});
+const buildStageStatusMap = (
+  nodeId: NodeId,
+  tasks: TaskQueueRecord[]
+): Record<TaskQueueRecord['stage'], StageStatus> => {
+  const plan = getStagePlan(nodeId);
+  return {
+    fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch')),
+    transform: buildStageStatus(tasks.filter((task) => task.stage === 'transform'), plan?.transformTotal),
+    vt: buildStageStatus(tasks.filter((task) => task.stage === 'vt')),
+  };
+};
 
 const resolveSessionStatus = (
   nodeId: NodeId,
@@ -697,8 +718,8 @@ const updateBuildSessionFromTasks = async (
   try {
     const taskQueue = new VtTaskQueueDb();
     const tasks = await listTasks(taskQueue, nodeId);
-    const progress = await summarizeTaskQueueProgress(tasks, resolveTaskType(tasks));
-    const stages = buildStageStatusMap(tasks);
+    const progress = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
+    const stages = buildStageStatusMap(nodeId, tasks);
     const status = overrides?.status ?? resolveSessionStatus(nodeId, tasks);
     const lastActivity = resolveSessionLastActivity(tasks);
     const expiresAt = resolveSessionExpiresAt(lastActivity);
@@ -731,8 +752,8 @@ const upsertBuildSessionSnapshot = async (
   },
 ): Promise<void> => {
   const now = Date.now();
-  const progress = await summarizeTaskQueueProgress(input.tasks, resolveTaskType(input.tasks));
-  const stages = buildStageStatusMap(input.tasks);
+  const progress = await summarizeTaskQueueProgress(input.nodeId, input.tasks, resolveTaskType(input.tasks));
+  const stages = buildStageStatusMap(input.nodeId, input.tasks);
   const existing = await shapeQueryAPIImpl.getBuildSessionRecord(input.nodeId).catch(() => null);
   const startedAt = existing?.startedAt ?? input.startedAt ?? now;
   const lastActivity = resolveSessionLastActivity(input.tasks);
@@ -885,7 +906,7 @@ const emitProgressSnapshot = async (
     const vtTasks = await listTasks(taskQueue, nodeId);
     const phase = resolveProgressPhase(nodeId, vtTasks);
     const statusSummary = summarizeTaskQueueStatus(vtTasks);
-    const payload = await buildProgressPayloadFromTasks(vtTasks);
+    const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks);
     sub.callback({
       nodeId,
       stage: statusSummary.taskType ?? 'fetch',
@@ -1122,7 +1143,7 @@ export const shapeBatchAPI = {
               phase: resolveProgressPhase(event.nodeId, vtTasks),
               timestamp: Date.now(),
               message: event.task.message,
-              payload: await buildProgressPayloadFromTasks(vtTasks),
+              payload: await buildProgressPayloadFromTasks(event.nodeId, vtTasks),
             });
           } catch (error) {
             console.error('[shapeBatchAPI] progress payload build failed', error);
@@ -1300,7 +1321,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = await buildTaskQueueSummary(vtTasks);
+      const summary = await buildTaskQueueSummary(nodeId, vtTasks);
       return summary.progress;
     }
     return {
@@ -1325,7 +1346,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = await buildTaskQueueSummary(vtTasks);
+      const summary = await buildTaskQueueSummary(nodeId, vtTasks);
       const paused = getPauseState(nodeId).paused;
       return {
         nodeId,
@@ -1438,7 +1459,7 @@ export const shapeBatchAPI = {
             phase: resolveProgressPhase(event.nodeId, vtTasks),
             timestamp: Date.now(),
             message: event.task.message,
-            payload: await buildProgressPayloadFromTasks(vtTasks),
+            payload: await buildProgressPayloadFromTasks(nodeId, vtTasks),
           });
         } catch (error) {
           console.error('[shapeBatchAPI] progress payload build failed', error);
@@ -1579,7 +1600,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = await buildTaskQueueSummary(vtTasks);
+      const summary = await buildTaskQueueSummary(nodeId, vtTasks);
       const paused = getPauseState(nodeId).paused;
       const latestTask = selectLatestTaskBySequence(vtTasks);
       const lastProcessed = latestTask ? resolveTaskProcessingTimestamp(latestTask) : 0;

@@ -3,9 +3,9 @@
  * Combines core node definition with worker-side entity handler
  */
 
-import type { NodeType, TreeId, PeerEntity, ValidationRule } from '@hierarchidb/core-types';
+import type { NodeType, TreeId, ValidationRule } from '@hierarchidb/core-types';
 
-export interface PluginDefinition {
+export interface PluginDefinition<T> {
   // Basic node information
   readonly nodeType: NodeType;
   readonly name: string;
@@ -37,7 +37,7 @@ export interface PluginDefinition {
   readonly api?: PluginAPIConfig;
 
   // Validation configuration (optional)
-  readonly validation?: PluginValidationConfig;
+  readonly validation?: PluginValidationConfig<T>;
 
   readonly extends?: string;
   readonly dependencies: string[];
@@ -136,7 +136,7 @@ export interface PluginAPIConfig {
 }
 
 // Plugin validation configuration
-export interface PluginValidationConfig<TEntity extends PeerEntity = PeerEntity> {
+export interface PluginValidationConfig<TEntity> {
   namePattern?: RegExp;
   maxChildren?: number;
   allowedChildTypes?: NodeType[];

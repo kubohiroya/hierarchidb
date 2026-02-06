@@ -17,7 +17,7 @@ function node(
     metadata: { name, description: undefined, tags: [] },
     draftMetadata: null,
     data: {},
-    draftData: null,
+    draftData: undefined,
     depth,
     visible: true,
     createdAt: Date.now(),

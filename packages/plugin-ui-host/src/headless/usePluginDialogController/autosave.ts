@@ -1,8 +1,8 @@
-import type { TreeNodeData } from '@hierarchidb/tree-api';
+import type { PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { useEffect, useRef } from 'react';
 
-type Params<TPayload extends TreeNodeData> = {
+type Params<TPayload extends PeerEntity> = {
   open: boolean;
   draft: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
@@ -10,7 +10,7 @@ type Params<TPayload extends TreeNodeData> = {
   enabled?: boolean;
 };
 
-export function useAutosave<TPayload extends TreeNodeData>({
+export function useAutosave<TPayload extends PeerEntity>({
   open,
   draft,
   hasUnsavedChanges,

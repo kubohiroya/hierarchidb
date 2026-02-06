@@ -23,7 +23,7 @@ describe('folder commit clears draft and keeps metadata (empty payload)', () => 
       metadata: { name: 'Root', description: undefined, tags: [] },
       draftMetadata: null,
       data: null,
-      draftData: null,
+      draftData: undefined,
       depth: 0,
       visible: true,
       createdAt: now,
@@ -55,7 +55,7 @@ describe('folder commit clears draft and keeps metadata (empty payload)', () => 
     const stored = await core.nodes.get(committedId);
     expect(stored).toBeDefined();
     expect((stored as { data?: unknown }).data).toBeNull();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { draftMetadata?: unknown }).draftMetadata).toEqual({
       name: 'Final Name',
       description: 'desc',

@@ -6,10 +6,6 @@ import React from 'react';
 import { PluginDialogShell, type PluginDialogShellProps } from './headless/PluginDialogShell.js';
 
 export interface PluginDialogHostProps extends PluginDialogShellProps {
-  /**
-   * Whether to trigger icon prefetch on mount. Enabled by default so the
-   * surrounding app gets consistent iconography as soon as any dialog opens.
-   */
   prefetchIcons?: boolean;
 }
 

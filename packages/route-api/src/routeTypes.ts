@@ -1,4 +1,4 @@
-import type { GroupEntity, ISO2, NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { GroupEntity, ISO2, NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 import type { BaseBatchConfig } from '@hierarchidb/batch-api';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
@@ -100,7 +100,7 @@ export interface RouteProcessingConfig {
   };
 }
 
-export interface RouteEntity {
+export interface RouteEntityPayload {
   selectedArrayByCountries: Record<ISO2, boolean[]>;
   dataSourceName?: string;
   licenseAgreement?: boolean;
@@ -132,6 +132,8 @@ export interface RouteEntity {
   buildStartedAt?: number;
   buildFinishedAt?: number;
 }
+
+export type RouteEntity = PeerEntity<RouteEntityPayload>;
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 

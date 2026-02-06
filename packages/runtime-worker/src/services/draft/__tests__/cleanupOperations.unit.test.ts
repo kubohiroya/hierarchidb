@@ -23,7 +23,7 @@ describe('discardTreeNodeDraft', () => {
         metadata: { name: 'Root', description: undefined, tags: [] },
         draftMetadata: null,
         data: null,
-        draftData: null,
+        draftData: undefined,
         depth: 0,
         visible: true,
         createdAt: now,
@@ -38,7 +38,7 @@ describe('discardTreeNodeDraft', () => {
         metadata: { name: 'Parent', description: undefined, tags: [] },
         draftMetadata: null,
         data: {},
-        draftData: null,
+        draftData: undefined,
         depth: 1,
         visible: true,
         createdAt: now,
@@ -87,7 +87,7 @@ describe('discardTreeNodeDraft', () => {
 
     const stored = await core.nodes.get(nodeId);
     expect(stored).toBeDefined();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { data?: unknown }).data).toEqual({ foo: 'bar' });
   });
 
@@ -115,7 +115,7 @@ describe('discardTreeNodeDraft', () => {
     const stored = await core.nodes.get(nodeId);
     expect(stored).toBeDefined();
     expect((stored as { draftMetadata?: unknown }).draftMetadata).toBeNull();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { data?: unknown }).data).toBeNull();
     expect((stored as { metadata?: { name?: string } }).metadata?.name).toBe('Child');
   });
@@ -144,7 +144,7 @@ describe('discardTreeNodeDraft', () => {
     const stored = await core.nodes.get(nodeId);
     expect(stored).toBeDefined();
     expect((stored as { draftMetadata?: unknown }).draftMetadata).toBeNull();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { data?: unknown }).data).toBeNull();
     expect((stored as { metadata?: { name?: string } }).metadata?.name).toBe('Template Node');
   });

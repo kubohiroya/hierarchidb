@@ -107,7 +107,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
     },
     draftMetadata: null,
     data: null,
-    draftData: null,
+    draftData: undefined,
     parentId: parentForSpeedDial as NodeId,
     depth: pageTreeNode?.depth ?? 1,
     createdAt: pageTreeNode?.createdAt ?? Date.now(),

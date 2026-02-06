@@ -20,8 +20,8 @@ type RemovePayload = {
   nodeIds: NodeId[];
 };
 
-export class TreeMutationCommandsAdapter {
-  constructor(private workerAPI: WorkerAPI) {
+export class TreeMutationCommandsAdapter<T> {
+  constructor(private workerAPI: WorkerAPI<T>) {
   }
 
   /**

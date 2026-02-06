@@ -51,7 +51,7 @@ export function resolveCountryCodeForDataSource(
 }
 
 type ShapeDraft = {
-  draftData: ShapeEntity;
+  draftData: Partial<ShapeEntity>;
 };
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
@@ -79,8 +79,9 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidationResult {
   const errors: string[] = [];
 
-  const fetchConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
-  const transformConfig = config.transformConfig ?? DEFAULT_BUILD_CONFIG.transformConfig;
+  const mergedConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, config);
+  const fetchConfig = mergedConfig.fetchConfig;
+  const transformConfig = mergedConfig.transformConfig;
 
   const fetchConcurrency = fetchConfig.maxConcurrent;
   if (fetchConcurrency < 1 || fetchConcurrency > 4) {

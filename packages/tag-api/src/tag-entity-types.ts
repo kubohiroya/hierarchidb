@@ -3,13 +3,16 @@
  */
 
 import type { RelationalEntity } from '@hierarchidb/core-types';
-import type { NodeId, TagId, Timestamp } from '@hierarchidb/core-types';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+
+export type TagId = string & { readonly __brand: 'TagId' };
 
 export interface TagEntity extends RelationalEntity<TagId> {
+  id: TagId;
   name: string;
   color: string;
   description?: string;
-  category: 'system' | 'user' | 'auto';
+  createdAt: Timestamp;
   usageCount: number;
 }
 
@@ -21,4 +24,8 @@ export interface NodeTagAssociation {
   tagId: TagId;
   assignedAt: Timestamp;
   assignedBy?: string; //  ID
+}
+
+export function toTagId(uuid: string): TagId {
+  return uuid as TagId;
 }

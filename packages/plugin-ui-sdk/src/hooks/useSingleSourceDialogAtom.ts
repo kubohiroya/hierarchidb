@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { PrimitiveAtom } from 'jotai';
 import { atom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { UseTreeNodeUpdaterOptions } from './useTreeNodeUpdater.js';
 import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
 
-type DraftShape<TPayload extends Record<string, unknown>> = Partial<TPayload>;
+type DraftShape<TPayload extends PeerEntity> = Partial<TPayload>;
 
-const isRecord = (value: unknown): value is TreeNodeData =>
+const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const shallowEqual = (a: unknown, b: unknown): boolean => {
@@ -31,7 +31,7 @@ const shallowEqual = (a: unknown, b: unknown): boolean => {
   return true;
 };
 
-export interface SingleSourceDialogAtomResult<TEntity extends Record<string, unknown>> {
+export interface SingleSourceDialogAtomResult<TEntity extends PeerEntity> {
   store: ReturnType<typeof createStore>;
   draftAtom: PrimitiveAtom<DraftShape<TEntity>>;
   metadataAtom: PrimitiveAtom<TreeNodeMetadata>;
@@ -47,7 +47,7 @@ export interface SingleSourceDialogAtomResult<TEntity extends Record<string, unk
   setMetadata: (updater: (prev: TreeNodeMetadata) => TreeNodeMetadata) => void;
 }
 
-export type UseSingleSourceDialogAtomOptions<TEntity extends Record<string, unknown>> =
+export type UseSingleSourceDialogAtomOptions<TEntity extends PeerEntity> =
   UseTreeNodeUpdaterOptions<TEntity>;
 
 /**
@@ -55,7 +55,7 @@ export type UseSingleSourceDialogAtomOptions<TEntity extends Record<string, unkn
  * Exposes jotai atoms for draftData/draftMetadata with equality guards
  * to avoid redundant updates and render loops.
  */
-export function useSingleSourceDialogAtom<TEntity extends Record<string, unknown> = Record<string, unknown>>(
+export function useSingleSourceDialogAtom<TEntity extends PeerEntity = PeerEntity>(
   options: UseSingleSourceDialogAtomOptions<TEntity>
 ): SingleSourceDialogAtomResult<TEntity> {
   const {
@@ -124,7 +124,7 @@ export function useSingleSourceDialogAtom<TEntity extends Record<string, unknown
         return;
       }
       store.set(draftAtomRef.current, next);
-      updateTreeNodeUpdater({ draftData: next as TEntity });
+      updateTreeNodeUpdater({ draftData: next });
     },
     [store, updateTreeNodeUpdater]
   );

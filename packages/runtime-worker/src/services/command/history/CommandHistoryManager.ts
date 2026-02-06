@@ -446,7 +446,7 @@ export class CommandHistoryManager {
           },
           draftMetadata: null,
           data: null,
-          draftData: null,
+          draftData: undefined,
           depth: 0,
           visible: true,
           createdAt: Date.now() as Timestamp,

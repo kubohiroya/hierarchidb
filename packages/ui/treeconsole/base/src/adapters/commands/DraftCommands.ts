@@ -4,7 +4,7 @@
  * Working Copy
   */
 
-import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import type {
   CommitDraftForCreatePayload,
@@ -27,21 +27,15 @@ export interface DraftEditSession {
   expectedUpdatedAt?: Timestamp;
 }
 
-export class DraftCommandsAdapter {
-  constructor(private workerAPI: WorkerAPI) {
+export class DraftCommandsAdapter<T> {
+  constructor(private workerAPI: WorkerAPI<T>) {
   }
 
-  private resolveCommitOptions(options: CommandAdapterOptions): CommitDraftOptions | undefined {
-    const policy = options.context?.onNameConflict as CommitDraftOptions['onNameConflict'] | undefined;
+  private resolveCommitOptions(options: CommandAdapterOptions): CommitDraftOptions<T> | undefined {
+    const policy = options.context?.onNameConflict as CommitDraftOptions<T>['onNameConflict'] | undefined;
     return policy ? { onNameConflict: policy } : undefined;
   }
 
-  /**
-      * Draft
-      * @param sourceNodeId ID
-   * @param options
-   * @returns
-      */
   async startNodeEdit(
     sourceNodeId: NodeId,
     options: CommandAdapterOptions,
@@ -56,7 +50,7 @@ export class DraftCommandsAdapter {
         await updaterAPI.updateTreeNodeDraftMetadata(sourceNodeId, currentNodeData.metadata);
       }
       if (currentNodeData?.data) {
-        await updaterAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Record<string, unknown>);
+        await updaterAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Partial<PeerEntity<T>>);
       }
 
       return {

@@ -1,4 +1,4 @@
-import type { TagId } from '@hierarchidb/core-types';
+import type { TagId } from './tag-entity-types.js';
 
 export type TagSuggestion = {
   id: TagId;

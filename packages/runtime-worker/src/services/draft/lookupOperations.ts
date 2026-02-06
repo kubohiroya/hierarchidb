@@ -1,5 +1,5 @@
-import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../CoreDB.js';
 
 /**
@@ -28,9 +28,9 @@ export async function updateTreeNodeDraftMetadata(
 export async function updateTreeNodeDraftData(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updater: Record<string, unknown> | null
+  updater: Partial<PeerEntity<TreeNodeData>>
 ): Promise<void> {
-  await coreDB.nodes.update(nodeId, { draftData: updater ?? null });
+  await coreDB.nodes.update(nodeId, { draftData: updater });
 }
 
 export async function getTreeNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | null> {

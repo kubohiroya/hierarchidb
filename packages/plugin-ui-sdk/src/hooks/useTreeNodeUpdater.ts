@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type {
   CommitDraftMode,
   DialogUIState,
   DiscardDraftOptions,
   TreeNode,
-  TreeNodeData,
   TreeNodeMetadata,
   TreeNodeUpdaterAPI,
 } from '@hierarchidb/tree-api';
@@ -14,10 +13,10 @@ import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { Remote } from 'comlink';
 
-export interface TreeNodeUpdaterState<TPayload extends TreeNodeData = TreeNodeData> {
+export interface TreeNodeUpdaterState<TPayload extends PeerEntity = PeerEntity> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
-  draftData: TPayload | null;
+  draftData?: Partial<TPayload>;
   dialogUIState: DialogUIState;
   isTemporary?: boolean;
   version?: number;
@@ -25,20 +24,20 @@ export interface TreeNodeUpdaterState<TPayload extends TreeNodeData = TreeNodeDa
   hasRemoteDraft?: boolean;
 }
 
-export interface UseTreeNodeUpdaterOptions<TPayload extends TreeNodeData = TreeNodeData> {
+export interface UseTreeNodeUpdaterOptions<TPayload extends PeerEntity = PeerEntity> {
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId?: NodeId;
   parentId?: NodeId;
   treeId?: TreeId;
   workerClient?: WorkerClientRef | null;
-  initialDraftData?: TPayload;
+  initialDraftData?: Partial<TPayload>;
   initialDraftMetadata?: TreeNodeMetadata;
   /** If true, discard draft on pagehide/beforeunload (defaults to false to preserve edits). */
   autoDiscardOnUnload?: boolean;
 }
 
-export interface UseTreeNodeUpdaterResult<TPayload extends TreeNodeData = TreeNodeData> {
+export interface UseTreeNodeUpdaterResult<TPayload extends PeerEntity = PeerEntity> {
   treeNodeUpdater: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
   updateTreeNodeUpdater: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void;
@@ -53,7 +52,7 @@ export interface UseTreeNodeUpdaterResult<TPayload extends TreeNodeData = TreeNo
 }
 
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
-export type PluginDialogData<TPayload extends TreeNodeData = TreeNodeData> = TPayload;
+export type PluginDialogData<TPayload extends PeerEntity = PeerEntity> = TPayload;
 
 const DEFAULT_DIALOG_UI_STATE: DialogUIState = {};
 
@@ -85,7 +84,7 @@ const stableStringify = (value: unknown): string => {
   }
 };
 
-export const createTreeNodeUpdaterActions = <TPayload extends TreeNodeData = TreeNodeData>(
+export const createTreeNodeUpdaterActions = <TPayload extends PeerEntity = PeerEntity>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {
   const updatePayload = (patch: Partial<TPayload>, base?: TPayload) => {
@@ -108,7 +107,7 @@ export const createTreeNodeUpdaterActions = <TPayload extends TreeNodeData = Tre
   return { updatePayload, updateMetadata, updatePayloadAndMetadata };
 };
 
-export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Record<string, unknown>>({
+export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
   mode,
   nodeType,
   nodeId,
@@ -133,13 +132,13 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
   }, []);
 
   const toUpdater = useCallback((node: TreeNode): TreeNodeUpdaterState<TPayload> => {
-    const hasRemoteDraft = node.draftData != null || node.draftMetadata != null;
+    const hasRemoteDraft = node.draftData !== undefined || node.draftMetadata != null;
     const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
     if (draftMetadata === null) {
       throw new Error('Draft metadata must not be null');
     }
     const draftData =
-      node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
+      node.draftData && isRecord(node.draftData) ? (node.draftData as Partial<TPayload>) : undefined;
     const dialogUIState =
       (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
     const isTemporary = (node as { isTemporary?: boolean }).isTemporary;
@@ -180,8 +179,13 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
           const needsDraftMeta =
             ((existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null) === null &&
             existing.metadata !== undefined;
+          const existingDraftData = (existing as { draftData?: Partial<PeerEntity> }).draftData;
+          const hasEmptyDraftData =
+            existingDraftData
+            && isRecord(existingDraftData)
+            && Object.keys(existingDraftData).length === 0;
           const needsDraftData =
-            ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? null) === null &&
+            (existingDraftData === undefined || hasEmptyDraftData) &&
             // Skip seeding when committed data is null (template-driven nodes often have draftData prefilled)
             existing.data !== null &&
             (existing.data ? Object.keys(existing.data as Record<string, unknown>).length > 0 : false);
@@ -194,9 +198,9 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
           if (needsDraftData) {
             await wcAPI.updateTreeNodeDraftData(
               nodeId,
-              (existing.data ?? {}) as Record<string, unknown>
+              (existing.data ?? {}) as Partial<PeerEntity>
             );
-            (existing as { draftData?: Record<string, unknown> | null }).draftData = {
+            (existing as { draftData?: Partial<PeerEntity> }).draftData = {
               ...(existing.data as Record<string, unknown>),
             };
           }
@@ -219,7 +223,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
             ...(nodeId ? { id: nodeId } : {}),
             ...(initialDraftMetadata ? { draftMetadata: initialDraftMetadata } : {}),
             ...(initialDraftData
-              ? { draftData: initialDraftData as unknown as Record<string, unknown> }
+              ? { draftData: initialDraftData as Partial<PeerEntity> }
               : {}),
             ...(shouldMarkTemporary ? { isTemporary: true } : {}),
           };
@@ -248,10 +252,10 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
 
   const buildComparableDraft = useCallback(
     (state: TreeNodeUpdaterState<TPayload> | null) => {
-      if (!state) return { draftMetadata: null, draftData: null };
+      if (!state) return { draftMetadata: null, draftData: undefined };
       return {
         draftMetadata: normalizeComparableValue(state.draftMetadata ?? null),
-        draftData: normalizeComparableValue(state.draftData ?? null),
+        draftData: normalizeComparableValue(state.draftData),
       };
     },
     []
@@ -275,7 +279,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
 
         const nextDraftMetadata = data.draftMetadata !== undefined ? data.draftMetadata : prev.draftMetadata ?? null;
         const nextDraftData =
-          data.draftData !== undefined ? data.draftData : data.draftData === null ? null : prev.draftData ?? null;
+          data.draftData !== undefined ? data.draftData : prev.draftData;
         const nextDialogUIState =
           data.dialogUIState !== undefined
             ? data.dialogUIState ?? DEFAULT_DIALOG_UI_STATE
@@ -284,7 +288,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
         const merged: TreeNodeUpdaterState<TPayload> = {
           treeNodeId: prev.treeNodeId,
           draftMetadata: nextDraftMetadata ?? null,
-          draftData: nextDraftData ?? null,
+          draftData: nextDraftData,
           dialogUIState: nextDialogUIState,
           isTemporary: data.isTemporary ?? prev.isTemporary,
           version: data.version ?? prev.version,
@@ -305,7 +309,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
     const finalData: TreeNodeUpdaterState<TPayload> = {
       ...data,
       treeNodeId: targetId,
-      draftData: (data.draftData as TPayload | null) ?? null,
+      draftData: data.draftData,
       draftMetadata: (data.draftMetadata as TreeNodeMetadata | null) ?? null,
       dialogUIState: data.dialogUIState ?? ({} as DialogUIState),
       version: data.version,
@@ -321,7 +325,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
       const res = await wcAPI.updateTreeNode(targetId, {
         mode,
         draftMetadata: finalData.draftMetadata ?? null,
-        draftData: finalData.draftData ?? null,
+        draftData: finalData.draftData,
         dialogUIState: finalData.dialogUIState ?? null,
       });
 
@@ -359,7 +363,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
         refreshedCopy = {
           ...refreshedCopy,
           draftMetadata: shouldClearDraft ? null : refreshedCopy.draftMetadata ?? finalData.draftMetadata ?? null,
-          draftData: shouldClearDraft ? null : (refreshedCopy.draftData as TPayload | null) ?? (finalData.draftData as TPayload | null) ?? null,
+          draftData: shouldClearDraft ? undefined : refreshedCopy.draftData ?? finalData.draftData,
           hasRemoteDraft: !shouldClearDraft,
         };
 

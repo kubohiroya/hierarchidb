@@ -1,14 +1,12 @@
-import type { GroupEntity, PeerEntity, RelationalEntity, NodeId } from '@hierarchidb/core-types';
+import type { GroupEntity, RelationalEntity, NodeId } from '@hierarchidb/core-types';
 
 //  API
 export type APIMethodArgs = readonly [NodeId, ...unknown[]];
-export type APIMethodReturn =
-  | PeerEntity
+export type APIMethodReturn<T> =
   | GroupEntity
-  | RelationalEntity
-  | PeerEntity[]
+  | RelationalEntity<T>
   | GroupEntity[]
-  | RelationalEntity[]
+  | RelationalEntity<T>[]
   | string
   | number
   | boolean
@@ -17,6 +15,7 @@ export type APIMethodReturn =
 
 //  Worker API
 export type WorkerAPIMethod<
+  T,
   TArgs extends APIMethodArgs = APIMethodArgs,
-  TReturn extends APIMethodReturn = APIMethodReturn,
+  TReturn extends APIMethodReturn<T> = APIMethodReturn<T>,
 > = (...args: TArgs) => Promise<TReturn>;

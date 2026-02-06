@@ -126,7 +126,7 @@ const buildNode = (overrides: Partial<TreeNode>): TreeNode =>
     metadata: { name: 'Folder', description: '', tags: [] },
     draftMetadata: null,
     data: null,
-    draftData: null,
+    draftData: undefined,
     depth: 1,
     createdAt: Date.now(),
     updatedAt: Date.now(),

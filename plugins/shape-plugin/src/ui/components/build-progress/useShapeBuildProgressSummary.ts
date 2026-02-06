@@ -231,6 +231,36 @@ export const useShapeBuildProgressSummary = <T extends BatchTaskSummary & TaskSt
     return rawDisplayCounts;
   }, [buildStatus, hasProgressData, rawDisplayCounts]);
 
+  const combinedStagePercentage = useMemo(() => {
+    if (!stages.length) return rawDisplayCounts.percentage;
+    const total = stages.reduce((sum, stage) => {
+      const value = stageProgress[stage.id] ?? 0;
+      return sum + Math.min(100, Math.max(0, value));
+    }, 0);
+    return Math.min(100, Math.max(0, Math.round(total / stages.length)));
+  }, [rawDisplayCounts.percentage, stageProgress, stages]);
+
+  const displayCountsWithStageProgress = useMemo(() => {
+    if (buildStatus !== 'running' || !hasProgressData) return displayCounts;
+    return { ...displayCounts, percentage: combinedStagePercentage };
+  }, [buildStatus, combinedStagePercentage, displayCounts, hasProgressData]);
+
+  const lastDisplayedPercentageRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (buildStatus !== 'running' || !hasProgressData) {
+      lastDisplayedPercentageRef.current = null;
+    }
+  }, [buildStatus, hasProgressData]);
+
+  const displayCountsMonotonic = useMemo(() => {
+    if (buildStatus !== 'running' || !hasProgressData) return displayCountsWithStageProgress;
+    const current = displayCountsWithStageProgress.percentage;
+    const previous = lastDisplayedPercentageRef.current;
+    const next = previous === null ? current : Math.max(previous, current);
+    lastDisplayedPercentageRef.current = next;
+    return { ...displayCountsWithStageProgress, percentage: next };
+  }, [buildStatus, displayCountsWithStageProgress, hasProgressData]);
+
   const stageRemainingMs = useMemo(() => {
     if (!resolvedTaskType) return null;
     const stageTasks = tasksByStage[resolvedTaskType] ?? [];
@@ -251,7 +281,7 @@ export const useShapeBuildProgressSummary = <T extends BatchTaskSummary & TaskSt
     tasksByStage,
     paneProgress: paneProgressWithSummary,
     displayStageId,
-    displayCounts,
+    displayCounts: displayCountsMonotonic,
     rawDisplayCounts,
     hasProgressData,
     stageRemainingMs,

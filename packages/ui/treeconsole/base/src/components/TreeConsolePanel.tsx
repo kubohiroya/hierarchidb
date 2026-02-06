@@ -6,7 +6,12 @@ import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import { toNodeType, type NodeId, type NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { type TreeNodeInUI, type TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import {
+  type BuildSessionIndicator,
+  type TreeNodeInUI,
+  type TreeTableController,
+  TreeTableCore,
+} from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
@@ -125,6 +130,8 @@ export interface TreeConsolePanelProps {
   readonly selectAllPersistence?: 'page' | 'session';
   /** Optional prefix for selection checkbox ids (e.g., to avoid collisions across dialogs) */
   readonly selectAllIdPrefix?: string;
+  /** Optional build session indicator state for row-level status */
+  readonly buildSessionIndicator?: BuildSessionIndicator;
   /** Enable trash-specific columns and behaviours */
   readonly useTrashColumns?: boolean;
   readonly trashAction?: 'restore' | 'empty';
@@ -324,6 +331,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         pageNodeId={props.pageNodeId}
         selectAllPersistence={props.selectAllPersistence}
         selectionIdPrefix={props.selectAllIdPrefix}
+        buildSessionIndicator={props.buildSessionIndicator}
         useTrashColumns={props.useTrashColumns ?? false}
         trashAction={props.trashAction}
         depthOffset={controller.depthOffset ?? 0}

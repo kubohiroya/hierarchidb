@@ -121,7 +121,7 @@ const toDraftDataPayload = (
     description: value.description ?? '',
     tags: value.tags ?? [],
   } as TreeNodeMetadata,
-  draftData: (value.draft ?? {}) as LocationEntity,
+  draftData: (value.draft ?? {}) as Partial<LocationEntity>,
   dialogUIState: value.dialogUIState ?? {},
 });
 
@@ -209,7 +209,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const handleDraftPatch = useCallback((patch: Partial<LocationDraft>) => {
     const merged = mergeLocationDraft(dialogData, patch);
     const payload = toDraftDataPayload(merged);
-    updatePayload(payload.draftData ?? {}, dialogData.draft as LocationEntity | undefined);
+    updatePayload(payload.draftData ?? {}, dialogData.draft as Partial<LocationEntity> | undefined);
     updateMetadata(
       {
         name: dialogData.name ?? '',

@@ -25,7 +25,6 @@ export async function discardTreeNodeDraft(
   const hasCommittedVersion = version > 1;
 
   const hasDraftPayload =
-    draftData !== null &&
     draftData !== undefined &&
     (typeof draftData !== 'object' || Object.keys(draftData as Record<string, unknown>).length > 0);
   const hasDraftState = hasDraftPayload || draftMetadata !== null;
@@ -42,7 +41,7 @@ export async function discardTreeNodeDraft(
   } else {
     await coreDB.nodes.update(draftNodeId, {
       draftMetadata: null,
-      draftData: null,
+      draftData: undefined,
       dialogUIState: undefined,
     });
   }

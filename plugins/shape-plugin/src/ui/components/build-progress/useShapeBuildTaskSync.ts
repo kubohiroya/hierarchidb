@@ -115,14 +115,14 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     pendingDeleteIdsRef.current = new Set();
     const resolved = sortTasksByIndex(next.map(resolveTaskSummary));
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
-    flushTasks(resolved);
+    scheduleFlush(resolved);
     if (errorRef.current !== null) {
       setError(null);
     }
     if (isLoadingRef.current) {
       setIsLoading(false);
     }
-  }, [flushTasks, resolveTaskSummary, setError, setIsLoading]);
+  }, [resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);

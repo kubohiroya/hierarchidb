@@ -20,13 +20,13 @@ interface SubscriptionEntry {
   createdAt: number;
 }
 
-export class SubscriptionManager {
-  private adapter: TreeObservableAdapter;
+export class SubscriptionManager<T> {
+  private adapter: TreeObservableAdapter<T>;
   private subscriptions = new Map<string, SubscriptionEntry>();
 
   // private _viewId: string; // Currently unused
 
-  constructor(workerAPI: WorkerAPI, _viewId: string) {
+  constructor(workerAPI: WorkerAPI<T>, _viewId: string) {
     this.adapter = new TreeObservableAdapter(workerAPI);
     // this._viewId = _viewId; // Currently unused
   }
@@ -164,7 +164,7 @@ export class SubscriptionManager {
       }
     });
 
-    toRemove.forEach((id) => this.unsubscribe(id));
+    toRemove.map((id) => this.unsubscribe(id));
   }
 
   /**
@@ -179,7 +179,7 @@ export class SubscriptionManager {
       }
     });
 
-    toRemove.forEach((id) => this.unsubscribe(id));
+    toRemove.map((id) => this.unsubscribe(id));
   }
 
   /**
@@ -210,7 +210,7 @@ export class SubscriptionManager {
       }
     });
 
-    toRemove.forEach((id) => this.unsubscribe(id));
+    toRemove.map((id) => this.unsubscribe(id));
   }
 
   /**

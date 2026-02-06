@@ -24,7 +24,7 @@ describe('Edit dialog cancel behavior by node origin', () => {
       metadata: { name: 'Root', description: undefined, tags: [] },
       draftMetadata: null,
       data: null,
-      draftData: null,
+      draftData: undefined,
       depth: 0,
       visible: true,
       createdAt: now,
@@ -161,7 +161,7 @@ describe('Edit dialog cancel behavior by node origin', () => {
 
     const stored = await core.nodes.get(nodeId);
     expect(stored).toBeDefined();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { draftMetadata?: unknown }).draftMetadata).toBeNull();
     expect((stored as { data?: unknown }).data).toEqual({ foo: 'committed' });
   });
@@ -215,7 +215,7 @@ describe('Edit dialog cancel behavior by node origin', () => {
 
     const stored = await core.nodes.get(nodeId);
     expect(stored).toBeDefined();
-    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
     expect((stored as { draftMetadata?: unknown }).draftMetadata).toBeNull();
     expect((stored as { data?: unknown }).data).toEqual({ state: 'committed' });
   });

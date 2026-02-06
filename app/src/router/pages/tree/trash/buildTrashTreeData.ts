@@ -98,7 +98,7 @@ export function buildTrashTreeData({
       updatedAt: node.updatedAt,
       version: node.version,
       data: ((node as { data?: NodePayload }).data ?? null) as NodePayload,
-      draftData: ((node as { draftData?: NodePayload }).draftData ?? null) as NodePayload,
+      draftData: (node as { draftData?: NodePayload }).draftData as NodePayload | undefined,
     });
   });
 

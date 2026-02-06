@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -9,7 +9,7 @@ import {
 } from '../plugin-dialog-mocks/setupPluginWorkerMock.js';
 
 function useFolderDialogForTest(parentId: NodeId) {
-  return useTreeNodeDialog<Record<string, unknown>>({
+  return useTreeNodeDialog<PeerEntity>({
     open: true,
     mode: 'create',
     nodeType: 'folder',
@@ -46,7 +46,7 @@ describe.skip('Folder dialog commit integration (headless)', () => {
       metadata: { name: 'Root', description: '', tags: [] },
       draftMetadata: null,
       data: null,
-      draftData: null,
+      draftData: undefined,
       depth: 0,
       createdAt: now,
       updatedAt: now,
@@ -84,7 +84,7 @@ describe.skip('Folder dialog commit integration (headless)', () => {
     expect(created).toBeDefined();
     expect(created?.metadata).toEqual({ name: 'Folder Name', description: 'desc', tags: ['x'] });
     expect(created?.data).toBeNull();
-    expect(created?.draftData).toBeNull();
+    expect(created?.draftData).toBeUndefined();
     expect(created?.draftMetadata).toBeNull();
   });
 });

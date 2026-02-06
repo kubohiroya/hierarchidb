@@ -1,11 +1,11 @@
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import type {
   ShapeEntity,
   SelectedArrayByCountries,
 } from '../../common/types/ShapeEntity.ts';
-import { summarizeCheckboxState, validateBatchConfig } from '../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, summarizeCheckboxState, validateBatchConfig } from '../../common/types/index.js';
 import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
@@ -18,13 +18,13 @@ import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeStepProps = PluginStepProps<ShapeEntity>;
+type ShapeStepProps = PluginStepProps<Partial<ShapeEntity>>;
 
 function createStepAdapter(
   Component: React.ComponentType<ShapeDialogStepProps>,
 ): (props: ShapeStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeStepProps) {
-    const latestDataRef = useRef<ShapeEntity | null>(null);
+    const latestDataRef = useRef<Partial<ShapeEntity> | null>(null);
     useEffect(() => {
       latestDataRef.current = {
         ...(latestDataRef.current ?? {}),
@@ -36,15 +36,15 @@ function createStepAdapter(
       nodeId: props.nodeId as NodeId,
       ...(props.data ?? {}),
     }) as Partial<ShapeEntity>;
-    const handleChange = (updates: Partial<ShapeEntity>) => {
+    const handleChange = useCallback((updates: Partial<ShapeEntity>) => {
       const next = {
         ...(latestDataRef.current ?? {}),
         nodeId: props.nodeId as NodeId,
         ...updates,
-      } as ShapeEntity;
+      } as Partial<ShapeEntity>;
       latestDataRef.current = next;
       props.onChange(next);
-    };
+    }, [props.nodeId, props.onChange]);
 
     return (
       <Component
@@ -159,7 +159,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.processing.label', 'Processing Configuration'),
         componentFactory: (props: ShapeStepProps) => <ShapeProcessing {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.buildConfig && validateBatchConfig(data.buildConfig).isValid),
+          validateBatchConfig(data?.buildConfig ?? DEFAULT_BUILD_CONFIG).isValid,
       },
       {
         id: 'build',

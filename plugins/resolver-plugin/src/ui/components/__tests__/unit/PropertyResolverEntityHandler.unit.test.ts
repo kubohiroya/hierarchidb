@@ -76,7 +76,7 @@ const runtimeWorkerMocks = vi.hoisted(() => {
   };
   const discardTreeNodeDraft = async (db: CoreDB, id: NodeId) => {
     const node = db.nodes.data.get(id as string);
-    if (node) db.nodes.data.set(id as string, { ...node, draftData: null, draftMetadata: null } as TreeNode);
+    if (node) db.nodes.data.set(id as string, { ...node, draftData: undefined, draftMetadata: null } as TreeNode);
   };
   return { CoreDB, getTreeNode, updateTreeNodeDraftData, updateTreeNodeDraftMetadata, discardTreeNodeDraft };
 });
@@ -118,7 +118,7 @@ describe('ResolverEntityService', () => {
       metadata: { name, description: '', tags: [] },
       draftMetadata: null,
       data: null,
-      draftData: null,
+      draftData: undefined,
     };
     await coreDB.createNode(node);
     return nodeId;
@@ -280,7 +280,7 @@ describe('ResolverEntityService', () => {
         metadata: { name: 'New', description: '', tags: [] },
         draftMetadata: null,
         data: null,
-        draftData: null,
+        draftData: undefined,
       } as TreeNode);
 
       await handler.createEntity(originalNodeId, {

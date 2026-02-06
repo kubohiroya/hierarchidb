@@ -15,9 +15,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const mergeNodeData = (node?: TreeNode | null): Record<string, unknown> => {
   if (!node) return {};
-  const base = isRecord(node.data) ? node.data : {};
   const draft = isRecord(node.draftData) ? node.draftData : {};
-  return { ...base, ...draft };
+  return { ...draft };
 };
 
 export const resolveBuildStepTarget = (

@@ -57,7 +57,7 @@ export async function commitTreeNodeDraft(
   }
 
   const finalizedData = (() => {
-    const candidate = (draft as { draftData?: unknown }).draftData ?? null;
+    const candidate = (draft as { draftData?: unknown }).draftData;
     if (
       candidate &&
       typeof candidate === 'object' &&
@@ -65,7 +65,15 @@ export async function commitTreeNodeDraft(
     ) {
       return null;
     }
-    return candidate;
+    if (candidate === undefined || typeof candidate !== 'object') return candidate;
+    if (typeof structuredClone === 'function') {
+      return structuredClone(candidate);
+    }
+    try {
+      return JSON.parse(JSON.stringify(candidate));
+    } catch {
+      return candidate;
+    }
   })();
   const shouldLogDebug =
     typeof console !== 'undefined' &&
@@ -89,7 +97,7 @@ export async function commitTreeNodeDraft(
       name: finalName,
     },
     data: finalizedData as TreeNode['data'],
-    draftData: null,
+    draftData: undefined,
     draftMetadata: null,
     dialogUIState:
       (draft as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState),

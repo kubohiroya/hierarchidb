@@ -31,7 +31,7 @@ function createNode(
     },
     draftMetadata: null,
     data: overrides.data ?? {},
-    draftData: overrides.draftData ?? null,
+    draftData: overrides.draftData,
     depth: overrides.depth ?? 0,
     visible: overrides.visible ?? true,
     createdAt: overrides.createdAt ?? now,

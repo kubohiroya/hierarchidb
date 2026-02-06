@@ -23,7 +23,7 @@ export interface StepCapabilities {
  * Provides methods for managing draft states and evaluating
  * capabilities for multi-step dialog workflows.
  */
-export interface PluginDialogAPI {
+export interface PluginDialogAPI<T> {
   /**
    * Create a new draft node
    *
@@ -39,7 +39,7 @@ export interface PluginDialogAPI {
    * @param draftId - The ID of the draft
    * @returns The draft data or undefined if not found
    */
-  getDraft(draftId: NodeId): Promise<TreeNodeUpdater | undefined>;
+  getDraft(draftId: NodeId): Promise<TreeNodeUpdater<T> | undefined>;
 
   /**
    * Update a draft
@@ -48,7 +48,7 @@ export interface PluginDialogAPI {
    * @param updates - Partial updates to apply
    * @returns The updated draft data
    */
-  updateDraft(draftId: NodeId, updates: Partial<TreeNodeUpdater>): Promise<TreeNodeUpdater>;
+  updateDraft(draftId: NodeId, updates: Partial<TreeNodeUpdater<T>>): Promise<TreeNodeUpdater<T>>;
 
   /**
    * Delete a draft
@@ -96,4 +96,4 @@ export interface PluginDialogAPI {
 /**
  * Multi-Step Dialog API with Comlink proxy marking
  */
-export type PluginDialogAPIProxy = PluginDialogAPI & ProxyMarked;
+export type PluginDialogAPIProxy<T> = PluginDialogAPI<T> & ProxyMarked;

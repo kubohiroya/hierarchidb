@@ -60,9 +60,9 @@ export type TreeNode<TData extends NodePayload | null = NodePayload | null> = No
    */
   data: TData | null;
   /**
-   * Working copy data; null when no draft exists
+   * Working copy data; undefined when no draft exists
    */
-  draftData: TData | null;
+  draftData?: TData;
   /**
    * Temporary flag for pre-commit nodes created from UI flows.
    */
@@ -94,10 +94,10 @@ export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePay
 /**
  * Working copy payload (drafted metadata/data) used across UI/Worker dialog flows.
  */
-export interface TreeNodeUpdaterPayload<T extends object = object> {
+export interface TreeNodeUpdaterPayload<T> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
-  draftData: Partial<T> | null;
+  draftData?: Partial<T>;
   buildStartedAt?: Timestamp;
   buildFinishedAt?: Timestamp;
 }
@@ -105,7 +105,7 @@ export interface TreeNodeUpdaterPayload<T extends object = object> {
 /**
  * Working copy container exposed over dialog APIs.
  */
-export interface TreeNodeUpdater<T extends object = object> {
+export interface TreeNodeUpdater<T> {
   payload: TreeNodeUpdaterPayload<T>;
   parentNodeId: NodeId;
   dialogUIState?: DialogUIState;

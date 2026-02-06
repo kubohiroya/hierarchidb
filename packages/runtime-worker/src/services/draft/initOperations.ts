@@ -38,7 +38,6 @@ export async function initTreeNode(
           (existing as { draftMetadata?: unknown }).draftMetadata !== null &&
           typeof (existing as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
         const hasDraftData =
-          (existing as { draftData?: unknown }).draftData !== null &&
           typeof (existing as { draftData?: unknown }).draftData !== 'undefined';
 
         if (!hasDraftMeta || !hasDraftData) {
@@ -63,8 +62,8 @@ export async function initTreeNode(
             },
             draftData: {
               ...(hasDraftData
-                ? ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? {})
-                : (initial?.draftData ?? initial?.data ?? {})),
+                ? ((existing as { draftData?: Record<string, unknown> }).draftData ?? {})
+                : (initial?.draftData ?? {})),
             },
             updatedAt: now,
             lastTouchedAt: now,
@@ -97,7 +96,7 @@ export async function initTreeNode(
       },
       data: null,
       draftData: {
-        ...(initial?.draftData ?? initial?.data ?? {}),
+        ...(initial?.draftData ?? {}),
       },
       isTemporary: initial?.isTemporary,
       depth,

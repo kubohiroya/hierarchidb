@@ -95,15 +95,15 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/_obsolate_common-api', src: '../packages/_obsolate_common/api/src/index.ts', dist: '../packages/_obsolate_common/api/dist/index.js' },
     { spec: '@hierarchidb/_obsolate_common-auth', src: '../packages/_obsolate_common/auth/src/index.ts', dist: '../packages/_obsolate_common/auth/dist/index.js' },
     { spec: '@hierarchidb/_obsolate_common-types', src: '../packages/_obsolate_common/types/src/index.ts', dist: '../packages/_obsolate_common/types/dist/index.js' },
-    { spec: '@hierarchidb/auth', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
-    { spec: '@hierarchidb/download', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
-    { spec: '@hierarchidb/chunk-store', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
+    { spec: '@hierarchidb/auth', src: '../packages/auth/src/index.ts', dist: '../packages/auth/dist/index.js' },
+    { spec: '@hierarchidb/download', src: '../packages/download/src/index.ts', dist: '../packages/download/dist/index.js' },
+    { spec: '@hierarchidb/chunk-store', src: '../packages/chunk-store/src/index.ts', dist: '../packages/chunk-store/dist/index.js' },
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-client', src: '../packages/ui/worker-client/src/index.ts', dist: '../packages/ui/worker-client/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-provider', src: '../packages/ui/worker-provider/src/index.ts', dist: '../packages/ui/worker-provider/dist/index.js' },
     { spec: '@hierarchidb/runtime-worker-worker', src: '../packages/runtime-worker/worker/src/index.ts', dist: '../packages/runtime-worker/worker/src/index.ts' },
-    { spec: '@hierarchidb/map-adapter', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
-    { spec: '@hierarchidb/gis-sdk', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
+    { spec: '@hierarchidb/map-adapter', src: '../packages/map-adapter/src/index.ts', dist: '../packages/map-adapter/dist/index.js' },
+    { spec: '@hierarchidb/gis-sdk', src: '../packages/gis-sdk/src/index.ts', dist: '../packages/gis-sdk/dist/index.js' },
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
@@ -131,7 +131,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/spreadsheet-plugin', src: '../plugins/spreadsheet-plugin/src/index.ts', dist: '../plugins/spreadsheet-plugin/dist/index.js' },
     { spec: '@hierarchidb/styler-plugin', src: '../plugins/styler-plugin/src/index.ts', dist: '../plugins/styler-plugin/dist/index.js' },
     { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
-    { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages//src/index.ts', dist: '../packages//dist/index.js' },
+    { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/tabular-source-xlsx/src/index.ts', dist: '../packages/tabular-source-xlsx/dist/index.js' },
     { spec: '@hierarchidb/timeline-plugin', src: '../plugins/timeline-plugin/src/index.ts', dist: '../plugins/timeline-plugin/dist/index.js' },
   ] as const;
 
@@ -197,11 +197,11 @@ function createRuntimeAliasConfig({
       group: 'runtime-worker',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/map-adapter', '../packages//src/index.ts', {
+    registerDevPackage('@hierarchidb/map-adapter', '../packages/map-adapter/src/index.ts', {
       group: 'features',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/tabular-source-xlsx', '../packages//src/index.ts', {
+    registerDevPackage('@hierarchidb/tabular-source-xlsx', '../packages/tabular-source-xlsx/src/index.ts', {
       group: 'features',
       exclude: true,
     });
@@ -306,8 +306,8 @@ function createRuntimeAliasConfig({
     });
     addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', { exact: true });
     addAlias('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/src/index.ts', { exact: true });
-    addAlias('@hierarchidb/map-adapter', '../packages//src/index.ts', { exclude: true, exact: true });
-    addAlias('@hierarchidb/tabular-source-xlsx', '../packages//src/index.ts', { exclude: true, exact: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/map-adapter/src/index.ts', { exclude: true, exact: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/tabular-source-xlsx/src/index.ts', { exclude: true, exact: true });
     addAlias('@hierarchidb/ui-plugin-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', { exclude: true, exact: true });
 
     for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {

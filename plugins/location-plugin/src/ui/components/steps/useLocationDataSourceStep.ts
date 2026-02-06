@@ -468,8 +468,8 @@ export const useLocationDataSourceStep = ({
     pendingDraftKeyRef.current = nextKey;
     setVisibleSources(nextSources);
     setVisibleSourceKey(nextKey);
-    const nextDraftPayload: Record<string, unknown> = {
-      ...(draft as Record<string, unknown>),
+    const nextDraftPayload: Partial<LocationEntity> = {
+      ...(draft as Partial<LocationEntity>),
       ideGsmSources: nextSources.map((source) => ({
         fileName: source.fileName,
         tabularSourceId: source.sourceId,
@@ -499,7 +499,7 @@ export const useLocationDataSourceStep = ({
           await tabularApi.removeTableReference(removedEntry.sourceId, 'location');
         }
         const updaterAPI = await api.getTreeNodeUpdaterAPI();
-        await updaterAPI.updateTreeNodeDraftData(nodeId, nextDraftPayload as Record<string, unknown>);
+        await updaterAPI.updateTreeNodeDraftData(nodeId, nextDraftPayload);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         setRouteRefError(message);

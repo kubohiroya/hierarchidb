@@ -12,7 +12,6 @@ import type {
 import { CoreDB } from '@hierarchidb/runtime-worker';
 
 type ResolverEntityPayload = ResolverEntity & {
-  id: NodeId;
   name: string;
   description: string;
 };
@@ -56,8 +55,7 @@ export class ResolverEntityService {
   }
 
   private resolveTargetField(node: TreeNode): 'data' | 'draftData' {
-    const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
-      typeof (node as { draftData?: unknown }).draftData !== 'undefined';
+    const hasDraft = typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     return hasDraft ? 'draftData' : 'data';
   }
 
@@ -67,16 +65,15 @@ export class ResolverEntityService {
     return hasDraft && node.draftMetadata ? node.draftMetadata : node.metadata;
   }
 
-  private toPayload(nodeId: NodeId, metadata: TreeNodeMetadata, data: ResolverEntity | null): ResolverEntityPayload | null {
+  private toPayload(
+    _nodeId: NodeId,
+    metadata: TreeNodeMetadata,
+    data: ResolverEntity | null
+  ): ResolverEntityPayload | null {
     if (!data || !isRecord(data)) {
       return null;
     }
-    return {
-      id: nodeId,
-      name: metadata.name,
-      description: metadata.description,
-      ...(data as ResolverEntity),
-    };
+    return { ...(data as ResolverEntity), name: metadata.name, description: metadata.description };
   }
 
   async getEntity(nodeId: NodeId): Promise<ResolverEntityPayload | null> {
@@ -102,6 +99,10 @@ export class ResolverEntityService {
       description: data.description ?? '',
     };
     const baseData: ResolverEntity = {
+      id: nodeId,
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      version: node.version,
       sourceSchema: (data.sourceSchema ?? null) as SchemaInfo | null,
       targetSchema: (data.targetSchema ?? null) as SchemaInfo | null,
       mappingRules: data.mappingRules ?? [],
@@ -124,7 +125,10 @@ export class ResolverEntityService {
     return updated;
   }
 
-  async updateEntity(nodeId: NodeId, updates: Partial<ResolverEntityPayload>): Promise<ResolverEntityPayload> {
+  async updateEntity(
+    nodeId: NodeId,
+    updates: Partial<ResolverEntityPayload>
+  ): Promise<ResolverEntityPayload> {
     const coreDB = await this.ensureCoreDB();
     const node = await coreDB.getNode(nodeId);
     if (!node) {
@@ -142,14 +146,16 @@ export class ResolverEntityService {
     if (typeof updates.description === 'string') {
       metadataPatch.description = updates.description;
     }
+    const { name: _name, description: _description, id: _id, ...dataUpdates } =
+      updates as Partial<ResolverEntityPayload> & { id?: NodeId };
     const nextData: ResolverEntity = {
-      ...(existing as ResolverEntity),
-      ...updates,
+      ...(existing as unknown as ResolverEntity),
+      ...dataUpdates,
+      id: nodeId,
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      version: node.version,
     };
-    delete (nextData as Record<string, unknown>).id;
-    delete (nextData as Record<string, unknown>).name;
-    delete (nextData as Record<string, unknown>).description;
-    delete (nextData as Record<string, unknown>).version;
     await coreDB.updateNode({
       id: nodeId,
       [targetField]: nextData,

@@ -27,7 +27,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
       Partial<TreeNode> & { name?: string }
   ): TreeNode => ({
     data: {},
-    draftData: null,
+    draftData: undefined,
     metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
     draftMetadata: null,
     visible: node.visible ?? true,

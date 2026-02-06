@@ -8,4 +8,5 @@ import type {
 export type DataSourceType = SpreadsheetDataSourceType;
 export type SpreadSheetDataSourceType = SpreadsheetSpreadSheetDataSourceType;
 export type SpreadsheetEntity = SpreadsheetEntityType;
+export type SpreadsheetDraft = Partial<SpreadsheetEntityType>;
 export type UploadedFileSummary = SpreadsheetUploadedFileSummary;

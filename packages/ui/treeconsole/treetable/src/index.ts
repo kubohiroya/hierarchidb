@@ -33,6 +33,7 @@ export type {
   TreeTableController,
   TreeTableCoreProps,
   TreeTableColumn,
+  BuildSessionIndicator,
   SelectionState,
   ExpansionState,
   EditingState,

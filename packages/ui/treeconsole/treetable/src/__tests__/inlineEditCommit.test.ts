@@ -34,7 +34,7 @@ const baseNode: TreeNode = {
     tags: [],
   },
   data: null,
-  draftData: null,
+  draftData: undefined,
   depth: 1,
   createdAt: 0 as Timestamp,
   updatedAt: 0 as Timestamp,

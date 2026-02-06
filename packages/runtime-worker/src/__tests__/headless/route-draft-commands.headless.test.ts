@@ -26,7 +26,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       Partial<TreeNode> & { name?: string }
   ): TreeNode => ({
     data: {},
-    draftData: null,
+    draftData: undefined,
     metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
     draftMetadata: null,
     visible: node.visible ?? true,
