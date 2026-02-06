@@ -49,10 +49,10 @@ Shape のビルド進行は UI 側の Step5（Build）で `useShapeBuildStep` �
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts`
 - `packages/ui/worker-client/src/workerBridge.ts`
-- `packages/features/worker-api/src/WorkerAPI.ts`
+- `packages//src/WorkerAPI.ts`
 - `plugins/shape-plugin/src/worker/api.ts`
-- `packages/features/shape-api/src/shapeDbTypes.ts`
-- `packages/features/shape-store/src/ShapeDB.ts`
+- `packages//src/shapeDbTypes.ts`
+- `packages//src/ShapeDB.ts`
 - `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts`
 - `packages/runtime-worker/src/services/ShapeMutationService.ts`
 
@@ -67,15 +67,15 @@ Shape のビルド進行は UI 側の Step5（Build）で `useShapeBuildStep` �
 ## Concrete Steps
 
 1) セッション型に stopReason を追加する。
-   - `packages/features/shape-api/src/shapeDbTypes.ts` の `ShapeBuildSessionRecord` に `stopReason?: 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown'` を追加する。
-   - `packages/features/shape-store/src/ShapeDB.ts` の `BuildSessionRecord` に同様の `stopReason?: ...` を追加する。
+   - `packages//src/shapeDbTypes.ts` の `ShapeBuildSessionRecord` に `stopReason?: 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown'` を追加する。
+   - `packages//src/ShapeDB.ts` の `BuildSessionRecord` に同様の `stopReason?: ...` を追加する。
 
 2) マッパと永続化に stopReason を流す。
    - `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts` の `toBuildSessionRecord` / `toBuildSessionUpdates` / `toShapeBuildSessionRecord` / `toShapeBuildSessionUpdates` に stopReason を反映する。
    - `packages/runtime-worker/src/services/ShapeMutationService.ts` の `toBuildSessionRecord` / `toBuildSessionUpdates` に stopReason を反映する。
 
 3) pauseBatchSession に stopReason を渡せるようにする。
-   - `packages/features/worker-api/src/WorkerAPI.ts` の `pauseBatchSession` を `pauseBatchSession(nodeType, nodeId, reason?: string)` に拡張する。
+   - `packages//src/WorkerAPI.ts` の `pauseBatchSession` を `pauseBatchSession(nodeType, nodeId, reason?: string)` に拡張する。
    - `packages/ui/worker-client/src/workerBridge.ts` の `pauseBatchSession` を reason 付きで呼び出せるようにする。
    - `plugins/shape-plugin/src/worker/api.ts` の `invokeBatchCommand('session/pause')` に `stopReason` を追加し、pause 実行後に `ShapeMutationService.updateBuildSession` で `stopReason` を保存する。
 

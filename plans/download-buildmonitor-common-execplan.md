@@ -40,7 +40,7 @@ After this change, plugin download/auth calls and BuildMonitor logic will be cen
 
 ## Context and Orientation
 
-The download/auth registry lives in packages/features/download/src/pluginDownloadRegistry.ts and is exported via packages/features/download/src/index.ts as @hierarchidb/download. It already provides configurePluginDownloadDefaults, getPluginDownloadService, downloadArrayBuffer, downloadJson, postJson, registerPluginDownloadServiceFactory, registerPluginAuthNotifier, and notifyPluginAuthRequired.
+The download/auth registry lives in packages//src/pluginDownloadRegistry.ts and is exported via packages//src/index.ts as @hierarchidb/download. It already provides configurePluginDownloadDefaults, getPluginDownloadService, downloadArrayBuffer, downloadJson, postJson, registerPluginDownloadServiceFactory, registerPluginAuthNotifier, and notifyPluginAuthRequired.
 
 Plugin-specific wrappers currently exist:
 
@@ -73,7 +73,7 @@ Remove plugins/shape-plugin/src/services/utils/authFetch.ts and plugins/shape-pl
 
 Remove plugins/location-plugin/src/services/download/registry.ts and plugins/route-plugin/src/services/download/registry.ts, and update all imports that depended on them to import directly from @hierarchidb/download. For location sharedNet (plugins/location-plugin/src/services/utils/sharedNet.ts), replace the dynamic registry import with direct imports: getPluginDownloadService('location'), notifyPluginAuthRequired('location', info), and postJson('location', ...). For route orchestrator (plugins/route-plugin/src/common/orchestrator/RouteSourceOrchestrator.ts), replace getRouteDownloadService and notifyAuthRequired with getPluginDownloadService('route') and notifyPluginAuthRequired('route', info).
 
-Remove plugin-specific download registry tests that only validate thin wrappers. If coverage is needed, add or rely on existing tests in packages/features/download for registry behavior. Ensure no public re-exports of removed wrapper functions remain (for example, remove getRouteDownloadService export from plugins/route-plugin/src/index.ts).
+Remove plugin-specific download registry tests that only validate thin wrappers. If coverage is needed, add or rely on existing tests in packages/ for registry behavior. Ensure no public re-exports of removed wrapper functions remain (for example, remove getRouteDownloadService export from plugins/route-plugin/src/index.ts).
 
 ## Concrete Steps
 
@@ -122,7 +122,7 @@ Capture short diffs and test outputs here as implementation proceeds.
 
 The shared BuildMonitor utilities must live in packages/ui/monitoring/src/utils/buildMonitor.ts and be exported in packages/ui/monitoring/src/index.ts. Plugins must import them as @hierarchidb/ui-monitoring.
 
-The download/auth registry APIs are provided by @hierarchidb/download (packages/features/download/src/pluginDownloadRegistry.ts). Plugins must call configurePluginDownloadDefaults, getPluginDownloadService, downloadArrayBuffer, downloadJson, postJson, authFetch, registerPluginAuthNotifier, and notifyPluginAuthRequired directly without plugin-local wrapper modules.
+The download/auth registry APIs are provided by @hierarchidb/download (packages//src/pluginDownloadRegistry.ts). Plugins must call configurePluginDownloadDefaults, getPluginDownloadService, downloadArrayBuffer, downloadJson, postJson, authFetch, registerPluginAuthNotifier, and notifyPluginAuthRequired directly without plugin-local wrapper modules.
 
 Plan change note: Initial survey proposed a new createPluginDownloadRegistry helper, but the user required eliminating thin wrapper layers. This plan therefore uses existing shared APIs directly and removes plugin-local wrappers instead.
 

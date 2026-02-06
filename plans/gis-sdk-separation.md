@@ -49,7 +49,7 @@ Vector tile generation: Converting GeoJSON feature collections into Mapbox Vecto
 
 ## Plan of Work
 
-First, create a new package `packages/features/gis-sdk` (name to be confirmed) that holds GIS-specific logic. The SDK should include a module that can take a FeatureCollection (or a buffer plus an adapter) and generate vector tiles plus optional metadata. Move the relevant algorithms from `packages/runtime-worker/src/services/StageProcessingService.ts` into the SDK. Keep runtime-worker limited to calling SDK functions and storing results, with no GIS algorithms in runtime-worker.
+First, create a new package `packages/` (name to be confirmed) that holds GIS-specific logic. The SDK should include a module that can take a FeatureCollection (or a buffer plus an adapter) and generate vector tiles plus optional metadata. Move the relevant algorithms from `packages/runtime-worker/src/services/StageProcessingService.ts` into the SDK. Keep runtime-worker limited to calling SDK functions and storing results, with no GIS algorithms in runtime-worker.
 
 Second, update `plugins/shape-plugin`, `plugins/location-plugin`, and `plugins/route-plugin` to call the GIS SDK directly (or through a thin adapter) instead of relying on runtime-worker internals. The adapters should pass FeatureCollection-like data and configuration to the SDK. Ensure that the runtime-worker still provides a generic worker client, but the GIS SDK does the actual GIS processing.
 
@@ -68,7 +68,7 @@ Finally, update tests and validation. Add or update tests in the GIS SDK package
 
 2) Create a new GIS SDK package.
 
-   - Create `packages/features/gis-sdk/package.json`, `packages/features/gis-sdk/src/index.ts`, and any module files needed for tile generation and metadata.
+   - Create `packages//package.json`, `packages//src/index.ts`, and any module files needed for tile generation and metadata.
    - Export a small API surface, for example:
      - `createVectorTileGenerator(config): VectorTileGenerator`
      - `generateTiles(input: FeatureCollection, options): VectorTileResult`

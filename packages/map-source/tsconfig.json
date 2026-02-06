@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "isolatedModules": false,
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "baseUrl": ".",
+    "jsx": "react-jsx"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
+}

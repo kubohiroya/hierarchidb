@@ -176,7 +176,7 @@ export default config;
 ✔ No violations (0)
 ✖ Violations (2)
  • from: packages/ui/button/src/useX.ts → to: packages/domain/src/private/db.ts (rule: deep-imports forbidden)
- • from: packages/features/x/src/RuntimeWorkerService.ts → to: @org/app (rule: layer: no upward imports)
+ • from: packages/x/src/RuntimeWorkerService.ts → to: @org/app (rule: layer: no upward imports)
 
 🎯 Mental model
 - Treat Dep‑Fence as your “import firewall.” Write a few high‑signal rules that capture your architecture, run it on every PR, and let developers focus on features without accidentally dissolving your boundaries.

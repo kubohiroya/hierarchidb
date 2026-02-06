@@ -56,13 +56,13 @@
 
 ## パッケージ構成（責務の明文化）
 
-- `packages/features/shape-store`
+- `packages/`
   - ShapeDB（成果物の永続化）
   - EphemeralShapeDB（中間生成物）
-- `packages/features/route-store`
+- `packages/`
   - RouteDB（成果物の永続化）
   - EphemeralRouteDB（中間生成物、未実装の場合は追加）
-- `packages/features/location-store`
+- `packages/`
   - LocationDB（features の永続化）
   - EphemeralLocationDB（中間生成物。未実装のため必要時に新設）
 - `packages/vt-orchestrator`
@@ -83,13 +83,13 @@
 
 ### shape-store / route-store / location-store
 
-- `packages/features/shape-store/src/ShapeDB.ts`
+- `packages//src/ShapeDB.ts`
   - ShapeDB（成果物の永続化）
-- `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- `packages//src/EphemeralShapeDB.ts`
   - EphemeralShapeDB（stage1/transform の中間生成物）
-- `packages/features/route-store/src/RouteDB.ts`
+- `packages//src/RouteDB.ts`
   - RouteDB（成果物の永続化）
-- `packages/features/location-store/src/LocationDB.ts`
+- `packages//src/LocationDB.ts`
   - LocationDB（features の永続化）
   - EphemeralLocationDB（未実装）
 

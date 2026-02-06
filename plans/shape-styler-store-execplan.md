@@ -54,8 +54,8 @@ Create new store packages for shape and styler, move DB classes into store packa
 Work from the repo root.
 
 1) Create store packages and move DB helpers.
-   - Create `packages/features/shape-store` with `src/ShapeDB.ts`, `src/EphemeralShapeDB.ts`, and `src/index.ts` exporting DB classes and types.
-   - Create `packages/features/styler-store` with `src/StylerEntity.ts`, `src/StylerAPI.ts`, and `src/index.ts` exporting styler types and API placeholders.
+   - Create `packages/` with `src/ShapeDB.ts`, `src/EphemeralShapeDB.ts`, and `src/index.ts` exporting DB classes and types.
+   - Create `packages/` with `src/StylerEntity.ts`, `src/StylerAPI.ts`, and `src/index.ts` exporting styler types and API placeholders.
    - Copy location/route DB helpers into their respective store packages and re-export them from plugin database entrypoints.
 
 2) Update host services and APIs.

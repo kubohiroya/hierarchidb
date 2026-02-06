@@ -85,7 +85,7 @@ Introduce a raw download pipeline that supports stream transforms, with hashing 
    - Use DexieChunkStore `setForNode` to store the transformed output with `sourceHash` metadata.
 
 4) Store source hash metadata on cached entries.
-   - Add optional `sourceHash` and `sourceHashAlgorithm` fields to `ChunkStoreMetadata` and `FileRecord` in `packages/features/chunk-store/src/index.ts`.
+   - Add optional `sourceHash` and `sourceHashAlgorithm` fields to `ChunkStoreMetadata` and `FileRecord` in `packages//src/index.ts`.
    - Ensure `storeRawDataDataSourceBufferForNode` (or the new helper) persists these fields in the metadata record.
    - Keep the existing `hash` field aligned with the stored buffer when using hash-based identities. The raw source hash should be stored separately to preserve the “hash at stream entrance” requirement.
 

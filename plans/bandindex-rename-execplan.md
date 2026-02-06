@@ -31,10 +31,10 @@ Band field naming is now consistently `bandIndex` across code, schema, and docum
 
 ## Context and Orientation
 
-Shape build pipelines store per-band artifacts in Dexie tables keyed by `bandIndex`. The tables live in `packages/features/shape-store/src/EphemeralShapeDB.ts` and are accessed from services in `plugins/shape-plugin/src/services/vt/` and `packages/vt-orchestrator/src/`. The UI and API types referencing per-band data live under `packages/features/shape-api/src/` and `plugins/shape-plugin/src/ui/`.
+Shape build pipelines store per-band artifacts in Dexie tables keyed by `bandIndex`. The tables live in `packages//src/EphemeralShapeDB.ts` and are accessed from services in `plugins/shape-plugin/src/services/vt/` and `packages/vt-orchestrator/src/`. The UI and API types referencing per-band data live under `packages//src/` and `plugins/shape-plugin/src/ui/`.
 
 Key areas:
-- `packages/features/shape-store/src/EphemeralShapeDB.ts` defines the Dexie schema and indexes for transform caches and tile-to-buffer relations.
+- `packages//src/EphemeralShapeDB.ts` defines the Dexie schema and indexes for transform caches and tile-to-buffer relations.
 - `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` and `packages/vt-orchestrator/src/vt/vtStage.ts` read/write band-related metadata.
 - `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` constructs per-band tasks and queries by band.
 - UI labels and task titles live in `plugins/shape-plugin/src/common/utils/taskTitles.ts` and locale JSON files.
@@ -43,7 +43,7 @@ Key areas:
 
 First, replace all TypeScript-level uses of `bandIndex` with `bandIndex` across packages, plugins, and app code, including log payloads and UI helpers. Update string keys and task IDs to use the new name where they are semantically labels, keeping the same numeric value.
 
-Second, update the Dexie schema in `packages/features/shape-store/src/EphemeralShapeDB.ts` by bumping the version and changing indexes from `[nodeId+bandIndex]` to `[nodeId+bandIndex]`. Add an upgrade step that clears `transformCache` and `tileIdToBufferRelations` so there is no mixed field state.
+Second, update the Dexie schema in `packages//src/EphemeralShapeDB.ts` by bumping the version and changing indexes from `[nodeId+bandIndex]` to `[nodeId+bandIndex]`. Add an upgrade step that clears `transformCache` and `tileIdToBufferRelations` so there is no mixed field state.
 
 Third, update documentation and plan references to use `bandIndex`. Finish by running typechecks for impacted packages and updating TASKS.md logs.
 
@@ -56,7 +56,7 @@ Run these steps from the repository root (`/Users/hiroya/WebstormProjects/hierar
    Example command and check:
      rg -n "\\bbandIndex\\b" app packages plugins
 
-2) Update `packages/features/shape-store/src/EphemeralShapeDB.ts`:
+2) Update `packages//src/EphemeralShapeDB.ts`:
    - Add a new Dexie version (next integer) with `bandIndex` indexes.
    - In the upgrade callback, clear `transformCache` and `tileIdToBufferRelations`.
 
@@ -85,8 +85,8 @@ These changes are safe to re-run. If the schema upgrade clears caches, the data 
 
 ## Interfaces and Dependencies
 
-- Dexie schema changes are implemented in `packages/features/shape-store/src/EphemeralShapeDB.ts`.
-- API and UI types are in `packages/features/shape-api/src/` and `plugins/shape-plugin/src/ui/`.
+- Dexie schema changes are implemented in `packages//src/EphemeralShapeDB.ts`.
+- API and UI types are in `packages//src/` and `plugins/shape-plugin/src/ui/`.
 - Task construction and band usage live in `plugins/shape-plugin/src/services/vt/` and `packages/vt-orchestrator/src/`.
 
 Plan updated on 2026-02-04: initial plan created for bandIndex rename and then completed with schema/typecheck verification.

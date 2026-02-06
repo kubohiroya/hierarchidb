@@ -285,7 +285,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../packages/features/batch-api
+        version: link:../packages/batch-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../packages/core-types
@@ -294,13 +294,13 @@ importers:
         version: link:../packages/tools/gen-iso3166-2
       '@hierarchidb/import-export-api':
         specifier: workspace:*
-        version: link:../packages/features/import-export-api
+        version: link:../packages/import-export-api
       '@hierarchidb/location-api':
         specifier: workspace:*
-        version: link:../packages/features/location-api
+        version: link:../packages/location-api
       '@hierarchidb/location-store':
         specifier: workspace:*
-        version: link:../packages/features/location-store
+        version: link:../packages/location-store
       '@hierarchidb/memory':
         specifier: workspace:*
         version: link:../packages/memory
@@ -321,13 +321,13 @@ importers:
         version: link:../packages/plugin-ui-sdk
       '@hierarchidb/resolver-store':
         specifier: workspace:*
-        version: link:../packages/features/resolver-store
+        version: link:../packages/resolver-store
       '@hierarchidb/route-api':
         specifier: workspace:*
-        version: link:../packages/features/route-api
+        version: link:../packages/route-api
       '@hierarchidb/route-store':
         specifier: workspace:*
-        version: link:../packages/features/route-store
+        version: link:../packages/route-store
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime-worker
@@ -336,25 +336,25 @@ importers:
         version: link:../packages/session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../packages/features/shape-api
+        version: link:../packages/shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
-        version: link:../packages/features/shape-store
+        version: link:../packages/shape-store
       '@hierarchidb/styler-store':
         specifier: workspace:*
-        version: link:../packages/features/styler-store
+        version: link:../packages/styler-store
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../packages/features/tabular-store
+        version: link:../packages/tabular-store
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../packages/features/tag
+        version: link:../packages/tag
       '@hierarchidb/tag-api':
         specifier: workspace:*
-        version: link:../packages/features/tag-api
+        version: link:../packages/tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../packages/features/tree-api
+        version: link:../packages/tree-api
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../packages/ui/country-select
@@ -390,7 +390,7 @@ importers:
         version: link:../packages/util
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../packages/features/worker-api
+        version: link:../packages/worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -523,6 +523,24 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/auth:
+    devDependencies:
+      '@hierarchidb/auth-api':
+        specifier: workspace:*
+        version: link:../auth-api
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/auth-api:
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/backend/bff:
     dependencies:
       hono:
@@ -570,21 +588,51 @@ importers:
         specifier: ^4.31.0
         version: 4.42.2(@cloudflare/workers-types@4.20251011.0)
 
-  packages/batch-runtime-services:
-    dependencies:
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../features/batch
+  packages/batch:
     devDependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../features/batch-api
+        version: link:../batch-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../features/download
+        version: link:../download
+      '@types/react':
+        specifier: ^18.3.27
+        version: 18.3.27
+      react:
+        specifier: '>=18.0.0'
+        version: 18.3.1
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/batch-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/batch-runtime-services:
+    dependencies:
+      '@hierarchidb/batch':
+        specifier: workspace:*
+        version: link:../batch
+    devDependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../batch-api
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../download
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -594,6 +642,40 @@ importers:
       react-transition-group:
         specifier: ^4.4.5
         version: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/batch-session-ports:
+    dependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/chunk-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../download
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      '@noble/hashes':
+        specifier: ^1.4.0
+        version: 1.8.0
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -640,89 +722,7 @@ importers:
         specifier: ^6.1.0
         version: 6.2.5
 
-  packages/features/auth:
-    devDependencies:
-      '@hierarchidb/auth-api':
-        specifier: workspace:*
-        version: link:../auth-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/auth-api:
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/batch:
-    devDependencies:
-      '@hierarchidb/batch-api':
-        specifier: workspace:*
-        version: link:../batch-api
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/download':
-        specifier: workspace:*
-        version: link:../download
-      '@types/react':
-        specifier: ^18.3.27
-        version: 18.3.27
-      react:
-        specifier: '>=18.0.0'
-        version: 18.3.1
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/batch-api:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/batch-session-ports:
-    dependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
-
-  packages/features/chunk-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/download':
-        specifier: workspace:*
-        version: link:../download
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      '@noble/hashes':
-        specifier: ^1.4.0
-        version: 1.8.0
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/download:
+  packages/download:
     devDependencies:
       '@hierarchidb/auth':
         specifier: workspace:*
@@ -732,7 +732,7 @@ importers:
         version: link:../auth-api
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -740,17 +740,17 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/gis-sdk:
+  packages/gis-sdk:
     dependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../core-types
+        version: link:../core-types
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../shape-api
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       '@hierarchidb/vectortile-store':
         specifier: workspace:*
         version: link:../vectortile-store
@@ -807,11 +807,11 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/import-export:
+  packages/import-export:
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../core-types
+        version: link:../core-types
       '@hierarchidb/import-export-api':
         specifier: workspace:*
         version: link:../import-export-api
@@ -820,40 +820,40 @@ importers:
         version: link:../tree-api
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       typescript:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/import-export-api:
+  packages/import-export-api:
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../core-types
+        version: link:../core-types
       typescript:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/location-api:
+  packages/location-api:
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../core-types
+        version: link:../core-types
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
-        version: link:../../tools/gen-iso3166-2
+        version: link:../tools/gen-iso3166-2
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       typescript:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/location-store:
+  packages/location-store:
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../core-types
+        version: link:../core-types
       '@hierarchidb/location-api':
         specifier: workspace:*
         version: link:../location-api
@@ -862,7 +862,7 @@ importers:
         version: link:../shape-store
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       '@hierarchidb/vectortile-store':
         specifier: workspace:*
         version: link:../vectortile-store
@@ -873,7 +873,7 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/map-adapter:
+  packages/map-adapter:
     dependencies:
       deck.gl:
         specifier: ^9.1.14
@@ -887,12 +887,12 @@ importers:
         version: link:../map-source
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
       typescript:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/map-source:
+  packages/map-source:
     dependencies:
       dexie:
         specifier: 4.2.0
@@ -900,329 +900,7 @@ importers:
     devDependencies:
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/resolver-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/route-api:
-    devDependencies:
-      '@hierarchidb/batch-api':
-        specifier: workspace:*
-        version: link:../batch-api
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/gis-sdk':
-        specifier: workspace:*
-        version: link:../gis-sdk
-      '@hierarchidb/location-api':
-        specifier: workspace:*
-        version: link:../location-api
-      '@hierarchidb/tree-api':
-        specifier: workspace:*
-        version: link:../tree-api
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/route-engine:
-    devDependencies:
-      '@hierarchidb/route-store':
-        specifier: workspace:*
-        version: link:../route-store
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/route-resolver:
-    dependencies:
-      '@webgpu/types':
-        specifier: '*'
-        version: 0.1.65
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/route-searoute:
-    dependencies:
-      '@hierarchidb/download':
-        specifier: workspace:*
-        version: link:../download
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/route-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/route-api':
-        specifier: workspace:*
-        version: link:../route-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      '@hierarchidb/vectortile-store':
-        specifier: workspace:*
-        version: link:../vectortile-store
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/shape-api:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/shape-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/gis-sdk':
-        specifier: workspace:*
-        version: link:../gis-sdk
-      '@hierarchidb/shape-api':
-        specifier: workspace:*
-        version: link:../shape-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      '@hierarchidb/vectortile-store':
-        specifier: workspace:*
-        version: link:../vectortile-store
-      '@types/geojson':
-        specifier: ^7946.0.14
-        version: 7946.0.16
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/spreadsheet-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/tabular-store':
-        specifier: workspace:*
-        version: link:../tabular-store
-      '@hierarchidb/ui-tabular':
-        specifier: workspace:*
-        version: link:../../ui/tabular-extract
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/style-api:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/styler-store:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/plugin-base':
-        specifier: workspace:*
-        version: link:../../plugin-base
-      '@hierarchidb/spreadsheet-store':
-        specifier: workspace:*
-        version: link:../spreadsheet-store
-      '@hierarchidb/style-api':
-        specifier: workspace:*
-        version: link:../style-api
-      '@hierarchidb/ui-map':
-        specifier: workspace:*
-        version: link:../../ui/map
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tabular-source:
-    devDependencies:
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tabular-source-xlsx:
-    dependencies:
-      xlsx:
-        specifier: ^0.18.5
-        version: 0.18.5
-    devDependencies:
-      '@hierarchidb/tabular-source':
-        specifier: workspace:*
-        version: link:../tabular-source
-      '@hierarchidb/tabular-store':
-        specifier: workspace:*
-        version: link:../tabular-store
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tabular-store:
-    devDependencies:
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tag:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/tag-api':
-        specifier: workspace:*
-        version: link:../tag-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tag-api:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/tree-api:
-    devDependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      comlink:
-        specifier: ^4.4.2
-        version: 4.4.2
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/vectortile-orchestrator:
-    dependencies:
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../../plugin-service-api
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/vectortile-store:
-    devDependencies:
-      '@hierarchidb/shape-api':
-        specifier: workspace:*
-        version: link:../shape-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/features/worker-api:
-    devDependencies:
-      '@hierarchidb/batch-api':
-        specifier: workspace:*
-        version: link:../batch-api
-      '@hierarchidb/core-types':
-        specifier: workspace:*
-        version: link:../../core-types
-      '@hierarchidb/import-export-api':
-        specifier: workspace:*
-        version: link:../import-export-api
-      '@hierarchidb/location-api':
-        specifier: workspace:*
-        version: link:../location-api
-      '@hierarchidb/memory':
-        specifier: workspace:*
-        version: link:../../memory
-      '@hierarchidb/plugin-base':
-        specifier: workspace:*
-        version: link:../../plugin-base
-      '@hierarchidb/route-api':
-        specifier: workspace:*
-        version: link:../route-api
-      '@hierarchidb/shape-api':
-        specifier: workspace:*
-        version: link:../shape-api
-      '@hierarchidb/style-api':
-        specifier: workspace:*
-        version: link:../style-api
-      '@hierarchidb/tag-api':
-        specifier: workspace:*
-        version: link:../tag-api
-      '@hierarchidb/tree-api':
-        specifier: workspace:*
-        version: link:../tree-api
+        version: link:../util
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1313,19 +991,19 @@ importers:
     dependencies:
       '@hierarchidb/location-api':
         specifier: workspace:*
-        version: link:../features/location-api
+        version: link:../location-api
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../plugin-base
       '@hierarchidb/route-api':
         specifier: workspace:*
-        version: link:../features/route-api
+        version: link:../route-api
       '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../features/shape-api
+        version: link:../shape-api
       '@hierarchidb/style-api':
         specifier: workspace:*
-        version: link:../features/style-api
+        version: link:../style-api
     devDependencies:
       '@types/react-transition-group':
         specifier: ^4.4.10
@@ -1353,10 +1031,10 @@ importers:
         version: link:../runtime-worker
       '@hierarchidb/tag-api':
         specifier: workspace:*
-        version: link:../features/tag-api
+        version: link:../tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../features/tree-api
+        version: link:../tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1374,7 +1052,7 @@ importers:
         version: link:../util
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../features/worker-api
+        version: link:../worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -1419,7 +1097,7 @@ importers:
         version: link:../plugin-service-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../features/tree-api
+        version: link:../tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1431,11 +1109,11 @@ importers:
         version: link:../ui/worker-provider
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../features/worker-api
+        version: link:../worker-api
     devDependencies:
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../features/download
+        version: link:../download
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1479,6 +1157,98 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  packages/resolver-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/route-api:
+    devDependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../batch-api
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../gis-sdk
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../location-api
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../tree-api
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/route-engine:
+    devDependencies:
+      '@hierarchidb/route-store':
+        specifier: workspace:*
+        version: link:../route-store
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/route-resolver:
+    dependencies:
+      '@webgpu/types':
+        specifier: '*'
+        version: 0.1.65
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/route-searoute:
+    dependencies:
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../download
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/route-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/route-api':
+        specifier: workspace:*
+        version: link:../route-api
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../vectortile-store
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/runtime-worker:
     dependencies:
       '@hierarchidb/core-types':
@@ -1486,46 +1256,46 @@ importers:
         version: link:../core-types
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../features/gis-sdk
+        version: link:../gis-sdk
       '@hierarchidb/import-export-api':
         specifier: workspace:*
-        version: link:../features/import-export-api
+        version: link:../import-export-api
       '@hierarchidb/location-api':
         specifier: workspace:*
-        version: link:../features/location-api
+        version: link:../location-api
       '@hierarchidb/location-store':
         specifier: workspace:*
-        version: link:../features/location-store
+        version: link:../location-store
       '@hierarchidb/route-api':
         specifier: workspace:*
-        version: link:../features/route-api
+        version: link:../route-api
       '@hierarchidb/route-engine':
         specifier: workspace:*
-        version: link:../features/route-engine
+        version: link:../route-engine
       '@hierarchidb/route-store':
         specifier: workspace:*
-        version: link:../features/route-store
+        version: link:../route-store
       '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../features/shape-api
+        version: link:../shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
-        version: link:../features/shape-store
+        version: link:../shape-store
       '@hierarchidb/style-api':
         specifier: workspace:*
-        version: link:../features/style-api
+        version: link:../style-api
       '@hierarchidb/styler-store':
         specifier: workspace:*
-        version: link:../features/styler-store
+        version: link:../styler-store
       '@hierarchidb/tag-api':
         specifier: workspace:*
-        version: link:../features/tag-api
+        version: link:../tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../features/tree-api
+        version: link:../tree-api
       '@hierarchidb/vectortile-store':
         specifier: workspace:*
-        version: link:../features/vectortile-store
+        version: link:../vectortile-store
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
@@ -1565,40 +1335,40 @@ importers:
         version: 2.2.0
       '@hierarchidb/auth':
         specifier: workspace:*
-        version: link:../features/auth
+        version: link:../auth
       '@hierarchidb/auth-api':
         specifier: workspace:*
-        version: link:../features/auth-api
+        version: link:../auth-api
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../features/batch-api
+        version: link:../batch-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
-        version: link:../features/chunk-store
+        version: link:../chunk-store
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../features/download
+        version: link:../download
       '@hierarchidb/import-export':
         specifier: workspace:*
-        version: link:../features/import-export
+        version: link:../import-export
       '@hierarchidb/map-adapter':
         specifier: workspace:*
-        version: link:../features/map-adapter
+        version: link:../map-adapter
       '@hierarchidb/map-source':
         specifier: workspace:*
-        version: link:../features/map-source
+        version: link:../map-source
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../plugin-base
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../features/tabular-source
+        version: link:../tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../features/tabular-store
+        version: link:../tabular-store
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../features/tag
+        version: link:../tag
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../util
@@ -1620,7 +1390,7 @@ importers:
     optionalDependencies:
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
-        version: link:../features/tabular-source-xlsx
+        version: link:../tabular-source-xlsx
 
   packages/session-coordinator:
     dependencies:
@@ -1632,6 +1402,154 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/shape-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/shape-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../gis-sdk
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../shape-api
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../vectortile-store
+      '@types/geojson':
+        specifier: ^7946.0.14
+        version: 7946.0.16
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/spreadsheet-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/tabular-store':
+        specifier: workspace:*
+        version: link:../tabular-store
+      '@hierarchidb/ui-tabular':
+        specifier: workspace:*
+        version: link:../ui/tabular-extract
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/style-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/styler-store:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/plugin-base':
+        specifier: workspace:*
+        version: link:../plugin-base
+      '@hierarchidb/spreadsheet-store':
+        specifier: workspace:*
+        version: link:../spreadsheet-store
+      '@hierarchidb/style-api':
+        specifier: workspace:*
+        version: link:../style-api
+      '@hierarchidb/ui-map':
+        specifier: workspace:*
+        version: link:../ui/map
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/tabular-source:
+    devDependencies:
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/tabular-source-xlsx:
+    dependencies:
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
+    devDependencies:
+      '@hierarchidb/tabular-source':
+        specifier: workspace:*
+        version: link:../tabular-source
+      '@hierarchidb/tabular-store':
+        specifier: workspace:*
+        version: link:../tabular-store
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/tabular-store:
+    devDependencies:
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/tag:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../tag-api
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/tag-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/testing/plugin-dialog-mocks:
     dependencies:
       '@hierarchidb/core-types':
@@ -1639,7 +1557,7 @@ importers:
         version: link:../../core-types
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../features/tree-api
+        version: link:../../tree-api
     devDependencies:
       typescript:
         specifier: 5.8.2
@@ -1695,7 +1613,7 @@ importers:
     dependencies:
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../features/download
+        version: link:../../download
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1720,11 +1638,23 @@ importers:
 
   packages/tools/schemas: {}
 
+  packages/tree-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/ui/accordion-config:
     dependencies:
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../../features/gis-sdk
+        version: link:../../gis-sdk
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1752,7 +1682,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
       '@hierarchidb/auth':
         specifier: workspace:*
-        version: link:../../features/auth
+        version: link:../../auth
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -1803,10 +1733,10 @@ importers:
     devDependencies:
       '@hierarchidb/batch':
         specifier: workspace:*
-        version: link:../../features/batch
+        version: link:../../batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../features/batch-api
+        version: link:../../batch-api
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../components
@@ -1855,7 +1785,7 @@ importers:
         version: link:../../core-types
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../features/tabular-store
+        version: link:../../tabular-store
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -1894,7 +1824,7 @@ importers:
     dependencies:
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../features/tree-api
+        version: link:../../tree-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -2470,10 +2400,10 @@ importers:
     devDependencies:
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../features/tabular-source
+        version: link:../../tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../features/tabular-store
+        version: link:../../tabular-store
       '@hierarchidb/ui-file':
         specifier: workspace:*
         version: link:../file
@@ -2565,7 +2495,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../../features/tree-api
+        version: link:../../../tree-api
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
@@ -2589,7 +2519,7 @@ importers:
         version: link:../treetable
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../../../features/worker-api
+        version: link:../../../worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -2801,7 +2731,7 @@ importers:
         version: link:../../../components
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../../features/tree-api
+        version: link:../../../tree-api
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
@@ -2891,11 +2821,11 @@ importers:
     dependencies:
       '@hierarchidb/auth-api':
         specifier: workspace:*
-        version: link:../../features/auth-api
+        version: link:../../auth-api
     devDependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../features/batch-api
+        version: link:../../batch-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
@@ -2907,7 +2837,7 @@ importers:
         version: link:../../runtime-worker
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../../features/worker-api
+        version: link:../../worker-api
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -2947,7 +2877,7 @@ importers:
         version: link:../../runtime-worker
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../../features/worker-api
+        version: link:../../worker-api
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -2989,11 +2919,42 @@ importers:
     dependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../features/batch-api
+        version: link:../batch-api
     devDependencies:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/vectortile-orchestrator:
+    dependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../plugin-service-api
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/vectortile-store:
+    devDependencies:
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../shape-api
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -3009,25 +2970,25 @@ importers:
     devDependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../features/batch-api
+        version: link:../batch-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
-        version: link:../features/chunk-store
+        version: link:../chunk-store
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../features/gis-sdk
+        version: link:../gis-sdk
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../plugin-service-api
       '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../features/shape-api
+        version: link:../shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
-        version: link:../features/shape-store
+        version: link:../shape-store
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../util
@@ -3065,6 +3026,45 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/worker-api:
+    devDependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../batch-api
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../import-export-api
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../location-api
+      '@hierarchidb/memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@hierarchidb/plugin-base':
+        specifier: workspace:*
+        version: link:../plugin-base
+      '@hierarchidb/route-api':
+        specifier: workspace:*
+        version: link:../route-api
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../shape-api
+      '@hierarchidb/style-api':
+        specifier: workspace:*
+        version: link:../style-api
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../tag-api
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../tree-api
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   plugins/basemap-plugin:
     dependencies:
       '@emotion/react':
@@ -3097,7 +3097,7 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -3173,13 +3173,13 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../../packages/features/tag
+        version: link:../../packages/tag
       '@hierarchidb/tag-api':
         specifier: workspace:*
-        version: link:../../packages/features/tag-api
+        version: link:../../packages/tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -3270,7 +3270,7 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -3285,7 +3285,7 @@ importers:
         version: link:../../packages/util
       '@hierarchidb/worker-api':
         specifier: workspace:*
-        version: link:../../packages/features/worker-api
+        version: link:../../packages/worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -3333,10 +3333,10 @@ importers:
         version: link:../../packages/tools/gen-iso3166-2
       '@hierarchidb/location-api':
         specifier: workspace:*
-        version: link:../../packages/features/location-api
+        version: link:../../packages/location-api
       '@hierarchidb/location-store':
         specifier: workspace:*
-        version: link:../../packages/features/location-store
+        version: link:../../packages/location-store
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
@@ -3345,10 +3345,10 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-source
+        version: link:../../packages/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-store
+        version: link:../../packages/tabular-store
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../../packages/ui/country-select
@@ -3391,13 +3391,13 @@ importers:
     devDependencies:
       '@hierarchidb/auth':
         specifier: workspace:*
-        version: link:../../packages/features/auth
+        version: link:../../packages/auth
       '@hierarchidb/batch':
         specifier: workspace:*
-        version: link:../../packages/features/batch
+        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../packages/features/batch-api
+        version: link:../../packages/batch-api
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
@@ -3409,10 +3409,10 @@ importers:
         version: link:../../packages/core-types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/features/download
+        version: link:../../packages/download
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../../packages/features/gis-sdk
+        version: link:../../packages/gis-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
@@ -3421,7 +3421,7 @@ importers:
         version: link:../spreadsheet-plugin
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth
@@ -3497,7 +3497,7 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -3560,10 +3560,10 @@ importers:
         version: link:../../packages/components
       '@hierarchidb/location-api':
         specifier: workspace:*
-        version: link:../../packages/features/location-api
+        version: link:../../packages/location-api
       '@hierarchidb/location-store':
         specifier: workspace:*
-        version: link:../../packages/features/location-store
+        version: link:../../packages/location-store
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
@@ -3572,13 +3572,13 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/route-api':
         specifier: workspace:*
-        version: link:../../packages/features/route-api
+        version: link:../../packages/route-api
       '@hierarchidb/route-engine':
         specifier: workspace:*
-        version: link:../../packages/features/route-engine
+        version: link:../../packages/route-engine
       '@hierarchidb/route-store':
         specifier: workspace:*
-        version: link:../../packages/features/route-store
+        version: link:../../packages/route-store
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -3621,19 +3621,19 @@ importers:
     devDependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../packages/features/batch-api
+        version: link:../../packages/batch-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
-        version: link:../../packages/features/chunk-store
+        version: link:../../packages/chunk-store
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../packages/core-types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/features/download
+        version: link:../../packages/download
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../../packages/features/gis-sdk
+        version: link:../../packages/gis-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
@@ -3642,10 +3642,10 @@ importers:
         version: link:../../packages/session-coordinator
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-store
+        version: link:../../packages/tabular-store
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-accordion-config':
         specifier: workspace:*
         version: link:../../packages/ui/accordion-config
@@ -3684,7 +3684,7 @@ importers:
         version: link:../../packages/plugin-base
       '@hierarchidb/shape-store':
         specifier: workspace:*
-        version: link:../../packages/features/shape-store
+        version: link:../../packages/shape-store
       '@hierarchidb/ui-monitoring':
         specifier: workspace:*
         version: link:../../packages/ui/monitoring
@@ -3693,10 +3693,10 @@ importers:
         version: link:../../packages/util
       '@hierarchidb/vectortile-orchestrator':
         specifier: workspace:*
-        version: link:../../packages/features/vectortile-orchestrator
+        version: link:../../packages/vectortile-orchestrator
       '@hierarchidb/vectortile-store':
         specifier: workspace:*
-        version: link:../../packages/features/vectortile-store
+        version: link:../../packages/vectortile-store
       '@hierarchidb/vt-orchestrator':
         specifier: workspace:*
         version: link:../../packages/vt-orchestrator
@@ -3748,19 +3748,19 @@ importers:
     devDependencies:
       '@hierarchidb/auth':
         specifier: workspace:*
-        version: link:../../packages/features/auth
+        version: link:../../packages/auth
       '@hierarchidb/batch':
         specifier: workspace:*
-        version: link:../../packages/features/batch
+        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../packages/features/batch-api
+        version: link:../../packages/batch-api
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
       '@hierarchidb/chunk-store':
         specifier: workspace:*
-        version: link:../../packages/features/chunk-store
+        version: link:../../packages/chunk-store
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3769,7 +3769,7 @@ importers:
         version: link:../../packages/core-types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/features/download
+        version: link:../../packages/download
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
@@ -3778,7 +3778,7 @@ importers:
         version: link:../../packages/tools/gen-iso3166-2
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
-        version: link:../../packages/features/gis-sdk
+        version: link:../../packages/gis-sdk
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
@@ -3793,16 +3793,16 @@ importers:
         version: link:../../packages/session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../../packages/features/shape-api
+        version: link:../../packages/shape-api
       '@hierarchidb/spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-store
+        version: link:../../packages/tabular-store
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-accordion-config':
         specifier: workspace:*
         version: link:../../packages/ui/accordion-config
@@ -3952,10 +3952,10 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-source
+        version: link:../../packages/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-store
+        version: link:../../packages/tabular-store
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
@@ -3968,19 +3968,19 @@ importers:
     devDependencies:
       '@hierarchidb/auth-api':
         specifier: workspace:*
-        version: link:../../packages/features/auth-api
+        version: link:../../packages/auth-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
-        version: link:../../packages/features/chunk-store
+        version: link:../../packages/chunk-store
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/features/download
+        version: link:../../packages/download
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/spreadsheet-store':
         specifier: workspace:*
-        version: link:../../packages/features/spreadsheet-store
+        version: link:../../packages/spreadsheet-store
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -4025,7 +4025,7 @@ importers:
         version: link:../../packages/plugin-base
       '@hierarchidb/styler-store':
         specifier: workspace:*
-        version: link:../../packages/features/styler-store
+        version: link:../../packages/styler-store
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth
@@ -4080,7 +4080,7 @@ importers:
         version: link:../spreadsheet-plugin
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/features/tabular-store
+        version: link:../../packages/tabular-store
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../packages/ui/i18n
@@ -4152,7 +4152,7 @@ importers:
         version: link:../../packages/runtime-worker
       '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../packages/features/tree-api
+        version: link:../../packages/tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog

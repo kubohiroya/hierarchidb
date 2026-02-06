@@ -21,7 +21,7 @@ shape-pluginのビルド処理におけるextract2/vectortileの入出力をephe
 ## Surprises & Discoveries
 
 - Observation: 既存のrawBuffers/extractedBuffers/vectorTilesがephemeralに存在するが、ステージ別テーブルでの検索キー要件を満たさない。
-  Evidence: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` のスキーマ定義。
+  Evidence: `packages//src/ephemeral/EphemeralGisDB.ts` のスキーマ定義。
 
 ## Decision Log
 
@@ -38,13 +38,13 @@ shape-pluginのビルド処理におけるextract2/vectortileの入出力をephe
 
 ## Context and Orientation
 
-shape-pluginのビルド処理は `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` と `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` がextract1/2を生成し、`plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` がvectortileを実行する。ephemeral DBは `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` を基底に、shape専用の拡張が `packages/features/shape-store/src/EphemeralShapeDB.ts` にある。現在、vectortile入力は `packages/runtime-worker/src/services/vectorTileStageRunner.ts` がchunk-storeに書き込み、`packages/runtime-worker/src/services/StageProcessingService.ts` がchunk-storeから読み込む。
+shape-pluginのビルド処理は `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` と `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` がextract1/2を生成し、`plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` がvectortileを実行する。ephemeral DBは `packages//src/ephemeral/EphemeralGisDB.ts` を基底に、shape専用の拡張が `packages//src/EphemeralShapeDB.ts` にある。現在、vectortile入力は `packages/runtime-worker/src/services/vectorTileStageRunner.ts` がchunk-storeに書き込み、`packages/runtime-worker/src/services/StageProcessingService.ts` がchunk-storeから読み込む。
 
 本タスクでは、extract1入力はchunk-storeのダウンロードキャッシュを利用し、extract2/vectortileの入出力はステージ別のsourceBuffersで完結させる。検索キーとして extract2は `nodeId+countryCode+adminLevel`、vectortileは `nodeId+tileId` を保持する。
 
 ## Plan of Work
 
-1) `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` と `packages/features/shape-store/src/EphemeralShapeDB.ts` のスキーマを更新する。extract2SourceBuffersとvectortileSourceBuffersを追加し、前者は `[nodeId+countryCode+adminLevel]`、後者は `[nodeId+tileId]` を付与する。バージョンを上げ、必要ならアップグレード時にクリアする。
+1) `packages//src/ephemeral/EphemeralGisDB.ts` と `packages//src/EphemeralShapeDB.ts` のスキーマを更新する。extract2SourceBuffersとvectortileSourceBuffersを追加し、前者は `[nodeId+countryCode+adminLevel]`、後者は `[nodeId+tileId]` を付与する。バージョンを上げ、必要ならアップグレード時にクリアする。
 
 2) extract2の出力にcountryCode/adminLevelを埋める。`shapeStageWorker.ts` と `LocalExtractAdapters.ts` の `putExtractedBuffer` 呼び出しに国コード・自治体レベルを追加する。
 
@@ -58,8 +58,8 @@ shape-pluginのビルド処理は `plugins/shape-plugin/src/services/batch/worke
 
 作業ディレクトリは `/Users/hiroya/WebstormProjects/hierarchidb`。
 
-- `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` を編集し、extract2SourceBuffers/vectortileSourceBuffersの型とインデックスを追加する。
-- `packages/features/shape-store/src/EphemeralShapeDB.ts` のバージョン定義を更新し、追加インデックスを含める。
+- `packages//src/ephemeral/EphemeralGisDB.ts` を編集し、extract2SourceBuffers/vectortileSourceBuffersの型とインデックスを追加する。
+- `packages//src/EphemeralShapeDB.ts` のバージョン定義を更新し、追加インデックスを含める。
 - `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` と `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` のbuffer書き込みに国コード・自治体レベルを追加する。
 - `packages/runtime-worker/src/services/vectorTileStageRunner.ts` と `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` を更新し、vectortile入力がephemeralを使うようにする。
 - `packages/runtime-worker/src/services/StageProcessingService.ts` でvectorTiles保存時にtileIdを設定し、ephemeral DBにも反映する。

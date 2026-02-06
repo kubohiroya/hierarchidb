@@ -18,7 +18,7 @@ Shape Step6 currently shows per-origin metadata rows with vertex and polygon cou
 
 ## Surprises & Discoveries
 
-- Observation: the source metadata table exists in `packages/features/vectortile-store/src/tilesDb.ts`, but there is no current writer path in the shape vt pipeline.
+- Observation: the source metadata table exists in `packages//src/tilesDb.ts`, but there is no current writer path in the shape vt pipeline.
   Evidence: `ShapeMutationService.putSourceMetadata` exists, yet no code calls it during `runShapePipeline`.
 - Observation: stage1 and transform buffers store `featureCount` and `vertexCount` only; polygon counts must be computed and added.
   Evidence: `packages/vt-shape-store/src/types.ts` only defines `vertexCount` and `featureCount`.
@@ -45,13 +45,13 @@ Pending.
 
 Step6 metadata is rendered in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The UI calls `ShapeQueryAPI.listSourceMetadata` and displays columns based on `ShapeSourceMetadataRow` from `packages/plugin-service-api/src/types/shapeBuildTypes.ts`.
 
-The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapePipeline` in `plugins/shape-plugin/src/services/vt/shapePipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages/features/vectortile-store/src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
+The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapePipeline` in `plugins/shape-plugin/src/services/vt/shapePipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages//src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
 
 “Origin” means one fetched dataset unit keyed by the fetch task’s `sourceKey`. For shape, `sourceKey` is `ISO2:adminLevel`. The origin key used in metadata will be `${dataSource}:${sourceKey}` and will be embedded into feature properties as `__hdbOriginKey` so that vt tiles can be attributed back to the origin.
 
 ## Plan of Work
 
-First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages/features/vectortile-store/src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
+First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages//src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
 
 Second, add polygon counts to stage1 and transform buffers. Update `packages/vt-shape-store/src/types.ts` and the `putStage1Buffer` and `putTransformBuffer` helpers to include `polygonCount`. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, compute both vertex and polygon counts from the fetched FeatureCollection and store them in the stage1 buffer. In `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, compute polygon counts from the transform output features and store them in the transform buffers.
 

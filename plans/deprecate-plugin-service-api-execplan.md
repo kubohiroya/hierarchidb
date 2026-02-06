@@ -38,11 +38,11 @@ After this change, the shared contracts that plugins and the host use are no lon
 
 ## Context and Orientation
 
-`packages/plugin-service-api/src/types` currently holds the remaining shared contracts: plugin definitions, registry metadata, lifecycle hooks, style contracts, and location/route API contracts. Location/route/shape contracts are migrating to feature API packages (`packages/features/*-api`). The goal is to make `plugin-service-api` unnecessary by moving base contracts into `packages/plugin-base` and style contracts into a new `packages/features/style-api` package, then updating consumers to import from those new locations. Typechecks are performed using `pnpm --filter <pkg> typecheck`, and public type resolution goes through `dist/*.d.ts`.
+`packages/plugin-service-api/src/types` currently holds the remaining shared contracts: plugin definitions, registry metadata, lifecycle hooks, style contracts, and location/route API contracts. Location/route/shape contracts are migrating to feature API packages (`packages/*-api`). The goal is to make `plugin-service-api` unnecessary by moving base contracts into `packages/plugin-base` and style contracts into a new `packages/` package, then updating consumers to import from those new locations. Typechecks are performed using `pnpm --filter <pkg> typecheck`, and public type resolution goes through `dist/*.d.ts`.
 
 ## Plan of Work
 
-First, introduce a new feature API package `packages/features/style-api` modeled after `shape-api` and `route-api`. Move `styleTypes.ts`, `StyleQueryAPI.ts`, and `StyleMutationAPI.ts` from plugin-service-api into the new package and export them from its `src/index.ts`. Update `tsconfig.base.json` paths to include the new package.
+First, introduce a new feature API package `packages/` modeled after `shape-api` and `route-api`. Move `styleTypes.ts`, `StyleQueryAPI.ts`, and `StyleMutationAPI.ts` from plugin-service-api into the new package and export them from its `src/index.ts`. Update `tsconfig.base.json` paths to include the new package.
 
 Second, create a plugin-base types area (for example, `packages/plugin-base/src/types`) and move core plugin contracts from plugin-service-api into that area. These include the plugin manifest/definition/registry types, lifecycle and extension APIs, NodeTypeAPI, base search criteria, and common result types. Update `packages/plugin-base/src/index.ts` to re-export these new types.
 
@@ -56,7 +56,7 @@ Finally, run targeted builds and typechecks for the new packages and the main co
 
 All commands run from repository root: `/Users/hiroya/WebstormProjects/hierarchidb`.
 
-1) Create `packages/features/style-api`:
+1) Create `packages/`:
    - Add `package.json`, `tsconfig.json`, and `src/index.ts`.
    - Move `styleTypes.ts`, `StyleQueryAPI.ts`, `StyleMutationAPI.ts` into `src/`.
    - Update `tsconfig.base.json` paths to include `@hierarchidb/style-api`.

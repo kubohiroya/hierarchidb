@@ -93,7 +93,7 @@ CoreDB でツリーノードが削除された場合、ノード種別に応じ�
 
 ## fetchWithAuth と外部URLのキャッシュ確認
 
-現行の `smartFetch` は in-flight の重複リクエスト共有がある（`packages/features/download/src/smartFetch.ts`）。
+現行の `smartFetch` は in-flight の重複リクエスト共有がある（`packages//src/smartFetch.ts`）。
 ツリーノード単位のキャッシュは、`DexieChunkStore.getOrFetchForNode` / `setForNode` により実現されている。
 以下の経路で nodeId 関係のキャッシュが稼働していることを確認済み。
 

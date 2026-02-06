@@ -46,7 +46,7 @@ extract2 の処理は次の2経路がある。
 - Worker 経由: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` の `processExtract2Task` が `extractGeoJson` を使って簡略化している。
 - ローカル経由: `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` の `LocalExtract2Adapter` が同じ `extractGeoJson` を使う。
 
-`extractGeoJson` は `packages/features/gis-sdk/src/processing/geometryExtract.ts` にあり、各 Feature を独立に簡略化するため共有境界がずれる可能性がある。
+`extractGeoJson` は `packages//src/processing/geometryExtract.ts` にあり、各 Feature を独立に簡略化するため共有境界がずれる可能性がある。
 
 Step4 のデフォルト値は `plugins/shape-plugin/src/common/types/constants.ts` の `DEFAULT_PROCESSING_CONFIG` と、UI の `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx` で反映される。現在は `tolerance` や `minVertexCountForAreaFilter` が高く、過度な簡略化に寄っている。
 

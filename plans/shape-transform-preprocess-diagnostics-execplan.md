@@ -37,7 +37,7 @@ Users need to understand why simplify preprocessing is dropping valid geometry d
 
 ## Context and Orientation
 
-The shape build pipeline has three stages: fetch, transform, and vt. This plan focuses on the transform stage, specifically the simplify preprocessing steps. The simplify pipeline lives in `packages/vt-orchestrator/src/transform/geometry.ts` and is invoked from `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`. Preprocessing includes snapping coordinates to a grid, cleaning coordinates, fixing rings, excluding small polygons, and resolving self-intersections before simplification. Errors are captured as `ShapeTransformErrorRecord` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts` and stored in the `transformErrors` table of `packages/features/shape-store/src/EphemeralShapeDB.ts`. Step6 preview uses `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts` to load `transformErrors` and renders `errorLineCollection` overlays in `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts`.
+The shape build pipeline has three stages: fetch, transform, and vt. This plan focuses on the transform stage, specifically the simplify preprocessing steps. The simplify pipeline lives in `packages/vt-orchestrator/src/transform/geometry.ts` and is invoked from `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`. Preprocessing includes snapping coordinates to a grid, cleaning coordinates, fixing rings, excluding small polygons, and resolving self-intersections before simplification. Errors are captured as `ShapeTransformErrorRecord` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts` and stored in the `transformErrors` table of `packages//src/EphemeralShapeDB.ts`. Step6 preview uses `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts` to load `transformErrors` and renders `errorLineCollection` overlays in `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts`.
 
 Terms defined for this plan:
 
@@ -102,7 +102,7 @@ Include in the final PR summary a small excerpt of the new log format showing is
 
 Key interfaces:
 
-- `PreSimplifyFilterConfig` in `packages/features/gis-sdk/src/config.ts` controls preprocessing behavior. Do not add new required fields without updating defaults and UI.
+- `PreSimplifyFilterConfig` in `packages//src/config.ts` controls preprocessing behavior. Do not add new required fields without updating defaults and UI.
 - `ShapeTransformErrorRecord` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts` stores error diagnostics and line features used in Step6.
 - `simplifyFeatureCollection` in `packages/vt-orchestrator/src/transform/geometry.ts` is the core preprocessing entry point.
 

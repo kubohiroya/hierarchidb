@@ -39,9 +39,9 @@
 
 waypoints: ルートを構成する座標列。`[lon, lat]` の配列で、LineString の座標として利用される。
 
-RouteLineString: ルートのラインデータ。`packages/features/route-store/src/index.ts` の `RouteLineString` に定義され、`waypoints` と `distance` などのメタデータを持つ。
+RouteLineString: ルートのラインデータ。`packages//src/index.ts` の `RouteLineString` に定義され、`waypoints` と `distance` などのメタデータを持つ。
 
-RouteGenerator: ルート生成アルゴリズムを切り替えるユーティリティ。`packages/features/route-engine/src/RouteGenerator.ts`。`method` に `direct`, `great_circle`, `osm_route`, `searoute` を指定できる。
+RouteGenerator: ルート生成アルゴリズムを切り替えるユーティリティ。`packages//src/RouteGenerator.ts`。`method` に `direct`, `great_circle`, `osm_route`, `searoute` を指定できる。
 
 OSRM: OpenStreetMap データを使ったルーティングサービス。ここでは OSRM 互換の HTTP API を指し、`/route/v1/{profile}/{lon,lat;...}` を呼び出す。
 
@@ -59,7 +59,7 @@ Download Service: `@hierarchidb/download` で提供されるネットワーク�
 
 具体的な作業項目の列挙は以下のとおり。
 
-1. `plugins/route-plugin/src/services/engines/OsrmEngine.ts` を route-engine へ移動するか、`packages/features/route-engine/src/OsrmEngine.ts` に移植して共通化する。
+1. `plugins/route-plugin/src/services/engines/OsrmEngine.ts` を route-engine へ移動するか、`packages//src/OsrmEngine.ts` に移植して共通化する。
 2. `@hierarchidb/download` の `FetchNetworkPort` を使った `NetworkPortLike` 実装を用意し、OSRM の GET が認証/スロットリング/リトライを通るようにする。
 3. runtime-worker の `RouteMutationService` と route-plugin の `RouteBatchSession` に OSRM エンジンを注入し、陸路モードの `RouteGenerationConfig.method` を `osm_route` に設定する。
 4. 交通モードと OSRM プロファイルの対応表を決め、`RouteGenerationOptions` に `osmProfile` と `osrmBaseUrl` を渡す。
@@ -72,12 +72,12 @@ Download Service: `@hierarchidb/download` で提供されるネットワーク�
 
 1) 依存と既存実装の確認
 
-  - rg -n "OsrmEngine|osm_route|RouteGenerator" plugins/route-plugin packages/features/route-engine packages/runtime-worker
+  - rg -n "OsrmEngine|osm_route|RouteGenerator" plugins/route-plugin packages/ packages/runtime-worker
 
 2) OSRM エンジンの共通化
 
-  - `packages/features/route-engine/src/OsrmEngine.ts` を追加し、`plugins/route-plugin/src/services/engines/OsrmEngine.ts` のロジックを移植する。
-  - `packages/features/route-engine/src/index.ts` からエクスポートする。
+  - `packages//src/OsrmEngine.ts` を追加し、`plugins/route-plugin/src/services/engines/OsrmEngine.ts` のロジックを移植する。
+  - `packages//src/index.ts` からエクスポートする。
 
 3) Download 経由の NetworkPort
 
@@ -115,8 +115,8 @@ Download Service: `@hierarchidb/download` で提供されるネットワーク�
 ## Artifacts and Notes
 
 - 既存の OSRM エンジン: `plugins/route-plugin/src/services/engines/OsrmEngine.ts`
-- ダウンロードのネットワークポート: `packages/features/download/src/adapters/FetchNetworkPort.ts`
-- 既存のルート生成: `packages/features/route-engine/src/RouteGenerator.ts`
+- ダウンロードのネットワークポート: `packages//src/adapters/FetchNetworkPort.ts`
+- 既存のルート生成: `packages//src/RouteGenerator.ts`
 
 ## Interfaces and Dependencies
 

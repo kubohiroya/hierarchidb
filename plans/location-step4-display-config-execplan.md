@@ -46,19 +46,19 @@ Location プラグインの Step4（Settings）で、表示設定を保存でき
 
 ## Context and Orientation
 
-LocationEntity は `packages/features/location-store/src/index.ts` に定義され、Location プラグインは `plugins/location-plugin/src/common/entities/LocationEntity.ts` から再 export している。Step4 の UI は `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx` にあり、`useTranslation` で `plugins/location-plugin/src/ui/locales/en.json` と `plugins/location-plugin/src/ui/locales/ja.json` の文言を使用している。ここで “Step4” は Location の `getCreateStepConfigs()` における Settings を指す。共通ズーム設定の最大ズームは `LocationEntity.tilesMaxZoom` を参照し、未設定の場合は既定値を使う。
+LocationEntity は `packages//src/index.ts` に定義され、Location プラグインは `plugins/location-plugin/src/common/entities/LocationEntity.ts` から再 export している。Step4 の UI は `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx` にあり、`useTranslation` で `plugins/location-plugin/src/ui/locales/en.json` と `plugins/location-plugin/src/ui/locales/ja.json` の文言を使用している。ここで “Step4” は Location の `getCreateStepConfigs()` における Settings を指す。共通ズーム設定の最大ズームは `LocationEntity.tilesMaxZoom` を参照し、未設定の場合は既定値を使う。
 
 Representation は「点 → 拡大ポリゴン → 拡大アイコン → 固定サイズアイコン」へ切り替えるズーム閾値を 4 つ指定する設定である。Icon はアイコンの種類・色・サイズ範囲を指定する設定である。Label はラベルの色・サイズ範囲と、拡大表示を開始・固定化するズーム閾値を指定する設定である。
 
 ## Plan of Work
 
-まず `packages/features/location-store/src/index.ts` に表示設定の型を追加し、LocationEntity に 3 つの設定フィールドを追加する。`LocationIconId` として使用可能なアイコン ID を列挙し、各設定を `LocationType` ごとの Record で定義する。次に `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx` に 3 つのカード UI を追加する。`tilesMaxZoom` を最大値として使うため、`tilesMaxZoom` が未設定の場合の既定値を定義し、スライダー入力を範囲内に収める補正関数を用意する。Representation の 4 点スライダーは `[pointZoom, polygonZoom, iconZoom, iconFixedZoom]` の順序を維持する。Icon のカードでは色入力、アイコン選択、サイズ範囲スライダーを提供する。Label のカードでは色入力、ズーム範囲スライダー、サイズ範囲スライダーを提供する。変更内容は `onUpdate` を通じて `LocationEntity` のドラフトへ保存する。
+まず `packages//src/index.ts` に表示設定の型を追加し、LocationEntity に 3 つの設定フィールドを追加する。`LocationIconId` として使用可能なアイコン ID を列挙し、各設定を `LocationType` ごとの Record で定義する。次に `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx` に 3 つのカード UI を追加する。`tilesMaxZoom` を最大値として使うため、`tilesMaxZoom` が未設定の場合の既定値を定義し、スライダー入力を範囲内に収める補正関数を用意する。Representation の 4 点スライダーは `[pointZoom, polygonZoom, iconZoom, iconFixedZoom]` の順序を維持する。Icon のカードでは色入力、アイコン選択、サイズ範囲スライダーを提供する。Label のカードでは色入力、ズーム範囲スライダー、サイズ範囲スライダーを提供する。変更内容は `onUpdate` を通じて `LocationEntity` のドラフトへ保存する。
 
 最後に `plugins/location-plugin/src/common/i18n/index.ts` と `plugins/location-plugin/src/ui/locales/en.json` / `ja.json` に説明文とラベルを追加する。翻訳は英語/日本語で追加し、UI では各設定の意味が表示される。
 
 ## Concrete Steps
 
-1) `packages/features/location-store/src/index.ts` に以下の型を追加し、`LocationEntity` に 3 つの新規フィールドを追加する。
+1) `packages//src/index.ts` に以下の型を追加し、`LocationEntity` に 3 つの新規フィールドを追加する。
 
    - `LocationRepresentationByZoomLevel` : 4 つのズーム閾値。
    - `LocationRepresentationByZoomLevelConfig` : `Record<LocationType, LocationRepresentationByZoomLevel>`
@@ -113,7 +113,7 @@ UI の確認として Step4 の Settings を開き、各 LocationType 行で 3 �
 
 ## Interfaces and Dependencies
 
-- `packages/features/location-store/src/index.ts` に新しい型と `LocationEntity` フィールドを追加する。
+- `packages//src/index.ts` に新しい型と `LocationEntity` フィールドを追加する。
 - `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx` に UI を追加する。
 - `plugins/location-plugin/src/common/i18n/index.ts` と `plugins/location-plugin/src/ui/locales/en.json` / `ja.json` に i18n を追加する。
 - `LocationType` は既存の `'area_centroid' | 'airport' | 'port' | 'railway_station' | 'interchange'` を使用する。

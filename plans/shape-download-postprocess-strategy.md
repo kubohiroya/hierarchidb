@@ -49,7 +49,7 @@ Data source implementations exist at:
 - `plugins/shape-plugin/src/services/datasources/GADMStrategy.ts`
 - `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`
 
-Country metadata (including `bbox`, `iso2`, `iso3`, `adminLevels`) is loaded via `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts` from `packages/features/fetch-save-metadata/output/*.json`. The batch pipeline currently ignores country metadata when building download tasks.
+Country metadata (including `bbox`, `iso2`, `iso3`, `adminLevels`) is loaded via `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts` from `packages/fetch-save-metadata/output/*.json`. The batch pipeline currently ignores country metadata when building download tasks.
 
 The goal is to let each data source decide its own download task structure and how to derive country/admin-level outputs from downloaded data.
 

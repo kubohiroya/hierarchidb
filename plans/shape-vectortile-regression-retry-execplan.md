@@ -39,7 +39,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 ## Plan of Work
 
-まず TaskStatus を拡張する。`packages/features/shape-store/src/ShapeDB.ts` と `plugins/shape-plugin/src/common/types/build.ts` の TaskStatus に `regression` を追加し、`packages/common/api/src/BatchControlAPI.ts` の `ProgressPhase` にも `regression` を追加する。UI 側で表示できるように `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` のステータスラベル/色/集計に `regression` を加える。回帰中タスクは「完了していない」扱いにし、警告色で表示する。
+まず TaskStatus を拡張する。`packages//src/ShapeDB.ts` と `plugins/shape-plugin/src/common/types/build.ts` の TaskStatus に `regression` を追加し、`packages/common/api/src/BatchControlAPI.ts` の `ProgressPhase` にも `regression` を追加する。UI 側で表示できるように `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` のステータスラベル/色/集計に `regression` を加える。回帰中タスクは「完了していない」扱いにし、警告色で表示する。
 
 次に vectortile のサイズ超過処理を修正する。`plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` のサイズ超過分岐で、payload の `retry` を読み取り、`retry` が undefined または 1 以下なら `regression` に設定し、payload の `retry` を `retry + 1` に更新する。`retry` が 2 以上なら `failed` にする。更新は `shapeDB.updateBatchTask` の `inputData` へ保存する。これにより再始動時に retry 値を参照できる。
 
@@ -51,7 +51,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 1) TaskStatus と ProgressPhase に regression を追加し、UI で表示できるようにする。
    - 編集: `packages/common/api/src/BatchControlAPI.ts`
-   - 編集: `packages/features/shape-store/src/ShapeDB.ts`
+   - 編集: `packages//src/ShapeDB.ts`
    - 編集: `plugins/shape-plugin/src/common/types/build.ts`
    - 編集: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
 
@@ -83,7 +83,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 ## Idempotence and Recovery
 
-この変更は繰り返し適用しても安全で、既存のタスクと DB を破壊しない。ロールバックは `plugins/shape-plugin/src/services/batch/**` と `packages/features/shape-store/src/ShapeDB.ts`、`plugins/shape-plugin/src/common/types/build.ts` の差分を revert する。
+この変更は繰り返し適用しても安全で、既存のタスクと DB を破壊しない。ロールバックは `plugins/shape-plugin/src/services/batch/**` と `packages//src/ShapeDB.ts`、`plugins/shape-plugin/src/common/types/build.ts` の差分を revert する。
 
 ## Artifacts and Notes
 

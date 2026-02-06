@@ -31,7 +31,7 @@ Host-side imports for Location/Route Query/Mutation APIs now go through store pa
 
 ## Context and Orientation
 
-Location and route API interfaces are defined under `packages/plugin-service-api/src/types` and are re-exported by store packages. Host-side packages such as `packages/runtime-worker` and `packages/common/api` currently import these types directly from `@hierarchidb/plugin-service-api`. Location and route database helpers already live in `packages/features/location-store` and `packages/features/route-store`, with plugin database entrypoints re-exporting those implementations. The goal is to make host code import API types through the store packages to align dependencies.
+Location and route API interfaces are defined under `packages/plugin-service-api/src/types` and are re-exported by store packages. Host-side packages such as `packages/runtime-worker` and `packages/common/api` currently import these types directly from `@hierarchidb/plugin-service-api`. Location and route database helpers already live in `packages/` and `packages/`, with plugin database entrypoints re-exporting those implementations. The goal is to make host code import API types through the store packages to align dependencies.
 
 ## Plan of Work
 

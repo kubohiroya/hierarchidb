@@ -44,7 +44,7 @@ The Shape build pipeline uses a task queue and ephemeral caches to track progres
 Key files to update:
 
 - `packages/plugin-service-api/src/types/shapeBuildTypes.ts` for build stage type definitions.
-- `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` and `packages/features/shape-store/src/ShapeDB.ts` for stage enums and task types.
+- `packages//src/ephemeral/EphemeralGisDB.ts` and `packages//src/ShapeDB.ts` for stage enums and task types.
 - `plugins/shape-plugin/src/worker/api.ts` for task queue mapping, stage ordering, and build status.
 - `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts` for session stage mapping.
 - `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts` for cache deletion actions.

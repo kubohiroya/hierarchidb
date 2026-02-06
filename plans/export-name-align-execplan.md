@@ -29,7 +29,7 @@ After this change, developers can locate exported types and services quickly bec
 - Decision: Consolidate `RouteGenerator` and `SearouteEngine` into a shared package (`@hierarchidb/route-engine`) and rewire runtime-worker + route-plugin to consume it.
   Rationale: Both implementations are functionally identical and cause duplicate symbol ambiguity.
   Date/Author: 2025-12-28 / Codex
-- Decision: Keep `packages/features/batch` as the canonical `LaneSemaphoreRegistry` and re-export from batch-runtime-services.
+- Decision: Keep `packages/` as the canonical `LaneSemaphoreRegistry` and re-export from batch-runtime-services.
   Rationale: Prevents divergence and clarifies shared batch ownership.
   Date/Author: 2025-12-28 / Codex
 - Decision: Rename duplicated UI types and runtime-worker interfaces per proposal (`TreeConsoleNodeContextMenuProps`, `PluginWorkerModuleLoaderContract`).
@@ -48,7 +48,7 @@ After this change, developers can locate exported types and services quickly bec
 This repo contains shared packages under `packages/`, plugin implementations under `plugins/`, and the app under `app/`. Exported types and services are often re-exported through `index.ts`, but this plan excludes `index.ts` from renaming. The focus is on actual definition files in `src/` folders. Duplicated symbol names currently exist across multiple packages (for example, `RouteGenerator` in both runtime-worker and route-plugin), and many files export a type whose name does not match the filename.
 
 Key files involved include:
-- `packages/features/import-export/src/ImportExportService.ts` (base implementation)
+- `packages//src/ImportExportService.ts` (base implementation)
 - `packages/runtime-worker/src/services/ImportExportLifecycleService.ts` (runtime-worker augmentation)
 - `packages/runtime-worker/src/services/route/*.ts` vs. `plugins/route-plugin/src/services/*.ts` (duplicated route engine types)
 - `plugins/shape-plugin/src/common/types/*` and `plugins/shape-plugin/src/services/types.ts` (duplicated batch-related types)

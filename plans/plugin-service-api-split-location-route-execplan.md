@@ -22,8 +22,8 @@ After this change, the definitive type definitions for location and route live i
 
 ## Surprises & Discoveries
 
-- Observation: `packages/features/location-store/src/locationTypes.ts` already defines location types that overlap with `plugin-service-api`.
-  Evidence: `packages/features/location-store/src/locationTypes.ts` and `packages/plugin-service-api/src/types/locationTypes.ts` both define `LocationPointProperties`-like shapes.
+- Observation: `packages//src/locationTypes.ts` already defines location types that overlap with `plugin-service-api`.
+  Evidence: `packages//src/locationTypes.ts` and `packages/plugin-service-api/src/types/locationTypes.ts` both define `LocationPointProperties`-like shapes.
 
 ## Decision Log
 
@@ -47,17 +47,17 @@ After this change, the definitive type definitions for location and route live i
 
 `packages/plugin-service-api` is a shared API bundle exporting many contract types. It currently defines `locationTypes.ts` and `routeTypes.ts` in `packages/plugin-service-api/src/types/` and re-exports them from `packages/plugin-service-api/src/index.ts`.
 
-`packages/features/location-store` and `packages/features/route-store` are feature-specific persistence layers. Today, location and route types are duplicated between the store packages and `plugin-service-api`, which creates ambiguity and dependency cycles.
+`packages/` and `packages/` are feature-specific persistence layers. Today, location and route types are duplicated between the store packages and `plugin-service-api`, which creates ambiguity and dependency cycles.
 
-The plan is to create two new feature API packages (`packages/features/location-api` and `packages/features/route-api`) and move the authoritative types there. Store packages will import types from their API packages. UI code will import only from API packages. `plugin-service-api` will re-export from API packages as a temporary compatibility layer. Separately, DB initialization and registration must move to the app so that plugins do not own DB selection.
+The plan is to create two new feature API packages (`packages/` and `packages/`) and move the authoritative types there. Store packages will import types from their API packages. UI code will import only from API packages. `plugin-service-api` will re-export from API packages as a temporary compatibility layer. Separately, DB initialization and registration must move to the app so that plugins do not own DB selection.
 
 ## Plan of Work
 
-First, create `packages/features/location-api` and `packages/features/route-api` packages that define the unified types for location and route. Use `tsdown` for build configuration and mirror the structure used by other feature packages.
+First, create `packages/` and `packages/` packages that define the unified types for location and route. Use `tsdown` for build configuration and mirror the structure used by other feature packages.
 
-Second, consolidate the type definitions. For location, merge the overlapping fields between `packages/features/location-store/src/locationTypes.ts` and `packages/plugin-service-api/src/types/locationTypes.ts` into a single `packages/features/location-api/src/locationTypes.ts`. The unified definition must preserve the richer shape (for example, keep both admin code/name and centroid fields). If a field only exists in one source and is still relevant, include it. Remove the old `locationTypes.ts` in `location-store` and update `location-store` exports to reference the API package instead.
+Second, consolidate the type definitions. For location, merge the overlapping fields between `packages//src/locationTypes.ts` and `packages/plugin-service-api/src/types/locationTypes.ts` into a single `packages//src/locationTypes.ts`. The unified definition must preserve the richer shape (for example, keep both admin code/name and centroid fields). If a field only exists in one source and is still relevant, include it. Remove the old `locationTypes.ts` in `location-store` and update `location-store` exports to reference the API package instead.
 
-For route, move `packages/plugin-service-api/src/types/routeTypes.ts` into `packages/features/route-api/src/routeTypes.ts`. If `route-store` has overlapping definitions, merge them similarly so the API package is authoritative. Update `route-store` to import its route types from `route-api`.
+For route, move `packages/plugin-service-api/src/types/routeTypes.ts` into `packages//src/routeTypes.ts`. If `route-store` has overlapping definitions, merge them similarly so the API package is authoritative. Update `route-store` to import its route types from `route-api`.
 
 Third, update `plugin-service-api` to re-export the new API types instead of defining them locally. Remove local `locationTypes.ts` and `routeTypes.ts` from `plugin-service-api`, and update `LocationQueryAPI.ts`, `RouteQueryAPI.ts`, and `RouteMutationAPI.ts` to import from `@hierarchidb/location-api` / `@hierarchidb/route-api`.
 
@@ -71,25 +71,25 @@ Finally, run typechecks for the new API packages and the affected consumers. Doc
 
 All commands run from repository root: `/Users/hiroya/WebstormProjects/hierarchidb`.
 
-1) Create `packages/features/location-api`:
+1) Create `packages/`:
 
-   - `packages/features/location-api/package.json` (use `tsdown` build; dependencies on `@hierarchidb/core-types`, `@hierarchidb/shape-store` if required by unified types).
-   - `packages/features/location-api/tsconfig.json` (pattern from other feature packages).
-   - `packages/features/location-api/src/locationTypes.ts` (unified definition).
-   - `packages/features/location-api/src/index.ts` exporting `locationTypes`.
+   - `packages//package.json` (use `tsdown` build; dependencies on `@hierarchidb/core-types`, `@hierarchidb/shape-store` if required by unified types).
+   - `packages//tsconfig.json` (pattern from other feature packages).
+   - `packages//src/locationTypes.ts` (unified definition).
+   - `packages//src/index.ts` exporting `locationTypes`.
 
-2) Create `packages/features/route-api`:
+2) Create `packages/`:
 
-   - `packages/features/route-api/package.json` (dependencies only on `@hierarchidb/core-types` if needed).
-   - `packages/features/route-api/tsconfig.json`.
-   - `packages/features/route-api/src/routeTypes.ts` (unified definition).
-   - `packages/features/route-api/src/index.ts` exporting `routeTypes`.
+   - `packages//package.json` (dependencies only on `@hierarchidb/core-types` if needed).
+   - `packages//tsconfig.json`.
+   - `packages//src/routeTypes.ts` (unified definition).
+   - `packages//src/index.ts` exporting `routeTypes`.
 
 3) Update store packages:
 
-   - `packages/features/location-store/src/locationTypes.ts`: remove or replace with re-exports from `@hierarchidb/location-api`.
-   - Update any imports in `packages/features/location-store/src/**` to use `@hierarchidb/location-api`.
-   - `packages/features/route-store/src/**`: update imports to `@hierarchidb/route-api` where route types are needed.
+   - `packages//src/locationTypes.ts`: remove or replace with re-exports from `@hierarchidb/location-api`.
+   - Update any imports in `packages//src/**` to use `@hierarchidb/location-api`.
+   - `packages//src/**`: update imports to `@hierarchidb/route-api` where route types are needed.
    - Update package.json dependencies for both stores to include their API packages.
 
 4) Update plugin-service-api:
@@ -143,7 +143,7 @@ All steps are safe to repeat. If a step fails, revert the last set of edits and 
 ## Artifacts and Notes
 
 - Sources for unification:
-  - `packages/features/location-store/src/locationTypes.ts`
+  - `packages//src/locationTypes.ts`
   - `packages/plugin-service-api/src/types/locationTypes.ts`
   - `packages/plugin-service-api/src/types/routeTypes.ts`
 

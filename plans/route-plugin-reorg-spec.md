@@ -260,7 +260,7 @@ Route should expose or implement a thin adapter that:
 ### Implementation Plan (Stage 2)
 
 1) GIS SDK skeleton and runtime-worker delegation
-   - Add `packages/features/gis-sdk` with vector tile generation API and metadata helpers.
+   - Add `packages/` with vector tile generation API and metadata helpers.
    - Move GIS logic from `packages/runtime-worker/src/services/StageProcessingService.ts` into SDK.
    - Update runtime-worker to call SDK functions and drop direct GIS library imports.
 2) Route integration (runtime-worker only)

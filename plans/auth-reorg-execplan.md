@@ -6,7 +6,7 @@ This ExecPlan must be maintained in accordance with `PLANS.md` in the repository
 
 ## Purpose / Big Picture
 
-auth 周りの責務が分散し、auth-recovery は名称と実態が一致せず、auth-api は薄く、common/auth は役割が曖昧である。これを `packages/features/auth-api`（型と契約）と `packages/features/auth`（実装）に整理し、`packages/common/auth` を完全廃止する。ユーザー視点では、認証が必要なダウンロードやバッチ処理の挙動は変えず、依存関係を明確にする。作業後は、auth の型は auth-api から、認証処理や通知の実装は auth から参照されることを確認できる。
+auth 周りの責務が分散し、auth-recovery は名称と実態が一致せず、auth-api は薄く、common/auth は役割が曖昧である。これを `packages/`（型と契約）と `packages/`（実装）に整理し、`packages/common/auth` を完全廃止する。ユーザー視点では、認証が必要なダウンロードやバッチ処理の挙動は変えず、依存関係を明確にする。作業後は、auth の型は auth-api から、認証処理や通知の実装は auth から参照されることを確認できる。
 
 ## Progress
 
@@ -21,10 +21,10 @@ auth 周りの責務が分散し、auth-recovery は名称と実態が一致せ�
 
 - Observation: `packages/common/auth` は BroadcastChannel を使う通知レジストリと通知生成ロジックを持ち、UI と Worker の双方から参照されている。
   Evidence: `packages/common/auth/src/AuthNotificationSystem.ts`。
-- Observation: `packages/features/auth-recovery` は AuthService を中心にしており、認証通知の生成・dispatch も含むため名称が責務と一致していない。
-  Evidence: `packages/features/auth-recovery/src/AuthService.ts`。
+- Observation: `packages/-recovery` は AuthService を中心にしており、認証通知の生成・dispatch も含むため名称が責務と一致していない。
+  Evidence: `packages/-recovery/src/AuthService.ts`。
 - Observation: 通知型は UI と Worker の契約として再利用されるため、実装ではなく auth-api に移すのが合理的だった。
-  Evidence: `packages/features/auth/src/AuthNotificationSystem.ts` が `@hierarchidb/auth-api` の型を参照している。
+  Evidence: `packages//src/AuthNotificationSystem.ts` が `@hierarchidb/auth-api` の型を参照している。
 
 ## Decision Log
 
@@ -48,19 +48,19 @@ auth 周りの責務が分散し、auth-recovery は名称と実態が一致せ�
 
 現在の構成は以下（移行後の状態）。
 
-- `packages/features/auth` は AuthService / AuthRecoveryService と AuthNotificationSystem（registry/factory/guards）を提供する。
-- `packages/features/auth-api` は AuthRuntimeBridge と AuthScope/AuthContext/AuthHeadersProvider などの契約型、通知型（AuthRequired/AuthSuccess/AuthCancelled）を提供する。
-- `packages/common/auth` と `packages/features/auth-recovery` は削除済みであり、参照は `@hierarchidb/auth` / `@hierarchidb/auth-api` に置換されている。
+- `packages/` は AuthService / AuthRecoveryService と AuthNotificationSystem（registry/factory/guards）を提供する。
+- `packages/` は AuthRuntimeBridge と AuthScope/AuthContext/AuthHeadersProvider などの契約型、通知型（AuthRequired/AuthSuccess/AuthCancelled）を提供する。
+- `packages/common/auth` と `packages/-recovery` は削除済みであり、参照は `@hierarchidb/auth` / `@hierarchidb/auth-api` に置換されている。
 
 主な参照箇所（抜粋）。
 
-- `@hierarchidb/auth-recovery` を参照する実装: `packages/runtime-worker/src/services/downloadAdapter.ts`, `packages/features/download/src/*`, `plugins/shape-plugin/src/ui/workers/countryAvailability.worker.ts`, `plugins/spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver.ts` など。
+- `@hierarchidb/auth-recovery` を参照する実装: `packages/runtime-worker/src/services/downloadAdapter.ts`, `packages//src/*`, `plugins/shape-plugin/src/ui/workers/countryAvailability.worker.ts`, `plugins/spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver.ts` など。
 - `@hierarchidb/common-auth` を参照する実装: `packages/ui/auth/src/services/UIAuthRecoveryClient.ts`, `plugins/location-plugin/src/common/hooks/useLocationProgress.ts` など。
 - Vite alias: `app/vite.config.ts` に `@hierarchidb/common-auth` / `@hierarchidb/auth-recovery` のパス解決がある。
 
 ## Plan of Work
 
-まず、`packages/features/auth` を新設し、`common/auth` と `auth-recovery` の実装をこちらに集約する。`AuthNotificationSystem` と `AuthService`（および互換用 `AuthRecoveryService`）は `@hierarchidb/auth` に移動する。`auth-api` は型専用パッケージとして維持し、`AuthRuntimeBridge` に加えて必要な型（`AuthScope`, `AuthContext`, `AuthHeadersProvider` など）を整理して配置する。`common/auth` は削除し、参照をすべて `@hierarchidb/auth` へ置換する。`auth-recovery` は削除し、参照を `@hierarchidb/auth` に置換する。
+まず、`packages/` を新設し、`common/auth` と `auth-recovery` の実装をこちらに集約する。`AuthNotificationSystem` と `AuthService`（および互換用 `AuthRecoveryService`）は `@hierarchidb/auth` に移動する。`auth-api` は型専用パッケージとして維持し、`AuthRuntimeBridge` に加えて必要な型（`AuthScope`, `AuthContext`, `AuthHeadersProvider` など）を整理して配置する。`common/auth` は削除し、参照をすべて `@hierarchidb/auth` へ置換する。`auth-recovery` は削除し、参照を `@hierarchidb/auth` に置換する。
 
 次に、依存関係とビルド設定を更新する。`package.json` の dependencies/peerDependencies/devDependencies を修正し、`tsconfig.base.json` の paths と `app/vite.config.ts` の alias を新パッケージへ合わせる。`plugin-registry` の生成物に `common-auth` が残るので、`pnpm tools:gen-plugin-registry` を実行して整合させる。
 
@@ -69,19 +69,19 @@ auth 周りの責務が分散し、auth-recovery は名称と実態が一致せ�
 ## Concrete Steps
 
 1) 既存パッケージの棚卸しと移行先の対応表を作成する。
-   - 対象: `packages/features/auth-recovery/src/*`, `packages/common/auth/src/*`, `packages/features/auth-api/src/*`。
+   - 対象: `packages/-recovery/src/*`, `packages/common/auth/src/*`, `packages//src/*`。
 
-2) `packages/features/auth` を新設する。
-   - 新規 `packages/features/auth/package.json`, `src/index.ts`, `src/AuthService.ts`, `src/AuthNotificationSystem.ts` を作成。
+2) `packages/` を新設する。
+   - 新規 `packages//package.json`, `src/index.ts`, `src/AuthService.ts`, `src/AuthNotificationSystem.ts` を作成。
    - `AuthService` と `AuthRecoveryService` を `auth-recovery` から移動。
    - `AuthNotificationSystem` を `common/auth` から移動。
 
-3) `packages/features/auth-api` を型専用に整理する。
+3) `packages/` を型専用に整理する。
    - `AuthRuntimeBridge` に加えて、`AuthScope` / `AuthContext` / `AuthHeadersProvider` などの型の所在を統一。
 
 4) 参照更新と削除。
    - `@hierarchidb/auth-recovery` と `@hierarchidb/common-auth` の import を `@hierarchidb/auth` へ置換。
-   - `packages/common/auth` と `packages/features/auth-recovery` を削除。
+   - `packages/common/auth` と `packages/-recovery` を削除。
    - `package.json` の依存を新パッケージへ統一。
 
 5) 設定更新。
@@ -108,8 +108,8 @@ auth 周りの責務が分散し、auth-recovery は名称と実態が一致せ�
 ## Artifacts and Notes
 
 - 主要ファイルの移動元/移動先を記録する。
-  - 例: `packages/common/auth/src/AuthNotificationSystem.ts` -> `packages/features/auth/src/AuthNotificationSystem.ts`
-  - 例: `packages/features/auth-recovery/src/AuthService.ts` -> `packages/features/auth/src/AuthService.ts`
+  - 例: `packages/common/auth/src/AuthNotificationSystem.ts` -> `packages//src/AuthNotificationSystem.ts`
+  - 例: `packages/-recovery/src/AuthService.ts` -> `packages//src/AuthService.ts`
 
 ## Interfaces and Dependencies
 

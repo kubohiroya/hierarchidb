@@ -36,7 +36,7 @@ After this change, shape builds can select a new `geoBoundaries:TopoJSON` data s
 
 ## Context and Orientation
 
-The shape build pipeline uses three stages (fetch, transform, vt). Fetch stores per-country buffers in the ephemeral shape DB (`packages/features/shape-store/src/EphemeralShapeDB.ts`), transform reads these buffers and produces flatgeobuf per zoom band in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, and vt generates tiles. Step2 data source options are in `plugins/shape-plugin/src/common/mock/data.ts` and used by `plugins/shape-plugin/src/ui/components/step2/useShapeDataSourceStep.ts`. Data source names are defined in `plugins/shape-plugin/src/common/types/data-source.ts` and referenced by metadata loader and fetch stage utilities.
+The shape build pipeline uses three stages (fetch, transform, vt). Fetch stores per-country buffers in the ephemeral shape DB (`packages//src/EphemeralShapeDB.ts`), transform reads these buffers and produces flatgeobuf per zoom band in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, and vt generates tiles. Step2 data source options are in `plugins/shape-plugin/src/common/mock/data.ts` and used by `plugins/shape-plugin/src/ui/components/step2/useShapeDataSourceStep.ts`. Data source names are defined in `plugins/shape-plugin/src/common/types/data-source.ts` and referenced by metadata loader and fetch stage utilities.
 
 TopoJSON support requires converting TopoJSON to GeoJSON (for counts and metadata) and vice versa (for merging and simplification). TopoJSON libraries (`topojson-client`, `topojson-server`, `topojson-simplify`) live in the shape plugin today, so the transform stage package (`@hierarchidb/vt-orchestrator`) must declare these dependencies to safely import them.
 
@@ -50,7 +50,7 @@ Next, update fetch-stage strategy resolution in `plugins/shape-plugin/src/servic
 
 Then, implement fetch-stage TopoJSON handling in `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`. Add helper functions for gzip compression/decompression, TopoJSON parsing, TopoJSON->GeoJSON conversion, and merging for Canada/Greenland. For `geoboundaries-topojson`, download TopoJSON (using the geoBoundaries metadata to obtain `tjDownloadURL`), merge when needed, simplify by zoom on TopoJSON, gzip it, and store it in fetch cache with a format/compression marker. For `geoboundaries`, after GeoJSON is downloaded, perform a GeoJSON->TopoJSON merge->GeoJSON roundtrip for Canada/Greenland (ADM0 only), then continue with existing zoom-based filtering and flatgeobuf caching.
 
-After that, extend the fetch cache record type in `packages/features/shape-store/src/EphemeralShapeDB.ts` with optional `format` and `compression` fields. Update fetch cache writes in `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` to set `format: 'flatgeobuf'` for existing behavior and `format: 'topojson'` with `compression: 'gzip'` for the new data source. Update fetch-cache decoding in both shape fetch stage and transform stage to use these markers.
+After that, extend the fetch cache record type in `packages//src/EphemeralShapeDB.ts` with optional `format` and `compression` fields. Update fetch cache writes in `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` to set `format: 'flatgeobuf'` for existing behavior and `format: 'topojson'` with `compression: 'gzip'` for the new data source. Update fetch-cache decoding in both shape fetch stage and transform stage to use these markers.
 
 Finally, extend transform-stage decoding in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`. If fetch cache format is TopoJSON, gunzip, parse TopoJSON, simplify by zoom tolerance using area-based threshold (two tolerance paths) and retry with an adjusted tolerance if vertex count is still above limits, then convert to flatgeobuf and proceed with the existing transform pipeline. Add required topojson dependencies to `packages/vt-orchestrator/package.json` and run `pnpm install`, `pnpm build`, and `pnpm typecheck` as required by the workflow.
 
@@ -68,7 +68,7 @@ Run commands from repository root (`/Users/hiroya/WebstormProjects/hierarchidb`)
    - Update `plugins/shape-plugin/src/services/batch/strategies/resolveFetchStageStrategy.ts` to add the new data source.
 
 3) Implement TopoJSON fetch-stage behavior and cache format markers.
-   - Update `packages/features/shape-store/src/EphemeralShapeDB.ts` with optional `format`/`compression` fields.
+   - Update `packages//src/EphemeralShapeDB.ts` with optional `format`/`compression` fields.
    - Edit `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` to handle TopoJSON downloads, merge, simplify, gzip cache, and metadata generation.
 
 4) Extend transform-stage decoding and add dependencies.
@@ -100,7 +100,7 @@ These steps are safe to repeat. If a change fails, revert the new data source or
 ## Interfaces and Dependencies
 
 - Data source names are declared in `plugins/shape-plugin/src/common/types/data-source.ts` and must include `geoboundaries-topojson`.
-- Fetch cache records in `packages/features/shape-store/src/EphemeralShapeDB.ts` must include optional `format?: 'flatgeobuf' | 'topojson'` and `compression?: 'gzip' | 'none'`.
+- Fetch cache records in `packages//src/EphemeralShapeDB.ts` must include optional `format?: 'flatgeobuf' | 'topojson'` and `compression?: 'gzip' | 'none'`.
 - Transform stage must accept a `FetchCacheRecord` where `format === 'topojson'` and handle gzip + TopoJSON simplification.
 - `@hierarchidb/vt-orchestrator` must declare `topojson-client`, `topojson-server`, and `topojson-simplify` in `package.json` dependencies.
 

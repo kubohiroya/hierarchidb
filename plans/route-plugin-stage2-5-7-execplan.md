@@ -20,8 +20,8 @@ Note: The broader route reorg direction (RouteEntity/RouteLineString, IDE-GSM in
 
 ## Surprises & Discoveries
 
-- Observation: runtime-worker already imports `@hierarchidb/gis-sdk`, but the SDK package is located under `packages/features/gis-sdk` and StageProcessingService still owns a local ephemeral buffer DB.
-  Evidence: `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/features/gis-sdk/src/index.ts`.
+- Observation: runtime-worker already imports `@hierarchidb/gis-sdk`, but the SDK package is located under `packages/` and StageProcessingService still owns a local ephemeral buffer DB.
+  Evidence: `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages//src/index.ts`.
 - Observation: shape/location/route batch sessions use `@hierarchidb/batch` (features/batch) while BaseBatchSessionManager lives in `packages/batch-runtime-services`.
   Evidence: `plugins/{shape,location,route}-plugin` imports `@hierarchidb/batch`, BaseBatchSessionManager imports `packages/batch-runtime-services/src/AbstractBatchSession.ts`.
 
@@ -43,9 +43,9 @@ Pending.
 
 ## Context and Orientation
 
-Runtime-worker GIS processing lives in `packages/runtime-worker/src/services/StageProcessingService.ts`, which currently reads data from a local Dexie-based ephemeral DB and calls functions imported from `@hierarchidb/gis-sdk`. The GIS SDK code exists under `packages/features/gis-sdk/src`, including `vectorTiles.ts` and `ephemeral/EphemeralGisDB.ts`.
+Runtime-worker GIS processing lives in `packages/runtime-worker/src/services/StageProcessingService.ts`, which currently reads data from a local Dexie-based ephemeral DB and calls functions imported from `@hierarchidb/gis-sdk`. The GIS SDK code exists under `packages//src`, including `vectorTiles.ts` and `ephemeral/EphemeralGisDB.ts`.
 
-Shape, location, and route batch managers are implemented under `plugins/*-plugin/src/services/batch`. Each plugin uses `@hierarchidb/batch` (located in `packages/features/batch`) for `AbstractBatchSession`, but the shared base manager lives under `packages/batch-runtime-services`.
+Shape, location, and route batch managers are implemented under `plugins/*-plugin/src/services/batch`. Each plugin uses `@hierarchidb/batch` (located in `packages/`) for `AbstractBatchSession`, but the shared base manager lives under `packages/batch-runtime-services`.
 
 Batch config/type naming is inconsistent: shape has `common/types/ObsolateBuildConfig.ts`, location has `common/types/batch-types.ts`, and route embeds processing config in `RouteEntity` types. The goal is to align filenames and exports while preserving public API compatibility.
 
@@ -104,7 +104,7 @@ Record typecheck outputs and key diffs in `TASKS.md` under the Stage2/5/7 task l
 
 ## Interfaces and Dependencies
 
-- GIS SDK: `packages/features/gis-sdk/src/index.ts`, `vectorTiles.ts`, `ephemeral/EphemeralGisDB.ts`.
+- GIS SDK: `packages//src/index.ts`, `vectorTiles.ts`, `ephemeral/EphemeralGisDB.ts`.
 - Runtime worker: `packages/runtime-worker/src/services/StageProcessingService.ts`.
 - Base manager: `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`.
 - Plugin managers: `plugins/{shape,location,route}-plugin/src/services/batch`.

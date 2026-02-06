@@ -24,7 +24,7 @@ packages:
   - packages/plugin-base
   - packages/ui/plugin-shell
   - packages/backend/*
-  - packages/features/*
+  - packages/*
   - packages/plugin-ui-sdk
   - packages/plugin-types
   - packages/batch-runtime-worker-services

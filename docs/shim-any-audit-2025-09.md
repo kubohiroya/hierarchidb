@@ -72,8 +72,8 @@
 | `packages/ui/data-grid` | 10 | InMemoryDataProvider など旧モデル依存 |
 | `packages/ui/i18n` | 9 | i18n 初期化（lazy load） |
 | `packages/plugins/linker-plugin` | 8 | リソース選択ステップ |
-| `packages/features/map-adapter` | 6 | MapLibre アダプタ周辺 |
-| `packages/features/tabular` | 6 | タブラー書き出しユーティリティ |
+| `packages/` | 6 | MapLibre アダプタ周辺 |
+| `packages/tabular` | 6 | タブラー書き出しユーティリティ |
 
 （テスト・deprecated ディレクトリは除外済み。`python3` 集計スクリプトで再取得可能。）
 
@@ -130,8 +130,8 @@ top packages:
   packages/ui/core                            25
   packages/backend/bff                        16
   packages/plugins/folder-plugin            16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -152,8 +152,8 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -178,8 +178,8 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -240,8 +240,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 ### 2025-09-20 08:20 再集計（`pnpm as-any:report`）
@@ -263,8 +263,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 top packages:
@@ -281,8 +281,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 top packages:
@@ -299,7 +299,7 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/import-export               7
+  packages/               7
   packages/plugins/base-plugin               7
 ```
 
@@ -318,7 +318,7 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/import-export               7
+  packages/               7
 ```
 
 top packages:
@@ -330,7 +330,7 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/tabular-store              12
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -348,8 +348,8 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -366,8 +366,8 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/location-plugin          10
@@ -385,8 +385,8 @@ top packages:
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
   packages/backend/bff                        16
-  packages/features/download                   13
-  packages/features/tabular-store              12
+  packages/                   13
+  packages/              12
   packages/runtime-ui/plugin-dialog           12
   packages/plugins/basemap-plugin           10
   packages/plugins/resolver-plugin          10
@@ -412,8 +412,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 ### 2025-09-20 07:55 再集計（`pnpm as-any:report`）
@@ -435,8 +435,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 ### 2025-09-20 08:16 再集計（`pnpm as-any:report`）
@@ -458,8 +458,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 ### 2025-09-20 08:30 再集計（`pnpm as-any:report`）
@@ -481,8 +481,8 @@ top packages:
   packages/ui/data-grid                       10
   packages/ui/i18n                             9
   packages/plugins/linker-plugin             8
-  packages/features/map-adapter                 6
-  packages/features/tabular                     6
+  packages/                 6
+  packages/tabular                     6
 ```
 
 ### 2025-09-20 09:45 再集計（`pnpm as-any:report`）

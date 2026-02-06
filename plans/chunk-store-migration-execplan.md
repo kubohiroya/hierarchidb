@@ -54,7 +54,7 @@ Plugins need a reusable, URL-keyed chunk storage that can be configured with cus
 
 `@hierarchidb/download` currently exports `DownloadService`, `FetchNetworkPort`, `DexieChunkStoragePort`, and plugin-level helpers such as `downloadJson`. Dexie chunk storage is used both by download and by unrelated features (e.g., vector tile generation), which blurs responsibilities. Plugins like spreadsheet and styler need URL-keyed chunk storage that can store structured content via custom serialization.
 
-This plan introduces `packages/features/chunk-store` as a standalone package with a clear API for chunk storage, serialization, and URL-key mapping. `@hierarchidb/download` will become a smaller package focused on network orchestration and will be used internally by `chunk-store` when network fetching is needed.
+This plan introduces `packages/` as a standalone package with a clear API for chunk storage, serialization, and URL-key mapping. `@hierarchidb/download` will become a smaller package focused on network orchestration and will be used internally by `chunk-store` when network fetching is needed.
 
 ## Plan of Work
 
@@ -74,7 +74,7 @@ Finally, update docs (download and chunk-store READMEs), run typechecks, and log
 
 ## Concrete Steps
 
-1. Create `packages/features/chunk-store` with package.json, tsconfig, and README describing purpose and API.
+1. Create `packages/` with package.json, tsconfig, and README describing purpose and API.
 2. Implement `src/index.ts` exporting the chunk-store interfaces and adapters.
 3. Implement a Dexie adapter that accepts injected DB/table names and serializer/deserializer functions.
 4. Refactor download helpers to remove plugin-level caching/registry APIs; update exports accordingly.

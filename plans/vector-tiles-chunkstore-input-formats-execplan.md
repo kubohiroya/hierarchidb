@@ -40,7 +40,7 @@ shape/location/route のベクトルタイル生成において、chunk-store �
 
 まず runtime-worker に inputFormat/inputCompression を追加し、chunk-store への書き込み時に gzip 圧縮を行えるようにする。`writeVectorTileInput` と `runVectorTileStage` に圧縮オプションを追加し、`StageProcessingService` は `inputCompression` に応じて `DecompressionStream('gzip')` で解凍してから gis-sdk の `generateVectorTilesFromJsonBuffer` / `generateVectorTilesFromFgbBuffer` に渡す。
 
-次に gis-sdk に FlatGeobuf エンコード関数を追加し、`packages/features/gis-sdk/src/vectorTiles.ts` と `packages/features/gis-sdk/src/index.ts` で export する。これを location/route の入力バッファ生成に利用する。
+次に gis-sdk に FlatGeobuf エンコード関数を追加し、`packages//src/vectorTiles.ts` と `packages//src/index.ts` で export する。これを location/route の入力バッファ生成に利用する。
 
 最後に shape/location/route の設定とタスク入力型に inputFormat/inputCompression を追加し、各パイプラインが指定に応じて GeoJSON/FlatGeobuf の入力バッファを生成して runtime-worker に渡す。Route の `RouteVectorTileService` は chunk-store 直接書き込みを `writeVectorTileInput` に置き換える。
 
@@ -48,12 +48,12 @@ shape/location/route のベクトルタイル生成において、chunk-store �
 
 1) runtime-worker の `packages/runtime-worker/src/services/vectorTileStageRunner.ts` に inputCompression 追加と gzip 圧縮処理を実装する。`packages/runtime-worker/src/services/StageProcessingService.ts` で gzip 解凍を追加する。必要なら `vitest.setup.base.ts` に `DecompressionStream` モックを追加する。
 
-2) gis-sdk の `packages/features/gis-sdk/src/vectorTiles.ts` に FlatGeobuf エンコード関数を追加し、`packages/features/gis-sdk/src/index.ts` で export する。
+2) gis-sdk の `packages//src/vectorTiles.ts` に FlatGeobuf エンコード関数を追加し、`packages//src/index.ts` で export する。
 
 3) shape/location/route の入力生成を更新する。
    - shape: `plugins/shape-plugin/src/common/types/ObsolateBuildConfig.ts` と `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts` に inputFormat/inputCompression を追加し、`RuntimeWorkerVectorTileAdapter` で `inputFormat` に応じて GeoJSON/FlatGeobuf を生成する。
-   - location: `packages/features/location-store/src/index.ts` の `LocationTileSettings` に inputFormat/inputCompression を追加し、`plugins/location-plugin/src/services/batch/LocationSessionController.ts` で inputFormat に応じたバッファ生成を行う。
-   - route: `packages/features/route-store/src/index.ts` の `RouteProcessingConfig.vectorTiles` と `plugins/route-plugin/src/services/RouteVectorTileService.ts` / `RouteBatchSession.ts` に inputFormat/inputCompression を追加し、chunk-store 書き込みを `writeVectorTileInput` に集約する。
+   - location: `packages//src/index.ts` の `LocationTileSettings` に inputFormat/inputCompression を追加し、`plugins/location-plugin/src/services/batch/LocationSessionController.ts` で inputFormat に応じたバッファ生成を行う。
+   - route: `packages//src/index.ts` の `RouteProcessingConfig.vectorTiles` と `plugins/route-plugin/src/services/RouteVectorTileService.ts` / `RouteBatchSession.ts` に inputFormat/inputCompression を追加し、chunk-store 書き込みを `writeVectorTileInput` に集約する。
 
 4) plugin-service-api の `packages/plugin-service-api/src/types/shapeBuildTypes.ts` に inputFormat/inputCompression を追加する。
 

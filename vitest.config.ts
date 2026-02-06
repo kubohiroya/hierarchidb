@@ -30,7 +30,7 @@ const projectRoots = [
   'packages/ui/dialog',
   'packages/ui/treeconsole/base',
   'packages/ui/treeconsole/treetable',
-  'packages/features/vectortile-orchestrator',
+  'packages/',
   'plugins/basemap-plugin',
   'plugins/folder-plugin',
   'plugins/location-plugin',
@@ -88,7 +88,7 @@ export default defineConfig({
       '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-worker-ui/plugin-dialog/src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(__dirname, './packages/runtime-worker/client/src/index.ts'),
-      '@hierarchidb/batch-api': path.resolve(__dirname, './packages/features/batch-api/src/index.ts'),
+      '@hierarchidb/batch-api': path.resolve(__dirname, './packages//src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
       '@hierarchidb/ui-treeconsole-toolbar': path.resolve(

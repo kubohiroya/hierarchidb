@@ -22,7 +22,7 @@ After this change, all geographic plugins use a single download registry that ha
 
 ## Decision Log
 
-- Decision: Move shared registry logic into `packages/features/download` rather than a UI package.
+- Decision: Move shared registry logic into `packages/` rather than a UI package.
   Rationale: The helper is runtime-agnostic and already depends on `@hierarchidb/download` internals.
   Date/Author: 2025-12-26 / Codex
 - Decision: Define a per-plugin cache policy (default: cache by pluginId + resolved options signature).
@@ -46,14 +46,14 @@ Key files:
 - `plugins/route-plugin/src/services/download/registry.ts`
 - `plugins/shape-plugin/src/services/utils/authFetch.ts`
 - `plugins/location-plugin/src/services/utils/authFetch.ts`
-- `packages/features/download/src/index.ts`
-- `packages/features/download/src/helpers/resolveNetworkUrl.ts`
+- `packages//src/index.ts`
+- `packages//src/helpers/resolveNetworkUrl.ts`
 
 A “download registry” in this plan means a small module that creates or returns a `DownloadServiceBundle` and provides auth notification hooks.
 
 ## Plan of Work
 
-Create a new module in `packages/features/download` that owns the plugin download registry. It should expose factory registration, option defaults, and helpers for array-buffer and JSON downloads. Consolidate the CORS proxy resolution and auth fetch logic into the same package. Then replace the plugin-specific registry and helper modules in shape, location, and route to use the shared module. Preserve plugin-specific defaults like dbPrefix and concurrency via parameters to the shared helper.
+Create a new module in `packages/` that owns the plugin download registry. It should expose factory registration, option defaults, and helpers for array-buffer and JSON downloads. Consolidate the CORS proxy resolution and auth fetch logic into the same package. Then replace the plugin-specific registry and helper modules in shape, location, and route to use the shared module. Preserve plugin-specific defaults like dbPrefix and concurrency via parameters to the shared helper.
 
 The registry must explicitly define its cache key. The planned default is: `pluginId + json(options)` where `options` is the merged configuration (`dbPrefix`, `perHostConcurrency`, `corsProxyBaseURL`). If `options` are omitted, the helper returns a cached instance per plugin. This preserves shape’s single cached instance while still allowing location/route to override concurrency in a deterministic way.
 
@@ -61,7 +61,7 @@ Auth notification should follow a consistent precedence: (1) explicit registry c
 
 ## Concrete Steps
 
-1) Add a new module `packages/features/download/src/pluginDownloadRegistry.ts` exporting:
+1) Add a new module `packages//src/pluginDownloadRegistry.ts` exporting:
 
    - `registerPluginDownloadServiceFactory(pluginId, factory)`
    - `getPluginDownloadService(pluginId, options)`
@@ -73,11 +73,11 @@ Auth notification should follow a consistent precedence: (1) explicit registry c
 
    The helper should internally manage per-plugin defaults and share a single implementation for CORS proxy resolution and retry logic.
 
-2) Create a shared `authFetch` helper in `packages/features/download/src/helpers/authFetch.ts` that uses `AuthRecoveryService` and `resolveNetworkUrl`. It should accept a `pluginType` string and pass it to `fetchWithAuth`.
+2) Create a shared `authFetch` helper in `packages//src/helpers/authFetch.ts` that uses `AuthRecoveryService` and `resolveNetworkUrl`. It should accept a `pluginType` string and pass it to `fetchWithAuth`.
 
 3) Add a shared URL resolver helper (for example `resolveDownloadUrl`) that applies the CORS proxy policy in one place, and use it in both `authFetch` and the download helpers.
 
-4) Update `packages/features/download/src/index.ts` to export the new registry and helper functions.
+4) Update `packages//src/index.ts` to export the new registry and helper functions.
 
 5) Replace the shape download helper with calls to the new registry, and delete or deprecate `plugins/shape-plugin/src/services/utils/downloadService.ts` if unused after migration. Preserve the shape-specific `dbPrefix: 'shape'` default in the registry.
 
@@ -108,7 +108,7 @@ Expected usage example in a plugin wrapper:
 
 ## Interfaces and Dependencies
 
-- New module: `packages/features/download/src/pluginDownloadRegistry.ts`.
+- New module: `packages//src/pluginDownloadRegistry.ts`.
 - Depends on: `createDownloadService`, `resolveNetworkUrl`, `AuthRecoveryService`.
 - No new external dependencies.
 

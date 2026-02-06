@@ -13,7 +13,7 @@ Users will have a single, reliable transform path that uses simplify-only proces
 - [x] (2026-01-25 03:30Z) Create this ExecPlan and keep it updated as decisions are made.
 - [x] Identify all transform-mode branching, simplify-only usage, and full-only configuration fields.
 - [x] Remove full-mode branches and related code paths in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
-- [x] Remove or restructure full-only configuration fields in `packages/features/gis-sdk/src/config.ts` and default config in `plugins/shape-plugin/src/common/types/constants.ts`.
+- [x] Remove or restructure full-only configuration fields in `packages//src/config.ts` and default config in `plugins/shape-plugin/src/common/types/constants.ts`.
 - [x] Update shape plugin UI to remove simplify-only-ineffective controls and align i18n.
 - [x] Update tests and fixtures that reference removed config fields.
 - [x] Run `pnpm typecheck` and capture output summary in `TASKS.md`.
@@ -38,7 +38,7 @@ Users will have a single, reliable transform path that uses simplify-only proces
 
 ## Context and Orientation
 
-The shape transform pipeline lives in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`. It currently branches between `simplify-only` and `full` transform modes. The simplify-only branch calls `simplifyOnlyCollection`, while the full branch calls `simplifyFeatureCollection` and performs additional geometry repair steps (ring fixes, self-intersection handling, pre-simplify filtering, quantization, and error record persistence). The shape plugin’s Step4 UI in `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx` exposes controls for both paths, and the configuration types live in `packages/features/gis-sdk/src/config.ts` with defaults in `plugins/shape-plugin/src/common/types/constants.ts`.
+The shape transform pipeline lives in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`. It currently branches between `simplify-only` and `full` transform modes. The simplify-only branch calls `simplifyOnlyCollection`, while the full branch calls `simplifyFeatureCollection` and performs additional geometry repair steps (ring fixes, self-intersection handling, pre-simplify filtering, quantization, and error record persistence). The shape plugin’s Step4 UI in `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx` exposes controls for both paths, and the configuration types live in `packages//src/config.ts` with defaults in `plugins/shape-plugin/src/common/types/constants.ts`.
 
 In this repo, “transform mode” refers to which simplify pipeline is used in `createTransformByBandHandler.ts`. “Simplify-only” means we only apply RDP simplification (and area-based tolerance adjustment) without quantization or geometry repair steps. “Full mode” refers to the branch that uses quantization and self-intersection repair logic.
 
@@ -54,7 +54,7 @@ Work in `/Users/hiroya/WebstormProjects/hierarchidb`.
 
 2) Edit `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` to remove the full-mode branch and any logs or error record logic that only applies to it. Ensure the simplify-only flow remains and still reports progress and errors sensibly.
 
-3) Edit `packages/features/gis-sdk/src/config.ts` and `plugins/shape-plugin/src/common/types/constants.ts` to remove full-only configuration fields (for example, self-intersection and pre-simplify filter settings) or to move any remaining required values to simplify-only paths if needed.
+3) Edit `packages//src/config.ts` and `plugins/shape-plugin/src/common/types/constants.ts` to remove full-only configuration fields (for example, self-intersection and pre-simplify filter settings) or to move any remaining required values to simplify-only paths if needed.
 
 4) Edit `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx` to remove UI controls that do not affect simplify-only behavior. Update i18n strings in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json` accordingly.
 
@@ -78,7 +78,7 @@ Include brief `pnpm typecheck` output summaries in `TASKS.md` for verification.
 
 No new external dependencies are required. All changes are contained within the shape pipeline and UI modules. The primary interfaces are:
 
-- `packages/features/gis-sdk/src/config.ts` `ShapeTransformConfig`
+- `packages//src/config.ts` `ShapeTransformConfig`
 - `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`
 - `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx`
 

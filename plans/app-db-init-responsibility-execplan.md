@@ -55,10 +55,10 @@ This plan must be maintained in accordance with `PLANS.md` in the repository roo
   - `plugins/route-plugin/src/services/database/index.ts`
   - `plugins/resolver-plugin/src/worker/database/index.ts`
 - storeパッケージ:
-  - `packages/features/location-store`
-  - `packages/features/route-store`
-  - `packages/features/shape-store`
-  - （新規）`packages/features/resolver-store`
+  - `packages/`
+  - `packages/`
+  - `packages/`
+  - （新規）`packages/`
 
 ## Plan of Work
 
@@ -72,15 +72,15 @@ This plan must be maintained in accordance with `PLANS.md` in the repository roo
 ## Concrete Steps
 
 1. resolver-store新設
-   - `packages/features/resolver-store/package.json`
-   - `packages/features/resolver-store/tsconfig.json`
-   - `packages/features/resolver-store/src/index.ts`
-   - `packages/features/resolver-store/src/ResolverDB.ts`
+   - `packages//package.json`
+   - `packages//tsconfig.json`
+   - `packages//src/index.ts`
+   - `packages//src/ResolverDB.ts`
 
 2. store API追加
-   - `packages/features/location-store/src/LocationDB.ts` に `clearLocationDatabases` 等を追加
-   - `packages/features/route-store/src/RouteDB.ts` に `getRouteDB` / `clearRouteDatabases` を追加
-   - `packages/features/shape-store/src/index.ts` へ `clearShapeDatabases` / `prewarmShapeDB` 追加
+   - `packages//src/LocationDB.ts` に `clearLocationDatabases` 等を追加
+   - `packages//src/RouteDB.ts` に `getRouteDB` / `clearRouteDatabases` を追加
+   - `packages//src/index.ts` へ `clearShapeDatabases` / `prewarmShapeDB` 追加
 
 3. plugin database module撤去
    - `plugins/location-plugin/src/database/**` 削除、package.json exports/build更新

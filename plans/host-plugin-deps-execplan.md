@@ -23,7 +23,7 @@ Success is observable by running dependency-cruiser with the repository config a
 - Observation: runtime-worker still dynamically imports @hierarchidb/location-plugin for IDE-GSM helpers, which is a direct host-to-plugin dependency.
   Evidence: packages/runtime-worker/src/services/LocationMutationService.ts imports @hierarchidb/location-plugin.
 - Observation: @hierarchidb/styler-store depends on @hierarchidb/spreadsheet-plugin for SpreadsheetEntity types, which is another host-to-plugin dependency.
-  Evidence: packages/features/styler-store/src/StylerEntity.ts imports @hierarchidb/spreadsheet-plugin.
+  Evidence: packages//src/StylerEntity.ts imports @hierarchidb/spreadsheet-plugin.
 
 ## Decision Log
 
@@ -37,13 +37,13 @@ Pending. This section will be updated after completing the milestones and valida
 
 ## Context and Orientation
 
-Host side means code in app/, packages/runtime-worker/, packages/common/, and packages/features/ that should not import plugin packages directly. Plugin code lives under plugins/*-plugin/ and is exposed to the host via @hierarchidb/plugin-registry generated loaders and definitions. Feature store packages (packages/features/*-store) are intended to hold shared types and storage implementations that host code can depend on safely.
+Host side means code in app/, packages/runtime-worker/, packages/common/, and packages/ that should not import plugin packages directly. Plugin code lives under plugins/*-plugin/ and is exposed to the host via @hierarchidb/plugin-registry generated loaders and definitions. Feature store packages (packages/*-store) are intended to hold shared types and storage implementations that host code can depend on safely.
 
 Key files and modules to update:
 
 - packages/runtime-worker/src/services/LocationMutationService.ts currently dynamic-imports location-plugin for IDE-GSM helpers.
 - plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts and plugins/location-plugin/src/services/pointRepository.ts contain the helpers that should move to a store package.
-- packages/features/styler-store/src/StylerEntity.ts imports spreadsheet-plugin types.
+- packages//src/StylerEntity.ts imports spreadsheet-plugin types.
 - plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts defines SpreadsheetEntity types that should move to a store package.
 - packages/runtime-worker/package.json and app/package.json declare direct plugin dependencies that should be removed or minimized in favor of plugin-registry.
 - app/vite.config.ts contains explicit plugin spec alias mappings; this must be checked for whether it violates the dependency rule or is part of the plugin-registry toolchain.
@@ -51,7 +51,7 @@ Key files and modules to update:
 Definitions:
 
 - plugin-registry: The generated registry and loader modules in packages/plugin-registry, which provide the authoritative plugin definitions and dynamic import loaders for UI/worker/icon/database modules.
-- store package: A package in packages/features/*-store that exposes types and persistence APIs that host code can depend on without importing plugin implementation code.
+- store package: A package in packages/*-store that exposes types and persistence APIs that host code can depend on without importing plugin implementation code.
 
 ## Plan of Work
 
@@ -59,7 +59,7 @@ First, enumerate all host-side imports of @hierarchidb/*-plugin and all host pac
 
 Second, remove the runtime-worker dependency on location-plugin by moving IDE-GSM parsing and point replacement helpers into @hierarchidb/location-store. Update location-store exports to include the moved functions, and update location-plugin to re-export them from the store. Update runtime-worker to import these helpers from location-store instead of location-plugin.
 
-Third, remove styler-store’s dependency on spreadsheet-plugin by creating a new packages/features/spreadsheet-store package. Move SpreadsheetEntity and SpreadSheetDataSourceType definitions into this new store package, and re-export them from spreadsheet-plugin. Update styler-store to import from spreadsheet-store and update its package.json dependencies accordingly.
+Third, remove styler-store’s dependency on spreadsheet-plugin by creating a new packages/ package. Move SpreadsheetEntity and SpreadSheetDataSourceType definitions into this new store package, and re-export them from spreadsheet-plugin. Update styler-store to import from spreadsheet-store and update its package.json dependencies accordingly.
 
 Fourth, update host package.json dependencies to remove direct plugin dependencies. app/package.json and packages/runtime-worker/package.json should keep plugin-registry and store packages, while direct plugin dependencies should be removed unless the dependency is explicitly required for plugin-registry generation. For Vite config alias lists, decide whether those lists can be derived from plugin-registry outputs or the existing plugin alias plugin without direct plugin dependencies; document the decision and align config accordingly.
 
@@ -70,19 +70,19 @@ Finally, rerun dependency-cruiser and grep scans to confirm that host-side plugi
 Run the following commands from the repository root and compare results to the expected outputs described below.
 
 1) Inventory direct plugin imports in host code.
-   Command: rg -n "@hierarchidb/[^\"'\s]*-plugin" packages/runtime-worker packages/common packages/features packages/ui app -g"*.ts*" -g"*.js"
+   Command: rg -n "@hierarchidb/[^\"'\s]*-plugin" packages/runtime-worker packages/common packages packages/ui app -g"*.ts*" -g"*.js"
    Expectation: The remaining hits should be limited to plugin-registry infrastructure or be flagged as disallowed. Record the disallowed list in this plan and TASKS.md.
 
 2) Move IDE-GSM helpers from location-plugin to location-store and update imports.
-   Files: packages/features/location-store/src (new modules as needed), plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts, plugins/location-plugin/src/services/pointRepository.ts, plugins/location-plugin/src/services/index.ts, packages/runtime-worker/src/services/LocationMutationService.ts.
+   Files: packages//src (new modules as needed), plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts, plugins/location-plugin/src/services/pointRepository.ts, plugins/location-plugin/src/services/index.ts, packages/runtime-worker/src/services/LocationMutationService.ts.
    Expectation: runtime-worker no longer imports @hierarchidb/location-plugin. location-plugin re-exports the helpers from location-store.
 
 3) Create spreadsheet-store and update styler-store/spreadsheet-plugin.
-   Files: packages/features/spreadsheet-store (new package.json, tsconfig, src/index.ts, src/SpreadsheetEntity.ts), plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts (move definitions), plugins/spreadsheet-plugin/src/index.ts (re-export), packages/features/styler-store/src/StylerEntity.ts, packages/features/styler-store/package.json.
+   Files: packages/ (new package.json, tsconfig, src/index.ts, src/SpreadsheetEntity.ts), plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts (move definitions), plugins/spreadsheet-plugin/src/index.ts (re-export), packages//src/StylerEntity.ts, packages//package.json.
    Expectation: styler-store imports SpreadsheetEntity types from spreadsheet-store. spreadsheet-plugin re-exports them for plugin-side usage. No host code imports spreadsheet-plugin directly for these types.
 
 4) Remove direct plugin dependencies from host package.json where possible.
-   Files: app/package.json, packages/runtime-worker/package.json, packages/features/styler-store/package.json.
+   Files: app/package.json, packages/runtime-worker/package.json, packages//package.json.
    Expectation: plugin-registry remains the only host-side dependency path to plugin packages.
 
 5) Validate the dependency graph.
@@ -105,7 +105,7 @@ Capture the dependency-cruiser output and any before/after grep output in TASKS.
 
 ## Interfaces and Dependencies
 
-This work introduces a new store package (packages/features/spreadsheet-store) with a public interface for SpreadsheetEntity types. Ensure these types are exported from spreadsheet-store and re-exported by spreadsheet-plugin. Location IDE-GSM helper signatures must remain identical to their current usage in runtime-worker to avoid behavioral changes; only their module location should change. runtime-worker should depend on @hierarchidb/location-store for these helpers, not on location-plugin.
+This work introduces a new store package (packages/) with a public interface for SpreadsheetEntity types. Ensure these types are exported from spreadsheet-store and re-exported by spreadsheet-plugin. Location IDE-GSM helper signatures must remain identical to their current usage in runtime-worker to avoid behavioral changes; only their module location should change. runtime-worker should depend on @hierarchidb/location-store for these helpers, not on location-plugin.
 
 
 Revision note: Initial plan drafted on 2025-12-28 to remove host-to-plugin dependencies outside plugin-registry and align store packages for shared types.

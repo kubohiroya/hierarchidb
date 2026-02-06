@@ -22,11 +22,11 @@ export default defineConfig({
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/tabular-store': path.resolve(
         workspaceRoot,
-        'packages/features/tabular-store/src/index.ts'
+        'packages//src/index.ts'
       ),
       '@hierarchidb/tabular-source': path.resolve(
         workspaceRoot,
-        'packages/features/tabular-source/src/index.ts'
+        'packages//src/index.ts'
       ),
       '@hierarchidb/ui-tabular': path.resolve(
         workspaceRoot,

@@ -33,7 +33,7 @@ LocationFeature の国情報が admin0 命名に統一され、Metadata 表の�
 
 ## Context and Orientation
 
-このリポジトリの LocationFeature は `packages/features/location-api/src/locationTypes.ts` に定義される。`LocationPointProperties` が `LocationFeatureProperties` として再利用され、`LocationFeature` の `data` がこの型を持つ。現在は `countryCode/countryName` と `admin0Code/admin0Name` が同居しているため、UI 表示で重複が発生する。
+このリポジトリの LocationFeature は `packages//src/locationTypes.ts` に定義される。`LocationPointProperties` が `LocationFeatureProperties` として再利用され、`LocationFeature` の `data` がこの型を持つ。現在は `countryCode/countryName` と `admin0Code/admin0Name` が同居しているため、UI 表示で重複が発生する。
 
 UI 側では `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` が Location Preview の Metadata 表や Snackbar 表示を作っており、ここで `countryCode/countryName` を表示している箇所を `admin0Code/admin0Name` に置換する必要がある。Worker 側の正規化では `plugins/location-plugin/src/worker/normalizers.ts` などが LocationFeature の正規化を行うため、`countryCode/countryName` の読み書きがある場合は置換する。
 
@@ -41,18 +41,18 @@ UI 側では `plugins/location-plugin/src/ui/components/steps/LocationMapPreview
 
 ## Plan of Work
 
-まず `packages/features/location-api/src/locationTypes.ts` の `LocationPointProperties` から `countryCode/countryName` を削除し、必要な箇所では `admin0Code/admin0Name` を正とする。次に、LocationFeature を生成・正規化する処理（`packages/features/location-api/src/ideGsmLocationCsv.ts`、`plugins/location-plugin/src/worker/normalizers.ts`、`plugins/location-plugin/src/services/pointFactories.ts` など）で `countryCode/countryName` を書き込んでいる箇所を `admin0Code/admin0Name` に置換する。最後に UI の Metadata 表と Snackbar 表示の参照先を更新し、`countryCode/countryName` のカラムを撤去する。
+まず `packages//src/locationTypes.ts` の `LocationPointProperties` から `countryCode/countryName` を削除し、必要な箇所では `admin0Code/admin0Name` を正とする。次に、LocationFeature を生成・正規化する処理（`packages//src/ideGsmLocationCsv.ts`、`plugins/location-plugin/src/worker/normalizers.ts`、`plugins/location-plugin/src/services/pointFactories.ts` など）で `countryCode/countryName` を書き込んでいる箇所を `admin0Code/admin0Name` に置換する。最後に UI の Metadata 表と Snackbar 表示の参照先を更新し、`countryCode/countryName` のカラムを撤去する。
 
 変更後は `pnpm --filter @hierarchidb/location-plugin typecheck` で型整合を確認し、必要に応じて `pnpm --filter @hierarchidb/location-api build` を実行して型出力を更新する。エラーが出た場合は参照漏れを洗い出して修正する。
 
 ## Concrete Steps
 
 1) スキーマの rename
-   - `packages/features/location-api/src/locationTypes.ts` の `LocationPointProperties` から `countryCode/countryName` を削除し、`admin0Code/admin0Name` を利用する前提にする。
+   - `packages//src/locationTypes.ts` の `LocationPointProperties` から `countryCode/countryName` を削除し、`admin0Code/admin0Name` を利用する前提にする。
 
 2) 正規化/変換処理の置換
    - `plugins/location-plugin/src/worker/normalizers.ts` の `countryCode/countryName` を `admin0Code/admin0Name` へ変更する。
-   - `packages/features/location-api/src/ideGsmLocationCsv.ts` や `plugins/location-plugin/src/services/pointFactories.ts` など `countryCode/countryName` を扱う箇所を `admin0Code/admin0Name` に置換する。
+   - `packages//src/ideGsmLocationCsv.ts` や `plugins/location-plugin/src/services/pointFactories.ts` など `countryCode/countryName` を扱う箇所を `admin0Code/admin0Name` に置換する。
 
 3) UI 表示の整理
    - `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の Metadata 表の `countryCode/countryName` 列を撤去し、`admin0Code/admin0Name` のみ表示する。
@@ -84,8 +84,8 @@ UI 側では `plugins/location-plugin/src/ui/components/steps/LocationMapPreview
 
 ## Interfaces and Dependencies
 
-- `LocationPointProperties`（`packages/features/location-api/src/locationTypes.ts`）のフィールド定義が最終的な契約になる。
-- 変換処理は `plugins/location-plugin/src/worker/normalizers.ts` と `packages/features/location-api/src/ideGsmLocationCsv.ts` を優先的に修正する。
+- `LocationPointProperties`（`packages//src/locationTypes.ts`）のフィールド定義が最終的な契約になる。
+- 変換処理は `plugins/location-plugin/src/worker/normalizers.ts` と `packages//src/ideGsmLocationCsv.ts` を優先的に修正する。
 - UI 側の表示は `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` を更新する。
 
 更新履歴: 2026-02-01 作成。admin0 命名統一の ExecPlan を追加。

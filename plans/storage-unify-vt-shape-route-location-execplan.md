@@ -50,10 +50,10 @@ Current storage layout splits intermediate artifacts and tiles across multiple s
 
 - `packages/vt-shape-store`: `VtShapeDb` stores fetch and transform caches.
 - `packages/vt-store`: `VtDb` stores vector tiles used by UI queries.
-- `packages/features/shape-store`: `ShapeDB` is the persistent domain DB for shape features.
-- `packages/features/route-store`: `RouteDB` is the persistent domain DB for route features.
-- `packages/features/location-store`: `LocationDB` is the persistent domain DB for location points (defined in `LocationDB.ts`).
-- `packages/features/shape-store/src/EphemeralShapeDB.ts`: `EphemeralShapeDB` stores current transform caches and tile relations.
+- `packages/`: `ShapeDB` is the persistent domain DB for shape features.
+- `packages/`: `RouteDB` is the persistent domain DB for route features.
+- `packages/`: `LocationDB` is the persistent domain DB for location points (defined in `LocationDB.ts`).
+- `packages//src/EphemeralShapeDB.ts`: `EphemeralShapeDB` stores current transform caches and tile relations.
 
 The goal is to remove `VtShapeDb` and `VtDb` entirely and use per-node DBs:
 
@@ -78,7 +78,7 @@ Finally, remove `packages/vt-shape-store` and `packages/vt-store` from dependenc
 
 Milestone 1 produces a complete migration map. Use ripgrep to list all references to `VtShapeDb`, `VtDb`, and `vt-shape-store`/`vt-store`. For each reference, record the replacement store and API. Acceptance: The mapping is recorded in this ExecPlan and includes every usage site.
 
-Milestone 2 moves intermediate artifacts to Ephemeral*DBs. Update schemas in `packages/features/shape-store/src/EphemeralShapeDB.ts` (and create or confirm `EphemeralRouteDB`/`EphemeralLocationDB` in their respective packages). Update fetch/transform handlers to write into these stores. Acceptance: Intermediate artifacts can be created and cleared via Step4 deletion for each node type.
+Milestone 2 moves intermediate artifacts to Ephemeral*DBs. Update schemas in `packages//src/EphemeralShapeDB.ts` (and create or confirm `EphemeralRouteDB`/`EphemeralLocationDB` in their respective packages). Update fetch/transform handlers to write into these stores. Acceptance: Intermediate artifacts can be created and cleared via Step4 deletion for each node type.
 
 Milestone 3 moves tiles to per-node DBs. Update tile write paths (currently using `VtDb`) to use `ShapeDB` / `RouteDB` / `LocationDB`. Update query APIs and UI loaders accordingly. Acceptance: Tiles render from the per-node DBs and `VtDb` is no longer referenced.
 
@@ -122,7 +122,7 @@ The migration should be repeatable. Schemas must be versioned so that re-running
 ## Artifacts and Notes
 
 Inventory (2026-01-20):
-- `packages/vt-shape-store/**`: legacy Dexie store for fetch/transform buffers. Replacement: `EphemeralShapeDB` tables in `packages/features/shape-store`.
+- `packages/vt-shape-store/**`: legacy Dexie store for fetch/transform buffers. Replacement: `EphemeralShapeDB` tables in `packages/`.
 - `packages/vt-store/**`: legacy tile store. Replacement: per-node DBs (`ShapeDB` / `RouteDB` / `LocationDB`) backed by `@hierarchidb/vectortile-store`.
 - `app/package.json`: dependency on `@hierarchidb/vt-store` (removed during cleanup).
 - `tsconfig.base.json`: path aliases for `@hierarchidb/vt-store` and `@hierarchidb/vt-shape-store` (removed during cleanup).
@@ -133,9 +133,9 @@ Record schema version bumps and cleanup validation here once implemented.
 
 Primary interfaces to update:
 
-- `packages/features/shape-store/src/ShapeDB.ts` and `EphemeralShapeDB.ts` for shape artifacts.
-- `packages/features/route-store/src/RouteDB.ts` and any EphemeralRouteDB counterpart.
-- `packages/features/location-store/src/LocationDB.ts` for `LocationDB` and ephemeral storage.
+- `packages//src/ShapeDB.ts` and `EphemeralShapeDB.ts` for shape artifacts.
+- `packages//src/RouteDB.ts` and any EphemeralRouteDB counterpart.
+- `packages//src/LocationDB.ts` for `LocationDB` and ephemeral storage.
 - `packages/vt-orchestrator/src/vt/vtStage.ts` and any pipeline stages that write tiles.
 - `plugins/*/src/services/vt/*` for fetch/transform/vt stage wiring.
 - `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` for node deletion cleanup hooks.

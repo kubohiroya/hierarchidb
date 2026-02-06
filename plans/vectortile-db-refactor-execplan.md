@@ -18,8 +18,8 @@ After this change, vector tiles and their metadata are stored inside each plugin
 
 ## Surprises & Discoveries
 
-- Observation: TilesDB appears in two places (packages/features/vectortile-store and packages/features/gis-sdk/src/TilesDB.ts) and shape-plugin also has a separate VectorTileDB/VectorTileDB2 file. This implies multiple overlapping “vector tile DB” definitions that are currently inconsistent.
-  Evidence: packages/features/gis-sdk/src/TilesDB.ts and packages/features/vectortile-store/src/tilesDb.ts plus plugins/shape-plugin/src/services/database/VectorTileDB.ts
+- Observation: TilesDB appears in two places (packages/ and packages//src/TilesDB.ts) and shape-plugin also has a separate VectorTileDB/VectorTileDB2 file. This implies multiple overlapping “vector tile DB” definitions that are currently inconsistent.
+  Evidence: packages//src/TilesDB.ts and packages//src/tilesDb.ts plus plugins/shape-plugin/src/services/database/VectorTileDB.ts
 
 ## Decision Log
 
@@ -33,18 +33,18 @@ After this change, vector tiles and their metadata are stored inside each plugin
 
 ## Context and Orientation
 
-Vector tile data is currently written by gis-sdk into TilesDB (packages/features/gis-sdk/src/TilesDB.ts) and queried through runtime-worker’s VectorTileWorkerAPI (getTile/listTiles/getSummary). Shape UI and services also reference TilesDB via runtime-worker for summaries, and shape-plugin has a separate VectorTileDB class for metadata display. Meanwhile, shape/location/route DBs each already contain vectorTiles tables but are not the primary storage location. The plan below consolidates these responsibilities into the per-plugin DBs.
+Vector tile data is currently written by gis-sdk into TilesDB (packages//src/TilesDB.ts) and queried through runtime-worker’s VectorTileWorkerAPI (getTile/listTiles/getSummary). Shape UI and services also reference TilesDB via runtime-worker for summaries, and shape-plugin has a separate VectorTileDB class for metadata display. Meanwhile, shape/location/route DBs each already contain vectorTiles tables but are not the primary storage location. The plan below consolidates these responsibilities into the per-plugin DBs.
 
 Key files to know:
 
-- packages/features/gis-sdk/src/vectorTiles.ts: vector tile generation, currently stores tiles and metadata in TilesDB.
+- packages//src/vectorTiles.ts: vector tile generation, currently stores tiles and metadata in TilesDB.
 - packages/runtime-worker/src/types.ts and packages/runtime-worker/src/services/StageProcessingService.ts: vector tile worker API.
 - packages/runtime-worker/src/services/vectorTileStageRunner.ts: writes inputs and triggers generateTiles/listTiles.
-- packages/features/shape-store/src/ShapeDB.ts: shapeDB schema (currently has vectorTiles but no metadata tables).
-- packages/features/location-store/src/LocationDB.ts: locationDB schema (vectorTiles table).
-- packages/features/route-store/src/RouteDB.ts: routeDB schema (vectorTiles table).
+- packages//src/ShapeDB.ts: shapeDB schema (currently has vectorTiles but no metadata tables).
+- packages//src/LocationDB.ts: locationDB schema (vectorTiles table).
+- packages//src/RouteDB.ts: routeDB schema (vectorTiles table).
 - plugins/shape-plugin/src/services/database/VectorTileDB.ts: duplicate VectorTileDB and VectorTileDB2 definitions to be consolidated.
-- packages/features/vectortile-store: shared base class and metadata schema for per-plugin DBs.
+- packages/: shared base class and metadata schema for per-plugin DBs.
 
 VectorTileDB2 (shape-plugin) currently defines meta, sources, and tileIndex tables for tile indexing. These table definitions will be moved to a shared base class so that all three plugin DBs can provide the same structure.
 
@@ -79,7 +79,7 @@ All commands should be run from /Users/hiroya/WebstormProjects/hierarchidb unles
    - Update shape/location/route adapters to write vector tiles into their DBs.
 
 4) Keep vectortile-store and update dependencies.
-   - Ensure packages/features/vectortile-store exports the shared base class/types.
+   - Ensure packages/ exports the shared base class/types.
    - Remove TilesDB references from package.json and code imports.
 
 ## Validation and Acceptance

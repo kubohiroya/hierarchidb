@@ -43,11 +43,11 @@ fetch-save-metadata パッケージを完全に削除し、Shape Plugin の Step
 
 現在の Shape Plugin は `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts` で `@hierarchidb/fetch-save-metadata/output/*.json` を静的 import し、Step3 の国メタデータや availability 計算に利用している。`useCountryMetadata`（`plugins/shape-plugin/src/ui/hooks/useCountryMetadata.ts`）は MetadataLoader を呼び出し、失敗時に SAMPLE_COUNTRIES を返す。`CountryAvailabilityResolver`（`plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`）も MetadataLoader を使って可用レベルを構築する。`@hierarchidb/download` には `downloadJson` があり、`cache: 'conditional'` 指定時は ETag/Last-Modified を使って再検証するが、テキスト（HTML）取得用のAPIは存在しない。
 
-fetch-save-metadata パッケージ（`packages/features/fetch-save-metadata`）および `scripts/data-generation/generate-metadata.mjs` は GitHub raw JSON を再取得するだけで、公式データソースからの生成経路はない。削除する場合は `package.json` の `metadata:ensure` などのスクリプト、および `app/vite.config.ts` / `types/ambient-modules.d.ts` / `tsconfig.base.json` の alias を合わせて更新する必要がある。
+fetch-save-metadata パッケージ（`packages/fetch-save-metadata`）および `scripts/data-generation/generate-metadata.mjs` は GitHub raw JSON を再取得するだけで、公式データソースからの生成経路はない。削除する場合は `package.json` の `metadata:ensure` などのスクリプト、および `app/vite.config.ts` / `types/ambient-modules.d.ts` / `tsconfig.base.json` の alias を合わせて更新する必要がある。
 
 ## Plan of Work
 
-まず `@hierarchidb/download` にテキスト取得のユーティリティを追加する。`downloadJson` と同じく `cache: 'conditional'` をサポートし、HTML取得に使える `downloadText` を提供する。実装は `packages/features/download/src/pluginDownloadRegistry.ts` に追加し、`packages/features/download/src/index.ts` で export する。レスポンスは `ArrayBuffer` を `TextDecoder('utf-8')` で文字列化し、Conditional fetch で 304 の場合はキャッシュを返す仕様に揃える。
+まず `@hierarchidb/download` にテキスト取得のユーティリティを追加する。`downloadJson` と同じく `cache: 'conditional'` をサポートし、HTML取得に使える `downloadText` を提供する。実装は `packages//src/pluginDownloadRegistry.ts` に追加し、`packages//src/index.ts` で export する。レスポンスは `ArrayBuffer` を `TextDecoder('utf-8')` で文字列化し、Conditional fetch で 304 の場合はキャッシュを返す仕様に揃える。
 
 次に Shape Plugin の MetadataLoader を静的 JSON import から `download` ベースに置き換える。`plugins/shape-plugin/src/services/metadata` 配下にデータソース別の取得関数を分離し、`MetadataLoader` がそれらを呼び出して `CountryMetadata[]` を返すようにする。geoBoundaries は `https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/` を `downloadJson` で取得し、配列の各レコードから `boundaryISO`（ISO-3）と `boundaryType`（ADMレベル）を収集し、ISO-3 ごとに利用可能レベルの集合を作る。国名は `boundaryName` / `shapeName` / `countryName` の順で読み取り、ISO-2 は `normalizeCountryCodeFormat(iso3, 'iso2')` で補完する。GADM は `https://gadm.org/maps.html` を `downloadText` で取得し、ISO-3 と国名、各国ページへのリンクを抽出する。各国ページは `downloadText` で取得し、`GeoJSON:` セクションから `level-0` などの数値を抽出して `availableAdminLevels` に変換する。Natural Earth は `CountryMetadata` を 1 件だけ返し（例: `countryCode: 'GLOBAL'`, `countryName: 'Worldwide'`, `availableAdminLevels: [0, 1]`）、OpenStreetMap は `MetadataLoader.loadMetadata` 時点で明示的に例外を投げる。
 
@@ -57,7 +57,7 @@ Step3 の UI/Worker については、`useCountryMetadata` が OpenStreetMap の
 
 ## Concrete Steps
 
-1) download パッケージに `downloadText` を追加し、export する。作業場所は `packages/features/download/src/pluginDownloadRegistry.ts` と `packages/features/download/src/index.ts`。
+1) download パッケージに `downloadText` を追加し、export する。作業場所は `packages//src/pluginDownloadRegistry.ts` と `packages//src/index.ts`。
    期待する追加シグネチャ例:
      downloadText(pluginId: string, url: string, prefix: string, options?: DownloadJsonOptions, signal?: AbortSignal): Promise<string>
 
@@ -72,7 +72,7 @@ Step3 の UI/Worker については、`useCountryMetadata` が OpenStreetMap の
    - 例外時に SAMPLE_COUNTRIES を流さない条件分岐を入れる。
 
 4) fetch-save-metadata を削除し、参照とスクリプトを整理する。
-   - 削除対象: `packages/features/fetch-save-metadata/**`, `scripts/data-generation/generate-metadata.mjs`
+   - 削除対象: `packages/fetch-save-metadata/**`, `scripts/data-generation/generate-metadata.mjs`
    - 更新対象: `package.json`（`metadata:ensure` と `generate-*-metadata` を削除）
    - 更新対象: `app/vite.config.ts`, `app/vite.config.min.ts`, `types/ambient-modules.d.ts`, `tsconfig.base.json`
    - shape-plugin の `prebuild` から `metadata:ensure` を削除

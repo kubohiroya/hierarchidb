@@ -134,7 +134,7 @@
   Total: 3,210 lines
 
 
-📁 packages/features/auth-recovery/src:
+📁 packages/auth-recovery/src:
 ──────────────────────────────────────────────────
   📄 AuthRecoveryService.ts              132 lines
   📄 capability.ts                         3 lines
@@ -144,7 +144,7 @@
   Total: 163 lines
 
 
-📁 packages/features/batch/src:
+📁 packages/batch/src:
 ──────────────────────────────────────────────────
   📂 lane/                               174 lines
   📂 manager/                            135 lines
@@ -157,7 +157,7 @@
   Total: 785 lines
 
 
-📁 packages/features/compute/src:
+📁 packages/compute/src:
 ──────────────────────────────────────────────────
   📄 capability.ts                        28 lines
   📄 ComputeService.ts                    20 lines
@@ -169,7 +169,7 @@
   Total: 256 lines
 
 
-📁 packages/features/download/src:
+📁 packages/download/src:
 ──────────────────────────────────────────────────
   📂 __tests__/                           62 lines
   📂 adapters/                           383 lines
@@ -184,7 +184,7 @@
   Total: 895 lines
 
 
-📁 packages/features/feature-registry/src:
+📁 packages/feature-registry/src:
 ──────────────────────────────────────────────────
   📄 FeatureRegistry.ts                   74 lines
   📄 preconnect.ts                              4 lines
@@ -193,7 +193,7 @@
   Total: 99 lines
 
 
-📁 packages/features/fetch-save-metadata/src:
+📁 packages/fetch-save-metadata/src:
 ──────────────────────────────────────────────────
   📂 types/                               22 lines
   📂 utils/                               41 lines
@@ -203,7 +203,7 @@
   Total: 120 lines
 
 
-📁 packages/features/import-export/src:
+📁 packages/import-export/src:
 ──────────────────────────────────────────────────
   📂 __tests__/                          171 lines
   📄 capability.ts                        48 lines
@@ -214,7 +214,7 @@
   Total: 669 lines
 
 
-📁 packages/features/map-adapter/src:
+📁 packages/map-adapter/src:
 ──────────────────────────────────────────────────
   📂 adapters/                           180 lines
   📄 preconnect.ts                             13 lines
@@ -225,7 +225,7 @@
   Total: 286 lines
 
 
-📁 packages/features/map-source/src:
+📁 packages/map-source/src:
 ──────────────────────────────────────────────────
   📂 adapters/                           229 lines
   📄 preconnect.ts                             13 lines
@@ -236,21 +236,21 @@
   Total: 304 lines
 
 
-📁 packages/features/route-resolver/src:
+📁 packages/route-resolver/src:
 ──────────────────────────────────────────────────
   📄 preconnect.ts                             33 lines
 ──────────────────────────────────────────────────
   Total: 33 lines
 
 
-📁 packages/features/route-searoute/src:
+📁 packages/route-searoute/src:
 ──────────────────────────────────────────────────
   📄 preconnect.ts                             20 lines
 ──────────────────────────────────────────────────
   Total: 20 lines
 
 
-📁 packages/features/tabular-source-xlsx/src:
+📁 packages/tabular-source-xlsx/src:
 ──────────────────────────────────────────────────
   📄 preconnect.ts                             27 lines
   📄 xlsxParser.ts                       100 lines
@@ -258,7 +258,7 @@
   Total: 127 lines
 
 
-📁 packages/features/tabular-source/src:
+📁 packages/tabular-source/src:
 ──────────────────────────────────────────────────
   📂 parsers/                            210 lines
   📂 processors/                          79 lines
@@ -274,7 +274,7 @@
   Total: 568 lines
 
 
-📁 packages/features/tabular-store/src:
+📁 packages/tabular-store/src:
 ──────────────────────────────────────────────────
   📄 preconnect.ts                              5 lines
   📄 Indexer.ts                           90 lines
@@ -287,7 +287,7 @@
   Total: 584 lines
 
 
-📁 packages/features/tag/src:
+📁 packages/tag/src:
 ──────────────────────────────────────────────────
   📄 capability.ts                        31 lines
   📄 preconnect.ts                             11 lines
@@ -822,21 +822,21 @@
   packages/common/auth/src                   335 lines
   packages/common/types/src                1,690 lines
   packages/components/src                  3,210 lines
-  packages/features/auth-recovery/src        163 lines
-  packages/features/batch/src                785 lines
-  packages/features/compute/src              256 lines
-  packages/features/download/src             895 lines
-  packages/features/feature-registry/src         99 lines
-  packages/features/fetch-save-metadata/src        120 lines
-  packages/features/import-export/src        669 lines
-  packages/features/map-adapter/src          286 lines
-  packages/features/map-source/src           304 lines
-  packages/features/route-resolver/src         33 lines
-  packages/features/route-searoute/src         20 lines
-  packages/features/tabular-source-xlsx/src        127 lines
-  packages/features/tabular-source/src        568 lines
-  packages/features/tabular-store/src        584 lines
-  packages/features/tag/src                  221 lines
+  packages/auth-recovery/src        163 lines
+  packages/batch/src                785 lines
+  packages/compute/src              256 lines
+  packages/download/src             895 lines
+  packages/feature-registry/src         99 lines
+  packages/fetch-save-metadata/src        120 lines
+  packages/import-export/src        669 lines
+  packages/map-adapter/src          286 lines
+  packages/map-source/src           304 lines
+  packages/route-resolver/src         33 lines
+  packages/route-searoute/src         20 lines
+  packages/tabular-source-xlsx/src        127 lines
+  packages/tabular-source/src        568 lines
+  packages/tabular-store/src        584 lines
+  packages/tag/src                  221 lines
   packages/plugin-base/src                 1,539 lines
   packages/plugin-presentation/src           318 lines
   packages/plugin-registry/src               184 lines

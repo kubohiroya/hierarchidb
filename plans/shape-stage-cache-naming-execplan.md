@@ -37,7 +37,7 @@ After this change, the shape build pipeline uses four explicit stages (fetch, tr
 
 ## Context and Orientation
 
-The shape build pipeline currently writes transform outputs into `@hierarchidb/vt-shape-store` and reads them in `packages/vt-orchestrator/src/vt/vtStage.ts`. A separate ephemeral database `packages/features/shape-store/src/EphemeralShapeDB.ts` stores stage buffers with legacy table names (`extract2SourceBuffers`, `vectorTileSourceBuffers`) and these names no longer match current stage semantics. UI cache labels live in `plugins/shape-plugin/src/ui/locales/*.json` and the delete actions are wired in `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`.
+The shape build pipeline currently writes transform outputs into `@hierarchidb/vt-shape-store` and reads them in `packages/vt-orchestrator/src/vt/vtStage.ts`. A separate ephemeral database `packages//src/EphemeralShapeDB.ts` stores stage buffers with legacy table names (`extract2SourceBuffers`, `vectorTileSourceBuffers`) and these names no longer match current stage semantics. UI cache labels live in `plugins/shape-plugin/src/ui/locales/*.json` and the delete actions are wired in `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`.
 
 Terms used in this plan:
 
@@ -53,7 +53,7 @@ Start by codifying the naming and stage vocabulary in shared types and UI string
 
 Run all commands from repository root `/Users/hiroya/WebstormProjects/hierarchidb`.
 
-1) Create the new cache schema and migration in `packages/features/shape-store/src/EphemeralShapeDB.ts`.
+1) Create the new cache schema and migration in `packages//src/EphemeralShapeDB.ts`.
    - Bump the Dexie version and add new table names (transformByBandCache, transformByZoomCache) with indices matching the old tables.
    - In the upgrade handler, copy rows from `extract2SourceBuffers` to `transformByBandCache` and from `vectorTileSourceBuffers` to `transformByZoomCache`, then optionally clear the old tables.
 
@@ -93,7 +93,7 @@ Expected `pnpm typecheck` snippet:
 
 ## Interfaces and Dependencies
 
-- `packages/features/shape-store/src/EphemeralShapeDB.ts` defines the ephemeral cache schema and must include the new table names.
+- `packages//src/EphemeralShapeDB.ts` defines the ephemeral cache schema and must include the new table names.
 - `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` writes transform-by-band cache entries.
 - `packages/vt-orchestrator/src/vt/vtStage.ts` reads transform-by-band cache entries.
 - `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts` uses cache counts to enable/disable delete buttons.

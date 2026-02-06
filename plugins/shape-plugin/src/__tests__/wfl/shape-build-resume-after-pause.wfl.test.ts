@@ -10,7 +10,7 @@ vi.mock('comlink', async () => (
 ));
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../../packages/features/gis-sdk/dist/index.js')
+  await import('../../../../../packages//dist/index.js')
 ));
 
 vi.mock('@hierarchidb/vt-orchestrator', async () => {

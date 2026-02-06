@@ -76,7 +76,7 @@ UI の状態更新は `plugins/shape-plugin/src/ui/components/step6/useShapePrev
 
 4) metadata schema 変更。
    - 編集: `packages/plugin-service-api/src/types/shapeBuildTypes.ts` の `ShapeFeatureMetadata` に `recycling?: boolean` を追加。
-   - 影響を受ける型 alias（`packages/features/vectortile-store/src/tilesDb.ts` など）も更新。
+   - 影響を受ける型 alias（`packages//src/tilesDb.ts` など）も更新。
 
 5) fetch/transform の allowlist 対応。
    - 編集: `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` に `__hdbFeatureId` 付与。

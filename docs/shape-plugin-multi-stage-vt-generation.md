@@ -68,7 +68,7 @@ flowchart TD
   - `ephemeralDB.transformCache` への保存。
   - `tileIdToBufferRelations` の作成（vt 生成時の検索キー）。
 
-- `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- `packages//src/EphemeralShapeDB.ts`
   - `fetchCache` / `transformCache` / `tileIdToBufferRelations` の保存先。
 
 ### VT ステージ（ベクトルタイル生成・保存）
@@ -86,5 +86,5 @@ flowchart TD
   - `ShapeQueryAPIImpl` が shapeDB / ephemeralShapeDB の検索を担当。
   - タスク一覧、タイル取得、セッション情報の読み出しを提供。
 
-- `packages/features/shape-store/src/ShapeDB.ts`
+- `packages//src/ShapeDB.ts`
   - VectorTile や build session の永続化先。

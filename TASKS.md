@@ -1,3 +1,19 @@
+2537) investigate/shape-build/multipolygon-merge-hypothesis (P1) — 進行中 (2026-02-06)
+- ブランチ名: investigate/shape-build/multipolygon-merge-hypothesis
+- 依存: なし
+- 受け入れ基準: fetch ステージで単一フィーチャーが隣接ポリゴンに分割される仮説のテスト計画を作成する／境界崩れの再現条件を整理する／1 Worker 限定でのポリゴン融合案（fetch 後処理 or transform 前処理）を比較提示する／頂点数上限(65535)と tolerance 増分の懸念について影響範囲と改善案を提示する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`, `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 調査・提案のみ（コード変更が発生した場合は差分を revert する）
+- チェックリスト:
+  - fetch ステージの実装位置とフィーチャー分割の検証方針を整理する
+  - transform ステージの簡略化処理と境界崩れの関係を確認する
+  - 1 Worker 限定のポリゴン融合処理案を比較する
+  - 頂点数上限と tolerance 増分について現行仕様と改善案を整理する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:00 JST shape build の multipolygon 分割仮説の検証と改善案作成に着手。
+  - update: 2026-02-06 21:05 JST shapeFetchStage の GeoBoundaries マージ条件と transform の頂点数/tolerance ロジックを確認。
+
 2535) fix/dialog/url-step-overwrite-init (P1) — 進行中 (2026-02-06)
 - ブランチ名: fix/dialog/url-step-overwrite-init
 - 依存: なし
@@ -210,7 +226,7 @@
 - ブランチ名: refactor/shape-transform/remove-area-based-tolerance
 - 依存: なし
 - 受け入れ基準: areaBasedTolerance 設定が型/デフォルト/テスト/翻訳含め完全撤去される／shape/route など参照箇所が残らない／必要な typecheck が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/transform/geometry.ts`, `e2e/**`
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/transform/geometry.ts`, `e2e/**`
 - ロールバック手順: areaBasedTolerance 関連の型/デフォルト/参照を復元する
 - チェックリスト:
   - areaBasedTolerance の型/デフォルト/参照/翻訳/テストを撤去する
@@ -231,7 +247,7 @@
 - ブランチ名: fix/build-task/transactional-retry
 - 依存: なし
 - 受け入れ基準: 中断されたタスクの結果が不完全に永続化されない（トランザクションで保護）／再開時に中断タスクが最初から再処理される／必要な typecheck が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/batch/src/**`, `packages/runtime-worker/src/**`, `plugins/**`（タスク永続化/再開処理）
+- 影響範囲: `packages/batch/src/**`, `packages/runtime-worker/src/**`, `plugins/**`（タスク永続化/再開処理）
 - ロールバック手順: 追加したトランザクション/再開制御を revert して元の処理に戻す
 - チェックリスト:
   - タスク結果の書き込みをトランザクション保護する
@@ -253,7 +269,7 @@
 - ブランチ名: fix/shape-build/queued-task-stuck
 - 依存: なし
 - 受け入れ基準: fetch ステージの一部タスクが queued のまま残る原因を特定し、必要なら修正して再現しないこと／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `packages/features/batch/src/**`, `packages/features/shape-store/src/**`（必要に応じて追加）
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `packages/batch/src/**`, `packages/shape-store/src/**`（必要に応じて追加）
 - ロールバック手順: 追加したタスク状態更新/進捗反映ロジックを元に戻す
 - チェックリスト:
   - queued 残存の経路を特定する
@@ -320,7 +336,7 @@
 - ブランチ名: fix/shape-store/buildtasks-stage-index
 - 依存: なし
 - 受け入れ基準: buildTasks の [nodeId+stage] インデックス不足による SchemaError が解消される／Dexie schema の version 更新が行われる／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`
 - ロールバック手順: version 20 の schema 追加を revert して以前の定義に戻す
 - チェックリスト:
   - batchTasks に [nodeId+stage] を追加する
@@ -659,6 +675,261 @@
   - update: 2026-02-04 13:41 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
   - done: 2026-02-04 13:41 JST styler ノードの Build 無効化対応を完了。
 
+2506) plan/features-to-packages/flatten (P1) — 進行中 (2026-02-04)
+- ブランチ名: plan/features-to-packages/flatten
+- 依存: なし
+- 受け入れ基準: features 配下のパッケージ移動方針が整理される／移行対象・依存・順序・チェックリスト・ロールバックが TASKS.md に明記される
+- 影響範囲: `pnpm-workspace.yaml`, `tsconfig.base.json`, `packages/**/tsconfig*.json`, `packages/**/package.json`, `turbo.json`, `tools/*`, `docs/*`, `app/docs/*`
+- ロールバック手順: 作業開始前の `packages/*` 構成へ戻し、tsconfig/workspace/turbo/工具/ドキュメントの変更を revert
+- チェックリスト:
+  - 移行対象の棚卸し（`packages/*` → `packages/*`）を作成する
+  - tsconfig/references/build scripts/workspace/turbo/tools/docs の影響箇所を列挙する
+  - 依存関係と移行順序（直列/並列）を明記する
+  - 検証コマンドとDoDを定義する
+  - ロールバック手順を定義する
+- 計画:
+  - 移行対象:
+    - `packages/*` 配下の全パッケージを `packages/*` 直下へ移動（パッケージ名は維持）
+  - 棚卸し表（2026-02-06 時点）:
+    - `packages/auth` → `packages/auth`（@hierarchidb/auth） 依存: @hierarchidb/auth-api, @hierarchidb/util
+    - `packages/auth-api` → `packages/auth-api`（@hierarchidb/auth-api） 依存: なし
+    - `packages/batch` → `packages/batch`（@hierarchidb/batch） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/download
+    - `packages/batch-api` → `packages/batch-api`（@hierarchidb/batch-api） 依存: @hierarchidb/core-types
+    - `packages/batch-session-ports` → `packages/batch-session-ports`（@hierarchidb/batch-session-ports） 依存: @hierarchidb/core-types
+    - `packages/chunk-store` → `packages/chunk-store`（@hierarchidb/chunk-store） 依存: @hierarchidb/core-types, @hierarchidb/download, @hierarchidb/util
+    - `packages/download` → `packages/download`（@hierarchidb/download） 依存: @hierarchidb/util, @hierarchidb/auth, @hierarchidb/auth-api
+    - `packages/gis-sdk` → `packages/gis-sdk`（@hierarchidb/gis-sdk） 依存: @hierarchidb/core-types, @hierarchidb/shape-api, @hierarchidb/util, @hierarchidb/vectortile-store
+    - `packages/import-export` → `packages/import-export`（@hierarchidb/import-export） 依存: @hierarchidb/core-types, @hierarchidb/import-export-api, @hierarchidb/util, @hierarchidb/tree-api
+    - `packages/import-export-api` → `packages/import-export-api`（@hierarchidb/import-export-api） 依存: @hierarchidb/core-types
+    - `packages/location-api` → `packages/location-api`（@hierarchidb/location-api） 依存: @hierarchidb/core-types, @hierarchidb/gen-iso3166-2, @hierarchidb/util
+    - `packages/location-store` → `packages/location-store`（@hierarchidb/location-store） 依存: @hierarchidb/core-types, @hierarchidb/location-api, @hierarchidb/shape-store, @hierarchidb/util, @hierarchidb/vectortile-store
+    - `packages/map-adapter` → `packages/map-adapter`（@hierarchidb/map-adapter） 依存: @hierarchidb/map-source, @hierarchidb/util
+    - `packages/map-source` → `packages/map-source`（@hierarchidb/map-source） 依存: @hierarchidb/util
+    - `packages/resolver-store` → `packages/resolver-store`（@hierarchidb/resolver-store） 依存: @hierarchidb/core-types, @hierarchidb/util
+    - `packages/route-api` → `packages/route-api`（@hierarchidb/route-api） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/gis-sdk, @hierarchidb/location-api, @hierarchidb/tree-api
+    - `packages/route-engine` → `packages/route-engine`（@hierarchidb/route-engine） 依存: @hierarchidb/route-store, @hierarchidb/util
+    - `packages/route-resolver` → `packages/route-resolver`（@hierarchidb/route-resolver） 依存: なし
+    - `packages/route-searoute` → `packages/route-searoute`（@hierarchidb/route-searoute） 依存: @hierarchidb/download
+    - `packages/route-store` → `packages/route-store`（@hierarchidb/route-store） 依存: @hierarchidb/core-types, @hierarchidb/route-api, @hierarchidb/util, @hierarchidb/vectortile-store
+    - `packages/shape-api` → `packages/shape-api`（@hierarchidb/shape-api） 依存: @hierarchidb/core-types
+    - `packages/shape-store` → `packages/shape-store`（@hierarchidb/shape-store） 依存: @hierarchidb/core-types, @hierarchidb/gis-sdk, @hierarchidb/shape-api, @hierarchidb/util, @hierarchidb/vectortile-store
+    - `packages/spreadsheet-store` → `packages/spreadsheet-store`（@hierarchidb/spreadsheet-store） 依存: @hierarchidb/core-types, @hierarchidb/tabular-store, @hierarchidb/ui-tabular
+    - `packages/style-api` → `packages/style-api`（@hierarchidb/style-api） 依存: @hierarchidb/core-types
+    - `packages/styler-store` → `packages/styler-store`（@hierarchidb/styler-store） 依存: @hierarchidb/core-types, @hierarchidb/plugin-base, @hierarchidb/style-api, @hierarchidb/spreadsheet-store, @hierarchidb/ui-map, @hierarchidb/util
+    - `packages/tabular-source` → `packages/tabular-source`（@hierarchidb/tabular-source） 依存: @hierarchidb/util
+    - `packages/tabular-source-xlsx` → `packages/tabular-source-xlsx`（@hierarchidb/tabular-source-xlsx） 依存: @hierarchidb/tabular-source, @hierarchidb/tabular-store
+    - `packages/tabular-store` → `packages/tabular-store`（@hierarchidb/tabular-store） 依存: @hierarchidb/util
+    - `packages/tag` → `packages/tag`（@hierarchidb/tag） 依存: @hierarchidb/core-types, @hierarchidb/tag-api, @hierarchidb/util
+    - `packages/tag-api` → `packages/tag-api`（@hierarchidb/tag-api） 依存: @hierarchidb/core-types
+    - `packages/tree-api` → `packages/tree-api`（@hierarchidb/tree-api） 依存: @hierarchidb/core-types
+    - `packages/vectortile-orchestrator` → `packages/vectortile-orchestrator`（@hierarchidb/vectortile-orchestrator） 依存: @hierarchidb/core-types, @hierarchidb/plugin-service-api
+    - `packages/vectortile-store` → `packages/vectortile-store`（@hierarchidb/vectortile-store） 依存: @hierarchidb/shape-api, @hierarchidb/util
+    - `packages/worker-api` → `packages/worker-api`（@hierarchidb/worker-api） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/import-export-api, @hierarchidb/location-api, @hierarchidb/memory, @hierarchidb/plugin-base, @hierarchidb/route-api, @hierarchidb/shape-api, @hierarchidb/style-api, @hierarchidb/tag-api, @hierarchidb/tree-api
+  - 影響範囲の棚卸し:
+    - `pnpm-workspace.yaml`: `packages/*` の glob 更新
+    - `tsconfig.base.json`: paths の dist 参照が移動先に一致するか確認
+    - 各 `tsconfig.build.json`: project references の相対パス更新
+    - 各 `package.json`: build スクリプトの `tsdown` config 相対パス更新
+    - `turbo.json`: pipeline/dependsOn がパス前提なら修正
+    - `tools/*`: 入出力パスが features 前提か確認
+    - `docs/*`, `app/docs/*`: ディレクトリ構成の記述更新
+  - 影響箇所の具体ファイル一覧（rg: packages）:
+    - workspace/tsconfig:
+      - `pnpm-workspace.yaml`
+      - `tsconfig.base.json`
+    - build/test config:
+      - `vitest.config.ts`
+      - `app/vite.config.ts`
+      - `packages/runtime-worker/vitest.config.ts`
+      - `plugins/shape-plugin/vitest.config.ts`
+      - `plugins/resolver-plugin/vitest.config.ts`
+      - `plugins/spreadsheet-plugin/vitest.config.ts`
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts`
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-pause-on-leave.wfl.test.ts`
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts`
+    - docs/plan:
+      - `docs/shape-plugin-multi-stage-vt-generation.md`
+      - `docs/shim-any-audit-2025-09.md`
+      - `plans/location-plugin-repair-execplan.md`
+      - `plans/locationfeature-admin0-rename-execplan.md`
+      - `plans/plugin-service-api-split-location-route-execplan.md`
+      - `plans/shape-transform-simplify-only-execplan.md`
+      - `plans/shape-build-stage-restructure-execplan.md`
+      - `plans/app-db-init-responsibility-execplan.md`
+      - `plans/bandindex-rename-execplan.md`
+      - `plans/shape-download-postprocess-strategy.md`
+      - `plans/download-buildmonitor-common-execplan.md`
+      - `plans/deprecate-plugin-service-api-execplan.md`
+      - `plans/chunk-store-migration-execplan.md`
+      - `plans/map-modeless-generated-table-execplan.md`
+    - lock/generated（移動時に更新される想定）:
+      - `pnpm-lock.yaml`
+      - `artifacts/dep-fence.run.json`
+      - `artifacts/dep-fence.json`
+      - `artifacts/count-lines-latest.txt`
+  - 差分設計（置換パターン草案）:
+    - 共通ルール:
+      - 物理移動後は `packages/<name>` → `packages/<name>` へ置換
+      - dist 参照は `packages/<name>/dist/...` に寄せる（NodeNext の .d.ts 解決に合わせる）
+      - src 参照は dev/alias/テストのみ（ビルド系/公開 API には使わない）
+      - 相対パス起点に注意（`app/` や `plugins/` からの `../packages/...`）
+    - workspace:
+      - `pnpm-workspace.yaml`: `packages/*` → `packages/*`
+    - tsconfig:
+      - `tsconfig.base.json`: `packages/<name>/dist/...` → `packages/<name>/dist/...`
+      - `packages/**/tsconfig*.json` の references:
+        - `../features/<name>/tsconfig.build.json` → `../<name>/tsconfig.build.json`（相対階層は対象パッケージ位置に合わせて調整）
+    - vite/vitest:
+      - `app/vite.config.ts`:
+        - src alias: `../packages/<name>/src/index.ts` → `../packages/<name>/src/index.ts`
+        - dist alias: `../packages/<name>/dist/index.js` → `../packages/<name>/dist/index.js`
+      - `vitest.config.ts`, `packages/runtime-worker/vitest.config.ts`, `plugins/*/vitest.config.ts`:
+        - `packages/<name>/src/index.ts` → `packages/<name>/src/index.ts`
+        - 相対パス指定は各 config の `__dirname` 基準で合わせる
+    - テスト/実行時 import:
+      - `plugins/shape-plugin/src/__tests__/wfl/*.test.ts`:
+        - src/dist 参照の `packages/<name>/...` を `packages/<name>/...` に置換
+    - docs/plan:
+      - `docs/*`, `plans/*`: 記載の `packages/<name>` を `packages/<name>` に置換
+    - 生成物/ロック:
+      - `pnpm-lock.yaml` は `pnpm install` で再生成
+      - `artifacts/*` は必要に応じて再生成（dep-fence/counters）
+  - 置換チェックリスト（対象ファイル単位）:
+    - workspace:
+      - `pnpm-workspace.yaml`: `packages/*` → `packages/*`
+    - tsconfig:
+      - `tsconfig.base.json`: `packages/<name>/dist/...` → `packages/<name>/dist/...`
+        - 例: `packages/shape-api/dist/index.d.ts` → `packages/shape-api/dist/index.d.ts`
+      - `packages/**/tsconfig*.json`: references/paths の `../features/<name>/...` を `../<name>/...` に調整
+        - 例: `../features/location-api/tsconfig.build.json` → `../location-api/tsconfig.build.json`
+    - vite:
+      - `app/vite.config.ts`: src/dist alias の `../packages/<name>/...` を `../packages/<name>/...` に置換
+        - 例: `../packages/map-adapter/src/index.ts` → `../packages/map-adapter/src/index.ts`
+    - vitest:
+      - `vitest.config.ts`: `packages/<name>/src/index.ts` → `packages/<name>/src/index.ts`
+      - `packages/runtime-worker/vitest.config.ts`: `packages/<name>/src/index.ts` → `packages/<name>/src/index.ts`
+      - `plugins/shape-plugin/vitest.config.ts`: `../../packages/<name>/src/index.ts` → `../../packages/<name>/src/index.ts`
+      - `plugins/resolver-plugin/vitest.config.ts`: `../../packages/download/src/index.ts` → `../../packages/download/src/index.ts`
+      - `plugins/spreadsheet-plugin/vitest.config.ts`: `packages/tabular-*/src/index.ts` → `packages/tabular-*/src/index.ts`
+    - tests:
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts`
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-pause-on-leave.wfl.test.ts`
+      - `plugins/shape-plugin/src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts`
+        - `../../../../../packages/<name>/...` → `../../../../../packages/<name>/...`
+    - docs/plan:
+      - `docs/shape-plugin-multi-stage-vt-generation.md`
+      - `docs/shim-any-audit-2025-09.md`
+      - `plans/location-plugin-repair-execplan.md`
+      - `plans/locationfeature-admin0-rename-execplan.md`
+      - `plans/plugin-service-api-split-location-route-execplan.md`
+      - `plans/shape-transform-simplify-only-execplan.md`
+      - `plans/shape-build-stage-restructure-execplan.md`
+      - `plans/app-db-init-responsibility-execplan.md`
+      - `plans/bandindex-rename-execplan.md`
+      - `plans/shape-download-postprocess-strategy.md`
+      - `plans/download-buildmonitor-common-execplan.md`
+      - `plans/deprecate-plugin-service-api-execplan.md`
+      - `plans/chunk-store-migration-execplan.md`
+      - `plans/map-modeless-generated-table-execplan.md`
+    - lock/generated（移動後に再生成）:
+      - `pnpm-lock.yaml`
+      - `artifacts/dep-fence.run.json`
+      - `artifacts/dep-fence.json`
+      - `artifacts/count-lines-latest.txt`
+    - turbo/tools/package.json の追跡結果:
+      - `turbo.json`: `packages` 参照なし（2026-02-06 調査）
+      - `packages/**/package.json`: `packages` 参照なし（2026-02-06 調査）
+      - `tools/*`: ディレクトリ自体が存在しない（`scripts/` が該当枠の可能性）
+  - 自動置換コマンド案（dry-run → 置換）:
+    - dry-run（対象確認）:
+      - `rg -n \"packages\" pnpm-workspace.yaml tsconfig.base.json vitest.config.ts app/vite.config.ts packages/runtime-worker/vitest.config.ts plugins/shape-plugin/vitest.config.ts plugins/resolver-plugin/vitest.config.ts plugins/spreadsheet-plugin/vitest.config.ts plugins/shape-plugin/src/__tests__/wfl docs plans`
+    - 置換（順序）:
+      1) workspace:
+         - `perl -0pi -e \"s#packages/\\*#packages/*#g\" pnpm-workspace.yaml`
+      2) tsconfig:
+         - `perl -0pi -e \"s#packages/([\\w-]+)/dist#packages/$1/dist#g\" tsconfig.base.json`
+         - `rg -l \"../features/\" packages | xargs perl -0pi -e \"s#../features/#../#g\"`
+      3) vite/vitest:
+         - `perl -0pi -e \"s#../packages/#../packages/#g\" app/vite.config.ts`
+         - `perl -0pi -e \"s#packages/#packages/#g\" vitest.config.ts packages/runtime-worker/vitest.config.ts`
+         - `perl -0pi -e \"s#../../packages/#../../packages/#g\" plugins/shape-plugin/vitest.config.ts plugins/resolver-plugin/vitest.config.ts plugins/spreadsheet-plugin/vitest.config.ts`
+      4) tests:
+         - `perl -0pi -e \"s#packages/#packages/#g\" plugins/shape-plugin/src/__tests__/wfl/*.ts`
+      5) docs/plan:
+         - `rg -l \"packages/\" docs plans | xargs perl -0pi -e \"s#packages/#packages/#g\"`
+    - 置換後確認:
+      - `rg -n \"packages\" pnpm-workspace.yaml tsconfig.base.json vitest.config.ts app/vite.config.ts packages/runtime-worker/vitest.config.ts plugins/shape-plugin/vitest.config.ts plugins/resolver-plugin/vitest.config.ts plugins/spreadsheet-plugin/vitest.config.ts plugins/shape-plugin/src/__tests__/wfl docs plans`
+    - 注意:
+      - 物理移動前の置換は不可。移動フェーズごとに対象を絞って実行する。
+      - `rg -l \"../features/\" packages` は移動後に相対階層が変わるため要再確認。
+  - 進め方（順序）:
+    1) 影響箇所の洗い出し（棚卸し表を作成）
+    2) `pnpm-workspace.yaml` と tsconfig paths/references を移行に合わせて更新
+    3) 対象パッケージの物理移動（依存が少ないものから）
+    4) 各パッケージの build script/tsconfig を更新
+    5) Turbo/ツール/ドキュメントを更新
+  - 移行順序（フェーズ案）:
+    - Phase 1: 依存が軽い API/ユーティリティ系
+      - auth-api, batch-api, batch-session-ports, import-export-api, shape-api, style-api, tag-api, tree-api, location-api, worker-api
+    - Phase 2: 低依存ストア/ソース系
+      - map-source, tabular-store, tabular-source, tabular-source-xlsx, resolver-store, route-resolver
+    - Phase 3: 中依存ストア/サービス系
+      - auth, download, chunk-store, batch, vectortile-store, gis-sdk, shape-store, location-store, import-export, tag
+    - Phase 4: ルート/スタイル/ルーティング系
+      - route-api, route-store, route-engine, route-searoute, spreadsheet-store, styler-store, map-adapter, vectortile-orchestrator
+  - 並列化可否:
+    - docs 更新と tools のパス更新は並列で進行可能
+    - tsconfig/references と 物理移動は直列で実施
+  - 検証:
+    - `pnpm --filter <移動対象> build`
+    - `pnpm --filter <移動対象> typecheck`
+    - `pnpm typecheck`
+    - Phase 完了ごとに `pnpm --filter <移動対象> test`（該当パッケージで定義がある場合）
+- 運用ログ:
+  - start: 2026-02-04 14:05 JST features → packages 再編の計画整理に着手。
+  - update: 2026-02-06 10:12 JST 移行対象の棚卸し表と依存関係の一覧、フェーズ順序を追記。
+  - update: 2026-02-06 10:28 JST packages 参照の具体ファイル一覧を追加。
+  - update: 2026-02-06 10:32 JST 置換チェックリスト（対象ファイル単位）を追記。
+  - update: 2026-02-06 10:36 JST turbo.json / packages/**/package.json に features 参照なし、tools ディレクトリ不在を追記。
+  - update: 2026-02-06 10:40 JST 自動置換の dry-run/置換コマンド案を追記。
+  - start: 2026-02-06 11:02 JST Phase 1（API系）移行作業を開始。
+  - update: 2026-02-06 11:05 JST Phase 1 対象を packages/* へ物理移動し、参照置換を実施。
+  - blocked: 2026-02-06 11:08 JST `pnpm --filter <Phase1> build` で tsconfig.base.json 参照が壊れて失敗。
+  - update: 2026-02-06 11:10 JST 移動済みパッケージの tsconfig extends を ../../tsconfig.base.json へ修正。
+  - blocked: 2026-02-06 11:14 JST `pnpm install --frozen-lockfile` が lockfile 不一致で失敗。
+  - blocked: 2026-02-06 11:16 JST `pnpm install --no-frozen-lockfile` が workspace glob 不整合（packages 未登録）で失敗。
+  - update: 2026-02-06 11:18 JST pnpm-workspace.yaml に packages/* を再追加し、pnpm install を完了。
+  - update: 2026-02-06 11:22 JST Phase 1 の build/typecheck を再実行し exit 0 を確認。
+  - start: 2026-02-06 11:40 JST Phase 2（store/source/resolver）移行作業を開始。
+  - update: 2026-02-06 11:44 JST Phase 2 対象を packages/* へ物理移動し、参照置換を実施。
+  - blocked: 2026-02-06 11:47 JST `pnpm --filter <Phase2> build` で tsconfig.base.json 参照が壊れて失敗。
+  - update: 2026-02-06 11:49 JST 移動済みパッケージの tsconfig extends を ../../tsconfig.base.json へ修正。
+  - update: 2026-02-06 11:52 JST Phase 2 build を再実行し exit 0 を確認。
+  - blocked: 2026-02-06 11:55 JST `pnpm --filter <Phase2> typecheck` が tabular-source-xlsx の xlsx.mjs 型不足で失敗。
+  - update: 2026-02-06 11:58 JST `pnpm install --no-frozen-lockfile` を実行（移動後の依存再リンク）。
+  - update: 2026-02-06 12:00 JST xlsx.mjs の型 shim を追加し、tabular-source-xlsx の types include を ../../types に修正。
+  - update: 2026-02-06 12:02 JST tabular-source-xlsx typecheck exit 0 を確認。
+  - update: 2026-02-06 12:04 JST Phase 2 の typecheck を再実行し exit 0 を確認。
+  - start: 2026-02-06 12:20 JST Phase 3（core store/sdk）移行作業を開始。
+  - update: 2026-02-06 12:24 JST Phase 3 対象を packages/* へ物理移動し、参照置換を実施。
+  - blocked: 2026-02-06 12:27 JST `pnpm --filter <Phase3> build` が vectortile-store の tsconfig extends 破損で失敗。
+  - update: 2026-02-06 12:29 JST vectortile-store の tsconfig extends を ../../tsconfig.json へ修正。
+  - update: 2026-02-06 12:33 JST Phase 3 build を再実行し exit 0 を確認。
+  - blocked: 2026-02-06 12:36 JST Phase 3 typecheck が gis-sdk の依存モジュール解決エラー（node_modules の symlink 破損）で失敗。
+  - update: 2026-02-06 12:42 JST Phase 3 対象の node_modules を削除して再インストールを実施。
+  - update: 2026-02-06 12:44 JST Phase 3 typecheck を再実行し exit 0 を確認。
+  - start: 2026-02-06 13:10 JST Phase 4（route/style/spreadsheet）移行作業を開始。
+  - update: 2026-02-06 13:14 JST Phase 4 対象を packages/* へ物理移動し、参照置換を実施。
+  - update: 2026-02-06 13:18 JST Phase 4 対象の tsconfig extends を ../../tsconfig.base.json へ修正。
+  - update: 2026-02-06 13:24 JST Phase 4 build を実行し exit 0 を確認。
+  - blocked: 2026-02-06 13:28 JST Phase 4 typecheck が spreadsheet-store の typescript 解決失敗で停止。
+  - update: 2026-02-06 13:31 JST Phase 4 対象の node_modules を削除し pnpm install を再実行。
+  - update: 2026-02-06 13:33 JST Phase 4 typecheck を再実行（route-engine 以外は完了、全体はタイムアウト）。
+  - update: 2026-02-06 13:35 JST route-engine typecheck を単体で再実行し exit 0 を確認。
+  - update: 2026-02-06 13:48 JST pnpm-workspace.yaml から packages/features/* を削除し、残存参照を全置換。
+  - update: 2026-02-06 13:49 JST packages/features が空であることを確認し、pnpm install を再実行。
+  - done: 2026-02-06 13:49 JST features → packages 再編の移行と参照整理を完了。
+  - done: 2026-02-06 10:12 JST features → packages 再編の計画整理（移行対象・依存・順序・検証・ロールバック）を完了。
 2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-memory-logs-tiling
 - 依存: なし
@@ -823,7 +1094,7 @@
 - ブランチ名: plan/ephemeral-db-unification
 - 依存: なし
 - 受け入れ基準: hidb-ephemeral の目的/スコープを整理し移行対象を一覧化する／現行DBスキーマから共通スキーマ案を提示する（batchTasks→buildTasks改名含む）／段階移行/ロールバック手順を整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`（必要に応じて追加）
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`（必要に応じて追加）
 - ロールバック手順: 調査/設計のみのため不要
 - チェックリスト:
   - 既存の ephemeral 系Dexie DB/テーブル構成を整理する
@@ -843,7 +1114,7 @@
 - ブランチ名: plan/ephemeral-db-phase1
 - 依存: 2515
 - 受け入れ基準: hidb-ephemeral の新Dexieクラスを追加する／旧DB→新DBの読み取り切替点を整理する／batchTasks→buildTasks改名の適用箇所を整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/*`（必要に応じて追加）
+- 影響範囲: `packages/gis-sdk/src/ephemeral/*`（必要に応じて追加）
 - ロールバック手順: 調査/設計のみのため不要
 - チェックリスト:
   - hidb-ephemeral の新Dexieクラスを追加する
@@ -1163,7 +1434,7 @@
 - ブランチ名: fix/gis-sdk/ephemeral-timestamp-guard
 - 依存: なし
 - 受け入れ基準: HidbEphemeralDB の timestamp 判定で undefined を参照しない／`pnpm --filter @hierarchidb/gis-sdk typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`
+- 影響範囲: `packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`
 - ロールバック手順: 該当差分を revert して元の filter に戻す
 - チェックリスト:
   - timestamp 判定に undefined ガードを追加する
@@ -1207,7 +1478,7 @@
 - ブランチ名: fix/shape/fetch-transform-cache-country-admin-index
 - 依存: なし
 - 受け入れ基準: fetchCache/transformCache に [nodeId+countryCode+adminLevel] を追加し SchemaError が解消される／Dexie schema の version 更新と upgrade 方針を明記する／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`
 - ロールバック手順: 該当差分を revert して schema を元に戻す
 - チェックリスト:
   - fetchCache/transformCache に [nodeId+countryCode+adminLevel] のインデックスを追加する
@@ -1224,7 +1495,7 @@
 - ブランチ名: fix/draft/disable-auto-rename-on-save
 - 依存: なし
 - 受け入れ基準: save/save-draft で auto-rename が既定適用されない（TreeNodeUpdater の default が error になる）／新規作成の初期命名は従来どおり initTreeNode でユニーク化される／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts`, `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`, `packages/features/tree-api/src/TreeNodeUpdaterAPI.ts`
+- 影響範囲: `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts`, `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`, `packages/tree-api/src/TreeNodeUpdaterAPI.ts`
 - ロールバック手順: 該当差分を revert して auto-rename 既定を復元する
 - チェックリスト:
   - TreeNodeUpdaterService の conflictPolicy 既定を error に変更する
@@ -1244,7 +1515,7 @@
 - ブランチ名: fix/tree/move-paste-conflict-dialog
 - 依存: なし
 - 受け入れ基準: move/paste の衝突時にダイアログで「中止/上書き」を選択できる／move/paste は暗黙 auto-rename を行わない／duplicate は auto-rename の連番 suffix を維持する／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/hooks/treeconsole/actions/*.ts`, `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/runtime-worker/src/services/command/core-handlers/index.ts`, `packages/features/tree-api/src/*`, `packages/ui/treeconsole/base/src/*`
+- 影響範囲: `app/src/hooks/treeconsole/actions/*.ts`, `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/runtime-worker/src/services/command/core-handlers/index.ts`, `packages/tree-api/src/*`, `packages/ui/treeconsole/base/src/*`
 - ロールバック手順: 該当差分を revert して auto-rename 既定・衝突時の挙動を元に戻す
 - チェックリスト:
   - onNameConflict に overwrite を追加し、move/paste で衝突時に NAME_NOT_UNIQUE を返す
@@ -1503,7 +1774,7 @@
 - ブランチ名: fix/shape/tile-buffer-relations-index
 - 依存: なし
 - 受け入れ基準: Dexie の tileIdToBufferRelations に [nodeId+bandIndex] インデックスが定義され SchemaError が再現しない／DB バージョン更新とマイグレーション方針を明記する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/**`, `packages/features/shape-store/**`, `packages/runtime-worker/**`（必要に応じて追加）
+- 影響範囲: `plugins/shape-plugin/**`, `packages/shape-store/**`, `packages/runtime-worker/**`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert してインデックス追加前へ戻す
 - チェックリスト:
   - tileIdToBufferRelations の schema/index 定義を確認する
@@ -1536,7 +1807,7 @@
 - ブランチ名: fix/deps/break-cycle-location-route
 - 依存: なし
 - 受け入れ基準: cyclic dependency が解消され dependency graph 検証が pass する／依存関係の変更理由を記録する／必要範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/package.json`, `packages/features/location-api/package.json`, `packages/features/route-api/package.json`（必要に応じて追加）
+- 影響範囲: `packages/plugin-service-api/package.json`, `packages/location-api/package.json`, `packages/route-api/package.json`（必要に応じて追加）
 - ロールバック手順: 依存関係の差分を revert して元の依存構成へ戻す
 - チェックリスト:
   - 循環依存を構成する依存関係を特定する
@@ -1554,7 +1825,7 @@
 - ブランチ名: investigation/plugin-service-api-current-scope
 - 依存: なし
 - 受け入れ基準: plugin-service-api に残っているモジュール/責務/依存を整理し、location-api/route-api への移行済み/未移行を区別して報告できる／廃止に向けた作業計画を提示できる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/**`, `packages/features/location-api/src/**`, `packages/features/route-api/src/**`, `plans/**`（調査結果に応じて追加）
+- 影響範囲: `packages/plugin-service-api/src/**`, `packages/location-api/src/**`, `packages/route-api/src/**`, `plans/**`（調査結果に応じて追加）
 - ロールバック手順: 調査のみのため差分なし
 - チェックリスト:
   - plugin-service-api の残存モジュール/責務/依存を整理する
@@ -1570,7 +1841,7 @@
 - ブランチ名: fix/batch/prepare-session-signature
 - 依存: なし
 - 受け入れ基準: IBatchSessionManager の prepareSession 型が UnifiedBatchManagerBase と整合し build:types が exit 0 になる／必要な参照先が型エラーなくビルドできる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/batch-api/src/BatchControlAPI.ts`, `packages/features/batch/src/manager/UnifiedBatchManagerBase.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`（必要に応じて追加）
+- 影響範囲: `packages/batch-api/src/BatchControlAPI.ts`, `packages/batch/src/manager/UnifiedBatchManagerBase.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して prepareSession の型定義を元に戻す
 - チェックリスト:
   - IBatchSessionManager の型パラメータ設計を調整する
@@ -1642,7 +1913,7 @@
 - ブランチ名: feat/auth/reorg
 - 依存: なし
 - 受け入れ基準: auth-api/auth の新構成方針が定義され、common/auth を完全廃止する移行計画（ExecPlan）が PLANS.md 規定に沿って作成される／棚卸し結果が反映される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-api/**`, `packages/features/auth-recovery/**`, `packages/common/auth/**`（削除予定）, `packages/features/auth/**`（新設予定）, 参照元各所
+- 影響範囲: `packages/auth-api/**`, `packages/auth-recovery/**`, `packages/common/auth/**`（削除予定）, `packages/auth/**`（新設予定）, 参照元各所
 - ロールバック手順: ExecPlan 実装前のため該当なし（計画段階）
 - チェックリスト:
   - 既存 auth 関連パッケージの責務と参照先を棚卸しする
@@ -1681,7 +1952,7 @@
 - ブランチ名: feat/shape-api/move-shape-types
 - 依存: なし
 - 受け入れ基準: @hierarchidb/shape-api を新設し EphemeralShapeAPI/ShapeQueryAPI/ShapeMutationAPI と依存型を移行する／plugin-service-api から該当型の export を撤去する／参照先を shape-api へ切替する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-api/src/**`, `packages/plugin-service-api/src/**`, `packages/**`, `plugins/shape-plugin/src/**`, `app/src/**`（必要に応じて追加）
+- 影響範囲: `packages/shape-api/src/**`, `packages/plugin-service-api/src/**`, `packages/**`, `plugins/shape-plugin/src/**`, `app/src/**`（必要に応じて追加）
 - ロールバック手順: 追加した shape-api を削除し、plugin-service-api の shape 型を復元、参照を元に戻す
 - チェックリスト:
   - shape-api を新設し shape 系型を移行する
@@ -1716,7 +1987,7 @@
 - ブランチ名: fix/route-api/routepoint-required-latlng
 - 依存: なし
 - 受け入れ基準: RoutePoint の latitude/longitude を必須化する／依存箇所の型整合が取れる／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts`（必要に応じて追加）
+- 影響範囲: `packages/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts`（必要に応じて追加）
 - ロールバック手順: RoutePoint の型を元に戻し、関連修正を revert する
 - チェックリスト:
   - RoutePoint の latitude/longitude を必須化する
@@ -1749,7 +2020,7 @@
 - 依存: なし
 - ExecPlan: plans/deprecate-plugin-service-api-execplan.md
 - 受け入れ基準: plugin-service-api の残存契約が plugin-base / feature API に移行される／style-api が新設される／主要参照先が新パッケージを参照する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/**`, `packages/plugin-base/src/**`, `packages/features/*-api/**`, `packages/**`, `plugins/**`, `app/**`
+- 影響範囲: `packages/plugin-service-api/src/**`, `packages/plugin-base/src/**`, `packages/*-api/**`, `packages/**`, `plugins/**`, `app/**`
 - ロールバック手順: plan に記載した手順で plugin-service-api の型を復元し、参照を戻す
 - チェックリスト:
   - style-api を新設して style 契約を移行する
@@ -1768,8 +2039,8 @@
 2436) refactor/common-api/move-import-export-plugin-dialog (P1) — 進行中 (2026-01-30)
 - ブランチ名: refactor/common-api/move-import-export-plugin-dialog
 - 依存: なし
-- 受け入れ基準: packages/features/import-export-api を新設し ImportExportAPI を移設する／common-api から ImportExportAPI と PluginDialogAPI を撤去し、PluginDialogAPI は tree-api に移設する／参照先の import が新パッケージへ切替される／必要範囲の build/typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/api/src/**`, `packages/features/import-export-api/src/**`, `packages/features/tree-api/src/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
+- 受け入れ基準: packages/import-export-api を新設し ImportExportAPI を移設する／common-api から ImportExportAPI と PluginDialogAPI を撤去し、PluginDialogAPI は tree-api に移設する／参照先の import が新パッケージへ切替される／必要範囲の build/typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/**`, `packages/import-export-api/src/**`, `packages/tree-api/src/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
 - ロールバック手順: import-export-api を削除し common-api に ImportExportAPI を復元、tree-api の PluginDialogAPI を元に戻し、参照を差し戻す
 - チェックリスト:
   - import-export-api を新設して ImportExportAPI を移設する
@@ -1789,8 +2060,8 @@
 2437) refactor/common-api/move-batch-control-api (P1) — 進行中 (2026-01-30)
 - ブランチ名: refactor/common-api/move-batch-control-api
 - 依存: なし
-- 受け入れ基準: packages/features/batch-api を新設し BatchControlAPI/taskStatus を移設する／common-api から該当 export を撤去する／参照先の import を @hierarchidb/batch-api に切替する／tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する／pnpm --filter @hierarchidb/batch-api build が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/api/src/**`, `packages/features/batch-api/src/**`, `packages/**`, `app/**`（必要に応じて追加）
+- 受け入れ基準: packages/batch-api を新設し BatchControlAPI/taskStatus を移設する／common-api から該当 export を撤去する／参照先の import を @hierarchidb/batch-api に切替する／tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する／pnpm --filter @hierarchidb/batch-api build が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/**`, `packages/batch-api/src/**`, `packages/**`, `app/**`（必要に応じて追加）
 - ロールバック手順: batch-api を削除し common-api に BatchControlAPI/taskStatus を復元、参照を差し戻す
 - チェックリスト:
   - batch-api を新設して BatchControlAPI/taskStatus を移設する
@@ -1827,7 +2098,7 @@
 - ブランチ名: fix/common-types/validation-rule-tag-suggestion
 - 依存: なし
 - 受け入れ基準: TagService の TagSuggestion import を tree-api 経由へ修正する／common-types に ValidationRule を定義し plugin-base の import エラーを解消する／@hierarchidb/tag と @hierarchidb/plugin-base の typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/tag/src/TagService.ts`, `packages/common/types/src/validation-types.ts`, `packages/plugin-base/src/types/plugin-definition.ts`（必要に応じて追加）
+- 影響範囲: `packages/tag/src/TagService.ts`, `packages/common/types/src/validation-types.ts`, `packages/plugin-base/src/types/plugin-definition.ts`（必要に応じて追加）
 - ロールバック手順: TagService の import を元へ戻し、ValidationRule 定義を削除して差分を revert する
 - チェックリスト:
   - TagService の TagSuggestion import を tree-api 参照に切替する
@@ -1844,7 +2115,7 @@
 - 依存: なし
 - ExecPlan: plans/refactor-common-types-execplan.md
 - 受け入れ基準: tree-api/tag-api/import-export-api/batch-api/core-types へ型が移設され、参照先が切替される／common-types は再エクスポートのみ（最終的に空にして削除可能な状態）／build/typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/types/src/**`, `packages/features/tree-api/**`, `packages/features/tag-api/**`, `packages/features/import-export-api/**`, `packages/features/batch-api/**`, `packages/core-types/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
+- 影響範囲: `packages/common/types/src/**`, `packages/tree-api/**`, `packages/tag-api/**`, `packages/import-export-api/**`, `packages/batch-api/**`, `packages/core-types/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
 - ロールバック手順: 新規パッケージ追加と移設差分を revert し、common-types の型を元に戻す
 - チェックリスト:
   - ExecPlan を作成し、移設対象と順序を明記する
@@ -1887,7 +2158,7 @@
 - ブランチ名: refactor/location-store/index-cleanup
 - 依存: なし
 - 受け入れ基準: location-store の index.ts が再エクスポートのみになる／LocationMutationAPI/LocationQueryAPI の再エクスポートが撤去され、参照側が plugin-service-api 参照へ移行される／未使用型 LocationEntity/LocationBatchConfig/LocationPoint が削除される／型定義が個別ファイルへ整理される／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
+- 影響範囲: `packages/location-store/src/index.ts`, `packages/location-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
 - ロールバック手順: 該当差分を revert して index.ts と型定義の配置を元に戻す
 - チェックリスト:
   - index.ts の再エクスポート以外の定義を個別ファイルへ移動する
@@ -1912,7 +2183,7 @@
 - ブランチ名: refactor/route-store/index-cleanup
 - 依存: なし
 - 受け入れ基準: route-store の index.ts が再エクスポートのみになる／RouteMutationAPI/RouteQueryAPI の再エクスポートが撤去され、参照側が plugin-service-api 参照へ移行される／型定義が個別ファイルへ整理される／pnpm --filter @hierarchidb/route-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/route-store/src/index.ts`, `packages/features/route-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
+- 影響範囲: `packages/route-store/src/index.ts`, `packages/route-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
 - ロールバック手順: 該当差分を revert して index.ts と型定義の配置を元に戻す
 - チェックリスト:
   - index.ts の再エクスポート以外の定義を個別ファイルへ移動する
@@ -1933,7 +2204,7 @@
 - ブランチ名: refactor/location-store/remove-unused-tables
 - 依存: なし
 - 受け入れ基準: LocationDB の relations/vectorTiles と hidb-location-metadata の tabularMetadata の参照箇所を調査し、未使用なら撤去・使用中なら根拠を提示する／撤去時は型・マイグレーション・参照箇所も整理する／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/src/**`, `packages/runtime-worker/src/**`, `plugins/location-plugin/src/**`, `packages/**`（調査後に確定）
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/location-store/src/**`, `packages/runtime-worker/src/**`, `plugins/location-plugin/src/**`, `packages/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert して tables と参照を復元する
 - チェックリスト:
   - relations/vectorTiles の参照箇所を特定する
@@ -1982,7 +2253,7 @@
 - ブランチ名: fix/location/idegdm-pointid-type
 - 依存: なし
 - 受け入れ基準: ideGsmCsv の pointId 型エラーが解消される／LocationFeatureId と LocationPointId の整合が取れる／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/locationTypes.ts`, `packages/features/location-store/src/ideGsmRouteCsv.ts`（必要に応じて）
+- 影響範囲: `packages/location-store/src/locationTypes.ts`, `packages/location-store/src/ideGsmRouteCsv.ts`（必要に応じて）
 - ロールバック手順: 型定義の変更差分を revert して元の brand 定義へ戻す
 - チェックリスト:
   - LocationFeatureId と LocationPointId の型整合を修正する
@@ -2008,7 +2279,7 @@
 - ブランチ名: refactor/route/settings-model-unify
 - 依存: なし
 - 受け入れ基準: draftData.processing と draftData.buildConfig が単一の設定モデルに統一される／UI（Step4/Step5）と Worker 側の設定参照が統一され、重複ロジックが削除される／既存の設定値がマイグレーションされ、挙動が変わらない／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載
-- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/features/route-store/src/**`
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/route-store/src/**`
 - ロールバック手順: 該当差分を revert し、processing/buildConfig の二重運用に戻す
 - チェックリスト:
   - 統合後の設定モデル設計を確定する
@@ -2025,7 +2296,7 @@
 - ブランチ名: refactor/location/build-config-adapter
 - 依存: なし
 - 受け入れ基準: Location の設定状態が BaseBuildConfig ベースで保持される／FetchConfigSection/VTConfigSection などの共通UIが利用される／既存UIの入力値と保存値が一致する／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載
-- 影響範囲: `plugins/location-plugin/src/ui/**`, `plugins/location-plugin/src/common/**`, `packages/features/location-store/src/**`
+- 影響範囲: `plugins/location-plugin/src/ui/**`, `plugins/location-plugin/src/common/**`, `packages/location-store/src/**`
 - ロールバック手順: 該当差分を revert し、従来の設定UIと保存形式に戻す
 - チェックリスト:
   - BaseBuildConfig へのマッピング方針を決める
@@ -2122,7 +2393,7 @@
 - ブランチ名: investigation/shape-plugin-remove-remnants
 - 依存: なし
 - 受け入れ基準: shape-plugin の DB テーブル/関連コード/未使用ファイル・クラス・関数・定数を調査し、削除候補を根拠付きで整理できる／削除可否の判断材料（参照有無/影響範囲）を列挙できる／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/shape-store/src/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/docs/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/shape-store/src/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/docs/**`（調査後に確定）
 - ロールバック手順: 調査のみのため差分なし
 - チェックリスト:
   - shape-plugin の永続化テーブル/型定義を整理する
@@ -2142,7 +2413,7 @@
 - ブランチ名: refactor/location/remove-vectortiles-remnants
 - 依存: なし
 - 受け入れ基準: LocationDB から vectorTiles テーブルと VectorTileDbBase 依存が撤去される／location のベクトルタイル関連コード・テストが削除される／他の残骸候補（未使用テーブル/型/コード）が一覧化される／pnpm --filter @hierarchidb/location-store typecheck など必要範囲が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/**`, `packages/features/vectortile-store/src/**`（必要に応じて追加）
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/**`, `packages/vectortile-store/src/**`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して Location の vectorTiles テーブルと関連コードを復元する
 - チェックリスト:
   - LocationDB から VectorTileDbBase 継承と vectorTiles テーブルを撤去する
@@ -2333,7 +2604,7 @@
   - update: 2026-01-30 12:05 JST pnpm --filter @hierarchidb/location-api build / @hierarchidb/route-api build / @hierarchidb/location-store build / @hierarchidb/route-store build / @hierarchidb/plugin-service-api build を実行（tsdown define 警告あり）。
   - update: 2026-01-30 12:05 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-01-30 12:20 JST route IDE-GSM CSV パース/検証の共通化方針（route-apiへ純粋関数を移動）で調整開始。
-  - start: 2026-01-30 13:20 JST route IDE-GSM CSV のパース/検証を route-api へ移動し、runtime-worker/route-plugin はラッパー化する作業に着手（DoD 合意済み）。未追跡ファイル（packages/features/resolver-store、plans/app-db-init-responsibility-execplan.md）の扱いは確認中。
+  - start: 2026-01-30 13:20 JST route IDE-GSM CSV のパース/検証を route-api へ移動し、runtime-worker/route-plugin はラッパー化する作業に着手（DoD 合意済み）。未追跡ファイル（packages/resolver-store、plans/app-db-init-responsibility-execplan.md）の扱いは確認中。
   - update: 2026-01-30 13:35 JST route-api に IDE-GSM CSV の parse/validate を集約し、runtime-worker/route-plugin 側はラッパーに整理。
   - update: 2026-01-30 13:35 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-01-30 14:05 JST plugin-service-api から route-api 依存を撤去（Route* 型はローカル定義、IdeGsmRouteError は route-api 直参照へ移行）し、循環依存の解消方針に合わせて整理。
@@ -2434,7 +2705,7 @@
 - ブランチ名: investigation/shape-location-route-persistence-audit
 - 依存: なし
 - 受け入れ基準: shape/location/route の永続化データ型とテーブル一覧を整理する／未使用・冗長な型・テーブル・インデックス候補を根拠付きで指摘する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/**`, `plugins/*/src/**`
+- 影響範囲: `packages/shape-store/src/ShapeDB.ts`, `packages/location-store/src/LocationDB.ts`, `packages/route-store/src/RouteDB.ts`, `packages/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/**`, `plugins/*/src/**`
 - ロールバック手順: なし（調査のみ）
 - チェックリスト:
   - 各 DB のテーブル/型/インデックスを列挙する
@@ -2449,7 +2720,7 @@
 - ブランチ名: fix/shape-location-store/schema-alignment
 - 依存: なし
 - 受け入れ基準: ShapeDB の buildSessions 命名が統一され relations テーブルが削除される／ShapeContainerNodeId を形状系で優先使用する／LocationFeature に centroidForShapeId/centroidForShapeContainerNodeId を追加し features のインデックスが更新される／pnpm --filter @hierarchidb/shape-store typecheck と pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/package.json`
+- 影響範囲: `packages/shape-store/src/ShapeDB.ts`, `packages/shape-store/src/index.ts`, `packages/location-store/src/LocationDB.ts`, `packages/location-store/package.json`
 - ロールバック手順: 該当差分を revert して旧スキーマと命名へ戻す
 - チェックリスト:
   - ShapeDB の batchSessions を buildSessions へ統一し、relations テーブルを削除する
@@ -2987,7 +3258,7 @@
 - ブランチ名: fix/location/id-pointid-separation
 - 依存: なし
 - 受け入れ基準: location の id が uuidv4() で生成される／pointId が lat/lon 小数5桁のハッシュから生成される／IDE-GSM と tabular 取り込みの両方で同じ pointId 生成ルールが適用される／既存 UI 表示が退行しない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/ideGsmRouteCsv.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/services/pointRepository.ts`（調査後に確定）
+- 影響範囲: `packages/location-store/src/index.ts`, `packages/location-store/src/ideGsmRouteCsv.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/services/pointRepository.ts`（調査後に確定）
 - ロールバック手順: 該当差分を revert して id=pointId の従来挙動に戻す
 - チェックリスト:
   - pointId 生成の共通ヘルパーを用意し IDE-GSM/Tabular 両方へ適用する
@@ -3501,7 +3772,7 @@
 - ブランチ名: feat/location/step4-display-config
 - 依存: なし
 - 受け入れ基準: Step4 に Representation/Icon/Label の各設定カードが追加され、Area Centroid/Airport/Port/Station/Interchange それぞれの値を保存できる／LocationEntity スキーマに設定が追加される／i18n で各設定の意味を表示する／既存の Step4 挙動と保存/読み込みが維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログ・ロールバック手順を記載する
-- 影響範囲: `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/locales/*.json`, `plugins/location-plugin/src/common/i18n/index.ts`
+- 影響範囲: `packages/location-store/src/index.ts`, `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/locales/*.json`, `plugins/location-plugin/src/common/i18n/index.ts`
 - ロールバック手順: 上記ファイルの差分を revert して Step4 を既存 UI に戻す
 - チェックリスト:
   - LocationEntity に表示設定スキーマを追加する
@@ -3830,7 +4101,7 @@
 - ブランチ名: investigation/shape/vt-tiles-z0-z1-display
 - 依存: なし
 - 受け入れ基準: z0-z1表示異常の原因切り分けができる／VT Generationのz1/z2生成の不整合有無を特定できる／影響範囲・修正方針・ロールバックを記録する／TASKS.mdに運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/**`, `packages/ui/map/src/**`, `packages/features/map-adapter/src/**`
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/ui/map/src/**`, `packages/map-adapter/src/**`
 - ロールバック手順: 調査用ログ/一時変更を revert する
 - チェックリスト:
   - 表示側/生成側の切り分け手順を定義する
@@ -4035,7 +4306,7 @@
 - ブランチ名: fix/shape/update-depth-loop-batch-footer
 - 依存: なし
 - 受け入れ基準: useShapeBuildTasks/useBatchProgress/PluginDialogFooter の update depth ループが解消される／setTimeout起因の再入が抑止される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/features/batch/src/progress/useBatchProgress.ts`, `packages/ui/dialog/src/PluginDialogFooter.tsx`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/batch/src/progress/useBatchProgress.ts`, `packages/ui/dialog/src/PluginDialogFooter.tsx`
 - ロールバック手順: ループ抑止差分を revert する
 - チェックリスト:
   - useShapeBuildTasksの再入ループを解消する
@@ -4096,7 +4367,7 @@
 - ブランチ名: perf/shape/task-progress-heavy-reflow
 - 依存: なし
 - 受け入れ基準: message handler/reflowの原因を特定し軽量化する／タスク進捗UIの描画が改善する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/features/batch/src/progress/useBatchProgress.ts`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/batch/src/progress/useBatchProgress.ts`
 - ロールバック手順: 計測/軽量化差分を revert する
 - チェックリスト:
   - 重い処理の原因箇所を特定する
@@ -5061,7 +5332,7 @@
 - ブランチ名: refactor/shape/transform-simplify-only
 - 依存: なし
 - 受け入れ基準: simplify-only 以外の transformMode 分岐（full系）がコードから撤去される／simplify-only では効果がない UI（quantize など）を同時に撤去する／不要になったパラメータ・ログ・エラーレコード経路が整理される／i18n 文言が最新構成に一致する／pnpm typecheck が exit 0／TASKS.md に運用ログとロールバック手順が記載される
-- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/**/__tests__/**`（調査後に確定）
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/**/__tests__/**`（調査後に確定）
 - ロールバック手順: simplify-only 固定化と UI/設定削除差分を revert し、full モード分岐を復帰する
 - チェックリスト:
   - ExecPlan を作成する
@@ -5100,7 +5371,7 @@
 - ブランチ名: feat/shape/step4-area-based-tolerance-ui
 - 依存: なし
 - 受け入れ基準: Step4 に大国向け簡略化調整のUIが追加され、既定OFFで挙動が変わらない／UIで設定した値が transform の簡略化に反映される／pnpm typecheck が exit 0／TASKS.md にロールバック手順と運用ログが記載される
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `packages/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
 - ロールバック手順: Step4 UI追加と area-based tolerance 設定差分を revert し、既定OFFの挙動を維持する
 - チェックリスト:
   - area-based tolerance の設定項目を TransformConfig に追加する
@@ -5140,7 +5411,7 @@
 - ブランチ名: audit/shape/vt-ui-slimming
 - 依存: なし
 - 受け入れ基準: VT ステージの各項目（Input/Output format & compression、TopoJSON simplify、Dynamic concurrency ほか）の実使用状況を確認し根拠付きで整理する／常時表示/Advanced/非表示（撤去候補）の構成案を提示する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/VTConfigSection.tsx`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/VTConfigSection.tsx`, `packages/vt-orchestrator/src/**`, `packages/gis-sdk/src/**`（調査後に確定）
 - ロールバック手順: 調査のみのため不要
 - チェックリスト:
   - VT の設定項目が実際に使用されている箇所を確認する
@@ -5210,7 +5481,7 @@
 - ブランチ名: feat/shape/area-based-simplify-tolerance
 - 依存: なし
 - 受け入れ基準: tolerance の基準が地図平面上の面積に切り替わっている／大国（例: Russia/China）で過剰簡略化が抑制され、小国の負荷は実質増えない／既存ズーム帯の見た目が不連続にならない／ロールバック手順が TASKS.md に明記されている
-- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`, `packages/gis-sdk/src/**`（調査後に確定）
 - ロールバック手順: tolerance 算出式の変更差分を revert し、従来の BBox 基準に戻す
 - チェックリスト:
   - tolerance の算出ロジックと参照箇所を特定する
@@ -5282,7 +5553,7 @@
 - ブランチ名: feat/shape/step4-cache-terms-split
 - 依存: なし
 - 受け入れ基準: step4 の「ビルド終了時の中間生成物の保持」と削除ボタンの文言が新しい用語に統一される（APIキャッシュ/フィルター処理キャッシュ/簡略化キャッシュ/タイルインデックス+タイルデータキャッシュ）／fetch の raw と filtered が UI 上で分離され、それぞれ保持/削除が可能／削除対象が UI 表記と一致する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/types/_BuildConfig.ts`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `packages/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/types/_BuildConfig.ts`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
 - ロールバック手順: 文言と UI 分割、および cleanupConfig の変更差分を revert して元の 1 ボタン構成へ戻す
 - チェックリスト:
   - fetch の raw / filtered キャッシュ削除の実体と分離方法を確認する
@@ -5915,7 +6186,7 @@
 - ブランチ名: fix/styler/auth-dialog-loop
 - 依存: なし
 - 受け入れ基準: 認証フロー完了後に同ダイアログが再表示されない（再試行や再読み込みでも再発しない）／401時のダイアログ表示は維持される（無条件に抑制しない）／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記録する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/contexts/SimpleBFFAuthContext.tsx`, `plugins/styler-plugin/src/ui/components/steps/**`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/contexts/SimpleBFFAuthContext.tsx`, `plugins/styler-plugin/src/ui/components/steps/**`
 - ロールバック手順: auth-recovery/UI auth の差分を revert する
 - チェックリスト:
   - 認証成功時に再発する 401 ダイアログの原因を特定する
@@ -5948,7 +6219,7 @@
 - ブランチ名: feat/shape/styler-code-coloring
 - 依存: なし
 - 受け入れ基準: ShapeのベクタータイルにcountryCode/adminCode/adminLevelが補完され、Stylerの生成結果（コード→色）をfeatureIdPropertyで適用できる／ADM0/1/2の塗り分けが可能／既存のタイル生成とメタデータ集計に影響しない／pnpm install・pnpm build・pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
+- 影響範囲: `packages/gis-sdk/src/vectorTiles.ts`
 - ロールバック手順: vectorTiles のプロパティ補完差分を revert する
 - チェックリスト:
   - タイル生成時にcountryCode/adminCode/adminLevelを補完する
@@ -6417,7 +6688,7 @@
 - ブランチ名: fix/shape/vt-running-stuck-ui
 - 依存: なし
 - 受け入れ基準: vtタスク完了後にUIへ完了状態が反映されRunningが残らない／skipped/completeの最終タスク状態がUIに反映される／進捗通知の仕様を崩さない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/vt/**`, `packages/features/batch/src/**`, `plugins/shape-plugin/src/ui/hooks/progress/**`（調査後に確定）
+- 影響範囲: `packages/vt-orchestrator/src/vt/**`, `packages/batch/src/**`, `plugins/shape-plugin/src/ui/hooks/progress/**`（調査後に確定）
 - ロールバック手順: vt完了通知/進捗更新の差分を revert する
 - チェックリスト:
   - vt完了時のタスク状態更新がUIへ伝播しているか確認する
@@ -6607,7 +6878,7 @@
 - ブランチ名: fix/shape/transform-simplify-only-default
 - 依存: なし
 - 受け入れ基準: transform のデフォルトが simplify-only になる／フル処理は設定で選択可能な状態で残る／fetch ステージでフィーチャー単位メタデータを生成し空結果も記録する／空結果は transform タスクを生成しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/services/vt/**`, `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/services/vt/**`, `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
 - ロールバック手順: 追加した transformMode と fetch メタデータ生成を revert する
 - チェックリスト:
   - transformMode を追加し既定を simplify-only にする
@@ -6663,7 +6934,7 @@
 - ブランチ名: analysis/shape/transform-mode-default
 - 依存: なし
 - 受け入れ基準: transform の処理モード/デフォルト設定の所在と影響範囲が整理される／「simplifyのみ」を既定にした場合のリスク/代替案を提示する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `packages/vt-orchestrator/src/transform/**`（調査結果に応じて追加）
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `packages/vt-orchestrator/src/transform/**`（調査結果に応じて追加）
 - ロールバック手順: 影響なし（分析のみ）
 - チェックリスト:
   - transform 処理手順と設定項目を整理する
@@ -6873,7 +7144,7 @@
 - ブランチ名: feat/storage/unify-vt-shape-route-location
 - 依存: plan/storage/unify-vt-shape-route-location
 - 受け入れ基準: VtShapeDb/VtDb 参照がすべて削除され、Ephemeral*DB と各ドメインDBへ移行されている／Step4 の中間生成物削除が各ノード種別で機能する／CoreDB のノード削除で関連データが nodeId で削除される／`pnpm lint && pnpm format && pnpm typecheck && pnpm test` が exit 0／TASKS.md の運用ログに start/done/blocked が記載されている
-- 影響範囲: `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/features/*-store/**`, `packages/vt-orchestrator/**`, `packages/runtime-worker/**`, `plugins/**`, `config/**`
+- 影響範囲: `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/*-store/**`, `packages/vt-orchestrator/**`, `packages/runtime-worker/**`, `plugins/**`, `config/**`
 - ロールバック手順: 旧ストアの参照を復元し、移行差分を revert する
 - チェックリスト:
   - VtShapeDb/VtDb 参照箇所を洗い出す
@@ -6936,7 +7207,7 @@
 - 依存: なし
 - ExecPlan: plans/storage-unify-vt-shape-route-location-execplan.md
 - 受け入れ基準: VtShapeDb/VtDb 廃止と保存先統合の ExecPlan が作成され、影響範囲・移行手順・検証・ロールバックが明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
-- 影響範囲: `plans/**`, `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/features/shape-store/**`, `packages/runtime-worker/**`, `plugins/**`
+- 影響範囲: `plans/**`, `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/shape-store/**`, `packages/runtime-worker/**`, `plugins/**`
 - ロールバック手順: ExecPlan の差分を revert する
 - チェックリスト:
   - 旧ストアの削除範囲と移行先を明記する
@@ -7013,7 +7284,7 @@
 - ExecPlan: plans/shape-build-stage-restructure-execplan.md
 - 受け入れ基準: fetch/transform/vt の新ステージ構成と入出力・永続化・ズーム帯の流れが ExecPlan に明文化されている／既存処理の置換範囲と非互換点が整理されている／既定OFFのフラグ導入方針とロールバック手順が明記されている／検証手順が `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を含めて記載されている／TASKS.md の運用ログに start/done/blocked が記載されている
 - 要点: shape ビルドの fetch/transform/vt 再編に向けた ExecPlan を作成し、フラグ既定OFFの移行計画を整理した。
-- 影響範囲: `packages/vt-orchestrator/src/**`, `packages/features/shape-store/src/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/components/step5/**`（計画で確定）
+- 影響範囲: `packages/vt-orchestrator/src/**`, `packages/shape-store/src/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/components/step5/**`（計画で確定）
 - ロールバック手順: フラグを既定OFFのまま維持し、該当差分を revert して従来のビルドフローへ戻す
 - チェックリスト:
   - 既存の fetch/transform/vt の責務と入出力を整理する
@@ -7029,7 +7300,7 @@
 - ブランチ名: feat/shape/omit-details-config
 - 依存: なし
 - 受け入れ基準: Transform でズームに応じた小BBox/小面積ポリゴン除外が行われる（外形リング面積を使用）／OmitDetailsConfig が BuildConfig に追加され弱/中/強を選べる／デフォルトは強設定／`app/public/templates/population-2023/tree-nodes.json` に設定値が反映される／Step4 Transform のアコーディオンにカードUIが追加される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/common/types/**`, `app/public/templates/population-2023/tree-nodes.json`（必要に応じて関連ファイルを追記）
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/common/types/**`, `app/public/templates/population-2023/tree-nodes.json`（必要に応じて関連ファイルを追記）
 - ロールバック手順: 該当差分を revert し、omit-details の設定/UI/フィルタを撤去する
 - チェックリスト:
   - OmitDetailsConfig を追加し weak/medium/strong を選べるようにする
@@ -7128,7 +7399,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-transform-preprocess-diagnostics-execplan.md
 - 受け入れ基準: simplify 前処理のログが feature/polygon 単位で問題箇所と理由を示す／問題ジオメトリをプレビューで視覚確認できる／過剰な前処理で地物が欠落しないよう処理方針が見直される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/features/shape-store/src/**`, `packages/plugin-service-api/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/shape-store/src/**`, `packages/plugin-service-api/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
 - ロールバック手順: 追加した診断/プレビュー/前処理変更を revert し、transform のログ・前処理を修正前へ戻す
 - チェックリスト:
   - simplify 前処理とログ出力の現状を整理する
@@ -7292,7 +7563,7 @@
 - ExecPlan: `plans/remove-transform-by-zoom-execplan.md`
 - 受け入れ基準: transform-by-zoom が型定義/実装/表示経路から除去され transform に一本化される／Step4 の Transform キャッシュ削除が transform 関連のタスク・キャッシュを漏れなく削除する／processingStatus と tileSummary が transform タスク実行抑止の判断材料として使われない／pnpm typecheck が exit 0 で通る／TASKS.md に運用ログを記載する
 - 要点: transform-by-zoom を廃止し、Transform キャッシュ削除時のタスク整理と runtime 状態優先の再開判定を反映。
-- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/shape-store/src/**`, `packages/features/gis-sdk/src/**`, `packages/plugin-service-api/src/**`, `packages/common/types/src/**`, `packages/runtime-worker/src/**`, `packages/vt-orchestrator/src/**`
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/shape-store/src/**`, `packages/gis-sdk/src/**`, `packages/plugin-service-api/src/**`, `packages/common/types/src/**`, `packages/runtime-worker/src/**`, `packages/vt-orchestrator/src/**`
 - ロールバック手順: 該当差分を revert し、transform-by-zoom を含む従来のタスク/型経路に戻す
 - チェックリスト:
   - transform-by-zoom の型定義を削除し、transform に一本化する
@@ -7354,7 +7625,7 @@
 - ブランチ名: feat/shape/step4-area-filter-coefficient
 - 依存: なし
 - 受け入れ基準: Step4 Transform の「面積フィルター」カードが撤去される／除外ポリゴン面積係数の UI が Step4 Transform に追加される／設定値がビルド設定に保存・再読込される／既存の Step4 UI に副作用がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/services/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、面積フィルター UI と係数 UI を修正前へ戻す
 - チェックリスト:
   - Step4 Transform の面積フィルター UI を撤去する
@@ -7564,7 +7835,7 @@
 - 依存: なし
 - ExecPlan: `plans/build-continuation-policy-execplan.md`
 - 受け入れ基準: TreeConsole のツールバーメニューにビルド継続ポリシー（3択）が追加される／shape/location/route のビルド設定に保存・再読込される／ビルド処理がポリシーに従って継続/停止する／文言が i18n 化される／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `app/src/**`, `packages/ui/**`, `plugins/shape-plugin/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- 影響範囲: `app/src/**`, `packages/ui/**`, `plugins/shape-plugin/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/**`, `packages/gis-sdk/src/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、ビルド継続ポリシー UI と停止条件を修正前に戻す
 - チェックリスト:
   - ビルド継続ポリシーの型/保存スキーマを追加する
@@ -7584,7 +7855,7 @@
 - ブランチ名: feat/shape/step4-vt-config-refine
 - 依存: なし
 - 受け入れ基準: Step4 の「ビルド終了時の中間生成物の保持」に VT キャッシュ保持スイッチが追加され、CleanupConfig に設定が保存/再読込される／VT キャッシュの自動削除条件が新規フラグで制御される／VT 生成アコーディオンの項目が整理され、詳細設定セクションが適用される／VT 設定のヘルプテキストが充実し i18n 化される／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/*`, `plugins/shape-plugin/src/services/batch/**`（調査後に確定）
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/*`, `plugins/shape-plugin/src/services/batch/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、Step4 の VT 設定 UI と CleanupConfig を修正前へ戻す
 - チェックリスト:
   - CleanupConfig に VT キャッシュ保持用フラグを追加する
@@ -7642,7 +7913,7 @@
 - ブランチ名: feat/shape/transform-pre-simplify-filters
 - 依存: なし
 - 受け入れ基準: TransformConfig 型に簡易化/事前フィルタ用の階層プロパティが追加される／テンプレートの buildConfig に新プロパティとデフォルトが反映される／Shape Step4 の Transform アコーディオンに新カードが追加され値が保存・再読込される／Transform ステージで新プロパティを参照して事前フィルタ/簡易化が動作する／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/worker/**`, `packages/features/gis-sdk/src/types/**`, `app/public/templates/**`（調査後に確定）
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/worker/**`, `packages/gis-sdk/src/types/**`, `app/public/templates/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、Transform 設定/テンプレート/事前フィルタ処理を修正前に戻す
 - チェックリスト:
   - TransformConfig 型へ簡易化/事前フィルタ用の階層プロパティを追加する
@@ -7829,7 +8100,7 @@
 - ブランチ名: feat/shape/transform-area-exclusion
 - 依存: なし
 - 受け入れ基準: Transform の簡易化前処理でポリゴンごとにアウトライン総延長と面積を算出し、`area < coefficient * gridSize * outlineLength / 2` の場合に除外される／係数はデフォルト1で「除外ポリゴン面積係数」として Step4 UI に追加される／設定値が保存・再読込され、transform 処理へ反映される／除外対象はエラー扱いにならず通常のフィルタとして処理される／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/vt-orchestrator/src/transform/**`, `packages/features/gis-sdk/src/types/**`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/vt-orchestrator/src/transform/**`, `packages/gis-sdk/src/types/**`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、Transform 設定の係数追加と面積除外の前処理を修正前に戻す
 - チェックリスト:
   - Transform 設定に「除外ポリゴン面積係数」を追加する
@@ -8066,7 +8337,7 @@
 - ブランチ名: chore/shape/shape-db-table-audit
 - 依存: なし
 - 受け入れ基準: hdb-shape の全テーブルについて読み書き参照箇所を整理する／未使用または重複の疑いがあるテーブルを根拠付きで提示する／削除/統合/保留の方針と影響範囲を提示する／削除/統合を提案する場合はロールバック手順と移行手順を明記する／TASKS.md に調査ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts` ほか（調査後に確定）
+- 影響範囲: `packages/shape-store/src/ShapeDB.ts` ほか（調査後に確定）
 - ロールバック手順: 調査のみの場合は不要。実装する場合は該当差分を revert し、hdb-shape のテーブル構成を元に戻す
 - チェックリスト:
   - hdb-shape の全テーブルと参照箇所（読み書き）を洗い出す
@@ -8083,7 +8354,7 @@
 - ブランチ名: chore/shape/ephemeral-table-audit
 - 依存: なし
 - 受け入れ基準: shape-ephemeral の全テーブルについて読み書き参照箇所を整理する／transformByBandCache/transformByZoomCache/transformByZoomReservations/vtCache の用途・重複・未使用の有無を根拠付きで説明する／未使用または重複の疑いがあるテーブルについて削除/統合/保留の方針と影響範囲を提示する／削除/統合を提案する場合はロールバック手順と移行手順を明記する／TASKS.md に調査ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts` ほか（調査後に確定）
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts` ほか（調査後に確定）
 - ロールバック手順: 調査のみの場合は不要。実装する場合は該当差分を revert し、shape-ephemeral のテーブル構成を元に戻す
 - チェックリスト:
   - shape-ephemeral の全テーブルと参照箇所（読み書き）を洗い出す
@@ -8230,7 +8501,7 @@
 - ブランチ名: fix/shape/geometry-simplify-invalid-polygon
 - 依存: なし
 - 受け入れ基準: geometrySimplify の invalid polygon エラーの原因・発生範囲・修正方法と適用範囲を説明できる／失敗時の挙動が仕様として明確（停止 or 継続）が明記されている／同じ入力で失敗しない（もしくは意図した失敗として明確なログが出る）／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/*`, `packages/features/gis-sdk/src/*`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/services/*`, `packages/gis-sdk/src/*`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、geometrySimplify のエラーハンドリングを修正前に戻す
 - チェックリスト:
   - invalid polygon の再現条件と発生箇所を特定する
@@ -8346,7 +8617,7 @@
 - ブランチ名: refactor/gis-sdk/require-build-config-properties
 - 依存: なし
 - 受け入れ基準: FetchConfig/TransformByBandConfig/TransformByZoomConfig/VTConfig の各プロパティが必須化され、フォールバック/存在チェックが撤去される／ビルドステージ未使用のプロパティ一覧を特定し説明できる／Step4 UI に存在しない表示/更新項目を列挙できる／ラベル/ヘルプの不一致を列挙できる／pnpm typecheck が通る／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/ui/components/step4/*`, `plugins/shape-plugin/src/services/batch/session/*`（調査後に確定）
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/ui/components/step4/*`, `plugins/shape-plugin/src/services/batch/session/*`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、型とフォールバック実装を修正前に戻す
 - チェックリスト:
   - 4型のプロパティ一覧を整理して説明する
@@ -8371,7 +8642,7 @@
 - ブランチ名: refactor/types/move-build-configs-to-gis-sdk
 - 依存: なし
 - 受け入れ基準: FetchConfig/TransformByBandConfig/TransformByZoomConfig/VTConfig/ CleanupConfig/ CommonSessionConfig が common-types から撤去され、gis-sdk 定義に統一される／参照元が common-types を使っていない／pnpm typecheck が通る／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/types/src/*`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/DownloadRetryControls.tsx`（調査後に確定）
+- 影響範囲: `packages/common/types/src/*`, `packages/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/DownloadRetryControls.tsx`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、build-config 型の定義と参照を修正前に戻す
 - チェックリスト:
   - common-types の build-config 型を撤去する
@@ -8388,7 +8659,7 @@
 - ブランチ名: feat/shape/step3-offline-metadata-cache
 - 依存: なし
 - 受け入れ基準: Step3 のメタデータ取得が 304 でローカルキャッシュを使う実装であることを確認できる／navigator.onLine === false の場合は外部アクセスを行わずローカルキャッシュを利用する／API 未到達時は外部アクセス失敗後にローカルキャッシュへフォールバックする／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `packages/features/chunk-store/src/index.ts`（確認のみ）, `plugins/shape-plugin/src/ui/components/step3/useShapeCountrySelectionStep.ts`（確認のみ）
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `packages/chunk-store/src/index.ts`（確認のみ）, `plugins/shape-plugin/src/ui/components/step3/useShapeCountrySelectionStep.ts`（確認のみ）
 - ロールバック手順: 該当差分を revert し、オンライン/オフライン判定とキャッシュ利用を変更前へ戻す
 - チェックリスト:
   - 304 応答時にキャッシュ利用されるコード経路を確認する
@@ -8499,7 +8770,7 @@
 - ブランチ名: refactor/types/streamline-build-types
 - 依存: なし
 - 受け入れ基準: BuildConfig/TaskQueueRecord/StageHandeler の重複定義が上流（packages/common/types）に統合される／上流・下流で不一致の型は合成した新定義で整合する／下流側は上流定義を参照する／pnpm typecheck が通る／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/types/src/*`, `packages/features/gis-sdk/src/*`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/*`（調査後に確定）
+- 影響範囲: `packages/common/types/src/*`, `packages/gis-sdk/src/*`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/*`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、型定義と参照を修正前に戻す
 - チェックリスト:
   - BuildConfig/TaskQueueRecord/StageHandeler の重複箇所を特定する
@@ -8527,7 +8798,7 @@
 - 依存: なし
 - ExecPlan: `plans/shape-stage-cache-naming-execplan.md`
 - 受け入れ基準: ステージが fetch/transform-by-band/transform-by-zoom/vt の4段階になる／中間データはCache命名に統一される／transform-by-band/zoom の中間はephemeralのみで永続側に残らない／UI/ログ/説明がCache命名に一致する／移行/ロールバック手順がExecPlanに記載される／pnpm typecheck が通る／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/*`, `packages/vt-shape-store/src/*`, `packages/features/shape-store/src/*`, `plugins/shape-plugin/src/*` ほか（調査後に確定）
+- 影響範囲: `packages/vt-orchestrator/src/*`, `packages/vt-shape-store/src/*`, `packages/shape-store/src/*`, `plugins/shape-plugin/src/*` ほか（調査後に確定）
 - ロールバック手順: ExecPlan に記載の手順で旧テーブル名/旧ステージ構成へ戻す
 - チェックリスト:
   - ExecPlan を作成し用語/段階/データ配置を確定する
@@ -8647,8 +8918,8 @@
 2201) refactor/gis-sdk/build-types-dedupe (P1) — 進行中 (2026-01-15)
 - ブランチ名: refactor/gis-sdk/build-types-dedupe
 - 依存: なし
-- 受け入れ基準: `packages/features/gis-sdk/src/types/_BuildConfig.ts` と `packages/features/gis-sdk/src/types/types.ts` の重複型が整理される／公開 export が明確になり既存参照が壊れない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/types/_BuildConfig.ts`, `packages/features/gis-sdk/src/types/types.ts`（調査結果に応じて）
+- 受け入れ基準: `packages/gis-sdk/src/types/_BuildConfig.ts` と `packages/gis-sdk/src/types/types.ts` の重複型が整理される／公開 export が明確になり既存参照が壊れない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/types/_BuildConfig.ts`, `packages/gis-sdk/src/types/types.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、型定義を修正前に戻す
 - チェックリスト:
   - 重複している型を特定する
@@ -8664,7 +8935,7 @@
 - ブランチ名: fix/shape-store/build-session-metadata-import
 - 依存: なし
 - 受け入れ基準: `@hierarchidb/shape-store` の `build:types` で `BuildSessionMetadata` 未解決エラーが解消される／`@hierarchidb/gis-sdk` 参照の型名が正しいものに置換される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`（調査結果に応じて）
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、型名参照を修正前に戻す
 - チェックリスト:
   - エラーの参照箇所と正しい型名を特定する
@@ -9084,7 +9355,7 @@
 - 依存: なし
 - ExecPlan: `plans/shape-raw-buffer-pipeline-execplan.md`
 - 受け入れ基準: DownloadBuffersForNode の命名を rawDataDataSourceBuffers に統一する／データソース戦略で raw ストリームの変換パイプを差し込める（入口でハッシュ計算）／GeoBoundaries は GeoJSON→FlatGeobuf を保存する／GADM は admin0 を zip 化して保存し admin1+ は zip のまま保存する／transformSource でバッファ形式ごとの解凍/再変換を戦略側で行う／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/datasources/*`, `packages/runtime-worker/src/services/shapeChunkStore.ts`, `packages/features/download` など（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/datasources/*`, `packages/runtime-worker/src/services/shapeChunkStore.ts`, `packages/download` など（調査結果に応じて）
 - ロールバック手順: 該当差分と ExecPlan を revert し、旧 download/raw バッファ経路に戻す
 - チェックリスト:
   - raw buffer の命名と API を整理する
@@ -9284,7 +9555,7 @@
 - ブランチ名: fix/ui/batch-progress-debounce
 - 依存: なし
 - 受け入れ基準: batch progress の UI 更新が適度にバウンスされ、Maximum update depth 警告が発生しない／更新頻度が抑制されても最終状態が反映される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/batch/src/progress/useBatchProgress.ts`（必要に応じて）
+- 影響範囲: `packages/batch/src/progress/useBatchProgress.ts`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、従来の即時更新へ戻す
 - チェックリスト:
   - progress 反映をデバウンスし、UI 更新頻度を抑制する
@@ -9326,7 +9597,7 @@
 - ブランチ名: fix/shape/step5-fetch-progress-live
 - 依存: なし
 - 受け入れ基準: Step5 の fetch 進捗がリアルタイムで反映される／進捗イベントの送信元とUI側の購読・集計が一致していることを確認する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `packages/features/batch/src/session/AbstractBatchSession.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `packages/batch/src/session/AbstractBatchSession.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の進捗表示仕様へ戻す
 - チェックリスト:
   - fetch の進捗イベントが UI に届いているか確認する
@@ -9446,7 +9717,7 @@
 - ブランチ名: fix/auth/cancel-cooldown-prevent-reopen
 - 依存: なし
 - 受け入れ基準: Cancel 押下後に auth-required ダイアログが即再表示されない／Cancel 後はクールダウン中に AUTH_REQUIRED を再発行しない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`
 - ロールバック手順: 該当ファイルの差分を revert し、Cancel 後も即再表示する挙動へ戻す
 - チェックリスト:
   - Cancel 後の再表示発生経路を確認する
@@ -9567,7 +9838,7 @@
 - 依存: なし
 - ExecPlan: `plans/location-plugin-repair-execplan.md`
 - 受け入れ基準: location-plugin の Step2-6 が CSV ソースのビルドと非VTの MapLibre プレビューに対応し、LocationQueryAPI が viewport 検索と prefetch マージン指定を受けられる／vectorTiles を参照せず points を描画できる／地物種類トグル・前方一致検索・ホバー/選択（半径8px）の強調表示が非VTでも動作する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `packages/plugin-service-api/src/types/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/worker/**`, `plugins/location-plugin/src/ui/components/**`, `docs/location-plugin-design.md`（参照整合が必要な場合）
+- 影響範囲: `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `packages/plugin-service-api/src/types/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/worker/**`, `plugins/location-plugin/src/ui/components/**`, `docs/location-plugin-design.md`（参照整合が必要な場合）
 - ロールバック手順: 上記差分を revert し、vectorTiles ベースの LocationQueryService と UI の既存プレビューへ戻す
 - チェックリスト:
   - LocationQuery/Mutation API と worker 実装を非VT検索へ移行する
@@ -9688,7 +9959,7 @@
 - 依存: なし
 - ExecPlan: `plans/shape-metadata-stage-geometry-stats-execplan.md`
 - 受け入れ基準: shape Step6 のメタデータ集計が fetch/transform/vt の新ステージ構成に基づいて集計される／集計結果がメタデータとして保存される／Step6 の表示カラムが新ステージ構成に一致する／旧ステージ名の集計/表示が残らない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`（調査結果に応じて）
+- 影響範囲: `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、既存のメタデータ集計/表示へ戻す
 - チェックリスト:
   - ExecPlan を更新し、ステージ再編後の集計/保存/表示方針を明記する
@@ -9757,7 +10028,7 @@
 - ブランチ名: fix/shape/progress-protocol-tasktype
 - 依存: なし
 - 受け入れ基準: worker→UI進捗プロトコルから currentStage/currentTask を廃止し taskType に統一する／送受信側と型定義が整合し型エラーが出ない／Step5の進捗表示が taskType で判定される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/api/src/BatchControlAPI.ts`, `packages/common/types/src/progress-types.ts`, `packages/features/batch/src/session/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/src/**`, `packages/ui/batch/src/**`
+- 影響範囲: `packages/common/api/src/BatchControlAPI.ts`, `packages/common/types/src/progress-types.ts`, `packages/batch/src/session/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/src/**`, `packages/ui/batch/src/**`
 - ロールバック手順: 該当差分を revert し、currentStage/currentTask を含む旧プロトコルに戻す
 - チェックリスト:
   - currentStage/currentTask の送信元/受信先/型定義を洗い出す
@@ -9775,7 +10046,7 @@
 - ブランチ名: fix/shape/batch-task-schema-cleanup
 - 依存: なし
 - 受け入れ基準: batchTasks の未使用インデックスを削除する／BatchTaskRecord/ShapeBatchTaskRecord/ShapeBatchTaskSummary の未使用プロパティを削除する／ShapeBatchTaskStatus と ProgressPhase の関係を整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
+- 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
 - ロールバック手順: 該当差分を revert し、batchTasks のインデックスとタスク型を元に戻す
 - チェックリスト:
   - batchTasks の未使用インデックスを削除する
@@ -9832,7 +10103,7 @@
 - ブランチ名: fix/shape/auth-dialog-loop-step3
 - 依存: なし
 - 受け入れ基準: Step3 の認証ダイアログは Worker からの認証失敗通知のみで開く／認証成功直後はダイアログが再表示されない／Worker 側のメタデータ取得は UI に待機表示→成功/失敗通知を返す／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`
 - ロールバック手順: 該当差分を revert し、認証フローの挙動を修正前に戻す
 - チェックリスト:
   - UI 側の認証判断を撤去し、Worker 結果を起点にする
@@ -9847,7 +10118,7 @@
 - ブランチ名: fix/auth/token-ssot-localstorage
 - 依存: なし
 - 受け入れ基準: AuthService の in-memory token を廃止し localStorage を SSOT にする／401 検知時に access_token を削除する／bff-auth-user を廃止して userinfo に統一する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/services/BFFAuthService.ts`, `packages/ui/auth/src/hooks/useAuth.ts`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/services/BFFAuthService.ts`, `packages/ui/auth/src/hooks/useAuth.ts`
 - ロールバック手順: 該当差分を revert し、トークン保持/ユーザ情報の保存を修正前に戻す
 - チェックリスト:
   - AuthService の currentToken を撤去して storage 参照に統一する
@@ -9862,7 +10133,7 @@
 - ブランチ名: fix/auth/remove-authsuccess-dispatch
 - 依存: なし
 - 受け入れ基準: AuthRequiredDialogHost から AuthSuccess/AuthCancelled の dispatch を撤去する／AuthService は AUTH_REQUIRED 通知後に待機せず例外で返す／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/features/auth-recovery/src/AuthService.ts`
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/auth-recovery/src/AuthService.ts`
 - ロールバック手順: 該当差分を revert し、AuthSuccess/AuthCancelled の dispatch と awaitAuth の待機を復元する
 - チェックリスト:
   - AuthRequiredDialogHost の success/cancel dispatch を削除する
@@ -9876,7 +10147,7 @@
 - ブランチ名: fix/auth/worker-authrequired-ui-only
 - 依存: なし
 - 受け入れ基準: Worker が AuthRequired を dispatch し UI が受信してのみ認証ダイアログを開く／AuthService が AuthSuccess/Cancelled を待機して再試行する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `app/src/contexts/AuthRequiredDialogHost.tsx`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`, `app/src/contexts/AuthRequiredDialogHost.tsx`
 - ロールバック手順: 該当差分を revert し、AuthRequired 連携を修正前に戻す
 - チェックリスト:
   - AuthService.awaitAuth の待機と再試行を復元する
@@ -9890,7 +10161,7 @@
 - ブランチ名: fix/auth/worker-authrequired-no-wait
 - 依存: なし
 - 受け入れ基準: AuthService.awaitAuth は AUTH_REQUIRED を dispatch したら即例外で終了する／Worker は UI storage ブリッジ経由のみでトークンを読む／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`
+- 影響範囲: `packages/auth-recovery/src/AuthService.ts`
 - ロールバック手順: 該当差分を revert し、AUTH_REQUIRED 待機と直接 localStorage 参照を復元する
 - チェックリスト:
   - awaitAuth を即例外化する
@@ -10130,7 +10401,7 @@
   - taskQueue の状態更新ルール（waiting/running/completed/failed + message 前置詞）が反映される
   - vt-shape-store/vt-store のデータ保存が設計に一致する
   - TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/**`, `packages/vt-orchestrator/**`, `packages/features/shape-store/**`（調査後に絞り込み）
+- 影響範囲: `plugins/shape-plugin/**`, `packages/vt-orchestrator/**`, `packages/shape-store/**`（調査後に絞り込み）
 - ロールバック手順: 追加・変更した差分を revert し、旧パイプラインへ戻す
 - チェックリスト:
   - 設計ドキュメントを再読し実装の不足点を洗い出す
@@ -10176,7 +10447,7 @@
 - ブランチ名: fix/auth/localstorage-only-worker-bridge
 - 依存: なし
 - 受け入れ基準: 認証関連の sessionStorage 利用が完全に撤去され localStorage に統一される／Worker 側から UI の localStorage を操作できるブリッジ API が追加される／auth フローが sessionStorage なしで動作する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/ui/auth/src/**`, `packages/features/auth-recovery/src/**`, `app/src/contexts/WorkerProvider.tsx`, `app/src/worker-runtime/**`（調査後に絞り込み）
+- 影響範囲: `packages/ui/auth/src/**`, `packages/auth-recovery/src/**`, `app/src/contexts/WorkerProvider.tsx`, `app/src/worker-runtime/**`（調査後に絞り込み）
 - ロールバック手順: auth の localStorage 統一差分と Worker ブリッジ追加差分を revert し、従来の sessionStorage 併用へ戻す
 - チェックリスト:
   - 認証関連の sessionStorage 参照/書き込みを削除する
@@ -10476,7 +10747,7 @@
 - ブランチ名: investigate/shape/step4-filter-config-usage
 - 依存: なし
 - 受け入れ基準: Step4 の面積フィルター/最小頂点数/最小面積/クイック除外しきい値/シンプル形状頂点しきい値/細長形状補正係数が実処理で参照されているかを確認し、参照箇所または未使用を報告する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/gis-sdk/src/**`, `packages/runtime-worker/src/**`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/gis-sdk/src/**`, `packages/runtime-worker/src/**`（調査結果に応じて）
 - ロールバック手順: 調査のみのため不要
 - チェックリスト:
   - Step4 UI で設定される項目の保存先を確認する
@@ -10507,7 +10778,7 @@
 - ブランチ名: feat/shape/geojson-vt-index-reuse
 - 依存: なし
 - 受け入れ基準: extract2 で geojson-vt の index を生成して IndexedDB に保存できる／vectortile ステージで保存済み index を復元して再利用できる／既存の per-tile index 生成が抑制される／設計と手順を doc に整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/**`, `packages/features/gis-sdk/src/**`, `plugins/shape-plugin/src/services/**`（調査後に絞り込み）
+- 影響範囲: `packages/runtime-worker/src/**`, `packages/gis-sdk/src/**`, `plugins/shape-plugin/src/services/**`（調査後に絞り込み）
 - ロールバック手順: 追加した index 保存/復元の処理を revert し、従来の per-tile index 生成へ戻す
 - チェックリスト:
   - idb-geojson-vt-test.html の復元手順をコードに反映する
@@ -10642,7 +10913,7 @@
 - ブランチ名: fix/shape/download-stall-chunk-store-response
 - 依存: なし
 - 受け入れ基準: download ステージで chunk-store 経由取得が停止しない／URL 取得の HEAD/GET と Dexie キャッシュの復元が期待通りに動作する／必要なら不整合の原因を説明し修正する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`（必要に応じて）
+- 影響範囲: `packages/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、chunk-store 関連の変更を元に戻す
 - チェックリスト:
   - download ステージの取得経路で chunk-store の利用有無を確認する
@@ -10812,7 +11083,7 @@
 - ブランチ名: fix/shape-plugin/step3-auth-dialog-flow
 - 依存: なし
 - 受け入れ基準: geoboundaries の 401 で AuthRequiredDialog が開き、認証完了後に取得が再開する／401ループが解消する／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/ui/auth/src/components/AuthRequiredDialog.tsx`, `packages/features/auth-recovery/src/AuthService.ts`, `packages/features/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/ui/auth/src/components/AuthRequiredDialog.tsx`, `packages/auth-recovery/src/AuthService.ts`, `packages/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`
 - ロールバック手順: 自動解決削除の差分を revert して前の挙動へ戻す
 - チェックリスト:
   - AUTH_REQUIRED の自動解決を削除する
@@ -10861,7 +11132,7 @@
 - ブランチ名: feat/download/smartfetch-inflight
 - 依存: なし
 - 受け入れ基準: smartFetch に in-flight 共有オプションを追加しGET/HEADのみ対象にする／既定キーは method+resolvedUrl+accept／キー生成を差し替え可能／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/download/src/smartFetch.ts`
+- 影響範囲: `packages/download/src/smartFetch.ts`
 - ロールバック手順: 上記ファイルの差分を revert し、in-flight 共有オプションを削除する
 - チェックリスト:
   - in-flight オプション型を追加する
@@ -10917,7 +11188,7 @@
 - ブランチ名: refactor/util/dedupe-sleep
 - 依存: なし
 - 受け入れ基準: 指定ファイルの sleep 定義を共通ユーティリティへ集約し重複を解消する／各ファイルの動作は保持される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/util/src/sleep.ts`, `packages/util/src/index.ts`, `packages/tools/gen-iso3166-2/src/scraper.ts`, `packages/features/chunk-store/src/index.ts`, `packages/features/download/src/adapters/FetchNetworkPort.ts`, `packages/features/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`
+- 影響範囲: `packages/util/src/sleep.ts`, `packages/util/src/index.ts`, `packages/tools/gen-iso3166-2/src/scraper.ts`, `packages/chunk-store/src/index.ts`, `packages/download/src/adapters/FetchNetworkPort.ts`, `packages/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`
 - ロールバック手順: 上記ファイルの差分を revert し、各ファイルのローカル sleep 定義を復元する
 - チェックリスト:
   - 共通 sleep ユーティリティを追加する
@@ -11016,7 +11287,7 @@
 - ブランチ名: fix/chunk-store/fetch-singleflight-dedupe
 - 依存: なし
 - 受け入れ基準: 同一URL/キャッシュキーの取得で in-flight を合流させる／Strict Mode などの二重実行でも外部URLアクセスが1回に抑止される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/chunk-store/src/index.ts`
+- 影響範囲: `packages/chunk-store/src/index.ts`
 - ロールバック手順: 上記ファイルの in-flight 合流ロジック差分を revert し、従来の直接フェッチ挙動に戻す
 - チェックリスト:
   - in-flight 合流ロジックを追加する
@@ -11286,7 +11557,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-chunk-store-cache-and-cleanup-execplan.md
 - 受け入れ基準: shape download のchunk-store利用がnodeId単位で参照関係を作成する／chunk-storeがHEAD+ETag/Last-Modifiedでキャッシュ判定する／hash同一性の利用状況を明確化し必要なら適用する／TreeNode削除経路でchunk-storeのdeleteForNodeが実行され参照0ならデータが削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/plugin.ts`（必要に応じて）
+- 影響範囲: `packages/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/plugin.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-storeのHEAD判定とnodeId関連付けを元に戻す
 - チェックリスト:
   - ExecPlanを作成し設計と検証手順を明記する
@@ -11303,7 +11574,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-ephemeral-stage-buffers-execplan.md
 - 受け入れ基準: extract1入力はchunk-storeのダウンロードキャッシュを利用し、extract2/vectortileの入出力はsourceBuffersへ移行される／extract2SourceBuffersはnodeId+国コード+自治体レベルで検索できる／vectortileSourceBuffersはnodeId+tileIdで検索できる／TreeNode削除で対象バッファが一括削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`（必要に応じて）
+- 影響範囲: `packages/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-store入力経路と旧bufferスキーマに戻す
 - チェックリスト:
   - ExecPlanを作成し設計と検証手順を明記する
@@ -11353,7 +11624,7 @@
 - ブランチ名: refactor/shape/extract-buffer-naming-align
 - 依存: なし
 - 受け入れ基準: ShapeBuildAPIClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
+- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
 - ロールバック手順: 上記ファイルの命名/型変更を revert し、従来の ShapeExtractedBufferRecord / ExtractedFeatureBuffer 名称へ戻す
 - チェックリスト:
   - ShapeBuildAPIClient.ts の型不整合箇所を修正する
@@ -11368,7 +11639,7 @@
 - ブランチ名: fix/shape/vectortile-no-empty-tileid
 - 依存: なし
 - 受け入れ基準: vectortile の tileId 関係が空のフォールバックを撤去し失敗扱いにする／tileId が空を許容する型定義を修正する／関連参照が更新されている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/features/shape-store/src/ShapeDB.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/shape-store/src/ShapeDB.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、tileId 未設定時のフォールバックと型定義を元に戻す
 - チェックリスト:
   - tileId 関係が空のフォールバックを削除する
@@ -11444,7 +11715,7 @@
 - ブランチ名: fix/shape/step3-delete-download-button-refresh
 - 依存: なし
 - 受け入れ基準: Step3 の「ダウンロード済みファイルを削除(N件)」ボタンが削除後に件数0へ更新され、無効化される／削除完了後に UI 状態が再取得される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- 影響範囲: `packages/chunk-store/src/index.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、削除後に relation が残る挙動へ戻す
 - チェックリスト:
   - 削除完了後に download 状態を再取得する
@@ -11472,7 +11743,7 @@
 - ブランチ名: fix/shape/download-stalls-after-two
 - 依存: なし
 - 受け入れ基準: download が2タスクで止まる原因を特定し、必要なら修正する／停止が正常待機の場合は根拠を示す／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/*`, `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/*`, `packages/chunk-store/src/index.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、旧挙動へ戻す
 - チェックリスト:
   - download ステージの停止要因を特定する
@@ -11486,7 +11757,7 @@
 - ブランチ名: fix/shape/geoboundaries-cache-complete
 - 依存: なし
 - 受け入れ基準: geoboundaries の download でキャッシュヒット時に task を completed に更新できる／0/230 停滞を解消する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `packages/chunk-store/src/index.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、従来のキャッシュ判定/完了更新に戻す
 - チェックリスト:
   - cache hit 時の task 更新経路を修正する
@@ -11578,7 +11849,7 @@
 - ブランチ名: refactor/shape-plugin/batch-storage-ephemeral
 - 依存: なし
 - 受け入れ基準: batchTasks を hdb-shape-ephemeral へ移設し hdb-shape 側を撤去する／TreeNode削除時に batchSessions を削除する／バッチ成功時に Step3 の保持スイッチ設定に従って batchTasks を自動削除する／rawBuffers の chunk-store 経由書き込みを撤去し ephem 保存へ統一する／ShapeEphemeralDBAPI を追加し ShapeDB/ShapeEphemeralDB の直接読み書きを API 経由へ統一する／参照先を一括で更新する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/plugin-service-api/src/types`, `packages/common/api/src/WorkerAPI.ts`, `packages/runtime-worker/src/services`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/worker/api.ts`, `packages/runtime-worker/src/entity/EntityLifecycleManager.ts`（他参照先含む）
+- 影響範囲: `packages/plugin-service-api/src/types`, `packages/common/api/src/WorkerAPI.ts`, `packages/runtime-worker/src/services`, `packages/shape-store/src/ShapeDB.ts`, `packages/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/worker/api.ts`, `packages/runtime-worker/src/entity/EntityLifecycleManager.ts`（他参照先含む）
 - ロールバック手順: batchTasks の参照/定義と rawBuffers 書き込み経路を元に戻し、TreeNode削除連動の batchSessions 削除を撤回する
 - チェックリスト:
   - hdb-shape の batchTasks を撤去し、ephemeral に移設する
@@ -11595,9 +11866,9 @@
 2058) chore/remove/runtime-stage-worker (P1) — 進行中 (2026-01-09)
 - ブランチ名: chore/remove/runtime-stage-worker
 - 依存: なし
-- 受け入れ基準: `packages/features/runtime-stage-worker` を削除し参照/依存を撤去する／計画ドキュメントの runtime-stage-worker 記述を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 受け入れ基準: `packages/runtime-stage-worker` を削除し参照/依存を撤去する／計画ドキュメントの runtime-stage-worker 記述を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：runtime-stage-worker パッケージを削除し、計画ドキュメントと pnpm-lock の参照を整理。
-- 影響範囲: `packages/features/runtime-stage-worker`, `docs/refactoring-plan-shape-to-location-route.md`, `pnpm-lock.yaml`
+- 影響範囲: `packages/runtime-stage-worker`, `docs/refactoring-plan-shape-to-location-route.md`, `pnpm-lock.yaml`
 - 検証：未実施（削除作業のみ）。
 - ロールバック手順: runtime-stage-worker パッケージと pnpm-lock のエントリ、計画ドキュメントの記述を復元する
 - チェックリスト:
@@ -11640,7 +11911,7 @@
 - ブランチ名: test/verify/smart-fetch-chunk-store
 - 依存: なし
 - 受け入れ基準: @hierarchidb/smart-fetch と @hierarchidb/chunk-store の利用経路を整理する／既存テストの内容を確認し不足があれば最小修正または追加する／関連テストを実行して結果を記録する／TASKS.md に運用ログ・影響範囲・検証結果を記載する
-- 影響範囲: `packages/features/download`, `packages/features/chunk-store`, `plugins/shape-plugin`（必要に応じて）
+- 影響範囲: `packages/download`, `packages/chunk-store`, `plugins/shape-plugin`（必要に応じて）
 - ロールバック手順: テスト追加/修正の差分を revert して元に戻す
 - チェックリスト:
   - smart-fetch/chunk-store の使用箇所と経路を確認する
@@ -11648,7 +11919,7 @@
   - 関連テストを実行し結果を運用ログに記載する
 - 運用ログ：
   - start: 2026-01-09 20:15 JST smart-fetch/chunk-store のテスト確認と実行に着手。
-  - done: 2026-01-09 20:20 JST smartFetch/DexieChunkStore テストを追加し、FetchNetworkPort.throttle を auth 無効化で修正。検証: `pnpm exec vitest run --config packages/features/download/vitest.config.ts` / `pnpm exec vitest run --config packages/features/chunk-store/vitest.config.ts`（成功）。
+  - done: 2026-01-09 20:20 JST smartFetch/DexieChunkStore テストを追加し、FetchNetworkPort.throttle を auth 無効化で修正。検証: `pnpm exec vitest run --config packages/download/vitest.config.ts` / `pnpm exec vitest run --config packages/chunk-store/vitest.config.ts`（成功）。
 
 2058) test/shape-plugin/enable-headless-batch (P1) — 進行中 (2026-01-09)
 - ブランチ名: test/shape-plugin/enable-headless-batch
@@ -11667,8 +11938,8 @@
 2057) chore/remove/compute-feature (P1) — 進行中 (2026-01-09)
 - ブランチ名: chore/remove/compute-feature
 - 依存: なし
-- 受け入れ基準: `packages/features/compute` を削除し参照/依存を撤去する／runtime-worker の FeatureRegistry から compute を外す／ドキュメントの compute 参照を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/compute`, `packages/runtime-worker/src/services/FeatureBootstrap.ts`, `packages/runtime-worker/package.json`, `packages/features/batch/README.md`, `plugins/*/PLAN.md`, `plugins/shape-plugin/README.md`（必要に応じて）
+- 受け入れ基準: `packages/compute` を削除し参照/依存を撤去する／runtime-worker の FeatureRegistry から compute を外す／ドキュメントの compute 参照を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/compute`, `packages/runtime-worker/src/services/FeatureBootstrap.ts`, `packages/runtime-worker/package.json`, `packages/batch/README.md`, `plugins/*/PLAN.md`, `plugins/shape-plugin/README.md`（必要に応じて）
 - ロールバック手順: compute パッケージと参照を復元し、FeatureRegistry への登録を元に戻す
 - チェックリスト:
   - compute パッケージと package.json 参照を削除する
@@ -11726,8 +11997,8 @@
 2057) chore/analysis/download-smart-fetch-status (P2) — 進行中 (2026-01-09)
 - ブランチ名: chore/analysis/download-smart-fetch-status
 - 依存: なし
-- 受け入れ基準: packages/features/download の現状と目的を整理する／smart-fetch という名称計画の有無と進捗を一次情報から確認する／再編・整理の進捗（完了/未完）を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/download`, `plans/*`, `TASKS.md`
+- 受け入れ基準: packages/download の現状と目的を整理する／smart-fetch という名称計画の有無と進捗を一次情報から確認する／再編・整理の進捗（完了/未完）を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/download`, `plans/*`, `TASKS.md`
 - ロールバック手順: 調査のみのためロールバック不要
 - チェックリスト:
   - smart-fetch 名称の記述有無を確認する
@@ -11802,7 +12073,7 @@
 - 依存: なし
 - 受け入れ基準: shape-plugin のバッチ再開時に全体進捗カードの "Primary Extraction ... 0/342 Completed failed 0 skipped 339" が残留せず、再開に応じて進捗が更新される／LRUSplitView の "No tasks yet" 3ペインのフラッシュが解消する／extract2 で tileId を生成して `shape-ephemeral` の `tileIdToBufferRelations`（nodeId+tileId の複合インデックス）に保存される／vectortile の入力生成が `tileIdToBufferRelations` を参照する／ツリーノード削除で `extractedBuffers` と `tileIdToBufferRelations` が削除される／ズームレンジUIが「0-12のレンジ選択」「n分割指定」「n+1ブレークポイント指定」に対応しデフォルトが 0-7 / n=2 / [0,4,7] である／extract2 がズーム範囲セット（n分割ブレークポイント）ごとにタスクを生成し、各タスク入力に対象ズーム範囲の識別情報が保持される／extract2 の単純化パラメータが各タスクの「最も詳細側のズーム率」に連動してスケールされる／extract2 完了後に vectortile のタスク群が開始される／Download Files を残したまま再開したケースの再現/解消手順を TASKS.md に記録する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
  - 受け入れ基準: shape-plugin のバッチ再開時に全体進捗カードの "Primary Extraction ... 0/342 Completed failed 0 skipped 339" が残留せず、再開に応じて進捗が更新される／LRUSplitView の "No tasks yet" 3ペインのフラッシュが解消する／extract2 で tileId を生成して `shape-ephemeral` の `tileIdToBufferRelations`（nodeId+tileId の複合インデックス）に保存される／vectortile の入力生成が `tileIdToBufferRelations` を参照する／ツリーノード削除で `extractedBuffers` と `tileIdToBufferRelations` が削除される／ズームレンジUIが「0-12のレンジ選択」「n分割指定」「n+1ブレークポイント指定」に対応しデフォルトが 0-7 / n=2 / [0,4,7] である／extract2 がズーム範囲セット（n分割ブレークポイント）ごとにタスクを生成し、各タスク入力に対象ズーム範囲の識別情報が保持される／extract2 の単純化パラメータが各タスクの「最も詳細側のズーム率」に連動してスケールされる／extract2 完了後に vectortile のタスク群が開始される／TopoJSON版の extract2/vectortile が z0/z1-4/z5-9 の集約方針に従い再構築され、タイルBBox拡張（係数/マージン）で周辺国/大陸を合成したTopoJSONから簡略化・flatgeobuf化・tileId索引化する／Step4で拡張係数とマージンを設定でき、extract2 に反映される／Download Files を残したまま再開したケースの再現/解消手順を TASKS.md に記録する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/services/batch/workers`, `plugins/shape-plugin/src/common/types`, `plugins/shape-plugin/src/worker`, `packages/features/shape-store/src`, `packages/plugin-service-api/src`, `packages/runtime-worker/src`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/services/batch/workers`, `plugins/shape-plugin/src/common/types`, `plugins/shape-plugin/src/worker`, `packages/shape-store/src`, `packages/plugin-service-api/src`, `packages/runtime-worker/src`（必要に応じて）
 - ロールバック手順: shape-plugin の tileId 関連差分と shape-ephemeral の新規テーブル定義を revert して元の挙動に戻す
 - チェックリスト:
   - 再開時に進捗が更新されない条件と再現手順を特定する
@@ -11875,7 +12146,7 @@
 - ブランチ名: fix/chunk-store/download-exports
 - 依存: なし
 - 受け入れ基準: @hierarchidb/chunk-store の build:types/typecheck で NetworkPort/Storage* の export エラーが解消する／@hierarchidb/download 側の公開APIと参照が一致する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/chunk-store/src` と `packages/features/download/src`
+- 影響範囲: `packages/chunk-store/src` と `packages/download/src`
 - ロールバック手順: chunk-store と download の export/import 差分を revert して元の参照へ戻す
 - チェックリスト:
   - chunk-store の import 参照元を特定する
@@ -11890,7 +12161,7 @@
 - ブランチ名: fix/gis-sdk/featurecollection-like-typecheck
 - 依存: なし
 - 受け入れ基準: @hierarchidb/gis-sdk の typecheck で TS2345 が解消する／FeatureCollectionLike と GeoJSON FeatureCollection の型整合が明確になる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
+- 影響範囲: `packages/gis-sdk/src/vectorTiles.ts`
 - ロールバック手順: gis-sdk の型/変換変更を revert して元のキャストに戻す
 - チェックリスト:
   - TS2345 の発生箇所と型定義を確認する
@@ -12044,8 +12315,8 @@
 - ブランチ名: fix/shape-store/tsconfig-paths
 - 依存: なし
 - 受け入れ基準: @hierarchidb/shape-store の tsconfig にある baseUrl/paths のローカル上書きを撤去し、paths を { "~/*": ["./src/*"] } のみにする／@hierarchidb/shape-store の build:types で TS2307/TS2339 を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/shape-store/tsconfig.json` と `packages/features/shape-store/src/EphemeralShapeDB.ts`
-- ロールバック手順: `packages/shape-store/tsconfig*.json` と `packages/features/shape-store/src/EphemeralShapeDB.ts` の差分を revert してローカル上書き・型修正を元に戻す
+- 影響範囲: `packages/shape-store/tsconfig.json` と `packages/shape-store/src/EphemeralShapeDB.ts`
+- ロールバック手順: `packages/shape-store/tsconfig*.json` と `packages/shape-store/src/EphemeralShapeDB.ts` の差分を revert してローカル上書き・型修正を元に戻す
 - チェックリスト:
   - shape-store の tsconfig の baseUrl/paths 上書きを特定する
   - paths を { "~/*": ["./src/*"] } のみに揃える
@@ -12074,8 +12345,8 @@
 - ブランチ名: fix/gis-sdk/vector-tiles-empty-result
 - 依存: なし
 - 受け入れ基準: VectorTileGenerateResult の空ケースで tiles を必ず返す／typecheck エラーが消える／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
-- ロールバック手順: `packages/features/gis-sdk/src/vectorTiles.ts` の差分を revert する
+- 影響範囲: `packages/gis-sdk/src/vectorTiles.ts`
+- ロールバック手順: `packages/gis-sdk/src/vectorTiles.ts` の差分を revert する
 - チェックリスト:
   - 空ケースの戻り値に tiles を追加する
   - typecheck エラーが消えることを確認する
@@ -12281,7 +12552,7 @@
 - 依存: なし
 - 受け入れ基準: gis-sdk が FlatGeobuf 入力から vector tile 生成できる／VectorTileGenerateConfig に入力フォーマット指定を追加する／runtime-worker の呼び出し側が新しい入力フォーマット指定を受け取れる／既存JSONフローの互換性を維持する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：gis-sdk に FlatGeobuf buffer のデコードを追加し、vector tile 生成を入力フォーマットで分岐できるよう拡張。runtime-worker は inputFormat を受け取り flatgeobuf 時に新経路を使用する。
-- 影響範囲：`packages/features/gis-sdk/src/vectorTiles.ts` と `packages/runtime-worker/src/services/StageProcessingService.ts` の入力処理、`packages/runtime-worker/src/types.ts` の API 型、`packages/features/gis-sdk/package.json` の依存。
+- 影響範囲：`packages/gis-sdk/src/vectorTiles.ts` と `packages/runtime-worker/src/services/StageProcessingService.ts` の入力処理、`packages/runtime-worker/src/types.ts` の API 型、`packages/gis-sdk/package.json` の依存。
 - ロールバック手順：上記ファイルの差分を revert し、`flatgeobuf` 依存追加と新規デコード関数を取り除く。
 - チェックリスト:
   - FlatGeobuf buffer から FeatureCollection を生成する処理を追加する
@@ -12314,9 +12585,9 @@
 - 受け入れ基準: @hierarchidb/fetch-save-metadata を削除する／shape-plugin Step3 が @hierarchidb/download 経由で geoBoundaries API からメタデータを取得・キャッシュし表示できる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：Step3 の国メタデータ取得を download 経由へ統合し、geoBoundaries/GADM/Natural Earth の取得・解析を実装。openstreetmap は Step2 無効化と Step3 例外で遮断。fetch-save-metadata と関連スクリプト/alias を削除した。
 - 原因/影響範囲：静的 JSON 再配布の fetch-save-metadata に依存していたためデータ鮮度と iso2 欠落が問題化。影響範囲は shape-plugin Step3（UI/Worker）と download パッケージの API、ビルド前処理と tsconfig/vite alias。
-- 修正内容と適用範囲：downloadText を追加し条件付きキャッシュ対応。MetadataLoader を download 経由に差し替え、geoBoundaries は `gbOpen/ALL/ALL` から iso3+level を集計、GADM は maps.html と各国ページから level 表記を抽出、Natural Earth は worldwide 1 行に固定。openstreetmap は Step3 で例外。fetch-save-metadata を削除し、`package.json` の metadata:ensure 系、`app/vite.config*.ts`、`tsconfig.base.json`、`types/ambient-modules.d.ts` を整理。対象: `packages/features/download/src/pluginDownloadRegistry.ts`, `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `plugins/shape-plugin/src/ui/hooks/useCountryMetadata.ts`, `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeDataSourceStep.ts`, `plugins/shape-plugin/src/common/mock/data.ts`, `plugins/shape-plugin/src/common/__tests__/unit/metadata-loader.unit.test.ts`, `plugins/shape-plugin/src/services/utils/__tests__/generateUrlMetadata.unit.test.ts` ほか。
+- 修正内容と適用範囲：downloadText を追加し条件付きキャッシュ対応。MetadataLoader を download 経由に差し替え、geoBoundaries は `gbOpen/ALL/ALL` から iso3+level を集計、GADM は maps.html と各国ページから level 表記を抽出、Natural Earth は worldwide 1 行に固定。openstreetmap は Step3 で例外。fetch-save-metadata を削除し、`package.json` の metadata:ensure 系、`app/vite.config*.ts`、`tsconfig.base.json`、`types/ambient-modules.d.ts` を整理。対象: `packages/download/src/pluginDownloadRegistry.ts`, `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `plugins/shape-plugin/src/ui/hooks/useCountryMetadata.ts`, `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeDataSourceStep.ts`, `plugins/shape-plugin/src/common/mock/data.ts`, `plugins/shape-plugin/src/common/__tests__/unit/metadata-loader.unit.test.ts`, `plugins/shape-plugin/src/services/utils/__tests__/generateUrlMetadata.unit.test.ts` ほか。
 - 検証：未実施（手動/自動テスト未実行）。
-- ロールバック手順：上記ファイル群の差分を revertし、`packages/features/fetch-save-metadata` と `scripts/data-generation/generate-metadata.mjs` を復元。`package.json` の metadata:ensure 系と vite/tsconfig/ambient module の alias を元に戻す。
+- ロールバック手順：上記ファイル群の差分を revertし、`packages/fetch-save-metadata` と `scripts/data-generation/generate-metadata.mjs` を復元。`package.json` の metadata:ensure 系と vite/tsconfig/ambient module の alias を元に戻す。
 - チェックリスト:
   - fetch-save-metadata 依存と import を排除する
   - geoBoundaries metadata を downloadJson で取得し、CountryMetadata に変換する
@@ -12332,7 +12603,7 @@
 - ExecPlan: plans/vector-tiles-chunkstore-input-formats-execplan.md
 - 受け入れ基準: shape/location/route のベクトルタイル生成で chunk-store の素材保存形式を geojson/geojson+gzip/flatgeobuf/flatgeobuf+gzip から選べる／保存と読み出しが形式ごとに動作する／既存の geojson 既定動作が維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：runtime-worker の chunk-store 入力に inputFormat/inputCompression を追加し gzip 圧縮/解凍を実装。gis-sdk に FlatGeobuf エンコードを追加し、shape/location/route の入力生成と config 配線を更新。RouteVectorTileService は writeVectorTileInput 経由で chunk-store 書き込みを共通化。
-- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/features/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `plugins/shape-plugin/src/common/types/ObsolateBuildConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/features/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
+- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/gis-sdk/src/vectorTiles.ts`, `packages/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `plugins/shape-plugin/src/common/types/ObsolateBuildConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
 - 検証：未実施（手動/自動テスト未実行）。
 - ロールバック手順：上記ファイルの差分を revert し、chunk-store 入力を JSON のみに戻す。route は DexieChunkStore 直接書き込みへ戻し、inputFormat/inputCompression の追加型定義を削除する。
 - チェックリスト:
@@ -12382,7 +12653,7 @@
   - プラグイン側でシリアライザ/デシリアライザ注入の実装へ移行する
   - 運用ログ start/done/blocked を追記する
 - 要点：@hierarchidb/chunk-store に relation テーブル（nodeId + metadataId）と同値性判定（url/etag/url+etag/hash）を追加し、nodeId 必須の set/get/delete API を実装。CAS（HashPort/ContentIndexPort/CachePort）を chunk-store へ移設。@hierarchidb/download は FetchNetworkPort/authFetch/postJson/auth通知へ簡素化し、pluginDownloadRegistry/createDownloadService/DexieChunkStoragePort を撤去。shape/route/runtime-worker/spreadsheet の URL 取得や一時保存を chunk-store ベースへ移行し、conditional caching と dedupe を維持。
-- 影響範囲：`packages/features/download`, `packages/features/chunk-store`, `plugins/shape-plugin`, `plugins/route-plugin`, `packages/runtime-worker`, `plugins/spreadsheet-plugin` とそれぞれの package.json/README/テスト。
+- 影響範囲：`packages/download`, `packages/chunk-store`, `plugins/shape-plugin`, `plugins/route-plugin`, `packages/runtime-worker`, `plugins/spreadsheet-plugin` とそれぞれの package.json/README/テスト。
 - ロールバック：chunk-store 追加と download API 変更を revert し、旧 downloadJson/getPluginDownloadService/DexieChunkStoragePort ベースへ戻す。relation テーブル/identity 判定の導入を差し戻し、プラグイン側は旧 download helper 呼び出しに差し替える。
 - 運用ログ：
   - start: 2026-01-03 19:35 JST ExecPlan 作成に着手。
@@ -12396,7 +12667,7 @@
 2031) chore/analysis/geoboundaries-output-trace (P2) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/geoboundaries-output-trace
 - 依存: なし
-- 受け入れ基準: packages/features/fetch-save-metadata/output/geoboundaries.json の生成元パッケージ/ファイルを特定する／アクセス先URLを特定する／取得内容と加工フローをコード参照付きで説明する／保存処理のタイミングと出力経路を説明する
+- 受け入れ基準: packages/fetch-save-metadata/output/geoboundaries.json の生成元パッケージ/ファイルを特定する／アクセス先URLを特定する／取得内容と加工フローをコード参照付きで説明する／保存処理のタイミングと出力経路を説明する
 - 要点：geoboundaries.json を生成するスクリプト・アクセスURL・加工/保存フローを整理し、関連ファイルを特定した。
 - チェックリスト:
   - 生成元パッケージ/ファイル/関数を特定する
@@ -12412,10 +12683,10 @@
 - 依存: なし
 - ExecPlan: plans/download-api-shape-step3-execplan.md
 - 受け入れ基準: @hierarchidb/download の any を排除し型付けを改善する／download API の入口を現行ユースケースに合わせて整理する／shape-plugin Step3 の country metadata 取得が download サービス層を経由し、キャッシュとコンテントネゴシエーションが有効になる／TASKS.md に運用ログ・影響範囲・ロールバック手順が記載されている
-- 受け入れ基準: packages/features/fetch-save-metadata/src/utils/fetchWithRetry.ts を削除し、@hierarchidb/download を使う実装に移行する
+- 受け入れ基準: packages/fetch-save-metadata/src/utils/fetchWithRetry.ts を削除し、@hierarchidb/download を使う実装に移行する
 - 要点：@hierarchidb/download の any を排除し API 公開範囲を整理、downloadJson に条件付きキャッシュを追加。Step3 の geoBoundaries availability を cache+コンテントネゴシエーションで取得し、fetch-save-metadata の fetchWithRetry を撤去して FetchNetworkPort に統一。
 - 原因/影響範囲：Step3 の geoBoundaries availability 取得で CORS/再取得が発生しやすく、download パッケージに冗長な公開 API と any 使用が残っていた。fetch-save-metadata にも重複したリトライ実装があり、責務が分散していた。影響範囲は download パッケージの公開 API、shape-plugin Step3 availability、fetch-save-metadata の取得処理。
-- 修正内容と適用範囲：download の型付けと公開 API を整理し、downloadJson に `cache: 'conditional'` を追加、Dexie ストレージに ETag/Last-Modified を保存。Step3 で geoBoundaries availability の取得を条件付きキャッシュに切り替え。fetch-save-metadata は FetchNetworkPort に置換し fetchWithRetry を削除。適用範囲は `packages/features/download/src/ports.ts`, `packages/features/download/src/adapters/DexieChunkStoragePort.ts`, `packages/features/download/src/adapters/FetchNetworkPort.ts`, `packages/features/download/src/createDownloadService.ts`, `packages/features/download/src/pluginDownloadRegistry.ts`, `packages/features/download/src/index.ts`, `packages/features/download/README.md`, `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`, `plugins/shape-plugin/src/services/utils/geoBoundariesAvailability.ts`, `packages/features/fetch-save-metadata/src/fetchSaveMetadata.ts`, `packages/features/fetch-save-metadata/package.json`, `packages/features/fetch-save-metadata/src/utils/fetchWithRetry.ts`（削除）, `plugins/route-plugin/src/common/orchestrator/__tests__/unit/auth-notify.unit.test.ts`, `plans/download-api-shape-step3-execplan.md`。
+- 修正内容と適用範囲：download の型付けと公開 API を整理し、downloadJson に `cache: 'conditional'` を追加、Dexie ストレージに ETag/Last-Modified を保存。Step3 で geoBoundaries availability の取得を条件付きキャッシュに切り替え。fetch-save-metadata は FetchNetworkPort に置換し fetchWithRetry を削除。適用範囲は `packages/download/src/ports.ts`, `packages/download/src/adapters/DexieChunkStoragePort.ts`, `packages/download/src/adapters/FetchNetworkPort.ts`, `packages/download/src/createDownloadService.ts`, `packages/download/src/pluginDownloadRegistry.ts`, `packages/download/src/index.ts`, `packages/download/README.md`, `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`, `plugins/shape-plugin/src/services/utils/geoBoundariesAvailability.ts`, `packages/fetch-save-metadata/src/fetchSaveMetadata.ts`, `packages/fetch-save-metadata/package.json`, `packages/fetch-save-metadata/src/utils/fetchWithRetry.ts`（削除）, `plugins/route-plugin/src/common/orchestrator/__tests__/unit/auth-notify.unit.test.ts`, `plans/download-api-shape-step3-execplan.md`。
 - 検証：`pnpm --filter @hierarchidb/download typecheck`（成功）／`pnpm --filter @hierarchidb/download build:types`（成功）／`pnpm --filter @hierarchidb/shape-plugin typecheck`（成功）。
 - ロールバック手順：上記ファイルの差分を revert し、fetchWithRetry.ts を復元する。
 - チェックリスト:
@@ -13238,7 +13509,7 @@
 - ブランチ名: refactor/feature/retire-feature-definition
 - 依存: なし
 - 受け入れ基準: FeatureDefinition/FeatureRegistry/FeatureBootstrap を撤去し参照を削除する／必要な初期化はシングルトン生成で代替する／影響範囲の build/typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/**`, `packages/features/**`, `plugins/**`, `app/**`, `packages/runtime-worker/package.json`（必要に応じて追加）
+- 影響範囲: `packages/runtime-worker/src/**`, `packages/**`, `plugins/**`, `app/**`, `packages/runtime-worker/package.json`（必要に応じて追加）
 - ロールバック手順: 変更差分を revert して FeatureDefinition/FeatureRegistry/FeatureBootstrap を復元する
 - チェックリスト:
   - FeatureDefinition/FeatureRegistry/FeatureBootstrap の定義と参照を撤去する
@@ -13330,7 +13601,7 @@
 - ブランチ名: fix/gis-sdk/buildtasks-index-nodeId-stage
 - 依存: なし
 - 受け入れ基準: buildTasks に [nodeId+stage] index が追加され SchemaError が出ない／DB version が更新される／pnpm --filter @hierarchidb/gis-sdk typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralBuildState.ts`, `packages/features/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`
+- 影響範囲: `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`, `packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`
 - ロールバック手順: 追加した index と DB version を元に戻す
 - チェックリスト:
   - buildTasks schema に [nodeId+stage] を追加する
@@ -13476,7 +13747,7 @@
 - ブランチ名: feat/route/idegsm-location-feature-linking
 - 依存: 2426
 - 受け入れ基準: IDE-GSM の LocationFeature 参照が route 仕様に合致する／LocationFeatureId を参照子として保持し、LocationNodeId も併記される／location 検索マップが兄弟順の近さで合成され先勝ちルールが守られる／route/location/shape の参照に基づく trash 制約が維持される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/features/route-api/src/ideGsmRouteCsv.ts`, `packages/features/route-api/src/routeTypes.ts`, `packages/features/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
+- 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/route-api/src/ideGsmRouteCsv.ts`, `packages/route-api/src/routeTypes.ts`, `packages/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の参照解決と import 処理を旧挙動に戻す
 - チェックリスト:
   - IDE-GSM の LocationFeature 参照モデルを route-api の型で表現する
@@ -13499,7 +13770,7 @@
 - ブランチ名: feat/route/idegsm-selection-matrix
 - 依存: 2435
 - 受け入れ基準: IDE-GSM 取り込み対象の国×交通モードが CSV/Location 参照から算出され、Route Selection のセル有効化と初期チェックが一致する／対象外の国は無効化される／解析失敗時は Route Selection がブロックされる／行ごとの一括選択チェックボックスが追加され route では有効化される／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/route-api/src/**`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`（必要に応じて追加）
+- 影響範囲: `packages/route-api/src/**`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して Route Selection の CSV 解析/行チェックボックスを撤去する
 - チェックリスト:
   - IDE-GSM の国×交通モード抽出 API を route-api/runtime-worker に追加する
@@ -13554,7 +13825,7 @@
 - ブランチ名: fix/location/idegsm-selection-countrycode
 - 依存: 2437
 - 受け入れ基準: IDE-GSM 解析後に Location Selection の国×地点タイプのチェックボックスが表示され、該当セルが初期チェックONになる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/ui/utils/ideGsmSelection.ts`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/ui/utils/ideGsmSelection.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の countryCode 設定を元に戻す
 - チェックリスト:
   - IDE-GSM パース結果に countryCode を設定する
@@ -13571,7 +13842,7 @@
 - ブランチ名: fix/location/idegsm-japan-countrycode-alias
 - 依存: 2439
 - 受け入れ基準: IDE-GSM の Japan 行で国×地点タイプのチェックボックスが表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して国名別名の補正を元に戻す
 - チェックリスト:
   - countryName の正規化を強化し alpha2/alpha3/別名から ISO2 を解決する
@@ -13588,7 +13859,7 @@
 - ブランチ名: feat/location/idegsm-remove-file-confirm
 - 依存: 2438
 - 受け入れ基準: IDE-GSM のファイル削除時に確認ダイアログを表示し、route 参照件数を警告表示できる／削除確定で該当ノードの IDE-GSM 由来データが破棄される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `packages/features/route-api/src/RouteQueryAPI.ts`, `packages/runtime-worker/src/services/RouteQueryService.ts`, `packages/features/route-store/src/RouteDB.ts`（必要に応じて追加）
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `packages/route-api/src/RouteQueryAPI.ts`, `packages/runtime-worker/src/services/RouteQueryService.ts`, `packages/route-store/src/RouteDB.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して削除確認/参照件数表示を撤去する
 - チェックリスト:
   - RouteQueryAPI に参照件数取得を追加する
@@ -13621,7 +13892,7 @@
 - ブランチ名: fix/location/idegsm-selection-country-mapping
 - 依存: 2440
 - 受け入れ基準: IDE-GSM の Japan 行で対象セルが表示される／ヘッダの country/country code 列が存在する場合でも countryCode が正しく解決される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の列推定を元に戻す
 - チェックリスト:
   - IDE-GSM CSV の列名推定と countryCode 優先処理を追加する
@@ -13679,7 +13950,7 @@
 - ブランチ名: feat/route-location/trash-reference-guard
 - 依存: なし
 - 受け入れ基準: route→location、location→shape の参照を Dexie インデックスで判定するチェックが追加され、参照されているノードは trash 移動が失敗する／連鎖チェックは 1 段のみ（route→location、location→shape）／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/features/route-store/src/RouteDB.ts`, `packages/features/location-store/src/LocationDB.ts`（必要に応じて追加）
+- 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/route-store/src/RouteDB.ts`, `packages/location-store/src/LocationDB.ts`（必要に応じて追加）
 - ロールバック手順: 変更差分を revert して trash 操作の参照ガードと新インデックスを取り消す
 - チェックリスト:
   - route-store で start/end location 参照チェックの関数を追加する
@@ -13834,7 +14105,7 @@
 - 依存: なし
 - ExecPlan: plans/route-shape-aligned-pipeline-execplan.md
 - 受け入れ基準: route のビルドが shape と同じ fetch/transform/vt ステージ構成で動作し、fetch 内で IDE-GSM の fetch/parse/waypoints/save を一括実行する／transform は転置インデックス生成のみを行う／vt でベクタタイル生成が行われる／タイル境界で LineString が分割され、始点/中継点/終点を含まないタイルでも表示される／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/runtime-worker/src/services/**`, `packages/features/vt-orchestrator/**`（必要に応じて追加）
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/runtime-worker/src/services/**`, `packages/vt-orchestrator/**`（必要に応じて追加）
 - ロールバック手順: route のステージ再編と vt 連携の差分を revert して旧フローへ戻す
 - チェックリスト:
   - ExecPlan を作成し合意する
@@ -13861,7 +14132,7 @@
 - ブランチ名: feat/route-plugin/route-config-style-ui
 - 依存: なし
 - 受け入れ基準: Route Config のアコーディオン最下部に交通モード別の色設定 UI と線の太さ/スタイル設定 UI が表示される／設定が route ノードの保存データに反映されプレビュー表示に反映される／i18n（英/日）が揃う／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`, `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx`, `plugins/route-plugin/src/common/styles/routeStyle.ts`, `packages/features/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/ui/locales/*.json`（必要に応じて追加）
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`, `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx`, `plugins/route-plugin/src/common/styles/routeStyle.ts`, `packages/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/ui/locales/*.json`（必要に応じて追加）
 - ロールバック手順: route のスタイル設定 UI と routeStyleConfig 関連の差分を revert して UI/プレビューを元に戻す
 - チェックリスト:
   - Route Config アコーディオンに交通モード別カラー/線幅/線種 UI を追加する
@@ -13961,7 +14232,7 @@
 - 依存: なし
 - ExecPlan: plans/locationfeature-admin0-rename-execplan.md
 - 受け入れ基準: LocationFeature の countryCode/countryName が admin0Code/admin0Name に統一され参照が残らない／Metadata 表から countryCode/countryName 列が撤去される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/locationTypes.ts`, `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/services/**`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/locationTypes.ts`, `packages/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/services/**`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
 - ロールバック手順: admin0 命名統一の差分を revert して countryCode/countryName を復元する
 - チェックリスト:
   - LocationFeature の型と生成処理を admin0 命名に統一する
@@ -14009,7 +14280,7 @@
 - ブランチ名: refactor/locationfeature/admin0-rename
 - 依存: なし
 - 受け入れ基準: 手動実行で legacy countryCode/countryName を admin0Code/admin0Name に移行できる／IDE-GSM CSV で admin0 が必ずセットされる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/services/download/csvSources.ts`, `plugins/location-plugin/src/services/pointFactories.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/services/download/csvSources.ts`, `plugins/location-plugin/src/services/pointFactories.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`（必要に応じて追加）
 - ロールバック手順: マイグレーション API と UI ボタンの差分を revert して元に戻す
 - チェックリスト:
   - 手動マイグレーション API を追加し UI から実行できるようにする
@@ -14060,7 +14331,7 @@
 - ブランチ名: feat/location/ide-gsm-remove-reimport
 - 依存: なし
 - 受け入れ基準: IDE-GSM のファイル削除確認後に残りファイルを再インポートする／削除時に LocationFeature を全削除してから再構築する／処理中は重複実行できない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-api/src/ideGsmTypes.ts`（必要に応じて追加）
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/location-api/src/ideGsmTypes.ts`（必要に応じて追加）
 - ロールバック手順: IDE-GSM の再インポート処理と append 書き込みの差分を revert して元に戻す
 - チェックリスト:
   - IDE-GSM の削除確認後に再インポートを行う流れを実装する
@@ -14077,7 +14348,7 @@
 - ブランチ名: fix/location/datasource-remove-ui-and-metadata-columns
 - 依存: なし
 - 受け入れ基準: Data Source の削除ボタンでファイルがUIから消える／Metadata カラムが admin0/admin0Code/admin1/admin1Code/admin2/admin2Code に統一され順序が一致する／Column/Row Config ダイアログの見出しが修正される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/features/location-api/src/locationTypes.ts`, `packages/features/location-api/src/LocationQueryAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`（必要に応じて追加）
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/location-api/src/locationTypes.ts`, `packages/location-api/src/LocationQueryAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`（必要に応じて追加）
 - ロールバック手順: Data Source 削除UIと admin0 系カラムの差分を revert して元に戻す
 - チェックリスト:
   - Data Source 削除時の UI 更新を安定化する
@@ -14109,7 +14380,7 @@
 - ブランチ名: investigation/location-label-zoom-range
 - 依存: なし
 - 受け入れ基準: Location のラベル表示ズーム範囲がどの設定からどの描画経路で適用されるかを説明できる／下限未達で表示される原因を特定できる／修正案を提示できる／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/location-plugin/src/ui/**`, `packages/ui/map/src/**`, `packages/features/location-api/src/**`（調査結果に応じて追加）
+- 影響範囲: `plugins/location-plugin/src/ui/**`, `packages/ui/map/src/**`, `packages/location-api/src/**`（調査結果に応じて追加）
 - ロールバック手順: 調査のみのため差分なし
 - チェックリスト:
   - ラベル表示のズーム設定が保存される箇所を特定する
@@ -14219,7 +14490,7 @@
 - ブランチ名: fix/location-ide-gsm/admin0-fields
 - 依存: なし
 - 受け入れ基準: IDE-GSM CSV パース結果で admin0/admin0Code が設定される／保存時に admin0/admin0Code が保持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`（必要に応じて追加）
+- 影響範囲: `packages/location-api/src/ideGsmLocationCsv.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`（必要に応じて追加）
 - ロールバック手順: admin0/admin0Code のマッピング変更を revert して元に戻す
 - チェックリスト:
   - IDE-GSM CSV のパースで admin0/admin0Code を確認する
@@ -14502,7 +14773,7 @@
 - ブランチ名: fix/route/datasource-card-size-focus
 - 依存: なし
 - 受け入れ基準: route の IDE-GSM インポートカードでファイルサイズが表示される／aria-hidden 警告が出ない／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`, `packages/features/route-api/src/routeTypes.ts`
+- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`, `packages/route-api/src/routeTypes.ts`
 - ロールバック手順: sizeBytes と focus 対策の差分を revert して元に戻す
 - チェックリスト:
   - IDE-GSM 単一ファイルで sizeBytes を保持・表示する
@@ -14556,7 +14827,7 @@
 - ブランチ名: refactor/shape-db/remove-unused-indexes
 - 依存: なし
 - 受け入れ基準: hidb-shape / hidb-shape-ephemeral の未使用テーブル/インデックスが削除される／Dexie version が更新される／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`
+- 影響範囲: `packages/shape-store/src/ShapeDB.ts`, `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/gis-sdk/src/ephemeral/EphemeralGisDB.ts`
 - ロールバック手順: Dexie version と stores 定義を revert して元に戻す
 - チェックリスト:
   - ShapeDB の buildSessions / metadata インデックスを整理する
@@ -14573,7 +14844,7 @@
 - ブランチ名: chore/location-route/db-index-audit
 - 依存: なし
 - 受け入れ基準: location/route の DB テーブル・インデックスの未使用候補を列挙し分類する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
 - ロールバック手順: なし（調査のみ）
 - チェックリスト:
   - LocationDB のテーブル/インデックス使用状況を確認する
@@ -14588,7 +14859,7 @@
 - ブランチ名: refactor/location-route/remove-unused-indexes
 - 依存: なし
 - 受け入れ基準: location/route の未使用テーブル/インデックスを削除し Dexie version を更新する／`pnpm --filter @hierarchidb/location-store typecheck` と `pnpm --filter @hierarchidb/route-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
 - ロールバック手順: Dexie version と stores 定義を revert して元に戻す
 - チェックリスト:
   - LocationDB の未使用インデックスを削除する
@@ -14605,7 +14876,7 @@
 - ブランチ名: refactor/types/remove-unknown-casts-a
 - 依存: なし
 - 受け入れ基準: Aカテゴリの as unknown as を型ガード/ファクトリ/適切な型で置換する／core-types/tag/runtime-worker/map-adapter/app の影響箇所が typecheck で通る／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/core-types/src/id-util.ts`, `packages/core-types/src/index.ts`, `packages/features/tag/src/TagService.ts`, `app/src/router/routes/useTagsPage.ts`, `packages/runtime-worker/src/services/CoreDB.ts`, `packages/runtime-worker/src/services/CommandProcessor.ts`, `packages/runtime-worker/src/services/test-helpers/commandProcessorHarness.ts`, `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `app/src/hooks/treeconsole/sortFilter.ts`, `packages/features/map-adapter/src/adapters/MapLibreDeckAdapter.ts`
+- 影響範囲: `packages/core-types/src/id-util.ts`, `packages/core-types/src/index.ts`, `packages/tag/src/TagService.ts`, `app/src/router/routes/useTagsPage.ts`, `packages/runtime-worker/src/services/CoreDB.ts`, `packages/runtime-worker/src/services/CommandProcessor.ts`, `packages/runtime-worker/src/services/test-helpers/commandProcessorHarness.ts`, `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `app/src/hooks/treeconsole/sortFilter.ts`, `packages/map-adapter/src/adapters/MapLibreDeckAdapter.ts`
 - ロールバック手順: 各ファイルの変更を revert して元に戻す
 - チェックリスト:
   - TagId/NodeId 生成の型キャストをファクトリ化する
@@ -14657,7 +14928,7 @@
 - ブランチ名: refactor/shape-db/move-build-sessions
 - 依存: なし
 - 受け入れ基準: hidb-shape の buildSessions が削除され、hidb-shape-ephemeral の sessions に移行される／runtime-worker と shape-plugin が ephemeral sessions を参照する／Dexie version が更新される／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`
+- 影響範囲: `packages/shape-store/src/ShapeDB.ts`, `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`
 - ロールバック手順: buildSessions を ShapeDB に戻し、runtime-worker/shape-plugin を元の参照に revert する
 - チェックリスト:
   - ShapeDB から buildSessions を削除し version を更新する
@@ -14884,7 +15155,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - ブランチ名: fix/ide-gsm/sourcekey-tabular-store
 - 依存: なし
 - 受け入れ基準: IDE-GSM の import で sourceKey に data URL が入らず tabular-store の tableId が保存される／Location と Route の両方で tabular-store 経由の import が動作する／既存の data URL が draft に残っている場合は UI 側で tabular-store に移行できる／`pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `packages/features/tabular-store/src/index.ts`, `packages/runtime-worker/src/services/utils/tabular.ts`, `packages/features/location-api/src/**`, `packages/features/route-api/src/**`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`（必要に応じて追加）
+- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `packages/tabular-store/src/index.ts`, `packages/runtime-worker/src/services/utils/tabular.ts`, `packages/location-api/src/**`, `packages/route-api/src/**`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の sourceUrl ベース処理に戻す
 - チェックリスト:
   - IDE-GSM import の payload を tabular-store の tableId 参照へ置換する
@@ -15006,7 +15277,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - ブランチ名: investigation/location-db-separation
 - 依存: なし
 - 受け入れ基準: LocationDB/Location-metadata の利用実態と分離理由をコード根拠付きで整理できる／未使用テーブル（vectorTiles/pendingSessions 等）の扱い案を提示できる／統合/分離/ephemeral 化の比較案を提示できる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/common/tabular/LocationTabularMetadataManager.ts`, `app/src/router/routes/modeless/modelessDialogContentData.ts`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`（調査後に確定）
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/common/tabular/LocationTabularMetadataManager.ts`, `app/src/router/routes/modeless/modelessDialogContentData.ts`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`（調査後に確定）
 - ロールバック手順: 調査のみのため差分なし
 - チェックリスト:
   - LocationDB のテーブル/利用箇所を確認する
@@ -15205,7 +15476,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - ブランチ名: fix/location-db/doc-alignment
 - 依存: なし
 - 受け入れ基準: LocationDB/location-metadata の役割が現行コードに一致するようドキュメントを更新する／未使用の ephemaral/pending/vectorTiles 記述を整理する／LocationDB の互換 alias を撤去する／`pnpm --filter @hierarchidb/location-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/src/index.ts`, `docs/vt-pipeline-design.md`, `docs/build-artifacts-by-node-type.md`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`, `docs/architecture/plugin-dialog-integration.md`
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/location-store/src/index.ts`, `docs/vt-pipeline-design.md`, `docs/build-artifacts-by-node-type.md`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`, `docs/architecture/plugin-dialog-integration.md`
 - ロールバック手順: 該当差分を revert して旧ドキュメント/alias に戻す
 - チェックリスト:
   - LocationDB の alias を撤去する

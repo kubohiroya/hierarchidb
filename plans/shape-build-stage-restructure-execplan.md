@@ -51,7 +51,7 @@ The new pipeline keeps the same three stages (fetch, transform, vt) but reassign
 
 ## Plan of Work
 
-Start by defining the configuration and storage changes. Add new config fields for band-thinning thresholds (bbox size, vertex count, area) and a pipeline selector flag. The thresholds should live under `fetchConfig` so the fetch stage can apply them. The pipeline flag should live in `config/feature-flags.ts` (default off) and the `ShapeBuildConfig` should allow choosing the new pipeline when enabled. Add new Dexie tables to persist per-feature/per-band FlatGeobuf outputs and the inverted tile index. Define the record types in `packages/vt-shape-store/src/types.ts` and `packages/features/shape-store/src/ShapeDB.ts` (or a new file under `packages/features/shape-store/src/` if it is clearer).
+Start by defining the configuration and storage changes. Add new config fields for band-thinning thresholds (bbox size, vertex count, area) and a pipeline selector flag. The thresholds should live under `fetchConfig` so the fetch stage can apply them. The pipeline flag should live in `config/feature-flags.ts` (default off) and the `ShapeBuildConfig` should allow choosing the new pipeline when enabled. Add new Dexie tables to persist per-feature/per-band FlatGeobuf outputs and the inverted tile index. Define the record types in `packages/vt-shape-store/src/types.ts` and `packages//src/ShapeDB.ts` (or a new file under `packages//src/` if it is clearer).
 
 Then update the fetch stage to perform the full filtering and thinning workflow. After `strategy.processData`, compute a feature list and iterate zoom bands from high to low. For each band, apply “fast small polygon thinning”: keep polygons only if all three conditions meet configurable thresholds (bbox size >= threshold, vertex count >= threshold, area >= threshold). The thinning must be applied progressively from high to low bands so that the lower zoom band starts from the already-thinned set of polygons. For each remaining polygon, write a FlatGeobuf per feature and band and persist it. Use a deterministic feature ID (the same ID logic used in the pipeline today, such as `buildFeatureId` in `shapePipeline.ts`) so downstream stages can refer to it. Persist per-band outputs in `vt-shape-store` using a new table such as `fetchBandFeatures`, keyed by `[nodeId+bandIndex+featureId]` and carrying bbox/area/vertex counts for indexing.
 
@@ -111,10 +111,10 @@ Add brief notes here during implementation, such as sample tile counts or perfor
 
 Key interfaces to update or add:
 
-- `packages/features/gis-sdk/src/config.ts`: add fetch-stage thinning config and pipeline selector metadata.
+- `packages//src/config.ts`: add fetch-stage thinning config and pipeline selector metadata.
 - `config/feature-flags.ts`: add a default-off flag to enable the new pipeline.
 - `packages/vt-shape-store/src/db/schema.ts` and `packages/vt-shape-store/src/types.ts`: define new per-feature/per-band FlatGeobuf cache records.
-- `packages/features/shape-store/src/ShapeDB.ts`: add an inverted index table and record types.
+- `packages//src/ShapeDB.ts`: add an inverted index table and record types.
 - `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`: implement band thinning and persistence.
 - `packages/vt-orchestrator/src/transform/`: add a simplified transform handler for per-band features and inverted index writes.
 - `packages/vt-orchestrator/src/vt/vtStage.ts`: update tile generation to use the inverted index and emit parent/child/grandchild tiles.

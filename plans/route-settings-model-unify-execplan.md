@@ -18,7 +18,7 @@ Routeプラグインの設定値が `draftData.processing` と `draftData.buildC
 ## Surprises & Discoveries
 
 - Observation: route-store は route-api を再エクスポートしており、型定義の正は route-api 側だった。
-  Evidence: packages/features/route-store/src/index.ts で '@hierarchidb/route-api' を export。
+  Evidence: packages//src/index.ts で '@hierarchidb/route-api' を export。
 
 ## Decision Log
 
@@ -42,7 +42,7 @@ Routeプラグインの設定は、これまで `RouteProcessingStep` が `draft
 
 - `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`。設定UIの実装。現在は `buildConfig` を用いるが、過去の `processing` と併存している可能性がある。
 - `plugins/route-plugin/src/ui/components/steps/useRouteBuildConfigStep.ts`。Route設定の初期化と更新を担当するフック。
-- `packages/features/route-store/src/routeTypes.ts`。RouteEntityの型。`buildConfig` を追加し、統合後はここを正とする。
+- `packages//src/routeTypes.ts`。RouteEntityの型。`buildConfig` を追加し、統合後はここを正とする。
 - `plugins/route-plugin/src/common/config/buildConfig.ts`。Route用の `BaseBuildConfig` デフォルト値とマージ関数。
 
 このExecPlanでは、`buildConfig` を Route設定の唯一の情報源とし、`processing` は移行用に読み取りのみ行い、最終的に参照箇所を撤去します。
@@ -70,7 +70,7 @@ UI側は `RouteProcessingStep` のみが設定更新を行うよう統一し、`
    - 不要な `processing` 参照は削除する。
 
 4) 型と保存ロジックの整理。
-   - `packages/features/route-store/src/routeTypes.ts` の `processing` フィールドは移行用途であることを明記し、参照箇所を残さない。
+   - `packages//src/routeTypes.ts` の `processing` フィールドは移行用途であることを明記し、参照箇所を残さない。
 
 5) 検証。
    - `pnpm --filter @hierarchidb/route-plugin typecheck`

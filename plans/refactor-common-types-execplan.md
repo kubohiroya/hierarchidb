@@ -63,7 +63,7 @@ common-types は `packages/common/types/src` にあり、以下のファイル�
 - undo-state-events.ts
 - validation-types.ts
 
-tree-api は `packages/features/tree-api/src`、import-export-api は `packages/features/import-export-api/src`、batch-api は `packages/features/batch-api/src` に存在する。新設する tag-api は `packages/features/tag-api/src`、core-types は `packages/core-types/src` とする。
+tree-api は `packages//src`、import-export-api は `packages//src`、batch-api は `packages//src` に存在する。新設する tag-api は `packages//src`、core-types は `packages/core-types/src` とする。
 
 本作業では、型定義を「利用文脈ごとのパッケージ」に移す。移設後は common-types を再エクスポート専用に縮退し、最終的に削除できる状態へ持っていく。再エクスポートは `src/index.ts` のみ許可というリポジトリ規約に従う。
 
@@ -84,7 +84,7 @@ tree-api は `packages/features/tree-api/src`、import-export-api は `packages/
      rg -n "@hierarchidb/core-types" packages plugins app
 
 2. tag-api を新設する。
-   - ルート: `packages/features/tag-api`
+   - ルート: `packages/`
    - `package.json`, `tsconfig.json`, `tsconfig.build.json`, `src/index.ts` を作成する。
    - `TagAPI.ts` と `TagTypes.ts` を tree-api から移動し、参照側の import を tag-api に変更する。
 

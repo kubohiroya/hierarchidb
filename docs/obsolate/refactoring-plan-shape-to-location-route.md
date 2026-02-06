@@ -44,7 +44,7 @@
 `progressCallback` を渡す場合は **必ず** `progressFactory` も渡す。
 
 - 理由: runnableTasks=0 の早期 return パスでも progress を通知する必要がある
-- 詳細: `packages/features/vectortile-orchestrator/README.md` を参照
+- 詳細: `packages//README.md` を参照
 
 ---
 
@@ -61,7 +61,7 @@
 - ProgressInfoBase（最小進捗 shape）
 
 成果物（予定）:
-- `packages/features/batch-session-ports/`（新規）
+- `packages//`（新規）
 
 ### 2) Layer1: download/extract 系の orchestrator 骨格を共通化
 
@@ -125,5 +125,5 @@
 
 ### Next
 
-- `packages/features/batch-session-ports/` の新設（Layer0）
+- `packages//` の新設（Layer0）
 - shape-plugin の download/extract を Layer1 orchestrator 骨格へ寄せる

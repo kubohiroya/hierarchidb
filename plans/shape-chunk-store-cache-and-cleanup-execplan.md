@@ -19,7 +19,7 @@ shape-pluginのdownloadで取得したGeoJSON/FlatGeobuf等のデータをchunk-
 ## Surprises & Discoveries
 
 - Observation: chunk-storeは条件付きGETでETag/Last-Modifiedを利用しているが、HEADチェックは未実装だった。
-  Evidence: `packages/features/chunk-store/src/index.ts` の `getOrFetchForNode` が GET に `If-None-Match`/`If-Modified-Since` を付与している。
+  Evidence: `packages//src/index.ts` の `getOrFetchForNode` が GET に `If-None-Match`/`If-Modified-Since` を付与している。
 - Observation: shapeの主要データソース（GeoBoundaries/NaturalEarth/GADM）はchunk-storeを利用していたが、nodeIdは共有IDで固定されていた。
   Evidence: 各strategyの `getOrFetchWithRetry` 呼び出しが `SHARED_SHAPE_NODE_ID` を使用していた。
 
@@ -42,13 +42,13 @@ ETag/Last-ModifiedのHEAD判定でキャッシュ再利用が可能になり、s
 
 ## Context and Orientation
 
-shape-pluginのdownloadは `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` からデータソース戦略へ委譲され、`plugins/shape-plugin/src/services/datasources/*.ts` がHTTP取得とキャッシュを担当する。chunk-storeは `packages/features/chunk-store/src/index.ts` の `DexieChunkStore` に実装され、`getOrFetchForNode` がキャッシュ判定と保存を行う。TreeNode削除は `plugins/shape-plugin/src/worker/plugin.ts` の `beforeDelete` が呼ばれ、`shapeBatchAPI.cleanupProcessingData` 経由で後始末を行う。
+shape-pluginのdownloadは `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` からデータソース戦略へ委譲され、`plugins/shape-plugin/src/services/datasources/*.ts` がHTTP取得とキャッシュを担当する。chunk-storeは `packages//src/index.ts` の `DexieChunkStore` に実装され、`getOrFetchForNode` がキャッシュ判定と保存を行う。TreeNode削除は `plugins/shape-plugin/src/worker/plugin.ts` の `beforeDelete` が呼ばれ、`shapeBatchAPI.cleanupProcessingData` 経由で後始末を行う。
 
 ここでの「chunk-store」は、IndexedDB(Dexie)を使ったキャッシュ層であり、`files/chunks/relations/keys` テーブルを持つ。`relations` は nodeId と cacheKey の対応を表し、参照がなくなると実データを削除できる。
 
 ## Plan of Work
 
-まず `packages/features/chunk-store/src/index.ts` の `getOrFetchForNode` に HEAD判定を追加する。既存のETag/Last-Modifiedを条件付きで送信し、304または同一メタデータの場合はGETをスキップしてキャッシュを返す。HEADが失敗・未対応の場合は現在のGETベース判定にフォールバックする。
+まず `packages//src/index.ts` の `getOrFetchForNode` に HEAD判定を追加する。既存のETag/Last-Modifiedを条件付きで送信し、304または同一メタデータの場合はGETをスキップしてキャッシュを返す。HEADが失敗・未対応の場合は現在のGETベース判定にフォールバックする。
 
 次に、shape-pluginのデータソースで `SHARED_SHAPE_NODE_ID` を使っている箇所を、取得対象の `nodeId` を利用する形に変える。`plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`、`GADMStrategy.ts`、`NaturalEarthStrategy.ts` で、`FetchOptions` に `nodeId` を追加して `getOrFetchWithRetry` の引数に渡す。`shapeStageWorker.ts` の `processDownloadTask` で `nodeId` を `fetchData` に渡し、nodeIdごとにrelationsが作られるようにする。nodeId未指定の利用箇所では既存の共有IDを使う。
 
@@ -58,11 +58,11 @@ shape-pluginのdownloadは `plugins/shape-plugin/src/services/batch/workers/shap
 
 作業ディレクトリは `/Users/hiroya/WebstormProjects/hierarchidb`。
 
-1) `packages/features/chunk-store/src/index.ts` を編集し、`getOrFetchForNode` にHEAD判定を追加する。
+1) `packages//src/index.ts` を編集し、`getOrFetchForNode` にHEAD判定を追加する。
 2) `plugins/shape-plugin/src/services/datasources/DataSourceStrategy.ts` に `nodeId?: NodeId` を追加する。
 3) `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` で `fetchData` 呼び出しに nodeId を渡す。
 4) `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` / `GADMStrategy.ts` / `NaturalEarthStrategy.ts` で nodeId を使って `getOrFetchWithRetry` を呼ぶ。
-5) `packages/features/chunk-store/src/index.ts` に nodeId単位の削除メソッドを追加し、内部で `deleteForNode` を呼ぶ。
+5) `packages//src/index.ts` に nodeId単位の削除メソッドを追加し、内部で `deleteForNode` を呼ぶ。
 6) `plugins/shape-plugin/src/worker/api.ts` の `cleanupProcessingData` に chunk-store削除を追加する。
 
 ## Validation and Acceptance

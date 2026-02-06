@@ -26,7 +26,7 @@
     },
     {
       "packageName": "@hierarchidb/download",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/download",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/download",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -34,7 +34,7 @@
     },
     {
       "packageName": "@hierarchidb/feature-registry",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/feature-registry",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature-registry",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -42,7 +42,7 @@
     },
     {
       "packageName": "@hierarchidb/map-source",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/map-source",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/map-source",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -50,7 +50,7 @@
     },
     {
       "packageName": "@hierarchidb/route-resolver",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/route-resolver",
       "rule": "peer-in-external",
       "severity": "WARN",
       "message": "peer not in tsup.external:\n- @webgpu/types",
@@ -58,7 +58,7 @@
     },
     {
       "packageName": "@hierarchidb/route-resolver",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/route-resolver",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -66,7 +66,7 @@
     },
     {
       "packageName": "@hierarchidb/table-metadata",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/table-metadata",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/table-metadata",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -74,7 +74,7 @@
     },
     {
       "packageName": "@hierarchidb/tabular-store",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/tabular-store",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/tabular-store",
       "rule": "external-in-deps",
       "severity": "WARN",
       "message": "external also in dependencies (consider peer):\n- dexie",
@@ -82,7 +82,7 @@
     },
     {
       "packageName": "@hierarchidb/tabular-xlsx",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/tabular-xlsx",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/tabular-xlsx",
       "rule": "external-in-deps",
       "severity": "WARN",
       "message": "external also in dependencies (consider peer):\n- xlsx",

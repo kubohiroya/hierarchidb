@@ -31,7 +31,7 @@
 
 ## Context and Orientation
 
-このリポジトリはモノレポで、UIは`app/`、コア型は`packages/common/types`、バッチ制御APIは`packages/common/api`にある。shape/location/routeはそれぞれ`plugins/shape-plugin`、`plugins/location-plugin`、`plugins/route-plugin`と、共有ストアの`packages/features/*-store`に分かれている。
+このリポジトリはモノレポで、UIは`app/`、コア型は`packages/common/types`、バッチ制御APIは`packages/common/api`にある。shape/location/routeはそれぞれ`plugins/shape-plugin`、`plugins/location-plugin`、`plugins/route-plugin`と、共有ストアの`packages/*-store`に分かれている。
 
 現在は`sessionId`が多数の型とDBレコードに登場するが、実装上は`nodeId`をsessionIdとして使っている箇所も混在している。今回の方針では`sessionId`という概念自体を廃止し、**すべてのAPI・DBキー・UI判定を`nodeId`に統一**する。`ShapeEntity`/`LocationEntity`/`RouteEntity`が持つ`buildStartedAt`/`buildFinishedAt`（または同等の日時）で完了状況を管理し、セッションIDの復活はしない。
 
@@ -43,8 +43,8 @@
 - `app/src/worker-runtime/worker.ts`（Worker APIの実装）
 - `plugins/shape-plugin/src/services/batch/**`（バッチ実行とDBの主処理）
 - `plugins/shape-plugin/src/ui/hooks/**` と `plugins/shape-plugin/src/ui/components/**`（Stage4/Stage5 UI）
-- `packages/features/shape-store/src/ShapeDB.ts`、`packages/features/shape-store/src/EphemeralShapeDB.ts`（shapeのDexieスキーマ）
-- `packages/features/location-store/src/index.ts`、`packages/features/route-store/src/index.ts`（entity型）
+- `packages//src/ShapeDB.ts`、`packages//src/EphemeralShapeDB.ts`（shapeのDexieスキーマ）
+- `packages//src/index.ts`、`packages//src/index.ts`（entity型）
 - `packages/plugin-service-api/src/types/*.ts`（location/routeのAPI型）
 
 ## Plan of Work
@@ -72,13 +72,13 @@ shape/location/routeのサービス層は、`sessionId`という引数を持つA
    - `app/src/worker-runtime/worker.ts` の `startBatchSession` / `getBatchSessionStatus` / `pauseBatchSession` / `resumeBatchSession` / `cancelBatchSession` / `getBatchTasks` を `nodeId` で扱う。
 
 3) DBスキーマとDAOを更新する。
-   - `packages/features/shape-store/src/ShapeDB.ts` と `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts` のテーブル設計を `nodeId` 基準に変える。
+   - `packages//src/ShapeDB.ts` と `packages//src/ephemeral/EphemeralGisDB.ts` のテーブル設計を `nodeId` 基準に変える。
    - schema version を更新し、旧データをクリアするマイグレーションを追加する。
 
 4) shape/location/route のサービス・UIを更新する。
    - `plugins/shape-plugin/src/services/batch/**` と `plugins/shape-plugin/src/ui/hooks/**` の `sessionId` 変数・引数を `nodeId` に置換する。
    - `plugins/shape-plugin/src/common/types/ShapeEntity.ts` から `batchSessionId` を削除し、`buildStartedAt`/`buildFinishedAt`で管理する。
-   - `packages/features/location-store/src/index.ts` / `packages/features/route-store/src/index.ts` などで `sessionId` 参照を排除し `nodeId` へ統一する。
+   - `packages//src/index.ts` / `packages//src/index.ts` などで `sessionId` 参照を排除し `nodeId` へ統一する。
 
 5) テストを更新し、検証を行う。
    - `rg -n "sessionId"` の残りを確認して修正する。
@@ -104,7 +104,7 @@ shape/location/routeのサービス層は、`sessionId`という引数を持つA
 
 - `packages/common/api/src/BatchControlAPI.ts` の`BatchSessionStatus`は `nodeId` のみを必須にする。
 - `packages/common/api/src/WorkerAPI.ts` は `nodeId` でバッチ操作を行うメソッド群を持つ。
-- `packages/features/shape-store/src/ShapeDB.ts` は `nodeId` をキーとする。`sessionId` フィールドは持たない。
+- `packages//src/ShapeDB.ts` は `nodeId` をキーとする。`sessionId` フィールドは持たない。
 - `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` や `useShapeBuildTasks.ts` は `nodeId` をキーに進捗とタスクを取得する。
 
 ---

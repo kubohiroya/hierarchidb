@@ -65,7 +65,7 @@ Shape の build 処理は fetch/transform/vt の 3 ステージで構成され�
 - `plugins/shape-plugin/src/ui/components/step4/*`
 - `plugins/shape-plugin/src/ui/components/step5/*`
 - `plugins/shape-plugin/src/ui/components/step6/*`
-- `packages/features/shape-store/src/ShapeDB.ts` / `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- `packages//src/ShapeDB.ts` / `packages//src/EphemeralShapeDB.ts`
 
 ## Plan of Work
 

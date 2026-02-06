@@ -47,7 +47,7 @@ PLANS.md はリポジトリ直下の `PLANS.md` を参照し、この ExecPlan �
 
 この実装は shape-plugin のバッチ処理を新しい vt パイプラインへ置き換える作業である。ここでの「パイプライン」は、外部データ取得（shape-fetch）、ズーム帯ごとの簡略化（transform）、ベクトルタイル生成（vt）という 3 つの段階を順に実行する処理を指す。ズーム帯（band）は z0-z2 を band0、z3-z5 を band1、z6-z8 を band2、z9-z11 を band3 とし、band3 は adminLevel>=2 が選択された国が存在する場合に自動的に有効化される。
 
-既存の実装は `plugins/shape-plugin/src/services/batch` と `packages/features/vectortile-*` を中心に組まれており、旧ステージ名（download/extract/vectortile）を前提にしている。新実装では以下を新設し、それに合わせて shape-plugin を作り直す。
+既存の実装は `plugins/shape-plugin/src/services/batch` と `packages/vectortile-*` を中心に組まれており、旧ステージ名（download/extract/vectortile）を前提にしている。新実装では以下を新設し、それに合わせて shape-plugin を作り直す。
 
 - `packages/vt-shape-store`: shape の中間ストアを担う Dexie DB。テーブルは `stage1Buffers`, `transformBandBuffers`, `tileIndexBand`, `vtBand3Reservations`。
 - `packages/vt-store`: vt タイルの保存と参照 API（VTQueryAPI / VTMutationAPI）。
@@ -72,7 +72,7 @@ vt は geojson-vt でタイル生成し、境界ラインをデデュープし�
 
 並行して shape-plugin 側を新構成に移行する。shape-fetch は plugin が担当し、smartFetch を使って GeoJSON を取得し `stage1Buffers` に保存する。その上で transform/vt のタスクを生成して taskQueue に記録する。worker 側 API は vt-orchestrator を呼び出す形に再編し、UI からは現行の Step5/Step6 ルートを維持する。
 
-最後に旧実装の `packages/features/vectortile-*` と `packages/features/shape-store` のうち新実装で不要になるものを削除し、shape-plugin からの参照を完全に取り除く。既存データは破棄する前提なので、移行コードや互換アダプタは作らない。
+最後に旧実装の `packages/vectortile-*` と `packages/` のうち新実装で不要になるものを削除し、shape-plugin からの参照を完全に取り除く。既存データは破棄する前提なので、移行コードや互換アダプタは作らない。
 
 ## Concrete Steps
 
@@ -80,7 +80,7 @@ vt は geojson-vt でタイル生成し、境界ラインをデデュープし�
 
 - 作業ディレクトリ: `/Users/hiroya/WebstormProjects/hierarchidb`
   - 既存の vectortile/shape-store の参照箇所を洗い出す。
-    - 例: `rg -n "vectortile|shape-store" plugins/shape-plugin packages/features`
+    - 例: `rg -n "vectortile|shape-store" plugins/shape-plugin packages`
   - vt-store / vt-shape-store / vt-orchestrator の新規ディレクトリを作成し、`package.json` と `tsconfig.json` を追加する。
   - `pnpm -r lint` は重いため、初期は `pnpm --filter @hierarchidb/shape-plugin typecheck` で局所チェックを行う。
 
@@ -131,7 +131,7 @@ vt は geojson-vt でタイル生成し、境界ラインをデデュープし�
 
 - turf の simplify（Ramer–Douglas–Peucker）を使用する。WebMercator(meters) で tolerance を計算し、grid-snap と併用する。
 - geojson-vt / vt-pbf を使用する。extent=4096 を前提に line dedupe を行う。
-- SHA3 のハッシュは `packages/features/chunk-store` に既存の実装を使用する。
+- SHA3 のハッシュは `packages/` に既存の実装を使用する。
 
 ## 変更履歴
 
