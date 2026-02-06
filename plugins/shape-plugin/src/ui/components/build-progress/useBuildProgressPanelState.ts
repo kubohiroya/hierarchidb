@@ -16,6 +16,12 @@ import {
   buildStageProgressAtom,
   buildStagesAtom,
   tasksByStageAtom,
+  crashSuspectMessageAtom,
+  crashSuspectOpenAtom,
+  crashSuspectControlsAtom,
+  suspendSuspectMessageAtom,
+  suspendSuspectOpenAtom,
+  suspendSuspectControlsAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
@@ -38,6 +44,12 @@ export const useBuildProgressPanelState = (params: {
   const summary = useAtomValue(taskProgressSummaryAtom);
   const controls = useAtomValue(taskProgressControlsAtom);
   const warningMessage = useAtomValue(taskWarningMessageAtom);
+  const crashSuspectMessage = useAtomValue(crashSuspectMessageAtom);
+  const crashSuspectOpen = useAtomValue(crashSuspectOpenAtom);
+  const crashSuspectControls = useAtomValue(crashSuspectControlsAtom);
+  const suspendSuspectMessage = useAtomValue(suspendSuspectMessageAtom);
+  const suspendSuspectOpen = useAtomValue(suspendSuspectOpenAtom);
+  const suspendSuspectControls = useAtomValue(suspendSuspectControlsAtom);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [completionSnapshot, setCompletionSnapshot] = useState<{
     status: BuildStatus;
@@ -332,6 +344,12 @@ export const useBuildProgressPanelState = (params: {
     setCrashHintOpen,
     sizeWarningOpen,
     setSizeWarningOpen,
+    crashSuspectMessage,
+    crashSuspectOpen,
+    crashSuspectControls,
+    suspendSuspectMessage,
+    suspendSuspectOpen,
+    suspendSuspectControls,
     completionDialogOpen,
     setCompletionDialogOpen,
     completionSnapshot,

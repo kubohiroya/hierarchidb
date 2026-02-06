@@ -11,7 +11,6 @@ export type {
   BaseBuildConfig,
   BoundingBox,
   CleanupConfig,
-  AreaBasedToleranceConfig,
   ExtractionMode,
   FeatureFilterMethod,
   FetchConfig,

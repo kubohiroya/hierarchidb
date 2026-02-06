@@ -57,8 +57,8 @@ export const useShapeBuildAutoResume = ({
     if (buildStatus === 'completed' || buildStatus === 'failed') return false;
     if (buildStatus === 'paused') return stopReason === 'route-leave';
     if (stopReason && stopReason !== 'route-leave') return false;
-    return true;
-  }, [buildStatus, stopReason]);
+    return runtimeStatus === 'processing' || buildStatus === 'idle';
+  }, [buildStatus, runtimeStatus, stopReason]);
 
   const suspendIfRunning = useCallback(() => {
     if (!shouldSuspendRef.current) return;

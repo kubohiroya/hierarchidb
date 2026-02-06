@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  ShapeBuildTaskRecord,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
   ShapeTransformCache,
   ShapeFeatureMetadata,
   ShapeFetchCache,
@@ -18,8 +19,8 @@ export interface ShapeMutationAPI {
   deleteFeatures(nodeId: NodeId): Promise<void>;
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
   clearShapeArtifacts(nodeId: NodeId): Promise<void>;
-  upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void>;
-  updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void>;
+  upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void>;
+  updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void>;
   putFetchCaches(buffers: ShapeFetchCache[]): Promise<void>;
   putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>;
   putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void>;

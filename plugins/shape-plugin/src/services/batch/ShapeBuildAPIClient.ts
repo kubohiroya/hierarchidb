@@ -6,6 +6,8 @@ import type {
   ShapeBuildStage,
   ShapeBuildProgressSummary,
   ShapeBuildTaskRecord,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
   ShapeBuildTaskStatus,
   ShapeBuildTaskSummary,
   ShapeEphemeralSessionRecord,
@@ -562,12 +564,12 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await ephemeralShapeDB.clearNodeData(nodeId);
   }
 
-  async upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
+  async upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void> {
     if (tasks.length === 0) return;
     await ephemeralShapeDB.buildTasks.bulkPut(tasks);
   }
 
-  async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
+  async updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void> {
     await ephemeralShapeDB.updateBuildTask(taskId, updates);
   }
 
@@ -650,7 +652,7 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
     return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count();
   }
 
-  async putBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
+  async putBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void> {
     if (tasks.length === 0) return;
     await ephemeralShapeDB.buildTasks.bulkPut(tasks);
   }
@@ -664,7 +666,7 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
     await ephemeralShapeDB.buildTasks.bulkDelete(taskIds);
   }
 
-  async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
+  async updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void> {
     await ephemeralShapeDB.updateBuildTask(taskId, updates);
   }
 

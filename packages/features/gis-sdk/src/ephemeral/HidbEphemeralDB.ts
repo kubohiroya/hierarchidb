@@ -20,7 +20,7 @@ export class HidbEphemeralDB extends Dexie {
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(2).stores(EPHEMERAL_DB_SCHEMA);
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
     this.fetchCache = this.table('fetchCache');

@@ -13,6 +13,7 @@ packages:
   - packages/core-types
   - packages/runtime-worker
   - packages/runtime-worker/*
+  - packages/session-coordinator
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/plugin-registry

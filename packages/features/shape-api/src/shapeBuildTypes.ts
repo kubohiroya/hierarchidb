@@ -56,6 +56,8 @@ export type ShapeTransformTaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
+  processedPolygons?: number;
+  totalPolygons?: number;
 };
 /*
 export type ShapeExtract2TaskPayload = {
@@ -153,6 +155,15 @@ export interface ShapeBuildTaskRecord<
   outputData?: TOutput;
   errorMessage?: string;
 }
+
+export type ShapeBuildTaskRecordInput = Omit<ShapeBuildTaskRecord, 'taskType'> & {
+  taskType: ShapeBuildStage;
+};
+
+export type ShapeBuildTaskRecordUpdate = Partial<Omit<ShapeBuildTaskRecord, 'taskType'>> & {
+  taskType?: never;
+};
+
 
 export interface ShapeFetchCache {
   id: string;

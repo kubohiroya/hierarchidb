@@ -1,16 +1,54 @@
 import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
+import { treeRouteIds } from './shared.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
+
+const resolveDialogDisplayMode = (value?: string): 'normal' | 'maximize' | 'full-screen' => {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'full':
+      return 'full-screen';
+    case 'maximize':
+      return 'maximize';
+    default:
+      return 'normal';
+  }
+};
+
+const toUrlModeSegment = (value: 'normal' | 'maximize' | 'full-screen'): string => {
+  switch (value) {
+    case 'full-screen':
+      return 'full';
+    case 'maximize':
+      return 'maximize';
+    default:
+      return 'normal';
+  }
+};
+
 
 export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
+  const matches = useRouterState({ select: (state) => state.matches });
+  const dialogMatch = useMemo(
+    () =>
+      matches.find(
+        (match) =>
+          match.routeId === treeRouteIds.dialogModeStep
+          || match.routeId === treeRouteIds.dialogMode
+          || match.routeId === treeRouteIds.dialog
+      ),
+    [matches]
+  );
+  const routeParams = (dialogMatch?.params as PluginDialogLoaderData['params'] | undefined)
+    ?? params;
+
   const searchParams = useMemo(
     () => new URLSearchParams(location.searchStr ?? ''),
     [location.searchStr]
@@ -52,21 +90,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
   );
 
-  const stepParam = useMemo(() => {
-    if (params.step) return params.step;
-    const hash = location.hash ?? '';
-    const usesHashRouting = hash.startsWith('#/');
-    const pathWithQuery = usesHashRouting ? hash.slice(1) : (location.pathname ?? '');
-    const pathOnly = pathWithQuery.split('?')[0] ?? '';
-    const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
-    const segments = normalizedPath.split('/').filter(Boolean);
-    const tIndex = segments.indexOf('t');
-    if (tIndex < 0) return null;
-    const stepSegment = segments[tIndex + 7];
-    if (!stepSegment) return null;
-    const parsed = parseInt(stepSegment, 10);
-    return Number.isFinite(parsed) && parsed >= 1 ? String(parsed) : null;
-  }, [location.hash, location.pathname, params.step]);
+  const stepParam = useMemo(() => routeParams?.step ?? null, [routeParams?.step]);
 
   const parsedStep = useMemo(() => {
     if (stepParam !== null && stepParam !== undefined) {
@@ -121,7 +145,8 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   ]);
 
   const currentStep = parsedStep;
-  const requestedAction = params.action?.toLowerCase() ?? '';
+  const urlDisplayMode = resolveDialogDisplayMode(routeParams?.mode);
+  const requestedAction = routeParams?.action?.toLowerCase() ?? '';
   const forceInitialStep = stepParam !== null || requestedAction === 'preview';
 
   const mode: 'create' | 'edit' | 'preview' =
@@ -152,6 +177,35 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     ? { enabled: true, onComplete: handleAutoBuildComplete }
     : undefined;
 
+  const handleUrlStateChange = useCallback(
+    (next: { mode: 'normal' | 'maximize' | 'full-screen'; step: number }) => {
+      const actionParam = params.action ?? String(effectiveAction ?? 'edit');
+      const modeSegment = toUrlModeSegment(next.mode);
+      void navigate({
+        to: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+        params: {
+          treeId: String(resolvedTreeId),
+          pageNodeId: String(resolvedPageNodeId),
+          targetNodeId: String(resolvedTargetNodeId),
+          nodeType: String(resolvedNodeType),
+          action: String(actionParam),
+          mode: modeSegment,
+          step: String(next.step),
+        },
+        replace: true,
+      });
+    },
+    [
+      effectiveAction,
+      navigate,
+      params.action,
+      resolvedNodeType,
+      resolvedPageNodeId,
+      resolvedTargetNodeId,
+      resolvedTreeId,
+    ]
+  );
+
   return {
     autoBuild,
     backdropDismissEnabled,
@@ -163,6 +217,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     forceInitialStep,
     handleClose,
     handleSuccess,
+    handleUrlStateChange,
     isOpen,
     isReady,
     mode,
@@ -171,6 +226,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     resolvedPageNodeId,
     resolvedTargetNodeId,
     resolvedTreeId,
+    urlDisplayMode,
   };
 }
 

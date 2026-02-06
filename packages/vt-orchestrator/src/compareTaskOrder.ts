@@ -131,6 +131,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           return;
         }
         const nextStatus = result.status ?? 'completed';
+        const taskUpdated = Boolean(result.taskUpdated);
         if (nextStatus === 'failed') {
           const errorMessage = result.errorMessage ?? 'stage task failed';
           if (skipOnFailure) {
@@ -142,6 +143,9 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             abortAll(new Error(errorMessage), task.taskId);
             return;
           }
+          continue;
+        }
+        if (taskUpdated) {
           continue;
         }
         await updateTask(db, task.taskId, {

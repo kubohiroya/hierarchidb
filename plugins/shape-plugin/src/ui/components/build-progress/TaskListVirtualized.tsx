@@ -76,12 +76,14 @@ export const TaskListVirtualized = ({
   resolveStatusColor,
   resolveTaskTitle,
   scrollToTaskId,
+  scrollRequestId,
   virtualize = true,
 }: TaskListProps) => {
   const { t } = useTranslation();
   const shouldVirtualize = virtualize;
   const parentRef = useRef<HTMLDivElement | null>(null);
   const setViewportRange = useSetAtom(taskViewportRangeAtom);
+  const lastScrollRequestRef = useRef<number | null>(null);
   const lastViewportRef = useRef<{
     stageId: string;
     startIndex: number;
@@ -116,11 +118,13 @@ export const TaskListVirtualized = ({
 
   useEffect(() => {
     if (!shouldVirtualize) return;
-    if (!scrollToTaskId) return;
+    if (!scrollToTaskId || scrollRequestId == null) return;
     const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
     if (index < 0) return;
+    if (lastScrollRequestRef.current === scrollRequestId) return;
+    lastScrollRequestRef.current = scrollRequestId;
     window.requestAnimationFrame(() => virtualizer.scrollToIndex(index, { align: 'center' }));
-  }, [ scrollToTaskId, shouldVirtualize, orderedTasks, virtualizer]);
+  }, [scrollRequestId, scrollToTaskId, shouldVirtualize, orderedTasks, virtualizer]);
 
   useEffect(() => {
     if (!shouldVirtualize) return;
@@ -212,8 +216,12 @@ export const TaskListVirtualized = ({
   const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
     const isSkipped = isSkippedMessage(task.message);
-    const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
-    const statusColor = resolveStatusColor(statusValue, isSkipped);
+    const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
+    const statusValueForDisplay = statusValue === 'completed' && displayProgress < 100
+      ? 'running'
+      : statusValue;
+    const statusLabelValue = resolveStatusLabel(statusValueForDisplay, isSkipped);
+    const statusColor = resolveStatusColor(statusValueForDisplay, isSkipped);
     const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
     const phaseMessage = resolvePhaseMessage(task.message);
     const geometryDetails = parseGeometrySimplifyError(task.message);
@@ -231,7 +239,7 @@ export const TaskListVirtualized = ({
           statusColor={statusColor}
           message={taskMessage}
           detailLines={detailLines}
-          progress={task.progress}
+          progress={displayProgress}
           fallbackProgress={stageValue}
         />
       </Box>

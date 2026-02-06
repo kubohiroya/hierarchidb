@@ -88,6 +88,22 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
 export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
 export const taskViewportRangeAtom = atom<TaskViewportRange | null>(null);
 export const taskWarningMessageAtom = atom<string | null>(null);
+export const crashSuspectMessageAtom = atom<string | null>(null);
+export const crashSuspectOpenAtom = atom(false);
+export type CrashSuspectControls = {
+  close: () => void;
+};
+export const crashSuspectControlsAtom = atom<CrashSuspectControls>({
+  close: () => {},
+});
+export const suspendSuspectMessageAtom = atom<string | null>(null);
+export const suspendSuspectOpenAtom = atom(false);
+export type SuspendSuspectControls = {
+  close: () => void;
+};
+export const suspendSuspectControlsAtom = atom<SuspendSuspectControls>({
+  close: () => {},
+});
 export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,
   statusLabel: '',

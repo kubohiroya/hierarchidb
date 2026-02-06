@@ -25,6 +25,11 @@ export interface EphemeralStageStatus {
   message?: string;
 }
 
+export type EphemeralBuildTaskOutput = ShapeBuildTaskResult | {
+  processedPolygons: number;
+  totalPolygons: number;
+};
+
 export interface EphemeralBuildSessionRecord {
   nodeId: NodeId;
   draftId?: NodeId;
@@ -61,7 +66,7 @@ export interface EphemeralBuildTaskRecord {
   sequence?: number;
   stage?: BuildStage;
   inputData?: ShapeBuildTaskPayload;
-  outputData?: ShapeBuildTaskResult;
+  outputData?: EphemeralBuildTaskOutput;
   retryCount?: number;
   startedAt?: number;
   completedAt?: number;
@@ -126,7 +131,7 @@ export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
     + ', [domainType+status], [domainType+updatedAt]',
   buildTasks:
     '&taskId, nodeId, domainType, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
     + ', [domainType+status]',
   fetchCache:
     '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',

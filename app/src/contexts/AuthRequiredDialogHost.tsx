@@ -5,17 +5,40 @@ import {
   type AuthRequiredNotification,
   type AuthSuccessNotification,
 } from '@hierarchidb/auth';
-import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
-import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { treeRouteIds } from '../router/routes/tree/shared.ts';
 
 const HANDLER_ID = 'app-auth-required-dialog';
+
+type DialogRouteParams = {
+  treeId: string;
+  pageNodeId?: string;
+  targetNodeId?: string;
+  nodeType?: string;
+  action?: string;
+  mode?: string;
+  step?: string;
+};
 
 export function AuthRequiredDialogHost(): JSX.Element | null {
   const registry = AuthNotificationRegistry.getInstance();
   const [notification, setNotification] = useState<AuthRequiredNotification | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
-  const { setStep } = useDialogUrlSync({ writeWhenNoDialogPath: false });
+  const navigate = useNavigate();
+  const matches = useRouterState({ select: (state) => state.matches });
+  const dialogMatch = useMemo(
+    () =>
+      matches.find(
+        (match) =>
+          match.routeId === treeRouteIds.dialogModeStep
+          || match.routeId === treeRouteIds.dialogMode
+          || match.routeId === treeRouteIds.dialog
+      ),
+    [matches]
+  );
+  const dialogParams = dialogMatch?.params as DialogRouteParams | undefined;
 
   const isAuthDebugEnabled = () => {
     try {
@@ -94,7 +117,27 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
     setNotification(null);
 
     if (notification.context.pluginType === 'shape') {
-      setStep(2);
+      const treeId = dialogParams?.treeId;
+      const pageNodeId = dialogParams?.pageNodeId;
+      const targetNodeId = dialogParams?.targetNodeId;
+      const nodeType = dialogParams?.nodeType;
+      const action = dialogParams?.action;
+      if (treeId && pageNodeId && targetNodeId && nodeType && action) {
+        const mode = dialogParams?.mode ?? 'normal';
+        void navigate({
+          to: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode/$step',
+          params: {
+            treeId,
+            pageNodeId,
+            targetNodeId,
+            nodeType,
+            action,
+            mode,
+            step: '2',
+          },
+          replace: true,
+        });
+      }
     }
   };
 

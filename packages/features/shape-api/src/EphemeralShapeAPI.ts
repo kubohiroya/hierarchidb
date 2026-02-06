@@ -1,6 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeBuildTaskRecord,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
   ShapeBuildStage,
   ShapeBuildTaskStatus,
   ShapeTransformCache,
@@ -38,8 +40,8 @@ export interface EphemeralShapeQueryAPI {
 
 }
 export interface EphemeralShapeMutationAPI {
-  putBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void>;
-  updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void>;
+  putBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void>;
+  updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void>;
   deleteBuildTasksByNode(nodeId: NodeId): Promise<void>;
   deleteBuildTasksByIds(taskIds: string[]): Promise<void>;
 

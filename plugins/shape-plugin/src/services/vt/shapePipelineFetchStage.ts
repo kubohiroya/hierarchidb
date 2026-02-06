@@ -7,6 +7,7 @@ import { runShapeFetchStage } from './shapeFetchStage.js';
 import {
   finalizePendingStageTasks,
   getFailedTaskCount,
+  resetStageRunningTasks,
   shouldStopAfterStage,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
@@ -27,6 +28,7 @@ export type ShapeFetchStageParams = {
 
 export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
   const fetchAbortController = new AbortController();
+  await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
   await runShapeFetchStage({
     nodeId: params.nodeId,
     dataSource: params.dataSource,

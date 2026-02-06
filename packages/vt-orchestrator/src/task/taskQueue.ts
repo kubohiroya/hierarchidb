@@ -7,12 +7,13 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../
 
 
 
-type StoredTaskRecord<TInput = unknown, TOutput = unknown> = TaskQueueRecord<TInput, TOutput> & {
+export type StoredTaskRecord<TInput = unknown, TOutput = unknown> = Omit<TaskQueueRecord<TInput, TOutput>, 'stage'> & {
+  stage?: TaskStage;
   taskType: TaskStage;
   domainType?: string;
 };
 
-const toTaskQueueRecord = <TInput = unknown, TOutput = unknown>(
+export const toTaskQueueRecord = <TInput = unknown, TOutput = unknown>(
   task: StoredTaskRecord<TInput, TOutput>
 ): TaskQueueRecord<TInput, TOutput> => {
   const { taskType, ...rest } = task;
@@ -24,7 +25,7 @@ export class VtTaskQueueDb extends Dexie {
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(2).stores(EPHEMERAL_DB_SCHEMA);
     this.tasks = this.table('buildTasks');
   }
 }
@@ -53,6 +54,10 @@ function emitTaskDeleteEvent(nodeId: NodeId, taskId: string): void {
       console.error('[vt-task-queue] listener failed', error);
     }
   });
+}
+
+export function emitTaskUpdate(task: TaskQueueRecord): void {
+  emitTaskEvent(task.nodeId, task);
 }
 
 export function onTaskQueueUpdate(nodeId: NodeId, callback: (event: TaskQueueEvent) => void): () => void {

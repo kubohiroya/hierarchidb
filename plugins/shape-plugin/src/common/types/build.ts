@@ -1,7 +1,7 @@
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig, VectorTileFormat } from '@hierarchidb/gis-sdk';
-import type { ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
+import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';
 
 //import type { ObsolateBuildConfig, HybridFilterConfig } from './ObsolateBuildConfig.ts';
@@ -144,7 +144,7 @@ export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: BuildTaskStatus;
-  config: ShapeBuildConfig;
+  config: BuildSessionConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;

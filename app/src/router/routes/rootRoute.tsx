@@ -8,6 +8,7 @@
  */
 
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { AuthRequiredDialogHost } from '../../contexts/AuthRequiredDialogHost.js';
 import { setupUIPlugins } from '../loaders/uiPlugins.js';
 
 interface RootContext {
@@ -23,5 +24,10 @@ export const rootRoute = createRootRoute({
       uiPluginsReady: true,
     };
   },
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <AuthRequiredDialogHost />
+      <Outlet />
+    </>
+  ),
 });

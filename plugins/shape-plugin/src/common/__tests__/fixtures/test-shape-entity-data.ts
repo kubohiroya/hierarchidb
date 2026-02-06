@@ -42,10 +42,6 @@ interface BatchConfig {
     omitDetailsConfig: {
       level: string;
     };
-    areaBasedTolerance: {
-      thresholdAreaPx2: number;
-      largeAreaTolerance: number;
-    };
     minRingVertices: number;
     boundaryDisableAtZoomOrAbove?: number;
   };
@@ -93,10 +89,6 @@ export function createTestBatchConfig(): BatchConfig {
       excludePolygonAreaCoefficient: 1,
       omitDetailsConfig: {
         level: 'strong',
-      },
-      areaBasedTolerance: {
-        thresholdAreaPx2: 4096 * 4096,
-        largeAreaTolerance: 0.1,
       },
       minRingVertices: 4,
       boundaryDisableAtZoomOrAbove: 3,

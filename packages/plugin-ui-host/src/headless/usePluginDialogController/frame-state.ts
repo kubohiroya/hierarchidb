@@ -25,31 +25,9 @@ interface Params {
   initialStep: number;
   forceInitialStep?: boolean;
   initialDialogUIState?: DialogUIState | null;
+  urlState?: { mode?: DialogDisplayMode; step?: number };
+  onUrlStateChange?: (next: { mode: DialogDisplayMode; step: number }) => void;
 }
-
-const parseDisplayMode = (mode: string | undefined): DialogDisplayMode | undefined => {
-  switch (mode) {
-    case 'full':
-      return 'full-screen';
-    case 'maximize':
-      return 'maximize';
-    case 'normal':
-      return 'normal';
-    default:
-      return undefined;
-  }
-};
-
-const toUrlMode = (mode: DialogDisplayMode): string => {
-  switch (mode) {
-    case 'full-screen':
-      return 'full';
-    case 'maximize':
-      return 'maximize';
-    default:
-      return 'normal';
-  }
-};
 
 export function clampIndex(index: number, length: number): number {
   return Math.max(0, Math.min(index, length - 1));
@@ -64,6 +42,8 @@ export function useDialogFrameState({
   initialStep,
   forceInitialStep = false,
   initialDialogUIState,
+  urlState,
+  onUrlStateChange,
 }: Params): {
   activeStepIndex: number;
   setActiveStepIndex: (value: number) => void;
@@ -79,112 +59,49 @@ export function useDialogFrameState({
   handlePositionChange: (next?: DialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 } {
-  const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
-  const writingRef = useRef(false);
+  const [urlStateInternal, setUrlStateInternal] = useState<{ mode: DialogDisplayMode; step: number }>(
+    () => ({
+      mode: urlState?.mode ?? 'normal',
+      step:
+        typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
+          ? urlState.step
+          : Math.max(initialStep, 1),
+    })
+  );
+  const urlStateSourceRef = useRef<'external' | 'internal' | null>(null);
 
-  const readDialogPathState = useCallback(() => {
-    if (!isBrowser) return { mode: undefined, step: undefined };
-    const hash = window.location.hash ?? '';
-    const usesHashRouting = hash.startsWith('#/');
-    const pathWithQuery = usesHashRouting ? hash.slice(1) : window.location.pathname;
-    const [pathOnly] = pathWithQuery.split('?');
-    const normalizedPath = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly}`;
-    const segments = normalizedPath.split('/').filter(Boolean);
-    const tIndex = segments.indexOf('t');
-    if (tIndex < 0 || segments.length < tIndex + 6) {
-      return { mode: undefined, step: undefined };
-    }
-    const modeSegment = segments[tIndex + 6];
-    const stepSegment = segments[tIndex + 7];
-    const mode = modeSegment;
-    const step = stepSegment !== undefined ? Number(stepSegment) : undefined;
-    return {
-      mode,
-      step: Number.isFinite(step) ? step : undefined,
-    };
-  }, [isBrowser]);
+  useEffect(() => {
+    const nextMode = urlState?.mode ?? 'normal';
+    const nextStep =
+      typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
+        ? urlState.step
+        : Math.max(initialStep, 1);
+    setUrlStateInternal((prev) => {
+      if (prev.mode === nextMode && prev.step === nextStep) return prev;
+      urlStateSourceRef.current = 'external';
+      return { mode: nextMode, step: nextStep };
+    });
+  }, [initialStep, urlState?.mode, urlState?.step]);
 
-  const [{ mode: urlMode, step: urlStep }, setUrlState] = useState<{
-    mode: DialogDisplayMode;
-    step: number;
-  }>(() => {
-    const { mode, step } = readDialogPathState();
-    return {
-      mode: parseDisplayMode(mode) ?? 'normal',
-      step: step ?? Math.max(initialStep, 1),
-    };
-  });
-
-  const updateDialogPath = useCallback(
-    (nextMode: DialogDisplayMode, nextStep: number) => {
-      if (!isBrowser) return;
-      const url = new URL(window.location.href);
-      const hash = url.hash ?? '';
-      const usesHashRouting = hash.startsWith('#/');
-      const pathWithQuery = usesHashRouting ? hash.slice(1) : url.pathname;
-      const [pathOnly, hashQuery = ''] = pathWithQuery.split('?');
-      const normalizedPath = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly}`;
-      const segments = normalizedPath.split('/').filter(Boolean);
-      const tIndex = segments.indexOf('t');
-      if (tIndex < 0 || segments.length < tIndex + 6) return;
-      const baseSegments = segments.slice(0, tIndex + 6);
-      const nextSegments = [...baseSegments, toUrlMode(nextMode), String(nextStep)];
-      const nextPath = `/${nextSegments.join('/')}`;
-
-      if (usesHashRouting) {
-        const hashSearch = new URLSearchParams(hashQuery);
-        hashSearch.delete('step');
-        hashSearch.delete('mode');
-        const querySuffix = hashSearch.toString();
-        url.hash = `#${nextPath}${querySuffix.length > 0 ? `?${querySuffix}` : ''}`;
-      } else {
-        url.pathname = nextPath;
-        const search = new URLSearchParams(url.search);
-        search.delete('step');
-        search.delete('mode');
-        url.search = search.toString();
-      }
-
-      writingRef.current = true;
-      window.history.replaceState(null, '', url);
-      setTimeout(() => {
-        writingRef.current = false;
-      }, 0);
+  const updateUrlState = useCallback(
+    (patch: Partial<{ mode: DialogDisplayMode; step: number }>) => {
+      setUrlStateInternal((prev) => {
+        const next = { mode: patch.mode ?? prev.mode, step: patch.step ?? prev.step };
+        if (next.mode === prev.mode && next.step === prev.step) return prev;
+        urlStateSourceRef.current = 'internal';
+        return next;
+      });
     },
-    [isBrowser]
+    [onUrlStateChange]
   );
 
+  const { mode: urlMode, step: urlStep } = urlStateInternal;
   useEffect(() => {
-    updateDialogPath(urlMode, urlStep);
-  }, [updateDialogPath, urlMode, urlStep]);
-
-  useEffect(() => {
-    if (!isBrowser) return;
-    const onPopState = () => {
-      if (writingRef.current) return;
-      const { mode, step } = readDialogPathState();
-      const parsedMode = parseDisplayMode(mode);
-      setUrlState((prev) => ({
-        mode: parsedMode ?? prev.mode,
-        step: step ?? prev.step,
-      }));
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, [isBrowser, readDialogPathState]);
-
-  useEffect(() => {
-    if (!isBrowser || !forceInitialStep) return;
-    const { mode, step } = readDialogPathState();
-    const parsedMode = parseDisplayMode(mode);
-    const fallbackStep = Math.max(initialStep, 1);
-    setUrlState((prev) => ({
-      mode: parsedMode ?? prev.mode,
-      step: step ?? fallbackStep,
-    }));
-  }, [forceInitialStep, initialStep, isBrowser, readDialogPathState]);
+    if (!onUrlStateChange) return;
+    if (urlStateSourceRef.current !== 'internal') return;
+    urlStateSourceRef.current = null;
+    onUrlStateChange(urlStateInternal);
+  }, [onUrlStateChange, urlStateInternal]);
 
   const [activeStepIndex, setActiveStepIndex] = useState(toInternalStepIndex(initialStep));
   useEffect(() => {
@@ -195,8 +112,8 @@ export function useDialogFrameState({
 
   const setUrlStepInternal = useCallback((nextIndex: number) => {
     const nextStep = toStepNumber(nextIndex);
-    setUrlState((prev) => (prev.step === nextStep ? prev : { ...prev, step: nextStep }));
-  }, []);
+    updateUrlState({ step: nextStep });
+  }, [updateUrlState]);
 
   const initialFrame = (() => {
     const viewport = getViewportSize();
@@ -226,13 +143,13 @@ export function useDialogFrameState({
 
   useEffect(() => {
     // default to initialStep/url sync values; no external persistence
-    setUrlState((prev) => (prev.mode === displayMode ? prev : { ...prev, mode: displayMode }));
-  }, [displayMode]);
+    updateUrlState({ mode: displayMode });
+  }, [displayMode, updateUrlState]);
 
   const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
     setDisplayModeState(value);
-    setUrlState((prev) => (prev.mode === value ? prev : { ...prev, mode: value }));
-  }, []);
+    updateUrlState({ mode: value });
+  }, [updateUrlState]);
 
   const persistPosition = useCallback((next: DialogPosition) => {
     setDialogPosition(next);
@@ -275,7 +192,9 @@ export function useDialogFrameState({
 
     defaultFrameRef.current = null;
     persistDisplayMode(mode);
-    if (!forceInitialStep && typeof progressState?.activeStepIndex === 'number') {
+    const hasUrlStep =
+      typeof urlState?.step === 'number' && Number.isFinite(urlState.step) && urlState.step >= 1;
+    if (!hasUrlStep && !forceInitialStep && typeof progressState?.activeStepIndex === 'number') {
       const nextStep = clampIndex(
         toInternalStepIndex(progressState.activeStepIndex),
         Number.POSITIVE_INFINITY
@@ -292,6 +211,7 @@ export function useDialogFrameState({
     persistPosition,
     persistSize,
     setUrlStepInternal,
+    urlState?.step,
     _nodeId,
   ]);
 

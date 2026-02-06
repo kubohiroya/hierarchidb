@@ -78,11 +78,9 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
  */
 export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidationResult {
   const errors: string[] = [];
-  const warnings: string[] = [];
 
   const fetchConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
   const transformConfig = config.transformConfig ?? DEFAULT_BUILD_CONFIG.transformConfig;
-  const areaBasedTolerance = transformConfig.areaBasedTolerance ?? DEFAULT_BUILD_CONFIG.transformConfig.areaBasedTolerance;
 
   const fetchConcurrency = fetchConfig.maxConcurrent;
   if (fetchConcurrency < 1 || fetchConcurrency > 4) {
@@ -129,20 +127,10 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
     errors.push('Feature area threshold must be between 0 and 10000');
   }
 
-  if (areaBasedTolerance.thresholdAreaPx2 <= 0 || !Number.isFinite(areaBasedTolerance.thresholdAreaPx2)) {
-    errors.push('Area-based tolerance threshold area must be > 0');
-  }
-  if (areaBasedTolerance.largeAreaTolerance < 0 || !Number.isFinite(areaBasedTolerance.largeAreaTolerance)) {
-    errors.push('Area-based tolerance large-area tolerance must be >= 0');
-  }
-  if (areaBasedTolerance.largeAreaTolerance > transformConfig.tolerance) {
-    warnings.push('Area-based tolerance large-area tolerance exceeds tolerance; it will be capped.');
-  }
-
   return {
     isValid: errors.length === 0,
     errors: errors.length > 0 ? errors : undefined,
-    warnings: warnings.length > 0 ? warnings : undefined,
+    warnings: undefined,
   };
 }
 
@@ -339,9 +327,6 @@ export function mergeBuildConfig(
       hybridFilterConfig: bandOverrides.hybridFilterConfig
         ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
         : base.transformConfig.hybridFilterConfig,
-      areaBasedTolerance: bandOverrides.areaBasedTolerance
-        ? { ...base.transformConfig.areaBasedTolerance, ...bandOverrides.areaBasedTolerance }
-        : base.transformConfig.areaBasedTolerance,
     }
     : base.transformConfig;
 

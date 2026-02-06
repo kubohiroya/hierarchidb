@@ -369,8 +369,8 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       position: 'fixed',
       inset: 0,
       zIndex: zIndex ?? theme.zIndex.modal,
-      backgroundColor: 'rgba(9, 12, 28, 0.45)',
-      backdropFilter: 'blur(2px)',
+      backgroundColor: 'rgba(9, 12, 28, 0.15)',
+      backdropFilter: 'blur(1px)',
       pointerEvents: open ? 'auto' : 'none',
     })
   ), [open, zIndex]);

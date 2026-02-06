@@ -1,4 +1,5 @@
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   area as turfArea,
   bbox as turfBbox,
@@ -12,16 +13,12 @@ import { feature as topojsonFeature } from 'topojson-client';
 import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from 'topojson-simplify';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
-import type { AreaBasedToleranceConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
-import {
-  buildBoundaryFeature,
-  resolveLargeAreaToleranceForCollection,
-} from './geometry.js';
+import { buildBoundaryFeature } from './geometry.js';
 import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
-import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
+import { VtTaskQueueDb, emitTaskUpdate, toTaskQueueRecord, updateTask, type StoredTaskRecord } from '../task/taskQueue.js';
 import { packTileId } from '../tiles/tileId.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
@@ -132,7 +129,6 @@ const decodeTopoJsonFetchCache = async (params: {
   compression?: string;
   zTarget: number;
   toleranceK: number;
-  areaBasedToleranceConfig: AreaBasedToleranceConfig;
   quantize?: number;
 }): Promise<FeatureCollection | null> => {
   const decompressed = params.compression === 'gzip'
@@ -147,7 +143,6 @@ const decodeTopoJsonFetchCache = async (params: {
     topology: snappedTopology,
     zTarget: params.zTarget,
     toleranceK: params.toleranceK,
-    areaBasedToleranceConfig: params.areaBasedToleranceConfig,
   });
   let maxVertices = maxVerticesInCollection(collection);
   if (maxVertices > MAX_VERTICES_PER_FEATURE) {
@@ -156,7 +151,6 @@ const decodeTopoJsonFetchCache = async (params: {
       topology,
       zTarget: params.zTarget,
       toleranceK: retryToleranceK,
-      areaBasedToleranceConfig: params.areaBasedToleranceConfig,
     });
     const retryMaxVertices = maxVerticesInCollection(retry.collection);
     collection = retry.collection;
@@ -193,15 +187,9 @@ const simplifyTopoJsonByZoom = (params: {
   topology: Topology;
   zTarget: number;
   toleranceK: number;
-  areaBasedToleranceConfig: AreaBasedToleranceConfig;
 }): { topology: Topology; collection: FeatureCollection; appliedToleranceK: number } => {
   const baseCollection = normalizeTopoJsonCollection(params.topology);
-  const appliedToleranceK = resolveLargeAreaToleranceForCollection(
-    baseCollection,
-    params.zTarget,
-    params.areaBasedToleranceConfig,
-    params.toleranceK,
-  );
+  const appliedToleranceK = params.toleranceK;
   const tolerance = resolveSimplifyToleranceDegrees(params.zTarget, appliedToleranceK);
   if (!Number.isFinite(tolerance) || tolerance <= 0) {
     return { topology: params.topology, collection: baseCollection, appliedToleranceK };
@@ -216,19 +204,10 @@ const simplifyOnlyCollection = (
   collection: FeatureCollection,
   zTarget: number,
   toleranceK: number,
-  areaBasedToleranceConfig: AreaBasedToleranceConfig,
-  options?: { skipLargeArea?: boolean },
+  _options?: { skipLargeArea?: boolean },
 ): FeatureCollection => {
   if (typeof turfSimplify !== 'function') return collection;
-  const effectiveToleranceK = options?.skipLargeArea
-    ? toleranceK
-    : resolveLargeAreaToleranceForCollection(
-      collection,
-      zTarget,
-      areaBasedToleranceConfig,
-      toleranceK,
-    );
-  const tolerance = resolveSimplifyToleranceDegrees(zTarget, effectiveToleranceK);
+  const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
   if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
   return turfSimplify(collection, {
     tolerance,
@@ -1133,6 +1112,60 @@ export const createTransformByBandHandler = (
       console.warn('[transform] failed to update task phase', { phase, error });
     }
   };
+  const finalizeTaskWithCache = async (params: {
+    taskId: string;
+    cacheRecord: {
+      id: string;
+      nodeId: NodeId;
+      bandIndex: number;
+      domainType: 'shape' | 'route';
+      sourceKey: string;
+      countryCode?: string;
+      adminLevel?: number;
+      data: ArrayBuffer;
+      featureCount: number;
+      vertexCount: number;
+      polygonCount: number;
+      extractionRatio: number;
+      tolerance: number;
+    };
+    message: string;
+    outputData: {
+      processedPolygons: number;
+      totalPolygons: number;
+    };
+  }): Promise<void> => {
+    const completedAt = Date.now();
+    let updatedTask: StoredTaskRecord | null = null;
+    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.buildTasks], async () => {
+      const current = await ephemeralDB.buildTasks.get(params.taskId);
+      if (!current) {
+        throw new Error('transform failed: task record missing');
+      }
+      const currentSequence = typeof current.sequence === 'number' ? current.sequence : 0;
+      const nextSequence = currentSequence + 1;
+      const lockedStatus = current.status === 'completed' || current.status === 'failed';
+      const effectiveStatus = lockedStatus ? current.status : 'completed';
+      await ephemeralDB.transformCache.put({
+        ...params.cacheRecord,
+        timestamp: 0,
+      });
+      await ephemeralDB.transformCache.update(params.cacheRecord.id, { timestamp: completedAt });
+      await ephemeralDB.buildTasks.update(params.taskId, {
+        status: effectiveStatus,
+        progress: 100,
+        message: params.message,
+        outputData: params.outputData,
+        completedAt,
+        updatedAt: completedAt,
+        sequence: nextSequence,
+      });
+      updatedTask = (await ephemeralDB.buildTasks.get(params.taskId)) ?? null;
+    });
+    if (updatedTask) {
+      emitTaskUpdate(toTaskQueueRecord(updatedTask));
+    }
+  };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
   const baseTolerance = transformConfig.tolerance;
@@ -1192,7 +1225,6 @@ export const createTransformByBandHandler = (
             compression: fetchCache.compression,
             zTarget: band.zMax,
             toleranceK: baseTolerance,
-            areaBasedToleranceConfig: transformConfig.areaBasedTolerance,
             quantize: transformConfig.quantize,
           });
         }
@@ -1356,7 +1388,7 @@ export const createTransformByBandHandler = (
         };
         await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
         const simplifyPromise = runStageWithLabel('simplify-only', () => (
-          simplifyOnlyCollection(inputCollection, band.zMax, tolerance, transformConfig.areaBasedTolerance)
+          simplifyOnlyCollection(inputCollection, band.zMax, tolerance)
         ));
         simplified = await runWithStallTimeout({
           promise: simplifyPromise,
@@ -1474,7 +1506,6 @@ export const createTransformByBandHandler = (
               { type: 'FeatureCollection', features: [feature] },
               band.zMax,
               tolerance,
-              transformConfig.areaBasedTolerance,
             );
           } catch (featureError) {
             errorFeatureCount += 1;
@@ -1589,9 +1620,14 @@ export const createTransformByBandHandler = (
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)})${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
-      const retryToleranceStep = 5.0;
-      const maxRetrySteps = 5;
-      const retryVertexLimit = Math.floor(65536 * 0.1);
+      const retryVertexLimit = 6553;
+      const maxRetrySteps = 8;
+      const resolveRetryToleranceStep = (baseVertexCount: number, baseToleranceK: number): number => {
+        const ratio = baseVertexCount / retryVertexLimit;
+        if (!Number.isFinite(ratio) || ratio <= 1) return Math.max(5, baseToleranceK);
+        const scaled = baseToleranceK * Math.min(10, ratio);
+        return Math.max(5, scaled);
+      };
       const countVertexLimitOverages = (collection: FeatureCollection) => {
         let maxVertexCount = 0;
         let overLimitFeatureCount = 0;
@@ -1605,14 +1641,7 @@ export const createTransformByBandHandler = (
         return { maxVertexCount, overLimitFeatureCount };
       };
 
-      const resolveRetryToleranceK = (baseToleranceK: number) => (
-        resolveLargeAreaToleranceForCollection(
-          inputCollection,
-          band.zMax,
-          transformConfig.areaBasedTolerance,
-          baseToleranceK,
-        )
-      );
+      const resolveRetryToleranceK = (baseToleranceK: number) => baseToleranceK;
 
       const simplifyFeatureWithTolerance = (feature: Feature, baseToleranceK: number): Feature => {
         const effectiveToleranceK = resolveRetryToleranceK(baseToleranceK);
@@ -1658,8 +1687,9 @@ export const createTransformByBandHandler = (
         let lastAttemptFeature: Feature = feature;
         let lastAttemptVertexCount = baseVertexCount;
 
+        const retryStep = resolveRetryToleranceStep(baseVertexCount, tolerance);
         for (let i = 0; i < maxRetrySteps; i += 1) {
-          const nextToleranceValue = tolerance + retryToleranceStep * (i + 1);
+          const nextToleranceValue = tolerance + retryStep * (i + 1);
           const retryFeature = await runRetrySimplifyFeature(feature, nextToleranceValue);
           if (!retryFeature?.geometry) break;
           const retryVertexCount = countVerticesFromGeometry(retryFeature.geometry);
@@ -1907,8 +1937,29 @@ export const createTransformByBandHandler = (
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
       await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.encodeEnd);
-      await ephemeralDB.transaction('rw', ephemeralDB.transformCache, async () => {
-        await ephemeralDB.transformCache.put({
+
+      const formatCount = (value: number): string => (
+        Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
+      );
+      const formatSignedPercent = (output: number, input: number): string => {
+        if (!Number.isFinite(input) || input <= 0) return '-0.0%';
+        const percent = ((output - input) / input) * 100;
+        const prefix = percent <= 0 ? '-' : '+';
+        return `${prefix}${Math.abs(percent).toFixed(1)}%`;
+      };
+      const formatChangeSummary = (label: string, input: number, output: number): string => {
+        const safeInput = Number.isFinite(input) ? input : output;
+        const safeOutput = Number.isFinite(output) ? output : 0;
+        return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
+      };
+      const completedMessage = [
+        formatChangeSummary('features', inputFeatureCount, simplifiedFeatureCount),
+        formatChangeSummary('polygons', inputPolygonCount, simplifiedPolygonCount),
+        formatChangeSummary('vertices', inputVertexCount, simplifiedVertexCount),
+      ].join(', ');
+      await finalizeTaskWithCache({
+        taskId,
+        cacheRecord: {
           id: cacheId,
           nodeId: task.nodeId,
           bandIndex: input.bandIndex,
@@ -1922,11 +1973,13 @@ export const createTransformByBandHandler = (
           polygonCount,
           extractionRatio,
           tolerance: tolerance,
-          timestamp: 0,
-        });
-        await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
+        },
+        message: completedMessage,
+        outputData: {
+          processedPolygons: inputPolygonCount,
+          totalPolygons: inputPolygonCount,
+        },
       });
-      await updateTaskPhase(taskId, 'cache:put:done', taskProgressRange.encodeEnd);
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
       console.info('[ShapeTransform][TileIndex]', JSON.stringify({
@@ -1956,25 +2009,6 @@ export const createTransformByBandHandler = (
         }
       }
 
-      const formatCount = (value: number): string => (
-        Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
-      );
-      const formatSignedPercent = (output: number, input: number): string => {
-        if (!Number.isFinite(input) || input <= 0) return '-0.0%';
-        const percent = ((output - input) / input) * 100;
-        const prefix = percent <= 0 ? '-' : '+';
-        return `${prefix}${Math.abs(percent).toFixed(1)}%`;
-      };
-      const formatChangeSummary = (label: string, input: number, output: number): string => {
-        const safeInput = Number.isFinite(input) ? input : output;
-        const safeOutput = Number.isFinite(output) ? output : 0;
-        return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
-      };
-      const completedMessage = [
-        formatChangeSummary('features', inputFeatureCount, simplifiedFeatureCount),
-        formatChangeSummary('polygons', inputPolygonCount, simplifiedPolygonCount),
-        formatChangeSummary('vertices', inputVertexCount, simplifiedVertexCount),
-      ].join(', ');
       return {
         status: 'completed',
         progress: 100,
@@ -1983,6 +2017,7 @@ export const createTransformByBandHandler = (
           processedPolygons: inputPolygonCount,
           totalPolygons: inputPolygonCount,
         },
+        taskUpdated: true,
       };
     } catch (error) {
       if (abortSignal?.aborted) {

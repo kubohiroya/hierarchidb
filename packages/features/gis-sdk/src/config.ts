@@ -68,11 +68,6 @@ export type OmitDetailsConfig = {
   level: OmitDetailsLevel;
 };
 
-export type AreaBasedToleranceConfig = {
-  thresholdAreaPx2: number;
-  largeAreaTolerance: number;
-};
-
 export type SelfIntersectionTuningConfig = {
   disableAtZoomOrBelow: number;
   maxVerticesForFix: number;
@@ -94,7 +89,6 @@ export interface TransformConfig {
   areaThreshold: number;
   excludePolygonAreaCoefficient: number;
   omitDetailsConfig: OmitDetailsConfig;
-  areaBasedTolerance: AreaBasedToleranceConfig;
   minRingVertices: number;
   boundaryDisableAtZoomOrAbove?: number;
 }

@@ -40,10 +40,6 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     omitDetailsConfig: {
       level: 'strong',
     },
-    areaBasedTolerance: {
-      thresholdAreaPx2: 4096 * 4096,
-      largeAreaTolerance: 1.0,
-    },
     minRingVertices: 4,
     boundaryDisableAtZoomOrAbove: 3,
   },

@@ -2,7 +2,8 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
-  ShapeBuildTaskRecord,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
   ShapeFeatureMetadata,
   ShapeFetchCache,
   ShapeMutationAPI,
@@ -23,6 +24,7 @@ import {
 } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
+import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -215,6 +217,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     await ephemeralShapeDB.sessions.put(toBuildSessionRecord(session));
+    publishBuildSessionUpdate({ nodeId: session.nodeId, status: session.status });
   }
 
   async updateBuildSession(
@@ -228,12 +231,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
       ...patch,
       updatedAt: Date.now(),
     });
+    publishBuildSessionUpdate({ nodeId, status: updates.status });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     await ephemeralShapeDB.sessions.delete(nodeId);
+    publishBuildSessionUpdate({ nodeId, status: 'deleted' });
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {
@@ -270,13 +275,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await ephemeralShapeDB.clearNodeData(nodeId);
   }
 
-  async upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
+  async upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void> {
     await this.ensureOpen();
     if (tasks.length === 0) return;
     await ephemeralShapeDB.buildTasks.bulkPut?.(tasks);
   }
 
-  async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
+  async updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void> {
     await this.ensureOpen();
     await ephemeralShapeDB.buildTasks.update?.(taskId, updates);
   }

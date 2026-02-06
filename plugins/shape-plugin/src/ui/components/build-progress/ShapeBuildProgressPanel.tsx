@@ -558,6 +558,12 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     setCrashHintOpen,
     sizeWarningOpen,
     setSizeWarningOpen,
+    crashSuspectMessage,
+    crashSuspectOpen,
+    crashSuspectControls,
+    suspendSuspectMessage,
+    suspendSuspectOpen,
+    suspendSuspectControls,
     completionDialogOpen,
     setCompletionDialogOpen,
     completionSnapshot,
@@ -691,6 +697,42 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
               {warningMessage}
             </Alert>
           </Snackbar>
+          <Dialog
+            open={suspendSuspectOpen}
+            onClose={() => suspendSuspectControls.close()}
+            maxWidth="sm"
+            fullWidth
+          >
+            <DialogTitle>{t('stage.progress.suspendSuspectTitle', 'Build tab suspended')}</DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="body2">
+                {suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build is paused while another tab is in background.')}
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={() => suspendSuspectControls.close()} variant="contained">
+                {t('common.close', 'Close')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog
+            open={crashSuspectOpen}
+            onClose={() => crashSuspectControls.close()}
+            maxWidth="sm"
+            fullWidth
+          >
+            <DialogTitle>{t('stage.progress.crashSuspectTitle', 'Build may have stopped')}</DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="body2">
+                {crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')}
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={() => crashSuspectControls.close()} variant="contained">
+                {t('common.close', 'Close')}
+              </Button>
+            </DialogActions>
+          </Dialog>
           <Dialog
             open={completionDialogOpen}
             onClose={() => setCompletionDialogOpen(false)}

@@ -26,6 +26,7 @@ import {
   configureWorkerContainer,
   getWorkerContainer,
   type PluginWorkerModuleLoaderContract,
+  subscribeToBuildSessionBroadcast,
   WorkerDiTokens,
   WorkerService,
 } from '@hierarchidb/runtime-worker';
@@ -520,8 +521,21 @@ reporter.reportStepProgress('Load Comlink', 0);
               callback([]);
             },
           });
+          const dispatchSessions = async () => {
+            try {
+              const sessions = await queryAPI.listBuildSessionRecordsByStatus(normalized);
+              callback(sessions);
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : String(error);
+              console.warn('[worker bootstrap] build session refresh failed:', msg);
+            }
+          };
+          const broadcastUnsubscribe = subscribeToBuildSessionBroadcast(() => {
+            void dispatchSessions();
+          });
           return Comlink.proxy(() => {
             subscription.unsubscribe();
+            broadcastUnsubscribe();
           });
         },
         setUiStorageBridge: async (bridge: UiStorageBridge): Promise<void> => {

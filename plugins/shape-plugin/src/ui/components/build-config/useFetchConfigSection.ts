@@ -77,7 +77,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     transform: 0,
     vt: 0,
   });
-  const [resultCounts, setResultCounts] = useState({ tiles: 0, metadata: 0 });
+  const [resultCounts, setResultCounts] = useState({ tiles: 0, metadata: 0, transformErrors: 0 });
 
   const [sessionStatus, setSessionStatus] = useState<BatchSessionStatus['status'] | null>(null);
   const setBuildTasks = useSetAtom(tasksAtom);
@@ -135,7 +135,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
       setCounts({ fetchApi: 0, fetchFiltered: 0, transform: 0, vt: 0 });
-      setResultCounts({ tiles: 0, metadata: 0 });
+      setResultCounts({ tiles: 0, metadata: 0, transformErrors: 0 });
       setSessionStatus(null);
       setCountsLoading(false);
       return;
@@ -151,16 +151,25 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         transformTaskCount,
         vtTaskCount,
         transformCacheCount,
-        numMetadata,
+        vectorTileSummary,
+        featureMetadata,
+        sourceMetadata,
+        transformErrors,
       ] = await Promise.all([
         ephemeralShapeAPIImpl.countFetchCaches(nodeId),
         countRawDataDataSourceBuffersForNode(nodeId),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
-        shapeQueryAPIImpl.listFeatureMetadata(nodeId).then((rows) => rows.length),
+        shapeQueryAPIImpl.getVectorTileSummary(nodeId),
+        shapeQueryAPIImpl.listFeatureMetadata(nodeId),
+        shapeQueryAPIImpl.listSourceMetadata(nodeId),
+        shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
       ]);
-      const transformCount = transformTaskCount > 0 ? transformTaskCount : transformCacheCount;
+      const metadataCount = featureMetadata.length + sourceMetadata.length;
+      const transformErrorCount = transformErrors.length;
+      const transformCount = transformTaskCount + transformCacheCount + transformErrorCount;
+      const tileCount = vtTaskCount + vectorTileSummary.tiles;
 
       const sessionStatus = await bridgeRef
         .initialize()
@@ -173,9 +182,9 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         fetchApi: rawCacheCount,
         fetchFiltered: fetchCacheCount,
         transform: transformCount,
-        vt: vtTaskCount,
+        vt: tileCount,
       });
-      setResultCounts({ tiles: vtTaskCount, metadata: numMetadata });
+      setResultCounts({ tiles: vectorTileSummary.tiles, metadata: metadataCount, transformErrors: transformErrorCount });
     } finally {
       setCountsLoading(false);
     }
@@ -240,7 +249,11 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       await taskQueue.tasks
         .where('nodeId')
         .equals(nodeId)
-        .and((task) => !['fetch', 'transform', 'vt'].includes(task.stage))
+        .and((task) => {
+          const stage = task.stage;
+          if (!stage) return true;
+          return !['fetch', 'transform', 'vt'].includes(stage);
+        })
         .delete();
     }
   }, [nodeId]);

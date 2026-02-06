@@ -39,9 +39,8 @@ const isStageStatus = (value: unknown): value is StageStatus => {
 
 export const isBuildProcessConfig = (value: unknown): value is BuildSessionConfig => {
   if (!isRecord(value)) return false;
-  return isRecord(value.download)
-    && isRecord(value.extract1)
-    && isRecord(value.extract2)
+  return isRecord(value.fetchConfig)
+    && isRecord(value.transformConfig)
     && isRecord(value.vectorTiles);
 };
 

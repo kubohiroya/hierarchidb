@@ -101,6 +101,7 @@ Work in small, reviewable increments. Document sandbox blockers and attempted al
 - **フォールバック禁止**: ユーザーから明示的な指示がない限り、互換性維持や保険目的のフォールバック実装を行わない。必要な場合は事前に確認する。
 - **型の厳格運用**: `nodeId` など必須値は型で必須化し、`null/undefined` を許容する修正や黙認は行わない。
 - **non-null assertion 禁止**: `!` による non-null assertion は使用しない。必要なら型を厳密化するかガードで安全に処理する。
+- **型の混在禁止**: 新旧混在の型（互換目的の union/accept 分岐を含む）を禁止する。暫定フォールバック・曖昧な型・互換目的の受け入れ分岐は実装しない。必要なら破壊的変更として明示し、事前に合意を取る。
 - **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。runtime/plugin など別パッケージの `.d.ts` に依存する場合は、明示的に `pipeline.build(:types|:bundle)` を設定し、`prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先行実行する。`tsdown` は root config で `clean: false` を強制しているため、個別パッケージで `clean` を上書きしない。
 - **依存タスクの順序制御**: 他パッケージの `.d.ts` を参照するビルドでは、依存先の `build` / `build:types` / `build:bundle` を Turbo で明示し、必要に応じて `prebuild:*` で `pnpm --filter <pkg> build[:types|:bundle]` を実行してから自パッケージの `tsc`/`tsdown` を呼び出す。`tsup` 系のスクリプトは廃止済みであることを常に意識する。
 - **依存タスクの順序制御**: `@hierarchidb/*` の `.d.ts` を使うプラグインは、Turbo の `pipeline` や `prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先に呼び出し、その後に `tsdown` を起動する。dist を消したい場合は明示的に `pnpm clean` 系のタスクを実行し、`tsdown` へ `clean:true` を渡さない。

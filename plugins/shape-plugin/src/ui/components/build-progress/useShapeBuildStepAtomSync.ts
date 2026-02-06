@@ -12,6 +12,12 @@ import {
   taskSummaryLoadingAtom,
   tasksByStageAtom,
   taskWarningMessageAtom,
+  crashSuspectMessageAtom,
+  crashSuspectOpenAtom,
+  crashSuspectControlsAtom,
+  suspendSuspectMessageAtom,
+  suspendSuspectOpenAtom,
+  suspendSuspectControlsAtom,
   buildStageProgressAtom,
   buildStagesAtom,
 } from '../../atoms/shapeBuildProgressAtoms.ts';
@@ -88,6 +94,12 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stageRemainingMs,
     isTaskSummaryLoading,
     warningMessage,
+    crashSuspectOpen,
+    crashSuspectMessage,
+    setCrashSuspectOpen: setCrashSuspectOpenFromHook,
+    suspendSuspectOpen,
+    suspendSuspectMessage,
+    setSuspendSuspectOpen: setSuspendSuspectOpenFromHook,
     canStartOrResume,
     handleStartOrResume,
     handlePause,
@@ -105,6 +117,12 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const setSummary = useSetAtom(taskProgressSummaryAtom);
   const setTaskSummaryLoading = useSetAtom(taskSummaryLoadingAtom);
   const setWarningMessage = useSetAtom(taskWarningMessageAtom);
+  const setCrashSuspectMessage = useSetAtom(crashSuspectMessageAtom);
+  const setCrashSuspectOpen = useSetAtom(crashSuspectOpenAtom);
+  const setCrashSuspectControls = useSetAtom(crashSuspectControlsAtom);
+  const setSuspendSuspectMessage = useSetAtom(suspendSuspectMessageAtom);
+  const setSuspendSuspectOpen = useSetAtom(suspendSuspectOpenAtom);
+  const setSuspendSuspectControls = useSetAtom(suspendSuspectControlsAtom);
   const setControls = useSetAtom(taskProgressControlsAtom);
   const setAuth = useSetAtom(taskProgressAuthAtom);
 
@@ -130,6 +148,12 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   } | null>(null);
   const taskSummaryLoadingRef = useRef<boolean | null>(null);
   const warningMessageRef = useRef<string | null>(null);
+  const crashSuspectMessageRef = useRef<string | null>(null);
+  const crashSuspectOpenRef = useRef<boolean | null>(null);
+  const crashSuspectControlsRef = useRef<{ close: () => void } | null>(null);
+  const suspendSuspectMessageRef = useRef<string | null>(null);
+  const suspendSuspectOpenRef = useRef<boolean | null>(null);
+  const suspendSuspectControlsRef = useRef<{ close: () => void } | null>(null);
   const controlsRef = useRef<TaskProgressControls | null>(null);
   const authRef = useRef<TaskProgressAuthState | null>(null);
 
@@ -150,6 +174,12 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const stableHandleProviderSelect = useCallback((provider: AuthProviderType) => {
     handleProviderSelectRef.current?.(provider);
   }, []);
+  const stableCloseCrashSuspect = useCallback(() => {
+    setCrashSuspectOpenFromHook();
+  }, [setCrashSuspectOpenFromHook]);
+  const stableCloseSuspendSuspect = useCallback(() => {
+    setSuspendSuspectOpenFromHook();
+  }, [setSuspendSuspectOpenFromHook]);
 
   useEffect(() => {
     handleStartOrResumeRef.current = handleStartOrResume ?? null;
@@ -243,6 +273,46 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     warningMessageRef.current = nextWarning;
     setWarningMessage(nextWarning);
   }, [setWarningMessage, warningMessage]);
+
+  useEffect(() => {
+    const nextMessage = crashSuspectMessage ?? null;
+    if (crashSuspectMessageRef.current === nextMessage) return;
+    crashSuspectMessageRef.current = nextMessage;
+    setCrashSuspectMessage(nextMessage);
+  }, [crashSuspectMessage, setCrashSuspectMessage]);
+
+  useEffect(() => {
+    if (crashSuspectOpenRef.current === crashSuspectOpen) return;
+    crashSuspectOpenRef.current = crashSuspectOpen;
+    setCrashSuspectOpen(crashSuspectOpen);
+  }, [crashSuspectOpen, setCrashSuspectOpen]);
+
+  useEffect(() => {
+    const nextControls = { close: stableCloseCrashSuspect };
+    if (crashSuspectControlsRef.current?.close === nextControls.close) return;
+    crashSuspectControlsRef.current = nextControls;
+    setCrashSuspectControls(nextControls);
+  }, [setCrashSuspectControls, stableCloseCrashSuspect]);
+
+  useEffect(() => {
+    const nextMessage = suspendSuspectMessage ?? null;
+    if (suspendSuspectMessageRef.current === nextMessage) return;
+    suspendSuspectMessageRef.current = nextMessage;
+    setSuspendSuspectMessage(nextMessage);
+  }, [setSuspendSuspectMessage, suspendSuspectMessage]);
+
+  useEffect(() => {
+    if (suspendSuspectOpenRef.current === suspendSuspectOpen) return;
+    suspendSuspectOpenRef.current = suspendSuspectOpen;
+    setSuspendSuspectOpen(suspendSuspectOpen);
+  }, [setSuspendSuspectOpen, suspendSuspectOpen]);
+
+  useEffect(() => {
+    const nextControls = { close: stableCloseSuspendSuspect };
+    if (suspendSuspectControlsRef.current?.close === nextControls.close) return;
+    suspendSuspectControlsRef.current = nextControls;
+    setSuspendSuspectControls(nextControls);
+  }, [setSuspendSuspectControls, stableCloseSuspendSuspect]);
 
   useEffect(() => {
     const nextControls = {

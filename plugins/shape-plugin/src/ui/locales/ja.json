@@ -173,16 +173,9 @@
       "omitDetailsLevelMediumHelp": "大・中の島が残ります。",
       "omitDetailsLevelStrongHelp": "大きな島だけが残ります。",
       "tolerance": "簡略化の強さ",
-      "tolerancePrimary": "小〜中面積の許容差 #1",
       "toleranceSecondary": "簡略化の強さ（前処理）",
       "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（Transform 前処理／VT 生成）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
       "toleranceHelpStage2": "タイル前処理として Transform の前処理を行います。",
-      "areaBasedToleranceTitle": "面積ベースの簡略化調整",
-      "areaBasedToleranceEnable": "大国の簡略化を抑制",
-      "areaBasedToleranceMinScale": "大国時の最小倍率",
-      "areaBasedToleranceReferenceArea": "基準面積（px^2）",
-      "areaBasedToleranceHelp": "面積がしきい値を超える場合、許容差は大面積の値で上限が設定されます。",
-      "areaBasedToleranceThresholdHelp": "マークは最初のバンドの最大ズーム（z={{zoom}}）に基づきます。",
       "minVertexCount": "最小頂点数",
       "minVertexCountHelp": "Transform の面積フィルタを頂点数がこの値以上の特徴に適用します。",
       "quickRejectThreshold": "クイック除外しきい値",
@@ -210,9 +203,7 @@
       "zoomBandBoundariesHelp": "範囲の境界となるズーム率を調整します。",
       "zoomBandRangeSummaryTitle": "ズーム帯の一覧",
       "zoomBandRangeItem": "範囲{{index}}: z{{min}}-{{max}}",
-      "applyCommonZoomBandBoundaries": "共通ズーム帯設定をここに反映させる",
-      "areaBasedToleranceThresholdArea": "許容差#1と#2のしきい値面積 (px^2)",
-      "areaBasedToleranceLargeTolerance": "大面積の許容差 #2"
+      "applyCommonZoomBandBoundaries": "共通ズーム帯設定をここに反映させる"
     },
     "zoomBandSettings": {
       "title": "ズーム帯設定"

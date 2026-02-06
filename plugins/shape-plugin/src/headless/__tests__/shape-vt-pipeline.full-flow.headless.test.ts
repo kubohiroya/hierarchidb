@@ -6,6 +6,11 @@ import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import type { FetchTaskPayload } from '../../common/types/index.js';
 
 const nodeId = 'shape-full-flow-test-node' as NodeId;
+
+// Enable this integration test with HDB_NETWORK_TESTS=1 to require real network access.
+const shouldRunNetworkTests = process.env.HDB_NETWORK_TESTS === '1';
+const describeNetwork = shouldRunNetworkTests ? describe : describe.skip;
+
 const APP_PREFIX = `hidb-test-shape-full-flow-${Math.random().toString(36).slice(2)}`;
 
 let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
@@ -69,7 +74,7 @@ const clearNodeArtifacts = async (): Promise<void> => {
   taskQueue.close();
 };
 
-describe('Shape full-flow pipeline', () => {
+describeNetwork('Shape full-flow pipeline', () => {
   beforeEach(async () => {
     (globalThis as { APP_PREFIX?: string }).APP_PREFIX = APP_PREFIX;
     if (!VtTaskQueueDb) {

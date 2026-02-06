@@ -12,7 +12,7 @@ import { isDataSourceName, SHAPE_DATA_SOURCE_BY_NAME } from '../../../common/typ
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../../workers/countryAvailability.types.js';
 import { wrap, releaseProxy, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useDialogUrlSync } from '@hierarchidb/plugin-base';
+import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
@@ -102,7 +102,7 @@ type Args = {
 export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }: Args) => {
   const { enqueueSnackbar } = useSnackbar();
   const nodeId = _nodeId;
-  const { setStep: setDialogStep } = useDialogUrlSync();
+  const { onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
   const prevSelectionRef = useRef<Record<string, boolean[]> | null>(null);
 
@@ -169,9 +169,9 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   }, [dataSourceKey]);
   useEffect(() => {
     if (dataSourceError) {
-      setDialogStep(2);
+      onStepNavigate({ type: 'direct', targetIndex: 1 });
     }
-  }, [dataSourceError, setDialogStep]);
+  }, [dataSourceError, onStepNavigate]);
   const iso = useIsoCountries();
   const [countries, setCountries] = useState<CountryMetadata[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);

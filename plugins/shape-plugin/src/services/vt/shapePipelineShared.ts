@@ -398,48 +398,50 @@ export const buildTransformByBandTasks = async (
   countryLookup: Map<string, CountryMetadata>,
   configSignature: string,
 ): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
-  const buffers = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
 
-  for (const buffer of buffers) {
-    if (buffer.featureCount === 0) {
-      continue;
-    }
-    const adminLevel = buffer.adminLevel;
-    const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
-    const countryCode = buffer.countryCode?.trim().toUpperCase();
-    const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
-    for (const band of bands) {
-      if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
-        if (!enableHighDetailBands) continue;
-        if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
+  await ephemeralShapeDB.fetchCache
+    .where('nodeId')
+    .equals(nodeId)
+    .each((buffer) => {
+      if (buffer.featureCount === 0) {
+        return;
       }
-      tasks.push({
-        taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
-        nodeId,
-        stage: 'transform',
-        status: 'queued',
-        index,
-        stagePriority,
-        progress: 0,
-        inputData: {
-          fetchCacheId: buffer.id,
-          bandIndex: band.bandIndex,
-          bandMinZoom: band.zMin,
-          bandMaxZoom: band.zMax,
-          domainType: 'shape',
-          sourceKey: buffer.sourceKey,
+      const adminLevel = buffer.adminLevel;
+      const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
+      const countryCode = buffer.countryCode?.trim().toUpperCase();
+      const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
+      for (const band of bands) {
+        if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
+          if (!enableHighDetailBands) continue;
+          if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
+        }
+        tasks.push({
+          taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
+          nodeId,
+          stage: 'transform',
+          status: 'queued',
+          index,
           stagePriority,
-          countryCode,
-          countryName: countryMeta?.countryName,
-          adminLevel: buffer.adminLevel,
-          configSignature,
-        },
-      });
-      index += 1;
-    }
-  }
+          progress: 0,
+          inputData: {
+            fetchCacheId: buffer.id,
+            bandIndex: band.bandIndex,
+            bandMinZoom: band.zMin,
+            bandMaxZoom: band.zMax,
+            domainType: 'shape',
+            sourceKey: buffer.sourceKey,
+            stagePriority,
+            countryCode,
+            countryName: countryMeta?.countryName,
+            adminLevel: buffer.adminLevel,
+            configSignature,
+          },
+        });
+        index += 1;
+      }
+    });
   return tasks;
 };
 

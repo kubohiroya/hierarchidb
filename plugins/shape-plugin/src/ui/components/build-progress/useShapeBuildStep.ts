@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import {
+  createPollingTracker,
+  createSessionCoordinator,
+  type SessionChannelMessage,
+} from '@hierarchidb/session-coordinator';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';
@@ -24,6 +29,7 @@ import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import { useShapeBuildStages } from './useShapeBuildStages.ts';
 import { useShapeBuildProgressSummary } from './useShapeBuildProgressSummary.ts';
 import { useShapeBuildLabels } from './useShapeBuildLabels.ts';
+import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 type StageLikeTask = {
@@ -58,18 +64,67 @@ type Args = {
 
 export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
+  const coordinator = useMemo(() => (
+    createSessionCoordinator({
+      channelName: 'sessions',
+      pollIntervalTimeout: 3000,
+      quietThresholdTimeout: 5000,
+      semaphoreTtlTimeout: 10000,
+    })
+  ), []);
   const activeNodeId = nodeId ?? data?.nodeId ?? null;
+  const tabIdRef = useRef<string>(coordinator.getTabId());
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const lastBroadcastAtRef = useRef<number | null>(null);
+  const lastBroadcastTabIdRef = useRef<string | null>(null);
+  const lastAckAtRef = useRef<number | null>(null);
+  const lastAckTabIdRef = useRef<string | null>(null);
+  const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
+  const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
+  const lastAutoResumeAtRef = useRef<number | null>(null);
+  const crashCheckStartedAtRef = useRef<number>(Date.now());
+  const suspendTimeout = coordinator.quietThresholdTimeout * 3;
 
   const [isPausePending, setIsPausePending] = useState(false);
+  const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
+  const [remoteStatus, setRemoteStatus] = useState<BuildProgressStatus | null>(null);
+  const [remoteUpdatedAt, setRemoteUpdatedAt] = useState<number | null>(null);
+  const [crashSuspectOpen, setCrashSuspectOpen] = useState(false);
+  const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
+  const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
+  const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
+  const closeCrashSuspect = useCallback(() => {
+    setCrashSuspectOpen(false);
+    setCrashSuspectMessage(null);
+    crashCheckStartedAtRef.current = Date.now();
+  }, []);
+  const closeSuspendSuspect = useCallback(() => {
+    setSuspendSuspectOpen(false);
+    setSuspendSuspectMessage(null);
+    crashCheckStartedAtRef.current = Date.now();
+  }, []);
+  const getRecentNonActiveState = useCallback((referenceTime: number) => {
+    let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
+    for (const entry of tabStateRef.current.values()) {
+      if (entry.state === 'active') continue;
+      if (!latest || entry.at > latest.at) {
+        latest = entry;
+      }
+    }
+    if (!latest) return null;
+    if (referenceTime - latest.at > suspendTimeout) return null;
+    return latest;
+  }, [suspendTimeout]);
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
-  const effectiveProgress = hasNodeId ? progress : null;
-  const effectiveStatus = hasNodeId ? status : null;
+  const remoteFresh = Boolean(remoteUpdatedAt && Date.now() - remoteUpdatedAt <= coordinator.quietThresholdTimeout);
+  const effectiveProgress = hasNodeId ? (progress ?? (remoteFresh ? remoteProgress : null)) : null;
+  const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteStatus : null)) : null;
   const stages = useShapeBuildStages(t);
   const processingStatus = data?.processingStatus ?? 'idle';
-  const runtimeStatus = effectiveStatus?.status ?? null;
-  const statusSource = runtimeStatus ?? processingStatus;
+  const runtimeStatus = status?.status ?? null;
+  const statusSource = effectiveStatus?.status ?? processingStatus;
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(statusSource)
   ), [statusSource]);
@@ -87,7 +142,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [baseBuildStatus, hasInFlightTasks]);
   useEffect(() => {
     if (!isPausePending) return;
-    if (buildStatus !== "running") {
+    if (buildStatus !== 'running') {
       setIsPausePending(false);
     }
   }, [buildStatus, isPausePending]);
@@ -170,6 +225,20 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const authDialogOpen = false;
   const closeAuthDialog = useCallback(() => {}, []);
   const handleProviderSelect = useCallback((_provider: AuthProviderType) => {}, []);
+  const sendAck = useCallback((sessionId: string, receivedTabId: string) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    coordinator.sendAck(channel, sessionId, receivedTabId);
+  }, [coordinator]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (buildStatus !== 'running' && runtimeStatus !== 'processing') return;
+    const activeSessionId = coordinator.readActiveSessionId();
+    if (!activeSessionId) {
+      coordinator.writeActiveSessionId(String(activeNodeId));
+    }
+  }, [activeNodeId, buildStatus, coordinator, runtimeStatus]);
 
   const saveDraftBeforeBatch = useCallback(async (patch?: Partial<ShapeEntity>) => {
     if (!activeNodeId) {
@@ -221,6 +290,226 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [activeNodeId, data, onChange, workerClient]);
 
+  const maybeAutoResume = useCallback(async () => {
+    if (!activeNodeId) return;
+    if (buildStatus === 'running' || runtimeStatus === 'processing') return;
+    const now = Date.now();
+    const hasRunner = coordinator.isRunnerTab(now);
+    const activeSessionId = coordinator.readActiveSessionId();
+    if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) return;
+    const recentNonActive = getRecentNonActiveState(now);
+    if (recentNonActive) return;
+    const lastBroadcast = lastBroadcastAtRef.current;
+    if (lastBroadcast && now - lastBroadcast < coordinator.quietThresholdTimeout) return;
+    const candidates = pollingTrackerRef.current.candidates(now);
+    if (candidates.length === 0) return;
+    if (candidates[0] !== tabIdRef.current) return;
+    const lastAutoResumeAt = lastAutoResumeAtRef.current;
+    if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
+    const semaphoreKey = `shape:${activeNodeId}`;
+    const acquired = await coordinator.tryAcquireSemaphore(semaphoreKey, tabIdRef.current, coordinator.semaphoreTtlTimeout);
+    if (!acquired) return;
+    lastAutoResumeAtRef.current = now;
+    coordinator.writeActiveSessionId(String(activeNodeId));
+    try {
+      await bridgeRef.current.initialize();
+      const status = await bridgeRef.current.getBatchSessionStatus(SHAPE_NODE_TYPE, activeNodeId);
+      if (status.status !== 'running') return;
+      const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+      await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+      await persistDraftPatch({ processingStatus: 'processing' });
+    } catch (error) {
+      coordinator.clearActiveSessionId(String(activeNodeId));
+      notify.error('Failed to auto-resume build.');
+      console.error('[ShapeBuildProgressStep] auto-resume failed', error);
+    }
+  }, [activeNodeId, buildStatus, coordinator, getRecentNonActiveState, persistDraftPatch, runtimeStatus]);
+
+  useEffect(() => {
+    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
+    const channel = coordinator.openChannel();
+    channelRef.current = channel;
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (!coordinator.isSessionChannelMessage(message)) return;
+      const typedMessage = message as SessionChannelMessage<BuildProgressStatus, BuildProgress>;
+      if (typedMessage.sessionId !== String(activeNodeId)) return;
+      if (typedMessage.tabId === tabIdRef.current) return;
+      const now = Date.now();
+      if (typedMessage.type === 'broadcast') {
+        lastBroadcastAtRef.current = now;
+        lastBroadcastTabIdRef.current = typedMessage.tabId;
+        setRemoteProgress(typedMessage.progress ?? null);
+        setRemoteStatus(typedMessage.status ?? null);
+        setRemoteUpdatedAt(now);
+        sendAck(typedMessage.sessionId, typedMessage.tabId);
+        return;
+      }
+      if (typedMessage.type === 'poll') {
+        pollingTrackerRef.current.record(typedMessage.tabId, now);
+        sendAck(typedMessage.sessionId, typedMessage.tabId);
+      }
+      if (typedMessage.type === 'tab-state') {
+        tabStateRef.current.set(typedMessage.tabId, { state: typedMessage.tabState, at: now });
+        sendAck(typedMessage.sessionId, typedMessage.tabId);
+      }
+      if (typedMessage.type === 'ack' && typedMessage.receivedTabId === tabIdRef.current) {
+        lastAckAtRef.current = now;
+        lastAckTabIdRef.current = typedMessage.tabId;
+      }
+    };
+    channel.addEventListener('message', handleMessage);
+    return () => {
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+      if (channelRef.current === channel) {
+        channelRef.current = null;
+      }
+    };
+  }, [activeNodeId, coordinator, sendAck]);
+
+  useEffect(() => {
+    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const sendTabState = (state: 'active' | 'hidden' | 'frozen') => {
+      coordinator.sendTabState(channel, String(activeNodeId), state);
+    };
+    const handleVisibility = () => {
+      const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      sendTabState(isHidden ? 'hidden' : 'active');
+    };
+    const handlePageHide = () => {
+      sendTabState('frozen');
+    };
+    handleVisibility();
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [activeNodeId, coordinator]);
+
+  useEffect(() => {
+    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const tick = () => {
+      const now = Date.now();
+      pollingTrackerRef.current.record(tabIdRef.current, now);
+      coordinator.sendPoll(channel, String(activeNodeId), now);
+      if (remoteUpdatedAt && now - remoteUpdatedAt > coordinator.quietThresholdTimeout) {
+        setRemoteProgress(null);
+        setRemoteStatus(null);
+        setRemoteUpdatedAt(null);
+      }
+      void maybeAutoResume();
+    };
+    tick();
+    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [activeNodeId, coordinator, maybeAutoResume, remoteUpdatedAt]);
+
+  useEffect(() => {
+    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
+    if (buildStatus !== 'running') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const tick = () => {
+      const now = Date.now();
+      const activeSessionId = coordinator.readActiveSessionId();
+      if (activeSessionId !== String(activeNodeId)) return;
+      coordinator.sendBroadcast(channel, String(activeNodeId), status ?? null, progress ?? null, now);
+      lastBroadcastAtRef.current = now;
+      lastBroadcastTabIdRef.current = tabIdRef.current;
+      coordinator.writeBroadcastAt(now);
+    };
+    tick();
+    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [activeNodeId, buildStatus, coordinator, progress, status]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    const shouldMonitor = data?.processingStatus === 'processing' && !data?.buildFinishedAt;
+    if (!shouldMonitor) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    if (buildStatus === 'running' || runtimeStatus === 'processing') {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    const now = Date.now();
+    const elapsedSinceStart = now - crashCheckStartedAtRef.current;
+    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
+    const lastBroadcast = lastBroadcastAtRef.current;
+    const lastAck = lastAckAtRef.current;
+    const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
+    const hasRecentBroadcast = lastBroadcast && now - lastBroadcast <= suspectWindowMs;
+    const hasRecentAck = lastAck && now - lastAck <= suspectWindowMs;
+    if (hasRecentBroadcast || hasRecentAck) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    const recentNonActive = getRecentNonActiveState(now);
+    if (recentNonActive) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (!suspendSuspectOpen) {
+        setSuspendSuspectMessage(
+          t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+        );
+        setSuspendSuspectOpen(true);
+      }
+      return;
+    }
+    if (suspendSuspectOpen) {
+      closeSuspendSuspect();
+    }
+    if (!crashSuspectOpen) {
+      setCrashSuspectMessage(
+        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+      );
+      setCrashSuspectOpen(true);
+    }
+  }, [
+    activeNodeId,
+    buildStatus,
+    closeCrashSuspect,
+    closeSuspendSuspect,
+    coordinator.pollIntervalTimeout,
+    coordinator.quietThresholdTimeout,
+    crashSuspectOpen,
+    data?.buildFinishedAt,
+    data?.processingStatus,
+    getRecentNonActiveState,
+    runtimeStatus,
+    suspendSuspectOpen,
+    t,
+  ]);
+
   const buildDownloadTaskPayloads = useCallback(async (): Promise<FetchTaskPayload[] | null> => {
     if (!workerClient) {
       notify.error('Worker client is unavailable.');
@@ -254,6 +543,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return false;
     }
+    const now = Date.now();
+    const hasRunner = coordinator.isRunnerTab(now);
+    const activeSessionId = coordinator.readActiveSessionId();
+    if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) {
+      notify.info('Another build session is active in this tab.');
+      return false;
+    }
+    coordinator.writeActiveSessionId(String(activeNodeId));
     // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
     if (canResume && !options?.forceRestart) {
       try {
@@ -263,6 +560,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         await persistDraftPatch({ processingStatus: 'processing' });
         return true;
       } catch (error) {
+        coordinator.clearActiveSessionId(String(activeNodeId));
         notify.error('Failed to resume build.');
         console.error('[ShapeBuildProgressStep] resume failed', error);
         return false;
@@ -270,12 +568,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     const saved = await saveDraftBeforeBatch();
     if (!saved) {
+      coordinator.clearActiveSessionId(String(activeNodeId));
       return false;
     }
     try {
       await bridgeRef.current.initialize();
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads || payloads.length === 0) {
+        coordinator.clearActiveSessionId(String(activeNodeId));
         return false;
       }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
@@ -288,11 +588,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await persistDraftPatch({ processingStatus: nextStatus });
       return true;
     } catch (error) {
+      coordinator.clearActiveSessionId(String(activeNodeId));
       notify.error('Failed to start or resume build.');
       console.error('[ShapeBuildProgressStep] start/resume failed', error);
       return false;
     }
-  }, [activeNodeId, buildStatus, buildDownloadTaskPayloads, canResume, persistDraftPatch, saveDraftBeforeBatch]);
+  }, [activeNodeId, buildStatus, buildDownloadTaskPayloads, canResume, coordinator, persistDraftPatch, saveDraftBeforeBatch]);
 
   const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
@@ -358,5 +659,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     totalElapsedMs: timingSnapshot.totalMs,
     stageElapsedMs: timingSnapshot.stageMs,
     stageRemainingMs: progressSummary.stageRemainingMs,
+    crashSuspectOpen,
+    crashSuspectMessage,
+    setCrashSuspectOpen: closeCrashSuspect,
+    suspendSuspectOpen,
+    suspendSuspectMessage,
+    setSuspendSuspectOpen: closeSuspendSuspect,
   };
 };

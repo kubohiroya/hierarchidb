@@ -72,6 +72,8 @@ export interface PluginDialogControllerOptions {
   open: boolean;
   initialStep?: number;
   forceInitialStep?: boolean;
+  urlState?: { mode?: DialogDisplayMode; step?: number };
+  onUrlStateChange?: (next: { mode: DialogDisplayMode; step: number }) => void;
   onClose: () => void;
   onSuccess?: (nodeId: NodeId) => void;
   footerOptions?: PluginDialogFooterOptions;
@@ -222,6 +224,8 @@ export function usePluginDialogController(
     open,
     initialStep = 1,
     forceInitialStep = false,
+    urlState,
+    onUrlStateChange,
     onClose,
     onSuccess,
     footerOptions,
@@ -308,6 +312,8 @@ export function usePluginDialogController(
     initialStep,
     forceInitialStep,
     initialDialogUIState: dialogUIState,
+    urlState,
+    onUrlStateChange,
   });
 
   const {
@@ -323,6 +329,7 @@ export function usePluginDialogController(
     dialogSize,
     displayMode,
     forceInitialStep,
+    urlStep: urlState?.step ?? null,
     restoreKey: (treeUpdater?.treeNodeId ?? nodeId) as string | number | null,
     restoreDeps: {
       setActiveStepIndex,

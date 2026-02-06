@@ -103,9 +103,11 @@ export const buildRawDataDataSourceCacheKey = (params: RawDataDataSourceCacheKey
   return buildShapeCacheKey(prefix, params.url ?? '');
 };
 
-export const isRawDataDataSourceCacheKey = (cacheKey?: string | null): boolean => (
-  Boolean(cacheKey && cacheKey.startsWith(RAW_DATA_CACHE_PREFIX))
-);
+export const isRawDataDataSourceCacheKey = (cacheKey?: string | null): boolean => {
+  if (!cacheKey) return false;
+  if (cacheKey.startsWith(RAW_DATA_CACHE_PREFIX)) return true;
+  return cacheKey.startsWith('http://') || cacheKey.startsWith('https://');
+};
 
 const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => (
   { buffer, contentType: RAW_DATA_DEFAULT_CONTENT_TYPE }

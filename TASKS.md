@@ -1,3 +1,274 @@
+2535) fix/dialog/url-step-overwrite-init (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/dialog/url-step-overwrite-init
+- 依存: なし
+- 受け入れ基準: 初期化中（Starting worker initialization...）で URL step が書き換わる経路を特定し、原因を説明する／必要なら修正し再発しないことを確認する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`, `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: 追加した監視/修正を revert する
+- チェックリスト:
+  - 初期化中に URL が書き換わる経路を特定する
+  - 書き換え元の呼び出し元を特定し、理由を説明する
+  - 必要なら修正とテストを実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 18:30 JST 初期化中に URL step が書き換わる問題の調査に着手。
+  - update: 2026-02-06 19:40 JST URL 初期化書き換えの再発防止テスト追加と原因コードの追加調査に着手。
+  - update: 2026-02-06 19:44 JST useDialogUrlSync の初期 step 書き換え抑止ガードを追加。
+  - update: 2026-02-06 19:48 JST plugin-base の unit test 追加と vitest projects へ plugin-base を追加。
+  - blocked: 2026-02-06 19:49 JST pnpm --filter @hierarchidb/plugin-base exec vitest run src/__tests__/useDialogUrlSync.unit.test.tsx が window 未定義で失敗。
+  - blocked: 2026-02-06 19:51 JST 同コマンドが replaceState SecurityError で失敗。
+  - update: 2026-02-06 19:53 JST useDialogUrlSync.unit.test.tsx を jsdom + 相対URLに修正。
+  - update: 2026-02-06 19:54 JST pnpm --filter @hierarchidb/plugin-base exec vitest run src/__tests__/useDialogUrlSync.unit.test.tsx exit 0 を確認。
+  - update: 2026-02-06 20:10 JST useDialogUrlSync 廃止方針の影響調査と撤去作業に着手。
+  - update: 2026-02-06 20:20 JST useDialogUrlSync を撤去し、AuthRequiredDialogHost の Cancel 遷移を router params 経由に変更。
+  - update: 2026-02-06 20:20 JST Shape Country Selection の dataSourceError で DialogContext の onStepNavigate により Step2 へ誘導。
+  - update: 2026-02-06 20:21 JST plugin-base から useDialogUrlSync の export/README 記述を削除し、vitest projects から plugin-base を除外。
+  - update: 2026-02-06 20:24 JST pnpm --filter @hierarchidb/plugin-base typecheck exit 0 を確認。
+  - update: 2026-02-06 20:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 20:26 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warning: define）を確認。
+  - update: 2026-02-06 20:40 JST PluginDialog 背景ブラーの制御パラメータ調査に着手。
+  - update: 2026-02-06 20:44 JST PluginDialogFrame の backdropFilter と backdropSx による制御を確認。
+  - update: 2026-02-06 20:47 JST PluginDialog の backdrop blur/alpha 調整に着手。
+  - update: 2026-02-06 20:49 JST PluginDialogFrame の backdropFilter を blur(1px) とし、暗幕 alpha を 0.15 に変更。
+  - update: 2026-02-06 20:50 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
+
+2535) fix/dialog/render-setstate-warning (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/dialog/render-setstate-warning
+- 依存: なし
+- 受け入れ基準: PluginDialogShell の render 中 setState 警告が再現しない／更新は適切な effect に移動される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/PluginDialogShell.tsx`（必要に応じて追加）
+- ロールバック手順: 追加した effect と条件分岐を revert して元の実装に戻す
+- チェックリスト:
+  - render 中の state 更新箇所を特定する
+  - effect での更新に置き換える
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 07:52 JST PluginDialogShell の render 中 setState 警告の対応に着手。
+  - update: 2026-02-06 07:56 JST URL 状態更新を effect 経由に移し、render 中のナビゲーション更新を抑制。
+  - update: 2026-02-06 07:56 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0。
+
+2536) fix/auth-required/router-provider-warning (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/auth-required/router-provider-warning
+- 依存: なし
+- 受け入れ基準: AuthRequiredDialogHost で RouterProvider 外の useRouter/useRouterState が発火しない／__store null エラーが再現しない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`（必要に応じて追加）
+- ロールバック手順: 追加したガード/遅延処理を revert して元の実装に戻す
+- チェックリスト:
+  - RouterProvider 外での hook 呼び出し経路を特定する
+  - ガードまたは遅延で警告/例外を回避する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 09:07 JST AuthRequiredDialogHost の RouterProvider 警告対応に着手。
+  - update: 2026-02-06 09:09 JST AuthRequiredDialogHost を rootRoute 配下へ移動し RouterProvider 外の hook 呼び出しを回避。
+  - update: 2026-02-06 09:09 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build は tsdown define 警告あり）。
+
+2534) fix/dialog/url-step-overwrite (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/dialog/url-step-overwrite
+- 依存: なし
+- 受け入れ基準: URL の step が dialogUIState 等で上書きされない／step=5 が step=1 に戻る挙動が解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/**`, `app/src/hooks/treeconsole/resolveOpenSteps.ts`（必要に応じて追加）
+- ロールバック手順: step 同期の条件分岐を元に戻す
+- チェックリスト:
+  - URL step を上書きする経路を特定する
+  - 上書き条件を撤去または抑止する
+  - 必要なら typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 16:40 JST URL step が dialogUIState 由来で書き換わる問題の調査に着手。
+  - update: 2026-02-06 16:46 JST mode セグメントが数値のとき step として扱う補正を追加。
+  - update: 2026-02-06 16:48 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-06 16:49 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warningあり）を確認。
+  - update: 2026-02-06 16:56 JST URL に step がある場合は dialogUIState の進捗復元をスキップするよう変更。
+  - update: 2026-02-06 17:02 JST URL の mode/step セグメント位置がずれていたため補正。
+  - update: 2026-02-06 17:04 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-06 17:05 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warningあり）を確認。
+  - update: 2026-02-06 17:18 JST tanstack params から step/mode を供給し、dialog 側の URL 解析を撤去。
+  - update: 2026-02-06 17:20 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-06 17:21 JST pnpm --filter @hierarchidb/plugin-ui-host build exit 0（define warningあり）を確認。
+  - update: 2026-02-06 17:22 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warningあり）を確認。
+  - update: 2026-02-06 17:28 JST urlState.step がある場合は frame-state 側の進捗復元を抑止。
+  - update: 2026-02-06 17:30 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-06 17:31 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warningあり）を確認。
+  - update: 2026-02-06 17:36 JST router の matches から dialog の params を取得するよう更新。
+  - update: 2026-02-06 18:15 JST dialog URL step の unit test を追加。
+  - update: 2026-02-06 18:17 JST pnpm --filter @hierarchidb/plugin-ui-host test 実行が OOM で終了したため、vitest exec に切り替え。
+  - update: 2026-02-06 18:18 JST pnpm --filter @hierarchidb/plugin-ui-host exec vitest run src/__tests__/dialog-url-step.unit.test.tsx exit 0 を確認。
+  - update: 2026-02-06 18:19 JST app 側 unit test を追加。
+  - update: 2026-02-06 18:20 JST pnpm --filter @hierarchidb/app exec vitest run src/router/__tests__/unit/plugin-dialog-step.unit.test.tsx exit 0 を確認。
+
+  - update: 2026-02-06 17:37 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-06 17:38 JST pnpm --filter @hierarchidb/plugin-ui-host build exit 0（define warningあり）を確認。
+  - update: 2026-02-06 17:39 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build warningあり）を確認。
+
+2533) fix/dialog/active-step-persist (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/dialog/active-step-persist
+- 依存: なし
+- 受け入れ基準: localStorage に PluginDialog:activeStep を保存しない／useMultiStepPersistence 由来の保存処理が撤去される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/hooks/useMultiStepPersistence.ts`
+- ロールバック手順: 保存用 useEffect を元に戻す
+- チェックリスト:
+  - localStorage への保存経路を撤去する
+  - 必要なら typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 16:28 JST PluginDialog:activeStep を localStorage へ保存する経路の撤去に着手。
+  - update: 2026-02-06 16:30 JST useMultiStepPersistence を no-op 化して localStorage 保存を撤去。
+  - update: 2026-02-06 16:33 JST useMultiStepPersistence を削除し、保存処理自体を撤去。
+  - update: 2026-02-06 16:34 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
+
+2532) fix/dialog/active-step-restore (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/dialog/active-step-restore
+- 依存: なし
+- 受け入れ基準: localStorage の PluginDialog:activeStep が URL の step を上書きしない／復元経路が撤去される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/hooks/useMultiStepPersistence.ts`
+- ロールバック手順: 復元用 useEffect を元に戻す
+- チェックリスト:
+  - localStorage からの復元経路を撤去する
+  - 必要なら typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 16:20 JST PluginDialog:activeStep の復元で URL step が上書きされる問題の調査に着手。
+  - update: 2026-02-06 16:22 JST localStorage から step を復元して setStep する経路を撤去。
+  - update: 2026-02-06 16:24 JST useMultiStepPersistence の setStep 依存を削除し typecheck を通過。
+  - update: 2026-02-06 16:25 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
+
+2531) fix/shape-build/task-status-progress-mismatch (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/task-status-progress-mismatch
+- 依存: なし
+- 受け入れ基準: タスク一覧で進捗が100未満のとき Completed/success 表示にならない／進捗100かつ完了条件を満たす場合のみ Completed 表示になる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskListVirtualized.tsx`（必要に応じて追加）
+- ロールバック手順: status 表示の条件分岐を元に戻す
+- チェックリスト:
+  - 表示進捗とステータス表示条件の不整合を解消する
+  - 必要なら typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 16:10 JST タスク一覧で Completed 表示が進捗と不整合になる問題の調査に着手。
+  - update: 2026-02-06 16:12 JST タスクの表示進捗が100未満の場合は Completed/success を出さないように調整。
+  - update: 2026-02-06 16:15 JST pnpm --filter @hierarchidb/shape-plugin typecheck が unused import で失敗したため修正。
+  - update: 2026-02-06 16:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2529) fix/shape-build/adaptive-tolerance (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/adaptive-tolerance
+- 依存: なし
+- 受け入れ基準: 高頂点数国でエラー終了する原因を特定し、適応的 tolerance の再処理が効いていない理由を説明する／必要なら修正方針を提示する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`（必要に応じて追加）
+- ロールバック手順: 追加した再処理/緩和ロジックを revert する
+- チェックリスト:
+  - 高頂点数エラーの発生経路を特定する
+  - tolerance の再処理ロジックを精読して適用条件を確認する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 14:18 JST 高頂点数国での transform エラー終了の調査に着手。
+  - update: 2026-02-06 14:24 JST transform の retry は per-feature の簡易化再試行のみで、overLimit が残ると失敗終了する仕様を確認。
+  - update: 2026-02-06 14:31 JST retry の tolerance 増分と回数を見直し、頂点数が多い feature ほど増分が大きくなるよう調整。
+  - update: 2026-02-06 14:32 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2528) fix/shape-build/transform-crash (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/transform-crash
+- 依存: なし
+- 受け入れ基準: fetch→transform 移行直後にブラウザが落ちる原因を特定し、再現条件と根本原因を説明する／必要なら修正方針を提示する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`（必要に応じて追加）
+- ロールバック手順: 追加した保護/制限/再試行ロジックを revert する
+- チェックリスト:
+  - fetch→transform 移行時の処理を精読してクラッシュ要因を特定する
+  - 必要なら最小修正で落ちない対策を提案する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 14:02 JST fetch→transform 移行でブラウザが落ちる問題の調査に着手。
+  - update: 2026-02-06 14:08 JST transform タスク生成時に fetchCache を toArray で全件読み込みしている点を特定。
+  - update: 2026-02-06 14:12 JST fetchCache を each で逐次走査してタスク生成するように変更。
+  - update: 2026-02-06 14:13 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 14:45 JST 大規模国→中小規模国の2フェイズで transform を実行し、国→ズーム帯順のタスク生成を追加。
+  - update: 2026-02-06 14:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 15:05 JST transform を国→ズーム帯順に分割実行し、フェイズごとに逐次 put+run するよう変更。
+  - update: 2026-02-06 15:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 16:15 JST transform ステージの unused import を整理し typecheck 通過を確認。
+
+2529) refactor/shape-transform/adaptive-only (P1) — 進行中 (2026-02-05)
+- ブランチ名: refactor/shape-transform/adaptive-only
+- 依存: なし
+- 受け入れ基準: step4 の transform セクションから簡略化カードが撤廃される／step5 のビルド中で tolerance#1/#2 の分割処理が撤廃され、アダプティブ調整方式に一本化される／1ポリゴン頂点数上限 6553 の条件を満たす／必要な typecheck が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/worker/**`, `packages/**`（transform 処理周辺）
+- ロールバック手順: step4 UI と step5 変換処理の差分を revert して旧方式へ戻す
+- チェックリスト:
+  - step4 の transform 簡略化カードを撤廃する
+  - step5 の tolerance#1/#2 分割処理を撤廃する
+  - アダプティブ調整方式に一本化する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-05 23:50 JST shape の transform アダプティブ一本化に着手。
+  - update: 2026-02-05 23:56 JST step4 の Transform 簡略化カードを撤廃し、tolerance#1/#2 の処理参照を削除。
+  - update: 2026-02-05 23:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-05 23:57 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2530) refactor/shape-transform/remove-area-based-tolerance (P1) — 完了 (2026-02-06)
+- ブランチ名: refactor/shape-transform/remove-area-based-tolerance
+- 依存: なし
+- 受け入れ基準: areaBasedTolerance 設定が型/デフォルト/テスト/翻訳含め完全撤去される／shape/route など参照箇所が残らない／必要な typecheck が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/transform/geometry.ts`, `e2e/**`
+- ロールバック手順: areaBasedTolerance 関連の型/デフォルト/参照を復元する
+- チェックリスト:
+  - areaBasedTolerance の型/デフォルト/参照/翻訳/テストを撤去する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 00:03 JST areaBasedTolerance 設定の完全撤去に着手。
+  - update: 2026-02-06 00:08 JST areaBasedTolerance の型/デフォルト/テスト/翻訳/マージ処理を撤去。
+  - update: 2026-02-06 00:10 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-02-06 00:10 JST pnpm --filter @hierarchidb/gis-sdk typecheck exit 0 を確認。
+  - update: 2026-02-06 00:10 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 00:10 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 00:10 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-06 00:11 JST shape-plugin の defaults から areaBasedTolerance を削除し、typecheck を再確認（exit 0）。
+  - done: 2026-02-06 00:11 JST areaBasedTolerance 設定の完全撤去を完了。
+
+2531) fix/build-task/transactional-retry (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/build-task/transactional-retry
+- 依存: なし
+- 受け入れ基準: 中断されたタスクの結果が不完全に永続化されない（トランザクションで保護）／再開時に中断タスクが最初から再処理される／必要な typecheck が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/batch/src/**`, `packages/runtime-worker/src/**`, `plugins/**`（タスク永続化/再開処理）
+- ロールバック手順: 追加したトランザクション/再開制御を revert して元の処理に戻す
+- チェックリスト:
+  - タスク結果の書き込みをトランザクション保護する
+  - 再開時の中断タスクを最初から再処理する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 01:09 JST ビルドタスクのトランザクション保護と再処理の対応に着手。
+  - update: 2026-02-06 01:17 JST DoD 承認のうえ、タスク結果のトランザクション化と再処理条件の調査を再開。
+  - update: 2026-02-06 01:24 JST transform 完了時の transformCache と buildTasks 更新を同一トランザクションに統合し、taskUpdated フラグで二重更新を抑止。
+  - update: 2026-02-06 01:24 JST TaskStatus に regression を追加し、ephemeral buildTasks の outputData を拡張して進捗情報を許容。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/batch-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/batch-api typecheck exit 0。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/gis-sdk typecheck exit 0。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
+
+2527) fix/shape-build/queued-task-stuck (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-build/queued-task-stuck
+- 依存: なし
+- 受け入れ基準: fetch ステージの一部タスクが queued のまま残る原因を特定し、必要なら修正して再現しないこと／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `packages/features/batch/src/**`, `packages/features/shape-store/src/**`（必要に応じて追加）
+- ロールバック手順: 追加したタスク状態更新/進捗反映ロジックを元に戻す
+- チェックリスト:
+  - queued 残存の経路を特定する
+  - 必要なら状態更新ロジックを修正する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 13:24 JST fetch ステージの queued 残存問題の調査に着手。
+  - update: 2026-02-06 13:35 JST taskType 欠落レコードが stage クエリに乗らず queued が残る仮説で正規化処理を追加。
+  - update: 2026-02-06 13:36 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 13:50 JST buildTasks への入力型に taskType を必須化する型を追加し、update から taskType を禁止。
+  - update: 2026-02-06 13:52 JST pnpm --filter @hierarchidb/shape-api typecheck exit 0 を確認。
+  - update: 2026-02-06 13:53 JST pnpm --filter @hierarchidb/runtime-worker typecheck が dist 未更新で失敗 → pnpm --filter @hierarchidb/shape-api build 実行後に exit 0。
+  - update: 2026-02-06 13:54 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2526) fix/appbar/build-session-buttons-running (P1) — 進行中 (2026-02-06)
 - ブランチ名: fix/appbar/build-session-buttons-running
 - 依存: なし
@@ -29,6 +300,22 @@
   - start: 2026-02-06 12:30 JST Shape Create のデフォルト国選択を Level0 のみにする作業に着手。
   - update: 2026-02-06 12:31 JST createDefaultSelectionRow を Level0 のみに限定。
 
+2525) fix/app/build-unloadable-session-coordinator (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/app/build-unloadable-session-coordinator
+- 依存: なし
+- 受け入れ基準: app build で @hierarchidb/ui-session-coordinator / @hierarchidb/session-coordinator の unloadable エラーが解消される／`pnpm --filter @hierarchidb/app build` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `pnpm-lock.yaml`
+- ロールバック手順: lockfile の差分を revert して元の依存状態へ戻す
+- チェックリスト:
+  - workspace install で session-coordinator 系が link されることを確認する
+  - app build を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 09:10 JST app build の unloadable dependency 修正に着手。
+  - update: 2026-02-06 09:11 JST pnpm install --no-frozen-lockfile を実行して workspace link を復旧。
+  - update: 2026-02-06 09:12 JST pnpm --filter @hierarchidb/app build exit 0 を確認。
+  - done: 2026-02-06 09:12 JST session-coordinator 依存の unloadable エラーを解消。
+
 2524) fix/shape-store/buildtasks-stage-index (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/shape-store/buildtasks-stage-index
 - 依存: なし
@@ -44,6 +331,57 @@
   - update: 2026-02-05 23:06 JST EphemeralShapeDB version 20 に [nodeId+stage] を追加。
   - update: 2026-02-05 23:07 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
   - done: 2026-02-05 23:07 JST buildTasks の [nodeId+stage] インデックス追加を完了。
+
+2529) fix/shape-build/auto-resume-after-reload (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape-build/auto-resume-after-reload
+- 依存: なし
+- 受け入れ基準: ビルド中セッションが永続化されている場合にリロード後も自動再開される／再開対象が存在しない場合は再開しない／既存のビルド開始/停止に副作用がない／`pnpm --filter @hierarchidb/app typecheck` が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/BuildSessionLauncherButtons.tsx`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts` ほか（調査後に確定）
+- ロールバック手順: 自動再開ロジックの差分を revert して元に戻す
+- チェックリスト:
+  - リロード後にビルド再開が止まる原因を特定する
+  - 自動再開が働くよう修正する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:57 JST リロード後の自動再開停止の調査に着手。
+  - update: 2026-02-05 23:01 JST autoResume 判定に runtimeStatus=processing を加味してリロード後の再開を許可。
+  - update: 2026-02-05 23:05 JST autoResume のリロード再開を検証するテストを追加。
+  - blocked: 2026-02-05 23:07 JST pnpm --filter @hierarchidb/shape-plugin test が既存の headless テスト失敗（shape-vt-pipeline.full-flow: fetch failed）で失敗。
+  - update: 2026-02-05 23:18 JST shape-vt-pipeline.full-flow を HDB_NETWORK_TESTS=1 時のみ実行するよう調整。
+  - blocked: 2026-02-05 23:23 JST pnpm --filter @hierarchidb/shape-plugin test -- src/headless/__tests__/shape-vt-pipeline.full-flow.headless.test.ts がタイムアウト（長時間の wfl/headless 実行）で完走せず。
+  - blocked: 2026-02-05 23:02 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存の未使用変数エラー（buildTransformByBandTasks）で失敗。
+  - update: 2026-02-06 19:10 JST BroadcastChannel sessions + UUID 選出 + Dexie セマフォでの再開制御へ移行する作業に着手。
+  - update: 2026-02-06 19:35 JST UI 共通インフラ化（新規 packages/ui-session-coordinator）へ方針変更。
+  - update: 2026-02-06 20:05 JST pnpm --filter @hierarchidb/session-coordinator build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 20:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 20:55 JST pnpm --filter @hierarchidb/session-coordinator build exit 0（tsdown define 警告あり）を再確認。
+
+2528) fix/appbar/build-session-pubsub (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/appbar/build-session-pubsub
+- 依存: なし
+- 受け入れ基準: 他タブでのビルド開始/進行/完了が AppBar のビルド中セッションに反映される／Dexie 更新を pub/sub で受信できる／既存の AppBar 表示に副作用がない／`pnpm --filter @hierarchidb/app typecheck` が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/appbar/AppBar.tsx`, `app/src/components/BuildSessionLauncherButtons.tsx`, `packages/worker-api/src/**`, `packages/runtime-worker/src/**`（調査後に確定）
+- ロールバック手順: build session pub/sub の差分を revert して元に戻す
+- チェックリスト:
+  - 他タブ更新が AppBar に反映されない原因を特定する
+  - pub/sub 経由で最新状態が届くよう修正する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:44 JST AppBar ビルド中セッション pub/sub 不具合調査に着手。
+  - update: 2026-02-05 22:49 JST BuildSession 更新を BroadcastChannel で通知し、subscribe 側で再取得するよう追加。
+  - update: 2026-02-05 22:50 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-02-05 22:51 JST pnpm --filter @hierarchidb/runtime-worker build exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-02-05 22:52 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown define 警告あり）を確認。
+  - update: 2026-02-06 19:10 JST BroadcastChannel sessions 方式で AppBar ボタンの状態表示を作り直す作業に着手。
+  - update: 2026-02-06 19:35 JST AppBar 連携も ui-session-coordinator 側へ寄せる方針に変更。
+  - blocked: 2026-02-06 20:07 JST pnpm --filter @hierarchidb/app typecheck が既存の plugin-dialog-step.unit.test.tsx 型エラーで失敗（NodeType 変換/never）。
+  - update: 2026-02-06 20:24 JST plugin-dialog-step.unit.test.tsx の NodeId/TreeId/NodeType と client 型を修正し、pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown define 警告あり）を確認。
+  - update: 2026-02-06 20:56 JST pnpm --filter @hierarchidb/ui-session-coordinator build exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-02-06 20:57 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 20:58 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown define 警告あり）を確認。
+  - update: 2026-02-06 21:15 JST route のビルド自動再開（BroadcastChannel/UUID/セマフォ）を適用し、pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
 
 2527) fix/tree-console/context-menu-create-folder-only (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/tree-console/context-menu-create-folder-only
@@ -12966,7 +13304,143 @@
   - start: 2026-02-05 22:54 JST build 中の delete ボタン有効化条件の修正に着手。
   - update: 2026-02-05 22:54 JST running/paused/failed/queued を busy 判定に含め、delete 有効化条件を調整。
   - update: 2026-02-05 23:02 JST processingStatus(processing/paused/failed) でも delete を有効化するよう補正。
-  - done: 2026-02-05 23:02 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 00:28 JST transform error/タイル/metadata の実数を削除対象に反映し、件数 0 での無効化を回避。
+  - done: 2026-02-06 00:28 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2445) fix/shape/invalid-build-session-config (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape/invalid-build-session-config
+- 依存: なし
+- 受け入れ基準: Shape build start/resume で Invalid build session config が発生しない／build session config が現行形式で保存される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts`, `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: isBuildProcessConfig と buildBuildSessionConfig の変更を元に戻す
+- チェックリスト:
+  - build session config の検証条件を現行形式に合わせる
+  - build session config を vectorTiles 形式で保存する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-05 23:12 JST Invalid build session config の修正に着手。
+  - update: 2026-02-05 23:14 JST build session config 判定を現行(fetchConfig/transformConfig/vectorTiles)と旧形式に対応。
+  - update: 2026-02-05 23:14 JST build session config を dataSource/vectorTiles 形式で保存するよう修正。
+  - update: 2026-02-05 23:14 JST getBuildSession は ShapeBuildConfig を返すように戻し型エラーを解消。
+  - update: 2026-02-06 00:01 JST build session config の旧形式 fallback を撤去し現行形式のみ許可。
+  - update: 2026-02-06 00:09 JST BatchSession.config を BuildSessionConfig に統一し、build session 保存は dataSource/vectorTiles 形式に固定。
+  - update: 2026-02-06 00:09 JST DEFAULT_BUILD_CONFIG の areaBasedTolerance を再定義し型を満たす。
+  - done: 2026-02-06 00:09 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2446) fix/gis-sdk/buildtasks-index-nodeId-stage (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/gis-sdk/buildtasks-index-nodeId-stage
+- 依存: なし
+- 受け入れ基準: buildTasks に [nodeId+stage] index が追加され SchemaError が出ない／DB version が更新される／pnpm --filter @hierarchidb/gis-sdk typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralBuildState.ts`, `packages/features/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`
+- ロールバック手順: 追加した index と DB version を元に戻す
+- チェックリスト:
+  - buildTasks schema に [nodeId+stage] を追加する
+  - DB version を更新する
+  - pnpm --filter @hierarchidb/gis-sdk typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 00:31 JST buildTasks の nodeId+stage index 追加に着手。
+  - done: 2026-02-06 00:31 JST pnpm --filter @hierarchidb/gis-sdk typecheck exit 0 を確認。
+2447) fix/shape/fetch-task-stuck-queued-running (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape/fetch-task-stuck-queued-running
+- 依存: なし
+- 受け入れ基準: fetch ステージの stale running タスクが再開時に queued へ戻り進捗が更新される／他ステージと同じ対策が適用される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipelineFetchStage.ts`
+- ロールバック手順: resetStageRunningTasks の呼び出しを元に戻す
+- チェックリスト:
+  - fetch ステージに stale running タスクのリセットを追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 00:36 JST fetch の stale running タスク対策に着手。
+  - update: 2026-02-06 00:50 JST subscribeToTasks で sequence を必須化し、古い update を破棄する処理を追加。
+  - done: 2026-02-06 00:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2448) fix/shape/tasklist-virtual-scroll-loop (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape/tasklist-virtual-scroll-loop
+- 依存: なし
+- 受け入れ基準: TaskListVirtualized のスクロール要求が無限に再実行されず Maximum update depth exceeded が発生しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskListVirtualized.tsx`
+- ロールバック手順: 追加したスクロール要求のガードを削除して元の挙動に戻す
+- チェックリスト:
+  - スクロール要求の重複実行を抑止する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 01:12 JST TaskListVirtualized のスクロール要求ループ修正に着手。
+  - update: 2026-02-06 01:15 JST scrollRequestId のガード追加でスクロール要求を一度だけ処理するよう修正。
+  - update: 2026-02-06 01:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck が scrollRequestId 未定義で exit 2。
+  - update: 2026-02-06 01:17 JST TaskListVirtualized で scrollRequestId を props から受け取るよう修正。
+  - done: 2026-02-06 01:18 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2449) fix/shape/transform-resume-task-reset-crash (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape/transform-resume-task-reset-crash
+- 依存: なし
+- 受け入れ基準: 再開時に transform タスクが空へリセットされず、異常な 3 件のみ再登録→クラッシュの挙動が発生しない／再開後のタスク進捗が安定して更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/vt-orchestrator/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来挙動へ戻す
+- チェックリスト:
+  - 再開時の transform タスク再構築経路を特定する
+  - 空リセット/3 件再登録に繋がる条件を修正する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 01:25 JST transform 再開時のタスクリセット/クラッシュの調査に着手。
+  - update: 2026-02-06 01:42 JST resumeBatchSession で build session config を優先して再開し、draft 更新による config 変更で既存 transform タスクが消えるのを防ぐよう修正。
+  - update: 2026-02-06 01:42 JST build session config が不正な場合は即時エラーで停止するよう追加。
+  - done: 2026-02-06 01:43 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2450) fix/shape/step4-api-cache-delete-enabled (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape/step4-api-cache-delete-enabled
+- 依存: なし
+- 受け入れ基準: Step4 の API キャッシュ削除ボタンがキャッシュ存在時に enabled になる／キャッシュの判定が誤判定しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/useFetchConfigSection.ts`（必要に応じて追加）
+- ロールバック手順: API キャッシュ判定の修正を revert する
+- チェックリスト:
+  - API キャッシュ有無の判定経路を確認する
+  - Step4 の delete 有効化条件を修正する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 01:51 JST Step4 API キャッシュ削除ボタンの有効化条件調査に着手。
+  - update: 2026-02-06 02:02 JST API キャッシュの URL ベースキーを削除/カウント対象に含めるため isRawDataDataSourceCacheKey を拡張。
+  - update: 2026-02-06 02:04 JST pnpm --filter @hierarchidb/shape-plugin typecheck が ShapeBuildAPIClient の出力型不一致で exit 2。
+  - update: 2026-02-06 02:09 JST ShapeTransformTaskResult に processedPolygons/totalPolygons を追加し shape-api build を実行（tsdown 警告あり）。
+  - update: 2026-02-06 02:11 JST useFetchConfigSection の stage undefined ガードを追加。
+  - done: 2026-02-06 02:12 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2451) fix/shape/auto-resume-persisted-build-session (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape/auto-resume-persisted-build-session
+- 依存: なし
+- 受け入れ基準: 永続化された build session が running だが稼働中タブがない場合に自動再開される／Step5 画面でセッション更新の購読が開始され UI が反映される／誤再開しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/worker/**`（必要に応じて追加）
+- ロールバック手順: 自動再開と購読追加の差分を revert する
+- チェックリスト:
+  - 永続化セッションの状態確認と再開条件を整理する
+  - Step5 画面で更新購読を開始する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 02:18 JST build session 永続状態に基づく自動再開/購読追加の調査に着手。
+  - update: 2026-02-06 02:39 JST getBatchSession が永続セッションを返すよう修正し、BatchSessionStatus 取得経路で更新時刻を反映。
+  - update: 2026-02-06 03:05 JST ポーリング/ステール判定を撤去し、BroadcastChannel(sessions) による配信/ポーリング/ACK を追加。
+  - update: 2026-02-06 03:05 JST UUID 昇順リーダー選出と Dexie セマフォ取得後の自動 resume を追加。
+  - update: 2026-02-06 22:00 JST session-coordinator の timeout オプション命名を *Timeout に統一し、shape/route/AppBar の参照を更新。
+  - update: 2026-02-06 22:02 JST pnpm --filter @hierarchidb/session-coordinator build exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-02-06 22:03 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 22:03 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 22:12 JST 失踪判定で tab-state を参照し、suspend/crash を分離するダイアログ表示と自動再開ガードを追加。
+  - update: 2026-02-06 22:15 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-06 22:15 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-06 22:15 JST timeout 命名統一と suspend/crash 分離を完了。
+2452) fix/app/build-session-tab-coordination (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/app/build-session-tab-coordination
+- 依存: なし
+- 受け入れ基準: 実行中タブなし⇄単一実行タブの遷移が安定し二重再開が起きない／同一タブで複数セッションが running でもアクティブは1件のみ／AppBar のビルドセッションボタンのボーダー/色が実行中タブとアクティブセッションに連動する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`, `app/src/components/BuildSessionLauncherButtons.tsx`（必要に応じて追加）
+- ロールバック手順: 追加したセッション調停/ボタン表示変更を revert する
+- チェックリスト:
+  - 実行タブ選出/待機制御のロジックを追加する
+  - AppBar ボタンの表示条件を更新する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-06 03:20 JST タブ間セッション調停と AppBar 表示制御の調査に着手。
 2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/route/reference-node-links
 - 依存: なし

@@ -1,0 +1,33 @@
+{
+  "name": "@hierarchidb/ui-session-coordinator",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "format": "biome check --write src",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "clean": "rm -rf dist",
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@hierarchidb/session-coordinator": "workspace:*",
+    "react": "^18.3.1"
+  },
+  "license": "MIT",
+  "module": "dist/index.js",
+  "peerDependencies": {
+    "@hierarchidb/session-coordinator": "workspace:*",
+    "react": "^18.3.1"
+  }
+}

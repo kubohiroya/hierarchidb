@@ -319,6 +319,12 @@
       "@hierarchidb/runtime-worker/*": [
         "packages/runtime-worker/dist/*"
       ],
+      "@hierarchidb/session-coordinator": [
+        "packages/session-coordinator/dist/index.d.ts"
+      ],
+      "@hierarchidb/session-coordinator/*": [
+        "packages/session-coordinator/dist/*"
+      ],
       "@hierarchidb/shape-plugin": [
         "plugins/shape-plugin/dist/index.d.ts"
       ],
@@ -531,6 +537,12 @@
       ],
       "@hierarchidb/ui-search-result-window/*": [
         "packages/ui/search-result-window/dist/*"
+      ],
+      "@hierarchidb/ui-session-coordinator": [
+        "packages/ui/session-coordinator/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-session-coordinator/*": [
+        "packages/ui/session-coordinator/dist/*"
       ],
       "@hierarchidb/ui-tabular": [
         "packages/ui/tabular-extract/dist/index.d.ts"

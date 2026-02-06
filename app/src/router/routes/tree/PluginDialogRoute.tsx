@@ -39,6 +39,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     forceInitialStep,
     handleClose,
     handleSuccess,
+    handleUrlStateChange,
     isOpen,
     isReady,
     mode,
@@ -47,6 +48,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     resolvedPageNodeId,
     resolvedTargetNodeId,
     resolvedTreeId,
+    urlDisplayMode,
   } = usePluginDialogRoute(data);
 
   if (!isReady) {
@@ -72,6 +74,8 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       onSuccess={handleSuccess}
       initialStep={currentStep}
       forceInitialStep={forceInitialStep}
+      urlState={{ mode: urlDisplayMode, step: currentStep }}
+      onUrlStateChange={handleUrlStateChange}
       backdropDismissEnabled={backdropDismissEnabled}
       autoBuild={autoBuild}
       removePaddingWithFullScreenMode={removePaddingWithFullScreenMode}

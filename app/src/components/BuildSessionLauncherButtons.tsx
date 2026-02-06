@@ -27,6 +27,7 @@ import { proxy } from 'comlink';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow.ts';
 import { openInNewTab } from '~/utils/openInNewTab.ts';
+import { useSessionCoordinator } from '@hierarchidb/ui-session-coordinator';
 
 type BuildSessionLauncherButtonsProps = {
   treeId?: TreeId;
@@ -115,11 +116,15 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   const { client: workerClient } = useWorker();
   const { t } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
+  const coordinator = useSessionCoordinator();
   const shapeNodeType = 'shape' as NodeType;
   const stages = useBuildStages(t);
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
   const [entries, setEntries] = useState<BuildSessionEntry[]>([]);
   const nodeCacheRef = useRef<Map<string, { node: TreeNode | null; nodePath: string }>>(new Map());
+  const tabIdRef = useRef<string>(coordinator.getTabId());
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const [isRunnerTab, setIsRunnerTab] = useState(false);
   const location = useRouterState({ select: (state) => state.location });
   const returnTo = useMemo(() => `${location.pathname}${location.searchStr ?? ''}`, [location.pathname, location.searchStr]);
 
@@ -177,6 +182,62 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
       }
     };
   }, [workerClient]);
+
+  const sendAck = useCallback((sessionId: string, receivedTabId: string) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    coordinator.sendAck(channel, sessionId, receivedTabId);
+  }, [coordinator]);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = coordinator.openChannel();
+    channelRef.current = channel;
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (!coordinator.isSessionChannelMessage(message)) return;
+      if (message.tabId === tabIdRef.current) return;
+      sendAck(message.sessionId, message.tabId);
+    };
+    channel.addEventListener('message', handleMessage);
+    return () => {
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+      if (channelRef.current === channel) {
+        channelRef.current = null;
+      }
+    };
+  }, [coordinator, sendAck]);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    if (entries.length === 0) return;
+    const tick = () => {
+      const now = Date.now();
+      entries.forEach((entry) => {
+        coordinator.sendPoll(channel, String(entry.session.nodeId), now);
+      });
+    };
+    tick();
+    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [coordinator, entries]);
+
+  useEffect(() => {
+    const updateRunner = () => {
+      const now = Date.now();
+      setIsRunnerTab(coordinator.isRunnerTab(now));
+    };
+    updateRunner();
+    const intervalId = setInterval(updateRunner, 1000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [coordinator]);
 
   const handleNavigateToBuild = useCallback(
     async (entry: BuildSessionEntry, options?: { openInNewTab?: boolean }) => {
@@ -258,6 +319,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   }, [entries, stageById, t]);
 
   if (resolvedEntries.length === 0) return null;
+  const activeSessionId = coordinator.readActiveSessionId();
 
   return (
     <Card
@@ -275,6 +337,9 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
           const nodeType = entry.node?.nodeType ?? 'folder';
           const nodePath = entry.nodePath || nodeName;
           const icon = resolveIcon({ nodeType });
+          const isActive = isRunnerTab && activeSessionId === String(entry.session.nodeId);
+          const variant = isRunnerTab ? 'outlined' : 'text';
+          const color = isActive ? 'primary' : 'inherit';
           const countsText = t(
             'stage.progress.countsWithUnit',
             '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}',
@@ -344,7 +409,8 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
               <LoadingButton
                 loading
                 size="small"
-                variant="outlined"
+                variant={variant}
+                color={color}
                 startIcon={icon}
                 onClick={(event) => handleNavigateToBuild(entry, { openInNewTab: event.shiftKey })}
               >

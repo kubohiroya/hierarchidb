@@ -29,6 +29,7 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
+import { createPollingTracker, createSessionCoordinator } from '@hierarchidb/session-coordinator';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,
@@ -129,6 +130,15 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
+  const coordinator = useMemo(() => (
+    createSessionCoordinator({
+      channelName: 'sessions',
+      pollIntervalTimeout: 3000,
+      quietThresholdTimeout: 5000,
+      semaphoreTtlTimeout: 10000,
+    })
+  ), []);
+  const routeData = useMemo(() => getRouteUpdaterPayload(draft), [draft]);
   const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('stage.notConfigured', 'Not configured');
   const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('stage.notConfigured', 'Not configured');
   const transportLabel = resolveTransportLabel(draft, t);
@@ -183,10 +193,48 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     taskMessage?: string;
     reason?: string;
   } | null>(null);
+  const [crashSuspectOpen, setCrashSuspectOpen] = useState(false);
+  const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
+  const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
+  const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
+  const closeCrashSuspect = useCallback(() => {
+    setCrashSuspectOpen(false);
+    setCrashSuspectMessage(null);
+    crashCheckStartedAtRef.current = Date.now();
+  }, []);
+  const closeSuspendSuspect = useCallback(() => {
+    setSuspendSuspectOpen(false);
+    setSuspendSuspectMessage(null);
+    crashCheckStartedAtRef.current = Date.now();
+  }, []);
   const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const tabIdRef = useRef<string>(coordinator.getTabId());
+  const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
+  const lastBroadcastAtRef = useRef<number | null>(null);
+  const lastBroadcastTabIdRef = useRef<string | null>(null);
+  const lastAckAtRef = useRef<number | null>(null);
+  const lastAckTabIdRef = useRef<string | null>(null);
+  const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
+  const lastAutoResumeAtRef = useRef<number | null>(null);
+  const crashCheckStartedAtRef = useRef<number>(Date.now());
+  const suspendTimeout = coordinator.quietThresholdTimeout * 3;
+  const getRecentNonActiveState = useCallback((referenceTime: number) => {
+    let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
+    for (const entry of tabStateRef.current.values()) {
+      if (entry.state === 'active') continue;
+      if (!latest || entry.at > latest.at) {
+        latest = entry;
+      }
+    }
+    if (!latest) return null;
+    if (referenceTime - latest.at > suspendTimeout) return null;
+    return latest;
+  }, [suspendTimeout]);
   const heapPauseRef = useRef<number | null>(null);
   const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
+  const sessionId = routeNodeId ? String(routeNodeId) : null;
   const crashInsight = useRouteBuildCrashInsight({ draft, nodeId: routeNodeId ? String(routeNodeId) : null });
   const monitorKey = useMemo(
     () => getBuildMonitorKey(buildMonitorConfig, routeNodeId ? String(routeNodeId) : null),
@@ -232,6 +280,86 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   }, [status]);
 
   useEffect(() => {
+    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
+    const channel = coordinator.openChannel();
+    channelRef.current = channel;
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (!coordinator.isSessionChannelMessage(message)) return;
+      if (message.sessionId !== sessionId) return;
+      if (message.tabId === tabIdRef.current) return;
+      const now = Date.now();
+      if (message.type === 'broadcast') {
+        lastBroadcastAtRef.current = now;
+        lastBroadcastTabIdRef.current = message.tabId;
+      }
+      if (message.type === 'poll') {
+        pollingTrackerRef.current.record(message.tabId, now);
+      }
+      if (message.type === 'tab-state') {
+        tabStateRef.current.set(message.tabId, { state: message.tabState, at: now });
+      }
+      if (message.type === 'ack' && message.receivedTabId === tabIdRef.current) {
+        lastAckAtRef.current = now;
+        lastAckTabIdRef.current = message.tabId;
+      }
+      coordinator.sendAck(channel, message.sessionId, message.tabId);
+    };
+    channel.addEventListener('message', handleMessage);
+    return () => {
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+      if (channelRef.current === channel) {
+        channelRef.current = null;
+      }
+    };
+  }, [coordinator, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const sendTabState = (state: 'active' | 'hidden' | 'frozen') => {
+      coordinator.sendTabState(channel, sessionId, state);
+    };
+    const handleVisibility = () => {
+      const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      sendTabState(isHidden ? 'hidden' : 'active');
+    };
+    const handlePageHide = () => {
+      sendTabState('frozen');
+    };
+    handleVisibility();
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [coordinator, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
+    if (status !== 'running') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const tick = () => {
+      const now = Date.now();
+      const activeSessionId = coordinator.readActiveSessionId();
+      if (activeSessionId !== sessionId) return;
+      coordinator.sendBroadcast(channel, sessionId, status, { percentage: overallProgress }, now);
+      coordinator.writeBroadcastAt(now);
+      lastBroadcastAtRef.current = now;
+      lastBroadcastTabIdRef.current = tabIdRef.current;
+    };
+    tick();
+    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [coordinator, overallProgress, sessionId, status]);
+
+  useEffect(() => {
     if (status !== 'running') {
       heapPauseRef.current = null;
       return;
@@ -268,6 +396,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     if (status !== 'completed' && status !== 'failed') return;
     recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
   }, [monitorKey, status]);
+
 
   const errorColumns = useMemo<GridColumn<IdeGsmRouteError>[]>(() => ([
     { id: 'rowNumber', label: t('stage.errors.columns.row', 'Row'), width: 90, sortable: true },
@@ -385,8 +514,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     status,
   ]);
 
-  const runIdeGsmBuild = useCallback(async () => {
+  const runIdeGsmBuild = useCallback(async (options?: { autoResume?: boolean }) => {
     if (buildInFlightRef.current) return;
+    if (!sessionId) {
+      notify.error(t('stage.errors.missingNode', 'Route node is missing.'));
+      return;
+    }
     if (!api) {
       notify.error(t('stage.errors.missingApi', 'Worker API is unavailable.'));
       return;
@@ -402,6 +535,18 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       return;
     }
 
+    const now = Date.now();
+    const hasRunner = coordinator.isRunnerTab(now);
+    const activeSessionId = coordinator.readActiveSessionId();
+    if (hasRunner && activeSessionId && activeSessionId !== sessionId) {
+      notify.info('Another build session is active in this tab.');
+      return;
+    }
+    if (!options?.autoResume) {
+      coordinator.writeActiveSessionId(sessionId);
+    } else if (!activeSessionId) {
+      coordinator.writeActiveSessionId(sessionId);
+    }
     buildInFlightRef.current = true;
     setStatus('running');
     setOverallProgress(0);
@@ -415,11 +560,11 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     });
     try {
       await initialize();
-      const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId;
+      const resolvedRouteNodeId = routeNodeId as NodeId;
       const routeMutation = await api.getRouteMutationAPI();
       const result = await routeMutation.importIdeGsmRoutes(
         {
-          nodeId: routeNodeId,
+          nodeId: resolvedRouteNodeId,
           tabularSourceId: sourceId,
           chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
         },
@@ -438,13 +583,13 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
       const [minZoom, maxZoom] = resolveZoomRange();
       setOverallProgress(FETCH_STAGE_MAX + 1);
-      await routeMutation.buildRouteTileIndex({ nodeId: routeNodeId, minZoom, maxZoom });
+      await routeMutation.buildRouteTileIndex({ nodeId: resolvedRouteNodeId, minZoom, maxZoom });
       setOverallProgress(TRANSFORM_STAGE_MAX);
 
       const vtConfig = resolveVectorTileConfig();
       setOverallProgress(TRANSFORM_STAGE_MAX + 1);
       await routeMutation.generateRouteVectorTiles({
-        nodeId: routeNodeId,
+        nodeId: resolvedRouteNodeId,
         minZoom,
         maxZoom,
         bufferSize: vtConfig.bufferSize,
@@ -462,16 +607,134 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       onUpdate({ processingStatus: 'failed', processingError: message, buildFinishedAt: Date.now() });
     } finally {
       buildInFlightRef.current = false;
+      coordinator.clearActiveSessionId(sessionId);
     }
   }, [
     api,
+    coordinator,
     draft,
     initialize,
     mapIdeGsmProgress,
-    nodeId,
+    routeNodeId,
+    sessionId,
     onUpdate,
     resolveVectorTileConfig,
     resolveZoomRange,
+    t,
+  ]);
+
+  const shouldAutoResume = Boolean(
+    routeData.processingStatus === 'processing' && !routeData.buildFinishedAt,
+  );
+  const maybeAutoResume = useCallback(async () => {
+    if (!sessionId) return;
+    if (!shouldAutoResume) return;
+    if (status === 'running' || buildInFlightRef.current) return;
+    const now = Date.now();
+    const recentNonActive = getRecentNonActiveState(now);
+    if (recentNonActive) return;
+    const lastBroadcast = lastBroadcastAtRef.current;
+    if (lastBroadcast && now - lastBroadcast < coordinator.quietThresholdTimeout) return;
+    const candidates = pollingTrackerRef.current.candidates(now);
+    if (candidates.length === 0) return;
+    if (candidates[0] !== tabIdRef.current) return;
+    const lastAutoResumeAt = lastAutoResumeAtRef.current;
+    if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
+    const semaphoreKey = `route:${sessionId}`;
+    const acquired = await coordinator.tryAcquireSemaphore(semaphoreKey, tabIdRef.current, coordinator.semaphoreTtlTimeout);
+    if (!acquired) return;
+    lastAutoResumeAtRef.current = now;
+    await runIdeGsmBuild({ autoResume: true });
+  }, [coordinator, getRecentNonActiveState, runIdeGsmBuild, sessionId, shouldAutoResume, status]);
+
+  useEffect(() => {
+    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
+    const channel = channelRef.current;
+    if (!channel) return;
+    const tick = () => {
+      const now = Date.now();
+      pollingTrackerRef.current.record(tabIdRef.current, now);
+      coordinator.sendPoll(channel, sessionId, now);
+      void maybeAutoResume();
+    };
+    tick();
+    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [coordinator, maybeAutoResume, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const shouldMonitor = shouldAutoResume;
+    if (!shouldMonitor) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    if (status === 'running' || buildInFlightRef.current) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    const now = Date.now();
+    const elapsedSinceStart = now - crashCheckStartedAtRef.current;
+    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
+    const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
+    const lastBroadcast = lastBroadcastAtRef.current;
+    const lastAck = lastAckAtRef.current;
+    const hasRecentBroadcast = lastBroadcast && now - lastBroadcast <= suspectWindowMs;
+    const hasRecentAck = lastAck && now - lastAck <= suspectWindowMs;
+    if (hasRecentBroadcast || hasRecentAck) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    const recentNonActive = getRecentNonActiveState(now);
+    if (recentNonActive) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (!suspendSuspectOpen) {
+        setSuspendSuspectMessage(
+          t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+        );
+        setSuspendSuspectOpen(true);
+      }
+      return;
+    }
+    if (suspendSuspectOpen) {
+      closeSuspendSuspect();
+    }
+    if (!crashSuspectOpen) {
+      setCrashSuspectMessage(
+        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+      );
+      setCrashSuspectOpen(true);
+    }
+  }, [
+    closeCrashSuspect,
+    closeSuspendSuspect,
+    coordinator.pollIntervalTimeout,
+    coordinator.quietThresholdTimeout,
+    crashSuspectOpen,
+    getRecentNonActiveState,
+    sessionId,
+    shouldAutoResume,
+    status,
+    suspendSuspectOpen,
     t,
   ]);
 
@@ -540,6 +803,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           if (isPausePending) return;
           setIsPausePending(true);
           setStatus('paused');
+          if (sessionId) {
+            coordinator.clearActiveSessionId(sessionId);
+          }
         }}
         onResume={runIdeGsmBuild}
         onComplete={() => {
@@ -560,6 +826,42 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
               confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
               description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
             />
+            <Dialog
+              open={suspendSuspectOpen}
+              onClose={() => closeSuspendSuspect()}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>{t('stage.progress.suspendSuspectTitle', 'Build tab suspended')}</DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2">
+                  {suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.')}
+                </Typography>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button onClick={() => closeSuspendSuspect()} variant="contained">
+                  {t('common.close', 'Close')}
+                </Button>
+              </DialogActions>
+            </Dialog>
+            <Dialog
+              open={crashSuspectOpen}
+              onClose={() => closeCrashSuspect()}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>{t('stage.progress.crashSuspectTitle', 'Build may have stopped')}</DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2">
+                  {crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')}
+                </Typography>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button onClick={() => closeCrashSuspect()} variant="contained">
+                  {t('common.close', 'Close')}
+                </Button>
+              </DialogActions>
+            </Dialog>
             <Dialog
               open={completionDialogOpen}
               onClose={() => setCompletionDialogOpen(false)}

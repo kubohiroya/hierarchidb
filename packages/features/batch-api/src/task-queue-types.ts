@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
 export type TaskStage = 'fetch' | 'transform' | 'vt';
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
 export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   taskId: string;
@@ -33,6 +33,7 @@ export type StageHandlerResult<TOutput = unknown> = {
   progress?: number;
   outputData?: TOutput;
   errorMessage?: string;
+  taskUpdated?: boolean;
 };
 
 export type StageHandler<TInput = unknown, TOutput = unknown> = (
