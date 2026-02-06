@@ -59,8 +59,6 @@ const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
-const LARGE_COUNTRY_VERTEX_THRESHOLD = 1_000_000;
-
 export const runShapeTransformStageSection = async (params: ShapeTransformStageParams): Promise<boolean> => {
   let existingTransformByBandTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'transform')
@@ -107,23 +105,24 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   });
 
   const orderedCountries = [...buffersByCountry.keys()].sort((a, b) => {
+    const totalA = countryTotals.get(a) ?? 0;
+    const totalB = countryTotals.get(b) ?? 0;
+    if (totalA !== totalB) return totalB - totalA;
     const nameA = params.countryLookup.get(a)?.countryName ?? a;
     const nameB = params.countryLookup.get(b)?.countryName ?? b;
     return nameA.localeCompare(nameB);
   });
-  const largeCountries = new Set(
-    orderedCountries.filter((country) => (countryTotals.get(country) ?? 0) >= LARGE_COUNTRY_VERTEX_THRESHOLD),
-  );
-  const largeCountryOrder = orderedCountries.filter((country) => largeCountries.has(country));
-  const smallCountryOrder = orderedCountries.filter((country) => !largeCountries.has(country));
 
   const buildTasksForCountryBand = (
     countryKey: string,
     countryIndex: number,
     band: { bandIndex: number; zMin: number; zMax: number },
-  ): Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> => {
+    startIndex: number,
+  ): { tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>; nextIndex: number } => {
     const countryBuffers = buffersByCountry.get(countryKey) ?? [];
-    if (countryBuffers.length === 0) return [];
+    if (countryBuffers.length === 0) {
+      return { tasks: [], nextIndex: startIndex };
+    }
     countryBuffers.sort((a, b) => {
       const adminA = typeof a.adminLevel === 'number' ? a.adminLevel : 0;
       const adminB = typeof b.adminLevel === 'number' ? b.adminLevel : 0;
@@ -132,11 +131,15 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     });
     const countryName = params.countryLookup.get(countryKey)?.countryName;
     const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
-    let index = 0;
+    let index = startIndex;
     for (const buffer of countryBuffers) {
       if (band.zMin >= 9) {
-        if (!params.enableHighDetailBands) continue;
-        if (typeof buffer.adminLevel !== 'number' || buffer.adminLevel < 2) continue;
+        if (!params.enableHighDetailBands) {
+          continue;
+        }
+        if (typeof buffer.adminLevel !== 'number' || buffer.adminLevel < 2) {
+          continue;
+        }
       }
       tasks.push({
         taskId: `${String(params.nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
@@ -162,16 +165,25 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       });
       index += 1;
     }
-    return tasks;
+    return { tasks, nextIndex: index };
   };
 
-  const desiredLargeTasks = largeCountryOrder.flatMap((country, index) => (
-    bandsAscending.flatMap((band) => buildTasksForCountryBand(country, index, band))
-  ));
-  const desiredSmallTasks = smallCountryOrder.flatMap((country, index) => (
-    bandsAscending.flatMap((band) => buildTasksForCountryBand(country, index, band))
-  ));
-  const desiredTransformTasks = [...desiredLargeTasks, ...desiredSmallTasks];
+  const desiredTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+  let nextIndex = 0;
+  orderedCountries.forEach((countryKey, countryIndex) => {
+    bandsAscending.forEach((band) => {
+      const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
+        countryKey,
+        countryIndex,
+        band,
+        nextIndex,
+      );
+      if (tasks.length > 0) {
+        desiredTransformTasks.push(...tasks);
+      }
+      nextIndex = updatedIndex;
+    });
+  });
 
   const plannedTransformTotal = desiredTransformTasks.length;
   if (plannedTransformTotal > 0) {
@@ -187,76 +199,14 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         existingTransformByBandTasks,
         desiredTransformTasks,
       );
-      const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
-      const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
-      if (missingTransformTasks.length > 0) {
-        await putTasks(params.taskQueue, missingTransformTasks);
-      }
-      if (existingTransformByBandTasks.length === 0 && missingTransformTasks.length === 0) {
-        return false;
-      }
-
-      await params.waitIfPaused?.();
-      await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
-
-      const transformByBandAbortController = new AbortController();
-      const transformByBandHandler = createTransformByBandHandler({
-        ephemeralDB: params.ephemeralStore,
-        transformConfig: resolveTransformConfig(params.buildConfig),
-        bands: params.bands,
-        featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
-        abortSignal: transformByBandAbortController.signal,
-      });
-
-      try {
-        await runStageTasks({
-          nodeId: params.nodeId,
-          stage: 'transform',
-          handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
-          waitIfPaused: params.waitIfPaused,
-          maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-          failureHandling: params.failureHandling,
-          abortController: transformByBandAbortController,
-        });
-      } catch (error) {
-        const baseMessage = error instanceof Error ? error.message : String(error);
-        const failedTaskId = error && typeof error === 'object'
-          ? (error as { taskId?: string }).taskId
-          : undefined;
-        const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
-        await finalizePendingStageTasks(
-          params.taskQueue,
-          params.nodeId,
-          'transform',
-          `aborted: ${reason}`,
-          '[ShapeTransform][PipelineDiagnostics] transform stage aborted',
-          params.pipelineRunId,
-        );
-        throw error;
-      }
-      console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-        counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'transform'),
-      }));
-      await finalizePendingStageTasks(
-        params.taskQueue,
-        params.nodeId,
-        'transform',
-        'aborted: transform stage completed with pending tasks',
-        '[ShapeTransform][PipelineDiagnostics] transform stage finalized pending tasks',
-        params.pipelineRunId,
-      );
-      const shouldStop = shouldStopAfterStage(
-        params.buildContinuationPolicy,
-        await getFailedTaskCount(params.taskQueue, params.nodeId, 'transform'),
-      );
-      if (params.buildConfig.fetchConfig.deleteOnComplete) {
-        await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
-          await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
-        });
-      }
-      return shouldStop;
+    }
+    const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
+    const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
+    if (missingTransformTasks.length > 0) {
+      await putTasks(params.taskQueue, missingTransformTasks);
+    }
+    if (existingTransformByBandTasks.length === 0 && missingTransformTasks.length === 0) {
+      return false;
     }
 
     await params.waitIfPaused?.();
@@ -270,38 +220,16 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
       abortSignal: transformByBandAbortController.signal,
     });
-    const runTransformTasks = async (maxConcurrent: number) => {
+    try {
       await runStageTasks({
         nodeId: params.nodeId,
         stage: 'transform',
         handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
         waitIfPaused: params.waitIfPaused,
-        maxConcurrent,
+        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
         failureHandling: params.failureHandling,
         abortController: transformByBandAbortController,
       });
-    };
-
-    const runPhase = async (countryOrder: string[], maxConcurrent: number) => {
-      for (let countryIndex = 0; countryIndex < countryOrder.length; countryIndex += 1) {
-        const countryKey = countryOrder[countryIndex];
-        if (!countryKey) continue;
-        for (const band of bandsAscending) {
-          const tasks = buildTasksForCountryBand(countryKey, countryIndex, band);
-          if (tasks.length == 0) continue;
-          await putTasks(params.taskQueue, tasks);
-          await runTransformTasks(maxConcurrent);
-        }
-      }
-    };
-
-    try {
-      if (largeCountryOrder.length > 0) {
-        await runPhase(largeCountryOrder, 1);
-      }
-      if (smallCountryOrder.length > 0) {
-        await runPhase(smallCountryOrder, params.buildConfig.transformConfig.maxConcurrent);
-      }
     } catch (error) {
       const baseMessage = error instanceof Error ? error.message : String(error);
       const failedTaskId = error && typeof error === 'object'
@@ -346,4 +274,3 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     clearStagePlan(params.nodeId);
   }
 };
-

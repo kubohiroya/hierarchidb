@@ -176,11 +176,10 @@ const resolveSimplifyToleranceDegrees = (zTarget: number, toleranceK: number): n
 
 const resolveTransformTolerance = (
   baseTolerance: number,
-  zTarget: number,
+  _zTarget: number,
 ): number => {
   if (!Number.isFinite(baseTolerance)) return baseTolerance;
-  if (zTarget <= 2) return 10.0;
-  return 10.0;
+  return baseTolerance;
 };
 
 const simplifyTopoJsonByZoom = (params: {
@@ -1082,6 +1081,15 @@ export const createTransformByBandHandler = (
     outputEnd: 95,
     encodeEnd: 100,
   } as const;
+  const normalizePhaseProgress = (value: number): number => {
+    if (!Number.isFinite(value)) return value;
+    const clamped = Math.min(100, Math.max(0, value));
+    if (clamped <= taskProgressRange.decodeEnd) {
+      return Math.round((clamped / taskProgressRange.decodeEnd) * 50);
+    }
+    const span = 100 - taskProgressRange.decodeEnd;
+    return Math.round(50 + ((clamped - taskProgressRange.decodeEnd) / span) * 50);
+  };
   const reportPolygonProgress = async (
     taskId: string,
     processedPolygons: number,
@@ -1106,7 +1114,7 @@ export const createTransformByBandHandler = (
     try {
       await updateTask(taskQueue, taskId, {
         message: `phase=${phase}`,
-        ...(progress !== undefined ? { progress } : {}),
+        ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
       });
     } catch (error) {
       console.warn('[transform] failed to update task phase', { phase, error });

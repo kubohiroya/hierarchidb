@@ -12,7 +12,7 @@ vi.mock('comlink', async () => (
 import { describe, expect, it, vi } from 'vitest';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../../packages//src/index.ts')
+  await import('../../../../../packages/gis-sdk/src/index.ts')
 ));
 
 const mockMetadata = vi.hoisted(() => ([

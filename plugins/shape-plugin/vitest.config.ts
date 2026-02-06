@@ -51,7 +51,7 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/batch-api',
-        replacement: path.resolve(__dirname, '../../packages//src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/batch-api/src/index.ts'),
       },
       {
         find: '@hierarchidb/ui-worker-client',
@@ -96,12 +96,12 @@ export default defineConfig({
         find: '@hierarchidb/resolver-store',
         replacement: path.resolve(
           __dirname,
-          '../../packages//src/index.ts',
+          '../../packages/resolver-store/src/index.ts',
         ),
       },
       {
         find: '@hierarchidb/location-store',
-        replacement: path.resolve(__dirname, '../../packages//src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/location-store/src/index.ts'),
       },
       {
         find: '@hierarchidb/download',
@@ -109,7 +109,7 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/shape-store',
-        replacement: path.resolve(__dirname, '../../packages//src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/shape-store/src/index.ts'),
       },
       {
         find: '@hierarchidb/vt-orchestrator',

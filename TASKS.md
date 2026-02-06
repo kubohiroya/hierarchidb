@@ -383,6 +383,16 @@
   - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。
   - update: 2026-02-07 10:46 JST useBatchProgress の進捗更新を単調化（percentage 低下のクランプ）し、phase=completed でもタスク完了前は確定更新を抑止。
   - update: 2026-02-07 10:47 JST pnpm --filter @hierarchidb/batch typecheck exit 0 を確認。
+  - update: 2026-02-07 11:18 JST transform ステージの簡略化実装（vt-orchestrator/createTransformByBandHandler）と既定パラメータ（DEFAULT_BUILD_CONFIG.transformConfig）を確認。
+  - update: 2026-02-07 11:25 JST resolveTransformTolerance が baseTolerance を無視して固定値を返す問題を修正するための対応に着手。
+  - update: 2026-02-07 11:30 JST resolveTransformTolerance が baseTolerance をそのまま返すよう修正し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-07 11:36 JST Step4 で transform/vt のタスク+キャッシュ削除後に Step5 再開でタスクを再生成する要件に対応するため調査を開始。
+  - update: 2026-02-07 12:05 JST transform ステージのタスク生成を全量復元（国サイズ順に並べ替え）し、過剰削除/不足追加を行ってから実行するよう修正。
+  - update: 2026-02-07 12:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-07 12:12 JST transform タスク進捗が 100%→0% に戻る挙動（「キャッシュ取得を完了」表示と同時）について原因調査を開始。
+  - update: 2026-02-07 12:20 JST transform 進捗を 0-50/50-100 の二段階で単調増加させる対応に着手。
+  - update: 2026-02-07 12:26 JST transform 進捗を 0-50/50-100 の二段階に正規化するロジックを追加し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-07 12:34 JST decode 完了で 50% 到達となるよう進捗正規化の境界を調整し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
 
 2537) investigate/shape-build/multipolygon-merge-hypothesis (P1) — 進行中 (2026-02-06)
 - ブランチ名: investigate/shape-build/multipolygon-merge-hypothesis
@@ -409,6 +419,7 @@
   - update: 2026-02-06 21:55 JST Processing Configuration の Next 判定を buildConfig 未初期化でも既定値で有効化。
   - update: 2026-02-06 22:10 JST build progress の進捗リセット表示をステージ平均で単調増加に補正。
   - update: 2026-02-06 22:20 JST build progress の表示を前回値以下に落ちないよう単調化（running時のみ）。
+  - update: 2026-02-07 11:12 JST transform ステージの簡略化アルゴリズムとパラメータ現状を整理する調査に着手。
 
 2535) fix/dialog/url-step-overwrite-init (P1) — 進行中 (2026-02-06)
 - ブランチ名: fix/dialog/url-step-overwrite-init

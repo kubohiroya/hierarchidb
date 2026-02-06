@@ -103,7 +103,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await screen.findByText('Build controls');
-    expect(document.body.textContent).toContain('Build failed');
+    await screen.findByText('Build failed');
     expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
   });
 });
