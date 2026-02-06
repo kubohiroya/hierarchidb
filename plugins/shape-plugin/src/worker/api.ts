@@ -3,7 +3,7 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeBuildConfig } from '../common/types/index.js';
@@ -61,14 +61,8 @@ import {
 import { getStagePlan } from '../services/vt/shapeProgressPlan.ts';
 
 type DraftLike = {
-  nodeId?: NodeId;
   treeNodeId?: NodeId;
   draftData?: Partial<ShapeEntity>;
-};
-
-const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undefined => {
-  const resolved = draft?.nodeId ?? draft?.treeNodeId ?? draft?.draftData?.nodeId;
-  return resolved ? toNodeId(String(resolved)) : undefined;
 };
 
 const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): BuildSessionConfig => {
@@ -1039,7 +1033,7 @@ export const shapeBatchAPI = {
       throw new Error('Shape batch session requires download task payloads or selection');
     }
 
-    const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
+    const nodeForSession = draftLike.treeNodeId ?? draftId;
     const pipelineKey = String(nodeForSession);
     if (activePipelines.has(pipelineKey)) {
       await emitProgressSnapshot(nodeForSession, 'startBatchProcess ignored: pipeline already active');
@@ -1308,7 +1302,7 @@ export const shapeBatchAPI = {
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
-    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
+    const nodeId = draftId;
     if (!entity || !nodeId) {
       return {
         total: 0,

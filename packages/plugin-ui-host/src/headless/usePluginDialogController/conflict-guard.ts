@@ -1,21 +1,21 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useConflictGuard(params: {
   mode: 'create' | 'edit';
-  client: Remote<WorkerAPI> | null;
+  client: Remote<WorkerAPI<TreeNodeData>> | null;
   nodeId: NodeId;
   draftVersion?: number;
   discardDraft: (opts?: { forceDelete?: boolean }) => Promise<void>;
   onClose: () => void;
-  updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<PeerEntity>>) => void;
+  updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<PeerEntity<TreeNodeData>>>) => void;
   getLocalDraftSnapshot?: () => {
     draftMetadata?: TreeNodeMetadata | null;
-    draftData?: Partial<PeerEntity>;
+    draftData?: Partial<PeerEntity<TreeNodeData>>;
   } | null;
 }) {
   const {
@@ -67,7 +67,12 @@ export function useConflictGuard(params: {
       if (!query) return null;
       const latest = await withTimeout(query.getNode(nodeId), 2000);
       if (!latest) return null;
-      return { latest, version: latest.version ?? 0, updatedAt: latest.updatedAt };
+      const latestNode = latest as TreeNode;
+      return {
+        latest: latestNode,
+        version: latestNode.version ?? 0,
+        updatedAt: latestNode.updatedAt,
+      };
     } catch (err) {
       console.warn('[PluginDialogShell] failed to fetch latest node for version check', err);
       return null;
@@ -81,7 +86,7 @@ export function useConflictGuard(params: {
     if (latest.version > localVersion) {
       const localSnapshot = getLocalDraftSnapshot?.() ?? null;
       const latestDraftData =
-        (latest.latest as { draftData?: Partial<PeerEntity> }).draftData;
+        (latest.latest as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
       const latestDraftMetadata =
         (latest.latest as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
       const isSameContent = compareDraftSnapshots(localSnapshot, {
@@ -147,9 +152,12 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | nul
 function compareDraftSnapshots(
   localSnapshot: {
     draftMetadata?: TreeNodeMetadata | null;
-    draftData?: Partial<PeerEntity>;
+    draftData?: Partial<PeerEntity<TreeNodeData>>;
   } | null,
-  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: Partial<PeerEntity> }
+  remoteSnapshot: {
+    draftMetadata?: TreeNodeMetadata | null;
+    draftData?: Partial<PeerEntity<TreeNodeData>>;
+  }
 ): boolean {
   const localMeta = localSnapshot?.draftMetadata ?? null;
   const localData = localSnapshot?.draftData;

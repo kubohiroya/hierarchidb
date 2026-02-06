@@ -6,10 +6,10 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 
-type WorkerApi = WorkerAPI<TreeNodeData>;
+type WorkerPayload = Record<string, unknown>;
+type WorkerApi = WorkerAPI<WorkerPayload>;
 
 export interface WorkerClientRef {
   /** Active WorkerAPI proxy when initialized */

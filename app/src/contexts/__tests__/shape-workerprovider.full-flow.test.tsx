@@ -3,7 +3,7 @@ import { render, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
 import { readFile } from 'node:fs/promises';
 import type { BatchProgressEvent, BatchProgressPayload, BatchTaskSummary, BatchTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { DEFAULT_BUILD_CONFIG, type SelectedArrayByCountries } from '@hierarchidb/shape-plugin';
 import { WorkerProvider } from '../WorkerProvider.tsx';
@@ -166,7 +166,12 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       getCommandProcessor: async () => (
         Comlink.proxy(services.getCommandProcessor()) as unknown as Awaited<ReturnType<WorkerAPI['getCommandProcessor']>>
       ),
-      startBatchSession: async (nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy) => {
+      startBatchSession: async (
+        nodeType: NodeType,
+        nodeId: NodeId,
+        downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
+        buildContinuationPolicy?: string
+      ) => {
         if (nodeType !== ('shape' as NodeType)) {
           throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
         }
@@ -180,42 +185,58 @@ vi.mock('~/worker-runtime/client.ts', async () => {
         const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
         return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
       },
-      getBatchSessionStatus: async (nodeType, nodeId) => {
+      getBatchSessionStatus: async (nodeType: NodeType, nodeId: NodeId) => {
         if (nodeType !== ('shape' as NodeType)) {
           return toBatchSessionStatus(nodeId, 'idle');
         }
         const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
         return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
       },
-      pauseBatchSession: async (_nodeType, nodeId) => {
+      pauseBatchSession: async (_nodeType: NodeType, nodeId: NodeId) => {
         await shapeBatchAPI.invokeBatchCommand('session/pause', { nodeId });
       },
-      resumeBatchSession: async (_nodeType, nodeId, buildContinuationPolicy) => {
+      resumeBatchSession: async (
+        _nodeType: NodeType,
+        nodeId: NodeId,
+        buildContinuationPolicy?: string
+      ) => {
         await shapeBatchAPI.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
       },
-      getBatchTasks: async (_nodeType, nodeId) => {
+      getBatchTasks: async (_nodeType: NodeType, nodeId: NodeId) => {
         const tasks = await shapeBatchAPI.getBatchTasks(nodeId);
         return tasks.map(toBatchTaskSummary);
       },
       listBuildSessionRecordsByStatus: async () => [],
-      subscribeBuildSessionRecordsByStatus: async (_nodeType, _statuses, _callback) => () => {},
-      subscribeBatchTasks: async (_nodeType, nodeId, callback) => {
+      subscribeBuildSessionRecordsByStatus: async (
+        _nodeType: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[0],
+        _statuses: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[1],
+        _callback: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[2]
+      ) => () => {},
+      subscribeBatchTasks: async (
+        _nodeType: NodeType,
+        nodeId: NodeId,
+        callback: (event: BatchTaskUpdateEvent) => void
+      ) => {
         if (shapeBatchAPI.subscribeToTasks) {
           return shapeBatchAPI.subscribeToTasks(nodeId, callback);
         }
         return () => {};
       },
       generateShapeDownloadTaskPayloadsFromSelection: async (
-        nodeId,
-        dataSource,
-        selectedArrayByCountries
+        nodeId: NodeId,
+        dataSource: string,
+        selectedArrayByCountries: SelectedArrayByCountries
       ) =>
         shapeBatchAPI.generateDownloadTaskPayloadsFromSelection(
           nodeId,
           dataSource,
           selectedArrayByCountries
         ),
-      subscribeBatchProgress: async (_nodeType, nodeId, callback) => {
+      subscribeBatchProgress: async (
+        _nodeType: NodeType,
+        nodeId: NodeId,
+        callback: (payload: BatchProgressEvent<BatchProgressPayload>) => void
+      ) => {
         const unsubscribe = shapeBatchAPI.subscribeToProgress(nodeId, callback);
         return () => unsubscribe();
       },

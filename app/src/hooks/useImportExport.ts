@@ -2,8 +2,8 @@ import type {
   ImportProgress as APIImportProgress,
   ImportData,
   ImportValidationResult,
-} from '@hierarchidb/import-export-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+} from '~/types/import-export.js';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -512,7 +512,7 @@ function validateImportDataPayload(data: ImportNodesPayload): ImportValidationRe
   const pluginNodeTypes = new Set(getInstalledPlugins().map((plugin) => plugin.nodeType));
   const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
 
-  data.nodes.forEach((node, index) => {
+  data.nodes.forEach((node: ImportNode, index: number) => {
     const nodeType = (node as Record<string, unknown>).nodeType;
     if (typeof nodeType === 'string' && !validNodeTypes.has(nodeType)) {
       errors.push(`Node ${index}: invalid node type '${nodeType}'`);

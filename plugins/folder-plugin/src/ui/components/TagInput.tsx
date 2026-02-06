@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, LocalOffer as TagIcon } from '@mui/icons-material';
-import type { TagId } from '@hierarchidb/core-types';
+import type { TagId } from '@hierarchidb/tag-api';
 import { useTagInput } from './useTagInput.js';
 
 export interface TagInputProps {

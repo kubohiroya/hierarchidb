@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TagId } from '@hierarchidb/core-types';
+import type { TagId } from '@hierarchidb/tag-api';
 import type { TagSuggestion as BaseTagSuggestion } from '@hierarchidb/tag-api';
 
 type TagSuggestion = Omit<BaseTagSuggestion, 'id'> & { id: TagId };

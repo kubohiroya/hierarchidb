@@ -3,6 +3,7 @@
  */
 
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import {
   createUniqueName,
@@ -104,10 +105,10 @@ export const createMutationActions = (
       const nodeType: NodeType = 'folder' as NodeType;
       const mutationAPI = await client.getMutationAPI();
       const queryAPI = await client.getQueryAPI();
-      const siblings = await queryAPI.listChildren(pageNodeId as NodeId);
+      const siblings = (await queryAPI.listChildren(pageNodeId as NodeId)) as TreeNode[];
       const siblingNames = siblings
-        .map((n) => (typeof n?.metadata?.name === 'string' ? n.metadata.name : ''))
-        .filter((n) => n);
+        .map((node) => (typeof node?.metadata?.name === 'string' ? node.metadata.name : ''))
+        .filter((name): name is string => Boolean(name));
       const baseName = 'New Folder';
       const resolvedName = createUniqueName(siblingNames, baseName);
       const res = await mutationAPI.createNode({

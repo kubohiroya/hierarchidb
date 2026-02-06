@@ -5,7 +5,7 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { SubscriptionId, TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
@@ -75,7 +75,7 @@ export function useTreeConsoleBreadcrumbs({
           typeof client.getSubscriptionAPI === 'function'
             ? await client.getSubscriptionAPI()
             : null;
-        const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
+        const ancestors: TreeNode[] = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
         const parentMap = new Map<string, string | null>();
         for (let i = 0; i < ancestors.length; i += 1) {
           const node = ancestors[i];
@@ -85,12 +85,12 @@ export function useTreeConsoleBreadcrumbs({
           const parent = i > 0 ? (ancestors[i - 1]?.id ?? null) : null;
           parentMap.set(String(node.id), parent ? String(parent) : null);
         }
-        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
-          id: n.id,
-          name: n.metadata?.name ?? '',
-          nodeType: n.nodeType,
-          visible: n.visible,
-          parentId: parentMap.get(String(n.id)) ?? null,
+        let nodes: BreadcrumbNode[] = ancestors.map((node) => ({
+          id: node.id,
+          name: node.metadata?.name ?? '',
+          nodeType: node.nodeType,
+          visible: node.visible,
+          parentId: parentMap.get(String(node.id)) ?? null,
         }));
 
         if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
@@ -119,7 +119,7 @@ export function useTreeConsoleBreadcrumbs({
         }
 
         if (subscriptionAPI) {
-          const targetIds = [...ancestors.map((a) => a.id as NodeId), pageTreeNode.id as NodeId];
+          const targetIds = [...ancestors.map((ancestor) => ancestor.id as NodeId), pageTreeNode.id as NodeId];
           const cb = comlinkProxy((event: unknown) => {
             const ev = event as { nodeId?: string; node?: TreeNode };
             const changedId = ev?.nodeId || ev?.node?.id;

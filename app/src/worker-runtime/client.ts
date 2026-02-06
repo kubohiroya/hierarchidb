@@ -2,7 +2,7 @@
  * UI-side worker bootstrap: create and wrap app/src/worker.ts via Comlink.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { bootLog } from '~/utils/bootLog.ts';
 import { APP_VERSION } from '~/version.ts';

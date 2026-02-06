@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationGroupItem } from '@hierarchidb/location-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { DEBUG_PREFIX } from './locationMapPreviewConstants.js';
 import { formatTimestamp, resolveLocationType } from './locationMapPreviewUtils.js';
@@ -66,7 +67,7 @@ export const buildMetadataColumns = (rows: Array<Record<string, unknown>>): stri
 
 type UseLocationMapPreviewMetadataArgs = {
   nodeId?: NodeId;
-  workerApi: Remote<WorkerAPI> | null;
+  workerApi: Remote<WorkerAPI<TreeNodeData>> | null;
   workerLoading: boolean;
   workerError: Error | null;
   initializeWorker: () => Promise<void>;

@@ -4,7 +4,7 @@
  * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -82,7 +82,7 @@ export function useTreeConsoleLoader({
       let builtIndex: DualKeyMap<NodeId, NodeId, TreeNode> | null = null;
       try {
         const queryAPI = await client.getQueryAPI();
-        const children = await queryAPI.listChildren(parentId);
+        const children: TreeNode[] = await queryAPI.listChildren(parentId);
         if (debugEnabled) {
           console.log('[TreeConsoleLoader] listChildren result', {
             parentId: String(parentId),
@@ -100,16 +100,16 @@ export function useTreeConsoleLoader({
         let displayNodes: TreeNode[] = children;
 
         if (shouldFlattenTrash) {
-          const batches = await Promise.all(
-            children.map((h) => queryAPI.listChildren(h.id as NodeId))
+          const batches: TreeNode[][] = await Promise.all(
+            children.map((child) => queryAPI.listChildren(child.id as NodeId))
           );
           displayNodes = batches.flat();
           if (debugEnabled) {
             console.log('[TreeConsoleLoader] flattened trash nodes', {
               parentId: String(parentId),
-              batches: batches.map((nodes, index) => ({
+              batches: batches.map((batch, index) => ({
                 parent: String(children[index]?.id ?? ''),
-                count: nodes.length,
+                count: batch.length,
               })),
               total: displayNodes.length,
             });

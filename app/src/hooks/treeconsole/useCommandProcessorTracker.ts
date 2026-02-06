@@ -5,7 +5,7 @@
  * exposed by the Worker command processor.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { TreeSubscriptionAPI } from '@hierarchidb/tree-api';
 import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';

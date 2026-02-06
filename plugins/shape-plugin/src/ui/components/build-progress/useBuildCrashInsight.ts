@@ -26,8 +26,8 @@ export const useBuildCrashInsight = (
   { draft, nodeId }: Args,
 ): CrashInsight<ShapeBuildStage, ShapeBuildConfigSnapshot> | null => {
   const key = useMemo(
-    () => getBuildMonitorKey(buildMonitorConfig, nodeId ?? (draft?.nodeId ?? null)),
-    [draft?.nodeId, nodeId],
+    () => getBuildMonitorKey(buildMonitorConfig, nodeId ?? null),
+    [nodeId],
   );
   const record = useMemo(() => {
     if (!key) return null;

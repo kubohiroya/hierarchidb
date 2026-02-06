@@ -101,7 +101,6 @@ export function buildBaseMapEntityFromNode(
   const version = (node as { version?: number }).version ?? 1;
   return {
     id: node.id as NodeId,
-    nodeId: node.id as NodeId,
     mapStyle,
     viewport,
     draftMetadata: (draftMetadata ||
@@ -299,8 +298,8 @@ export function useBaseMapEntity(
               }
             : prev
         );
-        if (treeNodeUpdater) {
-          void updatePayload({ viewport: cached }, treeNodeUpdater.draftData ?? undefined);
+      if (treeNodeUpdater) {
+          void updatePayload({ viewport: cached });
         }
         return;
       }
@@ -316,7 +315,7 @@ export function useBaseMapEntity(
           : prev
       );
       if (treeNodeUpdater) {
-        void updatePayload({ viewport: fallbackViewport }, treeNodeUpdater.draftData ?? undefined);
+        void updatePayload({ viewport: fallbackViewport });
       }
 
       // Then (once) ask and resolve geolocation; cache result for reuse
@@ -337,7 +336,7 @@ export function useBaseMapEntity(
               : prev
           );
           if (treeNodeUpdater) {
-            updatePayload({ viewport: geoViewport }, treeNodeUpdater.draftData ?? undefined);
+            updatePayload({ viewport: geoViewport });
           }
         }, 0);
       }

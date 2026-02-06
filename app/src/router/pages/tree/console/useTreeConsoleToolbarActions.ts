@@ -1,10 +1,10 @@
-import type { ImportData } from '@hierarchidb/import-export-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { ImportData } from '~/types/import-export.js';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type {
   BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, TreeId, PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNode, NodePayload } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type {
   TreeConsoleToolbar,
@@ -68,6 +68,12 @@ const normalizeRecord = (value: unknown): Record<string, unknown> | null | undef
   if (isRecord(value)) return value;
   return undefined;
 };
+
+const isPeerEntityPayload = (value: Record<string, unknown>): value is PeerEntity<NodePayload> =>
+  typeof value.id === 'string' &&
+  typeof value.createdAt === 'number' &&
+  typeof value.updatedAt === 'number' &&
+  typeof value.version === 'number';
 
 const isTreeNodeLike = (value: unknown): value is HierarchicalTreeNode | TreeNode =>
   isRecord(value) && typeof value.id === 'string' && typeof value.nodeType === 'string';
@@ -278,14 +284,18 @@ export function useTreeConsoleToolbarActions({
                 : typeof node.treeNodeType === 'string'
                   ? toNodeType(node.treeNodeType)
                   : toNodeType('folder');
+            const normalizedData = normalizeRecord(node.data);
+            const data = normalizedData && isPeerEntityPayload(normalizedData)
+              ? normalizedData
+              : undefined;
             return {
               name,
               nodeType: resolvedNodeType,
               description,
               metadata: rawMetadata,
               draftMetadata: normalizeRecord(node.draftMetadata),
-              draftData: normalizeRecord(node.draftData),
-              data: normalizeRecord(node.data),
+              draftData: normalizeRecord(node.draftData) ?? undefined,
+              data,
               children: children && children.length ? children : undefined,
             };
           };

@@ -11,6 +11,7 @@ import type {
   DialogState,
   DialogUIState,
   DialogWindowState,
+  TreeNodeData,
 } from '@hierarchidb/tree-api';
 import {
   composeStepConfigs,
@@ -62,6 +63,8 @@ import { usePendingAction } from './usePluginDialogController/pending-action.js'
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepNavigation } from './usePluginDialogController/step-navigation.js';
 
+type WorkerApi = WorkerAPI<TreeNodeData>;
+
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit' | 'preview';
   nodeType: string;
@@ -89,7 +92,7 @@ export interface PluginDialogFooterOptions {
   saveDraftLabel?: string;
 }
 
-type PluginDefinedEntity = PeerEntity;
+type PluginDefinedEntity = PeerEntity<TreeNodeData>;
 type LocalTreeNodeUpdaterState = TreeNodeUpdaterState<PluginDefinedEntity> & {
   dialogUIState?: DialogUIState | null;
 };
@@ -242,7 +245,7 @@ export function usePluginDialogController(
 
   const useClientHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
   const ref = useClientHook();
-  const client: Remote<WorkerAPI> | null = useMemo(() => ref?.client ?? null, [ref]);
+  const client: Remote<WorkerApi> | null = useMemo(() => ref?.client ?? null, [ref]);
   const autosaveEnabled = useAutosavePreference(autosaveEnabledProp);
 
   const initialDraftData = useMemo(() => {
@@ -378,7 +381,7 @@ export function usePluginDialogController(
   const localDraftDataRef = useRef<Partial<PluginDefinedEntity>>(draftDataWithoutMeta);
   const setLocalDraftData = useCallback(
     (next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
-      setLocalDraftDataState((prev) => {
+      setLocalDraftDataState((prev: Partial<PluginDefinedEntity>) => {
         const resolved =
           typeof next === 'function'
             ? (next as (prevState: Partial<PluginDefinedEntity>) => Partial<PluginDefinedEntity>)(
@@ -424,7 +427,10 @@ export function usePluginDialogController(
     client,
     draft: treeUpdater,
     updateDraft: (patch) => {
-      setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch.draftData }));
+      setLocalDraftData((prev: Partial<PluginDefinedEntity>) => ({
+        ...(toRecord(prev) ?? {}),
+        ...patch.draftData,
+      }));
       applyUpdateDraft(patch);
     },
   });
@@ -731,7 +737,7 @@ export function usePluginDialogController(
             ? (dialogData as Partial<PluginDefinedEntity>)
             : null;
 
-      const savePayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+      const savePayload: TreeNodeUpdaterState<PluginDefinedEntity> = {
         treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
         draftMetadata: {
           name: basicInfo.name,
@@ -775,7 +781,7 @@ export function usePluginDialogController(
       const ok = await ensureNoConflict();
       if (!ok) return;
       await updateLocalDraft();
-      const draftPayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+      const draftPayload: TreeNodeUpdaterState<PluginDefinedEntity> = {
         treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
         draftData: nodeType === 'folder' ? undefined : (dialogData as Partial<PluginDefinedEntity>),
         draftMetadata: {
@@ -949,7 +955,7 @@ export function usePluginDialogController(
     const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
     if (!treeNodeId) return;
     try {
-      const payload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+      const payload: TreeNodeUpdaterState<PluginDefinedEntity> = {
         treeNodeId,
         draftMetadata: treeUpdater?.draftMetadata ?? null,
         draftData: nodeType === 'folder' ? undefined : treeUpdater?.draftData,
@@ -1020,7 +1026,10 @@ export function usePluginDialogController(
         setLocalDraftData({});
         return;
       }
-      setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch }));
+      setLocalDraftData((prev: Partial<PluginDefinedEntity>) => ({
+        ...(toRecord(prev) ?? {}),
+        ...patch,
+      }));
     },
     [nodeType, setLocalDraftData]
   );

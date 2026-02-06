@@ -5,7 +5,7 @@ import {
   type TabularDataResult,
   type TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTabularDataFilterStep } from '../../hooks/useTabularDataFilterStep.js';
 import { TabularFilterSections } from '../TabularFilterSections.js';
@@ -17,7 +17,7 @@ import {
   type TabularDataFilterStepProps,
 } from './useTabularDataFilterStepView.js';
 
-type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabularDataFilter<T>> & {
+type FilterInnerProps<T extends SpreadsheetDraft> = ReturnType<typeof useTabularDataFilter<T>> & {
   setValid: PluginStepProps<T>['setValid'];
   setError: PluginStepProps<T>['setError'];
   renderSections?: TabularDataFilterProps['renderSections'];
@@ -31,7 +31,7 @@ type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabula
   showPreview?: boolean;
 };
 
-const TabularDataFilterInner = <T extends SpreadsheetEntity>({
+const TabularDataFilterInner = <T extends SpreadsheetDraft>({
   pluginId,
   keyValueState,
   keyValueValid,
@@ -144,7 +144,7 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   );
 };
 
-export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
+export const TabularDataFilterStep = <T extends SpreadsheetDraft>({
   data,
   onChange,
   setValid,

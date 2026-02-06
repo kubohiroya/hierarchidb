@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';

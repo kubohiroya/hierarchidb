@@ -3,7 +3,7 @@ import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -17,7 +17,7 @@ import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
 
 const TabularDataImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
-export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity> & { showPreview?: boolean }> = ({
+export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { showPreview?: boolean }> = ({
   data,
   onChange,
   setValid,

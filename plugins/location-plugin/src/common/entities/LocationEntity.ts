@@ -1,4 +1,5 @@
 import type { ISO2, PeerEntity, Timestamp } from '@hierarchidb/core-types';
+import type { NodePayload } from '@hierarchidb/tree-api';
 import type {
   IdeGsmSourceEntry,
   LocationBatchFilterCriteria,
@@ -26,11 +27,12 @@ export type {
   IdeGsmSourceEntry,
 } from '@hierarchidb/location-api';
 
-export interface LocationEntityPayload {
+export interface LocationEntityPayload extends NodePayload {
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
+  ideGsmFileSizeBytes?: number;
   ideGsmSourceUrl?: string;
   ideGsmSources?: IdeGsmSourceEntry[];
   ideGsmSelectionHash?: string;

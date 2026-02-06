@@ -1,9 +1,9 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { getWorkerClientHook, type WorkerClientRef } from '../ui/workerClientHook.js';
 
-type WorkerApi = WorkerAPI<TreeNodeData>;
+type WorkerPayload = Record<string, unknown>;
+type WorkerApi = WorkerAPI<WorkerPayload>;
 
 export interface UseWorkerAPIResult {
   api: Remote<WorkerApi> | null;

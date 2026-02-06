@@ -1,5 +1,5 @@
 import type { PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { useEffect, useMemo, useRef } from 'react';
 import type { TreeNodeUpdaterPayload } from './data-types.js';
 
@@ -9,7 +9,7 @@ type BasicInfo = {
   tags: string[];
 };
 
-export function useDialogDirtyState<TPayload extends PeerEntity>({
+export function useDialogDirtyState<TPayload extends PeerEntity<TreeNodeData>>({
   open,
   draft,
   basicInfo,

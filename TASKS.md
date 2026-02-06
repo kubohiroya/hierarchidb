@@ -1,9 +1,131 @@
-2548) fix/plugin-ui-sdk/peerentity-workerapi-generic-args (P1) — 進行中 (2026-02-06)
+2555) fix/app/type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/app/type-errors
+- 依存: なし
+- 受け入れ基準: app 内の WorkerAPI/ImportData の型引数不足・暗黙 any・TagEntity 参照不整合が解消される／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`
+- ロールバック手順: app の型修正差分を revert する
+- チェックリスト:
+  - WorkerAPI/ImportData の型引数指定を追加する
+  - 暗黙 any を型付けする
+  - TagEntity の参照を最新スキーマに合わせる
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 22:38 JST app の型エラー修正に着手。
+  - update: 2026-02-06 22:50 JST WorkerAPI/ImportData の型引数不足を app 内の型エイリアスで補正。
+  - update: 2026-02-06 22:50 JST TagEntity の category/updatedAt 参照と暗黙 any を修正。
+  - done: 2026-02-06 22:50 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2554) fix/shape-plugin/type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/shape-plugin/type-errors
+- 依存: なし
+- 受け入れ基準: shape-plugin の properties/nodeId 参照起因の型エラーが解消される／ShapeEntity に nodeId/properties を追加しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`
+- ロールバック手順: shape-plugin の型修正差分を revert する
+- チェックリスト:
+  - properties/nodeId の参照を正しいソースに置換する
+  - unsafe cast を安全な型に置換する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 22:24 JST shape-plugin の型エラー修正に着手。
+  - update: 2026-02-06 22:33 JST ShapeEntityService の取得ロジックを明示的フィールド抽出に変更。
+  - update: 2026-02-06 22:33 JST nodeId/properties の参照を削除し、関連ロジックを引数ベースに整理。
+  - done: 2026-02-06 22:33 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2553) fix/location-plugin/type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/location-plugin/type-errors
+- 依存: なし
+- 受け入れ基準: location-plugin の PeerEntity/WorkerAPI 型引数不足と LocationDraft/LocationEntity 型不整合が解消される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/**`
+- ロールバック手順: location-plugin の型修正差分を revert する
+- チェックリスト:
+  - PeerEntity/WorkerAPI の型引数指定を追加する
+  - LocationDraft/LocationEntity の型整合を取る
+  - ideGsmFileSizeBytes の型定義を修正する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 22:15 JST location-plugin の型エラー修正に着手。
+  - update: 2026-02-06 22:19 JST LocationEntityPayload を NodePayload 拡張に修正し、ideGsmFileSizeBytes を追加。
+  - update: 2026-02-06 22:19 JST LocationDialog の draft/metadata 同期と WorkerAPI 型引数・暗黙 any を修正。
+  - done: 2026-02-06 22:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2552) fix/plugin-ui-host/peerentity-workerapi-type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/plugin-ui-host/peerentity-workerapi-type-errors
+- 依存: なし
+- 受け入れ基準: plugin-ui-host の PeerEntity/WorkerAPI 型引数不足と暗黙 any が解消される／pnpm --filter @hierarchidb/plugin-ui-host typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/**`
+- ロールバック手順: 型引数/any 修正の差分を revert する
+- チェックリスト:
+  - PeerEntity/WorkerAPI の型引数指定を追加する
+  - prev の暗黙 any を型付きに修正する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 22:02 JST plugin-ui-host の型エラー修正に着手。
+  - update: 2026-02-06 22:07 JST TreeNodeUpdaterState の型引数を Partial から正規型へ修正。
+  - done: 2026-02-06 22:07 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+
+2551) fix/basemap-plugin/useBaseMapEntity-type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/basemap-plugin/useBaseMapEntity-type-errors
+- 依存: なし
+- 受け入れ基準: basemap-plugin の useBaseMapEntity 型エラーが解消される／pnpm --filter @hierarchidb/basemap-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts`, `plugins/basemap-plugin/src/common/types/BaseMapEntity.ts`
+- ロールバック手順: useBaseMapEntity と BaseMapEntityPayload の型修正差分を revert する
+- チェックリスト:
+  - PeerEntity/NodePayload の制約整合を取る
+  - nodeId の誤指定を除去する
+  - draftData の Partial 型を整合させる
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:26 JST basemap-plugin useBaseMapEntity の型エラー修正に着手。
+  - update: 2026-02-06 21:57 JST BaseMapEntityPayload を Record<string, unknown> 拡張に変更。
+  - update: 2026-02-06 21:58 JST nodeId の重複付与を削除し、updatePayload の base 引数を除去。
+  - update: 2026-02-06 22:01 JST BaseMapEntityPayload を NodePayload 交差型へ修正。
+  - update: 2026-02-06 22:01 JST pnpm --filter @hierarchidb/basemap-plugin typecheck exit 0 を再確認。
+  - done: 2026-02-06 21:59 JST pnpm --filter @hierarchidb/basemap-plugin typecheck exit 0 を確認。
+
+2550) fix/timeline-plugin/unused-nodeid (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/timeline-plugin/unused-nodeid
+- 依存: なし
+- 受け入れ基準: timeline-plugin の未使用 import エラー(TS6196)が解消される／pnpm --filter @hierarchidb/timeline-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/timeline-plugin/src/common/entities/TimelineEntity.ts`
+- ロールバック手順: import 修正の差分を revert する
+- チェックリスト:
+  - 未使用 import を削除する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:26 JST timeline-plugin の未使用 import 修正に着手。
+  - update: 2026-02-06 21:47 JST 未使用の NodeId import を削除。
+  - done: 2026-02-06 21:48 JST pnpm --filter @hierarchidb/timeline-plugin typecheck exit 0 を確認。
+
+2549) fix/folder-spreadsheet/type-errors (P1) — 完了 (2026-02-06)
+- ブランチ名: fix/folder-spreadsheet/type-errors
+- 依存: なし
+- 受け入れ基準: folder-plugin の TagId 参照エラーと spreadsheet-plugin の型不一致が解消される／pnpm --filter @hierarchidb/folder-plugin typecheck と pnpm --filter @hierarchidb/spreadsheet-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/folder-plugin/src/**`, `plugins/spreadsheet-plugin/src/**`
+- ロールバック手順: TagId 置換と spreadsheet 型修正の差分を revert する
+- チェックリスト:
+  - TagId の参照先を正しい型に置換する
+  - SpreadsheetEntity の Partial/onChange を整合させる
+  - 型安全なガードに置換する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 21:14 JST folder/spreadsheet の型エラー修正に着手。
+  - update: 2026-02-06 21:21 JST TagId の参照を tag-api に統一。
+  - update: 2026-02-06 21:24 JST Spreadsheet のステップ/フックを SpreadsheetDraft へ統一。
+  - done: 2026-02-06 21:25 JST pnpm --filter @hierarchidb/folder-plugin typecheck / pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。
+
+2548) fix/plugin-ui-sdk/peerentity-workerapi-generic-args (P1) — 完了 (2026-02-06)
 - ブランチ名: fix/plugin-ui-sdk/peerentity-workerapi-generic-args
 - 依存: なし
 - 受け入れ基準: plugin-ui-sdk の PeerEntity/TreeNodeUpdaterAPI/WorkerAPI 型引数不足が解消される／pnpm --filter @hierarchidb/plugin-ui-sdk typecheck と build:types が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-ui-sdk/src/**`, `packages/ui/worker-provider/dist/index.d.ts`
-- ロールバック手順: 型引数修正と dist の差分を revert する
+- 影響範囲: `packages/plugin-ui-sdk/src/**`, `packages/ui/worker-provider/src/**`, `packages/ui/worker-provider/package.json`, `packages/ui/worker-provider/dist/index.d.ts`
+- ロールバック手順: 型引数修正と worker-provider の型変更・dist の差分を revert する
 - チェックリスト:
   - PeerEntity/TreeNodeUpdaterAPI/WorkerAPI の型引数指定を追加する
   - ui-worker-provider の d.ts 参照エラーを解消する
@@ -11,6 +133,11 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-06 21:05 JST plugin-ui-sdk の型エラー修正に着手。
+  - update: 2026-02-06 21:10 JST PeerEntity<TreeNodeData> へ制約を統一し、WorkerAPI/TreeNodeUpdaterAPI の型引数を補完。
+  - update: 2026-02-06 21:11 JST ui-worker-provider の WorkerAPI payload を Record<string, unknown> に変更し、tree-api 参照を削除。
+  - update: 2026-02-06 21:11 JST pnpm --filter @hierarchidb/ui-worker-provider build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 21:12 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
+  - done: 2026-02-06 21:13 JST pnpm --filter @hierarchidb/plugin-ui-sdk build:types exit 0 を確認。
 
 2547) fix/resolver-plugin/entity-service-type-errors (P1) — 完了 (2026-02-06)
 - ブランチ名: fix/resolver-plugin/entity-service-type-errors

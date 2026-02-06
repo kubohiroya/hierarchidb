@@ -1,4 +1,4 @@
-import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
 
 export interface TabularStatistics {
   min: number;
@@ -66,5 +66,5 @@ export const calculateStatistics = (values: number[]): TabularStatistics => {
   };
 };
 
-export const coerceSpreadsheetEntity = (value: unknown): SpreadsheetEntity =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
+export const coerceSpreadsheetEntity = (value: unknown): SpreadsheetDraft =>
+  (typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {});

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { treeRouteIds } from '../../routes/tree/shared.ts';
 import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';

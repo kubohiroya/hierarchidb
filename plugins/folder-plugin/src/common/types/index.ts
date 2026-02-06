@@ -1,5 +1,5 @@
 // Import tag-related types
-export type { TagId } from '@hierarchidb/core-types';
+export type { TagId } from '@hierarchidb/tag-api';
 
 export type { TagSuggestion } from '@hierarchidb/tag-api';
 

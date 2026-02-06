@@ -1,7 +1,7 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TagEntity } from '@hierarchidb/tag-api';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeMetadata, TreeNode } from '@hierarchidb/tree-api';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import type React from 'react';
@@ -14,7 +14,7 @@ interface Params {
   nodeType: string;
   nodeId: NodeId;
   pageNodeId: NodeId;
-  client: Remote<WorkerAPI> | null;
+  client: Remote<WorkerAPI<TreeNodeData>> | null;
   draft: TreeNodeUpdaterPayload | null;
   updateDraft: (patch: import('./data-types.js').TreeNodeUpdaterPatch) => void;
 }
@@ -113,11 +113,13 @@ export function useBasicInfoState({
         const query = await client.getQueryAPI();
         const siblings = await query.listChildren(pageNodeId);
         if (disposed) return;
-        const values = new Set(
-          siblings
+        const values = new Set<string>(
+          (siblings as TreeNode[])
             .filter((node) => String(node?.id ?? '') !== String(nodeId))
             .map((node) =>
-              typeof node?.metadata.name === 'string' ? node.metadata.name.trim().toLowerCase() : ''
+              typeof node?.metadata?.name === 'string'
+                ? node.metadata.name.trim().toLowerCase()
+                : ''
             )
             .filter((name): name is string => Boolean(name))
         );

@@ -5,6 +5,7 @@ import type {
   DialogUIState,
   DiscardDraftOptions,
   TreeNode,
+  TreeNodeData,
   TreeNodeMetadata,
   TreeNodeUpdaterAPI,
 } from '@hierarchidb/tree-api';
@@ -13,7 +14,9 @@ import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { Remote } from 'comlink';
 
-export interface TreeNodeUpdaterState<TPayload extends PeerEntity = PeerEntity> {
+type WorkerApi = WorkerAPI<TreeNodeData>;
+
+export interface TreeNodeUpdaterState<TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData?: Partial<TPayload>;
@@ -24,7 +27,9 @@ export interface TreeNodeUpdaterState<TPayload extends PeerEntity = PeerEntity> 
   hasRemoteDraft?: boolean;
 }
 
-export interface UseTreeNodeUpdaterOptions<TPayload extends PeerEntity = PeerEntity> {
+export interface UseTreeNodeUpdaterOptions<
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+> {
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId?: NodeId;
@@ -37,7 +42,9 @@ export interface UseTreeNodeUpdaterOptions<TPayload extends PeerEntity = PeerEnt
   autoDiscardOnUnload?: boolean;
 }
 
-export interface UseTreeNodeUpdaterResult<TPayload extends PeerEntity = PeerEntity> {
+export interface UseTreeNodeUpdaterResult<
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+> {
   treeNodeUpdater: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
   updateTreeNodeUpdater: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void;
@@ -52,7 +59,9 @@ export interface UseTreeNodeUpdaterResult<TPayload extends PeerEntity = PeerEnti
 }
 
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
-export type PluginDialogData<TPayload extends PeerEntity = PeerEntity> = TPayload;
+export type PluginDialogData<
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+> = TPayload;
 
 const DEFAULT_DIALOG_UI_STATE: DialogUIState = {};
 
@@ -84,7 +93,9 @@ const stableStringify = (value: unknown): string => {
   }
 };
 
-export const createTreeNodeUpdaterActions = <TPayload extends PeerEntity = PeerEntity>(
+export const createTreeNodeUpdaterActions = <
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {
   const updatePayload = (patch: Partial<TPayload>, base?: TPayload) => {
@@ -107,7 +118,9 @@ export const createTreeNodeUpdaterActions = <TPayload extends PeerEntity = PeerE
   return { updatePayload, updateMetadata, updatePayloadAndMetadata };
 };
 
-export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
+export function useTreeNodeUpdater<
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+>({
   mode,
   nodeType,
   nodeId,
@@ -154,7 +167,11 @@ export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
     };
   }, [isRecord]);
 
-  const getClient = useCallback(async (): Promise<{ wc: TreeNodeUpdaterAPI; query: TreeQueryAPI; remote: Remote<WorkerAPI> }> => {
+  const getClient = useCallback(async (): Promise<{
+    wc: TreeNodeUpdaterAPI<TreeNodeData>;
+    query: TreeQueryAPI;
+    remote: Remote<WorkerApi>;
+  }> => {
     if (!workerClient) throw new Error('Worker client not initialized');
     const api = workerClient.getAPI();
     const wc = await api.getTreeNodeUpdaterAPI();
@@ -179,7 +196,7 @@ export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
           const needsDraftMeta =
             ((existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null) === null &&
             existing.metadata !== undefined;
-          const existingDraftData = (existing as { draftData?: Partial<PeerEntity> }).draftData;
+          const existingDraftData = (existing as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
           const hasEmptyDraftData =
             existingDraftData
             && isRecord(existingDraftData)
@@ -198,9 +215,9 @@ export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
           if (needsDraftData) {
             await wcAPI.updateTreeNodeDraftData(
               nodeId,
-              (existing.data ?? {}) as Partial<PeerEntity>
+              (existing.data ?? {}) as Partial<PeerEntity<TreeNodeData>>
             );
-            (existing as { draftData?: Partial<PeerEntity> }).draftData = {
+            (existing as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData = {
               ...(existing.data as Record<string, unknown>),
             };
           }
@@ -223,7 +240,7 @@ export function useTreeNodeUpdater<TPayload extends PeerEntity = PeerEntity>({
             ...(nodeId ? { id: nodeId } : {}),
             ...(initialDraftMetadata ? { draftMetadata: initialDraftMetadata } : {}),
             ...(initialDraftData
-              ? { draftData: initialDraftData as Partial<PeerEntity> }
+              ? { draftData: initialDraftData as Partial<PeerEntity<TreeNodeData>> }
               : {}),
             ...(shouldMarkTemporary ? { isTemporary: true } : {}),
           };

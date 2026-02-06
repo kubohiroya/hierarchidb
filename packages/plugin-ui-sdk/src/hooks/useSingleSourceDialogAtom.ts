@@ -3,11 +3,11 @@ import type { PrimitiveAtom } from 'jotai';
 import { atom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { UseTreeNodeUpdaterOptions } from './useTreeNodeUpdater.js';
 import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
 
-type DraftShape<TPayload extends PeerEntity> = Partial<TPayload>;
+type DraftShape<TPayload extends PeerEntity<TreeNodeData>> = Partial<TPayload>;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -31,7 +31,7 @@ const shallowEqual = (a: unknown, b: unknown): boolean => {
   return true;
 };
 
-export interface SingleSourceDialogAtomResult<TEntity extends PeerEntity> {
+export interface SingleSourceDialogAtomResult<TEntity extends PeerEntity<TreeNodeData>> {
   store: ReturnType<typeof createStore>;
   draftAtom: PrimitiveAtom<DraftShape<TEntity>>;
   metadataAtom: PrimitiveAtom<TreeNodeMetadata>;
@@ -47,7 +47,7 @@ export interface SingleSourceDialogAtomResult<TEntity extends PeerEntity> {
   setMetadata: (updater: (prev: TreeNodeMetadata) => TreeNodeMetadata) => void;
 }
 
-export type UseSingleSourceDialogAtomOptions<TEntity extends PeerEntity> =
+export type UseSingleSourceDialogAtomOptions<TEntity extends PeerEntity<TreeNodeData>> =
   UseTreeNodeUpdaterOptions<TEntity>;
 
 /**
@@ -55,7 +55,9 @@ export type UseSingleSourceDialogAtomOptions<TEntity extends PeerEntity> =
  * Exposes jotai atoms for draftData/draftMetadata with equality guards
  * to avoid redundant updates and render loops.
  */
-export function useSingleSourceDialogAtom<TEntity extends PeerEntity = PeerEntity>(
+export function useSingleSourceDialogAtom<
+  TEntity extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+>(
   options: UseSingleSourceDialogAtomOptions<TEntity>
 ): SingleSourceDialogAtomResult<TEntity> {
   const {

@@ -2,7 +2,7 @@
  * Shared helpers for TreeConsole action factory.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';

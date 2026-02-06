@@ -149,7 +149,7 @@ export const useShapeBuildTiming = ({
       buildStartRequestedRef.current = null;
       return;
     }
-    const key = nodeId ?? data?.nodeId ?? null;
+    const key = nodeId ?? null;
     if (!key) return;
     if (buildStartRequestedRef.current === key) return;
     buildStartRequestedRef.current = key;
@@ -157,14 +157,14 @@ export const useShapeBuildTiming = ({
       buildStartedAt: Date.now(),
       buildFinishedAt: undefined,
     });
-  }, [buildStatus, data?.buildStartedAt, data?.nodeId, nodeId]);
+  }, [buildStatus, data?.buildStartedAt, nodeId]);
 
   useEffect(() => {
     if (!monitorKey) return;
     if (buildStatus !== 'running') return;
     const startedAt = data?.buildStartedAt ?? Date.now();
     recordBuildStart(buildMonitorConfig, monitorKey, {
-      nodeId: data?.nodeId ? String(data.nodeId) : undefined,
+      nodeId: nodeId ? String(nodeId) : undefined,
       startedAt,
     });
     const interval = window.setInterval(() => {
@@ -177,7 +177,7 @@ export const useShapeBuildTiming = ({
     return () => {
       window.clearInterval(interval);
     };
-  }, [buildStatus, taskType, data?.buildStartedAt, data?.nodeId, monitorKey]);
+  }, [buildStatus, taskType, data?.buildStartedAt, monitorKey, nodeId]);
 
   useEffect(() => {
     if (!monitorKey) return;

@@ -1,5 +1,4 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
-import type { ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../common/types/index.js';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -27,8 +26,8 @@ const uniqueStages = (stages: ShapeBuildStage[]): ShapeBuildStage[] => {
   return STAGE_ORDER.filter((stage) => set.has(stage));
 };
 
-export const resolveShapeNodeId = (draft?: Partial<ShapeEntity> | null): NodeId | undefined =>
-  draft?.nodeId ? toNodeId(String(draft.nodeId)) : undefined;
+export const resolveShapeNodeId = (nodeId?: NodeId | string | null): NodeId | undefined =>
+  nodeId ? toNodeId(String(nodeId)) : undefined;
 
 export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeBuildStage[]): Promise<ShapeBuildStage[]> {
   const targetStages = uniqueStages(stages);

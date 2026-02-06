@@ -274,11 +274,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'admin0';
-  const activeNodeId = previewDraft.nodeId
-    ? toNodeId(String(previewDraft.nodeId))
-    : nodeId
-      ? toNodeId(String(nodeId))
-      : null;
+  const activeNodeId = nodeId ? toNodeId(String(nodeId)) : null;
   const nodeKey = activeNodeId;
   const processingStatus = data?.processingStatus ?? null;
   const baseLayerId = 'shape-preview';

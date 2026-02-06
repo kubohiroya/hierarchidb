@@ -4,6 +4,7 @@
  */
 
 import type { PeerEntity, Timestamp } from '@hierarchidb/core-types';
+import type { NodePayload } from '@hierarchidb/tree-api';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-base';
 
 /**
@@ -25,10 +26,10 @@ export interface MapViewport {
   pitch: number;
 }
 
-export interface BaseMapEntityPayload {
+export type BaseMapEntityPayload = NodePayload & {
   mapStyle: MapStyle;
   viewport?: MapViewport;
-}
+};
 
 /**
  * BaseMap entity persisted for each tree node

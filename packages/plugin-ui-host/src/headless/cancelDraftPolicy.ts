@@ -1,11 +1,11 @@
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { PeerEntity } from '@hierarchidb/core-types';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 
 export type CancelDecision = 'discard-force-delete' | 'discard-draft-only' | 'keep-draft';
 
 export function evaluateCancelPolicy<
-  TPayload extends
-    PeerEntity = PeerEntity,
+  TPayload extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 >(
   mode: 'create' | 'edit' | 'preview',
   draft: TreeNodeUpdaterState<TPayload> | null

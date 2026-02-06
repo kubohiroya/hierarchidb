@@ -1,18 +1,20 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 
 export type DialogUiState = unknown;
 
 // Draft container: basic info goes to draftMetadata, plugin data goes to draftData (Partial of plugin entity).
 export interface TreeNodeUpdaterPayload<
-  T extends PeerEntity = PeerEntity,
+  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 > {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData?: Partial<T>;
 }
 
-export interface TreeNodeUpdaterPatch<T extends PeerEntity = PeerEntity> {
+export interface TreeNodeUpdaterPatch<
+  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+> {
   draftMetadata?: TreeNodeMetadata | null;
   draftData?: Partial<T>;
 }
@@ -26,7 +28,7 @@ export type BasicInfoMeta = {
 export type BasicInfoState = TreeNodeMetadata;
 
 export interface StepCompositionResult<
-  T extends PeerEntity = PeerEntity,
+  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>,
 > {
   steps: import('@hierarchidb/ui-dialog').DialogStep[];
   stepDescriptors: ReadonlyArray<
@@ -37,7 +39,9 @@ export interface StepCompositionResult<
   dialogData: Partial<T>;
 }
 
-export interface StepAdapterProps<T extends PeerEntity = PeerEntity> {
+export interface StepAdapterProps<
+  T extends PeerEntity<TreeNodeData> = PeerEntity<TreeNodeData>
+> {
   cfg: import('@hierarchidb/plugin-base').PluginStepConfig<Partial<T>, DialogUiState>;
   mode: 'create' | 'edit';
   nodeId: string;

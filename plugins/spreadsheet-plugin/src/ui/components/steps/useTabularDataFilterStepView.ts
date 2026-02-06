@@ -5,13 +5,13 @@ import type {
   TabularDataResult,
   TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
 import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
 import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
 import { filterRulesAtom } from '../../state/tabularKeyValueAtoms.js';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 
-export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends PluginStepProps<T> {
+export interface TabularDataFilterStepProps<T extends SpreadsheetDraft> extends PluginStepProps<T> {
   renderSections?: TabularDataFilterProps['renderSections'];
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;
@@ -19,7 +19,7 @@ export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends
   showPreview?: boolean;
 }
 
-export const useTabularDataFilterStepView = <T extends SpreadsheetEntity>({
+export const useTabularDataFilterStepView = <T extends SpreadsheetDraft>({
   data,
   onChange,
   setValid,

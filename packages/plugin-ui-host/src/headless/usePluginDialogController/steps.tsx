@@ -1,5 +1,5 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   composeStepConfigs,
   PluginStepProps as PluginPluginStepProps,
@@ -25,7 +25,7 @@ import {
 } from '../controller/step-guards.js';
 import type { BasicInfoMeta, DialogUiState, StepCompositionResult } from './data-types.js';
 
-type PluginDefinedEntity = PeerEntity;
+type PluginDefinedEntity = PeerEntity<TreeNodeData>;
 
 type StepContextSnapshot = {
   mode: 'create' | 'edit';
@@ -102,7 +102,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         void name;
         void description;
         void tags;
-        setDraftData((prev) => ({
+        setDraftData((prev: Partial<PluginDefinedEntity>) => ({
           ...(toRecord(prev) ?? {}),
           ...(rest as Partial<PluginDefinedEntity>),
         }));

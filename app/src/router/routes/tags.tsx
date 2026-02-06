@@ -73,22 +73,9 @@ export default function TagsPage() {
     const query = searchQuery.toLowerCase();
     return (
       tag.name.toLowerCase().includes(query) ||
-      tag.description?.toLowerCase().includes(query) ||
-      tag.category?.toLowerCase().includes(query)
+      tag.description?.toLowerCase().includes(query)
     );
   });
-
-  // Group tags by category
-  const tagsByCategory = filteredTags.reduce(
-    (acc, tag) => {
-      const category = tag.category || 'uncategorized';
-      const list = acc[category] ?? [];
-      list.push(tag);
-      acc[category] = list;
-      return acc;
-    },
-    {} as Record<string, TagEntity[]>
-  );
 
   // Toggle sort order
   const toggleSort = (field: 'name' | 'usageCount') => {
@@ -197,43 +184,35 @@ export default function TagsPage() {
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {Object.entries(tagsByCategory).map(([category, categoryTags]) => (
-              <Box key={category} sx={{ width: '100%' }}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ textTransform: 'capitalize' }}>
-                      {category}
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                      {categoryTags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          badgeContent={tag.usageCount}
-                          color="secondary"
-                          max={999}
-                        >
-                          <Chip
-                            label={tag.name}
-                            onClick={() => handleTagClick(tag)}
-                            sx={{
-                              backgroundColor: tag.color || '#e0e0e0',
-                              color: '#fff',
-                              fontWeight: 500,
-                              '&:hover': {
-                                opacity: 0.8,
-                                cursor: 'pointer',
-                              },
-                            }}
-                          />
-                        </Badge>
-                      ))}
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
+            <Box sx={{ width: '100%' }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Tags
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                    {filteredTags.map((tag) => (
+                      <Badge key={tag.id} badgeContent={tag.usageCount} color="secondary" max={999}>
+                        <Chip
+                          label={tag.name}
+                          onClick={() => handleTagClick(tag)}
+                          sx={{
+                            backgroundColor: tag.color || '#e0e0e0',
+                            color: '#fff',
+                            fontWeight: 500,
+                            '&:hover': {
+                              opacity: 0.8,
+                              cursor: 'pointer',
+                            },
+                          }}
+                        />
+                      </Badge>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
           </Grid>
         )}
       </Container>

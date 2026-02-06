@@ -129,10 +129,10 @@ export const createContextMenuAction = (
           try {
             const mutationAPI = await client.getMutationAPI();
             const queryAPI = await client.getQueryAPI();
-            const siblings = await queryAPI.listChildren(targetNodeId);
+            const siblings = (await queryAPI.listChildren(targetNodeId)) as TreeNode[];
             const siblingNames = siblings
-              .map((n) => (typeof n?.metadata?.name === 'string' ? n.metadata.name : ''))
-              .filter((n) => n);
+              .map((node) => (typeof node?.metadata?.name === 'string' ? node.metadata.name : ''))
+              .filter((name): name is string => Boolean(name));
             const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
             const baseName = `New ${displayName}`;
             const resolvedName = createUniqueName(siblingNames, baseName);

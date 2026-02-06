@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -435,7 +435,7 @@ export const WorkerProvider = ({
       const expiresAt = rawExpires ? Number(rawExpires) : undefined;
       status.client
         .setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
-        .catch((error) => {
+        .catch((error: unknown) => {
           logWorkerProviderWarning('Failed to sync worker auth token', error);
         });
       lastAuthTokenRef.current = token;
@@ -460,7 +460,7 @@ export const WorkerProvider = ({
         localStorage.removeItem(key);
       },
     });
-    status.client.setUiStorageBridge(bridge).catch((error) => {
+    status.client.setUiStorageBridge(bridge).catch((error: unknown) => {
       logWorkerProviderWarning('Failed to register UI storage bridge', error);
     });
   }, [status.client, status.isInitialized]);

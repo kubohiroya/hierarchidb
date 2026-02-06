@@ -7,12 +7,11 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { TreeNodeData } from '@hierarchidb/tree-api';
 import { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-type WorkerClient = WorkerAPI<TreeNodeData>;
+type WorkerClient = WorkerAPI<Record<string, unknown>>;
 
 interface WorkerState {
   client: WorkerClient | null;

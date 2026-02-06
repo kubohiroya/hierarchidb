@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
-import type { CommitDraftMode, DialogProgressState, DialogUIState } from '@hierarchidb/tree-api';
+import type {
+  CommitDraftMode,
+  DialogProgressState,
+  DialogUIState,
+  TreeNodeData,
+} from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { StepNavigationEvent } from '@hierarchidb/ui-dialog';
 import type { DialogActionInFlight } from '../types.js';
 
-type UseStepNavigationArgs<TData extends PeerEntity> = {
+type UseStepNavigationArgs<TData extends PeerEntity<TreeNodeData>> = {
   activeStepIndex: number;
   stepsLength: number;
   setActiveStepIndex: (index: number) => void;
@@ -26,7 +31,7 @@ type UseStepNavigationArgs<TData extends PeerEntity> = {
   localDraftDataRef: React.MutableRefObject<Partial<TData>>;
 };
 
-export const useStepNavigation = <TData extends PeerEntity>(
+export const useStepNavigation = <TData extends PeerEntity<TreeNodeData>>(
   args: UseStepNavigationArgs<TData>
 ) => {
   const {

@@ -5,7 +5,6 @@ import {
   Breadcrumbs,
   Card,
   CardContent,
-  Chip,
   Container,
   Grid,
   Link,
@@ -65,11 +64,6 @@ export default function TagsPage({ uuid }: { uuid?: string }) {
                 )}
 
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Chip
-                    size="small"
-                    label={tag.category}
-                    color={tag.category === 'system' ? 'primary' : 'default'}
-                  />
                   <Typography variant="caption" color="text.secondary">
                     使用回数: {tag.usageCount}
                   </Typography>
@@ -176,10 +170,6 @@ export default function TagsPage({ uuid }: { uuid?: string }) {
               <Box display="flex" alignItems="center" gap={2} mb={2}>
                 <TagIcon sx={{ color: specificTag.color, fontSize: 32 }} />
                 <Typography variant="h4">{specificTag.name}</Typography>
-                <Chip
-                  label={specificTag.category}
-                  color={specificTag.category === 'system' ? 'primary' : 'default'}
-                />
               </Box>
 
               {specificTag.description && (
@@ -191,9 +181,6 @@ export default function TagsPage({ uuid }: { uuid?: string }) {
               <Typography variant="body2" color="text.secondary">
                 使用回数: {specificTag.usageCount} | 作成日時:{' '}
                 {new Date(specificTag.createdAt).toLocaleString()}
-                {specificTag.updatedAt && specificTag.updatedAt !== specificTag.createdAt && (
-                  <>| 更新日時: {new Date(specificTag.updatedAt).toLocaleString()}</>
-                )}
               </Typography>
             </Paper>
           )}

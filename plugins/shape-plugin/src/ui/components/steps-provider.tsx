@@ -6,7 +6,7 @@ import type {
   SelectedArrayByCountries,
 } from '../../common/types/ShapeEntity.ts';
 import { DEFAULT_BUILD_CONFIG, summarizeCheckboxState, validateBatchConfig } from '../../common/types/index.js';
-import { type NodeId, toNodeId } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
@@ -14,7 +14,6 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
 import { ShapeBuildStep } from './build-progress/ShapeBuildStep.tsx';
-import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -28,18 +27,15 @@ function createStepAdapter(
     useEffect(() => {
       latestDataRef.current = {
         ...(latestDataRef.current ?? {}),
-        nodeId: props.nodeId as NodeId,
         ...(props.data ?? {}),
       };
     }, [props.data, props.nodeId]);
     const data = ({
-      nodeId: props.nodeId as NodeId,
       ...(props.data ?? {}),
     }) as Partial<ShapeEntity>;
     const handleChange = useCallback((updates: Partial<ShapeEntity>) => {
       const next = {
         ...(latestDataRef.current ?? {}),
-        nodeId: props.nodeId as NodeId,
         ...updates,
       } as Partial<ShapeEntity>;
       latestDataRef.current = next;
@@ -75,64 +71,22 @@ const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   return hasSelection && hasDataSource && processingValid;
 };
 
-const resolveShapeNodeKey = (data?: Partial<ShapeEntity>): string | null => {
-  const key = data?.nodeId;
-  return key ? String(key) : null;
-};
-
-const requireShapeNodeId = (data?: Partial<ShapeEntity>): NodeId => {
-  const nodeKey = resolveShapeNodeKey(data);
-  if (!nodeKey) {
-    throw new Error('Shape nodeId is required for preview readiness checks.');
-  }
-  return toNodeId(nodeKey);
-};
-
 const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
   Boolean(data?.tileSummary && (data.tileSummary.tiles ?? 0) > 0);
-
-const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const summary = await shapeQueryAPIImpl.getVectorTileSummary(nodeId);
-  return summary.tiles > 0;
-};
-
-const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const rows = await shapeQueryAPIImpl.listSourceMetadata(nodeId);
-  return rows.length > 0;
-};
-
-const hasPersistedFeatureMetadata = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const rows = await shapeQueryAPIImpl.listFeatureMetadata(nodeId);
-  return rows.length > 0;
-};
-
-const hasPersistedTransformErrors = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const rows = await shapeQueryAPIImpl.listTransformErrorRecords(nodeId);
-  return rows.length > 0;
-};
 
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (data.processingStatus === 'completed') return true;
-  if (data.processingStatus === 'failed') return hasPersistedTransformErrors(data);
   if (hasTileSummary(data)) return true;
-  if (await hasPersistedVectorTiles(data)) return true;
-  return hasPersistedTransformErrors(data);
+  return data.processingStatus === 'failed';
 };
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
-  if (await hasPersistedMetadata(data)) return true;
-  if (await hasPersistedFeatureMetadata(data)) return true;
-  if (await hasPersistedTransformErrors(data)) return true;
   if (hasTileSummary(data)) return true;
-  return hasPersistedVectorTiles(data);
+  return data.processingStatus === 'completed';
 };
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({

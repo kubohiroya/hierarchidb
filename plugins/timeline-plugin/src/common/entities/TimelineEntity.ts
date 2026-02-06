@@ -1,4 +1,4 @@
-import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
+import type { PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export interface TimelineFrameViewState {

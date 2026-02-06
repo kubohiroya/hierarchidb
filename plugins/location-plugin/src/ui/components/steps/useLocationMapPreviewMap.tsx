@@ -4,6 +4,7 @@ import { Box, Typography } from '@mui/material';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationGroupItem } from '@hierarchidb/location-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import type { MapToggleSelection, MapViewState, ResourceGeoJsonLayer } from '@hierarchidb/ui-map';
 import {
@@ -173,7 +174,7 @@ type HoverMatch = {
 
 type UseLocationMapPreviewMapArgs = {
   nodeId?: NodeId;
-  workerApi: Remote<WorkerAPI> | null;
+  workerApi: Remote<WorkerAPI<TreeNodeData>> | null;
   workerLoading: boolean;
   workerError: Error | null;
   initializeWorker: () => Promise<void>;
@@ -281,7 +282,7 @@ export const useLocationMapPreviewMap = (
       const tileZoom = clampTileZoom(zoomValue, 0, MAX_TILE_ID_ZOOM);
       const tileIdField = resolveTileIdField(tileZoom, MAX_TILE_ID_ZOOM);
       const tileIdSet = getViewportTileIdSet(bbox, tileZoom, { minZoom: 0, maxZoom: MAX_TILE_ID_ZOOM });
-      const items = await api.queryByViewport(
+      const items = (await api.queryByViewport(
         previewNodeId as NodeId,
         bbox,
         zoomValue,
@@ -290,10 +291,10 @@ export const useLocationMapPreviewMap = (
           prefetchMarginPx: PREFETCH_MARGIN_PX,
           viewportSizePx,
         },
-      );
+      )) as LocationGroupItem[];
       if (requestId !== queryRequestRef.current) return;
       const points = items
-        .map((item) => {
+        .map((item: LocationGroupItem) => {
           const data = item.data;
           if (!data) return null;
           const longitude = data.longitude;
@@ -318,7 +319,10 @@ export const useLocationMapPreviewMap = (
             [tileIdField]: tileId,
           } as PreviewPoint & Record<string, unknown>;
         })
-        .filter((point): point is PreviewPoint & Record<string, unknown> => Boolean(point));
+        .filter(
+          (point: PreviewPoint & Record<string, unknown> | null): point is PreviewPoint &
+            Record<string, unknown> => Boolean(point)
+        );
       const filtered = filterItemsByTileIdSet(points, tileIdSet, tileIdField);
       console.info(DEBUG_PREFIX, 'viewport-fetch:success', { nodeId: previewNodeId, count: filtered.length });
       setPreviewPoints(filtered as PreviewPoint[]);

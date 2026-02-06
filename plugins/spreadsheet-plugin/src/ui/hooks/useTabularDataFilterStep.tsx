@@ -6,15 +6,15 @@ import {
   type TabularDataResult,
   type TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { rulesEqual } from '../state/tabularKeyValueAtoms.js';
 import type { useTabularKeyValueState } from './useTabularKeyValueState.js';
 
-type KeyValueState = ReturnType<typeof useTabularKeyValueState<SpreadsheetEntity>>;
+type KeyValueState = ReturnType<typeof useTabularKeyValueState<SpreadsheetDraft>>;
 
-export interface UseTabularDataFilterStepParams<T extends SpreadsheetEntity> {
+export interface UseTabularDataFilterStepParams<T extends SpreadsheetDraft> {
   pluginId: string;
   dialogData: T;
   setValid: PluginStepProps<T>['setValid'];
@@ -33,7 +33,7 @@ export interface UseTabularDataFilterStepParams<T extends SpreadsheetEntity> {
   dialogRef?: PluginStepProps<T>['dialogRef'];
 }
 
-export const useTabularDataFilterStep = <T extends SpreadsheetEntity>({
+export const useTabularDataFilterStep = <T extends SpreadsheetDraft>({
   pluginId,
   dialogData,
   setValid,

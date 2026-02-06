@@ -72,16 +72,21 @@ const normalizeLocationDraft = (
   mode: LocationDialogProps['mode']
 ): LocationDraft => {
   const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
+  const draftMetadata = raw?.draftMetadata ?? null;
 
+  const fallbackName = (draftData as { name?: string }).name;
+  const fallbackDescription = (draftData as { description?: string }).description;
   const normalizedDraft: LocationDraftPayload = {
     ...draftData,
+    name: draftMetadata?.name ?? fallbackName,
+    description: draftMetadata?.description ?? fallbackDescription,
     ...(mode === 'create' && !draftData.dataSource ? { dataSource: 'ide-gsm' } : {}),
   };
 
   return {
     treeNodeId: (raw?.treeNodeId ?? '') as NodeId,
     draft: normalizedDraft,
-    tags: undefined,
+    tags: draftMetadata?.tags ?? undefined,
     dataSource: normalizedDraft.dataSource,
     tabularSourceId: normalizedDraft.tabularSourceId,
     extractConfig: normalizedDraft.extractConfig,
@@ -117,12 +122,12 @@ const toDraftDataPayload = (
 ): TreeNodeUpdaterState<LocationEntity> => ({
   treeNodeId: value.treeNodeId ?? ('' as NodeId),
   draftMetadata: {
-    name: value.name ?? '',
-    description: value.description ?? '',
+    name: value.draft?.name ?? '',
+    description: value.draft?.description ?? '',
     tags: value.tags ?? [],
   } as TreeNodeMetadata,
   draftData: (value.draft ?? {}) as Partial<LocationEntity>,
-  dialogUIState: value.dialogUIState ?? {},
+  dialogUIState: {},
 });
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
@@ -209,12 +214,12 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const handleDraftPatch = useCallback((patch: Partial<LocationDraft>) => {
     const merged = mergeLocationDraft(dialogData, patch);
     const payload = toDraftDataPayload(merged);
-    updatePayload(payload.draftData ?? {}, dialogData.draft as Partial<LocationEntity> | undefined);
+    updatePayload(payload.draftData ?? {});
     updateMetadata(
       {
-        name: dialogData.name ?? '',
-        description: dialogData.description ?? '',
-        tags: dialogData.tags ?? [],
+        name: merged.draft?.name ?? '',
+        description: merged.draft?.description ?? '',
+        tags: merged.tags ?? [],
       } as TreeNodeMetadata,
       { name: '', description: '', tags: [] },
     );

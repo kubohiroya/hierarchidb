@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import { configureWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';

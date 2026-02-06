@@ -72,7 +72,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       semaphoreTtlTimeout: 10000,
     })
   ), []);
-  const activeNodeId = nodeId ?? data?.nodeId ?? null;
+  const activeNodeId = nodeId ?? null;
   const tabIdRef = useRef<string>(coordinator.getTabId());
   const channelRef = useRef<BroadcastChannel | null>(null);
   const lastBroadcastAtRef = useRef<number | null>(null);
@@ -161,10 +161,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const taskType = effectiveProgress?.taskType;
   const resolvedTaskType = taskType ?? effectiveStatus?.stage ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
-  const monitorKey = useMemo(() => {
-    const resolvedNodeId = nodeId ?? data?.nodeId;
-    return getBuildMonitorKey({ storagePrefix: 'hdb:shape:stage-monitor', maxSamples: 3, memoryPressureRatio: 0.85, heapWarningRatio: 0.85, heapCriticalRatio: 0.9 }, resolvedNodeId ? String(resolvedNodeId) : null);
-  }, [data?.nodeId, nodeId]);
+  const monitorKey = useMemo(() => (
+    getBuildMonitorKey(
+      {
+        storagePrefix: 'hdb:shape:stage-monitor',
+        maxSamples: 3,
+        memoryPressureRatio: 0.85,
+        heapWarningRatio: 0.85,
+        heapCriticalRatio: 0.9,
+      },
+      nodeId ? String(nodeId) : null
+    )
+  ), [nodeId]);
   const { timingSnapshot } = useShapeBuildTiming({
     buildStatus,
     taskType,

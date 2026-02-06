@@ -75,6 +75,9 @@ const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder('utf-8');
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 const GEOBOUNDARIES_MERGE_COUNTRIES = new Set(['CAN', 'GRL', 'CA', 'GL']);
 
 const isGeoBoundariesSource = (source: DataSourceName): boolean => (
@@ -438,8 +441,11 @@ const buildFetchFeatureCollection = (
   const features: Feature[] = [];
   for (const entity of entities) {
     if (!entity?.geometry) continue;
+    const entityProperties = isRecord(entity) && isRecord(entity.properties)
+      ? entity.properties
+      : undefined;
     const properties = {
-      ...(entity.properties ?? {}),
+      ...(entityProperties ?? {}),
     } as Record<string, unknown>;
     if (!properties.__hdbOriginKey) {
       properties.__hdbOriginKey = originKey;
