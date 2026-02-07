@@ -25,6 +25,7 @@ interface Params {
   initialStep: number;
   forceInitialStep?: boolean;
   initialDialogUIState?: DialogUIState | null;
+  allowFullScreen?: boolean;
   urlState?: { mode?: DialogDisplayMode; step?: number };
   onUrlStateChange?: (next: { mode: DialogDisplayMode; step: number }) => void;
 }
@@ -42,6 +43,7 @@ export function useDialogFrameState({
   initialStep,
   forceInitialStep = false,
   initialDialogUIState,
+  allowFullScreen = true,
   urlState,
   onUrlStateChange,
 }: Params): {
@@ -53,7 +55,11 @@ export function useDialogFrameState({
   dialogPosition: DialogPosition;
   transitionDisplayMode: (
     mode: DialogDisplayMode,
-    options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+    options?: {
+      restoreSize?: DialogSize | null;
+      restorePosition?: DialogPosition | null;
+      source?: 'explicit' | 'url-sync' | 'restore';
+    }
   ) => Promise<void>;
   handleSizeChange: (next?: DialogSize) => void;
   handlePositionChange: (next?: DialogPosition) => void;
@@ -61,7 +67,10 @@ export function useDialogFrameState({
 } {
   const [urlStateInternal, setUrlStateInternal] = useState<{ mode: DialogDisplayMode; step: number }>(
     () => ({
-      mode: urlState?.mode ?? 'normal',
+      mode:
+        !allowFullScreen && urlState?.mode === 'full-screen'
+          ? 'normal'
+          : (urlState?.mode ?? 'normal'),
       step:
         typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
           ? urlState.step
@@ -71,7 +80,8 @@ export function useDialogFrameState({
   const urlStateSourceRef = useRef<'external' | 'internal' | null>(null);
 
   useEffect(() => {
-    const nextMode = urlState?.mode ?? 'normal';
+    const requestedMode = urlState?.mode ?? 'normal';
+    const nextMode = !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
     const nextStep =
       typeof urlState?.step === 'number' && Number.isFinite(urlState.step)
         ? urlState.step
@@ -125,7 +135,9 @@ export function useDialogFrameState({
 
   const defaultFrameRef = useRef<typeof initialFrame | null>(initialFrame);
 
-  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>(urlMode);
+  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>(
+    !allowFullScreen && urlMode === 'full-screen' ? 'normal' : urlMode
+  );
   const [dialogSize, setDialogSize] = useState<DialogSize>(initialFrame.size);
   const [dialogPosition, setDialogPosition] = useState<DialogPosition>(initialFrame.position);
 
@@ -134,6 +146,7 @@ export function useDialogFrameState({
   const dialogPositionRef = useRef(dialogPosition);
   const hydratedKeyRef = useRef<string | null>(null);
   const transitionInFlightRef = useRef<DialogDisplayMode | null>(null);
+  const transitionSourceRef = useRef<'explicit' | 'url-sync' | 'restore' | null>(null);
   useEffect(() => {
     dialogSizeRef.current = dialogSize;
   }, [dialogSize]);
@@ -171,7 +184,9 @@ export function useDialogFrameState({
     const layoutViewport = getDialogLayoutViewport();
     const windowState = initialDialogUIState.dialogWindow;
     const progressState = initialDialogUIState.dialogProgress;
-    const mode = windowState?.mode ?? 'normal';
+    const requestedMode = windowState?.mode ?? 'normal';
+    const mode =
+      !allowFullScreen && requestedMode === 'full-screen' ? 'normal' : requestedMode;
     const size = windowState?.size ?? dialogSizeRef.current;
     const position = windowState?.position ?? dialogPositionRef.current;
 
@@ -219,8 +234,19 @@ export function useDialogFrameState({
   const transitionDisplayMode = useCallback(
     async (
       mode: DialogDisplayMode,
-      options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+      options?: {
+        restoreSize?: DialogSize | null;
+        restorePosition?: DialogPosition | null;
+        source?: 'explicit' | 'url-sync' | 'restore';
+      }
     ) => {
+      if (options?.source) {
+        transitionSourceRef.current = options.source;
+      }
+      const nextMode = !allowFullScreen && mode === 'full-screen' ? 'normal' : mode;
+      if (nextMode !== mode) {
+        mode = nextMode;
+      }
       if (mode === displayMode && transitionInFlightRef.current === null) {
         return;
       }
@@ -236,10 +262,16 @@ export function useDialogFrameState({
       const restorePosition = options?.restorePosition ?? null;
 
       const applyNormalizedState = (size: DialogSize, position: DialogPosition) => {
+        const currentSize = dialogSizeRef.current;
+        const currentPosition = dialogPositionRef.current;
+        if (!sizesEqual(currentSize, size)) {
+          persistSize(size);
+        }
+        if (!positionsEqual(currentPosition, position)) {
+          persistPosition(position);
+        }
         dialogSizeRef.current = size;
         dialogPositionRef.current = position;
-        persistSize(size);
-        persistPosition(position);
       };
 
       if (mode === 'full-screen') {
@@ -247,6 +279,7 @@ export function useDialogFrameState({
           width: Math.max(layoutViewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
           height: Math.max(layoutViewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
+        defaultFrameRef.current = null;
         applyNormalizedState(fullSize, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
         const size = getPresetSize('maximize', layoutViewport);
@@ -256,6 +289,7 @@ export function useDialogFrameState({
           minPosition: 0,
           clampSizeToViewport: true,
         });
+        defaultFrameRef.current = null;
         applyNormalizedState(normalized.size, normalized.position);
       } else {
         const size = restoreSize ?? getPresetSize('normal', viewport);
@@ -266,19 +300,19 @@ export function useDialogFrameState({
         applyNormalizedState(normalized.size, normalized.position);
       }
 
-      setDisplayModeState(mode);
       persistDisplayMode(mode);
+      transitionSourceRef.current = null;
       transitionInFlightRef.current = null;
     },
-    [displayMode, persistDisplayMode, persistPosition, persistSize]
+    [allowFullScreen, displayMode, persistDisplayMode, persistPosition, persistSize, urlMode]
   );
 
   useEffect(() => {
     if (transitionInFlightRef.current) return;
     if (urlMode !== displayMode) {
-      void transitionDisplayMode(urlMode);
+      void transitionDisplayMode(urlMode, { source: 'url-sync' });
     }
-  }, [urlMode, displayMode, transitionDisplayMode]);
+  }, [displayMode, transitionDisplayMode, urlMode]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -319,6 +353,7 @@ export function useDialogFrameState({
       }
 
       const shouldRecenter =
+        displayMode === 'normal' &&
         defaultFrameRef.current &&
         sizesEqual(dialogSizeRef.current, defaultFrameRef.current.size) &&
         positionsEqual(dialogPositionRef.current, defaultFrameRef.current.position);

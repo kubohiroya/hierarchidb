@@ -295,6 +295,7 @@ export function usePluginDialogController(
 
   const dialogUIState = (draft as LocalTreeNodeUpdaterState | null)?.dialogUIState ?? null;
   const isDialogReady = Boolean(dialogUIState);
+  const allowFullScreen = nodeType === 'folder';
 
   const {
     activeStepIndex,
@@ -314,6 +315,7 @@ export function usePluginDialogController(
     initialStep,
     forceInitialStep,
     initialDialogUIState: dialogUIState,
+    allowFullScreen,
     urlState,
     onUrlStateChange,
   });
@@ -330,6 +332,7 @@ export function usePluginDialogController(
     dialogPosition,
     dialogSize,
     displayMode,
+    allowFullScreen,
     forceInitialStep,
     urlStep: urlState?.step ?? null,
     restoreKey: (treeUpdater?.treeNodeId ?? nodeId) as string | number | null,
@@ -370,23 +373,6 @@ export function usePluginDialogController(
     return base;
   }, [getPersistableDialogUIState, dialogUIStateRef]);
 
-
-  const measureJsonSize = useCallback((value: unknown) => {
-    const now = typeof performance !== 'undefined' && typeof performance.now === 'function'
-      ? () => performance.now()
-      : () => Date.now();
-    const startedAt = now();
-    let size = 0;
-    let error: string | null = null;
-    try {
-      size = JSON.stringify(value ?? null).length;
-    } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
-    }
-    const durationMs = Math.max(0, now() - startedAt);
-    return { size, durationMs, error };
-  }, []);
-
   const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
     () => (toRecord(draft?.draftData) as Partial<PluginDefinedEntity>) ?? {},
     [draft?.draftData]
@@ -398,7 +384,8 @@ export function usePluginDialogController(
   const localDraftDataRef = useRef<Partial<PluginDefinedEntity>>(draftDataWithoutMeta);
   const displayModeTransitionRef = useRef(false);
   const setLocalDraftData = useCallback(
-    (next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
+    (source: string, next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
+      if (!source) throw new Error('setLocalDraftData: source is required.');
       setLocalDraftDataState((prev: Partial<PluginDefinedEntity>) => {
         const resolved =
           typeof next === 'function'
@@ -413,7 +400,7 @@ export function usePluginDialogController(
     []
   );
   useEffect(() => {
-    setLocalDraftData(draftDataWithoutMeta);
+    setLocalDraftData('draftDataSync', draftDataWithoutMeta);
   }, [draftDataWithoutMeta, setLocalDraftData]);
 
   const applyUpdateDraft = useCallback(
@@ -445,7 +432,7 @@ export function usePluginDialogController(
     client,
     draft: treeUpdater,
     updateDraft: (patch) => {
-      setLocalDraftData((prev: Partial<PluginDefinedEntity>) => ({
+      setLocalDraftData('basicInfoBridge', (prev: Partial<PluginDefinedEntity>) => ({
         ...(toRecord(prev) ?? {}),
         ...patch.draftData,
       }));
@@ -514,7 +501,7 @@ export function usePluginDialogController(
     nodeId,
     pageNodeId,
     draftData: localDraftData,
-    setDraftData: setLocalDraftData,
+    setDraftData: (next) => setLocalDraftData('stepAdapter', next),
     handleBasicInfoBridge,
     dialogRef,
     basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
@@ -1041,10 +1028,10 @@ export function usePluginDialogController(
   const handleStepDataChange = useCallback(
     (patch: Partial<Partial<PluginDefinedEntity>>) => {
       if (nodeType === 'folder') {
-        setLocalDraftData({});
+        setLocalDraftData('stepDataChange', {});
         return;
       }
-      setLocalDraftData((prev: Partial<PluginDefinedEntity>) => ({
+      setLocalDraftData('stepDataChange', (prev: Partial<PluginDefinedEntity>) => ({
         ...(toRecord(prev) ?? {}),
         ...patch,
       }));
@@ -1082,8 +1069,17 @@ export function usePluginDialogController(
       size: dialogSize,
       onSizeChange: handleSizeChangeWithPersist as (next?: DialogSize) => void,
       displayMode,
+      allowFullScreen,
       removePaddingWithFullScreenMode: Boolean(options.removePaddingWithFullScreenMode),
       onDisplayModeChange: (mode: DialogDisplayMode) => {
+        if (mode === 'full-screen' && !allowFullScreen) {
+          if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+            console.warn('[PluginDialogShell] full-screen disabled for node type', {
+              nodeType,
+            });
+          }
+          return;
+        }
         if (mode === displayMode) {
           return;
         }
@@ -1106,19 +1102,7 @@ export function usePluginDialogController(
         const restoreSize = shouldCaptureRestore
           ? dialogSize
           : (currentWindow?.restoreSize ?? null);
-        const draftMetrics = measureJsonSize(localDraftDataRef.current);
-        const dialogUiMetrics = measureJsonSize(buildDialogUIStateForPersist());
-        console.info('[PluginDialogShell] displayMode change', {
-          from: displayMode,
-          to: mode,
-          draftDataSize: draftMetrics.size,
-          draftDataMs: draftMetrics.durationMs,
-          draftDataError: draftMetrics.error,
-          dialogUiSize: dialogUiMetrics.size,
-          dialogUiMs: dialogUiMetrics.durationMs,
-          dialogUiError: dialogUiMetrics.error,
-        });
-        void transitionDisplayMode(mode, { restorePosition, restoreSize })
+        void transitionDisplayMode(mode, { restorePosition, restoreSize, source: 'explicit' })
           .then(() => {
             persistDialogWindow({ mode, restorePosition, restoreSize });
           })
@@ -1150,6 +1134,7 @@ export function usePluginDialogController(
       dialogSize,
       handleSizeChangeWithPersist,
       displayMode,
+      allowFullScreen,
       options.removePaddingWithFullScreenMode,
       HeaderComponent,
       ContentComponent,
@@ -1158,6 +1143,7 @@ export function usePluginDialogController(
       persistDialogWindow,
       persistDialogUIState,
       dialogUIStateRef,
+      nodeType,
     ]
   );
 

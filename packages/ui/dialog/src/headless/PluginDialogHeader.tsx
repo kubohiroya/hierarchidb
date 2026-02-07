@@ -10,6 +10,7 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<T
     validatedStepIndices: ctx.validatedStepIndices,
     committableStepIndices: ctx.committableStepIndices,
     displayMode: ctx.displayMode ?? 'normal',
+    allowFullScreen: ctx.allowFullScreen,
     onDisplayModeChange: ctx.onDisplayModeChange,
     isMinimized: ctx.isMinimized,
     onMinimizeChange: ctx.onMinimizeChange,

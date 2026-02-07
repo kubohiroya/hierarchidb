@@ -253,7 +253,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 displayMode={ctx.displayMode === 'full-screen' ? 'full-screen' : 'default'}
                 onClick={toggleFullscreen}
                 onPointerDown={stopPointerPropagation}
-                disabled={!ctx.onDisplayModeChange}
+                disabled={!ctx.onDisplayModeChange || !ctx.allowFullScreen}
               />
               <PluginDialogCloseButton
                 onClick={() => ctx.onRequestClose('close')}

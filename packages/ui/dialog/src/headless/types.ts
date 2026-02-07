@@ -38,6 +38,7 @@ export interface HeadlessHeaderRenderProps<TData> {
   validatedStepIndices: ReadonlyArray<number>;
   committableStepIndices: ReadonlyArray<number>;
   displayMode: DialogDisplayMode;
+  allowFullScreen?: boolean;
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
   isMinimized?: boolean;
   onMinimizeChange?: (next: boolean) => void;
@@ -75,6 +76,7 @@ export interface DialogFrameProps {
   onSizeChange?: (next: DialogSize) => void;
   displayMode?: DialogDisplayMode;
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
+  allowFullScreen?: boolean;
   isMinimized?: boolean;
   onMinimizeChange?: (next: boolean) => void;
   frameless?: boolean;

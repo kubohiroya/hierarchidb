@@ -4,7 +4,6 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
 import {
@@ -15,29 +14,8 @@ import {
   Minimize as MinimizeIcon,
   Window as WindowIcon,
 } from '@mui/icons-material';
-import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
-import {
-  DEFAULT_FLOATING_WINDOW_Z_INDEX,
-  FLOATING_WINDOW_ROOT_ID,
-  useFloatingWindowPortal,
-} from './FloatingWindowPortalProvider.js';
-
-const ensureFloatingWindowRoot = (): HTMLElement | null => {
-  if (typeof document === 'undefined') return null;
-  const body = document.body;
-  if (!body) return null;
-  let root = document.getElementById(FLOATING_WINDOW_ROOT_ID);
-  if (!root) {
-    root = document.createElement('div');
-    root.id = FLOATING_WINDOW_ROOT_ID;
-    root.style.position = 'fixed';
-    root.style.inset = '0';
-    root.style.pointerEvents = 'none';
-    body.appendChild(root);
-  }
-  root.style.zIndex = String(DEFAULT_FLOATING_WINDOW_Z_INDEX);
-  return root;
-};
+import type { FloatingWindowProps } from '../types/WindowState.js';
+import { useFloatingWindowController } from './useFloatingWindowController.js';
 
 const StyledWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',
@@ -136,389 +114,15 @@ const ResizeHandle = styled(Box)({
   },
 });
 
-export const FloatingWindow: React.FC<FloatingWindowProps> = ({
-  title,
-  titleIcon,
-  children,
-  initialState,
-  onStateChange,
-  onClose,
-  minWidth = 200,
-  minHeight = 100,
-  maxWidth,
-  maxHeight,
-  resizable = true,
-  draggable = true,
-  className,
-  style,
-}) => {
-
-  const setInteractionActive = useCallback((active: boolean) => {
-    if (typeof document === 'undefined') return;
-    const body = document.body;
-    if (!body) return;
-    if (active) {
-      body.dataset.hdbFloatingWindowInteraction = '1';
-    } else {
-      delete body.dataset.hdbFloatingWindowInteraction;
-    }
-  }, []);
-  const resetInteractionState = useCallback(() => {
-    isDragging.current = false;
-    isResizing.current = false;
-    resizeDirection.current = '';
-    setInteractionActive(false);
-    setOverlayActive(false);
-  }, [setInteractionActive]);
-  const [overlayActive, setOverlayActive] = useState(false);
-  const portalContext = useFloatingWindowPortal();
-  const portalRoot = portalContext.isProvider ? portalContext.root : ensureFloatingWindowRoot();
-  const portalHostRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (!portalRoot) return undefined;
-    if (!portalHostRef.current) {
-      const host = document.createElement('div');
-      host.style.position = 'relative';
-      host.style.pointerEvents = 'auto';
-      portalHostRef.current = host;
-      portalRoot.appendChild(host);
-    }
-    return () => {
-      const host = portalHostRef.current;
-      if (host && portalRoot.contains(host)) {
-        portalRoot.removeChild(host);
-      }
-      portalHostRef.current = null;
-    };
-  }, [portalRoot]);
-
-  const windowRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const isResizing = useRef(false);
-  const suppressNotifyRef = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0 });
-  const resizeStart = useRef({ width: 0, height: 0, x: 0, y: 0, positionX: 0, positionY: 0 });
-  const resizeDirection = useRef<string>('');
-
-  const [state, setState] = useState<WindowState>({
-    position: initialState?.position || { x: 100, y: 100 },
-    size: initialState?.size || { width: 400, height: 300 },
-    isMinimized: initialState?.isMinimized || false,
-    isFullscreen: initialState?.isFullscreen || false,
-    isVisible: initialState?.isVisible !== false,
-    zIndex: initialState?.zIndex || 1000,
-  });
-  const stateRef = useRef<WindowState>(state);
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-  const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
-  // Calculate constraints
-  const effectiveMaxWidth = maxWidth || window.innerWidth - 50;
-  const effectiveMaxHeight = maxHeight || window.innerHeight - 50;
-  const clamp = useCallback((value: number, min: number, max: number) => Math.min(max, Math.max(min, value)), []);
-  const resolveBounds = useCallback(() => {
-    const minVisibleLeft = 64;
-    const minVisibleTop = 24;
-    return {
-      minX: 0,
-      minY: 0,
-      maxX: Math.max(0, window.innerWidth - minVisibleLeft),
-      maxY: Math.max(0, window.innerHeight - minVisibleTop),
-    };
-  }, []);
-
-  const resolveIncomingState = useCallback((prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
-    if (!incoming) return null;
-    const normalizePosition = (value: WindowState['position'] | undefined) => {
-      if (!value) return prev.position;
-      const { x, y } = value;
-      if (!Number.isFinite(x) || !Number.isFinite(y)) {
-        return prev.position;
-      }
-      const bounds = resolveBounds();
-      return {
-        x: clamp(x, bounds.minX, bounds.maxX),
-        y: clamp(y, bounds.minY, bounds.maxY),
-      };
-    };
-    const normalizeSize = (value: WindowState['size'] | undefined) => {
-      if (!value) return prev.size;
-      const { width, height } = value;
-      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-        return prev.size;
-      }
-      return value;
-    };
-    const normalizeZIndex = (value: number | undefined) => (
-      typeof value === 'number' && Number.isFinite(value) ? value : prev.zIndex
-    );
-    const next: WindowState = {
-      position: normalizePosition(incoming.position),
-      size: normalizeSize(incoming.size),
-      isMinimized: incoming.isMinimized ?? prev.isMinimized,
-      isFullscreen: incoming.isFullscreen ?? prev.isFullscreen,
-      isVisible: incoming.isVisible ?? prev.isVisible,
-      zIndex: normalizeZIndex(incoming.zIndex),
-    };
-    const samePosition = next.position.x === prev.position.x && next.position.y === prev.position.y;
-    const sameSize = next.size.width === prev.size.width && next.size.height === prev.size.height;
-    const sameFlags = next.isMinimized === prev.isMinimized
-      && next.isFullscreen === prev.isFullscreen
-      && next.isVisible === prev.isVisible
-      && next.zIndex === prev.zIndex;
-    if (samePosition && sameSize && sameFlags) return null;
-    return next;
-  }, [clamp, resolveBounds]);
-
-  useEffect(() => {
-    setState((prev) => {
-      const next = resolveIncomingState(prev, initialState);
-      if (next) {
-        suppressNotifyRef.current = true;
-      }
-      return next ?? prev;
-    });
-  }, [initialState, resolveIncomingState]);
-
-  // Update external atoms
-  useEffect(() => {
-    if (suppressNotifyRef.current) {
-      suppressNotifyRef.current = false;
-      return;
-    }
-    onStateChange?.(state);
-  }, [state, onStateChange]);
-
-  const bringToFront = useCallback(() => {
-    const host = portalHostRef.current;
-    const parent = host?.parentElement;
-    if (host && parent && parent.lastElementChild !== host) {
-      parent.appendChild(host);
-    }
-  }, []);
-
-  // Handle dragging
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!draggable || e.button !== 0) return;
-    if (state.isFullscreen) return;
-
-    // Check if clicking on title bar
-    const target = e.target as HTMLElement;
-    if (!target.closest('.title-bar')) return;
-    if (target.closest('button')) return;
-
-    if (e.detail > 1) {
-      return;
-    }
-
-    isDragging.current = true;
-    setInteractionActive(true);
-    setOverlayActive(true);
-    bringToFront();
-    dragStart.current = {
-      x: e.clientX - stateRef.current.position.x,
-      y: e.clientY - stateRef.current.position.y,
-    };
-    e.preventDefault();
-  }, [bringToFront, draggable, minHeight, minWidth, setInteractionActive, setOverlayActive, state.isFullscreen]);
-
-  // Handle resizing
-  const handleResizeMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
-    if (!resizable || e.button !== 0) return;
-    if (state.isMinimized || state.isFullscreen) return;
-
-    isResizing.current = true;
-    setInteractionActive(true);
-    setOverlayActive(true);
-    bringToFront();
-    resizeDirection.current = direction;
-    resizeStart.current = {
-      width: stateRef.current.size.width,
-      height: stateRef.current.size.height,
-      x: e.clientX,
-      y: e.clientY,
-      positionX: stateRef.current.position.x,
-      positionY: stateRef.current.position.y,
-    };
-
-    e.preventDefault();
-    e.stopPropagation();
-  }, [bringToFront, resizable, setInteractionActive, setOverlayActive, state.isFullscreen, state.isMinimized]);
-
-  // Global mouse move handler
-  const interactionEnabled = state.isVisible;
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging.current) {
-        const { minX, minY, maxX, maxY } = resolveBounds();
-        const newX = clamp(e.clientX - dragStart.current.x, minX, maxX);
-        const newY = clamp(e.clientY - dragStart.current.y, minY, maxY);
-
-        setState(prev => ({
-          ...prev,
-          position: { x: newX, y: newY },
-        }));
-      }
-
-      if (isResizing.current) {
-        const deltaX = e.clientX - resizeStart.current.x;
-        const deltaY = e.clientY - resizeStart.current.y;
-        const dir = resizeDirection.current;
-
-        let newWidth = resizeStart.current.width;
-        let newHeight = resizeStart.current.height;
-        let newX = resizeStart.current.positionX;
-        let newY = resizeStart.current.positionY;
-
-        // Handle horizontal resizing
-        if (dir.includes('e')) {
-          newWidth = Math.max(minWidth, Math.min(resizeStart.current.width + deltaX, effectiveMaxWidth));
-        } else if (dir.includes('w')) {
-          const clampedWidth = Math.max(minWidth, Math.min(resizeStart.current.width - deltaX, effectiveMaxWidth));
-          newWidth = clampedWidth;
-          newX = resizeStart.current.positionX + (resizeStart.current.width - clampedWidth);
-        }
-
-        // Handle vertical resizing
-        if (dir.includes('s')) {
-          newHeight = Math.max(minHeight, Math.min(resizeStart.current.height + deltaY, effectiveMaxHeight));
-        } else if (dir.includes('n')) {
-          const clampedHeight = Math.max(minHeight, Math.min(resizeStart.current.height - deltaY, effectiveMaxHeight));
-          newHeight = clampedHeight;
-          newY = resizeStart.current.positionY + (resizeStart.current.height - clampedHeight);
-        }
-
-        const bounds = resolveBounds();
-        const clampedX = clamp(newX, bounds.minX, bounds.maxX);
-        const clampedY = clamp(newY, bounds.minY, bounds.maxY);
-        setState(prev => ({
-          ...prev,
-          position: { x: clampedX, y: clampedY },
-          size: { width: newWidth, height: newHeight },
-        }));
-      }
-    };
-
-    const handleMouseUp = () => {
-      isDragging.current = false;
-      isResizing.current = false;
-      resizeDirection.current = '';
-      setInteractionActive(false);
-      setOverlayActive(false);
-    };
-
-    if (interactionEnabled) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [
-    clamp,
-    effectiveMaxHeight,
-    effectiveMaxWidth,
-    interactionEnabled,
-    minHeight,
-    minWidth,
-    resolveBounds,
-    setInteractionActive,
-    setOverlayActive,
-  ]);
-
-  // Handle minimize/restore
-  const handleMinimize = useCallback(() => {
-    resetInteractionState();
-    bringToFront();
-    setState(prev => {
-      if (prev.isMinimized) {
-        return { ...prev, isMinimized: false };
-      }
-      const normal = prev.isFullscreen ? normalStateRef.current : null;
-      return {
-        ...prev,
-        isMinimized: true,
-        isFullscreen: false,
-        position: normal?.position ?? prev.position,
-        size: normal?.size ?? prev.size,
-      };
-    });
-  }, [bringToFront, setInteractionActive, setOverlayActive]);
-
-  const handleFullscreen = useCallback(() => {
-    resetInteractionState();
-    bringToFront();
-    setState(prev => {
-      if (prev.isFullscreen) {
-        const normal = normalStateRef.current;
-        return {
-          ...prev,
-          isFullscreen: false,
-          position: normal?.position ?? prev.position,
-          size: normal?.size ?? prev.size,
-        };
-      }
-      normalStateRef.current = { position: prev.position, size: prev.size };
-      return {
-        ...prev,
-        isFullscreen: true,
-        isMinimized: false,
-        position: { x: 0, y: 0 },
-        size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
-      };
-    });
-  }, [bringToFront, minHeight, minWidth]);
-
-  // Handle close
-  const handleClose = useCallback(() => {
-    resetInteractionState();
-    bringToFront();
-    setState(prev => ({ ...prev, isVisible: false }));
-    onClose?.();
-  }, [bringToFront, onClose, resetInteractionState]);
-
-  useEffect(() => {
-    if (!state.isFullscreen) return;
-    const handleResize = () => {
-      setState(prev => {
-        if (prev.isFullscreen) {
-          return {
-            ...prev,
-            position: { x: 0, y: 0 },
-            size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
-          };
-        }
-        return prev;
-      });
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [minHeight, minWidth, state.isFullscreen]);
-
-  useEffect(() => {
-    if (!state.isFullscreen && !state.isMinimized) return;
-    resetInteractionState();
-  }, [resetInteractionState, state.isFullscreen, state.isMinimized]);
-
-  // Calculate window styles
-  const windowStyle = useMemo(() => ({
-    left: state.position.x,
-    top: state.position.y,
-    width: state.isMinimized ? 250 : state.size.width,
-    height: state.isMinimized ? 40 : state.size.height,
-    zIndex: 0,
-    display: state.isVisible ? 'flex' : 'none',
-    ...style,
-  }), [state, style]);
+export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
+  const { title, titleIcon, children, resizable = true, className } = props;
+  const controller = useFloatingWindowController(props);
   const overlayZIndex = 1;
 
-  if (!state.isVisible) {
+  if (!controller.state.isVisible) {
     return null;
   }
-  if (portalContext.isProvider && !portalRoot) {
+  if (controller.isProviderPortal && !controller.portalRoot) {
     return null;
   }
 
@@ -529,33 +133,24 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         inset: 0,
         backgroundColor: 'transparent',
         zIndex: overlayZIndex,
-        cursor: isResizing.current ? 'nwse-resize' : 'move',
+        cursor: controller.overlayCursor,
         pointerEvents: 'auto',
       }}
     />
   );
   const windowNode = (
     <StyledWindow
-      ref={windowRef}
+      ref={controller.windowRef}
       className={`floating-window ${className || ''}`}
-      style={{ ...windowStyle, pointerEvents: 'auto' }}
+      style={{ ...controller.windowStyle, pointerEvents: 'auto' }}
       elevation={8}
-      onMouseDownCapture={(event) => {
-        if (event.button !== 0) return;
-        bringToFront();
-      }}
+      onMouseDownCapture={controller.handleWindowMouseDownCapture}
     >
       <TitleBar
         className="title-bar"
-        onMouseDown={handleMouseDown}
-        onDoubleClick={() => {
-          if (!draggable || state.isMinimized) return;
-          handleFullscreen();
-        }}
-        onMouseDownCapture={(event) => {
-          if (event.button !== 0) return;
-          bringToFront();
-        }}
+        onMouseDown={controller.handleMouseDown}
+        onDoubleClick={controller.handleTitleBarDoubleClick}
+        onMouseDownCapture={controller.handleTitleBarMouseDownCapture}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.83rem' }}>
           {titleIcon ?? <WindowIcon sx={{ fontSize: '1rem', ml: 1 }} />}
@@ -566,21 +161,21 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <IconButton
             size="small"
-            onClick={handleMinimize}
+            onClick={controller.handleMinimize}
             sx={{ color: 'inherit', padding: '2px' }}
           >
-            {state.isMinimized ? <RestoreIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
+            {controller.state.isMinimized ? <RestoreIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
           </IconButton>
           <IconButton
             size="small"
-            onClick={handleFullscreen}
+            onClick={controller.handleFullscreen}
             sx={{ color: 'inherit', padding: '2px' }}
           >
-            {state.isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+            {controller.state.isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
           </IconButton>
           <IconButton
             size="small"
-            onClick={handleClose}
+            onClick={controller.handleClose}
             sx={{ color: 'inherit', padding: '2px' }}
           >
             <CloseIcon fontSize="small" />
@@ -588,7 +183,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         </Box>
       </TitleBar>
 
-      {!state.isMinimized && (
+      {!controller.state.isMinimized && (
         <>
           <WindowContent>
             {children}
@@ -596,14 +191,14 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
           {resizable && (
             <>
-              <ResizeHandle className="resize-n" onMouseDown={handleResizeMouseDown('n')} />
-              <ResizeHandle className="resize-ne" onMouseDown={handleResizeMouseDown('ne')} />
-              <ResizeHandle className="resize-e" onMouseDown={handleResizeMouseDown('e')} />
-              <ResizeHandle className="resize-se" onMouseDown={handleResizeMouseDown('se')} />
-              <ResizeHandle className="resize-s" onMouseDown={handleResizeMouseDown('s')} />
-              <ResizeHandle className="resize-sw" onMouseDown={handleResizeMouseDown('sw')} />
-              <ResizeHandle className="resize-w" onMouseDown={handleResizeMouseDown('w')} />
-              <ResizeHandle className="resize-nw" onMouseDown={handleResizeMouseDown('nw')} />
+              <ResizeHandle className="resize-n" onMouseDown={controller.handleResizeMouseDown('n')} />
+              <ResizeHandle className="resize-ne" onMouseDown={controller.handleResizeMouseDown('ne')} />
+              <ResizeHandle className="resize-e" onMouseDown={controller.handleResizeMouseDown('e')} />
+              <ResizeHandle className="resize-se" onMouseDown={controller.handleResizeMouseDown('se')} />
+              <ResizeHandle className="resize-s" onMouseDown={controller.handleResizeMouseDown('s')} />
+              <ResizeHandle className="resize-sw" onMouseDown={controller.handleResizeMouseDown('sw')} />
+              <ResizeHandle className="resize-w" onMouseDown={controller.handleResizeMouseDown('w')} />
+              <ResizeHandle className="resize-nw" onMouseDown={controller.handleResizeMouseDown('nw')} />
             </>
           )}
         </>
@@ -613,8 +208,12 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
   return (
     <>
-      {overlayActive && portalRoot ? createPortal(overlayNode, portalRoot) : overlayActive ? overlayNode : null}
-      {portalHostRef.current ? createPortal(windowNode, portalHostRef.current) : windowNode}
+      {controller.overlayActive && controller.portalRoot
+        ? createPortal(overlayNode, controller.portalRoot)
+        : controller.overlayActive
+          ? overlayNode
+          : null}
+      {controller.portalHostRef.current ? createPortal(windowNode, controller.portalHostRef.current) : windowNode}
     </>
   );
 };

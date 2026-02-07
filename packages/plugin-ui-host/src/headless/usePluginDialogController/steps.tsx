@@ -259,7 +259,12 @@ export function useDialogSteps({
       ...(toRecord(prev) ?? {}),
       ...nextWorkingData,
     }));
-  }, [draftData, basicInfo, basicInfoMeta, setDraftAtomValue]);
+  }, [
+    basicInfo,
+    basicInfoMeta,
+    draftData,
+    setDraftAtomValue,
+  ]);
   const normalizedConfigs = useMemo<
     PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>[]
   >(() => {

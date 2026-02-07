@@ -3,7 +3,8 @@ import {
   prefetchAllIcons,
 } from '@hierarchidb/plugin-presentation';
 import React from 'react';
-import { PluginDialogShell, type PluginDialogShellProps } from './headless/PluginDialogShell.js';
+import { PluginDialogShell } from './headless/PluginDialogShell.js';
+import type { PluginDialogShellProps } from './headless/PluginDialogShell.types.js';
 
 export interface PluginDialogHostProps extends PluginDialogShellProps {
   prefetchIcons?: boolean;

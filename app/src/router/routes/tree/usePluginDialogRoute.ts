@@ -2,7 +2,7 @@ import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
 import { treeRouteIds } from './shared.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
@@ -148,6 +148,13 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const urlDisplayMode = resolveDialogDisplayMode(routeParams?.mode);
   const requestedAction = routeParams?.action?.toLowerCase() ?? '';
   const forceInitialStep = stepParam !== null || requestedAction === 'preview';
+  const lastUrlStateRef = useRef<{ mode: 'normal' | 'maximize' | 'full-screen'; step: number }>({
+    mode: urlDisplayMode,
+    step: currentStep,
+  });
+  useEffect(() => {
+    lastUrlStateRef.current = { mode: urlDisplayMode, step: currentStep };
+  }, [currentStep, urlDisplayMode]);
 
   const mode: 'create' | 'edit' | 'preview' =
     requestedAction === 'preview'
@@ -179,6 +186,11 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
 
   const handleUrlStateChange = useCallback(
     (next: { mode: 'normal' | 'maximize' | 'full-screen'; step: number }) => {
+      const current = lastUrlStateRef.current;
+      if (current.mode === next.mode && current.step === next.step) {
+        return;
+      }
+      lastUrlStateRef.current = { mode: next.mode, step: next.step };
       const actionParam = params.action ?? String(effectiveAction ?? 'edit');
       const modeSegment = toUrlModeSegment(next.mode);
       void navigate({

@@ -16,7 +16,11 @@ type RestoreDeps = {
   handlePositionChange: (next?: DialogPosition) => void;
   transitionDisplayMode: (
     mode: DialogDisplayMode,
-    options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+    options?: {
+      restoreSize?: DialogSize | null;
+      restorePosition?: DialogPosition | null;
+      source?: 'explicit' | 'url-sync' | 'restore';
+    }
   ) => Promise<void>;
 };
 
@@ -26,6 +30,7 @@ export function useDialogUIStateSync(params: {
   dialogPosition: DialogPosition;
   dialogSize: DialogSize;
   displayMode: DialogDisplayMode;
+  allowFullScreen?: boolean;
   forceInitialStep?: boolean;
   urlStep?: number | null;
   restoreKey?: string | number | null;
@@ -37,6 +42,7 @@ export function useDialogUIStateSync(params: {
     dialogPosition,
     dialogSize,
     displayMode,
+    allowFullScreen = true,
     forceInitialStep = false,
     urlStep,
     restoreKey,
@@ -89,9 +95,11 @@ export function useDialogUIStateSync(params: {
     if (!state) return;
     const windowState = state.dialogWindow;
     if (!windowRestoredRef.current && windowState) {
-      const mode = windowState.mode as DialogDisplayMode | undefined;
+      const rawMode = windowState.mode as DialogDisplayMode | undefined;
+      const mode =
+        !allowFullScreen && rawMode === 'full-screen' ? 'normal' : rawMode;
       if (mode) {
-        void restoreDeps.transitionDisplayMode(mode).catch(() => void 0);
+        void restoreDeps.transitionDisplayMode(mode, { source: 'restore' }).catch(() => void 0);
       }
       const canApplyFrame = mode !== 'full-screen' && mode !== 'maximize';
       if (canApplyFrame && windowState.size) {
@@ -145,9 +153,11 @@ export function useDialogUIStateSync(params: {
       typeof currentProgress.activeStepIndex === 'number' && currentProgress.activeStepIndex >= 1
         ? currentProgress.activeStepIndex
         : toPersistedStepIndex(activeStepIndexRef.current ?? activeStepIndex);
+    const resolvedMode =
+      !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
     return {
       dialogWindow: {
-        mode: currentWindow.mode ?? displayMode,
+        mode: currentWindow.mode ?? resolvedMode,
         position: currentWindow.position ?? dialogPosition,
         size: currentWindow.size ?? dialogSize,
         restorePosition: currentWindow.restorePosition ?? null,
@@ -157,21 +167,23 @@ export function useDialogUIStateSync(params: {
         activeStepIndex: persistedIndex,
       },
     };
-  }, [activeStepIndex, dialogPosition, dialogSize, displayMode]);
+  }, [activeStepIndex, allowFullScreen, dialogPosition, dialogSize, displayMode]);
 
   const dialogStateSnapshot: DialogState | null = useMemo(() => {
     const windowState = dialogUIStateRef.current?.dialogWindow;
     if (!windowState) return null;
+    const resolvedMode =
+      !allowFullScreen && displayMode === 'full-screen' ? 'normal' : displayMode;
     return {
       activeStepIndex:
         dialogUIStateRef.current?.dialogProgress?.activeStepIndex ??
         toPersistedStepIndex(activeStepIndex),
       size: windowState.size ?? dialogSize,
       position: windowState.position ?? dialogPosition,
-      displayMode: (windowState.mode as DialogDisplayMode | undefined) ?? displayMode,
+      displayMode: (windowState.mode as DialogDisplayMode | undefined) ?? resolvedMode,
       updatedAt: Date.now(),
     };
-  }, [activeStepIndex, dialogPosition, dialogSize, displayMode, toPersistedStepIndex]);
+  }, [activeStepIndex, allowFullScreen, dialogPosition, dialogSize, displayMode, toPersistedStepIndex]);
 
   const updateDialogState = useCallback(
     (patch: Partial<DialogState>) => {

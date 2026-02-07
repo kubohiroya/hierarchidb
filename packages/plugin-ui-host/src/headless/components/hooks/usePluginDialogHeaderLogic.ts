@@ -34,6 +34,7 @@ export function usePluginDialogHeaderLogic(params: {
   }, [ctx]);
 
   const toggleFullscreen = useCallback(() => {
+    if (!ctx.allowFullScreen) return;
     const next = ctx.displayMode === 'full-screen' ? 'normal' : 'full-screen';
     ctx.onDisplayModeChange?.(next);
   }, [ctx]);

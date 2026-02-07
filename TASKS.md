@@ -20,6 +20,53 @@
   - update: 2026-02-07 21:35 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
   - update: 2026-02-07 21:43 JST displayMode の遷移を frame-state 側でも再入防止し、urlMode 同期ループの再発を抑止。
   - update: 2026-02-07 21:45 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 21:53 JST folder 以外では full-screen を無効化（UI ボタン無効化＋displayMode ガード）してハング回避を優先。
+  - update: 2026-02-07 21:58 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` が allowFullScreen の型未反映で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/ui-dialog` を実行して dist を更新。
+  - update: 2026-02-07 22:00 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 22:08 JST full-screen が URL/永続状態から復元されても非 folder では normal に強制し、restore 経路のハングも回避。
+  - update: 2026-02-07 21:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` が TS2448（allowFullScreen 宣言前参照）で失敗。宣言位置の修正を実施予定。
+  - update: 2026-02-07 21:24 JST allowFullScreen の宣言位置を調整し、`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 21:27 JST maximize 実行でハングが継続しているため、displayMode と dialogUIState の同期経路を再調査。
+  - update: 2026-02-07 21:34 JST displayMode 遷移時の size/position 反映で同値更新を抑止し、displayMode の二重 set を撤去。
+  - update: 2026-02-07 21:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 21:41 JST maximize 後のハングが続くため、frame-state の recenter/既定位置ロジックを見直し。
+  - update: 2026-02-07 21:42 JST maximize/full-screen 遷移時は defaultFrame を無効化し、recenter を normal 時のみに限定。`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 21:50 JST draftData/data/default 同期ループ検証のため、最大化直後のみ同期ログを出す計画に切替。
+  - update: 2026-02-07 21:52 JST displayMode 変更直後の draftData / TreeNodeUpdater / draftAtom 更新ログを追加し、`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 22:21 JST maximize→normal の復元/URL同期/遷移起点を特定するログを追加。
+  - update: 2026-02-07 22:40 JST draftData/localDraftData 同期の source 未指定経路を例外化し、全呼び出しを source 付き経路へ統一する方針で調査を開始。
+  - update: 2026-02-07 22:49 JST setLocalDraftData を source 必須に統一し unknown ログを排除。`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 23:03 JST frame-state の normalize 連続実行を検知するガードを追加（1秒あたり120回超で例外）。ハング原因のループ検出用。
+  - update: 2026-02-07 23:22 JST dialog-ui-state の updateDialogUIState に連続更新ガードを追加（1秒あたり120回超で例外）。dialogUIState ループ検出用。
+  - update: 2026-02-07 23:35 JST handleSizeChangeWithPersist / handlePositionChangeWithPersist に連続更新ガードを追加（1秒あたり120回超で例外）。size/position 更新ループ検出用。
+  - update: 2026-02-07 23:47 JST displayMode 切替中の size/position 更新回数を計測するログを追加し、ハング直前の経路特定に着手。
+  - update: 2026-02-07 23:56 JST AbstractDialog の render 連続発火を検知するガードを追加し、レンダーループ有無を確認する。
+  - update: 2026-02-08 00:08 JST AbstractDialog のレンダーループ検知時に diffReason と主要値をログする計測を追加。
+  - blocked: 2026-02-08 00:18 JST ui-dialog typecheck が AbstractDialog.tsx の変数順序エラー（contextRef before declaration）で失敗。
+  - update: 2026-02-08 00:27 JST PluginDialogShell の render 連続発火ガードを追加し、親側ループの起点特定を進める。
+  - update: 2026-02-07 22:23 JST displayMode 遷移の source/log を追加し、`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-08 00:55 JST PluginDialogShell で render loop を検出したため、PluginDialogRoute/Host まで遡るログと URL 同期の追跡ログを追加する方針に切替。
+  - update: 2026-02-08 01:05 JST URL 同期で同値ナビゲーションが発生しないように guard とログを追加。
+  - update: 2026-02-08 01:07 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown の define 警告あり）。
+  - update: 2026-02-08 01:12 JST urlState 同値ナビゲーションを完全抑止（lastUrlStateRef を navigate 前に更新、デバッグログを削除）。
+  - update: 2026-02-08 01:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown の define 警告あり）。
+  - update: 2026-02-08 01:24 JST デバッグ用の render loop 検知/同期ログを撤去し、本番ログを最小化。
+  - blocked: 2026-02-08 01:27 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が TS2304（debug 関数削除後の参照残り）で失敗。
+  - update: 2026-02-08 01:28 JST 参照残りを修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown の define 警告あり）。
+
+2587) refactor/ui-dialog/extract-hooks (P2) — 進行中 (2026-02-08)
+- ブランチ名: refactor/ui-dialog/extract-hooks
+- 依存: 2586
+- 受け入れ基準: 今回触れた UI コンポーネントのロジックを hooks に切り出す／挙動が変わらない（最大化/解除の修正を維持）／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`, `packages/ui/dialog/src/headless/PluginDialogFrame.tsx`, `packages/ui/dialog/src/headless/AbstractDialog.tsx`, `packages/plugin-ui-host/src/headless/PluginDialogShell.tsx`（必要に応じて hooks 追加）
+- ロールバック手順: 追加した hooks と呼び出しの差分を元に戻す
+- チェックリスト:
+  - 対象コンポーネントのロジックを hooks に切り出す
+  - UI の挙動が変わらないことを確認
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 01:32 JST UI コンポーネントのロジックを hooks に切り出すリファクタに着手。
 
 2585) chore/dialog/measure-displaymode-payload (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/dialog/measure-displaymode-payload
