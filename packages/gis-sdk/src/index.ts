@@ -79,3 +79,4 @@ export {
   hidbEphemeralDB,
 } from './ephemeral/HidbEphemeralDB.js';
 export * from './config.js';
+export * from './geos/index.js';
