@@ -396,6 +396,7 @@ export function usePluginDialogController(
     () => draftDataWithoutMeta
   );
   const localDraftDataRef = useRef<Partial<PluginDefinedEntity>>(draftDataWithoutMeta);
+  const displayModeTransitionRef = useRef(false);
   const setLocalDraftData = useCallback(
     (next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
       setLocalDraftDataState((prev: Partial<PluginDefinedEntity>) => {
@@ -1083,6 +1084,19 @@ export function usePluginDialogController(
       displayMode,
       removePaddingWithFullScreenMode: Boolean(options.removePaddingWithFullScreenMode),
       onDisplayModeChange: (mode: DialogDisplayMode) => {
+        if (mode === displayMode) {
+          return;
+        }
+        if (displayModeTransitionRef.current) {
+          if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+            console.warn('[PluginDialogShell] displayMode change skipped (transition in flight)', {
+              current: displayMode,
+              requested: mode,
+            });
+          }
+          return;
+        }
+        displayModeTransitionRef.current = true;
         const currentWindow = dialogUIStateRef.current?.dialogWindow ?? null;
         const shouldCaptureRestore =
           displayMode === 'normal' && (mode === 'maximize' || mode === 'full-screen');
@@ -1104,9 +1118,13 @@ export function usePluginDialogController(
           dialogUiMs: dialogUiMetrics.durationMs,
           dialogUiError: dialogUiMetrics.error,
         });
-        void transitionDisplayMode(mode, { restorePosition, restoreSize }).then(() => {
-          persistDialogWindow({ mode, restorePosition, restoreSize });
-        });
+        void transitionDisplayMode(mode, { restorePosition, restoreSize })
+          .then(() => {
+            persistDialogWindow({ mode, restorePosition, restoreSize });
+          })
+          .finally(() => {
+            displayModeTransitionRef.current = false;
+          });
       },
       HeaderComponent,
       ContentComponent,

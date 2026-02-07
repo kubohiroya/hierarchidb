@@ -14,6 +14,12 @@
   - start: 2026-02-07 21:06 JST 最大化後の操作不能化（FloatingWindow/PluginDialog）の調査と修正に着手。
   - update: 2026-02-07 21:14 JST FloatingWindow の最大化/最小化/閉じる時にドラッグ/リサイズ中のインタラクションを強制解除して、透明オーバーレイが残留しないように修正。
   - update: 2026-02-07 21:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-floating-window` exit 0。
+  - update: 2026-02-07 21:23 JST PluginDialogFrame の最大化/復帰時にドラッグ/リサイズのグローバルリスナーを強制解除してインタラクション残留を防止。
+  - update: 2026-02-07 21:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog` exit 0。
+  - update: 2026-02-07 21:32 JST displayMode 変更を re-entrancy ガードで抑止し、遷移中の連鎖トグルを防止。
+  - update: 2026-02-07 21:35 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
+  - update: 2026-02-07 21:43 JST displayMode の遷移を frame-state 側でも再入防止し、urlMode 同期ループの再発を抑止。
+  - update: 2026-02-07 21:45 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown の define 警告あり）。
 
 2585) chore/dialog/measure-displaymode-payload (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/dialog/measure-displaymode-payload
@@ -208,6 +214,22 @@
   - start: 2026-02-07 20:32 JST LocationType の型不一致修正に着手。
   - update: 2026-02-07 20:34 JST LocationType の参照元を location-api に統一。
   - done: 2026-02-07 20:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` が exit 0 を確認。
+
+2582) fix/styler/step6-loading-skeleton (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/styler/step6-loading-skeleton
+- 依存: なし
+- 受け入れ基準: styler step6 の待機表示が LinearProgress から Skeleton に置換され、表示有無による縦ズレが解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/styler-plugin/src/ui/components/StylerAlgorithmStep2.tsx`
+- ロールバック手順: Skeleton 置換の差分を revert して LinearProgress に戻す
+- チェックリスト:
+  - LinearProgress を Skeleton に置換する
+  - レイアウトずれが発生しないことを確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 20:42 JST styler step6 の待機表示を Skeleton に置換する作業に着手。
+  - update: 2026-02-07 20:44 JST LinearProgress を Skeleton に置換し、表示有無で高さが変わらないように調整。
+  - done: 2026-02-07 20:46 JST `pnpm -w turbo run typecheck --filter @hierarchidb/styler-plugin` が exit 0 を確認。
 
 2576) chore/build/turbo-cache-investigation (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/build/turbo-cache-investigation

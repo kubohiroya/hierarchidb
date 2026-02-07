@@ -180,6 +180,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     originY: number;
     start: { x: number; y: number };
   } | null>(null);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
   const resizeStateRef = useRef<{
     pointerId: number;
@@ -189,13 +190,28 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     startPosition: { x: number; y: number };
     direction: ResizeDirection;
   } | null>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
+  const resetInteractionState = useCallback(() => {
+    const dragCleanup = dragCleanupRef.current;
+    if (dragCleanup) {
+      dragCleanup();
+    }
+    const resizeCleanup = resizeCleanupRef.current;
+    if (resizeCleanup) {
+      resizeCleanup();
+    }
     dragStateRef.current = null;
     resizeStateRef.current = null;
+    dragCleanupRef.current = null;
+    resizeCleanupRef.current = null;
     setIsInteracting(false);
     registerDragEnd();
-  }, [displayMode, registerDragEnd]);
+  }, [registerDragEnd]);
+
+  useEffect(() => {
+    resetInteractionState();
+  }, [displayMode, resetInteractionState]);
 
   const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen) return;
@@ -234,11 +250,14 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     };
 
     const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (dragStateRef.current?.pointerId !== endEvent.pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
+      const state = dragStateRef.current;
+      if (!state || state.pointerId !== endEvent.pointerId) return;
+      const cleanup = dragCleanupRef.current;
+      if (cleanup) {
+        cleanup();
+      }
       dragStateRef.current = null;
+      dragCleanupRef.current = null;
       setIsInteracting(false);
       guards.registerDragEnd();
     };
@@ -246,6 +265,11 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerEnd);
     window.addEventListener('pointercancel', handlePointerEnd);
+    dragCleanupRef.current = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerEnd);
+      window.removeEventListener('pointercancel', handlePointerEnd);
+    };
   }, [frameless, fullScreen, headlessProps, guards, position.x, position.y]);
 
   const handleResizePointerDown = useCallback((direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => {
@@ -316,11 +340,14 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     };
 
     const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (resizeStateRef.current?.pointerId !== endEvent.pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
+      const state = resizeStateRef.current;
+      if (!state || state.pointerId !== endEvent.pointerId) return;
+      const cleanup = resizeCleanupRef.current;
+      if (cleanup) {
+        cleanup();
+      }
       resizeStateRef.current = null;
+      resizeCleanupRef.current = null;
       setIsInteracting(false);
       guards.registerDragEnd();
     };
@@ -328,6 +355,11 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerEnd);
     window.addEventListener('pointercancel', handlePointerEnd);
+    resizeCleanupRef.current = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerEnd);
+      window.removeEventListener('pointercancel', handlePointerEnd);
+    };
   }, [fullScreen, guards, headlessProps, position.x, position.y, size.height, size.width]);
 
   const augmentedHeadlessProps = useMemo(() => ({

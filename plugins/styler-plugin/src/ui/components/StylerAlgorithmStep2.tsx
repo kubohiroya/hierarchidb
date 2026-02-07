@@ -14,7 +14,7 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
-  LinearProgress,
+  Skeleton,
   Radio,
   RadioGroup,
   Slider,
@@ -120,14 +120,20 @@ export const StylerAlgorithmStep2: React.FC<
 
   return (
     <Stack spacing={2}>
-      {isPreviewDeferred && (
-        <Stack spacing={0.5}>
-          <Typography variant="caption" color="text.secondary">
-            {t('styleSettings.processing', 'Processing tabular data...')}
-          </Typography>
-          <LinearProgress />
-        </Stack>
-      )}
+      <Stack spacing={0.5} sx={{ minHeight: 34 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ visibility: isPreviewDeferred ? 'visible' : 'hidden' }}
+        >
+          {t('styleSettings.processing', 'Processing tabular data...')}
+        </Typography>
+        <Skeleton
+          variant="rectangular"
+          height={4}
+          sx={{ borderRadius: 999, visibility: isPreviewDeferred ? 'visible' : 'hidden' }}
+        />
+      </Stack>
 
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

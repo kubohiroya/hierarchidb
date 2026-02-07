@@ -133,6 +133,7 @@ export function useDialogFrameState({
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
   const hydratedKeyRef = useRef<string | null>(null);
+  const transitionInFlightRef = useRef<DialogDisplayMode | null>(null);
   useEffect(() => {
     dialogSizeRef.current = dialogSize;
   }, [dialogSize]);
@@ -220,6 +221,15 @@ export function useDialogFrameState({
       mode: DialogDisplayMode,
       options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
     ) => {
+      if (mode === displayMode && transitionInFlightRef.current === null) {
+        return;
+      }
+      if (transitionInFlightRef.current) {
+        if (transitionInFlightRef.current === mode) {
+          return;
+        }
+      }
+      transitionInFlightRef.current = mode;
       const layoutViewport = getDialogLayoutViewport();
       const viewport = getViewportSize();
       const restoreSize = options?.restoreSize ?? null;
@@ -258,11 +268,13 @@ export function useDialogFrameState({
 
       setDisplayModeState(mode);
       persistDisplayMode(mode);
+      transitionInFlightRef.current = null;
     },
-    [persistDisplayMode, persistPosition, persistSize]
+    [displayMode, persistDisplayMode, persistPosition, persistSize]
   );
 
   useEffect(() => {
+    if (transitionInFlightRef.current) return;
     if (urlMode !== displayMode) {
       void transitionDisplayMode(urlMode);
     }
