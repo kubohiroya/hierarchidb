@@ -186,6 +186,7 @@ type UseLocationMapPreviewMapArgs = {
   metadataById: Map<string, LocationGroupItem>;
   t: (key: string, fallback?: string) => string;
   isDarkMode: boolean;
+  refreshKey?: string | number | null;
 };
 
 type UseLocationMapPreviewMapResult = {
@@ -214,6 +215,7 @@ export const useLocationMapPreviewMap = (
     metadataById,
     t,
     isDarkMode,
+    refreshKey,
   } = args;
 
   const previewNodeId = nodeId ?? 'preview' as NodeId;
@@ -355,7 +357,7 @@ export const useLocationMapPreviewMap = (
         queryTimerRef.current = null;
       }
     };
-  }, [scheduleViewportQuery]);
+  }, [scheduleViewportQuery, refreshKey]);
 
   useEffect(() => () => {
     if (hoverFrameRef.current) {
@@ -882,7 +884,7 @@ export const useLocationMapPreviewMap = (
 
   const handleMapMoveEnd = useCallback((viewState: MapViewState) => {
     scheduleViewportQuery(viewState);
-  }, [scheduleViewportQuery]);
+  }, [scheduleViewportQuery, refreshKey]);
 
   return {
     previewPoints,

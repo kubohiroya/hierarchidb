@@ -9,6 +9,7 @@ import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
 import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 import {
@@ -47,9 +48,11 @@ const buildInitialViewState = (bbox?: [number, number, number, number]): MapView
 export const useLocationMapPreviewStep = ({
   draft,
   nodeId,
+  onUpdate,
 }: {
   draft: Partial<LocationEntity>;
   nodeId?: NodeId;
+  onUpdate?: (updates: Partial<LocationEntity>) => void;
 }) => {
   const { translations, t } = useTranslation();
   const theme = useTheme();
@@ -61,6 +64,8 @@ export const useLocationMapPreviewStep = ({
     error: workerError,
     initialize: initializeWorker,
   } = useWorkerAPI();
+
+  useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
   const [rowFilterMode, setRowFilterMode] = useState<'all' | 'viewport'>('all');
   const [rowSearchOnly, setRowSearchOnly] = useState(true);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
@@ -73,6 +78,11 @@ export const useLocationMapPreviewStep = ({
     iconConfig,
     labelConfig,
   } = useLocationPreviewConfig(draft);
+
+  const metadataRefreshKey = useMemo(
+    () => `${draft.ideGsmSelectionHash ?? ''}|${draft.lastProcessedAt ?? ''}|${draft.processedAt ?? ''}|${draft.processingStatus ?? ''}`,
+    [draft.ideGsmSelectionHash, draft.lastProcessedAt, draft.processedAt, draft.processingStatus],
+  );
 
   const {
     metadataRows,
@@ -90,6 +100,7 @@ export const useLocationMapPreviewStep = ({
     workerLoading,
     workerError,
     initializeWorker,
+    refreshKey: metadataRefreshKey,
   });
 
   const {
@@ -113,6 +124,7 @@ export const useLocationMapPreviewStep = ({
     metadataById,
     t,
     isDarkMode: theme.palette.mode === 'dark',
+    refreshKey: metadataRefreshKey,
   });
 
   const filteredMetadataRows = useMemo(() => {

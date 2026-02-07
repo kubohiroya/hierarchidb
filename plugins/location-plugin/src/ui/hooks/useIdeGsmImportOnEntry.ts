@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
+import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
 import type { LocationEntity } from '../../common/types/index.js';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
@@ -11,6 +11,8 @@ import { updateIdeGsmProgress } from '../state/ideGsmProgress.js';
 import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/ideGsmSelection.js';
 
 const debugPrefix = '[LocationIdeGsmImport]';
+const inFlightByNode = new Map<string, boolean>();
+const lastCompletedByNode = new Map<string, string>();
 
 export const useIdeGsmImportOnEntry = ({
   draft,
@@ -52,20 +54,23 @@ export const useIdeGsmImportOnEntry = ({
     [selectionHash, sourceKey],
   );
   const inFlightRef = useRef(false);
+  const {
+    api: workerApi,
+    loading: workerLoading,
+    error: workerError,
+    initialize: initializeWorker,
+  } = useWorkerAPI();
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
     if (!nodeId) return;
     if (validSources.length === 0) return;
+    if (workerLoading || workerError || !workerApi) return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
+    const nodeKey = String(nodeId);
+    if (lastCompletedByNode.get(nodeKey) === combinedHash) return;
+    if (inFlightByNode.get(nodeKey)) return;
     if (inFlightRef.current) return;
-
-    let bridge: ReturnType<typeof getWorkerBridge> | null = null;
-    try {
-      bridge = getWorkerBridge();
-    } catch {
-      return;
-    }
 
     const selectionEntries = buildIdeGsmSelectionEntries(
       selection,
@@ -83,15 +88,15 @@ export const useIdeGsmImportOnEntry = ({
       sources: validSources.map((source) => source.tabularSourceId),
     });
     inFlightRef.current = true;
+    inFlightByNode.set(nodeKey, true);
 
     let cancelled = false;
     const run = async () => {
       try {
-        await bridge?.initialize();
+        await initializeWorker();
         if (cancelled) return;
         onUpdate?.({ processingStatus: 'processing' });
-        const api = await bridge?.getLocationMutationAPI();
-        if (!api) return;
+        const api = await workerApi.getLocationMutationAPI();
         for (const source of validSources) {
           const result = await api.importIdeGsmLocations(
             {
@@ -126,6 +131,7 @@ export const useIdeGsmImportOnEntry = ({
           processedAt: Date.now(),
           lastProcessedAt: Date.now(),
         });
+        lastCompletedByNode.set(nodeKey, combinedHash);
       } catch (error) {
         if (cancelled) return;
         const message = error instanceof Error ? error.message : String(error);
@@ -141,6 +147,7 @@ export const useIdeGsmImportOnEntry = ({
           updateIdeGsmProgress(nodeId, null);
         }
         inFlightRef.current = false;
+        inFlightByNode.delete(nodeKey);
       }
     };
 
@@ -162,5 +169,9 @@ export const useIdeGsmImportOnEntry = ({
     selectionHash,
     sourceKey,
     validSources,
+    workerApi,
+    workerError,
+    workerLoading,
+    initializeWorker,
   ]);
 };

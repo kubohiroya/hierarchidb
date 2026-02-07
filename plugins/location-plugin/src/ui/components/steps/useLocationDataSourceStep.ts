@@ -182,7 +182,7 @@ export const useLocationDataSourceStep = ({
   const [importInProgress, setImportInProgress] = useState(false);
 
   const value = useMemo<LocationDataSource>(
-    () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
+    () => (draft.dataSource as LocationDataSource) ?? 'ide-gsm',
     [draft.dataSource]
   );
 
@@ -279,6 +279,7 @@ export const useLocationDataSourceStep = ({
           sourceType: dataUrlFile ? 'local' : 'remote',
         };
         onUpdate({
+          dataSource: 'ide-gsm',
           ideGsmSources: [{
             fileName: entry.fileName,
             tabularSourceId: entry.sourceId,
@@ -360,6 +361,7 @@ export const useLocationDataSourceStep = ({
       setVisibleSources(nextSources);
       setVisibleSourceKey(nextKey);
       onUpdate({
+        dataSource: 'ide-gsm',
         ideGsmSources: nextSources.map((source) => ({
           fileName: source.fileName,
           tabularSourceId: source.sourceId,

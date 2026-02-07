@@ -71,6 +71,7 @@ type UseLocationMapPreviewMetadataArgs = {
   workerLoading: boolean;
   workerError: Error | null;
   initializeWorker: () => Promise<void>;
+  refreshKey?: string | number | null;
 };
 
 type RecyclingState = 'none' | 'off' | 'on' | 'partial';
@@ -97,6 +98,7 @@ export const useLocationMapPreviewMetadata = (
     workerLoading,
     workerError,
     initializeWorker,
+    refreshKey,
   } = args;
 
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
@@ -233,7 +235,7 @@ export const useLocationMapPreviewMetadata = (
     return () => {
       cancelled = true;
     };
-  }, [initializeWorker, nodeId, workerApi, workerError, workerLoading]);
+  }, [initializeWorker, nodeId, refreshKey, workerApi, workerError, workerLoading]);
 
   const metadataById = useMemo(
     () => new Map(metadataItems.map((item) => [String(item.id), item])),

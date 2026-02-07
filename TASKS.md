@@ -1,3 +1,50 @@
+2581) fix/location-preview/dialog-drag-blink (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/location-preview/dialog-drag-blink
+- 依存: 2580
+- 受け入れ基準: Step4でダイアログをドラッグしてもブリンク/無限ループが発生しない／Step3→Step4再遷移でハングせずIDE-GSM importの多重発火が起きない／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `packages/ui-floating-window` (調査結果に応じて)
+- ロールバック手順: ドラッグ関連のガード/依存追加を元に戻す
+- チェックリスト:
+  - ドラッグ中の状態更新ループを遮断する
+  - Step4再遷移時の多重実行を抑止する
+  - 検証用 typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 19:24 JST Step4ダイアログのブリンク/ハングとIDE-GSM多重実行の調査に着手。
+
+2580) fix/location-preview/ide-gsm-preview-lag (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/location-preview/ide-gsm-preview-lag
+- 依存: 2579
+- 受け入れ基準: Step4 preview で IDE-GSM の取り込みが不要に再実行されない／WorkerBridge 未初期化のエラーが出ない／取り込み済みデータがあれば即時に metadata/viewport が表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.tsx`
+- ロールバック手順: IDE-GSM import の起動条件と ready 判定を元に戻す
+- チェックリスト:
+  - WorkerBridge の ready 待ちを追加する
+  - 既に取り込み済みなら import をスキップする
+  - 取り込み済みデータの即時表示を確認する
+  - 検証用 typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 19:05 JST Step4 preview の IDE-GSM 取り込み再実行と遅延の改善に着手。
+  - update: 2026-02-07 19:18 JST WorkerProvider の初期化待ちと in-flight/完了ハッシュの重複ガードを追加。
+  - update: 2026-02-07 19:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+
+2579) fix/location-preview/missing-metadata (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/location-preview/missing-metadata
+- 依存: なし
+- 受け入れ基準: location の Step4 で metadata と地図ポイントが表示される／IDE-GSM 取り込み完了後に一覧が更新される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.tsx`, `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMap.tsx`
+- ロールバック手順: 追加した refreshKey と import 呼び出しを revert して元の挙動に戻す
+- チェックリスト:
+  - map preview で IDE-GSM import を起動する
+  - import 完了後に metadata/viewport を再取得する
+  - 検証用 typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:57 JST Step4 で metadata が表示されない不具合の対応に着手。
+  - update: 2026-02-07 18:32 JST map preview で IDE-GSM import を起動し、完了後に metadata/viewport を再取得する refreshKey を追加。
+  - update: 2026-02-07 18:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+
 2578) fix/dialog/save-disabled-with-draft (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/dialog/save-disabled-with-draft
 - 依存: なし
@@ -782,6 +829,10 @@
   - update: 2026-02-07 09:45 JST draftData 型統一と PeerEntity 適合の残作業（Spreadsheet を中心）を継続。
   - update: 2026-02-07 09:52 JST resolver-store の ResolverEntity を PeerEntity へ更新、pnpm --filter @hierarchidb/resolver-store typecheck exit 0 を確認。
   - update: 2026-02-07 10:05 JST VT 未完了なのに Build completed が出る問題の対応として完了判定を processingStatus 優先に変更、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - start: 2026-02-07 10:12 JST location 作成時のデフォルトデータソースを IDE-GSM に変更する対応に着手。
+  - update: 2026-02-07 10:22 JST IDE-GSM ファイル追加時に dataSource を ide-gsm に固定し、Step2 の選択自動生成が走るよう修正。
+  - update: 2026-02-07 10:24 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-07 10:14 JST location のデフォルト dataSource を IDE-GSM に変更、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-02-07 10:12 JST progress が単調増加にならず Maximum update depth exceeded が再現するとの報告を受領、再現条件整理と原因特定を優先対応に追加。
   - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。
   - update: 2026-02-07 10:46 JST useBatchProgress の進捗更新を単調化（percentage 低下のクランプ）し、phase=completed でもタスク完了前は確定更新を抑止。
