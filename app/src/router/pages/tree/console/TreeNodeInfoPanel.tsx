@@ -222,13 +222,13 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           >
             {labels.editLabel}
           </Button>
-          {isBuildable && (
+          {isBuildable && currentNode?.nodeType !== 'location' && !isStylerNode && (
             <Button
               variant="outlined"
               startIcon={<ConstructionIcon />}
               onClick={handleBuild}
               aria-label={labels.buildAria}
-              disabled={buildTargetLoading || currentNode?.nodeType === 'location' || isStylerNode}
+              disabled={buildTargetLoading}
             >
               {labels.buildLabel}
             </Button>

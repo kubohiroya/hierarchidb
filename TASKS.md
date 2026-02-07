@@ -1,3 +1,87 @@
+2586) fix/dialog/maximize-hang-freeze (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/dialog/maximize-hang-freeze
+- 依存: 2584
+- 受け入れ基準: FloatingWindow を最大化しても操作不能にならない／PluginDialog を最大化しても操作不能にならない／最大化↔解除の往復後も操作が失われない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`, `packages/ui/dialog/src/headless/PluginDialogFrame.tsx`, `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`（調査結果に応じて）
+- ロールバック手順: 最大化時のイベント制御と表示状態同期の変更を元に戻す
+- チェックリスト:
+  - 最大化直後の入力イベント阻害要因を特定する
+  - displayMode 変更連鎖の有無を確認する
+  - 最小差分で修正する
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-07 21:06 JST 最大化後の操作不能化（FloatingWindow/PluginDialog）の調査と修正に着手。
+
+2585) chore/dialog/measure-displaymode-payload (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/dialog/measure-displaymode-payload
+- 依存: 2584
+- 受け入れ基準: displayMode変更時にdraftData/dialogUIStateのJSONサイズと計測時間がログに出る／計測は一時ログのみで挙動変更しない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`
+- ロールバック手順: 追加したログと計測関数を削除する
+- チェックリスト:
+  - displayMode変更時のサイズ計測を追加
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-07 20:56 JST displayMode切替時のpayloadサイズ計測に着手。
+  - update: 2026-02-07 21:00 JST displayMode変更時にdraftData/dialogUIStateのJSONサイズと所要時間をログ出力。
+  - update: 2026-02-07 21:01 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0。
+
+2584) fix/dialog/restore-hang-after-maximize (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/dialog/restore-hang-after-maximize
+- 依存: 2583
+- 受け入れ基準: 最大化状態で「元に戻す」を押してもハングしない／最大化↔解除の往復後も操作が失われない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/headless/PluginDialogFrame.tsx`, `packages/ui/floating-window/src/components/FloatingWindow.tsx`
+- ロールバック手順: 最大化トグルとドラッグ抑止の追加変更を元に戻す
+- チェックリスト:
+  - FloatingWindow のダブルクリックを drag 開始より優先する
+  - PluginDialog の displayMode 変更時にドラッグ状態をクリア
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-07 20:30 JST 最大化解除時のハングと操作不能化の修正に着手。
+  - update: 2026-02-07 20:47 JST displayMode変更時のdialogUIState永続化を抑止してハング回避。
+  - update: 2026-02-07 20:48 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0。
+  - update: 2026-02-07 20:38 JST FloatingWindow のダブルクリックは onDoubleClick でトグルし、drag 開始を抑止。
+  - update: 2026-02-07 20:39 JST PluginDialog の displayMode 変更時にドラッグ状態をクリア。
+  - update: 2026-02-07 20:40 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0。
+  - update: 2026-02-07 20:40 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0。
+
+2583) fix/dialog/doubleclick-maximize-interaction (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/dialog/doubleclick-maximize-interaction
+- 依存: 2582
+- 受け入れ基準: FloatingWindow のタイトルバーをダブルクリックすると最大化/解除が反応する／PluginDialog をダブルクリック最大化してもマウス操作が無反応にならない（Folder以外も含む）／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`, `packages/ui/dialog/src/headless/PluginDialogFrame.tsx`
+- ロールバック手順: ダブルクリック判定とドラッグ抑止の変更を元に戻す
+- チェックリスト:
+  - FloatingWindow のダブルクリック判定を drag より優先
+  - PluginDialog の drag 開始をダブルクリック時に抑止
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-07 20:10 JST ダブルクリック最大化の不具合と操作不能化の修正に着手。
+  - update: 2026-02-07 20:21 JST FloatingWindow のダブルクリックを drag より優先するトグル処理に変更。
+  - update: 2026-02-07 20:22 JST PluginDialog の drag 開始をダブルクリック時に抑止。
+  - update: 2026-02-07 20:23 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0。
+  - update: 2026-02-07 20:23 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0。
+
+2582) feat/floating-window/titlebar-doubleclick-maximize (P2) — 進行中 (2026-02-07)
+- ブランチ名: feat/floating-window/titlebar-doubleclick-maximize
+- 依存: なし
+- 受け入れ基準: floating window のタイトルバーをダブルクリックすると最大化/解除(normal)がトグルされる／ドラッグ・最小化・閉じる操作に影響しない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`
+- ロールバック手順: タイトルバーのダブルクリックハンドラを削除する
+- チェックリスト:
+  - タイトルバーのダブルクリックで最大化トグル
+  - 既存操作に影響しないことを確認
+  - 検証用 typecheck を実行
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-07 19:55 JST タイトルバーのダブルクリックで最大化をトグルする対応に着手。
+  - update: 2026-02-07 19:58 JST タイトルバーのダブルクリックで最大化/解除をトグルする処理を追加。
+  - update: 2026-02-07 19:59 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0。
+
 2581) fix/location-preview/dialog-drag-blink (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/location-preview/dialog-drag-blink
 - 依存: 2580
@@ -61,6 +145,36 @@
   - start: 2026-02-07 17:57 JST Save As Draft 後に Save が disabled になる不具合の対応に着手。
   - update: 2026-02-07 18:07 JST Save ボタンの isDirty 依存を外し、全ステップ検証の判定を厳密化。
   - update: 2026-02-07 18:07 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0。
+
+2578) fix/app/location-hide-build-button (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/app/location-hide-build-button
+- 依存: なし
+- 受け入れ基準: location の TreeNodeInfoPanel で Build ボタンが非表示になる／他ノードタイプの表示が変わらない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: Build ボタン非表示の条件変更を revert する
+- チェックリスト:
+  - location ノード種別で Build ボタンを非表示にする
+  - 既存の nodeType 別 UI に回帰がないことを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 20:00 JST location の Build ボタン非表示対応に着手。
+  - update: 2026-02-07 20:02 JST location ノードでは Build ボタンを描画しない条件に変更。
+  - done: 2026-02-07 20:06 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が exit 0 を確認。
+
+2579) fix/app/styler-hide-build-button (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/app/styler-hide-build-button
+- 依存: なし
+- 受け入れ基準: styler の TreeNodeInfoPanel で Build ボタンが非表示になる／他ノードタイプの表示が変わらない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: Build ボタン非表示の条件変更を revert する
+- チェックリスト:
+  - styler ノード種別で Build ボタンを非表示にする
+  - 既存の nodeType 別 UI に回帰がないことを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 20:12 JST styler の Build ボタン非表示対応に着手。
+  - update: 2026-02-07 20:13 JST styler ノードでは Build ボタンを描画しない条件に変更。
+  - done: 2026-02-07 20:15 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が exit 0 を確認。
 
 2576) chore/build/turbo-cache-investigation (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/build/turbo-cache-investigation

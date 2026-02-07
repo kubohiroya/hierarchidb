@@ -172,6 +172,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     backdropIgnoreDelayMs,
     stopWheelPropagation,
   });
+  const registerDragEnd = guards.registerDragEnd;
 
   const dragStateRef = useRef<{
     pointerId: number;
@@ -189,12 +190,25 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     direction: ResizeDirection;
   } | null>(null);
 
+  useEffect(() => {
+    dragStateRef.current = null;
+    resizeStateRef.current = null;
+    setIsInteracting(false);
+    registerDragEnd();
+  }, [displayMode, registerDragEnd]);
+
   const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen) return;
     if (!headlessProps.onPositionChange) return;
     const isPrimaryButton = event.button === 0;
     const isSecondaryButton = frameless && event.button === 2;
     if (!isPrimaryButton && !isSecondaryButton) return;
+
+    if (event.detail > 1) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
 
     event.preventDefault();
     event.stopPropagation();

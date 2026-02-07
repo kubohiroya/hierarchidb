@@ -370,6 +370,23 @@ export function usePluginDialogController(
     return base;
   }, [getPersistableDialogUIState, dialogUIStateRef]);
 
+
+  const measureJsonSize = useCallback((value: unknown) => {
+    const now = typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? () => performance.now()
+      : () => Date.now();
+    const startedAt = now();
+    let size = 0;
+    let error: string | null = null;
+    try {
+      size = JSON.stringify(value ?? null).length;
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    }
+    const durationMs = Math.max(0, now() - startedAt);
+    return { size, durationMs, error };
+  }, []);
+
   const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
     () => (toRecord(draft?.draftData) as Partial<PluginDefinedEntity>) ?? {},
     [draft?.draftData]
@@ -1075,9 +1092,20 @@ export function usePluginDialogController(
         const restoreSize = shouldCaptureRestore
           ? dialogSize
           : (currentWindow?.restoreSize ?? null);
+        const draftMetrics = measureJsonSize(localDraftDataRef.current);
+        const dialogUiMetrics = measureJsonSize(buildDialogUIStateForPersist());
+        console.info('[PluginDialogShell] displayMode change', {
+          from: displayMode,
+          to: mode,
+          draftDataSize: draftMetrics.size,
+          draftDataMs: draftMetrics.durationMs,
+          draftDataError: draftMetrics.error,
+          dialogUiSize: dialogUiMetrics.size,
+          dialogUiMs: dialogUiMetrics.durationMs,
+          dialogUiError: dialogUiMetrics.error,
+        });
         void transitionDisplayMode(mode, { restorePosition, restoreSize }).then(() => {
           persistDialogWindow({ mode, restorePosition, restoreSize });
-          void persistDialogUIState();
         });
       },
       HeaderComponent,

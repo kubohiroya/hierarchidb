@@ -301,6 +301,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     if (!target.closest('.title-bar')) return;
     if (target.closest('button')) return;
 
+    if (e.detail > 1) {
+      return;
+    }
+
     isDragging.current = true;
     setInteractionActive(true);
     setOverlayActive(true);
@@ -310,7 +314,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       y: e.clientY - stateRef.current.position.y,
     };
     e.preventDefault();
-  }, [bringToFront, draggable, setInteractionActive, setOverlayActive, state.isFullscreen]);
+  }, [bringToFront, draggable, minHeight, minWidth, setInteractionActive, setOverlayActive, state.isFullscreen]);
 
   // Handle resizing
   const handleResizeMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
@@ -534,6 +538,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       <TitleBar
         className="title-bar"
         onMouseDown={handleMouseDown}
+        onDoubleClick={() => {
+          if (!draggable || state.isMinimized) return;
+          handleFullscreen();
+        }}
         onMouseDownCapture={(event) => {
           if (event.button !== 0) return;
           bringToFront();
