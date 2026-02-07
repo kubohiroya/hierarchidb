@@ -74,3 +74,7 @@ export const computePercentage = (counts: TaskCountSummary): number => {
   const done = counts.completed + counts.failed + counts.skipped;
   return counts.total > 0 ? Math.round((done / counts.total) * 100) : 0;
 };
+
+export const formatPercentageLabel = (counts: TaskCountSummary): string => (
+  `${computePercentage(counts)}%`
+);

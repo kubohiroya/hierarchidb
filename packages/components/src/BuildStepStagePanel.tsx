@@ -1,8 +1,16 @@
-import { type FC, memo, type ReactNode } from 'react';
-import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography, useTheme } from '@mui/material';
+import { type FC, memo, type ReactNode, useState, type MouseEvent } from 'react';
+import { Box, Chip, CircularProgress, IconButton, LinearProgress, Menu, MenuItem, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+
+export type BuildStepStageMenuItem = {
+  id: string;
+  label: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+};
 
 export type BuildStepStageTaskCount = {
   Completed: number;
@@ -22,6 +30,9 @@ export type BuildStepStageSummaryPanelProps = {
     count: number;
     isRunning: boolean;
   };
+  menuItems?: BuildStepStageMenuItem[];
+  menuDisabled?: boolean;
+  menuAriaLabel?: string;
   failedMode: boolean;
   onFailedModeUpdate: (newMode: boolean) => void;
   completedMode: boolean;
@@ -39,6 +50,9 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   progressContent,
   taskCount,
   concurrencyIndicator,
+  menuItems,
+  menuDisabled,
+  menuAriaLabel,
   failedMode,
   onFailedModeUpdate,
   completedMode,
@@ -52,9 +66,12 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const failed = taskCount?.Failed ?? 0;
   const skipped = taskCount?.Skip ?? 0;
   const total = taskCount?.Total ?? (completed + failed + skipped);
+  const doneTotal = completed + failed + skipped;
+  const progressPercent = total > 0 ? Math.round((doneTotal / total) * 100) : 0;
   const completedLabel = `${Math.min(total, completed)}/${total}`;
   const completedVisibleCount = Math.min(total, completed + skipped);
   const isFailedDisabled = failed === 0;
+  const isFailedVisible = failed > 0;
   const isCompletedDisabled = completedVisibleCount === 0;
   const isSkippedVisible = skipped > 0;
   const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
@@ -68,6 +85,19 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     ? theme.palette.grey[800]
     : theme.palette.grey[400];
   const indicatorSx = isIndicatorRunning ? undefined : { color: indicatorIdleColor };
+  const hasMenuItems = (menuItems?.length ?? 0) > 0;
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const isMenuOpen = Boolean(menuAnchorEl);
+  const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+  const handleMenuItemClick = (item: BuildStepStageMenuItem) => {
+    item.onClick();
+    handleMenuClose();
+  };
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>
@@ -75,6 +105,40 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
           <Stack direction="row" spacing={1} alignItems="center">
             {icon ? <Box>{icon}</Box> : null}
             <Typography variant="subtitle2">{title}</Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{ ml: 2, fontWeight: 600, fontSize: '1rem' }}
+            >
+              {progressPercent}%
+            </Typography>
+            {hasMenuItems ? (
+              <>
+                <IconButton
+                  aria-label={menuAriaLabel ?? 'Stage menu'}
+                  size="small"
+                  onClick={handleMenuOpen}
+                  disabled={menuDisabled}
+                  sx={{ ml: 2 }}
+                >
+                  <ArrowDropDownIcon fontSize="small" />
+                </IconButton>
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={isMenuOpen}
+                  onClose={handleMenuClose}
+                >
+                  {menuItems?.map((item) => (
+                    <MenuItem
+                      key={item.id}
+                      onClick={() => handleMenuItemClick(item)}
+                      disabled={item.disabled}
+                    >
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            ) : null}
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
             {indicatorCount > 0 ? (
@@ -91,16 +155,18 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
               </Stack>
             ) : null}
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Chip
-                label={`${failed}`}
-                size="small"
-                color={isFailedDisabled ? 'default' : 'error'}
-                icon={<ErrorOutlineIcon fontSize="small" />}
-                variant={failedVariant}
-                disabled={isFailedDisabled}
-                onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
-                sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-              />
+              {isFailedVisible ? (
+                <Chip
+                  label={`${failed}`}
+                  size="small"
+                  color={isFailedDisabled ? 'default' : 'error'}
+                  icon={<ErrorOutlineIcon fontSize="small" />}
+                  variant={failedVariant}
+                  disabled={isFailedDisabled}
+                  onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
+                  sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+                />
+              ) : null}
               {isSkippedVisible ? (
                 <Chip
                   label={`Skipped ${skipped}`}

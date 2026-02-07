@@ -13,6 +13,7 @@ import type {
   TreeNodeMetadata,
 } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, PeerEntity, TreeId, ValidationResult } from '@hierarchidb/core-types';
+import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
@@ -82,6 +83,59 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     };
   }
 
+  private cloneDraftData<T extends Record<string, unknown>>(value: T): T {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(value);
+    }
+    try {
+      return JSON.parse(JSON.stringify(value)) as T;
+    } catch {
+      return { ...value };
+    }
+  }
+
+  private resolveDefaultDraftData(nodeType: NodeType): Record<string, unknown> | undefined {
+    if (nodeType === 'shape') {
+      return {
+        buildConfig: DEFAULT_BUILD_CONFIG,
+      };
+    }
+    return undefined;
+  }
+
+  private async ensureDraftData(
+    node?: TreeNode,
+    persist: boolean = false
+  ): Promise<TreeNode | undefined> {
+    if (!node) return undefined;
+    const draftDataVal = (node as { draftData?: unknown }).draftData;
+    if (typeof draftDataVal !== 'undefined') {
+      return node;
+    }
+    const dataVal = (node as { data?: unknown }).data;
+    let nextDraftData: Record<string, unknown> | undefined;
+    if (dataVal && typeof dataVal === 'object') {
+      nextDraftData = this.cloneDraftData(dataVal as Record<string, unknown>);
+    } else {
+      const defaults = this.resolveDefaultDraftData(node.nodeType as NodeType);
+      if (defaults) {
+        nextDraftData = this.cloneDraftData(defaults);
+      }
+    }
+    if (!nextDraftData) return node;
+    if (persist) {
+      await this.coreDB.nodes.update(node.id as NodeId, {
+        draftData: nextDraftData,
+      });
+      const refreshed = await this.coreDB.nodes.get(node.id);
+      return refreshed as TreeNode | undefined;
+    }
+    return {
+      ...node,
+      draftData: nextDraftData,
+    } as TreeNode;
+  }
+
   private async ensureDraftMetadata(
     node?: TreeNode,
     fallbackName?: string,
@@ -145,6 +199,17 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     const desiredName =
       (initialData as { metadata?: { name?: string } } | undefined)?.metadata?.name?.trim() ||
       resolveDefaultNodeName(nodeType);
+    const resolvedInitial = (() => {
+      const initialDraftData = (initialData as { draftData?: unknown } | undefined)?.draftData;
+      if (typeof initialDraftData !== 'undefined') return initialData;
+      const defaults = this.resolveDefaultDraftData(nodeType);
+      if (!defaults) return initialData;
+      return {
+        ...(initialData ?? {}),
+        draftData: this.cloneDraftData(defaults),
+      };
+    })();
+
     const wcNodeId = await initTreeNode(
       this.coreDB,
       treeId,
@@ -152,7 +217,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       nodeType,
       desiredName,
       (initialData as { id?: NodeId } | undefined)?.id,
-      initialData
+      resolvedInitial
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
@@ -185,8 +250,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     const node = await this.coreDB.nodes.get(nodeId);
     if (!node) return undefined;
     const withMeta = await this.ensureDraftMetadata(node ?? undefined, undefined, true);
-    const withUi = await this.ensureDialogUIState(withMeta ?? node ?? undefined, false);
-    return this.normalizeForUpdater(withUi ?? withMeta ?? node ?? undefined);
+    const withDraft = await this.ensureDraftData(withMeta ?? node ?? undefined, true);
+    const withUi = await this.ensureDialogUIState(withDraft ?? withMeta ?? node ?? undefined, false);
+    return this.normalizeForUpdater(withUi ?? withDraft ?? withMeta ?? node ?? undefined);
   }
 
   // createDraftFromNode / getDraft / updateDraft are removed in favor of QueryAPI + updater calls.

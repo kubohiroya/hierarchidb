@@ -10,6 +10,7 @@ import type {
   TreeNode,
   UndoPayload,
 } from '@hierarchidb/tree-api';
+import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -913,17 +914,33 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
+  private cloneDraftData<T extends Record<string, unknown>>(value: T): T {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(value);
+    }
+    try {
+      return JSON.parse(JSON.stringify(value)) as T;
+    } catch {
+      return { ...value };
+    }
+  }
+
   /**
    * Provide node-type-specific default draft payloads for newly created working copies.
    * This keeps data null while seeding draftData with sensible defaults.
    */
   private resolveInitialDraftData(nodeType: NodeType): Record<string, unknown> | undefined {
     if (nodeType === 'basemap') {
-      return {
+      return this.cloneDraftData({
         mapStyle: { style: 'streets' },
         // Let UI hydrate viewport via Geolocation/API. Keep undefined to allow late fill.
         viewport: undefined,
-      };
+      });
+    }
+    if (nodeType === 'shape') {
+      return this.cloneDraftData({
+        buildConfig: DEFAULT_BUILD_CONFIG,
+      });
     }
     return undefined;
   }

@@ -24,6 +24,7 @@ import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
+import { useShapeBuildCacheActions } from '../build-config/useShapeBuildCacheActions.ts';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import type { BuildStage } from '@hierarchidb/components';
@@ -582,6 +583,110 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     stageContentItems,
   } = useShapeBuildProgressPanel({ data, nodeId });
 
+  const {
+    counts,
+    resultCounts,
+    deleteLoading,
+    canDeleteFetchApiCache,
+    canDeleteFetchFilteredCache,
+    canDeleteTransformCache,
+    canDeleteVTCache,
+    canDeleteMetadata,
+    handleDeleteFetchApiCache,
+    handleDeleteFetchFilteredCache,
+    handleDeleteTransformCache,
+    handleDeleteVTCache,
+    handleDeleteMetadata,
+  } = useShapeBuildCacheActions({ nodeId, draft: data });
+
+  const stageMenus = useMemo(() => {
+    const menuDisabled = summary.buildStatus === 'running';
+    const fetchApiBaseLabel = t('processing.download.deleteApiCache', 'APIキャッシュを削除');
+    const fetchFilteredBaseLabel = t('processing.download.deleteFilteredCache', 'フィルター処理キャッシュを削除');
+    const transformBaseLabel = t('processing.download.deleteStage1Cache', '簡略化キャッシュを削除');
+    const vtBaseLabel = t('processing.download.deleteTiles', 'タイルインデックス＋タイルデータキャッシュを削除');
+    const metadataLabel = t('processing.download.deleteMetadata', 'メタデータを削除');
+    const fetchApiLabel = `${fetchApiBaseLabel}(${counts.fetchApi}件)`;
+    const fetchFilteredLabel = `${fetchFilteredBaseLabel}(${counts.fetchFiltered}件)`;
+    const transformLabel = `${transformBaseLabel}(${counts.transform}件)`;
+    const vtLabel = `${vtBaseLabel}(${counts.vt}件)`;
+    const menuAriaLabel = t('stage.menu.label', 'Stage menu');
+
+    return {
+      fetch: {
+        disabled: menuDisabled,
+        ariaLabel: menuAriaLabel,
+        items: [
+          {
+            id: 'fetch-api',
+            label: fetchApiLabel,
+            onClick: handleDeleteFetchApiCache,
+            disabled: !canDeleteFetchApiCache || deleteLoading.fetchApi,
+          },
+          {
+            id: 'fetch-filtered',
+            label: fetchFilteredLabel,
+            onClick: handleDeleteFetchFilteredCache,
+            disabled: !canDeleteFetchFilteredCache || deleteLoading.fetchFiltered,
+          },
+        ],
+      },
+      transform: {
+        disabled: menuDisabled,
+        ariaLabel: menuAriaLabel,
+        items: [
+          {
+            id: 'transform',
+            label: transformLabel,
+            onClick: handleDeleteTransformCache,
+            disabled: !canDeleteTransformCache || deleteLoading.transform,
+          },
+        ],
+      },
+      vt: {
+        disabled: menuDisabled,
+        ariaLabel: menuAriaLabel,
+        items: [
+          {
+            id: 'vt',
+            label: vtLabel,
+            onClick: handleDeleteVTCache,
+            disabled: !canDeleteVTCache || deleteLoading.vt,
+          },
+          {
+            id: 'metadata',
+            label: metadataLabel,
+            onClick: handleDeleteMetadata,
+            disabled: !canDeleteMetadata || deleteLoading.metadata || resultCounts.metadata <= 0,
+          },
+        ],
+      },
+    };
+  }, [
+    canDeleteFetchApiCache,
+    canDeleteFetchFilteredCache,
+    canDeleteMetadata,
+    canDeleteTransformCache,
+    canDeleteVTCache,
+    counts.fetchApi,
+    counts.fetchFiltered,
+    counts.transform,
+    counts.vt,
+    deleteLoading.fetchApi,
+    deleteLoading.fetchFiltered,
+    deleteLoading.metadata,
+    deleteLoading.transform,
+    deleteLoading.vt,
+    handleDeleteFetchApiCache,
+    handleDeleteFetchFilteredCache,
+    handleDeleteMetadata,
+    handleDeleteTransformCache,
+    handleDeleteVTCache,
+    resultCounts.metadata,
+    summary.buildStatus,
+    t,
+  ]);
+
   const stageProgressContent = useMemo(() => (
     stageProgressItems.reduce<Record<string, JSX.Element>>((acc, item) => {
       const stage = item.stage;
@@ -655,6 +760,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       stageContents={stageContents}
       stageProgressContent={stageProgressContent}
       stageConcurrencyIndicators={stageConcurrencyIndicators}
+      stageMenus={stageMenus}
       statusContent={summary.hasProgressData ? (
         <TaskProgressSummaryCard
           summary={summary}

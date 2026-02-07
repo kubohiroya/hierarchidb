@@ -1,3 +1,69 @@
+2565) fix/shape-build/vt-delete-crash-suspect (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/shape-build/vt-delete-crash-suspect
+- 依存: 2564
+- 受け入れ基準: VT キャッシュ削除後に Build may have stopped ダイアログが出ない／VT キャッシュ削除後にビルド開始できる／VT キャッシュ削除後にブラウザがクラッシュしない／既存の削除メニュー挙動に回帰がない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts`
+- ロールバック手順: VT 削除時のセッションリセット差分を revert する
+- チェックリスト:
+  - VT キャッシュ削除後のセッション状態をリセットする
+  - Build may have stopped の発火条件を回避できることを確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 12:27 JST VT キャッシュ削除後のクラッシュ疑いダイアログ抑止に着手。
+  - update: 2026-02-07 12:30 JST VT キャッシュ削除後にセッションをリセットするよう調整。
+  - done: 2026-02-07 12:31 JST pnpm --filter @hierarchidb/components build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2564) feat/ui-batch/stage-cache-menu (P1) — 完了 (2026-02-07)
+- ブランチ名: feat/ui-batch/stage-cache-menu
+- 依存: なし
+- 受け入れ基準: ステージ見出しの進捗パーセント右に「▼」メニューボタンが表示される／ビルド停止中のみメニューが有効で実行中は無効化される／Fetch/Transform/VT の各メニューに指定の削除アクションが表示され実行できる／表示件数が既存のカウントと一致する／`pnpm --filter @hierarchidb/components typecheck` と `pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/build-config/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts`
+- ロールバック手順: ステージメニュー表示と削除アクション配線の差分を revert して元の表示へ戻す
+- チェックリスト:
+  - ステージメニューの UI を追加する
+  - 削除アクションの配線と件数表示を行う
+  - ビルド実行中の無効化を確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 10:51 JST ステージ別キャッシュ削除メニューの追加に着手。
+  - update: 2026-02-07 10:55 JST ステージ見出しにメニューボタンを追加し、削除アクションと件数表示を配線。
+  - done: 2026-02-07 10:56 JST pnpm --filter @hierarchidb/components build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2563) fix/ui-batch/hide-zero-error-chip (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/ui-batch/hide-zero-error-chip
+- 依存: なし
+- 受け入れ基準: エラー数が 0 の場合は ErrorOutline アイコン+エラー数が非表示になる／エラー数が 1 以上の場合は従来通り表示される／既存のステージ表示が崩れない／`pnpm --filter @hierarchidb/components typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: エラーチップ非表示条件の差分を revert して元の表示へ戻す
+- チェックリスト:
+  - エラーチップの表示条件を追加する
+  - 表示有無の挙動を確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 10:34 JST エラーチップの 0 件非表示対応に着手。
+  - update: 2026-02-07 10:36 JST エラー数が 0 の場合はチップ非表示になる条件を追加。
+  - done: 2026-02-07 10:36 JST pnpm --filter @hierarchidb/components typecheck exit 0 を確認。
+
+2562) fix/ui-batch/stage-progress-percent (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/ui-batch/stage-progress-percent
+- 依存: なし
+- 受け入れ基準: ステージのアイコン/タイトル右に 16px の余白で進捗パーセントが表示される／Completed+Skipped+Error を分子、ステージのタスク総数を分母として 0〜100% を算出する／パーセントは太字で標準より +2px のフォントサイズになる／0/0 の場合は 0% 表示／既存レイアウトに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/batch/src/utils/taskProgressSummary.ts`, `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: パーセント表示の差分を revert して元のレイアウトへ戻す
+- チェックリスト:
+  - 進捗パーセントを算出して表示する
+  - 表示位置/余白/フォントサイズ/ウェイトを調整する
+  - 0/0 の表示を確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 10:28 JST ステージ進捗パーセント表示の追加に着手。
+  - update: 2026-02-07 10:31 JST BuildStepStagePanel の見出しに進捗パーセント表示を追加。
+  - update: 2026-02-07 10:32 JST taskProgressSummary にパーセント表示用ユーティリティを追加。
+  - done: 2026-02-07 10:32 JST pnpm --filter @hierarchidb/components typecheck / pnpm --filter @hierarchidb/ui-batch-progress typecheck exit 0 を確認。
+
 2561) investigate/shape-build/step5-ui-busy-loop (P1) — 進行中 (2026-02-07)
 - ブランチ名: investigate/shape-build/step5-ui-busy-loop
 - 依存: 2560
@@ -12,6 +78,7 @@
 - 運用ログ:
   - start: 2026-02-07 13:45 JST Step5 での UI 過剰更新/ループ調査に着手。
   - update: 2026-02-07 09:31 JST Step5 のタスク未定義経路が Transform キャッシュ削除の taskQueue 操作と連動しているため、2560 の修正内容に合わせて検証する方針を整理。
+  - update: 2026-02-07 09:36 JST 2560 の修正内容に合わせて typecheck 成功を確認し、Step5 の挙動確認へ移行。
 
 2561) fix/shape-build/timing-inactive-tilesummary (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/shape-build/timing-inactive-tilesummary
@@ -34,7 +101,7 @@
   - update: 2026-02-07 15:20 JST Web Locks API によるタブ排他とハートビート更新の共通化を追加検討。
   - update: 2026-02-07 16:35 JST Web Locks API のロック取得を shape/route のビルド開始・自動再開に適用、共通 timing hook を @hierarchidb/batch へ移設。
 
-2560) investigate/shape-build/step5-browser-crash (P1) — 進行中 (2026-02-07)
+2560) investigate/shape-build/step5-browser-crash (P1) — 完了 (2026-02-07)
 - ブランチ名: investigate/shape-build/step5-browser-crash
 - 依存: なし
 - 受け入れ基準: Step5 ビルド開始後のクラッシュ条件と発生箇所を整理できる／原因仮説と確認手順を示せる／必要な計測ログを追加できる／TASKS.md に運用ログを記載する
@@ -49,6 +116,8 @@
   - start: 2026-02-07 13:30 JST Step5 ビルド開始後のブラウザクラッシュ調査に着手。
   - update: 2026-02-07 09:31 JST Transform キャッシュ削除時の taskQueue stage 正規化と stage 未設定レコード削除抑止の修正を進行中。
   - blocked: 2026-02-07 09:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存の build session/tileSummary 変更に伴う型エラーで exit 2（ShapeBuildAPIClient/shapeSessionMappers/useShapeBuildTiming ほか）。
+  - update: 2026-02-07 09:35 JST pnpm --filter @hierarchidb/shape-store build / pnpm --filter @hierarchidb/gis-sdk build / pnpm --filter @hierarchidb/shape-api build を実行。
+  - done: 2026-02-07 09:36 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2559) fix/shape-transform/default-tolerance-0.5 (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-transform/default-tolerance-0.5
@@ -116,6 +185,11 @@
   - update: 2026-02-07 01:52 JST shape-plugin の vitest alias と localStorage テスト環境を修正し、dialog 初期 draftData/valid の unit テストを追加・調整。
   - update: 2026-02-07 01:52 JST pnpm --filter @hierarchidb/shape-plugin exec vitest run src/ui/__tests__/dialog/shape-dialog-initial-draft.unit.test.tsx exit 0 を確認。
   - blocked: 2026-02-07 01:52 JST pnpm --filter @hierarchidb/shape-plugin test が shape-build-background-real-pipeline.wfl.test.ts の待機で完走せずタイムアウト。
+  - start: 2026-02-07 10:10 JST shape ダイアログ初期化フローの draftData/data/default 優先順を確認し、必要なら修正に着手。
+  - update: 2026-02-07 10:26 JST shape-api に DEFAULT_BUILD_CONFIG を移設して runtime-worker の draft 初期化へ反映。TreeMutationService/TreeNodeUpdaterService で draftData 未設定時の data→draft / data不在時の default 反映を追加。
+  - update: 2026-02-07 10:27 JST runtime-worker の headless テストを追加（draftData 初期化）し、WORKER_E2E=1 で単体実行を確認。
+  - update: 2026-02-07 10:27 JST pnpm --filter @hierarchidb/shape-api build / pnpm --filter @hierarchidb/runtime-worker typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck を実行し exit 0 を確認。
+
 
 2556) fix/shape-preview/multipolygon-loading-bar (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-preview/multipolygon-loading-bar

@@ -3,11 +3,17 @@ import { Box, Stack, Typography } from '@mui/material';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { BuildStepStagePanel } from './BuildStepStagePanel.js';
 import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.tsx';
-import type { BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
+import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
 import { BuildControlCard } from './BuildControlCard.tsx';
 import type { BuildStage } from './BuildStage.tsx';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+
+export type BuildStepStageMenu = {
+  items: BuildStepStageMenuItem[];
+  disabled?: boolean;
+  ariaLabel?: string;
+};
 
 export interface BuildStepPanelProps {
   status: BuildStatus;
@@ -16,6 +22,7 @@ export interface BuildStepPanelProps {
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
   stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
+  stageMenus?: Record<string, BuildStepStageMenu>;
   splitViewBreakpoints?: number[];
   splitViewInitialSizesByBreakpoint?: number[][];
   splitViewAutoCloseCountsByBreakpoint?: number[];
@@ -43,6 +50,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   stageProgress = {},
   paneProgress,
   stageConcurrencyIndicators,
+  stageMenus,
   splitViewBreakpoints,
   splitViewInitialSizesByBreakpoint,
   splitViewAutoCloseCountsByBreakpoint,
@@ -146,6 +154,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
             count: indicator.maxConcurrent,
             isRunning: indicator.isRunning,
           } : undefined}
+          menuItems={stageMenus?.[stage.id]?.items}
+          menuDisabled={stageMenus?.[stage.id]?.disabled}
+          menuAriaLabel={stageMenus?.[stage.id]?.ariaLabel}
           failedMode={filter.failedMode}
           onFailedModeUpdate={(next) => updateStageFilter(id, { failedMode: next })}
           completedMode={filter.completedMode}

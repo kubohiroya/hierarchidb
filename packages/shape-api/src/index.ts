@@ -1,5 +1,6 @@
 export * from './shapeTypes.js';
 export * from './shapeBuildTypes.js';
+export * from './defaults.js';
 export * from './shapeDbTypes.js';
 export * from './ShapeQueryAPI.js';
 export * from './ShapeMutationAPI.js';
