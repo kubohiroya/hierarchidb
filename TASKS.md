@@ -1,3 +1,169 @@
+2575) fix/gis-sdk/geometry-extract-unkink (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/gis-sdk/geometry-extract-unkink
+- 依存: なし
+- 受け入れ基準: `packages/gis-sdk/src/processing/geometryExtract.ts` の `unkink` 引数と `extractFeature` の返り値型の不整合が解消される／型安全な定義で `as Record<string, unknown>` を導入しない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/processing/geometryExtract.ts`
+- ロールバック手順: `geometryExtract.ts` の差分を revert して元の型定義に戻す
+- チェックリスト:
+  - `unkink` 入力の型を安全に整合させる
+  - `extractFeature` 返り値型を整合させる
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 19:05 JST `unkink` 引数の型不整合と `extractFeature` 返り値型の修正に着手。
+  - update: 2026-02-07 19:10 JST polygon のみ `unkink` を適用し、複数ポリゴンは MultiPolygon にまとめて返すよう型整合を調整。
+  - blocked: 2026-02-07 19:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk` が `@hierarchidb/shape-api#build:types` の TS5055（dist/index.d.ts 上書き）で失敗。
+
+2574) feat/ui-batch/progress-scroll-end (P1) — 進行中 (2026-02-07)
+- ブランチ名: codex/feat/ui-batch/progress-scroll-end
+- 依存: なし
+- 受け入れ基準: 進捗一覧の下部に ArrowCircleDown フロートボタンが表示される／クリックで Completed または Running または Skipped の終端タスク位置まで自動スクロールできる／終端タスクが表示範囲内の場合はボタンが非表示になる／既存の進捗表示やスクロール挙動に回帰がない／`pnpm -w turbo run typecheck --filter @hierarchidb/components` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/**`（進捗一覧 UI）、`plugins/shape-plugin/src/ui/components/build-progress/**`（必要に応じて）
+- ロールバック手順: フロートボタンとスクロール処理の差分を revert して従来表示に戻す
+- チェックリスト:
+  - 終端タスク検出とスクロール位置算出を実装する
+  - 表示範囲内ならボタンを非表示にする
+  - ArrowCircleDown フロートボタンを下部に配置する
+  - 既存 UI の回帰がないことを確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:41 JST 進捗一覧の終端スクロールボタン追加に着手。
+  - blocked: 2026-02-07 16:42 JST `git checkout -b codex/feat/ui-batch/progress-scroll-end` が `Operation not permitted` で失敗（`.git/refs/heads/codex` を作成できず）。
+  - update: 2026-02-07 16:52 JST TaskListVirtualized に ArrowCircleDown フロートボタンと終端タスクへのスクロール処理を追加。
+  - blocked: 2026-02-07 16:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が `@hierarchidb/shape-api#build:types` の TS5055（dist/index.d.ts 上書き）で失敗。
+
+2567) chore/geo/turf-geos-wasm-audit (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/turf-geos-wasm-audit
+- 依存: なし
+- 受け入れ基準: turf の利用箇所と利用内容を全件洗い出し、UI/Worker 別に整理する／geos-wasm への置換方法を各項目で提案できる／一覧表の形で提示できる／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - turf 利用箇所を全件洗い出す
+  - 利用内容と実行側（UI/Worker）を整理する
+  - geos-wasm への置換案を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 15:30 JST turf→geos-wasm 置換調査に着手。
+  - done: 2026-02-07 15:50 JST turf 利用箇所と UI/Worker 別の置換案一覧を整理。
+
+2568) chore/geo/geos-wasm-adoption-plan (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geos-wasm-adoption-plan
+- 依存: なし
+- 受け入れ基準: geos-wasm 導入方針を UI/Worker 配置・初期化タイミング・バンドル/ロード戦略・API ラッパ層の観点で整理する／フォールバックなしの前提を明記する／初期化フロー（テキスト）と疑似コードを提示する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - geos-wasm の配置方針（UI/Worker）を整理する
+  - 初期化タイミングとロード戦略を提案する
+  - API ラッパ層の構成案を示す
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:00 JST geos-wasm 導入方針の整理に着手。
+  - done: 2026-02-07 16:10 JST UI/Worker 配置・初期化・ロード戦略とラッパ層の方針を整理。
+
+2569) chore/geo/geos-wasm-wrapper-design (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geos-wasm-wrapper-design
+- 依存: なし
+- 受け入れ基準: geos ラッパ API の関数一覧とシグネチャを提示する／UI/Worker での利用方針を明記する／フォールバックなしの前提を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - geos ラッパ API の関数一覧を整理する
+  - 型/入出力の設計を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:20 JST geos ラッパ API 設計の整理に着手。
+  - done: 2026-02-07 16:35 JST geos ラッパ API の関数一覧とシグネチャ案を整理。
+
+2570) chore/geo/geos-wasm-build-plan (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geos-wasm-build-plan
+- 依存: なし
+- 受け入れ基準: wasm 配布/ビルドの具体案（tsdown/Worker/Vite の配置と解決方法）を提示する／フォールバックなしの前提を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - wasm 配布の配置案を整理する
+  - tsdown/Vite/Worker の解決方法を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:20 JST geos-wasm ビルド/配布案の整理に着手。
+  - done: 2026-02-07 16:35 JST tsdown/Vite/Worker での wasm 配布・解決方針を整理。
+
+2571) chore/geo/geos-engine-flag-design (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geos-engine-flag-design
+- 依存: なし
+- 受け入れ基準: geos 有効化の engine/pipeline フラグ設計を提示する／datasource とは分離する方針を明記する／フォールバックなしの前提を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - engine/pipeline フラグの設計案を整理する
+  - datasource との分離方針を明記する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:45 JST geos engine フラグ設計の整理に着手。
+  - done: 2026-02-07 17:05 JST geos engine フラグ設計案を整理。
+
+2573) chore/geo/geometry-engine-transform-config (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geometry-engine-transform-config
+- 依存: なし
+- 受け入れ基準: TransformConfig に geometryEngine を追加する設計を具体化する／型定義・デフォルト値・影響箇所を整理する／UI/Worker の反映ポイントを明記する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - TransformConfig の型変更案を提示する
+  - デフォルト値と互換方針を整理する
+  - UI/Worker 反映ポイントを整理する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:15 JST TransformConfig の geometryEngine 追加案の整理に着手。
+  - done: 2026-02-07 17:35 JST TransformConfig の geometryEngine 追加設計（型/デフォルト/影響箇所）を整理。
+
+2574) chore/geo/geometry-engine-ui-worker-plan (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geometry-engine-ui-worker-plan
+- 依存: なし
+- 受け入れ基準: geometryEngine の UI 追加位置/表示/保存方法を具体化する／Worker 側の分岐ポイントを段階分解して提示する／実装タスクの順序を示す／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - UI 追加位置と表示案を整理する
+  - Worker 分岐ポイントを段階分解する
+  - 実装タスクの順序を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:45 JST geometryEngine の UI/Worker 反映計画の整理に着手。
+  - done: 2026-02-07 18:05 JST geometryEngine の UI 追加・Worker 分岐・実装順序を整理。
+
+2572) chore/geo/geos-wrapper-wkb-plan (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/geo/geos-wrapper-wkb-plan
+- 依存: なし
+- 受け入れ基準: geos ラッパの内部 WKB 変換方針を提示する／対象 API と対象演算を明確化する／フォールバックなしの前提を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: 調査のみ（コード変更なし）
+- ロールバック手順: なし（ドキュメント/報告のみ）
+- チェックリスト:
+  - WKB 変換の適用範囲を整理する
+  - geos ラッパの内部構成案を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 16:45 JST geos ラッパの WKB 変換方針整理に着手。
+  - done: 2026-02-07 17:05 JST geos ラッパの WKB 内部変換方針を整理。
+
+2566) fix/shape-transform/unlink-after-simplify (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/shape-transform/unlink-after-simplify
+- 依存: なし
+- 受け入れ基準: shape の transform ステージで @turf/simplify 実行直後に @turf/unlink を適用し不正構造を修正する／既存の簡略化結果に破壊的な変更がない（構造修復のみ）／`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（transform ステージの簡略化処理）
+- ロールバック手順: unlink 追加の差分を revert して simplify 後の処理を元に戻す
+- チェックリスト:
+  - transform ステージの simplify 直後に unlink を実行する
+  - 既存の変換結果が保持されることを確認する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 15:10 JST shape transform の simplify 後に unlink を適用する作業に着手。
+  - blocked: 2026-02-07 15:12 JST `pnpm install` が @turf/unlink の 404（レジストリ未提供）で失敗。
+  - blocked: 2026-02-07 15:15 JST `pnpm i -w @turf/unlink` も 404（レジストリ未提供）で失敗。
+
 2565) fix/shape-build/vt-delete-crash-suspect (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-build/vt-delete-crash-suspect
 - 依存: 2564

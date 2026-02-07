@@ -32,6 +32,7 @@
     "@turf/helpers": "^7.0.0",
     "@turf/simplify": "^7.0.0",
     "@turf/turf": "^7.0.0",
+    "@turf/unkink-polygon": "^7.3.3",
     "flatgeobuf": "^4.4.0",
     "geojson-vt": "^3.2.1",
     "pbf": "^4.0.1",

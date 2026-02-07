@@ -1,6 +1,7 @@
 import simplify from '@turf/simplify';
+import unkink from '@turf/unkink-polygon';
 import { cleanCoords } from '@turf/clean-coords';
-import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
+import type { Feature, FeatureCollection, Geometry, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson';
 
 export interface ExtractOptions {
   tolerance: number;
@@ -8,13 +9,36 @@ export interface ExtractOptions {
   quantize?: number;
 }
 
+const isPolygonFeature = (
+  feature: Feature<Geometry, GeoJsonProperties>,
+): feature is Feature<Polygon | MultiPolygon, GeoJsonProperties> => {
+  const type = feature.geometry?.type;
+  return type === 'Polygon' || type === 'MultiPolygon';
+};
+
 const extractFeature = (
   feature: Feature<Geometry, GeoJsonProperties>,
   tolerance: number,
 ): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
   const extracted = simplify(feature, { tolerance, highQuality: false, mutate: false });
-  return extracted as Feature<Geometry, GeoJsonProperties>;
+  if (!isPolygonFeature(extracted)) return extracted;
+  const unkinked = unkink(extracted);
+  const polygons = unkinked.features
+    .map((entry) => entry.geometry)
+    .filter((geometry): geometry is Polygon => Boolean(geometry));
+  if (polygons.length === 0) return extracted;
+  const mergedGeometry: Polygon | MultiPolygon | undefined =
+    polygons.length === 1
+      ? polygons[0]
+      : { type: 'MultiPolygon', coordinates: polygons.map((polygon) => polygon.coordinates) };
+  if(! mergedGeometry){
+    return { ...extracted };
+  }
+  return {
+    ...extracted,
+    geometry: mergedGeometry,
+  };
 };
 
 const quantizeCoordinates = <T>(coords: T, quantize: number): T => {

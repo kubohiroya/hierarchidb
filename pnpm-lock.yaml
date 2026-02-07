@@ -784,6 +784,9 @@ importers:
       '@turf/turf':
         specifier: ^7.0.0
         version: 7.2.0
+      '@turf/unkink-polygon':
+        specifier: ^7.3.3
+        version: 7.3.3
       flatgeobuf:
         specifier: ^4.4.0
         version: 4.4.0
@@ -7639,6 +7642,9 @@ packages:
   '@turf/area@7.2.0':
     resolution: {integrity: sha512-zuTTdQ4eoTI9nSSjerIy4QwgvxqwJVciQJ8tOPuMHbXJ9N/dNjI7bU8tasjhxas/Cx3NE9NxVHtNpYHL0FSzoA==}
 
+  '@turf/area@7.3.3':
+    resolution: {integrity: sha512-FT66TCxUec+3RsCCyO1kWP57/tiEWEqYfpIs5n44dup401Cne/E+xunahEWxMfP/HSUxfcRQqrjH5vEulLrNoA==}
+
   '@turf/bbox-clip@7.2.0':
     resolution: {integrity: sha512-q6RXTpqeUQAYLAieUL1n3J6ukRGsNVDOqcYtfzaJbPW+0VsAf+1cI16sN700t0sekbeU1DH/RRVAHhpf8+36wA==}
 
@@ -7701,6 +7707,9 @@ packages:
 
   '@turf/boolean-point-in-polygon@7.2.0':
     resolution: {integrity: sha512-lvEOjxeXIp+wPXgl9kJA97dqzMfNexjqHou+XHVcfxQgolctoJiRYmcVCWGpiZ9CBf/CJha1KmD1qQoRIsjLaA==}
+
+  '@turf/boolean-point-in-polygon@7.3.3':
+    resolution: {integrity: sha512-hmXV4PofLAVbVZcnKk/yp//0s65huap+L3wKGKzbLWk57fWla/eRmFKx/iQ15xGu05zylHz5cA5AfriVGZHj2g==}
 
   '@turf/boolean-point-on-line@6.5.0':
     resolution: {integrity: sha512-A1BbuQ0LceLHvq7F/P7w3QvfpmZqbmViIUPHdNLvZimFNLo4e6IQunmzbe+8aSStH9QRZm3VOflyvNeXvvpZEQ==}
@@ -7825,6 +7834,9 @@ packages:
   '@turf/helpers@7.2.0':
     resolution: {integrity: sha512-cXo7bKNZoa7aC7ydLmUR02oB3IgDe7MxiPuRz3cCtYQHn+BJ6h1tihmamYDWWUlPHgSNF0i3ATc4WmDECZafKw==}
 
+  '@turf/helpers@7.3.3':
+    resolution: {integrity: sha512-9Ias0L1GuZPIzO6sk8jraTEuLJye6n9LYNEdw69ZGOQ6C1IigjxkPW49zmn21aTv1z27vxdVLSS3r+78DB2QnQ==}
+
   '@turf/hex-grid@7.2.0':
     resolution: {integrity: sha512-Yo2yUGxrTCQfmcVsSjDt0G3Veg8YD26WRd7etVPD9eirNNgXrIyZkbYA7zVV/qLeRWVmYIKRXg1USWl7ORQOGA==}
 
@@ -7845,6 +7857,9 @@ packages:
 
   '@turf/invariant@7.2.0':
     resolution: {integrity: sha512-kV4u8e7Gkpq+kPbAKNC21CmyrXzlbBgFjO1PhrHPgEdNqXqDawoZ3i6ivE3ULJj2rSesCjduUaC/wyvH/sNr2Q==}
+
+  '@turf/invariant@7.3.3':
+    resolution: {integrity: sha512-q6UDgWmtIlU+AIxt5Awnh18ZMSuNti6drCXbIBdGdgQaQ1qEiyGZDE3P9RKk6otoLXOBYecOuI0HIwf2IxurhQ==}
 
   '@turf/isobands@7.2.0':
     resolution: {integrity: sha512-lYoHeRieFzpBp29Jh19QcDIb0E+dzo/K5uwZuNga4wxr6heNU0AfkD4ByAHYIXHtvmp4m/JpSKq/2N6h/zvBkg==}
@@ -7911,6 +7926,9 @@ packages:
 
   '@turf/meta@7.2.0':
     resolution: {integrity: sha512-igzTdHsQc8TV1RhPuOLVo74Px/hyPrVgVOTgjWQZzt3J9BVseCdpfY/0cJBdlSRI4S/yTmmHl7gAqjhpYH5Yaw==}
+
+  '@turf/meta@7.3.3':
+    resolution: {integrity: sha512-Tz1j4h70iFB5SebWWoVv/uL59x4aOngXU+d1xQDXzOCn/O6txnreGVGMcYU362c5F06yqZx38H9UFTQ553lK0w==}
 
   '@turf/midpoint@7.2.0':
     resolution: {integrity: sha512-AMn5S9aSrbXdE+Q4Rj+T5nLdpfpn+mfzqIaEKkYI021HC0vb22HyhQHsQbSeX+AWcS4CjD1hFsYVcgKI+5qCfw==}
@@ -8053,8 +8071,8 @@ packages:
   '@turf/union@7.2.0':
     resolution: {integrity: sha512-Xex/cfKSmH0RZRWSJl4RLlhSmEALVewywiEXcu0aIxNbuZGTcpNoI0h4oLFrE/fUd0iBGFg/EGLXRL3zTfpg6g==}
 
-  '@turf/unkink-polygon@7.2.0':
-    resolution: {integrity: sha512-dFPfzlIgkEr15z6oXVxTSWshWi51HeITGVFtl1GAKGMtiXJx1uMqnfRsvljqEjaQu/4AzG1QAp3b+EkSklQSiQ==}
+  '@turf/unkink-polygon@7.3.3':
+    resolution: {integrity: sha512-FlTX/T5vat9zyV1xngLfnl5IryGFrSLmDsJswII7AU8DtZKe7URyD7AW5TWPUKDHCAJEoiP8lrDCQrZsoO9F8g==}
 
   '@turf/voronoi@7.2.0':
     resolution: {integrity: sha512-3K6N0LtJsWTXxPb/5N2qD9e8f4q8+tjTbGV3lE3v8x06iCnNlnuJnqM5NZNPpvgvCatecBkhClO3/3RndE61Fw==}
@@ -18005,6 +18023,13 @@ snapshots:
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
 
+  '@turf/area@7.3.3':
+    dependencies:
+      '@turf/helpers': 7.3.3
+      '@turf/meta': 7.3.3
+      '@types/geojson': 7946.0.16
+      tslib: 2.8.1
+
   '@turf/bbox-clip@7.2.0':
     dependencies:
       '@turf/helpers': 7.2.0
@@ -18154,6 +18179,14 @@ snapshots:
     dependencies:
       '@turf/helpers': 7.2.0
       '@turf/invariant': 7.2.0
+      '@types/geojson': 7946.0.16
+      point-in-polygon-hao: 1.2.4
+      tslib: 2.8.1
+
+  '@turf/boolean-point-in-polygon@7.3.3':
+    dependencies:
+      '@turf/helpers': 7.3.3
+      '@turf/invariant': 7.3.3
       '@types/geojson': 7946.0.16
       point-in-polygon-hao: 1.2.4
       tslib: 2.8.1
@@ -18470,6 +18503,11 @@ snapshots:
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
 
+  '@turf/helpers@7.3.3':
+    dependencies:
+      '@types/geojson': 7946.0.16
+      tslib: 2.8.1
+
   '@turf/hex-grid@7.2.0':
     dependencies:
       '@turf/distance': 7.2.0
@@ -18519,6 +18557,12 @@ snapshots:
   '@turf/invariant@7.2.0':
     dependencies:
       '@turf/helpers': 7.2.0
+      '@types/geojson': 7946.0.16
+      tslib: 2.8.1
+
+  '@turf/invariant@7.3.3':
+    dependencies:
+      '@turf/helpers': 7.3.3
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
 
@@ -18692,6 +18736,12 @@ snapshots:
     dependencies:
       '@turf/helpers': 7.2.0
       '@types/geojson': 7946.0.16
+
+  '@turf/meta@7.3.3':
+    dependencies:
+      '@turf/helpers': 7.3.3
+      '@types/geojson': 7946.0.16
+      tslib: 2.8.1
 
   '@turf/midpoint@7.2.0':
     dependencies:
@@ -19203,7 +19253,7 @@ snapshots:
       '@turf/triangle-grid': 7.2.0
       '@turf/truncate': 7.2.0
       '@turf/union': 7.2.0
-      '@turf/unkink-polygon': 7.2.0
+      '@turf/unkink-polygon': 7.3.3
       '@turf/voronoi': 7.2.0
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
@@ -19216,12 +19266,12 @@ snapshots:
       polyclip-ts: 0.16.8
       tslib: 2.8.1
 
-  '@turf/unkink-polygon@7.2.0':
+  '@turf/unkink-polygon@7.3.3':
     dependencies:
-      '@turf/area': 7.2.0
-      '@turf/boolean-point-in-polygon': 7.2.0
-      '@turf/helpers': 7.2.0
-      '@turf/meta': 7.2.0
+      '@turf/area': 7.3.3
+      '@turf/boolean-point-in-polygon': 7.3.3
+      '@turf/helpers': 7.3.3
+      '@turf/meta': 7.3.3
       '@types/geojson': 7946.0.16
       rbush: 3.0.1
       tslib: 2.8.1
@@ -19866,7 +19916,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@16.8.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -19885,14 +19935,6 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
-
-  '@vitest/mocker@3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
-    dependencies:
-      '@vitest/spy': 3.2.4
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -19923,7 +19965,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@16.8.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -26052,7 +26094,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/mocker': 3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

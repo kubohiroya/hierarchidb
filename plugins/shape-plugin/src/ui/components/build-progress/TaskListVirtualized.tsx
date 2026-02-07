@@ -1,5 +1,6 @@
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Box } from '@mui/material';
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
@@ -84,6 +85,14 @@ export const TaskListVirtualized = ({
   const parentRef = useRef<HTMLDivElement | null>(null);
   const setViewportRange = useSetAtom(taskViewportRangeAtom);
   const lastScrollRequestRef = useRef<number | null>(null);
+  const [localViewport, setLocalViewport] = useState<{
+    stageId: string;
+    startIndex: number;
+    endIndex: number;
+    startTaskId: string;
+    endTaskId: string;
+    total: number;
+  } | null>(null);
   const lastViewportRef = useRef<{
     stageId: string;
     startIndex: number;
@@ -128,50 +137,62 @@ export const TaskListVirtualized = ({
 
   useEffect(() => {
     if (!shouldVirtualize) return;
-    if (tasks.length === 0) {
-      setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
-      lastViewportRef.current = null;
-      return;
-    }
     const scrollEl = parentRef.current;
     if (!scrollEl) return;
-    const viewportHeight = scrollEl.clientHeight;
-    const scrollTop = scrollEl.scrollTop;
-    const total = orderedTasks.length;
-    if (total === 0 || viewportHeight <= 0) return;
-    const startIndex = Math.min(Math.max(Math.floor(scrollTop / TASK_ITEM_HEIGHT), 0), total - 1);
-    const endIndex = Math.min(
-      Math.max(Math.floor((scrollTop + viewportHeight - 1) / TASK_ITEM_HEIGHT), startIndex),
-      total - 1,
-    );
-    const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
-    const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
-    if (!startTaskId || !endTaskId) return;
-    const next = {
-      stageId,
-      startIndex,
-      endIndex,
-      startTaskId,
-      endTaskId,
-      total,
+    const updateViewport = () => {
+      if (tasks.length === 0) {
+        setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
+        lastViewportRef.current = null;
+        setLocalViewport(null);
+        return;
+      }
+      const viewportHeight = scrollEl.clientHeight;
+      const scrollTop = scrollEl.scrollTop;
+      const total = orderedTasks.length;
+      if (total === 0 || viewportHeight <= 0) return;
+      const startIndex = Math.min(Math.max(Math.floor(scrollTop / TASK_ITEM_HEIGHT), 0), total - 1);
+      const endIndex = Math.min(
+        Math.max(Math.floor((scrollTop + viewportHeight - 1) / TASK_ITEM_HEIGHT), startIndex),
+        total - 1,
+      );
+      const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
+      const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
+      if (!startTaskId || !endTaskId) return;
+      const next = {
+        stageId,
+        startIndex,
+        endIndex,
+        startTaskId,
+        endTaskId,
+        total,
+      };
+      const prev = lastViewportRef.current;
+      if (
+        prev
+        && prev.stageId === next.stageId
+        && prev.startIndex === next.startIndex
+        && prev.endIndex === next.endIndex
+        && prev.startTaskId === next.startTaskId
+        && prev.endTaskId === next.endTaskId
+        && prev.total === next.total
+      ) {
+        return;
+      }
+      lastViewportRef.current = next;
+      setLocalViewport(next);
+      setViewportRange({
+        ...next,
+        updatedAt: Date.now(),
+      });
     };
-    const prev = lastViewportRef.current;
-    if (
-      prev
-      && prev.stageId === next.stageId
-      && prev.startIndex === next.startIndex
-      && prev.endIndex === next.endIndex
-      && prev.startTaskId === next.startTaskId
-      && prev.endTaskId === next.endTaskId
-      && prev.total === next.total
-    ) {
-      return;
-    }
-    lastViewportRef.current = next;
-    setViewportRange({
-      ...next,
-      updatedAt: Date.now(),
-    });
+    updateViewport();
+    const handleScroll = () => {
+      window.requestAnimationFrame(updateViewport);
+    };
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      scrollEl.removeEventListener('scroll', handleScroll);
+    };
   }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
 
   useEffect(() => {
@@ -179,6 +200,7 @@ export const TaskListVirtualized = ({
     if (tasks.length === 0) {
       setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
       lastViewportRef.current = null;
+      setLocalViewport(null);
       return;
     }
     const startIndex = 0;
@@ -207,11 +229,50 @@ export const TaskListVirtualized = ({
       return;
     }
     lastViewportRef.current = next;
+    setLocalViewport(next);
     setViewportRange({
       ...next,
       updatedAt: Date.now(),
     });
   }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
+
+  const targetIndex = useMemo(() => {
+    for (let i = orderedTasks.length - 1; i >= 0; i -= 1) {
+      const task = orderedTasks[i];
+      if (!task) continue;
+      const isSkipped = isSkippedMessage(task.message);
+      const status = task.status ?? '';
+      if (isSkipped || status !== 'idle') {
+        return i;
+      }
+    }
+    return null;
+  }, [orderedTasks]);
+
+  const targetTaskId = targetIndex === null ? undefined : orderedTasks[targetIndex]?.taskId;
+  const isTargetVisible = targetIndex !== null && localViewport
+    ? targetIndex >= localViewport.startIndex && targetIndex <= localViewport.endIndex
+    : false;
+  const shouldShowScrollButton = targetIndex !== null && !isTargetVisible;
+
+  const handleScrollToTarget = useCallback(() => {
+    if (targetIndex === null) return;
+    if (shouldVirtualize) {
+      virtualizer.scrollToIndex(targetIndex, { align: 'end' });
+      return;
+    }
+    const scrollEl = parentRef.current;
+    if (!scrollEl || !targetTaskId) return;
+    const safeTaskId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(targetTaskId)
+      : targetTaskId;
+    const targetEl = scrollEl.querySelector<HTMLElement>(`[data-task-id="${safeTaskId}"]`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    scrollEl.scrollTo({ top: targetIndex * TASK_ITEM_HEIGHT, behavior: 'smooth' });
+  }, [shouldVirtualize, targetIndex, targetTaskId, virtualizer]);
 
   const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
@@ -232,7 +293,7 @@ export const TaskListVirtualized = ({
         : undefined);
     const detailLines = phaseMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
     return (
-      <Box key={key} sx={style}>
+      <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItem
           title={taskTitle}
           statusLabel={statusLabelValue}
@@ -247,7 +308,7 @@ export const TaskListVirtualized = ({
   },[resolvePhaseMessage, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageValue]);
 
   return (
-    <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+    <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }}>
       {shouldVirtualize ? (
         <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -275,6 +336,26 @@ export const TaskListVirtualized = ({
           })}
         </Box>
       )}
+      {shouldShowScrollButton ? (
+        <Tooltip title={t('stage.progress.scrollToLatest', 'Scroll to latest task')}>
+          <IconButton
+            aria-label={t('stage.progress.scrollToLatest', 'Scroll to latest task')}
+            color="primary"
+            onClick={handleScrollToTarget}
+            sx={{
+              position: 'absolute',
+              right: 12,
+              bottom: 12,
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+              zIndex: 2,
+              '&:hover': { bgcolor: 'background.paper' },
+            }}
+          >
+            <ArrowCircleDownIcon fontSize="medium" />
+          </IconButton>
+        </Tooltip>
+      ) : null}
     </Box>
   );
 };
