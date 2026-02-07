@@ -5,6 +5,7 @@ import {
   createPollingTracker,
   createSessionCoordinator,
   type SessionChannelMessage,
+  type SessionLockHandle,
 } from '@hierarchidb/session-coordinator';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
@@ -18,7 +19,6 @@ import type { BuildStatus } from '@hierarchidb/components';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { getBuildMonitorKey } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildTiming } from './useShapeBuildTiming.ts';
-import { useShapeBuildTileSummary } from './useShapeBuildTileSummary.ts';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { notify } from '@hierarchidb/components';
@@ -73,12 +73,47 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     })
   ), []);
   const activeNodeId = nodeId ?? null;
+  const lockKey = useMemo(() => (
+    activeNodeId ? `shape:${activeNodeId}` : null
+  ), [activeNodeId]);
   const tabIdRef = useRef<string>(coordinator.getTabId());
   const channelRef = useRef<BroadcastChannel | null>(null);
   const lastBroadcastAtRef = useRef<number | null>(null);
   const lastBroadcastTabIdRef = useRef<string | null>(null);
   const lastAckAtRef = useRef<number | null>(null);
   const lastAckTabIdRef = useRef<string | null>(null);
+  const lockRef = useRef<SessionLockHandle | null>(null);
+  const lockKeyRef = useRef<string | null>(null);
+  const [isLockOwner, setIsLockOwner] = useState(false);
+
+  const releaseBuildLock = useCallback(() => {
+    const lock = lockRef.current;
+    if (!lock) return;
+    lock.release();
+    lockRef.current = null;
+    lockKeyRef.current = null;
+    setIsLockOwner(false);
+  }, []);
+
+  const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
+    if (!lockKey) return false;
+    if (lockRef.current) return true;
+    const lock = await coordinator.tryAcquireSessionLock(lockKey);
+    if (!lock) {
+      if (options?.notifyOnFailure) {
+        if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
+          notify.error('Web Locks API is unavailable.');
+        } else {
+          notify.info('Another tab is already running this build.');
+        }
+      }
+      return false;
+    }
+    lockRef.current = lock;
+    lockKeyRef.current = lockKey;
+    setIsLockOwner(true);
+    return true;
+  }, [coordinator, lockKey]);
   const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
   const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
   const lastAutoResumeAtRef = useRef<number | null>(null);
@@ -141,8 +176,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return hasFailed ? 'failed' : 'completed';
   }, [displayTasks, hasInFlightTasks]);
   const buildStatus = useMemo<BuildStatus>(() => {
-    if (tasksCompletionStatus) {
-      return tasksCompletionStatus;
+    if (tasksCompletionStatus === 'failed') {
+      return 'failed';
     }
     if (baseBuildStatus === 'completed' && hasInFlightTasks) {
       return 'running';
@@ -177,17 +212,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     taskType,
     resolvedTaskType,
-    data,
     nodeId,
     monitorKey,
-    onChange,
-  });
-
-  useShapeBuildTileSummary({
-    activeNodeId,
-    buildStatus,
-    data,
-    onChange,
+    canWrite: isLockOwner,
   });
 
   const hasFailedFetchTasks = useMemo(() => (
@@ -257,6 +284,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [activeNodeId, buildStatus, coordinator, runtimeStatus]);
 
+  useEffect(() => {
+    if (!lockKeyRef.current) return;
+    if (lockKeyRef.current === lockKey) return;
+    releaseBuildLock();
+  }, [lockKey, releaseBuildLock]);
+
+  useEffect(() => {
+    return () => {
+      releaseBuildLock();
+    };
+  }, [releaseBuildLock]);
+
   const saveDraftBeforeBatch = useCallback(async (patch?: Partial<ShapeEntity>) => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
@@ -323,24 +362,36 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (candidates[0] !== tabIdRef.current) return;
     const lastAutoResumeAt = lastAutoResumeAtRef.current;
     if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
-    const semaphoreKey = `shape:${activeNodeId}`;
-    const acquired = await coordinator.tryAcquireSemaphore(semaphoreKey, tabIdRef.current, coordinator.semaphoreTtlTimeout);
+    const acquired = await tryAcquireBuildLock();
     if (!acquired) return;
     lastAutoResumeAtRef.current = now;
     coordinator.writeActiveSessionId(String(activeNodeId));
     try {
       await bridgeRef.current.initialize();
       const status = await bridgeRef.current.getBatchSessionStatus(SHAPE_NODE_TYPE, activeNodeId);
-      if (status.status !== 'running') return;
+      if (status.status !== 'running') {
+        releaseBuildLock();
+        return;
+      }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
       await persistDraftPatch({ processingStatus: 'processing' });
     } catch (error) {
+      releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
       notify.error('Failed to auto-resume build.');
       console.error('[ShapeBuildProgressStep] auto-resume failed', error);
     }
-  }, [activeNodeId, buildStatus, coordinator, getRecentNonActiveState, persistDraftPatch, runtimeStatus]);
+  }, [
+    activeNodeId,
+    buildStatus,
+    coordinator,
+    getRecentNonActiveState,
+    persistDraftPatch,
+    releaseBuildLock,
+    runtimeStatus,
+    tryAcquireBuildLock,
+  ]);
 
   useEffect(() => {
     if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
@@ -433,6 +484,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   useEffect(() => {
     if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
     if (buildStatus !== 'running') return;
+    if (!isLockOwner) return;
     const channel = channelRef.current;
     if (!channel) return;
     const tick = () => {
@@ -449,7 +501,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [activeNodeId, buildStatus, coordinator, progress, status]);
+  }, [activeNodeId, buildStatus, coordinator, isLockOwner, progress, status]);
 
   useEffect(() => {
     if (!activeNodeId) return;
@@ -567,6 +619,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.info('Another build session is active in this tab.');
       return false;
     }
+    const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
+    if (!acquired) {
+      return false;
+    }
     coordinator.writeActiveSessionId(String(activeNodeId));
     // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
     if (canResume && !options?.forceRestart) {
@@ -577,6 +633,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         await persistDraftPatch({ processingStatus: 'processing' });
         return true;
       } catch (error) {
+        releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
         notify.error('Failed to resume build.');
         console.error('[ShapeBuildProgressStep] resume failed', error);
@@ -585,6 +642,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     const saved = await saveDraftBeforeBatch();
     if (!saved) {
+      releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
       return false;
     }
@@ -592,6 +650,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await bridgeRef.current.initialize();
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads || payloads.length === 0) {
+        releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
         return false;
       }
@@ -605,12 +664,22 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await persistDraftPatch({ processingStatus: nextStatus });
       return true;
     } catch (error) {
+      releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
       notify.error('Failed to start or resume build.');
       console.error('[ShapeBuildProgressStep] start/resume failed', error);
       return false;
     }
-  }, [activeNodeId, buildStatus, buildDownloadTaskPayloads, canResume, coordinator, persistDraftPatch, saveDraftBeforeBatch]);
+  }, [
+    activeNodeId,
+    buildDownloadTaskPayloads,
+    canResume,
+    coordinator,
+    persistDraftPatch,
+    releaseBuildLock,
+    saveDraftBeforeBatch,
+    tryAcquireBuildLock,
+  ]);
 
   const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
@@ -640,6 +709,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     hasSelection,
     isProcessingValid,
   });
+
+  useEffect(() => {
+    if (!lockRef.current) return;
+    if (buildStatus === 'running' || runtimeStatus === 'processing' || isStartPending) return;
+    releaseBuildLock();
+  }, [buildStatus, isStartPending, releaseBuildLock, runtimeStatus]);
   const effectiveBuildStatus: BuildStatus = buildStatus;
   const effectiveStatusLabel = isStartPending && buildStatus === 'idle'
     ? t('stage.status.starting', 'Starting stage...')

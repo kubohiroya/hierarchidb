@@ -12,7 +12,7 @@ import {
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeEntityPayload } from '../../common/types/index.js';
+import type { ShapeFeaturePayload } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   buildRawDataDataSourceCacheKey,
@@ -63,7 +63,7 @@ export interface GeoBoundariesRawData {
 }
 
 //  GeoBoundaries
-export type GeoBoundariesProcessedData = Array<ShapeEntityPayload> & {
+export type GeoBoundariesProcessedData = Array<ShapeFeaturePayload> & {
   metadata?: {
     source: 'geoboundaries';
     processedAt: string;
@@ -285,7 +285,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       }
 
       //  ShapeEntity
-      const entities: ShapeEntityPayload[] = features.map((feature: GeoBoundariesFeature, index: number) => {
+      const entities: ShapeFeaturePayload[] = features.map((feature: GeoBoundariesFeature, index: number) => {
         const properties = feature.properties ?? {};
         const processedAt = new Date().toISOString();
 

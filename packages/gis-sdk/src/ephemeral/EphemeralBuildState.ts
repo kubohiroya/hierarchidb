@@ -48,6 +48,12 @@ export interface EphemeralBuildSessionRecord {
   lastActivity?: number;
   expiresAt?: number;
   tableId?: string;
+  inactiveMs?: number;
+  lastHeartbeatAt?: number;
+  stageInactiveMs?: number;
+  stageStartedAt?: number;
+  stageHeartbeatAt?: number;
+  stageId?: string;
 }
 
 export interface EphemeralBuildTaskRecord {

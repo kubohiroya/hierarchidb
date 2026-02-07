@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import type { ShapeEntityPayload } from '../../common/types/ShapeEntity.js';
+import type { ShapeFeaturePayload } from '../../common/types/ShapeFeaturePayload.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeStepValidationResult } from '../../common/types/index.js';
 import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
@@ -202,7 +202,7 @@ export interface SaveResult {
   error?: string;
 }
 
-export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntityPayload[]> {
+export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeFeaturePayload[]> {
   readonly id: string;
   readonly name: string;
   readonly config: DataSourceConfig;
@@ -222,7 +222,7 @@ export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEn
   clearCache?(): Promise<void>;
 }
 
-export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntityPayload[]>
+export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData = ShapeFeaturePayload[]>
   implements DataSourceStrategy<TRawData, TProcessedData> {
 
   abstract readonly id: string;

@@ -766,6 +766,12 @@ const upsertBuildSessionSnapshot = async (
     canResume: input.canResume,
     lastActivity,
     expiresAt,
+    inactiveMs: existing?.inactiveMs,
+    lastHeartbeatAt: existing?.lastHeartbeatAt,
+    stageInactiveMs: existing?.stageInactiveMs,
+    stageStartedAt: existing?.stageStartedAt,
+    stageHeartbeatAt: existing?.stageHeartbeatAt,
+    stageId: existing?.stageId,
   };
   await shapeMutationAPIImpl.upsertBuildSession(record);
 };

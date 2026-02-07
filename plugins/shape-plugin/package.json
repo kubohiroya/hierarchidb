@@ -64,6 +64,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/auth": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",

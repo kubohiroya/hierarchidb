@@ -7,7 +7,7 @@ import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type Sa
 import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
-import type { ShapeEntityPayload } from '../../../common/types/ShapeEntity.js';
+import type { ShapeFeaturePayload } from '../../../common/types/ShapeFeaturePayload.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -83,7 +83,7 @@ const minimalBatchConfig = {
   },
 };
 
-class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntityPayload[]> {
+class TestStrategy extends BaseDataSourceStrategy<any, ShapeFeaturePayload[]> {
   readonly id = 'test-strategy';
   readonly name = 'Test Strategy';
   readonly config: DataSourceConfig = {
@@ -105,8 +105,8 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntityPayload[]> {
     return { test: 'data', options };
   }
 
-  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeEntityPayload[]> {
-    const entity: ShapeEntityPayload = {
+  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeFeaturePayload[]> {
+    const entity: ShapeFeaturePayload = {
       buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
       licenseAgreement: true,
       selectedArrayByCountries: { US: [true] },
@@ -155,7 +155,7 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should validate data successfully', async () => {
-      const data: ShapeEntityPayload[] = [{
+    const data: ShapeFeaturePayload[] = [{
         buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
@@ -173,11 +173,10 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should save data successfully', async () => {
-      const data = [{
-        buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
-        licenseAgreement: true,
-        selectedArrayByCountries: {},
-      }] as ShapeEntityPayload[];
+      const data: ShapeFeaturePayload[] = [{
+        geometry: { type: 'Point', coordinates: [0, 0] },
+        properties: { source: 'test' },
+      }];
       const target: SaveTarget = {
         type: 'hierarchidb',
         entityType: 'shape',
@@ -430,7 +429,7 @@ describe('Integration Tests', () => {
     const saveSpy = vi.spyOn(strategy, 'saveData').mockRejectedValue(new Error('Save failed'));
 
     try {
-      await strategy.saveData([] as unknown as ShapeEntityPayload[], { type: 'hierarchidb' });
+      await strategy.saveData([] as unknown as ShapeFeaturePayload[], { type: 'hierarchidb' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }

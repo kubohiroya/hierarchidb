@@ -411,6 +411,7 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
       await admin.clearShapeEphemeralCache(nodeId, 'transformErrors');
       await admin.clearShapeEphemeralCache(nodeId, 'tileIdToBufferRelations');
 
+
       await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
 
       await pipeline.startPipeline({

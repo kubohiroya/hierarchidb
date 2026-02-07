@@ -4,7 +4,6 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { Geometry } from 'geojson';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 import type { DataSourceName } from '../../common/types/index.js';
 import type {
@@ -37,14 +36,6 @@ const getNumber = (record: Record<string, unknown>, key: string): number | undef
 const getBoolean = (record: Record<string, unknown>, key: string): boolean | undefined =>
   isBoolean(record[key]) ? record[key] : undefined;
 
-const getRecord = (record: Record<string, unknown>, key: string): Record<string, unknown> | undefined =>
-  isRecord(record[key]) ? record[key] : undefined;
-
-const isGeometry = (value: unknown): value is Geometry => {
-  if (!isRecord(value)) return false;
-  if (!isString(value.type)) return false;
-  return 'coordinates' in value || 'geometries' in value;
-};
 
 const isShapeBuildConfig = (value: unknown): value is ShapeBuildConfig =>
   isRecord(value) && isString(value.dataSourceName);
@@ -75,26 +66,15 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
   updatedAt: number;
   version: number;
 }): ShapeEntity => {
-  const geometryValue = record.geometry;
   const buildConfigValue = record.buildConfig;
   const selectedArrayByCountriesValue = record.selectedArrayByCountries;
   const previewMapViewValue = record.previewMapView;
-  const tileSummaryValue = getRecord(record, 'tileSummary');
-  const tileSummary = tileSummaryValue && isNumber(tileSummaryValue.tiles) && isNumber(tileSummaryValue.totalBytes)
-    ? {
-      tiles: tileSummaryValue.tiles,
-      totalBytes: tileSummaryValue.totalBytes,
-      zoomMin: getNumber(tileSummaryValue, 'zoomMin'),
-      zoomMax: getNumber(tileSummaryValue, 'zoomMax'),
-    }
-    : undefined;
 
   return {
     id: node.id,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
     version: node.version,
-    geometry: isGeometry(geometryValue) ? geometryValue : undefined,
     licenseAgreement: getBoolean(record, 'licenseAgreement'),
     licenseAgreedAt: getString(record, 'licenseAgreedAt'),
     buildConfig: isShapeBuildConfig(buildConfigValue) ? buildConfigValue : undefined,
@@ -103,9 +83,13 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
       : undefined,
     processingStatus: isProcessingStatus(record.processingStatus) ? record.processingStatus : undefined,
     stopReason: isShapeBuildStopReason(record.stopReason) ? record.stopReason : undefined,
-    tileSummary,
     buildStartedAt: getNumber(record, 'buildStartedAt'),
     buildFinishedAt: getNumber(record, 'buildFinishedAt'),
+    buildElapsedMs: getNumber(record, 'buildElapsedMs'),
+    buildResumedAt: getNumber(record, 'buildResumedAt'),
+    stageElapsedMs: getNumber(record, 'stageElapsedMs'),
+    stageResumedAt: getNumber(record, 'stageResumedAt'),
+    stageElapsedStageId: getString(record, 'stageElapsedStageId'),
     previewMapView: isPreviewMapView(previewMapViewValue) ? previewMapViewValue : undefined,
   };
 };

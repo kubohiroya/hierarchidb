@@ -71,21 +71,18 @@ const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   return hasSelection && hasDataSource && processingValid;
 };
 
-const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
-  Boolean(data?.tileSummary && (data.tileSummary.tiles ?? 0) > 0);
-
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (data.processingStatus === 'completed') return true;
-  if (hasTileSummary(data)) return true;
+  if (typeof data.buildFinishedAt === 'number') return true;
   return data.processingStatus === 'failed';
 };
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
-  if (hasTileSummary(data)) return true;
+  if (typeof data.buildFinishedAt === 'number') return true;
   return data.processingStatus === 'completed';
 };
 

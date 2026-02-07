@@ -159,6 +159,12 @@ export interface BatchSession {
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
+  inactiveMs?: number;
+  lastHeartbeatAt?: number;
+  stageInactiveMs?: number;
+  stageStartedAt?: number;
+  stageHeartbeatAt?: number;
+  stageId?: string;
   stages?: Partial<Record<BuildTaskType, StageStatus>>;
   resourceUsage?: ResourceUsage;
 }

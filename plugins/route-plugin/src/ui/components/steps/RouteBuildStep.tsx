@@ -29,7 +29,7 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
-import { createPollingTracker, createSessionCoordinator } from '@hierarchidb/session-coordinator';
+import { createPollingTracker, createSessionCoordinator, type SessionLockHandle } from '@hierarchidb/session-coordinator';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,
@@ -216,6 +216,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const lastBroadcastTabIdRef = useRef<string | null>(null);
   const lastAckAtRef = useRef<number | null>(null);
   const lastAckTabIdRef = useRef<string | null>(null);
+  const lockRef = useRef<SessionLockHandle | null>(null);
+  const lockKeyRef = useRef<string | null>(null);
+  const [isLockOwner, setIsLockOwner] = useState(false);
   const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
   const lastAutoResumeAtRef = useRef<number | null>(null);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
@@ -235,6 +238,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const heapPauseRef = useRef<number | null>(null);
   const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
   const sessionId = routeNodeId ? String(routeNodeId) : null;
+  const lockKey = useMemo(() => (
+    sessionId ? `route:${sessionId}` : null
+  ), [sessionId]);
   const crashInsight = useRouteBuildCrashInsight({ draft, nodeId: routeNodeId ? String(routeNodeId) : null });
   const monitorKey = useMemo(
     () => getBuildMonitorKey(buildMonitorConfig, routeNodeId ? String(routeNodeId) : null),
@@ -244,6 +250,47 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     enabled: status === 'running' || status === 'paused',
     workerEnabled: false,
   });
+
+  const releaseBuildLock = useCallback(() => {
+    const lock = lockRef.current;
+    if (!lock) return;
+    lock.release();
+    lockRef.current = null;
+    lockKeyRef.current = null;
+    setIsLockOwner(false);
+  }, []);
+
+  const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
+    if (!lockKey) return false;
+    if (lockRef.current) return true;
+    const lock = await coordinator.tryAcquireSessionLock(lockKey);
+    if (!lock) {
+      if (options?.notifyOnFailure) {
+        if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
+          notify.error('Web Locks API is unavailable.');
+        } else {
+          notify.info('Another tab is already running this build.');
+        }
+      }
+      return false;
+    }
+    lockRef.current = lock;
+    lockKeyRef.current = lockKey;
+    setIsLockOwner(true);
+    return true;
+  }, [coordinator, lockKey]);
+
+  useEffect(() => {
+    if (!lockKeyRef.current) return;
+    if (lockKeyRef.current === lockKey) return;
+    releaseBuildLock();
+  }, [lockKey, releaseBuildLock]);
+
+  useEffect(() => {
+    return () => {
+      releaseBuildLock();
+    };
+  }, [releaseBuildLock]);
 
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
@@ -341,6 +388,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   useEffect(() => {
     if (!sessionId || typeof BroadcastChannel === 'undefined') return;
     if (status !== 'running') return;
+    if (!isLockOwner) return;
     const channel = channelRef.current;
     if (!channel) return;
     const tick = () => {
@@ -357,7 +405,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     return () => {
       clearInterval(intervalId);
     };
-  }, [coordinator, overallProgress, sessionId, status]);
+  }, [coordinator, isLockOwner, overallProgress, sessionId, status]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -542,6 +590,10 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       notify.info('Another build session is active in this tab.');
       return;
     }
+    const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
+    if (!acquired) {
+      return;
+    }
     if (!options?.autoResume) {
       coordinator.writeActiveSessionId(sessionId);
     } else if (!activeSessionId) {
@@ -607,6 +659,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       onUpdate({ processingStatus: 'failed', processingError: message, buildFinishedAt: Date.now() });
     } finally {
       buildInFlightRef.current = false;
+      releaseBuildLock();
       coordinator.clearActiveSessionId(sessionId);
     }
   }, [
@@ -620,7 +673,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     onUpdate,
     resolveVectorTileConfig,
     resolveZoomRange,
+    releaseBuildLock,
     t,
+    tryAcquireBuildLock,
   ]);
 
   const shouldAutoResume = Boolean(
@@ -640,12 +695,11 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     if (candidates[0] !== tabIdRef.current) return;
     const lastAutoResumeAt = lastAutoResumeAtRef.current;
     if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
-    const semaphoreKey = `route:${sessionId}`;
-    const acquired = await coordinator.tryAcquireSemaphore(semaphoreKey, tabIdRef.current, coordinator.semaphoreTtlTimeout);
+    const acquired = await tryAcquireBuildLock();
     if (!acquired) return;
     lastAutoResumeAtRef.current = now;
     await runIdeGsmBuild({ autoResume: true });
-  }, [coordinator, getRecentNonActiveState, runIdeGsmBuild, sessionId, shouldAutoResume, status]);
+  }, [coordinator, getRecentNonActiveState, runIdeGsmBuild, sessionId, shouldAutoResume, status, tryAcquireBuildLock]);
 
   useEffect(() => {
     if (!sessionId || typeof BroadcastChannel === 'undefined') return;

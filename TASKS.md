@@ -1,3 +1,70 @@
+2561) investigate/shape-build/step5-ui-busy-loop (P1) — 進行中 (2026-02-07)
+- ブランチ名: investigate/shape-build/step5-ui-busy-loop
+- 依存: 2560
+- 受け入れ基準: Step5 でタスク未定義時に UI が過剰更新する経路を特定できる／原因と発生範囲を整理できる／必要な抑止修正を提案できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/plugin-ui-host/src/**`（調査結果に応じて）
+- ロールバック手順: 追加した計測/抑止ロジックを revert する
+- チェックリスト:
+  - Step5 の hook/atom/subscribe の更新経路を確認する
+  - タスク未定義時のループ条件を特定する
+  - 必要なら最小修正でループを抑止する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 13:45 JST Step5 での UI 過剰更新/ループ調査に着手。
+  - update: 2026-02-07 09:31 JST Step5 のタスク未定義経路が Transform キャッシュ削除の taskQueue 操作と連動しているため、2560 の修正内容に合わせて検証する方針を整理。
+
+2561) fix/shape-build/timing-inactive-tilesummary (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/shape-build/timing-inactive-tilesummary
+- 依存: なし
+- 受け入れ基準: ビルド総経過時間/ステージ経過時間が「現在時刻 - 開始時刻 - 不活性合計」で算出され、OS サスペンド/クラッシュ由来の不活性時間を検出して永続化できる／tileSummary が hidb-shape へ移設され ShapeEntity から削除される／geometry が ShapeEntity から撤去される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/shape-store/src/**`（必要に応じて追加）
+- ロールバック手順: 追加した不活性時間ロジックと tileSummary 移設・geometry 撤去の差分を revert する
+- チェックリスト:
+  - 不活性時間の検出/永続化を実装する
+  - ビルド/ステージ経過時間の表示が不活性時間を差し引くことを確認する
+  - ビルド担当タブの排他制御を Web Locks API で実装する
+  - ハートビート更新はロック獲得タブの UI スレッドのみが実行する
+  - ハートビート/経過時間の共通化（shape 固有実装の依存排除）を行う
+  - tileSummary を hidb-shape へ移設し ShapeEntity から削除する
+  - geometry を ShapeEntity から撤去する
+  - 必要範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 14:05 JST ビルド経過時間の不活性管理と tileSummary/geometry 見直しに着手。
+  - update: 2026-02-07 15:20 JST Web Locks API によるタブ排他とハートビート更新の共通化を追加検討。
+  - update: 2026-02-07 16:35 JST Web Locks API のロック取得を shape/route のビルド開始・自動再開に適用、共通 timing hook を @hierarchidb/batch へ移設。
+
+2560) investigate/shape-build/step5-browser-crash (P1) — 進行中 (2026-02-07)
+- ブランチ名: investigate/shape-build/step5-browser-crash
+- 依存: なし
+- 受け入れ基準: Step5 ビルド開始後のクラッシュ条件と発生箇所を整理できる／原因仮説と確認手順を示せる／必要な計測ログを追加できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/vt-orchestrator/src/**`（調査結果に応じて）
+- ロールバック手順: 追加した計測ログを revert する
+- チェックリスト:
+  - ログから crash 直前のステージと処理を特定する
+  - 大量データ/メモリ/無限ループの可能性を確認する
+  - 追加計測が必要なら実装する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 13:30 JST Step5 ビルド開始後のブラウザクラッシュ調査に着手。
+  - update: 2026-02-07 09:31 JST Transform キャッシュ削除時の taskQueue stage 正規化と stage 未設定レコード削除抑止の修正を進行中。
+  - blocked: 2026-02-07 09:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存の build session/tileSummary 変更に伴う型エラーで exit 2（ShapeBuildAPIClient/shapeSessionMappers/useShapeBuildTiming ほか）。
+
+2559) fix/shape-transform/default-tolerance-0.5 (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/shape-transform/default-tolerance-0.5
+- 依存: なし
+- 受け入れ基準: shape の既定 transformConfig.tolerance が 0.5 になる／他の既定値は変更しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`
+- ロールバック手順: tolerance の既定値を 0.2 に戻す
+- チェックリスト:
+  - transformConfig.tolerance の既定値を更新する
+  - 既定値変更の影響を確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 13:20 JST shape transform の既定 tolerance を 0.5 に変更する作業に着手。
+  - update: 2026-02-07 13:22 JST transformConfig.tolerance の既定値を 0.5 に更新。
+  - done: 2026-02-07 13:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2558) fix/shape-preview/map-event-timestamps (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-preview/map-event-timestamps
 - 依存: なし
@@ -46,6 +113,9 @@
   - update: 2026-02-06 23:48 JST shape ダイアログ初期 draftData/valid 条件の unit テストを追加。
   - update: 2026-02-06 23:48 JST テンプレート由来の processing-configuration は validateBatchConfig で invalid になることを確認。
   - blocked: 2026-02-06 23:48 JST pnpm --filter @hierarchidb/shape-plugin test が既存の import 解決エラーで exit 1（shape-build-*.wfl で packages//{src,dist} 参照、useShapeBuildAutoResume.reload で import 解決失敗、ShapeBuildAPIClient で @hierarchidb/shape-store 未解決）。
+  - update: 2026-02-07 01:52 JST shape-plugin の vitest alias と localStorage テスト環境を修正し、dialog 初期 draftData/valid の unit テストを追加・調整。
+  - update: 2026-02-07 01:52 JST pnpm --filter @hierarchidb/shape-plugin exec vitest run src/ui/__tests__/dialog/shape-dialog-initial-draft.unit.test.tsx exit 0 を確認。
+  - blocked: 2026-02-07 01:52 JST pnpm --filter @hierarchidb/shape-plugin test が shape-build-background-real-pipeline.wfl.test.ts の待機で完走せずタイムアウト。
 
 2556) fix/shape-preview/multipolygon-loading-bar (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/shape-preview/multipolygon-loading-bar
@@ -379,6 +449,7 @@
   - update: 2026-02-07 09:10 JST draftData を Partial<PeerEntity> へ統一する型修正に着手。
   - update: 2026-02-07 09:45 JST draftData 型統一と PeerEntity 適合の残作業（Spreadsheet を中心）を継続。
   - update: 2026-02-07 09:52 JST resolver-store の ResolverEntity を PeerEntity へ更新、pnpm --filter @hierarchidb/resolver-store typecheck exit 0 を確認。
+  - update: 2026-02-07 10:05 JST VT 未完了なのに Build completed が出る問題の対応として完了判定を processingStatus 優先に変更、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-02-07 10:12 JST progress が単調増加にならず Maximum update depth exceeded が再現するとの報告を受領、再現条件整理と原因特定を優先対応に追加。
   - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。
   - update: 2026-02-07 10:46 JST useBatchProgress の進捗更新を単調化（percentage 低下のクランプ）し、phase=completed でもタスク完了前は確定更新を抑止。
@@ -393,6 +464,8 @@
   - update: 2026-02-07 12:20 JST transform 進捗を 0-50/50-100 の二段階で単調増加させる対応に着手。
   - update: 2026-02-07 12:26 JST transform 進捗を 0-50/50-100 の二段階に正規化するロジックを追加し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - update: 2026-02-07 12:34 JST decode 完了で 50% 到達となるよう進捗正規化の境界を調整し、pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-07 12:43 JST Step5 の総経過時間/ステージ経過時間がリロードで 0 に戻る問題の修正に着手。
+  - update: 2026-02-07 12:58 JST build/stage の経過時間を draft に永続化し、リロード時に実稼働時間を復元するよう修正。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2537) investigate/shape-build/multipolygon-merge-hypothesis (P1) — 進行中 (2026-02-06)
 - ブランチ名: investigate/shape-build/multipolygon-merge-hypothesis

@@ -152,7 +152,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         domainType: 'shape',
         bandIndex: 0,
         tileId: 'z0-0-0',
-        bufferId: `${nodeId}-buffer`,
+        bufferId: `${nodeId}-transform-cache`,
         createdAt: now,
       });
     },

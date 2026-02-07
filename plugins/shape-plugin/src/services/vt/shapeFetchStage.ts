@@ -25,7 +25,7 @@ import type {
   DataSourceName,
   FetchTaskPayload,
   SelectedArrayByCountries,
-  ShapeEntityPayload,
+  ShapeFeaturePayload,
 } from '../../common/types/index.js';
 import { generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
@@ -435,7 +435,7 @@ const putFetchCache = async (params: {
 };
 
 const buildFetchFeatureCollection = (
-  entities: ShapeEntityPayload[],
+  entities: ShapeFeaturePayload[],
   originKey: string
 ): FeatureCollection => {
   const features: Feature[] = [];

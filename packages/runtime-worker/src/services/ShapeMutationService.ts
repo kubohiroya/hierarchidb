@@ -139,6 +139,12 @@ const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRec
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
+    inactiveMs: session.inactiveMs,
+    lastHeartbeatAt: session.lastHeartbeatAt,
+    stageInactiveMs: session.stageInactiveMs,
+    stageStartedAt: session.stageStartedAt,
+    stageHeartbeatAt: session.stageHeartbeatAt,
+    stageId: session.stageId,
   };
 };
 
@@ -165,6 +171,12 @@ const toBuildSessionUpdates = (
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
+  if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
+  if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
+  if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
+  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
+  if (updates.stageId !== undefined) next.stageId = updates.stageId;
   return next;
 };
 
@@ -248,12 +260,12 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async deleteVectorTile(tileId: string): Promise<void> {
     await this.ensureOpen();
-    await this.db.vectorTiles.delete(tileId);
+    await this.db.deleteVectorTile(tileId);
   }
 
   async deleteVectorTiles(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
+    await this.db.deleteVectorTilesByNode(nodeId);
   }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {

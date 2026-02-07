@@ -175,6 +175,7 @@ class RealVTWorker implements VTWorkerAPI {
         })
       );
       await shapeDB.vectorTiles.bulkPut(rows);
+      await shapeDB.rebuildVectorTileSummary(resolvedNodeId);
       return;
     }
     if (nodeType === 'route') {

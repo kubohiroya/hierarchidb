@@ -10,6 +10,7 @@ export type {
   ShapePreviewMapView,
   SelectedArrayByCountries,
 } from './ShapeEntity.js';
+export type { ShapeFeaturePayload } from './ShapeFeaturePayload.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
 export type { VectorTileEntity } from './VectorTileEntity.js';
 export type {

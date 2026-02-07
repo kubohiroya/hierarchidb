@@ -50,11 +50,48 @@ type StageLikeTask = {
   taskType?: TaskStage;
 };
 
+type TaskQueueRecordLike = Partial<StageLikeTask> & {
+  taskId?: string;
+};
+
+const KNOWN_TASK_STAGES: TaskStage[] = ['fetch', 'transform', 'vt'];
+
+
 const resolveTaskStage = (task: StageLikeTask): TaskStage =>
   task.stage ?? task.type ?? task.taskType;
 
 const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
   stages.includes(resolveTaskStage(task));
+
+const resolveKnownTaskStage = (task: TaskQueueRecordLike): TaskStage | null => {
+  const candidate = task.stage ?? task.taskType ?? task.type;
+  if (!candidate) return null;
+  return KNOWN_TASK_STAGES.includes(candidate) ? candidate : null;
+};
+
+const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
+  const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
+  const patches: Array<{ taskId: string; updates: { stage?: TaskStage; taskType?: TaskStage } }> = [];
+  records.forEach((record) => {
+    if (!record || typeof record !== 'object') return;
+    const taskId = (record as TaskQueueRecordLike).taskId;
+    if (typeof taskId !== 'string' || taskId.length === 0) return;
+    const resolvedStage = resolveKnownTaskStage(record as TaskQueueRecordLike);
+    if (!resolvedStage) return;
+    const currentStage = (record as TaskQueueRecordLike).stage;
+    const currentTaskType = (record as TaskQueueRecordLike).taskType;
+    const updates: { stage?: TaskStage; taskType?: TaskStage } = {};
+    if (currentStage !== resolvedStage) updates.stage = resolvedStage;
+    if (currentTaskType !== resolvedStage) updates.taskType = resolvedStage;
+    if (Object.keys(updates).length > 0) {
+      patches.push({ taskId, updates });
+    }
+  });
+  if (patches.length === 0) return;
+  await taskQueue.transaction('rw', taskQueue.tasks, async () => {
+    await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
+  });
+};
 
 export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
@@ -100,7 +137,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const transformDeleteCount = counts.transform;
   const vtDeleteCount = counts.vt;
   const metadataDeleteCount = resultCounts.metadata;
-  const hasTileSummary = Boolean(draft?.tileSummary && (draft.tileSummary.tiles ?? 0) > 0);
   const deleteFetchApiLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteApiCacheWithCount',
@@ -237,6 +273,9 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       await ephemeralShapeAPIImpl.deleteBuildTasksByIds(taskIds);
     }
     const taskQueue = new VtTaskQueueDb();
+    if (uniqueTypes.includes('transform')) {
+      await normalizeTaskQueueStages(taskQueue, nodeId);
+    }
     await Promise.all(
       uniqueTypes.map((stage) => (
         taskQueue.tasks
@@ -250,9 +289,9 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         .where('nodeId')
         .equals(nodeId)
         .and((task) => {
-          const stage = task.stage;
-          if (!stage) return true;
-          return !['fetch', 'transform', 'vt'].includes(stage);
+          const stage = resolveKnownTaskStage(task as TaskQueueRecordLike);
+          if (!stage) return false;
+          return !KNOWN_TASK_STAGES.includes(stage);
         })
         .delete();
     }
@@ -274,9 +313,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         draftData: {
           ...(draft ?? {}),
           processingStatus: 'idle',
-          tileSummary: undefined,
           buildStartedAt: undefined,
           buildFinishedAt: undefined,
+          buildElapsedMs: 0,
+          buildResumedAt: undefined,
+          stageElapsedMs: 0,
+          stageResumedAt: undefined,
+          stageElapsedStageId: undefined,
         } as Record<string, unknown>,
       });
     } catch (error) {
@@ -293,23 +336,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     ]);
     return summary.tiles > 0 || sourceMetadata.length > 0 || transformErrors.length > 0;
   }, [nodeId]);
-
-  const persistTileSummaryReset = useCallback(async () => {
-    if (!nodeId) return;
-    try {
-      await bridgeRef.initialize();
-      const updater = await bridgeRef.getTreeNodeUpdaterAPI();
-      await updater.updateTreeNode(nodeId, {
-        mode: 'save-draft',
-        draftData: {
-          ...(draft ?? {}),
-          tileSummary: undefined,
-        } as Record<string, unknown>,
-      });
-    } catch (error) {
-      console.warn('[ShapeDownloadConfigSection] failed to persist tile summary reset', error);
-    }
-  }, [bridgeRef, draft, nodeId]);
 
   const handleDeleteFetchApiCache = useCallback(async () => {
     const stagesToClear: BuildTaskType[] = ['fetch', 'transform', 'vt'];
@@ -331,7 +357,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       await loadCounts();
-      const shouldPreserveSession = draft?.processingStatus === 'completed' || hasTileSummary || await hasPersistedOutputs();
+      const shouldPreserveSession = draft?.processingStatus === 'completed' || await hasPersistedOutputs();
       if (!shouldPreserveSession) {
         onResetSession?.();
         await persistSessionReset();
@@ -343,7 +369,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     clearBatchTasksForStages,
     draft?.processingStatus,
     hasPersistedOutputs,
-    hasTileSummary,
     loadCounts,
     onResetSession,
     persistSessionReset,
@@ -372,7 +397,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       await clearFinalOutputs();
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
-      await persistTileSummaryReset();
       await loadCounts();
       notify.success('Deleted vt cache');
     });
@@ -381,7 +405,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     clearBatchTasksForStages,
     clearFinalOutputs,
     loadCounts,
-    persistTileSummaryReset,
     runDelete,
     setBuildTasks,
     setPersistedTasks,

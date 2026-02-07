@@ -98,6 +98,12 @@ export interface BuildSessionRecord {
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
+  inactiveMs?: number;
+  lastHeartbeatAt?: number;
+  stageInactiveMs?: number;
+  stageStartedAt?: number;
+  stageHeartbeatAt?: number;
+  stageId?: string;
 }
 
 export type FetchTaskPayload = {
@@ -289,6 +295,15 @@ export interface VectorTileRecord {
   version: number;
 }
 
+export interface ShapeTileSummaryRecord {
+  nodeId: ShapeContainerNodeId;
+  tiles: number;
+  totalBytes: number;
+  zoomMin?: number;
+  zoomMax?: number;
+  updatedAt: number;
+}
+
 export class ShapeDB extends VectorTileDbBase {
 
   // Feature storage tables
@@ -296,6 +311,7 @@ export class ShapeDB extends VectorTileDbBase {
 
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
+  tileSummaries!: Table<ShapeTileSummaryRecord, ShapeContainerNodeId>;
 
   constructor() {
     super(getDBName('shape'));
@@ -304,8 +320,40 @@ export class ShapeDB extends VectorTileDbBase {
       features: '++id, nodeId, [nodeId+adminLevel]',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
     }));
+    this.version(10).stores(this.mergeVectorTileStores({
+      features: '++id, nodeId, [nodeId+adminLevel]',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+      tileSummaries: '&nodeId',
+    })).upgrade(async (tx) => {
+      const tiles = await tx.table('vectorTiles').toArray();
+      if (tiles.length === 0) return;
+      const summaries = new Map<string, ShapeTileSummaryRecord>();
+      const now = Date.now();
+      for (const tile of tiles) {
+        const nodeKey = String(tile.nodeId);
+        const existing = summaries.get(nodeKey);
+        if (!existing) {
+          summaries.set(nodeKey, {
+            nodeId: tile.nodeId,
+            tiles: 1,
+            totalBytes: tile.size,
+            zoomMin: tile.z,
+            zoomMax: tile.z,
+            updatedAt: now,
+          });
+          continue;
+        }
+        existing.tiles += 1;
+        existing.totalBytes += tile.size;
+        existing.zoomMin = existing.zoomMin === undefined ? tile.z : Math.min(existing.zoomMin, tile.z);
+        existing.zoomMax = existing.zoomMax === undefined ? tile.z : Math.max(existing.zoomMax, tile.z);
+      }
+      const summaryTable = tx.table('tileSummaries');
+      await Promise.all(Array.from(summaries.values()).map((summary) => summaryTable.put(summary)));
+    });
 
     this.initVectorTileTables();
+    this.tileSummaries = this.table('tileSummaries');
   }
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
@@ -386,7 +434,96 @@ export class ShapeDB extends VectorTileDbBase {
 
   // Vector Tile Management
   async storeVectorTile(tile: VectorTileRecord): Promise<void> {
-    await this.vectorTiles.put(tile);
+    await this.transaction('rw', [this.vectorTiles, this.tileSummaries], async () => {
+      const existing = await this.vectorTiles.get(tile.tileId);
+      await this.vectorTiles.put(tile);
+      const summary = await this.tileSummaries.get(tile.nodeId);
+      const baseTiles = summary?.tiles ?? 0;
+      const baseBytes = summary?.totalBytes ?? 0;
+      const tiles = existing ? baseTiles : baseTiles + 1;
+      const totalBytes = baseBytes - (existing?.size ?? 0) + tile.size;
+      const zoomMin = summary?.zoomMin === undefined ? tile.z : Math.min(summary.zoomMin, tile.z);
+      const zoomMax = summary?.zoomMax === undefined ? tile.z : Math.max(summary.zoomMax, tile.z);
+      await this.tileSummaries.put({
+        nodeId: tile.nodeId,
+        tiles,
+        totalBytes: Math.max(0, totalBytes),
+        zoomMin,
+        zoomMax,
+        updatedAt: Date.now(),
+      });
+    });
+  }
+
+  async deleteVectorTile(tileId: string): Promise<void> {
+    await this.transaction('rw', [this.vectorTiles, this.tileSummaries], async () => {
+      const existing = await this.vectorTiles.get(tileId);
+      if (!existing) return;
+      await this.vectorTiles.delete(tileId);
+      const summary = await this.tileSummaries.get(existing.nodeId);
+      if (!summary) return;
+      const nextTiles = Math.max(0, summary.tiles - 1);
+      const nextBytes = Math.max(0, summary.totalBytes - existing.size);
+      if (nextTiles === 0) {
+        await this.tileSummaries.delete(existing.nodeId);
+        return;
+      }
+      let zoomMin = summary.zoomMin;
+      let zoomMax = summary.zoomMax;
+      if (existing.z === summary.zoomMin || existing.z === summary.zoomMax) {
+        const remaining = await this.vectorTiles.where('nodeId').equals(existing.nodeId).toArray();
+        const zoomLevels = remaining.map((tile) => tile.z);
+        zoomMin = zoomLevels.length > 0 ? Math.min(...zoomLevels) : undefined;
+        zoomMax = zoomLevels.length > 0 ? Math.max(...zoomLevels) : undefined;
+      }
+      await this.tileSummaries.put({
+        nodeId: existing.nodeId,
+        tiles: nextTiles,
+        totalBytes: nextBytes,
+        zoomMin,
+        zoomMax,
+        updatedAt: Date.now(),
+      });
+    });
+  }
+
+  async deleteVectorTilesByNode(nodeId: ShapeContainerNodeId): Promise<void> {
+    await this.transaction('rw', [this.vectorTiles, this.tileSummaries], async () => {
+      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+      await this.tileSummaries.delete(nodeId);
+    });
+  }
+
+  async deleteVectorTilesByNodeIds(nodeIds: ShapeContainerNodeId[]): Promise<void> {
+    if (nodeIds.length === 0) return;
+    await this.transaction('rw', [this.vectorTiles, this.tileSummaries], async () => {
+      await this.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
+      await this.tileSummaries.where('nodeId').anyOf(nodeIds).delete();
+    });
+  }
+
+  async getVectorTileSummary(nodeId: ShapeContainerNodeId): Promise<ShapeTileSummaryRecord | undefined> {
+    return await this.tileSummaries.get(nodeId);
+  }
+
+  async rebuildVectorTileSummary(nodeId: ShapeContainerNodeId): Promise<void> {
+    await this.transaction('rw', [this.vectorTiles, this.tileSummaries], async () => {
+      const tiles = await this.vectorTiles.where('nodeId').equals(nodeId).toArray();
+      if (tiles.length === 0) {
+        await this.tileSummaries.delete(nodeId);
+        return;
+      }
+      const totalBytes = tiles.reduce((sum, tile) => sum + tile.size, 0);
+      const zoomLevels = tiles.map((tile) => tile.z);
+      await this.tileSummaries.put({
+        nodeId,
+        tiles: tiles.length,
+        totalBytes,
+        zoomMin: Math.min(...zoomLevels),
+        zoomMax: Math.max(...zoomLevels),
+        updatedAt: Date.now(),
+      });
+    });
   }
 
   async getVectorTile(

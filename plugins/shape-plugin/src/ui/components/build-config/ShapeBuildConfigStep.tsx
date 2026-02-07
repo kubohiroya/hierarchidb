@@ -52,9 +52,13 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
   const resetSession = () => {
     onChange({
       processingStatus: 'idle',
-      tileSummary: undefined,
       buildStartedAt: undefined,
       buildFinishedAt: undefined,
+      buildElapsedMs: 0,
+      buildResumedAt: undefined,
+      stageElapsedMs: 0,
+      stageResumedAt: undefined,
+      stageElapsedStageId: undefined,
     });
   };
   const filteringPreviewImages = useMemo(() => ({

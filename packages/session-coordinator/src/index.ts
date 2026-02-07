@@ -85,6 +85,7 @@ export type SessionCoordinator = {
   ) => void;
   sendAck: (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => void;
   tryAcquireSemaphore: (key: string, ownerId: string, ttlMs?: number) => Promise<boolean>;
+  tryAcquireSessionLock: (key: string) => Promise<SessionLockHandle | null>;
 };
 
 type SessionSemaphoreRecord = {
@@ -92,6 +93,10 @@ type SessionSemaphoreRecord = {
   ownerId: string;
   acquiredAt: number;
   expiresAt: number;
+};
+
+export type SessionLockHandle = {
+  release: () => void;
 };
 
 const DEFAULT_KEYS: SessionStorageKeys = {
@@ -348,6 +353,40 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     }
   };
 
+  const tryAcquireSessionLock = async (key: string): Promise<SessionLockHandle | null> => {
+    if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
+      console.warn('[session-coordinator] Web Locks API is unavailable');
+      return null;
+    }
+    return new Promise<SessionLockHandle | null>((resolve) => {
+      let released = false;
+      let resolveRelease: (() => void) | null = null;
+      const releasePromise = new Promise<void>((release) => {
+        resolveRelease = release;
+      });
+      const release = () => {
+        if (released) return;
+        released = true;
+        resolveRelease?.();
+      };
+      navigator.locks.request(
+        key,
+        { ifAvailable: true, mode: 'exclusive' },
+        (lock) => {
+          if (!lock) {
+            resolve(null);
+            return;
+          }
+          resolve({ release });
+          return releasePromise;
+        },
+      ).catch((error) => {
+        console.warn('[session-coordinator] failed to acquire session lock', error);
+        resolve(null);
+      });
+    });
+  };
+
   return {
     channelName,
     pollIntervalTimeout,
@@ -367,5 +406,6 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     sendTabState,
     sendAck,
     tryAcquireSemaphore,
+    tryAcquireSessionLock,
   };
 };

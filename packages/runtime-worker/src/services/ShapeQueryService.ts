@@ -75,6 +75,12 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
+    inactiveMs: session.inactiveMs,
+    lastHeartbeatAt: session.lastHeartbeatAt,
+    stageInactiveMs: session.stageInactiveMs,
+    stageStartedAt: session.stageStartedAt,
+    stageHeartbeatAt: session.stageHeartbeatAt,
+    stageId: session.stageId,
   };
 };
 
@@ -197,6 +203,12 @@ const toBuildSessionRecordFromEphemeral = (
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
+    inactiveMs: session.inactiveMs,
+    lastHeartbeatAt: session.lastHeartbeatAt,
+    stageInactiveMs: session.stageInactiveMs,
+    stageStartedAt: session.stageStartedAt,
+    stageHeartbeatAt: session.stageHeartbeatAt,
+    stageId: session.stageId,
   };
 };
 
@@ -384,17 +396,15 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary> {
     await this.ensureOpen();
-    const tiles = await this.db.vectorTiles.where('nodeId').equals(nodeId).toArray();
-    if (tiles.length === 0) {
+    const summary = await this.db.getVectorTileSummary(nodeId);
+    if (!summary) {
       return { tiles: 0, totalBytes: 0 };
     }
-    const totalBytes = tiles.reduce((sum, tile) => sum + tile.size, 0);
-    const zoomLevels = tiles.map((tile) => tile.z);
     return {
-      tiles: tiles.length,
-      totalBytes,
-      zoomMin: Math.min(...zoomLevels),
-      zoomMax: Math.max(...zoomLevels),
+      tiles: summary.tiles,
+      totalBytes: summary.totalBytes,
+      zoomMin: summary.zoomMin,
+      zoomMax: summary.zoomMax,
     };
   }
 

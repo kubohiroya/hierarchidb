@@ -140,6 +140,12 @@ const toBuildSessionRecordFromEphemeral = (
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
+    inactiveMs: session.inactiveMs,
+    lastHeartbeatAt: session.lastHeartbeatAt,
+    stageInactiveMs: session.stageInactiveMs,
+    stageStartedAt: session.stageStartedAt,
+    stageHeartbeatAt: session.stageHeartbeatAt,
+    stageId: session.stageId,
   };
 };
 
@@ -359,17 +365,15 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary> {
-    const tiles = await listVtTilesByNode(nodeId);
-    if (tiles.length === 0) {
+    const summary = await shapeDB.getVectorTileSummary(nodeId);
+    if (!summary) {
       return { tiles: 0, totalBytes: 0 };
     }
-    const totalBytes = tiles.reduce((sum, tile) => sum + tile.size, 0);
-    const zoomLevels = tiles.map((tile) => tile.z);
     return {
-      tiles: tiles.length,
-      totalBytes,
-      zoomMin: Math.min(...zoomLevels),
-      zoomMax: Math.max(...zoomLevels),
+      tiles: summary.tiles,
+      totalBytes: summary.totalBytes,
+      zoomMin: summary.zoomMin,
+      zoomMax: summary.zoomMax,
     };
   }
 
@@ -540,11 +544,11 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
-    await shapeDB.vectorTiles.delete(tileId);
+    await shapeDB.deleteVectorTile(tileId);
   }
 
   async deleteVectorTiles(nodeId: NodeId): Promise<void> {
-    await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
+    await shapeDB.deleteVectorTilesByNode(nodeId);
   }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {

@@ -1,6 +1,5 @@
 import type { ISO2, PeerEntity } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { Geometry } from 'geojson';
 import type { ShapeBuildConfig } from './build.js';
 
 export interface ShapePreviewMapView {
@@ -10,9 +9,6 @@ export interface ShapePreviewMapView {
 }
 
 export interface ShapeEntityPayload {
-  geometry?: Geometry;
-  //properties?: Record<string, unknown>;
-
   licenseAgreement?: boolean;
   licenseAgreedAt?: string;
 
@@ -22,9 +18,13 @@ export interface ShapeEntityPayload {
   //batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
   stopReason?: ShapeBuildStopReason;
-  tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
   buildStartedAt?: number;
   buildFinishedAt?: number;
+  buildElapsedMs?: number;
+  buildResumedAt?: number;
+  stageElapsedMs?: number;
+  stageResumedAt?: number;
+  stageElapsedStageId?: string;
 
   // UI Preview
   previewMapView?: ShapePreviewMapView;

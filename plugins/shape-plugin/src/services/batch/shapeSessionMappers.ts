@@ -134,6 +134,12 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
+    inactiveMs: session.inactiveMs,
+    lastHeartbeatAt: session.lastHeartbeatAt,
+    stageInactiveMs: session.stageInactiveMs,
+    stageStartedAt: session.stageStartedAt,
+    stageHeartbeatAt: session.stageHeartbeatAt,
+    stageId: session.stageId,
   };
 };
 
@@ -157,6 +163,12 @@ export const toBuildSessionUpdates = (
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
+  if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
+  if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
+  if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
+  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
+  if (updates.stageId !== undefined) next.stageId = updates.stageId;
   return next;
 };
 
@@ -175,6 +187,12 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   canResume: session.canResume,
   lastActivity: session.lastActivity,
   expiresAt: session.expiresAt,
+  inactiveMs: session.inactiveMs,
+  lastHeartbeatAt: session.lastHeartbeatAt,
+  stageInactiveMs: session.stageInactiveMs,
+  stageStartedAt: session.stageStartedAt,
+  stageHeartbeatAt: session.stageHeartbeatAt,
+  stageId: session.stageId,
 });
 
 export const toShapeBuildSessionUpdates = (
@@ -194,6 +212,12 @@ export const toShapeBuildSessionUpdates = (
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
+  if (updates.inactiveMs !== undefined) next.inactiveMs = updates.inactiveMs;
+  if (updates.lastHeartbeatAt !== undefined) next.lastHeartbeatAt = updates.lastHeartbeatAt;
+  if (updates.stageInactiveMs !== undefined) next.stageInactiveMs = updates.stageInactiveMs;
+  if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
+  if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
+  if (updates.stageId !== undefined) next.stageId = updates.stageId;
   return next;
 };
 

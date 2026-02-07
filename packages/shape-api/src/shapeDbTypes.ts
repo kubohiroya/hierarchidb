@@ -24,6 +24,12 @@ export interface ShapeBuildSessionRecord<
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
+  inactiveMs?: number;
+  lastHeartbeatAt?: number;
+  stageInactiveMs?: number;
+  stageStartedAt?: number;
+  stageHeartbeatAt?: number;
+  stageId?: string;
 }
 
 export interface ShapeFeatureRecord {

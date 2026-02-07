@@ -258,6 +258,7 @@ export class EntityLifecycleManager {
           tileId: `${dst}-${row.z}-${row.x}-${row.y}`,
         }));
         await shapeDB.vectorTiles.bulkPut(copies);
+        await shapeDB.rebuildVectorTileSummary(dst);
         continue;
       }
       if (nodeType === 'route') {
@@ -303,7 +304,7 @@ export class EntityLifecycleManager {
   private async deleteVectorTiles(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
     if (nodeType === 'shape') {
       await shapeDB.open?.();
-      await shapeDB.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
+      await shapeDB.deleteVectorTilesByNodeIds(nodeIds);
       return;
     }
     if (nodeType === 'route') {

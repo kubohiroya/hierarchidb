@@ -515,9 +515,13 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
           ...(data ?? {}),
           selectedArrayByCountries: nextSelection,
           processingStatus: 'idle',
-          tileSummary: undefined,
           buildStartedAt: undefined,
           buildFinishedAt: undefined,
+          buildElapsedMs: 0,
+          buildResumedAt: undefined,
+          stageElapsedMs: 0,
+          stageResumedAt: undefined,
+          stageElapsedStageId: undefined,
         } as Record<string, unknown>,
       });
     } catch (error) {
