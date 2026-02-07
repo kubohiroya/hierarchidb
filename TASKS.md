@@ -11,6 +11,8 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-07 19:24 JST Step4ダイアログのブリンク/ハングとIDE-GSM多重実行の調査に着手。
+  - update: 2026-02-07 19:48 JST IDE-GSM import中は再実行しないガードを追加。
+  - update: 2026-02-07 19:49 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
 
 2580) fix/location-preview/ide-gsm-preview-lag (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/location-preview/ide-gsm-preview-lag

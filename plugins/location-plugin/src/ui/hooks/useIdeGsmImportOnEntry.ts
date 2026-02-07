@@ -66,6 +66,7 @@ export const useIdeGsmImportOnEntry = ({
     if (!nodeId) return;
     if (validSources.length === 0) return;
     if (workerLoading || workerError || !workerApi) return;
+    if (draft.processingStatus === 'processing') return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
     const nodeKey = String(nodeId);
     if (lastCompletedByNode.get(nodeKey) === combinedHash) return;
