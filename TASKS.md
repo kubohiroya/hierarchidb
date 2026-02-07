@@ -194,6 +194,21 @@
   - update: 2026-02-07 20:24 JST NodeId を index.ts で runtime export し、id-types の値定義を撤去。
   - done: 2026-02-07 20:27 JST `pnpm -w turbo run build --filter @hierarchidb/app` が exit 0 を確認。
 
+2581) fix/location-plugin/locationtype-unify (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/location-plugin/locationtype-unify
+- 依存: なし
+- 受け入れ基準: location-plugin の `useLocationMapPreviewMap.tsx` で LocationType の型不一致が解消される／`area_centroid` などの値が一致する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMap.tsx`
+- ロールバック手順: LocationType の参照元変更を revert する
+- チェックリスト:
+  - LocationType の参照元を統一する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 20:32 JST LocationType の型不一致修正に着手。
+  - update: 2026-02-07 20:34 JST LocationType の参照元を location-api に統一。
+  - done: 2026-02-07 20:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` が exit 0 を確認。
+
 2576) chore/build/turbo-cache-investigation (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/build/turbo-cache-investigation
 - 依存: なし

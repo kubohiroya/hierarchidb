@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
-import type { NodeId } from '@hierarchidb/core-types';
-import type { LocationGroupItem } from '@hierarchidb/location-api';
+import type { LocationGroupItem, LocationIconConfig, LocationLabelConfig, LocationRepresentationByZoomLevelConfig, LocationType } from '@hierarchidb/location-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -16,12 +15,7 @@ import {
   lonLatToTileXY,
   resolveTileIdField,
 } from '@hierarchidb/ui-map';
-import type {
-  LocationIconConfig,
-  LocationLabelConfig,
-  LocationRepresentationByZoomLevelConfig,
-  LocationType,
-} from '../../../common/types/index.js';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
@@ -215,7 +209,6 @@ export const useLocationMapPreviewMap = (
     metadataById,
     t,
     isDarkMode,
-    refreshKey,
   } = args;
 
   const previewNodeId = nodeId ?? 'preview' as NodeId;

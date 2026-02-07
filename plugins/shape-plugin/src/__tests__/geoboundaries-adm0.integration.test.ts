@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { GeoBoundariesStrategy } from '../services/datasources/GeoBoundariesStrategy.js';
+import { NodeId } from '@hierarchidb/core-types';
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
@@ -85,7 +86,7 @@ describeNetwork('GeoBoundaries ADM0 integration', () => {
 
     for (const target of targets) {
       const rawData = await strategy.fetchData({
-        nodeId: 'test-node',
+        nodeId: 'test-node' as NodeId,
         country: target.country,
         adminLevel: target.adminLevel,
         cacheKeyMode: 'url',
