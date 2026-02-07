@@ -21,8 +21,7 @@ export function usePluginDialogFooterLogic() {
     () => new Set(ctx.validatedStepIndices),
     [ctx.validatedStepIndices]
   );
-  const allStepsValidated =
-    totalSteps === 0 || validatedStepSet.size >= totalSteps || (isDirty && totalSteps > 0);
+  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps;
 
   const handleBackOrCancel = useCallback(() => {
     if (isFirstStep) {

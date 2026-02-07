@@ -12,7 +12,17 @@ import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature } from 'topojson-client';
 import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from 'topojson-simplify';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
+import {
+  applyFeatureFiltering,
+  encodeFlatGeobufFromFeatureCollection,
+  geosArea,
+  geosBbox,
+  geosIntersects,
+  geosIsValid,
+  geosSimplify,
+  latToTileY,
+  lonToTileX,
+} from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { buildBoundaryFeature } from './geometry.js';
 import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
@@ -174,6 +184,141 @@ const resolveSimplifyToleranceDegrees = (zTarget: number, toleranceK: number): n
   return (toleranceMeters / (2 * Math.PI * EARTH_RADIUS_METERS)) * 360;
 };
 
+type GeometryEngine = 'turf' | 'geos';
+
+type GeometryOps = {
+  simplifyCollection: (collection: FeatureCollection, zTarget: number, toleranceK: number) => FeatureCollection;
+  simplifyFeature: (feature: Feature, zTarget: number, toleranceK: number) => Feature;
+  bbox: (feature: Feature<Geometry>) => [number, number, number, number] | null;
+  area: (feature: Feature<Geometry>) => number;
+  isValid: (geometry?: Geometry | null) => boolean;
+  countSelfIntersections: (geometry: Geometry) => number;
+  intersectsBBox: (
+    feature: Feature<Geometry>,
+    bbox: { minX: number; minY: number; maxX: number; maxY: number },
+  ) => boolean;
+};
+
+const buildBBoxPolygonFeature = (
+  bbox: { minX: number; minY: number; maxX: number; maxY: number },
+): Feature<Polygon> => ({
+  type: 'Feature',
+  geometry: {
+    type: 'Polygon',
+    coordinates: [[
+      [bbox.minX, bbox.minY],
+      [bbox.maxX, bbox.minY],
+      [bbox.maxX, bbox.maxY],
+      [bbox.minX, bbox.maxY],
+      [bbox.minX, bbox.minY],
+    ]],
+  },
+  properties: {},
+});
+
+const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
+  const simplifyCollection = (collection: FeatureCollection, zTarget: number, toleranceK: number): FeatureCollection => {
+    const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
+    if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
+    if (engine === 'geos') {
+      const simplified = geosSimplify(collection, tolerance, { preserveTopology: true });
+      if (!simplified || simplified.type !== 'FeatureCollection') {
+        throw new Error('geos simplify returned non-FeatureCollection');
+      }
+      return simplified as FeatureCollection;
+    }
+    if (typeof turfSimplify !== 'function') return collection;
+    return turfSimplify(collection, {
+      tolerance,
+      highQuality: false,
+      mutate: false,
+    }) as FeatureCollection;
+  };
+
+  const simplifyFeature = (feature: Feature, zTarget: number, toleranceK: number): Feature => {
+    const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
+    if (!Number.isFinite(tolerance) || tolerance <= 0) return feature;
+    if (engine === 'geos') {
+      const simplified = geosSimplify(feature, tolerance, { preserveTopology: true });
+      if (!simplified || simplified.type !== 'Feature') {
+        throw new Error('geos simplify returned non-Feature');
+      }
+      return simplified as Feature;
+    }
+    return turfSimplify(feature, {
+      tolerance,
+      highQuality: false,
+      mutate: false,
+    }) as Feature;
+  };
+
+  const bbox = (feature: Feature<Geometry>): [number, number, number, number] | null => {
+    if (engine === 'geos') {
+      const box = geosBbox(feature);
+      return box ?? null;
+    }
+    const box = turfBbox(feature);
+    return box as [number, number, number, number];
+  };
+
+  const area = (feature: Feature<Geometry>): number => {
+    if (engine === 'geos') {
+      return geosArea(feature);
+    }
+    return turfArea(feature);
+  };
+
+  const isValid = (geometry?: Geometry | null): boolean => {
+    if (!geometry) return true;
+    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return true;
+    if (engine === 'geos') {
+      return geosIsValid(geometry);
+    }
+    const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry, properties: {} };
+    return turfBooleanValid(feature);
+  };
+
+  const countSelfIntersections = (geometry: Geometry): number => {
+    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return 0;
+    if (engine === 'geos') {
+      return isValid(geometry) ? 0 : 1;
+    }
+    try {
+      const polygonGeometry = geometry as Polygon | MultiPolygon;
+      const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry: polygonGeometry, properties: {} };
+      const result = turfKinks(feature);
+      return Array.isArray(result?.features) ? result.features.length : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const intersectsBBox = (
+    feature: Feature<Geometry>,
+    bboxParams: { minX: number; minY: number; maxX: number; maxY: number },
+  ): boolean => {
+    if (engine === 'geos') {
+      const bboxPolygon = buildBBoxPolygonFeature(bboxParams);
+      return geosIntersects(feature, bboxPolygon);
+    }
+    const clipped = turfBboxClip(
+      feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
+      [bboxParams.minX, bboxParams.minY, bboxParams.maxX, bboxParams.maxY],
+    );
+    return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
+  };
+
+  return {
+    simplifyCollection,
+    simplifyFeature,
+    bbox,
+    area,
+    isValid,
+    countSelfIntersections,
+    intersectsBBox,
+  };
+};
+
 const resolveTransformTolerance = (
   baseTolerance: number,
   _zTarget: number,
@@ -203,17 +348,9 @@ const simplifyOnlyCollection = (
   collection: FeatureCollection,
   zTarget: number,
   toleranceK: number,
+  geometryOps: GeometryOps,
   _options?: { skipLargeArea?: boolean },
-): FeatureCollection => {
-  if (typeof turfSimplify !== 'function') return collection;
-  const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
-  if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
-  return turfSimplify(collection, {
-    tolerance,
-    highQuality: false,
-    mutate: false,
-  }) as FeatureCollection;
-};
+): FeatureCollection => geometryOps.simplifyCollection(collection, zTarget, toleranceK);
 
 type GeojsonValidationIssue = {
   layer: string;
@@ -473,23 +610,29 @@ const isLineOrPolygonFeature = (
     || type === 'MultiPolygon';
 };
 
-const featureIntersectsTileBBox = (feature: Feature<Geometry>, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+const featureIntersectsTileBBox = (
+  feature: Feature<Geometry>,
+  bbox: { minX: number; minY: number; maxX: number; maxY: number },
+  geometryOps: GeometryOps,
+): boolean => {
   if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
   if (!isLineOrPolygonFeature(feature)) return false;
-  const clipped = turfBboxClip(
-    feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
-    [bbox.minX, bbox.minY, bbox.maxX, bbox.maxY],
-  );
-  return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
+  return geometryOps.intersectsBBox(feature, bbox);
 };
 
-const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
+const collectTileIdsForCollection = (
+  collection: FeatureCollection,
+  zBase: number,
+  geometryOps: GeometryOps,
+): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
   const maxIndex = (1 << zBase) - 1;
   const tileIds = new Set<number>();
   for (const feature of collection.features) {
     if (!feature?.geometry) continue;
-    const [minLon, minLat, maxLon, maxLat] = turfBbox(feature as Feature<Geometry>);
+    const bbox = geometryOps.bbox(feature as Feature<Geometry>);
+    if (!bbox) continue;
+    const [minLon, minLat, maxLon, maxLat] = bbox;
     if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) continue;
     const x1Raw = lonToTileX(minLon, zBase);
     const x2Raw = lonToTileX(maxLon, zBase);
@@ -503,7 +646,7 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
     for (let x = x1; x <= x2; x += 1) {
       for (let y = y1; y <= y2; y += 1) {
         const tileBBox = tileToBBox(zBase, x, y);
-        if (!featureIntersectsTileBBox(feature as Feature<Geometry>, tileBBox)) continue;
+        if (!featureIntersectsTileBBox(feature as Feature<Geometry>, tileBBox, geometryOps)) continue;
         tileIds.add(packTileId(x, y, zBase));
       }
     }
@@ -628,17 +771,9 @@ const computeRingArea = (ring: number[][]): number | null => {
   return sum / 2;
 };
 
-const countSelfIntersections = (geometry: Geometry): number => {
-  if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return 0;
-  try {
-    const polygonGeometry = geometry as Polygon | MultiPolygon;
-    const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry: polygonGeometry, properties: {} };
-    const result = turfKinks(feature);
-    return Array.isArray(result?.features) ? result.features.length : 0;
-  } catch {
-    return 0;
-  }
-};
+const countSelfIntersections = (geometry: Geometry, geometryOps: GeometryOps): number => (
+  geometryOps.countSelfIntersections(geometry)
+);
 
 const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
   const ringVertices = ring.length;
@@ -765,7 +900,7 @@ const buildEmptyGeometrySummary = (geometryType: string): GeometryIssueSummary =
   selfIntersectionCount: 0,
 });
 
-const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary => {
+const analyzeGeometryIssues = (geometry: Geometry | null | undefined, geometryOps: GeometryOps): GeometryIssueSummary => {
   if (!geometry) return buildEmptyGeometrySummary('none');
 
   if (geometry.type === 'GeometryCollection') {
@@ -773,7 +908,7 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
     let ringVertexTotal = 0;
     let ringCount = 0;
     const summary = geometries.reduce<GeometryIssueSummary>((acc, child) => {
-      const childSummary = analyzeGeometryIssues(child);
+      const childSummary = analyzeGeometryIssues(child, geometryOps);
       acc.polygonCount += childSummary.polygonCount;
       acc.ringCount += childSummary.ringCount;
       acc.errorPolygonCount += childSummary.errorPolygonCount;
@@ -816,20 +951,20 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
     return summary;
   }
 
-  if (geometry.type === 'Polygon') {
-    const rings = Array.isArray(geometry.coordinates)
-      ? (geometry.coordinates as number[][][])
-      : [];
-    const summary = {
-      geometryType: 'Polygon',
-      ...analyzePolygon(rings),
-      selfIntersectionCount: countSelfIntersections(geometry),
-    };
-    if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
-      summary.errorPolygonCount = summary.polygonCount;
+    if (geometry.type === 'Polygon') {
+      const rings = Array.isArray(geometry.coordinates)
+        ? (geometry.coordinates as number[][][])
+        : [];
+      const summary = {
+        geometryType: 'Polygon',
+        ...analyzePolygon(rings),
+        selfIntersectionCount: countSelfIntersections(geometry, geometryOps),
+      };
+      if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
+        summary.errorPolygonCount = summary.polygonCount;
+      }
+      return summary;
     }
-    return summary;
-  }
 
   if (geometry.type === 'MultiPolygon') {
     const polygons = Array.isArray(geometry.coordinates)
@@ -875,7 +1010,7 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
       }
       return acc;
     }, buildEmptyGeometrySummary('MultiPolygon'));
-    summary.selfIntersectionCount = countSelfIntersections(geometry);
+    summary.selfIntersectionCount = countSelfIntersections(geometry, geometryOps);
     if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
       summary.errorPolygonCount = summary.polygonCount;
     }
@@ -887,31 +1022,27 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
 };
 
 
-const isGeometryBooleanValid = (geometry?: Geometry | null): boolean => {
-  if (!geometry) return true;
-  if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return true;
-  try {
-    const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry, properties: {} };
-    return turfBooleanValid(feature);
-  } catch {
-    return false;
-  }
-};
+const isGeometryBooleanValid = (geometry: Geometry | null | undefined, geometryOps: GeometryOps): boolean => (
+  geometryOps.isValid(geometry)
+);
 
 const filterFeaturesByAspectRatioAndArea = (
   features: Feature[],
   aspectRatioThreshold: number,
   areaThreshold: number,
+  geometryOps: GeometryOps,
 ): Feature[] => {
   if (aspectRatioThreshold <= 0 && areaThreshold <= 0) return features;
   return features.filter((feature) => {
     if (!feature?.geometry) return false;
     if (areaThreshold > 0) {
-      const areaSqKm = turfArea(feature as Feature<Geometry>) / 1_000_000;
+      const areaSqKm = geometryOps.area(feature as Feature<Geometry>) / 1_000_000;
       if (areaSqKm < areaThreshold) return false;
     }
     if (aspectRatioThreshold > 0) {
-      const [minX, minY, maxX, maxY] = turfBbox(feature as Feature<Geometry>);
+      const bbox = geometryOps.bbox(feature as Feature<Geometry>);
+      if (!bbox) return false;
+      const [minX, minY, maxX, maxY] = bbox;
       const width = Math.abs(maxX - minX);
       const height = Math.abs(maxY - minY);
       const ratio = width == 0 || height == 0 ? Number.POSITIVE_INFINITY : Math.max(width / height, height / width);
@@ -993,7 +1124,11 @@ const runWithStallTimeout = async <T>(params: {
   }
 };
 
-const buildCollectionDiagnostics = (collection: FeatureCollection | null, label: string): string | null => {
+const buildCollectionDiagnostics = (
+  collection: FeatureCollection | null,
+  label: string,
+  geometryOps: GeometryOps,
+): string | null => {
   if (!collection) return null;
   const featureCount = collection.features.length;
   const missingGeometry = collection.features.filter((feature) => !feature?.geometry).length;
@@ -1018,7 +1153,7 @@ const buildCollectionDiagnostics = (collection: FeatureCollection | null, label:
   const sampleDetails: string[] = [];
   for (const feature of collection.features) {
     if (!feature?.geometry) continue;
-    const summary = analyzeGeometryIssues(feature.geometry);
+    const summary = analyzeGeometryIssues(feature.geometry, geometryOps);
     invalidRingCount += summary.invalidRingCount;
     openRingCount += summary.openRingCount;
     emptyRingCount += summary.emptyRingCount;
@@ -1026,7 +1161,7 @@ const buildCollectionDiagnostics = (collection: FeatureCollection | null, label:
     degenerateRingCount += summary.degenerateRingCount;
     duplicateVertexCount += summary.duplicateVertexCount;
     selfIntersectionCount += summary.selfIntersectionCount;
-    const isValid = isGeometryBooleanValid(feature.geometry);
+    const isValid = isGeometryBooleanValid(feature.geometry, geometryOps);
     if (!isValid) {
       invalidFeatureCount += 1;
     }
@@ -1180,6 +1315,11 @@ export const createTransformByBandHandler = (
   if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
+  const geometryEngine = transformConfig.geometryEngine ?? 'turf';
+  if (geometryEngine !== 'turf' && geometryEngine !== 'geos') {
+    throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
+  }
+  const geometryOps = createGeometryOps(geometryEngine);
   const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
@@ -1298,6 +1438,7 @@ export const createTransformByBandHandler = (
           filterTarget.features,
           transformConfig.aspectRatioThreshold,
           transformConfig.areaThreshold,
+          geometryOps,
         ));
         workingCollection = { ...filterTarget, features: filteredFeatures };
         await updateTaskPhase(taskId, 'filtering:done', taskProgressRange.decodeEnd);
@@ -1396,7 +1537,7 @@ export const createTransformByBandHandler = (
         };
         await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
         const simplifyPromise = runStageWithLabel('simplify-only', () => (
-          simplifyOnlyCollection(inputCollection, band.zMax, tolerance)
+          simplifyOnlyCollection(inputCollection, band.zMax, tolerance, geometryOps)
         ));
         simplified = await runWithStallTimeout({
           promise: simplifyPromise,
@@ -1514,6 +1655,7 @@ export const createTransformByBandHandler = (
               { type: 'FeatureCollection', features: [feature] },
               band.zMax,
               tolerance,
+              geometryOps,
             );
           } catch (featureError) {
             errorFeatureCount += 1;
@@ -1526,7 +1668,7 @@ export const createTransformByBandHandler = (
             const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, recordFeatureId);
             const recordId = `${task.taskId}:${recordFeatureId}`;
             const fallbackGeometryType = feature.geometry?.type ?? 'unknown';
-            const summary = analyzeGeometryIssues(feature.geometry);
+            const summary = analyzeGeometryIssues(feature.geometry, geometryOps);
             const recordPolygonCount = summary.polygonCount;
             const recordRingCount = summary.ringCount;
             const recordPolygonErrorCount = summary.errorPolygonCount > 0
@@ -1546,7 +1688,7 @@ export const createTransformByBandHandler = (
               degenerateRingCount += summary.degenerateRingCount;
               duplicateVertexCount += summary.duplicateVertexCount;
               selfIntersectionCount += summary.selfIntersectionCount;
-              const isValid = isGeometryBooleanValid(feature.geometry);
+              const isValid = isGeometryBooleanValid(feature.geometry, geometryOps);
               if (!isValid) {
                 invalidFeatureCount += 1;
               }
@@ -1653,13 +1795,7 @@ export const createTransformByBandHandler = (
 
       const simplifyFeatureWithTolerance = (feature: Feature, baseToleranceK: number): Feature => {
         const effectiveToleranceK = resolveRetryToleranceK(baseToleranceK);
-        const toleranceDegrees = resolveSimplifyToleranceDegrees(band.zMax, effectiveToleranceK);
-        if (!Number.isFinite(toleranceDegrees) || toleranceDegrees <= 0) return feature;
-        return turfSimplify(feature, {
-          tolerance: toleranceDegrees,
-          highQuality: false,
-          mutate: false,
-        }) as Feature;
+        return geometryOps.simplifyFeature(feature, band.zMax, effectiveToleranceK);
       };
 
       const runRetrySimplifyFeature = async (feature: Feature, baseToleranceK: number): Promise<Feature | null> => {
@@ -1785,7 +1921,7 @@ export const createTransformByBandHandler = (
           ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
         const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
         const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
-        const summary = analyzeGeometryIssues(feature.geometry);
+        const summary = analyzeGeometryIssues(feature.geometry, geometryOps);
         vertexLimitRecords.push({
           id: `${task.taskId}:vertex-limit:${featureIndex}`,
           nodeId: task.nodeId,
@@ -1989,7 +2125,7 @@ export const createTransformByBandHandler = (
         },
       });
 
-      const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
+      const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase, geometryOps);
       console.info('[ShapeTransform][TileIndex]', JSON.stringify({
         nodeId: String(task.nodeId),
         bandIndex: input.bandIndex,
@@ -2034,9 +2170,9 @@ export const createTransformByBandHandler = (
       const err = error instanceof Error ? error.message : String(error);
       const stagedError = err.startsWith('stage=') ? err : `stage=${stageLabel} ${err}`;
       const diagnostics = [
-        buildCollectionDiagnostics(workingCollection, 'input'),
-        buildCollectionDiagnostics(simplified, 'simplified'),
-        buildCollectionDiagnostics(outputCollection, 'output'),
+        buildCollectionDiagnostics(workingCollection, 'input', geometryOps),
+        buildCollectionDiagnostics(simplified, 'simplified', geometryOps),
+        buildCollectionDiagnostics(outputCollection, 'output', geometryOps),
       ].filter((value): value is string => Boolean(value)).join(' ');
       await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
       return {

@@ -1,3 +1,51 @@
+2578) fix/dialog/save-disabled-with-draft (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/dialog/save-disabled-with-draft
+- 依存: なし
+- 受け入れ基準: Save As Draft 後に Edit を開いた際、全ステップが有効なら Save が disabled にならない／追加編集なしでも Save が可能になる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`, `packages/plugin-ui-host/src/headless/components/hooks/usePluginDialogFooterLogic.ts`
+- ロールバック手順: Save ボタンの isDirty 条件と allStepsValidated ロジックを元に戻す
+- チェックリスト:
+  - Save ボタンの有効条件を見直す
+  - 検証用 typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:57 JST Save As Draft 後に Save が disabled になる不具合の対応に着手。
+  - update: 2026-02-07 18:07 JST Save ボタンの isDirty 依存を外し、全ステップ検証の判定を厳密化。
+  - update: 2026-02-07 18:07 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0。
+
+2576) chore/build/turbo-cache-investigation (P1) — 進行中 (2026-02-07)
+- ブランチ名: chore/build/turbo-cache-investigation
+- 依存: なし
+- 受け入れ基準: turbo のキャッシュ miss が発生する要因を `turbo.json` と対象パッケージ設定から特定し、具体的な入力差分/設定問題を提示する／必要な修正案を提案する／TASKS.md に運用ログを記載する
+- 影響範囲: `turbo.json`/各パッケージの `package.json`（調査のみ）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - `turbo.json` の inputs/outputs/env/dependsOn を確認する
+  - `@hierarchidb/runtime-worker` など対象パッケージの build 定義と出力を確認する
+  - キャッシュ miss を招く入力差分の要因を整理する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 19:15 JST turbo キャッシュ miss の原因調査に着手。
+  - update: 2026-02-07 19:22 JST turbo.json の inputs が $TURBO_DEFAULT$ を使い、dist/build/tsbuildinfo を除外していないため build 出力が入力に混ざる可能性を確認。tsdown は clean:false で dist が残るためキャッシュ miss を誘発し得ると判断。
+  - update: 2026-02-07 19:28 JST turbo.json の inputs に dist/build/tsbuildinfo 除外を追加してキャッシュ miss の入力混入を抑制。
+
+2577) fix/build/core-types-nodeid-export (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/build/core-types-nodeid-export
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/app:build` の MISSING_EXPORT（NodeId）を解消し、shape-api から core-types への型のみ参照が JS 出力に残らない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/shape-api/src/index.ts`
+- ロールバック手順: shape-api の index.ts を元に戻す
+- チェックリスト:
+  - shape-api の re-export を type-only に整理する
+  - ビルドエラーの再発がないことを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 19:35 JST NodeId の MISSING_EXPORT に対処する作業に着手。
+  - update: 2026-02-07 19:36 JST shape-api の index.ts を type-only re-export に整理して NodeId の runtime import を排除。
+  - update: 2026-02-07 19:45 JST core-types に NodeId の runtime export を追加し、shape-api の NodeId import を解決。
+  - update: 2026-02-07 19:47 JST `pnpm -w turbo run build --filter @hierarchidb/core-types --filter @hierarchidb/shape-api --force` を実行して dist を更新。
+  - done: 2026-02-07 19:49 JST `pnpm -w turbo run build --filter @hierarchidb/app` が exit 0（NodeId MISSING_EXPORT 解消）を確認。
+
 2575) fix/gis-sdk/geometry-extract-unkink (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/gis-sdk/geometry-extract-unkink
 - 依存: なし
@@ -136,6 +184,48 @@
   - start: 2026-02-07 17:45 JST geometryEngine の UI/Worker 反映計画の整理に着手。
   - done: 2026-02-07 18:05 JST geometryEngine の UI 追加・Worker 分岐・実装順序を整理。
 
+2575) feat/geo/geometry-engine-toggle (P1) — 進行中 (2026-02-07)
+- ブランチ名: feat/geo/geometry-engine-toggle
+- 依存: なし
+- 受け入れ基準: TransformConfig に geometryEngine を追加する／DEFAULT_BUILD_CONFIG に geometryEngine の既定値を追加する／UI の Transform 設定に geometryEngine セレクタが表示され保存できる／ローカライズ文言が更新される／`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/config.ts`, `packages/shape-api/src/defaults.ts`, `plugins/shape-plugin/src/ui/components/build-config/TransformConfigSection.tsx`, `plugins/shape-plugin/src/ui/components/build-config/useTransformConfigSectionView.ts`, `plugins/shape-plugin/src/ui/locales/{en,ja}.json`
+- ロールバック手順: 上記変更を revert して geometryEngine の追加と UI 表示を撤去する
+- チェックリスト:
+  - TransformConfig に geometryEngine を追加する
+  - DEFAULT_BUILD_CONFIG に geometryEngine を追加する
+  - UI の Transform セクションに geometryEngine セレクタを追加する
+  - i18n 文言を追加する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 18:15 JST geometryEngine の型・既定値・UI 追加に着手。
+  - update: 2026-02-07 18:25 JST gis-sdk/shape-api/shape-plugin に geometryEngine 追加と UI 反映を実施。
+  - update: 2026-02-07 18:30 JST `pnpm -w turbo run build --filter @hierarchidb/gis-sdk` を実行。
+  - done: 2026-02-07 18:32 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-plugin` exit 0 を確認。
+
+
+2577) feat/geo/geos-engine-wiring (P1) — 進行中 (2026-02-07)
+- ブランチ名: feat/geo/geos-engine-wiring
+- 依存: 2575
+- 受け入れ基準: geos ラッパを gis-sdk から公開できる／shapePipelineTransformStage が geometryEngine=geos の場合に initGeos を実行する／vt-orchestrator の transform が geometryEngine に応じて turf/geos を切替し geos 選択時に turf を呼ばない／未対応処理は明示的エラーで止める／`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` と `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/index.ts`, `packages/gis-sdk/src/geos/**`, `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`, `packages/gis-sdk/package.json`
+- ロールバック手順: geos ラッパ追加と transform 切替差分を revert して turf のみの挙動へ戻す
+- チェックリスト:
+  - gis-sdk の geos ラッパを export する
+  - shapePipelineTransformStage で geometryEngine=geos 時に initGeos を実行する
+  - vt-orchestrator の transform を geometryEngine 切替に対応させる
+  - geos 未対応の処理は明示的エラーで停止させる
+  - build/typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:30 JST geos-wasm ラッパ追加と transform 切替の実装に着手。
+  - update: 2026-02-07 17:30 JST gis-sdk へ geos-wasm を追加し、geos ラッパ（WKB 変換・bbox/area/valid/simplify/clip/contains/intersects/makeValid）を作成。
+
+  - update: 2026-02-07 17:36 JST gis-sdk の geos export と transform/vt-orchestrator の geometryEngine 切替を実装。
+  - blocked: 2026-02-07 17:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` が geos-wasm の型定義不整合で失敗（plugin-ui-sdk build:types）。
+  - update: 2026-02-07 17:42 JST geos-wasm 型シムを追加し、tsconfig の paths を更新して型解決を修正。
+  - update: 2026-02-07 17:44 JST `pnpm -w turbo run build --filter @hierarchidb/gis-sdk` exit 0 を確認。
+  - update: 2026-02-07 17:44 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0 を確認。
 2572) chore/geo/geos-wrapper-wkb-plan (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/geos-wrapper-wkb-plan
 - 依存: なし

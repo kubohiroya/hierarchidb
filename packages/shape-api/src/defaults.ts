@@ -14,6 +14,7 @@ export const DEFAULT_BUILD_CONFIG = {
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     maxConcurrent: 3,
+    geometryEngine: 'turf',
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,

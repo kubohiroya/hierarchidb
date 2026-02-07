@@ -201,7 +201,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
   const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
   const inlineSaveDisabled =
-    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction || !isDirty;
+    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction;
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
@@ -345,7 +345,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 color="primary"
                 onClick={handleNextOrSave}
                 onPointerDown={stopPointerPropagation}
-                disabled={disableRightPrimary || !canCommit || !allStepsValidated || !isDirty}
+                disabled={disableRightPrimary || !canCommit || !allStepsValidated}
                 loading={pendingAction?.type === rightActionType}
                 endIcon={<CheckIcon fontSize="small" />}
               >

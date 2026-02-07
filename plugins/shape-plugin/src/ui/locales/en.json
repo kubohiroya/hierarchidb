@@ -74,7 +74,12 @@
     },
     "transform": {
       "title": "Transform",
-      "summaryHelp": "Transform runs turf.simplify with the configured tolerance."
+      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance.",
+      "summaryHelpGeos": "Transform runs geos with the configured tolerance.",
+      "geometryEngineTitle": "Geometry Engine",
+      "geometryEngineHelp": "Selects the geometry engine used during transform.",
+      "geometryEngineOptionTurf": "turf",
+      "geometryEngineOptionGeos": "geos"
     },
     "transformByZoom": {
       "title": "Transform by zoom"

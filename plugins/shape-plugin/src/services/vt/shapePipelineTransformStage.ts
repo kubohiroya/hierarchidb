@@ -17,7 +17,7 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setTransformPlannedTotal } from './shapeProgressPlan.ts';
-import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import { initGeos, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformStageParams = {
   nodeId: NodeId;
@@ -63,7 +63,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   let existingTransformByBandTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'transform')
     : [];
-  const transformConfigSignature = buildStableSignature(resolveTransformConfig(params.buildConfig));
+  const transformConfig = resolveTransformConfig(params.buildConfig);
+  const transformConfigSignature = buildStableSignature(transformConfig);
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
 
   const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
@@ -212,10 +213,14 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     await params.waitIfPaused?.();
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
 
+    if (transformConfig.geometryEngine === 'geos') {
+      await initGeos();
+    }
+
     const transformByBandAbortController = new AbortController();
     const transformByBandHandler = createTransformByBandHandler({
       ephemeralDB: params.ephemeralStore,
-      transformConfig: resolveTransformConfig(params.buildConfig),
+      transformConfig,
       bands: params.bands,
       featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
       abortSignal: transformByBandAbortController.signal,
