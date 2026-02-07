@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { GeoBoundariesStrategy } from '../services/datasources/GeoBoundariesStrategy.js';
-import { NodeId } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
