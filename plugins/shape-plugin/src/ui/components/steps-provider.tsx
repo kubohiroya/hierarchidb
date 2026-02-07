@@ -29,7 +29,7 @@ function createStepAdapter(
         ...(latestDataRef.current ?? {}),
         ...(props.data ?? {}),
       };
-    }, [props.data, props.nodeId]);
+    }, [props.data]);
     const data = ({
       ...(props.data ?? {}),
     }) as Partial<ShapeEntity>;
@@ -40,7 +40,7 @@ function createStepAdapter(
       } as Partial<ShapeEntity>;
       latestDataRef.current = next;
       props.onChange(next);
-    }, [props.nodeId, props.onChange]);
+    }, [props]);
 
     return (
       <Component

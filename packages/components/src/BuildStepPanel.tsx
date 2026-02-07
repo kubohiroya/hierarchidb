@@ -170,7 +170,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         </BuildStepStagePanel>
       </Box>
     );
-  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageContents, updateStageFilter]);
+  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageMenus, stageContents, updateStageFilter]);
 
   const computedStatusLabel = (() => {
     switch (status) {

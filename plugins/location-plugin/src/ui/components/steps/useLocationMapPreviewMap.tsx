@@ -884,7 +884,7 @@ export const useLocationMapPreviewMap = (
 
   const handleMapMoveEnd = useCallback((viewState: MapViewState) => {
     scheduleViewportQuery(viewState);
-  }, [scheduleViewportQuery, refreshKey]);
+  }, [scheduleViewportQuery]);
 
   return {
     previewPoints,

@@ -1,5 +1,5 @@
 import type { TreeId } from '@hierarchidb/core-types';
-import { toTagId, type NodeTagAssociation, type TagEntity, type TagId } from '@hierarchidb/tag-api';
+import { toTagId, type NodeTagAssociation, type TagEntity } from '@hierarchidb/tag-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { useQuery } from '~/hooks/useQuery.js';
