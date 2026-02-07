@@ -1,3 +1,52 @@
+2592) fix/tags/step1-create-sync (P1) — 進行中 (2026-02-08)
+- ブランチ名: fix/tags/step1-create-sync
+- 依存: なし
+- 受け入れ基準: Step1 Basic Info で作成したタグが `/tags` 画面に表示される（作成直後に反映）／既存タグの表示や保存フローに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**` / `packages/plugin-ui-host` / `packages/plugin-service-sdk` / `packages/runtime-worker` / `packages/plugin-base`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert してタグ同期の既存挙動へ戻す
+- チェックリスト:
+  - Step1 Basic Info のタグ作成が `/tags` に反映されない事象を再現する
+  - UI→Worker→DB→一覧取得の同期経路を特定する
+  - 最小差分で修正する
+  - 影響パッケージの typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 07:33 JST Step1 Basic Info のタグ作成が `/tags` に反映されない問題の調査に着手。
+  - update: 2026-02-08 07:36 JST BasicInfo のタグ入力は metadata の string[] のみ更新され、TagService への作成・関連付けが行われていないことを確認。commit 後に TagEntity/association を同期する方針で修正する。
+  - update: 2026-02-08 07:39 JST commit 時に TagEntity を作成/再利用し、node との tag association を同期する処理を TreeNodeUpdaterService に追加。`pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` exit 0（core-types build で tsdown define 警告あり）。
+
+2591) fix/dialog/basic-info-input (P1) — 進行中 (2026-02-08)
+- ブランチ名: fix/dialog/basic-info-input
+- 依存: なし
+- 受け入れ基準: Step1 Basic Info の name/description 入力が全プラグインで正常に行える（連続入力/削除が反応する）／他ステップの入力やバリデーションに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host` / `packages/ui/dialog` / `packages/ui`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert して元の入力処理に戻す
+- チェックリスト:
+  - Step1 Basic Info の入力不具合を再現し原因を特定する
+  - 最小差分で修正する
+  - 影響パッケージの typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 07:31 JST Step1 Basic Info の name/description 入力不具合の調査と修正に着手。
+  - update: 2026-02-08 07:40 JST useAbstractDialog で stepData 変更を検知して context 更新するように修正。
+  - update: 2026-02-08 07:46 JST ui-dialog typecheck が zIndex の関数指定で失敗したため ModelessDialogFrame の resize handle zIndex を整理。
+  - update: 2026-02-08 07:48 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog` exit 0。
+
+2590) fix/plugin-ui-host/sync-debug-helpers (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/plugin-ui-host/sync-debug-helpers
+- 依存: なし
+- 受け入れ基準: usePluginDialogController.tsx の sync debug helper 未定義エラーが解消され、@hierarchidb/plugin-ui-host の typecheck が通る／同期デバッグの意図が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`
+- ロールバック手順: 該当差分を revert して元の未定義状態に戻す
+- チェックリスト:
+  - 未定義シンボルの import/実装/削除方針を確定する
+  - typecheck を実行する
+- 運用ログ:
+  - start: 2026-02-07 21:05 JST sync debug helper の未定義エラー修正に着手。
+  - blocked: 2026-02-07 21:08 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` が backdropDismissEnabled の型未定義で失敗。
+  - update: 2026-02-07 21:11 JST sync debug helper を追加し、PluginDialogShellState に backdropDismissEnabled を追加。
+  - done: 2026-02-07 21:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0 を確認。
+
 2586) fix/dialog/maximize-hang-freeze (P1) — 進行中 (2026-02-07)
 - ブランチ名: fix/dialog/maximize-hang-freeze
 - 依存: 2584
@@ -67,6 +116,9 @@
   - 運用ログ start/update/done/blocked を追記
 - 運用ログ:
   - start: 2026-02-08 01:32 JST UI コンポーネントのロジックを hooks に切り出すリファクタに着手。
+  - blocked: 2026-02-08 07:33 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が TS2307（@mui/system が見つからない）で失敗。
+  - blocked: 2026-02-08 07:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が TS2322（resize handle の zIndex 型不一致）で失敗。
+  - update: 2026-02-08 07:36 JST handle sx の型調整と zIndex の組み立てを整理し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown の define 警告あり）。
 
 2585) chore/dialog/measure-displaymode-payload (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/dialog/measure-displaymode-payload
@@ -262,7 +314,7 @@
   - update: 2026-02-07 20:34 JST LocationType の参照元を location-api に統一。
   - done: 2026-02-07 20:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` が exit 0 を確認。
 
-2582) fix/styler/step6-loading-skeleton (P1) — 進行中 (2026-02-07)
+2582) fix/styler/step6-loading-skeleton (P1) — 完了 (2026-02-07)
 - ブランチ名: fix/styler/step6-loading-skeleton
 - 依存: なし
 - 受け入れ基準: styler step6 の待機表示が LinearProgress から Skeleton に置換され、表示有無による縦ズレが解消される／TASKS.md に運用ログを記載する
@@ -329,13 +381,14 @@
 2574) feat/ui-batch/progress-scroll-end (P1) — 進行中 (2026-02-07)
 - ブランチ名: codex/feat/ui-batch/progress-scroll-end
 - 依存: なし
-- 受け入れ基準: 進捗一覧の下部に ArrowCircleDown フロートボタンが表示される／クリックで Completed または Running または Skipped の終端タスク位置まで自動スクロールできる／終端タスクが表示範囲内の場合はボタンが非表示になる／既存の進捗表示やスクロール挙動に回帰がない／`pnpm -w turbo run typecheck --filter @hierarchidb/components` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: ArrowCircleDown フロートボタンは TaskListVirtualized の親コンポーネントで position: relative を基準に表示される／進捗一覧の最下端中央に表示される／ボタンサイズが 2 倍で背景が透過になる／クリックで最下端の Running タスクが表示される位置へ自動スクロールできる／該当タスクが表示範囲内の場合はボタンが非表示になる／既存の進捗表示やスクロール挙動に回帰がない／`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/components/src/**`（進捗一覧 UI）、`plugins/shape-plugin/src/ui/components/build-progress/**`（必要に応じて）
 - ロールバック手順: フロートボタンとスクロール処理の差分を revert して従来表示に戻す
 - チェックリスト:
-  - 終端タスク検出とスクロール位置算出を実装する
+  - 最下端の Running タスク検出とスクロール位置算出を実装する
   - 表示範囲内ならボタンを非表示にする
-  - ArrowCircleDown フロートボタンを下部に配置する
+  - ArrowCircleDown フロートボタンを親コンポーネントで最下端中央に配置する
+  - ボタンのサイズを 2 倍化し背景を透過にする
   - 既存 UI の回帰がないことを確認する
   - typecheck を実行する
   - 運用ログ start/update/done/blocked を追記する
@@ -346,6 +399,20 @@
   - blocked: 2026-02-07 16:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が `@hierarchidb/shape-api#build:types` の TS5055（dist/index.d.ts 上書き）で失敗。
   - update: 2026-02-07 17:05 JST shape-api の defaults から gis-sdk 依存を外し、TS5055 を解消。
   - done: 2026-02-07 17:07 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` ともに exit 0 を確認。
+  - start: 2026-02-07 23:45 JST ArrowCircleDown の配置/サイズ/スクロール対象を調整する作業に着手。
+  - update: 2026-02-07 23:49 JST 最下端 Running タスクへのスクロール、ボタン位置/サイズ/透過を反映。
+  - blocked: 2026-02-07 23:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が `@hierarchidb/ui-dialog#typecheck` の TS2769 で失敗。
+  - start: 2026-02-08 00:00 JST ボタン配置を親コンポーネント側へ移動する作業に着手。
+  - update: 2026-02-08 00:01 JST ボタンを親側に移動し、親の relative 基準で配置。
+  - done: 2026-02-08 00:01 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
+  - start: 2026-02-08 06:44 JST TaskListVirtualized のホイールスクロール逸脱を修正する作業に着手。
+  - update: 2026-02-08 06:45 JST TaskListVirtualized で wheel の伝播を止めるよう調整。
+  - done: 2026-02-08 06:45 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
+  - start: 2026-02-08 06:47 JST TaskListVirtualized のホイールスクロール未反映を再調査。
+  - update: 2026-02-08 06:54 JST 親側で onWheelCapture して TaskListVirtualized にスクロールを適用。
+  - done: 2026-02-08 06:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
+  - update: 2026-02-08 06:56 JST passive wheel の警告回避のため addEventListener(passive: false) へ切替。
+  - done: 2026-02-08 06:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
 
 2567) chore/geo/turf-geos-wasm-audit (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/turf-geos-wasm-audit
@@ -1050,6 +1117,8 @@
   - start: 2026-02-07 10:12 JST location 作成時のデフォルトデータソースを IDE-GSM に変更する対応に着手。
   - update: 2026-02-07 10:22 JST IDE-GSM ファイル追加時に dataSource を ide-gsm に固定し、Step2 の選択自動生成が走るよう修正。
   - update: 2026-02-07 10:24 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - start: 2026-02-07 10:32 JST ui-dialog の TSX キャスト構文エラーと Sx 型不一致を修正。
+  - update: 2026-02-07 10:41 JST ui-dialog のヘッダー/フッター render 型整理と resize handle の sx 型を安全化、pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
   - update: 2026-02-07 10:14 JST location のデフォルト dataSource を IDE-GSM に変更、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-02-07 10:12 JST progress が単調増加にならず Maximum update depth exceeded が再現するとの報告を受領、再現条件整理と原因特定を優先対応に追加。
   - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。

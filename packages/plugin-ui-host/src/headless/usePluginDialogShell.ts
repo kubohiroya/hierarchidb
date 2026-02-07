@@ -4,6 +4,7 @@ import type { PluginDialogShellProps } from './PluginDialogShell.types.js';
 import { usePluginDialogController } from './usePluginDialogController.js';
 
 type PluginDialogShellState = ReturnType<typeof usePluginDialogController> & {
+  backdropDismissEnabled?: boolean;
   backdropSx: { pointerEvents: 'none' } | undefined;
   unsavedDialogSlotProps: {
     root: { sx: { zIndex: (theme: Theme) => number } };

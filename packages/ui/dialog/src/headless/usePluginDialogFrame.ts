@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SxProps, Theme } from '@mui/material/styles';
+import type { CSSObject, SxProps, Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
 import type { HeadlessDialogProps } from './types.js';
@@ -29,7 +29,7 @@ type DialogCountWindow = Window & {
 type ResizeHandleConfig = {
   key: string;
   direction: ResizeDirection;
-  sx: SxProps<Theme>;
+  sx: CSSObject | ((theme: Theme) => CSSObject);
 };
 
 type PluginDialogFrameState<TData> = {
@@ -401,12 +401,11 @@ export function usePluginDialogFrame<TData>(
     })
   ), [fullScreen, frameless, isInteracting, position.x, position.y, size.height, size.width, transparent]);
 
-  const combinedFrameSx = useMemo<SxProps<Theme>>(
-    () => (frameSx
-      ? ([defaultFrameSx, frameSx] as unknown as SxProps<Theme>)
-      : defaultFrameSx),
-    [defaultFrameSx, frameSx],
-  );
+  const combinedFrameSx = useMemo<SxProps<Theme>>(() => {
+    if (!frameSx) return defaultFrameSx;
+    const extra = Array.isArray(frameSx) ? frameSx : [frameSx];
+    return [defaultFrameSx, ...extra] as SxProps<Theme>;
+  }, [defaultFrameSx, frameSx]);
 
   const defaultBackdropSx = useMemo(() => (
     (theme: Theme) => ({
@@ -419,12 +418,11 @@ export function usePluginDialogFrame<TData>(
     })
   ), [open, zIndex]);
 
-  const combinedBackdropSx = useMemo<SxProps<Theme>>(
-    () => (backdropSx
-      ? ([defaultBackdropSx, backdropSx] as unknown as SxProps<Theme>)
-      : defaultBackdropSx),
-    [defaultBackdropSx, backdropSx],
-  );
+  const combinedBackdropSx = useMemo<SxProps<Theme>>(() => {
+    if (!backdropSx) return defaultBackdropSx;
+    const extra = Array.isArray(backdropSx) ? backdropSx : [backdropSx];
+    return [defaultBackdropSx, ...extra] as SxProps<Theme>;
+  }, [defaultBackdropSx, backdropSx]);
 
   const resizeHandles = useMemo<ResizeHandleConfig[]>(() => ([
     {
@@ -480,7 +478,6 @@ export function usePluginDialogFrame<TData>(
         width: CORNER_HANDLE_SIZE,
         height: CORNER_HANDLE_SIZE,
         cursor: 'nwse-resize',
-        zIndex: (theme: { zIndex: { modal: number } }) => (theme?.zIndex?.modal ?? 1300) + 6,
       },
     },
     {
@@ -492,7 +489,6 @@ export function usePluginDialogFrame<TData>(
         width: CORNER_HANDLE_SIZE,
         height: CORNER_HANDLE_SIZE,
         cursor: 'nesw-resize',
-        zIndex: (theme: { zIndex: { modal: number } }) => (theme?.zIndex?.modal ?? 1300) + 6,
       },
     },
     {
@@ -504,7 +500,6 @@ export function usePluginDialogFrame<TData>(
         width: CORNER_HANDLE_SIZE,
         height: CORNER_HANDLE_SIZE,
         cursor: 'nesw-resize',
-        zIndex: (theme: { zIndex: { modal: number } }) => (theme?.zIndex?.modal ?? 1300) + 6,
       },
     },
     {
@@ -516,7 +511,6 @@ export function usePluginDialogFrame<TData>(
         width: CORNER_HANDLE_SIZE,
         height: CORNER_HANDLE_SIZE,
         cursor: 'nwse-resize',
-        zIndex: (theme: { zIndex: { modal: number } }) => (theme?.zIndex?.modal ?? 1300) + 6,
       },
     },
   ]), []);

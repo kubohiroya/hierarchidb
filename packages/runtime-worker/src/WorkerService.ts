@@ -127,7 +127,8 @@ export class WorkerService {
 
       const treeNodeUpdaterService: TreeNodeUpdaterAPI<TreeNodeData> = new TreeNodeUpdaterService(
         coreDB,
-        commandProcessor
+        commandProcessor,
+        tagService
       );
 
       const uiStateDB = await UIStateDB.getSingleton();

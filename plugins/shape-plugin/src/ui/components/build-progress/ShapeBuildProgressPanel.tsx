@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useRef } from 'react';
+import { type WheelEvent as ReactWheelEvent, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -9,13 +9,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Skeleton,
   Snackbar,
   Stack,
   Typography,
+  Tooltip,
   useTheme,
 } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import type { NodeId } from '@hierarchidb/core-types';
 import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -474,6 +477,10 @@ const BuildProgressStageContent = ({
   const filter = useBuildStageFilter();
   const stageTasks = tasksByStage[stage.id] ?? [];
   const scrollTarget = useAtomValue(taskScrollTargetAtom);
+  const setScrollTarget = useSetAtom(taskScrollTargetAtom);
+  const viewportRange = useAtomValue(taskViewportRangeAtom);
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
+  const listWrapperRef = useRef<HTMLDivElement | null>(null);
   const scrollToTaskId = scrollTarget?.stageId === stage.id ? scrollTarget.taskId : undefined;
   const scrollRequestId = scrollTarget?.requestedAt;
   const disableVirtualization = typeof window !== 'undefined'
@@ -484,14 +491,68 @@ const BuildProgressStageContent = ({
     if (task.status === 'completed') return filter.completedMode;
     return true;
   });
-  const displayTasks = stage.id === 'vt'
+  const orderedTasks = stage.id === 'vt'
     ? sortVectorTileTasks(filteredTasks)
-    : filteredTasks;
+    : stage.id === 'transform'
+      ? sortTransformTasks(filteredTasks)
+      : filteredTasks;
+  const displayTasks = orderedTasks;
   const hasTasks = filteredTasks.length > 0;
   const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
   const showTaskSkeleton = !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
+  const runningTargetIndex = useMemo(() => {
+    for (let i = orderedTasks.length - 1; i >= 0; i -= 1) {
+      const task = orderedTasks[i];
+      if (!task) continue;
+      if (task.status === 'running') return i;
+    }
+    return null;
+  }, [orderedTasks]);
+  const runningTaskId = runningTargetIndex === null ? undefined : orderedTasks[runningTargetIndex]?.taskId;
+  const isRunningVisible = runningTargetIndex !== null
+    && viewportRange?.stageId === stage.id
+    && runningTargetIndex >= viewportRange.startIndex
+    && runningTargetIndex <= viewportRange.endIndex;
+  const shouldShowScrollButton = Boolean(runningTaskId) && !isRunningVisible;
+  const handleScrollToRunning = useCallback(() => {
+    if (!runningTaskId) return;
+    setScrollTarget({
+      stageId: stage.id,
+      taskId: runningTaskId,
+      requestedAt: Date.now(),
+    });
+  }, [runningTaskId, setScrollTarget, stage.id]);
+  const handleWheelCapture = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    const scrollEl = listScrollRef.current;
+    if (!scrollEl) return;
+    if (scrollEl.scrollHeight <= scrollEl.clientHeight) {
+      return;
+    }
+    scrollEl.scrollTop += event.deltaY;
+  }, []);
+
+  useEffect(() => {
+    const wrapper = listWrapperRef.current;
+    if (!wrapper) return;
+    const handleWheel = (event: globalThis.WheelEvent) => {
+      event.stopPropagation();
+      const scrollEl = listScrollRef.current;
+      if (!scrollEl) return;
+      if (scrollEl.scrollHeight <= scrollEl.clientHeight) {
+        event.preventDefault();
+        return;
+      }
+      scrollEl.scrollTop += event.deltaY;
+      event.preventDefault();
+    };
+    wrapper.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      wrapper.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   return (
     <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
@@ -522,17 +583,47 @@ const BuildProgressStageContent = ({
           </Typography>
         </>
       ) : (
-        <TaskListVirtualized
-          stageId={stage.id}
-          tasks={displayTasks}
-          stageValue={stageValue}
-          resolveStatusLabel={resolveStatusLabel}
-          resolveStatusColor={resolveStatusColor}
-          resolveTaskTitle={resolveTaskTitle}
-          scrollToTaskId={scrollToTaskId}
-          scrollRequestId={scrollRequestId}
-          virtualize={!disableVirtualization}
-        />
+        <Box
+          sx={{ position: 'relative', flex: 1, minHeight: 0 }}
+          onWheelCapture={handleWheelCapture}
+          ref={listWrapperRef}
+        >
+          <TaskListVirtualized
+            ref={listScrollRef}
+            stageId={stage.id}
+            tasks={displayTasks}
+            stageValue={stageValue}
+            resolveStatusLabel={resolveStatusLabel}
+            resolveStatusColor={resolveStatusColor}
+            resolveTaskTitle={resolveTaskTitle}
+            scrollToTaskId={scrollToTaskId}
+            scrollRequestId={scrollRequestId}
+            virtualize={!disableVirtualization}
+          />
+          {shouldShowScrollButton ? (
+            <Tooltip title={t('stage.progress.scrollToRunning', 'Scroll to running task')}>
+              <IconButton
+                aria-label={t('stage.progress.scrollToRunning', 'Scroll to running task')}
+                color="primary"
+                onClick={handleScrollToRunning}
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: 8,
+                  transform: 'translateX(-50%)',
+                  bgcolor: 'transparent',
+                  boxShadow: 'none',
+                  zIndex: 2,
+                  width: 56,
+                  height: 56,
+                  '&:hover': { bgcolor: 'transparent' },
+                }}
+              >
+                <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+        </Box>
       )}
     </Stack>
   );

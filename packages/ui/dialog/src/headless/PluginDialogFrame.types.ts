@@ -1,4 +1,3 @@
-import type React from 'react';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { HeadlessDialogProps } from './types.js';
 

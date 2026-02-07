@@ -4,6 +4,7 @@ import type {
   DiscardDraftOptions,
   TreeNodeUpdaterAPI,
 } from '@hierarchidb/tree-api';
+import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
   CommitResult,
   DialogUIState,
@@ -33,7 +34,8 @@ import {
 export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> {
   constructor(
     private coreDB: CoreDB,
-    _commandProcessor?: CommandProcessor
+    _commandProcessor?: CommandProcessor,
+    private tagService?: TagAPI
   ) {}
 
   private readonly defaultDialogUIState: DialogUIState = {
@@ -101,6 +103,79 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       };
     }
     return undefined;
+  }
+
+  private normalizeTagNames(tags: string[]): string[] {
+    const normalized = new Map<string, string>();
+    for (const raw of tags) {
+      if (typeof raw !== 'string') continue;
+      const trimmed = raw.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (!normalized.has(key)) {
+        normalized.set(key, trimmed);
+      }
+    }
+    return Array.from(normalized.values());
+  }
+
+  private pickTagColor(name: string): string {
+    const palette = [
+      '#f44336',
+      '#e91e63',
+      '#9c27b0',
+      '#3f51b5',
+      '#2196f3',
+      '#03a9f4',
+      '#009688',
+      '#4caf50',
+      '#ff9800',
+      '#795548',
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i += 1) {
+      hash = (hash * 31 + name.charCodeAt(i)) | 0;
+    }
+    const idx = Math.abs(hash) % palette.length;
+    return palette[idx] ?? '#9e9e9e';
+  }
+
+  private async syncTagsForNode(nodeId: NodeId, tags: string[]): Promise<void> {
+    if (!this.tagService) return;
+    const desired = this.normalizeTagNames(tags);
+    const desiredKeys = new Set(desired.map((tag) => tag.toLowerCase()));
+
+    const [allTags, existingTags] = await Promise.all([
+      this.tagService.getAllTags(),
+      this.tagService.getTagsForNode(nodeId),
+    ]);
+
+    const allByName = new Map(
+      allTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const)
+    );
+    const existingByName = new Map(
+      existingTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const)
+    );
+
+    for (const name of desired) {
+      const key = name.toLowerCase();
+      let tag = existingByName.get(key) ?? allByName.get(key);
+      if (!tag) {
+        tag = await this.tagService.createTag({
+          name,
+          color: this.pickTagColor(name),
+        });
+        allByName.set(key, tag);
+      }
+      await this.tagService.addTagToNode({ nodeId, tagId: tag.id });
+    }
+
+    for (const tag of existingTags) {
+      const key = tag.name.trim().toLowerCase();
+      if (!desiredKeys.has(key)) {
+        await this.tagService.removeTagFromNode({ nodeId, tagId: tag.id });
+      }
+    }
   }
 
   private async ensureDraftData(
@@ -406,6 +481,12 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       const withUi =
         (await this.ensureDialogUIState(normalizedNode ?? undefined, false)) ?? normalizedNode;
       const forUpdater = this.normalizeForUpdater(withUi ?? undefined, requestedName);
+      const metadataTags = Array.isArray(forUpdater?.metadata?.tags)
+        ? forUpdater?.metadata?.tags ?? []
+        : [];
+      if (metadataTags.length || this.tagService) {
+        await this.syncTagsForNode(result.nodeId, metadataTags);
+      }
       return {
         status: 'ok',
         nodeId: result.nodeId,

@@ -1,11 +1,9 @@
-import { Fragment, useRef } from 'react';
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { PluginDialogHeader } from './PluginDialogHeader.js';
 import { PluginDialogContent } from './PluginDialogContent.js';
 import { PluginDialogFooter } from './PluginDialogFooter.js';
 import type {
-  HeadlessFooterRenderProps,
-  HeadlessHeaderRenderProps,
   HeadlessDialogProps,
   HeadlessDialogContextValue,
 } from './types.js';
@@ -120,6 +118,7 @@ export function useAbstractDialog<TData>(
     if (prev.open !== nextValue.open) return 'open';
     if (prev.activeStepIndex !== nextValue.activeStepIndex) return 'activeStepIndex';
     if (prev.onStepDataChange !== nextValue.onStepDataChange) return 'onStepDataChange';
+    if (!shallowEqualData(prev.stepData, nextValue.stepData)) return 'stepData';
     if (prev.onStepNavigate !== nextValue.onStepNavigate) return 'onStepNavigate';
     if (prev.onRequestClose !== nextValue.onRequestClose) return 'onRequestClose';
     if (prev.onRequestCommit !== nextValue.onRequestCommit) return 'onRequestCommit';
@@ -153,9 +152,11 @@ export function useAbstractDialog<TData>(
     contextRef.current = nextValue;
   }
 
+  const headerRenderer = renderHeader;
+  const footerRenderer = renderFooter;
   const headerElement = (
     <HeaderComponent>
-      {renderHeader as ((renderProps: HeadlessHeaderRenderProps<TData>) => ReactNode) | undefined}
+      {headerRenderer}
     </HeaderComponent>
   );
   const contentElement = (
@@ -163,7 +164,7 @@ export function useAbstractDialog<TData>(
   );
   const footerElement = (
     <FooterComponent>
-      {renderFooter as ((renderProps: HeadlessFooterRenderProps<TData>) => ReactNode) | undefined}
+      {footerRenderer}
     </FooterComponent>
   );
 

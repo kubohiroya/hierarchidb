@@ -1,5 +1,5 @@
-import type React from 'react';
 import { Box, Fade } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { HeadlessPluginDialog } from './PluginDialog.js';
 import type { PluginDialogFrameComponentProps } from './PluginDialogFrame.types.js';
@@ -11,7 +11,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
 
   const frameNode = (
     <Box
-      sx={state.combinedFrameSx}
+      sx={state.combinedFrameSx as SxProps<Theme>}
       role="dialog"
       aria-modal="true"
       onKeyDown={state.handleKeyDown}
@@ -23,11 +23,14 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
         state.resizeHandles.map((handle) => (
           <Box
             key={handle.key}
-            sx={(theme) => ({
-              position: 'absolute',
-              zIndex: (theme.zIndex?.modal ?? 1300) + 5,
-              ...handle.sx,
-            })}
+            sx={(theme) => {
+              const handleSx = typeof handle.sx === 'function' ? handle.sx(theme) : handle.sx;
+              return {
+                position: 'absolute',
+                zIndex: (theme.zIndex?.modal ?? 1300) + 5,
+                ...handleSx,
+              };
+            }}
             onPointerDown={(event) => {
               state.handleResizePointerDown(handle.direction, event);
               state.augmentedHeadlessProps.onResizeHandlePointerDown?.(event);
@@ -47,7 +50,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       unmountOnExit
     >
       <Box
-        sx={state.combinedBackdropSx}
+        sx={state.combinedBackdropSx as SxProps<Theme>}
         role="presentation"
         onPointerDown={state.handleBackdropPointerDown}
         onWheel={state.handleWheelCapture}

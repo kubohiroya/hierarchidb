@@ -405,7 +405,6 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -417,7 +416,6 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -429,7 +427,6 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -441,7 +438,6 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
           ].map((handle) => (
@@ -449,7 +445,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
               key={handle.key}
               sx={(theme) => ({
                 position: 'absolute',
-                zIndex: (theme.zIndex?.modal ?? 1300) + 5,
+                zIndex: (theme.zIndex?.modal ?? 1300) + (handle.key.includes('-') ? 6 : 5),
                 ...handle.sx,
               })}
               onPointerDown={(event) => {

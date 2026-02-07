@@ -63,6 +63,28 @@ import { usePendingAction } from './usePluginDialogController/pending-action.js'
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepNavigation } from './usePluginDialogController/step-navigation.js';
 
+const SYNC_DEBUG_STORAGE_KEY = 'hdb:dialog-sync-debug';
+
+function isSyncDebugActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(SYNC_DEBUG_STORAGE_KEY) === '1';
+}
+
+function buildDraftSignature(value: unknown): string | null {
+  if (value == null) return null;
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    return `[unserializable:${String(error)}]`;
+  }
+}
+
+function logSync(label: string, payload: { draftData?: string | null; dialogUIState?: string | null }): void {
+  if (!isSyncDebugActive()) return;
+  // eslint-disable-next-line no-console
+  console.debug(`[PluginDialogSync] ${label}`, payload);
+}
+
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
 export interface PluginDialogControllerOptions {
@@ -631,6 +653,12 @@ export function usePluginDialogController(
       draftData: nodeType === 'folder' ? undefined : { ...(localDraftDataRef.current ?? {}) },
       dialogUIState: getPersistableDialogUIState(),
     };
+    if (isSyncDebugActive()) {
+      logSync('updateTreeNodeUpdater:updateLocalDraft', {
+        draftData: buildDraftSignature(nextPatch.draftData),
+        dialogUIState: buildDraftSignature(nextPatch.dialogUIState),
+      });
+    }
     updateTreeNodeUpdater(nextPatch);
   }, [
     basicInfo.description,
