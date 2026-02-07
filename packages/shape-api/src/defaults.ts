@@ -1,6 +1,4 @@
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
-import type { ShapeDataSourceName } from './shapeBuildTypes.js';
 
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',
@@ -70,4 +68,4 @@ export const DEFAULT_BUILD_CONFIG = {
     deleteTransformCache: false,
     deleteVTCache: false,
   },
-} as const satisfies BaseBuildConfig<ShapeDataSourceName>;
+} as const;

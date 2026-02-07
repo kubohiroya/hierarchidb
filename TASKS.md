@@ -31,6 +31,8 @@
   - blocked: 2026-02-07 16:42 JST `git checkout -b codex/feat/ui-batch/progress-scroll-end` が `Operation not permitted` で失敗（`.git/refs/heads/codex` を作成できず）。
   - update: 2026-02-07 16:52 JST TaskListVirtualized に ArrowCircleDown フロートボタンと終端タスクへのスクロール処理を追加。
   - blocked: 2026-02-07 16:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が `@hierarchidb/shape-api#build:types` の TS5055（dist/index.d.ts 上書き）で失敗。
+  - update: 2026-02-07 17:05 JST shape-api の defaults から gis-sdk 依存を外し、TS5055 を解消。
+  - done: 2026-02-07 17:07 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` ともに exit 0 を確認。
 
 2567) chore/geo/turf-geos-wasm-audit (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/turf-geos-wasm-audit
@@ -16334,3 +16336,16 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-03 01:14 JST Open サブメニューの Basic Info ラベルを common.basicInfo.title から解決するよう修正。
   - update: 2026-02-03 01:20 JST 日本語ロケール時は Basic Info を「基本情報」固定表示するよう補正。
   - done: 2026-02-02 23:08 JST URL step 優先、永続化抑制、Open の Step サブメニュー化を完了。
+2576) chore/shape-api/cleanup-src-build-artifacts (P1) — 完了 (2026-02-07)
+- ブランチ名: chore/shape-api/cleanup-src-build-artifacts
+- 依存: なし
+- 受け入れ基準: `packages/shape-api/src` 配下の `*.js` と `*.js.map` が削除される／削除対象の一覧と結果を報告できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/shape-api/src/**`
+- ロールバック手順: なし（削除のみ）
+- チェックリスト:
+  - `packages/shape-api/src` 配下の `*.js` を削除する
+  - `packages/shape-api/src` 配下の `*.js.map` を削除する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 17:08 JST shape-api の src 配下に残った build 生成物（*.js / *.js.map）の削除に着手。
+  - done: 2026-02-07 17:09 JST `packages/shape-api/src` 直下の `*.js` と `*.js.map` を削除し、残存なしを確認。
