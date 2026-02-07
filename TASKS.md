@@ -12,6 +12,8 @@
   - 運用ログ start/update/done/blocked を追記
 - 運用ログ:
   - start: 2026-02-07 21:06 JST 最大化後の操作不能化（FloatingWindow/PluginDialog）の調査と修正に着手。
+  - update: 2026-02-07 21:14 JST FloatingWindow の最大化/最小化/閉じる時にドラッグ/リサイズ中のインタラクションを強制解除して、透明オーバーレイが残留しないように修正。
+  - update: 2026-02-07 21:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-floating-window` exit 0。
 
 2585) chore/dialog/measure-displaymode-payload (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/dialog/measure-displaymode-payload
@@ -175,6 +177,22 @@
   - start: 2026-02-07 20:12 JST styler の Build ボタン非表示対応に着手。
   - update: 2026-02-07 20:13 JST styler ノードでは Build ボタンを描画しない条件に変更。
   - done: 2026-02-07 20:15 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が exit 0 を確認。
+
+2580) fix/build/core-types-nodeid-runtime-export (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/build/core-types-nodeid-runtime-export
+- 依存: なし
+- 受け入れ基準: core-types の NodeId runtime export が定義され、app build の MISSING_EXPORT/Export not defined が解消する／plugin-manifest の読み込みが通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/core-types/src/index.ts`, `packages/core-types/src/id-types.ts`
+- ロールバック手順: NodeId の runtime export 追加を revert する
+- チェックリスト:
+  - NodeId の runtime export を index.ts に定義する
+  - id-types の値定義を整理する
+  - build を実行して再発しないことを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 20:22 JST core-types の NodeId runtime export 修正に着手。
+  - update: 2026-02-07 20:24 JST NodeId を index.ts で runtime export し、id-types の値定義を撤去。
+  - done: 2026-02-07 20:27 JST `pnpm -w turbo run build --filter @hierarchidb/app` が exit 0 を確認。
 
 2576) chore/build/turbo-cache-investigation (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/build/turbo-cache-investigation

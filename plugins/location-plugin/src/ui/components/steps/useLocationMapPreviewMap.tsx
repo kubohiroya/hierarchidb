@@ -357,7 +357,7 @@ export const useLocationMapPreviewMap = (
         queryTimerRef.current = null;
       }
     };
-  }, [scheduleViewportQuery, refreshKey]);
+  }, [scheduleViewportQuery]);
 
   useEffect(() => () => {
     if (hoverFrameRef.current) {

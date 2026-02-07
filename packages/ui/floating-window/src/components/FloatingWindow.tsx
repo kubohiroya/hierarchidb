@@ -163,6 +163,13 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       delete body.dataset.hdbFloatingWindowInteraction;
     }
   }, []);
+  const resetInteractionState = useCallback(() => {
+    isDragging.current = false;
+    isResizing.current = false;
+    resizeDirection.current = '';
+    setInteractionActive(false);
+    setOverlayActive(false);
+  }, [setInteractionActive]);
   const [overlayActive, setOverlayActive] = useState(false);
   const portalContext = useFloatingWindowPortal();
   const portalRoot = portalContext.isProvider ? portalContext.root : ensureFloatingWindowRoot();
@@ -424,11 +431,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
   // Handle minimize/restore
   const handleMinimize = useCallback(() => {
-    isDragging.current = false;
-    isResizing.current = false;
-    resizeDirection.current = '';
-    setInteractionActive(false);
-    setOverlayActive(false);
+    resetInteractionState();
     bringToFront();
     setState(prev => {
       if (prev.isMinimized) {
@@ -446,6 +449,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   }, [bringToFront, setInteractionActive, setOverlayActive]);
 
   const handleFullscreen = useCallback(() => {
+    resetInteractionState();
     bringToFront();
     setState(prev => {
       if (prev.isFullscreen) {
@@ -470,10 +474,11 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
   // Handle close
   const handleClose = useCallback(() => {
+    resetInteractionState();
     bringToFront();
     setState(prev => ({ ...prev, isVisible: false }));
     onClose?.();
-  }, [bringToFront, onClose]);
+  }, [bringToFront, onClose, resetInteractionState]);
 
   useEffect(() => {
     if (!state.isFullscreen) return;
@@ -492,6 +497,11 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [minHeight, minWidth, state.isFullscreen]);
+
+  useEffect(() => {
+    if (!state.isFullscreen && !state.isMinimized) return;
+    resetInteractionState();
+  }, [resetInteractionState, state.isFullscreen, state.isMinimized]);
 
   // Calculate window styles
   const windowStyle = useMemo(() => ({
