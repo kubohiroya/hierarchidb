@@ -83,7 +83,6 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <TreeConsoleToolbar {...toolbarProps} />
-
       <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
         {shouldRenderTreeTable ? (
           <TreeConsolePanelWithDynamicSpeedDial

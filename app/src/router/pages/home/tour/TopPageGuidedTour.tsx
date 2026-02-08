@@ -94,16 +94,6 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       placement: 'bottom',
     },
     {
-      target: '[data-tour-id="home-tags-button"]',
-      content: (
-        <div>
-          <h3>Tags 🔖</h3>
-          <p>Open the Tags page to explore and manage labels across your data.</p>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    {
       target: '[data-tour-id="home-help-button"]',
       content: (
         <div>

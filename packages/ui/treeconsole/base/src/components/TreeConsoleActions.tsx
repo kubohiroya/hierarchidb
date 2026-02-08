@@ -14,13 +14,6 @@ import type { TreeConsoleActionsProps } from '../types/index.js';
  * TreeConsoleActions
   */
 export function TreeConsoleActions(_props: TreeConsoleActionsProps): React.JSX.Element {
-  const {  } = _props; // all controls removed
-
-  // const pageType = isProjectsPage ? 'projects' : isResourcesPage ? 'resources' : 'preview';
-  // const buttonColor = getPageButtonColor(pageType); // Function not found
-  // no-op
-
-  // No local actions; SpeedDial removed.
 
   const backActionButton = null; // TODO: Implement back button logic
 

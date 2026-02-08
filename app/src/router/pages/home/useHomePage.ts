@@ -49,10 +49,6 @@ export function useHomePage() {
     [getSavedPageNodeId, navigate]
   );
 
-  const handleNavigateToTags = useCallback(() => {
-    navigate({ to: '/tags' });
-  }, [navigate]);
-
   const handleNavigateToInfo = useCallback(() => {
     navigate({ to: '/info' });
   }, [navigate]);
@@ -69,7 +65,6 @@ export function useHomePage() {
     githubHref,
     handleNavigateToInfo,
     handleNavigateToPluginLoaders,
-    handleNavigateToTags,
     handleTreeSelect,
     isTourOpen,
     isUserMenuReady,

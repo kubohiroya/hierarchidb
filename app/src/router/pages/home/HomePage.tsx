@@ -7,7 +7,6 @@ import {
   GitHub as GitHubIcon,
   HelpOutline as HelpOutlineIcon,
   Info as InfoIcon,
-  LocalOffer as LocalOfferIcon,
 } from '@mui/icons-material';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
@@ -62,7 +61,6 @@ export default function HomePage() {
     githubHref,
     handleNavigateToInfo,
     handleNavigateToPluginLoaders,
-    handleNavigateToTags,
     handleTreeSelect,
     isTourOpen,
     isUserMenuReady,
@@ -165,29 +163,6 @@ export default function HomePage() {
             />
           </Box>
 
-          <Button
-            data-tour-id="home-tags-button"
-            variant="outlined"
-            size="large"
-            startIcon={<LocalOfferIcon />}
-            onClick={handleNavigateToTags}
-            sx={{
-              height: '84px',
-              px: 4.5,
-              textTransform: 'none',
-              borderRadius: 2,
-              borderColor: 'divider',
-              color: 'text.primary',
-              backgroundColor: 'background.paper',
-              fontSize: '1.1rem',
-              '&:hover': {
-                borderColor: 'primary.main',
-                backgroundColor: 'action.hover',
-              },
-            }}
-          >
-            Tags
-          </Button>
         </Box>
 
         <div

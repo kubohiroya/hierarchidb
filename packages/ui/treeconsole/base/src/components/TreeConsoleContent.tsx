@@ -164,34 +164,34 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                   totalItemCount: controller.totalItemCount,
                   handleSearchTextChange: controller.handleSearchTextChange,
                   onNodeClick: controller.onNodeClick ?
-                    (nodeId: string, node?: TreeNodeInUI) => controller.onNodeClick!(nodeId as NodeId, node as unknown as TreeNode) :
+                    (nodeId: string, node?: TreeNodeInUI) => controller.onNodeClick?.(nodeId as NodeId, node as unknown as TreeNode) :
                     undefined,
                   onNodeExpand: controller.onNodeExpand ?
                     (nodeId: string, expanded: boolean) =>
-                      controller.onNodeExpand!(nodeId as NodeId, expanded) :
+                      controller.onNodeExpand?.(nodeId as NodeId, expanded) :
                     undefined,
                   onNodeSelect: controller.onNodeSelect ?
                     (nodeIds: string[], selected: boolean) =>
-                      controller.onNodeSelect!(nodeIds as NodeId[], selected) :
+                      controller.onNodeSelect?.(nodeIds as NodeId[], selected) :
                     undefined,
                   startEdit: controller.startEdit ?
-                    (nodeId: string) => controller.startEdit!(nodeId as NodeId) :
+                    (nodeId: string) => controller.startEdit?.(nodeId as NodeId) :
                     undefined,
                   finishEdit: controller.finishEdit ?
                     (nodeId: string, newName: string, field?: 'name' | 'description') =>
-                      controller.finishEdit!(nodeId as NodeId, newName, field) :
+                      controller.finishEdit?.(nodeId as NodeId, newName, field) :
                     undefined,
                   cancelEdit: controller.cancelEdit,
                   onCreate: controller.onCreate ?
                     (parentId: string, type: string) =>
-                      controller.onCreate!(parentId as NodeId, type) :
+                      controller.onCreate?.(parentId as NodeId, type) :
                     undefined,
                   onDuplicate: controller.onDuplicate ?
                     (nodeId: string) =>
-                      controller.onDuplicate!(nodeId as NodeId) :
+                      controller.onDuplicate?.(nodeId as NodeId) :
                     undefined,
                   onTrash: controller.onTrash ?
-                    (nodeIds: string[]) => controller.onTrash!(nodeIds as NodeId[]) :
+                    (nodeIds: string[]) => controller.onTrash?.(nodeIds as NodeId[]) :
                     undefined,
                 }}
                 viewHeight={viewHeight || 400}

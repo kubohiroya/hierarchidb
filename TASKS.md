@@ -1,3 +1,47 @@
+2600) feat/tree-console/tag-chip-links (P1) — 完了 (2026-02-08)
+- ブランチ名: codex/feat/tree-console/tag-chip-links
+- 依存: なし
+- 受け入れ基準: TreeNodeInfoPanel でタグ付きノードの場合、Draft 等の既存 Chip 群の直後にタグ Chip が表示される／タグ Chip クリックで `/t/:tagId/:pageNodeId/tags/:tag` に遷移する（実データの tagId/tag を使用）／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`（必要に応じて追加）
+- ロールバック手順: TreeNodeInfoPanel のタグ Chip 追加分を revert して従来表示に戻す
+- チェックリスト:
+  - TreeNodeInfoPanel の Chip 群にタグ Chip を追加する
+  - タグ Chip クリックで `/t/:tagId/:pageNodeId/tags/:tag` へ遷移する
+  - 既存表示に回帰がないことを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 10:27 JST TreeNodeInfoPanel のタグ Chip クリック遷移追加に着手。
+  - blocked: 2026-02-08 10:27 JST `git checkout -b codex/feat/tree-console/tag-chip-links` が ref 作成できず失敗（.git/refs/heads/codex/feat/tree-console/tag-chip-links を作成不可）。
+  - blocked: 2026-02-08 10:30 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が TreeNodeInfoPanel の tagId null 型エラーで失敗。
+  - update: 2026-02-08 10:31 JST tagId 型を TagEntity['id'] に合わせ、null ガードを追加。
+  - done: 2026-02-08 10:32 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:37 JST pageNodeId を InfoPanel に明示的に渡し、タグ Chip の遷移先が `/t/:tagId/:pageNodeId/tags/:tag` に固定されるよう修正。
+  - done: 2026-02-08 10:37 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:41 JST tagId を URL から除外し、`/t/:treeId/:pageNodeId/tags/:tag` に遷移するよう修正。
+  - done: 2026-02-08 10:41 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+
+2599) feat/router/tag-nested-path (P1) — 進行中 (2026-02-08)
+- ブランチ名: feat/router/tag-nested-path
+- 依存: なし
+- 受け入れ基準: `/tags/:tag?` は既存どおり動作する／`/t/:treeId/:pageNodeId/tags/:tag?` で同内容が表示される（リダイレクトなし）／`/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` の省略解釈を崩さない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/**`（必要に応じて追加）
+- ロールバック手順: 追加した tags ネスト経路の判定を revert し、既存ルーティング解釈に戻す
+- チェックリスト:
+  - `/t/:treeId/:pageNodeId/tags/:tag?` を `/tags/:tag?` と同内容で表示できるようにする
+  - 既存の `/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` の省略解釈に回帰がないことを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 09:58 JST `/t/:treeId/:pageNodeId/tags/:tag?` の追加と既存ルートの非破壊対応に着手。
+  - update: 2026-02-08 10:45 JST `/t/:treeId/:pageNodeId/tags/:tag?` 用に tree/tagsRoute を追加し、ルートツリーへ接続。
+  - update: 2026-02-08 10:45 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:57 JST tree/tagsRoute を MUI モーダルダイアログ化し、`treeRouteIds` と TagsPage の basePath/onBack 対応を追加。
+  - update: 2026-02-08 10:58 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:05 JST Home の Tags ボタンとガイドツアーの Tags ステップを撤去。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - blocked: 2026-02-08 11:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が useTagsPage の staleTime 追加と tags.tsx の TagEntity 未 import で失敗。
+  - update: 2026-02-08 11:14 JST useTagsPage にタグ取得キャッシュを実装し、TagsPage の取得を useQuery 化。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet
 - 依存: なし

@@ -14,6 +14,18 @@ export interface TaggedNode {
   breadcrumbNodes: BreadcrumbNode[];
 }
 
+const TAG_CACHE_TTL_MS = 60_000;
+
+const allTagsCache: { data: TagEntity[] | null; ts: number } = {
+  data: null,
+  ts: 0,
+};
+
+const specificTagCache = new Map<string, { data: TagEntity | null; ts: number }>();
+const taggedNodesCache = new Map<string, { data: TaggedNode[]; ts: number }>();
+
+const isFresh = (ts: number) => Date.now() - ts < TAG_CACHE_TTL_MS;
+
 function buildBreadcrumbNodes(nodes: TreeNode[]): BreadcrumbNode[] {
   return nodes.map((node) => ({
     id: node.id,
@@ -37,8 +49,14 @@ export function useTagsPage(tagName?: string) {
 
   const fetchAllTags = useCallback(async () => {
     if (!workerClient) throw new Error('Worker not connected');
+    if (allTagsCache.data && isFresh(allTagsCache.ts)) {
+      return allTagsCache.data;
+    }
     const tagAPI = await workerClient.getTagAPI();
-    return await tagAPI.getAllTags();
+    const all = await tagAPI.getAllTags();
+    allTagsCache.data = all;
+    allTagsCache.ts = Date.now();
+    return all;
   }, [workerClient]);
 
   const { data: allTags = [], isLoading: isLoadingTags } = useQuery<TagEntity[]>({
@@ -51,17 +69,26 @@ export function useTagsPage(tagName?: string) {
   const fetchSpecificTag = useCallback(async () => {
     if (!normalizedTagName) return null;
     if (!workerClient) throw new Error('Worker not connected');
+    const cached = specificTagCache.get(normalizedTagName);
+    if (cached && isFresh(cached.ts)) {
+      return cached.data;
+    }
     const tagAPI = await workerClient.getTagAPI();
     const candidates = await tagAPI.searchTags(tagName ?? '');
     const exact = candidates.find(
       (tag) => tag.name.trim().toLowerCase() === normalizedTagName
     );
-    if (exact) return exact;
+    if (exact) {
+      specificTagCache.set(normalizedTagName, { data: exact, ts: Date.now() });
+      return exact;
+    }
     const all = await tagAPI.getAllTags();
     const fallback = all.find(
       (tag) => tag.name.trim().toLowerCase() === normalizedTagName
     );
-    return fallback ?? null;
+    const resolved = fallback ?? null;
+    specificTagCache.set(normalizedTagName, { data: resolved, ts: Date.now() });
+    return resolved;
   }, [normalizedTagName, tagName, workerClient]);
 
   const { data: specificTag = null, isLoading: isLoadingTag } = useQuery<TagEntity | null>({
@@ -74,6 +101,12 @@ export function useTagsPage(tagName?: string) {
   const fetchTaggedNodes = useCallback(async (): Promise<TaggedNode[]> => {
     if (!specificTag) return [];
     if (!workerClient) throw new Error('Worker not connected');
+    if (normalizedTagName) {
+      const cached = taggedNodesCache.get(normalizedTagName);
+      if (cached && isFresh(cached.ts)) {
+        return cached.data;
+      }
+    }
     const tagAPI = await workerClient.getTagAPI();
     const associations = await tagAPI.getNodesByTag(specificTag.id);
 
@@ -111,8 +144,11 @@ export function useTagsPage(tagName?: string) {
       }
     }
 
+    if (normalizedTagName) {
+      taggedNodesCache.set(normalizedTagName, { data: taggedNodesData, ts: Date.now() });
+    }
     return taggedNodesData;
-  }, [specificTag, workerClient]);
+  }, [normalizedTagName, specificTag, workerClient]);
 
   const { data: taggedNodes = [], isLoading: isLoadingNodes } = useQuery<TaggedNode[]>({
     queryKey: ['tag', normalizedTagName, 'nodes'],

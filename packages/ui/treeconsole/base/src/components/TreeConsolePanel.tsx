@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import type { ComponentProps, ReactElement } from 'react';
-import { Box, Typography, useMediaQuery } from '@mui/material';
+import { Box, IconButton, Link, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
@@ -16,6 +16,7 @@ import { TreeConsoleBreadcrumb, type OpenStepOption } from '@hierarchidb/ui-tree
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
 import { DualKeyMap } from '@hierarchidb/util';
+import { Sell } from '@mui/icons-material';
 
 type PanelBreadcrumbNode = {
   treeNodeId?: string;
@@ -285,28 +286,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     };
   }, [props]);
 
-  // No right-click handlers
-
-  // SpeedDial actions
-  // Built-in static SpeedDial removed; host app may provide DynamicSpeedDial instead.
-
-  //const totalItems = props.data.length;
-  //const selectedItems = props.selectedIds.length;
-  // const visibleItems = props.data.length; // In real implementation, this would be filtered count
-
-  // Compute footer counters for loading atoms (controller not yet available)
-  /*
-  const countLoadedRecursive = (nodes: readonly TreeNodeData[]): number => {
-    let c = 0;
-    for (const n of nodes || []) {
-      c += 1;
-      const ch = n.children as readonly TreeNodeData[] | undefined;
-      if (Array.isArray(ch) && ch.length) c += countLoadedRecursive(ch);
-    }
-    return c;
-  };
-   */
-
   const footerTopLevel = Array.isArray(props.data) ? props.data.length : 0;
   //const footerLoaded = countLoadedRecursive(props.data);
   const footerSelected = props.selectedIds.length;
@@ -339,7 +318,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         hideDragHandler={props.hideDragHandler ?? false}
         rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
         selectionMode="multiple"
-        // Right-click disabled
       />
     </Box>
   );
@@ -353,33 +331,36 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         minWidth: 0,
       }}
     >
-      {/* Breadcrumb Navigation with drop-to-parent support */}
-      {(() => {
-        const defaultRendererProps: DefaultBreadcrumbProps = {
-          nodePath: props.breadcrumbItems as unknown as readonly DefaultBreadcrumbNode[],
-          onNodeClick: props.onBreadcrumbNavigate,
-          treeId: props.treeId,
-          variant: 'default',
-          pageNodeId: props.pageNodeId,
-          useTrashColumns: props.useTrashColumns ?? false,
-          trashAction: props.trashAction,
-          iconInteractive: !props.useTrashColumns,
-          onDropToNode: props.onMoveNodes
-            ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
-            : undefined,
-          onContextAction: props.onBreadcrumbContextAction,
-          resolveOpenSteps: props.resolveOpenSteps,
-        };
-        const renderDefault = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
-        if (props.breadcrumbRenderer) {
-          return props.breadcrumbRenderer({
-            items: props.breadcrumbItems,
-            defaultRendererProps,
-            defaultRenderer: renderDefault,
-          });
-        }
-        return renderDefault();
-      })()}
+      <Box sx={{display:'flex', flexDirection:'row', alignItems:'center', padding:'0px'}}>
+        <IconButton sx={{marginLeft: 1}}><Link href={`/t/${props.treeId}/${props.pageNodeId}/tags`}><Sell/></Link></IconButton>
+        {/* Breadcrumb Navigation with drop-to-parent support */}
+        {(() => {
+          const defaultRendererProps: DefaultBreadcrumbProps = {
+            nodePath: props.breadcrumbItems as unknown as readonly DefaultBreadcrumbNode[],
+            onNodeClick: props.onBreadcrumbNavigate,
+            treeId: props.treeId,
+            variant: 'default',
+            pageNodeId: props.pageNodeId,
+            useTrashColumns: props.useTrashColumns ?? false,
+            trashAction: props.trashAction,
+            iconInteractive: !props.useTrashColumns,
+            onDropToNode: props.onMoveNodes
+              ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
+              : undefined,
+            onContextAction: props.onBreadcrumbContextAction,
+            resolveOpenSteps: props.resolveOpenSteps,
+          };
+          const breadcrumbRenderer = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
+          if (props.breadcrumbRenderer) {
+            return props.breadcrumbRenderer({
+              items: props.breadcrumbItems,
+              defaultRendererProps,
+              defaultRenderer: breadcrumbRenderer,
+            });
+          }
+          return breadcrumbRenderer();
+        })()}
+      </Box>
       {/* Main Table Content */}
       {shouldSplitView ? (
         <Box
@@ -401,7 +382,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         renderTable()
       )}
 
-      {/* Footer */}
       {!props.useTrashColumns &&
         <TreeConsoleFooter
           controller={null} // TODO: Convert TreeTableController to TreeViewController

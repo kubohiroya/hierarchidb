@@ -31,7 +31,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
@@ -39,11 +39,12 @@ type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction
 
 export interface TreeNodeInfoPanelProps {
   readonly treeId?: TreeId;
+  readonly pageNodeId?: NodeId;
   readonly node?: TreeNode;
   readonly onContextMenuAction: ContextMenuHandler;
 }
 
-export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
+export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
   const navigate = useNavigate();
   const {
     currentNode,
@@ -89,6 +90,30 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     typeof currentNode?.metadata?.description === 'string' && currentNode.metadata.description.trim().length > 0
       ? currentNode.metadata.description
       : labels.emptyDescriptionLabel;
+  const resolvedPageNodeId =
+    pageNodeId ? String(pageNodeId) : (currentNode?.id ? String(currentNode.id) : null);
+  const resolvedTreeId = treeId ? String(treeId) : null;
+  const tagNames = useMemo(() => {
+    const rawTags = currentNode?.metadata?.tags;
+    if (!Array.isArray(rawTags)) return [];
+    const seen = new Set<string>();
+    const normalized: string[] = [];
+    for (const entry of rawTags) {
+      if (typeof entry !== 'string') continue;
+      const trimmed = entry.trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+      seen.add(trimmed);
+      normalized.push(trimmed);
+    }
+    return normalized;
+  }, [currentNode?.metadata?.tags]);
+  const handleTagNavigate = useCallback(
+    (tagName: string) => {
+      if (!resolvedTreeId || !resolvedPageNodeId) return;
+      navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/tags/${encodeURIComponent(tagName)}` });
+    },
+    [navigate, resolvedPageNodeId, resolvedTreeId]
+  );
   const parentNodeId = currentNode?.parentId;
   const isStylerNode = currentNode?.nodeType === 'styler';
   const isRootNode =
@@ -170,8 +195,14 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           >
             {displayName || labels.unnamedNodeLabel}
           </Typography>
-          {(isDraft || isBuildRunning) && (
-            <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
+          {(isDraft || isBuildRunning || tagNames.length > 0) && (
+            <Stack
+              direction="row"
+              spacing={0.75}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
+            >
               {isDraft && (
                 <Tooltip
                   arrow
@@ -201,6 +232,24 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
                   color={isBuildActive ? 'primary' : 'inherit'}
                 />
               )}
+              {tagNames.map((tagName) => {
+                const isClickable = Boolean(resolvedTreeId && resolvedPageNodeId);
+                return (
+                  <Chip
+                    key={`tag-chip-${tagName}`}
+                    label={tagName}
+                    size="small"
+                    variant="outlined"
+                    clickable={isClickable}
+                    onClick={
+                      isClickable
+                        ? () => handleTagNavigate(tagName)
+                        : undefined
+                    }
+                    sx={{ height: 20 }}
+                  />
+                );
+              })}
             </Stack>
           )}
           <Typography variant="body2" color="text.secondary">

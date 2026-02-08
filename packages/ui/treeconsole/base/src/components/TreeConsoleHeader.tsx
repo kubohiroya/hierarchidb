@@ -1,13 +1,4 @@
-/**
-  * TreeConsoleHeader
-      * 1.
- * 2.
- * 3.
-  */
-
-// import React from 'provider'; // Not needed with new JSX transform
-import { Box, Typography } from '@mui/material';
-// import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { Box, Button, Typography } from '@mui/material';
 import type { TreeConsoleHeaderProps } from '../types/index.js';
 
 /**
@@ -60,36 +51,10 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         backgroundColor: 'background.paper',
       }}
     >
-      {/*
-*/}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        {/*
-*/}
         <Typography variant="h6" component="h1" noWrap>
           {title}
         </Typography>
-        {/*
- -
-*/}
-        {/*
-        {previousNodePath.length > 0 && (
-          <TreeConsoleBreadcrumb
-            nodePath={previousNodePath}
-            currentNodeId={currentNodeId}
-            depthOffset={depthOffset}
-            context={{
-              isTrashPage,
-              isProjectsPage,
-            }}
-            onNodeClick={(nodeId: string, node?: any) => {
-              console.log('Navigate to node:', nodeId, node);
-            }}
-            variant="default"
-          />
-        )}
-        */}
-        {/*
-*/}
         {currentNodeInfo && (
           <Box sx={{ mt: 0.5 }}>
             <Typography variant="caption" color="text.secondary">
@@ -99,12 +64,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           </Box>
         )}
       </Box>
-
-      {/*
-*/}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        {/*
-*/}
         <Typography
           variant="caption"
           sx={{
@@ -120,8 +80,6 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           {pageType}
         </Typography>
 
-        {/*
-*/}
         {isTrashPage && (
           <Typography
             variant="caption"
@@ -138,10 +96,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           </Typography>
         )}
 
-        {/*
-*/}
         {canPreviewNode && currentNodeId && (
-          <button
+          <Button
             onClick={() => console.log('PreviewStep:', currentNodeId)}
             style={{
               padding: '4px 8px',
@@ -154,13 +110,13 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
             }}
           >
             Preview
-          </button>
+          </Button>
         )}
 
         {/*
 */}
         {onClose && (
-          <button
+          <Button
             onClick={onClose}
             style={{
               padding: '4px 8px',
@@ -173,7 +129,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
             }}
           >
             Close
-          </button>
+          </Button>
         )}
       </Box>
     </Box>

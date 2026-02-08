@@ -1,5 +1,7 @@
 export const treeRouteIds = {
   page: '/t/$treeId/$pageNodeId',
+  tags: '/t/$treeId/$pageNodeId/tags',
+  tagName: '/t/$treeId/$pageNodeId/tags/$tag',
   target: '/t/$treeId/$pageNodeId/$targetNodeId',
   dialog: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
   dialogMode: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action/$mode',

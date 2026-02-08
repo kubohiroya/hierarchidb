@@ -371,6 +371,7 @@ export function useTreeConsoleIntegrationInner({
 
   const infoPanelProps: TreeNodeInfoPanelProps = {
     treeId: treeId as TreeId | undefined,
+    pageNodeId: pageNodeId as NodeId | undefined,
     node: pageTreeNode,
     onContextMenuAction: handleContextMenuAction,
   } as TreeNodeInfoPanelProps;

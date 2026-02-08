@@ -341,14 +341,14 @@ export function TreeTableCore({
 
   const renderSkeletonRows = (count = 8) =>
     Array.from({ length: count }).map((_, rowIndex) => (
-      <TableRow key={`skeleton-row-${rowIndex}`}>
+      <TableRow key={`skeleton-row-${String(rowIndex)}`}>
         {columns.map((column, index) => {
           const columnId = column.id ?? `col-${index}`;
           const width = columnWidths[columnId];
           const isSelection = columnId === 'selection';
           return (
             <TableCell
-              key={`skeleton-cell-${columnId}-${rowIndex}`}
+              key={`skeleton-cell-${columnId}-${String(rowIndex)}`}
               sx={{
                 width: width ? `${width}px` : undefined,
                 minWidth: width ? `${width}px` : undefined,

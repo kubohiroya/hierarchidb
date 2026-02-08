@@ -1,7 +1,6 @@
 // import { useWorker } from '../contexts/WorkerProvider.js';
 import type { TagEntity } from '@hierarchidb/tag-api';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
-// import { useNavigate } from 'react-router';
 import {
   Badge,
   Box,
@@ -19,8 +18,8 @@ import {
   Typography,
 } from '@mui/material';
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { useWorker } from '~/contexts/WorkerProvider.js';
+import { useMemo, useState } from 'react';
+import { useTagsPage } from './useTagsPage.js';
 
 // Meta function for React Router v7
 export function meta() {
@@ -30,43 +29,33 @@ export function meta() {
   ];
 }
 
-export default function TagsPage() {
+type TagsPageProps = {
+  basePath?: string;
+  embedded?: boolean;
+  onBack?: () => void;
+};
+
+function normalizeBasePath(value?: string) {
+  if (!value) return '/tags';
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+}
+
+export default function TagsPage({ basePath, embedded, onBack }: TagsPageProps) {
   const navigate = useNavigate();
-  const { client, isConnected } = useWorker();
-  const [tags, setTags] = useState<TagEntity[]>([]);
+  const { allTags, isConnected, isLoadingTags } = useTagsPage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'name' | 'usageCount'>('usageCount');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Load tags on mount
-  useEffect(() => {
-    if (!isConnected || !client) return;
-
-    const loadTags = async () => {
-      try {
-        setLoading(true);
-        // Get all tags from the worker
-        const tagAPI = await client.getTagAPI();
-        const all = await tagAPI.getAllTags();
-        const sorted = [...all].sort((a, b) => {
-          const dir = sortOrder === 'asc' ? 1 : -1;
-          if (sortBy === 'name') {
-            return a.name.localeCompare(b.name) * dir;
-          }
-          // usageCount default
-          return ((a.usageCount || 0) - (b.usageCount || 0)) * dir;
-        });
-        setTags(sorted);
-      } catch (error) {
-        console.error('Failed to load tags:', error);
-      } finally {
-        setLoading(false);
+  const tags = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    return [...allTags].sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name) * dir;
       }
-    };
-
-    loadTags();
-  }, [client, isConnected, sortBy, sortOrder]);
+      return ((a.usageCount || 0) - (b.usageCount || 0)) * dir;
+    });
+  }, [allTags, sortBy, sortOrder]);
 
   // Filter tags based on search query
   const filteredTags = tags.filter((tag) => {
@@ -89,7 +78,8 @@ export default function TagsPage() {
 
   // Handle tag click - navigate to search with tag filter
   const handleTagClick = (tag: TagEntity) => {
-    navigate({ to: `/tags/${encodeURIComponent(tag.name)}` });
+    const resolvedBasePath = normalizeBasePath(basePath);
+    navigate({ to: `${resolvedBasePath}/${encodeURIComponent(tag.name)}` });
   };
 
   // Handle tag edit
@@ -104,13 +94,21 @@ export default function TagsPage() {
   // Note: Tags with zero usage are automatically deleted by PersistentRelationalEntity lifecycle management
   // Manual deletion is not needed and could interfere with the lifecycle system
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    navigate({ to: '/' });
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: embedded ? 'auto' : '100vh', bgcolor: 'background.default' }}>
       {/* Header */}
       <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Container maxWidth="lg">
           <Box sx={{ py: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton onClick={() => navigate({ to: '/' })} size="large">
+            <IconButton onClick={handleBack} size="large">
               <ArrowBack />
             </IconButton>
 
@@ -167,7 +165,7 @@ export default function TagsPage() {
 
       {/* Main content */}
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {loading ? (
+        {!isConnected || isLoadingTags ? (
           <Typography>Loading tags...</Typography>
         ) : filteredTags.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
