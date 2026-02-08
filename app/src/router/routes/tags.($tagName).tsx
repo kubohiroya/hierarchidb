@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTagsPage } from './useTagsPage.js';
 
 type TaggedNodeRow = {
@@ -32,6 +33,7 @@ function decodeTagName(raw?: string): string | undefined {
 
 export default function TagDetailPage({ tagName }: { tagName?: string }) {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
   const resolvedTagName = useMemo(() => decodeTagName(tagName), [tagName]);
   const { isConnected, isLoadingNodes, isLoadingTag, specificTag, taggedNodes } =
     useTagsPage(resolvedTagName);
@@ -50,7 +52,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
   if (!isConnected) {
     return (
       <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Typography>Workerに接続中...</Typography>
+        <Typography>{t('tags.detail.connectingWorker')}</Typography>
       </Container>
     );
   }
@@ -72,18 +74,20 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
             )}
 
             <Typography variant="body2" color="text.secondary">
-              使用回数: {specificTag.usageCount} | 作成日時:{' '}
-              {new Date(specificTag.createdAt).toLocaleString()}
+              {t('tags.detail.usageAndCreated', {
+                count: specificTag.usageCount,
+                createdAt: new Date(specificTag.createdAt).toLocaleString(),
+              })}
             </Typography>
           </Paper>
         )}
 
         {isLoadingTag || isLoadingNodes ? (
-          <Typography>読み込み中...</Typography>
+          <Typography>{t('tags.detail.loading')}</Typography>
         ) : !specificTag ? (
-          <Typography>タグが見つかりません。</Typography>
+          <Typography>{t('tags.detail.notFound')}</Typography>
         ) : rows.length === 0 ? (
-          <Typography>このタグが付けられたノードはありません。</Typography>
+          <Typography>{t('tags.detail.empty')}</Typography>
         ) : (
           <List>
             {rows.map((row) => (
@@ -102,7 +106,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
                   }}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  {row.assignedAt ? new Date(row.assignedAt).toLocaleString() : '—'}
+                  {row.assignedAt ? new Date(row.assignedAt).toLocaleString() : t('tags.detail.noAssignedAt')}
                 </Typography>
               </ListItem>
             ))}

@@ -227,6 +227,16 @@
       "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node."
     }
   },
+  "tags": {
+    "detail": {
+      "connectingWorker": "Connecting to worker...",
+      "usageAndCreated": "Usage: {{count}} | Created: {{createdAt}}",
+      "loading": "Loading...",
+      "notFound": "Tag not found.",
+      "empty": "No nodes are tagged with this label.",
+      "noAssignedAt": "-"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "Select all",

@@ -41,7 +41,7 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { authLoginRoute, authCallbackRoute, authSilentRenewRoute } = await import(
     './routes/auth/index.js'
   );
-  const { tagsRoute, tagDetailRoute, pluginsRoute } = await import('./routes/utilityRoutes.js');
+  const { pluginsRoute } = await import('./routes/utilityRoutes.js');
 
   // Import console routes
   const { treeBaseRoute } = await import('./routes/tree/baseRoute.js');
@@ -83,8 +83,6 @@ export async function createHierarchiRouter(config: RouterConfig) {
     authLoginRoute,
     authCallbackRoute,
     authSilentRenewRoute,
-    tagsRoute,
-    tagDetailRoute,
     pluginsRoute,
     treeRouteWithChildren,
   ]);

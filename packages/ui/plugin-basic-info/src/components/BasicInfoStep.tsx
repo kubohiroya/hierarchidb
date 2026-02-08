@@ -92,14 +92,8 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
 
   const handleTagClick = useCallback(
     (tag: string) => {
-      if (onTagClick) {
-        onTagClick(tag);
-        return;
-      }
-      if (typeof window === 'undefined') return;
-      const trimmed = tag.trim();
-      if (!trimmed) return;
-      window.location.assign(`/tags/${encodeURIComponent(trimmed)}`);
+      if (!onTagClick) return;
+      onTagClick(tag);
     },
     [onTagClick],
   );

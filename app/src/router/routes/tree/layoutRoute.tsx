@@ -12,6 +12,8 @@ import { treeBaseRoute } from './baseRoute.js';
 export const treeLayoutRoute = createRoute({
   getParentRoute: () => treeBaseRoute,
   path: '$treeId',
+  shouldReload: false,
+  staleTime: Infinity,
   loader: async ({ params }) => {
     const { treeId } = params;
     if (!treeId) {

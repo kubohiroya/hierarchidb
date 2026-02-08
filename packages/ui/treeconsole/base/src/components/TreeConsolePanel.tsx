@@ -1,40 +1,20 @@
-import { memo, useMemo } from 'react';
-import type { ComponentProps, ReactElement } from 'react';
-import { Box, IconButton, Link, Typography, useMediaQuery } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import type { ReactElement } from 'react';
+import { memo } from 'react';
+import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
-import { toNodeType, type NodeId, type NodeType } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import {
-  type BuildSessionIndicator,
-  type TreeNodeInUI,
-  type TreeTableController,
-  TreeTableCore,
-} from '@hierarchidb/ui-treeconsole-treetable';
-import { TreeConsoleBreadcrumb, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import type { OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
-import { DualKeyMap } from '@hierarchidb/util';
-import { Sell } from '@mui/icons-material';
+import type { DualKeyMap } from '@hierarchidb/util';
+import type { PanelBreadcrumbNode, TreeConsolePanelBreadcrumbRendererProps } from '../hooks/useTreeConsolePanel.js';
+import { useTreeConsolePanel } from '../hooks/useTreeConsolePanel.js';
+import { TagsLinkButton } from './TagsLinkButton.js';
 
-type PanelBreadcrumbNode = {
-  treeNodeId?: string;
-  id?: string;
-  nodeType?: string;
-  type?: string;
-  name?: string;
-  parentId?: string | null;
-};
-
-type DefaultBreadcrumbProps = ComponentProps<typeof TreeConsoleBreadcrumb>;
-type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
-
-export interface TreeConsolePanelBreadcrumbRendererProps {
-  readonly items: readonly PanelBreadcrumbNode[];
-  readonly defaultRendererProps: DefaultBreadcrumbProps;
-  readonly defaultRenderer: () => ReactElement;
-}
+export type { TreeConsolePanelBreadcrumbRendererProps } from '../hooks/useTreeConsolePanel.js';
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -150,177 +130,42 @@ export interface TreeConsolePanelProps {
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
-  // Right-click context menus are disabled by policy
-  const theme = useTheme();
-  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
-  const pageNodeType = (props.pageTreeNode?.nodeType ?? '').toLowerCase();
-  const shouldSplitView = isMdUp && pageNodeType === 'folder' && Boolean(props.infoPanel);
+  const {
+    controller,
+    shouldSplitView,
+    footerTopLevel,
+    footerSelected,
+    breadcrumbElement,
+    isPageContextValid,
+  } = useTreeConsolePanel({
+    data: props.data,
+    nodeIndex: props.nodeIndex,
+    breadcrumbItems: props.breadcrumbItems,
+    selectedIds: props.selectedIds,
+    expandedIds: props.expandedIds,
+    pageNodeId: props.pageNodeId,
+    subtreeRootId: props.subtreeRootId,
+    treeId: props.treeId,
+    pageTreeNode: props.pageTreeNode,
+    infoPanel: props.infoPanel,
+    useTrashColumns: props.useTrashColumns,
+    trashAction: props.trashAction,
+    onNodeClick: props.onNodeClick,
+    onNodeSelect: props.onNodeSelect,
+    onNodeExpand: props.onNodeExpand,
+    onMoveNodes: props.onMoveNodes,
+    onContextMenuAction: props.onContextMenuAction,
+    resolvePreviewGuardState: props.resolvePreviewGuardState,
+    resolveOpenSteps: props.resolveOpenSteps,
+    onBreadcrumbNavigate: props.onBreadcrumbNavigate,
+    onBreadcrumbContextAction: props.onBreadcrumbContextAction,
+    breadcrumbRenderer: props.breadcrumbRenderer,
+    buildSessionIndicator: props.buildSessionIndicator,
+  });
 
-  // Create TreeTableController from props
-  const controller: TreeTableController = useMemo((): TreeTableController => {
-    const rootNodeId = props.subtreeRootId
-      ? String(props.subtreeRootId)
-      : props.pageNodeId
-        ? String(props.pageNodeId)
-        : undefined;
-
-    const baseDepth = (() => {
-      if (rootNodeId && props.nodeIndex instanceof DualKeyMap) {
-        const node = props.nodeIndex.get(rootNodeId as NodeId);
-        if (node && typeof node.depth === 'number' && Number.isFinite(node.depth)) {
-          return node.depth as number;
-        }
-      }
-      const depths = props.data
-        .map((node) => (typeof node.depth === 'number' ? (node.depth as number) : undefined))
-        .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
-      if (depths.length > 0) {
-        return Math.min(...depths);
-      }
-      return 1;
-    })();
-
-    const depthOffset = 1 - (Number.isFinite(baseDepth) ? baseDepth : 1);
-
-    const resolvePreviewGuardState = props.resolvePreviewGuardState;
-
-    const toTreeNodeInUI = (node: HierarchicalTreeNode, fallbackDepth: number): TreeNodeInUI => {
-      const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
-      const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
-      const originalNameValue =
-        props.useTrashColumns && typeof (node as { originalName?: string }).originalName === 'string'
-          ? (node as { originalName?: string }).originalName
-          : undefined;
-      const displayName =
-        typeof originalNameValue === 'string' && originalNameValue.trim().length > 0
-          ? originalNameValue
-          : node.metadata?.name || '';
-      const base: TreeNodeInUI = {
-        ...node,
-        nodeType: toNodeType(node.nodeType || 'folder'),
-        metadata: { ...node.metadata, name: displayName},
-        hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
-        depth: normalizedDepth,
-        absoluteDepth: resolvedDepth,
-      };
-
-      if (Array.isArray(node.children) && node.children.length > 0) {
-        base.children = node.children;
-      }
-
-      return base;
-    };
-
-    // Convert data to TreeNodeInUI format
-    const data = props.data.map((node) => toTreeNodeInUI(node, 1));
-
-    // Convert selectedIds and expandedIds to the expected format
-    const rowSelection: Record<string, boolean> = {};
-    props.selectedIds.forEach((id) => {
-      rowSelection[id] = true;
-    });
-
-    const expandedRowIds = new Set(props.expandedIds);
-
-    return {
-      data,
-      nodeIndex: props.nodeIndex,
-      rowSelection,
-      expandedRowIds,
-      rootNodeId: rootNodeId as NodeId | undefined,
-      depthOffset,
-      startEdit: async (_nodeId: string) => {},
-      finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
-        // delegate to parent handler via context-menu action channel
-        const nodeData: HierarchicalTreeNode = (field === 'name'
-          ? ({ id: nodeId, name: newValue })
-          : ({ id: nodeId, description: newValue })) as unknown as HierarchicalTreeNode;
-        props.onContextMenuAction(field === 'name' ? 'rename-inline' : 'update-desc-inline', nodeData);
-      },
-      cancelEdit: () => {},
-      onNodeClick: (_nodeId: string, node?: TreeNodeInUI) => {
-        if (node && props.onNodeClick) {
-          // Cast TreeNodeInUI to TreeNodeData for callback
-          // TreeNodeInUI is compatible with TreeNodeData
-
-          const nodeData: HierarchicalTreeNode = {
-            ...node,
-          };
-
-          props.onNodeClick(nodeData);
-        }
-      },
-      onNodeSelect: props.onNodeSelect
-        ? (nodeIds: string[], selected: boolean) => {
-            props.onNodeSelect?.(nodeIds, selected);
-          }
-        : undefined,
-      onNodeExpand: props.onNodeExpand,
-      onMoveNodes: (nodeIds: string[], targetParentId: string) => {
-        props.onMoveNodes?.(nodeIds, targetParentId);
-      },
-      resolvePreviewGuardState: resolvePreviewGuardState
-        ? (node: TreeNodeInUI) => resolvePreviewGuardState(node as HierarchicalTreeNode)
-        : undefined,
-          resolveOpenSteps: props.resolveOpenSteps
-            ? (node: TreeNodeInUI) => {
-                const resolver = props.resolveOpenSteps;
-                if (!resolver) return Promise.resolve([]);
-                return resolver(String(node.id ?? ''), String(node.nodeType || 'folder'));
-              }
-            : undefined,
-      onContextAction: (
-        action: string,
-        node: TreeNodeInUI,
-        options?: { navigateToParent?: boolean; nextVisible?: boolean }
-      ) => {
-        if (props.onContextMenuAction) {
-          const nodeData: HierarchicalTreeNode = {
-            ...(node as unknown as HierarchicalTreeNode),
-            id: node.id,
-            nodeType: (node.nodeType || 'folder') as NodeType,
-          };
-          props.onContextMenuAction(action, nodeData, options);
-        }
-      },
-    };
-  }, [props]);
-
-  const footerTopLevel = Array.isArray(props.data) ? props.data.length : 0;
-  //const footerLoaded = countLoadedRecursive(props.data);
-  const footerSelected = props.selectedIds.length;
-
-  const renderTable = () => (
-    <Box
-      sx={{
-        flex: 1,
-        overflow: 'hidden',
-        position: 'relative',
-        paddingLeft: '8px',
-        paddingRight: '8px',
-        minWidth: 0,
-      }}
-      data-tour-id="tree-table"
-    >
-      <TreeTableCore
-        controller={controller}
-        viewHeight={600}
-        viewWidth={1200}
-        treeId={props.treeId}
-        pageNodeId={props.pageNodeId}
-        selectAllPersistence={props.selectAllPersistence}
-        selectionIdPrefix={props.selectAllIdPrefix}
-        buildSessionIndicator={props.buildSessionIndicator}
-        useTrashColumns={props.useTrashColumns ?? false}
-        trashAction={props.trashAction}
-        depthOffset={controller.depthOffset ?? 0}
-        disableDragAndDrop={false}
-        hideDragHandler={props.hideDragHandler ?? false}
-        rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-        selectionMode="multiple"
-      />
-    </Box>
-  );
+  if (!isPageContextValid) {
+    return <Box>Invalid page context</Box>;
+  }
 
   return (
     <Box
@@ -331,35 +176,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         minWidth: 0,
       }}
     >
-      <Box sx={{display:'flex', flexDirection:'row', alignItems:'center', padding:'0px'}}>
-        <IconButton sx={{marginLeft: 1}}><Link href={`/t/${props.treeId}/${props.pageNodeId}/tags`}><Sell/></Link></IconButton>
-        {/* Breadcrumb Navigation with drop-to-parent support */}
-        {(() => {
-          const defaultRendererProps: DefaultBreadcrumbProps = {
-            nodePath: props.breadcrumbItems as unknown as readonly DefaultBreadcrumbNode[],
-            onNodeClick: props.onBreadcrumbNavigate,
-            treeId: props.treeId,
-            variant: 'default',
-            pageNodeId: props.pageNodeId,
-            useTrashColumns: props.useTrashColumns ?? false,
-            trashAction: props.trashAction,
-            iconInteractive: !props.useTrashColumns,
-            onDropToNode: props.onMoveNodes
-              ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
-              : undefined,
-            onContextAction: props.onBreadcrumbContextAction,
-            resolveOpenSteps: props.resolveOpenSteps,
-          };
-          const breadcrumbRenderer = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
-          if (props.breadcrumbRenderer) {
-            return props.breadcrumbRenderer({
-              items: props.breadcrumbItems,
-              defaultRendererProps,
-              defaultRenderer: breadcrumbRenderer,
-            });
-          }
-          return breadcrumbRenderer();
-        })()}
+      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: 0 }}>
+        <TagsLinkButton treeId={props.treeId as string} pageNodeId={props.pageNodeId as string} />
+        {breadcrumbElement}
       </Box>
       {/* Main Table Content */}
       {shouldSplitView ? (
@@ -373,16 +192,70 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             p: { md: 2 },
           }}
         >
-          <Box sx={{ minHeight: 0, alignSelf: 'start' }}>
-            {props.infoPanel}
+          <Box sx={{ minHeight: 0, alignSelf: 'start' }}>{props.infoPanel}</Box>
+          <Box
+            sx={{
+              flex: 1,
+              overflow: 'hidden',
+              position: 'relative',
+              paddingLeft: '8px',
+              paddingRight: '8px',
+              minWidth: 0,
+            }}
+            data-tour-id="tree-table"
+          >
+            <TreeTableCore
+              controller={controller}
+              viewHeight={600}
+              viewWidth={1200}
+              treeId={props.treeId}
+              pageNodeId={props.pageNodeId}
+              selectAllPersistence={props.selectAllPersistence}
+              selectionIdPrefix={props.selectAllIdPrefix}
+              buildSessionIndicator={props.buildSessionIndicator}
+              useTrashColumns={props.useTrashColumns ?? false}
+              trashAction={props.trashAction}
+              depthOffset={controller.depthOffset ?? 0}
+              disableDragAndDrop={false}
+              hideDragHandler={props.hideDragHandler ?? false}
+              rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+              selectionMode="multiple"
+            />
           </Box>
-          {renderTable()}
         </Box>
       ) : (
-        renderTable()
+        <Box
+          sx={{
+            flex: 1,
+            overflow: 'hidden',
+            position: 'relative',
+            paddingLeft: '8px',
+            paddingRight: '8px',
+            minWidth: 0,
+          }}
+          data-tour-id="tree-table"
+        >
+          <TreeTableCore
+            controller={controller}
+            viewHeight={600}
+            viewWidth={1200}
+            treeId={props.treeId}
+            pageNodeId={props.pageNodeId}
+            selectAllPersistence={props.selectAllPersistence}
+            selectionIdPrefix={props.selectAllIdPrefix}
+            buildSessionIndicator={props.buildSessionIndicator}
+            useTrashColumns={props.useTrashColumns ?? false}
+            trashAction={props.trashAction}
+            depthOffset={controller.depthOffset ?? 0}
+            disableDragAndDrop={false}
+            hideDragHandler={props.hideDragHandler ?? false}
+            rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+            selectionMode="multiple"
+          />
+        </Box>
       )}
 
-      {!props.useTrashColumns &&
+      {!props.useTrashColumns && (
         <TreeConsoleFooter
           controller={null} // TODO: Convert TreeTableController to TreeViewController
           onStartTour={props.onStartTour}
@@ -391,15 +264,18 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           loadingTooltip={(
             <Box sx={{ p: 0.5 }}>
               <Typography variant="caption" display="block">From left to right:</Typography>
-              <Typography variant="caption" display="block">- Number of top-level children in the subscribed
-                subtree</Typography>
-              <Typography variant="caption" display="block">- Number of loaded nodes (visible + expanded)</Typography>
+              <Typography variant="caption" display="block">
+                - Number of top-level children in the subscribed subtree
+              </Typography>
+              <Typography variant="caption" display="block">
+                - Number of loaded nodes (visible + expanded)
+              </Typography>
               <Typography variant="caption" display="block">- Number of selected nodes</Typography>
             </Box>
           )}
         />
-      }
-
+      )}
     </Box>
   );
 });
+

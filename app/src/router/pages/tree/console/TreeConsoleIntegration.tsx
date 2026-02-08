@@ -10,6 +10,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
+import { useEffect } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
@@ -47,6 +48,14 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     resetWorker: reset,
     initializeWorker: initialize,
   });
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    console.debug('[TreeConsoleIntegration] mount', { treeId, pageNodeId });
+    return () => {
+      console.debug('[TreeConsoleIntegration] unmount', { treeId, pageNodeId });
+    };
+  }, [pageNodeId, treeId]);
 
   if (workerLoading) {
     return (

@@ -118,6 +118,8 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const navigate = useNavigate();
   const { client: workerClient } = useWorker();
   const bootProgress = useOptionalBootProgress();
+  const location = useRouterState({ select: (state) => state.location });
+  const matches = useRouterState({ select: (state) => state.matches });
   const isUserMenuReady = Boolean(
     bootProgress?.steps.Auth.done && bootProgress?.steps.Theme.done && bootProgress?.steps.I18n.done
   );
@@ -143,6 +145,23 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
       }
     })();
   }, [workerClient]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (!location.pathname.includes('/tags')) return;
+    const snapshot = matches.map((match) => ({
+      routeId: match.routeId,
+      id: match.id,
+      fullPath: match.fullPath,
+      status: match.status,
+      params: match.params,
+    }));
+    console.debug('[TreeRouteMatchSnapshot]', {
+      pathname: location.pathname,
+      search: location.search,
+      matches: snapshot,
+    });
+  }, [location.pathname, location.search, matches]);
 
   const pageName = data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
 

@@ -24,6 +24,8 @@ function getBootWindow(): BootWindow | null {
 export const treeBaseRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 't',
+  shouldReload: false,
+  staleTime: Infinity,
   loader: async () => {
     const bootWindow = getBootWindow();
 

@@ -14,6 +14,8 @@ import { treeLayoutRoute } from './layoutRoute.js';
 export const treePageRoute = createRoute({
   getParentRoute: () => treeLayoutRoute,
   path: '$pageNodeId',
+  shouldReload: false,
+  staleTime: Infinity,
   loader: async ({ params }) => {
     const { treeId, pageNodeId } = params;
     if (!treeId) {

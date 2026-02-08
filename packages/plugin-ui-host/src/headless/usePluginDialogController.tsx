@@ -81,7 +81,6 @@ function buildDraftSignature(value: unknown): string | null {
 
 function logSync(label: string, payload: { draftData?: string | null; dialogUIState?: string | null }): void {
   if (!isSyncDebugActive()) return;
-  // eslint-disable-next-line no-console
   console.debug(`[PluginDialogSync] ${label}`, payload);
 }
 
@@ -515,9 +514,11 @@ export function usePluginDialogController(
     (tag: string) => {
       const trimmed = tag.trim();
       if (!trimmed) return;
-      void navigate({ to: `/tags/${encodeURIComponent(trimmed)}` as const });
+      void navigate({
+        to: `/t/${treeId}/${pageNodeId}/tags/${encodeURIComponent(trimmed)}` as const,
+      });
     },
-    [navigate]
+    [navigate, pageNodeId, treeId]
   );
 
   const { steps, stepDescriptors, currentStepData, dialogData } = useDialogSteps({
@@ -1152,37 +1153,7 @@ export function usePluginDialogController(
       ContentComponent,
       FooterComponent,
     }),
-    [
-      open,
-      isDialogReady,
-      safeStepDescriptors,
-      stableStepData,
-      handleStepDataChange,
-      activeStepIndex,
-      handleNavigation,
-      stableEnabledStepIndices,
-      stableValidatedStepIndices,
-      stableCommittableStepIndices,
-      invalidMessageMap,
-      handleCloseRequest,
-      handleRequestCommit,
-      dialogDirty,
-      dialogPosition,
-      handlePositionChangeWithPersist,
-      dialogSize,
-      handleSizeChangeWithPersist,
-      displayMode,
-      allowFullScreen,
-      options.removePaddingWithFullScreenMode,
-      HeaderComponent,
-      ContentComponent,
-      FooterComponent,
-      transitionDisplayMode,
-      persistDialogWindow,
-      persistDialogUIState,
-      dialogUIStateRef,
-      nodeType,
-    ]
+    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, allowFullScreen, options.removePaddingWithFullScreenMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef, nodeType]
   );
 
   return {

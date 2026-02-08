@@ -46,6 +46,19 @@ function normalizeTagName(value?: string): string | null {
 export function useTagsPage(tagName?: string) {
   const { client: workerClient, isConnected } = useWorker();
   const normalizedTagName = normalizeTagName(tagName);
+  const cachedAllTags = allTagsCache.data && isFresh(allTagsCache.ts) ? allTagsCache.data : null;
+  const cachedSpecificEntry = normalizedTagName
+    ? specificTagCache.get(normalizedTagName)
+    : undefined;
+  const cachedSpecificTag =
+    cachedSpecificEntry && isFresh(cachedSpecificEntry.ts) ? cachedSpecificEntry.data : null;
+  const cachedTaggedNodesEntry = normalizedTagName
+    ? taggedNodesCache.get(normalizedTagName)
+    : undefined;
+  const cachedTaggedNodes =
+    cachedTaggedNodesEntry && isFresh(cachedTaggedNodesEntry.ts)
+      ? cachedTaggedNodesEntry.data
+      : null;
 
   const fetchAllTags = useCallback(async () => {
     if (!workerClient) throw new Error('Worker not connected');
@@ -62,8 +75,8 @@ export function useTagsPage(tagName?: string) {
   const { data: allTags = [], isLoading: isLoadingTags } = useQuery<TagEntity[]>({
     queryKey: ['tags', 'all'],
     queryFn: fetchAllTags,
-    enabled: isConnected,
-    initialData: [],
+    enabled: isConnected && !cachedAllTags,
+    initialData: cachedAllTags ?? [],
   });
 
   const fetchSpecificTag = useCallback(async () => {
@@ -94,8 +107,8 @@ export function useTagsPage(tagName?: string) {
   const { data: specificTag = null, isLoading: isLoadingTag } = useQuery<TagEntity | null>({
     queryKey: ['tag', normalizedTagName],
     queryFn: fetchSpecificTag,
-    enabled: !!normalizedTagName && isConnected,
-    initialData: null,
+    enabled: !!normalizedTagName && isConnected && cachedSpecificTag === null,
+    initialData: cachedSpecificTag ?? null,
   });
 
   const fetchTaggedNodes = useCallback(async (): Promise<TaggedNode[]> => {
@@ -153,8 +166,8 @@ export function useTagsPage(tagName?: string) {
   const { data: taggedNodes = [], isLoading: isLoadingNodes } = useQuery<TaggedNode[]>({
     queryKey: ['tag', normalizedTagName, 'nodes'],
     queryFn: fetchTaggedNodes,
-    enabled: !!specificTag && isConnected,
-    initialData: [],
+    enabled: !!specificTag && isConnected && !cachedTaggedNodes,
+    initialData: cachedTaggedNodes ?? [],
   });
 
   return {

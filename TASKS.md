@@ -24,11 +24,12 @@
 2599) feat/router/tag-nested-path (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/router/tag-nested-path
 - 依存: なし
-- 受け入れ基準: `/tags/:tag?` は既存どおり動作する／`/t/:treeId/:pageNodeId/tags/:tag?` で同内容が表示される（リダイレクトなし）／`/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` の省略解釈を崩さない／TASKS.md に運用ログを記載する
+- 受け入れ基準: `/tags`・`/tags/:tagName` を廃止し、`/t/:treeId/:pageNodeId/tags(/:tagName)` のダイアログ表示のみでタグ一覧/詳細を提供する／`/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` の省略解釈を崩さない／TASKS.md に運用ログを記載する
 - 影響範囲: `app/src/router/routes/**`（必要に応じて追加）
-- ロールバック手順: 追加した tags ネスト経路の判定を revert し、既存ルーティング解釈に戻す
+- ロールバック手順: tags ダイアログの差分を revert し、/tags のルート復帰が必要なら utilityRoutes と router index を戻す
 - チェックリスト:
-  - `/t/:treeId/:pageNodeId/tags/:tag?` を `/tags/:tag?` と同内容で表示できるようにする
+  - `/tags`・`/tags/:tagName` のルートを撤去する
+  - `/t/:treeId/:pageNodeId/tags(/:tagName)` でタグ一覧/詳細が表示されることを確認する
   - 既存の `/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` の省略解釈に回帰がないことを確認する
   - 影響範囲の typecheck を実行する
   - 運用ログ start/update/done/blocked を追記
@@ -41,6 +42,20 @@
   - update: 2026-02-08 11:05 JST Home の Tags ボタンとガイドツアーの Tags ステップを撤去。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
   - blocked: 2026-02-08 11:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が useTagsPage の staleTime 追加と tags.tsx の TagEntity 未 import で失敗。
   - update: 2026-02-08 11:14 JST useTagsPage にタグ取得キャッシュを実装し、TagsPage の取得を useQuery 化。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:19 JST Basic Info のタグチップ遷移先を `/t/:treeId/:pageNodeId/tags/:tagName` に変更。`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:23 JST useTagsPage のキャッシュがある場合は再取得せず初期表示を安定化。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:23 JST `/tags` 廃止方針（tree 配下ダイアログのみ）で再構成する方針を確定。
+  - start: 2026-02-08 11:32 JST `/tags` 廃止と tree 配下ダイアログ集約の実装に着手。
+  - update: 2026-02-08 11:33 JST `/tags` ルート撤去と tags ダイアログへ一覧UIを移設。BasicInfo の /tags フォールバックも撤去。`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-plugin-basic-info` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:39 JST tags ダイアログの keepMounted を有効化し、初期化時の瞬間的な消去を抑制。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - start: 2026-02-08 11:47 JST `/t/:treeId/:pageNodeId/tags` 遷移時の再マウント/初期化インジケータ発生の原因調査に着手。
+  - update: 2026-02-08 11:50 JST tree ルートの loader が毎回再実行されていたため、treeBase/treeLayout/treePage に `shouldReload: false` を設定して再ロードを抑制。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 11:57 JST treeBase/treeLayout/treePage に `staleTime: Infinity` を追加し、同一マッチで loader が再実行されないよう固定。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 12:01 JST `targetNodeId === 'tags'` の場合は treeTargetRoute から tags ルートへ redirect するガードを追加し、誤マッチ時の再初期化を回避。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - start: 2026-02-08 12:05 JST `/t/:treeId/:pageNodeId/tags` 遷移時の pending match 特定のため、開発用ログを仕込んで原因を追跡する。
+  - update: 2026-02-08 12:06 JST TreeLayoutBody で pending match を DEV ログ出力する計測を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 12:08 JST `/tags` 遷移時に match 全体をログ出力するよう計測を拡張。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 12:12 JST TreeTagsDialog/TreeConsoleIntegration の mount/unmount を DEV ログ出力する計測を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet
@@ -994,6 +1009,21 @@
   - update: 2026-02-07 10:26 JST shape-api に DEFAULT_BUILD_CONFIG を移設して runtime-worker の draft 初期化へ反映。TreeMutationService/TreeNodeUpdaterService で draftData 未設定時の data→draft / data不在時の default 反映を追加。
   - update: 2026-02-07 10:27 JST runtime-worker の headless テストを追加（draftData 初期化）し、WORKER_E2E=1 で単体実行を確認。
   - update: 2026-02-07 10:27 JST pnpm --filter @hierarchidb/shape-api build / pnpm --filter @hierarchidb/runtime-worker typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck を実行し exit 0 を確認。
+  - start: 2026-02-07 10:28 JST tags詳細画面の i18n 不足修正に着手。
+  - update: 2026-02-07 10:30 JST tags詳細画面の文言を common.json の tags.detail へ移し、t() 参照に置換。
+  - update: 2026-02-07 10:31 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build の tsdown define 警告あり）。
+  - start: 2026-02-07 10:33 JST TreeConsolePanel の可読性改善とロジック切り出しに着手。
+  - update: 2026-02-07 10:39 JST TreeConsolePanel のロジックを useTreeConsolePanel フックへ移し、レンダリングを簡素化。
+  - update: 2026-02-07 10:40 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - start: 2026-02-07 10:42 JST TagsLinkButton の表示条件と分岐箇所の確認に着手。
+  - update: 2026-02-07 10:44 JST TreeConsoleIntegration 側の shouldRenderTreeTable 分岐で TreeConsolePanel が描画されず、TagsLinkButton が出ない経路を確認。
+
+
+
+
+
+
+
 
 
 2556) fix/shape-preview/multipolygon-loading-bar (P1) — 完了 (2026-02-07)

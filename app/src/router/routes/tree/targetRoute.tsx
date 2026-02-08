@@ -5,9 +5,10 @@
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).tsx`
  */
 
-import { createRoute, Outlet } from '@tanstack/react-router';
+import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { loadTargetNode } from '../../loaders/treeLoaders.js';
 import { treePageRoute } from './pageRoute.js';
+import { treeTagsRoute } from './tagsRoute.js';
 export const treeTargetRoute = createRoute({
   getParentRoute: () => treePageRoute,
   path: '$targetNodeId',
@@ -15,6 +16,16 @@ export const treeTargetRoute = createRoute({
     const { treeId, pageNodeId, targetNodeId } = params;
     if (!treeId || !targetNodeId) {
       throw new Error('Missing required parameters');
+    }
+    if (targetNodeId === 'tags') {
+      throw redirect({
+        to: treeTagsRoute.to,
+        params: {
+          treeId,
+          pageNodeId,
+        },
+        replace: true,
+      });
     }
     const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
     return await loadTargetNode({
