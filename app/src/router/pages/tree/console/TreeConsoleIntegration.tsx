@@ -11,7 +11,6 @@ import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconso
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
-import { useEffect } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
 import { useTreeConsoleSpeedDial } from './useTreeConsoleSpeedDial.js';
@@ -61,14 +60,6 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     speedDialSuppressed,
     setSpeedDialSuppressed,
   });
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    console.debug('[TreeConsoleIntegration] mount', { treeId, pageNodeId });
-    return () => {
-      console.debug('[TreeConsoleIntegration] unmount', { treeId, pageNodeId });
-    };
-  }, [pageNodeId, treeId]);
-
   if (workerLoading) {
     return (
       <Box

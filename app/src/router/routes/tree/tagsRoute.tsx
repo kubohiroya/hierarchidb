@@ -26,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import TagDetailRoute from '../tags.($tagName).js';
 import { useTagsPage } from '../useTagsPage.js';
 import { treePageRoute } from './pageRoute.js';
@@ -41,14 +41,6 @@ function TreeTagsDialog() {
 
   const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
   const basePath = `/t/${treeId}/${resolvedPageNodeId}/tags`;
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    console.debug('[TreeTagsDialog] mount', { treeId, pageNodeId: resolvedPageNodeId });
-    return () => {
-      console.debug('[TreeTagsDialog] unmount', { treeId, pageNodeId: resolvedPageNodeId });
-    };
-  }, [resolvedPageNodeId, treeId]);
-
   const handleClose = () => {
     if (!treeId) return;
     navigate({ to: `/t/${treeId}/${resolvedPageNodeId}` });

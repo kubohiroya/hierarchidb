@@ -146,22 +146,6 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
     })();
   }, [workerClient]);
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    if (!location.pathname.includes('/tags')) return;
-    const snapshot = matches.map((match) => ({
-      routeId: match.routeId,
-      id: match.id,
-      fullPath: match.fullPath,
-      status: match.status,
-      params: match.params,
-    }));
-    console.debug('[TreeRouteMatchSnapshot]', {
-      pathname: location.pathname,
-      search: location.search,
-      matches: snapshot,
-    });
-  }, [location.pathname, location.search, matches]);
 
   const pageName = data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
 

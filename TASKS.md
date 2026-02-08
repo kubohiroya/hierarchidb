@@ -178,6 +178,7 @@
   - update: 2026-02-08 16:45 JST shapeFetchStage/shapePipeline へ geometryEngine を伝播し、`pnpm -w turbo run build --filter @hierarchidb/ui-treeconsole-base` を実行（exit 0）。
   - update: 2026-02-08 16:46 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
   - start: 2026-02-08 16:51 JST tags ルーティング検証用の console.debug を撤去する対応に着手。
+  - update: 2026-02-08 16:56 JST tags ルーティングの console.debug を撤去し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet
