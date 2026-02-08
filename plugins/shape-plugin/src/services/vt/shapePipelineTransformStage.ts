@@ -60,6 +60,14 @@ const readNumber = (value: unknown): number | null => (
 );
 
 export const runShapeTransformStageSection = async (params: ShapeTransformStageParams): Promise<boolean> => {
+  console.warn('[ShapeTransform][PipelineDiagnostics] transform stage start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks: params.resumeExistingTasks,
+    maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+    geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
+    bands: params.bands.length,
+  }));
   let existingTransformByBandTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'transform')
     : [];
@@ -68,6 +76,12 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
 
   const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
+  console.warn('[ShapeTransform][PipelineDiagnostics] transform stage fetched inputs', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    fetchTasks: fetchTasks.length,
+    existingTransformTasks: existingTransformByBandTasks.length,
+  }));
   const buffers: TransformBufferMeta[] = [];
   fetchTasks.forEach((task) => {
     const output = isRecord(task.outputData) ? task.outputData : null;
@@ -87,6 +101,10 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     });
   });
   if (buffers.length === 0) {
+    console.warn('[ShapeTransform][PipelineDiagnostics] transform stage skipped (no buffers)', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
     return false;
   }
 
@@ -203,6 +221,13 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     }
     const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
     const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
+    console.warn('[ShapeTransform][PipelineDiagnostics] transform stage tasks prepared', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      planned: desiredTransformTasks.length,
+      existing: existingTransformByBandTasks.length,
+      missing: missingTransformTasks.length,
+    }));
     if (missingTransformTasks.length > 0) {
       await putTasks(params.taskQueue, missingTransformTasks);
     }
@@ -210,14 +235,42 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       return false;
     }
 
+    console.warn('[ShapeTransform][PipelineDiagnostics] transform waitIfPaused start', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
     await params.waitIfPaused?.();
+    console.warn('[ShapeTransform][PipelineDiagnostics] transform waitIfPaused done', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
+    console.warn('[ShapeTransform][PipelineDiagnostics] reset running tasks start', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
+    console.warn('[ShapeTransform][PipelineDiagnostics] reset running tasks done', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
 
     if (transformConfig.geometryEngine === 'geos') {
+      console.warn('[ShapeTransform][PipelineDiagnostics] init geos start', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+      }));
       await initGeos();
+      console.warn('[ShapeTransform][PipelineDiagnostics] init geos done', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+      }));
     }
 
     const transformByBandAbortController = new AbortController();
+    console.warn('[ShapeTransform][PipelineDiagnostics] createTransformByBandHandler start', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
     const transformByBandHandler = createTransformByBandHandler({
       ephemeralDB: params.ephemeralStore,
       transformConfig,
@@ -225,7 +278,16 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
       abortSignal: transformByBandAbortController.signal,
     });
+    console.warn('[ShapeTransform][PipelineDiagnostics] createTransformByBandHandler done', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+    }));
     try {
+      console.warn('[ShapeTransform][PipelineDiagnostics] runStageTasks start', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+      }));
       await runStageTasks({
         nodeId: params.nodeId,
         stage: 'transform',

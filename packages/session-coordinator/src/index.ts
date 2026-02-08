@@ -2,35 +2,25 @@ import { Dexie } from 'dexie';
 
 export type SessionTabState = 'active' | 'hidden' | 'frozen';
 
-export type SessionChannelMessage<TStatus = unknown, TProgress = unknown> =
-  | {
-      type: 'broadcast';
-      sessionId: string;
-      tabId: string;
-      timestamp: number;
-      status?: TStatus | null;
-      progress?: TProgress | null;
-    }
-  | {
-      type: 'poll';
-      sessionId: string;
-      tabId: string;
-      timestamp: number;
-    }
-  | {
-      type: 'tab-state';
-      sessionId: string;
-      tabId: string;
-      timestamp: number;
-      tabState: SessionTabState;
-    }
-  | {
-      type: 'ack';
-      sessionId: string;
-      tabId: string;
-      receivedTabId: string;
-      timestamp: number;
-    };
+export type HeartbeatRecord<TStatus = unknown, TProgress = unknown> = {
+  sessionId: string;
+  tabId: string;
+  updatedAt: number;
+  expiresAt: number;
+  status?: TStatus | null;
+  progress?: TProgress | null;
+  tabState?: SessionTabState;
+  lockOwner?: boolean;
+};
+
+export type HeartbeatPayload<TStatus = unknown, TProgress = unknown> = {
+  sessionId: string;
+  status?: TStatus | null;
+  progress?: TProgress | null;
+  tabState?: SessionTabState;
+  lockOwner?: boolean;
+  timestamp?: number;
+};
 
 export type SessionStorageKeys = {
   tabIdKey: string;
@@ -67,25 +57,18 @@ export type SessionCoordinator = {
   readBroadcastAt: () => number | null;
   writeBroadcastAt: (timestamp: number) => void;
   isRunnerTab: (referenceTime?: number) => boolean;
-  openChannel: () => BroadcastChannel;
-  isSessionChannelMessage: (value: unknown) => value is SessionChannelMessage;
-  sendPoll: (channel: BroadcastChannel, sessionId: string, timestamp?: number) => void;
-  sendBroadcast: <TStatus = unknown, TProgress = unknown>(
-    channel: BroadcastChannel,
-    sessionId: string,
-    status: TStatus | null,
-    progress: TProgress | null,
-    timestamp?: number,
-  ) => void;
-  sendTabState: (
-    channel: BroadcastChannel,
-    sessionId: string,
-    tabState: SessionTabState,
-    timestamp?: number,
-  ) => void;
-  sendAck: (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => void;
   tryAcquireSemaphore: (key: string, ownerId: string, ttlMs?: number) => Promise<boolean>;
   tryAcquireSessionLock: (key: string) => Promise<SessionLockHandle | null>;
+  isWebLockSupported: () => boolean;
+  probeSessionLock: (key: string) => Promise<'held' | 'free' | 'unsupported'>;
+  writeHeartbeat: <TStatus = unknown, TProgress = unknown>(payload: HeartbeatPayload<TStatus, TProgress>) => Promise<void>;
+  readHeartbeat: <TStatus = unknown, TProgress = unknown>(
+    sessionId: string,
+  ) => Promise<HeartbeatRecord<TStatus, TProgress> | null>;
+  readHeartbeats: <TStatus = unknown, TProgress = unknown>(
+    sessionId?: string,
+  ) => Promise<HeartbeatRecord<TStatus, TProgress>[]>;
+  pruneHeartbeats: (referenceTime?: number) => Promise<void>;
 };
 
 type SessionSemaphoreRecord = {
@@ -149,6 +132,10 @@ const getSemaphoreDb = (dbName: string) => {
   const db = new Dexie(dbName);
   db.version(1).stores({
     semaphores: '&key, ownerId, expiresAt',
+  });
+  db.version(2).stores({
+    semaphores: '&key, ownerId, expiresAt',
+    heartbeats: '&sessionId, updatedAt, expiresAt, tabId',
   });
   semaphoreDbCache.set(dbName, db);
   return db;
@@ -260,74 +247,9 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     return Boolean(broadcastAt && snapshot - broadcastAt <= quietThresholdTimeout);
   };
 
-  const isSessionChannelMessage = (value: unknown): value is SessionChannelMessage => {
-    if (!value || typeof value !== 'object') return false;
-    const record = value as Record<string, unknown>;
-    const type = record.type;
-    if (type !== 'broadcast' && type !== 'poll' && type !== 'ack' && type !== 'tab-state') return false;
-    if (typeof record.sessionId !== 'string' || typeof record.tabId !== 'string') return false;
-    if (typeof record.timestamp !== 'number') return false;
-    if (type === 'ack') {
-      return typeof record.receivedTabId === 'string';
-    }
-    if (type === 'tab-state') {
-      return record.tabState === 'active' || record.tabState === 'hidden' || record.tabState === 'frozen';
-    }
-    return true;
-  };
-
-  const openChannel = () => new BroadcastChannel(channelName);
-
-  const sendPoll = (channel: BroadcastChannel, sessionId: string, timestamp = nowFn()) => {
-    channel.postMessage({
-      type: 'poll',
-      sessionId,
-      tabId: getTabId(),
-      timestamp,
-    } satisfies SessionChannelMessage);
-  };
-
-  const sendBroadcast = <TStatus = unknown, TProgress = unknown>(
-    channel: BroadcastChannel,
-    sessionId: string,
-    status: TStatus | null,
-    progress: TProgress | null,
-    timestamp = nowFn(),
-  ) => {
-    channel.postMessage({
-      type: 'broadcast',
-      sessionId,
-      tabId: getTabId(),
-      timestamp,
-      status,
-      progress,
-    } satisfies SessionChannelMessage<TStatus, TProgress>);
-  };
-
-  const sendTabState = (
-    channel: BroadcastChannel,
-    sessionId: string,
-    tabState: SessionTabState,
-    timestamp = nowFn(),
-  ) => {
-    channel.postMessage({
-      type: 'tab-state',
-      sessionId,
-      tabId: getTabId(),
-      timestamp,
-      tabState,
-    } satisfies SessionChannelMessage);
-  };
-
-  const sendAck = (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp = nowFn()) => {
-    channel.postMessage({
-      type: 'ack',
-      sessionId,
-      tabId: getTabId(),
-      receivedTabId,
-      timestamp,
-    } satisfies SessionChannelMessage);
-  };
+  const isWebLockSupported = () => (
+    typeof navigator !== 'undefined' && typeof navigator.locks?.request === 'function'
+  );
 
   const tryAcquireSemaphore = async (key: string, ownerId: string, ttlMs?: number) => {
     const now = nowFn();
@@ -354,7 +276,7 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
   };
 
   const tryAcquireSessionLock = async (key: string): Promise<SessionLockHandle | null> => {
-    if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
+    if (!isWebLockSupported()) {
       console.warn('[session-coordinator] Web Locks API is unavailable');
       return null;
     }
@@ -387,6 +309,99 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     });
   };
 
+  const probeSessionLock = async (key: string): Promise<'held' | 'free' | 'unsupported'> => {
+    if (!isWebLockSupported()) return 'unsupported';
+    return new Promise<'held' | 'free'>((resolve) => {
+      let resolved = false;
+      navigator.locks.request(
+        key,
+        { ifAvailable: true, mode: 'exclusive' },
+        (lock) => {
+          if (!lock) {
+            resolved = true;
+            resolve('held');
+            return;
+          }
+          resolved = true;
+          resolve('free');
+          return undefined;
+        },
+      ).catch((error) => {
+        console.warn('[session-coordinator] failed to probe session lock', error);
+        if (!resolved) {
+          resolve('held');
+        }
+      });
+    });
+  };
+
+  const writeHeartbeat = async <TStatus = unknown, TProgress = unknown>(
+    payload: HeartbeatPayload<TStatus, TProgress>,
+  ): Promise<void> => {
+    const db = getSemaphoreDb(semaphoreDbName);
+    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
+    const now = payload.timestamp ?? nowFn();
+    const expiresAt = now + quietThresholdTimeout + pollIntervalTimeout * 2;
+    try {
+      const existing = await table.get(payload.sessionId);
+      const next: HeartbeatRecord<TStatus, TProgress> = {
+        sessionId: payload.sessionId,
+        tabId: getTabId(),
+        updatedAt: now,
+        expiresAt,
+        status: payload.status !== undefined ? payload.status : existing?.status,
+        progress: payload.progress !== undefined ? payload.progress : existing?.progress,
+        tabState: payload.tabState ?? existing?.tabState,
+        lockOwner: payload.lockOwner ?? existing?.lockOwner,
+      };
+      await table.put(next);
+      writeBroadcastAt(now);
+    } catch (error) {
+      console.warn('[session-coordinator] failed to write heartbeat', error);
+    }
+  };
+
+  const readHeartbeat = async <TStatus = unknown, TProgress = unknown>(
+    sessionId: string,
+  ): Promise<HeartbeatRecord<TStatus, TProgress> | null> => {
+    const db = getSemaphoreDb(semaphoreDbName);
+    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
+    try {
+      return await table.get(sessionId) ?? null;
+    } catch (error) {
+      console.warn('[session-coordinator] failed to read heartbeat', error);
+      return null;
+    }
+  };
+
+  const readHeartbeats = async <TStatus = unknown, TProgress = unknown>(
+    sessionId?: string,
+  ): Promise<HeartbeatRecord<TStatus, TProgress>[]> => {
+    const db = getSemaphoreDb(semaphoreDbName);
+    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
+    try {
+      if (sessionId) {
+        const record = await table.get(sessionId);
+        return record ? [record] : [];
+      }
+      return await table.toArray();
+    } catch (error) {
+      console.warn('[session-coordinator] failed to read heartbeats', error);
+      return [];
+    }
+  };
+
+  const pruneHeartbeats = async (referenceTime?: number): Promise<void> => {
+    const db = getSemaphoreDb(semaphoreDbName);
+    const table = db.table<HeartbeatRecord, string>('heartbeats');
+    const now = referenceTime ?? nowFn();
+    try {
+      await table.where('expiresAt').belowOrEqual(now).delete();
+    } catch (error) {
+      console.warn('[session-coordinator] failed to prune heartbeats', error);
+    }
+  };
+
   return {
     channelName,
     pollIntervalTimeout,
@@ -399,13 +414,13 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     readBroadcastAt,
     writeBroadcastAt,
     isRunnerTab,
-    openChannel,
-    isSessionChannelMessage,
-    sendPoll,
-    sendBroadcast,
-    sendTabState,
-    sendAck,
     tryAcquireSemaphore,
     tryAcquireSessionLock,
+    isWebLockSupported,
+    probeSessionLock,
+    writeHeartbeat,
+    readHeartbeat,
+    readHeartbeats,
+    pruneHeartbeats,
   };
 };

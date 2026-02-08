@@ -13,6 +13,8 @@ type BrowserGlobals = Window & {
   __HDB_MENU_BUILDERS__?: unknown;
   __HDB_PLUGIN_DEFS__?: unknown[];
   __HDB_GET_WORKER_CLIENT_HOOK?: ReturnType<typeof getWorkerClientHook>;
+  __HDB_DEBUG_DUMP__?: (options?: { limit?: number }) => Promise<unknown[]>;
+  __HDB_DEBUG_CLEAR__?: () => Promise<void>;
 };
 
 const logWarning = (message: string, error?: unknown) => {
@@ -27,6 +29,76 @@ const logWarning = (message: string, error?: unknown) => {
 };
 
 let initialized = false;
+
+type DebugLogRecord = {
+  id?: number;
+  ts?: number;
+  level?: string;
+  tag?: string;
+  message?: string;
+  dataText?: string;
+};
+
+const openDebugLogDb = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('indexedDB is not available'));
+      return;
+    }
+    const request = indexedDB.open('hidb-debug-log', 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('logs')) {
+        db.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('Failed to open debug log DB'));
+  });
+};
+
+const readDebugLogs = async (limit: number): Promise<DebugLogRecord[]> => {
+  const db = await openDebugLogDb();
+  return new Promise((resolve, reject) => {
+    const logs: DebugLogRecord[] = [];
+    const tx = db.transaction('logs', 'readonly');
+    const store = tx.objectStore('logs');
+    const request = store.openCursor(null, 'prev');
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor || logs.length >= limit) {
+        resolve(logs.slice().reverse());
+        return;
+      }
+      logs.push(cursor.value as DebugLogRecord);
+      cursor.continue();
+    };
+    request.onerror = () => reject(request.error ?? new Error('Failed to read debug logs'));
+    tx.oncomplete = () => {
+      db.close();
+    };
+    tx.onerror = () => {
+      db.close();
+    };
+  });
+};
+
+const clearDebugLogs = async (): Promise<void> => {
+  const db = await openDebugLogDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction('logs', 'readwrite');
+    const store = tx.objectStore('logs');
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error('Failed to clear debug logs'));
+    tx.oncomplete = () => {
+      db.close();
+    };
+    tx.onerror = () => {
+      db.close();
+    };
+  });
+};
 
 export function initializeBrowserGlobals(): void {
   if (initialized) return;
@@ -50,6 +122,25 @@ export function initializeBrowserGlobals(): void {
 
   const globalWindow = window as BrowserGlobals;
   globalWindow.__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
+  globalWindow.__HDB_DEBUG_DUMP__ = async (options?: { limit?: number }) => {
+    const limit = typeof options?.limit === 'number' ? options.limit : 2000;
+    try {
+      const logs = await readDebugLogs(limit);
+      console.log('[HDB][DebugLog] dump', logs);
+      return logs;
+    } catch (error) {
+      console.warn('[HDB][DebugLog] dump failed', error);
+      return [];
+    }
+  };
+  globalWindow.__HDB_DEBUG_CLEAR__ = async () => {
+    try {
+      await clearDebugLogs();
+      console.log('[HDB][DebugLog] cleared');
+    } catch (error) {
+      console.warn('[HDB][DebugLog] clear failed', error);
+    }
+  };
 
   void globalWindow.__HDB_UI_PLUGIN_READY__?.catch(() => {
     /* swallow to avoid unhandled rejection */

@@ -863,11 +863,67 @@ const upsertBuildSessionSnapshot = async (
   await shapeMutationAPIImpl.upsertBuildSession(record);
 };
 
+type BuildSessionUpdateState = {
+  timer: ReturnType<typeof setTimeout> | null;
+  pending: boolean;
+  running: boolean;
+  overrides?: {
+    status?: ShapeBuildSessionRecord['status'];
+    stopReason?: ShapeBuildStopReason;
+    canResume?: boolean;
+    completedAt?: number;
+  };
+};
+
+const BUILD_SESSION_UPDATE_DEBOUNCE_MS = 1000;
+const buildSessionUpdateStates = new Map<string, BuildSessionUpdateState>();
+
+const scheduleBuildSessionUpdate = (
+  nodeId: NodeId,
+  overrides?: {
+    status?: ShapeBuildSessionRecord['status'];
+    stopReason?: ShapeBuildStopReason;
+    canResume?: boolean;
+    completedAt?: number;
+  },
+): void => {
+  const key = String(nodeId);
+  const state = buildSessionUpdateStates.get(key) ?? {
+    timer: null,
+    pending: false,
+    running: false,
+  };
+  if (!state.running && state.timer) {
+    clearTimeout(state.timer);
+    state.timer = null;
+  }
+  state.pending = true;
+  state.overrides = overrides ?? state.overrides;
+  const run = async () => {
+    if (state.running) return;
+    state.timer = null;
+    state.running = true;
+    try {
+      const nextOverrides = state.overrides;
+      state.overrides = undefined;
+      state.pending = false;
+      await updateBuildSessionFromTasks(nodeId, nextOverrides);
+    } finally {
+      state.running = false;
+      if (state.pending) {
+        state.timer = setTimeout(run, BUILD_SESSION_UPDATE_DEBOUNCE_MS);
+      }
+    }
+  };
+  state.timer = setTimeout(run, BUILD_SESSION_UPDATE_DEBOUNCE_MS);
+  buildSessionUpdateStates.set(key, state);
+};
+
 const startSessionTracking = (nodeId: NodeId): void => {
   const key = String(nodeId);
   if (sessionSubscriptions.has(key)) return;
   const unsubscribe = onTaskQueueUpdate(nodeId, () => {
-    void updateBuildSessionFromTasks(nodeId);
+    scheduleBuildSessionUpdate(nodeId);
   });
   sessionSubscriptions.set(key, unsubscribe);
 };
@@ -905,9 +961,33 @@ const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
     }
   });
   if (patches.length === 0) return;
-  await taskQueue.transaction('rw', taskQueue.tasks, async () => {
-    await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
+  const debugTag = 'normalize-task-queue-2026-02-09-0334';
+  const startedAt = Date.now();
+  console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields start', {
+    tag: debugTag,
+    nodeId,
+    patchCount: patches.length,
   });
+  let waitTimer: ReturnType<typeof setInterval> | null = null;
+  waitTimer = setInterval(() => {
+    console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields waiting', {
+      tag: debugTag,
+      nodeId,
+      elapsedMs: Date.now() - startedAt,
+    });
+  }, 5000);
+  try {
+    await taskQueue.transaction('rw', taskQueue.tasks, async () => {
+      await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
+    });
+    console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields done', {
+      tag: debugTag,
+      nodeId,
+      elapsedMs: Date.now() - startedAt,
+    });
+  } finally {
+    if (waitTimer) clearInterval(waitTimer);
+  }
 };
 
 const getPauseState = (nodeId: NodeId): PauseState => {

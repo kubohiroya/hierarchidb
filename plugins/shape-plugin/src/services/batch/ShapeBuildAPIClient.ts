@@ -1,6 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  EphemeralShapeAPI,
   ShapeBuildSessionRecord,
   ShapeBuildSessionSummary,
   ShapeBuildStage,
@@ -634,7 +633,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
 }
 
-export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
+export class EphemeralShapeApiImpl {
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray();
   }

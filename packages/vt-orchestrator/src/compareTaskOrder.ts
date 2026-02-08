@@ -38,6 +38,12 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   let failureTaskId: string | null = null;
   let activeWorkers = 0;
   const workerPromises: Promise<void>[] = [];
+  let loggedSummary = false;
+  let loggedTaskStart = 0;
+  let loggedTaskUpdate = 0;
+  let loggedTaskDone = 0;
+  let loggedTaskError = 0;
+  const maxTaskLogs = 2;
 
   const extractTaskId = (error: unknown): string | null => {
     if (!error || typeof error !== 'object') return null;
@@ -92,6 +98,20 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     return used / limit;
   };
 
+  const logStageSummary = (): void => {
+    if (loggedSummary) return;
+    loggedSummary = true;
+    const heapRatio = readHeapUsageRatio();
+    console.warn('[vt-orchestrator][runStageTasks] stage summary', {
+      nodeId,
+      stage,
+      pending: pending.length,
+      desiredConcurrent,
+      maxConcurrentLimit,
+      heapUsedRatio: heapRatio,
+    });
+  };
+
   const adjustConcurrency = (): void => {
     if (!dynamicConfig) return;
     const usageRatio = readHeapUsageRatio();
@@ -107,6 +127,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
 
   const runNext = async () => {
     while (true) {
+      logStageSummary();
       if (aborted || abortSignal?.aborted) return;
       if (activeWorkers > desiredConcurrent) return;
       const index = cursor;
@@ -117,14 +138,45 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         await waitIfPaused();
       }
       if (aborted || abortSignal?.aborted) return;
+      if (loggedTaskStart < maxTaskLogs) {
+        loggedTaskStart += 1;
+        const inputKeys = task.inputData && typeof task.inputData === 'object'
+          ? Object.keys(task.inputData as Record<string, unknown>)
+          : null;
+        console.warn('[vt-orchestrator][runStageTasks] task start', {
+          nodeId,
+          stage,
+          taskId: task.taskId,
+          index,
+          inputKeys,
+        });
+      }
       await updateTask(db, task.taskId, {
         status: 'running',
         startedAt: Date.now(),
         progress: 0,
       });
+      if (loggedTaskUpdate < maxTaskLogs) {
+        loggedTaskUpdate += 1;
+        console.warn('[vt-orchestrator][runStageTasks] task status updated', {
+          nodeId,
+          stage,
+          taskId: task.taskId,
+        });
+      }
 
       try {
         const result = await handler(task as TaskQueueRecord<TInput, TOutput>);
+        if (loggedTaskDone < maxTaskLogs) {
+          loggedTaskDone += 1;
+          console.warn('[vt-orchestrator][runStageTasks] task done', {
+            nodeId,
+            stage,
+            taskId: task.taskId,
+            status: result.status ?? 'completed',
+            progress: result.progress ?? 100,
+          });
+        }
         if (stopOnFailure && (aborted || abortSignal?.aborted) && task.taskId !== failureTaskId) {
           const reason = failureError ? failureError.message : 'aborted';
           await markTaskFailed(task.taskId, `aborted: ${reason}`);
@@ -157,6 +209,16 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           completedAt: Date.now(),
         });
       } catch (error) {
+        if (loggedTaskError < maxTaskLogs) {
+          loggedTaskError += 1;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.warn('[vt-orchestrator][runStageTasks] task error', {
+            nodeId,
+            stage,
+            taskId: task.taskId,
+            error: errorMessage,
+          });
+        }
         const err = normalizeErrorMessage(error);
         if (skipOnFailure) {
           await markTaskSkipped(task.taskId, err);

@@ -255,7 +255,8 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/plugin-base#build"
+          "@hierarchidb/plugin-base#build",
+          "@hierarchidb/vt-orchestrator#build"
         ]
       }
     }

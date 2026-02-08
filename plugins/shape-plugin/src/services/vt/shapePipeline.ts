@@ -132,7 +132,13 @@ const preparePipelineRun = async (context: ShapePipelineContext): Promise<void> 
 
 const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> => {
   const { params, taskQueue, resumeExistingTasks, failureHandling, buildContinuationPolicy } = context;
-  return runShapeFetchStageSection({
+  console.warn('[ShapePipeline][Stage] fetch start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks,
+    buildContinuationPolicy,
+  }));
+  const stopAfterStage = await runShapeFetchStageSection({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
     selectedArrayByCountries: params.selectedArrayByCountries,
@@ -145,6 +151,12 @@ const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> =>
     buildContinuationPolicy,
     pipelineRunId: params.pipelineRunId,
   });
+  console.warn('[ShapePipeline][Stage] fetch done', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    stopAfterStage,
+  }));
+  return stopAfterStage;
 };
 
 const runTransformStage = async (context: ShapePipelineContext): Promise<boolean> => {
@@ -161,7 +173,14 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     loadCountryLookup,
     ephemeralStore,
   } = context;
-  return runShapeTransformStageSection({
+  console.warn('[ShapePipeline][Stage] transform start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks,
+    maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+    geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
+  }));
+  const stopAfterStage = await runShapeTransformStageSection({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     bands,
@@ -177,6 +196,12 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     diffBuildEnabled,
     recyclingAllowlist,
   });
+  console.warn('[ShapePipeline][Stage] transform done', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    stopAfterStage,
+  }));
+  return stopAfterStage;
 };
 
 const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
@@ -190,6 +215,12 @@ const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
     loadContinentLookup,
     ephemeralStore,
   } = context;
+  console.warn('[ShapePipeline][Stage] vt start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks,
+    maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+  }));
   await runShapeVtStageSection({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
@@ -203,6 +234,10 @@ const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
     ephemeralStore,
     loadContinentLookup,
   });
+  console.warn('[ShapePipeline][Stage] vt done', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+  }));
 };
 
 const runMetadataStage = async (context: ShapePipelineContext): Promise<void> => {

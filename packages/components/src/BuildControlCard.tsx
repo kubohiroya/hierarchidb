@@ -12,6 +12,7 @@ type BuildControlCardProps = {
   controlLabel?: string;
   pauseLabel?: string;
   pauseLoading?: boolean;
+  pausePending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
   startIcon?: ReactNode;
@@ -26,6 +27,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                                                              controlLabel,
                                                              pauseLabel,
                                                              pauseLoading,
+                                                             pausePending,
                                                              startLabel,
                                                              resumeLabel,
                                                              startIcon,
@@ -46,9 +48,9 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const computedIcon = status === 'paused'
     ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
     : (startIcon ?? <PlayArrowIcon fontSize="small" />);
-  const disablePause = status !== 'running' || !onPause || pauseLoading;
-  const disableStart = !onResume || status === 'running';
-  const isLoading = status === 'running';
+  const disablePause = status !== 'running' || !onPause || pauseLoading || pausePending;
+  const disableStart = !onResume || status === 'running' || pausePending;
+  const isLoading = status === 'running' && !pausePending;
 
   return (
     <Box

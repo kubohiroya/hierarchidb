@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
+import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../services/utils/utils.js';
-import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCES } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCE_BY_NAME, SHAPE_DATA_SOURCES } from '../../../common/types/index.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -26,6 +27,11 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   );
 
   const dataSourceId = draftData.buildConfig?.dataSourceName;
+  const iso = useIsoCountries();
+  const maxAdminLevel = useMemo(() => {
+    if (!dataSourceId) return 0;
+    return SHAPE_DATA_SOURCE_BY_NAME[dataSourceId]?.maxAdminLevel ?? 0;
+  }, [dataSourceId]);
 
   useEffect(() => {
     if (dataSourceId) return;
@@ -39,6 +45,22 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     }
     onChange({ buildConfig: DEFAULT_BUILD_CONFIG });
   }, [dataSourceId, draftData.buildConfig, onChange]);
+
+  useEffect(() => {
+    const existingSelection = draftData.selectedArrayByCountries;
+    if (!dataSourceId) return;
+    if (existingSelection && !Array.isArray(existingSelection)) return;
+    if (iso.status !== 'ready') return;
+    if (iso.countries.length === 0) return;
+    const nextSelection: Record<string, boolean[]> = {};
+    iso.countries.forEach((country) => {
+      nextSelection[country.code] = Array.from(
+        { length: maxAdminLevel + 1 },
+        (_, idx) => idx === 0,
+      );
+    });
+    onChange({ selectedArrayByCountries: nextSelection });
+  }, [dataSourceId, draftData.selectedArrayByCountries, iso, maxAdminLevel, onChange]);
 
   const handleChange = useCallback((next: {
     dataSourceId?: string;

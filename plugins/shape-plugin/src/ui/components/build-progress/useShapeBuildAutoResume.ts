@@ -14,6 +14,7 @@ type Args = {
   hasDataSource: boolean;
   hasSelection: boolean;
   isProcessingValid: boolean;
+  isLockSupported: boolean;
 };
 
 export const useShapeBuildAutoResume = ({
@@ -27,6 +28,7 @@ export const useShapeBuildAutoResume = ({
   hasDataSource,
   hasSelection,
   isProcessingValid,
+  isLockSupported,
 }: Args) => {
   const [isStartPending, setIsStartPending] = useState(false);
   const canStartOrResume = useMemo(() => (
@@ -35,7 +37,8 @@ export const useShapeBuildAutoResume = ({
     && hasDataSource
     && hasSelection
     && isProcessingValid
-  ), [buildStatus, hasDataSource, hasSelection, isProcessingValid, isStartPending]);
+    && isLockSupported
+  ), [buildStatus, hasDataSource, hasSelection, isLockSupported, isProcessingValid, isStartPending]);
 
   useEffect(() => {
     if (!isStartPending) return;
@@ -89,6 +92,7 @@ export const useShapeBuildAutoResume = ({
 
   const startOrResume = useCallback(async (options?: { autoResume?: boolean }) => {
     if (isStartPending) return;
+    if (!isLockSupported) return;
     setIsStartPending(true);
     const ok = await handleStartOrResume({
       forceRestart: hasFailedFetchTasks,
@@ -101,6 +105,7 @@ export const useShapeBuildAutoResume = ({
 
   useEffect(() => {
     if (!activeNodeId || !canStartOrResume || isStartPending) return;
+    if (!isLockSupported) return;
     if (typeof window === 'undefined') return;
     const storage = window.localStorage;
     if (!storage || typeof storage.getItem !== 'function' || typeof storage.removeItem !== 'function') return;

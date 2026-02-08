@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
-import { pickAdminCode, pickAdminName, type GeometryEngine } from '@hierarchidb/gis-sdk';
+import { initGeos, pickAdminCode, pickAdminName, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
@@ -28,6 +28,9 @@ export type ShapeMetadataStageParams = {
 };
 
 export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): Promise<void> => {
+  if (params.geometryEngine === 'geos') {
+    await initGeos();
+  }
   const featureMetadataRows = await buildFeatureMetadataFromTransformCaches(
     params.nodeId,
     params.dataSource,

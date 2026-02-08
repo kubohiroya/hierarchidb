@@ -1,3 +1,175 @@
+2616) fix/shape-api/type-reexports-explicit (P1) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/shape-api/type-reexports-explicit
+- 依存: なし
+- 受け入れ基準: `packages/shape-api/src/index.ts` の `export type *` が明示的な `export type { ... }` に置換される／`dist/index.js` に `import { NodeId }` が出力されない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/shape-api/src/index.ts`
+- ロールバック手順: 変更差分を revert して `export type *` に戻す
+- チェックリスト:
+  - `export type *` を明示的な `export type { ... }` に置換する
+  - `pnpm --filter @hierarchidb/shape-api build` を実行する
+  - `dist/index.js` に `import { NodeId }` が残らないことを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 00:06 JST shape-api の type re-export 明示化に着手。
+  - update: 2026-02-09 00:20 JST `packages/shape-api/package.json` の build を `tsc --project tsconfig.json --outDir dist` に切替。
+  - update: 2026-02-09 00:21 JST `pnpm --filter @hierarchidb/shape-api build` exit 0。`dist/index.js` に `NodeId` import が出力されないことを確認。
+  - update: 2026-02-09 00:11 JST `packages/shape-api/src/index.ts` を明示的な type export に置換し、`pnpm --filter @hierarchidb/shape-api build` を実行。
+  - blocked: 2026-02-09 00:12 JST `dist/index.js` に `import { NodeId }` が残り、回避策2だけでは解消せず。tsdown が type re-export を値 import として残している可能性。
+
+2615) fix/ui/shape-build-step-stage-transition-ref (P1) — 完了 (2026-02-08)
+- ブランチ名: codex/fix/ui/shape-build-step-stage-transition-ref
+- 依存: なし
+- 受け入れ基準: `useShapeBuildStep.ts` の `stageTransitionRef` 初期化順による `ReferenceError` が解消される／再現ログのエラーが出ない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- ロールバック手順: 変更差分を revert し、従来の初期化順へ戻す
+- チェックリスト:
+  - `stageTransitionRef` の宣言順を修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 23:53 JST `stageTransitionRef` 初期化順エラーの修正に着手。
+  - update: 2026-02-08 23:56 JST `stageTransitionRef` を `heartbeatFresh` の `useMemo` より前に移動して初期化順を修正。
+  - done: 2026-02-08 23:57 JST `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+
+2617) fix/ui/shape-task-card-spacing (P3) — 完了 (2026-02-09)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: タスクカードの「タイトル＋Chip」行の下の余白が解消され、余白分が message 行の下に移動する／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来の余白配置へ戻す
+- チェックリスト:
+  - タイトル＋Chip行の余白を解消し message 行の下に余白を移動する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 01:04 JST タスクカードの余白移動に着手。
+  - done: 2026-02-09 01:06 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2618) fix/ui/shape-task-card-header-align (P3) — 完了 (2026-02-09)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: タスクカードの「タイトル＋Chip」行が下揃えになる／行の下に 2px の余白が付与される／高さ 56px と行順（タイトル+Chip → 進捗バー → message）が維持される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来の行揃えと余白へ戻す
+- チェックリスト:
+  - タイトル＋Chip 行を下揃えにする
+  - タイトル＋Chip 行の下に 2px の余白を追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 01:07 JST タスクカードのタイトル＋Chip 行の下揃えと余白追加に着手。
+  - done: 2026-02-09 01:08 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2616) fix/ui/shape-task-card-order-message-tone (P3) — 完了 (2026-02-09)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: タスクカードの行順が「タイトル+Chip → 進捗バー → message」になる／高さが 56px に調整される（維持）／message の文字色が `text.disabled` 相当に薄くなる／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来の行順/色へ戻す
+- チェックリスト:
+  - タスクカードの行順を指定順へ変更する
+  - message の色を薄くする
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 01:02 JST タスクカードの行順/色調整に着手。
+  - done: 2026-02-09 01:01 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2615) fix/ui/shape-task-summary-order (P3) — 完了 (2026-02-09)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: ステージサマリーで Chip 行が進捗バーの上に表示される／タスク一覧の各タスクカードでタイトル+Chip行が進捗バーの上に表示される／タスクカードの高さが調整される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来の行順/高さへ戻す
+- チェックリスト:
+  - ステージサマリーの Chip 行と進捗バーの順序を入れ替える
+  - タスクカードの行順を入れ替え、高さを調整する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 23:47 JST Step5 サマリー/タスクカードの行順入れ替えと高さ調整に着手。
+  - update: 2026-02-09 00:54 JST `pnpm -w turbo run build --filter @hierarchidb/components` exit 0（core-types/ui-lru-splitview/components で tsdown define 警告あり）。
+  - done: 2026-02-09 00:58 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2614) fix/ui/shape-task-title-fontsize (P3) — 完了 (2026-02-08)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: shape Step5 のタスク一覧でタイトルのフォントサイズが現状より 2px 大きい／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来のタイトルフォントサイズへ戻す
+- チェックリスト:
+  - タスクタイトルのフォントサイズを 2px 大きくする
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 23:13 JST Step5 タスクタイトルのフォントサイズ調整に着手。
+  - done: 2026-02-08 23:44 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2613) fix/ui/shape-task-message-spacing (P3) — 完了 (2026-02-08)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: shape Step5 のタスク一覧で message 行の下に 2px の margin が付与される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 変更差分を revert し、従来の message 行レイアウトへ戻す
+- チェックリスト:
+  - message 行の下に 2px の margin を追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 23:02 JST Step5 タスク message 行の余白調整に着手。
+  - done: 2026-02-08 23:11 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2612) fix/ui/shape-step5-chip-spacing (P3) — 完了 (2026-02-08)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: Step5 ステージサマリーの Chip 行（Completed/Skipped/Failed）が進捗バー直下で上に 2px の margin を持つ／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の Chip 行レイアウトへ戻す
+- チェックリスト:
+  - Chip 行の上に 2px の margin を追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 22:53 JST Step5 Chip 行の余白調整に着手。
+  - update: 2026-02-08 22:57 JST `pnpm -w turbo run build --filter @hierarchidb/components` exit 0（core-types/ui-lru-splitview/components で tsdown define 警告あり）。
+  - done: 2026-02-08 23:00 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components` exit 0。
+
+2611) fix/ui/shape-step5-progress-header-layout (P2) — 完了 (2026-02-08)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: ステージサマリーの Chip 行が右寄せになる／ビルド操作カードから「このステージの経過時間」「このステージの残り時間（概算）」が撤去され「総経過時間」のみ残る／全体進捗サマリー撤去後に残っている状態表示（Build paused など）が撤去される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx` / `packages/components/src/BuildStepStagePanel.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts` / `plugins/shape-plugin/src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx`
+- ロールバック手順: 変更差分を revert し、従来の Chip 配置/ビルド操作カード/状態表示へ戻す
+- チェックリスト:
+  - ステージサマリー Chip 行を右寄せにする
+  - ビルド操作カードのステージ経過/残り表示を撤去する
+  - ステータス表示（Build paused 等）の領域を撤去する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 22:46 JST Step5 進捗ヘッダ/操作カード/状態表示の調整に着手。
+  - update: 2026-02-08 22:50 JST `pnpm -w turbo run build --filter @hierarchidb/components` exit 0（core-types/ui-lru-splitview/components で tsdown define 警告あり）。
+  - done: 2026-02-08 22:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-i18n` exit 0。
+
+2610) fix/ui/shape-step5-progress-summary-layout (P2) — 完了 (2026-02-08)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: shape Step5 build 画面の上部全体進捗サマリーカードが撤去される／各ステージサマリーで進捗率%と▼の間に「経過時間 0時間0分0秒 ・ 推計残り 0時間0分0秒」が i18n キー経由で表示される／ステージ説明文行が撤去され余白が詰まる／進捗バー直下に Chip 行が表示され (アイコン・英文ラベル・数字) 形式で Completed も省略せず「完了数/全体数」で表示される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `packages/ui/batch-progress/**` / `packages/ui/i18n/public/locales/{ja,en}/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のサマリー表示/ラベル/レイアウトへ戻す
+- チェックリスト:
+  - 全体進捗サマリーカードを撤去する
+  - ステージサマリーに経過時間/推計残り表示を追加し i18n 化する
+  - ステージ説明文行を削除しレイアウトを詰める
+  - 進捗バー直下に Chip 行を追加し Completed ラベルの省略を解除する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 22:33 JST shape Step5 build のサマリー/UI調整に着手。
+  - blocked: 2026-02-08 22:40 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-i18n` が `stageHeaderMeta` 型差分（@hierarchidb/components の dist 未更新）で失敗。
+  - update: 2026-02-08 22:41 JST `pnpm -w turbo run build --filter @hierarchidb/components` で dist を更新。
+  - done: 2026-02-08 22:44 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-i18n` exit 0。
+
 2609) refactor/shape/metadata-terminology-and-reset-scope (P1) — 進行中 (2026-02-08)
 - ブランチ名: codex/refactor/shape/metadata-terminology-and-reset-scope
 - 依存: なし
@@ -84,6 +256,9 @@
   - update: 2026-02-08 19:20 JST Running 100% を Completed として正規化する処理とテスト更新を追加。
   - blocked: 2026-02-08 19:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が useShapeBuildTaskSync.ts の status 型エラーで失敗。
   - update: 2026-02-08 19:27 JST status 正規化の型修正後、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types などで tsdown define 警告あり）。
+  - update: 2026-02-08 22:34 JST Fetch/Transform/VT 全ステージで Running 100% が Completed に安定表示されるよう拡張対応に着手。
+  - update: 2026-02-08 22:36 JST Fetch/Transform/VT の Running 100% 正規化を確認するユニットテストを追加。
+  - update: 2026-02-08 22:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types などで tsdown define 警告あり）。
 
 2604) fix/shape/step3-country-metadata-cache (P2) — 進行中 (2026-02-08)
 - ブランチ名: codex/fix/shape/step3-country-metadata-cache
@@ -170,6 +345,26 @@
   - start: 2026-02-07 21:20 JST mapRoute の dynamic import 失敗調査に着手。
   - blocked: 2026-02-07 21:24 JST sandbox から dev server を起動すると listen EPERM (0.0.0.0:4200) で失敗。ローカル起動ログが必要。
   - update: 2026-02-07 21:25 JST escalated 実行も timeout でログ取得できず。
+
+2602) feat/geo/geos-wasm-ui-worker (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/feat/geo/geos-wasm-ui-worker
+- 依存: なし
+- 受け入れ基準: UI 用 geos Worker を Comlink 経由で遅延起動できる／30秒アイドルで terminate する／RPC 完了時にアイドルタイマーが更新される／build worker 側で geos 利用前に initGeos を保証する／UI 側の geos 利用が RPC 経由になる／`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/geos/**` / `packages/gis-sdk/src/geometryEngine.ts` / `plugins/shape-plugin/src/services/vt/**` / `packages/vt-orchestrator/src/transform/**`（必要に応じて）
+- ロールバック手順: 追加した geos Worker/Comlink クライアントと初期化分岐を revert し、turf のみの経路に戻す
+- チェックリスト:
+  - geos Worker（UI用）と Comlink API を実装する
+  - UI クライアントで遅延起動・多重起動防止・30秒アイドル終了を実装する
+  - build worker 側の geos 初期化を使用前に保証する
+  - UI の geos 利用箇所が RPC 経由になっていることを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 14:00 JST geos-wasm UI Worker 化と build worker 初期化保証の実装に着手。
+  - update: 2026-02-08 14:20 JST UI 向け geos Worker/Client を追加し、fetch/metadata/vt ステージで geos 初期化を保証。
+  - blocked: 2026-02-08 14:30 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` が app の GeoJSON 型未解決と releaseProxy 型不一致で失敗。
+  - blocked: 2026-02-08 14:40 JST app の geosWorkerClient で GeoJSON 戻り値の型が合わず typecheck 失敗。
+  - done: 2026-02-08 14:50 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` exit 0。
 
 2601) chore/i18n/treeconsole-breadcrumb-tooltip (P3) — 完了 (2026-02-08)
 - ブランチ名: なし
@@ -890,6 +1085,7 @@
 - 運用ログ:
   - start: 2026-02-07 16:00 JST geos-wasm 導入方針の整理に着手。
   - done: 2026-02-07 16:10 JST UI/Worker 配置・初期化・ロード戦略とラッパ層の方針を整理。
+  - update: 2026-02-08 13:45 JST UI は Comlink で geos-wasm Worker を必要時起動し 30 秒アイドルで終了、ビルド Worker は初期化時に geos をロードする前提で設計案を整理。
 
 2569) chore/geo/geos-wasm-wrapper-design (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/geos-wasm-wrapper-design
@@ -1836,6 +2032,17 @@
   - update: 2026-02-06 15:05 JST transform を国→ズーム帯順に分割実行し、フェイズごとに逐次 put+run するよう変更。
   - update: 2026-02-06 15:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-02-06 16:15 JST transform ステージの unused import を整理し typecheck 通過を確認。
+  - update: 2026-02-09 04:20 JST taskQueue の listTasks 系で sortBy('index') を外し、IndexedDB 読み出し負荷低減の修正に着手。
+  - update: 2026-02-09 04:26 JST taskQueue の listTasks/listTasksByStage/listTasksByStatus/listTasksByStageAndStatus から sortBy('index') を撤去。
+  - update: 2026-02-09 04:27 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 04:40 JST buildTasks の複合インデックス（nodeId+index ほか）を追加し、listTasks 系を複合インデックスの between へ切替。
+  - update: 2026-02-09 04:49 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 05:02 JST build session 更新の listTasks 多重呼び出しを抑えるため、updateBuildSessionFromTasks をデバウンスする修正に着手。
+  - update: 2026-02-09 05:07 JST updateBuildSessionFromTasks をノード単位で 1000ms デバウンスし、タスク更新連打による listTasks 連続実行を抑制。
+  - update: 2026-02-09 05:08 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 05:16 JST taskQueue のデバッグログ（listTasks 待機ログ/追加 get/永続ログ）を抑制する修正に着手。
+  - update: 2026-02-09 05:20 JST taskQueue のデバッグログ/待機ログ/追加 get を抑制し、bulkPut/bulkGet・listTasks の count を撤去。
+  - update: 2026-02-09 05:21 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
 
 2529) refactor/shape-transform/adaptive-only (P1) — 進行中 (2026-02-05)
 - ブランチ名: refactor/shape-transform/adaptive-only
@@ -17296,3 +17503,116 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-08 21:12 JST 設計を `docs/session-web-locks-heartbeat-design.md` に整理（API/スキーマ/判定ロジック/リスク）。
   - update: 2026-02-08 21:18 JST Build ステップの時間計測仕様（総経過/ステージ経過/残り時間）を同設計書へ追記。
   - update: 2026-02-08 21:26 JST Lock 競合・非対応環境・heartbeat 粒度・stage 切替・pause/resume・retention・命名規約の詳細仕様を追記。
+
+2612) feat/session/web-locks-heartbeat-implementation (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/feat/session/web-locks-heartbeat-implementation
+- 依存: 2611
+- 受け入れ基準: `@hierarchidb/session-coordinator` の BroadcastChannel 依存が削除され Web Locks + Heartbeat に移行する／`useBuildSessionSnapshots` が heartbeat pull に更新される／shape/route の crash/suspend 判定が lock/heartbeat ベースになる／Web Locks 非対応時は Start/Resume が無効化される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/session-coordinator/src/**` / `packages/ui/session-coordinator/src/**` / `app/src/hooks/build-session/**` / `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/route-plugin/src/ui/components/steps/**`
+- ロールバック手順: 変更差分を revert し、BroadcastChannel ベースの実装へ戻す
+- チェックリスト:
+  - session-coordinator に heartbeat/lock probe API を実装する
+  - shape/route の heartbeat 送信と crash/suspend 判定を更新する
+  - useBuildSessionSnapshots を heartbeat pull に更新する
+  - Web Locks 非対応時の UI 制限を実装する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 21:30 JST Web Locks + Heartbeat 実装へ着手。
+  - blocked: 2026-02-08 21:31 JST `git checkout -b codex/feat/session/web-locks-heartbeat-implementation` が ref 作成不可で失敗。
+  - update: 2026-02-08 22:06 JST `pnpm -w turbo run build --filter @hierarchidb/session-coordinator` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-08 22:10 JST `pnpm -w turbo run typecheck --filter @hierarchidb/session-coordinator --filter @hierarchidb/ui-session-coordinator --filter @hierarchidb/app --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - done: 2026-02-08 22:10 JST Web Locks + Heartbeat 置換の実装を完了。
+  - update: 2026-02-08 22:24 JST Step5 タイマー更新・クラッシュ検知の挙動調整と Pause/Start UI 連動の修正に着手。
+  - update: 2026-02-08 22:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-08 22:44 JST クラッシュ後に自動再開状態へ戻る問題の修正に着手。
+  - update: 2026-02-08 22:51 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-08 23:02 JST fetch→transform 移行時の誤停止判定とクラッシュ再発の修正に着手。
+  - update: 2026-02-08 23:10 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-08 23:18 JST ビルド開始直後の停止ダイアログ抑止（10秒猶予）対応に着手。
+  - update: 2026-02-08 23:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-08 23:43 JST fetch→transform 移行時の停止判定猶予/自動 pause 仕様での修正に着手。
+  - update: 2026-02-08 23:49 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 00:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 00:23 JST クラッシュ直前の停止判定/再開判定を絞るログ埋め込みに着手。
+  - update: 2026-02-09 00:25 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 00:29 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 00:31 JST transform ステージ停止点の特定ログを追加する作業に着手。
+  - update: 2026-02-09 00:31 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 03:05 JST transform タスク更新が DB トランザクション待ちで停滞する疑いのため、taskQueue の putTasks 周辺にログ追加を準備。
+  - update: 2026-02-09 03:08 JST `packages/vt-orchestrator/src/task/taskQueue.ts` に putTasks の wait ログ（bulkGet/bulkPut）を追加。
+  - update: 2026-02-09 03:09 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types で tsdown define 警告あり）。
+  - update: 2026-02-09 03:26 JST buildTasks の rw トランザクション待ちを特定するため、transform ハンドラと task queue の遅延ログ追加に着手。
+  - update: 2026-02-09 03:30 JST `createTransformByBandHandler.ts` の buildTasks+transformCache トランザクションに待機ログを追加。
+  - update: 2026-02-09 03:31 JST `taskQueue.ts` の listTasks/listTasksByStage/listTasksByStageAndStatus に待機ログを追加。
+  - update: 2026-02-09 03:32 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types で tsdown define 警告あり）。
+  - update: 2026-02-09 03:40 JST 永続デバッグログ（IndexedDB: hidb-debug-log）を追加し、taskQueue/transform の TaskDebug を永続化するよう更新。
+  - update: 2026-02-09 03:41 JST `app/src/router/init/initializeBrowserGlobals.ts` に `window.__HDB_DEBUG_DUMP__()` / `__HDB_DEBUG_CLEAR__()` を追加。
+  - update: 2026-02-09 03:42 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/app` exit 0（core-types/plugin-base で tsdown define 警告あり）。
+  - update: 2026-02-09 03:48 JST listTasks 系の遅延時に buildTasks 件数を記録するログ追加に着手。
+  - update: 2026-02-09 03:51 JST listTasks 遅延時に totalTasks/nodeTasks/stageTasks を出力するログを追加。
+  - update: 2026-02-09 03:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types で tsdown define 警告あり）。
+  - update: 2026-02-09 04:06 JST transformCache と buildTasks の同一 rw トランザクションがロック元の疑いのため、分離対応に着手。
+  - update: 2026-02-09 00:35 JST runStageTasks 内のクラッシュ箇所特定ログに着手。
+  - update: 2026-02-09 00:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 00:42 JST transform タスク初回ハングのフェーズ特定ログに着手。
+  - update: 2026-02-09 00:54 JST createTransformByBandHandler の初回タスク用フェーズログ/心拍ログ追加に着手。
+  - blocked: 2026-02-09 00:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` が TS18048 (createTransformByBandHandler.ts: used possibly undefined) で exit 2。
+  - update: 2026-02-09 00:56 JST TS18048 を typeof チェックへ修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 01:12 JST transform デバッグ対象の選定ロジックをノード単位で再選定する修正に着手。
+  - update: 2026-02-09 01:13 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 02:11 JST Vite の vt-orchestrator resolve を src へ固定し、optimizeDeps 除外で prebundle 固定化を防ぐ修正に着手。
+  - update: 2026-02-09 02:14 JST `pnpm build` exit 0（eslint storybook 警告/tsdown define 警告/バンドルサイズ警告あり）。
+  - update: 2026-02-09 02:20 JST TaskDebug ログを console.warn へ切り替える修正に着手。
+  - update: 2026-02-09 02:22 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 02:28 JST fetchCache.get のハング検出ログを追加する修正に着手。
+  - update: 2026-02-09 02:29 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（core-types/plugin-base などで tsdown define 警告あり）。
+  - update: 2026-02-09 02:40 JST TaskDebug が出ないため vt-orchestrator 読み込み確認ログの追加に着手。
+  - blocked: 2026-02-09 02:42 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` が TransformByBandStageContext に nodeId/geometryEngine が存在しないため TS2339 で exit 2。
+  - update: 2026-02-09 02:43 JST handler created ログの参照を transformConfig/bands に修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 02:49 JST runStageTasks の updateTask 後ログを追加する修正に着手。
+  - update: 2026-02-09 02:50 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 02:56 JST updateTask の transaction 内ログ/待機ログを追加する修正に着手。
+  - update: 2026-02-09 02:57 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 03:05 JST updateTask の read-only プローブ/DB イベントログを追加する修正に着手。
+  - update: 2026-02-09 03:06 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 03:16 JST updateTask の status=running 用ログを毎回出す修正に着手。
+  - blocked: 2026-02-09 03:18 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` が taskQueue.ts の shouldLog 参照で TS2304 となり exit 2。
+  - update: 2026-02-09 03:19 JST shouldLog 参照を修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-09 03:34 JST buildTasks の transaction を呼ぶ箇所に待機ログを追加する修正に着手。
+  - update: 2026-02-09 03:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - start: 2026-02-09 07:47 JST Dexie.js 利用の 24/48 時間比較調査に着手。
+  - start: 2026-02-09 08:05 JST Step5→Step4 遷移時ハングの原因調査に着手。
+  - update: 2026-02-09 08:17 JST Step4（build-config）マウント時に `useShapeBuildCacheActions` が `listFeatureMetadata`/`listTransformErrorRecords`/`buildTasks count` を実行し、ビルド中は同一 IndexedDB での RW トランザクションと競合し得る点を確認。48h 内のセッション変更は BroadcastChannel→Dexie heartbeat への移行で、別DB（semaphoreDb）だが追加 I/O となっている。
+2613) fix/shape/step3-country-selection-defaults (P2) — 完了 (2026-02-08)
+- ブランチ名: codex/fix/shape/step3-country-selection-defaults
+- 依存: なし
+- 受け入れ基準: shape ノード作成直後に Step3「国選択」が未訪問でも valid である／国チェックボックス0件でも valid と判定される／全世界各国 Level0 のチェックボックスが Step3 訪問時ではなくノード作成直後に draftData へセットされる／既存挙動に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/data-source/useShapeDataSourceStep.ts` / `plugins/shape-plugin/src/ui/components/country-selection/useShapeCountrySelectionStep.ts` / `plugins/shape-plugin/src/ui/components/steps-provider.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `plugins/shape-plugin/src/ui/__tests__/dialog/shape-dialog-initial-draft.unit.test.tsx`
+- ロールバック手順: 変更差分を revert し、従来の Step3 valid 判定/チェックボックス初期化タイミングへ戻す
+- チェックリスト:
+  - Step3 の valid 判定条件を0件でも valid になるよう修正する
+  - ノード作成直後に Level0 国リストを draftData へ初期化する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 23:08 JST shape Step3 国選択の初期化/valid 判定の見直しに着手。
+  - update: 2026-02-08 23:19 JST Step3 valid 条件を選択非依存へ変更し、デフォルト選択の初期化を Data Source ステップ側へ移動。
+  - update: 2026-02-08 23:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
+  - done: 2026-02-08 23:20 JST Step3 選択初期化のタイミング変更と valid 条件調整を完了。
+2619) refactor/worker/sharedworker-multitab-build-session (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/refactor/worker/sharedworker-multitab-build-session
+- 依存: なし
+- 受け入れ基準: WorkerProvider が Web Locks でタブ間シングルトンを保証し SharedWorker を Comlink expose する構成に再編される／WorkerClient が SharedWorker 接続前提の初期化・再接続フローへ移行し Dedicated Worker モードを維持する／ビルドセッションのタブ超え存在・動作状況通知が BroadcastChannel API へ移行し `packages/session-coordinator` の既存実装をベースに統合される／TreeSubscriptionAPI 等の pub/sub とビルドセッション重要通知（ステージ・完了・エラー）は Comlink callback を維持する／TASKS.md に運用ログとロールバック手順を記載する
+- 影響範囲: `packages/session-coordinator/src/**` / `app/src/worker-runtime/**` / `packages/plugin-service-sdk/src/worker/**` / `packages/runtime-worker/src/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して Dedicated Worker + 既存 Comlink callback / Broadcast 実装に戻す
+- チェックリスト:
+  - Web Locks + SharedWorker による WorkerProvider 初期化フローを整理する
+  - WorkerClient の SharedWorker 対応と Dedicated Worker モードを両立する
+  - BroadcastChannel によるタブ超え通知を `packages/session-coordinator` の実装に寄せて統合する
+  - TreeSubscriptionAPI とビルドセッション重要通知の Comlink callback を維持する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 10:00 JST SharedWorker + Web Locks + BroadcastChannel でのタブ跨ぎビルドセッション再編に着手。
+  - update: 2026-02-08 10:12 JST ExecPlan を `plans/worker-sharedworker-multitab-execplan.md` に作成し、ブランチを `codex/refactor/worker/sharedworker-multitab-build-session` で開始。

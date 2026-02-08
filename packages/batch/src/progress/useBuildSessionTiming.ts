@@ -115,6 +115,27 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
   }, [buildStatus, getSessionRecord, resolvedTaskType, sessionId]);
 
   useEffect(() => {
+    if (!sessionId) return;
+    if (canWrite) return;
+    if (buildStatus !== 'running') return;
+    let cancelled = false;
+    const tick = async () => {
+      const session = await getSessionRecord(sessionId);
+      if (cancelled) return;
+      sessionRef.current = session;
+      setTimingSnapshot(computeTimingSnapshot(session, Date.now(), buildStatus, resolvedTaskType));
+    };
+    void tick();
+    const intervalId = window.setInterval(() => {
+      void tick();
+    }, heartbeatIntervalMs);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [buildStatus, canWrite, getSessionRecord, heartbeatIntervalMs, resolvedTaskType, sessionId]);
+
+  useEffect(() => {
     if (!canWrite) return;
     const session = sessionRef.current;
     if (!session || buildStatus !== 'running') return;

@@ -29,7 +29,12 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
-import { createPollingTracker, createSessionCoordinator, type SessionLockHandle } from '@hierarchidb/session-coordinator';
+import {
+  createSessionCoordinator,
+  type HeartbeatRecord,
+  type SessionTabState,
+  type SessionLockHandle,
+} from '@hierarchidb/session-coordinator';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,
@@ -181,6 +186,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
   const [isPausePending, setIsPausePending] = useState(false);
+  useEffect(() => {
+    if (!isPausePending) return;
+    if (status !== 'running') {
+      setIsPausePending(false);
+    }
+  }, [isPausePending, status]);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
   const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
@@ -209,38 +220,27 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   }, []);
   const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
-  const channelRef = useRef<BroadcastChannel | null>(null);
   const tabIdRef = useRef<string>(coordinator.getTabId());
-  const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
-  const lastBroadcastAtRef = useRef<number | null>(null);
-  const lastBroadcastTabIdRef = useRef<string | null>(null);
-  const lastAckAtRef = useRef<number | null>(null);
-  const lastAckTabIdRef = useRef<string | null>(null);
   const lockRef = useRef<SessionLockHandle | null>(null);
   const lockKeyRef = useRef<string | null>(null);
   const [isLockOwner, setIsLockOwner] = useState(false);
-  const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
+  const [remoteHeartbeat, setRemoteHeartbeat] = useState<HeartbeatRecord<BuildStatus, { percentage: number }> | null>(null);
+  const lastHeartbeatPruneAtRef = useRef<number | null>(null);
+  const localTabStateRef = useRef<SessionTabState>('active');
   const lastAutoResumeAtRef = useRef<number | null>(null);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
   const suspendTimeout = coordinator.quietThresholdTimeout * 3;
-  const getRecentNonActiveState = useCallback((referenceTime: number) => {
-    let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
-    for (const entry of tabStateRef.current.values()) {
-      if (entry.state === 'active') continue;
-      if (!latest || entry.at > latest.at) {
-        latest = entry;
-      }
-    }
-    if (!latest) return null;
-    if (referenceTime - latest.at > suspendTimeout) return null;
-    return latest;
-  }, [suspendTimeout]);
   const heapPauseRef = useRef<number | null>(null);
   const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
   const sessionId = routeNodeId ? String(routeNodeId) : null;
   const lockKey = useMemo(() => (
     sessionId ? `route:${sessionId}` : null
   ), [sessionId]);
+  const isWebLockSupported = coordinator.isWebLockSupported();
+  const remoteUpdatedAt = remoteHeartbeat?.updatedAt ?? null;
+  const remoteExpiresAt = remoteHeartbeat?.expiresAt ?? null;
+  const remoteTabState = remoteHeartbeat?.tabState ?? null;
+  const remoteTabId = remoteHeartbeat?.tabId ?? null;
   const crashInsight = useRouteBuildCrashInsight({ draft, nodeId: routeNodeId ? String(routeNodeId) : null });
   const monitorKey = useMemo(
     () => getBuildMonitorKey(buildMonitorConfig, routeNodeId ? String(routeNodeId) : null),
@@ -263,14 +263,16 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
     if (!lockKey) return false;
     if (lockRef.current) return true;
+    if (!isWebLockSupported) {
+      if (options?.notifyOnFailure) {
+        notify.error('Web Locks API is unavailable.');
+      }
+      return false;
+    }
     const lock = await coordinator.tryAcquireSessionLock(lockKey);
     if (!lock) {
       if (options?.notifyOnFailure) {
-        if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
-          notify.error('Web Locks API is unavailable.');
-        } else {
-          notify.info('Another tab is already running this build.');
-        }
+        notify.info('Another tab is already running this build.');
       }
       return false;
     }
@@ -278,7 +280,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     lockKeyRef.current = lockKey;
     setIsLockOwner(true);
     return true;
-  }, [coordinator, lockKey]);
+  }, [coordinator, isWebLockSupported, lockKey]);
 
   useEffect(() => {
     if (!lockKeyRef.current) return;
@@ -327,54 +329,13 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   }, [status]);
 
   useEffect(() => {
-    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
-    const channel = coordinator.openChannel();
-    channelRef.current = channel;
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (!coordinator.isSessionChannelMessage(message)) return;
-      if (message.sessionId !== sessionId) return;
-      if (message.tabId === tabIdRef.current) return;
-      const now = Date.now();
-      if (message.type === 'broadcast') {
-        lastBroadcastAtRef.current = now;
-        lastBroadcastTabIdRef.current = message.tabId;
-      }
-      if (message.type === 'poll') {
-        pollingTrackerRef.current.record(message.tabId, now);
-      }
-      if (message.type === 'tab-state') {
-        tabStateRef.current.set(message.tabId, { state: message.tabState, at: now });
-      }
-      if (message.type === 'ack' && message.receivedTabId === tabIdRef.current) {
-        lastAckAtRef.current = now;
-        lastAckTabIdRef.current = message.tabId;
-      }
-      coordinator.sendAck(channel, message.sessionId, message.tabId);
-    };
-    channel.addEventListener('message', handleMessage);
-    return () => {
-      channel.removeEventListener('message', handleMessage);
-      channel.close();
-      if (channelRef.current === channel) {
-        channelRef.current = null;
-      }
-    };
-  }, [coordinator, sessionId]);
-
-  useEffect(() => {
-    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    const sendTabState = (state: 'active' | 'hidden' | 'frozen') => {
-      coordinator.sendTabState(channel, sessionId, state);
-    };
+    if (typeof document === 'undefined') return;
     const handleVisibility = () => {
-      const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-      sendTabState(isHidden ? 'hidden' : 'active');
+      const isHidden = document.visibilityState === 'hidden';
+      localTabStateRef.current = isHidden ? 'hidden' : 'active';
     };
     const handlePageHide = () => {
-      sendTabState('frozen');
+      localTabStateRef.current = 'frozen';
     };
     handleVisibility();
     document.addEventListener('visibilitychange', handleVisibility);
@@ -383,22 +344,24 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [coordinator, sessionId]);
+  }, []);
 
   useEffect(() => {
-    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
+    if (!sessionId) return;
     if (status !== 'running') return;
     if (!isLockOwner) return;
-    const channel = channelRef.current;
-    if (!channel) return;
     const tick = () => {
       const now = Date.now();
       const activeSessionId = coordinator.readActiveSessionId();
       if (activeSessionId !== sessionId) return;
-      coordinator.sendBroadcast(channel, sessionId, status, { percentage: overallProgress }, now);
-      coordinator.writeBroadcastAt(now);
-      lastBroadcastAtRef.current = now;
-      lastBroadcastTabIdRef.current = tabIdRef.current;
+      void coordinator.writeHeartbeat({
+        sessionId,
+        status,
+        progress: { percentage: overallProgress },
+        tabState: localTabStateRef.current,
+        lockOwner: true,
+        timestamp: now,
+      });
     };
     tick();
     const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
@@ -406,6 +369,18 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       clearInterval(intervalId);
     };
   }, [coordinator, isLockOwner, overallProgress, sessionId, status]);
+
+  useEffect(() => {
+    if (!remoteHeartbeat) return;
+    if (isLockOwner) return;
+    if (remoteHeartbeat.status && remoteHeartbeat.status !== status) {
+      setStatus(remoteHeartbeat.status);
+    }
+    const nextProgress = remoteHeartbeat.progress?.percentage;
+    if (typeof nextProgress === 'number' && Number.isFinite(nextProgress)) {
+      setOverallProgress(nextProgress);
+    }
+  }, [isLockOwner, remoteHeartbeat, status]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -685,35 +660,55 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     if (!sessionId) return;
     if (!shouldAutoResume) return;
     if (status === 'running' || buildInFlightRef.current) return;
+    if (!isWebLockSupported) return;
     const now = Date.now();
-    const recentNonActive = getRecentNonActiveState(now);
-    if (recentNonActive) return;
-    const lastBroadcast = lastBroadcastAtRef.current;
-    if (lastBroadcast && now - lastBroadcast < coordinator.quietThresholdTimeout) return;
-    const candidates = pollingTrackerRef.current.candidates(now);
-    if (candidates.length === 0) return;
-    if (candidates[0] !== tabIdRef.current) return;
+    if (remoteUpdatedAt && remoteTabId && remoteTabId !== tabIdRef.current) {
+      if (now - remoteUpdatedAt < coordinator.quietThresholdTimeout) return;
+    }
+    if (remoteTabState && remoteTabState !== 'active' && remoteUpdatedAt && now - remoteUpdatedAt <= suspendTimeout) return;
     const lastAutoResumeAt = lastAutoResumeAtRef.current;
     if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
     const acquired = await tryAcquireBuildLock();
     if (!acquired) return;
     lastAutoResumeAtRef.current = now;
     await runIdeGsmBuild({ autoResume: true });
-  }, [coordinator, getRecentNonActiveState, runIdeGsmBuild, sessionId, shouldAutoResume, status, tryAcquireBuildLock]);
+  }, [
+    coordinator.quietThresholdTimeout,
+    isWebLockSupported,
+    remoteTabId,
+    remoteTabState,
+    remoteUpdatedAt,
+    runIdeGsmBuild,
+    sessionId,
+    shouldAutoResume,
+    status,
+    suspendTimeout,
+    tryAcquireBuildLock,
+  ]);
 
   useEffect(() => {
-    if (!sessionId || typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    const tick = () => {
+    if (!sessionId) {
+      setRemoteHeartbeat(null);
+      return;
+    }
+    let cancelled = false;
+    const tick = async () => {
       const now = Date.now();
-      pollingTrackerRef.current.record(tabIdRef.current, now);
-      coordinator.sendPoll(channel, sessionId, now);
+      const record = await coordinator.readHeartbeat<BuildStatus, { percentage: number }>(sessionId);
+      if (cancelled) return;
+      setRemoteHeartbeat(record);
+      if (!lastHeartbeatPruneAtRef.current || now - lastHeartbeatPruneAtRef.current > coordinator.quietThresholdTimeout) {
+        lastHeartbeatPruneAtRef.current = now;
+        void coordinator.pruneHeartbeats(now);
+      }
       void maybeAutoResume();
     };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    void tick();
+    const intervalId = setInterval(() => {
+      void tick();
+    }, coordinator.pollIntervalTimeout);
     return () => {
+      cancelled = true;
       clearInterval(intervalId);
     };
   }, [coordinator, maybeAutoResume, sessionId]);
@@ -742,53 +737,100 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     const now = Date.now();
     const elapsedSinceStart = now - crashCheckStartedAtRef.current;
     if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
-    const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
-    const lastBroadcast = lastBroadcastAtRef.current;
-    const lastAck = lastAckAtRef.current;
-    const hasRecentBroadcast = lastBroadcast && now - lastBroadcast <= suspectWindowMs;
-    const hasRecentAck = lastAck && now - lastAck <= suspectWindowMs;
-    if (hasRecentBroadcast || hasRecentAck) {
-      if (crashSuspectOpen) {
-        closeCrashSuspect();
+    let cancelled = false;
+    const check = async () => {
+      if (!lockKey) return;
+      const lockState = await coordinator.probeSessionLock(lockKey);
+      if (cancelled) return;
+      const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
+      const heartbeatFresh = Boolean(
+        remoteUpdatedAt && (
+          (typeof remoteExpiresAt === 'number' && remoteExpiresAt > now)
+          || now - remoteUpdatedAt <= suspectWindowMs
+        )
+      );
+      const recentNonActive = Boolean(
+        remoteTabState
+        && remoteTabState !== 'active'
+        && remoteUpdatedAt
+        && now - remoteUpdatedAt <= suspendTimeout
+      );
+      if (lockState === 'held') {
+        if (recentNonActive || !heartbeatFresh) {
+          if (crashSuspectOpen) {
+            closeCrashSuspect();
+          }
+          if (!suspendSuspectOpen) {
+            setSuspendSuspectMessage(
+              t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+            );
+            setSuspendSuspectOpen(true);
+          }
+          return;
+        }
+        if (crashSuspectOpen) {
+          closeCrashSuspect();
+        }
+        if (suspendSuspectOpen) {
+          closeSuspendSuspect();
+        }
+        return;
+      }
+      if (lockState === 'unsupported') {
+        if (!crashSuspectOpen) {
+          setCrashSuspectMessage(
+            t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+          );
+          setCrashSuspectOpen(true);
+        }
+        return;
+      }
+      if (heartbeatFresh) {
+        if (crashSuspectOpen) {
+          closeCrashSuspect();
+        }
+        if (suspendSuspectOpen) {
+          closeSuspendSuspect();
+        }
+        return;
       }
       if (suspendSuspectOpen) {
         closeSuspendSuspect();
       }
-      return;
-    }
-    const recentNonActive = getRecentNonActiveState(now);
-    if (recentNonActive) {
-      if (crashSuspectOpen) {
-        closeCrashSuspect();
-      }
-      if (!suspendSuspectOpen) {
-        setSuspendSuspectMessage(
-          t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+      if (!crashSuspectOpen) {
+        setCrashSuspectMessage(
+          t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
         );
-        setSuspendSuspectOpen(true);
+        setCrashSuspectOpen(true);
       }
-      return;
-    }
-    if (suspendSuspectOpen) {
-      closeSuspendSuspect();
-    }
-    if (!crashSuspectOpen) {
-      setCrashSuspectMessage(
-        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-      );
-      setCrashSuspectOpen(true);
-    }
+      setStatus('paused');
+      if (sessionId) {
+        onUpdate({ processingStatus: 'pending', buildFinishedAt: undefined });
+        coordinator.clearActiveSessionId(sessionId);
+      }
+      releaseBuildLock();
+    };
+    void check();
+    return () => {
+      cancelled = true;
+    };
   }, [
     closeCrashSuspect,
     closeSuspendSuspect,
     coordinator.pollIntervalTimeout,
     coordinator.quietThresholdTimeout,
     crashSuspectOpen,
-    getRecentNonActiveState,
+    lockKey,
+    onUpdate,
+    releaseBuildLock,
+    remoteExpiresAt,
+    remoteTabState,
+    remoteUpdatedAt,
     sessionId,
     shouldAutoResume,
     status,
     suspendSuspectOpen,
+    suspendTimeout,
     t,
   ]);
 
@@ -861,12 +903,13 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
             coordinator.clearActiveSessionId(sessionId);
           }
         }}
-        onResume={runIdeGsmBuild}
+        onResume={isWebLockSupported && !isPausePending ? runIdeGsmBuild : undefined}
         onComplete={() => {
           setStatus('completed');
           setOverallProgress(100);
         }}
-        pauseLoading={isPausePending}
+        pauseLoading={false}
+        pausePending={isPausePending}
         footer={(
           <>
             <HeapPressureDialog

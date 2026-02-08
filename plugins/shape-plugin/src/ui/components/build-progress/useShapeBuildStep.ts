@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
-  createPollingTracker,
   createSessionCoordinator,
-  type SessionChannelMessage,
+  type HeartbeatRecord,
+  type SessionTabState,
   type SessionLockHandle,
 } from '@hierarchidb/session-coordinator';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
@@ -78,14 +78,21 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     activeNodeId ? `shape:${activeNodeId}` : null
   ), [activeNodeId]);
   const tabIdRef = useRef<string>(coordinator.getTabId());
-  const channelRef = useRef<BroadcastChannel | null>(null);
-  const lastBroadcastAtRef = useRef<number | null>(null);
-  const lastBroadcastTabIdRef = useRef<string | null>(null);
-  const lastAckAtRef = useRef<number | null>(null);
-  const lastAckTabIdRef = useRef<string | null>(null);
+  const isWebLockSupported = coordinator.isWebLockSupported();
   const lockRef = useRef<SessionLockHandle | null>(null);
   const lockKeyRef = useRef<string | null>(null);
   const [isLockOwner, setIsLockOwner] = useState(false);
+  const [remoteHeartbeat, setRemoteHeartbeat] = useState<HeartbeatRecord<BuildProgressStatus, BuildProgress> | null>(null);
+  const [lockState, setLockState] = useState<'held' | 'free' | 'unsupported' | null>(null);
+  const lastHeartbeatPruneAtRef = useRef<number | null>(null);
+  const localTabStateRef = useRef<SessionTabState>('active');
+  // Allow the next stage to enqueue tasks before treating the pipeline as stalled.
+  const stageTransitionGraceMs = 20000;
+  const stageTransitionRef = useRef<{ startedAt: number | null; lastStageId: string | null; nextStageId: string | null }>({
+    startedAt: null,
+    lastStageId: null,
+    nextStageId: null,
+  });
 
   const releaseBuildLock = useCallback(() => {
     const lock = lockRef.current;
@@ -99,14 +106,16 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
     if (!lockKey) return false;
     if (lockRef.current) return true;
+    if (!isWebLockSupported) {
+      if (options?.notifyOnFailure) {
+        notify.error('Web Locks API is unavailable.');
+      }
+      return false;
+    }
     const lock = await coordinator.tryAcquireSessionLock(lockKey);
     if (!lock) {
       if (options?.notifyOnFailure) {
-        if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
-          notify.error('Web Locks API is unavailable.');
-        } else {
-          notify.info('Another tab is already running this build.');
-        }
+        notify.info('Another tab is already running this build.');
       }
       return false;
     }
@@ -114,17 +123,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     lockKeyRef.current = lockKey;
     setIsLockOwner(true);
     return true;
-  }, [coordinator, lockKey]);
-  const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
-  const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
+  }, [coordinator, isWebLockSupported, lockKey]);
   const lastAutoResumeAtRef = useRef<number | null>(null);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
+  const crashHandledRef = useRef(false);
+  const crashDialogSuppressUntilRef = useRef<number | null>(null);
+  void crashHandledRef.current;
   const suspendTimeout = coordinator.quietThresholdTimeout * 3;
 
   const [isPausePending, setIsPausePending] = useState(false);
-  const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
-  const [remoteStatus, setRemoteStatus] = useState<BuildProgressStatus | null>(null);
-  const [remoteUpdatedAt, setRemoteUpdatedAt] = useState<number | null>(null);
   const [crashSuspectOpen, setCrashSuspectOpen] = useState(false);
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
@@ -139,24 +146,41 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setSuspendSuspectMessage(null);
     crashCheckStartedAtRef.current = Date.now();
   }, []);
-  const getRecentNonActiveState = useCallback((referenceTime: number) => {
-    let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
-    for (const entry of tabStateRef.current.values()) {
-      if (entry.state === 'active') continue;
-      if (!latest || entry.at > latest.at) {
-        latest = entry;
-      }
-    }
-    if (!latest) return null;
-    if (referenceTime - latest.at > suspendTimeout) return null;
-    return latest;
-  }, [suspendTimeout]);
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
-  const remoteFresh = Boolean(remoteUpdatedAt && Date.now() - remoteUpdatedAt <= coordinator.quietThresholdTimeout);
-  const effectiveProgress = hasNodeId ? (progress ?? (remoteFresh ? remoteProgress : null)) : null;
-  const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteStatus : null)) : null;
+  const remoteUpdatedAt = remoteHeartbeat?.updatedAt ?? null;
+  const remoteExpiresAt = remoteHeartbeat?.expiresAt ?? null;
+  const remoteTabState = remoteHeartbeat?.tabState ?? null;
+  const remoteTabId = remoteHeartbeat?.tabId ?? null;
+  const heartbeatWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
+  const heartbeatFresh = useMemo(() => {
+    if (!remoteUpdatedAt) return false;
+    const now = Date.now();
+    const transitionStartedAt = stageTransitionRef.current?.startedAt ?? null;
+    const transitionGraceActive = transitionStartedAt !== null
+      && now - transitionStartedAt < stageTransitionGraceMs;
+    if (transitionGraceActive) {
+      console.log('[ShapeBuildProgressStep] crash check suppressed by stage transition grace', {
+        nodeId: activeNodeId ? String(activeNodeId) : null,
+        elapsedMs: transitionStartedAt ? now - transitionStartedAt : null,
+        lastStageId: stageTransitionRef.current?.lastStageId ?? null,
+        nextStageId: stageTransitionRef.current?.nextStageId ?? null,
+      });
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
+    if (typeof remoteExpiresAt === 'number' && remoteExpiresAt > now) return true;
+    return now - remoteUpdatedAt <= heartbeatWindowMs;
+  }, [heartbeatWindowMs, remoteExpiresAt, remoteUpdatedAt]);
+  const remoteFresh = heartbeatFresh;
+  const effectiveProgress = hasNodeId ? (progress ?? (remoteFresh ? remoteHeartbeat?.progress ?? null : null)) : null;
+  const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteHeartbeat?.status ?? null : null)) : null;
   const stages = useShapeBuildStages(t);
   const processingStatus = data?.processingStatus ?? 'idle';
   const runtimeStatus = status?.status ?? null;
@@ -170,21 +194,41 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
+  const hasLiveRunner = useMemo(() => (
+    isLockOwner || lockState === 'held' || heartbeatFresh
+  ), [heartbeatFresh, isLockOwner, lockState]);
+  const shouldMonitor = data?.processingStatus === 'processing' && !data?.buildFinishedAt;
   const tasksCompletionStatus = useMemo<BuildStatus | null>(() => {
     if (displayTasks.length === 0) return null;
     if (hasInFlightTasks) return null;
     const hasFailed = displayTasks.some((task) => task.status === 'failed');
-    return hasFailed ? 'failed' : 'completed';
-  }, [displayTasks, hasInFlightTasks]);
+    if (hasFailed) return 'failed';
+    if (shouldMonitor) return null;
+    return 'completed';
+  }, [displayTasks, hasInFlightTasks, shouldMonitor]);
+  const hasStalledInFlightTasks = hasInFlightTasks && shouldMonitor && !hasLiveRunner;
   const buildStatus = useMemo<BuildStatus>(() => {
     if (tasksCompletionStatus === 'failed') {
       return 'failed';
     }
-    if (hasInFlightTasks) {
+    if (hasInFlightTasks && hasLiveRunner) {
       return 'running';
     }
+    if (hasStalledInFlightTasks) {
+      return 'paused';
+    }
+    if (shouldMonitor && !hasLiveRunner && baseBuildStatus === 'running') {
+      return 'paused';
+    }
     return baseBuildStatus;
-  }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
+  }, [
+    baseBuildStatus,
+    hasInFlightTasks,
+    hasLiveRunner,
+    hasStalledInFlightTasks,
+    shouldMonitor,
+    tasksCompletionStatus,
+  ]);
   useEffect(() => {
     if (!isPausePending) return;
     if (buildStatus !== 'running') {
@@ -235,6 +279,76 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     isSkippedTask: (task) => isSkippedMessage(task.message),
     timingStageMs: timingSnapshot.stageMs,
   });
+  const stageTransition = useMemo(() => {
+    if (!shouldMonitor) {
+      return { isGap: false, lastStageId: null, nextStageId: null };
+    }
+    const tasksByStage = progressSummary.tasksByStage;
+    let lastStageId: string | null = null;
+    stages.forEach((stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      if (stageTasks.length > 0) {
+        lastStageId = stage.id;
+      }
+    });
+    if (!lastStageId) {
+      return { isGap: false, lastStageId: null, nextStageId: null };
+    }
+    const lastStageTasks = tasksByStage[lastStageId] ?? [];
+    const lastStageHasInFlight = lastStageTasks.some(
+      (task) => task.status === 'running' || task.status === 'queued',
+    );
+    if (lastStageHasInFlight) {
+      return { isGap: false, lastStageId, nextStageId: null };
+    }
+    const lastStageIndex = stages.findIndex((stage) => stage.id === lastStageId);
+    const nextStageId = lastStageIndex >= 0 ? (stages[lastStageIndex + 1]?.id ?? null) : null;
+    if (!nextStageId) {
+      return { isGap: false, lastStageId, nextStageId: null };
+    }
+    const nextStageTasks = tasksByStage[nextStageId] ?? [];
+    const nextStageStarted = nextStageTasks.length > 0;
+    return {
+      isGap: !nextStageStarted,
+      lastStageId,
+      nextStageId,
+    };
+  }, [progressSummary.tasksByStage, shouldMonitor, stages]);
+  useEffect(() => {
+    if (!stageTransition.isGap) {
+      const current = stageTransitionRef.current;
+      if (current.startedAt && current.lastStageId && current.nextStageId) {
+        console.log('[ShapeBuildProgressStep] stage transition resolved', {
+          nodeId: nodeId ? String(nodeId) : null,
+          lastStageId: current.lastStageId,
+          nextStageId: current.nextStageId,
+          elapsedMs: Date.now() - current.startedAt,
+        });
+      }
+      stageTransitionRef.current = { startedAt: null, lastStageId: null, nextStageId: null };
+      return;
+    }
+    const current = stageTransitionRef.current;
+    if (
+      current.startedAt
+      && current.lastStageId === stageTransition.lastStageId
+      && current.nextStageId === stageTransition.nextStageId
+    ) {
+      return;
+    }
+    const startedAt = Date.now();
+    stageTransitionRef.current = {
+      startedAt,
+      lastStageId: stageTransition.lastStageId,
+      nextStageId: stageTransition.nextStageId,
+    };
+    console.log('[ShapeBuildProgressStep] stage transition gap detected', {
+      nodeId: nodeId ? String(nodeId) : null,
+      lastStageId: stageTransition.lastStageId,
+      nextStageId: stageTransition.nextStageId,
+      startedAt,
+    });
+  }, [nodeId, stageTransition.isGap, stageTransition.lastStageId, stageTransition.nextStageId]);
   const {
     statusLabel,
     warningMessage,
@@ -270,11 +384,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const authDialogOpen = false;
   const closeAuthDialog = useCallback(() => {}, []);
   const handleProviderSelect = useCallback((_provider: AuthProviderType) => {}, []);
-  const sendAck = useCallback((sessionId: string, receivedTabId: string) => {
-    const channel = channelRef.current;
-    if (!channel) return;
-    coordinator.sendAck(channel, sessionId, receivedTabId);
-  }, [coordinator]);
 
   useEffect(() => {
     if (!activeNodeId) return;
@@ -284,6 +393,32 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       coordinator.writeActiveSessionId(String(activeNodeId));
     }
   }, [activeNodeId, buildStatus, coordinator, runtimeStatus]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    console.log('[ShapeBuildProgressStep] status snapshot', {
+      nodeId: String(activeNodeId),
+      buildStatus,
+      runtimeStatus,
+      processingStatus: data?.processingStatus,
+      lockState,
+      heartbeatFresh,
+      hasLiveRunner,
+      stageGap: stageTransitionRef.current?.startedAt ? {
+        lastStageId: stageTransitionRef.current.lastStageId,
+        nextStageId: stageTransitionRef.current.nextStageId,
+        elapsedMs: Date.now() - stageTransitionRef.current.startedAt,
+      } : null,
+    });
+  }, [
+    activeNodeId,
+    buildStatus,
+    data?.processingStatus,
+    hasLiveRunner,
+    heartbeatFresh,
+    lockState,
+    runtimeStatus,
+  ]);
 
   useEffect(() => {
     if (!lockKeyRef.current) return;
@@ -350,17 +485,17 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;
     if (buildStatus === 'running' || runtimeStatus === 'processing') return;
+    if (data?.processingStatus !== 'processing') return;
+    if (!isWebLockSupported) return;
+    if (!heartbeatFresh && lockState !== 'held') return;
     const now = Date.now();
     const hasRunner = coordinator.isRunnerTab(now);
     const activeSessionId = coordinator.readActiveSessionId();
     if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) return;
-    const recentNonActive = getRecentNonActiveState(now);
-    if (recentNonActive) return;
-    const lastBroadcast = lastBroadcastAtRef.current;
-    if (lastBroadcast && now - lastBroadcast < coordinator.quietThresholdTimeout) return;
-    const candidates = pollingTrackerRef.current.candidates(now);
-    if (candidates.length === 0) return;
-    if (candidates[0] !== tabIdRef.current) return;
+    if (remoteUpdatedAt && remoteTabId && remoteTabId !== tabIdRef.current) {
+      if (now - remoteUpdatedAt < coordinator.quietThresholdTimeout) return;
+    }
+    if (remoteTabState && remoteTabState !== 'active' && remoteUpdatedAt && now - remoteUpdatedAt <= suspendTimeout) return;
     const lastAutoResumeAt = lastAutoResumeAtRef.current;
     if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
     const acquired = await tryAcquireBuildLock();
@@ -387,69 +522,28 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     activeNodeId,
     buildStatus,
     coordinator,
-    getRecentNonActiveState,
+    data?.processingStatus,
+    heartbeatFresh,
+    isWebLockSupported,
+    lockState,
     persistDraftPatch,
     releaseBuildLock,
+    remoteTabId,
+    remoteTabState,
+    remoteUpdatedAt,
     runtimeStatus,
+    suspendTimeout,
     tryAcquireBuildLock,
   ]);
 
   useEffect(() => {
-    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
-    const channel = coordinator.openChannel();
-    channelRef.current = channel;
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (!coordinator.isSessionChannelMessage(message)) return;
-      const typedMessage = message as SessionChannelMessage<BuildProgressStatus, BuildProgress>;
-      if (typedMessage.sessionId !== String(activeNodeId)) return;
-      if (typedMessage.tabId === tabIdRef.current) return;
-      const now = Date.now();
-      if (typedMessage.type === 'broadcast') {
-        lastBroadcastAtRef.current = now;
-        lastBroadcastTabIdRef.current = typedMessage.tabId;
-        setRemoteProgress(typedMessage.progress ?? null);
-        setRemoteStatus(typedMessage.status ?? null);
-        setRemoteUpdatedAt(now);
-        sendAck(typedMessage.sessionId, typedMessage.tabId);
-        return;
-      }
-      if (typedMessage.type === 'poll') {
-        pollingTrackerRef.current.record(typedMessage.tabId, now);
-        sendAck(typedMessage.sessionId, typedMessage.tabId);
-      }
-      if (typedMessage.type === 'tab-state') {
-        tabStateRef.current.set(typedMessage.tabId, { state: typedMessage.tabState, at: now });
-        sendAck(typedMessage.sessionId, typedMessage.tabId);
-      }
-      if (typedMessage.type === 'ack' && typedMessage.receivedTabId === tabIdRef.current) {
-        lastAckAtRef.current = now;
-        lastAckTabIdRef.current = typedMessage.tabId;
-      }
-    };
-    channel.addEventListener('message', handleMessage);
-    return () => {
-      channel.removeEventListener('message', handleMessage);
-      channel.close();
-      if (channelRef.current === channel) {
-        channelRef.current = null;
-      }
-    };
-  }, [activeNodeId, coordinator, sendAck]);
-
-  useEffect(() => {
-    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    const sendTabState = (state: 'active' | 'hidden' | 'frozen') => {
-      coordinator.sendTabState(channel, String(activeNodeId), state);
-    };
+    if (typeof document === 'undefined') return;
     const handleVisibility = () => {
-      const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-      sendTabState(isHidden ? 'hidden' : 'active');
+      const isHidden = document.visibilityState === 'hidden';
+      localTabStateRef.current = isHidden ? 'hidden' : 'active';
     };
     const handlePageHide = () => {
-      sendTabState('frozen');
+      localTabStateRef.current = 'frozen';
     };
     handleVisibility();
     document.addEventListener('visibilitychange', handleVisibility);
@@ -458,56 +552,64 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [activeNodeId, coordinator]);
+  }, []);
 
   useEffect(() => {
-    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    const tick = () => {
+    if (!activeNodeId) {
+      setRemoteHeartbeat(null);
+      setLockState(null);
+      return;
+    }
+    let cancelled = false;
+    const tick = async () => {
       const now = Date.now();
-      pollingTrackerRef.current.record(tabIdRef.current, now);
-      coordinator.sendPoll(channel, String(activeNodeId), now);
-      if (remoteUpdatedAt && now - remoteUpdatedAt > coordinator.quietThresholdTimeout) {
-        setRemoteProgress(null);
-        setRemoteStatus(null);
-        setRemoteUpdatedAt(null);
+      const record = await coordinator.readHeartbeat<BuildProgressStatus, BuildProgress>(String(activeNodeId));
+      if (cancelled) return;
+      setRemoteHeartbeat(record);
+      if (!lastHeartbeatPruneAtRef.current || now - lastHeartbeatPruneAtRef.current > coordinator.quietThresholdTimeout) {
+        lastHeartbeatPruneAtRef.current = now;
+        void coordinator.pruneHeartbeats(now);
       }
       void maybeAutoResume();
     };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
+    void tick();
+    const intervalId = setInterval(() => {
+      void tick();
+    }, coordinator.pollIntervalTimeout);
     return () => {
+      cancelled = true;
       clearInterval(intervalId);
     };
-  }, [activeNodeId, coordinator, maybeAutoResume, remoteUpdatedAt]);
+  }, [activeNodeId, coordinator, maybeAutoResume]);
 
   useEffect(() => {
-    if (!activeNodeId || typeof BroadcastChannel === 'undefined') return;
-    if (buildStatus !== 'running') return;
+    if (!activeNodeId) return;
     if (!isLockOwner) return;
-    const channel = channelRef.current;
-    if (!channel) return;
+    if (!shouldMonitor) return;
     const tick = () => {
       const now = Date.now();
       const activeSessionId = coordinator.readActiveSessionId();
       if (activeSessionId !== String(activeNodeId)) return;
-      coordinator.sendBroadcast(channel, String(activeNodeId), status ?? null, progress ?? null, now);
-      lastBroadcastAtRef.current = now;
-      lastBroadcastTabIdRef.current = tabIdRef.current;
-      coordinator.writeBroadcastAt(now);
+      void coordinator.writeHeartbeat({
+        sessionId: String(activeNodeId),
+        status: status ?? null,
+        progress: progress ?? null,
+        tabState: localTabStateRef.current,
+        lockOwner: true,
+        timestamp: now,
+      });
     };
     tick();
     const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
     return () => {
       clearInterval(intervalId);
     };
-  }, [activeNodeId, buildStatus, coordinator, isLockOwner, progress, status]);
+  }, [activeNodeId, coordinator, isLockOwner, progress, shouldMonitor, status]);
 
   useEffect(() => {
     if (!activeNodeId) return;
-    const shouldMonitor = data?.processingStatus === 'processing' && !data?.buildFinishedAt;
     if (!shouldMonitor) {
+      crashHandledRef.current = false;
       if (crashSuspectOpen) {
         closeCrashSuspect();
       }
@@ -516,24 +618,24 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       }
       return;
     }
-    if (buildStatus === 'running' || runtimeStatus === 'processing') {
+    const transitionStartedAt = stageTransitionRef.current?.startedAt ?? null;
+    if (hasLiveRunner && !transitionStartedAt) {
+      crashHandledRef.current = false;
       if (crashSuspectOpen) {
         closeCrashSuspect();
       }
       if (suspendSuspectOpen) {
         closeSuspendSuspect();
       }
+      return;
+    }
+    if (crashHandledRef.current) {
       return;
     }
     const now = Date.now();
-    const elapsedSinceStart = now - crashCheckStartedAtRef.current;
-    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
-    const lastBroadcast = lastBroadcastAtRef.current;
-    const lastAck = lastAckAtRef.current;
-    const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
-    const hasRecentBroadcast = lastBroadcast && now - lastBroadcast <= suspectWindowMs;
-    const hasRecentAck = lastAck && now - lastAck <= suspectWindowMs;
-    if (hasRecentBroadcast || hasRecentAck) {
+    const transitionGraceActive = transitionStartedAt !== null
+      && now - transitionStartedAt < stageTransitionGraceMs;
+    if (transitionGraceActive) {
       if (crashSuspectOpen) {
         closeCrashSuspect();
       }
@@ -542,41 +644,152 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       }
       return;
     }
-    const recentNonActive = getRecentNonActiveState(now);
-    if (recentNonActive) {
+    const suppressUntil = crashDialogSuppressUntilRef.current;
+    if (suppressUntil && now < suppressUntil) {
       if (crashSuspectOpen) {
         closeCrashSuspect();
       }
-      if (!suspendSuspectOpen) {
-        setSuspendSuspectMessage(
-          t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
-        );
-        setSuspendSuspectOpen(true);
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
       }
       return;
     }
-    if (suspendSuspectOpen) {
-      closeSuspendSuspect();
-    }
-    if (!crashSuspectOpen) {
-      setCrashSuspectMessage(
-        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+    const elapsedSinceStart = now - crashCheckStartedAtRef.current;
+    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
+    let cancelled = false;
+    const check = async () => {
+      if (!lockKey) return;
+      const lockState = await coordinator.probeSessionLock(lockKey);
+      if (cancelled) return;
+      setLockState(lockState);
+      const heartbeatIsFresh = heartbeatFresh;
+      const transitionStalled = transitionStartedAt !== null
+        && now - transitionStartedAt >= stageTransitionGraceMs;
+      if (transitionStalled && lockState !== 'held' && !heartbeatIsFresh) {
+        console.log('[ShapeBuildProgressStep] transition stalled -> pause', {
+          nodeId: activeNodeId ? String(activeNodeId) : null,
+          lockState,
+          heartbeatFresh: heartbeatIsFresh,
+          transitionElapsedMs: transitionStartedAt ? now - transitionStartedAt : null,
+        });
+        if (crashSuspectOpen) {
+          closeCrashSuspect();
+        }
+        if (suspendSuspectOpen) {
+          closeSuspendSuspect();
+        }
+        try {
+          await persistDraftPatch({ processingStatus: 'paused', stopReason: 'unknown' });
+          releaseBuildLock();
+          coordinator.clearActiveSessionId(String(activeNodeId));
+          crashHandledRef.current = true;
+        } catch (error) {
+          console.error('[ShapeBuildProgressStep] transition pause failed', error);
+        }
+        return;
+      }
+      const recentNonActive = Boolean(
+        remoteTabState
+        && remoteTabState !== 'active'
+        && remoteUpdatedAt
+        && now - remoteUpdatedAt <= suspendTimeout
       );
-      setCrashSuspectOpen(true);
-    }
+      if (lockState === 'held') {
+        if (recentNonActive || !heartbeatIsFresh) {
+          console.log('[ShapeBuildProgressStep] suspend suspect (lock held)', {
+            nodeId: activeNodeId ? String(activeNodeId) : null,
+            heartbeatFresh: heartbeatIsFresh,
+            recentNonActive,
+          });
+          if (crashSuspectOpen) {
+            closeCrashSuspect();
+          }
+          if (!suspendSuspectOpen) {
+            setSuspendSuspectMessage(
+              t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+            );
+            setSuspendSuspectOpen(true);
+          }
+          return;
+        }
+        if (crashSuspectOpen) {
+          closeCrashSuspect();
+        }
+        if (suspendSuspectOpen) {
+          closeSuspendSuspect();
+        }
+        return;
+      }
+      if (lockState === 'unsupported') {
+        console.log('[ShapeBuildProgressStep] crash suspect (lock unsupported)', {
+          nodeId: activeNodeId ? String(activeNodeId) : null,
+        });
+        if (!crashSuspectOpen) {
+          setCrashSuspectMessage(
+            t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+          );
+          setCrashSuspectOpen(true);
+        }
+        return;
+      }
+      if (heartbeatIsFresh) {
+        console.log('[ShapeBuildProgressStep] crash check skipped (heartbeat fresh)', {
+          nodeId: activeNodeId ? String(activeNodeId) : null,
+          lockState,
+        });
+        if (crashSuspectOpen) {
+          closeCrashSuspect();
+        }
+        if (suspendSuspectOpen) {
+          closeSuspendSuspect();
+        }
+        return;
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      if (!crashSuspectOpen) {
+        setCrashSuspectMessage(
+          t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+        );
+        setCrashSuspectOpen(true);
+      }
+      try {
+        console.log('[ShapeBuildProgressStep] crash suspend -> pause', {
+          nodeId: activeNodeId ? String(activeNodeId) : null,
+          lockState,
+          heartbeatFresh: heartbeatIsFresh,
+        });
+        await persistDraftPatch({ processingStatus: 'paused', stopReason: 'unknown' });
+        releaseBuildLock();
+        coordinator.clearActiveSessionId(String(activeNodeId));
+        crashHandledRef.current = true;
+      } catch (error) {
+        console.error('[ShapeBuildProgressStep] crash suspend failed', error);
+      }
+    };
+    void check();
+    return () => {
+      cancelled = true;
+    };
   }, [
     activeNodeId,
     buildStatus,
     closeCrashSuspect,
     closeSuspendSuspect,
-    coordinator.pollIntervalTimeout,
-    coordinator.quietThresholdTimeout,
+    coordinator,
     crashSuspectOpen,
-    data?.buildFinishedAt,
-    data?.processingStatus,
-    getRecentNonActiveState,
-    runtimeStatus,
+    heartbeatFresh,
+    lockKey,
+    persistDraftPatch,
+    releaseBuildLock,
+    remoteTabState,
+    remoteUpdatedAt,
+    hasLiveRunner,
+    shouldMonitor,
+    stageTransitionGraceMs,
     suspendSuspectOpen,
+    suspendTimeout,
     t,
   ]);
 
@@ -608,22 +821,52 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [activeNodeId, data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, workerClient]);
 
   const canResume = buildStatus === 'paused';
+  const canStartOrResumeNow = !isPausePending;
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
       return false;
     }
+    if (!canStartOrResumeNow) {
+      return false;
+    }
+    const startAt = Date.now();
+    crashDialogSuppressUntilRef.current = startAt + 10000;
     const now = Date.now();
     const hasRunner = coordinator.isRunnerTab(now);
     const activeSessionId = coordinator.readActiveSessionId();
+    console.log('[ShapeBuildProgressStep] start/resume requested', {
+      nodeId: String(activeNodeId),
+      autoResume: options?.autoResume ?? false,
+      forceRestart: options?.forceRestart ?? false,
+      canResume,
+      buildStatus,
+      runtimeStatus,
+      processingStatus: data?.processingStatus,
+      lockState,
+      heartbeatFresh,
+      activeSessionId,
+      hasRunner,
+      now,
+    });
     if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) {
       notify.info('Another build session is active in this tab.');
       return false;
     }
     const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
     if (!acquired) {
+      console.log('[ShapeBuildProgressStep] start/resume lock acquire failed', {
+        nodeId: String(activeNodeId),
+        lockState,
+        heartbeatFresh,
+      });
       return false;
     }
+    console.log('[ShapeBuildProgressStep] start/resume lock acquired', {
+      nodeId: String(activeNodeId),
+      lockState: 'held',
+      at: Date.now(),
+    });
     coordinator.writeActiveSessionId(String(activeNodeId));
     // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
     if (canResume && !options?.forceRestart) {
@@ -632,6 +875,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
         await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
         await persistDraftPatch({ processingStatus: 'processing' });
+        console.log('[ShapeBuildProgressStep] resume requested', {
+          nodeId: String(activeNodeId),
+          policy,
+          elapsedMs: Date.now() - startAt,
+        });
         return true;
       } catch (error) {
         releaseBuildLock();
@@ -645,6 +893,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (!saved) {
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
+      console.log('[ShapeBuildProgressStep] start blocked: save draft failed', {
+        nodeId: String(activeNodeId),
+        elapsedMs: Date.now() - startAt,
+      });
       return false;
     }
     try {
@@ -653,6 +905,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       if (!payloads || payloads.length === 0) {
         releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
+        console.log('[ShapeBuildProgressStep] start blocked: payloads empty', {
+          nodeId: String(activeNodeId),
+          elapsedMs: Date.now() - startAt,
+        });
         return false;
       }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
@@ -663,6 +919,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           ? 'failed'
           : 'processing';
       await persistDraftPatch({ processingStatus: nextStatus });
+      console.log('[ShapeBuildProgressStep] start requested', {
+        nodeId: String(activeNodeId),
+        policy,
+        status: statusResult.status,
+        payloadCount: payloads.length,
+        elapsedMs: Date.now() - startAt,
+      });
       return true;
     } catch (error) {
       releaseBuildLock();
@@ -673,11 +936,17 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [
     activeNodeId,
+    buildStatus,
     buildDownloadTaskPayloads,
     canResume,
+    canStartOrResumeNow,
     coordinator,
+    data?.processingStatus,
+    heartbeatFresh,
+    lockState,
     persistDraftPatch,
     releaseBuildLock,
+    runtimeStatus,
     saveDraftBeforeBatch,
     tryAcquireBuildLock,
   ]);
@@ -693,6 +962,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await bridgeRef.current.initialize();
       await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId, reason);
       await persistDraftPatch({ processingStatus: 'paused', stopReason: reason });
+      setIsPausePending(false);
     } catch (error) {
       setIsPausePending(false);
       notify.error('Failed to pause build.');
@@ -709,13 +979,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     hasDataSource,
     hasSelection,
     isProcessingValid,
+    isLockSupported: isWebLockSupported,
   });
 
   useEffect(() => {
     if (!lockRef.current) return;
     if (buildStatus === 'running' || runtimeStatus === 'processing' || isStartPending) return;
+    if (shouldMonitor) return;
     releaseBuildLock();
-  }, [buildStatus, isStartPending, releaseBuildLock, runtimeStatus]);
+  }, [buildStatus, isStartPending, releaseBuildLock, runtimeStatus, shouldMonitor]);
   const effectiveBuildStatus: BuildStatus = buildStatus;
   const effectiveStatusLabel = isStartPending && buildStatus === 'idle'
     ? t('stage.status.starting', 'Starting stage...')
@@ -742,7 +1014,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     skipped: progressSummary.displayCounts.skipped,
     hasProgressData: progressSummary.hasProgressData,
     warningMessage,
-    canStartOrResume,
+    canStartOrResume: canStartOrResume && canStartOrResumeNow,
     handleStartOrResume: startOrResume,
     handlePause,
     isPausePending,

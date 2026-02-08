@@ -49,9 +49,9 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
   const sessionMapRef = useRef<Map<string, BuildSessionSnapshot>>(new Map());
   const signatureRef = useRef('');
   const [isRunnerTab, setIsRunnerTab] = useState(false);
-  const channelRef = useRef<BroadcastChannel | null>(null);
   const tabIdRef = useRef<string>(coordinator.getTabId());
   const initRequestedRef = useRef(false);
+  const lastPruneAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (workerClient || isInitialized || initRequestedRef.current) return;
@@ -130,95 +130,64 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
     };
   }, [nodeType, updateSessions, workerClient]);
 
-  const sendAck = useCallback(
-    (sessionId: string, receivedTabId: string) => {
-      const channel = channelRef.current;
-      if (!channel) return;
-      coordinator.sendAck(channel, sessionId, receivedTabId);
-    },
-    [coordinator]
-  );
-
   useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = coordinator.openChannel();
-    channelRef.current = channel;
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (!coordinator.isSessionChannelMessage(message)) return;
-      const isSameTab = message.tabId === tabIdRef.current;
-      if (message.type === 'broadcast') {
-        const now = Date.now();
-        const key = String(message.sessionId);
-        const existing = sessionMapRef.current.get(key);
-        const next: BuildSessionSnapshot = {
-          nodeId: message.sessionId as NodeId,
-          status: message.status ?? existing?.status,
-          progress: message.progress ?? existing?.progress,
-          updatedAt: message.timestamp ?? now,
-          lastSeenAt: now,
-          hasShapeRecord: existing?.hasShapeRecord,
-        };
-        const nextMap = new Map(sessionMapRef.current);
-        nextMap.set(key, next);
-        sessionMapRef.current = nextMap;
-        updateSessions(nextMap);
-        if (isSameTab) return;
-      }
-      if (isSameTab) return;
-      sendAck(message.sessionId, message.tabId);
-    };
-    channel.addEventListener('message', handleMessage);
-    return () => {
-      channel.removeEventListener('message', handleMessage);
-      channel.close();
-      if (channelRef.current === channel) {
-        channelRef.current = null;
-      }
-    };
-  }, [coordinator, sendAck, updateSessions]);
-
-  useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    if (sessions.length === 0) return;
-    const tick = () => {
+    let cancelled = false;
+    const tick = async () => {
       const now = Date.now();
-      sessions.forEach((session) => {
-        coordinator.sendPoll(channel, String(session.nodeId), now);
-      });
-    };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator, sessions]);
-
-  useEffect(() => {
-    const staleTimeout = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
-    const intervalId = setInterval(() => {
-      const now = Date.now();
+      const sessionIds = Array.from(sessionMapRef.current.keys());
+      if (sessionIds.length === 0) return;
+      const records = await Promise.all(sessionIds.map((id) => (
+        coordinator.readHeartbeat(id)
+      )));
+      if (cancelled) return;
       const nextMap = new Map(sessionMapRef.current);
       let changed = false;
-      nextMap.forEach((snapshot, key) => {
-        if (snapshot.hasShapeRecord) return;
-        if (!snapshot.lastSeenAt) return;
-        if (now - snapshot.lastSeenAt > staleTimeout) {
-          nextMap.delete(key);
-          changed = true;
+      sessionIds.forEach((id, index) => {
+        const existing = nextMap.get(id);
+        if (!existing) return;
+        const record = records[index];
+        if (!record) {
+          if (!existing.hasShapeRecord && existing.lastSeenAt) {
+            nextMap.delete(id);
+            changed = true;
+          }
+          return;
         }
+        const isExpired = record.expiresAt <= now;
+        if (isExpired && !existing.hasShapeRecord) {
+          nextMap.delete(id);
+          changed = true;
+          return;
+        }
+        const nextUpdatedAt = Math.max(existing.updatedAt ?? 0, record.updatedAt ?? 0) || existing.updatedAt || record.updatedAt;
+        const next: BuildSessionSnapshot = {
+          ...existing,
+          status: record.status ?? existing.status,
+          progress: record.progress ?? existing.progress,
+          updatedAt: nextUpdatedAt,
+          lastSeenAt: record.updatedAt,
+        };
+        nextMap.set(id, next);
+        changed = true;
       });
       if (changed) {
         sessionMapRef.current = nextMap;
         updateSessions(nextMap);
       }
-    }, 1000);
+      if (!lastPruneAtRef.current || now - lastPruneAtRef.current > coordinator.quietThresholdTimeout) {
+        lastPruneAtRef.current = now;
+        void coordinator.pruneHeartbeats(now);
+      }
+    };
+    void tick();
+    const intervalId = setInterval(() => {
+      void tick();
+    }, coordinator.pollIntervalTimeout);
     return () => {
+      cancelled = true;
       clearInterval(intervalId);
     };
-  }, [coordinator.pollIntervalTimeout, coordinator.quietThresholdTimeout, updateSessions]);
+  }, [coordinator, updateSessions]);
 
   useEffect(() => {
     const updateRunner = () => {

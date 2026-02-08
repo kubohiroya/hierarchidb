@@ -103,7 +103,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.countrySelection.label', 'Country Selection'),
         componentFactory: (props: ShapeStepProps) => <ShapeCountrySelection {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection,
+          Boolean(data?.buildConfig?.dataSourceName),
       },
       {
         id: 'processing-configuration',
