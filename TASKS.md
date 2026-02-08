@@ -1,3 +1,37 @@
+2578) feat/geo/geometry-engine-wrapper (P1) — 進行中 (2026-02-08)
+- ブランチ名: feat/geo/geometry-engine-wrapper
+- 依存: 2575, 2577
+- ExecPlan: plans/geometry-engine-wrapper-execplan.md
+- 受け入れ基準: turf 系関数の利用箇所が gis-sdk の geometryEngine ラッパに置換される／geometryEngine=turf|geos の切替が全処理で可能になる／geos 未対応の機能は明示的エラーで停止する／kinks 依存は geos の isValid へ置換する／`pnpm --filter @hierarchidb/gis-sdk typecheck` / `pnpm --filter @hierarchidb/vt-orchestrator typecheck` / `pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/gis-sdk/src/**`, `packages/vt-orchestrator/src/**`, `plugins/shape-plugin/src/**`
+- ロールバック手順: geometryEngine ラッパ導入と turf 呼び出し置換の差分を revert し、直接 turf を呼ぶ実装へ戻す
+- チェックリスト:
+  - geometryEngine ラッパ API を gis-sdk に追加する
+  - turf 呼び出しをラッパ経由へ置換する
+  - geos 実装で未対応機能があれば明示的エラーにする
+  - kinks を geos isValid に置換する
+  - typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 15:43 JST geometryEngine ラッパ導入と turf 置換に着手。
+  - update: 2026-02-08 15:45 JST gis-sdk に geometryEngine ラッパを追加し export を更新。
+  - update: 2026-02-08 15:47 JST geometryEngine ラッパの型調整と gis-sdk typecheck を実施（exit 0）。
+
+2591) fix/app/map-route-dynamic-import-fail (P1) — 進行中 (2026-02-07)
+- ブランチ名: fix/app/map-route-dynamic-import-fail
+- 依存: なし
+- 受け入れ基準: mapRoute.tsx の dynamic import 失敗原因が特定され、initializeApp が失敗しない／再現条件と発生範囲を記録する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/mapRoute.tsx`, `app/src/entry.client.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert して元の挙動へ戻す
+- チェックリスト:
+  - 失敗時の network/console メッセージを確認する
+  - mapRoute.tsx の依存と dynamic import 経路を確認する
+  - 修正後に dev 起動を確認する
+- 運用ログ:
+  - start: 2026-02-07 21:20 JST mapRoute の dynamic import 失敗調査に着手。
+  - blocked: 2026-02-07 21:24 JST sandbox から dev server を起動すると listen EPERM (0.0.0.0:4200) で失敗。ローカル起動ログが必要。
+  - update: 2026-02-07 21:25 JST escalated 実行も timeout でログ取得できず。
+
 2601) chore/i18n/treeconsole-breadcrumb-tooltip (P3) — 完了 (2026-02-08)
 - ブランチ名: なし
 - 依存: なし
@@ -74,6 +108,7 @@
   - blocked: 2026-02-08 14:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/ui-dialog の型エラーで失敗（useAbstractDialog.ts:156-164）。
   - start: 2026-02-08 14:20 JST @hierarchidb/ui-dialog の型エラー修正に着手。
   - done: 2026-02-08 14:27 JST useAbstractDialog の Header/Footer/Content 既定コンポーネントを型キャストで固定し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
+  - start: 2026-02-08 14:40 JST `/t/:treeId/:pageNodeId/tags` で全消去が出る原因として TreeConsoleIntegration の再初期化条件を調査開始。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet
