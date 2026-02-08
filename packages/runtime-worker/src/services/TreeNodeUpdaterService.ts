@@ -384,7 +384,20 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       updates.metadata = (request?.metadata ?? undefined) as TreeNodeMetadata | undefined;
     }
     if (Object.keys(updates).length > 0) {
+      const previousNode = await this.coreDB.getNode(draftId);
       await this.coreDB.nodes.update(draftId, updates);
+      const nextNode = await this.coreDB.getNode(draftId);
+      if (nextNode) {
+        this.coreDB.changeSubject.next({
+          type: 'node-updated',
+          nodeId: draftId,
+          node: nextNode,
+          previousNode: previousNode ?? undefined,
+          parentId: nextNode.parentId,
+          previousParentId: previousNode?.parentId,
+          timestamp: Date.now(),
+        });
+      }
     }
     const shouldLogDebug =
       typeof console !== 'undefined' &&
@@ -406,6 +419,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
 
     if (mode === 'save-draft') {
       const requestedName = request?.draftMetadata?.name;
+      const requestedTags = Array.isArray(request?.draftMetadata?.tags)
+        ? request?.draftMetadata?.tags ?? []
+        : [];
       let nodeMaybe: TreeNode | undefined = (await getTreeNode(this.coreDB, draftId)) ?? undefined;
       nodeMaybe =
         (await this.ensureDraftMetadata(nodeMaybe ?? undefined, requestedName, true)) ??
@@ -431,6 +447,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
               }
             : null,
         });
+      }
+      if (requestedTags.length || this.tagService) {
+        await this.syncTagsForNode(draftId, requestedTags);
       }
       return { status: 'ok', nodeId: draftId, node: node as TreeNode | undefined };
     }

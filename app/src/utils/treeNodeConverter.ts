@@ -5,7 +5,7 @@
  * for use with TreeConsolePanel.
  */
 
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 
 /**
@@ -91,14 +91,14 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.name', 'Name'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: HierarchicalTreeNode) => node.metadata?.name ?? '',
+      render: (_value: unknown, node: HierarchicalTreeNode) => getTreeNodeName(node),
     },
     {
       id: 'description',
       label: t('trash.columns.description', 'Description'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: HierarchicalTreeNode) => node.metadata?.description || '-',
+      render: (_value: unknown, node: HierarchicalTreeNode) => getTreeNodeDescription(node) || '-',
     },
     {
       id: 'createdAt',
@@ -147,7 +147,7 @@ export function createBreadcrumbFromTreeNode(node: TreeNode): {
 } {
   return {
     id: node.id,
-    name: (node as { metadata?: { name?: string } }).metadata?.name ?? '',
+    name: getTreeNodeName(node),
     nodeType: node.nodeType,
     isClickable: true,
   };

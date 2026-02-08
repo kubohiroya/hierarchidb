@@ -51,8 +51,8 @@ const hasSelection = (data?: LocationStepData): boolean => {
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
-const isLocationBuildPersisted = async (data?: Partial<LocationEntity>): Promise<boolean> => (
-  Boolean(data?.processingStatus === 'completed')
+const isMapPreviewReady = (data?: LocationStepData): boolean => (
+  canProceedFromDataSource(data) && hasSelection(data)
 );
 
 registry.registerConfigProvider<LocationStepData>({
@@ -106,7 +106,7 @@ registry.registerConfigProvider<LocationStepData>({
             />
           );
         },
-        validate: (data?: LocationStepData) => isLocationBuildPersisted(data),
+        validate: (data?: LocationStepData) => isMapPreviewReady(data),
       },
     ];
   },

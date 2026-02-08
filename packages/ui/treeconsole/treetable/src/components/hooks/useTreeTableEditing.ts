@@ -5,6 +5,7 @@
 
 import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { getTreeNodeDescription, getTreeNodeName } from '@hierarchidb/tree-api';
 import type { TreeTableController, TreeNodeInUI } from '../../types.js';
 
 interface UseTreeTableEditingParams {
@@ -44,7 +45,7 @@ export function useTreeTableEditing({ controller }: UseTreeTableEditingParams): 
   const handleStartEdit = useCallback((node: TreeNodeInUI, field: 'name' | 'description' = 'name') => {
     setEditingNodeId(node.id);
     setEditingField(field);
-    const initial = field === 'name' ? node.metadata.name : (node.metadata.description || '');
+    const initial = field === 'name' ? getTreeNodeName(node) : getTreeNodeDescription(node);
     setEditingValue(initial);
     controller?.startEdit?.(node.id);
   }, [controller]);

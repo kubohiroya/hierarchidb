@@ -5,7 +5,7 @@ import type { SxProps } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { darken } from '@mui/material/styles';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
 import { NameCell, IndentSpace, StyledTableRow } from '../TreeTableStyles.js';
@@ -118,12 +118,12 @@ export function TreeTableRows({
               to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
               sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              {node.metadata.name}
+              {getTreeNodeName(node)}
             </Box>
           </NameCell>
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px`, paddingLeft: '4px' }}>
-          {node.metadata.description || '-'}
+          {getTreeNodeDescription(node) || '-'}
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
           {(() => {

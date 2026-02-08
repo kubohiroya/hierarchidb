@@ -1,5 +1,5 @@
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import {
   NodeContextMenu,
   NodeTypeIcon,
@@ -80,6 +80,15 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     && isRunnerTab
     && String(activeSessionId ?? '') === String(currentNode?.id ?? '');
   const isVisible = currentNode?.visible !== false;
+  const displayName = currentNode ? getTreeNodeName(currentNode).trim() : '';
+  const originalName =
+    typeof currentNode?.metadata?.name === 'string' && currentNode.metadata.name.trim().length > 0
+      ? currentNode.metadata.name
+      : labels.unnamedNodeLabel;
+  const originalDescription =
+    typeof currentNode?.metadata?.description === 'string' && currentNode.metadata.description.trim().length > 0
+      ? currentNode.metadata.description
+      : labels.emptyDescriptionLabel;
   const parentNodeId = currentNode?.parentId;
   const isStylerNode = currentNode?.nodeType === 'styler';
   const isRootNode =
@@ -159,18 +168,31 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
               textDecorationColor: isVisible ? 'initial' : 'inherit',
             }}
           >
-            {currentNode.metadata?.name || labels.unnamedNodeLabel}
+            {displayName || labels.unnamedNodeLabel}
           </Typography>
           {(isDraft || isBuildRunning) && (
             <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center">
               {isDraft && (
-                <Chip
-                  label={labels.draftLabel}
-                  size="small"
-                  color="error"
-                  variant="filled"
-                  sx={{ height: 20 }}
-                />
+                <Tooltip
+                  arrow
+                  placement="top"
+                  title={(
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 160 }}>
+                      <Box sx={{ fontWeight: 600 }}>{originalName}</Box>
+                      <Box>{originalDescription}</Box>
+                    </Box>
+                  )}
+                >
+                  <span>
+                    <Chip
+                      label={labels.draftLabel}
+                      size="small"
+                      color="error"
+                      variant="filled"
+                      sx={{ height: 20 }}
+                    />
+                  </span>
+                </Tooltip>
               )}
               {isBuildRunning && (
                 <CircularProgress

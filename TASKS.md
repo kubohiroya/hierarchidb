@@ -1,3 +1,72 @@
+2594) fix/location-preview/step4-preview-valid (P1) — 完了 (2026-02-08)
+- ブランチ名: fix/location-preview/step4-preview-valid
+- 依存: なし
+- 受け入れ基準: location の Step4 preview が Step1/2/3 が valid の時点で即 valid になる／Step1-4 が valid のため Save ボタンが有効になる／Step4 は preview であり既存の preview 表示・IDE-GSM import に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: Step4 valid 判定の差分を revert して元の条件へ戻す
+- チェックリスト:
+  - Step4 preview の valid 条件が Step1-3 の有効状態で即 valid になるよう修正する
+  - Step1-4 が valid のとき Save が有効になることを確認する
+  - 既存の preview 表示や IDE-GSM import の挙動に回帰がないことを確認する
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 07:53 JST location Step4 preview の valid 判定を Step1-3 有効時に即 valid とする対応に着手。
+  - update: 2026-02-08 07:55 JST map-preview の validate を Step1-3 の有効条件に合わせて isMapPreviewReady へ変更。
+  - done: 2026-02-08 07:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` exit 0（core-types build で tsdown define 警告あり）。
+
+2594) fix/subscription/metadata-change-notify (P1) — 完了 (2026-02-08)
+- ブランチ名: fix/subscription/metadata-change-notify
+- 依存: なし
+- 受け入れ基準: metadata の name/description 更新が TreeSubscriptionAPI 経由で購読者に通知される／TreeConsole 側で名称表示が更新される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/**` / `packages/tree-api/**` / `app/src/hooks/treeconsole/**`
+- ロールバック手順: 該当差分を revert して通知経路を元に戻す
+- チェックリスト:
+  - TreeSubscriptionService のイベント発火条件を調査する
+  - metadata 更新時に通知が飛ばない再現を確認する
+  - 必要な通知経路を修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 08:30 JST metadata 更新時の TreeSubscription 通知有無を調査開始。
+  - update: 2026-02-08 08:36 JST TreeNodeUpdaterService の draft 更新が CoreDB changeSubject を通らず通知されない経路を特定。更新後に changeSubject へ node-updated を送出するよう修正。
+  - done: 2026-02-08 08:37 JST `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` exit 0（core-types build で tsdown define 警告あり）。
+
+2593) refactor/tree-console/tree-node-display (P2) — 完了 (2026-02-08)
+- ブランチ名: refactor/tree-console/tree-node-display
+- 依存: なし
+- 受け入れ基準: TreeConsole 配下のツリーノード名表示が getTreeNodeName 経由に統一される／getTreeNodeName/getTreeNodeDescription が draftMetadata 優先で値を返す／draft 表示の Chip ホバーで metadata 本来の name/description が表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`（TreeConsole 周辺）/ `packages/**`（TreeNode 型定義の参照箇所）
+- ロールバック手順: 該当差分を revert して表示ロジックを元に戻す
+- チェックリスト:
+  - TreeConsole 配下の name 表示箇所を洗い出す
+  - getTreeNodeName/getTreeNodeDescription を追加する
+  - draft 表示の Chip に本来の name/description を表示する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 08:10 JST TreeConsole のツリーノード名表示ユーティリティ追加と表示統一に着手。
+  - update: 2026-02-08 08:24 JST getTreeNodeName/getTreeNodeDescription を追加し、TreeConsole の表示・Breadcrumb・InfoPanel・TreeTable に反映。Draft Chip のホバーで metadata の name/description を表示するツールチップを追加。
+  - done: 2026-02-08 08:25 JST `pnpm -w turbo run typecheck --filter @hierarchidb/tree-api --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+
+2593) fix/dialog/false-conflict-on-save (P1) — 進行中 (2026-02-08)
+- ブランチ名: fix/dialog/false-conflict-on-save
+- 依存: なし
+- 受け入れ基準: 競合がない保存で「他の編集と競合しています」が表示されない／別タブで同一ノードを保存した場合は従来通り競合検知される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/draft/*` / `packages/plugin-ui-host` / `packages/plugin-ui-sdk`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert して元の競合検知ロジックに戻す
+- チェックリスト:
+  - 保存時に不正な競合ダイアログが出る条件を再現する
+  - 競合検知の判定経路を特定する
+  - 最小差分で修正する
+  - 影響パッケージの typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 08:25 JST 保存時の誤競合ダイアログ表示の調査に着手。
+  - update: 2026-02-08 08:28 JST conflict 判定で remote の draftMetadata が null の場合は committed metadata/data を比較対象にするよう修正。`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-08 08:55 JST conflict 判定で data が null の場合は undefined と同等扱いに正規化し、folder の誤競合を回避する方向で修正。
+  - update: 2026-02-08 08:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown define 警告あり）。
+
 2592) fix/tags/step1-create-sync (P1) — 進行中 (2026-02-08)
 - ブランチ名: fix/tags/step1-create-sync
 - 依存: なし
@@ -14,6 +83,12 @@
   - start: 2026-02-08 07:33 JST Step1 Basic Info のタグ作成が `/tags` に反映されない問題の調査に着手。
   - update: 2026-02-08 07:36 JST BasicInfo のタグ入力は metadata の string[] のみ更新され、TagService への作成・関連付けが行われていないことを確認。commit 後に TagEntity/association を同期する方針で修正する。
   - update: 2026-02-08 07:39 JST commit 時に TagEntity を作成/再利用し、node との tag association を同期する処理を TreeNodeUpdaterService に追加。`pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-08 07:58 JST `pnpm -w turbo run build --filter @hierarchidb/runtime-worker` exit 0（tsdown define 警告あり）。dist を更新。
+  - update: 2026-02-08 08:12 JST save-draft 経路でも TagEntity/association を同期するよう TreeNodeUpdaterService を拡張。
+  - update: 2026-02-08 08:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker` exit 0（core-types build で tsdown define 警告あり）。`pnpm -w turbo run build --filter @hierarchidb/runtime-worker` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-08 09:05 JST TagService が Node の crypto 依存で worker 実行時に失敗する可能性があるため、browser 向けに globalThis.crypto.randomUUID() を使うよう修正（Tag 作成/関連付けが DB に反映されない原因候補）。
+  - update: 2026-02-08 09:07 JST `pnpm -w turbo run typecheck --filter @hierarchidb/tag` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-08 09:07 JST `pnpm -w turbo run build --filter @hierarchidb/tag` exit 0（tag/core-types/tag-api/util build で tsdown define 警告あり）。
 
 2591) fix/dialog/basic-info-input (P1) — 進行中 (2026-02-08)
 - ブランチ名: fix/dialog/basic-info-input

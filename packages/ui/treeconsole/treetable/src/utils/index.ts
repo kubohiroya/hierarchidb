@@ -4,7 +4,7 @@
   */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 
 export function calculateNodeDepth(node: TreeNode, allNodes: TreeNode[]): number {
   if (!node.parentId) {
@@ -154,7 +154,7 @@ export function getNodePath(
     node,
   ];
 
-  return pathNodes.map((n) => n?.metadata.name).join(separator);
+  return pathNodes.map((n) => (n ? getTreeNodeName(n) : '')).join(separator);
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import {
   getPluginIconColor,
   isFolderNodeType,
@@ -76,8 +76,8 @@ export function useTreeNodeInfoPanel({
         prev.visible !== nextNode.visible ||
         prev.updatedAt !== nextNode.updatedAt ||
         prev.version !== nextNode.version ||
-        prev.metadata?.name !== nextNode.metadata?.name ||
-        prev.metadata?.description !== nextNode.metadata?.description
+        getTreeNodeName(prev) !== getTreeNodeName(nextNode) ||
+        getTreeNodeDescription(prev) !== getTreeNodeDescription(nextNode)
       ) {
         return nextNode;
       }
@@ -328,12 +328,9 @@ export function useTreeNodeInfoPanel({
     setPendingTrashNode(null);
   }, []);
 
-  const description =
-    (currentNode?.metadata?.description &&
-      currentNode.metadata.description.trim().length > 0 &&
-      currentNode.metadata.description) ||
-    getString('treeConsole.infoPanel.emptyDescription', 'No description provided.') ||
-    '';
+  const descriptionText = currentNode ? getTreeNodeDescription(currentNode).trim() : '';
+  const emptyDescriptionLabel = getString('treeConsole.infoPanel.emptyDescription', 'No description provided.');
+  const description = descriptionText || emptyDescriptionLabel || '';
   const nodeTypeLabel = currentNode?.nodeType ?? 'node';
   const nodeDataDepth = nodeData?.depth ?? node?.depth;
   const depthForColor =
@@ -352,7 +349,8 @@ export function useTreeNodeInfoPanel({
     /root/i.test(currentNode?.nodeType ?? '') ||
     /trash/i.test(currentNode?.nodeType ?? '');
   const canMutate = !isRootLike;
-  const isDraft = Boolean(currentNode?.draftData);
+  const draftMetadata = (currentNode as { draftMetadata?: unknown } | undefined)?.draftMetadata;
+  const isDraft = Boolean(currentNode?.draftData) || (draftMetadata !== null && draftMetadata !== undefined);
 
   const labels = {
     createdLabel: getString('treeConsole.infoPanel.createdLabel', 'Created'),
@@ -360,6 +358,7 @@ export function useTreeNodeInfoPanel({
     updatedLabel: getString('treeConsole.infoPanel.updatedLabel', 'Updated'),
     updatedAtLabel: formatTimestamp(currentNode?.updatedAt),
     description,
+    emptyDescriptionLabel,
     confirmTrashTitle: getString('treeConsole.infoPanel.confirmTrashTitle', 'Move to Trash'),
     confirmTrashDescription: getString(
       'treeConsole.infoPanel.confirmTrashDescription',

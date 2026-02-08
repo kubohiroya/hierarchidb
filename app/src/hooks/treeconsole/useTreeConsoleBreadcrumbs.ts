@@ -7,7 +7,7 @@
 
 import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { SubscriptionId, TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
@@ -87,7 +87,7 @@ export function useTreeConsoleBreadcrumbs({
         }
         let nodes: BreadcrumbNode[] = ancestors.map((node) => ({
           id: node.id,
-          name: node.metadata?.name ?? '',
+          name: getTreeNodeName(node),
           nodeType: node.nodeType,
           visible: node.visible,
           parentId: parentMap.get(String(node.id)) ?? null,
@@ -108,7 +108,7 @@ export function useTreeConsoleBreadcrumbs({
 
         const currentBreadcrumb: BreadcrumbNode = {
           id: pageTreeNode.id,
-          name: pageTreeNode.metadata?.name ?? '',
+          name: getTreeNodeName(pageTreeNode),
           nodeType: pageTreeNode.nodeType,
           visible: pageTreeNode.visible,
           parentId: pageTreeNode.parentId ? String(pageTreeNode.parentId) : null,
@@ -127,7 +127,7 @@ export function useTreeConsoleBreadcrumbs({
             setBreadcrumbItems((prev) =>
               prev.map((item) => {
                 if (String(item.id) !== String(changedId)) return item;
-                const nextName = ev.node?.metadata?.name ?? item.name;
+                const nextName = ev.node ? getTreeNodeName(ev.node) : item.name;
                 const nextNodeType = ev.node?.nodeType ?? item.nodeType;
                 const nextVisible =
                   typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
@@ -155,7 +155,7 @@ export function useTreeConsoleBreadcrumbs({
           setBreadcrumbItems([
             {
               id: pageTreeNode.id,
-              name: pageTreeNode.metadata?.name ?? '',
+              name: getTreeNodeName(pageTreeNode),
               nodeType: pageTreeNode.nodeType,
             },
           ]);

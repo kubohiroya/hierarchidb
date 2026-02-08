@@ -3,7 +3,7 @@
  * Wraps the TreeTable node context menu interactions with controller actions.
  */
 
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
 import type { TreeNodeInUI, TreeTableController } from '../../types.js';
@@ -117,7 +117,7 @@ export function TreeTableContextMenu({
       nodeId={node?.id || ''}
       nodeType={node?.nodeType || 'folder'}
       treeId={treeId}
-      nodeName={node?.metadata.name}
+      nodeName={node ? getTreeNodeName(node) : ''}
       isVisible={node?.visible ?? true}
       canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}

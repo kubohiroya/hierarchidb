@@ -11,7 +11,6 @@ import {
   type TagEntity, toTagId } from '@hierarchidb/tag-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
-import crypto from 'crypto';
 
 /**
  * TagService - generic tagging service using a DB port.
@@ -27,8 +26,15 @@ export class TagService implements TagAPI {
 
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
     const now = Date.now() as Timestamp;
+    const uuid =
+      typeof globalThis.crypto?.randomUUID === 'function'
+        ? globalThis.crypto.randomUUID()
+        : null;
+    if (!uuid) {
+      throw new Error('crypto.randomUUID is not available');
+    }
     const tag: TagEntity = {
-      id: crypto.randomUUID() as TagId,
+      id: uuid as TagId,
       name: request.name.trim(),
       color: request.color,
       description: request.description?.trim(),

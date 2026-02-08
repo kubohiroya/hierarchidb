@@ -70,6 +70,7 @@ export type {
   TreeNodeUpdaterPayload,
   TreeNodeWithChildren,
 } from './tree-node-types.js';
+export { getTreeNodeDescription, getTreeNodeName } from './tree-node-utils.js';
 export { NODE_TYPES } from './tree-node-types.js';
 export type { TreeRootNodeType } from './tree-root-node-types.js';
 export { TREE_ROOT_NODE_TYPES } from './tree-root-node-types.js';

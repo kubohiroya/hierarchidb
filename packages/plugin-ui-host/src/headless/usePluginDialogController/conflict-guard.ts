@@ -85,14 +85,23 @@ export function useConflictGuard(params: {
     const localVersion = acknowledgedVersionRef.current ?? 0;
     if (latest.version > localVersion) {
       const localSnapshot = getLocalDraftSnapshot?.() ?? null;
+      const latestNode = latest.latest as TreeNode;
       const latestDraftData =
-        (latest.latest as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
+        (latestNode as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
       const latestDraftMetadata =
-        (latest.latest as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
-      const isSameContent = compareDraftSnapshots(localSnapshot, {
-        draftData: latestDraftData,
-        draftMetadata: latestDraftMetadata,
-      });
+        (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
+      const normalizeDraftData = (value: unknown) => {
+        if (value === null || typeof value === 'undefined') return undefined;
+        return value;
+      };
+      const remoteSnapshot = {
+        draftData: normalizeDraftData(
+          latestDraftData ??
+            ((latestNode as { data?: Partial<PeerEntity<TreeNodeData>> }).data ?? undefined)
+        ),
+        draftMetadata: latestDraftMetadata ?? (latestNode.metadata ?? null),
+      };
+      const isSameContent = compareDraftSnapshots(localSnapshot, remoteSnapshot);
       if (isSameContent) {
         acknowledgedVersionRef.current = latest.version;
         updateTreeNodeUpdater({

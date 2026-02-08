@@ -6,7 +6,7 @@ import {
 } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeNode } from '@hierarchidb/tree-api';
+import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
@@ -192,21 +192,9 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const selectionCheckboxPrefix = selectionIdPrefix || 'row-selection';
   const selectionAllCheckboxId = `${selectionCheckboxPrefix}-all`;
 
-  const getNameValue = (node: TreeNode): string => {
-    const metaName = (node as { metadata?: { name?: unknown } }).metadata?.name;
-    const raw = typeof metaName !== 'undefined' ? metaName : (node as { name?: unknown }).name;
-    if (typeof raw === 'string') return raw;
-    if (raw === null || raw === undefined) return '';
-    return String(raw);
-  };
+  const getNameValue = (node: TreeNode): string => getTreeNodeName(node);
 
-  const getDescriptionValue = (node: TreeNode): string => {
-    const metaDesc = (node as { metadata?: { description?: unknown } }).metadata?.description;
-    const raw = typeof metaDesc !== 'undefined' ? metaDesc : (node as { description?: unknown }).description;
-    if (typeof raw === 'string') return raw;
-    if (raw === null || raw === undefined) return '';
-    return String(raw);
-  };
+  const getDescriptionValue = (node: TreeNode): string => getTreeNodeDescription(node);
 
   const selectionColumn: ColumnDef<TreeNode> = {
     id: 'selection',
@@ -435,7 +423,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 }}
                 onBlur={(event) => {
                   const nextValue = event.target.value.trim();
-                  if (nextValue === node.metadata.name) {
+                  if (nextValue === getTreeNodeName(node)) {
                     setEditingNodeId(null);
                     setEditingField(null);
                     setEditingError(null);
@@ -455,7 +443,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   if (event.key === 'Enter') {
                     event.stopPropagation();
                     const nextValue = event.currentTarget.value.trim();
-                    if (nextValue === node.metadata.name) {
+                    if (nextValue === getTreeNodeName(node)) {
                       setEditingNodeId(null);
                       setEditingField(null);
                       setEditingError(null);
@@ -525,18 +513,35 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                     '&:hover': { textDecoration: isVisible ? 'underline' : 'line-through' },
                   }}
                 >
-                  {node.metadata.name}
+                  {getTreeNodeName(node)}
                 </Box>
                 <SparkleAnimation showSparkle={showSparkle} />
                 {hasSelfDraft ? (
-                  <Chip
-                    label={params.draftChipLabels.self}
-                    size="small"
-                    color="error"
-                    variant="filled"
-                    sx={{ height: 20 }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <Tooltip
+                    arrow
+                    placement="top"
+                    title={(
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 160 }}>
+                        <Box sx={{ fontWeight: 600 }}>
+                          {columnLabels.name}: {typeof node.metadata?.name === 'string' && node.metadata.name.length > 0 ? node.metadata.name : emptyValue}
+                        </Box>
+                        <Box>
+                          {columnLabels.description}: {typeof node.metadata?.description === 'string' && node.metadata.description.length > 0 ? node.metadata.description : emptyValue}
+                        </Box>
+                      </Box>
+                    )}
+                  >
+                    <span>
+                      <Chip
+                        label={params.draftChipLabels.self}
+                        size="small"
+                        color="error"
+                        variant="filled"
+                        sx={{ height: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </span>
+                  </Tooltip>
                 ) : hasDescendantDraft ? (
                   <Chip
                     label={descendantDraftLabel}
@@ -604,7 +609,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               }}
               onBlur={(event) => {
                 const nextValue = event.target.value.trim();
-                if ((node.metadata.description || '') === nextValue) {
+                if (getTreeNodeDescription(node) === nextValue) {
                   setEditingNodeId(null);
                   setEditingField(null);
                   setEditingError(null);
@@ -648,7 +653,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         );
       }
 
-      if (!node.metadata.description) return emptyValue;
+      if (!getTreeNodeDescription(node)) return emptyValue;
       return (
         <Box
           sx={{
@@ -663,7 +668,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
             handleStartEdit(node, 'description');
           }}
         >
-          <span>{node.metadata.description}</span>
+          <span>{getTreeNodeDescription(node)}</span>
         </Box>
       );
     },
