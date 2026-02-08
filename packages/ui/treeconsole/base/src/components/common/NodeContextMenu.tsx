@@ -19,7 +19,8 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch } from '@mui/material';
-import { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useTreeConsoleNodeContextMenu } from '../../hooks/useTreeConsoleNodeContextMenu.js';
 
 export interface TreeConsoleNodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -58,179 +59,37 @@ export interface TreeConsoleNodeContextMenuProps {
  * eria-cartographRowContextMenuMUI
  */
 export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactElement | null {
+  const { canCreate = true, canEdit = true, canDuplicate = true, addMenuNodeTypes = [] } = props;
+
   const {
-    anchorEl,
-    anchorPosition,
-    open,
-    onClose,
-    nodeType = 'folder',
-    canOpen: _canOpen = true,
-    canEdit = true,
-    canCreate = true,
-    canRemove,
-    canTrash,
-    canDuplicate = true,
-    onOpen: _onOpen,
-    onOpenFolder: _onOpenFolder,
-    onPreview: _onPreview,
-    onEdit: _onEdit,
-    onCreate: _onCreate,
-    onDuplicate: _onDuplicate,
-    onRemove: _onRemove,
-    onTrash: _onTrash,
-    onToggleVisible: _onToggleVisible,
-    isVisible,
-    addMenuNodeTypes = [],
-  } = props;
-
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
-  const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
-
-  // Use refs to store the latest props to avoid stale closures
-  const propsRef = useRef(props);
-  useEffect(() => {
-    propsRef.current = props;
-  });
-
-  useEffect(() => {
-    if (!open) {
-      setLocalInvisible(null);
-      return;
-    }
-    const resolvedVisible = typeof isVisible === 'boolean' ? isVisible : true;
-    if (localInvisible !== null && localInvisible === !resolvedVisible) {
-      setLocalInvisible(null);
-    }
-  }, [open, isVisible, localInvisible]);
-
-  const handleAddMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
-    event.stopPropagation();
-    event.preventDefault();
-    // Get the menu item element as anchor
-    const menuItem = event.currentTarget.closest('li');
-    if (menuItem) {
-      setAddMenuAnchor(menuItem as HTMLElement);
-      setAddMenuOpen(true);
-    }
-  }, []);
-
-  const handleMainMenuClose = useCallback(() => {
-    // Close all submenus as well
-    setAddMenuOpen(false);
-    setAddMenuAnchor(null);
-    onClose();
-  },[onClose]);
-
-  const handleOpenClick = useCallback(() => {
-    const onOpen = propsRef.current.onOpen;
-    handleMainMenuClose();
-    // Call onOpen after menu is closed to avoid conflicts
-    requestAnimationFrame(() => {
-      onOpen?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handleOpenFolderClick = useCallback(() => {
-    const onOpenFolder = propsRef.current.onOpenFolder;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onOpenFolder?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handleEditClick = useCallback(() => {
-    const onEdit = propsRef.current.onEdit;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onEdit?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handleCreateClick = useCallback((type: string) => {
-    const onCreate = propsRef.current.onCreate;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onCreate?.(type);
-    });
-  }, [handleMainMenuClose]);
-
-  const handleDuplicateClick = useCallback(() => {
-    const onDuplicate = propsRef.current.onDuplicate;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onDuplicate?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handleTrashClick = useCallback(() => {
-    const current = propsRef.current;
-    const handler = current.onTrash ?? current.onRemove;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      handler?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handlePreviewClick = useCallback(() => {
-    const onPreview = propsRef.current.onPreview;
-    handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onPreview?.();
-    });
-  }, [handleMainMenuClose]);
-
-  const handleToggleVisible = useCallback(() => {
-    const onToggleVisible = propsRef.current.onToggleVisible;
-    const effectiveVisible =
-      localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
-    const nextVisible = !effectiveVisible;
-    setLocalInvisible(!nextVisible);
-    requestAnimationFrame(() => {
-      onToggleVisible?.(nextVisible);
-    });
-  }, [isVisible, localInvisible]);
-
-  // Effect to ensure menus are closed when anchorEl changes
-  useEffect(() => {
-    if (!anchorEl) {
-      setAddMenuOpen(false);
-      setAddMenuAnchor(null);
-    }
-  }, [anchorEl]);
-
-  const isFolder =
-    nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
-  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
-
-  const safeAnchorEl = useMemo(() => {
-    try {
-      if (!anchorEl) return null;
-      const doc = anchorEl.ownerDocument || document;
-      return doc.contains(anchorEl) ? anchorEl : null;
-    } catch (error) {
-      console.warn('[NodeContextMenu] Failed to validate context menu anchor', error);
-      return null;
-    }
-  }, [anchorEl]);
-
-  const fallbackAnchorPosition = !safeAnchorEl && anchorPosition ? anchorPosition : null;
-
-  useEffect(() => {
-    if (open && !safeAnchorEl && !fallbackAnchorPosition) {
-      requestAnimationFrame(() => handleMainMenuClose());
-    }
-  }, [open, safeAnchorEl, fallbackAnchorPosition, handleMainMenuClose]);
+    addMenuOpen,
+    addMenuAnchor,
+    isFolder,
+    allowTrash,
+    safeAnchorEl,
+    fallbackAnchorPosition,
+    effectiveVisible,
+    effectiveInvisible,
+    labels,
+    handleAddMenuClick,
+    handleMainMenuClose,
+    handleOpenClick,
+    handleOpenFolderClick,
+    handleEditClick,
+    handleCreateClick,
+    handleDuplicateClick,
+    handleTrashClick,
+    handlePreviewClick,
+    handleToggleVisible,
+  } = useTreeConsoleNodeContextMenu(props);
 
   return (
     <>
-      {/*
-       */}
       <Menu
         anchorEl={safeAnchorEl}
         anchorReference={fallbackAnchorPosition ? 'anchorPosition' : 'anchorEl'}
         anchorPosition={fallbackAnchorPosition ?? undefined}
-        open={open && (!!safeAnchorEl || !!fallbackAnchorPosition)}
+        open={props.open && (!!safeAnchorEl || !!fallbackAnchorPosition)}
         onClose={handleMainMenuClose}
         disablePortal={false}
         keepMounted={false}
@@ -264,11 +123,11 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
         }}
       >
         {canCreate && (
-          <MenuItem onClick={handleAddMenuClick} aria-label="Create">
+          <MenuItem onClick={handleAddMenuClick} aria-label={labels.create}>
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
-            <ListItemText>Create</ListItemText>
+            <ListItemText>{labels.create}</ListItemText>
             <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
           </MenuItem>
         )}
@@ -276,58 +135,53 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
         {canCreate && <Divider />}
 
         {isFolder ? (
-          <MenuItem onClick={handleOpenFolderClick} aria-label="Open Folder">
+          <MenuItem onClick={handleOpenFolderClick} aria-label={labels.openFolder}>
             <ListItemIcon>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText>Open Folder</ListItemText>
+            <ListItemText>{labels.openFolder}</ListItemText>
           </MenuItem>
         ) : (
-          <MenuItem onClick={handleOpenClick} aria-label="Open">
+          <MenuItem onClick={handleOpenClick} aria-label={labels.open}>
             <ListItemIcon>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText>Open</ListItemText>
+            <ListItemText>{labels.open}</ListItemText>
           </MenuItem>
         )}
 
-        <MenuItem onClick={handleEditClick} disabled={!canEdit} aria-label="Edit">
+        <MenuItem onClick={handleEditClick} disabled={!canEdit} aria-label={labels.edit}>
           <ListItemIcon>
             <EditIcon />
           </ListItemIcon>
-          <ListItemText>Edit</ListItemText>
+          <ListItemText>{labels.edit}</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label="Duplicate">
+        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label={labels.duplicate}>
           <ListItemIcon>
             <ContentCopyIcon />
           </ListItemIcon>
-          <ListItemText>Duplicate</ListItemText>
+          <ListItemText>{labels.duplicate}</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label="Move to Trash">
+        <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label={labels.moveToTrash}>
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>
-          <ListItemText>Move to Trash</ListItemText>
+          <ListItemText>{labels.moveToTrash}</ListItemText>
         </MenuItem>
 
         <Divider />
 
-        {(() => {
-          const effectiveVisible =
-            localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
-          const effectiveInvisible = !effectiveVisible;
-          return (
-            <MenuItem
-              onClick={handleToggleVisible}
-              aria-label={effectiveInvisible ? 'Invisible' : 'Visible'}
-              sx={{ minWidth: 200 }}
-            >
+        <MenuItem
+          onClick={handleToggleVisible}
+          aria-label={effectiveInvisible ? labels.hidden : labels.visible}
+          sx={{ minWidth: 200 }}
+        >
           <ListItemIcon>
             {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText>{effectiveInvisible ? 'Invisible' : 'Visible'}</ListItemText>
+          <ListItemText>{effectiveInvisible ? labels.hidden : labels.visible}</ListItemText>
           <Switch
             checked={effectiveVisible}
             size="small"
@@ -336,34 +190,23 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
               handleToggleVisible();
             }}
             sx={{ ml: 'auto' }}
-            inputProps={{ 'aria-label': effectiveInvisible ? 'Invisible' : 'Visible' }}
+            inputProps={{ 'aria-label': effectiveInvisible ? labels.hidden : labels.visible }}
           />
         </MenuItem>
-          );
-        })()}
 
         {!isFolder && (
           <>
             <Divider />
-            {(() => {
-              const effectiveVisible =
-                localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
-              return (
-                <MenuItem onClick={handlePreviewClick} aria-label="Preview" disabled={!effectiveVisible}>
+            <MenuItem onClick={handlePreviewClick} aria-label={labels.preview} disabled={!effectiveVisible}>
               <ListItemIcon>
                 <PlayArrowIcon />
               </ListItemIcon>
-              <ListItemText>Preview</ListItemText>
+              <ListItemText>{labels.preview}</ListItemText>
             </MenuItem>
-              );
-            })()}
           </>
         )}
       </Menu>
 
-      {/*
- Create
-*/}
       <Menu
         anchorEl={addMenuAnchor}
         open={addMenuOpen}
@@ -398,27 +241,27 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
           },
         }}
       >
-        <MenuItem onClick={() => handleCreateClick('folder')} aria-label="Folder">
+        <MenuItem onClick={() => handleCreateClick('folder')} aria-label={labels.createFolder}>
           <ListItemIcon>
             <CreateFolderIcon />
           </ListItemIcon>
-          <ListItemText>Folder</ListItemText>
+          <ListItemText>{labels.createFolder}</ListItemText>
         </MenuItem>
 
         {addMenuNodeTypes.length > 0 && <Divider />}
 
-        <MenuItem onClick={() => handleCreateClick('note')} aria-label="Note">
+        <MenuItem onClick={() => handleCreateClick('note')} aria-label={labels.createNote}>
           <ListItemIcon>
             <NoteAddIcon />
           </ListItemIcon>
-          <ListItemText>Note</ListItemText>
+          <ListItemText>{labels.createNote}</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={() => handleCreateClick('file')} aria-label="File">
+        <MenuItem onClick={() => handleCreateClick('file')} aria-label={labels.createFile}>
           <ListItemIcon>
             <FileIcon />
           </ListItemIcon>
-          <ListItemText>File</ListItemText>
+          <ListItemText>{labels.createFile}</ListItemText>
         </MenuItem>
       </Menu>
     </>

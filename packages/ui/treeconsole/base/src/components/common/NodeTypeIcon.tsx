@@ -23,8 +23,6 @@ interface NodeTypeIconProps {
   htmlColor?: string;
 }
 
-/**
-    */
 function getIconByType(nodeType: string) {
   switch (nodeType) {
     case 'ProjectFolder':
@@ -46,9 +44,6 @@ function getIconByType(nodeType: string) {
   }
 }
 
-/**
-  * NodeTypeIcon
-  */
 export function NodeTypeIcon({
                                nodeType,
                                size = 'small',

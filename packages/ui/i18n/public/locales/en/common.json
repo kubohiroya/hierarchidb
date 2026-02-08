@@ -333,6 +333,9 @@
     },
     "contextMenu": {
       "create": "Create",
+      "createFolder": "Folder",
+      "createNote": "Note",
+      "createFile": "File",
       "createUnavailable": "Create menu unavailable",
       "createTooltip": "{{label}}: {{description}}",
       "openFolder": "Open folder",
@@ -347,6 +350,19 @@
       "checkReference": "Check reference",
       "preview": "Preview",
       "build": "Build"
+    },
+    "content": {
+      "loading": "Loading...",
+      "empty": {
+        "restore": "No items can be restored from the trash.",
+        "dispose": "No items can be permanently deleted.",
+        "projects": "No projects yet. Create a new project to get started.",
+        "resources": "No resources yet. Create a new resource to get started.",
+        "default": "No data available."
+      }
+    },
+    "breadcrumb": {
+      "blockedDescendantMove": "Cannot move to a descendant."
     },
     "errors": {
       "trashFailed": "Move to trash failed.",

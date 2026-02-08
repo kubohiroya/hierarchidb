@@ -1,3 +1,17 @@
+2601) chore/i18n/treeconsole-breadcrumb-tooltip (P3) — 完了 (2026-02-08)
+- ブランチ名: なし
+- 依存: なし
+- 受け入れ基準: パンくずの「子孫に移動することはできません」が i18n キー経由で表示される／英語ロケールで英訳が表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx` / `packages/ui/i18n/public/locales/en/common.json` / `packages/ui/i18n/public/locales/ja/common.json`
+- ロールバック手順: 追加した i18n キーと参照を revert して直書きに戻す
+- チェックリスト:
+  - パンくずの tooltip 文言を i18n キー経由に差し替える
+  - 英日ロケールにキーを追加する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 12:20 JST パンくず tooltip の i18n 化に着手。
+  - done: 2026-02-08 12:22 JST i18n キー追加と参照更新を完了（検証未実施）。
+
 2600) feat/tree-console/tag-chip-links (P1) — 完了 (2026-02-08)
 - ブランチ名: codex/feat/tree-console/tag-chip-links
 - 依存: なし
@@ -1017,6 +1031,18 @@
   - update: 2026-02-07 10:40 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
   - start: 2026-02-07 10:42 JST TagsLinkButton の表示条件と分岐箇所の確認に着手。
   - update: 2026-02-07 10:44 JST TreeConsoleIntegration 側の shouldRenderTreeTable 分岐で TreeConsolePanel が描画されず、TagsLinkButton が出ない経路を確認。
+  - start: 2026-02-07 10:48 JST TreeConsoleIntegration と TreeConsolePanelWithDynamicSpeedDial の統合とフック整理に着手。
+  - update: 2026-02-08 13:39 JST TreeConsoleBreadcrumb に leftSlot を追加し、TagsLinkButton を共通スロットで表示する方針の実装を進行中。
+  - update: 2026-02-08 13:41 JST TreeConsoleBreadcrumb の leftSlot 対応と TagsLinkButton の共通表示を実装し、TreeConsoleIntegration 統合側へ反映。
+  - update: 2026-02-08 13:41 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build の tsdown define 警告あり）。
+  - update: 2026-02-08 13:43 JST TreeConsoleIntegration と TreeConsolePanelWithDynamicSpeedDial の統合済みを確認（後者ファイルは削除済み、ロジックは useTreeConsoleSpeedDial などへ移行済み）。
+  - start: 2026-02-08 13:49 JST TreeConsoleBreadcrumb のロジックをカスタムフックへ切り出すリファクタに着手。
+  - update: 2026-02-08 13:50 JST TreeConsoleBreadcrumb のロジックを useTreeConsoleBreadcrumb へ移し、表示側を簡素化。
+  - update: 2026-02-08 13:50 JST pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck exit 0 を確認。
+  - start: 2026-02-08 13:52 JST TreeConsole base の NodeContextMenu/TreeConsoleContent をフック切り出し + i18n 化に着手。
+  - update: 2026-02-08 13:56 JST NodeContextMenu/TreeConsoleContent のロジックをフックへ切り出し、TreeConsole コンテキストメニューと空表示を i18n 化。
+  - update: 2026-02-08 13:56 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+
 
 
 

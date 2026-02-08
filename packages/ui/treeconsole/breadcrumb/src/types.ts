@@ -2,6 +2,7 @@
  * Types for TreeConsoleBreadcrumb package
  */
 
+import type { ReactElement } from 'react';
 import type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';
 
 export interface BreadcrumbNode {
@@ -112,6 +113,11 @@ export interface TreeConsoleBreadcrumbProps {
     },
   ) => void;
 
+
+  /**
+   * Optional element rendered to the left of breadcrumbs.
+   */
+  leftSlot?: ReactElement;
   /**
    * Optional resolver for Open-step submenu.
    */

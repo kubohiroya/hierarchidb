@@ -333,6 +333,9 @@
     },
     "contextMenu": {
       "create": "作成",
+      "createFolder": "フォルダー",
+      "createNote": "ノート",
+      "createFile": "ファイル",
       "createUnavailable": "作成メニューを利用できません",
       "createTooltip": "{{label}}: {{description}}",
       "openFolder": "フォルダーを開く",
@@ -347,6 +350,19 @@
       "checkReference": "参照を確認",
       "preview": "プレビュー",
       "build": "ビルド"
+    },
+    "content": {
+      "loading": "読み込み中...",
+      "empty": {
+        "restore": "ゴミ箱に復元できるアイテムはありません。",
+        "dispose": "完全削除できるアイテムはありません。",
+        "projects": "プロジェクトがありません。新しいプロジェクトを作成してください。",
+        "resources": "リソースがありません。新しいリソースを作成してください。",
+        "default": "データがありません。"
+      }
+    },
+    "breadcrumb": {
+      "blockedDescendantMove": "子孫に移動することはできません"
     },
     "errors": {
       "trashFailed": "ゴミ箱への移動に失敗しました。",

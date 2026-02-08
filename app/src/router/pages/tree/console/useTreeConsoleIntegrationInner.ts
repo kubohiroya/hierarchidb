@@ -1,10 +1,11 @@
 import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode, TreeConsolePanelProps as BaseTreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import { TagsLinkButton } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
-import { useCallback, useMemo, useState } from 'react';
+import { createElement, useCallback, useMemo, useState } from 'react';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
@@ -16,9 +17,7 @@ import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
 import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions.js';
 import { useTreeConsoleTrashWatcher } from './useTreeConsoleTrashWatcher.js';
 
-type TreeConsolePanelProps = React.ComponentProps<
-  typeof import('./TreeConsolePanelWithDynamicSpeedDial.js').TreeConsolePanelWithDynamicSpeedDial
->;
+type TreeConsolePanelProps = BaseTreeConsolePanelProps;
 type TreeConsoleBreadcrumbProps = React.ComponentProps<
   typeof import('@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb').TreeConsoleBreadcrumb
 >;
@@ -358,6 +357,11 @@ export function useTreeConsoleIntegrationInner({
     isDialogRoute,
   } as TreeConsolePanelProps;
 
+  const tagsLeftSlot =
+    treeId && pageNodeId
+      ? createElement(TagsLinkButton, { treeId: String(treeId), pageNodeId: String(pageNodeId) })
+      : undefined;
+
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {
     nodePath: breadcrumbItems,
     onNodeClick: actions.handleBreadcrumbNavigate,
@@ -367,6 +371,7 @@ export function useTreeConsoleIntegrationInner({
     iconInteractive: !isTrashPage,
     onContextAction: handleBreadcrumbContextAction,
     resolveOpenSteps,
+    leftSlot: tagsLeftSlot,
   } as TreeConsoleBreadcrumbProps;
 
   const infoPanelProps: TreeNodeInfoPanelProps = {

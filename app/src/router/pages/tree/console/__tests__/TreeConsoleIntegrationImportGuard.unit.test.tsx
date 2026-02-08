@@ -15,12 +15,17 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb', () => ({
   TreeConsoleBreadcrumb: () => null,
 }));
 
-vi.mock('../TreeConsolePanelWithDynamicSpeedDial.js', () => ({
-  TreeConsolePanelWithDynamicSpeedDial: () => null,
+vi.mock('@hierarchidb/ui-treeconsole-base', () => ({
+  TreeConsolePanel: () => null,
+  TagsLinkButton: () => null,
 }));
 
 vi.mock('../TreeNodeInfoPanel.js', () => ({
   TreeNodeInfoPanel: () => null,
+}));
+
+vi.mock('../DynamicSpeedDial.js', () => ({
+  DynamicSpeedDial: () => null,
 }));
 
 const mockHookActions = {

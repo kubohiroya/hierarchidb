@@ -95,7 +95,6 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       parts.push(`${selectedCount} selected`);
     }
 
-    //  /
     if (controller?.searchText && controller.searchText.trim() !== '') {
       parts.push(`${filteredCount} found`);
       parts.push(`${totalCount} total`);

@@ -130,6 +130,11 @@ export interface TreeConsolePanelProps {
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
+  const tagsLeftSlot =
+    props.treeId && props.pageNodeId
+      ? <TagsLinkButton treeId={props.treeId} pageNodeId={props.pageNodeId} />
+      : undefined;
+
   const {
     controller,
     shouldSplitView,
@@ -161,6 +166,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     onBreadcrumbContextAction: props.onBreadcrumbContextAction,
     breadcrumbRenderer: props.breadcrumbRenderer,
     buildSessionIndicator: props.buildSessionIndicator,
+    leftSlot: tagsLeftSlot,
   });
 
   if (!isPageContextValid) {
@@ -177,7 +183,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: 0 }}>
-        <TagsLinkButton treeId={props.treeId as string} pageNodeId={props.pageNodeId as string} />
         {breadcrumbElement}
       </Box>
       {/* Main Table Content */}

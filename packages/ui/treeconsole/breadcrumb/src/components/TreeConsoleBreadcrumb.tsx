@@ -19,21 +19,12 @@ import {
 import type { Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { Link as RouterLink } from '@tanstack/react-router';
-import {
-  type DragEvent,
-  type KeyboardEvent,
-  type MouseEvent,
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import type { DragEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
 import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
 import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
 import { getPluginIconColor, isFolderNodeType } from '../utils/nodeTypeIconColor.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { NodeTypeIcon } from './NodeTypeIcon.js';
+import { useTreeConsoleBreadcrumb } from '../hooks/useTreeConsoleBreadcrumb.js';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
@@ -154,179 +145,46 @@ const BreadcrumbLink = styled(RouterLink, {
 
 export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
   const {
-    nodePath = [],
-    currentNodeId: _currentNodeId,
-    onNodeClick,
-    variant: _variant = 'default',
-    context = {},
     depthOffset: _depthOffset = 0,
-    NodeTypeIcon: CustomNodeTypeIcon,
-    NodeContextMenu: CustomNodeContextMenu,
     pageNodeId,
     onContextAction,
+    leftSlot,
+    treeId,
   } = props;
 
-  const { isTrashPage: _isTrashPage, isProjectsPage } = context;
-  const useTrashColumnsFlag: boolean = Boolean(props.useTrashColumns);
-  const trashActionValue: 'restore' | 'empty' | undefined = props.trashAction;
-  const iconInteractive = props.iconInteractive ?? true;
-
-  // Use custom containers if provided, otherwise use defaults
-  const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
-  const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
-
-  const [contextMenuAnchor, setContextMenuAnchor] = useState<HTMLElement | null>(null);
-  const [contextMenuNode, setContextMenuNode] = useState<BreadcrumbNode | null>(null);
-  const [openSteps, setOpenSteps] = useState<import('./NodeContextMenu.js').OpenStepOption[]>([]);
-  const [openStepsLoading, setOpenStepsLoading] = useState(false);
-
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState<string | null>(null);
-  const [pendingDeleteNode, setPendingDeleteNode] = useState<BreadcrumbNode | null>(null);
-
-  const [isNavigating, _setIsNavigating] = useState(false);
-  const [hoverId, setHoverId] = useState<string | null>(null);
-  const [hoverBlocked, setHoverBlocked] = useState<boolean>(false);
-
-  let pathToUse: BreadcrumbNode[] = [];
-
-  if (nodePath && nodePath.length > 0) {
-    pathToUse = [...nodePath];
-  } else {
-    const rootNodeName = isProjectsPage ? 'Projects' : 'Resources';
-    pathToUse = [
-      {
-        id: isProjectsPage ? 'projects-root' : 'resources-root',
-        nodeType: isProjectsPage ? 'ProjectsRoot' : 'ResourcesRoot',
-        name: rootNodeName,
-        parentId: null,
-      },
-    ];
-  }
-
-  const handleNodeClick = useCallback(
-    (nodeId: string, node?: BreadcrumbNode) => {
-      if (onNodeClick) {
-        onNodeClick(nodeId, node);
-      } else if (onContextAction && node) {
-        onContextAction('navigate', node);
-      }
-    },
-    [onContextAction, onNodeClick]
-  );
-
-  const handleConfirmTrash = useCallback(async () => {
-    if (pendingDeleteNodeId && pendingDeleteNode && onContextAction) {
-      onContextAction('trash', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
-    }
-    setConfirmDialogOpen(false);
-    setPendingDeleteNodeId(null);
-    setPendingDeleteNode(null);
-  }, [onContextAction, pendingDeleteNode, pendingDeleteNodeId]);
-
-  const openContextMenu = (node: BreadcrumbNode, anchorEl: HTMLElement | null) => {
-    if (!anchorEl) return;
-    setContextMenuAnchor(anchorEl);
-    setContextMenuNode(node);
-  };
-
-  const handleContextMenuOpen = (
-    event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
-    node: BreadcrumbNode
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const anchorEl = event.currentTarget as unknown as HTMLElement | null;
-    openContextMenu(node, anchorEl);
-  };
-
-  const handleContextMenuClose = () => {
-    setContextMenuAnchor(null);
-    setContextMenuNode(null);
-    setOpenSteps([]);
-  };
-
-  useEffect(() => {
-    const resolver = props.resolveOpenSteps;
-    const node = contextMenuNode;
-    if (!resolver || !contextMenuAnchor || !node) {
-      setOpenSteps([]);
-      setOpenStepsLoading(false);
-      return;
-    }
-    const nodeId = node.id ?? node.treeNodeId;
-    const nodeType = node.nodeType;
-    if (!nodeId || !nodeType) {
-      setOpenSteps([]);
-      return;
-    }
-    let cancelled = false;
-    setOpenStepsLoading(true);
-    void (async () => {
-      const steps = await resolver(String(nodeId), String(nodeType));
-      if (!cancelled) {
-        setOpenSteps(Array.isArray(steps) ? steps : []);
-        setOpenStepsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [contextMenuAnchor, contextMenuNode, props.resolveOpenSteps]);
-
-  const handleCreate = (type: string) => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction(`create:${type}`, contextMenuNode, {
-        navigateToParent: true,
-        source: 'breadcrumb',
-      });
-    }
-  };
-
-  const handleEdit = () => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction('edit', contextMenuNode, { source: 'breadcrumb' });
-    }
-  };
-
-  const handleDuplicate = () => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction('duplicate', contextMenuNode, { source: 'breadcrumb' });
-    }
-  };
-
-  const handleCopy = () => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction('copy', contextMenuNode, { source: 'breadcrumb' });
-    }
-  };
-
-  const handleCut = () => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction('cut', contextMenuNode, { navigateToParent: true, source: 'breadcrumb' });
-    }
-  };
-
-  const handleBuild = () => {
-    if (contextMenuNode && onContextAction) {
-      onContextAction('build', contextMenuNode, { source: 'breadcrumb' });
-    }
-  };
-
-  const handleTrash = () => {
-    if (contextMenuNode) {
-      setPendingDeleteNodeId(contextMenuNode.id || contextMenuNode.id || '');
-      setPendingDeleteNode(contextMenuNode);
-      setConfirmDialogOpen(true);
-    }
-  };
-
-  const isRootContext = ((): boolean => {
-    if (!contextMenuNode) return false;
-    const first = pathToUse[0];
-    return !!first && String(first.id) === String(contextMenuNode.id || contextMenuNode.id);
-  })();
+  const {
+    pathToUse,
+    iconInteractive,
+    IconComponent,
+    ContextMenuComponent,
+    blockedDescendantMoveLabel,
+    handleNodeClick,
+    handleContextMenuOpen,
+    handleContextMenuClose,
+    openContextMenu,
+    contextMenuAnchor,
+    contextMenuNode,
+    openSteps,
+    openStepsLoading,
+    confirmDialogOpen,
+    setConfirmDialogOpen,
+    handleConfirmTrash,
+    handleCreate,
+    handleEdit,
+    handleDuplicate,
+    handleCopy,
+    handleCut,
+    handleBuild,
+    handleTrash,
+    isRootContext,
+    isNavigating,
+    hoverId,
+    setHoverId,
+    hoverBlocked,
+    setHoverBlocked,
+    useTrashColumnsFlag,
+    trashActionValue,
+  } = useTreeConsoleBreadcrumb(props);
 
   return (
     <>
@@ -339,6 +197,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             px: 2,
           }}
         >
+          {leftSlot && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+              {leftSlot}
+            </Box>
+          )}
           {isNavigating && <CircularProgress size={20} sx={{ mr: 2 }} />}
 
           <Breadcrumbs
@@ -363,13 +226,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                   ? Math.max(0, Math.round(absoluteDepth))
                   : Math.max(0, index + _depthOffset);
               const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
-              const nodeType =
-                nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
+              const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
               const manifestIconColor = getPluginIconColor(nodeType);
               const iconColor = isFolderNodeType(nodeType)
                 ? baseIconColor
                 : (manifestIconColor ?? baseIconColor);
-              const treeId = props.treeId;
               const hasTreeId = Boolean(treeId);
               const isRootLike =
                 index === 0 && (!node.parentId || (hasTreeId && nodeIdString === `${treeId}:root`));
@@ -378,7 +239,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                 nodeId: nodeIdString,
                 pageNodeId,
                 holderType: node.holderType as 'draft' | 'trash' | undefined,
-                                                useTrashColumns: useTrashColumnsFlag,
+                useTrashColumns: useTrashColumnsFlag,
                 trashAction: trashActionValue,
                 isRootLike,
               };
@@ -403,7 +264,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     clickable={iconInteractive}
                     onClick={
                       iconInteractive
-                        ? (event) => {
+                        ? (event: MouseEvent<HTMLElement>) => {
                             event.preventDefault();
                             event.stopPropagation();
                             openContextMenu(node, event.currentTarget as HTMLElement);
@@ -442,7 +303,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                   aria-disabled={hoverId === nodeIdString && hoverBlocked ? true : undefined}
                   title={
                     hoverId === nodeIdString && hoverBlocked
-                      ? '子孫に移動することはできません'
+                      ? blockedDescendantMoveLabel
                       : undefined
                   }
                   aria-haspopup="menu"
@@ -483,8 +344,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         </Box>
       </BreadcrumbContainer>
 
-      {/*
-       */}
       <ContextMenuComponent
         anchorEl={contextMenuAnchor}
         open={Boolean(contextMenuAnchor)}
@@ -493,9 +352,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder-plugin'}
         nodeName={contextMenuNode?.name}
         treeId={props.treeId}
-        isVisible={
-          contextMenuNode?.visible !== false
-        }
+        isVisible={contextMenuNode?.visible !== false}
         canCreate={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)}
         canEdit={!isRootContext}
         canTrash={!isRootContext}
@@ -523,16 +380,10 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
           else handleContextMenuClose();
         }}
         onOpen={() =>
-          handleNodeClick(
-            contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined
-          )
+          handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)
         }
         onOpenFolder={() =>
-          handleNodeClick(
-            contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined
-          )
+          handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)
         }
         onOpenStep={(step) => {
           if (contextMenuNode && onContextAction) {
@@ -558,8 +409,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         }}
       />
 
-      {/*
-       */}
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
         <DialogTitle>Move to Trash</DialogTitle>
         <DialogContent>

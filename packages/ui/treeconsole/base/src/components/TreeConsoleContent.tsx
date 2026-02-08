@@ -5,15 +5,12 @@
   */
 
 import type React from 'react';
-import { memo, useEffect, useState } from 'react';
+import { memo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TreeConsoleContentProps } from '../types/index.js';
-import type { NodeId } from '@hierarchidb/core-types';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeNode } from '@hierarchidb/tree-api';
-import { DualKeyMap } from '@hierarchidb/util';
+import { useTreeConsoleContent } from '../hooks/useTreeConsoleContent.js';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;
@@ -69,65 +66,30 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
      mode: _mode,
      hideDragHandler = false,
    }) => {
-    const [isWebKit, setIsWebKit] = useState(false);
-    const [webKitInitialized, setWebKitInitialized] = useState(false);
+    const {
+      contentState,
+      emptyMessage,
+      loadingLabel,
+      treeTableController,
+      handleDragStateChange,
+      shouldRenderDebugInfo,
+    } = useTreeConsoleContent({
+      controller,
+      isProjectsPage,
+      isResourcesPage,
+      viewHeight,
+      viewWidth,
+      useTrashColumns,
+      depthOffset: _depthOffset,
+      rootNodeId: _treeRootNodeId,
+      currentNodeInfo: _currentNodeInfo,
+      onDragStateChange: _onDragStateChange,
+      canPreviewNode: _canPreviewNode,
+      mode: _mode,
+      hideDragHandler,
+    });
 
-    //  WebKit Safari
-    useEffect(() => {
-      if (typeof window !== 'undefined') {
-        const ua = window.navigator.userAgent.toLowerCase();
-        const isWebKitBrowser =
-          ua.includes('webkit') && !ua.includes('chrome') && !ua.includes('firefox');
-        setIsWebKit(isWebKitBrowser);
-
-        if (isWebKitBrowser) {
-          const timer = setTimeout(() => {
-            setWebKitInitialized(true);
-          }, 500);
-          return () => clearTimeout(timer);
-        } else {
-          setWebKitInitialized(true);
-        }
-      } else {
-        setWebKitInitialized(true);
-      }
-    }, []);
-
-    const globalProcess = (globalThis as typeof globalThis & {
-      process?: { env?: Record<string, string | undefined> };
-    }).process;
-    const isTestEnv = globalProcess?.env?.NODE_ENV === 'test';
-    const isLoading = !controller || controller.isLoading || (!isTestEnv && isWebKit && !webKitInitialized);
-
-    const dataCount = controller?.data ? controller.data.length : 0;
-    const hasMinimumData = controller && Array.isArray(controller.data);
-
-    const isEmpty = controller && !controller.isLoading && dataCount === 0;
-
-    const contentState = (() => {
-      if (isLoading) return 'loading';
-      if (isEmpty) return 'empty';
-      if (hasMinimumData) return 'table';
-      return 'loading';
-    })();
-
-    const getEmptyMessage = () => {
-      if (_mode === 'restore') {
-        return 'ゴミ箱に復元可能なアイテムはありません。';
-      }
-      if (_mode === 'dispose') {
-        return '完全削除可能なアイテムはありません。';
-      }
-      if (isProjectsPage) {
-        return 'プロジェクトがありません。新しいプロジェクトを作成してください。';
-      }
-      if (isResourcesPage) {
-        return 'リソースがありません。新しいリソースを作成してください。';
-      }
-      return 'データがありません。';
-    };
-
-  return (
+    return (
       <StyledDialogContent
         sx={{
           height: viewHeight || '100%',
@@ -138,78 +100,35 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
           {contentState === 'loading' && (
             <LoadingContainer>
               <CircularProgress size={40} />
-              <Typography sx={{ ml: 2 }}>読み込み中...</Typography>
+              <Typography sx={{ ml: 2 }}>{loadingLabel}</Typography>
             </LoadingContainer>
           )}
 
           {contentState === 'empty' && (
             <EmptyStateContainer>
               <Typography variant="h6" color="text.secondary">
-                {getEmptyMessage()}
+                {emptyMessage}
               </Typography>
             </EmptyStateContainer>
           )}
 
-          {contentState === 'table' && controller && (
+          {contentState === 'table' && treeTableController && (
             <TableContainer>
               <TreeTableCore
-                controller={{
-                  data: controller.data,
-                  nodeIndex: controller.nodeIndex ?? new DualKeyMap<NodeId, NodeId, TreeNode>(),
-                  rowSelection: controller.rowSelection,
-                  expandedRowIds: controller.expandedRowIds,
-                  rootNodeId: controller.rootNodeId,
-                  searchText: controller.searchText,
-                  filteredItemCount: controller.filteredItemCount,
-                  totalItemCount: controller.totalItemCount,
-                  handleSearchTextChange: controller.handleSearchTextChange,
-                  onNodeClick: controller.onNodeClick ?
-                    (nodeId: string, node?: TreeNodeInUI) => controller.onNodeClick?.(nodeId as NodeId, node as unknown as TreeNode) :
-                    undefined,
-                  onNodeExpand: controller.onNodeExpand ?
-                    (nodeId: string, expanded: boolean) =>
-                      controller.onNodeExpand?.(nodeId as NodeId, expanded) :
-                    undefined,
-                  onNodeSelect: controller.onNodeSelect ?
-                    (nodeIds: string[], selected: boolean) =>
-                      controller.onNodeSelect?.(nodeIds as NodeId[], selected) :
-                    undefined,
-                  startEdit: controller.startEdit ?
-                    (nodeId: string) => controller.startEdit?.(nodeId as NodeId) :
-                    undefined,
-                  finishEdit: controller.finishEdit ?
-                    (nodeId: string, newName: string, field?: 'name' | 'description') =>
-                      controller.finishEdit?.(nodeId as NodeId, newName, field) :
-                    undefined,
-                  cancelEdit: controller.cancelEdit,
-                  onCreate: controller.onCreate ?
-                    (parentId: string, type: string) =>
-                      controller.onCreate?.(parentId as NodeId, type) :
-                    undefined,
-                  onDuplicate: controller.onDuplicate ?
-                    (nodeId: string) =>
-                      controller.onDuplicate?.(nodeId as NodeId) :
-                    undefined,
-                  onTrash: controller.onTrash ?
-                    (nodeIds: string[]) => controller.onTrash?.(nodeIds as NodeId[]) :
-                    undefined,
-                }}
+                controller={treeTableController}
                 viewHeight={viewHeight || 400}
                 viewWidth={viewWidth || 800}
                 useTrashColumns={useTrashColumns}
                 depthOffset={_depthOffset}
                 disableDragAndDrop={false}
                 hideDragHandler={hideDragHandler}
-                onDragStateChange={_onDragStateChange ?
-                  (draggingNodeId: NodeId | undefined, descendantIdSet: Set<NodeId> | undefined, _dragPreviewElement: HTMLElement | null) =>
-                    _onDragStateChange(draggingNodeId, descendantIdSet) :
-                  undefined}
+                onDragStateChange={handleDragStateChange}
               />
             </TableContainer>
           )}
 
           {/* Lightweight debug info for tests/diagnostics (ensure single instance per document) */}
-          {typeof document === 'undefined' || !document.querySelector('[data-testid="treeconsole-debug-info"]') ? (
+          {shouldRenderDebugInfo ? (
             <Box sx={{ p: 1 }} data-testid="treeconsole-debug-info">
               <Typography variant="caption">TreeTypes Root: {String(_treeRootNodeId || '')}</Typography>
               {_mode && (

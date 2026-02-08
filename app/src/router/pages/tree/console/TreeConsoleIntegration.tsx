@@ -5,14 +5,16 @@
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
-import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useEffect } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
-import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
+import { DynamicSpeedDial } from './DynamicSpeedDial.js';
+import { useTreeConsoleSpeedDial } from './useTreeConsoleSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
@@ -49,6 +51,16 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     initializeWorker: initialize,
   });
 
+  const speedDial = useTreeConsoleSpeedDial({
+    treeId,
+    pageNodeId,
+    pageTreeNode,
+    onContextMenuAction: treeConsolePanelProps.onContextMenuAction,
+    canCreate: treeConsolePanelProps.canCreate,
+    isDialogRoute,
+    speedDialSuppressed,
+    setSpeedDialSuppressed,
+  });
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     console.debug('[TreeConsoleIntegration] mount', { treeId, pageNodeId });
@@ -94,13 +106,25 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
       <TreeConsoleToolbar {...toolbarProps} />
       <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
         {shouldRenderTreeTable ? (
-          <TreeConsolePanelWithDynamicSpeedDial
-            {...treeConsolePanelProps}
-            infoPanel={<TreeNodeInfoPanel {...infoPanelProps} />}
-            speedDialSuppressed={speedDialSuppressed}
-            setSpeedDialSuppressed={setSpeedDialSuppressed}
-            isDialogRoute={isDialogRoute}
-          />
+          <>
+            {speedDial.guidedTour}
+            <TreeConsolePanel
+              {...treeConsolePanelProps}
+              infoPanel={<TreeNodeInfoPanel {...infoPanelProps} />}
+              onContextMenuAction={speedDial.onContextMenuAction}
+              treeIdForPersistence={treeConsolePanelProps.treeId}
+              renderBuiltInSpeedDial={false}
+            />
+            <DynamicSpeedDial
+              treeId={treeConsolePanelProps.treeId as TreeId | undefined}
+              onCreateAction={(action: string, _, options) =>
+                speedDial.onContextMenuAction(action, speedDial.speedDialContextNode, options)
+              }
+              position={{ bottom: 16, right: 16 }}
+              hidden={speedDial.hideSpeedDial}
+              onSuppress={speedDial.suppressSpeedDial}
+            />
+          </>
         ) : (
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <TreeConsoleBreadcrumb {...breadcrumbProps} />

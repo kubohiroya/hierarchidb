@@ -75,7 +75,9 @@ export interface TreeConsolePanelLogicArgs {
   ) => void;
   readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
   readonly buildSessionIndicator?: BuildSessionIndicator;
+  readonly leftSlot?: ReactElement;
 }
+
 
 export interface TreeConsolePanelLogicResult {
   readonly controller: TreeTableController;
@@ -109,6 +111,7 @@ export function useTreeConsolePanel({
   onBreadcrumbNavigate,
   onBreadcrumbContextAction,
   breadcrumbRenderer,
+  leftSlot,
 }: TreeConsolePanelLogicArgs): TreeConsolePanelLogicResult {
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -262,6 +265,7 @@ export function useTreeConsolePanel({
         : undefined,
       onContextAction: onBreadcrumbContextAction,
       resolveOpenSteps,
+      leftSlot,
     }),
     [
       breadcrumbItems,
@@ -273,6 +277,7 @@ export function useTreeConsolePanel({
       treeId,
       trashAction,
       useTrashColumns,
+      leftSlot,
     ]
   );
 
