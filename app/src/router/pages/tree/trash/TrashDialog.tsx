@@ -16,7 +16,7 @@ import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole
 import {
   type HierarchicalTreeNode,
   TreeConsolePanel,
-  type TreeConsolePanelBreadcrumbRendererProps,
+  type TreeConsoleBreadcrumbRendererProps,
   type TreeConsolePanelProps,
   type TreeTableColumn,
   TreeTableSearchInput,
@@ -502,7 +502,7 @@ function TrashDialogContent({
           hideDragHandler
           breadcrumbRenderer={({
             defaultRendererProps,
-          }: TreeConsolePanelBreadcrumbRendererProps) => (
+          }: TreeConsoleBreadcrumbRendererProps) => (
             <TrashBreadcrumb {...defaultRendererProps} />
           )}
           onNodeClick={(_node: HierarchicalTreeNode) => undefined}

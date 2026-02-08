@@ -143,7 +143,9 @@ const BreadcrumbLink = styled(RouterLink, {
   },
 }));
 
-export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
+type TreeConsoleBreadcrumbBaseProps = Omit<TreeConsoleBreadcrumbProps, 'renderer'>;
+
+function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): ReactElement | null {
   const {
     depthOffset: _depthOffset = 0,
     pageNodeId,
@@ -423,4 +425,20 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
       </Dialog>
     </>
   );
+}
+
+export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
+  const { renderer, ...baseProps } = props;
+
+  if (renderer) {
+    const defaultRenderer = () => <TreeConsoleBreadcrumbBase {...baseProps} />;
+    const items = Array.isArray(baseProps.nodePath) ? baseProps.nodePath : [];
+    return renderer({
+      items,
+      defaultRendererProps: baseProps,
+      defaultRenderer,
+    });
+  }
+
+  return <TreeConsoleBreadcrumbBase {...baseProps} />;
 }

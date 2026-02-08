@@ -273,7 +273,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
 
   const renderLoadingSkeleton = () => {
     return Array.from({ length: 5 }).map((_, index) => (
-      <TableRow key={`skeleton-${index}`}>
+      <TableRow key={`skeleton-${String(index)}`}>
         {showCheckboxes && (
           <TableCell padding="checkbox" style={{ padding: '4px 6px', width: 49, minWidth: 49, maxWidth: 49 }}>
             <Skeleton variant="rectangular" width={20} height={20} />

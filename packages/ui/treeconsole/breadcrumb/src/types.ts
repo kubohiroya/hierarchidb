@@ -122,4 +122,15 @@ export interface TreeConsoleBreadcrumbProps {
    * Optional resolver for Open-step submenu.
    */
   resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;
+
+  /**
+   * Optional renderer override for host-specific breadcrumb presentation.
+   */
+  renderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
 }
+
+export type TreeConsoleBreadcrumbRendererProps = {
+  readonly items: readonly BreadcrumbNode[];
+  readonly defaultRendererProps: TreeConsoleBreadcrumbProps;
+  readonly defaultRenderer: () => ReactElement;
+};

@@ -1,7 +1,7 @@
 // Main containers
 export { TreeConsolePanel } from './components/TreeConsolePanel.js';
 export { TagsLinkButton } from './components/TagsLinkButton.js';
-export type { TreeConsolePanelProps, TreeConsolePanelBreadcrumbRendererProps } from './components/TreeConsolePanel.js';
+export type { TreeConsolePanelProps, TreeConsoleBreadcrumbRendererProps } from './components/TreeConsolePanel.js';
 
 // TreeTable containers
 export { TreeTableView, TreeTableFooter, RowContextMenu, TreeTableSearchInput } from './components/TreeTable/index.js';

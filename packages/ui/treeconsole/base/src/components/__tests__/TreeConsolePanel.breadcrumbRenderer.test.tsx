@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach, vi } from 'vitest';
-import type { TreeConsolePanelBreadcrumbRendererProps, TreeConsolePanelProps } from '../TreeConsolePanel.js';
+import type { TreeConsoleBreadcrumbRendererProps, TreeConsolePanelProps } from '../TreeConsolePanel.js';
 import { TreeConsolePanel } from '../TreeConsolePanel.js';
 import { cleanup, render, screen } from '@testing-library/react';
 import React = require('react');
@@ -14,7 +14,17 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const breadcrumbModule = vi.hoisted(() => ({
-  TreeConsoleBreadcrumb: vi.fn(() => React.createElement('div', { 'data-testid': 'default-breadcrumb' })),
+  TreeConsoleBreadcrumb: vi.fn((props: { renderer?: (args: unknown) => React.ReactNode; nodePath?: unknown[] }) => {
+    const { renderer, ...baseProps } = props;
+    if (renderer) {
+      return renderer({
+        items: Array.isArray(baseProps.nodePath) ? baseProps.nodePath : [],
+        defaultRendererProps: baseProps,
+        defaultRenderer: () => React.createElement('div', { 'data-testid': 'default-breadcrumb' }),
+      });
+    }
+    return React.createElement('div', { 'data-testid': 'default-breadcrumb' });
+  }),
   getPluginIconColor: vi.fn(() => undefined),
   isFolderNodeType: vi.fn((nodeType: string) => nodeType === 'folder'),
 }));
@@ -94,8 +104,8 @@ describe('TreeConsolePanel breadcrumbRenderer', () => {
 
   it('invokes the custom renderer with default props and allows fallback rendering', () => {
     const items = [{ id: 'trash', name: 'Trash' }];
-    let capturedDefaultProps: TreeConsolePanelBreadcrumbRendererProps['defaultRendererProps'] | undefined;
-    const renderer = vi.fn((params: TreeConsolePanelBreadcrumbRendererProps) => {
+    let capturedDefaultProps: TreeConsoleBreadcrumbRendererProps['defaultRendererProps'] | undefined;
+    const renderer = vi.fn((params: TreeConsoleBreadcrumbRendererProps) => {
       capturedDefaultProps = params.defaultRendererProps;
       const fallback = params.defaultRenderer();
       expect(React.isValidElement(fallback)).toBe(true);

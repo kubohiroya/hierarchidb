@@ -1,7 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, MouseEvent, SetStateAction } from 'react';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { TreeConsoleNodeContextMenuProps } from '../components/common/NodeContextMenu.js';
+
+interface TreeConsoleNodeContextMenuProps {
+  anchorEl: HTMLElement | null;
+  anchorPosition?: { top: number; left: number } | null;
+  open: boolean;
+  onClose: () => void;
+  nodeType?: string;
+  canRemove?: boolean;
+  canTrash?: boolean;
+  isVisible?: boolean;
+  onOpen?: () => void;
+  onOpenFolder?: () => void;
+  onPreview?: () => void;
+  onEdit?: () => void;
+  onCreate?: (type: string) => void;
+  onDuplicate?: () => void;
+  onRemove?: () => void;
+  onTrash?: () => void;
+  onToggleVisible?: (nextValue: boolean) => void;
+}
 
 interface NodeContextMenuLabels {
   create: string;

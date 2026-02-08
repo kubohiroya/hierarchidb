@@ -6,12 +6,11 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { TreeConsolePanelBreadcrumbProps, TreeConsolePanelBreadcrumbRendererProps } from '../components/TreeConsolePanelBreadcrumb.js';
+import type { OpenStepOption, TreeConsoleBreadcrumbProps, TreeConsoleBreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { HierarchicalTreeNode } from '../types/index.js';
 
-type DefaultBreadcrumbProps = TreeConsolePanelBreadcrumbProps['defaultRendererProps'];
+type DefaultBreadcrumbProps = TreeConsoleBreadcrumbProps;
 type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
 
 export type PanelBreadcrumbNode = {
@@ -68,7 +67,7 @@ export interface TreeConsolePanelLogicArgs {
       openInNewTab?: boolean;
     }
   ) => void;
-  readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
+  readonly breadcrumbRenderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
   readonly buildSessionIndicator?: BuildSessionIndicator;
   readonly leftSlot?: ReactElement;
 }
@@ -79,7 +78,7 @@ export interface TreeConsolePanelLogicResult {
   readonly shouldSplitView: boolean;
   readonly footerTopLevel: number;
   readonly footerSelected: number;
-  readonly breadcrumbProps: TreeConsolePanelBreadcrumbProps;
+  readonly breadcrumbProps: TreeConsoleBreadcrumbProps;
   readonly isPageContextValid: boolean;
 }
 
@@ -276,13 +275,12 @@ export function useTreeConsolePanel({
     ]
   );
 
-  const breadcrumbProps = useMemo<TreeConsolePanelBreadcrumbProps>(
+  const breadcrumbProps = useMemo<TreeConsoleBreadcrumbProps>(
     () => ({
-      items: breadcrumbItems,
-      defaultRendererProps: defaultBreadcrumbProps,
+      ...defaultBreadcrumbProps,
       renderer: breadcrumbRenderer,
     }),
-    [breadcrumbItems, breadcrumbRenderer, defaultBreadcrumbProps]
+    [breadcrumbRenderer, defaultBreadcrumbProps]
   );
 
   return {

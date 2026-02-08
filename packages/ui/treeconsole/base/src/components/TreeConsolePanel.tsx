@@ -6,16 +6,16 @@ import type { TreeTableColumn } from './TreeTable/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import type { OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { OpenStepOption, TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { PanelBreadcrumbNode } from '../hooks/useTreeConsolePanel.js';
 import { useTreeConsolePanel } from '../hooks/useTreeConsolePanel.js';
-import { TreeConsolePanelBreadcrumb, type TreeConsolePanelBreadcrumbRendererProps } from './TreeConsolePanelBreadcrumb.js';
 import { TagsLinkButton } from './TagsLinkButton.js';
 
-export type { TreeConsolePanelBreadcrumbRendererProps } from './TreeConsolePanelBreadcrumb.js';
+export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -125,7 +125,7 @@ export interface TreeConsolePanelProps {
   /** Hide the drag handle column when true (e.g., Trash dialog). */
   readonly hideDragHandler?: boolean;
   /** Optional custom breadcrumb renderer for host-specific presentation. */
-  readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
+  readonly breadcrumbRenderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
   /** Optional info panel to show alongside the table in split view. */
   readonly infoPanel?: ReactElement;
 }
@@ -184,7 +184,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: 0 }}>
-        <TreeConsolePanelBreadcrumb {...breadcrumbProps} />
+        <TreeConsoleBreadcrumb {...breadcrumbProps} />
       </Box>
       {/* Main Table Content */}
       {shouldSplitView ? (
@@ -284,4 +284,3 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     </Box>
   );
 });
-

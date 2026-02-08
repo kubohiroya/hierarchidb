@@ -1,81 +1,47 @@
-/**
-  * TreeConsole API
-  * API
- * TreeConsoleObservable
-  */
-
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/tree-api';
 
-/**
-  * WorkerAPI
-  */
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
 
-/**
-    */
 export type UnsubscribeFunction = () => void;
 
-/**
-   * API
-  */
 export interface AdapterContext {
-  /**
-   * IDTreeConsole
-   */
+
   viewId: string;
-  /**
-   * ID
-   */
+
   groupId: string;
-  /**
-      */
+
   onNameConflict?: OnNameConflict;
 }
 
-/**
-    */
+
 export interface CommandAdapterOptions {
-  /**
-      */
+
   context: AdapterContext;
-  /**
-      */
+
   retryConfig?: {
     maxAttempts: number;
     delayMs: number;
   };
 }
 
-/**
-    */
+
 export interface WorkerAPIAdapterConfig<T> {
-  /**
-   * WorkerAPI
-   */
+
   workerAPI: WorkerAPI<T>;
-  /**
-   * ID
-   */
+
   defaultViewId: string;
-  /**
-      */
+
   defaultOnNameConflict?: OnNameConflict;
 }
 
-/**
-  * WorkerAPI
-  */
 export interface ExpandedStateChange {
   nodeId: NodeId;
   expanded: boolean;
   timestamp?: number;
 }
 
-/**
-  * WorkerAPI
-  */
 export interface SubTreeChange {
   type: TreeChangeEventType;
   nodeId: NodeId;
@@ -84,8 +50,6 @@ export interface SubTreeChange {
   timestamp: number;
 }
 
-/**
-    */
 export class TreeConsoleAdapterError extends Error {
   constructor(
     message: string,

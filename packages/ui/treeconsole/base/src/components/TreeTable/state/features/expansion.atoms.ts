@@ -1,20 +1,8 @@
-/**
-  * Expansion Feature Atoms
-  * /atom
- * -
- * -
-  */
-
 import { atom } from 'jotai';
 import type { ExpandedState } from '@tanstack/react-table';
 import { tableDataAtom } from '../core/data.atoms.js';
 
-/**
-    */
 export const expandedAtom = atom<ExpandedState>({});
-
-/**
-    */
 export const toggleExpandedAtom = atom(null, (get, set, nodeId: string) => {
   const expanded = get(expandedAtom);
   const newExpanded = { ...(expanded as Record<string, boolean>) };
@@ -28,9 +16,6 @@ export const toggleExpandedAtom = atom(null, (get, set, nodeId: string) => {
   set(expandedAtom, newExpanded);
 });
 
-/**
-  * /
-  */
 export const toggleAllExpandedAtom = atom(null, (get, set) => {
   const data = get(tableDataAtom);
   const expanded = get(expandedAtom);

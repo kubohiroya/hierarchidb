@@ -1,13 +1,6 @@
-/**
-  * WorkerAPIAdapter
-  * TreeConsole
- * WorkerAPITreeConsole
-   */
-
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeNodeEvent } from '@hierarchidb/tree-api';
-// import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
 import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
@@ -21,8 +14,6 @@ export class WorkerAPIAdapter<T> {
   private viewId: string;
   private defaultOnNameConflict: OnNameConflict;
 
-  // Individual adapters
-  // private _observableAdapter: TreeObservableAdapter; // Currently unused - remove until needed
   private mutationAdapter: TreeMutationCommandsAdapter<T>;
   private draftAdapter: DraftCommandsAdapter<T>;
   private subscriptionManager: SubscriptionManager<T>;
@@ -32,17 +23,11 @@ export class WorkerAPIAdapter<T> {
     this.viewId = config.defaultViewId;
     this.defaultOnNameConflict = config.defaultOnNameConflict ?? 'auto-rename';
 
-    // Initialize adapters
-    // this._observableAdapter = new TreeObservableAdapter(this.workerAPI); // Currently unused
     this.mutationAdapter = new TreeMutationCommandsAdapter(this.workerAPI);
     this.draftAdapter = new DraftCommandsAdapter(this.workerAPI);
     this.subscriptionManager = new SubscriptionManager(this.workerAPI, this.viewId);
   }
 
-  /**
-            * @param overrides
-   * @returns AdapterContext
-      */
   private createDefaultContext(overrides?: Partial<AdapterContext>): AdapterContext {
     return {
       viewId: this.viewId,
@@ -52,23 +37,12 @@ export class WorkerAPIAdapter<T> {
     };
   }
 
-  /**
-            * @param contextOverrides
-   * @returns CommandAdapterOptions
-      */
   private createDefaultOptions(contextOverrides?: Partial<AdapterContext>): CommandAdapterOptions {
     return {
       context: this.createDefaultContext(contextOverrides),
     };
   }
 
-  // =====================
-  // Observable Operations (Subscription)
-  // =====================
-
-  /**
-      * subscribeSubTree
-      */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
@@ -80,8 +54,6 @@ export class WorkerAPIAdapter<T> {
       .then((subscriptionId) => () => this.subscriptionManager.unsubscribe(subscriptionId));
   }
 
-  /**
-            */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
@@ -93,8 +65,6 @@ export class WorkerAPIAdapter<T> {
       .then((subscriptionId) => () => this.subscriptionManager.unsubscribe(subscriptionId));
   }
 
-  /**
-            */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
@@ -106,13 +76,6 @@ export class WorkerAPIAdapter<T> {
       .then((subscriptionId) => () => this.subscriptionManager.unsubscribe(subscriptionId));
   }
 
-  // =====================
-  // Mutation Operations (CRUD)
-  // =====================
-
-  /**
-      * moveNodes
-      */
   async moveNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
@@ -122,15 +85,11 @@ export class WorkerAPIAdapter<T> {
     return this.mutationAdapter.moveNodes(nodeIds, targetParentId, options);
   }
 
-  /**
-            */
   async trashNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.deleteNodes(nodeIds, options);
   }
 
-  /**
-            */
   async duplicateNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
@@ -140,8 +99,6 @@ export class WorkerAPIAdapter<T> {
     return this.mutationAdapter.duplicateNodes(nodeIds, targetParentId, options);
   }
 
-  /**
-            */
   async pasteNodes(
     targetParentId: NodeId,
     contextOverrides?: Partial<AdapterContext>,
@@ -150,15 +107,11 @@ export class WorkerAPIAdapter<T> {
     return this.mutationAdapter.pasteNodes(targetParentId, options);
   }
 
-  /**
-            */
   async removeNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.removeNodes(nodeIds, options);
   }
 
-  /**
-            */
   async restoreFromTrash(
     nodeIds: NodeId[],
     targetParentId?: NodeId,
@@ -172,8 +125,6 @@ export class WorkerAPIAdapter<T> {
   // Working Copy Operations (Editing)
   // =====================
 
-  /**
-            */
   async startNodeEdit(
     sourceNodeId: NodeId,
     contextOverrides?: Partial<AdapterContext>,
@@ -182,8 +133,6 @@ export class WorkerAPIAdapter<T> {
     return this.draftAdapter.startNodeEdit(sourceNodeId, options);
   }
 
-  /**
-            */
   async startNodeCreate(
     parentId: NodeId,
     name: string,
@@ -195,9 +144,6 @@ export class WorkerAPIAdapter<T> {
     return this.draftAdapter.startNodeCreate(parentId, name, description, nodeType, options);
   }
 
-  /**
-      * Working Copy
-      */
   async commitNodeEdit(
     editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
@@ -206,9 +152,6 @@ export class WorkerAPIAdapter<T> {
     return this.draftAdapter.commitNodeEdit(editSession, options);
   }
 
-  /**
-      * Working Copy
-      */
   async commitNodeCreate(
     editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
@@ -217,9 +160,6 @@ export class WorkerAPIAdapter<T> {
     return this.draftAdapter.commitNodeCreate(editSession, options);
   }
 
-  /**
-      * Working Copy
-      */
   async discardDraft(
     editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
@@ -232,21 +172,14 @@ export class WorkerAPIAdapter<T> {
   // Lifecycle Management
   // =====================
 
-  /**
-         * unmount
-      */
   cleanup(): void {
     this.subscriptionManager.cleanupAll();
   }
 
-  /**
-            */
   cleanupNodeSubscriptions(nodeId: NodeId): void {
     this.subscriptionManager.unsubscribeByNodeId(nodeId);
   }
 
-  /**
-            */
   getAdapterInfo(): {
     viewId: string;
     defaultOnNameConflict: OnNameConflict;
@@ -259,9 +192,6 @@ export class WorkerAPIAdapter<T> {
     };
   }
 
-  /**
-      * viewId
-      */
   updateViewId(newViewId: string): void {
     this.viewId = newViewId;
   }

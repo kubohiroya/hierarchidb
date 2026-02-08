@@ -16,6 +16,7 @@ export type {
   BreadcrumbNode,
   TreeConsoleBreadcrumbContext,
   TreeConsoleBreadcrumbProps,
+  TreeConsoleBreadcrumbRendererProps,
 } from './types.js';
 
 // Utilities

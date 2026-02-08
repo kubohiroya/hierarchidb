@@ -19,6 +19,7 @@ export const treeTargetRoute = createRoute({
     const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
     if (targetNodeId === 'tags') {
       const pageData = await loadPageNode({ treeId, pageNodeId: resolvedPageNodeId });
+      console.warn('tags');
       return {
         ...pageData,
         targetNodeId: resolvedPageNodeId,
