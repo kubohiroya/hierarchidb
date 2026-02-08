@@ -1,24 +1,22 @@
 import type { TreeId } from '@hierarchidb/core-types';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Box,
-  Breadcrumbs,
   Container,
-  Link,
   List,
   ListItem,
-  ListItemButton,
-  ListItemText,
   Paper,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTagsPage } from './useTagsPage.js';
 
 type TaggedNodeRow = {
   id: string;
-  breadcrumb: string;
+  breadcrumbNodes: BreadcrumbNode[];
   treeId?: TreeId;
   assignedAt?: number;
 };
@@ -42,7 +40,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
     () =>
       taggedNodes.map((item) => ({
         id: item.node.id,
-        breadcrumb: item.breadcrumb,
+        breadcrumbNodes: item.breadcrumbNodes,
         treeId: item.treeId,
         assignedAt: item.tagAssociation.assignedAt,
       })),
@@ -59,16 +57,6 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Breadcrumbs sx={{ mb: 3 }}>
-        <Link component={RouterLink} to="/" color="inherit">
-          ホーム
-        </Link>
-        <Link component={RouterLink} to="/tags" color="inherit">
-          タグ
-        </Link>
-        {resolvedTagName && <Typography color="text.primary">{resolvedTagName}</Typography>}
-      </Breadcrumbs>
-
       <Box>
         {specificTag && (
           <Paper sx={{ p: 3, mb: 3 }}>
@@ -99,18 +87,23 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
         ) : (
           <List>
             {rows.map((row) => (
-              <ListItem key={row.id} disablePadding>
-                <ListItemButton
-                  onClick={() => {
+              <ListItem
+                key={row.id}
+                sx={{ alignItems: 'flex-start', flexDirection: 'column', gap: 1.5, py: 2 }}
+              >
+                <TreeConsoleBreadcrumb
+                  nodePath={row.breadcrumbNodes}
+                  currentNodeId={row.id}
+                  treeId={row.treeId ? String(row.treeId) : undefined}
+                  variant="minimal"
+                  onNodeClick={(nodeId) => {
                     if (!row.treeId) return;
-                    navigate({ to: `/t/${row.treeId}/${row.id}` });
+                    navigate({ to: `/t/${row.treeId}/${nodeId}` });
                   }}
-                >
-                  <ListItemText
-                    primary={row.breadcrumb}
-                    secondary={row.assignedAt ? new Date(row.assignedAt).toLocaleString() : '—'}
-                  />
-                </ListItemButton>
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {row.assignedAt ? new Date(row.assignedAt).toLocaleString() : '—'}
+                </Typography>
               </ListItem>
             ))}
           </List>

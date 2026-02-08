@@ -21,8 +21,8 @@ export const tagsRoute = createRoute({
 });
 
 export const tagDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/tags/$tagName',
+  getParentRoute: () => tagsRoute,
+  path: '$tagName',
   component: () => {
     const { tagName } = tagDetailRoute.useParams();
     return <TagDetailRoute tagName={tagName} />;

@@ -18,7 +18,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 
@@ -214,6 +214,10 @@ export default function TagsPage() {
             </Box>
           </Grid>
         )}
+        <Box sx={{ mt: 4 }}>
+          <Divider sx={{ mb: 3 }} />
+          <Outlet />
+        </Box>
       </Container>
     </Box>
   );

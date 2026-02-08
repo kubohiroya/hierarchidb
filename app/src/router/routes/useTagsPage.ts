@@ -1,6 +1,7 @@
 import type { TreeId } from '@hierarchidb/core-types';
 import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { useCallback } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { useQuery } from '~/hooks/useQuery.js';
@@ -10,6 +11,17 @@ export interface TaggedNode {
   treeId?: TreeId;
   tagAssociation: NodeTagAssociation;
   breadcrumb: string;
+  breadcrumbNodes: BreadcrumbNode[];
+}
+
+function buildBreadcrumbNodes(nodes: TreeNode[]): BreadcrumbNode[] {
+  return nodes.map((node) => ({
+    id: node.id,
+    treeNodeId: node.id,
+    nodeType: node.nodeType,
+    name: getTreeNodeName(node),
+    isClickable: true,
+  }));
 }
 
 function normalizeTagName(value?: string): string | null {
@@ -82,6 +94,7 @@ export function useTagsPage(tagName?: string) {
           const ancestors = await queryAPI.listAncestors(association.nodeId);
           const breadcrumbNodes = [...ancestors, node];
           const breadcrumb = breadcrumbNodes.map((item) => getTreeNodeName(item)).join(' / ');
+          const breadcrumbNodePath = buildBreadcrumbNodes(breadcrumbNodes);
           const rootNode = ancestors[0] ?? node;
           const treeId = rootIdToTreeId.get(String(rootNode.id));
 
@@ -90,6 +103,7 @@ export function useTagsPage(tagName?: string) {
             treeId,
             tagAssociation: association,
             breadcrumb,
+            breadcrumbNodes: breadcrumbNodePath,
           });
         }
       } catch (error) {

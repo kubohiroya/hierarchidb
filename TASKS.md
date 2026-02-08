@@ -12,6 +12,8 @@
 - 運用ログ:
   - start: 2026-02-08 10:24 JST `/tags/:tagName` の詳細を `/tags` 画面の Outlet として表示する対応に着手。
   - update: 2026-02-08 10:27 JST ブランチ命名を `feat/tags/tag-detail-outlet` で進める方針に確定。
+  - update: 2026-02-08 10:33 JST 新規ブランチ作成を行わず現行ブランチで対応する方針に変更。
+  - update: 2026-02-08 10:37 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
 
 2597) fix/shape/metadata-contamination (P1) — 完了 (2026-02-08)
 - ブランチ名: fix/shape/metadata-contamination
