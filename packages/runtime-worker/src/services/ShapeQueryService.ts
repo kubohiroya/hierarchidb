@@ -11,7 +11,7 @@ import type {
   ShapeFetchCache,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeSourceMetadata,
+  ShapeDataSourceMetadata,
   ShapeTileInfo,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
@@ -498,9 +498,9 @@ export class ShapeQueryService implements ShapeQueryAPI {
     }));
   }
 
-  async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]> {
-    return this.db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<
-      ShapeSourceMetadata[]
+  async listDataSourceMetadata(nodeId: NodeId): Promise<ShapeDataSourceMetadata[]> {
+    return this.db.dataSourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<
+      ShapeDataSourceMetadata[]
     >;
   }
 

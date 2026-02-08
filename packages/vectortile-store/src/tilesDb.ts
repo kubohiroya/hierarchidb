@@ -1,12 +1,12 @@
 import { Dexie, type Table } from 'dexie';
-import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/shape-api';
+import type { ShapeFeatureMetadata, ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 
 export type FeatureMetadataRow = ShapeFeatureMetadata;
-export type SourceMetadataRow = ShapeSourceMetadata;
+export type DataSourceMetadataRow = ShapeDataSourceMetadata;
 
 export class VectorTileDbBase extends Dexie {
   featureMetadata!: Table<FeatureMetadataRow, string>;
-  sourceMetadata!: Table<SourceMetadataRow, string>;
+  dataSourceMetadata!: Table<DataSourceMetadataRow, string>;
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
     return {
@@ -20,6 +20,6 @@ export class VectorTileDbBase extends Dexie {
 
   protected initVectorTileTables(): void {
     this.featureMetadata = this.table('featureMetadata');
-    this.sourceMetadata = this.table('sourceMetadata');
+    this.dataSourceMetadata = this.table('sourceMetadata');
   }
 }

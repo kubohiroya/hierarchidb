@@ -1,6 +1,6 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeSourceMetadata } from '@hierarchidb/shape-api';
+import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 import type { ShapeDB } from '@hierarchidb/shape-store';
 import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import { VectorTile } from '@mapbox/vector-tile';
@@ -89,7 +89,7 @@ const summarizeGeometry = (geometry?: Geometry | null): { vertexCount: number; p
 
 type StageTotals = { vertexCount: number; polygonCount: number };
 
-type SourceMetadata = {
+type DataSourceMetadata = {
   originKey: string;
   originLabel: string;
   dataSource: DataSourceName;
@@ -116,7 +116,7 @@ const buildOriginBase = (
     continent?: string;
     createdAt: number;
   },
-): SourceMetadata => ({
+): DataSourceMetadata => ({
   originKey,
   originLabel: buildOriginLabel(info.countryName, info.countryCode, info.adminLevel),
   dataSource: info.dataSource,
@@ -132,7 +132,7 @@ const buildOriginBase = (
 });
 
 const ensureOrigin = (
-  map: Map<string, SourceMetadata>,
+  map: Map<string, DataSourceMetadata>,
   originKey: string,
   info: {
     dataSource: DataSourceName;
@@ -142,7 +142,7 @@ const ensureOrigin = (
     continent?: string;
     createdAt: number;
   },
-): SourceMetadata => {
+): DataSourceMetadata => {
   const existing = map.get(originKey);
   if (existing) return existing;
   const created = buildOriginBase(originKey, info);
@@ -204,10 +204,10 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const lookup = buildCountryLookup(metadata);
   const now = Date.now();
-  const existingRows = await shapeQueryAPIImpl.listSourceMetadata(params.nodeId);
+  const existingRows = await shapeQueryAPIImpl.listDataSourceMetadata(params.nodeId);
   const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
 
-  const origins = new Map<string, SourceMetadata>();
+  const origins = new Map<string, DataSourceMetadata>();
 
   const fetchCaches = await params.shapeStore.fetchCache.where('nodeId').equals(params.nodeId).toArray();
   fetchCaches.forEach((buffer) => {
@@ -267,7 +267,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const rows: ShapeSourceMetadata[] = Array.from(origins.values()).map((origin) => ({
+  const rows: ShapeDataSourceMetadata[] = Array.from(origins.values()).map((origin) => ({
     id: `${String(params.nodeId)}:${origin.originKey}`,
     nodeId: String(params.nodeId),
     originKey: origin.originKey,
@@ -289,6 +289,6 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     vtPolygonCount: origin.vt.polygonCount,
   }));
 
-  await shapeMutationAPIImpl.deleteSourceMetadataByNode(params.nodeId);
-  await shapeMutationAPIImpl.putSourceMetadata(rows);
+  await shapeMutationAPIImpl.deleteDataSourceMetadataByNode(params.nodeId);
+  await shapeMutationAPIImpl.putDataSourceMetadata(rows);
 };

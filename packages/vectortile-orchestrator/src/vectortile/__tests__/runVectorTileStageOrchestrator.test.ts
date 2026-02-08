@@ -115,7 +115,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       'postprocess.persistPlaceholderMetadata',
       'postprocess.syncVectorTilesToShapeStore',
       'postprocess.summarizeVectorTilesByOrigin',
-      'postprocess.updateSourceMetadataStage',
+      'postprocess.updateDataSourceMetadataStage',
       'postprocess.clearFeatureCache',
     ]);
 

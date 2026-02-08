@@ -316,7 +316,7 @@ export function usePluginDialogController(
 
   const dialogUIState = (draft as LocalTreeNodeUpdaterState | null)?.dialogUIState ?? null;
   const isDialogReady = Boolean(dialogUIState);
-  const allowFullScreen = nodeType === 'folder';
+  const allowFullScreen = true;
 
   const {
     activeStepIndex,

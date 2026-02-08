@@ -106,4 +106,77 @@ describe('useShapeBuildTasks', () => {
 
     expect(getBatchTasksMock).not.toHaveBeenCalled();
   });
+
+  it('keeps completed 100% when a running 100% update arrives later', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-2',
+        tasks: [
+          {
+            taskId: 'task-2',
+            stage: 'vt',
+            status: 'running',
+            progress: 100,
+            message: 'Cache saving',
+            index: 1,
+            sequence: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2',
+        task: {
+          taskId: 'task-2',
+          stage: 'vt',
+          status: 'completed',
+          progress: 100,
+          message: 'Done',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2',
+        task: {
+          taskId: 'task-2',
+          stage: 'vt',
+          status: 'running',
+          progress: 100,
+          message: 'Late running',
+          index: 1,
+          sequence: 3,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+  });
 });

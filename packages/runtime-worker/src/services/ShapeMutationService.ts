@@ -7,7 +7,7 @@ import type {
   ShapeFeatureMetadata,
   ShapeFetchCache,
   ShapeMutationAPI,
-  ShapeSourceMetadata,
+  ShapeDataSourceMetadata,
   ShapeTransformCache,
   ShapeVectorTileRecord,
 } from '@hierarchidb/shape-api';
@@ -329,18 +329,18 @@ export class ShapeMutationService implements ShapeMutationAPI {
     });
   }
 
-  async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
+  async putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void> {
     if (rows.length === 0) return;
-    await this.db.sourceMetadata.bulkPut?.(rows);
+    await this.db.dataSourceMetadata.bulkPut?.(rows);
   }
 
-  async deleteSourceMetadataByIds(ids: string[]): Promise<void> {
+  async deleteDataSourceMetadataByIds(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
-    await this.db.sourceMetadata.bulkDelete?.(ids);
+    await this.db.dataSourceMetadata.bulkDelete?.(ids);
   }
 
-  async deleteSourceMetadataByNode(nodeId: string): Promise<void> {
-    await this.db.sourceMetadata.where('nodeId').equals(nodeId).delete?.();
+  async deleteDataSourceMetadataByNode(nodeId: string): Promise<void> {
+    await this.db.dataSourceMetadata.where('nodeId').equals(nodeId).delete?.();
   }
 
   async putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void> {

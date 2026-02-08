@@ -73,7 +73,7 @@ export type CacheCounts = {
 
 export type ResultCounts = {
   tiles: number;
-  metadata: number;
+  featureMetadata: number;
   transformErrors: number;
 };
 
@@ -103,7 +103,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
   });
   const [resultCounts, setResultCounts] = useState<ResultCounts>({
     tiles: 0,
-    metadata: 0,
+    featureMetadata: 0,
     transformErrors: 0,
   });
   const [deleteLoading, setDeleteLoading] = useState<DeleteLoadingState>({
@@ -120,7 +120,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
       setCounts({ fetchApi: 0, fetchFiltered: 0, transform: 0, vt: 0 });
-      setResultCounts({ tiles: 0, metadata: 0, transformErrors: 0 });
+      setResultCounts({ tiles: 0, featureMetadata: 0, transformErrors: 0 });
       setSessionStatus(null);
       setCountsLoading(false);
       return;
@@ -138,7 +138,6 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
         transformCacheCount,
         vectorTileSummary,
         featureMetadata,
-        sourceMetadata,
         transformErrors,
       ] = await Promise.all([
         ephemeralShapeAPIImpl.countFetchCaches(nodeId),
@@ -148,10 +147,9 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
         shapeQueryAPIImpl.getVectorTileSummary(nodeId),
         shapeQueryAPIImpl.listFeatureMetadata(nodeId),
-        shapeQueryAPIImpl.listSourceMetadata(nodeId),
         shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
       ]);
-      const metadataCount = featureMetadata.length + sourceMetadata.length;
+      const featureMetadataCount = featureMetadata.length;
       const transformErrorCount = transformErrors.length;
       const transformCount = transformTaskCount + transformCacheCount + transformErrorCount;
       const tileCount = vtTaskCount + vectorTileSummary.tiles;
@@ -169,7 +167,11 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
         transform: transformCount,
         vt: tileCount,
       });
-      setResultCounts({ tiles: vectorTileSummary.tiles, metadata: metadataCount, transformErrors: transformErrorCount });
+      setResultCounts({
+        tiles: vectorTileSummary.tiles,
+        featureMetadata: featureMetadataCount,
+        transformErrors: transformErrorCount,
+      });
     } finally {
       setCountsLoading(false);
     }
@@ -232,11 +234,9 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     }
   }, [nodeId]);
 
-  const clearFinalOutputs = useCallback(async () => {
+  const clearTileData = useCallback(async () => {
     if (!nodeId) return;
     await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-    await shapeMutationAPIImpl.deleteSourceMetadataByNode(nodeId);
   }, [nodeId]);
 
   const persistSessionReset = useCallback(async () => {
@@ -265,12 +265,12 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
 
   const hasPersistedOutputs = useCallback(async (): Promise<boolean> => {
     if (!nodeId) return false;
-    const [summary, sourceMetadata, transformErrors] = await Promise.all([
+    const [summary, featureMetadata, transformErrors] = await Promise.all([
       shapeQueryAPIImpl.getVectorTileSummary(nodeId),
-      shapeQueryAPIImpl.listSourceMetadata(nodeId),
+      shapeQueryAPIImpl.listFeatureMetadata(nodeId),
       shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
     ]);
-    return summary.tiles > 0 || sourceMetadata.length > 0 || transformErrors.length > 0;
+    return summary.tiles > 0 || featureMetadata.length > 0 || transformErrors.length > 0;
   }, [nodeId]);
 
   const handleDeleteFetchApiCache = useCallback(async () => {
@@ -334,7 +334,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     await runDelete('vt', async () => {
       await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
       await clearBatchTasksForStages(stagesToClear);
-      await clearFinalOutputs();
+      await clearTileData();
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       const shouldPreserveSession = draft?.processingStatus === 'completed' || await hasPersistedOutputs();
@@ -343,11 +343,11 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
         await persistSessionReset();
       }
       await loadCounts();
-      notify.success('Deleted vt cache');
+      notify.success('Deleted tile data');
     });
   }, [
     clearBatchTasksForStages,
-    clearFinalOutputs,
+    clearTileData,
     draft?.processingStatus,
     hasPersistedOutputs,
     loadCounts,
@@ -359,13 +359,12 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     setPersistedTasks,
   ]);
 
-  const handleDeleteMetadata = useCallback(async () => {
+  const handleDeleteFeatureMetadata = useCallback(async () => {
     if (!nodeId) return;
     await runDelete('metadata', async () => {
       await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-      await shapeMutationAPIImpl.deleteSourceMetadataByNode(nodeId);
       await loadCounts();
-      notify.success('Deleted metadata');
+      notify.success('Deleted feature metadata');
     });
   }, [loadCounts, nodeId, runDelete]);
 
@@ -379,7 +378,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
   const canDeleteFetchFilteredCache = deleteEnabled && counts.fetchFiltered > 0;
   const canDeleteTransformCache = deleteEnabled && counts.transform > 0;
   const canDeleteVTCache = deleteEnabled && counts.vt > 0;
-  const canDeleteMetadata = deleteEnabled && resultCounts.metadata > 0;
+  const canDeleteMetadata = deleteEnabled && resultCounts.featureMetadata > 0;
 
   return {
     counts,
@@ -395,6 +394,6 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     handleDeleteFetchFilteredCache,
     handleDeleteTransformCache,
     handleDeleteVTCache,
-    handleDeleteMetadata,
+    handleDeleteMetadata: handleDeleteFeatureMetadata,
   };
 };

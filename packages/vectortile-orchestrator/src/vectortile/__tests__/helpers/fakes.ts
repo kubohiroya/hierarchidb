@@ -68,8 +68,8 @@ export function makePostprocess(callLog?: string[]): RunVectorTileStageOrchestra
       callLog?.push('postprocess.summarizeVectorTilesByOrigin');
       return new Map();
     }),
-    updateSourceMetadataStage: vi.fn(async () => {
-      callLog?.push('postprocess.updateSourceMetadataStage');
+    updateDataSourceMetadataStage: vi.fn(async () => {
+      callLog?.push('postprocess.updateDataSourceMetadataStage');
     }),
     clearFeatureCache: vi.fn(() => {
       callLog?.push('postprocess.clearFeatureCache');

@@ -226,7 +226,7 @@ export interface ShapeFeatureMetadata {
   recycling?: boolean;
 }
 
-export interface ShapeSourceMetadata {
+export interface ShapeDataSourceMetadata {
   id: string;
   nodeId: string;
   originKey: string;

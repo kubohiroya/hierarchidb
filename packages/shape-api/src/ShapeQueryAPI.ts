@@ -14,7 +14,7 @@ import type {
   ShapeTransformErrorRecord,
   ShapeFeatureMetadata,
   ShapeFetchCache,
-  ShapeSourceMetadata,
+  ShapeDataSourceMetadata,
   ShapeVTMetadata,
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeFeatureRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
@@ -49,7 +49,7 @@ export interface ShapeQueryAPI {
   listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]>;
   getTransformCache(bufferId: string): Promise<ShapeTransformCache | null>;
   listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]>;
-  listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]>;
+  listDataSourceMetadata(nodeId: NodeId): Promise<ShapeDataSourceMetadata[]>;
   listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]>;
   listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]>;
 }

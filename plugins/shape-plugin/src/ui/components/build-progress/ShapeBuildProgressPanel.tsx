@@ -701,8 +701,8 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     const fetchApiBaseLabel = t('processing.download.deleteApiCache', 'APIキャッシュを削除');
     const fetchFilteredBaseLabel = t('processing.download.deleteFilteredCache', 'フィルター処理キャッシュを削除');
     const transformBaseLabel = t('processing.download.deleteStage1Cache', '簡略化キャッシュを削除');
-    const vtBaseLabel = t('processing.download.deleteTiles', 'タイルインデックス＋タイルデータキャッシュを削除');
-    const metadataLabel = t('processing.download.deleteMetadata', 'メタデータを削除');
+    const vtBaseLabel = t('processing.download.deleteTiles', 'タイルデータを削除');
+    const metadataLabel = t('processing.download.deleteMetadata', 'フィーチャーメタデータを削除');
     const fetchApiLabel = `${fetchApiBaseLabel}(${counts.fetchApi}件)`;
     const fetchFilteredLabel = `${fetchFilteredBaseLabel}(${counts.fetchFiltered}件)`;
     const transformLabel = `${transformBaseLabel}(${counts.transform}件)`;
@@ -725,6 +725,12 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
             label: fetchFilteredLabel,
             onClick: handleDeleteFetchFilteredCache,
             disabled: !canDeleteFetchFilteredCache || deleteLoading.fetchFiltered,
+          },
+          {
+            id: 'feature-metadata',
+            label: metadataLabel,
+            onClick: handleDeleteMetadata,
+            disabled: !canDeleteMetadata || deleteLoading.metadata || resultCounts.featureMetadata <= 0,
           },
         ],
       },
@@ -750,12 +756,6 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
             onClick: handleDeleteVTCache,
             disabled: !canDeleteVTCache || deleteLoading.vt,
           },
-          {
-            id: 'metadata',
-            label: metadataLabel,
-            onClick: handleDeleteMetadata,
-            disabled: !canDeleteMetadata || deleteLoading.metadata || resultCounts.metadata <= 0,
-          },
         ],
       },
     };
@@ -779,7 +779,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     handleDeleteMetadata,
     handleDeleteTransformCache,
     handleDeleteVTCache,
-    resultCounts.metadata,
+    resultCounts.featureMetadata,
     summary.buildStatus,
     t,
   ]);

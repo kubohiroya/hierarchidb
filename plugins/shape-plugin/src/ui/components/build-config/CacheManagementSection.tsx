@@ -167,7 +167,7 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
                       }}
                     />
                   }
-                  label={t('processing.download.retainVtCache', 'Tile index + tile data cache')}
+                  label={t('processing.download.retainVtCache', 'Tile data')}
                 />
               </FormGroup>
             </Stack>

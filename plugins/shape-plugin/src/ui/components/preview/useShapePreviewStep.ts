@@ -9,7 +9,7 @@ import type {
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeFeatureMetadata, ShapeSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
+import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -145,7 +145,7 @@ const pickAdminNameByLevel = (
 };
 
 const buildHoverLabel = (
-  row: ShapeSourceMetadata,
+  row: ShapeDataSourceMetadata,
   properties?: Record<string, unknown>,
 ): string => {
   const resolvedLevel = resolveAdminLevelFromProps(properties, row.adminLevel);
@@ -329,9 +329,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [activeNodeId, selectionDataSource, selectionMatrix, workerClient]);
 
-  const loadSourceMetadataRows = useCallback(
+  const loadDataSourceMetadataRows = useCallback(
     (targetNodeId: NodeId) =>
-      shapeQueryAPIImpl.listSourceMetadata(targetNodeId) as Promise<ShapeSourceMetadata[]>,
+      shapeQueryAPIImpl.listDataSourceMetadata(targetNodeId) as Promise<ShapeDataSourceMetadata[]>,
     [],
   );
 
@@ -348,14 +348,14 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   );
 
   const {
-    metadataRows: rawSourceMetadataRows,
-    metadataLoading: sourceMetadataLoading,
-    metadataError: sourceMetadataError,
-    metadataLoaded: sourceMetadataLoaded,
+    metadataRows: rawDataSourceMetadataRows,
+    metadataLoading: dataSourceMetadataLoading,
+    metadataError: dataSourceMetadataError,
+    metadataLoaded: dataSourceMetadataLoaded,
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
     activeNodeId,
-    loadSourceMetadataRows,
+    loadDataSourceMetadataRows,
     metadataPollIntervalMs,
   );
 
@@ -427,8 +427,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [selectionMetadata]);
 
   const filteredMetadataRows = useMemo(() => {
-    if (!selectionFilters) return rawSourceMetadataRows;
-    return rawSourceMetadataRows.filter((row) => {
+    if (!selectionFilters) return rawDataSourceMetadataRows;
+    return rawDataSourceMetadataRows.filter((row) => {
       const rowLevel = row.adminLevel;
       const rowCode = row.countryCode?.trim().toUpperCase();
       const rowName = row.countryName?.trim().toLowerCase();
@@ -442,17 +442,17 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (matchesFilter(rowCode, selectionFilters.byCode)) return true;
       return matchesFilter(rowName, selectionFilters.byName);
     });
-  }, [rawSourceMetadataRows, selectionFilters]);
+  }, [rawDataSourceMetadataRows, selectionFilters]);
 
-  const sourceMetadataRows = filteredMetadataRows;
+  const dataSourceMetadataRows = filteredMetadataRows;
   const featureMetadataRows = featureMetadataOverride ?? rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
 
-  const sourceMetadataLookup = useMemo(() => {
-    const bySourceKey = new Map<string, ShapeSourceMetadata>();
-    const byCountryName = new Map<string, ShapeSourceMetadata>();
-    const byCountryCode = new Map<string, ShapeSourceMetadata>();
-    sourceMetadataRows.forEach((row) => {
+  const dataSourceMetadataLookup = useMemo(() => {
+    const bySourceKey = new Map<string, ShapeDataSourceMetadata>();
+    const byCountryName = new Map<string, ShapeDataSourceMetadata>();
+    const byCountryCode = new Map<string, ShapeDataSourceMetadata>();
+    dataSourceMetadataRows.forEach((row) => {
       const code = normalizeCountryCodeValue(row.countryCode);
       const level = row.adminLevel;
       const name = normalizeText(row.countryName)?.toLowerCase();
@@ -467,7 +467,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       }
     });
     return { bySourceKey, byCountryName, byCountryCode };
-  }, [sourceMetadataRows]);
+  }, [dataSourceMetadataRows]);
 
   const resolveSourceContext = useCallback((input: {
     countryCode?: string;
@@ -488,11 +488,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       ?? normalizeText(selectionByCode?.countryName)
       ?? normalizeText(selectionByName?.countryName);
     const lookupKey = buildLookupKey(candidateCode, candidateAdminLevel);
-    const sourceByKey = lookupKey ? sourceMetadataLookup.bySourceKey.get(lookupKey) : undefined;
+    const sourceByKey = lookupKey ? dataSourceMetadataLookup.bySourceKey.get(lookupKey) : undefined;
     const sourceByName = candidateName && candidateAdminLevel != null
-      ? sourceMetadataLookup.byCountryName.get(`${candidateName.toLowerCase()}:${candidateAdminLevel}`)
+      ? dataSourceMetadataLookup.byCountryName.get(`${candidateName.toLowerCase()}:${candidateAdminLevel}`)
       : undefined;
-    const sourceByCode = candidateCode ? sourceMetadataLookup.byCountryCode.get(candidateCode) : undefined;
+    const sourceByCode = candidateCode ? dataSourceMetadataLookup.byCountryCode.get(candidateCode) : undefined;
     const sourceRow = sourceByKey ?? sourceByName ?? sourceByCode;
     const countryCode = normalizeCountryCodeValue(sourceRow?.countryCode)
       ?? candidateCode
@@ -510,7 +510,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         ? `${parsedSourceKey.countryCode}:${parsedSourceKey.adminLevel}`
         : input.sourceKey,
     };
-  }, [selectionDataSource, selectionLookup.byCode, selectionLookup.byName, sourceMetadataLookup]);
+  }, [selectionDataSource, selectionLookup.byCode, selectionLookup.byName, dataSourceMetadataLookup]);
 
   const updateBounds = useCallback(
     (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null, lng: number, lat: number) => {
@@ -650,8 +650,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
   }, [mapInstance, selectionBounds]);
 
-  const getRowId = useCallback((row: ShapeSourceMetadata) => row.originKey, []);
-  const buildSearchText = useCallback((row: ShapeSourceMetadata) => {
+  const getRowId = useCallback((row: ShapeDataSourceMetadata) => row.originKey, []);
+  const buildSearchText = useCallback((row: ShapeDataSourceMetadata) => {
     return [
       row.originLabel,
       row.countryName,
@@ -668,7 +668,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   useVectorTilePreviewSearch(
     metadataEnabled,
-    sourceMetadataRows,
+    dataSourceMetadataRows,
     searchKeyword,
     getRowId,
     buildSearchText,
@@ -676,7 +676,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   );
 
   const deriveSelectionContext = useCallback((
-    rows: ShapeSourceMetadata[],
+    rows: ShapeDataSourceMetadata[],
     ids: string[],
   ) => {
     if (!ids.length) return null;
@@ -692,9 +692,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
 
   const resolveSelection = useCallback((
-    row: ShapeSourceMetadata,
+    row: ShapeDataSourceMetadata,
     current: typeof selectionContext,
-    rows: ShapeSourceMetadata[],
+    rows: ShapeDataSourceMetadata[],
   ) => {
     const adminLevel = row.adminLevel ?? 0;
     const countryCode = row.countryCode ?? '';
@@ -742,7 +742,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return map;
   }, [hoverCandidates, resolveHoverOriginKey]);
 
-  const getHoverLabel = useCallback((row: ShapeSourceMetadata) => {
+  const getHoverLabel = useCallback((row: ShapeDataSourceMetadata) => {
     const hoverProps = hoverFeatureByOriginKey.get(row.originKey)?.props;
     return buildHoverLabel(row, hoverProps);
   }, [hoverFeatureByOriginKey]);
@@ -753,7 +753,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     hoverMessage,
     handleMapIdentify,
   } = useVectorTilePreviewSelection({
-    rows: sourceMetadataRows,
+    rows: dataSourceMetadataRows,
     selectedIds,
     setSelectedIds,
     hoveredId,
@@ -1222,10 +1222,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     t,
     theme,
     metadataEnabled,
-    sourceMetadataRows,
-    sourceMetadataLoading,
-    sourceMetadataError,
-    sourceMetadataLoaded,
+    dataSourceMetadataRows,
+    dataSourceMetadataLoading,
+    dataSourceMetadataError,
+    dataSourceMetadataLoaded,
     featureMetadataRows,
     featureListRows,
     featureMetadataLoading,

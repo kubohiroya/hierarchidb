@@ -1,5 +1,5 @@
 export { VectorTileDbBase } from './tilesDb.js';
 export type {
   FeatureMetadataRow,
-  SourceMetadataRow,
+  DataSourceMetadataRow,
 } from './tilesDb.js';

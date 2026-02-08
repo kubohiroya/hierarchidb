@@ -17,7 +17,7 @@ import type {
   ShapeMutationAPI,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeSourceMetadata,
+  ShapeDataSourceMetadata,
   ShapeTileIdToBufferRelation,
   ShapeTileInfo,
   ShapeTileSummary,
@@ -450,8 +450,8 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     }));
   }
 
-  async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]> {
-    return shapeDB.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadata[]>;
+  async listDataSourceMetadata(nodeId: NodeId): Promise<ShapeDataSourceMetadata[]> {
+    return shapeDB.dataSourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeDataSourceMetadata[]>;
   }
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]> {
@@ -597,18 +597,18 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     });
   }
 
-  async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
+  async putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void> {
     if (rows.length === 0) return;
-    await shapeDB.sourceMetadata.bulkPut(rows);
+    await shapeDB.dataSourceMetadata.bulkPut(rows);
   }
 
-  async deleteSourceMetadataByIds(ids: string[]): Promise<void> {
+  async deleteDataSourceMetadataByIds(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
-    await shapeDB.sourceMetadata.bulkDelete(ids);
+    await shapeDB.dataSourceMetadata.bulkDelete(ids);
   }
 
-  async deleteSourceMetadataByNode(nodeId: NodeId): Promise<void> {
-    await shapeDB.sourceMetadata.where('nodeId').equals(nodeId).delete();
+  async deleteDataSourceMetadataByNode(nodeId: NodeId): Promise<void> {
+    await shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).delete();
   }
 
   async putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void> {

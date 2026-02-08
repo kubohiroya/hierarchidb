@@ -108,7 +108,7 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
     syncVectorTilesToShapeStore: postprocess.syncVectorTilesToShapeStore,
     metadataEnabled,
     summarizeVectorTilesByOrigin: postprocess.summarizeVectorTilesByOrigin,
-    updateSourceMetadataStage: postprocess.updateSourceMetadataStage,
+    updateDataSourceMetadataStage: postprocess.updateDataSourceMetadataStage,
     clearFeatureCache: postprocess.clearFeatureCache,
   });
 }

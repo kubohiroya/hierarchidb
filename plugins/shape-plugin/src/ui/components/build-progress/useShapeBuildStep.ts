@@ -180,7 +180,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (tasksCompletionStatus === 'failed') {
       return 'failed';
     }
-    if (baseBuildStatus === 'completed' && hasInFlightTasks) {
+    if (hasInFlightTasks) {
       return 'running';
     }
     return baseBuildStatus;

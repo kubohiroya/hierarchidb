@@ -43,7 +43,7 @@ export type VectorTileStagePostprocessPort = {
   persistPlaceholderMetadata: (replace: boolean) => Promise<number>;
   syncVectorTilesToShapeStore: () => Promise<void>;
   summarizeVectorTilesByOrigin: () => Promise<Map<string, GeometryStatsSummary>>;
-  updateSourceMetadataStage: (stage: 'vectorTile', statsByOrigin: Map<string, GeometryStatsSummary>) => Promise<void>;
+  updateDataSourceMetadataStage: (stage: 'vectorTile', statsByOrigin: Map<string, GeometryStatsSummary>) => Promise<void>;
   clearFeatureCache?: () => Promise<void> | void;
 };
 

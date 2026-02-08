@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
@@ -50,7 +50,7 @@ import {
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
+import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 import { isSkippedMessage } from '../common/utils/taskMessages.ts';
 import { buildShapeTaskTitle } from '../common/utils/taskTitles.ts';
 import {
@@ -89,6 +89,93 @@ const buildConfigFromSession = (config: BuildSessionConfig): ShapeBuildConfig =>
     fetchConfig: config.fetchConfig,
     transformConfig: config.transformConfig,
     vtConfig: config.vectorTiles,
+  });
+};
+
+const hasConfigDiff = <T extends object>(left: T, right: T): boolean => {
+  const keys = new Set<keyof T>([...Object.keys(left), ...Object.keys(right)] as Array<keyof T>);
+  for (const key of keys) {
+    if (!Object.is(left[key], right[key])) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const resolveConfigInvalidationPlan = (
+  prevConfig: ShapeBuildConfig | null,
+  nextConfig: ShapeBuildConfig | null,
+): { fetch: boolean; transform: boolean; vt: boolean } => {
+  if (!prevConfig || !nextConfig) {
+    return { fetch: false, transform: false, vt: false };
+  }
+  const prev = mergeBuildConfig(DEFAULT_BUILD_CONFIG, prevConfig);
+  const next = mergeBuildConfig(DEFAULT_BUILD_CONFIG, nextConfig);
+  return {
+    fetch: hasConfigDiff(prev.fetchConfig, next.fetchConfig),
+    transform: hasConfigDiff(prev.transformConfig, next.transformConfig),
+    vt: hasConfigDiff(prev.vtConfig, next.vtConfig),
+  };
+};
+
+const clearTaskQueueStages = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
+  if (stages.length === 0) return;
+  const taskQueue = new VtTaskQueueDb();
+  await Promise.all(
+    stages.map((stage) => (
+      taskQueue.tasks
+        .where('[nodeId+taskType]')
+        .equals([nodeId, stage])
+        .delete()
+    )),
+  );
+};
+
+const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
+  const uniqueStages = Array.from(new Set(stages));
+  if (uniqueStages.length === 0) return;
+  const taskRows = await Promise.all(
+    uniqueStages.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByType(nodeId, stage)),
+  );
+  const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
+  if (taskIds.length > 0) {
+    await ephemeralShapeAPIImpl.deleteBuildTasksByIds(taskIds);
+  }
+};
+
+const applyConfigInvalidation = async (
+  nodeId: NodeId,
+  prevConfig: ShapeBuildConfig | null,
+  nextConfig: ShapeBuildConfig | null,
+): Promise<void> => {
+  const plan = resolveConfigInvalidationPlan(prevConfig, nextConfig);
+  if (!plan.fetch && !plan.transform && !plan.vt) return;
+
+  const stagesToClear: TaskStage[] = [];
+  if (plan.fetch) {
+    stagesToClear.push('fetch', 'transform', 'vt');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
+  } else if (plan.transform) {
+    stagesToClear.push('transform', 'vt');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
+  } else if (plan.vt) {
+    stagesToClear.push('vt');
+    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+  }
+
+  await clearBuildTasksByStage(nodeId, stagesToClear);
+  await clearTaskQueueStages(nodeId, stagesToClear);
+
+  console.warn('[shapeBatchAPI] config invalidation applied', {
+    nodeId,
+    fetch: plan.fetch,
+    transform: plan.transform,
+    vt: plan.vt,
   });
 };
 
@@ -1058,6 +1145,11 @@ export const shapeBatchAPI = {
     activePipelineRuns.set(pipelineKey, pipelineRunId);
 
     const taskQueue = new VtTaskQueueDb();
+    const previousSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null);
+    const previousBuildConfig = previousSession?.config && isBuildProcessConfig(previousSession.config)
+      ? buildConfigFromSession(previousSession.config)
+      : null;
+    await applyConfigInvalidation(nodeForSession, previousBuildConfig, mergedBatchConfig);
     let existingTasks = await listTasks(taskQueue, nodeForSession);
     if (existingTasks.length === 0) {
       await seedTaskQueueFromBuildTasks(nodeForSession);
@@ -1222,6 +1314,12 @@ export const shapeBatchAPI = {
         const mergedBuildConfig = entityBuildConfig
           ? mergeBuildConfig(normalizedBaseConfig, entityBuildConfig)
           : normalizedBaseConfig;
+        await applyConfigInvalidation(nodeId, sessionBuildConfig, mergedBuildConfig);
+        existingTasks = await listTasks(taskQueue, nodeId);
+        if (existingTasks.length === 0) {
+          await seedTaskQueueFromBuildTasks(nodeId);
+          existingTasks = await listTasks(taskQueue, nodeId);
+        }
         const resolvedDataSource = requireDataSourceName(
           mergedBuildConfig.dataSourceName,
           'resumeBatchSession',

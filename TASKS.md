@@ -1,3 +1,90 @@
+2609) refactor/shape/metadata-terminology-and-reset-scope (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/refactor/shape/metadata-terminology-and-reset-scope
+- 依存: なし
+- 受け入れ基準: セッションリセットの用途と想定タイミングがコード根拠付きで説明される／`metadata` の曖昧な命名が `DataSourceMetadata` / `FeatureMetadata` に整理される（必要箇所の改名と UI 文言反映）／VT キャッシュ削除の依存関係が正しく確認される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/shape-api/src/**` / `packages/shape-store/src/**` / `packages/runtime-worker/src/**` / `packages/ui/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の命名/セッション挙動へ戻す
+- チェックリスト:
+  - セッションリセットの用途と呼び出し箇所を整理する
+  - `DataSourceMetadata` / `FeatureMetadata` への名称整理を行う
+  - VT 削除パスの依存関係を点検する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 19:40 JST セッションリセット/metadata 命名/VT 削除パスの見直しに着手。
+  - update: 2026-02-08 20:02 JST SourceMetadata を DataSourceMetadata へ改名し、UI文言も DataSource/Feature で明確化。vectortile-store の dataSourceMetadata テーブル参照へ統一。
+  - update: 2026-02-08 20:06 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/runtime-worker --filter @hierarchidb/vectortile-store --filter @hierarchidb/vectortile-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-08 20:58 JST フィーチャーメタデータ削除/タイルデータ削除のメニュー整理と、設定差分に応じたタスク再開範囲の調整に着手。
+  - update: 2026-02-08 21:06 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/runtime-worker --filter @hierarchidb/vectortile-store --filter @hierarchidb/vectortile-orchestrator` exit 0（core-types build で tsdown define 警告あり）。
+
+2608) fix/ui/shape-step5-progress-ui (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/ui/shape-step5-progress-ui
+- 依存: なし
+- 受け入れ基準: shape Step5 build のステージ別サマリーに並列度に応じた `CircularProgress` の進捗中インジケータが表示される／plugin dialog タイトルバーの「全画面化」ボタンが有効化され操作できる／ビルド実行中に「経過時間」「このステージの経過時間」「このステージの残り時間（概算）」が継続更新される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/ui/dialog/src/**` / `packages/ui/batch-progress/src/**` / `app/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して Step5 サマリー表示/タイマー更新/全画面化操作を従来挙動へ戻す
+- チェックリスト:
+  - Step5 サマリーの並列度インジケータ表示を復旧する
+  - plugin dialog タイトルバーの全画面化操作を有効化する
+  - Step5 ビルド中の経過時間/ステージ経過時間/残り時間の更新を復旧する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 19:05 JST shape Step5 サマリー/タイマー更新と dialog 全画面化の復旧に着手。
+  - update: 2026-02-08 19:22 JST Step5 サマリーの並列度インジケータ復旧（batchConfig を fallback）、ビルド中の in-flight タスクで buildStatus=running を優先、plugin dialog の全画面化を再許可。
+  - update: 2026-02-08 19:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/plugin-ui-host` exit 0（core-types build で tsdown define 警告あり）。
+
+2607) fix/shape/vt-cache-delete-resume-scope (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/shape/vt-cache-delete-resume-scope
+- 依存: なし
+- 受け入れ基準: Step5 で「タイルインデックス＋タイルデータキャッシュを削除」を実行後に再開した際、Transform ステージのタスクが空になったり再実行されない／VT のみが再開される／挙動の差分と原因が TASKS.md に記載される
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/runtime-worker/src/**` / `packages/vt-orchestrator/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の再開挙動に戻す
+- チェックリスト:
+  - VT キャッシュ削除時に transform のタスクが invalidation される原因を特定する
+  - VT ステージのみ再開するよう挙動を修正する（必要であれば）
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 18:28 JST Step5 VT キャッシュ削除後に transform が再開される不具合調査に着手。
+
+2606) fix/shape/vt-skip-status-mismatch (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/shape/vt-skip-status-mismatch
+- 依存: なし
+- 受け入れ基準: Step5 の VT タスクで `skipped` 状態が発生した場合は UI/ログ上も `Skipped` と表示され、`Completed` にならない／スキップ理由のメッセージが詳細化される（必要に応じて長文追記）／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/vt-orchestrator/src/**` / `app/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のステータス判定/メッセージ表示に戻す
+- チェックリスト:
+  - VT タスクの status 集計/表示で `skipped` を `completed` に誤変換しない
+  - スキップ理由の詳細メッセージを付与する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 18:12 JST Step5 VT タスクの skipped/completed 表示不整合の修正に着手。
+  - update: 2026-02-08 18:20 JST skipped 判定を `skipped:` を含むメッセージ全体へ拡張し、geojson-vt の空タイル理由に詳細情報（タイル座標/レイヤ/件数）を付与。
+  - update: 2026-02-08 18:22 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
+
+2605) fix/shape/step5-task-status-sticky (P2) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/shape/step5-task-status-sticky
+- 依存: なし
+- 受け入れ基準: shape の Step5 build タスク一覧で `Running 100%` と `Completed 100%` が混在通知されても最終的に Completed が表示される／「キャッシュ保存開始」など該当タスクで Running 表示が残留しない／既存 UI に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**` / `app/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のステータス表示に戻す
+- チェックリスト:
+  - Step5 build タスク表示のマージ/更新ロジックで Completed 100% を優先する
+  - 「キャッシュ保存開始」を含むケースで Running 表示が残留しないことを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 17:42 JST shape Step5 build タスクの Running/Completed 表示競合修正に着手。
+  - blocked: 2026-02-08 17:42 JST `git checkout -b codex/fix/shape/step5-task-status-sticky` が ref 作成不可で失敗。
+  - update: 2026-02-08 17:46 JST Step5 build タスク同期で Completed 100% を優先するマージ処理とユニットテストを追加。
+  - update: 2026-02-08 17:59 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types などで tsdown define 警告あり）。
+  - update: 2026-02-08 19:14 JST Transform ステージの「キャッシュ保存開始」Running 100% 残留ケースの調査・修正に着手。
+  - update: 2026-02-08 19:20 JST Running 100% を Completed として正規化する処理とテスト更新を追加。
+  - blocked: 2026-02-08 19:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が useShapeBuildTaskSync.ts の status 型エラーで失敗。
+  - update: 2026-02-08 19:27 JST status 正規化の型修正後、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types などで tsdown define 警告あり）。
+
 2604) fix/shape/step3-country-metadata-cache (P2) — 進行中 (2026-02-08)
 - ブランチ名: codex/fix/shape/step3-country-metadata-cache
 - 依存: なし
@@ -17173,3 +17260,39 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - 運用ログ:
   - start: 2026-02-07 17:08 JST shape-api の src 配下に残った build 生成物（*.js / *.js.map）の削除に着手。
   - done: 2026-02-07 17:09 JST `packages/shape-api/src` 直下の `*.js` と `*.js.map` を削除し、残存なしを確認。
+2610) fix/shape/step5-unexpected-stop-dialog (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/shape/step5-unexpected-stop-dialog
+- 依存: なし
+- 受け入れ基準: Step5 の VT ステージ完了直後に表示される「Build may have stopped unexpectedly」ダイアログの発火条件と判断根拠がコード参照付きで説明される／該当判定に到るログ経路・状態遷移が整理される／必要なら最小差分の修正案と影響範囲・ロールバック手順を記載する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/runtime-worker/src/**` / `packages/vt-orchestrator/src/**` / `app/src/**`（調査後に確定）
+- ロールバック手順: 変更差分を revert し、従来の停止判定/ダイアログ表示へ戻す
+- チェックリスト:
+  - Step5 の停止判定/ダイアログ表示条件を特定する
+  - VT ステージ完了時に unexpectedly 判定される経路を特定する
+  - 判定の根拠と状態遷移を TASKS.md に整理する
+  - 必要に応じて最小差分の修正案を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 20:45 JST Step5 VT 完了時の unexpected 停止ダイアログの原因調査に着手。
+  - blocked: 2026-02-08 20:46 JST `git checkout -b codex/fix/shape/step5-unexpected-stop-dialog` が ref 作成不可で失敗。
+  - update: 2026-02-08 20:50 JST `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の crashSuspect 判定を確認。processingStatus=processing かつ buildFinishedAt なしのまま buildStatus/runtimeStatus が processing でなく、かつブロードキャスト/ACK が一定時間途絶えると「Build may have stopped unexpectedly」を表示する。
+
+2611) design/session/replace-heartbeat-with-web-locks (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/design/session-replace-heartbeat-web-locks
+- 依存: なし
+- 受け入れ基準: BroadcastChannel による heartbeat を Web Locks API ベースへ置換する設計案が提示される／現行の心拍/判定ロジックの役割分担が整理される／UI 側の停止判定（crash/suspend）を Web Locks ベースへ置き換えた場合の挙動差と影響範囲が明確化される／移行方針とロールバック指針が提示される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/session-coordinator/src/**` / `packages/ui/session-coordinator/src/**` / `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/route-plugin/src/ui/components/steps/**` / `app/src/hooks/build-session/**`（設計上の対象）
+- ロールバック手順: 本設計で改修する場合は BroadcastChannel ベースの実装へ revert できることを前提にする
+- チェックリスト:
+  - 現行の BroadcastChannel heartbeat の役割（poll/broadcast/ack/tab-state）を整理する
+  - Web Locks 置換案の API 形状と監視ロジックを提示する
+  - crash/suspend 判定の差分とユースケース影響を説明する
+  - 移行手順とリスクを整理する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 20:52 JST BroadcastChannel 心拍を Web Locks API ベースへ置換する設計検討に着手。
+  - blocked: 2026-02-08 20:53 JST `git checkout -b codex/design/session-replace-heartbeat-web-locks` が ref 作成不可で失敗。
+  - update: 2026-02-08 21:05 JST Web Locks で session lock を保持し、Heartbeat は IndexedDB に記録して他タブはポーリングで参照する設計案を作成。unexpected 判定は「processing かつ lock free」で発火させ、lock held + heartbeat stale は suspend 扱いへ寄せる方針を整理。
+  - update: 2026-02-08 21:12 JST 設計を `docs/session-web-locks-heartbeat-design.md` に整理（API/スキーマ/判定ロジック/リスク）。
+  - update: 2026-02-08 21:18 JST Build ステップの時間計測仕様（総経過/ステージ経過/残り時間）を同設計書へ追記。
+  - update: 2026-02-08 21:26 JST Lock 競合・非対応環境・heartbeat 粒度・stage 切替・pause/resume・retention・命名規約の詳細仕様を追記。

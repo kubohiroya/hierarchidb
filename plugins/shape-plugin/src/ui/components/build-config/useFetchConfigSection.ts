@@ -55,7 +55,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const fetchFilteredDeleteCount = counts.fetchFiltered;
   const transformDeleteCount = counts.transform;
   const vtDeleteCount = counts.vt;
-  const metadataDeleteCount = resultCounts.metadata;
+  const metadataDeleteCount = resultCounts.featureMetadata;
   const deleteFetchApiLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteApiCacheWithCount',
@@ -79,12 +79,12 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   ), [formatDeleteLabelI18n, t, transformDeleteCount]);
   const deleteVTLabel = useMemo(() => (
     formatDeleteLabel(
-      t('processing.download.deleteTiles', 'Delete tile index + tile data cache'),
+      t('processing.download.deleteTiles', 'Delete tile data'),
       vtDeleteCount,
     )
   ), [formatDeleteLabel, t, vtDeleteCount]);
   const deleteMetadataLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete Metadata'), metadataDeleteCount)
+    formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete feature metadata'), metadataDeleteCount)
   ), [formatDeleteLabel, metadataDeleteCount, t]);
 
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {

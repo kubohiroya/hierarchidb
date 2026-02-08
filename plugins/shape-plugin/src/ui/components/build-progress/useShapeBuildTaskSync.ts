@@ -40,6 +40,42 @@ const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
   throw new Error(`[ShapeBuildStep] Invalid task stage: ${String(candidate ?? 'undefined')}`);
 };
 
+const resolveProgressValue = (value: number | undefined): number => (
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
+);
+
+const normalizeTaskStatus = (
+  status: ShapeBuildTaskSummary['status'] | undefined,
+  progress: number,
+): ShapeBuildTaskSummary['status'] => {
+  const resolved = status ?? 'queued';
+  if (resolved === 'running' && progress >= 100) {
+    return 'completed';
+  }
+  return resolved;
+};
+
+const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
+  task.status === 'completed' && resolveProgressValue(task.progress) >= 100
+);
+
+const isRunningAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
+  task.status === 'running' && resolveProgressValue(task.progress) >= 100
+);
+
+const shouldPreferNextTask = (
+  current: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  if (isCompletedAtFullProgress(current) && isRunningAtFullProgress(next)) {
+    return false;
+  }
+  if (isCompletedAtFullProgress(next) && isRunningAtFullProgress(current)) {
+    return true;
+  }
+  return shouldApplyTaskUpdate(current, next);
+};
+
 export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: SyncArgs) => {
   const isLoadingRef = useRef(false);
   const errorRef = useRef<Error | null>(null);
@@ -94,15 +130,19 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     });
   }, [flushTasks]);
 
-  const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => ({
-    ...task,
-    stage: resolveTaskStage(task),
-  }), []);
+  const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
+    const progress = resolveProgressValue(task.progress);
+    return {
+      ...task,
+      stage: resolveTaskStage(task),
+      status: normalizeTaskStatus(task.status, progress),
+    };
+  }, []);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
     const baseList = pendingTasksRef.current ?? committedTasksRef.current;
     const currentTask = tasksMapRef.current.get(task.taskId);
-    if (!shouldApplyTaskUpdate(currentTask, task)) {
+    if (currentTask && !shouldPreferNextTask(currentTask, task)) {
       return baseList;
     }
     const nextMap = new Map(tasksMapRef.current);

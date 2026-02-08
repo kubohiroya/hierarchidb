@@ -660,6 +660,21 @@ const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason
   `${featureSummary}, ${tileSummary} (skipped: ${reason})`
 );
 
+const buildGeojsonVtEmptyTileReason = (detail: {
+  z: number;
+  x: number;
+  y: number;
+  layerName: string;
+  clippedFeatureCount: number;
+  featureCount: number;
+}): string => ([
+  'geojson-vt produced empty tile for clipped features',
+  `tile=${detail.z}/${detail.x}/${detail.y}`,
+  `layer=${detail.layerName}`,
+  `clippedFeatures=${detail.clippedFeatureCount}`,
+  `layerFeatures=${detail.featureCount}`,
+].join(', '));
+
 type OutputTileTotals = {
   featureCount: number;
   vertexCount: number;
@@ -1190,7 +1205,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               message: buildSkippedMessage(
                 adminFeatureSummary,
                 tileSummary,
-                'geojson-vt produced empty tile for clipped features',
+                buildGeojsonVtEmptyTileReason(emptyTileWithFeatures),
               ),
             };
           }

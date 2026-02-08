@@ -25,6 +25,7 @@ import {
 } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
+import type { ShapeBuildConfig } from '../../../common/types/build.js';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 
 const isDev = import.meta.env.DEV;
@@ -287,7 +288,8 @@ export const useBuildProgressPanelState = (params: {
   ), [stageProgress, summary.overallProgress]);
 
   const stageConcurrencyIndicators = useMemo(() => {
-    const buildConfig = params.data?.buildConfig;
+    const buildConfig = params.data?.buildConfig
+      ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
     if (!buildConfig) return undefined;
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];

@@ -590,15 +590,15 @@ describe('Shape WorkerProvider full flow', () => {
         true
       );
 
-      const [featureMetadata, vectorTiles, sourceMetadata] = await Promise.all([
+      const [featureMetadata, vectorTiles, dataSourceMetadata] = await Promise.all([
         shapeQuery.listFeatureMetadata(nodeId),
         shapeQuery.listVectorTiles(nodeId),
-        shapeQuery.listSourceMetadata(nodeId),
+        shapeQuery.listDataSourceMetadata(nodeId),
       ]);
 
       expect(featureMetadata.length).toBeGreaterThan(0);
       expect(vectorTiles.length).toBeGreaterThan(0);
-      expect(sourceMetadata.length).toBeGreaterThan(0);
+      expect(dataSourceMetadata.length).toBeGreaterThan(0);
 
       const hasAdm0 = featureMetadata.some(
         (entry) => entry.countryCode === 'JPN' && entry.adminLevel === 0

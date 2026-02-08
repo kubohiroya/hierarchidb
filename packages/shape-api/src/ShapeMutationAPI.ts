@@ -5,7 +5,7 @@ import type {
   ShapeTransformCache,
   ShapeFeatureMetadata,
   ShapeFetchCache,
-  ShapeSourceMetadata,
+  ShapeDataSourceMetadata,
 } from './shapeBuildTypes.js';
 import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
@@ -23,9 +23,9 @@ export interface ShapeMutationAPI {
   updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void>;
   putFetchCaches(buffers: ShapeFetchCache[]): Promise<void>;
   putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>;
-  putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void>;
-  deleteSourceMetadataByIds(ids: string[]): Promise<void>;
-  deleteSourceMetadataByNode(nodeId: string): Promise<void>;
+  putDataSourceMetadata(rows: ShapeDataSourceMetadata[]): Promise<void>;
+  deleteDataSourceMetadataByIds(ids: string[]): Promise<void>;
+  deleteDataSourceMetadataByNode(nodeId: string): Promise<void>;
   putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void>;
   deleteFeatureMetadataByNode(nodeId: string): Promise<void>;
   syncVectorTilesFromTilesDb(nodeId: NodeId): Promise<void>;
