@@ -195,6 +195,15 @@
       }
     }
   },
+  "tags": {
+    "detail": {
+      "connectingWorker": "ワーカーに接続中...",
+      "usageAndCreated": "使用回数: {{count}}",
+      "loading": "読み込み中...",
+      "notFound": "タグが見つかりませんでした。",
+      "empty": "このラベルが付いたノードはありません。"
+    }
+  },
   "plugins": {
     "noDependencies": "依存関係はありません",
     "details": "プラグイン詳細",

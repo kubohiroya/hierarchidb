@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
-import { point } from '@turf/helpers';
+import type { GeometryEngine } from './config.js';
+import { geometryPointInPolygon } from './geometryEngine.js';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { LRUCache } from 'typescript-lru-cache';
@@ -38,6 +38,7 @@ export type VectorTileGeocodeOptions = {
   adminLevels?: number[];
   maxMatches?: number;
   cache?: LRUCache<string, VectorTileLayerCache>;
+  geometryEngine?: GeometryEngine;
 };
 
 export type VectorTileLayerCache = {
@@ -148,7 +149,8 @@ export const geocodePointInShapeTiles = async (
   const layerName = options?.layerName ?? DEFAULT_LAYER_NAME;
   const cache = options?.cache ?? defaultCache;
   const results: VectorTileGeocodeMatch[] = [];
-  const testPoint = point([location.longitude, location.latitude]);
+  const geometryEngine = options?.geometryEngine ?? 'turf';
+  const testCoord: [number, number] = [location.longitude, location.latitude];
 
   for (const nodeId of targets) {
     const z = await resolveZoom(query, nodeId, options);
@@ -159,7 +161,7 @@ export const geocodePointInShapeTiles = async (
       continue;
     }
     for (const feature of layer.features) {
-      if (!booleanPointInPolygon(testPoint, feature)) continue;
+      if (!geometryPointInPolygon(testCoord, feature, geometryEngine)) continue;
       const properties = (feature.properties ?? {}) as Record<string, unknown>;
       const adminLevel = pickAdminLevel(properties);
       if (options?.adminLevels?.length && (adminLevel == null || !options.adminLevels.includes(adminLevel))) {

@@ -55,6 +55,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared
     bands,
     _enableHighDetailBands,
     configSignature,
+    _geometryEngine,
   ) => {
     let index = 0;
     return bands.map((band) => ({

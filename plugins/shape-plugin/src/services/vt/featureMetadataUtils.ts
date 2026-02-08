@@ -1,8 +1,5 @@
 import type { Feature, Geometry } from 'geojson';
-import * as turf from '@turf/turf';
-
-const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
-const turfArea = (turf as { area?: (input: unknown) => number }).area;
+import { geometryArea, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
@@ -35,10 +32,12 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
   return 0;
 };
 
-const safeBbox = (feature: Feature<Geometry>): [number, number, number, number] | null => {
-  if (!turfBbox) return null;
+const safeBbox = (
+  feature: Feature<Geometry>,
+  geometryEngine: GeometryEngine,
+): [number, number, number, number] | null => {
   try {
-    const result = turfBbox(feature);
+    const result = geometryBbox(feature, geometryEngine);
     if (!Array.isArray(result) || result.length !== 4) return null;
     const [minLon, minLat, maxLon, maxLat] = result;
     if (
@@ -56,10 +55,9 @@ const safeBbox = (feature: Feature<Geometry>): [number, number, number, number] 
   }
 };
 
-const safeArea = (feature: Feature<Geometry>): number => {
-  if (!turfArea) return 0;
+const safeArea = (feature: Feature<Geometry>, geometryEngine: GeometryEngine): number => {
   try {
-    const value = turfArea(feature);
+    const value = geometryArea(feature, geometryEngine);
     return Number.isFinite(value) ? value : 0;
   } catch {
     return 0;
@@ -90,7 +88,7 @@ export const buildFeatureId = (
   return `${composed}:${index}`;
 };
 
-export const extractGeometryStats = (feature: Feature): {
+export const extractGeometryStats = (feature: Feature, geometryEngine: GeometryEngine): {
   vertexCount: number;
   polygonCount: number;
   bbox?: [number, number, number, number];
@@ -100,10 +98,10 @@ export const extractGeometryStats = (feature: Feature): {
   const vertexCount = countVerticesFromGeometry(geometry);
   const polygonCount = countPolygonsFromGeometry(geometry);
   let bbox: [number, number, number, number] | undefined;
-  const resolvedBbox = safeBbox(feature as Feature<Geometry>);
+  const resolvedBbox = safeBbox(feature as Feature<Geometry>, geometryEngine);
   if (resolvedBbox) {
     bbox = resolvedBbox;
   }
-  const area = safeArea(feature as Feature<Geometry>);
+  const area = safeArea(feature as Feature<Geometry>, geometryEngine);
   return { vertexCount, polygonCount, bbox, area };
 };

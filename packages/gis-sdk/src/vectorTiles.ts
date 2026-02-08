@@ -1,9 +1,10 @@
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import area from '@turf/area';
 import type vtPbfNS = require('@maplibre/vt-pbf');
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { GeometryEngine } from './config.js';
+import { geometryArea } from './geometryEngine.js';
 
 import {
   latToTileY,
@@ -17,7 +18,6 @@ import {
 
 type GeojsonVtModule = typeof import('geojson-vt');
 type GeojsonVtData = Parameters<GeojsonVtModule>[0];
-type TurfInput = Parameters<typeof area>[0];
 
 export type VTMetadataContext = {
   dataSource?: string;
@@ -36,6 +36,7 @@ export type VTGenerateConfig = {
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
   metadataContext?: VTMetadataContext;
+  geometryEngine?: GeometryEngine;
   signal?: AbortSignal;
 };
 
@@ -146,7 +147,7 @@ const updateBbox = (bbox: [number, number, number, number], coord: number[]) => 
   if (lat > bbox[3]) bbox[3] = lat;
 };
 
-const extractGeometryStats = (geometry?: FeatureGeometry): {
+const extractGeometryStats = (geometry: FeatureGeometry | undefined, engine: GeometryEngine): {
   vertexCount: number;
   polygonCount: number;
   bbox?: [number, number, number, number];
@@ -168,7 +169,7 @@ const extractGeometryStats = (geometry?: FeatureGeometry): {
   if (type !== 'Polygon' && type !== 'MultiPolygon') {
     let fallbackArea = 0;
     try {
-      fallbackArea = Math.max(0, area(geometry as unknown as TurfInput));
+      fallbackArea = Math.max(0, geometryArea(geometry, engine));
     } catch {
       fallbackArea = 0;
     }
@@ -217,7 +218,7 @@ const extractGeometryStats = (geometry?: FeatureGeometry): {
 
   let areaValue = 0;
   try {
-    areaValue = Math.max(0, area(geometry as unknown as TurfInput));
+    areaValue = Math.max(0, geometryArea(geometry, engine));
   } catch {
     areaValue = 0;
   }
@@ -335,6 +336,7 @@ export const generateVectorTilesFromFeatureCollection = async (
 
   const metadataEnabled = Boolean(config.metadataEnabled);
   const metadataContext = config.metadataContext ?? {};
+  const geometryEngine = config.geometryEngine ?? 'turf';
   const createdAt = Date.now();
   let metadataCount: number | undefined;
   let featureMetadata: FeatureMetadataRow[] | undefined;
@@ -351,7 +353,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       const tileFeatureId = buildUniqueFeatureId(feature, index, metadataContext);
       properties.id = tileFeatureId;
       ensureMetadataProperties(properties, metadataContext);
-      const stats = extractGeometryStats(feature.geometry);
+      const stats = extractGeometryStats(feature.geometry, geometryEngine);
       records.push({
         id: `${nodeId}-${tileFeatureId}`,
         nodeId,
@@ -416,7 +418,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   const bbox: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
   for (const feature of features) {
     throwIfAborted(config.signal);
-    const stats = extractGeometryStats(feature?.geometry);
+    const stats = extractGeometryStats(feature?.geometry, geometryEngine);
     if (!stats.bbox) continue;
     updateBbox(bbox, [stats.bbox[0], stats.bbox[1]]);
     updateBbox(bbox, [stats.bbox[2], stats.bbox[3]]);

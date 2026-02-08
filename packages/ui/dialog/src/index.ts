@@ -5,7 +5,6 @@ export * from './components/CommonDialogActions.js';
 export * from './components/UnsavedChangesDialog.js';
 export * from './types/PluginDialog.types.js';
 export * from './headless/AbstractDialog.js';
-export * from './headless/PluginDialog.js';
 export * from './headless/PluginDialogContent.js';
 export * from './headless/PluginDialogHeader.js';
 export * from './headless/PluginDialogFooter.js';

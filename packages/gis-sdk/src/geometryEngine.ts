@@ -7,6 +7,7 @@ import simplify from '@turf/simplify';
 import { cleanCoords } from '@turf/clean-coords';
 import { point } from '@turf/helpers';
 import { bboxClip, booleanValid } from '@turf/turf';
+import unkink from '@turf/unkink-polygon';
 import type { GeometryEngine } from './config.js';
 import {
   geosArea,
@@ -14,6 +15,7 @@ import {
   geosClip,
   geosContains,
   geosIsValid,
+  geosMakeValid,
   geosSimplify,
 } from './geos/index.js';
 
@@ -33,6 +35,42 @@ type SimplifyOptions = {
 const toFeature = (geojson: GeoJSON): Feature => {
   if (geojson.type === 'Feature') return geojson as Feature;
   return { type: 'Feature', geometry: geojson as Geometry, properties: {} };
+};
+
+const collectPolygons = (geojson: GeoJSON): Polygon[] => {
+  const geometries: Geometry[] = [];
+  if (geojson.type === 'FeatureCollection') {
+    for (const feature of geojson.features) {
+      if (feature.geometry) {
+        geometries.push(feature.geometry as Geometry);
+      }
+    }
+  } else if (geojson.type === 'Feature') {
+    if (geojson.geometry) geometries.push(geojson.geometry as Geometry);
+  } else {
+    geometries.push(geojson as Geometry);
+  }
+
+  const polygons: Polygon[] = [];
+  const pushGeometry = (geometry: Geometry): void => {
+    if (geometry.type === 'Polygon') {
+      polygons.push(geometry);
+      return;
+    }
+    if (geometry.type === 'MultiPolygon') {
+      for (const coords of geometry.coordinates) {
+        polygons.push({ type: 'Polygon', coordinates: coords });
+      }
+      return;
+    }
+    if (geometry.type === 'GeometryCollection') {
+      for (const child of geometry.geometries ?? []) {
+        pushGeometry(child);
+      }
+    }
+  };
+  geometries.forEach((geometry) => pushGeometry(geometry));
+  return polygons;
 };
 
 export const geometryArea = (geojson: GeoJSON, engine: GeometryEngine): number => {
@@ -109,4 +147,18 @@ export const geometryCleanCoords = (geojson: GeoJSON): GeoJSON => {
   const feature = toFeature(geojson);
   const cleaned = cleanCoords(feature);
   return cleaned.geometry ?? geojson;
+};
+
+export const geometryUnkinkPolygons = (
+  feature: Feature<Polygon | MultiPolygon>,
+  engine: GeometryEngine,
+): Polygon[] => {
+  if (engine === 'geos') {
+    const fixed = geosMakeValid(feature);
+    return collectPolygons(fixed);
+  }
+  const unkinked = unkink(feature);
+  return unkinked.features
+    .map((entry) => entry.geometry)
+    .filter((geometry): geometry is Polygon => Boolean(geometry) && geometry.type === 'Polygon');
 };

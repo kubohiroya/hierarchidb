@@ -1,4 +1,5 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 
@@ -132,6 +133,7 @@ export interface VTWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      geometryEngine?: GeometryEngine;
       targetNodeId?: NodeId;
       targetNodeType?: string;
       abortKey?: string;

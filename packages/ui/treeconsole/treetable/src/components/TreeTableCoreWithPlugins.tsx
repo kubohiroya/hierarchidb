@@ -41,67 +41,10 @@ export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins): 
         onPluginEvent={onPluginEvent}
         debugMode={debugPlugins}
       >
-        <TreeTableCoreWithPluginContext {...coreProps} />
+        <TreeTableCoreOriginal {...coreProps} />
       </PluginProvider>
     );
   }
 
   return <TreeTableCoreOriginal {...coreProps} />;
-}
-
-/**
-  * TreeTableCore
-   */
-function TreeTableCoreWithPluginContext(props: TreeTableCoreProps): ReactElement {
-  return <TreeTableCoreOriginal {...props} />;
-}
-
-// =============================================================================
-//  Convenience Components (TreeTableWithPlugins)
-// =============================================================================
-
-/**
-  * TreeTable
- * @deprecated TreeTableCoreWithPluginsinlineEditPlugin
-  */
-export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
-  const plugins = props.plugins || [];
-  return (
-    <TreeTableCoreWithPlugins
-      {...props}
-      enablePlugins={true}
-      plugins={plugins}
-    />
-  );
-}
-
-/**
-  * TreeTable
- * @deprecated TreeTableCoreWithPluginskeyboardNavigationPlugin
-  */
-export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
-  const plugins = props.plugins || [];
-  return (
-    <TreeTableCoreWithPlugins
-      {...props}
-      enablePlugins={true}
-      plugins={plugins}
-    />
-  );
-}
-
-/**
-  * TreeTable
- * @deprecated TreeTableCoreWithPluginsfullFeaturedPlugins
-  */
-export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
-  const plugins = props.plugins || [];
-  return (
-    <TreeTableCoreWithPlugins
-      {...props}
-      enablePlugins={true}
-      plugins={plugins}
-      debugPlugins={props.debugPlugins || false}
-    />
-  );
 }

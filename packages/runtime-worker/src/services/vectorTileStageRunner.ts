@@ -1,5 +1,6 @@
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { VectorTileProgress, VTWorkerAPI } from '../types.js';
 
 export type VectorTileStageInput = {

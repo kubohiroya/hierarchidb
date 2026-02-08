@@ -17,6 +17,21 @@
   - start: 2026-02-08 16:24 JST TreeConsolePanelBreadcrumbRendererProps のリネーム対応に着手。
   - done: 2026-02-08 16:25 JST TreeConsoleBreadcrumbRendererProps へリネームを反映し、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-breadcrumb` exit 0（core-types などで tsdown define 警告あり）。
 
+2603) refactor/ui/remove-thin-wrappers (P3) — 進行中 (2026-02-08)
+- ブランチ名: codex/refactor/ui/remove-thin-wrappers
+- 依存: なし
+- 受け入れ基準: 指摘した薄いラッパー/フック（HeadlessPluginDialog/ModelessDialog/TreeTableCoreWithPluginContext/InlineEditableTreeTable/KeyboardNavigableTreeTable/AdvancedTreeTable/GuidedTour/useFloatingWindowPortal/useWorkerAPI）を削除し、参照元を直接参照へ更新する／既存挙動が変わらない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/headless/PluginDialog.tsx`, `packages/ui/dialog/src/headless/ModelessDialogFrame.tsx`, `packages/ui/treeconsole/treetable/src/components/TreeTableCoreWithPlugins.tsx`, `packages/ui/tour/src/components/GuidedTour.tsx`, `packages/ui/floating-window/src/components/FloatingWindowPortalProvider.tsx`, `packages/ui/worker-provider/src/index.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、各ラッパー/フックを復元して従来の import 経路に戻す
+- チェックリスト:
+  - 指摘した薄いラッパー/フックの削除と参照元の更新を行う
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 16:31 JST 薄いラッパー/フック削除と参照更新に着手。
+  - update: 2026-02-08 16:34 JST HeadlessPluginDialog/ModelessDialog/TreeTableCoreWithPluginContext/InlineEditableTreeTable/KeyboardNavigableTreeTable/AdvancedTreeTable/GuidedTour/useFloatingWindowPortal/useWorkerAPI を削除し、参照元を直接参照へ更新。
+  - blocked: 2026-02-08 16:35 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/ui-tour --filter @hierarchidb/ui-floating-window --filter @hierarchidb/ui-worker-provider` が `@hierarchidb/gis-sdk` の TS2554（geometryExtract.ts:210）で失敗。
+
 2578) feat/geo/geometry-engine-wrapper (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/geo/geometry-engine-wrapper
 - 依存: 2575, 2577
@@ -131,6 +146,13 @@
   - start: 2026-02-08 14:40 JST `/t/:treeId/:pageNodeId/tags` で全消去が出る原因として TreeConsoleIntegration の再初期化条件を調査開始。
   - update: 2026-02-08 14:49 JST useTreeConsoleIntegration の初期化 effect を `pageNodeId + searchQuery` キーでガードし、同一キーで `ssot.nodeIndex` がある場合は再初期化/ローディングを抑止するよう修正。
   - update: 2026-02-08 14:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - start: 2026-02-08 15:10 JST `/t/:treeId/:pageNodeId/tags` 遷移時の全消去を抑止するため、Outlet の Suspense 影響を切り分けて対策を検討開始。
+  - update: 2026-02-08 15:14 JST TreeLayoutBody の Suspense を分割し、TreeConsoleIntegration と Outlet を別境界にして nested ルートのサスペンドが全画面フォールバックを発火しないよう調整。
+  - blocked: 2026-02-08 15:18 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/gis-sdk の TS2554（geometryExtract.ts:210）で失敗。
+  - update: 2026-02-08 15:20 JST extractGeoJson の extractFeature 呼び出しに geometryEngine を渡すよう修正。
+  - blocked: 2026-02-08 15:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/ui-floating-window の TS1361（useFloatingWindowController.ts:87）で失敗。
+  - update: 2026-02-08 15:24 JST useFloatingWindowController の React import を値として読み込むよう修正。
+  - blocked: 2026-02-08 15:28 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/vt-orchestrator の build:types で多数の TS エラー（geometryUnkinkPolygons 未 export 等）により失敗。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet

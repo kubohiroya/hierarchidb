@@ -19,7 +19,6 @@ type TaggedNodeRow = {
   id: string;
   breadcrumbNodes: BreadcrumbNode[];
   treeId?: TreeId;
-  assignedAt?: number;
 };
 
 function decodeTagName(raw?: string): string | undefined {
@@ -44,7 +43,6 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
         id: item.node.id,
         breadcrumbNodes: item.breadcrumbNodes,
         treeId: item.treeId,
-        assignedAt: item.tagAssociation.assignedAt,
       })),
     [taggedNodes]
   );
@@ -72,13 +70,6 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
                 {specificTag.description}
               </Typography>
             )}
-
-            <Typography variant="body2" color="text.secondary">
-              {t('tags.detail.usageAndCreated', {
-                count: specificTag.usageCount,
-                createdAt: new Date(specificTag.createdAt).toLocaleString(),
-              })}
-            </Typography>
           </Paper>
         )}
 
@@ -93,7 +84,7 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
             {rows.map((row) => (
               <ListItem
                 key={row.id}
-                sx={{ alignItems: 'flex-start', flexDirection: 'column', gap: 1.5, py: 2 }}
+                sx={{ alignItems: 'center', flexDirection: 'row', py: 2 }}
               >
                 <TreeConsoleBreadcrumb
                   nodePath={row.breadcrumbNodes}
@@ -105,9 +96,6 @@ export default function TagDetailPage({ tagName }: { tagName?: string }) {
                     navigate({ to: `/t/${row.treeId}/${nodeId}` });
                   }}
                 />
-                <Typography variant="caption" color="text.secondary">
-                  {row.assignedAt ? new Date(row.assignedAt).toLocaleString() : t('tags.detail.noAssignedAt')}
-                </Typography>
               </ListItem>
             ))}
           </List>

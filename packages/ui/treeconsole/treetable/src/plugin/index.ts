@@ -46,11 +46,7 @@ export type {
 } from './types.js';
 
 //  Plugin-enhanced components ()
-export {
-  InlineEditableTreeTable,
-  KeyboardNavigableTreeTable,
-  AdvancedTreeTable,
-} from '../components/TreeTableCoreWithPlugins.js';
+// Thin wrapper components removed; use TreeTableCoreWithPlugins directly.
 
 // Utility functions
 export function createPlugin(

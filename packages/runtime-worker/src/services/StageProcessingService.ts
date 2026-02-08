@@ -323,6 +323,7 @@ class RealVTWorker implements VTWorkerAPI {
         metadataEnabled: config.metadataEnabled,
         metadataReplace: config.metadataReplace,
         metadataContext: config.metadataContext,
+        geometryEngine: config.geometryEngine,
         signal: controller?.signal,
       };
       const inputFormat = config.inputFormat ?? 'geojson';

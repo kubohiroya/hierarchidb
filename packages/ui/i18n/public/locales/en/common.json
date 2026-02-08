@@ -195,6 +195,15 @@
       }
     }
   },
+  "tags": {
+    "detail": {
+      "connectingWorker": "Connecting to worker...",
+      "usageAndCreated": "Usage: {{count}}",
+      "loading": "Loading...",
+      "notFound": "Tag not found.",
+      "empty": "No nodes are tagged with this label."
+    }
+  },
   "plugins": {
     "noDependencies": "No dependencies",
     "details": "Plugin Details",

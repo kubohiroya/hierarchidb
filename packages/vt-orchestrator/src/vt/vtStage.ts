@@ -12,7 +12,7 @@ import type {
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import { bboxClip as turfBboxClip } from '@turf/turf';
+import { geometryBboxClip } from '@hierarchidb/gis-sdk';
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
@@ -717,7 +717,7 @@ const clipFeaturesForTile = (
     const geometry = sourceFeature.geometry;
     let clipped: Feature<Geometry> | null = null;
     if (geometry && isClipGeometry(geometry)) {
-      clipped = turfBboxClip(
+      clipped = geometryBboxClip(
         sourceFeature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
         [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
       ) as Feature<Geometry>;
@@ -1262,7 +1262,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                     const geometry = feature.geometry;
                     let clipped: Feature<Geometry> | null = null;
                     if (geometry && isClipGeometry(geometry)) {
-                      clipped = turfBboxClip(
+                      clipped = geometryBboxClip(
                         feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
                         [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
                       ) as Feature<Geometry>;

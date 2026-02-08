@@ -490,6 +490,4 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
   return createPortal(dialogNode, portalTarget);
 }
 
-export function ModelessDialog<TData>(props: ModelessDialogFrameProps<TData>) {
-  return <ModelessDialogFrame {...props} />;
-}
+// ModelessDialog wrapper removed; use ModelessDialogFrame directly.

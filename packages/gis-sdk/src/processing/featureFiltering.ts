@@ -1,8 +1,6 @@
-import area from '@turf/area';
-import bbox from '@turf/bbox';
-import bboxPolygon from '@turf/bbox-polygon';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { FeatureFilterMethod, HybridFilterConfig } from '../config.js';
+import type { FeatureFilterMethod, GeometryEngine, HybridFilterConfig } from '../config.js';
+import { geometryArea, geometryBbox, geometryBboxPolygon } from '../geometryEngine.js';
 
 export type { FeatureFilterMethod, HybridFilterConfig };
 
@@ -44,23 +42,28 @@ const countVertices = (geometry: Geometry | null | undefined): number => {
   }
 };
 
-const computeBboxAreaSqKm = (geometry: Geometry): number => {
-  const bounds = bbox(geometry);
-  const polygon = bboxPolygon(bounds);
-  return area(polygon) / 1_000_000;
+const computeBboxAreaSqKm = (geometry: Geometry, engine: GeometryEngine): number => {
+  const bounds = geometryBbox(geometry, engine);
+  if (!bounds) return 0;
+  const polygon = geometryBboxPolygon(bounds);
+  return geometryArea(polygon, engine) / 1_000_000;
 };
 
-const computePolygonAreaSqKm = (geometry: Geometry): number => area(geometry) / 1_000_000;
+const computePolygonAreaSqKm = (geometry: Geometry, engine: GeometryEngine): number => (
+  geometryArea(geometry, engine) / 1_000_000
+);
 
-const computeAspectRatio = (geometry: Geometry): number => {
-  const [minX, minY, maxX, maxY] = bbox(geometry);
+const computeAspectRatio = (geometry: Geometry, engine: GeometryEngine): number => {
+  const bounds = geometryBbox(geometry, engine);
+  if (!bounds) return Number.POSITIVE_INFINITY;
+  const [minX, minY, maxX, maxY] = bounds;
   const width = Math.abs(maxX - minX);
   const height = Math.abs(maxY - minY);
   if (width === 0 || height === 0) return Number.POSITIVE_INFINITY;
   return width > height ? width / height : height / width;
 };
 
-const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings): boolean => {
+const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings, engine: GeometryEngine): boolean => {
   const threshold = settings.minArea;
   if (!Number.isFinite(threshold) || threshold <= 0) return true;
 
@@ -70,21 +73,21 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   const hybridConfig = { ...DEFAULT_HYBRID_CONFIG, ...(settings.hybridFilterConfig ?? {}) };
 
   if (method === 'bbox_only') {
-    return computeBboxAreaSqKm(geometry) >= threshold;
+    return computeBboxAreaSqKm(geometry, engine) >= threshold;
   }
 
   if (method === 'polygon_only') {
-    return computePolygonAreaSqKm(geometry) >= threshold;
+    return computePolygonAreaSqKm(geometry, engine) >= threshold;
   }
 
-  const bboxArea = computeBboxAreaSqKm(geometry);
+  const bboxArea = computeBboxAreaSqKm(geometry, engine);
   if (hybridConfig.quickRejectThreshold && bboxArea < threshold * hybridConfig.quickRejectThreshold) {
     return false;
   }
 
   const vertexCount = countVertices(geometry);
-  const polygonArea = computePolygonAreaSqKm(geometry);
-  const aspectRatio = computeAspectRatio(geometry);
+  const polygonArea = computePolygonAreaSqKm(geometry, engine);
+  const aspectRatio = computeAspectRatio(geometry, engine);
   const ratio = bboxArea > 0 ? polygonArea / bboxArea : 0;
   const correction = hybridConfig.elongatedShapeCorrectionFactor ?? 1;
   const regularMinRatio = hybridConfig.regularShapeMinRatio ?? 0.5;
@@ -105,7 +108,11 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   return polygonArea >= threshold;
 };
 
-export const applyFeatureFiltering = (geojson: unknown, settings: FeatureFilterSettings): unknown => {
+export const applyFeatureFiltering = (
+  geojson: unknown,
+  settings: FeatureFilterSettings,
+  geometryEngine: GeometryEngine,
+): unknown => {
   if (!geojson || typeof geojson !== 'object') return geojson;
   const collection = geojson as FeatureCollection;
   if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
@@ -117,7 +124,7 @@ export const applyFeatureFiltering = (geojson: unknown, settings: FeatureFilterS
   const filtered = collection.features.filter((feature: Feature) => {
     if (!feature?.geometry) return false;
     try {
-      return passesAreaThreshold(feature.geometry, settings);
+      return passesAreaThreshold(feature.geometry, settings, geometryEngine);
     } catch {
       return false;
     }

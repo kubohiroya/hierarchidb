@@ -34,6 +34,7 @@ export type ShapeVtStageParams = {
 
 export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promise<void> => {
   const vtConfig = resolveVtConfig(params.buildConfig);
+  const geometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
   let existingVtTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'vt')
     : [];
@@ -44,6 +45,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     params.bands,
     params.enableHighDetailBands,
     vtConfigSignature,
+    geometryEngine,
   );
   if (params.resumeExistingTasks && existingVtTasks.length > 0) {
     existingVtTasks = await filterObsoleteTasks(params.taskQueue, existingVtTasks, desiredVtTasks);
@@ -102,6 +104,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     ephemeralDB: params.ephemeralStore,
     vtConfig,
     bands: params.bands,
+    geometryEngine,
     abortSignal: vtAbortController.signal,
     continentByCountry,
     tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {

@@ -1,12 +1,12 @@
-import simplify from '@turf/simplify';
-import unkink from '@turf/unkink-polygon';
-import { cleanCoords } from '@turf/clean-coords';
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson';
+import type { GeometryEngine } from '../config.js';
+import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '../geometryEngine.js';
 
 export interface ExtractOptions {
   tolerance: number;
   perFeature: boolean;
   quantize?: number;
+  geometryEngine?: GeometryEngine;
 }
 
 const isPolygonFeature = (
@@ -19,20 +19,23 @@ const isPolygonFeature = (
 const extractFeature = (
   feature: Feature<Geometry, GeoJsonProperties>,
   tolerance: number,
+  geometryEngine: GeometryEngine,
 ): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
-  const extracted = simplify(feature, { tolerance, highQuality: false, mutate: false });
+  const extracted = geometrySimplify(feature, geometryEngine, {
+    tolerance,
+    highQuality: false,
+    mutate: false,
+    preserveTopology: true,
+  });
   if (!isPolygonFeature(extracted)) return extracted;
-  const unkinked = unkink(extracted);
-  const polygons = unkinked.features
-    .map((entry) => entry.geometry)
-    .filter((geometry): geometry is Polygon => Boolean(geometry));
+  const polygons = geometryUnkinkPolygons(extracted as Feature<Polygon | MultiPolygon>, geometryEngine);
   if (polygons.length === 0) return extracted;
   const mergedGeometry: Polygon | MultiPolygon | undefined =
     polygons.length === 1
       ? polygons[0]
       : { type: 'MultiPolygon', coordinates: polygons.map((polygon) => polygon.coordinates) };
-  if(! mergedGeometry){
+  if (!mergedGeometry) {
     return { ...extracted };
   }
   return {
@@ -188,7 +191,7 @@ const quantizeGeometry = (
     ...quantized,
     geometry: prunedGeometry,
   };
-  return cleanCoords(prunedFeature) as Feature<Geometry, GeoJsonProperties>;
+  return geometryCleanCoords(prunedFeature) as Feature<Geometry, GeoJsonProperties>;
 };
 
 export const extractGeoJson = (geojson: unknown, options: ExtractOptions): unknown => {
@@ -197,6 +200,7 @@ export const extractGeoJson = (geojson: unknown, options: ExtractOptions): unkno
   const collection = geojson as FeatureCollection;
   if (collection.type === 'FeatureCollection' && Array.isArray(collection.features)) {
     if (!options.perFeature) return geojson;
+    const geometryEngine = options.geometryEngine ?? 'turf';
     return {
       ...collection,
       features: collection.features
@@ -204,7 +208,7 @@ export const extractGeoJson = (geojson: unknown, options: ExtractOptions): unkno
           const needsExtract = Number.isFinite(options.tolerance) && options.tolerance > 0;
           try {
             const extracted = needsExtract
-              ? extractFeature(feature as Feature<Geometry>, options.tolerance)
+              ? extractFeature(feature as Feature<Geometry>, options.tolerance, geometryEngine)
               : (feature as Feature<Geometry>);
             return quantizeGeometry(extracted, options.quantize);
           } catch {

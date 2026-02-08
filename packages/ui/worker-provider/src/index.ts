@@ -1,8 +1,6 @@
 // React provider/hooks for runtime-worker worker client
 
-import { useWorkerAPI as useWorkerAPIImpl } from './hooks/useWorkerAPI.js';
-
-export const useWorkerAPI = useWorkerAPIImpl;
+export { useWorkerAPI } from './hooks/useWorkerAPI.js';
 export { createWorkerClientProvider } from './provider/WorkerClientProvider.js';
 export type { WorkerProviderProps } from './provider/WorkerProvider.js';
 export { createWorkerProvider } from './provider/WorkerProvider.js';

@@ -1,13 +1,5 @@
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
-import {
-  area as turfArea,
-  bbox as turfBbox,
-  bboxClip as turfBboxClip,
-  booleanValid as turfBooleanValid,
-  kinks as turfKinks,
-  simplify as turfSimplify,
-} from '@turf/turf';
 import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature } from 'topojson-client';
 import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from 'topojson-simplify';
@@ -15,13 +7,14 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import {
   applyFeatureFiltering,
   encodeFlatGeobufFromFeatureCollection,
-  geosArea,
-  geosBbox,
-  geosIntersects,
-  geosIsValid,
-  geosSimplify,
+  geometryArea,
+  geometryBbox,
+  geometryBboxClip,
+  geometryIsValid,
+  geometrySimplify,
   latToTileY,
   lonToTileX,
+  type GeometryEngine,
 } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { buildBoundaryFeature } from './geometry.js';
@@ -184,8 +177,6 @@ const resolveSimplifyToleranceDegrees = (zTarget: number, toleranceK: number): n
   return (toleranceMeters / (2 * Math.PI * EARTH_RADIUS_METERS)) * 360;
 };
 
-type GeometryEngine = 'turf' | 'geos';
-
 type GeometryOps = {
   simplifyCollection: (collection: FeatureCollection, zTarget: number, toleranceK: number) => FeatureCollection;
   simplifyFeature: (feature: Feature, zTarget: number, toleranceK: number) => Feature;
@@ -199,113 +190,66 @@ type GeometryOps = {
   ) => boolean;
 };
 
-const buildBBoxPolygonFeature = (
-  bbox: { minX: number; minY: number; maxX: number; maxY: number },
-): Feature<Polygon> => ({
-  type: 'Feature',
-  geometry: {
-    type: 'Polygon',
-    coordinates: [[
-      [bbox.minX, bbox.minY],
-      [bbox.maxX, bbox.minY],
-      [bbox.maxX, bbox.maxY],
-      [bbox.minX, bbox.maxY],
-      [bbox.minX, bbox.minY],
-    ]],
-  },
-  properties: {},
-});
-
 const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
   const simplifyCollection = (collection: FeatureCollection, zTarget: number, toleranceK: number): FeatureCollection => {
     const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
     if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
-    if (engine === 'geos') {
-      const simplified = geosSimplify(collection, tolerance, { preserveTopology: true });
-      if (!simplified || simplified.type !== 'FeatureCollection') {
-        throw new Error('geos simplify returned non-FeatureCollection');
-      }
-      return simplified as FeatureCollection;
-    }
-    if (typeof turfSimplify !== 'function') return collection;
-    return turfSimplify(collection, {
+    const simplified = geometrySimplify(collection, engine, {
       tolerance,
       highQuality: false,
       mutate: false,
-    }) as FeatureCollection;
+      preserveTopology: true,
+    });
+    if (!simplified || simplified.type !== 'FeatureCollection') {
+      throw new Error('simplify returned non-FeatureCollection');
+    }
+    return simplified as FeatureCollection;
   };
 
   const simplifyFeature = (feature: Feature, zTarget: number, toleranceK: number): Feature => {
     const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
     if (!Number.isFinite(tolerance) || tolerance <= 0) return feature;
-    if (engine === 'geos') {
-      const simplified = geosSimplify(feature, tolerance, { preserveTopology: true });
-      if (!simplified || simplified.type !== 'Feature') {
-        throw new Error('geos simplify returned non-Feature');
-      }
-      return simplified as Feature;
-    }
-    return turfSimplify(feature, {
+    const simplified = geometrySimplify(feature, engine, {
       tolerance,
       highQuality: false,
       mutate: false,
-    }) as Feature;
+      preserveTopology: true,
+    });
+    if (!simplified || simplified.type !== 'Feature') {
+      throw new Error('simplify returned non-Feature');
+    }
+    return simplified as Feature;
   };
 
   const bbox = (feature: Feature<Geometry>): [number, number, number, number] | null => {
-    if (engine === 'geos') {
-      const box = geosBbox(feature);
-      return box ?? null;
-    }
-    const box = turfBbox(feature);
-    return box as [number, number, number, number];
+    return geometryBbox(feature, engine);
   };
 
   const area = (feature: Feature<Geometry>): number => {
-    if (engine === 'geos') {
-      return geosArea(feature);
-    }
-    return turfArea(feature);
+    return geometryArea(feature, engine);
   };
 
   const isValid = (geometry?: Geometry | null): boolean => {
     if (!geometry) return true;
     if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return true;
-    if (engine === 'geos') {
-      return geosIsValid(geometry);
-    }
-    const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry, properties: {} };
-    return turfBooleanValid(feature);
+    return geometryIsValid(geometry, engine);
   };
 
   const countSelfIntersections = (geometry: Geometry): number => {
     if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return 0;
-    if (engine === 'geos') {
-      return isValid(geometry) ? 0 : 1;
-    }
-    try {
-      const polygonGeometry = geometry as Polygon | MultiPolygon;
-      const feature: Feature<Polygon | MultiPolygon> = { type: 'Feature', geometry: polygonGeometry, properties: {} };
-      const result = turfKinks(feature);
-      return Array.isArray(result?.features) ? result.features.length : 0;
-    } catch {
-      return 0;
-    }
+    return isValid(geometry) ? 0 : 1;
   };
 
   const intersectsBBox = (
     feature: Feature<Geometry>,
     bboxParams: { minX: number; minY: number; maxX: number; maxY: number },
   ): boolean => {
-    if (engine === 'geos') {
-      const bboxPolygon = buildBBoxPolygonFeature(bboxParams);
-      return geosIntersects(feature, bboxPolygon);
-    }
-    const clipped = turfBboxClip(
+    const clipped = geometryBboxClip(
       feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
       [bboxParams.minX, bboxParams.minY, bboxParams.maxX, bboxParams.maxY],
+      engine,
     );
-    return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
+    return Boolean(clipped?.geometry && hasCoordinatesFromGeometry(clipped.geometry));
   };
 
   return {
@@ -598,6 +542,14 @@ const hasCoordinates = (coords: unknown): boolean => {
   if (coords.length === 0) return false;
   if (typeof coords[0] === 'number') return true;
   return coords.some((entry) => hasCoordinates(entry));
+};
+
+const hasCoordinatesFromGeometry = (geometry: Geometry): boolean => {
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.some((child) => hasCoordinatesFromGeometry(child));
+  }
+  return hasCoordinates((geometry as Geometry & { coordinates: unknown }).coordinates);
 };
 
 const isLineOrPolygonFeature = (
@@ -1420,12 +1372,16 @@ export const createTransformByBandHandler = (
         stageLabel = 'filter:featureFiltering';
         await updateTaskPhase(taskId, 'filtering:start', taskProgressRange.decodeEnd);
         assertNotAborted(abortSignal);
-        const filtered = await runStageWithLabel('filter:featureFiltering', () => applyFeatureFiltering(workingCollection, {
-          minArea: transformConfig.featureAreaThreshold,
-          featureFilterMethod: transformConfig.featureFilterMethod,
-          minVertexCountForAreaFilter: transformConfig.minVertexCountForAreaFilter,
-          hybridFilterConfig: transformConfig.hybridFilterConfig,
-        }));
+        const filtered = await runStageWithLabel('filter:featureFiltering', () => applyFeatureFiltering(
+          workingCollection,
+          {
+            minArea: transformConfig.featureAreaThreshold,
+            featureFilterMethod: transformConfig.featureFilterMethod,
+            minVertexCountForAreaFilter: transformConfig.minVertexCountForAreaFilter,
+            hybridFilterConfig: transformConfig.hybridFilterConfig,
+          },
+          geometryEngine,
+        ));
         if (filtered && typeof filtered === 'object' && (filtered as FeatureCollection).type === 'FeatureCollection') {
           workingCollection = filtered as FeatureCollection;
         }

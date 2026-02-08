@@ -312,6 +312,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       dataSource,
       ephemeralStore: hidbEphemeralDB,
       shapeDb: shapeDB,
+      geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
       recyclingAllowlist,
       diffBuildEnabled: false,
     });

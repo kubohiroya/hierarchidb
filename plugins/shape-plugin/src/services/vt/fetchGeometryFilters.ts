@@ -1,8 +1,5 @@
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
-import type { OmitDetailsConfig } from '@hierarchidb/gis-sdk';
-import * as turf from '@turf/turf';
-
-const turfArea = (turf as { area?: (input: unknown) => number }).area;
+import { geometryArea, type GeometryEngine, type OmitDetailsConfig } from '@hierarchidb/gis-sdk';
 
 const EARTH_RADIUS = 6378137;
 const MVT_EXTENT = 4096;
@@ -71,10 +68,9 @@ const computeRingLengthMeters = (ring: number[][]): number => {
   return length;
 };
 
-const computePolygonArea = (coords: number[][][]): number => {
-  if (!turfArea) return 0;
+const computePolygonArea = (coords: number[][][], geometryEngine: GeometryEngine): number => {
   try {
-    return Math.abs(turfArea({ type: 'Polygon', coordinates: coords } as Polygon));
+    return Math.abs(geometryArea({ type: 'Polygon', coordinates: coords } as Polygon, geometryEngine));
   } catch {
     return 0;
   }
@@ -119,11 +115,12 @@ const shouldOmitByDetails = (
   coords: number[][][],
   config: OmitDetailsConfig,
   zTarget: number,
+  geometryEngine: GeometryEngine,
 ): boolean => {
   const threshold = resolveOmitDetailsThreshold(config, zTarget);
   const metersPerPixelValue = metersPerPixel(zTarget);
   const { widthMeters, heightMeters } = computeOuterRingBounds(coords);
-  const areaMeters = computePolygonArea(coords);
+  const areaMeters = computePolygonArea(coords, geometryEngine);
   const widthPx = metersPerPixelValue > 0 ? widthMeters / metersPerPixelValue : 0;
   const heightPx = metersPerPixelValue > 0 ? heightMeters / metersPerPixelValue : 0;
   const areaPx2 = metersPerPixelValue > 0 ? areaMeters / (metersPerPixelValue * metersPerPixelValue) : 0;
@@ -136,11 +133,12 @@ const shouldExcludeByArea = (
   coords: number[][][],
   coefficient: number,
   zTarget: number,
+  geometryEngine: GeometryEngine,
 ): boolean => {
   if (!Number.isFinite(coefficient) || coefficient <= 0) return false;
   const outlineLength = computeRingLengthMeters(coords[0] ?? []);
   if (outlineLength <= 0) return false;
-  const area = computePolygonArea(coords);
+  const area = computePolygonArea(coords, geometryEngine);
   const gridSizeMeters = metersPerPixel(zTarget);
   const threshold = (coefficient * gridSizeMeters * outlineLength) / 2;
   return area < threshold;
@@ -153,6 +151,7 @@ const filterPolygons = (
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
     minRingVertices?: number;
+    geometryEngine: GeometryEngine;
   },
 ): number[][][][] => {
   const filtered: number[][][][] = [];
@@ -160,8 +159,8 @@ const filterPolygons = (
   for (const coords of polygons) {
     const outer = coords[0] ?? [];
     if (outer.length < minRingVertices) continue;
-    if (shouldOmitByDetails(coords, options.omitDetailsConfig, options.zTarget)) continue;
-    if (shouldExcludeByArea(coords, options.excludePolygonAreaCoefficient, options.zTarget)) continue;
+    if (shouldOmitByDetails(coords, options.omitDetailsConfig, options.zTarget, options.geometryEngine)) continue;
+    if (shouldExcludeByArea(coords, options.excludePolygonAreaCoefficient, options.zTarget, options.geometryEngine)) continue;
     filtered.push(coords);
   }
   return filtered;
@@ -174,6 +173,7 @@ const filterGeometry = (
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
     minRingVertices?: number;
+    geometryEngine: GeometryEngine;
   },
 ): Geometry | null => {
   if (geometry.type === 'Polygon') {
@@ -197,6 +197,7 @@ export const filterFetchCollectionByZoom = (
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
     minRingVertices?: number;
+    geometryEngine: GeometryEngine;
   },
 ): FeatureCollection => {
   const features: Feature[] = [];

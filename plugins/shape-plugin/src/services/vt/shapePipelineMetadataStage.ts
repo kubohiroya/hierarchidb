@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
-import { pickAdminCode, pickAdminName } from '@hierarchidb/gis-sdk';
+import { pickAdminCode, pickAdminName, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
@@ -21,6 +21,7 @@ export type ShapeMetadataStageParams = {
   dataSource: DataSourceName;
   ephemeralStore: HidbEphemeralDB;
   shapeDb: typeof shapeDB;
+  geometryEngine: GeometryEngine;
   recyclingByFeatureId?: Map<string, boolean>;
   recyclingAllowlist: Set<string>;
   diffBuildEnabled: boolean;
@@ -31,6 +32,7 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
     params.nodeId,
     params.dataSource,
     params.ephemeralStore,
+    params.geometryEngine,
     params.recyclingByFeatureId,
   );
   if (featureMetadataRows.length > 0) {
@@ -60,6 +62,7 @@ const buildFeatureMetadataFromTransformCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
   ephemeralStore: HidbEphemeralDB,
+  geometryEngine: GeometryEngine,
   recyclingByFeatureId?: Map<string, boolean>,
 ): Promise<ShapeFeatureMetadata[]> => {
   const records: ShapeFeatureMetadata[] = [];
@@ -81,7 +84,7 @@ const buildFeatureMetadataFromTransformCaches = async (
       const adminLevel = originInfo.adminLevel;
       const adminCode = pickAdminCode(properties);
       const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
-      const stats = extractGeometryStats(feature);
+      const stats = extractGeometryStats(feature, geometryEngine);
       const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount');
       const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount');
       records.push({

@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
-import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
+import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
@@ -35,7 +35,6 @@ import type { RetryConfig } from '../datasources/DataSourceStrategy.js';
 import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
-import * as turf from '@turf/turf';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
@@ -71,7 +70,6 @@ export type ShapeFetchTaskOutput = {
   polygonCount?: number;
 };
 
-const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder('utf-8');
 
@@ -543,7 +541,7 @@ const buildFetchFeatureMetadata = (params: {
     if (properties.__hdbFeatureId !== featureId) {
       properties.__hdbFeatureId = featureId;
     }
-    const stats = extractGeometryStats(feature);
+    const stats = extractGeometryStats(feature, geometryEngine);
     const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
     const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
     records.push({
@@ -631,7 +629,8 @@ const applyOriginPropertiesToCollection = (collection: FeatureCollection, origin
 };
 
 const summarizeFeatureCollection = (
-  collection: FeatureCollection
+  collection: FeatureCollection,
+  geometryEngine: GeometryEngine,
 ): {
   featureCount: number;
   vertexCount: number;
@@ -646,8 +645,8 @@ const summarizeFeatureCollection = (
     polygonCount += countPolygonsFromGeometry(feature.geometry);
   }
   let bbox: [number, number, number, number] = [0, 0, 0, 0];
-  if (turfBbox) {
-    const bounds = turfBbox(collection);
+  {
+    const bounds = geometryBbox(collection, geometryEngine);
     if (Array.isArray(bounds) && bounds.length === 4 && bounds.every((value) => Number.isFinite(value))) {
       const [minX, minY, maxX, maxY] = bounds as [number, number, number, number];
       bbox = [minX, minY, maxX, maxY];
@@ -707,6 +706,7 @@ const createFetchHandler = (params: {
   abortSignal?: AbortSignal;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
+  const geometryEngine: GeometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
   const isTopoJsonSource = params.dataSource === 'geoboundaries-topojson';
   const strategySource = isTopoJsonSource ? 'geoboundaries' : params.dataSource;
   const strategyId = resolveStrategyIdFromDataSource(strategySource);
@@ -753,6 +753,7 @@ const createFetchHandler = (params: {
           createdAt,
           countryLookup,
           recyclingByFeatureId: params.recyclingByFeatureId,
+          geometryEngine,
         });
         if (cachedMetadata.length > 0) {
           await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
@@ -838,7 +839,7 @@ const createFetchHandler = (params: {
         }
       }
       baseCollection = normalizeGeojsonCollection(baseCollection);
-      const inputSummary = summarizeFeatureCollection(baseCollection);
+      const inputSummary = summarizeFeatureCollection(baseCollection, geometryEngine);
       const filteredCollection = Number.isFinite(filterZoom)
         ? filterFetchCollectionByZoom(baseCollection, {
           zTarget: filterZoom!,
@@ -876,13 +877,14 @@ const createFetchHandler = (params: {
         createdAt,
         countryLookup,
         recyclingByFeatureId: params.recyclingByFeatureId,
+        geometryEngine,
       });
       if (featureMetadata.length > 0) {
         await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
       }
 
       assertNotAborted(params.abortSignal);
-      const outputSummary = summarizeFeatureCollection(collectionWithOrigin);
+      const outputSummary = summarizeFeatureCollection(collectionWithOrigin, geometryEngine);
       const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
@@ -949,7 +951,7 @@ const createFetchHandler = (params: {
       collection = mergeGeojsonCollection(collection);
     }
     collection = normalizeGeojsonCollection(collection);
-    const inputSummary = summarizeFeatureCollection(collection);
+    const inputSummary = summarizeFeatureCollection(collection, geometryEngine);
     const filteredCollection = Number.isFinite(filterZoom)
       ? filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
@@ -985,13 +987,14 @@ const createFetchHandler = (params: {
       createdAt,
       countryLookup,
       recyclingByFeatureId: params.recyclingByFeatureId,
+      geometryEngine,
     });
     if (featureMetadata.length > 0) {
       await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection);
+    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection, geometryEngine);
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const bufferId = await putFetchCache({

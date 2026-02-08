@@ -3,13 +3,14 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { bboxClip as turfBboxClip } from '@turf/turf';
 import {
+  geometryBboxClip,
   latToTileY,
   lonToTileX,
   pickAdminLevel,
   pickCountryCode,
   pickCountryName,
+  type GeometryEngine,
 } from '@hierarchidb/gis-sdk';
 import {
   buildZoomBandRanges,
@@ -267,23 +268,32 @@ const isLineOrPolygonFeature = (
     || type === 'MultiPolygon';
 };
 
-const featureIntersectsTileBBox = (feature: Feature, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+const featureIntersectsTileBBox = (
+  feature: Feature,
+  bbox: { minX: number; minY: number; maxX: number; maxY: number },
+  geometryEngine: GeometryEngine,
+): boolean => {
   if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
   if (!isLineOrPolygonFeature(feature)) return false;
-  const clipped = turfBboxClip(
+  const clipped = geometryBboxClip(
     feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
     [bbox.minX, bbox.minY, bbox.maxX, bbox.maxY],
+    geometryEngine,
   ) as Feature<LineString | MultiLineString | Polygon | MultiPolygon> | null;
   return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
 };
 
-const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
+const collectTileIdsForCollection = (
+  collection: FeatureCollection,
+  zBase: number,
+  geometryEngine: GeometryEngine,
+): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
   const maxIndex = (1 << zBase) - 1;
   const tileIds = new Set<number>();
   for (const feature of collection.features) {
     if (!feature?.geometry) continue;
-    const bbox = extractGeometryStats(feature).bbox;
+    const bbox = extractGeometryStats(feature, geometryEngine).bbox;
     if (!bbox) continue;
     const [minLon, minLat, maxLon, maxLat] = bbox;
     const x1Raw = lonToTileX(minLon, zBase);
@@ -298,7 +308,7 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
     for (let x = x1; x <= x2; x += 1) {
       for (let y = y1; y <= y2; y += 1) {
         const tileBBox = tileToBBox(zBase, x, y);
-        if (!featureIntersectsTileBBox(feature, tileBBox)) continue;
+        if (!featureIntersectsTileBBox(feature, tileBBox, geometryEngine)) continue;
         tileIds.add(packTileId(x, y, zBase));
       }
     }
@@ -310,9 +320,10 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   nodeId: NodeId;
   bandIndex: number;
   zBase: number;
+  geometryEngine: GeometryEngine;
   ephemeralStore: HidbEphemeralDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]> }> => {
-  const { nodeId, bandIndex, zBase, ephemeralStore } = params;
+  const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
   const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
     ephemeralStore.transformCache
       .where('[nodeId+bandIndex]')
@@ -356,7 +367,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
       });
       continue;
     }
-    const tileIds = collectTileIdsForCollection(collection, zBase);
+    const tileIds = collectTileIdsForCollection(collection, zBase, geometryEngine);
     if (tileIds.length === 0) continue;
     tileIds.forEach((tileId) => {
       const bucket = tileBuffers.get(tileId);
@@ -490,6 +501,7 @@ export const buildVtTasks = async (
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,
+  geometryEngine: GeometryEngine,
 ): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
   const tasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
   let index = 0;
@@ -521,6 +533,7 @@ export const buildVtTasks = async (
         nodeId,
         bandIndex: band.bandIndex,
         zBase: band.zBase,
+        geometryEngine,
         ephemeralStore,
       });
       relationCount = backfilled.relationCount;

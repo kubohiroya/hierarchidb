@@ -1,7 +1,7 @@
 import { Box, Fade } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
-import { HeadlessPluginDialog } from './PluginDialog.js';
+import { AbstractDialog } from './AbstractDialog.js';
 import type { PluginDialogFrameComponentProps } from './PluginDialogFrame.types.js';
 import { usePluginDialogFrame } from './usePluginDialogFrame.js';
 
@@ -18,7 +18,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       onContextMenu={state.handleContextMenu}
       onPointerDown={state.handleFramePointerDown}
     >
-      <HeadlessPluginDialog {...state.augmentedHeadlessProps} />
+      <AbstractDialog {...state.augmentedHeadlessProps} />
       {state.allowResizeHandles && (
         state.resizeHandles.map((handle) => (
           <Box

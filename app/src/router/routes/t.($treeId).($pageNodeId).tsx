@@ -226,29 +226,33 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
               </DialogActions>
             </Dialog>
           ) : (
-            <Suspense
-              fallback={
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
-                  }}
-                >
-                  <CircularProgress />
-                </Box>
-              }
-            >
-              <MemoizedTreeConsoleIntegration
-                key={dialogStableKeyRef.current}
-                treeId={data.tree?.id}
-                pageNodeId={data.pageNodeId}
-                pageTreeNode={data.pageNode}
-              />
-              {/* Nested routes (e.g. dialog) render here */}
-              <Outlet />
-            </Suspense>
+            <>
+              <Suspense
+                fallback={
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                }
+              >
+                <MemoizedTreeConsoleIntegration
+                  key={dialogStableKeyRef.current}
+                  treeId={data.tree?.id}
+                  pageNodeId={data.pageNodeId}
+                  pageTreeNode={data.pageNode}
+                />
+              </Suspense>
+              <Suspense fallback={null}>
+                {/* Nested routes (e.g. dialog) render here */}
+                <Outlet />
+              </Suspense>
+            </>
           )}
         </Box>
       </Box>

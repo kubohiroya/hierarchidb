@@ -1,6 +1,12 @@
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
-import { area as turfArea, booleanValid, kinks as turfKinks, simplify as turfSimplify, unkinkPolygon } from '@turf/turf';
-import { cleanCoords } from '@turf/clean-coords';
+import {
+  geometryArea,
+  geometryCleanCoords,
+  geometryIsValid,
+  geometrySimplify,
+  geometryUnkinkPolygons,
+  type GeometryEngine,
+} from '@hierarchidb/gis-sdk';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type {
   OmitDetailsConfig,
@@ -152,18 +158,18 @@ const computeRingLengthMeters = (ring: number[][]): number => {
   return length;
 };
 
-const computePolygonArea = (coords: number[][][]): number => {
+const computePolygonArea = (coords: number[][][], engine: GeometryEngine): number => {
   try {
-    return Math.abs(turfArea({ type: 'Polygon', coordinates: coords } as Polygon));
+    return Math.abs(geometryArea({ type: 'Polygon', coordinates: coords } as Polygon, engine));
   } catch {
     return 0;
   }
 };
 
-const computeOuterRingArea = (coords: number[][][]): number => {
+const computeOuterRingArea = (coords: number[][][], engine: GeometryEngine): number => {
   const outer = coords[0];
   if (!outer || outer.length === 0) return 0;
-  return computePolygonArea([outer]);
+  return computePolygonArea([outer], engine);
 };
 
 const computeOuterRingBounds = (coords: number[][][]): { widthMeters: number; heightMeters: number } => {
@@ -274,29 +280,27 @@ const hasOpenRings = (geometry: Geometry): boolean => {
   return false;
 };
 
-const isGeometryValid = (geometry: Geometry): boolean => {
+const isGeometryValid = (geometry: Geometry, engine: GeometryEngine): boolean => {
   if (geometry.type !== 'GeometryCollection') {
     const coords = (geometry as GeometryWithCoords).coordinates;
     if (hasNonFiniteCoords(coords)) return false;
     if (hasOpenRings(geometry)) return false;
   }
   try {
-    const feature = { type: 'Feature', geometry, properties: {} } as Feature;
-    return booleanValid(feature);
+    return geometryIsValid(geometry, engine);
   } catch {
     return false;
   }
 };
 
-const formatGeometryDiagnostics = (geometry: Geometry): string => {
+const formatGeometryDiagnostics = (geometry: Geometry, engine: GeometryEngine): string => {
   const vertexCount = countVerticesFromGeometry(geometry);
   const ringCount = countRingsFromGeometry(geometry);
   const nonFinite = hasNonFiniteGeometry(geometry);
   const openRings = hasOpenRings(geometry);
   let booleanValidFlag = false;
   try {
-    const feature = { type: 'Feature', geometry, properties: {} } as Feature;
-    booleanValidFlag = booleanValid(feature);
+    booleanValidFlag = geometryIsValid(geometry, engine);
   } catch {
     booleanValidFlag = false;
   }
@@ -306,8 +310,14 @@ const formatGeometryDiagnostics = (geometry: Geometry): string => {
 
 const cleanGeometry = (geometry: Geometry): Geometry => {
   try {
-    const cleaned = cleanCoords({ type: 'Feature', geometry, properties: {} });
-    return cleaned.geometry ?? geometry;
+    const cleaned = geometryCleanCoords({ type: 'Feature', geometry, properties: {} });
+    if ((cleaned as Feature).geometry) {
+      return (cleaned as Feature).geometry as Geometry;
+    }
+    if ((cleaned as Geometry).type) {
+      return cleaned as Geometry;
+    }
+    return geometry;
   } catch {
     return geometry;
   }
@@ -318,13 +328,14 @@ const validateSimplifiedGeometry = (
   ringFix: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
+  geometryEngine: GeometryEngine,
 ): Geometry => {
   const cleaned = cleanGeometry(geometry);
-  const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles);
+  const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles, geometryEngine);
   if (!ringFixed) {
     throw new Error('simplify produced empty geometry');
   }
-  if (!isGeometryValid(ringFixed)) {
+  if (!isGeometryValid(ringFixed, geometryEngine)) {
     throw new Error('simplify produced invalid geometry');
   }
   return ringFixed;
@@ -360,7 +371,11 @@ export const snapGeometryToGrid = (geometry: Geometry, zTarget: number, quantize
   return snapGeometryToGridWithStep(geometry, metersPerPixel(zTarget) * factor);
 };
 
-export const simplifyGeometryInMercator = (geometry: Geometry, toleranceMeters: number): Geometry => {
+export const simplifyGeometryInMercator = (
+  geometry: Geometry,
+  toleranceMeters: number,
+  geometryEngine: GeometryEngine,
+): Geometry => {
   const toMercator = (coord: LonLat): LonLat => {
     const [x, y] = lonLatToMercator(coord);
     return [x, y];
@@ -369,10 +384,11 @@ export const simplifyGeometryInMercator = (geometry: Geometry, toleranceMeters: 
     return mercatorToLonLat(coord);
   };
   const mercatorGeometry = mapGeometry(geometry, toMercator);
-  const simplified = turfSimplify(mercatorGeometry, {
+  const simplified = geometrySimplify(mercatorGeometry, geometryEngine, {
     tolerance: toleranceMeters,
     highQuality: false,
     mutate: false,
+    preserveTopology: true,
   }) as Geometry;
   return mapGeometry(simplified, toLonLat);
 };
@@ -450,11 +466,11 @@ const normalizeRing = (ring: number[][], config: RingFixConfig): number[][] => {
   return points;
 };
 
-const computeRingArea = (ring: number[][]): number => {
+const computeRingArea = (ring: number[][], engine: GeometryEngine): number => {
   if (ring.length < 4) return 0;
   try {
     const polygon = { type: 'Polygon', coordinates: [ring] } as Polygon;
-    return Math.abs(turfArea(polygon));
+    return Math.abs(geometryArea(polygon, engine));
   } catch {
     return 0;
   }
@@ -465,11 +481,12 @@ const fixPolygonRings = (
   config: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
+  geometryEngine: GeometryEngine,
 ): number[][][] | null => {
   const normalized = rings.map((ring) => normalizeRing(ring, config));
   const assessed = normalized.map((ring) => ({
     ring,
-    area: computeRingArea(ring),
+    area: computeRingArea(ring, geometryEngine),
     vertexCount: ring.length,
     isClosed: isRingClosed(ring),
     hasNonFinite: hasNonFiniteCoords(ring),
@@ -508,16 +525,17 @@ const applyRingFix = (
   config: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
+  geometryEngine: GeometryEngine,
 ): Geometry | null => {
   if (geometry.type === 'Polygon') {
     const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
-    const fixed = fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles);
+    const fixed = fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles, geometryEngine);
     return fixed ? { ...geometry, coordinates: fixed } : null;
   }
   if (geometry.type === 'MultiPolygon') {
     const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
     const fixedPolygons = polygons
-      .map((rings) => fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles))
+      .map((rings) => fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles, geometryEngine))
       .filter((rings): rings is number[][][] => Boolean(rings));
     if (fixedPolygons.length === 0) {
       return null;
@@ -534,6 +552,7 @@ const applySelfIntersectionFix = (
   minPolygonArea: number,
   zTarget: number,
   quantize: number | undefined,
+  geometryEngine: GeometryEngine,
   options: { splitSelfIntersections: boolean; dropSmallPolygons: boolean; minRingVertices: number },
 ): Geometry | null => {
   const sanitizePolygon = (coords: number[][][]): number[][][] => (
@@ -541,17 +560,10 @@ const applySelfIntersectionFix = (
   );
   const splitPolygon = (coords: number[][][]): number[][][][] => {
     const polygon = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: {} } as const;
-    const kinkPoints = turfKinks(polygon).features;
-    if (kinkPoints.length === 0) return [coords];
-    try {
-      const unkinked = unkinkPolygon(polygon);
-      const pieces = unkinked.features
-        .map((feature) => feature.geometry?.coordinates)
-        .filter((piece): piece is number[][][] => Array.isArray(piece));
-      return pieces.length > 0 ? pieces : [coords];
-    } catch {
-      return [coords];
-    }
+    const pieces = geometryUnkinkPolygons(polygon, geometryEngine)
+      .map((feature) => feature.coordinates);
+    if (pieces.length <= 1) return [coords];
+    return pieces;
   };
 
   const baseSnapTolerance = (metersPerPixel(zTarget) * resolveQuantizeFactor(quantize)) / 2;
@@ -588,7 +600,7 @@ const applySelfIntersectionFix = (
     const pieces = splitAllowed ? splitPolygon(sanitized) : [sanitized];
     return pieces.map((piece) => ({
       coords: piece,
-      area: Math.abs(turfArea({ type: 'Polygon', coordinates: piece } as Polygon)),
+      area: Math.abs(geometryArea({ type: 'Polygon', coordinates: piece } as Polygon, geometryEngine)),
       vertexCount: countPolygonVertices(piece),
     }));
   });
@@ -622,6 +634,7 @@ const recoverInvalidSelfIntersection = (
   ringFix: RingFixConfig,
   minRingArea: number,
   dropInvalidHoles: boolean,
+  geometryEngine: GeometryEngine,
 ): Geometry | null => {
   const toPolygonFeature = (coords: number[][][]): Feature<Polygon> => ({
     type: 'Feature',
@@ -637,10 +650,8 @@ const recoverInvalidSelfIntersection = (
 
   const candidates = polygons.flatMap((coords) => {
     try {
-      const unkinked = unkinkPolygon(toPolygonFeature(coords));
-      const pieces = unkinked.features
-        .map((feature) => feature.geometry?.coordinates)
-        .filter((piece): piece is number[][][] => Array.isArray(piece));
+      const pieces = geometryUnkinkPolygons(toPolygonFeature(coords), geometryEngine)
+        .map((feature) => feature.coordinates);
       return pieces.length > 0 ? pieces : [coords];
     } catch {
       return [coords];
@@ -649,11 +660,11 @@ const recoverInvalidSelfIntersection = (
 
   const validPieces = candidates.flatMap((coords) => {
     const cleaned = cleanGeometry({ type: 'Polygon', coordinates: coords } as Polygon);
-    const fixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles);
-    if (!fixed || !isGeometryValid(fixed)) return [];
+    const fixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles, geometryEngine);
+    if (!fixed || !isGeometryValid(fixed, geometryEngine)) return [];
     return [{
       coords: (fixed as Polygon).coordinates,
-      area: Math.abs(turfArea(fixed as Polygon)),
+      area: Math.abs(geometryArea(fixed as Polygon, geometryEngine)),
     }];
   });
 
@@ -692,12 +703,13 @@ const applyOmitDetailsFilter = (
   geometry: Geometry,
   config: OmitDetailsConfig,
   zTarget: number,
+  geometryEngine: GeometryEngine,
 ): Geometry | null => {
   const threshold = resolveOmitDetailsThreshold(config, zTarget);
   const metersPerPixelValue = metersPerPixel(zTarget);
   const shouldOmit = (coords: number[][][]): boolean => {
     const { widthMeters, heightMeters } = computeOuterRingBounds(coords);
-    const areaMeters = computeOuterRingArea(coords);
+    const areaMeters = computeOuterRingArea(coords, geometryEngine);
     const widthPx = metersPerPixelValue > 0 ? widthMeters / metersPerPixelValue : 0;
     const heightPx = metersPerPixelValue > 0 ? heightMeters / metersPerPixelValue : 0;
     const areaPx2 = metersPerPixelValue > 0 ? areaMeters / (metersPerPixelValue * metersPerPixelValue) : 0;
@@ -724,7 +736,8 @@ const applyPolygonAreaExclusion = (
   geometry: Geometry,
   coefficient: number,
   zTarget: number,
-  quantize?: number,
+  quantize: number | undefined,
+  geometryEngine: GeometryEngine,
 ): Geometry | null => {
   if (!Number.isFinite(coefficient)) {
     throw new Error('excludePolygonAreaCoefficient must be a finite number');
@@ -734,7 +747,7 @@ const applyPolygonAreaExclusion = (
   const shouldExclude = (coords: number[][][]): boolean => {
     const outlineLength = computePolygonOutlineLength(coords);
     if (outlineLength <= 0) return false;
-    const area = computePolygonArea(coords);
+    const area = computePolygonArea(coords, geometryEngine);
     // Exclude tiny polygons relative to grid size and outline length.
     const threshold = (coefficient * gridSizeMeters * outlineLength) / 2;
     return area < threshold;
@@ -751,7 +764,7 @@ const applyPolygonAreaExclusion = (
     }
     if (polygons.length === 0) return null;
     const largest = polygons.reduce((best, current) => (
-      computePolygonArea(current) > computePolygonArea(best) ? current : best
+      computePolygonArea(current, geometryEngine) > computePolygonArea(best, geometryEngine) ? current : best
     ));
     return { ...geometry, coordinates: [largest] };
   }
@@ -783,9 +796,11 @@ export const simplifyFeatureCollection = async (
   quantize: number | undefined,
   excludePolygonAreaCoefficient: number,
   omitDetailsConfig: OmitDetailsConfig,
+  geometryEngine?: GeometryEngine,
   options?: SimplifyOptions,
 ): Promise<FeatureCollection> => {
   const metersPerPixelValue = metersPerPixel(zTarget);
+  const engine = geometryEngine ?? 'turf';
   const baseToleranceK = toleranceK;
   const toMetersTolerance = (value: number): number => {
     if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return value;
@@ -882,10 +897,10 @@ export const simplifyFeatureCollection = async (
         continue;
       }
       const cleaned = cleanGeometry(snapped);
-      const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
+      const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles, engine);
       if (!ringFixed) {
         droppedRingFix += 1;
-        const cleanedDiagnostics = formatGeometryDiagnostics(cleaned);
+        const cleanedDiagnostics = formatGeometryDiagnostics(cleaned, engine);
         if (diagnosticLogsEmitted < diagnosticLogLimit) {
           diagnosticLogsEmitted += 1;
           console.warn('[ShapeTransform][SimplifyDiagnostics] invalid after ring fix (rings removed)', {
@@ -904,12 +919,12 @@ export const simplifyFeatureCollection = async (
         });
         continue;
       }
-      const ringFixedValid = isGeometryValid(ringFixed);
+      const ringFixedValid = isGeometryValid(ringFixed, engine);
       let ringFixCandidate = ringFixed;
       if (enforcePreSimplifyValidity && !ringFixedValid) {
         droppedInvalidAfterRingFix += 1;
-        const cleanedDiagnostics = formatGeometryDiagnostics(cleaned);
-        const ringFixedDiagnostics = formatGeometryDiagnostics(ringFixed);
+        const cleanedDiagnostics = formatGeometryDiagnostics(cleaned, engine);
+        const ringFixedDiagnostics = formatGeometryDiagnostics(ringFixed, engine);
         if (diagnosticLogsEmitted < diagnosticLogLimit) {
           diagnosticLogsEmitted += 1;
           console.warn('[ShapeTransform][SimplifyDiagnostics] invalid after ring fix', {
@@ -933,8 +948,9 @@ export const simplifyFeatureCollection = async (
           ringFix,
           minRingArea,
           preSimplify.dropInvalidHoles,
+          engine,
         );
-        if (recovered && isGeometryValid(recovered)) {
+        if (recovered && isGeometryValid(recovered, engine)) {
           ringFixCandidate = recovered;
           if (diagnosticLogsEmitted < diagnosticLogLimit) {
             diagnosticLogsEmitted += 1;
@@ -942,12 +958,12 @@ export const simplifyFeatureCollection = async (
               featureId,
               featureIndex: index,
               zTarget,
-              recovered: formatGeometryDiagnostics(recovered),
+              recovered: formatGeometryDiagnostics(recovered, engine),
             });
           }
         }
       }
-      const omittedDetails = applyOmitDetailsFilter(ringFixCandidate, omitDetailsConfig, zTarget);
+      const omittedDetails = applyOmitDetailsFilter(ringFixCandidate, omitDetailsConfig, zTarget, engine);
       if (!omittedDetails) {
         droppedOmitDetails += 1;
         await recordIssue(options, {
@@ -959,7 +975,13 @@ export const simplifyFeatureCollection = async (
         });
         continue;
       }
-      const areaFiltered = applyPolygonAreaExclusion(omittedDetails, excludePolygonAreaCoefficient, zTarget, quantize);
+      const areaFiltered = applyPolygonAreaExclusion(
+        omittedDetails,
+        excludePolygonAreaCoefficient,
+        zTarget,
+        quantize,
+        engine,
+      );
       if (!areaFiltered) {
         droppedArea += 1;
         await recordIssue(options, {
@@ -982,6 +1004,7 @@ export const simplifyFeatureCollection = async (
         minPolygonArea,
         zTarget,
         quantize,
+        engine,
         {
           splitSelfIntersections: preSimplify.splitSelfIntersections,
           dropSmallPolygons: preSimplify.dropSmallPolygons,
@@ -990,7 +1013,7 @@ export const simplifyFeatureCollection = async (
       );
       if (!intersectionFixed) {
         droppedIntersection += 1;
-        const areaDiagnostics = formatGeometryDiagnostics(areaFiltered);
+        const areaDiagnostics = formatGeometryDiagnostics(areaFiltered, engine);
         await recordIssue(options, {
           featureId,
           featureIndex: index,
@@ -1001,23 +1024,25 @@ export const simplifyFeatureCollection = async (
         continue;
       }
       let intersectionCandidate = intersectionFixed;
-      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionCandidate)) {
+      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionCandidate, engine)) {
         const intersectionRepaired = applyRingFix(
           cleanGeometry(intersectionCandidate),
           ringFix,
           minRingArea,
           preSimplify.dropInvalidHoles,
+          engine,
         );
         if (intersectionRepaired) {
           intersectionCandidate = intersectionRepaired;
         }
-        if (!isGeometryValid(intersectionCandidate)) {
+        if (!isGeometryValid(intersectionCandidate, engine)) {
           const recoveredFromArea = recoverInvalidSelfIntersection(
             areaFiltered,
             selfIntersection,
             ringFix,
             minRingArea,
             preSimplify.dropInvalidHoles,
+            engine,
           );
           const recoveredFromIntersection = recoverInvalidSelfIntersection(
             intersectionCandidate,
@@ -1025,9 +1050,10 @@ export const simplifyFeatureCollection = async (
             ringFix,
             minRingArea,
             preSimplify.dropInvalidHoles,
+            engine,
           );
           const recovered = recoveredFromArea ?? recoveredFromIntersection;
-          if (recovered && isGeometryValid(recovered)) {
+          if (recovered && isGeometryValid(recovered, engine)) {
             intersectionCandidate = recovered;
             if (diagnosticLogsEmitted < diagnosticLogLimit) {
               diagnosticLogsEmitted += 1;
@@ -1035,16 +1061,16 @@ export const simplifyFeatureCollection = async (
                 featureId,
                 featureIndex: index,
                 zTarget,
-                recovered: formatGeometryDiagnostics(recovered),
+                recovered: formatGeometryDiagnostics(recovered, engine),
               });
             }
           }
         }
       }
-      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionCandidate)) {
+      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionCandidate, engine)) {
         droppedInvalidAfterIntersection += 1;
-        const areaDiagnostics = formatGeometryDiagnostics(areaFiltered);
-        const intersectionDiagnostics = formatGeometryDiagnostics(intersectionCandidate);
+        const areaDiagnostics = formatGeometryDiagnostics(areaFiltered, engine);
+        const intersectionDiagnostics = formatGeometryDiagnostics(intersectionCandidate, engine);
         if (diagnosticLogsEmitted < diagnosticLogLimit) {
           diagnosticLogsEmitted += 1;
           console.warn('[ShapeTransform][SimplifyDiagnostics] invalid after self-intersection fix', {
@@ -1068,8 +1094,18 @@ export const simplifyFeatureCollection = async (
         simplifyStarted = true;
         await options.onPhase('simplify:start');
       }
-      const simplified = simplifyGeometryInMercator(intersectionCandidate, toMetersTolerance(baseToleranceK));
-      const validated = validateSimplifiedGeometry(simplified, ringFix, minRingArea, preSimplify.dropInvalidHoles);
+      const simplified = simplifyGeometryInMercator(
+        intersectionCandidate,
+        toMetersTolerance(baseToleranceK),
+        engine,
+      );
+      const validated = validateSimplifiedGeometry(
+        simplified,
+        ringFix,
+        minRingArea,
+        preSimplify.dropInvalidHoles,
+        engine,
+      );
       features.push({ ...feature, geometry: validated });
     }
     const processed = index + 1;

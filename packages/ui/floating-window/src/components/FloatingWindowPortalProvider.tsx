@@ -10,12 +10,10 @@ type FloatingWindowPortalContextValue = {
   isProvider: boolean;
 };
 
-const FloatingWindowPortalContext = React.createContext<FloatingWindowPortalContextValue>({
+export const FloatingWindowPortalContext = React.createContext<FloatingWindowPortalContextValue>({
   root: null,
   isProvider: false,
 });
-
-export const useFloatingWindowPortal = () => React.useContext(FloatingWindowPortalContext);
 
 export function FloatingWindowPortalProvider({
   children,
