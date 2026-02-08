@@ -1,3 +1,97 @@
+2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
+- ブランチ名: feat/tags/tag-detail-outlet
+- 依存: なし
+- 受け入れ基準: `/tags/:tagName` で `/tags` 画面の内容が上部に表示される／下部に従来のタグ詳細（該当タグの関連ノード一覧など）が表示される／`/tags` 単独表示は従来通り／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/**` / `app/src/router/routes/useTagsPage.ts`（必要に応じて追加）
+- ロールバック手順: tags ルートの Outlet 構成変更を revert して従来の単独表示に戻す
+- チェックリスト:
+  - `/tags` ルートを親にして `/tags/:tagName` を Outlet 配下で表示する
+  - `/tags/:tagName` で `/tags` の内容が上部に表示されることを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 10:24 JST `/tags/:tagName` の詳細を `/tags` 画面の Outlet として表示する対応に着手。
+  - update: 2026-02-08 10:27 JST ブランチ命名を `feat/tags/tag-detail-outlet` で進める方針に確定。
+
+2597) fix/shape/metadata-contamination (P1) — 完了 (2026-02-08)
+- ブランチ名: fix/shape/metadata-contamination
+- 依存: なし
+- 受け入れ基準: shape ノードの data/draftData に name/description/tags が保存されない／不正プロパティの混入経路が撤去される／shape の作成・編集フローに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/**` / `packages/plugin-ui-host/**` / `packages/runtime-worker/**`（調査結果に応じて追加）
+- ロールバック手順: 該当差分を revert して data/draftData 更新経路を元に戻す
+- チェックリスト:
+  - data/draftData に name/description/tags が混入する経路を特定する
+  - 不正な保存経路を撤去し、混入を防止する
+  - 影響範囲の typecheck を実行する
+  - 必要ならテストを追加/更新し、なければリグレッションポイントを記載する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 09:18 JST shape ノードの data/draftData に metadata が混入する経路の撤去に着手。
+  - update: 2026-02-08 09:21 JST shape の draftData 永続化経路で name/description/tags を除外するサニタイズを追加。
+  - done: 2026-02-08 09:22 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
+
+2596) fix/location/draftmetadata-contamination (P1) — 完了 (2026-02-08)
+- ブランチ名: fix/location/draftmetadata-contamination
+- 依存: なし
+- 受け入れ基準: location ノードの draft/draftData に draftMetadata 相当の不正プロパティが保存されない／不正プロパティの混入経路が撤去される／location の作成・編集フローに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/**` / `packages/plugin-ui-host/**` / `plugins/location-plugin/**`（調査結果に応じて追加）
+- ロールバック手順: 該当差分を revert して draft/draftData の更新経路を元に戻す
+- チェックリスト:
+  - draft/draftData に draftMetadata 相当の不正プロパティが保存される経路を特定する
+  - 不正な保存経路を撤去し、混入を防止する
+  - 影響範囲の typecheck を実行する
+  - 必要ならテストを追加/更新し、なければリグレッションポイントを記載する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 09:15 JST location ノードの draft/draftData に draftMetadata 相当の不正内容が混入する経路の撤去に着手。
+  - update: 2026-02-08 09:17 JST steps-provider の draftMetadata 同梱を撤去し、location の step payload から draftMetadata を除去。
+  - done: 2026-02-08 09:18 JST `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` exit 0（core-types build で tsdown define 警告あり）。
+
+2596) fix/basic-info/tag-chip-actions (P1) — 進行中 (2026-02-08)
+- ブランチ名: fix/basic-info/tag-chip-actions
+- 依存: なし
+- 受け入れ基準: Step1 Basic Info のタグChipクリックで `/tags/:tagName` に遷移する／×アイコン押下時に確認ダイアログが表示され、確認後にのみタグ関連が削除される／他の入力や保存フローに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/plugin-basic-info/src/components/**` / `packages/plugin-ui-host/src/headless/**`
+- ロールバック手順: タグChipのクリック/削除制御の差分を revert して従来の即削除に戻す
+- チェックリスト:
+  - TagChipsInput にタグクリック/削除要求のコールバックを追加する
+  - BasicInfoStep で削除確認ダイアログを表示し、確認後にタグを削除する
+  - プラグインダイアログから /tags/:tagName へ遷移できることを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 09:43 JST Step1 Basic Info のタグChipクリック遷移と削除確認ダイアログの対応に着手。
+  - update: 2026-02-08 09:50 JST TagChipsInput にタグクリック/削除要求フックを追加し、BasicInfoStep に削除確認ダイアログを追加。usePluginDialogController から /tags/:tagName への遷移を追加。
+  - blocked: 2026-02-08 09:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が ui-plugin-basic-info の dist 未更新で失敗。
+  - update: 2026-02-08 09:55 JST `pnpm -w turbo run build --filter @hierarchidb/ui-plugin-basic-info` exit 0（core-types/ui-plugin-basic-info build で tsdown define 警告あり）。
+  - update: 2026-02-08 09:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:03 JST BasicInfoStep のタグクリックで onTagClick がない場合でも /tags/:tagName へ遷移するフォールバックを追加。
+  - update: 2026-02-08 10:04 JST `pnpm -w turbo run build --filter @hierarchidb/ui-plugin-basic-info` exit 0（core-types/ui-plugin-basic-info build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（plugin-base build で tsdown define 警告あり）。
+
+2595) feat/tags/tag-detail-breadcrumbs (P1) — 進行中 (2026-02-08)
+- ブランチ名: feat/tags/tag-detail-breadcrumbs
+- 依存: なし
+- 受け入れ基準: /tags のタグChipクリックで `/tags/:tagName` に遷移する／`/tags/:tagName` で当該タグが付いたノードのパンくずリストが TreeTable 形式で表示される／既存の /tags 一覧と他ルートに回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/**` / `app/src/router/routes/useTagsPage.ts`（必要に応じて追加）
+- ロールバック手順: tags ルートと詳細表示の変更を revert して /tags/:uuid 経路と旧表示に戻す
+- チェックリスト:
+  - /tags のタグChipクリックの遷移先を /tags/:tagName に変更する
+  - /tags/:tagName の詳細ページでタグ名から tagId を特定し、関連ノードのパンくずを TreeTable 表示する
+  - タグ一覧 (/tags) の表示に回帰がないことを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記
+- 運用ログ:
+  - start: 2026-02-08 09:12 JST /tags クリックの遷移先変更と /tags/:tagName 詳細の TreeTable 表示対応に着手。
+  - update: 2026-02-08 09:21 JST /tags → /tags/:tagName へ遷移変更、/tags/:tagName でタグ名検索とパンくず作成・TreeTable 表示を実装。
+  - blocked: 2026-02-08 09:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が useTagsPage の rootNode undefined 判定で失敗。
+  - update: 2026-02-08 09:24 JST rootNode 取得を `ancestors[0] ?? node` に修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 09:33 JST /tags/:tagName の表示を TreeTable からリスト形式に変更。
+  - blocked: 2026-02-08 09:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が ListItem の button props で失敗。
+  - update: 2026-02-08 09:35 JST ListItemButton を使用するように修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（plugin-base build で tsdown define 警告あり）。
+  - update: 2026-02-08 10:10 JST /tags/:tagName での無限更新を回避するため useTagsPage の queryFn を useCallback で安定化。
+  - update: 2026-02-08 10:11 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（plugin-base build で tsdown define 警告あり）。
+
 2594) fix/location-preview/step4-preview-valid (P1) — 完了 (2026-02-08)
 - ブランチ名: fix/location-preview/step4-preview-valid
 - 依存: なし

@@ -30,6 +30,7 @@ import { useShapeBuildStages } from './useShapeBuildStages.ts';
 import { useShapeBuildProgressSummary } from './useShapeBuildProgressSummary.ts';
 import { useShapeBuildLabels } from './useShapeBuildLabels.ts';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
+import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 type StageLikeTask = {
@@ -315,8 +316,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await updater.updateTreeNode(activeNodeId, {
         mode: 'save-draft',
         draftData: {
-          ...(data ?? {}),
-          ...(patch ?? {}),
+          ...sanitizeShapeDraftData(data ?? {}),
+          ...sanitizeShapeDraftData(patch ?? {}),
           batchConfig: baseBatchConfig,
         } as Record<string, unknown>,
       });
@@ -336,8 +337,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       await updater.updateTreeNode(activeNodeId, {
         mode: 'save-draft',
         draftData: {
-          ...(data ?? {}),
-          ...patch,
+          ...sanitizeShapeDraftData(data ?? {}),
+          ...sanitizeShapeDraftData(patch),
         } as Record<string, unknown>,
       });
       onChange(patch);

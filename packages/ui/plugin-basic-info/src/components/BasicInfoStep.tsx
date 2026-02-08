@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useId } from 'react';
+import { useCallback, useEffect, useRef, useId, useState } from 'react';
 import type { ChangeEvent, FC } from 'react';
-import { Box, FormControl, TextField, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import { TagChipsInput } from './TagChipsInput.js';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +28,10 @@ export interface BasicInfoStepProps {
   tagSuggestions?: string[];
   /** Disable editing */
   disabled?: boolean;
+  /** Called when a tag chip is clicked */
+  onTagClick?: (tag: string) => void;
+  /** Show confirmation dialog before removing a tag */
+  confirmTagDelete?: boolean;
 }
 
 /**
@@ -43,9 +47,12 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   validate,
   tagSuggestions = [],
   disabled = false,
+  onTagClick,
+  confirmTagDelete = true,
 }) => {
   const { t } = useTranslation('plugin-basic-info');
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [pendingTagDelete, setPendingTagDelete] = useState<string | null>(null);
   const fieldId = useId();
   const nameInputId = `${fieldId}-name`;
   const descriptionInputId = `${fieldId}-description`;
@@ -82,6 +89,50 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
     },
     [emitChange],
   );
+
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      if (onTagClick) {
+        onTagClick(tag);
+        return;
+      }
+      if (typeof window === 'undefined') return;
+      const trimmed = tag.trim();
+      if (!trimmed) return;
+      window.location.assign(`/tags/${encodeURIComponent(trimmed)}`);
+    },
+    [onTagClick],
+  );
+
+  const removeTag = useCallback(
+    (tag: string) => {
+      const nextTags = tags.filter((t) => t !== tag);
+      emitChange({ tags: nextTags });
+    },
+    [emitChange, tags],
+  );
+
+  const handleTagDeleteRequest = useCallback(
+    (tag: string) => {
+      if (disabled) return;
+      if (!confirmTagDelete) {
+        removeTag(tag);
+        return;
+      }
+      setPendingTagDelete(tag);
+    },
+    [confirmTagDelete, disabled, removeTag],
+  );
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!pendingTagDelete) return;
+    removeTag(pendingTagDelete);
+    setPendingTagDelete(null);
+  }, [pendingTagDelete, removeTag]);
+
+  const handleCancelDelete = useCallback(() => {
+    setPendingTagDelete(null);
+  }, []);
 
   const normalizedName = typeof name === 'string' ? name : '';
   const normalizedDescription = typeof description === 'string' ? description : '';
@@ -179,11 +230,38 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           )}
           value={tags}
           onChange={handleTagsChange}
+          onTagClick={handleTagClick}
+          onTagDeleteRequest={handleTagDeleteRequest}
           suggestions={tagSuggestions}
           placeholder={String(t('fields.tags.placeholder', 'Enter tag and press Enter'))}
           disabled={disabled}
         />
       </FormControl>
+
+      <Dialog
+        open={Boolean(pendingTagDelete)}
+        onClose={handleCancelDelete}
+        aria-labelledby={`${fieldId}-tag-delete-title`}
+      >
+        <DialogTitle id={`${fieldId}-tag-delete-title`}>
+          {t('tags.remove.title', 'Remove tag?')}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('tags.remove.body', 'Remove the tag "{{tag}}" from this node?', {
+              tag: pendingTagDelete ?? '',
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete}>
+            {t('actions.cancel', 'Cancel')}
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            {t('actions.remove', 'Remove')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

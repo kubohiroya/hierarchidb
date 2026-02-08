@@ -138,6 +138,7 @@ type BasicInfoAdapterProps = {
   mode: 'create' | 'edit';
   onChange: (data: TreeNodeMetadata) => void;
   validate: () => string | null;
+  onTagClick?: (tag: string) => void;
 };
 
 const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
@@ -146,6 +147,7 @@ const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
   mode,
   onChange,
   validate,
+  onTagClick,
 }) => {
   const handleChange = useCallback(
     (data: { name: string; description: string; tags?: string[] }) => {
@@ -166,6 +168,7 @@ const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
       onChange={handleChange}
       mode={mode}
       validate={validate}
+      onTagClick={onTagClick}
     />
   );
 };
@@ -186,6 +189,7 @@ interface Params {
   handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
   basicInfoLabel: string;
+  onTagClick?: (tag: string) => void;
 }
 
 export function useDialogSteps({
@@ -204,6 +208,7 @@ export function useDialogSteps({
   handleBasicInfoBridge,
   dialogRef,
   basicInfoLabel,
+  onTagClick,
 }: Params): StepCompositionResult<PluginDefinedEntity> {
   const [uiState, setUiState] = useState<DialogUiState>({});
   const [draftAtom] = useState<PrimitiveAtom<StepData>>(() =>
@@ -363,10 +368,11 @@ export function useDialogSteps({
           mode={modeRef.current}
           validate={() => basicInfoValidationErrorRef.current}
           onChange={handleBasicInfoChange}
+          onTagClick={onTagClick}
         />
       ),
     };
-  }, [basicInfoLabel, composedConfigs.hasHostBase, handleBasicInfoChange]);
+  }, [basicInfoLabel, composedConfigs.hasHostBase, handleBasicInfoChange, onTagClick]);
 
   const stepConfigRegistryRef = useRef(
     new Map<string, PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>>()

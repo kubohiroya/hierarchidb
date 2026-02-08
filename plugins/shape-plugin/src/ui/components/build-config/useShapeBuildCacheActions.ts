@@ -13,6 +13,7 @@ import {
   countRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNode,
 } from '../../../services/utils/chunkStore.js';
+import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
 type StageLikeTask = {
   stage: TaskStage;
@@ -246,7 +247,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await updater.updateTreeNode(nodeId, {
         mode: 'save-draft',
         draftData: {
-          ...(draft ?? {}),
+          ...sanitizeShapeDraftData(draft ?? {}),
           processingStatus: 'idle',
           buildStartedAt: undefined,
           buildFinishedAt: undefined,

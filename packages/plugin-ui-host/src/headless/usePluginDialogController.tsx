@@ -511,6 +511,15 @@ export function usePluginDialogController(
     hydratePresentationDefinitionsFromGlobal();
   }, []);
 
+  const handleTagNavigate = useCallback(
+    (tag: string) => {
+      const trimmed = tag.trim();
+      if (!trimmed) return;
+      void navigate({ to: `/tags/${encodeURIComponent(trimmed)}` as const });
+    },
+    [navigate]
+  );
+
   const { steps, stepDescriptors, currentStepData, dialogData } = useDialogSteps({
     composedConfigs,
     basicInfo,
@@ -527,6 +536,7 @@ export function usePluginDialogController(
     handleBasicInfoBridge,
     dialogRef,
     basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
+    onTagClick: handleTagNavigate,
   });
 
   // Keep stepData stable across draft updates; refresh only on step change.

@@ -19,6 +19,7 @@ import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { deleteRawDataDataSourceBuffersForNodeKeys } from '../../../services/utils/chunkStore.ts';
 import { shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
 // (availability is loaded in a dedicated worker thread)
 
@@ -512,7 +513,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       await updater.updateTreeNode(nodeId, {
         mode: 'save-draft',
         draftData: {
-          ...(data ?? {}),
+          ...sanitizeShapeDraftData(data ?? {}),
           selectedArrayByCountries: nextSelection,
           processingStatus: 'idle',
           buildStartedAt: undefined,

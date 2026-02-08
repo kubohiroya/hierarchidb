@@ -4,6 +4,8 @@ import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material
 export interface TagChipsInputProps {
   value?: string[];
   onChange?: (tags: string[]) => void;
+  onTagClick?: (tag: string) => void;
+  onTagDeleteRequest?: (tag: string) => void;
   placeholder?: string;
   label?: ReactNode;
   maxTags?: number;
@@ -17,6 +19,8 @@ export interface TagChipsInputProps {
 export const TagChipsInput: React.FC<TagChipsInputProps> = ({
   value = [],
   onChange,
+  onTagClick,
+  onTagDeleteRequest,
   placeholder = 'Enter tag and press Enter',
   label = 'Tags',
   maxTags = 20,
@@ -67,7 +71,20 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
             key={t}
             label={t}
             color="primary" // default to primary for visibility in dark mode
-            onDelete={disabled ? undefined : () => removeTag(t)}
+            clickable={Boolean(onTagClick) && !disabled}
+            onClick={disabled ? undefined : onTagClick ? () => onTagClick(t) : undefined}
+            onDelete={
+              disabled
+                ? undefined
+                : (event) => {
+                    event.stopPropagation();
+                    if (onTagDeleteRequest) {
+                      onTagDeleteRequest(t);
+                      return;
+                    }
+                    removeTag(t);
+                  }
+            }
             size="small"
           />
         ))}

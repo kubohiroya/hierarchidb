@@ -89,8 +89,7 @@ export default function TagsPage() {
 
   // Handle tag click - navigate to search with tag filter
   const handleTagClick = (tag: TagEntity) => {
-    // Navigate to resources console with tag filter
-    navigate({ to: `/t/r?tag=${encodeURIComponent(tag.name)}` });
+    navigate({ to: `/tags/${encodeURIComponent(tag.name)}` });
   };
 
   // Handle tag edit

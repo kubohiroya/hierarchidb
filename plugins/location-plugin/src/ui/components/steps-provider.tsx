@@ -1,6 +1,5 @@
 import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
@@ -10,13 +9,10 @@ import { i18n } from '@hierarchidb/ui-i18n';
 const registry = PluginStepRegistry.getInstance();
 
 // Step payload = Partial<LocationEntity>; treeNode metadataはホスト Basic Info で管理する。
-type LocationStepData = Partial<LocationEntity> & {
-  draftMetadata?: TreeNodeMetadata | null;
-};
+type LocationStepData = Partial<LocationEntity>;
 
 const ensureData = (data?: LocationStepData): LocationStepData => ({
   ...(data ?? {}),
-  draftMetadata: (data?.draftMetadata ?? { name: '', description: '', tags: [] }) as TreeNodeMetadata,
 });
 
 const mergeData = (
