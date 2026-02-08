@@ -11,6 +11,8 @@ import type { LocationEntity } from '../../../common/types/index.js';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 import { useLocationMapPreviewStep } from './useLocationMapPreviewStep.js';
+import { LocationAdmin0Formatter, LocationTypeFormatter } from './LocationMapPreviewStepElements.js';
+import { LocationPreviewHoverSnackbar } from './LocationMapPreviewMapElements.js';
 
 interface LocationMapPreviewStepProps {
   draft: Partial<LocationEntity>;
@@ -25,7 +27,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     initialViewState,
     locationGeoJsonLayers,
     attributionItems,
-    locationPreviewSnackbar,
+    locationPreviewSnackbarProps,
     hoverMatches,
     handleMapLoad,
     handleMapMoveEnd,
@@ -35,8 +37,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     setMetadataWindowOpen,
     displayedMetadataRows,
     displayedMetadataColumns,
-    typeColumnFormatter,
-    admin0ColumnFormatter,
+    typeFormatterProps,
+    admin0FormatterProps,
     metadataLoading,
     metadataLoadingText,
     metadataError,
@@ -59,6 +61,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     onUpdate,
   });
 
+  const admin0ColumnFormatter = (value: unknown, row: Record<string, unknown>) => (
+    <LocationAdmin0Formatter {...admin0FormatterProps} value={value} row={row} />
+  );
+
+  const typeColumnFormatter = (value: unknown) => (
+    <LocationTypeFormatter {...typeFormatterProps} value={value} />
+  );
+
+  const terrainToggleOptionNodes = terrainToggleOptions.map((option) => ({
+    id: option.id,
+    label: option.label,
+    icon: <option.Icon fontSize="small" htmlColor={option.iconColor} />,
+    labelColor: option.labelColor,
+  }));
+
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0} flex={1}>
       <MapPreviewShell
@@ -70,7 +87,9 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           geoJsonLayers: locationGeoJsonLayers,
           attributionItems,
           snackbar: {
-            content: locationPreviewSnackbar,
+            content: locationPreviewSnackbarProps ? (
+              <LocationPreviewHoverSnackbar {...locationPreviewSnackbarProps} />
+            ) : undefined,
             open: hoverMatches.length > 0,
             autoHideDuration: null,
             contentSx: {
@@ -161,7 +180,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                 <Box sx={{ height: '100%', minHeight: 0 }}>
                   <MapToggleCard
                     title=""
-                    options={terrainToggleOptions}
+                    options={terrainToggleOptionNodes}
                     selection={locationTypeSelection}
                     onToggle={handleLocationToggle}
                   />

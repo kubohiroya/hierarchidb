@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
 import type { LocationGroupItem, LocationIconConfig, LocationLabelConfig, LocationRepresentationByZoomLevelConfig, LocationType } from '@hierarchidb/location-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
@@ -18,6 +16,9 @@ import {
 import type { NodeId } from '@hierarchidb/core-types';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import type { LocationMapPreviewIconProps, LocationPreviewHoverMatch, LocationPreviewHoverSnackbarProps } from './LocationMapPreviewMapElements.js';
+import { LocationMapPreviewIcon } from './LocationMapPreviewMapElements.js';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import {
   CIRCLE_RADIUS_AT_MAX,
@@ -152,19 +153,7 @@ type PreviewPoint = {
   tileId?: string;
 };
 
-type HoverMatch = {
-  id: string;
-  index: number;
-  name?: string;
-  type: LocationType;
-  typeLabel: string;
-  region?: string;
-  countryLabel?: string;
-  miniMapX: number;
-  miniMapY: number;
-  Icon: typeof LOCATION_ICON_COMPONENTS.public;
-  color: string;
-};
+type HoverMatch = LocationPreviewHoverMatch;
 
 type UseLocationMapPreviewMapArgs = {
   nodeId?: NodeId;
@@ -186,7 +175,7 @@ type UseLocationMapPreviewMapArgs = {
 type UseLocationMapPreviewMapResult = {
   previewPoints: PreviewPoint[];
   locationGeoJsonLayers: ResourceGeoJsonLayer[];
-  locationPreviewSnackbar?: ReactNode;
+  locationPreviewSnackbarProps?: LocationPreviewHoverSnackbarProps;
   hoverMatches: HoverMatch[];
   handleMapLoad: (map: MapLibreMapInstance) => void;
   handleMapMoveEnd: (viewState: MapViewState) => void;
@@ -403,7 +392,11 @@ export const useLocationMapPreviewMap = (
       resolve();
       return;
     }
-    const svg = renderToStaticMarkup(<asset.Icon htmlColor={asset.color} />);
+    const iconProps: LocationMapPreviewIconProps = {
+      Icon: asset.Icon,
+      color: asset.color,
+    };
+    const svg = renderToStaticMarkup(createElement(LocationMapPreviewIcon, iconProps));
     const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     const image = new Image();
     image.onload = () => {
@@ -772,61 +765,12 @@ export const useLocationMapPreviewMap = (
     };
   }, [clearHoverMatches, mapReady, scheduleHoverLookup]);
 
-  const locationPreviewSnackbar = useMemo(() => {
+  const locationPreviewSnackbarProps = useMemo<LocationPreviewHoverSnackbarProps | undefined>(() => {
     if (hoverMatches.length === 0) return undefined;
-    const snackbarBg = isDarkMode ? 'rgba(32,32,36,0.92)' : 'rgba(255,255,255,0.96)';
-    const snackbarText = isDarkMode ? '#F5F5F7' : '#1F1F24';
-    const radarFill = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
-    const radarStroke = isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.18)';
-    return (
-      <Box sx={{ display: 'flex', gap: 1.5, minWidth: 320, color: snackbarText, bgcolor: snackbarBg, borderRadius: 1.5, px: 1.5, py: 1 }}>
-        <Box sx={{ width: 64, height: 64, flex: '0 0 64px' }}>
-          <svg width={64} height={64} viewBox="0 0 64 64">
-            <title>miniRader</title>
-            <circle cx={32} cy={32} r={32} fill={radarFill} />
-            <circle cx={32} cy={32} r={31.5} fill="none" stroke={radarStroke} />
-            {hoverMatches.map((match) => (
-              <g key={match.id}>
-                <text
-                  x={match.miniMapX}
-                  y={match.miniMapY}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize="10"
-                  fontWeight="700"
-                  fill={match.color}
-                >
-                  {match.index}
-                </text>
-              </g>
-            ))}
-          </svg>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 220 }}>
-          {hoverMatches.map((match) => (
-            <Box key={match.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="caption" sx={{ width: 18, textAlign: 'right' }}>
-                {match.index}.
-              </Typography>
-              <match.Icon fontSize="small" htmlColor={match.color} />
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                {match.name ? (
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: snackbarText }}>
-                    {match.name}
-                  </Typography>
-                ) : null}
-                <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(245,245,247,0.7)' : 'rgba(31,31,36,0.6)' }}>
-                  {[
-                    match.region,
-                    match.countryLabel,
-                  ].filter(Boolean).join(' / ')}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    );
+    return {
+      matches: hoverMatches,
+      isDarkMode,
+    };
   }, [hoverMatches, isDarkMode]);
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
@@ -882,7 +826,7 @@ export const useLocationMapPreviewMap = (
   return {
     previewPoints,
     locationGeoJsonLayers,
-    locationPreviewSnackbar,
+    locationPreviewSnackbarProps,
     hoverMatches,
     handleMapLoad,
     handleMapMoveEnd,

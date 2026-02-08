@@ -27,7 +27,6 @@ import type {
   HeadlessDialogProps,
   StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
-import { PluginDialogContent } from '@hierarchidb/ui-dialog';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
@@ -38,7 +37,6 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ConflictDialog,
   createContentComponent,
   createFooterComponent,
   createHeaderComponent,
@@ -47,6 +45,8 @@ import type {
   PluginDialogFooterPrimaryButtonOptions,
   PluginDialogFooterProps,
 } from './components/PluginDialogFooter.js';
+import type { PluginDialogConflictDialogProps } from './PluginDialogControllerElements.js';
+import { createPluginDialogContentComponent } from './PluginDialogControllerElements.js';
 import { toRecord } from './controller/step-guards.js';
 import { useAutosave } from './usePluginDialogController/autosave.js';
 import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
@@ -138,7 +138,7 @@ export interface PluginDialogControllerState {
     title: string;
     message: string;
   };
-  conflictDialog?: React.ReactNode;
+  conflictDialog?: PluginDialogConflictDialogProps;
 }
 
 const PlaceholderStep: React.FC = () => null;
@@ -913,11 +913,7 @@ export function usePluginDialogController(
     HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent']
   >(() => {
     const Content = createContentComponent(dialogRef);
-    return () => (
-      <Content>
-        <PluginDialogContent />
-      </Content>
-    );
+    return createPluginDialogContentComponent<Partial<PluginDefinedEntity>>(Content);
   }, [dialogRef]);
 
   const foregroundDialogSx = useMemo(
@@ -930,17 +926,15 @@ export function usePluginDialogController(
     []
   );
 
-  const conflictDialogNode = useMemo(
-    () => (
-      <ConflictDialog
-        open={conflictDialog.open}
-        updatedAt={conflictDialog.updatedAt ?? null}
-        foregroundSx={foregroundDialogSx}
-        resolveConflict={resolveConflict}
-        formatTimestamp={formatTimestamp}
-        translate={t}
-      />
-    ),
+  const conflictDialogProps = useMemo<PluginDialogConflictDialogProps>(
+    () => ({
+      open: conflictDialog.open,
+      updatedAt: conflictDialog.updatedAt ?? null,
+      foregroundSx: foregroundDialogSx,
+      resolveConflict,
+      formatTimestamp,
+      translate: t,
+    }),
     [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, resolveConflict, t]
   );
 
@@ -1166,7 +1160,7 @@ export function usePluginDialogController(
     hasUnsavedChanges: dialogDirty,
     dialogState: dialogStateSnapshot,
     updateDialogState,
-    conflictDialog: conflictDialogNode,
+    conflictDialog: conflictDialogProps,
     unsavedChangeDialog: {
       open: discardDialogOpen,
       onDiscard: handleConfirmDiscard,

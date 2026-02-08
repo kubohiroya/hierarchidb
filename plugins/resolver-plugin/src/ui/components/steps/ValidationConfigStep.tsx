@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
 import { useValidationConfigStepView } from './useValidationConfigStepView.js';
+import { ValidationRuleParameterFields, ValidationRuleTypeMenu } from './ValidationConfigStepViewElements.js';
 import { useValidationConfigStep } from './useValidationConfigStep.js';
 
 interface ValidationConfigStepProps {
@@ -73,8 +74,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
   });
 
   const {
-    renderParameterFields,
-    ruleTypeMenu,
+    parameterFieldsProps,
+    ruleTypeMenuProps,
   } = useValidationConfigStepView({
     ruleFormData,
     updateRuleFormData,
@@ -245,11 +246,11 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
               })}
               label="Rule Type"
             >
-              {ruleTypeMenu}
+              <ValidationRuleTypeMenu {...ruleTypeMenuProps} />
             </Select>
           </FormControl>
 
-          {renderParameterFields()}
+          <ValidationRuleParameterFields {...parameterFieldsProps} />
 
           <TextField
             fullWidth

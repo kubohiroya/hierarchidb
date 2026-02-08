@@ -1,13 +1,12 @@
 import type { LocationNearestPointResponse } from '@hierarchidb/location-api';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { Place } from '@mui/icons-material';
-import type { SvgIconProps } from '@mui/material';
-import { Box } from '@mui/material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
 import type { LocationType, NodeId } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { LOCATION_TYPE_STYLES } from '../steps/locationTypes.js';
+import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewElements.js';
 import type {
   DisplayMode,
   MapStatistics,
@@ -19,17 +18,15 @@ const HOVER_DISTANCE_PX = 16;
 
 type TypeStyle = {
   color: string;
-  icon: ReactNode;
-  altIcon?: ReactNode;
+  Icon: SvgIconComponent;
+  AltIcon?: SvgIconComponent;
   defaultVisible: boolean;
 };
 
-type IconComponent = (props: SvgIconProps) => JSX.Element;
-
 type LocationTypeStyle = {
   color: string;
-  icon: IconComponent;
-  altIcon?: IconComponent;
+  icon: SvgIconComponent;
+  altIcon?: SvgIconComponent;
 };
 
 const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = Object.fromEntries(
@@ -41,8 +38,8 @@ const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = Object.from
         key,
         {
           color: value.color,
-          icon: <Icon fontSize="small" />,
-          altIcon: AltIcon ? <AltIcon fontSize="small" /> : undefined,
+          Icon,
+          AltIcon,
           defaultVisible: true,
         },
       ];
@@ -104,7 +101,7 @@ type UseLocationMapPreviewResult = {
   clusterRadius: number;
   maxZoom: number;
   statistics: MapStatistics;
-  markers: ReactNode;
+  markers: LocationMapPreviewMarkerEntry[];
   handleDisplayModeChange: (_: React.MouseEvent<HTMLElement>, newMode: DisplayMode | null) => void;
   handleTypeToggle: (type: LocationType) => void;
   handleMapMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
@@ -261,20 +258,21 @@ export const useLocationMapPreview = (
   }, [displayMode, filteredLocations.length, mapSize.height, mapSize.width]);
 
   const resolvePointIcon = useCallback(
-    (point: PreviewLocationPoint) => {
+    (point: PreviewLocationPoint): SvgIconComponent => {
       const base = typeSettings[point.type];
-      if (!base) return <Place fontSize="small" />;
-      if (point.type === 'area_centroid' && base.altIcon) {
-        return point.properties?.admin1 ? base.altIcon : base.icon;
+      if (!base) return Place;
+      if (point.type === 'area_centroid' && base.AltIcon) {
+        return point.properties?.admin1 ? base.AltIcon : base.Icon;
       }
-      return base.icon;
+      return base.Icon;
     },
     [typeSettings]
   );
 
-  const markers = useMemo(() => {
-    if (!bounds || displayMode !== 'points' || mapSize.width === 0 || mapSize.height === 0)
-      return null;
+  const markers = useMemo<LocationMapPreviewMarkerEntry[]>(() => {
+    if (!bounds || displayMode !== 'points' || mapSize.width === 0 || mapSize.height === 0) {
+      return [];
+    }
     const size = resolveMarkerSize(zoom);
     const iconSize = resolveIconSize(zoom);
     const { minLon, maxLon, minLat, maxLat } = bounds;
@@ -290,43 +288,32 @@ export const useLocationMapPreview = (
       const isHovered = hoverPointId != null && point.id === hoverPointId;
       const emphasisScale = isHovered ? 1.8 : 1;
       if (!useIconMarkers) {
-        return (
-          <Box
-            key={point.id}
-            title={title}
-            sx={{
-              position: 'absolute',
-              left: x - (size * emphasisScale) / 2,
-              top: y - (size * emphasisScale) / 2,
-              width: size * emphasisScale,
-              height: size * emphasisScale,
-              bgcolor: color,
-              borderRadius: 0,
-              opacity: 0.85,
-              boxShadow: isHovered ? `0 0 12px ${color}` : 'none',
-              zIndex: isHovered ? 2 : 1,
-            }}
-          />
-        );
+        const markerSize = size * emphasisScale;
+        return {
+          id: point.id,
+          title,
+          left: x - markerSize / 2,
+          top: y - markerSize / 2,
+          size: markerSize,
+          color,
+          isHovered,
+          useIcon: false,
+        };
       }
-      return (
-        <Box
-          key={point.id}
-          title={title}
-          sx={{
-            position: 'absolute',
-            left: x - (iconSize * emphasisScale) / 2,
-            top: y - (iconSize * emphasisScale) / 2,
-            color,
-            opacity: 0.95,
-            filter: isHovered ? `drop-shadow(0 0 6px ${color})` : 'none',
-            zIndex: isHovered ? 2 : 1,
-            '& svg': { fontSize: iconSize * emphasisScale },
-          }}
-        >
-          {resolvePointIcon(point)}
-        </Box>
-      );
+      const icon = resolvePointIcon(point);
+      const scaledIconSize = iconSize * emphasisScale;
+      return {
+        id: point.id,
+        title,
+        left: x - scaledIconSize / 2,
+        top: y - scaledIconSize / 2,
+        size: scaledIconSize,
+        iconSize: scaledIconSize,
+        color,
+        isHovered,
+        useIcon: true,
+        Icon: icon,
+      };
     });
   }, [
     bounds,

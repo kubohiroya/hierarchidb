@@ -4,6 +4,7 @@
 
 import type React from 'react';
 import { Alert, Box, Paper, Typography } from '@mui/material';
+import { RoutePreviewEmptyContent, RoutePreviewHoverSnackbar } from './RoutePreviewStepElements.js';
 import { DEFAULT_MAP_CONFIG, MapToggleCard, ResourceLayerMap, RoutePreviewList } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteUpdaterPayload } from '@hierarchidb/route-api';
@@ -22,7 +23,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     attributionItems,
     initialViewState,
     vectorLayers,
-    hoverSnackbar,
+    hoverSnackbarProps,
     showMissingGeometry,
     lineStringsError,
     lineStringsLoading,
@@ -37,7 +38,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     selectedIds,
     setSelectedIds,
     emptyErrorSummary,
-    emptyContent,
+    emptyContentProps,
     modeMeta,
     columnLabels,
     countLabels,
@@ -77,7 +78,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 options={routeModeOptions.map((option) => ({
                   id: option.id,
                   label: option.label,
-                  icon: option.icon,
+                  icon: <option.Icon fontSize="small" />,
                 }))}
                 selection={routeModeSelection}
                 onToggle={handleRouteModeToggle}
@@ -112,7 +113,10 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 loading={lineStringsLoading}
                 error={lineStringsError ?? undefined}
                 columnLabels={columnLabels}
-                modeMeta={modeMeta}
+                modeMeta={Object.fromEntries(Object.entries(modeMeta).map(([key, meta]) => [
+                  key,
+                  { ...meta, icon: <meta.Icon fontSize="small" /> },
+                ]))}
                 search={{
                   value: listSearch,
                   onChange: setListSearch,
@@ -126,9 +130,11 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 errorSummaryById={emptyErrorSummary}
                 errorColumnLabels={errorColumnLabels}
                 statusLabels={statusLabels}
-                emptyContent={emptyContent}
+                emptyContent={emptyContentProps ? (
+                  <RoutePreviewEmptyContent {...emptyContentProps} />
+                ) : undefined}
               />
-              {mapInstance ? hoverSnackbar : null}
+              {mapInstance ? <RoutePreviewHoverSnackbar {...hoverSnackbarProps} /> : null}
             </Box>
           </Paper>
         </>

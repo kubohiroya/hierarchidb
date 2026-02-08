@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Snackbar } from '@mui/material';
 import {
   buildCategoryFilter,
   buildRoutePreviewRows,
@@ -18,6 +17,7 @@ import {
   Speed as SpeedIcon,
   Train as TrainIcon,
 } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { RouteLineString, RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
@@ -34,16 +34,16 @@ const HOVER_DISTANCE_PX = 16;
 type RouteModeOption = {
   id: RouteMode;
   label: string;
-  icon: React.ReactNode;
+  Icon: SvgIconComponent;
   modes: RouteMode[];
 };
 
 const ROUTE_MODE_OPTIONS: RouteModeOption[] = [
-  { id: ROUTE_MODES.AIRWAY, label: 'Air', icon: <FlightIcon fontSize="small" />, modes: [ROUTE_MODES.AIRWAY] },
-  { id: ROUTE_MODES.WATERWAY, label: 'Sea', icon: <DirectionsBoatIcon fontSize="small" />, modes: [ROUTE_MODES.WATERWAY] },
-  { id: ROUTE_MODES.RAILWAY, label: 'Rail', icon: <TrainIcon fontSize="small" />, modes: [ROUTE_MODES.RAILWAY] },
-  { id: ROUTE_MODES.H_RAILWAY, label: 'High-speed Rail', icon: <SpeedIcon fontSize="small" />, modes: [ROUTE_MODES.H_RAILWAY] },
-  { id: ROUTE_MODES.ROAD, label: 'Road', icon: <DirectionsCarIcon fontSize="small" />, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
+  { id: ROUTE_MODES.AIRWAY, label: 'Air', Icon: FlightIcon, modes: [ROUTE_MODES.AIRWAY] },
+  { id: ROUTE_MODES.WATERWAY, label: 'Sea', Icon: DirectionsBoatIcon, modes: [ROUTE_MODES.WATERWAY] },
+  { id: ROUTE_MODES.RAILWAY, label: 'Rail', Icon: TrainIcon, modes: [ROUTE_MODES.RAILWAY] },
+  { id: ROUTE_MODES.H_RAILWAY, label: 'High-speed Rail', Icon: SpeedIcon, modes: [ROUTE_MODES.H_RAILWAY] },
+  { id: ROUTE_MODES.ROAD, label: 'Road', Icon: DirectionsCarIcon, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
 ];
 
 const resolveBoundsForLines = (lines: [number, number][][]): Bounds | null => {
@@ -354,7 +354,7 @@ export const useRoutePreviewStep = ({
       mode.id,
       {
         label: t(mode.labelKey, mode.id),
-        icon: <mode.icon fontSize="small" />,
+        Icon: mode.icon,
         color: routeStyleConfig.modeColors[mode.id],
       },
     ]),
@@ -391,20 +391,14 @@ export const useRoutePreviewStep = ({
   const matchedIdSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const emptyErrorSummary = useMemo(() => new Map(), []);
 
-  const hoverSnackbar = (
-    <Snackbar
-      open={hoverOpen && Boolean(hoverMessage)}
-      message={hoverMessage}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      autoHideDuration={2000}
-    />
-  );
+  const hoverSnackbarProps = {
+    open: hoverOpen && Boolean(hoverMessage),
+    message: hoverMessage ?? '',
+  };
 
-  const emptyContent = listRows.length === 0 ? (
-    <Alert severity="info" sx={{ m: 2 }}>
-      {t('preview.list.empty', 'No route lines are available yet.')}
-    </Alert>
-  ) : undefined;
+  const emptyContentProps = listRows.length === 0 ? {
+    message: t('preview.list.empty', 'No route lines are available yet.'),
+  } : undefined;
 
   return {
     t,
@@ -413,7 +407,7 @@ export const useRoutePreviewStep = ({
     attributionItems,
     initialViewState,
     vectorLayers,
-    hoverSnackbar,
+    hoverSnackbarProps,
     showMissingGeometry,
     lineStringsError,
     lineStringsLoading,
@@ -428,7 +422,7 @@ export const useRoutePreviewStep = ({
     selectedIds,
     setSelectedIds,
     emptyErrorSummary,
-    emptyContent,
+    emptyContentProps,
     modeMeta: routeModeMeta,
     columnLabels: {
       lineId: t('preview.list.columns.lineId', 'Line Id'),

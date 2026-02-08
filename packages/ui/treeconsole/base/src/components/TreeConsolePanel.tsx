@@ -10,11 +10,12 @@ import type { OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
 import type { DualKeyMap } from '@hierarchidb/util';
-import type { PanelBreadcrumbNode, TreeConsolePanelBreadcrumbRendererProps } from '../hooks/useTreeConsolePanel.js';
+import type { PanelBreadcrumbNode } from '../hooks/useTreeConsolePanel.js';
 import { useTreeConsolePanel } from '../hooks/useTreeConsolePanel.js';
+import { TreeConsolePanelBreadcrumb, type TreeConsolePanelBreadcrumbRendererProps } from './TreeConsolePanelBreadcrumb.js';
 import { TagsLinkButton } from './TagsLinkButton.js';
 
-export type { TreeConsolePanelBreadcrumbRendererProps } from '../hooks/useTreeConsolePanel.js';
+export type { TreeConsolePanelBreadcrumbRendererProps } from './TreeConsolePanelBreadcrumb.js';
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -140,7 +141,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     shouldSplitView,
     footerTopLevel,
     footerSelected,
-    breadcrumbElement,
+    breadcrumbProps,
     isPageContextValid,
   } = useTreeConsolePanel({
     data: props.data,
@@ -183,7 +184,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: 0 }}>
-        {breadcrumbElement}
+        <TreeConsolePanelBreadcrumb {...breadcrumbProps} />
       </Box>
       {/* Main Table Content */}
       {shouldSplitView ? (

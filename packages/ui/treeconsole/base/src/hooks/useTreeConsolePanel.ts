@@ -1,17 +1,17 @@
 import { useMemo } from 'react';
-import type { ComponentProps, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { toNodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { TreeConsolePanelBreadcrumbProps, TreeConsolePanelBreadcrumbRendererProps } from '../components/TreeConsolePanelBreadcrumb.js';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { HierarchicalTreeNode } from '../types/index.js';
 
-type DefaultBreadcrumbProps = ComponentProps<typeof TreeConsoleBreadcrumb>;
+type DefaultBreadcrumbProps = TreeConsolePanelBreadcrumbProps['defaultRendererProps'];
 type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
 
 export type PanelBreadcrumbNode = {
@@ -23,11 +23,6 @@ export type PanelBreadcrumbNode = {
   parentId?: string | null;
 };
 
-export interface TreeConsolePanelBreadcrumbRendererProps {
-  readonly items: readonly PanelBreadcrumbNode[];
-  readonly defaultRendererProps: DefaultBreadcrumbProps;
-  readonly defaultRenderer: () => ReactElement;
-}
 
 export interface TreeConsolePanelLogicArgs {
   readonly data: readonly HierarchicalTreeNode[];
@@ -84,7 +79,7 @@ export interface TreeConsolePanelLogicResult {
   readonly shouldSplitView: boolean;
   readonly footerTopLevel: number;
   readonly footerSelected: number;
-  readonly breadcrumbElement: ReactElement;
+  readonly breadcrumbProps: TreeConsolePanelBreadcrumbProps;
   readonly isPageContextValid: boolean;
 }
 
@@ -281,24 +276,21 @@ export function useTreeConsolePanel({
     ]
   );
 
-  const breadcrumbElement = useMemo(() => {
-    const defaultRenderer = () => <TreeConsoleBreadcrumb {...defaultBreadcrumbProps} />;
-    if (breadcrumbRenderer) {
-      return breadcrumbRenderer({
-        items: breadcrumbItems,
-        defaultRendererProps: defaultBreadcrumbProps,
-        defaultRenderer,
-      });
-    }
-    return defaultRenderer();
-  }, [breadcrumbItems, breadcrumbRenderer, defaultBreadcrumbProps]);
+  const breadcrumbProps = useMemo<TreeConsolePanelBreadcrumbProps>(
+    () => ({
+      items: breadcrumbItems,
+      defaultRendererProps: defaultBreadcrumbProps,
+      renderer: breadcrumbRenderer,
+    }),
+    [breadcrumbItems, breadcrumbRenderer, defaultBreadcrumbProps]
+  );
 
   return {
     controller,
     shouldSplitView,
     footerTopLevel,
     footerSelected,
-    breadcrumbElement,
+    breadcrumbProps,
     isPageContextValid,
   };
 }

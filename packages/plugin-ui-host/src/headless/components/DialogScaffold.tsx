@@ -8,7 +8,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+import type { SxProps, Theme } from '@mui/material/styles';
 import type React from 'react';
 import { memo } from 'react';
 import type { DialogActionInFlight } from '../types.js';
@@ -63,7 +63,7 @@ export const createFooterComponent = (
 export interface ConflictDialogProps {
   open: boolean;
   updatedAt: number | null;
-  foregroundSx: Record<string, unknown>;
+  foregroundSx: SxProps<Theme>;
   resolveConflict: (action: 'continue' | 'discard') => void;
   formatTimestamp: (ts?: number) => string;
   translate: (key: string, opts?: Record<string, unknown>) => string;

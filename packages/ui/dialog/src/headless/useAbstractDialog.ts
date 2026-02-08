@@ -1,11 +1,19 @@
 import { useRef } from 'react';
-import type { ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import { PluginDialogHeader } from './PluginDialogHeader.js';
 import { PluginDialogContent } from './PluginDialogContent.js';
 import { PluginDialogFooter } from './PluginDialogFooter.js';
 import type {
-  HeadlessDialogProps,
+  AbstractDialogContentProps,
+  AbstractDialogFooterProps,
+  AbstractDialogHeaderProps,
+} from './AbstractDialogElements.js';
+import type {
   HeadlessDialogContextValue,
+  HeadlessDialogContentProps,
+  HeadlessDialogFooterProps,
+  HeadlessDialogHeaderProps,
+  HeadlessDialogProps,
 } from './types.js';
 
 function asReadonlyArray(source?: ReadonlyArray<number>): ReadonlyArray<number> {
@@ -62,9 +70,9 @@ function shallowEqualData(a: unknown, b: unknown): boolean {
 
 export type AbstractDialogState<TData> = {
   contextValue: HeadlessDialogContextValue<TData>;
-  headerElement: ReactNode;
-  contentElement: ReactNode;
-  footerElement: ReactNode;
+  headerProps: AbstractDialogHeaderProps<TData>;
+  contentProps: AbstractDialogContentProps<TData>;
+  footerProps: AbstractDialogFooterProps<TData>;
 };
 
 export function useAbstractDialog<TData>(
@@ -86,13 +94,22 @@ export function useAbstractDialog<TData>(
     onStepNavigate,
     onRequestClose,
     onRequestCommit,
-    HeaderComponent = PluginDialogHeader,
-    ContentComponent = PluginDialogContent,
-    FooterComponent = PluginDialogFooter,
+    HeaderComponent: HeaderComponentProp,
+    ContentComponent: ContentComponentProp,
+    FooterComponent: FooterComponentProp,
     renderHeader,
     renderFooter,
     ...frameProps
   } = props;
+  const HeaderComponent =
+    HeaderComponentProp ??
+    (PluginDialogHeader as ComponentType<HeadlessDialogHeaderProps<TData>>);
+  const ContentComponent =
+    ContentComponentProp ??
+    (PluginDialogContent as ComponentType<HeadlessDialogContentProps<TData>>);
+  const FooterComponent =
+    FooterComponentProp ??
+    (PluginDialogFooter as ComponentType<HeadlessDialogFooterProps<TData>>);
 
   const nextValue: HeadlessDialogContextValue<TData> = {
     open,
@@ -152,21 +169,18 @@ export function useAbstractDialog<TData>(
     contextRef.current = nextValue;
   }
 
-  const headerRenderer = renderHeader;
-  const footerRenderer = renderFooter;
-  const headerElement = (
-    <HeaderComponent>
-      {headerRenderer}
-    </HeaderComponent>
-  );
-  const contentElement = (
-    <ContentComponent />
-  );
-  const footerElement = (
-    <FooterComponent>
-      {footerRenderer}
-    </FooterComponent>
-  );
+  const headerProps: AbstractDialogHeaderProps<TData> = {
+    HeaderComponent,
+    headerRenderer: renderHeader,
+  };
+  const contentProps: AbstractDialogContentProps<TData> = {
+    ContentComponent,
+  };
+  const footerProps: AbstractDialogFooterProps<TData> = {
+    FooterComponent,
+    footerRenderer: renderFooter,
+  };
 
-  return { contextValue, headerElement, contentElement, footerElement };
+  return { contextValue, headerProps, contentProps, footerProps };
 }
+

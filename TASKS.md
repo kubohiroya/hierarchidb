@@ -70,6 +70,10 @@
   - update: 2026-02-08 12:06 JST TreeLayoutBody で pending match を DEV ログ出力する計測を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
   - update: 2026-02-08 12:08 JST `/tags` 遷移時に match 全体をログ出力するよう計測を拡張。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
   - update: 2026-02-08 12:12 JST TreeTagsDialog/TreeConsoleIntegration の mount/unmount を DEV ログ出力する計測を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（core-types/plugin-base build で tsdown define 警告あり）。
+  - start: 2026-02-08 14:11 JST tree target route の loader で tags redirect を撤去し、タグ一覧ダイアログ用の返却データを用意する対応に着手。
+  - blocked: 2026-02-08 14:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/ui-dialog の型エラーで失敗（useAbstractDialog.ts:156-164）。
+  - start: 2026-02-08 14:20 JST @hierarchidb/ui-dialog の型エラー修正に着手。
+  - done: 2026-02-08 14:27 JST useAbstractDialog の Header/Footer/Content 既定コンポーネントを型キャストで固定し、`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet
@@ -672,6 +676,7 @@
 - 運用ログ:
   - start: 2026-02-07 15:30 JST turf→geos-wasm 置換調査に着手。
   - done: 2026-02-07 15:50 JST turf 利用箇所と UI/Worker 別の置換案一覧を整理。
+  - update: 2026-02-08 13:10 JST turf 個別関数の geos-wasm 対応可否（直接/組合せ/不可）を API 根拠付きで再整理。
 
 2568) chore/geo/geos-wasm-adoption-plan (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/geos-wasm-adoption-plan
@@ -1042,6 +1047,15 @@
   - start: 2026-02-08 13:52 JST TreeConsole base の NodeContextMenu/TreeConsoleContent をフック切り出し + i18n 化に着手。
   - update: 2026-02-08 13:56 JST NodeContextMenu/TreeConsoleContent のロジックをフックへ切り出し、TreeConsole コンテキストメニューと空表示を i18n 化。
   - update: 2026-02-08 13:56 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - start: 2026-02-08 14:08 JST use*.tsx カスタムフックの .ts 化と JSX 分離（単一利用コンポーネントのみ）に着手。
+  - update: 2026-02-08 14:22 JST useTreeConsolePanel/useAbstractDialog/useRoutePreviewStep/useValidationConfigStepView/useLocationViewportLayers/useLocationMapPreviewStep/useResourceLayerMapStats の JSX 分離と .ts 化を実施。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/resolver-plugin typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-08 14:22 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build の tsdown define 警告あり）。
 
 
 

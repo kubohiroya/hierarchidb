@@ -7,19 +7,20 @@ import { Fragment } from 'react';
 import { PluginDialogProvider } from '../hooks/useDialogContext.js';
 import type { HeadlessDialogProps } from './types.js';
 import { useAbstractDialog } from './useAbstractDialog.js';
+import { AbstractDialogContent, AbstractDialogFooter, AbstractDialogHeader } from './AbstractDialogElements.js';
 
 /**
  * Headless dialog container. Renders provided header/content/footer components
  * inside a context provider so that each layer can access dialog atoms and callbacks.
  */
 export function AbstractDialog<TData>(props: HeadlessDialogProps<TData>) {
-  const { contextValue, headerElement, contentElement, footerElement } = useAbstractDialog(props);
+  const { contextValue, headerProps, contentProps, footerProps } = useAbstractDialog(props);
 
   return (
     <PluginDialogProvider value={contextValue}>
-      <Fragment>{headerElement}</Fragment>
-      <Fragment>{contentElement}</Fragment>
-      <Fragment>{footerElement}</Fragment>
+      <Fragment><AbstractDialogHeader {...headerProps} /></Fragment>
+      <Fragment><AbstractDialogContent {...contentProps} /></Fragment>
+      <Fragment><AbstractDialogFooter {...footerProps} /></Fragment>
     </PluginDialogProvider>
   );
 }

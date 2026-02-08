@@ -42,6 +42,7 @@ import type {
   PreviewLocationPoint,
 } from './locationMapPreviewTypes.js';
 import { useLocationMapPreview } from './useLocationMapPreview.js';
+import { LocationMapPreviewMarkers } from './LocationMapPreviewElements.js';
 
 //  props
 const SAMPLE_LOCATIONS: PreviewLocationPoint[] = [
@@ -126,6 +127,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     setMaxZoom,
     setSelectedLocation,
   } = useLocationMapPreview({ nodeId, locations });
+
+  const SelectedLocationIcon = selectedLocation ? typeSettings[selectedLocation.type]?.Icon : undefined;
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -224,7 +227,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 key={type}
                 label={(
                   <Box display="flex" alignItems="center" gap={0.5}>
-                    <span>{config.icon}</span>
+                    <span><config.Icon fontSize="small" /></span>
                     <span>{config.name} ({count})</span>
                   </Box>
                 )}
@@ -285,7 +288,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           </Box>
         </div>
 
-        {displayMode === 'points' && markers ? (
+        {displayMode === 'points' && markers.length > 0 ? (
           <Box
             sx={{
               position: 'absolute',
@@ -293,7 +296,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               pointerEvents: 'none',
             }}
           >
-            {markers}
+            <LocationMapPreviewMarkers markers={markers} />
           </Box>
         ) : null}
 
@@ -499,7 +502,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           fullWidth
         >
           <DialogTitle>
-            {typeSettings[selectedLocation.type]?.icon} {selectedLocation.name}
+            {SelectedLocationIcon ? <SelectedLocationIcon fontSize="small" /> : null}{' '}
+            {selectedLocation.name}
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={2}>

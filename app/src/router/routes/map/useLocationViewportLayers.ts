@@ -11,6 +11,8 @@ import type {
 import { DEFAULT_LAYER_SETS } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { createElement } from 'react';
+import { LocationViewportIcon, type LocationViewportIconProps } from './LocationViewportIcon.js';
 import {
   DirectionsBoat as DirectionsBoatIcon,
   FlightTakeoff as FlightTakeoffIcon,
@@ -110,7 +112,11 @@ export const useLocationViewportLayers = (
       ([type, Icon]) =>
         new Promise<void>((resolve) => {
           const iconId = `location-icon-${type}`;
-          const svg = renderToStaticMarkup(<Icon htmlColor={LOCATION_TYPE_COLORS[type]} />);
+          const iconProps: LocationViewportIconProps = {
+            Icon,
+            color: LOCATION_TYPE_COLORS[type],
+          };
+          const svg = renderToStaticMarkup(createElement(LocationViewportIcon, iconProps));
           const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
           const image = new Image();
           image.onload = () => {

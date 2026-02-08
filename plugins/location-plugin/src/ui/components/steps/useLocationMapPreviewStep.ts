@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hierarchidb/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
@@ -13,13 +13,12 @@ import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
 import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 import {
-  DEFAULT_ICON_IDS,
   DEFAULT_TYPE_COLORS,
-  LOCATION_ICON_COMPONENTS,
 } from './locationMapPreviewConstants.js';
-import { resolveCountryFlag, resolveLocationType } from './locationMapPreviewUtils.js';
+import { resolveCountryFlag } from './locationMapPreviewUtils.js';
 import { useLocationPreviewConfig } from './useLocationPreviewConfig.js';
 import { buildMetadataColumns, useLocationMapPreviewMetadata } from './useLocationMapPreviewMetadata.js';
+import type { LocationTerrainToggleOption, LocationTypeFormatterProps } from './LocationMapPreviewStepElements.js';
 import { useLocationMapPreviewMap } from './useLocationMapPreviewMap.js';
 
 const LOCATION_TYPE_OPTIONS = (Object.entries(LOCATION_TYPE_STYLES) as Array<
@@ -29,7 +28,7 @@ const LOCATION_TYPE_OPTIONS = (Object.entries(LOCATION_TYPE_STYLES) as Array<
   return {
     id: key,
     label: key,
-    icon: <Icon fontSize="small" />,
+    Icon,
   };
 });
 
@@ -106,7 +105,7 @@ export const useLocationMapPreviewStep = ({
   const {
     previewPoints,
     locationGeoJsonLayers,
-    locationPreviewSnackbar,
+    locationPreviewSnackbarProps,
     hoverMatches,
     handleMapLoad,
     handleMapMoveEnd,
@@ -166,45 +165,17 @@ export const useLocationMapPreviewStep = ({
 
   const showIdeGsmProgress = ideGsmProgress?.phase === 'save';
 
-  const admin0ColumnFormatter = useCallback((value: unknown, row: Record<string, unknown>) => {
-    const name = typeof value === 'string' ? value : '';
-    const code = typeof row.admin0Code === 'string' ? row.admin0Code : undefined;
-    const flag = resolveCountryFlag(code);
-    if (!name && !flag) return '';
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        {flag ? <Typography variant="body2">{flag}</Typography> : null}
-        <Typography variant="body2">{name}</Typography>
-      </Box>
-    );
-  }, []);
-
-  const typeColumnFormatter = useCallback((value: unknown) => {
-    const rawType = typeof value === 'string' ? value : undefined;
-    const type = rawType ? resolveLocationType(rawType) : 'area_centroid';
-    const iconEntry = iconConfig[type];
-    const iconId = iconEntry?.iconId ?? DEFAULT_ICON_IDS[type];
-    const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LOCATION_TYPE_STYLES[type].icon;
-    const color = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
-    const label = t(`locationTypes.${type}`, type);
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-        <Icon fontSize="small" htmlColor={color} />
-        <Typography variant="body2">{label}</Typography>
-      </Box>
-    );
-  }, [iconConfig, t]);
-
-  const terrainToggleOptions = useMemo(() => (
+  const terrainToggleOptions = useMemo<LocationTerrainToggleOption[]>(() => (
     LOCATION_TYPE_OPTIONS.map((option) => {
       const type = option.id as LocationType;
       const Icon = LOCATION_TYPE_STYLES[type].icon;
       const iconColor = iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
       const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
       return {
-        id: option.id,
+        id: option.id as LocationType,
         label: translations.locationTypes?.[type] ?? option.label,
-        icon: <Icon fontSize="small" htmlColor={iconColor} />,
+        Icon,
+        iconColor,
         labelColor,
       };
     })
@@ -215,6 +186,15 @@ export const useLocationMapPreviewStep = ({
     initialPosition: { x: 80, y: 40 },
     initialSize: { width: 280, height: 280 },
   });
+
+  const admin0FormatterProps = {
+    resolveFlag: resolveCountryFlag,
+  };
+
+  const typeFormatterProps: Omit<LocationTypeFormatterProps, 'value'> = {
+    iconConfig,
+    t,
+  };
 
   const styleConfigWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:location:style-config',
@@ -254,7 +234,7 @@ export const useLocationMapPreviewStep = ({
     initialViewState,
     locationGeoJsonLayers,
     attributionItems,
-    locationPreviewSnackbar,
+    locationPreviewSnackbarProps,
     hoverMatches,
     handleMapLoad,
     handleMapMoveEnd,
@@ -264,8 +244,8 @@ export const useLocationMapPreviewStep = ({
     setMetadataWindowOpen,
     displayedMetadataRows,
     displayedMetadataColumns,
-    typeColumnFormatter,
-    admin0ColumnFormatter,
+    typeFormatterProps,
+    admin0FormatterProps,
     metadataLoading,
     metadataLoadingText,
     metadataError,
