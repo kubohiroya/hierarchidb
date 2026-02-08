@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
+import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import type { NodeId } from '@hierarchidb/core-types';
 import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -516,6 +517,13 @@ const BuildProgressStageContent = ({
     && runningTargetIndex >= viewportRange.startIndex
     && runningTargetIndex <= viewportRange.endIndex;
   const shouldShowScrollButton = Boolean(runningTaskId) && !isRunningVisible;
+  const scrollDirection: 'up' | 'down' | null = useMemo(() => {
+    if (!shouldShowScrollButton || runningTargetIndex === null) return null;
+    if (viewportRange?.stageId !== stage.id || viewportRange == null) return 'down';
+    if (runningTargetIndex < viewportRange.startIndex) return 'up';
+    if (runningTargetIndex > viewportRange.endIndex) return 'down';
+    return null;
+  }, [runningTargetIndex, shouldShowScrollButton, stage.id, viewportRange]);
   const handleScrollToRunning = useCallback(() => {
     if (!runningTaskId) return;
     setScrollTarget({
@@ -596,7 +604,7 @@ const BuildProgressStageContent = ({
             scrollRequestId={scrollRequestId}
             virtualize={!disableVirtualization}
           />
-          {shouldShowScrollButton ? (
+          {scrollDirection ? (
             <Tooltip title={t('stage.progress.scrollToRunning', 'Scroll to running task')}>
               <IconButton
                 aria-label={t('stage.progress.scrollToRunning', 'Scroll to running task')}
@@ -605,7 +613,7 @@ const BuildProgressStageContent = ({
                 sx={{
                   position: 'absolute',
                   left: '50%',
-                  bottom: 0,
+                  ...(scrollDirection === 'down' ? { bottom: 0 } : { top: 0 }),
                   transform: 'translateX(-50%)',
                   bgcolor: 'transparent',
                   boxShadow: 'none',
@@ -615,7 +623,9 @@ const BuildProgressStageContent = ({
                   '&:hover': { bgcolor: 'transparent' },
                 }}
               >
-                <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
+                {scrollDirection === 'down'
+                  ? <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
+                  : <ArrowCircleUpIcon sx={{ fontSize: 48 }} />}
               </IconButton>
             </Tooltip>
           ) : null}

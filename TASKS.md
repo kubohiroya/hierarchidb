@@ -770,6 +770,8 @@
   - done: 2026-02-08 06:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
   - update: 2026-02-08 20:30 JST TaskListVirtualized のスクロールコンテナ高さを明示し、親ラッパーを flex/height:100% へ調整。矢印ボタンを最下端中央に合わせるよう位置を更新。
   - done: 2026-02-08 20:33 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
+  - update: 2026-02-08 20:40 JST ランニングタスクの位置に応じて上端/下端中央へ矢印を切替表示するよう調整。
+  - done: 2026-02-08 20:42 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
 
 2567) chore/geo/turf-geos-wasm-audit (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/turf-geos-wasm-audit
