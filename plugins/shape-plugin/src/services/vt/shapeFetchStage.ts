@@ -526,6 +526,7 @@ const buildFetchFeatureMetadata = (params: {
   createdAt: number;
   countryLookup?: Map<string, CountryMetadata>;
   recyclingByFeatureId?: Map<string, boolean>;
+  geometryEngine: GeometryEngine;
 }): ShapeFeatureMetadata[] => {
   const records: ShapeFeatureMetadata[] = [];
   for (let index = 0; index < params.collection.features.length; index += 1) {
@@ -541,7 +542,7 @@ const buildFetchFeatureMetadata = (params: {
     if (properties.__hdbFeatureId !== featureId) {
       properties.__hdbFeatureId = featureId;
     }
-    const stats = extractGeometryStats(feature, geometryEngine);
+    const stats = extractGeometryStats(feature, params.geometryEngine);
     const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
     const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
     records.push({
@@ -846,6 +847,7 @@ const createFetchHandler = (params: {
           omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
           excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
           minRingVertices: params.buildConfig.transformConfig.minRingVertices,
+          geometryEngine,
         })
         : baseCollection;
 
@@ -958,6 +960,7 @@ const createFetchHandler = (params: {
         omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
         excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
         minRingVertices: params.buildConfig.transformConfig.minRingVertices,
+        geometryEngine,
       })
       : collection;
     if (filteredCollection.features.length === 0) {

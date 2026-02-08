@@ -179,6 +179,17 @@ export function useTreeConsoleIntegrationInner({
     [actions, requestEdit]
   );
 
+  const handleTagsNavigate = useCallback(() => {
+    if (!treeId || !pageNodeId) return;
+    navigate({
+      to: '/t/$treeId/$pageNodeId/tags',
+      params: {
+        treeId: String(treeId),
+        pageNodeId: String(pageNodeId),
+      },
+    });
+  }, [navigate, pageNodeId, treeId]);
+
   const handleBreadcrumbContextAction = useCallback(
     (
       action: string,
@@ -351,6 +362,7 @@ export function useTreeConsoleIntegrationInner({
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
     buildSessionIndicator,
+    onNavigateTags: handleTagsNavigate,
     useTrashColumns: isTrashPage,
     speedDialSuppressed,
     setSpeedDialSuppressed,
@@ -359,7 +371,11 @@ export function useTreeConsoleIntegrationInner({
 
   const tagsLeftSlot =
     treeId && pageNodeId
-      ? createElement(TagsLinkButton, { treeId: String(treeId), pageNodeId: String(pageNodeId) })
+      ? createElement(TagsLinkButton, {
+        treeId: String(treeId),
+        pageNodeId: String(pageNodeId),
+        onNavigate: handleTagsNavigate,
+      })
       : undefined;
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {

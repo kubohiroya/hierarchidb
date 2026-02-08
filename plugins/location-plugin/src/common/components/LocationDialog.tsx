@@ -31,7 +31,6 @@ import {
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createLocationTabularApi } from '../tabular/createLocationTabularApi.js';
 import {
-  HeadlessPluginDialog,
   FRAME_CONSTANTS,
   getViewportSize,
   getPresetSize,
@@ -39,6 +38,7 @@ import {
   initialPosition,
   sizesEqual,
   positionsEqual,
+  PluginDialogFrame,
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
   type HeadlessDialogProps,
@@ -604,6 +604,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   };
 
   return (
-    <HeadlessPluginDialog<LocationDraft> {...dialogProps} />
+    <PluginDialogFrame<LocationDraft> headlessProps={dialogProps} />
   );
 };

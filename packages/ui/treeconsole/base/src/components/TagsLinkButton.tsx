@@ -1,11 +1,17 @@
-import { IconButton, Link } from '@mui/material';
+import { IconButton } from '@mui/material';
 import { Sell } from '@mui/icons-material';
 
-export const TagsLinkButton = (props: { treeId: string; pageNodeId: string }) => (
+export type TagsLinkButtonProps = {
+  treeId: string;
+  pageNodeId: string;
+  onNavigate: () => void;
+};
+
+export const TagsLinkButton = (props: TagsLinkButtonProps) => (
   <IconButton
-    sx={{ ml: 1 }}
-    component={Link}
-    href={`/t/${props.treeId}/${props.pageNodeId}/tags`}
+    size="small"
+    sx={{ ml: 1, fontSize: '12px' }}
+    onClick={props.onNavigate}
     aria-label="tags"
   >
     <Sell />

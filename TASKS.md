@@ -1,3 +1,18 @@
+2604) fix/shape/step3-country-metadata-cache (P2) — 進行中 (2026-02-08)
+- ブランチ名: codex/fix/shape/step3-country-metadata-cache
+- 依存: なし
+- 受け入れ基準: shape の Step3 国選択でメタデータがキャッシュ済みの場合は `gbOpen/ALL/ALL` へのリクエストを行わない／キャッシュ未取得または「Reload Metadata」押下時のみリクエストを行う／既存の表示・選択に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、常時リクエストする挙動へ戻す
+- チェックリスト:
+  - Step3 でキャッシュ判定を追加し、キャッシュがある場合はリクエストを抑止する
+  - Reload Metadata 押下時にのみ強制再取得されることを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 17:09 JST Step3 国選択のメタデータ取得をキャッシュ前提に変更する対応に着手。
+  - blocked: 2026-02-08 17:09 JST `git checkout -b codex/fix/shape/step3-country-metadata-cache` が ref 作成不可で失敗。
+
 2602) refactor/ui/treeconsole-breadcrumb-merge (P3) — 進行中 (2026-02-08)
 - ブランチ名: codex/refactor/ui/treeconsole-breadcrumb-merge
 - 依存: なし
@@ -153,6 +168,16 @@
   - blocked: 2026-02-08 15:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/ui-floating-window の TS1361（useFloatingWindowController.ts:87）で失敗。
   - update: 2026-02-08 15:24 JST useFloatingWindowController の React import を値として読み込むよう修正。
   - blocked: 2026-02-08 15:28 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が @hierarchidb/vt-orchestrator の build:types で多数の TS エラー（geometryUnkinkPolygons 未 export 等）により失敗。
+  - update: 2026-02-08 15:33 JST vtStage の geometryBboxClip 呼び出しに engine 指定が不足していたため、turf を明示して build:types エラーを解消する修正を追加。
+  - blocked: 2026-02-08 15:37 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が runtime-worker の VT generateTiles config で geometryEngine 未定義エラーにより失敗。
+  - update: 2026-02-08 15:38 JST StageProcessingService の generateTiles config に geometryEngine を追加し、VTGenerateConfig へ渡せるよう補正。
+  - blocked: 2026-02-08 15:43 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が location-plugin で HeadlessPluginDialog 未 export エラーにより失敗。
+  - update: 2026-02-08 15:44 JST LocationDialog の HeadlessPluginDialog を PluginDialogFrame へ差し替え、headlessProps 経由で従来の dialogProps を渡すよう修正。
+  - start: 2026-02-08 16:34 JST TagsLinkButton の /tags href を tree 配下の tags ルート遷移へ置換する対応に着手。
+  - blocked: 2026-02-08 16:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` が shape-plugin の geometryEngine 未設定エラーで失敗（shapeFetchStage.ts/shapePipeline.ts）。
+  - update: 2026-02-08 16:45 JST shapeFetchStage/shapePipeline へ geometryEngine を伝播し、`pnpm -w turbo run build --filter @hierarchidb/ui-treeconsole-base` を実行（exit 0）。
+  - update: 2026-02-08 16:46 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
+  - start: 2026-02-08 16:51 JST tags ルーティング検証用の console.debug を撤去する対応に着手。
 
 2598) feat/tags/tag-detail-outlet (P1) — 進行中 (2026-02-08)
 - ブランチ名: feat/tags/tag-detail-outlet

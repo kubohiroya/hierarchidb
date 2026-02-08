@@ -128,12 +128,20 @@ export interface TreeConsolePanelProps {
   readonly breadcrumbRenderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
   /** Optional info panel to show alongside the table in split view. */
   readonly infoPanel?: ReactElement;
+  /** Optional handler to open tags within the current tree hierarchy. */
+  readonly onNavigateTags?: () => void;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
   const tagsLeftSlot =
-    props.treeId && props.pageNodeId
-      ? <TagsLinkButton treeId={props.treeId} pageNodeId={props.pageNodeId} />
+    props.treeId && props.pageNodeId && props.onNavigateTags
+      ? (
+        <TagsLinkButton
+          treeId={props.treeId}
+          pageNodeId={props.pageNodeId}
+          onNavigate={props.onNavigateTags}
+        />
+      )
       : undefined;
 
   const {

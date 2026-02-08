@@ -720,6 +720,7 @@ const clipFeaturesForTile = (
       clipped = geometryBboxClip(
         sourceFeature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
         [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
+        'turf',
       ) as Feature<Geometry>;
     } else if (geometry && isPointGeometry(geometry)) {
       if (isAnyPointInBBox(geometry, tileBBox)) {
@@ -1265,6 +1266,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       clipped = geometryBboxClip(
                         feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
                         [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
+                        'turf',
                       ) as Feature<Geometry>;
                     } else if (geometry && isPointGeometry(geometry)) {
                       if (isAnyPointInBBox(geometry, tileBBox)) {

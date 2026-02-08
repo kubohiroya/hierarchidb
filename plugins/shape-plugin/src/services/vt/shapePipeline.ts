@@ -207,11 +207,13 @@ const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
 
 const runMetadataStage = async (context: ShapePipelineContext): Promise<void> => {
   const { params, diffBuildEnabled, recyclingAllowlist, recyclingByFeatureId, ephemeralStore } = context;
+  const geometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
   await runShapeMetadataStage({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
     ephemeralStore,
     shapeDb: shapeDB,
+    geometryEngine,
     recyclingByFeatureId: diffBuildEnabled ? recyclingByFeatureId : undefined,
     recyclingAllowlist,
     diffBuildEnabled,

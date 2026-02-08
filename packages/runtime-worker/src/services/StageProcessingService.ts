@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
+  type GeometryEngine,
   type VectorTileRow,
   type VTGenerateConfig,
 } from '@hierarchidb/gis-sdk';
@@ -280,6 +281,7 @@ class RealVTWorker implements VTWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      geometryEngine?: GeometryEngine;
       targetNodeId?: NodeId;
       targetNodeType?: string;
       abortKey?: string;
