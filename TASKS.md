@@ -12,6 +12,8 @@
 - 運用ログ:
   - start: 2026-02-08 17:09 JST Step3 国選択のメタデータ取得をキャッシュ前提に変更する対応に着手。
   - blocked: 2026-02-08 17:09 JST `git checkout -b codex/fix/shape/step3-country-metadata-cache` が ref 作成不可で失敗。
+  - update: 2026-02-08 17:18 JST metadata のキャッシュ判定を追加し、Reload 時のみ強制再取得するよう修正。
+  - done: 2026-02-08 17:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
 
 2602) refactor/ui/treeconsole-breadcrumb-merge (P3) — 進行中 (2026-02-08)
 - ブランチ名: codex/refactor/ui/treeconsole-breadcrumb-merge
@@ -766,6 +768,8 @@
   - done: 2026-02-08 06:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
   - update: 2026-02-08 06:56 JST passive wheel の警告回避のため addEventListener(passive: false) へ切替。
   - done: 2026-02-08 06:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0 を確認。
+  - update: 2026-02-08 20:30 JST TaskListVirtualized のスクロールコンテナ高さを明示し、親ラッパーを flex/height:100% へ調整。矢印ボタンを最下端中央に合わせるよう位置を更新。
+  - done: 2026-02-08 20:33 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
 
 2567) chore/geo/turf-geos-wasm-audit (P1) — 進行中 (2026-02-07)
 - ブランチ名: chore/geo/turf-geos-wasm-audit

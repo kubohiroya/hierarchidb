@@ -269,7 +269,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     <Box
       ref={setRefs}
       onWheel={(event) => event.stopPropagation()}
-      sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}
+      sx={{ flex: 1, minHeight: 0, height: '100%', overflow: 'auto' }}
     >
       {shouldVirtualize ? (
         <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>

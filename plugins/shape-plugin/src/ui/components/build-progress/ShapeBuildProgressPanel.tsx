@@ -1,4 +1,4 @@
-import { type WheelEvent as ReactWheelEvent, useCallback, useEffect, useId, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -524,16 +524,6 @@ const BuildProgressStageContent = ({
       requestedAt: Date.now(),
     });
   }, [runningTaskId, setScrollTarget, stage.id]);
-  const handleWheelCapture = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-    const scrollEl = listScrollRef.current;
-    if (!scrollEl) return;
-    if (scrollEl.scrollHeight <= scrollEl.clientHeight) {
-      return;
-    }
-    scrollEl.scrollTop += event.deltaY;
-  }, []);
-
   useEffect(() => {
     const wrapper = listWrapperRef.current;
     if (!wrapper) return;
@@ -584,8 +574,14 @@ const BuildProgressStageContent = ({
         </>
       ) : (
         <Box
-          sx={{ position: 'relative', flex: 1, minHeight: 0 }}
-          onWheelCapture={handleWheelCapture}
+          sx={{
+            position: 'relative',
+            flex: 1,
+            minHeight: 0,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
           ref={listWrapperRef}
         >
           <TaskListVirtualized
@@ -609,7 +605,7 @@ const BuildProgressStageContent = ({
                 sx={{
                   position: 'absolute',
                   left: '50%',
-                  bottom: 8,
+                  bottom: 0,
                   transform: 'translateX(-50%)',
                   bgcolor: 'transparent',
                   boxShadow: 'none',

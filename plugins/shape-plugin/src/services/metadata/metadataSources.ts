@@ -85,7 +85,39 @@ const resolveGeoBoundariesContinent = (
   return 'N/A';
 };
 
-export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
+type MetadataFetchOptions = {
+  force?: boolean;
+};
+
+const getCachedOrFetchForNode = async <T>(params: {
+  store: ReturnType<typeof createShapeChunkStoreWithNetworkPort<T>>;
+  nodeId: NodeId;
+  url: string;
+  cacheKey: string;
+  accept: string;
+  force?: boolean;
+}): Promise<{ value: T }> => {
+  const { store, nodeId, url, cacheKey, accept, force } = params;
+  if (!force) {
+    const hasRelation = await store.hasRelationForNode(nodeId, cacheKey);
+    if (hasRelation) {
+      const cached = await store.get(cacheKey);
+      if (cached) return cached;
+    } else {
+      const cached = await store.get(cacheKey);
+      if (cached) {
+        await store.setForNode(nodeId, cacheKey, cached.value, cached.metadata);
+        return cached;
+      }
+    }
+  }
+  return store.getOrFetchForNode(nodeId, url, { accept, cacheKey });
+};
+
+export async function fetchGeoBoundariesMetadata(
+  nodeId: NodeId,
+  options?: MetadataFetchOptions,
+): Promise<CountryMetadata[]> {
   const store = createShapeChunkStoreWithNetworkPort(
     jsonSerializer,
     jsonDeserializer,
@@ -94,9 +126,13 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   const cacheKey = buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL);
   const entry = isOffline()
     ? await store.get(cacheKey)
-    : await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
+    : await getCachedOrFetchForNode({
+      store,
+      nodeId,
+      url: GEOBOUNDARIES_ALL_METADATA_URL,
       accept: 'application/json',
       cacheKey,
+      force: options?.force,
     });
   if (!entry) {
     throw new Error('Offline: geoboundaries metadata cache is missing.');
@@ -236,15 +272,22 @@ const mapWithConcurrency = async <T, R>(
   return results;
 };
 
-export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
+export async function fetchGadmMetadata(
+  nodeId: NodeId,
+  options?: MetadataFetchOptions,
+): Promise<CountryMetadata[]> {
   const store = createShapeChunkStoreWithNetworkPort(
     textSerializer,
     textDeserializer,
     createShapeNetworkPort(),
   );
-  const htmlEntry = await store.getOrFetchForNode(nodeId, GADM_MAPS_URL, {
+  const htmlEntry = await getCachedOrFetchForNode({
+    store,
+    nodeId,
+    url: GADM_MAPS_URL,
     accept: 'text/html',
     cacheKey: buildShapeCacheKey('gadm:maps', GADM_MAPS_URL),
+    force: options?.force,
   });
   const html = htmlEntry.value;
   const entries = parseGadmCountryEntries(html);
@@ -256,9 +299,13 @@ export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata
   const gadmMissingSamples: Array<{ iso3: string; metadata: string | null }> = [];
   const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
     try {
-      const countryEntry = await store.getOrFetchForNode(nodeId, entry.url, {
+      const countryEntry = await getCachedOrFetchForNode({
+        store,
+        nodeId,
+        url: entry.url,
         accept: 'text/html',
         cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
+        force: options?.force,
       });
       const countryHtml = countryEntry.value;
       const levels = parseGadmLevelsFromHtml(countryHtml);

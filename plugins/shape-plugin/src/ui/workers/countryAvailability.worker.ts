@@ -32,8 +32,8 @@ const api: CountryAvailabilityWorkerAPI = {
       fetchedAt: Date.now(),
     };
   },
-  async loadMetadata(dataSource: DataSourceName, nodeId: NodeId) {
-    return metadataLoader.loadMetadata(dataSource, nodeId);
+  async loadMetadata(dataSource: DataSourceName, nodeId: NodeId, options?: { force?: boolean }) {
+    return metadataLoader.loadMetadata(dataSource, nodeId, options);
   },
   async clearMetadataCache(dataSource?: DataSourceName) {
     metadataLoader.clearCache(dataSource);

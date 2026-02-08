@@ -273,10 +273,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         throw new Error('UI storage bridge is not initialized for availability worker');
       }
       await bridgeReady;
-      if (options?.force) {
-        await ref.api.clearMetadataCache(dataSourceKey);
-      }
-      const result = await ref.api.loadMetadata(dataSourceKey, nodeId);
+      const result = await ref.api.loadMetadata(dataSourceKey, nodeId, options);
       if (requestId !== metadataRequestIdRef.current) return;
       setCountries(Array.isArray(result) ? result : []);
       if (!result?.length) {

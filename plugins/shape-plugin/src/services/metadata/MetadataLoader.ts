@@ -14,7 +14,7 @@ export class MetadataLoader {
   private static instance: MetadataLoader | null = null;
   private metadataCache: Map<string, CountryMetadata[]> = new Map();
 
-  private readonly loaders: Record<DataSourceName, (nodeId: NodeId) => Promise<CountryMetadata[]>> = {
+  private readonly loaders: Record<DataSourceName, (nodeId: NodeId, options?: { force?: boolean }) => Promise<CountryMetadata[]>> = {
     gadm: fetchGadmMetadata,
     geoboundaries: fetchGeoBoundariesMetadata,
     'geoboundaries-topojson': fetchGeoBoundariesMetadata,
@@ -34,9 +34,13 @@ export class MetadataLoader {
   /**
    * Load metadata for a specific data source
    */
-  async loadMetadata(dataSource: DataSourceName, nodeId: NodeId): Promise<CountryMetadata[]> {
+  async loadMetadata(
+    dataSource: DataSourceName,
+    nodeId: NodeId,
+    options?: { force?: boolean },
+  ): Promise<CountryMetadata[]> {
     const cacheKey = `${dataSource}:${nodeId}`;
-    if (this.metadataCache.has(cacheKey)) {
+    if (!options?.force && this.metadataCache.has(cacheKey)) {
       return this.metadataCache.get(cacheKey)!;
     }
 
@@ -45,7 +49,7 @@ export class MetadataLoader {
       throw new Error(`Unknown data source: ${dataSource}`);
     }
     try {
-      const metadata = await loader(nodeId);
+      const metadata = await loader(nodeId, options);
 
       // Cache the result
       this.metadataCache.set(cacheKey, metadata);
