@@ -3,6 +3,17 @@ export type { SessionBroadcastChannel, SessionBroadcastMessage } from './broadca
 export { createSessionBroadcastChannel } from './broadcast.js';
 
 export type SessionTabState = 'active' | 'hidden' | 'frozen';
+export type SessionChannelType = 'broadcast' | 'poll' | 'ack' | 'tab-state';
+export type SessionChannelMessage<TStatus = unknown, TProgress = unknown> = {
+  type: SessionChannelType;
+  sessionId: string;
+  tabId: string;
+  status?: TStatus | null;
+  progress?: TProgress | null;
+  receivedTabId?: string;
+  tabState?: SessionTabState;
+  updatedAt?: number;
+};
 
 export type HeartbeatRecord<TStatus = unknown, TProgress = unknown> = {
   sessionId: string;
@@ -58,6 +69,23 @@ export type SessionCoordinator = {
   clearActiveSessionId: (sessionId: string) => void;
   readBroadcastAt: () => number | null;
   writeBroadcastAt: (timestamp: number) => void;
+  openChannel: () => BroadcastChannel;
+  sendBroadcast: <TStatus = unknown, TProgress = unknown>(
+    channel: BroadcastChannel,
+    sessionId: string,
+    status: TStatus | null,
+    progress: TProgress | null,
+    timestamp?: number,
+  ) => void;
+  sendPoll: (channel: BroadcastChannel, sessionId: string, timestamp?: number) => void;
+  sendAck: (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => void;
+  sendTabState: (
+    channel: BroadcastChannel,
+    sessionId: string,
+    tabState: SessionTabState,
+    timestamp?: number,
+  ) => void;
+  isSessionChannelMessage: (message: unknown) => message is SessionChannelMessage;
   isRunnerTab: (referenceTime?: number) => boolean;
   tryAcquireSemaphore: (key: string, ownerId: string, ttlMs?: number) => Promise<boolean>;
   tryAcquireSessionLock: (key: string) => Promise<SessionLockHandle | null>;
@@ -173,6 +201,27 @@ export const createPollingTracker = ({
   return { record, candidates, prune };
 };
 
+const resolveChannelName = (channelName?: string): string => {
+  const base = channelName && channelName.trim().length > 0 ? channelName.trim() : 'sessions';
+  return `hdb:session-coordinator:${base}`;
+};
+
+const SESSION_CHANNEL_TYPES: SessionChannelType[] = ['broadcast', 'poll', 'ack', 'tab-state'];
+
+const isSessionChannelMessage = (message: unknown): message is SessionChannelMessage => {
+  if (!message || typeof message !== 'object') return false;
+  const record = message as Record<string, unknown>;
+  if (!SESSION_CHANNEL_TYPES.includes(record.type as SessionChannelType)) return false;
+  if (typeof record.sessionId !== 'string') return false;
+  if (typeof record.tabId !== 'string') return false;
+  if (record.type === 'ack' && typeof record.receivedTabId !== 'string') return false;
+  if (record.type === 'tab-state') {
+    const state = record.tabState;
+    if (state !== 'active' && state !== 'hidden' && state !== 'frozen') return false;
+  }
+  return true;
+};
+
 export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}): SessionCoordinator => {
   const channelName = options.channelName ?? 'sessions';
   const pollIntervalTimeout = options.pollIntervalTimeout ?? 3000;
@@ -241,6 +290,73 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     } catch {
       // ignore
     }
+  };
+
+  const openChannel = () => {
+    const resolved = resolveChannelName(channelName);
+    return new BroadcastChannel(resolved);
+  };
+
+  const publish = <TStatus, TProgress>(
+    channel: BroadcastChannel,
+    message: SessionChannelMessage<TStatus, TProgress>,
+  ) => {
+    try {
+      channel.postMessage(message);
+    } catch {
+      // ignore broadcast failures
+    }
+  };
+
+  const sendBroadcast = <TStatus = unknown, TProgress = unknown>(
+    channel: BroadcastChannel,
+    sessionId: string,
+    status: TStatus | null,
+    progress: TProgress | null,
+    timestamp?: number,
+  ) => {
+    publish(channel, {
+      type: 'broadcast',
+      sessionId,
+      tabId: getTabId(),
+      status,
+      progress,
+      updatedAt: timestamp ?? nowFn(),
+    });
+  };
+
+  const sendPoll = (channel: BroadcastChannel, sessionId: string, timestamp?: number) => {
+    publish(channel, {
+      type: 'poll',
+      sessionId,
+      tabId: getTabId(),
+      updatedAt: timestamp ?? nowFn(),
+    });
+  };
+
+  const sendAck = (channel: BroadcastChannel, sessionId: string, receivedTabId: string, timestamp?: number) => {
+    publish(channel, {
+      type: 'ack',
+      sessionId,
+      tabId: getTabId(),
+      receivedTabId,
+      updatedAt: timestamp ?? nowFn(),
+    });
+  };
+
+  const sendTabState = (
+    channel: BroadcastChannel,
+    sessionId: string,
+    tabState: SessionTabState,
+    timestamp?: number,
+  ) => {
+    publish(channel, {
+      type: 'tab-state',
+      sessionId,
+      tabId: getTabId(),
+      tabState,
+      updatedAt: timestamp ?? nowFn(),
+    });
   };
 
   const isRunnerTab = (referenceTime?: number) => {
@@ -415,6 +531,12 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     clearActiveSessionId,
     readBroadcastAt,
     writeBroadcastAt,
+    openChannel,
+    sendBroadcast,
+    sendPoll,
+    sendAck,
+    sendTabState,
+    isSessionChannelMessage,
     isRunnerTab,
     tryAcquireSemaphore,
     tryAcquireSessionLock,

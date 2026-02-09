@@ -1,3 +1,23 @@
+2619) fix/ui/session-coordinator-openchannel (P1) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/session-coordinator-openchannel
+- 依存: なし
+- 受け入れ基準: `coordinator.openChannel is not a function` が発生しない／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/session-coordinator/src/**` / `app/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来挙動へ戻す
+- チェックリスト:
+  - 例外の発生箇所と不整合原因を特定する
+  - coordinator の生成/注入/参照経路の不整合を修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 10:45 JST `coordinator.openChannel is not a function` の原因特定と修正に着手。
+  - update: 2026-02-09 10:47 JST session-coordinator の BroadcastChannel API 廃止を前提に useShapeBuildStep を `createSessionBroadcastChannel` へ差し替え（誤りのため後で修正）。
+  - update: 2026-02-09 10:53 JST BroadcastChannel API は廃止ではなく喪失していたため、session-coordinator に `openChannel`/`send*`/`isSessionChannelMessage` を復元する方針へ修正。
+  - update: 2026-02-09 10:55 JST 依存 dist 未更新で typecheck 失敗（SessionChannelMessage 等が未解決）→ session-coordinator を build。
+  - update: 2026-02-09 10:55 JST tab-state の undefined をガードして typecheck を通過させた。
+  - update: 2026-02-09 10:55 JST session-coordinator に BroadcastChannel API と SessionChannelMessage を復元し、useShapeBuildStep を従来 API へ戻した。session-coordinator build で dist を更新。
+  - update: 2026-02-09 10:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/session-coordinator --filter @hierarchidb/shape-plugin` exit 0。
+
 2616) fix/shape-api/type-reexports-explicit (P1) — 完了 (2026-02-09)
 - ブランチ名: codex/fix/shape-api/type-reexports-explicit
 - 依存: なし

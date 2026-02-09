@@ -419,6 +419,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         sendAck(typedMessage.sessionId, typedMessage.tabId);
       }
       if (typedMessage.type === 'tab-state') {
+        if (!typedMessage.tabState) return;
         tabStateRef.current.set(typedMessage.tabId, { state: typedMessage.tabState, at: now });
         sendAck(typedMessage.sessionId, typedMessage.tabId);
       }
