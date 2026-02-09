@@ -3,8 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Dialog,
   DialogActions,
   DialogContent,
@@ -375,81 +373,6 @@ const TaskProgressBar = ({
   );
 };
 
-const TaskProgressSummaryCard = ({
-  summary,
-  stages,
-  tasksByStage,
-  activeStageId,
-  resolveTaskTitle,
-  t,
-}: {
-  summary: TaskProgressSummary;
-  stages: BuildStage[];
-  tasksByStage: Record<string, TaskWithMetadata[]>;
-  activeStageId?: string | null;
-  resolveTaskTitle: (task: TaskWithMetadata) => string;
-  t: (key: string, fallback: string, options?: Record<string, unknown>) => string;
-}) => (
-  <Card
-    variant="outlined"
-    sx={{
-      width: '100%',
-      transition: 'none',
-      '&:hover': { transform: 'none', boxShadow: 'none' },
-    }}
-    data-testid="shape-plugin-batch-progress-summary"
-  >
-    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-        <Stack spacing={0.25} flex={1}>
-          <Typography variant="caption" color="text.secondary">
-            {t('stage.progress.stage', 'Stage')}
-          </Typography>
-          <Typography variant="body2">{summary.stageLabel}</Typography>
-        </Stack>
-        <Stack spacing={0.25} flex={1}>
-          <Typography variant="caption" color="text.secondary">
-            {summary.taskUnitLabel || t('stage.progress.task', 'Polygons')}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: 2,
-              lineHeight: 1.4,
-              minHeight: '2.8em',
-              maxHeight: '2.8em',
-            }}
-          >
-            {summary.taskLabel}
-          </Typography>
-        </Stack>
-      </Stack>
-      <Stack gap={1}>
-        <TaskProgressBar
-          stages={stages}
-          tasksByStage={tasksByStage}
-          buildStatus={summary.buildStatus}
-          activeStageId={activeStageId}
-          resolveTaskTitle={resolveTaskTitle}
-        />
-        <Typography variant="caption" color="text.secondary">
-          {t('stage.progress.countsWithUnit', '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
-            percentage: Math.round(summary.overallProgress),
-            completed: summary.completed,
-            total: summary.total,
-            failed: summary.failed,
-            skipped: summary.skipped,
-            unit: summary.taskUnitLabel || t('stage.progress.task', 'Polygons'),
-          })}
-        </Typography>
-      </Stack>
-    </CardContent>
-  </Card>
-);
-
 const BuildProgressStageContent = ({
   showHeader,
   stage,
@@ -784,6 +707,36 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     t,
   ]);
 
+  const formatInlineDuration = useCallback((durationMs?: number | null) => {
+    const safeMs = durationMs == null || !Number.isFinite(durationMs) || durationMs < 0 ? 0 : durationMs;
+    const totalSeconds = Math.max(0, Math.floor(safeMs / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return t('stage.timing.inlineDuration', '{{hours}}h {{minutes}}m {{seconds}}s', {
+      hours,
+      minutes,
+      seconds,
+    });
+  }, [t]);
+
+  const stageTimingSummary = useMemo(() => {
+    const elapsed = formatInlineDuration(summary.stageElapsedMs);
+    const remaining = formatInlineDuration(summary.stageRemainingMs);
+    return t(
+      'stage.timing.elapsedRemaining',
+      'Elapsed {{elapsed}} ・ Est. remaining {{remaining}}',
+      { elapsed, remaining },
+    );
+  }, [formatInlineDuration, summary.stageElapsedMs, summary.stageRemainingMs, t]);
+
+  const stageHeaderMeta = useMemo(() => (
+    stages.reduce<Record<string, string>>((acc, stage) => {
+      acc[stage.id] = stageTimingSummary;
+      return acc;
+    }, {})
+  ), [stageTimingSummary, stages]);
+
   const stageProgressContent = useMemo(() => (
     stageProgressItems.reduce<Record<string, JSX.Element>>((acc, item) => {
       const stage = item.stage;
@@ -858,22 +811,16 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       stageProgressContent={stageProgressContent}
       stageConcurrencyIndicators={stageConcurrencyIndicators}
       stageMenus={stageMenus}
-      statusContent={summary.hasProgressData ? (
-        <TaskProgressSummaryCard
-          summary={summary}
-          stages={stages}
-          tasksByStage={tasksByStage}
-          activeStageId={activeStageId}
-          resolveTaskTitle={resolveTaskTitle as (task: TaskWithMetadata) => string}
-          t={t}
-        />
-      ) : undefined}
+      stageHeaderMeta={stageHeaderMeta}
+      chipPlacement="belowProgress"
+      suppressStatusFallback
       startIcon={<ConstructionIcon fontSize="small" />}
       onResume={controls.canStartOrResume ? handleStartClick : undefined}
-      onPause={controls.handlePause}
+      onPause={controls.pausePending ? undefined : controls.handlePause}
       controlLabel={t('stage.controls.title', 'Build controls')}
       pauseLabel={t('stage.controls.pause', 'Pause')}
-      pauseLoading={controls.pausePending}
+      pauseLoading={false}
+      pausePending={controls.pausePending}
       startLabel={t('stage.controls.start', 'Start Build')}
       resumeLabel={t('stage.controls.resume', 'Resume Build')}
       statusLabel={controls.statusLabel}

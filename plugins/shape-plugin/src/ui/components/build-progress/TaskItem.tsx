@@ -11,7 +11,7 @@ type Props = {
   fallbackProgress: number;
 };
 
-export const TASK_ITEM_HEIGHT = 50;
+export const TASK_ITEM_HEIGHT = 56;
 
 export const TaskItem: React.FC<Props> = ({
   title,
@@ -34,18 +34,20 @@ export const TaskItem: React.FC<Props> = ({
         maxHeight: `${TASK_ITEM_HEIGHT}px`,
       }}
     >
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <Stack direction="row" spacing={1} alignItems="flex-end" sx={{ mb: '2px' }}>
+          <Typography variant="caption" sx={{ flex: 1, fontSize: '14px' }}>
+            {title}
+          </Typography>
+          <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
+        </Stack>
+      </Box>
       <LinearProgress
         variant="determinate"
         value={Math.min(100, Math.max(0, progress ?? fallbackProgress))}
         color={statusColor === 'default' ? 'primary' : statusColor}
       />
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minHeight: 0, flex: 1, overflow: 'hidden' }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="caption" sx={{ flex: 1 }}>
-            {title}
-          </Typography>
-          <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
-        </Stack>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <Tooltip
           title={displayMessage}
           placement="top-start"
@@ -55,7 +57,7 @@ export const TaskItem: React.FC<Props> = ({
         >
           <Typography
             variant="caption"
-            color="text.secondary"
+            color="text.disabled"
             sx={{
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -63,6 +65,7 @@ export const TaskItem: React.FC<Props> = ({
               lineHeight: 1.2,
               minHeight: '1.2em',
               maxHeight: '1.2em',
+              mt: '2px',
               visibility: displayMessage ? 'visible' : 'hidden',
             }}
           >

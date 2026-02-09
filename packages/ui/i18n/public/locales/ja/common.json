@@ -77,6 +77,12 @@
       }
     }
   },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}時間{{minutes}}分{{seconds}}秒",
+      "elapsedRemaining": "経過時間 {{elapsed}} ・ 推計残り {{remaining}}"
+    }
+  },
   "api": {
     "request": "APIリクエスト",
     "response": "APIレスポンス",

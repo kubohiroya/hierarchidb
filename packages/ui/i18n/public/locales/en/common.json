@@ -77,6 +77,12 @@
       }
     }
   },
+  "stage": {
+    "timing": {
+      "inlineDuration": "{{hours}}h {{minutes}}m {{seconds}}s",
+      "elapsedRemaining": "Elapsed {{elapsed}} ・ Est. remaining {{remaining}}"
+    }
+  },
   "api": {
     "request": "API Request",
     "response": "API Response",

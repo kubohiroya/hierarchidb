@@ -264,21 +264,10 @@ export const useBuildProgressPanelState = (params: {
         label: t('stage.timing.totalElapsed', 'Total elapsed'),
         value: isBuildStarted ? formatElapsedDuration(summary.totalElapsedMs) : emptyValue,
       },
-      {
-        label: t('stage.timing.stageElapsed', 'Stage elapsed'),
-        value: isBuildStarted ? formatElapsedDuration(summary.stageElapsedMs) : emptyValue,
-      },
-      {
-        label: t('stage.timing.stageRemaining', 'Stage remaining (estimate)'),
-        value: formatDuration(summary.stageRemainingMs ?? null),
-      },
     ];
   }, [
-    formatDuration,
     formatElapsedDuration,
     summary.buildStatus,
-    summary.stageElapsedMs,
-    summary.stageRemainingMs,
     summary.totalElapsedMs,
     t,
   ]);

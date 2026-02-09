@@ -22,7 +22,22 @@ import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
 import { VtTaskQueueDb, emitTaskUpdate, toTaskQueueRecord, updateTask, type StoredTaskRecord } from '../task/taskQueue.js';
+import { logDebug } from '../debug/persistentDebugLog.js';
 import { packTileId } from '../tiles/tileId.js';
+
+const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
+let taskDebugModuleLogged = false;
+const logTaskDebugModuleOnce = (label: string, details?: Record<string, unknown>) => {
+  if (taskDebugModuleLogged) return;
+  taskDebugModuleLogged = true;
+  console.warn('[ShapeTransform][TaskDebug] module', {
+    label,
+    tag: TASKDEBUG_BUILD_TAG,
+    ...details,
+  });
+};
+
+logTaskDebugModuleOnce('loaded');
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -1158,6 +1173,11 @@ const buildCollectionDiagnostics = (
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
 ): StageHandler<TransformByBandTaskInput> => {
+  console.warn('[ShapeTransform][TaskDebug] handler created', {
+    tag: TASKDEBUG_BUILD_TAG,
+    bandCount: context.bands.length,
+    geometryEngine: context.transformConfig.geometryEngine ?? 'turf',
+  });
   const { ephemeralDB, transformConfig, bands, abortSignal, featureIdAllowlist } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
@@ -1232,7 +1252,43 @@ export const createTransformByBandHandler = (
   }): Promise<void> => {
     const completedAt = Date.now();
     let updatedTask: StoredTaskRecord | null = null;
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.buildTasks], async () => {
+    const cacheStartedAt = Date.now();
+    let cacheWaitLogged = false;
+    const cacheWaitTimer = setTimeout(() => {
+      cacheWaitLogged = true;
+      logDebug('warn', 'ShapeTransform', 'transform cache write waiting', {
+        tag: TASKDEBUG_BUILD_TAG,
+        taskId: params.taskId,
+        elapsedMs: Date.now() - cacheStartedAt,
+      });
+    }, 5000);
+    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache], async () => {
+      await ephemeralDB.transformCache.put({
+        ...params.cacheRecord,
+        timestamp: 0,
+      });
+      await ephemeralDB.transformCache.update(params.cacheRecord.id, { timestamp: completedAt });
+    });
+    clearTimeout(cacheWaitTimer);
+    if (cacheWaitLogged) {
+      logDebug('warn', 'ShapeTransform', 'transform cache write done', {
+        tag: TASKDEBUG_BUILD_TAG,
+        taskId: params.taskId,
+        elapsedMs: Date.now() - cacheStartedAt,
+      });
+    }
+
+    const taskStartedAt = Date.now();
+    let taskWaitLogged = false;
+    const taskWaitTimer = setTimeout(() => {
+      taskWaitLogged = true;
+      logDebug('warn', 'ShapeTransform', 'transform task update waiting', {
+        tag: TASKDEBUG_BUILD_TAG,
+        taskId: params.taskId,
+        elapsedMs: Date.now() - taskStartedAt,
+      });
+    }, 5000);
+    await ephemeralDB.transaction('rw', [ephemeralDB.buildTasks], async () => {
       const current = await ephemeralDB.buildTasks.get(params.taskId);
       if (!current) {
         throw new Error('transform failed: task record missing');
@@ -1241,11 +1297,6 @@ export const createTransformByBandHandler = (
       const nextSequence = currentSequence + 1;
       const lockedStatus = current.status === 'completed' || current.status === 'failed';
       const effectiveStatus = lockedStatus ? current.status : 'completed';
-      await ephemeralDB.transformCache.put({
-        ...params.cacheRecord,
-        timestamp: 0,
-      });
-      await ephemeralDB.transformCache.update(params.cacheRecord.id, { timestamp: completedAt });
       await ephemeralDB.buildTasks.update(params.taskId, {
         status: effectiveStatus,
         progress: 100,
@@ -1257,6 +1308,14 @@ export const createTransformByBandHandler = (
       });
       updatedTask = (await ephemeralDB.buildTasks.get(params.taskId)) ?? null;
     });
+    clearTimeout(taskWaitTimer);
+    if (taskWaitLogged) {
+      logDebug('warn', 'ShapeTransform', 'transform task update done', {
+        tag: TASKDEBUG_BUILD_TAG,
+        taskId: params.taskId,
+        elapsedMs: Date.now() - taskStartedAt,
+      });
+    }
     if (updatedTask) {
       emitTaskUpdate(toTaskQueueRecord(updatedTask));
     }
@@ -1273,9 +1332,41 @@ export const createTransformByBandHandler = (
   }
   const geometryOps = createGeometryOps(geometryEngine);
   const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
+  let debugTaskId: string | null = null;
+  let debugTaskStartedAt: number | null = null;
+  let debugNodeId: NodeId | null = null;
+  let debugSelectionLogged = false;
+  let firstTaskLogged = false;
+  const debugResetAfterMs = 30000;
+  const readHeapUsageRatio = (): number | null => {
+    const performance = (globalThis as {
+      performance?: {
+        memory?: {
+          usedJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+        };
+      };
+    }).performance;
+    const memory = performance?.memory;
+    const used = memory?.usedJSHeapSize;
+    const limit = memory?.jsHeapSizeLimit;
+    if (typeof used !== 'number' || typeof limit !== 'number' || limit <= 0) return null;
+    if (!Number.isFinite(used) || !Number.isFinite(limit)) return null;
+    return Math.round((used / limit) * 1000) / 1000;
+  };
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
+    if (!firstTaskLogged) {
+      firstTaskLogged = true;
+      console.warn('[ShapeTransform][TaskDebug] handler first task', {
+        tag: TASKDEBUG_BUILD_TAG,
+        nodeId: task.nodeId,
+        taskId,
+        stage: task.stage,
+        inputKeys: Object.keys(task.inputData ?? {}),
+      });
+    }
     const input = task.inputData;
     if (!input) {
       return { status: 'failed', errorMessage: 'transform failed: task input is missing' };
@@ -1304,18 +1395,99 @@ export const createTransformByBandHandler = (
     let stageLabel = 'start';
     let inputPolygonCount = 0;
     let inputVertexCount = 0;
+    const now = Date.now();
+    if (!debugTaskId || !debugTaskStartedAt || now - debugTaskStartedAt > debugResetAfterMs || debugNodeId !== task.nodeId) {
+      debugTaskId = taskId;
+      debugTaskStartedAt = now;
+      debugNodeId = task.nodeId;
+      debugSelectionLogged = false;
+    }
+    const isDebugTask = debugTaskId === taskId;
+    const getElapsedMs = () => (debugTaskStartedAt ? Date.now() - debugTaskStartedAt : null);
+    const logDebugPhase = (phase: string, details?: Record<string, unknown>) => {
+      if (!isDebugTask) return;
+      console.warn('[ShapeTransform][TaskDebug]', {
+        nodeId: task.nodeId,
+        taskId,
+        phase,
+        stageLabel,
+        elapsedMs: getElapsedMs(),
+        heapUsedRatio: readHeapUsageRatio(),
+        ...details,
+      });
+    };
+    let debugHeartbeat: ReturnType<typeof setInterval> | null = null;
+    if (isDebugTask) {
+      if (!debugSelectionLogged) {
+        debugSelectionLogged = true;
+        console.warn('[ShapeTransform][TaskDebug] selection', {
+          nodeId: task.nodeId,
+          taskId,
+          bandIndex: input.bandIndex,
+          sourceKey: input.sourceKey,
+          adminLevel: input.adminLevel,
+          zTarget: band.zMax,
+        });
+      }
+      logDebugPhase('task-start', {
+        bandIndex: input.bandIndex,
+        zTarget: band.zMax,
+        sourceKey: input.sourceKey,
+        adminLevel: input.adminLevel,
+        fetchCacheId: input.fetchCacheId,
+        domainType: input.domainType,
+        tolerance,
+      });
+      debugHeartbeat = setInterval(() => {
+        logDebugPhase('task-heartbeat');
+      }, 5000);
+    }
 
     try {
       stageLabel = 'fetch:cache';
+      logDebugPhase('fetch-cache:start', { fetchCacheId: input.fetchCacheId });
       await updateTaskPhase(taskId, 'fetch-cache:start', 0);
       assertNotAborted(abortSignal);
+      let fetchWaitTimer: ReturnType<typeof setInterval> | null = null;
+      let fetchWaitStartedAt: number | null = null;
+      if (isDebugTask) {
+        fetchWaitStartedAt = Date.now();
+        fetchWaitTimer = setInterval(() => {
+          const elapsedMs = fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null;
+          console.warn('[ShapeTransform][TaskDebug] fetch-cache:waiting', {
+            nodeId: task.nodeId,
+            taskId,
+            fetchCacheId: input.fetchCacheId,
+            elapsedMs,
+            db: {
+              name: (ephemeralDB as { name?: string }).name ?? null,
+              isOpen: typeof (ephemeralDB as { isOpen?: () => boolean }).isOpen === 'function'
+                ? (ephemeralDB as { isOpen: () => boolean }).isOpen()
+                : null,
+            },
+          });
+        }, 5000);
+      }
       const fetchCache = await ephemeralDB.fetchCache.get(input.fetchCacheId);
+      if (fetchWaitTimer) {
+        clearInterval(fetchWaitTimer);
+      }
       if (!fetchCache) {
         return { status: 'failed', errorMessage: 'transform failed: fetch cache not found' };
       }
+      logDebugPhase('fetch-cache:done', {
+        format: fetchCache.format,
+        compression: fetchCache.compression ?? null,
+        byteLength: fetchCache.data.byteLength,
+        elapsedMs: fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null,
+      });
       await updateTaskPhase(taskId, 'fetch-cache:done', 0);
 
       stageLabel = 'decode';
+      logDebugPhase('decode:start', {
+        format: fetchCache.format,
+        compression: fetchCache.compression ?? null,
+      });
       await updateTaskPhase(taskId, 'decode:start', 5);
       assertNotAborted(abortSignal);
       let collection = await runStageWithLabel('decode', () => {
@@ -1333,6 +1505,7 @@ export const createTransformByBandHandler = (
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
+      logDebugPhase('decode:done', { featureCount: collection.features.length });
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
 
       if (featureIdAllowlist && featureIdAllowlist.size > 0) {
@@ -1473,6 +1646,10 @@ export const createTransformByBandHandler = (
         assertNotAborted(abortSignal);
         const simplifyStartAt = Date.now();
         stageLabel = 'simplify-only';
+        logDebugPhase('simplify:start', {
+          featureCount: inputFeatureCount,
+          polygonCount: inputPolygonCount,
+        });
         console.log('[ShapeTransform][SimplifyOnlyMetrics] start', {
           nodeId: task.nodeId,
           taskId,
@@ -1504,6 +1681,10 @@ export const createTransformByBandHandler = (
           getLastProgressAt: () => Date.now(),
         });
         processedPolygonCount = inputPolygonCount;
+        logDebugPhase('simplify:done', {
+          featureCount: simplified?.features.length ?? 0,
+          polygonCount: inputPolygonCount,
+        });
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
           taskId,
@@ -1947,6 +2128,10 @@ export const createTransformByBandHandler = (
       );
 
       await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.simplifyEnd);
+      logDebugPhase('output-build:start', {
+        featureCount: simplifiedFeatureCount,
+        polygonCount: simplifiedPolygonCount,
+      });
       const features: Feature[] = [];
       for (let index = 0; index < simplified.features.length; index++) {
         assertNotAborted(abortSignal);
@@ -1971,6 +2156,7 @@ export const createTransformByBandHandler = (
         type: 'FeatureCollection',
         features,
       };
+      logDebugPhase('output-build:done', { featureCount: outputCollectionValue.features.length });
       if (outputCollectionValue.features.length === 0) {
         await reportPolygonProgress(taskId, inputPolygonCount, inputPolygonCount);
         return {
@@ -2023,6 +2209,7 @@ export const createTransformByBandHandler = (
       stageLabel = 'encode';
       await updateTaskPhase(taskId, 'output:build:done', taskProgressRange.outputEnd);
       await updateTaskPhase(taskId, 'encode:start', taskProgressRange.outputEnd);
+      logDebugPhase('encode:start', { featureCount: outputCollectionValue.features.length });
       outputCollection = outputCollectionValue;
       const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
       if (encoded.byteLength === 0) {
@@ -2030,6 +2217,7 @@ export const createTransformByBandHandler = (
       }
       stageLabel = 'encode:validate';
       await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
+      logDebugPhase('encode:done', { byteLength: encoded.byteLength });
       await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd);
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
@@ -2037,6 +2225,7 @@ export const createTransformByBandHandler = (
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
       await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.encodeEnd);
+      logDebugPhase('cache-put:start', { cacheId });
 
       const formatCount = (value: number): string => (
         Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
@@ -2080,6 +2269,7 @@ export const createTransformByBandHandler = (
           totalPolygons: inputPolygonCount,
         },
       });
+      logDebugPhase('cache-put:done', { cacheId });
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase, geometryOps);
       console.info('[ShapeTransform][TileIndex]', JSON.stringify({
@@ -2125,6 +2315,7 @@ export const createTransformByBandHandler = (
       }
       const err = error instanceof Error ? error.message : String(error);
       const stagedError = err.startsWith('stage=') ? err : `stage=${stageLabel} ${err}`;
+      logDebugPhase('task-error', { error: stagedError });
       const diagnostics = [
         buildCollectionDiagnostics(workingCollection, 'input', geometryOps),
         buildCollectionDiagnostics(simplified, 'simplified', geometryOps),
@@ -2135,6 +2326,11 @@ export const createTransformByBandHandler = (
         status: 'failed',
         errorMessage: `transform failed: ${stagedError}${diagnostics ? ` ${diagnostics}` : ''}`,
       };
+    } finally {
+      if (debugHeartbeat) {
+        clearInterval(debugHeartbeat);
+      }
+      logDebugPhase('task-end');
     }
   };
 };

@@ -25,6 +25,8 @@ export type BuildStepStageSummaryPanelProps = {
   description?: string;
   progress: number;
   progressContent?: ReactNode;
+  headerMeta?: ReactNode;
+  chipPlacement?: 'header' | 'belowProgress';
   taskCount?: BuildStepStageTaskCount;
   concurrencyIndicator?: {
     count: number;
@@ -48,6 +50,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   description,
   progress,
   progressContent,
+  headerMeta,
+  chipPlacement = 'header',
   taskCount,
   concurrencyIndicator,
   menuItems,
@@ -98,6 +102,50 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     item.onClick();
     handleMenuClose();
   };
+  const chips = (
+    <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+      {isFailedVisible ? (
+        <Chip
+          label={`Failed ${failed}`}
+          size="small"
+          color={isFailedDisabled ? 'default' : 'error'}
+          icon={<ErrorOutlineIcon fontSize="small" />}
+          variant={failedVariant}
+          disabled={isFailedDisabled}
+          onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
+          sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+        />
+      ) : null}
+      {isSkippedVisible ? (
+        <Chip
+          label={`Skipped ${skipped}`}
+          size="small"
+          color="warning"
+          icon={<SkipNextIcon fontSize="small" />}
+          variant={skippedVariant}
+          disabled={isSkippedDisabled}
+          onClick={isSkippedDisabled ? undefined : () => onSkippedModeUpdate(!skippedMode)}
+          sx={isSkippedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+        />
+      ) : null}
+      <Chip
+        label={`Completed ${completedLabel}`}
+        size="small"
+        color={isCompletedDisabled ? 'default' : 'success'}
+        icon={<TaskAltIcon fontSize="small" />}
+        variant={completedVariant}
+        disabled={isCompletedDisabled}
+        onClick={isCompletedDisabled ? undefined : () => onCompletedModeUpdate(!completedMode)}
+        sx={isCompletedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+      />
+    </Stack>
+  );
+  const headerChips = chipPlacement === 'header' ? chips : null;
+  const footerChips = chipPlacement === 'belowProgress' ? (
+    <Box display="flex" justifyContent="flex-end" sx={{ mt: '2px', mb: '2px' }}>
+      {chips}
+    </Box>
+  ) : null;
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>
@@ -111,6 +159,11 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             >
               {progressPercent}%
             </Typography>
+            {headerMeta ? (
+              <Typography variant="caption" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                {headerMeta}
+              </Typography>
+            ) : null}
             {hasMenuItems ? (
               <>
                 <IconButton
@@ -154,42 +207,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                 ))}
               </Stack>
             ) : null}
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              {isFailedVisible ? (
-                <Chip
-                  label={`${failed}`}
-                  size="small"
-                  color={isFailedDisabled ? 'default' : 'error'}
-                  icon={<ErrorOutlineIcon fontSize="small" />}
-                  variant={failedVariant}
-                  disabled={isFailedDisabled}
-                  onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
-                  sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-                />
-              ) : null}
-              {isSkippedVisible ? (
-                <Chip
-                  label={`Skipped ${skipped}`}
-                  size="small"
-                  color="warning"
-                  icon={<SkipNextIcon fontSize="small" />}
-                  variant={skippedVariant}
-                  disabled={isSkippedDisabled}
-                  onClick={isSkippedDisabled ? undefined : () => onSkippedModeUpdate(!skippedMode)}
-                  sx={isSkippedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-                />
-              ) : null}
-              <Chip
-                label={completedLabel}
-                size="small"
-                color={isCompletedDisabled ? 'default' : 'success'}
-                icon={<TaskAltIcon fontSize="small" />}
-                variant={completedVariant}
-                disabled={isCompletedDisabled}
-                onClick={isCompletedDisabled ? undefined : () => onCompletedModeUpdate(!completedMode)}
-                sx={isCompletedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-              />
-            </Stack>
+            {headerChips}
           </Stack>
         </Stack>
         {description ? (
@@ -197,6 +215,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             {description}
           </Typography>
         ) : null}
+        {footerChips}
         {progressContent ?? (
           <LinearProgress
             variant="determinate"

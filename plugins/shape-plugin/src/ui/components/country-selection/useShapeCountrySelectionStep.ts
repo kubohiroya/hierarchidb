@@ -647,26 +647,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     [baseCountries, columns],
   );
 
-  const createDefaultSelectionRow = useCallback(
-    (levels: number[]) => Array.from(
-      { length: resolvedMaxAdminLevel + 1 },
-      (_, idx) => idx === 0 && levels.includes(0),
-    ),
-    [resolvedMaxAdminLevel],
-  );
-
-  useEffect(() => {
-    if (baseCountries.length === 0) return;
-    if (selectedArrayByCountries && !Array.isArray(selectedArrayByCountries)) return;
-    const nextSelection: Record<string, boolean[]> = {};
-    baseCountries.forEach((entry) => {
-      nextSelection[entry.country.code] = createDefaultSelectionRow(entry.availableAdminLevels);
-    });
-    if (Object.keys(nextSelection).length > 0) {
-      onChange({ selectedArrayByCountries: nextSelection });
-    }
-  }, [baseCountries, createDefaultSelectionRow, onChange, selectedArrayByCountries]);
-
   const reloadAll = useCallback(async () => {
     if (!dataSourceKey) return;
     await loadAll({ force: true });

@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { BuildStepStagePanel } from './BuildStepStagePanel.js';
+import { BuildStepStagePanel } from './BuildStepStagePanel.tsx';
 import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.tsx';
 import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
 import { BuildControlCard } from './BuildControlCard.tsx';
@@ -23,23 +23,27 @@ export interface BuildStepPanelProps {
   paneProgress?: PaneProgress[];
   stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
   stageMenus?: Record<string, BuildStepStageMenu>;
+  stageHeaderMeta?: Record<string, ReactNode>;
   splitViewBreakpoints?: number[];
   splitViewInitialSizesByBreakpoint?: number[][];
   splitViewAutoCloseCountsByBreakpoint?: number[];
   stageContents?: Record<string, ReactNode>;
   stageProgressContent?: Record<string, ReactNode>;
+  chipPlacement?: 'header' | 'belowProgress';
   onPause?: () => void;
   onResume?: () => void;
   onComplete?: () => void;
   controlLabel?: string;
   pauseLabel?: string;
   pauseLoading?: boolean;
+  pausePending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
   statusLabel?: string;
   statusContent?: ReactNode;
+  suppressStatusFallback?: boolean;
   controlDetails?: Array<{ label: string; value: string }>;
 }
 
@@ -51,23 +55,27 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   paneProgress,
   stageConcurrencyIndicators,
   stageMenus,
+  stageHeaderMeta,
   splitViewBreakpoints,
   splitViewInitialSizesByBreakpoint,
   splitViewAutoCloseCountsByBreakpoint,
   stageContents,
   stageProgressContent,
+  chipPlacement,
   onPause,
   onResume,
   onComplete,
   controlLabel,
   pauseLabel,
   pauseLoading,
+  pausePending,
   startLabel,
   resumeLabel,
   startIcon,
   resumeIcon,
   statusLabel,
   statusContent,
+  suppressStatusFallback,
   controlDetails,
 }) => {
   void onComplete;
@@ -149,6 +157,8 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           description={stage.description}
           progress={progressValue}
           progressContent={stageProgressContent?.[stage.id]}
+          headerMeta={stageHeaderMeta?.[stage.id]}
+          chipPlacement={chipPlacement}
           taskCount={taskCount}
           concurrencyIndicator={indicator ? {
             count: indicator.maxConcurrent,
@@ -198,6 +208,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           controlLabel={controlLabel}
           pauseLabel={pauseLabel}
           pauseLoading={pauseLoading}
+          pausePending={pausePending}
           startLabel={startLabel}
           resumeLabel={resumeLabel}
           startIcon={startIcon}
@@ -208,7 +219,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           <Box flex={1} minWidth={0}>
             {statusContent}
           </Box>
-        ) : (
+        ) : suppressStatusFallback ? null : (
           <Stack spacing={1} flex={1} justifyContent="center">
             <Typography variant="body2" color="text.secondary">
               {statusLabel ?? computedStatusLabel}

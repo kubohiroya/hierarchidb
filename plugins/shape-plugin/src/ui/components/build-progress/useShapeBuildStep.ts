@@ -119,7 +119,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
   const lastAutoResumeAtRef = useRef<number | null>(null);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
-  const unexpectedStopHandledRef = useRef(false);
   const suspendTimeout = coordinator.quietThresholdTimeout * 3;
 
   const [isPausePending, setIsPausePending] = useState(false);
@@ -347,69 +346,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       console.error('[ShapeBuildProgressStep] failed to persist build markers', error);
     }
   }, [activeNodeId, data, onChange, workerClient]);
-
-  useEffect(() => {
-    if (processingStatus !== 'processing') {
-      unexpectedStopHandledRef.current = false;
-    }
-  }, [processingStatus]);
-
-  const reconcileUnexpectedStop = useCallback(async (): Promise<boolean> => {
-    if (!activeNodeId || !workerClient) return false;
-    try {
-      await bridgeRef.current.initialize();
-      const status = await bridgeRef.current.getBatchSessionStatus(SHAPE_NODE_TYPE, activeNodeId);
-      if (status.status === 'running' || status.status === 'paused') {
-        return false;
-      }
-      const nextStatus = status.status === 'completed'
-        ? 'completed'
-        : status.status === 'failed'
-          ? 'failed'
-          : 'paused';
-      const nextStopReason = status.status === 'completed'
-        ? 'completed'
-        : status.status === 'failed'
-          ? 'failed'
-          : 'unknown';
-      await persistDraftPatch({ processingStatus: nextStatus, stopReason: nextStopReason });
-    } catch (error) {
-      await persistDraftPatch({ processingStatus: 'paused', stopReason: 'unknown' });
-    }
-    unexpectedStopHandledRef.current = true;
-    coordinator.clearActiveSessionId(String(activeNodeId));
-    releaseBuildLock();
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('autoResumeBuild');
-      }
-    } catch {
-      // ignore
-    }
-    return true;
-  }, [activeNodeId, coordinator, persistDraftPatch, releaseBuildLock, workerClient]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (processingStatus !== 'processing') return;
-    if (runtimeStatus === 'processing') return;
-    if (hasInFlightTasks) return;
-    if (unexpectedStopHandledRef.current) return;
-    if (typeof window === 'undefined') return;
-    const timerId = window.setTimeout(() => {
-      void reconcileUnexpectedStop();
-    }, coordinator.quietThresholdTimeout);
-    return () => {
-      clearTimeout(timerId);
-    };
-  }, [
-    activeNodeId,
-    coordinator.quietThresholdTimeout,
-    hasInFlightTasks,
-    processingStatus,
-    reconcileUnexpectedStop,
-    runtimeStatus,
-  ]);
 
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;
@@ -773,6 +709,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     hasDataSource,
     hasSelection,
     isProcessingValid,
+    isLockSupported: true,
   });
 
   useEffect(() => {

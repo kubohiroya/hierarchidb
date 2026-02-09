@@ -59,9 +59,33 @@ const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId
     }
   });
   if (patches.length === 0) return;
-  await taskQueue.transaction('rw', taskQueue.tasks, async () => {
-    await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
+  const debugTag = 'normalize-task-queue-ui-2026-02-09-0334';
+  const startedAt = Date.now();
+  console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages start', {
+    tag: debugTag,
+    nodeId,
+    patchCount: patches.length,
   });
+  let waitTimer: ReturnType<typeof setInterval> | null = null;
+  waitTimer = setInterval(() => {
+    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages waiting', {
+      tag: debugTag,
+      nodeId,
+      elapsedMs: Date.now() - startedAt,
+    });
+  }, 5000);
+  try {
+    await taskQueue.transaction('rw', taskQueue.tasks, async () => {
+      await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
+    });
+    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages done', {
+      tag: debugTag,
+      nodeId,
+      elapsedMs: Date.now() - startedAt,
+    });
+  } finally {
+    if (waitTimer) clearInterval(waitTimer);
+  }
 };
 
 export type CacheCounts = {

@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
-import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
+import { encodeFlatGeobufFromFeatureCollection, geometryBbox, initGeos, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
@@ -1039,6 +1039,10 @@ const createFetchHandler = (params: {
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const geometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
+  if (geometryEngine === 'geos') {
+    await initGeos();
+  }
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));

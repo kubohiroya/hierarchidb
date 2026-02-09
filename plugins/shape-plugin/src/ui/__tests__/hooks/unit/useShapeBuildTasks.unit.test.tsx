@@ -179,4 +179,54 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.progress).toBe(100);
     });
   });
+
+  it('normalizes running 100% to completed across stages', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-3'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-3',
+        tasks: [
+          {
+            taskId: 'task-3',
+            stage: 'fetch',
+            status: 'running',
+            progress: 100,
+            message: 'Cache saving',
+            index: 1,
+            sequence: 1,
+          },
+          {
+            taskId: 'task-4',
+            stage: 'transform',
+            status: 'running',
+            progress: 100,
+            message: 'Cache saving',
+            index: 2,
+            sequence: 1,
+          },
+          {
+            taskId: 'task-5',
+            stage: 'vt',
+            status: 'running',
+            progress: 100,
+            message: 'Cache saving',
+            index: 3,
+            sequence: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[1]?.status).toBe('completed');
+      expect(result.current.tasks[2]?.status).toBe('completed');
+    });
+  });
 });

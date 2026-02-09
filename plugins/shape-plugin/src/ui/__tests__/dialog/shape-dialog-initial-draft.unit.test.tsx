@@ -87,7 +87,7 @@ describe('shape dialog initial draft data', () => {
 
     const validities = await resolveStepValidities(createDraft);
     expect(validities['data-source']).toBe(true);
-    expect(validities['country-selection']).toBe(false);
+    expect(validities['country-selection']).toBe(true);
     expect(validities['processing-configuration']).toBe(true);
     expect(validities['build']).toBe(false);
     expect(validities['preview']).toBe(false);

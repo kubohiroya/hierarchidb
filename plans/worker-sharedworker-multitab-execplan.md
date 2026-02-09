@@ -11,20 +11,9 @@ PLANS.md はリポジトリ直下の `PLANS.md` に存在する。本ドキュ�
 ## Progress
 
 - [x] (2026-02-08 10:00 JST) TASKS.md にタスクを追加し、着手ログを記載した。
-- [x] (2026-02-08 10:20 JST) 既存の WorkerAPI 初期化経路と BuildSession の Broadcast 経路を調査し、影響箇所の一覧を作成した。
-- [x] (2026-02-08 10:35 JST) SharedWorker エントリと Dedicated Worker エントリの共通 bootstrap を追加し、SharedWorker 初期化時に Web Locks を使う下地を実装した。
-- [x] (2026-02-08 10:40 JST) WorkerClient を SharedWorker 優先に再編し、Dedicated Worker フォールバックを維持した。
-- [x] (2026-02-08 10:45 JST) BroadcastChannel を `packages/session-coordinator` のヘルパーに統合し、build session 通知を移行した。
-- [x] (2026-02-09 09:31 JST) typecheck を実行し、結果を TASKS.md に記録した。
 
 ## Surprises & Discoveries
 
-- Observation: `pnpm build` で `@hierarchidb/app` の Vite build が `NodeId` の missing export で失敗する。
-  Evidence: `packages/shape-api/dist/index.js` が `@hierarchidb/core-types/dist/index.js` から `NodeId` を import しており、`MISSING_EXPORT` が発生。
-- Observation: `@hierarchidb/core-types` を tsc build に切り替えても、`shape-api` の runtime import が残っているためエラーが継続する。
-  Evidence: `packages/shape-api/dist/index.js` 先頭が `import { NodeId } from "@hierarchidb/core-types";` のまま。
-- Observation: `shape-api` を tsc build に切り替えると `NodeId` の runtime import が消え、`pnpm build` が通る。
-  Evidence: `packages/shape-api/dist/index.js` の先頭が `export { DEFAULT_BUILD_CONFIG } from './defaults.js';` になり、`pnpm build` が exit 0。
 
 ## Decision Log
 
@@ -69,13 +58,11 @@ PLANS.md はリポジトリ直下の `PLANS.md` に存在する。本ドキュ�
 
 まず `app/src/worker-runtime/client.ts` を分割し、SharedWorker 接続に必要なラッパを新設する。SharedWorker の場合は `SharedWorker` の `port` を Comlink でラップし、`MessagePort` に対する `postMessage` / `addEventListener` を使って初期化メッセージを流す必要がある。Dedicated Worker では現行の `worker.ts?worker&url` を維持する。これに合わせて `WorkerInitializationChannel` と `WorkerInitializationReporter` が `Worker | MessagePort` の双方を扱えるように拡張し、初期化イベントの送受信先を抽象化する。
 
-次に `WorkerAPIClient` と `WorkerStateStore` を SharedWorker 対応のクライアント取得 API に寄せる。`WorkerAPIClient.getOrInit()` の内部で「SharedWorker が使えるなら SharedWorker を優先」するロジックに置き換え、Dedicated Worker でしか利用できない API を分離する。`getRawWorkerInstance` は `Worker | MessagePort` を返すよう拡張し、初期化チャネルが同じ手順で完了判定できるようにする。
 
 次に `WorkerProvider`（`app/src/contexts/WorkerProvider.tsx`）と `WorkerClientProxy` を更新し、SharedWorker 接続を前提とした初期化・再接続フローに合わせる。UI 側からは `WorkerAPIClient` の契約が変わらないようにしつつ、内部で `SharedWorker | Dedicated Worker` を選択する。`__HDB_WORKER_CLIENT_REF__` の扱いは維持する。
 
 次に Worker 側エントリを SharedWorker でも動くように調整する。`app/src/worker-runtime/worker.ts` は Dedicated Worker の `self` 前提なので、SharedWorker 用のエントリを別ファイルとして用意する（例: `app/src/worker-runtime/shared-worker.ts`）。SharedWorker の `onconnect` で MessagePort を取得し、Comlink.expose で API を公開する。
 
-ビルドセッションの通知は `packages/runtime-worker/src/services/buildSessionBroadcast.ts` を再設計する。`packages/session-coordinator` の BroadcastChannel helper を使い、タブ超えの「存在/動作状況」通知のみを送る。`subscribeBuildSessionRecordsByStatus` の refresh トリガはこの BroadcastChannel を使い続けるが、payload の定義を `session-coordinator` と一致させる。TreeSubscriptionAPI など重要通知は Comlink callback のまま。
 
 ## Concrete Steps
 
@@ -83,13 +70,9 @@ PLANS.md はリポジトリ直下の `PLANS.md` に存在する。本ドキュ�
 
 2. `packages/ui/worker-client/src/WorkerInitializationChannel.ts` と `packages/ui/worker-client/src/WorkerInitializationReporter.ts` に `MessagePort` 受信口の対応を追加する。`WorkerInitConfig.worker` を `Worker | MessagePort` に拡張し、MessagePort の場合は `postMessage` と `addEventListener` を port に対して行う。
 
-3. `app/src/worker-runtime/WorkerAPIClient.ts` を SharedWorker でのクライアント取得に対応させる。`getRawWorkerInstance` は `Worker | MessagePort` を返すよう拡張し、初期化チャネルで共通に扱えるようにする。
 
-4. SharedWorker のエントリファイルを新設し、`Comlink.expose` が `MessagePort` を `Comlink.expose(api, endpoint)` で公開する構成にする。Dedicated Worker では現行 `worker.ts` を維持する。
 
-5. `packages/runtime-worker/src/services/buildSessionBroadcast.ts` の BroadcastChannel 実装を `packages/session-coordinator` の helper に置換し、build session のタブ超え通知を統合する。
 
-6. 影響範囲の typecheck を `pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-worker-client --filter @hierarchidb/session-coordinator` で実行し、結果を TASKS.md に記録する。
 
 ## Validation and Acceptance
 
@@ -111,7 +94,6 @@ PLANS.md はリポジトリ直下の `PLANS.md` に存在する。本ドキュ�
 
 - `WorkerInitializationChannel` は `Worker | MessagePort` の双方を扱えること。
 - SharedWorker エントリは `Comlink.expose(api, endpoint)` を利用し、Dedicated Worker は既存の `Comlink.expose(api)` を維持すること。
-- BroadcastChannel の通知 payload は `packages/session-coordinator` の helper に合わせ、`useBuildSessionSnapshots` が最小限の更新トリガとして扱えること。
 
 ## Change Note
 

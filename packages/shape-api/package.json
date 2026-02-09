@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "build:types": "pnpm run build",
+    "build": "tsc --project tsconfig.json --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },

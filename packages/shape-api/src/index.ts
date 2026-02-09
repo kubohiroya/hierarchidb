@@ -1,7 +1,47 @@
-export type * from './shapeTypes.js';
-export type * from './shapeBuildTypes.js';
+export type {
+  ShapeProcessingState,
+  ShapeProcessingStatus,
+  ShapeTileLayerInfo,
+  ShapeTileInfo,
+  ShapeTileSummary,
+  ShapeTileSummaryEntry,
+  ShapeBuildProgressSummary,
+  ShapeBuildSessionSummary,
+  ShapeBuildTaskSummary,
+} from './shapeTypes.js';
+export type {
+  ShapeDataSourceName,
+  ShapeBuildStage,
+  ShapeBuildTaskStatus,
+  ShapeFetchTaskPayload,
+  ShapeFetchTaskResult,
+  ShapeTransformTaskPayload,
+  ShapeTransformTaskResult,
+  ShapeVTTaskPayload,
+  ShapeVTTaskResult,
+  ShapeBuildTaskPayload,
+  ShapeBuildTaskResult,
+  ShapeBuildTaskRecord,
+  ShapeBuildTaskRecordInput,
+  ShapeBuildTaskRecordUpdate,
+  ShapeFetchCache,
+  ShapeTransformCache,
+  ShapeVTMetadata,
+  ShapeFeatureMetadata,
+  ShapeDataSourceMetadata,
+  ShapeErrorLineString,
+  ShapeErrorLineFeature,
+  ShapeErrorLineFeatureCollection,
+  ShapeTransformErrorRecord,
+} from './shapeBuildTypes.js';
 export { DEFAULT_BUILD_CONFIG } from './defaults.js';
-export type * from './shapeDbTypes.js';
-export type * from './ShapeQueryAPI.js';
-export type * from './ShapeMutationAPI.js';
-export type * from './EphemeralShapeAPI.js';
+export type {
+  ShapeBuildStopReason,
+  ShapeBuildSessionRecord,
+  ShapeFeatureRecord,
+  ShapeVectorTileRecord,
+  ShapeTileIdToBufferRelation,
+  ShapeEphemeralSessionRecord,
+} from './shapeDbTypes.js';
+export type { ShapeQueryAPI } from './ShapeQueryAPI.js';
+export type { ShapeMutationAPI } from './ShapeMutationAPI.js';

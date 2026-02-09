@@ -99,6 +99,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/download', src: '../packages/download/src/index.ts', dist: '../packages/download/dist/index.js' },
     { spec: '@hierarchidb/chunk-store', src: '../packages/chunk-store/src/index.ts', dist: '../packages/chunk-store/dist/index.js' },
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
+    { spec: '@hierarchidb/vt-orchestrator', src: '../packages/vt-orchestrator/src/index.ts', dist: '../packages/vt-orchestrator/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-client', src: '../packages/ui/worker-client/src/index.ts', dist: '../packages/ui/worker-client/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-provider', src: '../packages/ui/worker-provider/src/index.ts', dist: '../packages/ui/worker-provider/dist/index.js' },
     { spec: '@hierarchidb/runtime-worker-worker', src: '../packages/runtime-worker/worker/src/index.ts', dist: '../packages/runtime-worker/worker/src/index.ts' },
