@@ -1,3 +1,22 @@
+2644) fix/ui/shape-step4-fetch-retry-defaults-and-max-double (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: Shape Step4 UI の Retry Delay デフォルト値が従来の2倍になる／Shape Step4 UI の Retry Attempts のデフォルト値と max 値が従来の2倍になる／既存の設定更新フロー（retryLimit 同期を含む）は維持される／影響範囲の build/typecheck が成功する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/shape-api/src/defaults.ts` / `packages/ui/accordion-config/src/build-config/DownloadRetryControls.tsx`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、Retry Delay と Retry Attempts のデフォルト値・max 値を従来値へ戻す
+- チェックリスト:
+  - Retry Delay デフォルト値を 1000ms から 2000ms へ変更する
+  - Retry Attempts デフォルト値を 3 から 6 へ変更する
+  - Retry Attempts max 値を 5 から 10 へ変更する
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 08:29 JST Shape Step4 の Retry Delay/Retry Attempts デフォルト値および Retry Attempts max 値を2倍化する修正に着手。
+  - update: 2026-02-10 08:32 JST HTTP 502 が散見される運用状況に対し、Step4 UI の再試行設定（デフォルト値と上限）を調整。`DEFAULT_BUILD_CONFIG.fetchConfig` の `retryDelay/retryAttempts/retryLimit` を 1000/3/3 から 2000/6/6 へ変更し、`DownloadRetryControls` の `RETRY_ATTEMPTS_MAX` を 5 から 10 へ変更。
+  - done: 2026-02-10 08:32 JST `pnpm -w turbo run build --filter @hierarchidb/shape-api --filter @hierarchidb/ui-accordion-config` exit 0。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-api --filter @hierarchidb/ui-accordion-config` exit 0。
+  - update: 2026-02-10 08:34 JST 追加要望により Step4 UI の `Retry Attempts` max 値を 10 から 8 へ調整（デフォルト値 6 は維持）。
+  - update: 2026-02-10 08:36 JST 追加要望により Step4 UI の `Retry Delay (ms)` デフォルト値を 2000 から 5000 へ調整。
+
 2643) fix/ui/shape-reset-session-immediate-elapsed-ui-sync (P1) — 完了 (2026-02-10)
 - ブランチ名: codex/fix/ui/shape-reset-session-immediate-elapsed-ui-sync
 - 依存: なし

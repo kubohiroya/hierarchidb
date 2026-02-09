@@ -26,7 +26,7 @@ type Props = {
   t: TranslateFn;
 };
 
-const RETRY_ATTEMPTS_MAX = 5;
+const RETRY_ATTEMPTS_MAX = 8;
 
 export const DownloadRetryControls: React.FC<Props> = ({
   baseDownloadConfig,

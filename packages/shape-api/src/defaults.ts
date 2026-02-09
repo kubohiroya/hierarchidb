@@ -6,9 +6,9 @@ export const DEFAULT_BUILD_CONFIG = {
     maxConcurrent: 4,
     deleteOnComplete: false,
     timeoutMs: 300000,
-    retryAttempts: 3,
-    retryDelay: 1000,
-    retryLimit: 3,
+    retryAttempts: 6,
+    retryDelay: 5000,
+    retryLimit: 6,
     retryBackoff: 'linear',
   },
   transformConfig: {
