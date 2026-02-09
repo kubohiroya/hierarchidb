@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
-import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
+import { useBuildSessionSnapshots } from '@hierarchidb/ui-batch-progress';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;

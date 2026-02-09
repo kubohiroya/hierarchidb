@@ -19,6 +19,7 @@ type BuildControlCardProps = {
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
   details?: Array<{ label: string; value: string }>;
+  rightContent?: ReactNode;
 };
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
@@ -35,6 +36,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   startIcon,
   resumeIcon,
   details,
+  rightContent,
 }) => {
   const pauseSpinner = (
     <CircularProgress
@@ -111,6 +113,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
             </Box>
           ))}
         </Stack>
+      ) : null}
+      {rightContent ? (
+        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
+          {rightContent}
+        </Box>
       ) : null}
     </Box>
   );

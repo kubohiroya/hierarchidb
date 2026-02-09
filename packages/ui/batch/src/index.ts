@@ -11,5 +11,7 @@ export type {
   PluginBatchProgressState as PluginBuildProgressState,
 } from './hooks/usePluginBatchProgress.js';
 export * from './hooks/useBuildTaskProgress.js';
+export * from './hooks/useBuildSessionSnapshots.js';
+export * from './components/BuildSessionLauncherPanel.js';
 export * from './hooks/taskSyncHelpers.js';
 export * from './utils/taskProgressSummary.js';

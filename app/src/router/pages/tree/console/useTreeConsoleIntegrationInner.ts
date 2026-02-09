@@ -10,7 +10,7 @@ import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts'
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
-import { useBuildSessionSnapshots } from '~/hooks/build-session/useBuildSessionSnapshots.ts';
+import { useBuildSessionSnapshots } from '@hierarchidb/ui-batch-progress';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';

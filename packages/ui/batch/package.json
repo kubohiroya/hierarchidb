@@ -28,7 +28,15 @@
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
-    "@hierarchidb/components": "workspace:*"
+    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/ui-session-coordinator": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
+    "@mui/icons-material": ">=5.0.0",
+    "@mui/material": ">=5.0.0",
+    "comlink": ">=4.0.0"
   },
   "devDependencies": {
     "react": ">=18.0.0",
@@ -36,7 +44,15 @@
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/ui-session-coordinator": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@mui/icons-material": ">=5.0.0",
+    "@mui/material": ">=5.0.0",
+    "comlink": ">=4.0.0",
     "typescript": "workspace:^5.9.3"
   },
   "sideEffects": false,

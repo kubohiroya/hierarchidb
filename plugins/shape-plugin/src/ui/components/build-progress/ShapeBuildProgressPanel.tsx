@@ -20,8 +20,9 @@ import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
-import type { NodeId } from '@hierarchidb/core-types';
+import { type NodeId, toNodeType } from '@hierarchidb/core-types';
 import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
+import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
@@ -560,7 +561,15 @@ const BuildProgressStageContent = ({
   );
 };
 
-export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<ShapeEntity>; nodeId?: NodeId }) => {
+export const ShapeBuildProgressPanel = ({
+  data,
+  nodeId,
+  onChange,
+}: {
+  data?: Partial<ShapeEntity>;
+  nodeId?: NodeId;
+  onChange?: (patch: Partial<ShapeEntity>) => void;
+}) => {
   const {
     t,
     stages,
@@ -605,6 +614,20 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     stageContentItems,
   } = useShapeBuildProgressPanel({ data, nodeId });
 
+  const resetSessionDraft = useCallback(() => {
+    onChange?.({
+      processingStatus: 'idle',
+      buildStartedAt: undefined,
+      buildFinishedAt: undefined,
+      buildElapsedMs: 0,
+      buildResumedAt: undefined,
+      stageElapsedMs: 0,
+      stageResumedAt: undefined,
+      stageElapsedStageId: undefined,
+      stageElapsedByStage: {},
+    });
+  }, [onChange]);
+
   const {
     counts,
     resultCounts,
@@ -620,7 +643,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     handleDeleteVTCache,
     handleDeleteMetadata,
     handleResetSession,
-  } = useShapeBuildCacheActions({ nodeId, draft: data });
+  } = useShapeBuildCacheActions({ nodeId, draft: data, onResetSession: resetSessionDraft });
 
   const stageMenus = useMemo(() => {
     const menuDisabled = summary.buildStatus === 'running';
@@ -869,6 +892,9 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       resumeLabel={t('stage.controls.resume', 'Resume Build')}
       statusLabel={controls.statusLabel}
       controlDetails={controlDetails}
+      controlRightContent={(
+        <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
+      )}
       footer={(
         <>
           <Snackbar

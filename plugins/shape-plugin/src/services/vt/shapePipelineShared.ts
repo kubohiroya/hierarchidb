@@ -54,10 +54,16 @@ export type ShapeVtTaskInput = {
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
 
+/**
+ * @deprecated Use reconcileStageTasksByMetadata instead of legacy signature filtering.
+ */
 const buildTaskInputSignature = (input: unknown): string => (
   buildStableSignature(input ?? null)
 );
 
+/**
+ * @deprecated Use reconcileStageTasksByMetadata to align with metadata-based reconciliation.
+ */
 export const filterObsoleteTasks = async (
   taskQueue: VtTaskQueueDb,
   existingTasks: TaskQueueRecord[],

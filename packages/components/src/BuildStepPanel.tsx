@@ -46,6 +46,7 @@ export interface BuildStepPanelProps {
   statusContent?: ReactNode;
   suppressStatusFallback?: boolean;
   controlDetails?: Array<{ label: string; value: string }>;
+  controlRightContent?: ReactNode;
 }
 
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
@@ -79,6 +80,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   statusContent,
   suppressStatusFallback,
   controlDetails,
+  controlRightContent,
 }) => {
   void onComplete;
 
@@ -217,6 +219,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           startIcon={startIcon}
           resumeIcon={resumeIcon}
           details={controlDetails}
+          rightContent={controlRightContent}
         />
         {statusContent ? (
           <Box minWidth={0}>

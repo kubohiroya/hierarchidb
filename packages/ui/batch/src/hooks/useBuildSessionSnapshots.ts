@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { HeartbeatRecord } from '@hierarchidb/session-coordinator';
 import { proxy } from 'comlink';
 import { useSessionCoordinator } from '@hierarchidb/ui-session-coordinator';
-import { useWorker } from '~/contexts/WorkerProvider.js';
+import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+
+type QueuedProgress = {
+  requestedAt?: number;
+};
+
+type BuildSessionRecordLike = {
+  nodeId: NodeId;
+  status?: unknown;
+  progress?: unknown;
+  updatedAt?: number;
+  startedAt?: number;
+};
 
 export type BuildSessionSnapshot = {
   nodeId: NodeId;
@@ -11,6 +24,7 @@ export type BuildSessionSnapshot = {
   updatedAt?: number;
   lastSeenAt?: number;
   hasShapeRecord?: boolean;
+  requestedAt?: number;
 };
 
 export type BuildSessionSnapshotsResult = {
@@ -26,6 +40,7 @@ const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
       const status = typeof session.status === 'string' ? session.status : '';
       const updatedAt = session.updatedAt ?? '';
       const lastSeenAt = session.lastSeenAt ?? '';
+      const requestedAt = session.requestedAt ?? '';
       const progressKey = (() => {
         if (session.progress === null || session.progress === undefined) return '';
         if (typeof session.progress === 'string' || typeof session.progress === 'number') {
@@ -37,13 +52,20 @@ const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
           return '';
         }
       })();
-      return `${session.nodeId}|${status}|${updatedAt}|${lastSeenAt}|${progressKey}`;
+      return `${session.nodeId}|${status}|${updatedAt}|${lastSeenAt}|${requestedAt}|${progressKey}`;
     })
     .join('||');
 };
 
+const resolveQueuedRequestedAt = (progress: unknown, fallback?: number): number | undefined => {
+  if (!progress || typeof progress !== 'object') return fallback;
+  const record = progress as QueuedProgress;
+  if (typeof record.requestedAt === 'number') return record.requestedAt;
+  return fallback;
+};
+
 export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapshotsResult => {
-  const { client: workerClient, initialize, isInitialized } = useWorker();
+  const { api, initialize, loading } = useWorkerAPI();
   const coordinator = useSessionCoordinator();
   const [sessions, setSessions] = useState<BuildSessionSnapshot[]>([]);
   const sessionMapRef = useRef<Map<string, BuildSessionSnapshot>>(new Map());
@@ -54,14 +76,14 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
   const lastPruneAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (workerClient || isInitialized || initRequestedRef.current) return;
+    if (api || loading || initRequestedRef.current) return;
     initRequestedRef.current = true;
     void initialize().catch((error: unknown) => {
       initRequestedRef.current = false;
       const message = error instanceof Error ? error.message : String(error);
       console.warn('[useBuildSessionSnapshots] worker initialize failed', message);
     });
-  }, [initialize, isInitialized, workerClient]);
+  }, [api, initialize, loading]);
 
   const updateSessions = useCallback((nextMap: Map<string, BuildSessionSnapshot>) => {
     const nextSessions = Array.from(nextMap.values()).sort((a, b) => {
@@ -74,7 +96,7 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
   }, []);
 
   useEffect(() => {
-    if (!workerClient) {
+    if (!api) {
       sessionMapRef.current = new Map();
       updateSessions(new Map());
       return;
@@ -82,14 +104,14 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
     let active = true;
     let unsubscribe: (() => void) | null = null;
     const subscribe = async () => {
-      const unsub = await workerClient.subscribeBuildSessionRecordsByStatus(
+      const unsub = await api.subscribeBuildSessionRecordsByStatus(
         nodeType,
         ['running'],
-        proxy(async (incoming) => {
+        proxy(async (incoming: BuildSessionRecordLike[]) => {
           if (!active) return;
           const nextMap = new Map(sessionMapRef.current);
           const activeIds = new Set<string>();
-          incoming.forEach((session) => {
+          incoming.forEach((session: BuildSessionRecordLike) => {
             const key = String(session.nodeId);
             activeIds.add(key);
             const existing = nextMap.get(key);
@@ -100,6 +122,7 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
               updatedAt: session.updatedAt,
               lastSeenAt: existing?.lastSeenAt,
               hasShapeRecord: true,
+              requestedAt: session.startedAt ?? existing?.requestedAt ?? session.updatedAt,
             });
           });
           for (const [key, snapshot] of nextMap.entries()) {
@@ -128,48 +151,60 @@ export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapsh
         unsubscribe();
       }
     };
-  }, [nodeType, updateSessions, workerClient]);
+  }, [api, nodeType, updateSessions]);
 
   useEffect(() => {
     let cancelled = false;
     const tick = async () => {
       const now = Date.now();
-      const sessionIds = Array.from(sessionMapRef.current.keys());
-      if (sessionIds.length === 0) return;
-      const records = await Promise.all(sessionIds.map((id) => (
-        coordinator.readHeartbeat(id)
-      )));
+      const heartbeats = await coordinator.readHeartbeats();
       if (cancelled) return;
       const nextMap = new Map(sessionMapRef.current);
       let changed = false;
-      sessionIds.forEach((id, index) => {
-        const existing = nextMap.get(id);
-        if (!existing) return;
-        const record = records[index];
-        if (!record) {
-          if (!existing.hasShapeRecord && existing.lastSeenAt) {
-            nextMap.delete(id);
-            changed = true;
-          }
-          return;
-        }
-        const isExpired = record.expiresAt <= now;
-        if (isExpired && !existing.hasShapeRecord) {
-          nextMap.delete(id);
+
+      heartbeats.forEach((record: HeartbeatRecord) => {
+        if (!record || record.expiresAt <= now) return;
+        const key = String(record.sessionId);
+        const existing = nextMap.get(key);
+        if (existing?.hasShapeRecord) {
+          const nextUpdatedAt = Math.max(existing.updatedAt ?? 0, record.updatedAt ?? 0) || existing.updatedAt || record.updatedAt;
+          const next: BuildSessionSnapshot = {
+            ...existing,
+            updatedAt: nextUpdatedAt,
+            lastSeenAt: record.updatedAt,
+            status: record.status ?? existing.status,
+            progress: record.progress ?? existing.progress,
+            requestedAt: existing.requestedAt ?? resolveQueuedRequestedAt(record.progress, record.updatedAt),
+          };
+          nextMap.set(key, next);
           changed = true;
           return;
         }
-        const nextUpdatedAt = Math.max(existing.updatedAt ?? 0, record.updatedAt ?? 0) || existing.updatedAt || record.updatedAt;
+        if (record.status !== 'waiting') return;
+        const requestedAt = resolveQueuedRequestedAt(record.progress, record.updatedAt) ?? record.updatedAt;
         const next: BuildSessionSnapshot = {
-          ...existing,
-          status: record.status ?? existing.status,
-          progress: record.progress ?? existing.progress,
-          updatedAt: nextUpdatedAt,
+          nodeId: record.sessionId as NodeId,
+          status: record.status,
+          progress: record.progress,
+          updatedAt: record.updatedAt,
           lastSeenAt: record.updatedAt,
+          hasShapeRecord: false,
+          requestedAt,
         };
-        nextMap.set(id, next);
+        nextMap.set(key, next);
         changed = true;
       });
+
+      for (const [key, snapshot] of nextMap.entries()) {
+        if (!snapshot.hasShapeRecord && snapshot.status === 'waiting' && snapshot.lastSeenAt) {
+          const expired = snapshot.lastSeenAt + coordinator.quietThresholdTimeout <= now;
+          if (expired) {
+            nextMap.delete(key);
+            changed = true;
+          }
+        }
+      }
+
       if (changed) {
         sessionMapRef.current = nextMap;
         updateSessions(nextMap);

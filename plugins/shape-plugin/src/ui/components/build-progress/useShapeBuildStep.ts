@@ -94,6 +94,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const lockRef = useRef<SessionLockHandle | null>(null);
   const lockKeyRef = useRef<string | null>(null);
   const [isLockOwner, setIsLockOwner] = useState(false);
+  const queueRequestedAtRef = useRef<number | null>(null);
 
   const releaseBuildLock = useCallback(() => {
     const lock = lockRef.current;
@@ -113,7 +114,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         if (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function') {
           notify.error('Web Locks API is unavailable.');
         } else {
-          notify.info('Another tab is already running this build.');
+          notify.info('Build is queued and will start after the current session finishes.');
         }
       }
       return false;
@@ -123,6 +124,78 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setIsLockOwner(true);
     return true;
   }, [coordinator, lockKey]);
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const writeWaitingHeartbeat = useCallback(async (requestedAt: number, now?: number) => {
+    if (!activeNodeId) return;
+    await coordinator.writeHeartbeat({
+      sessionId: String(activeNodeId),
+      status: 'waiting',
+      progress: { requestedAt },
+      timestamp: now ?? Date.now(),
+      lockOwner: false,
+    });
+  }, [activeNodeId, coordinator]);
+
+  const clearWaitingHeartbeat = useCallback(async () => {
+    if (!activeNodeId) return;
+    await coordinator.writeHeartbeat({
+      sessionId: String(activeNodeId),
+      status: null,
+      progress: null,
+      timestamp: Date.now(),
+      lockOwner: false,
+    });
+  }, [activeNodeId, coordinator]);
+
+  const waitForBuildLock = useCallback(async (requestedAt: number): Promise<boolean> => {
+    if (!lockKey || !activeNodeId) return false;
+    const sessionId = String(activeNodeId);
+    const tabId = tabIdRef.current;
+    const pollInterval = coordinator.pollIntervalTimeout;
+    queueRequestedAtRef.current = requestedAt;
+
+    const claimQueueIfAvailable = async (now: number) => {
+      const heartbeat = await coordinator.readHeartbeat(sessionId);
+      if (!heartbeat || heartbeat.expiresAt <= now || heartbeat.status !== 'waiting') {
+        await writeWaitingHeartbeat(requestedAt, now);
+        return { owner: true, requestedAt };
+      }
+      const heartbeatRequestedAt = (() => {
+        const progress = heartbeat.progress as { requestedAt?: number } | null | undefined;
+        return typeof progress?.requestedAt === 'number' ? progress.requestedAt : heartbeat.updatedAt;
+      })();
+      if (heartbeat.tabId === tabId) {
+        return { owner: true, requestedAt: heartbeatRequestedAt ?? requestedAt };
+      }
+      if (heartbeatRequestedAt !== undefined && heartbeatRequestedAt <= requestedAt) {
+        return { owner: false, requestedAt: heartbeatRequestedAt };
+      }
+      await writeWaitingHeartbeat(requestedAt, now);
+      return { owner: true, requestedAt };
+    };
+
+    let queueState = await claimQueueIfAvailable(Date.now());
+    while (true) {
+      if (!queueState.owner) {
+        await sleep(pollInterval);
+        queueState = await claimQueueIfAvailable(Date.now());
+        continue;
+      }
+      const lock = await coordinator.tryAcquireSessionLock(lockKey);
+      if (lock) {
+        lockRef.current = lock;
+        lockKeyRef.current = lockKey;
+        setIsLockOwner(true);
+        await clearWaitingHeartbeat();
+        return true;
+      }
+      await writeWaitingHeartbeat(queueState.requestedAt ?? requestedAt, Date.now());
+      await sleep(pollInterval);
+      queueState = await claimQueueIfAvailable(Date.now());
+    }
+  }, [activeNodeId, clearWaitingHeartbeat, coordinator, lockKey, writeWaitingHeartbeat]);
   const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
   const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
   const lastAutoResumeAtRef = useRef<number | null>(null);
@@ -258,7 +331,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     canWrite: isLockOwner,
   });
   const timingStageId = buildStatus === 'idle' ? null : (resolvedTaskType ?? null);
-  const hasTimingSession = Boolean(timingSession?.startedAt);
+  const hasTimingSession = Boolean(timingSession?.startedAt) && processingStatus !== 'idle';
   const fallbackElapsedMs = (() => {
     if (buildStatus !== 'running' || !persistedBuildResumedAt) {
       return persistedBuildElapsedMs;
@@ -284,6 +357,30 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage)) return;
     setCompletedStageElapsedMs(persistedStageElapsedByStage);
   }, [buildStatus, completedStageElapsedMs, persistedStageElapsedByStage]);
+  useEffect(() => {
+    if (processingStatus !== 'idle') return;
+    if (persistedBuildElapsedMs !== 0) return;
+    if (persistedStageElapsedMs !== 0) return;
+    if (persistedBuildResumedAt !== null) return;
+    if (persistedStageResumedAt !== null) return;
+    if (persistedStageElapsedStageId !== null) return;
+    if (!shallowEqualNumberRecord(persistedStageElapsedByStage, {})) return;
+    setDisplayTotalElapsedMs(0);
+    setDisplayStageElapsedMs(0);
+    totalTickRef.current = null;
+    stageTickRef.current = null;
+    lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
+    lastDisplayStageIdRef.current = null;
+    setCompletedStageElapsedMs({});
+  }, [
+    persistedBuildElapsedMs,
+    persistedBuildResumedAt,
+    persistedStageElapsedByStage,
+    persistedStageElapsedMs,
+    persistedStageElapsedStageId,
+    persistedStageResumedAt,
+    processingStatus,
+  ]);
   useEffect(() => {
     if (buildStatus === 'idle') {
       setDisplayTotalElapsedMs(totalElapsedMs);
@@ -897,7 +994,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
     if (!acquired) {
-      return false;
+      const queued = await waitForBuildLock(now);
+      if (!queued) {
+        return false;
+      }
     }
     coordinator.writeActiveSessionId(String(activeNodeId));
     const saved = await saveDraftBeforeBuild();

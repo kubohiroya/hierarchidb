@@ -1,3 +1,35 @@
+2643) fix/ui/shape-reset-session-immediate-elapsed-ui-sync (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/fix/ui/shape-reset-session-immediate-elapsed-ui-sync
+- 依存: なし
+- 受け入れ基準: Step5 で Reset Session 実行直後に Total elapsed が 0 表示へ遷移する（リロード不要）／ステージ elapsed も同時に 0 表示へ遷移する／既存の Reset Session の削除処理・永続化処理は維持される／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildStep.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の Reset Session 実行後にリロードまで反映されない挙動へ戻す
+- チェックリスト:
+  - Step5 側から onResetSession 時に onChange へ elapsed 初期化パッチを即時反映する
+  - Reset Session 後の Total elapsed / stage elapsed の即時表示を確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 00:15 JST Reset Session 後に Total elapsed が即時リセットされない問題の UI 同期修正に着手。
+  - update: 2026-02-10 00:22 JST 原因は Step5 側 `useShapeBuildCacheActions` に `onResetSession` が未配線で、Reset 後の `onChange` パッチが呼ばれず表示状態が stale なまま維持される点。`ShapeBuildStep` から `ShapeBuildProgressPanel` へ `onChange` を渡し、Reset 時に elapsed 関連フィールドを即時初期化するコールバックを配線。
+  - done: 2026-02-10 00:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2642) fix/plugin-dialog/persist-dialog-ui-state-on-window-actions (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: プラグインダイアログの最大化・全画面化・通常化・サイズ変更・位置変更の各操作時に、永続化対象 `dialogUIState` が更新される／ダイアログ再表示時に直前の mode/size/position が復元される／既存の保存系（close/save-draft/step遷移）に回帰を作らない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController.ts`（必要に応じて追加）
+- ロールバック手順: 追加した window 操作時の `dialogUIState` 永続化差分を revert し、従来の close/step遷移時のみ保存する挙動へ戻す
+- チェックリスト:
+  - displayMode/size/position の更新経路を統一し、永続化更新を追加する
+  - 連続ドラッグ/リサイズ時に過剰な永続化書き込みを抑止する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 08:25 JST window 操作（最大化/全画面/通常化/リサイズ/位置変更）で dialogUIState が永続更新されない問題の修正に着手。
+  - update: 2026-02-10 08:33 JST `persistDialogWindow` からデバウンス付き `save-draft` 永続化を起動するよう修正し、displayMode/size/position の全操作を同一永続化経路へ統一。
+  - done: 2026-02-10 08:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0。
+
 2637) fix/ui/shape-step4-delete-build-outputs-reset-only (P2) — 完了 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step4-delete-build-outputs-reset-only
 - 依存: なし
@@ -150,6 +182,22 @@
   - update: 2026-02-09 22:12 JST BuildControlCard を横並びレイアウトにし、ボタン/余白を縮小。
   - done: 2026-02-09 22:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
 
+2628) fix/ui/shape-reset-session-elapsed-crash (P1) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-reset-session-elapsed-crash
+- 依存: なし
+- 受け入れ基準: Reset Session 後に Total elapsed が即時 0 にリセットされ表示が維持される／数秒後のブラウザクラッシュが再発しない／原因・発生範囲・修正方法・適用範囲・ロールバック手順が TASKS.md に記載される／影響範囲の検証結果が TASKS.md に記録される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の Reset Session 表示へ戻す
+- チェックリスト:
+  - Reset Session 後に elapsed 表示が即時 0 へリセットされる
+  - クラッシュ原因の可能性（残存セッション参照/表示補正）を解消する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 21:20 JST Reset Session 後の elapsed 未リセットとクラッシュの修正に着手。
+  - update: 2026-02-09 23:05 JST 原因は Reset Session 後も timing session が有効扱いになり、表示が stale 値を参照し続ける点。`processingStatus === 'idle'` で timing session を無効化し、elapsed 永続値が全て初期化された条件で表示ステート/参照/完了ステージ累積を即時ゼロクリアする処理を追加。適用範囲は `useShapeBuildStep.ts`（表示制御）と `useShapeBuildCacheActions.ts`（永続値リセット）に限定。
+  - done: 2026-02-09 23:08 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
 2627) fix/ui/shape-build-elapsed-smooth-display (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-build-elapsed-smooth-display
 - 依存: なし
@@ -280,6 +328,41 @@
   - update: 2026-02-10 02:20 JST `pnpm -w turbo run test --filter @hierarchidb/batch -- --run src/session/__tests__/buildSessionReconcile.unit.test.ts` exit 0（tsdown define 警告あり）。
   - update: 2026-02-10 02:21 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeStageReconcile.unit.test.ts` は初回タイムアウトのため再実行し、exit 0（tsdown define 警告あり）。
   - done: 2026-02-10 02:21 JST 共通ユーティリティと shape-plugin のタスク再構成がメタデータ比較で動作することをテストで確認。
+
+2640) chore/shape-build/deprecate-old-reconcile (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/chore/shape-build-deprecate-old-reconcile
+- 依存: なし
+- 受け入れ基準: 新仕様の界面で未使用となった旧実装に @deprecated を付与する／対象箇所を最小限に限定し誤って利用中のAPIを退役させない／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`
+- ロールバック手順: 付与した @deprecated を削除する
+- チェックリスト:
+  - 旧実装（未使用）を確認し @deprecated を付与する
+  - 影響範囲の検証結果を記録する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 02:30 JST 旧タスク再構成実装の @deprecated 付与に着手。
+  - update: 2026-02-10 02:33 JST 旧タスク再構成の `filterObsoleteTasks` と補助関数に @deprecated を付与。
+  - done: 2026-02-10 02:34 JST 変更完了（検証は未実施）。
+
+2641) feat/build-session/queue-waiting-ui (P1) — 進行中 (2026-02-10)
+- ブランチ名: codex/feat/build-session-queue-waiting-ui
+- 依存: なし
+- 受け入れ基準: Web Locks 取得失敗時に開始待機へ移行し FIFO 順で再試行される／待機中セッションも AppBar に表示される／AppBar の並びが開始指示順（左が古い）になる／AppBar と同内容を Shape Step5 の Build control card 右側に表示する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `app/src/components/BuildSessionLauncherButtons.tsx` / `app/src/hooks/build-session/useBuildSessionSnapshots.ts` / `packages/components/src/BuildControlCard.tsx` / `packages/components/src/BuildStepPanel.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`（追加調整あり）
+- ロールバック手順: 本変更の差分を revert し、開始不可/非表示の挙動へ戻す
+- チェックリスト:
+  - 開始待機（queued）と FIFO 再試行を実装
+  - 待機中セッション表示と並び順の変更
+  - Step5 の Build control card に AppBar 相当の表示を追加
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 02:50 JST 開始待機（queued）と AppBar/Step5 表示の実装に着手。
+  - update: 2026-02-10 03:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（`@hierarchidb/plugin-base` build の tsdown で define 警告あり）。
+  - done: 2026-02-10 03:38 JST 変更完了（待機表示/並び順/Step5 右側パネル反映）。
+  - update: 2026-02-10 03:47 JST BuildSessionLauncherButtons をメニュー化し、待機順の移動/削除を追加する対応に着手。
+  - update: 2026-02-10 04:15 JST `pnpm -w turbo run build --filter @hierarchidb/session-coordinator` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-10 04:18 JST `pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-10 04:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/app --filter @hierarchidb/shape-plugin` exit 0（`@hierarchidb/plugin-base` build の tsdown define 警告あり）。
 
 2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values

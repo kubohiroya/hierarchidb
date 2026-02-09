@@ -99,6 +99,7 @@ export type SessionCoordinator = {
     sessionId?: string,
   ) => Promise<HeartbeatRecord<TStatus, TProgress>[]>;
   pruneHeartbeats: (referenceTime?: number) => Promise<void>;
+  removeHeartbeat: (sessionId: string) => Promise<void>;
 };
 
 type SessionSemaphoreRecord = {
@@ -520,6 +521,16 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     }
   };
 
+  const removeHeartbeat = async (sessionId: string): Promise<void> => {
+    const db = getSemaphoreDb(semaphoreDbName);
+    const table = db.table<HeartbeatRecord, string>('heartbeats');
+    try {
+      await table.delete(sessionId);
+    } catch (error) {
+      console.warn('[session-coordinator] failed to remove heartbeat', error);
+    }
+  };
+
   return {
     channelName,
     pollIntervalTimeout,
@@ -546,5 +557,6 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     readHeartbeat,
     readHeartbeats,
     pruneHeartbeats,
+    removeHeartbeat,
   };
 };
