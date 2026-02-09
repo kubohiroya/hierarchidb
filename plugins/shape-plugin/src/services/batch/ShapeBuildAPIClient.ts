@@ -87,6 +87,13 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     && (value.message === undefined || typeof value.message === 'string');
 };
 
+const isSelectedArrayByCountries = (value: unknown): value is Record<string, boolean[]> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => (
+    Array.isArray(entry) && entry.every((item) => typeof item === 'boolean')
+  ));
+};
+
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
   const fetch = value.fetch;
@@ -129,6 +136,9 @@ const toBuildSessionRecordFromEphemeral = (
     draftId: session.draftId,
     status: session.status,
     config: session.config,
+    selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
+      ? session.selectedArrayByCountries
+      : undefined,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,

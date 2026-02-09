@@ -14,6 +14,7 @@ export interface ShapeBuildSessionRecord<
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   config: Config;
+  selectedArrayByCountries?: Record<string, boolean[]>;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;

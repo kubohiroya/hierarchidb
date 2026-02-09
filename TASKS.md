@@ -1,3 +1,18 @@
+2637) fix/ui/shape-step4-delete-build-outputs-reset-only (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step4-delete-build-outputs-reset-only
+- 依存: なし
+- 受け入れ基準: Shape Step4 の「Delete build outputs immediately」カードが撤去され、同位置に Reset to defaults ボタンのみが表示される／既存の Reset to defaults 動作は維持される／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/CacheManagementSection.tsx`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、Delete build outputs immediately カードを元の配置で復元する
+- チェックリスト:
+  - Delete build outputs immediately カードを撤去し、Reset to defaults ボタンのみを同位置に配置する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:55 JST Shape Step4 の Delete build outputs immediately カード撤去に着手。
+  - update: 2026-02-09 23:57 JST Delete build outputs immediately カードを撤去し、同位置に Reset to defaults ボタンのみ配置。
+  - done: 2026-02-09 23:59 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
 2636) fix/ui/shape-stage-label-fontsize (P2) — 完了 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-stage-label-fontsize
 - 依存: なし
@@ -198,6 +213,22 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-09 19:05 JST fetch ステージの 502 失敗に関するリトライ配線と再ビルド方針の調査に着手。
+
+2637) fix/shape-build-start-resume-unify (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/shape-build-start-resume-unify
+- 依存: なし
+- 受け入れ基準: start/resume が同一動作として統一され、新規/追加分の実行・失敗タスクの再実行・非選択になったタスク/出力の削除が実現される／UI ラベルは前回タスクが残っている場合に Resume 表示となる／想定と異なる現行挙動が解消される／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/worker/api.ts` / `plugins/shape-plugin/src/services/vt/**`（調査結果に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の start/resume 分岐とタスク再利用挙動へ戻す
+- チェックリスト:
+  - start/resume の動作仕様をコードに反映する（新規/追加/失敗/非選択の扱い）
+  - UI ラベルの表示条件を見直す
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:55 JST start/resume の統一挙動と UI ラベル条件の調査に着手。
+  - update: 2026-02-10 00:20 JST sessions に selectedArrayByCountries を保存する型拡張を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin` が gis-sdk の dist 未更新で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` を実行。
+  - done: 2026-02-10 00:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin` exit 0。
   - update: 2026-02-09 19:22 JST fetch ステージは buildConfig.fetchConfig から retryConfig を構築し、rawDataPipeline/getOrFetchWithRetry で外側の再試行を実施。内部の FetchNetworkPort は smartFetch のデフォルトリトライ（retries=3, baseDelayMs=300, maxDelayMs=5000）を持つため二層リトライ構成。`HTTP 502` は両レイヤの再試行を尽くした最終失敗として投げられる経路を確認。再ビルド時は worker の resetFailedTasks が failed を queued に戻して再実行し、完了済みタスクは保持されるが「タスク再作成＋結果マージ」を明示する追加整理が必要。
   - update: 2026-02-09 19:28 JST ブラウザ再読込時の warning は UI 側 `useShapeBuildTasks` が subscribeBatchTasks の snapshot に含まれる `status=failed` を検知して必ず `console.warn('[ShapeBuildStep] task failed', ...)` を出しているため発生。タスク実行のトリガではなく、停止/永続化された failed タスクの表示ログである点を確認。
   - update: 2026-02-09 19:36 JST 停止セッションでは failed タスク warning を出さないよう、`useShapeBuildTasks` に `reportFailures` オプションを追加し、`useShapeBuildStep` で `processing` 状態のみ warning を有効化するよう変更。

@@ -125,6 +125,7 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     draftId: session.draftId,
     status: session.status,
     config: session.config,
+    selectedArrayByCountries: session.selectedArrayByCountries,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
@@ -153,6 +154,9 @@ export const toBuildSessionUpdates = (
     if (!isBuildProcessConfig(updates.config)) return null;
     next.config = updates.config;
   }
+  if (updates.selectedArrayByCountries !== undefined) {
+    next.selectedArrayByCountries = updates.selectedArrayByCountries;
+  }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
@@ -177,6 +181,7 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   draftId: session.draftId,
   status: session.status,
   config: session.config,
+  selectedArrayByCountries: session.selectedArrayByCountries,
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
   completedAt: session.completedAt,
@@ -202,6 +207,9 @@ export const toShapeBuildSessionUpdates = (
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.config !== undefined) next.config = updates.config;
+  if (updates.selectedArrayByCountries !== undefined) {
+    next.selectedArrayByCountries = updates.selectedArrayByCountries;
+  }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;

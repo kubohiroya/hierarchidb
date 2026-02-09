@@ -2,6 +2,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   FormControlLabel,
   FormGroup,
   Paper,
@@ -14,7 +15,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
-import { DeleteBuildOutputsCard } from './DeleteBuildOutputsCard.tsx';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import { useTranslation } from '../../i18n.js';
@@ -30,27 +30,6 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
   const { t } = useTranslation();
   const {
     switchId,
-    deleteFetchApiLabel,
-    deleteFetchFilteredLabel,
-    deleteTransformFilterLabel,
-    deleteVTLabel,
-    deleteMetadataLabel,
-    countsLoading,
-    deleteFetchApiLoading,
-    deleteFetchFilteredLoading,
-    deleteTransformLoading,
-    deleteVTLoading,
-    deleteMetadataLoading,
-    canDeleteFetchApiCache,
-    canDeleteFetchFilteredCache,
-    canDeleteTransformCache,
-    canDeleteVTCache,
-    canDeleteMetadata,
-    handleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache,
-    handleDeleteTransformCache,
-    handleDeleteVTCache,
-    handleDeleteMetadata,
     handleResetDefaults,
     update,
   } = fetchState;
@@ -173,33 +152,15 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
             </Stack>
           </Paper>
           <Stack sx={{ flex: 1, minWidth: 0 }}>
-            <DeleteBuildOutputsCard
-              title={t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
-              deleteFetchApiLabel={deleteFetchApiLabel}
-              deleteFetchFilteredLabel={deleteFetchFilteredLabel}
-              deleteTransformFilterLabel={deleteTransformFilterLabel}
-              deleteVTLabel={deleteVTLabel}
-              deleteMetadataLabel={deleteMetadataLabel}
-              countsLoading={countsLoading}
-              deleteFetchApiLoading={deleteFetchApiLoading}
-              deleteFetchFilteredLoading={deleteFetchFilteredLoading}
-              deleteTransformLoading={deleteTransformLoading}
-              deleteVTLoading={deleteVTLoading}
-              deleteMetadataLoading={deleteMetadataLoading}
-              canDeleteFetchApiCache={canDeleteFetchApiCache}
-              canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
-              canDeleteTransformCache={canDeleteTransformCache}
-              canDeleteVTCache={canDeleteVTCache}
-              canDeleteMetadata={canDeleteMetadata}
-              onDeleteFetchApiCache={handleDeleteFetchApiCache}
-              onDeleteFetchFilteredCache={handleDeleteFetchFilteredCache}
-              onDeleteTransformCache={handleDeleteTransformCache}
-              onDeleteVTCache={handleDeleteVTCache}
-              onDeleteMetadata={handleDeleteMetadata}
-              onResetDefaults={handleResetDefaults}
-              resetDisabled={disabled}
+            <Button
+              fullWidth
+              variant="outlined"
+              color="warning"
               disabled={disabled}
-            />
+              onClick={handleResetDefaults}
+            >
+              {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
+            </Button>
           </Stack>
         </Stack>
       </AccordionDetails>

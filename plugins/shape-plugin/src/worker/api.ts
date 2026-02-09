@@ -824,6 +824,7 @@ const upsertBuildSessionSnapshot = async (
     nodeId: NodeId;
     draftId?: NodeId;
     config: ShapeBuildConfig;
+    selectedArrayByCountries?: SelectedArrayByCountries;
     tasks: TaskQueueRecord[];
     status: ShapeBuildSessionRecord['status'];
     startedAt?: number;
@@ -844,6 +845,7 @@ const upsertBuildSessionSnapshot = async (
     draftId: input.draftId ?? existing?.draftId,
     status: input.status,
     config: buildBuildSessionConfig(input.config),
+    selectedArrayByCountries: input.selectedArrayByCountries ?? existing?.selectedArrayByCountries,
     startedAt,
     updatedAt: now,
     completedAt: input.completedAt,
@@ -1245,6 +1247,7 @@ export const shapeBatchAPI = {
       nodeId: nodeForSession,
       draftId,
       config: mergedBatchConfig,
+      selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
       tasks: existingTasks,
       status: 'running',
       startedAt: buildStartedAt,
@@ -1408,6 +1411,7 @@ export const shapeBatchAPI = {
         await upsertBuildSessionSnapshot({
           nodeId,
           config: mergedBuildConfig,
+          selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
           tasks: existingTasks,
           status: 'running',
           startedAt: Date.now(),
