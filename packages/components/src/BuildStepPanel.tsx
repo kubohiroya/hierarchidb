@@ -198,9 +198,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   })();
 
   return (
-    <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
+    <Box display="flex" flexDirection="column" gap={1} height="100%" minHeight={0}>
 
-      <Stack direction="row" spacing={2} alignItems="stretch" flexShrink={0}>
+      <Stack direction="row" spacing={2} alignItems="center" justifyContent="center" flexShrink={0}>
         <BuildControlCard
           status={status}
           onPause={onPause}
@@ -216,11 +216,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           details={controlDetails}
         />
         {statusContent ? (
-          <Box flex={1} minWidth={0}>
+          <Box minWidth={0}>
             {statusContent}
           </Box>
         ) : suppressStatusFallback ? null : (
-          <Stack spacing={1} flex={1} justifyContent="center">
+          <Stack spacing={1} justifyContent="center">
             <Typography variant="body2" color="text.secondary">
               {statusLabel ?? computedStatusLabel}
             </Typography>

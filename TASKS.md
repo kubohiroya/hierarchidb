@@ -1,3 +1,140 @@
+2636) fix/ui/shape-stage-label-fontsize (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-label-fontsize
+- 依存: なし
+- 受け入れ基準: ステージ名（Fetch/Transform/VT Generation 等）のラベル文字サイズが一律で 2px 増える／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来のフォントサイズへ戻す
+- チェックリスト:
+  - ステージ名ラベルのフォントサイズを +2px に調整する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:35 JST ステージ名ラベルのフォントサイズ調整に着手。
+  - update: 2026-02-09 23:37 JST ステージ名ラベルを `1rem + 2px` に拡大。
+  - done: 2026-02-09 23:39 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2635) fix/ui/shape-stage-summary-percent-visible (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-percent-visible
+- 依存: なし
+- 受け入れ基準: ステージサマリーの進捗 % が表示される／表示位置は「CircularProgress 群 → Chip → %」の順を維持する／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の進捗 % 表示へ戻す
+- チェックリスト:
+  - 進捗 % の表示が消えないよう配置を修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:25 JST ステージサマリーの % 表示消失の修正に着手。
+  - update: 2026-02-09 23:28 JST 下段の Chip 行に % 表示を追加し、表示消失を解消。
+  - done: 2026-02-09 23:30 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2634) fix/ui/shape-stage-summary-percent-position (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-percent-position
+- 依存: なし
+- 受け入れ基準: ステージサマリーの進捗 % 表示がタイトル右ではなく Chip 表示の右側に移動する／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の進捗 % 表示位置へ戻す
+- チェックリスト:
+  - 進捗 % 表示を Chip の右側へ移動する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:15 JST ステージサマリーの % 表示位置調整に着手。
+  - update: 2026-02-09 23:18 JST 進捗 % を Chip の右側へ移動。
+  - done: 2026-02-09 23:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2633) fix/ui/shape-stage-summary-indicator-order (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-indicator-order
+- 依存: なし
+- 受け入れ基準: ステージ進捗サマリー下段の並びが「CircularProgress 群 → Chip（Failed/Skipped/Completed）」の順になる／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の表示順へ戻す
+- チェックリスト:
+  - CircularProgress 群と Chip の表示順を入れ替える
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 23:05 JST ステージ進捗サマリー下段の表示順調整に着手。
+  - update: 2026-02-09 23:08 JST CircularProgress 群を Chip の前に並べるよう順序を入れ替え。
+  - done: 2026-02-09 23:10 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2632) fix/ui/shape-stage-summary-icons (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-icons
+- 依存: なし
+- 受け入れ基準: ステージ進捗サマリーの Elapsed が Timelapse アイコン表示になる／Est. remaining が HourglassTop アイコン表示になる／Chip の Failed/Skipped/Completed ラベル文字が撤去され数値のみ表示になる／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` / `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来のラベル表示へ戻す
+- チェックリスト:
+  - Elapsed/Est. remaining をアイコン表示に変更する
+  - Chip のラベル文字を撤去し数値のみ表示にする
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:55 JST ステージ進捗サマリーのアイコン化に着手。
+  - update: 2026-02-09 22:58 JST Elapsed/Est. remaining を Timelapse/HourglassTop アイコンに置換し、Chip のラベル文字を撤去して数値のみ表示。
+  - done: 2026-02-09 23:00 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2631) fix/ui/shape-stage-summary-layout (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-layout
+- 依存: なし
+- 受け入れ基準: ステージ進捗サマリーの Elapsed/Est. remaining が2行表示になり、値が右揃えで表示される／並列動作の CircularProgress 群が下段の Chip の右側に移動する／既存の挙動（進捗更新・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` / `packages/components/src/BuildStepStagePanel.tsx` / `plugins/shape-plugin/src/ui/locales/en.json` / `plugins/shape-plugin/src/ui/locales/ja.json`
+- ロールバック手順: 変更差分を revert し、従来のサマリー表示とインジケータ配置へ戻す
+- チェックリスト:
+  - Elapsed/Est. remaining を2行・右揃えに変更
+  - 並列動作インジケータを Chip 行の右側へ移動
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:40 JST ステージ進捗サマリーのレイアウト調整に着手。
+  - update: 2026-02-09 22:48 JST Elapsed/Est. remaining を2行右揃えにし、並列インジケータを Chip 行の右側へ移動。ui-worker-client の dist が古く typecheck 失敗したため `pnpm -w turbo run build --filter @hierarchidb/ui-worker-client` を実行。
+  - done: 2026-02-09 22:50 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2630) fix/ui/shape-step5-build-controls-gap (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step5-build-controls-gap
+- 依存: なし
+- 受け入れ基準: Build controls カードとステージ進捗コンポーネント間の縦方向 gap が 24px から 8px へ縮小される／既存の挙動（ボタン動作・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の gap へ戻す
+- チェックリスト:
+  - Build controls とステージ進捗間の gap を 8px に調整する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:30 JST Build controls とステージ進捗の間の gap 縮小に着手。
+  - update: 2026-02-09 22:33 JST BuildStepPanel の縦 gap を 24px から 8px に変更。
+  - done: 2026-02-09 22:35 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2629) fix/ui/shape-step5-build-controls-center (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step5-build-controls-center
+- 依存: なし
+- 受け入れ基準: Step5 Build の Build controls カードが横並びのまま中央揃えで表示される／既存の挙動（ボタン動作・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`
+- ロールバック手順: 変更差分を revert し、従来の Build controls 配置へ戻す
+- チェックリスト:
+  - Build controls の配置を中央揃えに調整する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:20 JST Step5 Build controls カードの中央揃え調整に着手。
+  - update: 2026-02-09 22:25 JST BuildStepPanel の controls 行を中央揃えに変更。
+  - done: 2026-02-09 22:27 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2628) fix/ui/shape-step5-build-controls-layout (P2) — 完了 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step5-build-controls-layout
+- 依存: なし
+- 受け入れ基準: Step5 Build の Build controls カード内の要素がすべて横並びで表示される（`Build control (Pause) (Start Build) Total elapsed ...` の並び）／カードの縦方向の高さが現状の約1/3になる（余白・行間・ボタン高さを含めて調整）／既存の挙動（ボタン動作・状態表示・アクセシビリティ）が変わらない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`（調査結果に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の Build controls レイアウトへ戻す
+- チェックリスト:
+  - Build controls カード内のレイアウト（横並び・高さ）調整
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:05 JST Step5 Build controls カードの横並びレイアウト調整に着手。
+  - update: 2026-02-09 22:12 JST BuildControlCard を横並びレイアウトにし、ボタン/余白を縮小。
+  - done: 2026-02-09 22:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
 2627) fix/ui/shape-build-elapsed-smooth-display (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-build-elapsed-smooth-display
 - 依存: なし
@@ -66,6 +203,12 @@
   - update: 2026-02-09 19:36 JST 停止セッションでは failed タスク warning を出さないよう、`useShapeBuildTasks` に `reportFailures` オプションを追加し、`useShapeBuildStep` で `processing` 状態のみ warning を有効化するよう変更。
   - done: 2026-02-09 19:40 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
   - update: 2026-02-09 19:52 JST Step5 Start Build の発火順序（新規/失敗タスク残り）を整理。`useShapeBuildAutoResume` が `hasFailedFetchTasks` を検知すると `forceRestart` になり、Start ボタンでも resume ではなく startBatchSession 経由に倒れるため、停止セッションでも再開ではなく再開始扱いになる点をズレとして記載。
+  - update: 2026-02-09 20:06 JST UI文言の用語統一（Build/Fetch/Session/Start/Resume/Delete）に向けて、shape-plugin の locales(en/ja) から Batch/Download/Process/Restart を含む表示文言を洗い出し、置換候補を整理。
+  - update: 2026-02-09 20:15 JST shape-plugin の UI文言を Build/Fetch/Session 用語へ統一（Processing→Build、Batch→Build、Download→Fetch、unknownStage/進捗表記などを更新）。
+  - update: 2026-02-09 20:22 JST app/public/locales の UI文言を統一（guidedTour の download/restart、route/spreadsheet/styler の processing を Build/Start 表記へ更新）。
+  - update: 2026-02-09 20:30 JST docs/app/docs の用語統一候補を抽出。deprecated 配下を除外して優先度を整理する方針を提案。
+  - update: 2026-02-09 20:40 JST 非deprecatedの docs/app/docs を Build/Fetch/Session 用語へ部分統一（glossary, settings, runtime-flags, UNIFIED_BATCH_CONTROL_API, shape-plugin migration, vt-pipeline-design を更新）。
+  - update: 2026-02-09 20:55 JST コード識別子の用語混在（Batch/Download/Processing/Restart）を調査し、公開API/内部/プラグイン別の置換候補と段階移行方針を整理。
 
 2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values
@@ -17982,3 +18125,84 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - 運用ログ:
   - start: 2026-02-09 16:40 JST AppBar の BuildSessionLauncherButtons が表示されない原因調査に着手。
   - update: 2026-02-09 16:45 JST BuildSessionLauncherButtons は shape の build session しか購読しておらず（useBuildSessionSnapshots で nodeType='shape' 固定）、worker bootstrap も shape のみ対応のため route セッションでは空になることを確認。BuildSessionLauncherButtons は Tree ルートの AppBar 直下でのみ描画され、UserAvatarMenu には直接組み込まれていない。
+2628) refactor/api/build-aliases-for-batch (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/api/build-aliases-for-batch
+- 依存: なし
+- 受け入れ基準: `Batch*` 既存公開APIの挙動を変えずに `Build*` 互換エイリアスを追加する／型定義・エクスポート・ドキュメントコメントに「`Build*` 推奨 / `Batch*` 非推奨」方針が反映される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/batch/src/index.ts` / `packages/ui/batch/src/types.ts` / `packages/worker-api/src/index.ts` / `packages/worker-api/src/buildSessionTypes.ts` / `packages/common-api/src/index.ts`（必要に応じて追加）
+- ロールバック手順: 追加した `Build*` エイリアスと `@deprecated` 表記を撤去し、従来の `Batch*` のみへ戻す
+- チェックリスト:
+  - 公開APIに `Build*` エイリアスを追加し `Batch*` を `@deprecated` へ移行する
+  - d.ts とエクスポート差分が最小になるよう確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 21:30 JST 公開APIの Batch→Build エイリアス追加に着手。
+  - update: 2026-02-09 21:38 JST batch-api に Build* 型エイリアスと isBuildControlAPIV2Enabled を追加し、Batch* に @deprecated を付与。progress-types に BuildStage を追加。
+  - update: 2026-02-09 21:40 JST batch/ui-batch/worker-api の公開エクスポートに Build* エイリアスを追加（useBuildProgress/useBuildProgressState/usePluginBuildProgress/BuildWorkerAPI など）。
+  - update: 2026-02-09 21:46 JST `packages/batch/src/index.ts` が useBuildSessionTiming の BuildStatus と batch-api の BuildStatus を二重 export し typecheck が失敗したため、index の re-export を明示化して BuildStatus を除外するよう修正。
+  - done: 2026-02-09 21:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch-api --filter @hierarchidb/batch --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/worker-api` exit 0。
+
+2629) refactor/api/build-worker-api-aliases (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/api/build-worker-api-aliases
+- 依存: 2628
+- 受け入れ基準: WorkerAPI に Build 名のエイリアスメソッド（start/pause/resume/get status/get tasks/subscribe tasks/subscribe progress）を追加し、Batch 名の挙動は維持される／Batch 名メソッドに @deprecated を付与し Build 名推奨を明示する／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/worker-api/src/WorkerAPI.ts` / `packages/worker-api/src/index.ts`（必要に応じて追加）
+- ロールバック手順: 追加した Build 名エイリアスと @deprecated 表記を撤去し Batch 名のみへ戻す
+- チェックリスト:
+  - WorkerAPI に Build 名エイリアスメソッドを追加する
+  - Batch 名メソッドへ @deprecated を付与する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:05 JST WorkerAPI の Build 名エイリアスメソッド追加に着手。
+  - update: 2026-02-09 22:07 JST WorkerAPI に Build 名メソッドを追加し、Batch 名へ @deprecated を付与。
+  - done: 2026-02-09 22:09 JST `pnpm -w turbo run typecheck --filter @hierarchidb/worker-api` exit 0。
+
+2630) refactor/internal/batch-identifiers-step1 (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/internal/batch-identifiers-step1
+- 依存: 2629
+- 受け入れ基準: 非公開範囲で Batch 識別子の Build 統一を段階的に進め、影響範囲とロールバックを明記する／挙動は維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/batch/**` / `packages/ui/batch/**` / `packages/worker-api/**` / `plugins/*-plugin/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、Batch 名の内部識別子へ戻す
+- チェックリスト:
+  - 対象範囲の候補を限定し、改名の影響を整理する
+  - 非公開の識別子のみを Build 名に変更する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:05 JST Batch 識別子の内部統一（step1）に着手。
+  - update: 2026-02-09 22:18 JST batch/ui-batch の内部型参照を Build*（BuildProgress/BuildSessionStatus/BuildUnifiedProgressInfo 等）へ切替し、Batch 系の識別子依存を縮小。
+  - done: 2026-02-09 22:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch --filter @hierarchidb/ui-batch-progress` exit 0。
+
+2631) refactor/api/build-worker-impl-aliases (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/api/build-worker-impl-aliases
+- 依存: 2629
+- 受け入れ基準: ui-worker-client と runtime worker の WorkerAPI 実装に Build 名メソッド（start/pause/resume/get status/get tasks/subscribe tasks/subscribe progress）を追加し Batch 名へ委譲する／挙動は不変／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/worker-client/src/**` / `packages/runtime-worker/src/**`（必要に応じて追加）
+- ロールバック手順: 追加した Build 名メソッドを撤去し Batch 名のみへ戻す
+- チェックリスト:
+  - ui-worker-client に Build 名のエイリアス実装を追加する
+  - runtime worker 側の WorkerAPI 実装に Build 名メソッドを追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:28 JST WorkerAPI 実装側の Build 名エイリアス追加に着手。
+  - update: 2026-02-09 22:34 JST ui-worker-client の WorkerBridge に Build 名メソッドを追加し、Batch 名に委譲する実装を追加。
+  - update: 2026-02-09 22:37 JST app の workerBootstrap に Build 名メソッドを追加し Batch 名へ委譲。テストの WorkerAPI mock に Build 名メソッドを追加。
+  - done: 2026-02-09 22:41 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-worker-client --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
+
+2632) refactor/internal/batch-identifiers-step2 (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/internal/batch-identifiers-step2
+- 依存: 2630
+- 受け入れ基準: plugins 内の非公開識別子（型/関数/変数名）を Build へ寄せ、公開API・永続スキーマ・外部I/Fは変更しない／影響範囲とロールバックを TASKS.md に明記／影響範囲の typecheck が exit 0／挙動は不変
+- 影響範囲: `plugins/*-plugin/src/**`（候補を絞ってから確定）
+- ロールバック手順: 変更差分を revert し、Batch 名の内部識別子へ戻す
+- チェックリスト:
+  - plugins 配下の Batch 識別子候補を抽出し、非公開範囲に限定する
+  - 対象を Build 名に置換し、外部I/Fを変更しない
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 22:46 JST plugins の Batch 識別子統一（step2）に着手。
+  - update: 2026-02-09 22:50 JST 影響範囲を shape-plugin UI（build-progress/build-config/atoms/tests）に限定して Batch→Build の内部識別子と WorkerBridge 呼び出し名を統一する方針を採用。

@@ -13,7 +13,7 @@
       "label": "License Agreement"
     },
     "processing": {
-      "label": "Processing Configuration"
+      "label": "Build Configuration"
     },
     "countrySelection": {
       "label": "Country Selection"
@@ -33,7 +33,7 @@
   },
   "messages": {
     "completeRequired": "Complete required fields and selections before building.",
-    "notImplemented": "Shape batch build is not yet implemented in this dialog."
+    "notImplemented": "Shape build is not yet implemented in this dialog."
   },
   "dialog": {
     "createTitle": "Create Shape",
@@ -44,15 +44,15 @@
     "defaultName": "New shape"
   },
   "batchRecovery": {
-    "title": "Resume Batch Session",
-    "body": "Batch session recovery UI is under reconstruction. Please resume or discard sessions via the worker tools until the refactor is complete.",
+    "title": "Resume Build Session",
+    "body": "Build session recovery UI is under reconstruction. Please resume or discard sessions via the worker tools until the refactor is complete.",
     "close": "Close"
   },
   "countrySelection": {
     "loading": "Loading country metadata...",
     "loadError": "Failed to load country metadata: {{message}}",
     "title": "Select Countries & Administrative Levels",
-    "description": "Select countries and their administrative levels to download. Use the matrix to make precise selections."
+    "description": "Select countries and their administrative levels to fetch. Use the matrix to make precise selections."
   },
   "dataSource": {
     "title": "Data Source",
@@ -114,7 +114,7 @@
       "deleteStage2Cache": "Delete zoom-ratio cache",
       "deleteTiles": "Delete tile data",
       "deleteMetadata": "Delete feature metadata",
-      "deleteApiCacheHelp": "API cache: downloaded raw data for this node (before filtering).",
+      "deleteApiCacheHelp": "API cache: fetched raw data for this node (before filtering).",
       "deleteFilteredCacheHelp": "Filtered cache: fetch-stage filtered feature collections per zoom band.",
       "deleteTransformHelp": "Simplified cache: simplified geometries by zoom band plus transform error records.",
       "deleteVtHelp": "Tile data: generated vector tiles (tile index is also cleared).",
@@ -375,6 +375,8 @@
       "totalElapsed": "Total elapsed",
       "stageElapsed": "Stage elapsed",
       "stageRemaining": "Stage remaining (estimate)",
+      "elapsedLabel": "Elapsed",
+      "remainingLabel": "Est. remaining",
       "duration": "{{hours}}h {{minutes}}m {{seconds}}s",
       "unknown": "-"
     },
@@ -415,16 +417,16 @@
     "controls": {
       "title": "Build controls",
       "pause": "Pause",
-      "start": "Start build",
-      "resume": "Resume build"
+      "start": "Start Build",
+      "resume": "Resume Build"
     },
     "progress": {
-      "title": "Batch progress",
+      "title": "Build progress",
       "session": "Session",
       "stage": "Stage",
       "task": "Task",
       "working": "Working...",
-      "unknownStage": "processing",
+      "unknownStage": "build",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "tasks": {

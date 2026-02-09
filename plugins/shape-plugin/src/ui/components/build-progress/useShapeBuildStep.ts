@@ -459,7 +459,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     };
   }, [releaseBuildLock]);
 
-  const saveDraftBeforeBatch = useCallback(async (patch?: Partial<ShapeEntity>) => {
+  const saveDraftBeforeBuild = useCallback(async (patch?: Partial<ShapeEntity>) => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
       return false;
@@ -468,7 +468,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.error('Worker client is unavailable.');
       return false;
     }
-    const baseBatchConfig = {
+    const baseBuildConfig = {
       ...(data?.buildConfig ?? {}),
       ...(patch?.buildConfig ?? {}),
     };
@@ -480,7 +480,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         draftData: {
           ...sanitizeShapeDraftData(data ?? {}),
           ...sanitizeShapeDraftData(patch ?? {}),
-          batchConfig: baseBatchConfig,
+          batchConfig: baseBuildConfig,
         } as Record<string, unknown>,
       });
       return true;
@@ -640,13 +640,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     coordinator.writeActiveSessionId(String(activeNodeId));
     try {
       await bridgeRef.current.initialize();
-      const status = await bridgeRef.current.getBatchSessionStatus(SHAPE_NODE_TYPE, activeNodeId);
+      const status = await bridgeRef.current.getBuildSessionStatus(SHAPE_NODE_TYPE, activeNodeId);
       if (status.status !== 'running') {
         releaseBuildLock();
         return;
       }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-      await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+      await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
       await persistDraftPatch({ processingStatus: 'processing' });
     } catch (error) {
       releaseBuildLock();
@@ -902,7 +902,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       try {
         await bridgeRef.current.initialize();
         const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-        await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+        await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
         await persistDraftPatch({ processingStatus: 'processing' });
         return true;
       } catch (error) {
@@ -913,7 +913,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return false;
       }
     }
-    const saved = await saveDraftBeforeBatch();
+    const saved = await saveDraftBeforeBuild();
     if (!saved) {
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
@@ -928,7 +928,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return false;
       }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-      const statusResult = await bridgeRef.current.startBatchSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+      const statusResult = await bridgeRef.current.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
       const nextStatus = statusResult.status === 'completed'
         ? 'completed'
         : statusResult.status === 'failed'
@@ -950,7 +950,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     coordinator,
     persistDraftPatch,
     releaseBuildLock,
-    saveDraftBeforeBatch,
+    saveDraftBeforeBuild,
     tryAcquireBuildLock,
   ]);
 
@@ -963,7 +963,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setIsPausePending(true);
     try {
       await bridgeRef.current.initialize();
-      await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId, reason);
+      await bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason);
       await persistDraftPatch({ processingStatus: 'paused', stopReason: reason });
     } catch (error) {
       setIsPausePending(false);

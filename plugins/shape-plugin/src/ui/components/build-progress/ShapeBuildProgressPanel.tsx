@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -18,6 +18,8 @@ import {
 import ConstructionIcon from '@mui/icons-material/Construction';
 import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
+import TimelapseIcon from '@mui/icons-material/Timelapse';
 import type { NodeId } from '@hierarchidb/core-types';
 import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -738,10 +740,29 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
     );
     const remaining = formatInlineDuration(isTimingStage ? summary.stageRemainingMs : null);
-    return t(
-      'stage.timing.elapsedRemaining',
-      'Elapsed {{elapsed}} ・ Est. remaining {{remaining}}',
-      { elapsed, remaining },
+    const elapsedLabel = t('stage.timing.elapsedLabel', 'Elapsed');
+    const remainingLabel = t('stage.timing.remainingLabel', 'Est. remaining');
+    return (
+      <Box
+        display="grid"
+        gridTemplateColumns="auto auto"
+        columnGap={1}
+        rowGap={0.25}
+        sx={{ textAlign: 'right', justifyContent: 'end', alignItems: 'center' }}
+      >
+        <Box display="flex" alignItems="center" justifyContent="flex-end" color="text.secondary">
+          <TimelapseIcon fontSize="small" titleAccess={elapsedLabel} />
+        </Box>
+        <Typography variant="caption">
+          {elapsed}
+        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="flex-end" color="text.secondary">
+          <HourglassTopIcon fontSize="small" titleAccess={remainingLabel} />
+        </Box>
+        <Typography variant="caption">
+          {remaining}
+        </Typography>
+      </Box>
     );
   }, [
     formatInlineDuration,
@@ -753,7 +774,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   ]);
 
   const stageHeaderMeta = useMemo(() => (
-    stages.reduce<Record<string, string>>((acc, stage) => {
+    stages.reduce<Record<string, ReactNode>>((acc, stage) => {
       acc[stage.id] = buildTimingSummary(stage.id);
       return acc;
     }, {})

@@ -390,7 +390,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           startBatchSession: async (
             nodeType: NodeType,
             nodeId: NodeId,
-            downloadTaskPayloads?: unknown[],
+            downloadTaskPayloads?: ShapeDownloadTaskPayloads,
             buildContinuationPolicy?: BuildContinuationPolicy
           ): Promise<BatchSessionStatus> => {
             const api = resolveShapeBatchApiOrThrow(nodeType);
@@ -411,6 +411,14 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             setHeapContext({ nodeType, nodeId: status.nodeId });
             return status;
           },
+          startBuildSession: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            downloadTaskPayloads?: ShapeDownloadTaskPayloads,
+            buildContinuationPolicy?: BuildContinuationPolicy
+          ): Promise<BatchSessionStatus> => (
+            api.startBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy)
+          ),
           generateShapeDownloadTaskPayloadsFromSelection: async (
             nodeId: NodeId,
             dataSource: ShapeDataSourceName,
@@ -437,6 +445,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
             return toBatchSessionStatus(session as Record<string, unknown> | undefined, nodeId);
           },
+          getBuildSessionStatus: async (
+            nodeType: NodeType,
+            nodeId: NodeId
+          ): Promise<BatchSessionStatus> => api.getBatchSessionStatus(nodeType, nodeId),
           pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> => {
             const api = resolveShapeBatchApiOrThrow(nodeType);
             if (api.invokeBatchCommand) {
@@ -452,6 +464,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               await api.pauseBatchProcessing(draftId);
             }
           },
+          pauseBuildSession: async (nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> => (
+            api.pauseBatchSession(nodeType, nodeId, reason)
+          ),
           resumeBatchSession: async (
             nodeType: NodeType,
             nodeId: NodeId,
@@ -473,6 +488,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             }
             setHeapContext({ nodeType, nodeId });
           },
+          resumeBuildSession: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            buildContinuationPolicy?: BuildContinuationPolicy
+          ): Promise<void> => api.resumeBatchSession(nodeType, nodeId, buildContinuationPolicy),
           subscribeBatchProgress: async (
             nodeType: NodeType,
             nodeId: NodeId,
@@ -485,6 +505,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const unsubscribe = api.subscribeToProgress(nodeId, callback);
             return toComlinkProxy(Comlink, unsubscribe);
           },
+          subscribeBuildProgress: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            callback: (event: BatchProgressEvent) => void
+          ): Promise<() => void> => api.subscribeBatchProgress(nodeType, nodeId, callback),
           subscribeBatchTasks: async (
             nodeType: NodeType,
             nodeId: NodeId,
@@ -497,6 +522,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const unsubscribe = api.subscribeToTasks(nodeId, callback);
             return toComlinkProxy(Comlink, unsubscribe);
           },
+          subscribeBuildTasks: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            callback: (event: BatchTaskUpdateEvent) => void
+          ): Promise<() => void> => api.subscribeBatchTasks(nodeType, nodeId, callback),
           subscribeHeapPressure: async (
             callback: (event: HeapPressureEvent) => void
           ): Promise<() => void> => {
@@ -516,6 +546,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               return [];
             }
           },
+          getBuildTasks: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> => (
+            api.getBatchTasks(nodeType, nodeId)
+          ),
           listBuildSessionRecordsByStatus: async (
             nodeType: NodeType,
             statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>

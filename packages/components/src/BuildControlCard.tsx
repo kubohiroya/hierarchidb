@@ -21,19 +21,19 @@ type BuildControlCardProps = {
 };
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
-                                                             status,
-                                                             onPause,
-                                                             onResume,
-                                                             controlLabel,
-                                                             pauseLabel,
-                                                             pauseLoading,
-                                                             pausePending,
-                                                             startLabel,
-                                                             resumeLabel,
-                                                             startIcon,
-                                                             resumeIcon,
-                                                             details,
-                                                           }) => {
+  status,
+  onPause,
+  onResume,
+  controlLabel,
+  pauseLabel,
+  pauseLoading,
+  pausePending,
+  startLabel,
+  resumeLabel,
+  startIcon,
+  resumeIcon,
+  details,
+}) => {
   const pauseSpinner = (
     <CircularProgress
       size={16}
@@ -55,23 +55,25 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   return (
     <Box
       sx={{
-        minWidth: 252,
-        maxWidth: 312,
-        width: 312,
-        p: 2,
+        minWidth: 0,
+        maxWidth: '100%',
+        width: 'auto',
+        p: 1,
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
         backgroundColor: 'background.paper',
         display: 'flex',
-        flexDirection: 'column',
-        gap: 1.5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+        flexWrap: 'nowrap',
       }}
     >
-      <Typography variant="subtitle2" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
         {controlLabel ?? 'Build Controls'}
       </Typography>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
         <Button
           variant="outlined"
           size="small"
@@ -84,7 +86,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         <LoadingButton
           color="secondary"
           variant="contained"
-          size="large"
+          size="small"
           endIcon={computedIcon}
           disabled={disableStart}
           onClick={onResume}
@@ -94,16 +96,16 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         </LoadingButton>
       </Stack>
       {details && details.length > 0 ? (
-        <Stack spacing={0.5}>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
           {details.map((detail) => (
-            <Stack key={detail.label} direction="row" spacing={1} justifyContent="space-between">
+            <Box key={detail.label} display="flex" alignItems="center" gap={0.5}>
               <Typography variant="caption" color="text.secondary">
                 {detail.label}
               </Typography>
               <Typography variant="caption">
                 {detail.value}
               </Typography>
-            </Stack>
+            </Box>
           ))}
         </Stack>
       ) : null}

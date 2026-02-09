@@ -89,6 +89,19 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     ? theme.palette.grey[800]
     : theme.palette.grey[400];
   const indicatorSx = isIndicatorRunning ? undefined : { color: indicatorIdleColor };
+  const indicatorNode = indicatorCount > 0 ? (
+    <Stack direction="row" spacing={0.5} alignItems="center">
+      {Array.from({ length: indicatorCount }).map((_, index) => (
+        <CircularProgress
+          key={`stage-slot-${index}`}
+          size={14}
+          variant={indicatorVariant}
+          value={indicatorVariant === 'determinate' ? 100 : undefined}
+          sx={indicatorSx}
+        />
+      ))}
+    </Stack>
+  ) : null;
   const hasMenuItems = (menuItems?.length ?? 0) > 0;
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const isMenuOpen = Boolean(menuAnchorEl);
@@ -106,7 +119,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
       {isFailedVisible ? (
         <Chip
-          label={`Failed ${failed}`}
+          aria-label={`Failed ${failed}`}
+          label={`${failed}`}
           size="small"
           color={isFailedDisabled ? 'default' : 'error'}
           icon={<ErrorOutlineIcon fontSize="small" />}
@@ -118,7 +132,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
       ) : null}
       {isSkippedVisible ? (
         <Chip
-          label={`Skipped ${skipped}`}
+          aria-label={`Skipped ${skipped}`}
+          label={`${skipped}`}
           size="small"
           color="warning"
           icon={<SkipNextIcon fontSize="small" />}
@@ -129,7 +144,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
         />
       ) : null}
       <Chip
-        label={`Completed ${completedLabel}`}
+        aria-label={`Completed ${completedLabel}`}
+        label={`${completedLabel}`}
         size="small"
         color={isCompletedDisabled ? 'default' : 'success'}
         icon={<TaskAltIcon fontSize="small" />}
@@ -141,9 +157,21 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     </Stack>
   );
   const headerChips = chipPlacement === 'header' ? chips : null;
+  const progressPercentNode = (
+    <Typography
+      variant="subtitle2"
+      sx={{ fontWeight: 600, fontSize: '1rem' }}
+    >
+      {progressPercent}%
+    </Typography>
+  );
   const footerChips = chipPlacement === 'belowProgress' ? (
     <Box display="flex" justifyContent="flex-end" sx={{ mt: '2px', mb: '2px' }}>
-      {chips}
+      <Stack direction="row" spacing={1} alignItems="center">
+        {indicatorNode}
+        {chips}
+        {progressPercentNode}
+      </Stack>
     </Box>
   ) : null;
   return (
@@ -152,18 +180,9 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
         <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
           <Stack direction="row" spacing={1} alignItems="center">
             {icon ? <Box>{icon}</Box> : null}
-            <Typography variant="subtitle2">{title}</Typography>
-            <Typography
-              variant="subtitle2"
-              sx={{ ml: 2, fontWeight: 600, fontSize: '1rem' }}
-            >
-              {progressPercent}%
+            <Typography variant="subtitle2" sx={{ fontSize: 'calc(1rem + 2px)' }}>
+              {title}
             </Typography>
-            {headerMeta ? (
-              <Typography variant="caption" color="text.secondary" component="span" sx={{ ml: 1 }}>
-                {headerMeta}
-              </Typography>
-            ) : null}
             {hasMenuItems ? (
               <>
                 <IconButton
@@ -194,20 +213,18 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             ) : null}
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {indicatorCount > 0 ? (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {Array.from({ length: indicatorCount }).map((_, index) => (
-                  <CircularProgress
-                    key={`stage-slot-${index}`}
-                    size={14}
-                    variant={indicatorVariant}
-                    value={indicatorVariant === 'determinate' ? 100 : undefined}
-                    sx={indicatorSx}
-                  />
-                ))}
+            {headerMeta ? (
+              <Box display="flex" flexDirection="column" alignItems="flex-end">
+                {headerMeta}
+              </Box>
+            ) : null}
+            {headerChips ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                {indicatorNode}
+                {headerChips}
+                {progressPercentNode}
               </Stack>
             ) : null}
-            {headerChips}
           </Stack>
         </Stack>
         {description ? (

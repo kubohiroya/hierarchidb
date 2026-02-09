@@ -1,4 +1,5 @@
 import type { NodeType } from '@hierarchidb/core-types';
+import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 import {
   toShapeProgress,
@@ -40,8 +41,8 @@ export function useBuildProgress(
     nodeId,
     {
       autoSubscribe,
-      mapUnifiedToProgress: (info) => toShapeProgress(info as ExtendedProgress | null),
-      mapUnifiedToStatus: (info) => toShapeStatus(info as ExtendedProgress | null),
+      mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) => toShapeProgress(info as ExtendedProgress | null),
+      mapUnifiedToStatus: (info: BuildUnifiedProgressInfo | null) => toShapeStatus(info as ExtendedProgress | null),
     },
   );
   return {

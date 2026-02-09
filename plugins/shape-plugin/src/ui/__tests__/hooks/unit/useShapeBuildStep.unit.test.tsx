@@ -31,9 +31,9 @@ vi.mock('../../../i18n.js', () => ({
 vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => ({
     initialize: vi.fn(),
-    resumeBatchSession: vi.fn(),
-    startBatchSession: vi.fn(),
-    pauseBatchSession: vi.fn(),
+    resumeBuildSession: vi.fn(),
+    startBuildSession: vi.fn(),
+    pauseBuildSession: vi.fn(),
   }),
 }));
 

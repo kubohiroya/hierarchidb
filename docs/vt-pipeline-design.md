@@ -585,7 +585,7 @@ vt-orchestrator は fetch の実行は行わない。
 - 自動再試行が過剰だと I/O が過負荷になる
 
 **新仕様（決定規則）**
-- `fetch`: ネットワーク系はリトライ（回数は batchConfig の retryAttempts を使用）
+- `fetch`: ネットワーク系はリトライ（回数は buildConfig の retryAttempts を使用）
 - `transform`: deterministic なので基本再試行なし（失敗は failed）
 - `vt`: リトライ不要（失敗は failed）
 
@@ -635,7 +635,7 @@ vt-orchestrator は fetch の実行は行わない。
 ### 2) 非Legacy項目（要約）
 
 #### shape
-- fetch: `downloadConfig.maxConcurrent`, `timeoutMs`, `retryDelay`, `retryAttempts`
+- fetch: `downloadConfig.maxConcurrent`, `timeoutMs`, `retryDelay`, `retryAttempts`（fetch 設定）
 - transform: `transformShapeSimplificationTolerance`, `featureFilterMethod`, `areaThreshold`, `hybridFilterConfig.*`
 - vt: `tileConfig.minZoom/maxZoom`, `zoomBreakpoints`, `bufferSize`, `tileExpandFactor`, `tileExpandMargin`, `vtShapeSimplificationTolerance`
 - task split: `maxBuffersPerTask`, `maxVerticesPerTask`, `maxBand3Reservations`
@@ -704,22 +704,22 @@ vt-orchestrator は fetch の実行は行わない。
 
 ##### fetch（shape-fetch）
 
-- `downloadConfig.maxConcurrent`（Rating）
+- `downloadConfig.maxConcurrent`（Rating, fetch 設定）
   - 形式: number（整数）
   - 単位: workers
   - バリデーション: min=1, max=4, step=1
   - 既定値出典: `DEFAULT_PROCESSING_CONFIG.downloadConfig.maxConcurrent`（未設定時は 2）
-- `downloadConfig.timeoutMs`（TextField）
+- `downloadConfig.timeoutMs`（TextField, fetch 設定）
   - 形式: number
   - 単位: ms
   - バリデーション: min=0
   - 既定値出典: `DEFAULT_PROCESSING_CONFIG.downloadConfig.timeoutMs`（未設定時は 300000）
-- `downloadConfig.retryDelay`（TextField）
+- `downloadConfig.retryDelay`（TextField, fetch 設定）
   - 形式: number
   - 単位: ms
   - バリデーション: min=0
   - 既定値出典: `DEFAULT_PROCESSING_CONFIG.downloadConfig.retryDelay`（未設定時は 1000）
-- `downloadConfig.retryAttempts`（Rating）
+- `downloadConfig.retryAttempts`（Rating, fetch 設定）
   - 形式: number（整数）
   - 単位: 回数
   - バリデーション: max=10
@@ -933,10 +933,10 @@ vt-orchestrator は fetch の実行は行わない。
 
 #### shape
 
-- `downloadConfig.maxConcurrent` : smartFetch の同時実行数を制限する
-- `downloadConfig.timeoutMs` : 外部API呼び出しのタイムアウト（ms）
-- `downloadConfig.retryDelay` : リトライ間隔（ms）
-- `downloadConfig.retryAttempts` : リトライ回数
+- `downloadConfig.maxConcurrent` : smartFetch の同時実行数を制限する（fetch）
+- `downloadConfig.timeoutMs` : 外部API呼び出しのタイムアウト（ms, fetch）
+- `downloadConfig.retryDelay` : リトライ間隔（ms, fetch）
+- `downloadConfig.retryAttempts` : リトライ回数（fetch）
 - `extract1Config.workers` : Transform 前段の並列数（Legacy controls / Advanced Settings）
 - `extract1Config.tolerance` : 旧 Extract 互換の許容誤差（Legacy controls / Advanced Settings）
 - `extract2Config.workers` : Transform 後段の並列数（Legacy controls / Advanced Settings）

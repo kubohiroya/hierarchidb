@@ -13,7 +13,7 @@
       "label": "ライセンス同意"
     },
     "processing": {
-      "label": "処理設定"
+      "label": "ビルド設定"
     },
     "countrySelection": {
       "label": "国選択"
@@ -33,7 +33,7 @@
   },
   "messages": {
     "completeRequired": "ビルド前に必須項目と選択を完了してください。",
-    "notImplemented": "Shape のバッチビルドはこのダイアログでは未実装です。"
+    "notImplemented": "Shape のビルドはこのダイアログでは未実装です。"
   },
   "dialog": {
     "createTitle": "Shape を作成",
@@ -44,15 +44,15 @@
     "defaultName": "新規 shape"
   },
   "batchRecovery": {
-    "title": "バッチセッション再開",
-    "body": "バッチセッション復旧UIは再構築中です。リファクタ完了まで、ワーカーツールから再開または破棄してください。",
+    "title": "ビルドセッション再開",
+    "body": "ビルドセッション復旧UIは再構築中です。リファクタ完了まで、ワーカーツールから再開または破棄してください。",
     "close": "閉じる"
   },
   "countrySelection": {
     "loading": "国別メタデータを読み込み中...",
     "loadError": "国別メタデータの読み込みに失敗しました: {{message}}",
     "title": "国・行政レベルの選択",
-    "description": "ダウンロードする国と行政レベルを選択してください。行列で細かく指定できます。"
+    "description": "取得する国と行政レベルを選択してください。行列で細かく指定できます。"
   },
   "dataSource": {
     "title": "データソース",
@@ -114,7 +114,7 @@
       "deleteStage2Cache": "ズーム率別キャッシュを削除",
       "deleteTiles": "タイルデータを削除",
       "deleteMetadata": "フィーチャーメタデータを削除",
-      "deleteApiCacheHelp": "APIキャッシュ: このノードの取得済み生データ（フィルタリング前）。",
+      "deleteApiCacheHelp": "APIキャッシュ: このノードの取得済み生データ（フィルタ前）。",
       "deleteFilteredCacheHelp": "フィルター処理キャッシュ: fetchステージのズーム帯別フィルター済みコレクション。",
       "deleteTransformHelp": "簡略化キャッシュ: ズーム帯別に簡略化したジオメトリとtransformエラーログ。",
       "deleteVtHelp": "タイルデータ: 生成済みベクトルタイル（タイルインデックスも削除）。",
@@ -375,6 +375,8 @@
       "totalElapsed": "総経過時間",
       "stageElapsed": "このステージの経過時間",
       "stageRemaining": "このステージの残り時間(概算)",
+      "elapsedLabel": "経過",
+      "remainingLabel": "推定残り",
       "duration": "{{hours}}時間{{minutes}}分{{seconds}}秒",
       "unknown": "-"
     },
@@ -419,12 +421,12 @@
       "resume": "ビルド再開"
     },
     "progress": {
-      "title": "バッチ進捗",
+      "title": "ビルド進捗",
       "session": "セッション",
       "stage": "ステージ",
       "task": "タスク",
       "working": "進行中...",
-      "unknownStage": "処理中",
+      "unknownStage": "ビルド中",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} 完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     },
     "tasks": {

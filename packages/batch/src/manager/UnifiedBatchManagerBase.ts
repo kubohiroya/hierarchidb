@@ -1,5 +1,10 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
-import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
+import type {
+  BuildProgressCallback,
+  BuildProgressEvent,
+  BuildSessionStatus,
+  IBuildSessionManager,
+} from '@hierarchidb/batch-api';
 
 export interface UnifiedBatchSession<TConfig, TData> {
   config: TConfig;
@@ -14,12 +19,12 @@ export interface BatchPersistence<TConfig, TData> {
     | UnifiedBatchSession<TConfig, TData>
     | undefined;
   onSessionStarted?(nodeId: NodeId, payload: UnifiedBatchSession<TConfig, TData>): Promise<void> | void;
-  onSessionProgress?(nodeId: NodeId, event: BatchProgressEvent): Promise<void> | void;
-  onSessionStatusChange?(nodeId: NodeId, status: BatchSessionStatus): Promise<void> | void;
+  onSessionProgress?(nodeId: NodeId, event: BuildProgressEvent): Promise<void> | void;
+  onSessionStatusChange?(nodeId: NodeId, status: BuildSessionStatus): Promise<void> | void;
   onSessionCompleted?(nodeId: NodeId): Promise<void> | void;
 }
 
-export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchSessionManager<TConfig, TData> {
+export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildSessionManager<TConfig, TData> {
   private readonly pending = new Map<NodeId, UnifiedBatchSession<TConfig, TData>>();
 
   protected constructor(protected readonly persistence?: BatchPersistence<TConfig, TData>) {}
@@ -41,7 +46,7 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     }
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus> {
+  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
     const payload = this.persistence
       ? await this.persistence.takePending(nodeId)
       : this.pending.get(nodeId);
@@ -70,11 +75,11 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     await this.notifyStatus(nodeId);
   }
 
-  async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+  async getBatchSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     return this.getBuildSessionStatus(nodeId);
   }
 
-  async getBuildSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+  async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const status = await this.performStatus(nodeId);
     if (!status.nodeId) status.nodeId = nodeId;
     if (this.persistence?.onSessionStatusChange) {
@@ -83,8 +88,8 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     return status;
   }
 
-  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
-    return this.performSubscribe(nodeId, (event: BatchProgressEvent) => {
+  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+    return this.performSubscribe(nodeId, (event: BuildProgressEvent) => {
       let nextEvent = event;
       if (!nextEvent.nodeId) {
         nextEvent = { ...nextEvent, nodeId };
@@ -101,11 +106,11 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     });
   }
 
-  protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BatchSessionStatus>;
+  protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BuildSessionStatus>;
   protected abstract performPause(nodeId: NodeId): Promise<void>;
   protected abstract performResume(nodeId: NodeId): Promise<void>;
-  protected abstract performStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
-  protected abstract performSubscribe(nodeId: NodeId, callback: BatchProgressCallback): () => void;
+  protected abstract performStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
+  protected abstract performSubscribe(nodeId: NodeId, callback: BuildProgressCallback): () => void;
 
   private async notifyStatus(nodeId: NodeId): Promise<void> {
     if (!this.persistence?.onSessionStatusChange) return;

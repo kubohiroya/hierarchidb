@@ -1,7 +1,6 @@
-import type { BatchProgressEvent, UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import type { BatchProgressAdapter } from '@hierarchidb/batch-api';
+import type { BuildProgressAdapter, BuildProgressEvent, BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 
-export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgressInfo {
+export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedProgressInfo {
   const payload = event.payload ?? {};
   const total = typeof payload.total === 'number' && payload.total > 0 ? payload.total : 0;
   const completed = typeof payload.completed === 'number' ? payload.completed : 0;
@@ -23,11 +22,11 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
 }
 
 export function createAdapterFromProgressSubscribe(
-  subscribeToProgress: (cb: (event: BatchProgressEvent) => void) => (() => void) | Promise<() => void>,
-): BatchProgressAdapter {
+  subscribeToProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
+): BuildProgressAdapter {
   return {
-    subscribe: (consumer: (info: UnifiedProgressInfo) => void) => {
-      const wrapped = (event: BatchProgressEvent) => {
+    subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) => {
+      const wrapped = (event: BuildProgressEvent) => {
         consumer(progressEventToUnified(event));
       };
       return subscribeToProgress(wrapped);

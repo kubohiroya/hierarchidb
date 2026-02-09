@@ -1,1 +1,1 @@
-export type { UiStorageBridge, WorkerAPI } from './WorkerAPI.js';
+export type { BuildWorkerAPI, UiStorageBridge, WorkerAPI } from './WorkerAPI.js';

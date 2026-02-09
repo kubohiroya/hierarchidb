@@ -41,7 +41,7 @@ export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeBuildSta
   return cleared;
 }
 
-export function resolveBatchConfigInvalidation(
+export function resolveBuildConfigInvalidation(
   prevConfig: ShapeBuildConfig | undefined,
   nextConfig: ShapeBuildConfig | undefined,
 ): ShapeBuildStage[] {

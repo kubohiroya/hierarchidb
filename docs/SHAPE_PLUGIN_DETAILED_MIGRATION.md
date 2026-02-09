@@ -12,9 +12,9 @@
 
 **✅ shape-pluginは非常に完成度が高いプラグイン**:
 - **folder-plugin拡張**: FolderEntityを継承した地理空間データプラグイン
-- **完全なStep実装**: TabularDataSourceStep, LicenseStep, ProcessingStep, CountrySelectionStep
-- **高度なバッチ処理**: 大規模地理データの並列処理
-- **Worker統合**: VectorTileWorker、ExtractWorker、DownloadWorker
+- **完全なStep実装**: TabularDataSourceStep, LicenseStep, ProcessingStep（ビルド設定）, CountrySelectionStep
+- **高度なビルド処理**: 大規模地理データの並列処理
+- **Worker統合**: VectorTileWorker、ExtractWorker、DownloadWorker（Fetch）
 - **認証システム**: データソースアクセス認証
 - **エラーハンドリング**: 包括的なエラー管理システム
 
@@ -38,11 +38,11 @@ export interface ShapeEntity extends FolderEntity {
 ### UI Components（完全実装済み）
 - **TabularDataSourceStep**: データソース選択（geofabrik、naturalearth、gadm、osm）
 - **LicenseStep**: ライセンス同意確認
-- **ProcessingStep**: 処理設定（行政レベル選択）
+- **ProcessingStep**: ビルド設定（行政レベル選択）
 - **CountrySelectionStep**: 国家選択インターフェース
 
-### バッチ処理システム（完成済み）
-- **BatchSessionManager**: セッション管理
+### ビルド処理システム（完成済み）
+- **BatchSessionManager**: ビルドセッション管理（API名は互換維持）
 - **WorkerPoolManager**: ワーカープール管理
 - **ShapeService**: 地理データ処理サービス
 

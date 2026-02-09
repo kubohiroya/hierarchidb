@@ -106,7 +106,7 @@ Create（作成）、Read（読み取り）、Update（更新）、Delete（削�
 
 操作の取り消し（Undo）とやり直し（Redo）。操作履歴をリングバッファで管理。
 
-### バッチ操作（Batch Operation）
+### 一括操作（Bulk Operation）
 
 複数の項目に対して一括で行う操作。効率的な大量データ処理を可能にする。
 

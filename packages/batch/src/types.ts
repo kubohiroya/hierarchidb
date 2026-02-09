@@ -15,6 +15,18 @@ export type {
   UseBatchProgressOptions,
   StandardProgressEvent,
   StandardProgressPayload,
+  BuildStatus,
+  BuildProgress,
+  BuildProgressAdapter,
+  BuildProgressCallback,
+  BuildProgressEvent,
+  BuildProgressPayload,
+  BuildSessionState,
+  BuildSessionStatus,
+  BuildManagerFactory,
+  IBuildSessionManager,
+  BuildUnifiedProgressInfo,
+  UseBuildProgressOptions,
 } from '@hierarchidb/batch-api';
 
 export type { BatchPersistence, UnifiedBatchSession } from './manager/UnifiedBatchManagerBase.js';

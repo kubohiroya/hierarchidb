@@ -11,7 +11,7 @@
     "title": "Authentication 🔐",
     "loginDescription": "Login with your Google account to access external data sources.",
     "loggedInDescription": "You're already logged in! Click here to access your user menu.",
-    "additionalInfo": "Authentication is required for downloading geographic data from GADM, Natural Earth, and other providers."
+    "additionalInfo": "Authentication is required for fetching geographic data from GADM, Natural Earth, and other providers."
   },
   "documentation": {
     "title": "Documentation 📚",
@@ -19,6 +19,6 @@
   },
   "help": {
     "title": "Need Help? 🤔",
-    "description": "You can restart this tour anytime by clicking the help button. We're here to help you get the most out of ERIA Cartograph!"
+    "description": "You can start this tour anytime by clicking the help button. We're here to help you get the most out of ERIA Cartograph!"
   }
 }

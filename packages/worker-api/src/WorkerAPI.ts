@@ -10,7 +10,13 @@ import type {
   ShapeQueryAPI,
 } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
-import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type {
+  BatchProgressEvent,
+  BatchSessionStatus,
+  BatchTaskSummary,
+  BatchTaskUpdateEvent,
+  BuildContinuationPolicy,
+} from '@hierarchidb/batch-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {
@@ -76,21 +82,52 @@ export interface WorkerAPI<T> {
   getRouteMutationAPI(): Promise<RouteMutationAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
+  /** @deprecated Use startBuildSession. */
   startBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
+  /** Preferred alias for startBatchSession. */
+  startBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<BatchSessionStatus>;
+  /** @deprecated Use getBuildSessionStatus. */
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  /** Preferred alias for getBatchSessionStatus. */
+  getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  /** @deprecated Use pauseBuildSession. */
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /** Preferred alias for pauseBatchSession. */
+  pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /** @deprecated Use resumeBuildSession. */
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
+  /** Preferred alias for resumeBatchSession. */
+  resumeBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<void>;
+  /** @deprecated Use getBuildTasks. */
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
+  /** Preferred alias for getBatchTasks. */
+  getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
+  /** @deprecated Use subscribeBuildTasks. */
   subscribeBatchTasks(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: BatchTaskUpdateEvent) => void
+  ): Promise<() => void>;
+  /** Preferred alias for subscribeBatchTasks. */
+  subscribeBuildTasks(
     nodeType: NodeType,
     nodeId: NodeId,
     callback: (event: BatchTaskUpdateEvent) => void
@@ -109,7 +146,14 @@ export interface WorkerAPI<T> {
     dataSource: ShapeDataSourceName,
     selectedArrayByCountries: Record<string, boolean[]>
   ): Promise<ShapeDownloadTaskPayload[]>;
+  /** @deprecated Use subscribeBuildProgress. */
   subscribeBatchProgress(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: BatchProgressEvent) => void
+  ): Promise<() => void>;
+  /** Preferred alias for subscribeBatchProgress. */
+  subscribeBuildProgress(
     nodeType: NodeType,
     nodeId: NodeId,
     callback: (event: BatchProgressEvent) => void
@@ -119,3 +163,6 @@ export interface WorkerAPI<T> {
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;
 }
+
+/** Preferred alias for WorkerAPI. */
+export type BuildWorkerAPI<T> = WorkerAPI<T>;

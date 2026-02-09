@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toNodeId, type NodeType } from '@hierarchidb/core-types';
-import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 
@@ -9,7 +9,7 @@ export type UseBatchProgressStateOptions = {
 };
 
 export interface BatchProgressState {
-  progress: UnifiedProgressInfo | null;
+  progress: BuildUnifiedProgressInfo | null;
   error: Error | null;
   subscribe: () => void;
   unsubscribe: () => void;

@@ -1,6 +1,13 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BaseBatchConfig, BatchProgress, BatchProgressEvent, BatchProgressPayload, ProgressPhase } from '@hierarchidb/batch-api';
-import type { BatchSessionState, ResourceUsage } from '@hierarchidb/batch-api';
+import type {
+  BaseBatchConfig,
+  BuildProgress,
+  BuildProgressEvent,
+  BuildProgressPayload,
+  BuildSessionState,
+  ProgressPhase,
+  ResourceUsage,
+} from '@hierarchidb/batch-api';
 
 /**
  * Shared lifecycle base for batch-oriented workflows.
@@ -12,9 +19,9 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   protected resourceUsage?: ResourceUsage;
   protected abortController: AbortController | null = null;
 
-  private readonly progressListeners = new Set<(event: BatchProgressEvent) => void>();
-  private readonly state: BatchSessionState;
-  private progress: BatchProgress;
+  private readonly progressListeners = new Set<(event: BuildProgressEvent) => void>();
+  private readonly state: BuildSessionState;
+  private progress: BuildProgress;
 
   constructor(nodeId: NodeId, config: TConfig) {
     this.nodeId = nodeId;
@@ -33,11 +40,11 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     };
   }
 
-  getState(): BatchSessionState {
+  getState(): BuildSessionState {
     return { ...this.state };
   }
 
-  getProgress(): BatchProgress {
+  getProgress(): BuildProgress {
     return { ...this.progress };
   }
 
@@ -129,15 +136,15 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.emitProgress({ phase: 'running', stage: this.progress.taskType ?? 'running', payload: this.toProgressPayload() });
   }
 
-  addBatchProgressListener(listener: (event: BatchProgressEvent) => void): () => void {
+  addBatchProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
     this.progressListeners.add(listener);
     return () => {
       this.progressListeners.delete(listener);
     };
   }
 
-  protected updateProgress(partial: Partial<BatchProgress>, stage?: string): void {
-    const merged: BatchProgress = {
+  protected updateProgress(partial: Partial<BuildProgress>, stage?: string): void {
+    const merged: BuildProgress = {
       ...this.progress,
       ...partial,
     };
@@ -158,18 +165,18 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     });
   }
 
-  protected toProgressPayload(): BatchProgressPayload {
+  protected toProgressPayload(): BuildProgressPayload {
     const { total, completed, failed, skipped, estimatedTimeRemaining } = this.progress;
     return { total, completed, failed, skipped, estimatedTimeRemaining };
   }
 
-  protected emitProgress(event: Partial<BatchProgressEvent>): void {
+  protected emitProgress(event: Partial<BuildProgressEvent>): void {
     const errorPayload = event.error;
     const formattedError =
       errorPayload && typeof errorPayload === 'object' && 'code' in (errorPayload as object)
         ? formatProgressError(errorPayload)
         : event.error;
-    const full: BatchProgressEvent = {
+    const full: BuildProgressEvent = {
       nodeId: this.nodeId,
       stage: event.stage ?? this.progress.taskType ?? 'unknown',
       phase: event.phase ?? (this.state.status as ProgressPhase),
@@ -203,7 +210,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
-  protected onBatchProgressEvent(_event: BatchProgressEvent): void {}
+  protected onBatchProgressEvent(_event: BuildProgressEvent): void {}
 }
 
 function abortError(message: string): Error {

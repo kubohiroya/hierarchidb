@@ -10,11 +10,11 @@ import {
 } from '@hierarchidb/ui-batch-progress';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
-import type { BatchTaskSummary } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary } from '@hierarchidb/batch-api';
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
-type Args<T extends BatchTaskSummary & TaskStageCarrier> = {
+type Args<T extends BuildTaskSummary & TaskStageCarrier> = {
   stages: BuildStage[];
   resolvedTaskType?: string;
   overallProgress: number;
@@ -28,7 +28,7 @@ type Args<T extends BatchTaskSummary & TaskStageCarrier> = {
   timingStageMs: number;
 };
 
-type SummaryResult<T extends BatchTaskSummary & TaskStageCarrier> = {
+type SummaryResult<T extends BuildTaskSummary & TaskStageCarrier> = {
   taskSummary: Record<string, TaskCountSummary>;
   aggregatedCounts: TaskCountSummary;
   stageProgress: Record<string, number>;
@@ -48,7 +48,7 @@ type SummaryResult<T extends BatchTaskSummary & TaskStageCarrier> = {
   stageRemainingMs: number | null;
 };
 
-export const useShapeBuildProgressSummary = <T extends BatchTaskSummary & TaskStageCarrier>({
+export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskStageCarrier>({
   stages,
   resolvedTaskType,
   overallProgress,

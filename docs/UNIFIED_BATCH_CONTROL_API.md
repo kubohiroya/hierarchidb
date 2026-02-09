@@ -1,6 +1,8 @@
-# Unified Batch Control API — Runtime Worker / UI 連携仕様（2025-09 再整理）
+# Unified Build Control API — Runtime Worker / UI 連携仕様（2025-09 再整理）
 
-本ドキュメントは Shape / Location / Route を中心に構築中の共通バッチ基盤について、Runtime Worker と UI の結線仕様をまとめたものです。以下の方針は旧 API からの移行前提となります。
+本ドキュメントは Shape / Location / Route を中心に構築中の共通ビルド基盤について、Runtime Worker と UI の結線仕様をまとめたものです。以下の方針は旧 API からの移行前提となります。
+
+注記: API 名は互換性のため `Batch*` を維持していますが、用語としては Build/Session/Fetch に統一して記述します。
 
 ## 1. ローディング戦略
 

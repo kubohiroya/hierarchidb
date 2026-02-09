@@ -8,7 +8,7 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
-import type { BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
+import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 import { useShapeBuildTaskSync, type RawTaskSummary } from './useShapeBuildTaskSync.ts';
 
@@ -108,7 +108,7 @@ export function useShapeBuildTasks(
     subscriptionIdRef.current = subscriptionId;
     let cancelled = false;
 
-    const handleEvent = (event: BatchTaskUpdateEvent<RawTaskSummary>) => {
+    const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
       if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
       if (event.type === 'snapshot') {
         handleSnapshotRef.current(event.tasks);
@@ -126,7 +126,7 @@ export function useShapeBuildTasks(
     const start = async () => {
       try {
         await bridgeRef.current.initialize();
-        const unsubscribe = await bridgeRef.current.subscribeBatchTasks(
+        const unsubscribe = await bridgeRef.current.subscribeBuildTasks(
           SHAPE_NODE_TYPE,
           nodeId,
           handleEvent,
@@ -138,7 +138,7 @@ export function useShapeBuildTasks(
         subscriptionRef.current = unsubscribe;
       } catch (err) {
         if (cancelled) return;
-        const errObj = err instanceof Error ? err : new Error('Failed to subscribe batch tasks');
+        const errObj = err instanceof Error ? err : new Error('Failed to subscribe build tasks');
         setError(errObj);
         setIsLoading(false);
       }

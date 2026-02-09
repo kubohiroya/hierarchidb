@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
-import type { BatchTaskSummary } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary } from '@hierarchidb/batch-api';
 import {
   areTaskListsEqual,
   shouldApplyTaskUpdate,
@@ -8,7 +8,7 @@ import {
 } from '@hierarchidb/ui-batch-progress';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 
-export type RawTaskSummary = BatchTaskSummary & {
+export type RawTaskSummary = BuildTaskSummary & {
   taskType?: string;
   type?: string;
   stage?: string;

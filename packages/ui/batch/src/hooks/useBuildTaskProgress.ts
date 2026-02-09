@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
-import type { BatchTaskSummary } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary } from '@hierarchidb/batch-api';
 import { buildTaskCountSummary } from '../utils/taskProgressSummary.js';
 
-type TaskStageCarrier = BatchTaskSummary & { taskType?: string; type?: string; stage?: string };
+type TaskStageCarrier = BuildTaskSummary & { taskType?: string; type?: string; stage?: string };
 
 const resolveTaskStage = (task: TaskStageCarrier): string | undefined => (
   task.taskType ?? task.type ?? task.stage
@@ -21,14 +21,14 @@ const toStageKey = (task: TaskStageCarrier): string => {
   return candidate;
 };
 
-const isSkippedTask = (task: BatchTaskSummary): boolean => {
+const isSkippedTask = (task: BuildTaskSummary): boolean => {
   const message = task.message;
   if (!message) return false;
   const normalized = message.trim().toLowerCase();
   return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
-export const useBuildTaskProgress = <T extends BatchTaskSummary>(
+export const useBuildTaskProgress = <T extends BuildTaskSummary>(
   stages: BuildStage[],
   taskType: string | undefined,
   overallProgress: number,

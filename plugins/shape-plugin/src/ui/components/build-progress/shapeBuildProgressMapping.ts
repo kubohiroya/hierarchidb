@@ -1,4 +1,4 @@
-import type { BatchProgressPayload, BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { computePercentage } from '@hierarchidb/ui-batch-progress';
 
 export interface BuildProgress {
@@ -21,9 +21,9 @@ export interface BuildProgressStatus {
   lastUpdated?: number;
 }
 
-export type ExtendedPayload = BatchProgressPayload & { stage?: string };
+export type ExtendedPayload = BuildProgressPayload & { stage?: string };
 
-export type ExtendedProgress = UnifiedProgressInfo & {
+export type ExtendedProgress = BuildUnifiedProgressInfo & {
   phase?: string;
   timestamp?: number;
   message?: string | null;
@@ -54,7 +54,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
 
 export function toShapeStatus(
   info: ExtendedProgress | null,
-  fallback?: BatchSessionStatus | null,
+  fallback?: BuildSessionStatus | null,
 ): BuildProgressStatus | null {
   const fallbackStatus = fallback?.status;
   const phase = fallbackStatus && fallbackStatus !== 'idle'

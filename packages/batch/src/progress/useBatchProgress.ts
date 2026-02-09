@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import type { BatchProgressAdapter, UseBatchProgressOptions } from '@hierarchidb/batch-api';
+import type { BuildProgressAdapter, BuildUnifiedProgressInfo, UseBuildProgressOptions } from '@hierarchidb/batch-api';
 
 type Unsubscribe = () => void;
 
 type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
-type Adapter = BatchProgressAdapter | null;
+type Adapter = BuildProgressAdapter | null;
 
-const resolveSkippedCount = (info: UnifiedProgressInfo): number => {
+const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
   const payload = info.payload as Record<string, unknown> | undefined;
   const skipped = payload?.skipped;
   return typeof skipped === 'number' && Number.isFinite(skipped) ? skipped : 0;
@@ -16,16 +15,16 @@ const resolveSkippedCount = (info: UnifiedProgressInfo): number => {
 
 export function useBatchProgress(
   adapter: Adapter,
-  { autoSubscribe = true }: UseBatchProgressOptions = {},
+  { autoSubscribe = true }: UseBuildProgressOptions = {},
 ) {
-  const [progress, setProgress] = useState<UnifiedProgressInfo | null>(null);
+  const [progress, setProgress] = useState<BuildUnifiedProgressInfo | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const unsubRef = useRef<Unsubscribe | null>(null);
   const subscribedRef = useRef(false);
-  const pendingRef = useRef<UnifiedProgressInfo | null>(null);
+  const pendingRef = useRef<BuildUnifiedProgressInfo | null>(null);
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
-  const lastProgressRef = useRef<UnifiedProgressInfo | null>(null);
+  const lastProgressRef = useRef<BuildUnifiedProgressInfo | null>(null);
 
   useEffect(() => {
     adapterRef.current = adapter;
@@ -66,7 +65,7 @@ export function useBatchProgress(
   const subscribe = useCallback(() => {
     const currentAdapter = adapterRef.current;
     if (!currentAdapter || subscribedRef.current) return;
-    const result: SubscribeResult = currentAdapter.subscribe((info: UnifiedProgressInfo) => {
+    const result: SubscribeResult = currentAdapter.subscribe((info: BuildUnifiedProgressInfo) => {
       pendingRef.current = info;
       if (flushFrameRef.current !== null) return;
       flushFrameRef.current = window.requestAnimationFrame(update);

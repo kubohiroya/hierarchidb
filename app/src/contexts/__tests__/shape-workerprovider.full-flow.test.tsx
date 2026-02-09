@@ -133,6 +133,64 @@ vi.mock('~/worker-runtime/client.ts', async () => {
 
   const createWorkerApi = async (): Promise<WorkerAPI> => {
     const services = await WorkerService.getSingleton([]);
+    const startBatchSessionImpl = async (
+      nodeType: NodeType,
+      nodeId: NodeId,
+      downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
+      buildContinuationPolicy?: string
+    ) => {
+      if (nodeType !== ('shape' as NodeType)) {
+        throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
+      }
+      const buildConfig = await resolveShapeDraftData(nodeId);
+      await shapeBatchAPI.startBatchProcess(
+        nodeId,
+        buildConfig,
+        downloadTaskPayloads ?? [],
+        buildContinuationPolicy
+      );
+      const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
+      return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
+    };
+    const getBatchSessionStatusImpl = async (nodeType: NodeType, nodeId: NodeId) => {
+      if (nodeType !== ('shape' as NodeType)) {
+        return toBatchSessionStatus(nodeId, 'idle');
+      }
+      const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
+      return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
+    };
+    const pauseBatchSessionImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
+      await shapeBatchAPI.invokeBatchCommand('session/pause', { nodeId });
+    };
+    const resumeBatchSessionImpl = async (
+      _nodeType: NodeType,
+      nodeId: NodeId,
+      buildContinuationPolicy?: string
+    ) => {
+      await shapeBatchAPI.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
+    };
+    const getBatchTasksImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
+      const tasks = await shapeBatchAPI.getBatchTasks(nodeId);
+      return tasks.map(toBatchTaskSummary);
+    };
+    const subscribeBatchTasksImpl = async (
+      _nodeType: NodeType,
+      nodeId: NodeId,
+      callback: (event: BatchTaskUpdateEvent) => void
+    ) => {
+      if (shapeBatchAPI.subscribeToTasks) {
+        return shapeBatchAPI.subscribeToTasks(nodeId, callback);
+      }
+      return () => {};
+    };
+    const subscribeBatchProgressImpl = async (
+      _nodeType: NodeType,
+      nodeId: NodeId,
+      callback: (payload: BatchProgressEvent<BatchProgressPayload>) => void
+    ) => {
+      const unsubscribe = shapeBatchAPI.subscribeToProgress(nodeId, callback);
+      return () => unsubscribe();
+    };
     return {
       ping: async () => ({ response: 'pong', timestamp: Date.now() }),
       initialize: async () => {},
@@ -166,62 +224,29 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       getCommandProcessor: async () => (
         Comlink.proxy(services.getCommandProcessor()) as unknown as Awaited<ReturnType<WorkerAPI['getCommandProcessor']>>
       ),
-      startBatchSession: async (
+      startBatchSession: startBatchSessionImpl,
+      startBuildSession: async (
         nodeType: NodeType,
         nodeId: NodeId,
         downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
         buildContinuationPolicy?: string
-      ) => {
-        if (nodeType !== ('shape' as NodeType)) {
-          throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
-        }
-        const buildConfig = await resolveShapeDraftData(nodeId);
-        await shapeBatchAPI.startBatchProcess(
-          nodeId,
-          buildConfig,
-          downloadTaskPayloads ?? [],
-          buildContinuationPolicy
-        );
-        const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
-        return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
-      },
-      getBatchSessionStatus: async (nodeType: NodeType, nodeId: NodeId) => {
-        if (nodeType !== ('shape' as NodeType)) {
-          return toBatchSessionStatus(nodeId, 'idle');
-        }
-        const batchStatus = await shapeBatchAPI.getBatchStatus(nodeId);
-        return toBatchSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
-      },
-      pauseBatchSession: async (_nodeType: NodeType, nodeId: NodeId) => {
-        await shapeBatchAPI.invokeBatchCommand('session/pause', { nodeId });
-      },
-      resumeBatchSession: async (
-        _nodeType: NodeType,
-        nodeId: NodeId,
-        buildContinuationPolicy?: string
-      ) => {
-        await shapeBatchAPI.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
-      },
-      getBatchTasks: async (_nodeType: NodeType, nodeId: NodeId) => {
-        const tasks = await shapeBatchAPI.getBatchTasks(nodeId);
-        return tasks.map(toBatchTaskSummary);
-      },
+      ) => startBatchSessionImpl(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy),
+      getBatchSessionStatus: getBatchSessionStatusImpl,
+      getBuildSessionStatus: getBatchSessionStatusImpl,
+      pauseBatchSession: pauseBatchSessionImpl,
+      pauseBuildSession: pauseBatchSessionImpl,
+      resumeBatchSession: resumeBatchSessionImpl,
+      resumeBuildSession: resumeBatchSessionImpl,
+      getBatchTasks: getBatchTasksImpl,
+      getBuildTasks: getBatchTasksImpl,
       listBuildSessionRecordsByStatus: async () => [],
       subscribeBuildSessionRecordsByStatus: async (
         _nodeType: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[0],
         _statuses: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[1],
         _callback: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[2]
       ) => () => {},
-      subscribeBatchTasks: async (
-        _nodeType: NodeType,
-        nodeId: NodeId,
-        callback: (event: BatchTaskUpdateEvent) => void
-      ) => {
-        if (shapeBatchAPI.subscribeToTasks) {
-          return shapeBatchAPI.subscribeToTasks(nodeId, callback);
-        }
-        return () => {};
-      },
+      subscribeBatchTasks: subscribeBatchTasksImpl,
+      subscribeBuildTasks: subscribeBatchTasksImpl,
       generateShapeDownloadTaskPayloadsFromSelection: async (
         nodeId: NodeId,
         dataSource: string,
@@ -232,14 +257,8 @@ vi.mock('~/worker-runtime/client.ts', async () => {
           dataSource,
           selectedArrayByCountries
         ),
-      subscribeBatchProgress: async (
-        _nodeType: NodeType,
-        nodeId: NodeId,
-        callback: (payload: BatchProgressEvent<BatchProgressPayload>) => void
-      ) => {
-        const unsubscribe = shapeBatchAPI.subscribeToProgress(nodeId, callback);
-        return () => unsubscribe();
-      },
+      subscribeBatchProgress: subscribeBatchProgressImpl,
+      subscribeBuildProgress: subscribeBatchProgressImpl,
       subscribeHeapPressure: async () => () => {},
       setUiStorageBridge: async () => {},
       setAuthToken: async () => {},
