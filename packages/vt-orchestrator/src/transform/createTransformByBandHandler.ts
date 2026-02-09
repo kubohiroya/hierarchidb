@@ -27,6 +27,7 @@ import { packTileId } from '../tiles/tileId.js';
 
 const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
 let taskDebugModuleLogged = false;
+let structuredCloneLogged = false;
 const logTaskDebugModuleOnce = (label: string, details?: Record<string, unknown>) => {
   if (taskDebugModuleLogged) return;
   taskDebugModuleLogged = true;
@@ -1252,6 +1253,18 @@ export const createTransformByBandHandler = (
   }): Promise<void> => {
     const completedAt = Date.now();
     let updatedTask: StoredTaskRecord | null = null;
+    if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true && !structuredCloneLogged) {
+      structuredCloneLogged = true;
+      const cloneFn = globalThis.structuredClone;
+      const cloneText = typeof cloneFn === 'function' ? String(cloneFn) : '';
+      console.info('[ShapeTransform][TaskDebug] structuredClone probe', {
+        tag: TASKDEBUG_BUILD_TAG,
+        name: typeof cloneFn === 'function' ? cloneFn.name : null,
+        type: typeof cloneFn,
+        isNative: typeof cloneFn === 'function' ? cloneText.includes('[native code]') : null,
+        preview: typeof cloneFn === 'function' ? cloneText.slice(0, 120) : null,
+      });
+    }
     const cacheStartedAt = Date.now();
     let cacheWaitLogged = false;
     const cacheWaitTimer = setTimeout(() => {
@@ -2200,6 +2213,7 @@ export const createTransformByBandHandler = (
         throw new Error(`transform failed: invalid geojson for vt (issues=${issues.length})`);
       }
 
+      const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
       stageLabel = 'counts:output-vertices';
       await updateTaskPhase(taskId, 'output:counts:start', taskProgressRange.outputEnd - 5);
       const vertexCount = await runStageWithLabel('counts:output-vertices', () => features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0));
@@ -2215,13 +2229,43 @@ export const createTransformByBandHandler = (
       if (encoded.byteLength === 0) {
         throw new Error('transform failed: empty transform cache buffer');
       }
+      if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
+        const data = encoded;
+        const dataIsObject = data !== null && typeof data === 'object';
+        const dataConstructorName = dataIsObject
+          ? (data as { constructor?: { name?: string } }).constructor?.name ?? null
+          : null;
+        const dataByteLength = dataIsObject && 'byteLength' in (data as { byteLength?: number })
+          ? (data as { byteLength?: number }).byteLength ?? null
+          : null;
+        const dataSize = dataIsObject && 'size' in (data as { size?: number })
+          ? (data as { size?: number }).size ?? null
+          : null;
+        const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
+        const isArrayBufferView = dataIsObject
+          && typeof ArrayBuffer !== 'undefined'
+          && typeof ArrayBuffer.isView === 'function'
+          ? ArrayBuffer.isView(data as unknown as ArrayBufferView)
+          : null;
+        const isUint8Array = typeof Uint8Array !== 'undefined' && data instanceof Uint8Array;
+        console.info('[ShapeTransform][TaskDebug] transform cache encode probe', {
+          tag: TASKDEBUG_BUILD_TAG,
+          nodeId: String(task.nodeId),
+          cacheId: String(cacheId),
+          dataType: typeof data,
+          dataConstructorName,
+          dataByteLength,
+          dataSize,
+          isArrayBuffer,
+          isArrayBufferView,
+          isUint8Array,
+        });
+      }
       stageLabel = 'encode:validate';
       await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
       logDebugPhase('encode:done', { byteLength: encoded.byteLength });
       await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd);
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
-      const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
-
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
       await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.encodeEnd);
@@ -2269,6 +2313,42 @@ export const createTransformByBandHandler = (
           totalPolygons: inputPolygonCount,
         },
       });
+      if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
+        const saved = await ephemeralDB.transformCache.get(cacheId);
+        const data = saved?.data ?? null;
+        const dataIsObject = data !== null && typeof data === 'object';
+        const dataConstructorName = dataIsObject
+          ? (data as { constructor?: { name?: string } }).constructor?.name ?? null
+          : null;
+        const dataByteLength = dataIsObject && 'byteLength' in (data as { byteLength?: number })
+          ? (data as { byteLength?: number }).byteLength ?? null
+          : null;
+        const dataSize = dataIsObject && 'size' in (data as { size?: number })
+          ? (data as { size?: number }).size ?? null
+          : null;
+        const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
+        const isArrayBufferView = dataIsObject
+          && typeof ArrayBuffer !== 'undefined'
+          && typeof ArrayBuffer.isView === 'function'
+          ? ArrayBuffer.isView(data as unknown as ArrayBufferView)
+          : null;
+        const isUint8Array = typeof Uint8Array !== 'undefined' && data instanceof Uint8Array;
+        console.info('[ShapeTransform][TaskDebug] transform cache readback probe', {
+          tag: TASKDEBUG_BUILD_TAG,
+          nodeId: String(task.nodeId),
+          cacheId: String(cacheId),
+          hasRecord: Boolean(saved),
+          recordKeys: saved ? Object.keys(saved) : [],
+          dataType: data === null ? 'null' : typeof data,
+          dataConstructorName,
+          dataByteLength,
+          dataSize,
+          isArrayBuffer,
+          isArrayBufferView,
+          isUint8Array,
+          timestamp: saved?.timestamp ?? null,
+        });
+      }
       logDebugPhase('cache-put:done', { cacheId });
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase, geometryOps);

@@ -1,3 +1,82 @@
+2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values
+- 依存: なし
+- 受け入れ基準: Step5 の Total elapsed/各ステージの Elapsed/Remaining が実態に一致する／算出と更新の仕組みが TASKS.md に整理される／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／ロールバック手順が明記される／影響範囲の検証結果が TASKS.md に記録される
+- 影響範囲: `plugins/shape-plugin/src/ui/**` / `packages/components/src/BuildStep*.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の時間表示ロジックへ戻す
+- チェックリスト:
+  - 時間算出/更新の実装箇所を特定する
+  - 不整合の原因を特定し修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 18:10 JST Step5 の Total elapsed/Elapsed/Remaining 表示不整合の調査と修正に着手。
+
+2622) fix/ui/shape-build-config-running-notice (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-build-config-running-notice
+- 依存: なし
+- 受け入れ基準: Step5 ビルド実行中に Step4 を開いても集計/削除 UI を表示せず「稼働中セッションへ遷移」ボタンのみ表示される／ボタン押下で Step5 へ遷移する／ビルド非実行時は従来 UI を維持する／ローカライズ文言が追加される／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/ShapeBuildConfigStep.tsx` / `plugins/shape-plugin/src/ui/locales/en.json` / `plugins/shape-plugin/src/ui/locales/ja.json`
+- ロールバック手順: 変更差分を revert し、従来の集計 UI を常時表示へ戻す
+- チェックリスト:
+  - ビルド実行中は Step4 を通知 + 遷移ボタンのみ表示に切替
+  - Step5 への遷移動線を `useDialogContext` で実装
+  - i18n 文字列追加
+  - `pnpm build && pnpm typecheck` を実行
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 16:58 JST Step5 実行中に Step4 へ遷移した際のハング回避のため、Step4 の表示を簡素化する修正に着手。
+  - update: 2026-02-09 17:06 JST ビルド実行中は Step4 を「稼働中セッションへ遷移」ボタンのみ表示に切替し、i18n 文言を追加。
+  - update: 2026-02-09 17:10 JST typecheck 失敗の型エラーに対応し、gis-sdk/ vt-orchestrator/ geosWorkerClient テストの型調整を実施。
+  - update: 2026-02-09 17:11 JST `pnpm build` exit 0（eslint-plugin-storybook 不在警告、tsdown define 警告、vite chunk size 警告、plugin-ui-sdk tsconfig 警告、npm env 警告あり）。
+  - done: 2026-02-09 17:12 JST `pnpm typecheck` exit 0。
+
+2621) fix/tags/draft-trash-association (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/tags/draft-trash-association
+- 依存: なし
+- 受け入れ基準: TagEntity/RelationalEntity から nodeIds を撤去し DB 保存から除外される／TagEntity.usageCount を型・DBスキーマから撤去し都度集計へ移行する／tagAssociations が draft/published のスコープで別行として保存される／save-draft で draft 関連を作成し publish save で published を作成後 draft を削除する／draft と published が同時に存在する場合は draft を優先して /tags 一覧と利用数集計に反映する／ドラフト・ゴミ箱配下ノードは /tags 一覧と利用数集計から除外される（ゴミ箱判定は先祖が trash ルート）／ゴミ箱から削除で tagAssociations を削除する／テストで仕様を検証する／TASKS.md に原因・発生範囲・修正方法・適用範囲・検証ログを記載する
+- 影響範囲: `packages/core-types/src/entity-types.ts` / `packages/tag/src/TagService.ts` / `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts` / `packages/runtime-worker/src/services/TreeMutationService.ts` / `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` / `app/src/router/routes/useTagsPage.ts` / `packages/runtime-worker/src/services/__tests__/unit/tag-associations.unit.test.ts` / `plugins/folder-plugin/docs/tag-management-specification.md`
+- ロールバック手順: 変更差分を revert し、従来挙動へ戻す
+- チェックリスト:
+  - RelationalEntity/TagEntity から nodeIds を撤去し生成箇所を更新する
+  - TagEntity.usageCount を撤去し集計は都度計算へ変更する
+  - tagAssociations を scope 付きで保存し、draft/published 共存時は draft を優先する
+  - save-draft で draft 関連を作成し、publish save で published 作成後 draft を削除する
+  - ドラフト/ゴミ箱配下ノードを /tags 一覧と利用数集計から除外する（先祖が trash ルート）
+  - ゴミ箱から削除時に tagAssociations を削除する
+  - 仕様に対応するテストを追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 14:30 JST タグの draft/ゴミ箱時の関連・usageCount 仕様変更と nodeIds 撤去に着手。
+  - update: 2026-02-09 15:05 JST RelationalEntity から nodeIds を撤去し、TagService の tag 生成から nodeIds を削除。
+  - update: 2026-02-09 15:05 JST save-draft では tagAssociations を作成せず、本保存のみで同期するよう TreeNodeUpdaterService を修正。
+  - update: 2026-02-09 15:06 JST moveToTrash で tagAssociations を削除し usageCount を減算、restore で metadata.tags を同期するよう TreeMutationService を拡張。
+  - update: 2026-02-09 15:06 JST ノード削除時に tagAssociations と usageCount を削減する処理を EntityLifecycleManager に実装。
+  - update: 2026-02-09 15:06 JST /tags の関連表示で trash 先祖を判定して除外するよう useTagsPage を補正。
+  - update: 2026-02-09 15:07 JST tag の draft/ trash / remove の単体テストを追加。
+  - blocked: 2026-02-09 15:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/core-types --filter @hierarchidb/tag-api --filter @hierarchidb/tag --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` が `@hierarchidb/vt-orchestrator` の既存型エラーで失敗。
+  - update: 2026-02-09 17:20 JST tagAssociations に scope を追加し、CoreDB の tagAssociations を `&id` 主キー＋`[nodeId+tagId+scope]` へ更新。TagService は draft 優先・重複保護を強化。/tags 集計で draft/ゴミ箱除外と draft 優先を適用。
+  - update: 2026-02-09 17:30 JST runtime-worker の vitest alias を各パッケージパスへ補正し、タグ関連テストを安定化。
+  - update: 2026-02-09 17:45 JST `pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tag-associations.unit.test.ts` exit 0。
+  - update: 2026-02-09 17:50 JST `pnpm -w turbo run typecheck --filter @hierarchidb/core-types --filter @hierarchidb/tag-api --filter @hierarchidb/tag --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` exit 0。
+
+2620) fix/tags/duplicate-association-on-save (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/tags/duplicate-association-on-save
+- 依存: なし
+- 受け入れ基準: タグ作成後にノード保存しても重複キーエラーが発生しない／重複登録の原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する／ロールバック手順を明記する／影響範囲の検証結果を TASKS.md に記録する
+- 影響範囲: `packages/tag/src/TagService.ts`
+- ロールバック手順: 変更差分を revert し、従来挙動へ戻す
+- チェックリスト:
+  - 重複登録が発生する経路（TagService / TreeNodeUpdaterService）を特定する
+  - タグ関連の保存フローで冪等性を担保する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 14:10 JST タグ作成後の保存で重複キーエラーが発生する問題の調査と修正に着手。
+  - update: 2026-02-09 14:15 JST TagService の addTagToNode で ConstraintError 時に既存関連を再取得し、存在すれば冪等に返却するよう修正。
+  - update: 2026-02-09 14:17 JST `pnpm -w turbo run typecheck --filter @hierarchidb/tag` exit 0。
+
 2619) fix/ui/session-coordinator-openchannel (P1) — 完了 (2026-02-09)
 - ブランチ名: codex/fix/ui/session-coordinator-openchannel
 - 依存: なし
@@ -365,6 +444,31 @@
   - start: 2026-02-07 21:20 JST mapRoute の dynamic import 失敗調査に着手。
   - blocked: 2026-02-07 21:24 JST sandbox から dev server を起動すると listen EPERM (0.0.0.0:4200) で失敗。ローカル起動ログが必要。
   - update: 2026-02-07 21:25 JST escalated 実行も timeout でログ取得できず。
+
+2603) test/geo/geos-worker-client (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/test/geo/geos-worker-client
+- 依存: なし
+- 受け入れ基準: geos Worker 経由で simplify/area/bbox/isValid/makeValid のユニットテストが追加される／Comlink経由の呼び出しで期待される不変条件を検証できる／`pnpm -w turbo run test --filter @hierarchidb/app` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/geos/**`
+- ロールバック手順: 追加したテストと geos Worker のテスト用補助コードを revert する
+- チェックリスト:
+  - geos Worker の API を Comlink 経由で呼ぶユニットテストを追加する
+  - simplify/area/bbox/isValid/makeValid の検証を行う
+  - 影響範囲の test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 15:05 JST geos Worker 経由のユニットテスト追加に着手。
+  - update: 2026-02-09 17:00 JST Comlink mock を解除したテスト起動と MessageChannel 経由の geosWorkerClient 初期化、geos-wasm Module 参照の調整に対応。
+  - update: 2026-02-09 17:05 JST `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` exit 0（4 tests）。フル `pnpm -w turbo run test --filter @hierarchidb/app` は未実行。
+  - update: 2026-02-09 17:13 JST 性能比較テストを追加し、`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` exit 0（5 tests）。perf 出力: turf init+1 0.15ms / turf x100 0.14ms / geos init+1 0.20ms / geos x100 9.84ms。
+  - start: 2026-02-09 18:40 JST simplify の性能比較（turf vs geos-wasm）を 1回/100回 で再計測する作業に着手。
+  - blocked: 2026-02-09 18:39 JST `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` が simplify 比較テストで 180000ms タイムアウト。perf 出力は turf area 0.16ms/0.14ms、geos area 0.21ms/3.09ms、turf simplify 0.38ms/0.56ms までで geos simplify x100 は未取得。
+  - update: 2026-02-09 18:46 JST simplify の比較回数を turf/geos ともに x50 へ変更。
+  - blocked: 2026-02-09 18:52 JST `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` が 240000ms タイムアウト。perf 出力は turf area 0.47ms/0.25ms、geos area 0.28ms/50.89ms、turf simplify 1.29ms/0.77ms までで geos simplify x50 は未取得。
+  - update: 2026-02-09 19:00 JST simplify 計測の LineString を 1000 頂点に変更。
+  - blocked: 2026-02-09 19:07 JST `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` が 240000ms タイムアウト。perf 出力は turf area 0.41ms/0.38ms、geos area 0.69ms/5.20ms、turf simplify 0.47ms/0.30ms までで geos simplify x50 は未取得。
+  - update: 2026-02-09 19:15 JST geos simplify を Worker 内バッチ実行できる `simplifyRepeated` を追加し、テストのタイムアウトを 600000ms に延長。
+  - blocked: 2026-02-09 19:52 JST `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/geos/__tests__/geosWorkerClient.unit.test.ts` が 600000ms タイムアウト。perf 出力は turf area 0.15ms/0.15ms、geos area 0.21ms/139.48ms、turf simplify 0.47ms/0.31ms までで geos simplify x50 は未取得。
 
 2602) feat/geo/geos-wasm-ui-worker (P1) — 進行中 (2026-02-08)
 - ブランチ名: codex/feat/geo/geos-wasm-ui-worker
@@ -17550,6 +17654,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-09 09:51 JST `pnpm build` を再実行して exit 0 を確認。
   - update: 2026-02-09 09:56 JST `packages/ui/worker-provider` の `getRawWorker` を `Worker | MessagePort | null` に拡張し、`pnpm typecheck` を実行（exit 0）。
   - update: 2026-02-09 09:59 JST AppBar の SharedSession 監視ボタン（`BuildSessionLauncherButtons`）の配線を確認。`useBuildSessionSnapshots` → `SessionCoordinatorProvider` と worker の build session Broadcast 更新が繋がっていることを確認。
+  - update: 2026-02-09 16:23 JST プラグインダイアログ表示時の AppBar 上の SharedSession 監視表示の配線を確認。`BuildSessionLauncherButtons` は `useBuildSessionSnapshots` のセッション有無で表示/非表示され、進捗は worker の build session 購読で更新される。
 2611) fix/shape/build-resume-crash (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/shape/build-resume-crash
 - 依存: なし
@@ -17646,7 +17751,8 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - start: 2026-02-09 07:47 JST Dexie.js 利用の 24/48 時間比較調査に着手。
   - start: 2026-02-09 08:05 JST Step5→Step4 遷移時ハングの原因調査に着手。
   - update: 2026-02-09 08:17 JST Step4（build-config）マウント時に `useShapeBuildCacheActions` が `listFeatureMetadata`/`listTransformErrorRecords`/`buildTasks count` を実行し、ビルド中は同一 IndexedDB での RW トランザクションと競合し得る点を確認。48h 内のセッション変更は BroadcastChannel→Dexie heartbeat への移行で、別DB（semaphoreDb）だが追加 I/O となっている。
-2613) fix/shape/step3-country-selection-defaults (P2) — 完了 (2026-02-08)
+  - update: 2026-02-09 08:26 JST ビルド実行中は Step4 を稼働中セッションボタンのみ表示とし、集計/削除UIを表示しない変更に着手。
+2613) fix/shape/step3-country-selection-defaults (P2) — 進行中 (2026-02-08)
 - ブランチ名: codex/fix/shape/step3-country-selection-defaults
 - 依存: なし
 - 受け入れ基準: shape ノード作成直後に Step3「国選択」が未訪問でも valid である／国チェックボックス0件でも valid と判定される／全世界各国 Level0 のチェックボックスが Step3 訪問時ではなくノード作成直後に draftData へセットされる／既存挙動に回帰がない／TASKS.md に運用ログを記載する
@@ -17662,6 +17768,87 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-08 23:19 JST Step3 valid 条件を選択非依存へ変更し、デフォルト選択の初期化を Data Source ステップ側へ移動。
   - update: 2026-02-08 23:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（core-types build で tsdown define 警告あり）。
   - done: 2026-02-08 23:20 JST Step3 選択初期化のタイミング変更と valid 条件調整を完了。
+  - update: 2026-02-09 11:07 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` 実行。
+  - blocked: 2026-02-09 11:07 JST テスト失敗（@hierarchidb/util の import 解決失敗、metadata-loader unit 失敗、useShapeBuildAutoResume 系失敗）。原因対応が必要。
+  - start: 2026-02-09 11:16 JST shape-plugin テストを現行実装へ合わせる作業を再開。
+  - update: 2026-02-09 11:38 JST shape-build-background-real-pipeline を短時間スモークと実パイプラインに分割し、実パイプラインは環境変数で限定実行する方針を確定。
+  - update: 2026-02-09 11:39 JST shape-build-background-real-pipeline にスモークテストを追加し、実パイプラインは HDB_WFL_REAL_PIPELINE=1 のときのみ実行に変更。
+  - update: 2026-02-09 11:39 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` exit 0（tsdown define 警告あり）。
+  - blocked: 2026-02-09 11:49 JST `HDB_WFL_REAL_PIPELINE=1 pnpm -w turbo run test --filter @hierarchidb/shape-plugin --env-mode=loose -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts` が 300s でタイムアウト（real pipeline 実行ログあり、完走未確認）。
+  - start: 2026-02-09 11:53 JST real pipeline のハング箇所特定のため、テストに進捗ログを追加して再実行。
+  - blocked: 2026-02-09 11:57 JST 進捗ログ追加後の再実行をユーザー判断で中断（3分超経過）。
+  - start: 2026-02-09 12:01 JST 進捗ログと timeout 付き await でハング箇所を確定させる調査を開始。
+  - blocked: 2026-02-09 12:14 JST step分割テストを実行したが 300s でタイムアウト。step2 の `debugTransformCacheAccess` 中（bulkGet 直前までのログあり）で停止しており、`waitForPipeline` などの timeout 要素には到達していない。
+  - update: 2026-02-09 12:32 JST tileIdToBufferRelations の pre-count チェックを追加し、timeout を 1/5（12s/24s/6s/6s）に短縮。
+  - update: 2026-02-09 12:35 JST real pipeline 4テストを常時実行に変更（スキップ条件を撤去）。
+  - blocked: 2026-02-09 12:37 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が exit 1。real pipeline step1-4 で pre tile relations count が 0 のため assert 失敗（waitFor 未到達）。
+  - update: 2026-02-09 12:45 JST ハング切り分け用に waitFor/bulkGet 前後のログを追加し、pre-count の assert を削除。
+  - start: 2026-02-09 13:05 JST pre-count assert 削除後に real pipeline のハング位置を再計測するため、テスト再実行に着手。
+  - blocked: 2026-02-09 13:08 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。最終ログは `[vt][debug] collect transaction done` で停止。
+  - start: 2026-02-09 14:48 JST vtStage の collect〜tileWriter に追加ログを差し込んでハング位置を絞り込む作業に着手。
+  - update: 2026-02-09 14:55 JST collect後の集計・buildLayerIndexes・tileWriter へ __HDB_VT_DEBUG_COLLECT 時のみ出るログを追加。
+  - blocked: 2026-02-09 14:59 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。最終ログは `[vt][debug] collect transaction done` で停止（collect loaded summary 以降のログが出ない）。
+  - start: 2026-02-09 14:56 JST transaction 内 return 直前ログを追加し、collect transaction 直後の停止位置を再確認する作業に着手。
+  - update: 2026-02-09 14:57 JST collect transaction の return 直前に recordCount などのログを追加。
+  - blocked: 2026-02-09 15:02 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`[vt][debug] collect transaction return` までは到達し、その後の `collect loaded summary` 以降が出ない。
+  - start: 2026-02-09 14:59 JST transaction 外側直後の最小ログを追加し、停止位置をさらに詰める作業に着手。
+  - update: 2026-02-09 15:00 JST transaction 外側直後に after transaction ログを追加。
+  - blocked: 2026-02-09 15:02 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`[vt][debug] collect transaction return` までは出力されるが、`[vt][debug] after transaction` が出ないため transaction コールバックの完了後〜commit 解決前で停止している可能性。
+  - start: 2026-02-09 15:03 JST transaction の Promise 解決/失敗ログを追加して停止位置を確認する作業に着手。
+  - update: 2026-02-09 15:04 JST transaction の resolved/rejected ログを追加。
+  - blocked: 2026-02-09 15:07 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`[vt][debug] collect transaction resolved` までは出力されるが、`[vt][debug] after transaction` が出ないため resolved 直後の処理で停止している可能性。
+  - start: 2026-02-09 15:07 JST txPromise を timeout race で包み、await 解決箇所を明示的に検知する作業に着手。
+  - update: 2026-02-09 15:08 JST debug 時のみ txPromise を timeout race で包み、timeout 到達時に明示的に error を投げるように変更。
+  - blocked: 2026-02-09 15:10 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。txPromise race の timeout は発火せず、`[vt][debug] collect transaction resolved` で停止し `after transaction` が出ない。
+  - start: 2026-02-09 15:11 JST after transaction の stderr ログを追加し、stdout 停止を疑う切り分けに着手。
+  - update: 2026-02-09 15:11 JST after transaction 直後に console.error のログを追加。
+  - blocked: 2026-02-09 15:14 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。stderr の `after transaction` も出ず、`[vt][debug] collect transaction resolved` で停止。
+  - start: 2026-02-09 15:15 JST txPromise.then 内に after transaction/summary を移して、await 後に到達できない問題を切り分ける作業に着手。
+  - update: 2026-02-09 15:16 JST after transaction/summary ログを txPromise.then 内へ移動。
+  - blocked: 2026-02-09 15:18 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`[vt][debug] after transaction` と `collect loaded summary` は出力され、その後 `[vt][debug] collect transaction resolved` で停止。
+  - start: 2026-02-09 15:19 JST records ループ直前と先頭にログを追加して停止位置を切り分ける作業に着手。
+  - update: 2026-02-09 15:19 JST record loop start/entry のログを追加。
+  - blocked: 2026-02-09 15:22 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`[vt][debug] record loop start/entry` は出ず、`collect loaded summary` → `collect transaction resolved` で停止。
+  - start: 2026-02-09 15:23 JST records.length の try/catch ログで停止位置をさらに切り分ける作業に着手。
+  - update: 2026-02-09 15:23 JST record loop start の try/catch ログを追加。
+  - blocked: 2026-02-09 15:26 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`record loop start failed` は出ず、`collect loaded summary` → `collect transaction resolved` で停止。
+  - start: 2026-02-09 15:29 JST records の先頭を手動参照する probe ログを追加し、for-of 以前での停止を切り分ける作業に着手。
+  - update: 2026-02-09 15:29 JST record manual probe のログを追加。
+  - blocked: 2026-02-09 15:32 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` が 120s でタイムアウト（exit 124）。`record manual probe` は出力され、byteLength が null のまま `collect transaction resolved` で停止。
+  - start: 2026-02-09 15:37 JST record の中身（data の型やキー）を軽量ログで出力し、record.data が null になる原因を絞り込む作業に着手。
+  - update: 2026-02-09 15:37 JST record shape probe を追加し、data の型/constructor/byteLength/size/キー/metadata を debug ログで出力するよう修正。
+  - start: 2026-02-09 15:39 JST record shape probe のログ確認のため real pipeline step 1+2 を再実行。
+  - update: 2026-02-09 15:41 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1+2"` を実行。対象ファイルは 5 tests すべて skip のため、record shape probe のログは出力されず（exit 0）。
+  - start: 2026-02-09 15:49 JST real pipeline テストのスキップ条件（環境変数/フラグ）を特定し、再実行に必要な条件を整理する調査に着手。
+  - update: 2026-02-09 15:50 JST real pipeline test file に skip/gating 条件はなく、直近の skip は `-t "real pipeline step 1+2"` の `+` が正規表現として解釈され一致しなかったことが原因の可能性が高い（`1\\+2` で再実行が必要）。
+  - start: 2026-02-09 15:56 JST `-t "real pipeline step 1\\+2"` で real pipeline step 1+2 を再実行し、record shape probe ログを確認する作業に着手。
+  - blocked: 2026-02-09 15:59 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。`record shape probe` で data の constructor が Object/byteLength null を確認後、`collect transaction resolved` 以降で停止。
+  - start: 2026-02-09 16:08 JST transformCache の record.data が Object になる書き込み経路と期待型を特定する調査に着手。
+  - update: 2026-02-09 16:08 JST transformCache への主な書き込みは `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の finalizeTaskWithCache（encodeFlatGeobufFromFeatureCollection で ArrayBuffer を生成して put）。型定義は `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` / `packages/shape-api/src/shapeBuildTypes.ts` ともに data: ArrayBuffer。読み取り側 `packages/vt-orchestrator/src/vt/vtStage.ts` は new Uint8Array(buffer) 前提。
+  - start: 2026-02-09 16:20 JST transform cache 書き込み時（encode直後/put直後）の data 型を __HDB_VT_DEBUG_COLLECT 時のみログ出力する修正に着手。
+  - update: 2026-02-09 16:21 JST 追加ログで参照する cacheId を encode 前に算出するよう修正（cacheId 参照の順序ミスを解消）。
+  - start: 2026-02-09 16:27 JST 追加ログ（encode/readback probe）の確認のため real pipeline step 1+2 を再実行。
+  - blocked: 2026-02-09 16:29 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。encode probe は ArrayBuffer（byteLength 888/616）だが、readback probe では dataConstructorName=Object/byteLength null に変化しており、transformCache 保存時に型が崩れている可能性が高い。
+  - start: 2026-02-09 16:43 JST createTransformByBandHandler の ephemeralDB 実体と transformCache の保存経路（Dexieスキーマ含む）を特定する調査に着手。
+  - update: 2026-02-09 16:44 JST transformByBand context の ephemeralDB は `packages/vt-orchestrator/src/contexts.ts` で HidbEphemeralDB（@hierarchidb/gis-sdk）と定義。HidbEphemeralDB は Dexie 実装で、`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` の EPHEMERAL_DB_SCHEMA に transformCache を `&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]` として登録。
+  - start: 2026-02-09 16:45 JST テスト環境の fake-indexeddb/IndexedDB 実装の導入箇所と ArrayBuffer 取り扱いを調査開始。
+  - update: 2026-02-09 16:46 JST vitest では `vitest.setup.base.ts` が `fake-indexeddb/auto` を読み込み、`structuredClone` 未定義時に JSON stringify/parse のポリフィルを設定している（ArrayBuffer が Object 化される可能性）。fake-indexeddb は insert 時に structuredClone を使うため、transformCache 保存時に型が崩れる原因候補。
+  - start: 2026-02-09 17:10 JST vitest.setup.base の structuredClone を node:util 優先に修正し、fake-indexeddb の ArrayBuffer 破壊を防ぐ対応に着手。
+  - blocked: 2026-02-09 17:21 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` をログ保存付きで再実行（`/tmp/shape-real-pipeline-step1-2.log`）。encode probe は ArrayBuffer のままだが readback probe は dataConstructorName=Object/byteLength null のまま。structuredClone 修正の効果は確認できず。
+  - start: 2026-02-09 17:34 JST vitest.setup.base の structuredClone を node:util で常時上書きし、JSON 由来の clone を排除する対応に着手。
+  - blocked: 2026-02-09 17:37 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。encode/readback probe ともに従来同様で、readback data は Object のまま。
+  - start: 2026-02-09 17:40 JST structuredClone の実体ログ出しと Dexie の clone 経路調査を同時に進める。
+  - update: 2026-02-09 17:41 JST createTransformByBandHandler の finalizeTaskWithCache で structuredClone の name/isNative/preview を debug 時に一度だけログ出しするよう追加。
+  - blocked: 2026-02-09 17:13 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。標準出力が途中で切れており、encode/readback probe の最終状態は要再確認。
+  - blocked: 2026-02-09 12:50 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が 300s でタイムアウト。step1 は bulkGet まで完走、step2 は start ログのみで setup 完了ログが出ず、以降の待機箇所に到達できていない。
+  - update: 2026-02-09 13:02 JST setupWorker/setupAdditionalClient の各工程（reset/import/terminate/expose/wrap）に前後ログを追加。
+  - start: 2026-02-09 17:46 JST structuredClone 実体ログの取得と Dexie clone 経路確認のため、real pipeline step 1+2 をログ保存付きで再実行する作業に着手。
+  - blocked: 2026-02-09 17:49 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。`/tmp/shape-real-pipeline-step1-2.log` に structuredClone probe を確認（isNative=false、preview は `function structuredClone(value, options)`）、encode は ArrayBuffer のままでも readback data は Object/byteLength null のまま。
+  - update: 2026-02-09 17:50 JST fake-indexeddb は `build/esm/lib/cloneValueForInsertion.js` で `structuredClone(value)` を使って挿入時に複製していることを確認。Dexie `dist/dexie.js` では `intrinsicTypeNames` に `ArrayBuffer` が含まれ、`intrinsicTypes.has(x.constructor)` の場合は clone を行わず値を保持する実装を確認。
+  - update: 2026-02-09 17:55 JST real pipeline テストに structuredClone の ArrayBuffer サニティログと transformCache readback の data 形状（keys/Buffer/isView/byteLength/length）ログを追加。
+  - blocked: 2026-02-09 17:57 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。`structuredClone sanity` で clonedConstructor は ArrayBuffer だが `cloned instanceof ArrayBuffer` が false、byteLength=8。transformCache readback の data は Object/keys=[]/byteLength null のまま。
+  - update: 2026-02-09 19:39 JST structuredClone sanity の追加ログ（node:util との同一性、toStringTag、constructor 等）と、structuredClone を defineProperty で固定する変更に着手。
+  - blocked: 2026-02-09 19:42 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts -t "real pipeline step 1\\+2"` が 120s でタイムアウト（exit 124）。`structuredClone sanity` は utilAvailable=false、clonedConstructor=ArrayBuffer だが constructorEquals=false / instanceof ArrayBuffer=false / toStringTag='[object ArrayBuffer]' を確認。transformCache readback の data は Object/keys=[]/byteLength null のまま。
 2619) refactor/worker/sharedworker-multitab-build-session (P1) — 進行中 (2026-02-08)
 - ブランチ名: codex/refactor/worker/sharedworker-multitab-build-session
 - 依存: なし
@@ -17678,3 +17865,31 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - 運用ログ:
   - start: 2026-02-08 10:00 JST SharedWorker + Web Locks + BroadcastChannel でのタブ跨ぎビルドセッション再編に着手。
   - update: 2026-02-08 10:12 JST ExecPlan を `plans/worker-sharedworker-multitab-execplan.md` に作成し、ブランチを `codex/refactor/worker/sharedworker-multitab-build-session` で開始。
+2620) fix/ui/plugin-dialog-step-persistence-log (P2) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/plugin-dialog-step-persistence-log
+- 依存: なし
+- 受け入れ基準: step persistence の ConstraintError が発生した際に object store 名・キー・操作種別・対象エンティティ種別がログで特定できる／挙動（保存成否）は変更しない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/**` / `packages/runtime/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来ログへ戻す
+- チェックリスト:
+  - step persistence の失敗時に詳細キー情報をログ出力する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 16:10 JST step persistence の ConstraintError 詳細ログ追加に着手。
+  - update: 2026-02-09 16:13 JST step persistence の失敗ログに payload/step 情報を追加し、TagService の重複キー検出ログを補強。
+  - done: 2026-02-09 16:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/tag --filter @hierarchidb/plugin-ui-host` exit 0。
+2621) investigate/appbar/build-session-launcher-missing (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/investigate/appbar-build-session-launcher-missing
+- 依存: なし
+- 受け入れ基準: AppBar の BuildSessionLauncherButtons が表示されない原因を特定し、根拠となるコード箇所を明記できる／修正方針を提示できる／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/BuildSessionLauncherButtons.tsx`, `packages/ui/auth/src/components/UserAvatarMenu.tsx`（必要に応じて追加）
+- ロールバック手順: 調査のみ（コード変更は行わない）
+- チェックリスト:
+  - 表示条件とデータ取得経路を確認する
+  - 表示されない原因をコード参照付きで説明する
+  - 修正方針を提示する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 16:40 JST AppBar の BuildSessionLauncherButtons が表示されない原因調査に着手。
+  - update: 2026-02-09 16:45 JST BuildSessionLauncherButtons は shape の build session しか購読しておらず（useBuildSessionSnapshots で nodeType='shape' 固定）、worker bootstrap も shape のみ対応のため route セッションでは空になることを確認。BuildSessionLauncherButtons は Tree ルートの AppBar 直下でのみ描画され、UserAvatarMenu には直接組み込まれていない。

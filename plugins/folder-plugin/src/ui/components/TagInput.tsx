@@ -150,9 +150,6 @@ export const TagInput: React.FC<TagInputProps> = ({
             <Typography variant="body2" sx={{ flex: 1 }}>
               {option.name}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {option.usageCount}回使用
-            </Typography>
           </Box>
         )}
         PaperComponent={({ children, ...paperProps }) => (

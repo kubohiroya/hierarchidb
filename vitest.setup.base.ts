@@ -89,11 +89,26 @@ if (typeof Worker === 'undefined') {
 // Browser API Polyfills
 // ========================
 
-// structuredClone polyfill (for Node < v17)
+// structuredClone polyfill (force node:util when available)
+try {
+  const { structuredClone: nodeStructuredClone } = await import('node:util');
+  if (typeof nodeStructuredClone === 'function') {
+    try {
+      Object.defineProperty(globalThis, 'structuredClone', {
+        value: nodeStructuredClone,
+        configurable: false,
+        writable: false,
+      });
+    } catch (error) {
+      logVitestSetupWarning('Failed to lock structuredClone; falling back to assignment', error);
+      globalThis.structuredClone = nodeStructuredClone;
+    }
+  }
+} catch {
+  // ignore and fall back to JSON-based clone
+}
 if (!globalThis.structuredClone) {
-  globalThis.structuredClone = (obj: any) => {
-    return JSON.parse(JSON.stringify(obj));
-  };
+  globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
 }
 
 // crypto.subtle mock for tests that need crypto APIs

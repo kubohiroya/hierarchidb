@@ -140,21 +140,32 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     return palette[idx] ?? '#9e9e9e';
   }
 
-  private async syncTagsForNode(nodeId: NodeId, tags: string[]): Promise<void> {
+  private async syncTagsForNode(
+    nodeId: NodeId,
+    tags: string[],
+    scope: 'draft' | 'published'
+  ): Promise<void> {
     if (!this.tagService) return;
     const desired = this.normalizeTagNames(tags);
     const desiredKeys = new Set(desired.map((tag) => tag.toLowerCase()));
 
     const [allTags, existingTags] = await Promise.all([
       this.tagService.getAllTags(),
-      this.tagService.getTagsForNode(nodeId),
+      this.tagService.getTagAssociationsForNode(nodeId),
     ]);
 
     const allByName = new Map(
       allTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const)
     );
     const existingByName = new Map(
-      existingTags.map((tag) => [tag.name.trim().toLowerCase(), tag] as const)
+      existingTags
+        .filter((assoc) => assoc.scope === scope)
+        .map((assoc) => {
+          const tag = allTags.find((t) => t.id === assoc.tagId);
+          if (!tag) return null;
+          return [tag.name.trim().toLowerCase(), tag] as const;
+        })
+        .filter((entry): entry is readonly [string, typeof allTags[number]] => Boolean(entry))
     );
 
     for (const name of desired) {
@@ -167,14 +178,29 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
         });
         allByName.set(key, tag);
       }
-      await this.tagService.addTagToNode({ nodeId, tagId: tag.id });
+      await this.tagService.addTagToNode({ nodeId, tagId: tag.id, scope });
     }
 
-    for (const tag of existingTags) {
+    for (const assoc of existingTags.filter((entry) => entry.scope === scope)) {
+      const tag = allTags.find((t) => t.id === assoc.tagId);
+      if (!tag) continue;
       const key = tag.name.trim().toLowerCase();
       if (!desiredKeys.has(key)) {
-        await this.tagService.removeTagFromNode({ nodeId, tagId: tag.id });
+        await this.tagService.removeTagFromNode({ nodeId, tagId: tag.id, scope });
       }
+    }
+  }
+
+  private async clearTagScope(nodeId: NodeId, scope: 'draft' | 'published'): Promise<void> {
+    if (!this.tagService) return;
+    const associations = await this.tagService.getTagAssociationsForNode(nodeId);
+    for (const assoc of associations) {
+      if (assoc.scope !== scope) continue;
+      await this.tagService.removeTagFromNode({
+        nodeId,
+        tagId: assoc.tagId,
+        scope,
+      });
     }
   }
 
@@ -448,8 +474,8 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
             : null,
         });
       }
-      if (requestedTags.length || this.tagService) {
-        await this.syncTagsForNode(draftId, requestedTags);
+      if (this.tagService) {
+        await this.syncTagsForNode(draftId, requestedTags, 'draft');
       }
       return { status: 'ok', nodeId: draftId, node: node as TreeNode | undefined };
     }
@@ -503,8 +529,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
       const metadataTags = Array.isArray(forUpdater?.metadata?.tags)
         ? forUpdater?.metadata?.tags ?? []
         : [];
-      if (metadataTags.length || this.tagService) {
-        await this.syncTagsForNode(result.nodeId, metadataTags);
+      if (this.tagService) {
+        await this.syncTagsForNode(result.nodeId, metadataTags, 'published');
+        await this.clearTagScope(result.nodeId, 'draft');
       }
       return {
         status: 'ok',
@@ -538,11 +565,15 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     const wc = await getTreeNode(this.coreDB, nodeId);
     if (!wc) return;
     await discardWc(this.coreDB, nodeId, options);
+    await this.clearTagScope(nodeId, 'draft');
   }
 
   async discardAllDrafts(): Promise<number> {
     const list = await this.listDrafts();
-    for (const wc of list) await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
+    for (const wc of list) {
+      await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
+      await this.clearTagScope(wc.id as NodeId, 'draft');
+    }
     return list.length;
   }
 
@@ -576,7 +607,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   async cleanupOldDrafts(olderThan: number): Promise<number> {
     const list = await this.listDrafts();
     const toDelete = list.filter((x) => x.updatedAt < olderThan);
-    for (const wc of toDelete) await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
+    for (const wc of toDelete) {
+      await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
+      await this.clearTagScope(wc.id as NodeId, 'draft');
+    }
     return toDelete.length;
   }
 }

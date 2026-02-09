@@ -30,6 +30,7 @@ const createArgs = (overrides: Partial<Parameters<typeof useShapeBuildAutoResume
   hasDataSource: true,
   hasSelection: true,
   isProcessingValid: true,
+  isLockSupported: true,
   ...overrides,
 });
 

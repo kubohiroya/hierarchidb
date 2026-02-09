@@ -10,9 +10,13 @@ export type GeosEmscriptenModule = GeosModule & {
   UTF8ToString: (ptr: number) => string;
 };
 
-const asEmscriptenModule = (geos: GeosModule): GeosEmscriptenModule => (
-  geos as GeosEmscriptenModule
-);
+const asEmscriptenModule = (geos: GeosModule): GeosEmscriptenModule => {
+  const module = (geos as unknown as { Module?: GeosEmscriptenModule }).Module;
+  if (!module || typeof module._malloc !== 'function') {
+    throw new Error('geos-wasm runtime methods are not available');
+  }
+  return module;
+};
 
 const allocSizePointer = (geos: GeosModule): number => asEmscriptenModule(geos)._malloc(4);
 

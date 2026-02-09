@@ -13,15 +13,17 @@ export interface TagEntity extends RelationalEntity<TagId> {
   color: string;
   description?: string;
   createdAt: Timestamp;
-  usageCount: number;
 }
 
 export type NodeTagAssociationId = string & { readonly __brand: 'NodeTagAssociationId' };
+
+export type TagAssociationScope = 'draft' | 'published';
 
 export interface NodeTagAssociation {
   id: NodeTagAssociationId;
   nodeId: NodeId;
   tagId: TagId;
+  scope: TagAssociationScope;
   assignedAt: Timestamp;
   assignedBy?: string; //  ID
 }

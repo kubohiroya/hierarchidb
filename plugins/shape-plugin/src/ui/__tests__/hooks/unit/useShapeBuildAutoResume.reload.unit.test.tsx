@@ -19,6 +19,7 @@ describe('useShapeBuildAutoResume reload behavior', () => {
       hasDataSource: true,
       hasSelection: true,
       isProcessingValid: true,
+      isLockSupported: true,
       ...args,
     }));
     return { result, handleStartOrResume, handlePause };

@@ -5,7 +5,6 @@
  * and renders tags content inside a modal dialog.
  */
 
-import type { TagEntity } from '@hierarchidb/tag-api';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 import {
   Badge,
@@ -28,7 +27,7 @@ import {
 import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import TagDetailRoute from '../tags.($tagName).js';
-import { useTagsPage } from '../useTagsPage.js';
+import { type TagWithUsage, useTagsPage } from '../useTagsPage.js';
 import { treePageRoute } from './pageRoute.js';
 
 function TreeTagsDialog() {
@@ -75,7 +74,7 @@ function TreeTagsDialog() {
     setSortOrder('desc');
   };
 
-  const handleTagClick = (tag: TagEntity) => {
+  const handleTagClick = (tag: TagWithUsage) => {
     navigate({ to: `${basePath}/${encodeURIComponent(tag.name)}` });
   };
 

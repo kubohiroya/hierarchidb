@@ -1412,6 +1412,10 @@ importers:
         version: 5.8.2
 
   packages/shape-api:
+    dependencies:
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../util
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*

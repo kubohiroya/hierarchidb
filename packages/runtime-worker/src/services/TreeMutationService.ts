@@ -118,6 +118,7 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
+
   private async checkTrashReferenceGuard(
     nodeIds: NodeId[]
   ): Promise<{ blocked: boolean; message?: string }> {

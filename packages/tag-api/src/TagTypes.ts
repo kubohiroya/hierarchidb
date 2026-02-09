@@ -4,5 +4,4 @@ export type TagSuggestion = {
   id: TagId;
   name: string;
   color: string;
-  usageCount: number;
 };

@@ -708,8 +708,10 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   ]);
 
   const formatInlineDuration = useCallback((durationMs?: number | null) => {
-    const safeMs = durationMs == null || !Number.isFinite(durationMs) || durationMs < 0 ? 0 : durationMs;
-    const totalSeconds = Math.max(0, Math.floor(safeMs / 1000));
+    if (durationMs == null || !Number.isFinite(durationMs) || durationMs < 0) {
+      return t('stage.timing.unknown', '-');
+    }
+    const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
@@ -720,22 +722,23 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     });
   }, [t]);
 
-  const stageTimingSummary = useMemo(() => {
-    const elapsed = formatInlineDuration(summary.stageElapsedMs);
-    const remaining = formatInlineDuration(summary.stageRemainingMs);
+  const buildTimingSummary = useCallback((stageId: string) => {
+    const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
+    const elapsed = formatInlineDuration(isTimingStage ? summary.stageElapsedMs : null);
+    const remaining = formatInlineDuration(isTimingStage ? summary.stageRemainingMs : null);
     return t(
       'stage.timing.elapsedRemaining',
       'Elapsed {{elapsed}} ・ Est. remaining {{remaining}}',
       { elapsed, remaining },
     );
-  }, [formatInlineDuration, summary.stageElapsedMs, summary.stageRemainingMs, t]);
+  }, [formatInlineDuration, summary.stageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
 
   const stageHeaderMeta = useMemo(() => (
     stages.reduce<Record<string, string>>((acc, stage) => {
-      acc[stage.id] = stageTimingSummary;
+      acc[stage.id] = buildTimingSummary(stage.id);
       return acc;
     }, {})
-  ), [stageTimingSummary, stages]);
+  ), [buildTimingSummary, stages]);
 
   const stageProgressContent = useMemo(() => (
     stageProgressItems.reduce<Record<string, JSX.Element>>((acc, item) => {

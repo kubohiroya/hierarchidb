@@ -298,7 +298,14 @@ export class EntityLifecycleManager {
 
   private async deleteRelations(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
     void nodeType;
-    void nodeIds;
+    if (!nodeIds.length) return;
+    for (const nodeId of nodeIds) {
+      const associations = await this.coreDB.getTagAssociationsForNode(nodeId);
+      if (!associations.length) continue;
+      for (const assoc of associations) {
+        await this.coreDB.removeTagAssociation(nodeId, assoc.tagId, assoc.scope);
+      }
+    }
   }
 
   private async deleteVectorTiles(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {

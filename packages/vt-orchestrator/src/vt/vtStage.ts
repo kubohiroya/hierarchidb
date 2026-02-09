@@ -526,7 +526,7 @@ const collectFeatures = async (
   }
   const useBulkGet = (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET === true;
   const useGetEach = (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH === true;
-  const records: EphemeralTransformCacheRecord[] = await context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
+  const txPromise = context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
     if (debugCollect) {
       console.info('[vt][debug] collect transaction start', JSON.stringify({ nodeId }));
     }
@@ -561,11 +561,116 @@ const collectFeatures = async (
     if (debugCollect) {
       console.info('[vt][debug] collect transaction done', JSON.stringify({ nodeId }));
     }
+    if (debugCollect) {
+      console.info('[vt][debug] collect transaction return', JSON.stringify({
+        nodeId,
+        recordCount: loaded.length,
+        bufferIdCount: bufferIds.length,
+        recordSample: loaded.slice(0, Math.min(loaded.length, 3)).map((record) => record.id),
+      }));
+    }
     return loaded;
+  }).then((records) => {
+    if (debugCollect) {
+      console.info('[vt][debug] after transaction', JSON.stringify({ nodeId }));
+      console.error('[vt][debug] after transaction (stderr)', JSON.stringify({ nodeId }));
+      console.info('[vt][debug] collect loaded summary', JSON.stringify({
+        nodeId,
+        recordCount: records.length,
+        bufferIdCount: bufferIds.length,
+        recordSample: records.slice(0, Math.min(records.length, 3)).map((record) => record.id),
+      }));
+      const first = records[0];
+      console.info('[vt][debug] record manual probe', JSON.stringify({
+        nodeId,
+        hasRecord: Boolean(first),
+        bufferId: first?.id ?? null,
+        byteLength: first?.data?.byteLength ?? null,
+      }));
+      const data = first?.data ?? null;
+      const dataIsObject = data !== null && typeof data === 'object';
+      const dataConstructorName = dataIsObject
+        ? (data as { constructor?: { name?: string } }).constructor?.name ?? null
+        : null;
+      const dataByteLength = dataIsObject && 'byteLength' in (data as { byteLength?: number })
+        ? (data as { byteLength?: number }).byteLength ?? null
+        : null;
+      const dataSize = dataIsObject && 'size' in (data as { size?: number })
+        ? (data as { size?: number }).size ?? null
+        : null;
+      const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
+      const isArrayBufferView = dataIsObject
+        && typeof ArrayBuffer !== 'undefined'
+        && typeof ArrayBuffer.isView === 'function'
+        ? ArrayBuffer.isView(data as unknown as ArrayBufferView)
+        : null;
+      const isUint8Array = typeof Uint8Array !== 'undefined' && data instanceof Uint8Array;
+      console.info('[vt][debug] record shape probe', JSON.stringify({
+        nodeId,
+        hasRecord: Boolean(first),
+        recordKeys: first ? Object.keys(first) : [],
+        dataType: data === null ? 'null' : typeof data,
+        dataConstructorName,
+        dataByteLength,
+        dataSize,
+        isArrayBuffer,
+        isArrayBufferView,
+        isUint8Array,
+        timestamp: first?.timestamp ?? null,
+        countryCode: first?.countryCode ?? null,
+        sourceKey: first?.sourceKey ?? null,
+      }));
+    }
+    return records;
   });
+  if (debugCollect) {
+    txPromise
+      .then(() => {
+        console.info('[vt][debug] collect transaction resolved', JSON.stringify({ nodeId }));
+      })
+      .catch((error) => {
+        console.info('[vt][debug] collect transaction rejected', JSON.stringify({
+          nodeId,
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      });
+  }
+  const records: EphemeralTransformCacheRecord[] = debugCollect
+    ? await Promise.race([
+      txPromise,
+      new Promise<never>((_, reject) => {
+        const timeoutMs = (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS ?? 15000;
+        const timeoutId = setTimeout(() => {
+          reject(new Error(`[vt][debug] collect transaction timeout after ${timeoutMs}ms (nodeId=${String(nodeId)})`));
+        }, timeoutMs);
+        txPromise.finally(() => clearTimeout(timeoutId));
+      }),
+    ])
+    : await txPromise;
+
+  if (debugCollect) {
+    try {
+      console.info('[vt][debug] record loop start', JSON.stringify({
+        nodeId,
+        recordCount: records.length,
+      }));
+    } catch (error) {
+      console.info('[vt][debug] record loop start failed', JSON.stringify({
+        nodeId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    }
+  }
   for (const record of records) {
     if (!record || record.timestamp <= 0) continue;
     bufferSizes.set(record.id, record.data.byteLength);
+    if (debugCollect) {
+      console.info('[vt][debug] record loop entry', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        byteLength: record.data.byteLength,
+      }));
+    }
     if (debugCollect) {
       console.info('[vt][debug] decode start', JSON.stringify({
         nodeId,
@@ -603,6 +708,15 @@ const collectFeatures = async (
         return continent ?? 'Unknown';
       })()
       : null;
+    let featureLoopStartedAt = 0;
+    if (debugCollect) {
+      featureLoopStartedAt = Date.now();
+      console.info('[vt][debug] feature loop start', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        featureCount: collection.features.length,
+      }));
+    }
     collection.features.forEach((feature) => {
       allFeatures.push(feature);
       if (featuresByContinent && continentKey) {
@@ -623,6 +737,22 @@ const collectFeatures = async (
         bufferId: record.id,
       });
     });
+    if (debugCollect) {
+      console.info('[vt][debug] feature loop done', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        featureCount: collection.features.length,
+        durationMs: Date.now() - featureLoopStartedAt,
+      }));
+    }
+  }
+  if (debugCollect) {
+    console.info('[vt][debug] collect features summary', JSON.stringify({
+      nodeId,
+      allFeatures: allFeatures.length,
+      featureStats: featureStats.length,
+      bufferSizeCount: bufferSizes.size,
+    }));
   }
   if (allFeatures.length === 0) return null;
   return {
@@ -846,6 +976,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       tileId: input?.tileId,
       bufferCount: bufferIds.length,
     };
+    const debugCollect = (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true;
     try {
       if (!input) {
         return { status: 'failed', errorMessage: 'vt task input is missing' };
@@ -1041,10 +1172,26 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           if (features.length === 0) continue;
           const continentMap = buildLayerMap({ type: 'FeatureCollection', features });
           if (continentMap.size === 0) continue;
+          if (debugCollect) {
+            console.info('[vt][debug] buildLayerIndexes start', JSON.stringify({
+              ...taskContext,
+              continent,
+              layerCount: continentMap.size,
+              heap: getHeapSnapshot(),
+            }));
+          }
           const continentIndexes = await buildLayerIndexes(context, continentMap, band, {
             ...taskContext,
             continent,
           });
+          if (debugCollect) {
+            console.info('[vt][debug] buildLayerIndexes done', JSON.stringify({
+              ...taskContext,
+              continent,
+              indexCount: continentIndexes.size,
+              heap: getHeapSnapshot(),
+            }));
+          }
           if (continentIndexes.size === 0) continue;
           for (let z = band.zMin; z <= band.zMax; z++) {
             assertNotAborted(abortSignal);
@@ -1332,7 +1479,22 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
             }
           } else {
+            if (debugCollect) {
+              console.info('[vt][debug] buildLayerIndexes start', JSON.stringify({
+                ...taskContext,
+                layerCount: layerMap.size,
+                forcePerTileIndex,
+                heap: getHeapSnapshot(),
+              }));
+            }
             indexes = await buildLayerIndexes(context, layerMap, band, taskContext);
+            if (debugCollect) {
+              console.info('[vt][debug] buildLayerIndexes done', JSON.stringify({
+                ...taskContext,
+                indexCount: indexes.size,
+                heap: getHeapSnapshot(),
+              }));
+            }
             if (indexes.size === 0) {
               return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
             }
@@ -1343,7 +1505,23 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             if (features.length === 0) continue;
             assertNotAborted(abortSignal);
             const singleLayerMap = new Map<string, Feature[]>([[layerName, features]]);
+            if (debugCollect) {
+              console.info('[vt][debug] buildLayerIndexes start', JSON.stringify({
+                ...taskContext,
+                layerCount: singleLayerMap.size,
+                layerName,
+                heap: getHeapSnapshot(),
+              }));
+            }
             const layerIndexes = await buildLayerIndexes(context, singleLayerMap, band, taskContext);
+            if (debugCollect) {
+              console.info('[vt][debug] buildLayerIndexes done', JSON.stringify({
+                ...taskContext,
+                layerName,
+                indexCount: layerIndexes.size,
+                heap: getHeapSnapshot(),
+              }));
+            }
             const layerIndex = layerIndexes.get(layerName);
             if (!layerIndex) continue;
             for (let z = band.zMin; z <= band.zMax; z++) {
@@ -1542,6 +1720,16 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             }
             try {
               const storeStartedAt = Date.now();
+              if (debugCollect) {
+                console.info('[vt][debug] tileWriter start', JSON.stringify({
+                  ...taskContext,
+                  tileId,
+                  z,
+                  x,
+                  y,
+                  byteLength: bytes.byteLength,
+                }));
+              }
               await tileWriter({
                 tileId,
                 z,
@@ -1551,6 +1739,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                 data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
                 layers,
               });
+              if (debugCollect) {
+                console.info('[vt][debug] tileWriter done', JSON.stringify({
+                  ...taskContext,
+                  tileId,
+                  durationMs: Date.now() - storeStartedAt,
+                }));
+              }
               storeStats.duration += Date.now() - storeStartedAt;
               storeStats.tileCount += 1;
               storeStats.bytes += bytes.byteLength;

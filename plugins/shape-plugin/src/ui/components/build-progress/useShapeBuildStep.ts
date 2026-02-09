@@ -722,6 +722,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const effectiveStatusLabel = isStartPending && buildStatus === 'idle'
     ? t('stage.status.starting', 'Starting stage...')
     : statusLabel;
+  const timingStageId = buildStatus === 'idle' ? null : (resolvedTaskType ?? null);
 
   return {
     t,
@@ -743,6 +744,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     failed: progressSummary.displayCounts.failed,
     skipped: progressSummary.displayCounts.skipped,
     hasProgressData: progressSummary.hasProgressData,
+    timingStageId,
     warningMessage,
     canStartOrResume,
     handleStartOrResume: startOrResume,

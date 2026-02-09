@@ -21,11 +21,11 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
 
   const mockSearchTags = useCallback(async (query: string): Promise<TagSuggestion[]> => {
     const mockTags: TagSuggestion[] = [
-      { id: 'tag_1' as TagId, name: '重要', color: '#f44336', usageCount: 15 },
-      { id: 'tag_2' as TagId, name: 'プロジェクト', color: '#2196f3', usageCount: 8 },
-      { id: 'tag_3' as TagId, name: '完了', color: '#4caf50', usageCount: 12 },
-      { id: 'tag_4' as TagId, name: 'レビュー待ち', color: '#ff9800', usageCount: 5 },
-      { id: 'tag_5' as TagId, name: 'バックログ', color: '#9c27b0', usageCount: 3 },
+      { id: 'tag_1' as TagId, name: '重要', color: '#f44336' },
+      { id: 'tag_2' as TagId, name: 'プロジェクト', color: '#2196f3' },
+      { id: 'tag_3' as TagId, name: '完了', color: '#4caf50' },
+      { id: 'tag_4' as TagId, name: 'レビュー待ち', color: '#ff9800' },
+      { id: 'tag_5' as TagId, name: 'バックログ', color: '#9c27b0' },
     ];
 
     return mockTags.filter(tag =>
@@ -39,7 +39,6 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
       id: `tag_${Date.now()}` as TagId,
       name,
       color: colors[Math.floor(Math.random() * colors.length)] as string,
-      usageCount: 0,
     };
   }, []);
 
@@ -68,7 +67,6 @@ export function useTagInput({ value, onChange, maxTags, allowCreate }: UseTagInp
         id,
         name: `Tag ${index + 1}`,
         color: '#2196f3',
-        usageCount: 0,
       }));
       setSelectedTags(mockSelected);
     };

@@ -1,20 +1,28 @@
 import type { Feature } from 'geojson';
-import type { Remote } from 'comlink';
+import type { Endpoint, Remote } from 'comlink';
 import { releaseProxy, wrap } from 'comlink';
 import type { Bbox, GeoJSON, GeosSimplifyOptions, GeosWorkerApi } from './geosWorker.types.ts';
 
 const IDLE_TIMEOUT_MS = 30_000;
 
-let geosWorker: Worker | null = null;
+type WorkerEndpointFactory = () => { endpoint: Endpoint; terminate?: () => void };
+
+let terminateWorker: (() => void) | null = null;
 let geosApi: Remote<GeosWorkerApi> | null = null;
 let geosApiPromise: Promise<Remote<GeosWorkerApi>> | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let inFlight = 0;
+let createWorkerEndpointOverride: WorkerEndpointFactory | null = null;
 
-const createWorker = (): Worker => new Worker(
-  new URL('./geosWorker.entry.ts', import.meta.url),
-  { type: 'module' },
-);
+const createWorkerEndpoint = (): { endpoint: Endpoint; terminate?: () => void } => {
+  const worker = new Worker(new URL('./geosWorker.entry.ts', import.meta.url), { type: 'module' });
+  return {
+    endpoint: worker,
+    terminate: () => worker.terminate(),
+  };
+};
+
+const getWorkerEndpointFactory = (): WorkerEndpointFactory => createWorkerEndpointOverride ?? createWorkerEndpoint;
 
 const clearIdleTimer = (): void => {
   if (!idleTimer) return;
@@ -30,8 +38,10 @@ const shutdownWorker = (): void => {
       void Promise.resolve(releaser());
     }
   }
-  geosWorker?.terminate();
-  geosWorker = null;
+  if (terminateWorker) {
+    terminateWorker();
+    terminateWorker = null;
+  }
   geosApi = null;
   geosApiPromise = null;
 };
@@ -54,9 +64,9 @@ const ensureClient = async (): Promise<Remote<GeosWorkerApi>> => {
     throw new Error('Geos worker is not available in this environment.');
   }
   geosApiPromise = (async () => {
-    const worker = createWorker();
-    geosWorker = worker;
-    const api = wrap<GeosWorkerApi>(worker);
+    const { endpoint, terminate } = getWorkerEndpointFactory()();
+    terminateWorker = terminate ?? null;
+    const api = wrap<GeosWorkerApi>(endpoint);
     await api.init();
     geosApi = api;
     scheduleIdleShutdown();
@@ -92,6 +102,17 @@ export const geosWorkerClient = {
       return result as GeoJSON;
     })
   ),
+  simplifyRepeated: (
+    geojson: GeoJSON,
+    tolerance: number,
+    repeats: number,
+    options?: GeosSimplifyOptions,
+  ): Promise<GeoJSON> => (
+    callWithClient(async (client) => {
+      const result = await client.simplifyRepeated(geojson, tolerance, repeats, options);
+      return result as GeoJSON;
+    })
+  ),
   isValid: (geojson: GeoJSON): Promise<boolean> => callWithClient((client) => client.isValid(geojson)),
   makeValid: (geojson: GeoJSON): Promise<GeoJSON> => (
     callWithClient(async (client) => {
@@ -101,4 +122,9 @@ export const geosWorkerClient = {
   ),
   contains: (left: GeoJSON, right: GeoJSON): Promise<boolean> => callWithClient((client) => client.contains(left, right)),
   shutdown: (): void => shutdownWorker(),
+};
+
+// Test-only hook to inject a custom Worker endpoint factory.
+export const setGeosWorkerEndpointFactoryForTests = (factory: WorkerEndpointFactory | null): void => {
+  createWorkerEndpointOverride = factory;
 };

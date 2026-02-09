@@ -1,8 +1,8 @@
-import type { TreeId } from '@hierarchidb/core-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { useQuery } from '~/hooks/useQuery.js';
 
@@ -12,6 +12,10 @@ export interface TaggedNode {
   tagAssociation: NodeTagAssociation;
   breadcrumb: string;
   breadcrumbNodes: BreadcrumbNode[];
+}
+
+export interface TagWithUsage extends TagEntity {
+  usageCount: number;
 }
 
 const TAG_CACHE_TTL_MS = 60_000;
@@ -34,6 +38,30 @@ function buildBreadcrumbNodes(nodes: TreeNode[]): BreadcrumbNode[] {
     name: getTreeNodeName(node),
     isClickable: true,
   }));
+}
+
+function isDraftNode(node?: TreeNode): boolean {
+  return typeof (node as { draftMetadata?: unknown })?.draftMetadata !== 'undefined' &&
+    (node as { draftMetadata?: unknown }).draftMetadata !== null;
+}
+
+function isInTrash(ancestors: TreeNode[], node?: TreeNode): boolean {
+  if (node?.nodeType === 'trash') return true;
+  return ancestors.some((ancestor) => ancestor.nodeType === 'trash');
+}
+
+function selectEffectiveAssociations(
+  associations: NodeTagAssociation[]
+): Map<string, NodeTagAssociation> {
+  const effective = new Map<string, NodeTagAssociation>();
+  for (const assoc of associations) {
+    const key = String(assoc.nodeId);
+    const current = effective.get(key);
+    if (!current || (current.scope !== 'draft' && assoc.scope === 'draft')) {
+      effective.set(key, assoc);
+    }
+  }
+  return effective;
 }
 
 function normalizeTagName(value?: string): string | null {
@@ -79,6 +107,78 @@ export function useTagsPage(tagName?: string) {
     initialData: cachedAllTags ?? [],
   });
 
+  const fetchUsageCounts = useCallback(async () => {
+    if (!workerClient) throw new Error('Worker not connected');
+    const tagAPI = await workerClient.getTagAPI();
+    const queryAPI = await workerClient.getQueryAPI();
+    const nodeCache = new Map<string, TreeNode | undefined>();
+    const ancestorCache = new Map<string, TreeNode[]>();
+    const draftScopeCache = new Map<string, boolean>();
+
+    const getNode = async (nodeId: NodeId) => {
+      const key = String(nodeId);
+      if (nodeCache.has(key)) return nodeCache.get(key);
+      const node = await queryAPI.getNode(nodeId);
+      nodeCache.set(key, node ?? undefined);
+      return node ?? undefined;
+    };
+
+    const getAncestors = async (nodeId: NodeId) => {
+      const key = String(nodeId);
+      if (ancestorCache.has(key)) return ancestorCache.get(key) ?? [];
+      const ancestors = await queryAPI.listAncestors(nodeId);
+      ancestorCache.set(key, ancestors);
+      return ancestors;
+    };
+
+    const hasDraftAssociations = async (nodeId: NodeId) => {
+      const key = String(nodeId);
+      if (draftScopeCache.has(key)) return draftScopeCache.get(key) ?? false;
+      const associations = await tagAPI.getTagAssociationsForNode(nodeId);
+      const hasDraft = associations.some((assoc) => assoc.scope === 'draft');
+      draftScopeCache.set(key, hasDraft);
+      return hasDraft;
+    };
+
+    const counts = new Map<string, number>();
+    await Promise.all(
+      allTags.map(async (tag) => {
+        const associations = await tagAPI.getNodesByTag(tag.id);
+        const effective = selectEffectiveAssociations(associations);
+        let count = 0;
+        for (const assoc of effective.values()) {
+          if (assoc.scope === 'published') {
+            const hasDraft = await hasDraftAssociations(assoc.nodeId);
+            if (hasDraft) continue;
+          }
+          const node = await getNode(assoc.nodeId);
+          if (!node) continue;
+          if (isDraftNode(node)) continue;
+          const ancestors = await getAncestors(assoc.nodeId);
+          if (isInTrash(ancestors, node)) continue;
+          count += 1;
+        }
+        counts.set(String(tag.id), count);
+      })
+    );
+    return counts;
+  }, [allTags, workerClient]);
+
+  const { data: usageCounts = new Map<string, number>() } = useQuery<
+    Map<string, number>
+  >({
+    queryKey: ['tags', 'usage-counts', allTags.length],
+    queryFn: fetchUsageCounts,
+    enabled: isConnected && allTags.length > 0,
+  });
+
+  const tagsWithUsage = useMemo<TagWithUsage[]>(() => {
+    return allTags.map((tag) => ({
+      ...tag,
+      usageCount: usageCounts.get(String(tag.id)) ?? 0,
+    }));
+  }, [allTags, usageCounts]);
+
   const fetchSpecificTag = useCallback(async () => {
     if (!normalizedTagName) return null;
     if (!workerClient) throw new Error('Worker not connected');
@@ -122,6 +222,7 @@ export function useTagsPage(tagName?: string) {
     }
     const tagAPI = await workerClient.getTagAPI();
     const associations = await tagAPI.getNodesByTag(specificTag.id);
+    const draftScopeCache = new Map<string, boolean>();
 
     const taggedNodesData: TaggedNode[] = [];
 
@@ -131,13 +232,34 @@ export function useTagsPage(tagName?: string) {
       trees.map((tree) => [String(tree.rootId), tree.id])
     );
 
-    for (const association of associations) {
+    const effective = selectEffectiveAssociations(associations);
+    for (const association of effective.values()) {
       try {
         if (!workerClient) throw new Error('Worker not connected');
+        if (association.scope === 'published') {
+          const nodeKey = String(association.nodeId);
+          let hasDraft = draftScopeCache.get(nodeKey);
+          if (typeof hasDraft === 'undefined') {
+            const nodeAssociations = await tagAPI.getTagAssociationsForNode(
+              association.nodeId
+            );
+            hasDraft = nodeAssociations.some((assoc) => assoc.scope === 'draft');
+            draftScopeCache.set(nodeKey, hasDraft);
+          }
+          if (hasDraft) {
+            continue;
+          }
+        }
         const node = await queryAPI.getNode(association.nodeId);
 
         if (node) {
+          if (isDraftNode(node)) {
+            continue;
+          }
           const ancestors = await queryAPI.listAncestors(association.nodeId);
+          if (isInTrash(ancestors, node)) {
+            continue;
+          }
           const breadcrumbNodes = [...ancestors, node];
           const breadcrumb = breadcrumbNodes.map((item) => getTreeNodeName(item)).join(' / ');
           const breadcrumbNodePath = buildBreadcrumbNodes(breadcrumbNodes);
@@ -171,7 +293,7 @@ export function useTagsPage(tagName?: string) {
   });
 
   return {
-    allTags,
+    allTags: tagsWithUsage,
     isConnected,
     isLoadingNodes,
     isLoadingTag,

@@ -1,7 +1,7 @@
 import type {
   NodeId,
 } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity, TagId } from './tag-entity-types.js';
+import type { NodeTagAssociation, TagEntity, TagId, TagAssociationScope } from './tag-entity-types.js';
 import type { TagSuggestion } from './TagTypes.js';
 
 export interface CreateTagRequest {
@@ -14,12 +14,12 @@ export interface UpdateTagRequest {
   name?: string;
   color?: string;
   description?: string;
-  usageCount: number;
 }
 
 export interface TagAssociationRequest {
   nodeId: NodeId;
   tagId: TagId;
+  scope: TagAssociationScope;
 }
 
 export interface TagAPI {
@@ -72,6 +72,11 @@ export interface TagAPI {
    * Get all tags associated with a node
    */
   getTagsForNode(nodeId: NodeId): Promise<TagEntity[]>;
+
+  /**
+   * Get all tag associations for a node (all scopes)
+   */
+  getTagAssociationsForNode(nodeId: NodeId): Promise<NodeTagAssociation[]>;
 
   /**
    * Get all nodes associated with a tag

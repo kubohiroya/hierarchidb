@@ -1,6 +1,6 @@
 import type React from 'react';
-import { useMemo } from 'react';
-import { Alert } from '@mui/material';
+import { useCallback, useMemo } from 'react';
+import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
 import { TransformConfigSection } from './TransformConfigSection.js';
@@ -18,11 +18,13 @@ import {
   filteringMediumUrl,
 } from '../../assets/filtering-samples/filteringSamples.ts';
 import { useVTConfigSection } from './useVTConfigSection.ts';
+import { useDialogContext } from '@hierarchidb/ui-dialog';
+import type { ShapeEntity } from '../../../common/types/index.js';
 
 /**
  * Processing configuration step for Shape plugin.
  */
-export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
+const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   data,
   nodeId,
   onChange,
@@ -103,4 +105,41 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
       <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
     </BuildConfigShell>
   );
+};
+
+const ShapeBuildConfigRunningNotice: React.FC = () => {
+  const { t } = useTranslation();
+  const { stepComponents, onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
+  const buildStepIndex = useMemo(() => (
+    stepComponents.findIndex((step) => step.id === 'build')
+  ), [stepComponents]);
+  const handleOpenBuildStep = useCallback(() => {
+    if (buildStepIndex < 0) return;
+    onStepNavigate({ type: 'direct', targetIndex: buildStepIndex });
+  }, [buildStepIndex, onStepNavigate]);
+
+  return (
+    <Stack spacing={2} sx={{ p: 2 }}>
+      <Typography variant="subtitle1">
+        {t('processing.buildRunning.title', 'Build is running')}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {t(
+          'processing.buildRunning.body',
+          'A build session is currently running. Open the Build step to view progress.',
+        )}
+      </Typography>
+      <Button variant="contained" onClick={handleOpenBuildStep} disabled={buildStepIndex < 0}>
+        {t('processing.buildRunning.action', 'Open Build Step')}
+      </Button>
+    </Stack>
+  );
+};
+
+export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = (props) => {
+  const isBuildRunning = props.data?.processingStatus === 'processing';
+  if (isBuildRunning) {
+    return <ShapeBuildConfigRunningNotice />;
+  }
+  return <ShapeBuildConfigContent {...props} />;
 };

@@ -1,5 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity, TagId } from '@hierarchidb/tag-api';
+import type {
+  NodeTagAssociation,
+  TagAssociationScope,
+  TagEntity,
+  TagId,
+} from '@hierarchidb/tag-api';
 import type { TagDBPort } from '@hierarchidb/tag';
 import type { CoreDB } from '../CoreDB.js';
 
@@ -30,12 +35,16 @@ export class TagDBPortCoreDBAdapter implements TagDBPort {
     return this.coreDB.createTagAssociation(association);
   }
 
-  getTagAssociation(nodeId: NodeId, tagId: TagId): Promise<NodeTagAssociation | undefined> {
-    return this.coreDB.getTagAssociation(nodeId, tagId);
+  getTagAssociation(
+    nodeId: NodeId,
+    tagId: TagId,
+    scope: TagAssociationScope
+  ): Promise<NodeTagAssociation | undefined> {
+    return this.coreDB.getTagAssociation(nodeId, tagId, scope);
   }
 
-  removeTagAssociation(nodeId: NodeId, tagId: TagId): Promise<boolean> {
-    return this.coreDB.removeTagAssociation(nodeId, tagId);
+  removeTagAssociation(nodeId: NodeId, tagId: TagId, scope: TagAssociationScope): Promise<boolean> {
+    return this.coreDB.removeTagAssociation(nodeId, tagId, scope);
   }
 
   removeAllTagAssociations(tagId: TagId): Promise<number> {

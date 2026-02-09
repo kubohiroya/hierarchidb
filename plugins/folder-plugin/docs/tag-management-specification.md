@@ -16,10 +16,9 @@ interface TagEntity extends RelationalEntity {
   color: string;          // 16進数カラーコード
   description?: string;   // タグの説明
   category: 'system' | 'user' | 'auto';  // タグカテゴリ
-  usageCount: number;     // 使用頻度
+  // usageCount は保存しない（都度集計）
   
   // RelationalEntityから継承
-  nodeIds: NodeId[];      // 参照しているノードID一覧
   referenceCount: number; // 参照カウント
   lastAccessedAt: Timestamp; // 最終アクセス日時
 }
@@ -31,6 +30,7 @@ interface NodeTagAssociation {
   id: EntityId;          // 一意ID（将来的に専用型に切替予定）
   nodeId: NodeId;         // ノードID
   tagId: TagId;           // タグID
+  scope: 'draft' | 'published'; // 関連のスコープ
   assignedAt: Timestamp;  // 割り当て日時
   assignedBy?: string;    // 割り当て者（オプション）
 }
@@ -48,19 +48,19 @@ interface NodeTagAssociation {
 ### TagDatabase（Dexie）
 ```typescript
 // テーブル定義
-tags: '&id, name, category, usageCount, *nodeIds, referenceCount'
-nodeTagAssociations: '&id, nodeId, tagId, assignedAt, [nodeId+tagId]'
+tags: '&id, name, category, referenceCount'
+nodeTagAssociations: '&id, nodeId, tagId, scope, assignedAt, [nodeId+tagId+scope]'
 ```
 
 ### インデックス設計
 - **tags**テーブル:
   - プライマリキー: `id` (TagId)
-  - セカンダリインデックス: `name`, `category`, `usageCount`
-  - 複合インデックス: `nodeIds`（マルチエントリ）
+  - セカンダリインデックス: `name`, `category`
+  - 複合インデックス: なし
 
 - **nodeTagAssociations**テーブル:
   - プライマリキー: `id` (EntityId)  // 将来 `AssociationId` に置換可能
-  - ユニーク複合インデックス: `[nodeId+tagId]`
+  - ユニーク複合インデックス: `[nodeId+tagId+scope]`
   - 外部キーインデックス: `nodeId`, `tagId`
 
 ## API仕様
@@ -88,10 +88,10 @@ getAllTags(): Promise<TagEntity[]>
 #### ノード-タグ関連付け
 ```typescript
 // タグ追加
-addTagToNode(nodeId: NodeId, tagId: TagId): Promise<void>
+addTagToNode(request: TagAssociationRequest): Promise<void>
 
 // タグ削除
-removeTagFromNode(nodeId: NodeId, tagId: TagId): Promise<void>
+removeTagFromNode(request: TagAssociationRequest): Promise<void>
 
 // ノードのタグ取得
 getTagsForNode(nodeId: NodeId): Promise<TagEntity[]>
@@ -110,8 +110,8 @@ interface TagWorkerAPI {
   getAllTags(): Promise<TagEntity[]>;
   
   // ノード関連付け
-  addTagToNode(nodeId: NodeId, tagId: TagId): Promise<void>;
-  removeTagFromNode(nodeId: NodeId, tagId: TagId): Promise<void>;
+  addTagToNode(request: TagAssociationRequest): Promise<void>;
+  removeTagFromNode(request: TagAssociationRequest): Promise<void>;
   getTagsForNode(nodeId: NodeId): Promise<TagEntity[]>;
 }
 ```
@@ -294,7 +294,7 @@ const handleCommit = async () => {
   
   // 2. タグ関連付けを保存
   for (const tagId of draft.tags) {
-    await tagService.addTagToNode(nodeId, tagId);
+    await tagService.addTagToNode({ nodeId, tagId, scope: 'published' });
   }
   
   onClose();

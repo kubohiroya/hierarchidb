@@ -9,9 +9,13 @@ export type GeosInitConfig = Parameters<typeof initGeosJs>[0];
 let geosPromise: Promise<GeosModule> | null = null;
 let geosModule: GeosModule | null = null;
 
-const asEmscriptenModule = (geos: GeosModule): GeosEmscriptenModule => (
-  geos as GeosEmscriptenModule
-);
+const asEmscriptenModule = (geos: GeosModule): GeosEmscriptenModule => {
+  const module = (geos as unknown as { Module?: GeosEmscriptenModule }).Module;
+  if (!module || typeof module._malloc !== 'function') {
+    throw new Error('geos-wasm runtime methods are not available');
+  }
+  return module;
+};
 
 export const initGeos = async (config?: GeosInitConfig): Promise<GeosModule> => {
   if (!geosPromise) {
@@ -186,19 +190,20 @@ const withGeosGeometryPair = <T>(
 };
 
 export const geosArea = (geojson: GeoJSON): number => {
-  const geos = asEmscriptenModule(getGeosOrThrow());
+  const geos = getGeosOrThrow();
+  const module = asEmscriptenModule(geos);
   const { geometry } = normalizeGeometryInput(geojson);
   if (!geometry) return 0;
   return withGeosGeometry(geos, geometry as GeoJSON, (geomPtr) => {
-    const areaPtr = geos._malloc(8);
+    const areaPtr = module._malloc(8);
     try {
       const ok = geos.GEOSArea(geomPtr, areaPtr);
       if (ok === 0) {
         throw new Error('GEOSArea failed');
       }
-      return geos.getValue(areaPtr, 'double') as number;
+      return module.getValue(areaPtr, 'double') as number;
     } finally {
-      geos._free(areaPtr);
+      module._free(areaPtr);
     }
   });
 };

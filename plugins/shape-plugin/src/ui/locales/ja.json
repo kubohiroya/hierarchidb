@@ -84,6 +84,11 @@
     "transformByZoom": {
       "title": "Transform by zoom"
     },
+    "buildRunning": {
+      "title": "ビルド実行中",
+      "body": "現在ビルドセッションが実行中です。進捗を確認するにはビルド画面を開いてください。",
+      "action": "ビルド画面を開く"
+    },
     "vt": {
       "title": "VT 生成"
     },

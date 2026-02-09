@@ -8,7 +8,9 @@ import {
   type UpdateTagRequest,
   type NodeTagAssociation,
   type NodeTagAssociationId,
-  type TagEntity, toTagId } from '@hierarchidb/tag-api';
+  type TagEntity,
+  toTagId,
+} from '@hierarchidb/tag-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
 
@@ -38,14 +40,23 @@ export class TagService implements TagAPI {
       name: request.name.trim(),
       color: request.color,
       description: request.description?.trim(),
-      usageCount: 0,
-      nodeIds: [],
       referenceCount: 0,
       lastAccessedAt: now,
       createdAt: now,
     };
 
-    await this.db.createTag(tag);
+    try {
+      await this.db.createTag(tag);
+    } catch (err) {
+      const name = (err as { name?: string }).name ?? 'Error';
+      if (name === 'ConstraintError') {
+        throw new Error(
+          `[TagService] createTag failed due to duplicate key (tagId=${tag.id}, name=${tag.name})`,
+          { cause: err as Error }
+        );
+      }
+      throw err;
+    }
     return tag;
   }
 
@@ -88,47 +99,78 @@ export class TagService implements TagAPI {
   async getTagSuggestions(query: string, limit: number = 10): Promise<TagSuggestion[]> {
     const tags = await this.searchTags(query);
     return tags
-      .sort((a, b) => b.usageCount - a.usageCount)
+      .sort((a, b) => a.name.localeCompare(b.name))
       .slice(0, limit)
-      .map((t) => ({ id: t.id, name: t.name, color: t.color, usageCount: t.usageCount }));
+      .map((t) => ({ id: t.id, name: t.name, color: t.color }));
   }
 
   async addTagToNode(request: TagAssociationRequest): Promise<NodeTagAssociation> {
     const tag = await this.getTag(request.tagId);
     if (!tag) throw new Error(`Tag ${request.tagId} not found`);
 
-    const existing = await this.db.getTagAssociation(request.nodeId, request.tagId);
+    const existing = await this.db.getTagAssociation(
+      request.nodeId,
+      request.tagId,
+      request.scope
+    );
     if (existing) return existing;
 
     const association: NodeTagAssociation = {
-      id: `${request.nodeId}_${request.tagId}` as NodeTagAssociationId,
+      id: `${request.nodeId}_${request.tagId}_${request.scope}` as NodeTagAssociationId,
       nodeId: request.nodeId,
       tagId: request.tagId,
+      scope: request.scope,
       assignedAt: Date.now() as Timestamp,
     };
 
-    await this.db.createTagAssociation(association);
-    await this.updateTag(request.tagId, { usageCount: tag.usageCount + 1 });
+    try {
+      await this.db.createTagAssociation(association);
+    } catch (err) {
+      const name = (err as { name?: string }).name ?? 'Error';
+      if (name === 'ConstraintError') {
+        const existingAfter = await this.db.getTagAssociation(
+          association.nodeId,
+          association.tagId,
+          association.scope
+        );
+        if (existingAfter) {
+          return existingAfter;
+        }
+        const nodeAssociations = await this.db.getTagAssociationsForNode(association.nodeId);
+        const matched = nodeAssociations.find(
+          (assoc) =>
+            assoc.tagId === association.tagId && assoc.scope === association.scope
+        );
+        if (matched) {
+          return matched;
+        }
+        throw new Error(
+          `[TagService] addTagToNode failed due to duplicate key (nodeId=${association.nodeId}, tagId=${association.tagId}, associationId=${association.id})`,
+          { cause: err as Error }
+        );
+      }
+      throw err;
+    }
     return association;
   }
 
   async removeTagFromNode(request: TagAssociationRequest): Promise<boolean> {
-    const removed = await this.db.removeTagAssociation(request.nodeId, request.tagId);
-    if (removed) {
-      const tag = await this.getTag(request.tagId);
-      if (tag) await this.updateTag(request.tagId, { usageCount: Math.max(0, tag.usageCount - 1) });
-    }
-    return removed;
+    return await this.db.removeTagAssociation(request.nodeId, request.tagId, request.scope);
   }
 
   async getTagsForNode(nodeId: NodeId): Promise<TagEntity[]> {
     const assocs = await this.db.getTagAssociationsForNode(nodeId);
+    const effective = this.selectEffectiveAssociations(assocs);
     const tags: TagEntity[] = [];
-    for (const a of assocs) {
-      const t = await this.getTag(a.tagId);
+    for (const assoc of effective) {
+      const t = await this.getTag(assoc.tagId);
       if (t) tags.push(t);
     }
     return tags;
+  }
+
+  async getTagAssociationsForNode(nodeId: NodeId): Promise<NodeTagAssociation[]> {
+    return await this.db.getTagAssociationsForNode(nodeId);
   }
 
   async getNodesByTag(tagId: TagId): Promise<NodeTagAssociation[]> {
@@ -151,12 +193,73 @@ export class TagService implements TagAPI {
   }> {
     const all = await this.getAllTags();
     const totalAssociations = await this.db.getTotalTagAssociations();
-    const mostUsedTags = [...all].sort((a, b) => b.usageCount - a.usageCount).slice(0, 5);
+    const usageCounts = await this.getUsageCounts();
+    const mostUsedTags = [...all]
+      .sort((a, b) => (usageCounts.get(b.id) ?? 0) - (usageCounts.get(a.id) ?? 0))
+      .slice(0, 5);
     const recentTags = [...all].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
     return { totalTags: all.length, totalAssociations, mostUsedTags, recentTags };
   }
 
   generateTagId(): TagId {
     return toTagId(`tag_${generateId()}`);
+  }
+
+  private selectEffectiveAssociations(
+    associations: NodeTagAssociation[]
+  ): NodeTagAssociation[] {
+    const byNode = new Map<string, NodeTagAssociation[]>();
+    for (const assoc of associations) {
+      const key = String(assoc.nodeId);
+      const list = byNode.get(key);
+      if (list) {
+        list.push(assoc);
+      } else {
+        byNode.set(key, [assoc]);
+      }
+    }
+    const effective: NodeTagAssociation[] = [];
+    for (const list of byNode.values()) {
+      const hasDraft = list.some((assoc) => assoc.scope === 'draft');
+      if (hasDraft) {
+        effective.push(...list.filter((assoc) => assoc.scope === 'draft'));
+      } else {
+        effective.push(...list);
+      }
+    }
+    return effective;
+  }
+
+  private async getUsageCounts(): Promise<Map<TagId, number>> {
+    const allAssociations = await this.db.getTotalTagAssociations();
+    if (allAssociations === 0) return new Map<TagId, number>();
+    const tags = await this.getAllTags();
+    const counts = new Map<TagId, number>();
+    const draftScopeCache = new Map<NodeId, boolean>();
+    const hasDraftAssociations = async (nodeId: NodeId) => {
+      if (draftScopeCache.has(nodeId)) return draftScopeCache.get(nodeId) ?? false;
+      const nodeAssociations = await this.db.getTagAssociationsForNode(nodeId);
+      const hasDraft = nodeAssociations.some((assoc) => assoc.scope === 'draft');
+      draftScopeCache.set(nodeId, hasDraft);
+      return hasDraft;
+    };
+    for (const tag of tags) {
+      const assocs = await this.db.getTagAssociationsForTag(tag.id);
+      const effective = this.selectEffectiveAssociations(assocs);
+      let count = 0;
+      for (const assoc of effective) {
+        if (assoc.scope === 'published') {
+          const hasDraft = await hasDraftAssociations(assoc.nodeId);
+          if (hasDraft) {
+            continue;
+          }
+        }
+        if (assoc.tagId === tag.id) {
+          count += 1;
+        }
+      }
+      counts.set(tag.id, count);
+    }
+    return counts;
   }
 }

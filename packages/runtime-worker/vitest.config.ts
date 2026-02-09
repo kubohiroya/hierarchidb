@@ -50,79 +50,79 @@ export default defineConfig({
       ),
       '@hierarchidb/gis-sdk': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/gis-sdk/src/index.ts',
       ),
       '@hierarchidb/location-api': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/location-api/src/index.ts',
       ),
       '@hierarchidb/route-api': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/route-api/src/index.ts',
       ),
       '@hierarchidb/batch-api': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/batch-api/src/index.ts',
       ),
       '@hierarchidb/tree-api': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/tree-api/src/index.ts',
       ),
       '@hierarchidb/worker-api': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/worker-api/src/index.ts',
       ),
       '@hierarchidb/auth': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/auth/src/index.ts',
       ),
       '@hierarchidb/download': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/download/src/index.ts',
       ),
       '@hierarchidb/import-export': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/import-export/src/index.ts',
       ),
       '@hierarchidb/map-source': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/map-source/src/index.ts',
       ),
       '@hierarchidb/tabular-source': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/tabular-source/src/index.ts',
       ),
       '@hierarchidb/route-store': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/route-store/src/index.ts',
       ),
       '@hierarchidb/shape-store': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/shape-store/src/index.ts',
       ),
       '@hierarchidb/chunk-store': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/chunk-store/src/index.ts',
       ),
       '@hierarchidb/location-store': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/location-store/src/index.ts',
       ),
       '@hierarchidb/styler-store': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/styler-store/src/index.ts',
       ),
       '@hierarchidb/tag': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/tag/src/index.ts',
       ),
       '@hierarchidb/map-adapter': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/map-adapter/src/index.ts',
       ),
       '@hierarchidb/tabular-source-xlsx': path.resolve(
         workspaceRoot,
-        'packages//src/index.ts',
+        'packages/tabular-source-xlsx/src/index.ts',
       ),
       '@hierarchidb/vt-orchestrator': path.resolve(
         workspaceRoot,

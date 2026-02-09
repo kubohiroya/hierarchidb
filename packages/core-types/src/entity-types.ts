@@ -35,7 +35,6 @@ export interface GroupEntity extends BaseEntity {
  */
 export interface RelationalEntity<ID> {
   id: ID;
-  nodeIds: NodeId[];
   referenceCount: number;
   lastAccessedAt: Timestamp;
 }

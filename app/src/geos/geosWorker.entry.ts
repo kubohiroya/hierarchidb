@@ -1,4 +1,4 @@
-import { expose } from 'comlink';
+import { expose, type Endpoint } from 'comlink';
 import {
   geosArea,
   geosBbox,
@@ -17,7 +17,7 @@ const ensureReady = async (): Promise<void> => {
   await initPromise;
 };
 
-const api: GeosWorkerApi = {
+export const createGeosWorkerApi = (): GeosWorkerApi => ({
   async init() {
     await ensureReady();
   },
@@ -39,6 +39,15 @@ const api: GeosWorkerApi = {
       preserveTopology: options?.preserveTopology ?? true,
     });
   },
+  async simplifyRepeated(geojson, tolerance, repeats, options) {
+    await ensureReady();
+    const preserveTopology = options?.preserveTopology ?? true;
+    let current = geojson;
+    for (let i = 0; i < repeats; i += 1) {
+      current = geosSimplify(current, tolerance, { preserveTopology });
+    }
+    return current;
+  },
   async isValid(geojson) {
     await ensureReady();
     return geosIsValid(geojson);
@@ -51,6 +60,16 @@ const api: GeosWorkerApi = {
     await ensureReady();
     return geosContains(left, right);
   },
+});
+
+export const exposeGeosWorker = (endpoint?: Endpoint): void => {
+  expose(createGeosWorkerApi(), endpoint);
 };
 
-expose(api);
+const shouldAutoExpose = typeof self !== 'undefined'
+  && typeof (self as { postMessage?: unknown }).postMessage === 'function'
+  && typeof (self as { document?: unknown }).document === 'undefined';
+
+if (shouldAutoExpose) {
+  exposeGeosWorker();
+}

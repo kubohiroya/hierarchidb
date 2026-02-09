@@ -8,7 +8,11 @@ import type {
   TreeRootState,
 } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
-import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
+import type {
+  NodeTagAssociation,
+  TagAssociationScope,
+  TagEntity,
+} from '@hierarchidb/tag-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
@@ -89,7 +93,7 @@ export class CoreDB extends Dexie {
   nodes!: Table<TreeNode<NodePayload>, NodeId>;
   rootStates!: Table<TreeRootState, NodeId>;
   tags!: Table<TagEntity, TagEntity['id']>;
-  tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
+  tagAssociations!: Table<NodeTagAssociation, NodeTagAssociation['id']>;
 
   //  Subject
   public changeSubject = new Subject<TreeChangeEvent>();
@@ -163,6 +167,62 @@ export class CoreDB extends Dexie {
           }
           if (typeof (node as { draftData?: unknown }).draftData !== 'undefined') {
             // keep draftData if present; no special handling needed
+          }
+        });
+      });
+
+    this.version(5)
+      .stores({
+        trees: '&id, rootId, trashRootId, superRootId',
+        nodes: [
+          '&id',
+          'parentId',
+          '&[parentId+metadata.name]',
+          '[parentId+updatedAt]',
+          'depth',
+          '*references',
+        ].join(', '),
+        rootStates: '&rootNodeId',
+        tags: '&id, name, createdAt',
+        tagAssociations: 'nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
+      })
+      .upgrade(async (tx) => {
+        const tagAssociations = tx.table<NodeTagAssociation>('tagAssociations');
+        await tagAssociations.toCollection().modify((assoc) => {
+          const current = assoc as NodeTagAssociation & { scope?: TagAssociationScope };
+          if (!current.scope) {
+            (assoc as NodeTagAssociation).scope = 'published';
+          }
+        });
+      });
+
+    this.version(6)
+      .stores({
+        trees: '&id, rootId, trashRootId, superRootId',
+        nodes: [
+          '&id',
+          'parentId',
+          '&[parentId+metadata.name]',
+          '[parentId+updatedAt]',
+          'depth',
+          '*references',
+        ].join(', '),
+        rootStates: '&rootNodeId',
+        tags: '&id, name, createdAt',
+        tagAssociations: '&id, nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
+      })
+      .upgrade(async (tx) => {
+        const tagAssociations = tx.table<NodeTagAssociation>('tagAssociations');
+        await tagAssociations.toCollection().modify((assoc) => {
+          const current = assoc as NodeTagAssociation & { scope?: TagAssociationScope };
+          if (!current.scope) {
+            (assoc as NodeTagAssociation).scope = 'published';
+          }
+          if (!current.id) {
+            const nodeId = String(current.nodeId);
+            const tagId = String(current.tagId);
+            const scope = current.scope ?? 'published';
+            (assoc as NodeTagAssociation).id = `${nodeId}_${tagId}_${scope}` as NodeTagAssociation['id'];
           }
         });
       });
@@ -1084,18 +1144,26 @@ export class CoreDB extends Dexie {
    */
   async getTagAssociation(
     nodeId: NodeId,
-    tagId: TagEntity['id']
+    tagId: TagEntity['id'],
+    scope: TagAssociationScope
   ): Promise<NodeTagAssociation | undefined> {
-    return await this.tagAssociations.get([nodeId, tagId]);
+    return await this.tagAssociations
+      .where('[nodeId+tagId+scope]')
+      .equals([nodeId, tagId, scope])
+      .first();
   }
 
   /**
    * Remove a tag association
    */
-  async removeTagAssociation(nodeId: NodeId, tagId: TagEntity['id']): Promise<boolean> {
+  async removeTagAssociation(
+    nodeId: NodeId,
+    tagId: TagEntity['id'],
+    scope: TagAssociationScope
+  ): Promise<boolean> {
     const count = await this.tagAssociations
-      .where('[nodeId+tagId]')
-      .equals([nodeId, tagId])
+      .where('[nodeId+tagId+scope]')
+      .equals([nodeId, tagId, scope])
       .delete();
     return count > 0;
   }

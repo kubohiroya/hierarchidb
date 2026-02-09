@@ -163,7 +163,32 @@ export const useStepNavigation = <TData extends PeerEntity<TreeNodeData>>(
           try {
             await commitFn('save-draft', payload);
           } catch (err) {
-            console.warn('[PluginDialogShell] step persistence failed', err);
+            const draftMeta = payload.draftMetadata as { name?: string; tags?: string[] } | null;
+            const draftData = payload.draftData as Record<string, unknown> | undefined;
+            const errorName = (err as { name?: string }).name ?? 'Error';
+            const errorMessage = (err as { message?: string }).message ?? String(err);
+            console.warn(
+              '[PluginDialogShell] step persistence failed',
+              {
+                errorName,
+                errorMessage,
+                nodeId,
+                targetId,
+                nodeType,
+                nextIndex,
+                persistedStepIndex: toPersistedStepIndex(nextIndex),
+                treeUpdaterTreeNodeId: treeUpdaterTreeNodeIdRef.current ?? null,
+                draftMetadata: draftMeta
+                  ? {
+                      name: draftMeta.name ?? null,
+                      tagsCount: Array.isArray(draftMeta.tags) ? draftMeta.tags.length : 0,
+                    }
+                  : null,
+                draftDataKeys: draftData ? Object.keys(draftData).slice(0, 25) : null,
+                dialogProgress: payload.dialogUIState?.dialogProgress ?? null,
+              },
+              err
+            );
           }
         }
         await Promise.race([
