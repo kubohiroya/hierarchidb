@@ -107,6 +107,7 @@ export type DeleteLoadingState = {
   transform: boolean;
   vt: boolean;
   metadata: boolean;
+  resetSession: boolean;
 };
 
 type Args = {
@@ -136,6 +137,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     transform: false,
     vt: false,
     metadata: false,
+    resetSession: false,
   });
   const [sessionStatus, setSessionStatus] = useState<BatchSessionStatus['status'] | null>(null);
   const setBuildTasks = useSetAtom(tasksAtom);
@@ -280,6 +282,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
           stageElapsedMs: 0,
           stageResumedAt: undefined,
           stageElapsedStageId: undefined,
+          stageElapsedByStage: {},
         } as Record<string, unknown>,
       });
     } catch (error) {
@@ -392,6 +395,32 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     });
   }, [loadCounts, nodeId, runDelete]);
 
+  const handleResetSession = useCallback(async () => {
+    if (!nodeId) return;
+    await runDelete('resetSession', async () => {
+      await deleteRawDataDataSourceBuffersForNode(nodeId);
+      await shapeMutationAPIImpl.clearShapeArtifacts(nodeId);
+      await Promise.all([
+        shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId),
+        shapeMutationAPIImpl.deleteDataSourceMetadataByNode(nodeId),
+      ]);
+      setBuildTasks([]);
+      setPersistedTasks([]);
+      onResetSession?.();
+      await persistSessionReset();
+      await loadCounts();
+      notify.success('Reset session data');
+    });
+  }, [
+    loadCounts,
+    nodeId,
+    onResetSession,
+    persistSessionReset,
+    runDelete,
+    setBuildTasks,
+    setPersistedTasks,
+  ]);
+
   const draftStatus = draft?.processingStatus ?? null;
   const allowDeleteWhileBusy = (
     (sessionStatus !== null && ['running', 'paused', 'failed', 'queued'].includes(sessionStatus))
@@ -419,5 +448,6 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata: handleDeleteFeatureMetadata,
+    handleResetSession,
   };
 };

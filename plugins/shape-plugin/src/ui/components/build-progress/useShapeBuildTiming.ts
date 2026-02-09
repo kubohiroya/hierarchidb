@@ -83,5 +83,6 @@ export const useShapeBuildTiming = ({
 
   return {
     timingSnapshot,
+    session,
   };
 };

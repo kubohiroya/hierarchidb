@@ -1,3 +1,72 @@
+2627) fix/ui/shape-build-elapsed-smooth-display (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-build-elapsed-smooth-display
+- 依存: なし
+- 受け入れ基準: Time elapsed / Stage elapsed が1秒ごとに単調増加し、停止・ジャンプが発生しない／Pause時は停止し、Resume後に連続的に増加する／表示は永続化された累積値と矛盾しない範囲で補正される／TASKS.md に原因・発生範囲・修正方法・ロールバック手順・検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- ロールバック手順: 変更差分を revert し、従来のタイミング表示へ戻す
+- チェックリスト:
+  - 表示用の elapsed を1秒単位で単調増加させる
+  - Pause/Resume/Stage切替時の表示リセットを整える
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 21:05 JST elapsed 表示の単調増加化に着手。
+  - update: 2026-02-09 21:12 JST 表示用の elapsed を1秒刻みで単調増加させ、停止/逆行/ジャンプを抑止する補正を追加。
+  - done: 2026-02-09 21:13 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2626) fix/ui/shape-build-elapsed-persist-resume (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-build-elapsed-persist-resume
+- 依存: なし
+- 受け入れ基準: Time elapsed がドラフトに永続化され、Pause/Resume を繰り返しても累積時間が保持される／再開時は前回までの経過時間に今回の経過時間が加算される／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／ロールバック手順が明記される／影響範囲の検証結果が TASKS.md に記録される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTiming.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のセッションタイミング算出へ戻す
+- チェックリスト:
+  - Time elapsed の永続化/再開時加算の更新経路を特定する
+  - Pause/Resume で buildElapsedMs / buildResumedAt を更新する
+  - 表示側で永続化値を参照し、再開後に累積表示されるようにする
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 20:20 JST Time elapsed の永続化と再開時加算の実装に着手。
+  - update: 2026-02-09 20:30 JST buildElapsedMs/buildResumedAt を Pause/Resume の状態遷移で更新し、セッションが無い場合はドラフトの累積値を表示に使用するよう補正。
+  - update: 2026-02-09 20:50 JST stageElapsedMs/stageResumedAt/stageElapsedStageId と stageElapsedByStage を追加し、ステージ切替・完了時に累積値を永続化するよう補正。
+  - done: 2026-02-09 20:51 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2625) fix/ui/shape-stage-summary-menu-count-unit-i18n (P2) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-stage-summary-menu-count-unit-i18n
+- 依存: なし
+- 受け入れ基準: ステージサマリーの▼メニュー内の件数単位「件」が i18n 化され、英語表示でも違和感がない／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／ロールバック手順が明記される／影響範囲の検証結果が TASKS.md に記録される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` / `plugins/shape-plugin/src/ui/locales/en.json` / `plugins/shape-plugin/src/ui/locales/ja.json`
+- ロールバック手順: 変更差分を revert し、従来の固定表記へ戻す
+- チェックリスト:
+  - ▼メニュー内の件数単位表示の実装箇所を特定する
+  - i18n キーへ置換し、ja/en 文言を追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 20:05 JST ステージサマリーの▼メニュー内「件」固定表示の i18n 化に着手。
+  - update: 2026-02-09 20:08 JST ステージサマリーの▼メニュー内の件数単位を `processing.download.countUnit` に置換し、en に " items" を追加。
+  - done: 2026-02-09 20:10 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2624) investigate/shape-fetch-retry-502 (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/investigate/shape-fetch-retry-502
+- 依存: なし
+- 受け入れ基準: fetch ステージのリトライ配線（smart-fetch 設定→実行箇所→失敗時挙動）がコード参照で整理され、HTTP 502 が「規定回数・間隔の再アクセス後の最終失敗」かどうかが明確に説明される／502 失敗タスクの再ビルド方針（再タスク作成→再実行→既存結果とのマージ）の現行実装有無と必要な変更点が整理される／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する（不具合対応方針の明記）／ロールバック手順が明記される／運用ログ start/update/done/blocked を追記する
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/runtime-worker/src/**` / `packages/plugin-service-sdk/src/**`（調査結果に応じて）
+- ロールバック手順: 調査のみの場合は変更なし。実装変更が必要になった場合は当該差分を revert し、従来の fetch/再ビルド挙動へ戻す
+- チェックリスト:
+  - fetch ステージのリトライ設定と実行箇所を特定する
+  - 502 失敗が再アクセス後の最終失敗かを検証し、ログ・コード参照で整理する
+  - 502 失敗タスクの再ビルド運用（再タスク作成→再実行→マージ）の実装有無を確認し、必要なら変更案をまとめる
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 19:05 JST fetch ステージの 502 失敗に関するリトライ配線と再ビルド方針の調査に着手。
+  - update: 2026-02-09 19:22 JST fetch ステージは buildConfig.fetchConfig から retryConfig を構築し、rawDataPipeline/getOrFetchWithRetry で外側の再試行を実施。内部の FetchNetworkPort は smartFetch のデフォルトリトライ（retries=3, baseDelayMs=300, maxDelayMs=5000）を持つため二層リトライ構成。`HTTP 502` は両レイヤの再試行を尽くした最終失敗として投げられる経路を確認。再ビルド時は worker の resetFailedTasks が failed を queued に戻して再実行し、完了済みタスクは保持されるが「タスク再作成＋結果マージ」を明示する追加整理が必要。
+  - update: 2026-02-09 19:28 JST ブラウザ再読込時の warning は UI 側 `useShapeBuildTasks` が subscribeBatchTasks の snapshot に含まれる `status=failed` を検知して必ず `console.warn('[ShapeBuildStep] task failed', ...)` を出しているため発生。タスク実行のトリガではなく、停止/永続化された failed タスクの表示ログである点を確認。
+  - update: 2026-02-09 19:36 JST 停止セッションでは failed タスク warning を出さないよう、`useShapeBuildTasks` に `reportFailures` オプションを追加し、`useShapeBuildStep` で `processing` 状態のみ warning を有効化するよう変更。
+  - done: 2026-02-09 19:40 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - update: 2026-02-09 19:52 JST Step5 Start Build の発火順序（新規/失敗タスク残り）を整理。`useShapeBuildAutoResume` が `hasFailedFetchTasks` を検知すると `forceRestart` になり、Start ボタンでも resume ではなく startBatchSession 経由に倒れるため、停止セッションでも再開ではなく再開始扱いになる点をズレとして記載。
+
 2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values
 - 依存: なし
@@ -11,6 +80,26 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-09 18:10 JST Step5 の Total elapsed/Elapsed/Remaining 表示不整合の調査と修正に着手。
+  - update: 2026-02-09 18:25 JST timingStageId を summary に追加し、ステージ別のタイミング表示を active stage のみ反映・未設定時は「-」に統一。
+  - blocked: 2026-02-09 18:40 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が `useShapeBuildStep.ts` の index type エラーで失敗。
+  - update: 2026-02-09 18:42 JST 完了ステージの elapsed 記録を追加し、stage transition 時に elapsed を保持するよう補正。
+  - done: 2026-02-09 18:44 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2624) fix/ui/shape-step5-pause-start-disabled (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/ui/shape-step5-pause-start-disabled
+- 依存: なし
+- 受け入れ基準: Step5 で Pause 押下後に Start Build が disabled になる／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／ロールバック手順が明記される／影響範囲の検証結果が TASKS.md に記録される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の Start Build の enabled 表示へ戻す
+- チェックリスト:
+  - Pause 押下後の Start Build の disabled 判定と更新経路を特定する
+  - 不整合の原因を特定し修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 18:50 JST Step5 Pause 押下後に Start Build が disabled にならない不具合の調査に着手。
+  - update: 2026-02-09 19:05 JST paused 状態では in-flight タスクが残っても buildStatus を paused 優先にし、Start Build が再開可能になるよう補正。
+  - done: 2026-02-09 19:08 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 
 2622) fix/ui/shape-build-config-running-notice (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-build-config-running-notice

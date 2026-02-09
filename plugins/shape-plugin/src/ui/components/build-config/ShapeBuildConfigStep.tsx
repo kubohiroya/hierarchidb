@@ -61,6 +61,7 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
       stageElapsedMs: 0,
       stageResumedAt: undefined,
       stageElapsedStageId: undefined,
+      stageElapsedByStage: {},
     });
   };
   const filteringPreviewImages = useMemo(() => ({

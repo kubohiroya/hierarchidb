@@ -27,6 +27,7 @@ export type TaskProgressSummary = {
   buildStatus: BuildStatus;
   hasProgressData: boolean;
   timingStageId?: string | null;
+  completedStageElapsedMs: Record<string, number>;
   totalElapsedMs: number;
   stageElapsedMs: number;
   stageRemainingMs: number | null;
@@ -83,6 +84,7 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   buildStatus: 'idle',
   hasProgressData: false,
   timingStageId: null,
+  completedStageElapsedMs: {},
   totalElapsedMs: 0,
   stageElapsedMs: 0,
   stageRemainingMs: null,

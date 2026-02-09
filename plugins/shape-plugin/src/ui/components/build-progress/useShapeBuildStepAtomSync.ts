@@ -90,6 +90,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     skipped,
     hasProgressData,
     timingStageId,
+    completedStageElapsedMs,
     totalElapsedMs,
     stageElapsedMs,
     stageRemainingMs,
@@ -144,6 +145,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     buildStatus: typeof buildStatus;
     hasProgressData: typeof hasProgressData;
     timingStageId: typeof timingStageId;
+    completedStageElapsedMs: typeof completedStageElapsedMs;
     totalElapsedMs: typeof totalElapsedMs;
     stageElapsedMs: typeof stageElapsedMs;
     stageRemainingMs: typeof stageRemainingMs;
@@ -240,6 +242,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
       buildStatus,
       hasProgressData,
       timingStageId,
+      completedStageElapsedMs,
       totalElapsedMs,
       stageElapsedMs,
       stageRemainingMs,
@@ -261,6 +264,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     taskUnitLabel,
     totalElapsedMs,
     timingStageId,
+    completedStageElapsedMs,
     stageElapsedMs,
     stageRemainingMs,
   ]);

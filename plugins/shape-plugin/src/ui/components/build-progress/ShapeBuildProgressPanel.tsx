@@ -617,6 +617,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata,
+    handleResetSession,
   } = useShapeBuildCacheActions({ nodeId, draft: data });
 
   const stageMenus = useMemo(() => {
@@ -626,10 +627,12 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     const transformBaseLabel = t('processing.download.deleteStage1Cache', '簡略化キャッシュを削除');
     const vtBaseLabel = t('processing.download.deleteTiles', 'タイルデータを削除');
     const metadataLabel = t('processing.download.deleteMetadata', 'フィーチャーメタデータを削除');
-    const fetchApiLabel = `${fetchApiBaseLabel}(${counts.fetchApi}件)`;
-    const fetchFilteredLabel = `${fetchFilteredBaseLabel}(${counts.fetchFiltered}件)`;
-    const transformLabel = `${transformBaseLabel}(${counts.transform}件)`;
-    const vtLabel = `${vtBaseLabel}(${counts.vt}件)`;
+    const resetSessionLabel = t('stage.menu.resetSession', 'Reset Session');
+    const countUnit = t('processing.download.countUnit', ' items');
+    const fetchApiLabel = `${fetchApiBaseLabel}(${counts.fetchApi}${countUnit})`;
+    const fetchFilteredLabel = `${fetchFilteredBaseLabel}(${counts.fetchFiltered}${countUnit})`;
+    const transformLabel = `${transformBaseLabel}(${counts.transform}${countUnit})`;
+    const vtLabel = `${vtBaseLabel}(${counts.vt}${countUnit})`;
     const menuAriaLabel = t('stage.menu.label', 'Stage menu');
 
     return {
@@ -654,6 +657,12 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
             label: metadataLabel,
             onClick: handleDeleteMetadata,
             disabled: !canDeleteMetadata || deleteLoading.metadata || resultCounts.featureMetadata <= 0,
+          },
+          {
+            id: 'reset-session',
+            label: resetSessionLabel,
+            onClick: handleResetSession,
+            disabled: deleteLoading.resetSession,
           },
         ],
       },
@@ -724,14 +733,24 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
 
   const buildTimingSummary = useCallback((stageId: string) => {
     const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
-    const elapsed = formatInlineDuration(isTimingStage ? summary.stageElapsedMs : null);
+    const completedElapsedMs = summary.completedStageElapsedMs[stageId];
+    const elapsed = formatInlineDuration(
+      isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
+    );
     const remaining = formatInlineDuration(isTimingStage ? summary.stageRemainingMs : null);
     return t(
       'stage.timing.elapsedRemaining',
       'Elapsed {{elapsed}} ・ Est. remaining {{remaining}}',
       { elapsed, remaining },
     );
-  }, [formatInlineDuration, summary.stageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
+  }, [
+    formatInlineDuration,
+    summary.completedStageElapsedMs,
+    summary.stageElapsedMs,
+    summary.stageRemainingMs,
+    summary.timingStageId,
+    t,
+  ]);
 
   const stageHeaderMeta = useMemo(() => (
     stages.reduce<Record<string, string>>((acc, stage) => {

@@ -60,6 +60,11 @@ const isSelectedArrayByCountries = (value: unknown): value is SelectedArrayByCou
   );
 };
 
+const isNumberRecord = (value: unknown): value is Record<string, number> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isNumber(entry));
+};
+
 const toShapeEntity = (record: Record<string, unknown>, node: {
   id: NodeId;
   createdAt: number;
@@ -90,6 +95,7 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
     stageElapsedMs: getNumber(record, 'stageElapsedMs'),
     stageResumedAt: getNumber(record, 'stageResumedAt'),
     stageElapsedStageId: getString(record, 'stageElapsedStageId'),
+    stageElapsedByStage: isNumberRecord(record.stageElapsedByStage) ? record.stageElapsedByStage : undefined,
     previewMapView: isPreviewMapView(previewMapViewValue) ? previewMapViewValue : undefined,
   };
 };

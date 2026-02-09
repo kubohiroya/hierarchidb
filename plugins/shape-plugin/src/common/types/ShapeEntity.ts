@@ -25,6 +25,7 @@ export interface ShapeEntityPayload {
   stageElapsedMs?: number;
   stageResumedAt?: number;
   stageElapsedStageId?: string;
+  stageElapsedByStage?: Record<string, number>;
 
   // UI Preview
   previewMapView?: ShapePreviewMapView;

@@ -14,6 +14,7 @@ import { useShapeBuildTaskSync, type RawTaskSummary } from './useShapeBuildTaskS
 
 export interface UseShapeBuildTasksOptions {
   autoSubscribe?: boolean;
+  reportFailures?: boolean;
 }
 
 export interface UseShapeBuildTasksState {
@@ -29,7 +30,7 @@ export function useShapeBuildTasks(
   nodeId: NodeId | null,
   options: UseShapeBuildTasksOptions = {},
 ): UseShapeBuildTasksState {
-  const { autoSubscribe = true } = options;
+  const { autoSubscribe = true, reportFailures = true } = options;
   const bridgeRef = useRef(getWorkerBridge());
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
@@ -165,6 +166,7 @@ export function useShapeBuildTasks(
   }, []);
 
   useEffect(() => {
+    if (!reportFailures) return;
     const reported = reportedFailuresRef.current;
     tasks.forEach((task) => {
       if (task.status !== 'failed') return;
@@ -183,7 +185,7 @@ export function useShapeBuildTasks(
       }
       console.warn('[ShapeBuildStep] task failed', { taskId: task.taskId, stage: task.stage, message });
     });
-  }, [tasks]);
+  }, [reportFailures, tasks]);
 
   return useMemo(
     () => ({

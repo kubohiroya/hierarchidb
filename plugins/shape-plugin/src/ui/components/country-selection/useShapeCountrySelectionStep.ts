@@ -520,6 +520,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
           stageElapsedMs: 0,
           stageResumedAt: undefined,
           stageElapsedStageId: undefined,
+          stageElapsedByStage: {},
         } as Record<string, unknown>,
       });
     } catch (error) {

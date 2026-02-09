@@ -108,7 +108,7 @@
       "deleteFilteredCache": "Delete filtered cache",
       "deleteFilteredCacheWithCount": "Delete filtered cache ({{count}} items)",
       "deleteLoadingHint": "Loading delete counts...",
-      "countUnit": "",
+      "countUnit": " items",
       "deleteStage1Cache": "Delete simplified cache",
       "deleteStage1CacheWithCount": "Delete simplified cache ({{count}} items)",
       "deleteStage2Cache": "Delete zoom-ratio cache",
