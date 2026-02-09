@@ -236,11 +236,8 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     const statusValue = task.status;
     const isSkipped = isSkippedMessage(task.message);
     const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
-    const statusValueForDisplay = statusValue === 'completed' && displayProgress < 100
-      ? 'running'
-      : statusValue;
-    const statusLabelValue = resolveStatusLabel(statusValueForDisplay, isSkipped);
-    const statusColor = resolveStatusColor(statusValueForDisplay, isSkipped);
+    const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
+    const statusColor = resolveStatusColor(statusValue, isSkipped);
     const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
     const phaseMessage = resolvePhaseMessage(task.message);
     const geometryDetails = parseGeometrySimplifyError(task.message);

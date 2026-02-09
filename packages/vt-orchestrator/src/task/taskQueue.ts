@@ -116,7 +116,8 @@ export async function putTasks(
 export async function updateTask(
   db: VtTaskQueueDb,
   taskId: string,
-  updates: Partial<TaskQueueRecord>
+  updates: Partial<TaskQueueRecord>,
+  options?: { allowTerminalStatusTransition?: boolean }
 ): Promise<void> {
   const now = Date.now();
   try {
@@ -126,16 +127,23 @@ export async function updateTask(
       const nextSequence = currentSequence + 1;
       const currentStatus = current?.status;
       const nextStatusCandidate = updates.status;
-      const lockedStatus = currentStatus === 'completed' || currentStatus === 'failed';
-      const effectiveStatus = lockedStatus && nextStatusCandidate && nextStatusCandidate !== currentStatus
-        ? currentStatus
-        : nextStatusCandidate;
-      const payload = {
-        ...updates,
-        status: effectiveStatus ?? currentStatus,
-        updatedAt: now,
-        sequence: nextSequence,
-      };
+      const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed')
+        && !options?.allowTerminalStatusTransition;
+      const blocksStatusRegression = lockedStatus
+        && nextStatusCandidate !== undefined
+        && nextStatusCandidate !== currentStatus;
+      const payload = blocksStatusRegression
+        ? {
+          status: currentStatus,
+          updatedAt: now,
+          sequence: nextSequence,
+        }
+        : {
+          ...updates,
+          status: nextStatusCandidate ?? currentStatus,
+          updatedAt: now,
+          sequence: nextSequence,
+        };
       await db.tasks.update(taskId, payload);
       const task = await db.tasks.get(taskId);
       if (task) emitTaskEvent(task.nodeId, toTaskQueueRecord(task));

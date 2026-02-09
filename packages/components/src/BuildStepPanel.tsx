@@ -153,6 +153,8 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     const taskCount = taskCountByStage[id];
     const filter = resolveStageFilter(id);
     const indicator = stageConcurrencyIndicators?.[stage.id];
+    const stageProgressNode = stageProgressContent?.[stage.id];
+    const stageContentNode = stageContents?.[stage.id];
     return (
       <Box onDoubleClick={toggle} sx={{ height: '100%', minHeight: 0 }}>
         <BuildStepStagePanel
@@ -160,7 +162,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           icon={stage.icon}
           description={stage.description}
           progress={progressValue}
-          progressContent={stageProgressContent?.[stage.id]}
+          progressContent={stageProgressNode ? (
+            <BuildStageFilterProvider value={filter}>
+              {stageProgressNode}
+            </BuildStageFilterProvider>
+          ) : undefined}
           headerMeta={stageHeaderMeta?.[stage.id]}
           chipPlacement={chipPlacement}
           taskCount={taskCount}
@@ -178,9 +184,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           skippedMode={filter.skippedMode}
           onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
         >
-          <BuildStageFilterProvider value={filter}>
-            {stageContents?.[stage.id]}
-          </BuildStageFilterProvider>
+          {stageContentNode ? (
+            <BuildStageFilterProvider value={filter}>
+              {stageContentNode}
+            </BuildStageFilterProvider>
+          ) : null}
         </BuildStepStagePanel>
       </Box>
     );

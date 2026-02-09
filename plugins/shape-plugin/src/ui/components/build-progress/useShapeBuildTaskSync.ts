@@ -46,14 +46,9 @@ const resolveProgressValue = (value: number | undefined): number => (
 
 const normalizeTaskStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
-  progress: number,
-): ShapeBuildTaskSummary['status'] => {
-  const resolved = status ?? 'queued';
-  if (resolved === 'running' && progress >= 100) {
-    return 'completed';
-  }
-  return resolved;
-};
+): ShapeBuildTaskSummary['status'] => (
+  status ?? 'queued'
+);
 
 const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
   task.status === 'completed' && resolveProgressValue(task.progress) >= 100
@@ -67,6 +62,12 @@ const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (current.status === 'completed' && next.status === 'running') {
+    return false;
+  }
+  if (current.status === 'running' && next.status === 'completed') {
+    return true;
+  }
   if (isCompletedAtFullProgress(current) && isRunningAtFullProgress(next)) {
     return false;
   }
@@ -131,11 +132,10 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   }, [flushTasks]);
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
-    const progress = resolveProgressValue(task.progress);
     return {
       ...task,
       stage: resolveTaskStage(task),
-      status: normalizeTaskStatus(task.status, progress),
+      status: normalizeTaskStatus(task.status),
     };
   }, []);
 

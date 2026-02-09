@@ -1175,6 +1175,8 @@ const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
     errorMessage: undefined,
     message: undefined,
     outputData: undefined,
+  }, {
+    allowTerminalStatusTransition: true,
   })));
 };
 

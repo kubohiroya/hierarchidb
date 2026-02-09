@@ -100,6 +100,7 @@ export const finalizePendingStageTasks = async (
     [...queuedTasks, ...runningTasks].map((task) => (
       updateTask(taskQueue, task.taskId, {
         status: 'failed',
+        message: errorMessage,
         errorMessage,
         completedAt: now,
       })

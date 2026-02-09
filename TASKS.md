@@ -1,3 +1,57 @@
+2647) feat/ui/shape-stage-svg-reflect-chip-visibility-opacity (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: ステージサマリー Chip の Failed/Skipped/Completed トグル状態が SVG タスク進捗表示へ反映される／非表示状態の種類に該当する SVG セグメントは不透明度 40%（透明度 60%）で描画される／表示状態へ戻したときは不透明度 100% に戻る／既存の色体系・レイアウトは維持される／影響範囲の typecheck または test が成功する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、SVG 進捗表示が Chip トグル状態を参照しない従来挙動へ戻す
+- チェックリスト:
+  - ステージフィルター Context を SVG 進捗表示側にも適用する
+  - 非表示種類の SVG セグメントを不透明度 40% 描画へ変更する
+  - 影響範囲の typecheck または test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 09:05 JST ステージサマリー Chip の状態を SVG タスク進捗表示へ反映し、非表示種類の色を透明度 60% へ調整する対応に着手。
+  - update: 2026-02-10 09:12 JST `BuildStepPanel` でステージごとの `BuildStageFilterProvider` を `stageProgressContent`（SVG 進捗表示）にも適用し、`ShapeBuildProgressPanel` の `TaskProgressBar` で `failed/skipped/completed` の非表示状態を `fillOpacity=0.4` として反映する実装を追加。
+  - done: 2026-02-10 09:13 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2646) fix/ui/shape-task-status-message-flicker-near-completion (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2645) fix/shape-fetch-failed-message-and-resume-queue
+- 受け入れ基準: タスク終盤で Completed と Running が相互上書きされる表示フリッカーが解消される／Completed へ遷移したタスクは同一タスク内で Running 表示へ戻らない／状態とメッセージ表示が整合する／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／影響範囲の typecheck と test が成功する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/worker/api.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のタスク状態/メッセージ更新ロジックへ戻す
+- チェックリスト:
+  - 状態フリッカーの更新経路（イベント順序・進捗マージ）を特定する
+  - Completed 優先ルールを実装し、表示競合を解消する
+  - 回帰防止テストを追加または更新する
+  - 影響範囲の typecheck と test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 08:50 JST タスク終盤で Completed/Running とメッセージが相互上書きされる表示フリッカーの調査と修正に着手。
+  - update: 2026-02-10 08:53 JST 原因は (1) `useShapeBuildTaskSync` と `TaskListVirtualized` が progress 値を根拠に status を再推論しており、終盤の progress 変動で running/completed が競合する点、(2) `taskQueue.updateTask` が terminal status ロック時でも message/progress 更新を許していたため、遅延 running 更新が completed 表示内容を上書きし得る点を確認。
+  - update: 2026-02-10 08:55 JST UI 側は status 推論を停止し、`completed -> running` 更新を同期層で拒否。taskQueue 側は terminal status 競合時に status だけでなく message/progress を含む更新を無視するよう修正。回帰防止として `shapePipelineStageHelpers.unit.test.ts` に「late running update が completed message を上書きしない」検証を追加。
+  - blocked: 2026-02-10 08:53 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` が TS6133（`useShapeBuildTaskSync.ts` unused variable）で exit 2。
+  - update: 2026-02-10 08:54 JST 未使用変数を削除して typecheck 再実行準備。
+  - done: 2026-02-10 08:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapePipelineStageHelpers.unit.test.ts` exit 0。
+
+2645) fix/shape-fetch-failed-message-and-resume-queue (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2637) fix/shape-build-start-resume-unify
+- 受け入れ基準: fetch stage で failed になったタスクの失敗理由が task message に永続化される／resume build 時に fetch stage failed タスクが queued へ戻り再実行対象になる／成功済み・進行中タスクの既存挙動に回帰を作らない／影響範囲の typecheck と test が成功する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/**` / `plugins/shape-plugin/src/worker/**` / `plugins/shape-plugin/src/__tests__/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の failed message 未永続化および resume 時の failed fetch 非再キュー挙動へ戻す
+- チェックリスト:
+  - fetch stage 失敗時に message が永続化される更新経路を追加する
+  - resume build 時に fetch stage failed タスクを queued に戻す処理を実装する
+  - 対象ユニットテストを追加または更新する
+  - 影響範囲の typecheck と test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 08:40 JST fetch failed message 未永続化と resume 時の failed fetch 非再キュー問題の修正に着手。
+  - update: 2026-02-10 08:44 JST 原因は `packages/vt-orchestrator/src/task/taskQueue.ts` の `updateTask` が `failed/completed` からの遷移を常にロックしており、`plugins/shape-plugin/src/worker/api.ts` の `resetFailedTasks` が `queued` へ戻せていなかった点。加えて `plugins/shape-plugin/src/services/vt/shapePipelineStageHelpers.ts` の `finalizePendingStageTasks` が `errorMessage` のみ更新し `message` を保存していなかったため、fetch failed の理由が message 欄に残らない経路があった。
+  - update: 2026-02-10 08:47 JST `updateTask(..., { allowTerminalStatusTransition: true })` オプションを追加し、`resetFailedTasks` から明示指定して failed→queued を許可。`finalizePendingStageTasks` では failed 化時に `message` と `errorMessage` を同値で保存するよう修正。再発防止として `plugins/shape-plugin/src/__tests__/unit/shapePipelineStageHelpers.unit.test.ts` を追加し、(1) failed→queued 遷移許可、(2) failed 理由の message 永続化を検証。
+  - done: 2026-02-10 08:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapePipelineStageHelpers.unit.test.ts` exit 0。
+
 2644) fix/ui/shape-step4-fetch-retry-defaults-and-max-double (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: なし

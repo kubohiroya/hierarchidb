@@ -48,6 +48,7 @@ const TaskProgressBar = ({
   resolveTaskTitle: (task: TaskWithMetadata) => string;
 }) => {
   const theme = useTheme();
+  const filter = useBuildStageFilter();
   const flowBandClipId = useId().replace(/:/g, '');
   const setScrollTarget = useSetAtom(taskScrollTargetAtom);
   const viewportRange = useAtomValue(taskViewportRangeAtom);
@@ -80,7 +81,7 @@ const TaskProgressBar = ({
   const successColor = theme.palette.success.main;
   const pausedColor = theme.palette.warning.main;
   const { segments, stageOffsets, stageCounts } = useMemo(() => {
-    const nextSegments: Array<{ fill: string; stageId: string; taskId?: string; title: string; width: number }> = [];
+    const nextSegments: Array<{ fill: string; fillOpacity: number; stageId: string; taskId?: string; title: string; width: number }> = [];
     const nextStageOffsets = new Map<string, number>();
     const nextStageCounts = new Map<string, number>();
     let totalCount = 0;
@@ -119,9 +120,14 @@ const TaskProgressBar = ({
         } else if (statusValue === 'paused') {
           fill = pausedColor;
         }
+        const isDimmed =
+          (isSkipped && !filter.skippedMode)
+          || (statusValue === 'failed' && !filter.failedMode)
+          || (statusValue === 'completed' && !filter.completedMode);
         const isExternalStage = sourceStageId !== stage.id;
         nextSegments.push({
           fill,
+          fillOpacity: isDimmed ? 0.4 : 1,
           stageId: stage.id,
           taskId: isExternalStage ? undefined : task.taskId,
           title: resolveTaskTitle(task),
@@ -134,6 +140,9 @@ const TaskProgressBar = ({
   }, [
     failedColor,
     pausedColor,
+    filter.completedMode,
+    filter.failedMode,
+    filter.skippedMode,
     resolveTaskTitle,
     runningColor,
     skippedColor,
@@ -315,6 +324,7 @@ const TaskProgressBar = ({
                 width={segment.width}
                 height={height}
                 fill={segment.fill}
+                fillOpacity={segment.fillOpacity}
               />
             );
             if (!segment.taskId) {
