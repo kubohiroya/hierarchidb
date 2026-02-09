@@ -1,53 +1,43 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import {
+  createSessionBroadcastChannel,
+  type SessionBroadcastMessage,
+} from '@hierarchidb/session-coordinator';
 
-type BuildSessionBroadcastMessage = {
-  sourceId: string;
+type BuildSessionBroadcastPayload = {
   nodeId?: NodeId;
   status?: string;
-  updatedAt: number;
 };
 
-const channelName = 'hierarchidb:shape-build-sessions:v1';
-const sourceId = `build-session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-let channel: BroadcastChannel | null = null;
+type BuildSessionBroadcastMessage = SessionBroadcastMessage<BuildSessionBroadcastPayload> &
+  BuildSessionBroadcastPayload;
 
-const getChannel = (): BroadcastChannel | null => {
-  if (channel) return channel;
-  if (typeof BroadcastChannel !== 'function') return null;
-  channel = new BroadcastChannel(channelName);
-  return channel;
-};
+const broadcastChannel = createSessionBroadcastChannel<BuildSessionBroadcastPayload>({
+  channelName: 'build-sessions',
+});
 
 export const publishBuildSessionUpdate = (payload?: {
   nodeId?: NodeId;
   status?: string;
 }): void => {
-  const bc = getChannel();
-  if (!bc) return;
-  try {
-    bc.postMessage({
-      sourceId,
-      updatedAt: Date.now(),
-      ...payload,
-    } satisfies BuildSessionBroadcastMessage);
-  } catch {
-    // Ignore broadcast failures.
-  }
+  broadcastChannel.publish({
+    type: 'build-session-update',
+    payload,
+  });
 };
 
 export const subscribeToBuildSessionBroadcast = (
   handler: (message: BuildSessionBroadcastMessage) => void,
 ): (() => void) => {
-  const bc = getChannel();
-  if (!bc) return () => {};
-  const onMessage = (event: MessageEvent) => {
-    const data = event.data as BuildSessionBroadcastMessage | undefined;
-    if (!data) return;
-    if (data.sourceId === sourceId) return;
-    handler(data);
-  };
-  bc.addEventListener('message', onMessage);
-  return () => {
-    bc.removeEventListener('message', onMessage);
-  };
+  return broadcastChannel.subscribe((message) => {
+    if (message.type !== 'build-session-update') return;
+    handler({
+      sourceId: message.sourceId,
+      updatedAt: message.updatedAt,
+      nodeId: message.payload?.nodeId,
+      status: message.payload?.status,
+      type: message.type,
+      payload: message.payload,
+    });
+  });
 };

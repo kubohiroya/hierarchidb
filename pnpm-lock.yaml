@@ -1281,6 +1281,9 @@ importers:
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../route-store
+      '@hierarchidb/session-coordinator':
+        specifier: workspace:*
+        version: link:../session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../shape-api

@@ -1,4 +1,6 @@
 import { Dexie } from 'dexie';
+export type { SessionBroadcastChannel, SessionBroadcastMessage } from './broadcast.js';
+export { createSessionBroadcastChannel } from './broadcast.js';
 
 export type SessionTabState = 'active' | 'hidden' | 'frozen';
 

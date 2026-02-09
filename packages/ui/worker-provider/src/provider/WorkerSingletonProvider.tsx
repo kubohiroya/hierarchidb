@@ -26,7 +26,7 @@ interface WorkerProviderProps {
   loadingComponent?: React.ReactNode;
   errorComponent?: React.ComponentType<{ error: Error }>;
   getWorkerClient: () => Promise<WorkerClient>;
-  getRawWorker: () => Worker | null;
+  getRawWorker: () => Worker | MessagePort | null;
 }
 
 const WorkerContext = createContext<WorkerState | null>(null);

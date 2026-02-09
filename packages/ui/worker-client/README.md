@@ -66,7 +66,7 @@ const { WorkerAPIClient } = await loadWorkerAPIClientModule();
 let retries = 3;
 
 while (retries > 0) {
-  const rawWorker = WorkerAPIClient.getRawWorkerInstance();
+  const rawWorker = WorkerAPIClient.getRawWorkerInstance(); // Worker | MessagePort
   const result = await channel.waitForInitialization({
     worker: rawWorker,
     timeout: 10000,
@@ -237,7 +237,7 @@ class WorkerInitializationChannel {
 }
 
 interface WorkerInitConfig {
-  worker: Worker;           // The Worker instance
+  worker: Worker | MessagePort; // The Worker or MessagePort instance
   timeout?: number;         // Timeout in ms (default: 30000)
   debug?: boolean;          // Enable debug logging (default: false)
 }

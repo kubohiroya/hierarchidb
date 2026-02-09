@@ -44,6 +44,7 @@
     "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
+    "@hierarchidb/session-coordinator": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "comlink": "^4.4.2",

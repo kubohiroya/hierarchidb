@@ -17296,3 +17296,45 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-08 21:12 JST 設計を `docs/session-web-locks-heartbeat-design.md` に整理（API/スキーマ/判定ロジック/リスク）。
   - update: 2026-02-08 21:18 JST Build ステップの時間計測仕様（総経過/ステージ経過/残り時間）を同設計書へ追記。
   - update: 2026-02-08 21:26 JST Lock 競合・非対応環境・heartbeat 粒度・stage 切替・pause/resume・retention・命名規約の詳細仕様を追記。
+2620) refactor/worker/sharedworker-multitab-build-session (P1) — 進行中 (2026-02-08)
+- ブランチ名: codex/refactor/worker/sharedworker-multitab-build-session
+- 依存: なし
+- 受け入れ基準: WorkerProvider が Web Locks でタブ間シングルトンを保証し SharedWorker を Comlink expose する構成に再編される／WorkerClient が SharedWorker 接続前提の初期化・再接続フローへ移行し Dedicated Worker モードを維持する／ビルドセッションのタブ超え存在・動作状況通知が BroadcastChannel API へ移行し `packages/session-coordinator` の既存実装をベースに統合される／TreeSubscriptionAPI 等の pub/sub とビルドセッション重要通知（ステージ・完了・エラー）は Comlink callback を維持する／TASKS.md に運用ログとロールバック手順を記載する
+- 影響範囲: `packages/session-coordinator/src/**` / `app/src/worker-runtime/**` / `packages/plugin-service-sdk/src/worker/**` / `packages/runtime-worker/src/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して Dedicated Worker + 既存 Comlink callback / Broadcast 実装に戻す
+- チェックリスト:
+  - Web Locks + SharedWorker による WorkerProvider 初期化フローを整理する
+  - WorkerClient の SharedWorker 対応と Dedicated Worker モードを両立する
+  - BroadcastChannel によるタブ超え通知を `packages/session-coordinator` の実装に寄せて統合する
+  - TreeSubscriptionAPI とビルドセッション重要通知の Comlink callback を維持する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-08 10:00 JST SharedWorker + Web Locks + BroadcastChannel でのタブ跨ぎビルドセッション再編に着手。
+  - update: 2026-02-08 10:12 JST ExecPlan を `plans/worker-sharedworker-multitab-execplan.md` に作成し、ブランチを `codex/refactor/worker/sharedworker-multitab-build-session` で開始。
+  - update: 2026-02-08 10:45 JST SharedWorker エントリ/共通 bootstrap、WorkerClient の SharedWorker 優先化、session-coordinator Broadcast helper と build session broadcast 移行に着手。
+  - update: 2026-02-09 09:31 JST `pnpm install` 実行（exit 0）。
+  - blocked: 2026-02-09 09:31 JST `pnpm build` で `@hierarchidb/app` の Vite build が失敗。`packages/shape-api/dist/index.js` が `@hierarchidb/core-types/dist/index.js` から `NodeId` を import しており、export 不足エラー（MISSING_EXPORT）で停止。
+  - update: 2026-02-09 09:31 JST `pnpm typecheck` は exit 0。
+  - update: 2026-02-09 09:45 JST `@hierarchidb/core-types` の build を tsc へ切替（`tsc --project tsconfig.build.json`）し、`pnpm -w turbo run build --filter @hierarchidb/core-types` を実行（exit 0）。
+  - blocked: 2026-02-09 09:45 JST `pnpm build` を再実行したが `packages/shape-api/dist/index.js` が `NodeId` を runtime import しており、`@hierarchidb/core-types/dist/index.js` の export 不足で再度 `MISSING_EXPORT` が発生。
+  - update: 2026-02-09 09:51 JST 方法Bとして `packages/shape-api/tsconfig.json` に `importsNotUsedAsValues: remove` と `preserveValueImports: false` を追加して build したが、`NodeId` の runtime import が残留。
+  - update: 2026-02-09 09:51 JST 方法Aとして `@hierarchidb/shape-api` を tsc build (`tsc --project tsconfig.build.json`) に切替し、`packages/shape-api/dist/index.js` から `NodeId` の runtime import が消えることを確認。
+  - update: 2026-02-09 09:51 JST `pnpm build` を再実行して exit 0 を確認。
+  - update: 2026-02-09 09:56 JST `packages/ui/worker-provider` の `getRawWorker` を `Worker | MessagePort | null` に拡張し、`pnpm typecheck` を実行（exit 0）。
+  - update: 2026-02-09 09:59 JST AppBar の SharedSession 監視ボタン（`BuildSessionLauncherButtons`）の配線を確認。`useBuildSessionSnapshots` → `SessionCoordinatorProvider` と worker の build session Broadcast 更新が繋がっていることを確認。
+2611) fix/shape/build-resume-crash (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/shape/build-resume-crash
+- 依存: なし
+- 受け入れ基準: shape ビルド中のブラウザクラッシュ後に同一URLを再訪してもビルドが停止状態で復帰し、Start が loading にならず Pause が disabled にならない／再訪から10秒程度でブラウザがクラッシュしない／原因・影響範囲・ロールバック手順が TASKS.md に記載される
+- 影響範囲: `app/src/**` / `packages/runtime-worker/src/**` / `packages/plugin-ui-host/src/**` / `plugins/shape-plugin/src/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の復帰挙動へ戻す
+- チェックリスト:
+  - 再訪時の build セッション復帰処理と UI 状態の同期箇所を特定する
+  - 10秒後クラッシュの原因（例: 復帰時の購読/タイマー）を特定し修正する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-09 10:10 JST ブラウザクラッシュ後の Step5 再訪で build 状態が不整合となり再クラッシュする件の調査に着手。
+  - update: 2026-02-09 10:15 JST 再訪時に worker セッションが停止している場合は processingStatus を paused/unknown へ補正し、autoResumeBuild を解除する処理を追加。
+  - update: 2026-02-09 10:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。

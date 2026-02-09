@@ -90,7 +90,13 @@ async function getOrInit(): Promise<WorkerInterface> {
 function reset(): void {
   if (workerInstance) {
     const raw = getRawWorkerInstance();
-    raw?.terminate();
+    if (raw) {
+      if ('terminate' in raw && typeof raw.terminate === 'function') {
+        raw.terminate();
+      } else if ('close' in raw && typeof raw.close === 'function') {
+        raw.close();
+      }
+    }
   }
   workerInstance = null;
   state = 'uninitialized';
@@ -115,7 +121,7 @@ function isReady(): boolean {
   return state === 'initialized' && workerInstance !== null;
 }
 
-function getRawWorkerInstance(): Worker | null {
+function getRawWorkerInstance(): Worker | MessagePort | null {
   const module = getClientModuleOrNull();
   return module?.getRawWorkerInstance?.() ?? null;
 }

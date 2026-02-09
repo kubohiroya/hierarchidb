@@ -10,6 +10,7 @@ import type {
   WorkerInitConfig,
   WorkerInitMessage,
   WorkerInitRequest,
+  WorkerInitMessageTarget,
 } from './types.js';
 
 const INIT_EVENT_START = 'hierarchidb-worker-init-start';
@@ -25,7 +26,7 @@ const dispatchInitEvent = (eventName: string, detail?: unknown) => {
 };
 
 export class WorkerInitializationChannel {
-  private worker: Worker | null = null;
+  private worker: WorkerInitMessageTarget | null = null;
   private initPromise: Promise<InitializationResult> | null = null;
   private messageHandler: ((event: MessageEvent) => void) | null = null;
   private debug: boolean = false;
@@ -40,7 +41,7 @@ export class WorkerInitializationChannel {
       return this.initPromise;
     }
 
-    this.worker = worker;
+    this.worker = worker as WorkerInitMessageTarget;
     this.debug = debug;
     const startTime = Date.now();
 
@@ -121,6 +122,7 @@ export class WorkerInitializationChannel {
       if (!this.worker) {
         throw new Error('Worker is not initialized');
       }
+      this.worker.start?.();
       this.worker.addEventListener('message', this.messageHandler);
 
       // Send initialization request
@@ -160,6 +162,7 @@ export class WorkerInitializationChannel {
       };
 
       if (this.worker) {
+        this.worker.start?.();
         this.worker.addEventListener('message', handler);
         const request: WorkerInitRequest = { type: 'PING' };
         this.worker.postMessage(request);

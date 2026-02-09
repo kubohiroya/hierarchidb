@@ -38,13 +38,23 @@ export interface WorkerInitMessage {
  * Configuration for Worker initialization
  */
 export interface WorkerInitConfig {
-  /** Worker instance to monitor */
-  worker: Worker;
+  /** Worker or MessagePort instance to monitor */
+  worker: Worker | MessagePort;
   /** Timeout in milliseconds (default: 30000) */
   timeout?: number;
   /** Enable debug logging */
   debug?: boolean;
 }
+
+/**
+ * Message target used for initialization channels.
+ */
+export type WorkerInitMessageTarget = {
+  postMessage: (message: WorkerInitMessage) => void;
+  addEventListener: (type: 'message', listener: (event: MessageEvent) => void) => void;
+  removeEventListener: (type: 'message', listener: (event: MessageEvent) => void) => void;
+  start?: () => void;
+};
 
 /**
  * Initialization step definition

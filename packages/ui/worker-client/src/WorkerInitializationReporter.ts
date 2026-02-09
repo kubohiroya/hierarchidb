@@ -5,7 +5,12 @@
  * to the UI thread via postMessage, independent of Comlink.
  */
 
-import type { InitializationStep, WorkerInitMessage, WorkerInitRequest } from './types.js';
+import type {
+  InitializationStep,
+  WorkerInitMessage,
+  WorkerInitRequest,
+  WorkerInitMessageTarget,
+} from './types.js';
 
 export class WorkerInitializationReporter {
   private isInitialized = false;
@@ -13,10 +18,24 @@ export class WorkerInitializationReporter {
   private currentStep = 0;
   private currentProgress = 0;
   private debug = false;
+  private messageTarget: WorkerInitMessageTarget | null = null;
+  private sender?: (message: WorkerInitMessage) => void;
+  private messageListenerEnabled = true;
 
-  constructor(steps: InitializationStep[] = [], debug = false) {
+  constructor(
+    steps: InitializationStep[] = [],
+    debug = false,
+    options?: {
+      messageTarget?: WorkerInitMessageTarget | null;
+      sender?: (message: WorkerInitMessage) => void;
+      listenForRequests?: boolean;
+    }
+  ) {
     this.initSteps = steps;
     this.debug = debug;
+    this.messageTarget = options?.messageTarget ?? (typeof self !== 'undefined' ? (self as WorkerInitMessageTarget) : null);
+    this.sender = options?.sender;
+    this.messageListenerEnabled = options?.listenForRequests ?? true;
     this.setupMessageListener();
   }
 
@@ -24,17 +43,20 @@ export class WorkerInitializationReporter {
    * Set up message listener for initialization requests
    */
   private setupMessageListener(): void {
-    if (typeof self !== 'undefined' && 'addEventListener' in self) {
-      self.addEventListener('message', (event: MessageEvent) => {
-        const request = event.data as WorkerInitRequest;
-
-        if (request.type === 'INIT_REQUEST') {
-          this.reportCurrentStatus();
-        } else if (request.type === 'PING') {
-          this.sendMessage('PING_RESPONSE', { timestamp: Date.now() });
-        }
-      });
+    if (!this.messageListenerEnabled) return;
+    if (!this.messageTarget || typeof this.messageTarget.addEventListener !== 'function') {
+      return;
     }
+    this.messageTarget.start?.();
+    this.messageTarget.addEventListener('message', (event: MessageEvent) => {
+      const request = event.data as WorkerInitRequest;
+
+      if (request.type === 'INIT_REQUEST') {
+        this.reportCurrentStatus();
+      } else if (request.type === 'PING') {
+        this.sendMessage('PING_RESPONSE', { timestamp: Date.now() });
+      }
+    });
   }
 
   /**
@@ -124,27 +146,77 @@ export class WorkerInitializationReporter {
   }
 
   /**
+   * Send the current status to a specific target.
+   */
+  public sendStatusTo(target: WorkerInitMessageTarget): void {
+    if (this.isInitialized) {
+      this.sendMessageToTarget(target, 'INIT_COMPLETE', {
+        progress: 100,
+        message: 'Worker initialized successfully',
+      });
+      return;
+    }
+    if (this.currentProgress > 0) {
+      const currentStepName = this.initSteps[this.currentStep]?.name || 'Initializing...';
+      this.sendMessageToTarget(target, 'INIT_PROGRESS', {
+        progress: this.currentProgress,
+        message: currentStepName,
+      });
+      return;
+    }
+    this.sendMessageToTarget(target, 'INIT_PROGRESS', {
+      progress: 0,
+      message: 'Starting initialization...',
+    });
+  }
+
+  /**
    * Send a message to the UI thread
    */
   private sendMessage(
     type: WorkerInitMessage['type'],
     payload?: WorkerInitMessage['payload']
   ): void {
-    if (typeof self !== 'undefined' && 'postMessage' in self) {
-      const message: WorkerInitMessage = {
-        type,
-        payload: {
-          ...payload,
-          timestamp: Date.now(),
-        },
-      };
+    const message: WorkerInitMessage = {
+      type,
+      payload: {
+        ...payload,
+        timestamp: Date.now(),
+      },
+    };
 
-      if (this.debug) {
-        console.log('[WorkerInitReporter] Sending message:', message);
-      }
-
-      self.postMessage(message);
+    if (this.debug) {
+      console.log('[WorkerInitReporter] Sending message:', message);
     }
+
+    if (this.sender) {
+      this.sender(message);
+      return;
+    }
+
+    if (this.messageTarget && typeof this.messageTarget.postMessage === 'function') {
+      this.messageTarget.postMessage(message);
+    }
+  }
+
+  private sendMessageToTarget(
+    target: WorkerInitMessageTarget,
+    type: WorkerInitMessage['type'],
+    payload?: WorkerInitMessage['payload']
+  ): void {
+    const message: WorkerInitMessage = {
+      type,
+      payload: {
+        ...payload,
+        timestamp: Date.now(),
+      },
+    };
+
+    if (this.debug) {
+      console.log('[WorkerInitReporter] Sending message to target:', message);
+    }
+
+    target.postMessage(message);
   }
 
   /**
