@@ -418,6 +418,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (!data?.buildConfig) return false;
     return validateBatchConfig(data.buildConfig).isValid;
   }, [data?.buildConfig]);
+
+  const showResumeLabel = useMemo(() => (
+    buildStatus === 'paused' || displayTasks.length > 0
+  ), [buildStatus, displayTasks.length]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   const bridgeRef = useRef(getWorkerBridge());
@@ -879,7 +883,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     ) as Promise<FetchTaskPayload[]>;
   }, [activeNodeId, data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, workerClient]);
 
-  const canResume = buildStatus === 'paused';
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
@@ -897,22 +900,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       return false;
     }
     coordinator.writeActiveSessionId(String(activeNodeId));
-    // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
-    if (canResume && !options?.forceRestart) {
-      try {
-        await bridgeRef.current.initialize();
-        const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-        await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
-        await persistDraftPatch({ processingStatus: 'processing' });
-        return true;
-      } catch (error) {
-        releaseBuildLock();
-        coordinator.clearActiveSessionId(String(activeNodeId));
-        notify.error('Failed to resume build.');
-        console.error('[ShapeBuildProgressStep] resume failed', error);
-        return false;
-      }
-    }
     const saved = await saveDraftBeforeBuild();
     if (!saved) {
       releaseBuildLock();
@@ -946,7 +933,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [
     activeNodeId,
     buildDownloadTaskPayloads,
-    canResume,
     coordinator,
     persistDraftPatch,
     releaseBuildLock,
@@ -1016,6 +1002,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     timingStageId,
     completedStageElapsedMs,
     warningMessage,
+    showResumeLabel,
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,

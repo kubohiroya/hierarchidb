@@ -228,7 +228,8 @@
 - 運用ログ:
   - start: 2026-02-09 23:55 JST start/resume の統一挙動と UI ラベル条件の調査に着手。
   - update: 2026-02-10 00:20 JST sessions に selectedArrayByCountries を保存する型拡張を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin` が gis-sdk の dist 未更新で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` を実行。
-  - done: 2026-02-10 00:23 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin` exit 0。
+  - update: 2026-02-10 00:45 JST start/resume 統一のため UI から resume 分岐を撤去し、前回タスク残存時の Resume 表示条件を追加。selection diff の削除処理を worker 側に実装。`pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store` が components の dist 未更新で失敗したため、`pnpm -w turbo run build --filter @hierarchidb/components` を実行。
+  - done: 2026-02-10 00:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store` exit 0。
   - update: 2026-02-09 19:22 JST fetch ステージは buildConfig.fetchConfig から retryConfig を構築し、rawDataPipeline/getOrFetchWithRetry で外側の再試行を実施。内部の FetchNetworkPort は smartFetch のデフォルトリトライ（retries=3, baseDelayMs=300, maxDelayMs=5000）を持つため二層リトライ構成。`HTTP 502` は両レイヤの再試行を尽くした最終失敗として投げられる経路を確認。再ビルド時は worker の resetFailedTasks が failed を queued に戻して再実行し、完了済みタスクは保持されるが「タスク再作成＋結果マージ」を明示する追加整理が必要。
   - update: 2026-02-09 19:28 JST ブラウザ再読込時の warning は UI 側 `useShapeBuildTasks` が subscribeBatchTasks の snapshot に含まれる `status=failed` を検知して必ず `console.warn('[ShapeBuildStep] task failed', ...)` を出しているため発生。タスク実行のトリガではなく、停止/永続化された failed タスクの表示ログである点を確認。
   - update: 2026-02-09 19:36 JST 停止セッションでは failed タスク warning を出さないよう、`useShapeBuildTasks` に `reportFailures` オプションを追加し、`useShapeBuildStep` で `processing` 状態のみ warning を有効化するよう変更。
@@ -237,9 +238,48 @@
   - update: 2026-02-09 20:06 JST UI文言の用語統一（Build/Fetch/Session/Start/Resume/Delete）に向けて、shape-plugin の locales(en/ja) から Batch/Download/Process/Restart を含む表示文言を洗い出し、置換候補を整理。
   - update: 2026-02-09 20:15 JST shape-plugin の UI文言を Build/Fetch/Session 用語へ統一（Processing→Build、Batch→Build、Download→Fetch、unknownStage/進捗表記などを更新）。
   - update: 2026-02-09 20:22 JST app/public/locales の UI文言を統一（guidedTour の download/restart、route/spreadsheet/styler の processing を Build/Start 表記へ更新）。
+  - update: 2026-02-10 00:52 JST Resume ラベルのユニットテストを追加し、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` を再実行。
+  - done: 2026-02-10 00:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
   - update: 2026-02-09 20:30 JST docs/app/docs の用語統一候補を抽出。deprecated 配下を除外して優先度を整理する方針を提案。
   - update: 2026-02-09 20:40 JST 非deprecatedの docs/app/docs を Build/Fetch/Session 用語へ部分統一（glossary, settings, runtime-flags, UNIFIED_BATCH_CONTROL_API, shape-plugin migration, vt-pipeline-design を更新）。
   - update: 2026-02-09 20:55 JST コード識別子の用語混在（Batch/Download/Processing/Restart）を調査し、公開API/内部/プラグイン別の置換候補と段階移行方針を整理。
+  - update: 2026-02-09 23:52 JST Step5 の Start/Resume 押下時フローを新規セッションと fetch failed タスク保持の2ケースで再追跡し、想定との差分を点検する調査に着手。
+
+2638) docs/shape-build-session-spec (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/docs/shape-build-session-spec
+- 依存: なし
+- 受け入れ基準: ビルドセッション仕様を docs に新規作成し、タイムスタンプ比較・タスク生成・ステージ遷移の規則を定式化する／新規セッションと再開セッションの十分性検討を記述する／現行実装との齟齬の有無をコード参照つきで記述する／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `docs/build-session-spec.md`（新規）
+- ロールバック手順: 追加した仕様ドキュメントを削除する
+- チェックリスト:
+  - 仕様の定式化（タイムスタンプ比較・タスク生成・ステージ遷移）
+  - 十分性の検討（新規/再開セッション）
+  - 実装との齟齬確認（コード参照）
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 00:57 JST ビルドセッション仕様の定式化と実装整合の検討に着手。
+  - update: 2026-02-10 01:10 JST 仕様ドラフトを `docs/build-session-spec.md` として作成し、十分性と実装差異の整理を追記。
+  - update: 2026-02-10 02:15 JST メタデータ/タイムスタンプ比較の仕様修正（国×ADMはメタデータ比較のみ）を反映。
+  - done: 2026-02-10 02:15 JST 仕様修正を反映し、ビルドセッション仕様の更新を完了。
+
+2639) feat/shape-build/metadata-reconcile (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/feat/shape-build-metadata-reconcile
+- 依存: なし
+- 受け入れ基準: 共通コード（packages/batch）にメタデータ/タイムスタンプ比較のタスク判定ユーティリティを追加しテストを先に追加する／shape-plugin 固有のタスク再構成ロジックに共通ユーティリティを適用しテストを先に追加する／新規/再開ビルドのタスク生成がメタデータ比較に基づいて行われる／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/batch/src/**` / `plugins/shape-plugin/src/services/vt/**`
+- ロールバック手順: 追加したユーティリティと呼び出しを revert し、従来のタスク照合ロジックへ戻す
+- チェックリスト:
+  - 共通ユーティリティのテスト追加（先行）
+  - 共通ユーティリティの実装
+  - shape-plugin 固有テスト追加（先行）
+  - shape-plugin へ適用
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 01:20 JST メタデータ比較によるタスク再構成の共通化とテストファースト実装に着手。
+  - update: 2026-02-10 02:05 JST メタデータ/タイムスタンプ比較仕様の修正（国×ADMはメタデータ比較のみ）を反映する作業と、shape-plugin のテスト配置見直しに着手。
+  - update: 2026-02-10 02:20 JST `pnpm -w turbo run test --filter @hierarchidb/batch -- --run src/session/__tests__/buildSessionReconcile.unit.test.ts` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-10 02:21 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeStageReconcile.unit.test.ts` は初回タイムアウトのため再実行し、exit 0（tsdown define 警告あり）。
+  - done: 2026-02-10 02:21 JST 共通ユーティリティと shape-plugin のタスク再構成がメタデータ比較で動作することをテストで確認。
 
 2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values

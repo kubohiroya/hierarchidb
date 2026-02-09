@@ -2,13 +2,18 @@ import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hi
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata } from '../../common/types/index.js';
-import { createTransformByBandHandler, listTasksByStage, putTasks, runStageTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import {
+  createTransformByBandHandler,
+  deleteTasksByIds,
+  listTasksByStage,
+  putTasks,
+  runStageTasks,
+  VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeTransformByBandTaskInput } from './shapePipelineShared.ts';
-import {
-  filterObsoleteTasks,
-  resolveTransformConfig,
-} from './shapePipelineShared.ts';
+import { resolveTransformConfig } from './shapePipelineShared.ts';
+import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   getFailedTaskCount,
@@ -212,15 +217,19 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   }
 
   try {
+    let missingTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
     if (params.resumeExistingTasks && existingTransformByBandTasks.length > 0) {
-      existingTransformByBandTasks = await filterObsoleteTasks(
-        params.taskQueue,
-        existingTransformByBandTasks,
-        desiredTransformTasks,
-      );
+      const reconciled = reconcileStageTasksByMetadata(desiredTransformTasks, existingTransformByBandTasks);
+      if (reconciled.obsoleteTaskIds.length > 0) {
+        await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
+      }
+      const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
+      existingTransformByBandTasks = existingTransformByBandTasks.filter((task) => !obsoleteSet.has(task.taskId));
+      missingTransformTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+    } else {
+      const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
+      missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
     }
-    const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
-    const missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
     console.warn('[ShapeTransform][PipelineDiagnostics] transform stage tasks prepared', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,

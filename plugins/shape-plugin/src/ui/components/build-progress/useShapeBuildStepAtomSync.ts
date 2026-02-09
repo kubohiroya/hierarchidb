@@ -103,6 +103,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     suspendSuspectMessage,
     setSuspendSuspectOpen: setSuspendSuspectOpenFromHook,
     canStartOrResume,
+    showResumeLabel,
     handleStartOrResume,
     handlePause,
     isPausePending,
@@ -326,6 +327,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     const nextControls = {
       canStartOrResume,
       statusLabel: statusLabel ?? '',
+      showResumeLabel: Boolean(showResumeLabel),
       handleStartOrResume: stableHandleStartOrResume,
       handlePause: stableHandlePause,
       pausePending: Boolean(isPausePending),

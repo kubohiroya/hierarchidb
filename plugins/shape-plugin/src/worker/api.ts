@@ -35,7 +35,12 @@ import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
-import { bufferDeserializer, bufferSerializer, createShapeChunkStore } from '../services/utils/chunkStore.js';
+import {
+  bufferDeserializer,
+  bufferSerializer,
+  createShapeChunkStore,
+  deleteRawDataDataSourceBuffersForNodeKeys,
+} from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveFetchStageStrategy.ts';
 import { isBuildProcessConfig, toBuildSessionRecord } from '../services/batch/shapeSessionMappers.ts';
@@ -53,6 +58,7 @@ import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 import { isSkippedMessage } from '../common/utils/taskMessages.ts';
 import { buildShapeTaskTitle } from '../common/utils/taskTitles.ts';
+import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import {
   resolveTaskActivityTimestamp,
   resolveTaskProcessingTimestamp,
@@ -116,6 +122,132 @@ const resolveConfigInvalidationPlan = (
     transform: hasConfigDiff(prev.transformConfig, next.transformConfig),
     vt: hasConfigDiff(prev.vtConfig, next.vtConfig),
   };
+};
+
+const normalizeSelectionKey = (code: string): string => code.trim().toUpperCase();
+
+const buildSelectionSet = (selection: SelectedArrayByCountries | undefined): Set<string> => {
+  const set = new Set<string>();
+  if (!selection || Array.isArray(selection)) return set;
+  Object.entries(selection).forEach(([code, row]) => {
+    if (!Array.isArray(row)) return;
+    const normalizedCode = normalizeSelectionKey(code);
+    row.forEach((selected, index) => {
+      if (selected) {
+        set.add(`${normalizedCode}:${index}`);
+      }
+    });
+  });
+  return set;
+};
+
+const computeRemovedSelectionPairs = (
+  prevSelection: SelectedArrayByCountries | undefined,
+  nextSelection: SelectedArrayByCountries | undefined,
+): Array<{ countryCode: string; adminLevel: number }> => {
+  if (!prevSelection || Array.isArray(prevSelection)) return [];
+  const prevSet = buildSelectionSet(prevSelection);
+  const nextSet = buildSelectionSet(nextSelection);
+  const removed: Array<{ countryCode: string; adminLevel: number }> = [];
+  prevSet.forEach((entry) => {
+    if (nextSet.has(entry)) return;
+    const [countryCode, adminLevelText] = entry.split(':');
+    const adminLevel = Number.parseInt(adminLevelText ?? '', 10);
+    if (!countryCode || !Number.isFinite(adminLevel)) return;
+    removed.push({ countryCode, adminLevel });
+  });
+  return removed;
+};
+
+const applySelectionDiffCleanup = async (
+  nodeId: NodeId,
+  prevSelection: SelectedArrayByCountries | undefined,
+  nextSelection: SelectedArrayByCountries | undefined,
+): Promise<void> => {
+  const removedPairs = computeRemovedSelectionPairs(prevSelection, nextSelection);
+  if (removedPairs.length === 0) return;
+  const taskQueue = new VtTaskQueueDb();
+  const removedKeyTuples = removedPairs.map((entry) => (
+    [nodeId, normalizeSelectionKey(entry.countryCode), entry.adminLevel] as const
+  ));
+  const [fetchCaches, transformCaches, vtTasks] = await Promise.all([
+    ephemeralShapeDB.fetchCache
+      .where('[nodeId+countryCode+adminLevel]')
+      .anyOf(removedKeyTuples)
+      .toArray(),
+    ephemeralShapeDB.transformCache
+      .where('[nodeId+countryCode+adminLevel]')
+      .anyOf(removedKeyTuples)
+      .toArray(),
+    taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
+  ]);
+
+  const fetchCacheIds = fetchCaches.map((cache) => cache.id);
+  if (fetchCacheIds.length > 0) {
+    await ephemeralShapeDB.fetchCache
+      .where('[nodeId+countryCode+adminLevel]')
+      .anyOf(removedKeyTuples)
+      .delete();
+    await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
+  }
+
+  const transformCacheIds = transformCaches.map((cache) => cache.id);
+  const removedBufferSet = new Set(transformCacheIds);
+  if (transformCacheIds.length > 0) {
+    await ephemeralShapeDB.transformCache
+      .where('[nodeId+countryCode+adminLevel]')
+      .anyOf(removedKeyTuples)
+      .delete();
+    const relations = await ephemeralShapeDB.tileIdToBufferRelations
+      .where('bufferId')
+      .anyOf(transformCacheIds)
+      .toArray();
+    const affectedTileIds = new Set(relations.map((row) => row.tileId));
+    await ephemeralShapeDB.tileIdToBufferRelations
+      .where('bufferId')
+      .anyOf(transformCacheIds)
+      .delete();
+    const encoder = new TextEncoder();
+    const hasher = new NobleSha3HashPort();
+    const tileIdsToDelete = vtTasks
+      .map((task) => {
+        const input = task.inputData as { bufferIds?: string[]; tileId?: number } | undefined;
+        if (!input?.bufferIds?.length || typeof input.tileId !== 'number') return null;
+        if (!input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId))) return null;
+        const sorted = [...input.bufferIds].sort();
+        const hash = hasher.digest(encoder.encode(JSON.stringify(sorted)).buffer, 'sha3-256');
+        return `${input.tileId}|${hash}`;
+      })
+      .filter((entry): entry is string => Boolean(entry));
+    for (const tileId of tileIdsToDelete) {
+      await shapeMutationAPIImpl.deleteVectorTile(tileId);
+    }
+    if (affectedTileIds.size > 0 && tileIdsToDelete.length === 0) {
+      await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+    }
+  }
+
+  const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
+  const removedSet = new Set(removedPairs.map((entry) => `${normalizeSelectionKey(entry.countryCode)}:${entry.adminLevel}`));
+  const removedTaskIds = tasks
+    .filter((task) => {
+      const stage = task.stage ?? task.taskType;
+      if (stage === 'fetch' || stage === 'transform') {
+        const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
+        if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
+        return removedSet.has(`${normalizeSelectionKey(input.countryCode)}:${input.adminLevel}`);
+      }
+      if (stage === 'vt') {
+        const input = task.inputData as { bufferIds?: string[] } | undefined;
+        if (!input?.bufferIds?.length) return false;
+        return input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId));
+      }
+      return false;
+    })
+    .map((task) => task.taskId);
+  if (removedTaskIds.length > 0) {
+    await taskQueue.tasks.bulkDelete(removedTaskIds);
+  }
 };
 
 const clearTaskQueueStages = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
@@ -1231,6 +1363,11 @@ export const shapeBatchAPI = {
     const previousBuildConfig = previousSession?.config && isBuildProcessConfig(previousSession.config)
       ? buildConfigFromSession(previousSession.config)
       : null;
+    await applySelectionDiffCleanup(
+      nodeForSession,
+      previousSession?.selectedArrayByCountries,
+      draftLike?.draftData?.selectedArrayByCountries,
+    );
     await applyConfigInvalidation(nodeForSession, previousBuildConfig, mergedBatchConfig);
     let existingTasks = await listTasks(taskQueue, nodeForSession);
     if (existingTasks.length === 0) {
@@ -1397,6 +1534,11 @@ export const shapeBatchAPI = {
         const mergedBuildConfig = entityBuildConfig
           ? mergeBuildConfig(normalizedBaseConfig, entityBuildConfig)
           : normalizedBaseConfig;
+        await applySelectionDiffCleanup(
+          nodeId,
+          sessionRecord?.selectedArrayByCountries,
+          draftLike?.draftData?.selectedArrayByCountries,
+        );
         await applyConfigInvalidation(nodeId, sessionBuildConfig, mergedBuildConfig);
         existingTasks = await listTasks(taskQueue, nodeId);
         if (existingTasks.length === 0) {

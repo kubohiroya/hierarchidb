@@ -39,6 +39,7 @@ export interface BuildStepPanelProps {
   pausePending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
+  showResumeLabel?: boolean;
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
   statusLabel?: string;
@@ -71,6 +72,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   pausePending,
   startLabel,
   resumeLabel,
+  showResumeLabel,
   startIcon,
   resumeIcon,
   statusLabel,
@@ -211,6 +213,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           pausePending={pausePending}
           startLabel={startLabel}
           resumeLabel={resumeLabel}
+          showResumeLabel={showResumeLabel}
           startIcon={startIcon}
           resumeIcon={resumeIcon}
           details={controlDetails}

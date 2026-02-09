@@ -864,6 +864,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       pauseLabel={t('stage.controls.pause', 'Pause')}
       pauseLoading={false}
       pausePending={controls.pausePending}
+      showResumeLabel={controls.showResumeLabel}
       startLabel={t('stage.controls.start', 'Start Build')}
       resumeLabel={t('stage.controls.resume', 'Resume Build')}
       statusLabel={controls.statusLabel}

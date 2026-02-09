@@ -59,6 +59,7 @@ const makeStore = () => {
   store.set(tasksLoadingAtom, false);
   store.set(taskSummaryLoadingAtom, false);
   store.set(taskWarningMessageAtom, null);
+  store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
   store.set(taskProgressControlsAtom, {
     canStartOrResume: false,
     statusLabel: '',
@@ -91,6 +92,8 @@ describe('ShapeBuildProgressPanel', () => {
       skipped: 0,
       buildStatus: 'failed',
       hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
       totalElapsedMs: 0,
       stageElapsedMs: 0,
       stageRemainingMs: null,
@@ -104,5 +107,40 @@ describe('ShapeBuildProgressPanel', () => {
 
     await screen.findByText('Build controls');
     expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
+  });
+
+  it('shows resume label when tasks remain even if status is idle', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: true,
+      statusLabel: '',
+      showResumeLabel: true,
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await screen.findByText('Build controls');
+    expect(screen.getByText('Resume Build')).toBeTruthy();
   });
 });

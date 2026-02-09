@@ -36,6 +36,7 @@ export type TaskProgressSummary = {
 export type TaskProgressControls = {
   canStartOrResume: boolean;
   statusLabel: string;
+  showResumeLabel?: boolean;
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void;
   pausePending?: boolean;

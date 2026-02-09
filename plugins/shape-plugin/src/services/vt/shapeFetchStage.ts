@@ -40,6 +40,7 @@ import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts'
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
 import { buildZoomBandRanges } from '@hierarchidb/util';
 import { buildStableSignature } from './taskSignatures.ts';
+import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,
@@ -695,10 +696,6 @@ const buildFetchTasks = (
   });
 };
 
-const buildTaskInputSignature = (input: unknown): string => (
-  buildStableSignature(input ?? null)
-);
-
 const createFetchHandler = (params: {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
@@ -1100,30 +1097,10 @@ const reconcileFetchTasks = async (
     await putTasks(params.taskQueue, desiredTasks);
     return;
   }
-  const desiredSignatures = new Map(desiredTasks.map((task) => [
-    task.taskId,
-    buildTaskInputSignature(task.inputData),
-  ]));
-  const obsoleteTaskIds: string[] = [];
-  const validExistingTasks: typeof existingTasks = [];
-  existingTasks.forEach((task) => {
-    const desiredSignature = desiredSignatures.get(task.taskId);
-    if (!desiredSignature) {
-      obsoleteTaskIds.push(task.taskId);
-      return;
-    }
-    const existingSignature = buildTaskInputSignature(task.inputData);
-    if (existingSignature !== desiredSignature) {
-      obsoleteTaskIds.push(task.taskId);
-      return;
-    }
-    validExistingTasks.push(task);
-  });
+  const { missingTasks, obsoleteTaskIds } = reconcileStageTasksByMetadata(desiredTasks, existingTasks);
   if (obsoleteTaskIds.length > 0) {
     await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
   }
-  const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
-  const missingTasks = desiredTasks.filter((task) => !existingIds.has(task.taskId));
   if (missingTasks.length > 0) {
     await putTasks(params.taskQueue, missingTasks);
   }

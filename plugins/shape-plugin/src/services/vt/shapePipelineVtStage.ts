@@ -1,16 +1,21 @@
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
-import { createVtHandler, listTasksByStage, listTasksByStageAndStatus, putTasks, runStageTasks, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import {
+  createVtHandler,
+  deleteTasksByIds,
+  listTasksByStage,
+  listTasksByStageAndStatus,
+  putTasks,
+  runStageTasks,
+  updateTask,
+  VtTaskQueueDb,
+} from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeVtTaskInput } from './shapePipelineShared.ts';
-import {
-  buildShapeVectorTileRecord,
-  buildVtTasks,
-  filterObsoleteTasks,
-  resolveVtConfig,
-} from './shapePipelineShared.ts';
+import { buildShapeVectorTileRecord, buildVtTasks, resolveVtConfig } from './shapePipelineShared.ts';
+import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   readHeapSnapshot,
@@ -50,8 +55,18 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     vtConfigSignature,
     geometryEngine,
   );
+  let missingVtTasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
   if (params.resumeExistingTasks && existingVtTasks.length > 0) {
-    existingVtTasks = await filterObsoleteTasks(params.taskQueue, existingVtTasks, desiredVtTasks);
+    const reconciled = reconcileStageTasksByMetadata(desiredVtTasks, existingVtTasks);
+    if (reconciled.obsoleteTaskIds.length > 0) {
+      await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
+    }
+    const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
+    existingVtTasks = existingVtTasks.filter((task) => !obsoleteSet.has(task.taskId));
+    missingVtTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>;
+    if (missingVtTasks.length > 0) {
+      await putTasks(params.taskQueue, missingVtTasks);
+    }
   }
   if (params.resumeExistingTasks && existingVtTasks.length > 0) {
     const runningVtTasks = await listTasksByStageAndStatus(params.taskQueue, params.nodeId, 'vt', 'running');
@@ -65,14 +80,12 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
       )));
     }
   }
-  let missingVtTasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
-  if (params.resumeExistingTasks) {
-    const existingIds = new Set(existingVtTasks.map((task) => task.taskId));
-    missingVtTasks = desiredVtTasks.filter((task) => !existingIds.has(task.taskId)) as Array<TaskQueueRecord<ShapeVtTaskInput>>;
+  if (params.resumeExistingTasks && existingVtTasks.length === 0) {
+    missingVtTasks = desiredVtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>;
     if (missingVtTasks.length > 0) {
       await putTasks(params.taskQueue, missingVtTasks);
     }
-  } else {
+  } else if (!params.resumeExistingTasks) {
     missingVtTasks = desiredVtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>;
     if (missingVtTasks.length > 0) {
       await putTasks(params.taskQueue, missingVtTasks);

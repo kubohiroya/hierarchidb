@@ -11,4 +11,5 @@ export type {
   UseBuildSessionTimingArgs,
 } from './progress/useBuildSessionTiming.js';
 export * from './progress/progressAdapters.js';
+export * from './session/buildSessionReconcile.js';
 export * from './types.js';
