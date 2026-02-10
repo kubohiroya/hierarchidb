@@ -1,3 +1,19 @@
+2667) fix/ui/plugin-dialog-titlebar-back-button-layout (P2) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2642) fix/plugin-dialog/persist-dialog-ui-state-on-window-actions
+- 受け入れ基準: PluginDialog のタイトルバー右端にある `Close Dialog` アイコンボタンが左端へ移動する／アイコンが `←` 表示へ変更される／ボタンサイズが `large` になり押下領域が拡大される／既存のダイアログ close 動作が維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/headless/**`（必要に応じて `packages/ui/dialog/src/components/**`）
+- ロールバック手順: タイトルバーの close ボタン配置・アイコン・size に関する差分を revert し、従来の右端 Close アイコン配置へ戻す
+- チェックリスト:
+  - タイトルバーの close ボタンを右端から左端へ移動する
+  - close ボタンのアイコンを `←` 表示へ変更する
+  - close ボタンの size を `large` に変更する
+  - close 動作とアクセシビリティ属性（aria-label など）を維持する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-10 17:57 JST PluginDialog タイトルバーの close ボタンを左端 `←` へ移動し、押下しやすい `large` サイズへ変更する修正に着手。
+
 2666) fix/ui/shape-completed-message-stability-after-normalization (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2665) fix/ui/shape-transform-running-completed-blink-guard
@@ -251,6 +267,9 @@
   - done: 2026-02-10 13:27 JST `buildFetchTitle` を `${admin0Name} (${admin0Code}) ${adminLevel}` 優先へ変更し、`useShapeBuildStep.ts` で fetch タスク title から `(${admin0Code}) ${adminLevel}` を抽出して `worker progress update (...) ...` 形式でログ出力するよう修正。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` ともに exit 0。
   - update: 2026-02-10 13:45 JST 再報告を受けて追加原因を確認。`useShapeBuildStep.ts` の fetch scope 解決が `task.title` 依存だったため、title 未同期/旧形式のタイミングで `fetchProgressScope` が null になり `worker progress update` 単体のログが残る経路があった。
   - done: 2026-02-10 13:45 JST `useShapeBuildStep.ts` に scope 解決のフォールバックを追加（title 解析を `ADM` 形式含め許容、`selectedArrayByCountries` から `(${ISO2}) ${adminLevel}` を補完）。さらに fetch ステージで scope 不明時は進捗ログを出さないガードを追加し、`worker progress update` 単体表示を防止。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` ともに exit 0。
+  - start: 2026-02-10 17:49 JST Transform ステージの task title を Fetch と同系表記へ揃える追加要望（`Japan (JP) 0 band2 z3-6`、`ADM`/`z3-z6` 形式禁止）に着手。
+  - update: 2026-02-10 17:52 JST 原因は `plugins/shape-plugin/src/common/utils/taskTitles.ts` の `buildTransformTitle` が旧仕様 `country + ADMx + bandN + zM-zK` を組み立てていたこと。`buildTransformTitle` を `${admin0Name} (${admin0Code}) ${adminLevel} band${bandIndex} z${min}-${max}` 形式へ変更し、`ADM` 接頭辞と `z3-z6` 表記を撤去。回帰防止として `plugins/shape-plugin/src/common/__tests__/unit/taskTitles.unit.test.ts` を追加し Transform タイトル整形を検証。
+  - done: 2026-02-10 17:53 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/common/__tests__/unit/taskTitles.unit.test.ts` はすべて exit 0。
 
 2655) fix/ui/shape-summary-reset-after-stage-cache-delete (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
