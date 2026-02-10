@@ -1,3 +1,33 @@
+2671) fix/ui/shape-step5-start-does-not-trigger-fetch-when-draft-paused (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2658) fix/ui/shape-build-start-pending-and-progress-scope-stability
+- 受け入れ基準: shape step5 で `Build start` 押下後に Fetch タスクが確実に `queued/running` へ遷移する／`draftData.processingStatus: paused` が残存していても開始フローを阻害しない／開始遷移ログ（`starting-session`→`awaiting-first-task`）後に実タスク開始が観測できる／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/worker/**`（必要に応じて追加）
+- ロールバック手順: 本タスク差分を revert し、従来の step5 開始フローへ戻す
+- チェックリスト:
+  - `Build start` 実行後に Fetch タスクが起動しない根本原因を特定する
+  - `processingStatus` と build session state の不整合を解消する
+  - 必要な回帰防止テストまたは診断ログを追加する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 19:43 JST shape step5 で `Build start` 押下後に Fetch タスクが起動しない不具合（開始遷移は完了するが実タスク未開始）の調査と修正に着手。
+
+2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2669) fix/build/app-unloadable-ui-batch-progress-dependency
+- 受け入れ基準: `LocationMapPreview` 表示時に同一 `nodeId + sourceKey + selectionHash` の IDE-GSM import が多重再起動しない／`metadata-fetch` と `viewport-fetch` が import の再起動ループに巻き込まれず安定表示される／`useIdeGsmImportOnEntry` の回帰防止テストを追加する／影響範囲の typecheck/test が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`（新規）
+- ロールバック手順: 上記2ファイルの差分を revert し、従来の import 起動・effect 依存挙動へ戻す
+- チェックリスト:
+  - import 再実行ループの根本原因（effect cleanup による completion 更新スキップ）を修正する
+  - `onUpdate` 参照の安定化で不要な effect 再起動を抑止する
+  - 回帰防止テスト（processing 更新後も import 1 回で完了）を追加する
+  - 影響範囲の typecheck/test（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 19:45 JST Location preview 表示で IDE-GSM import が再起動ループし画面がブリンクする不具合の修正に着手。ログ上で `import-result` 後に `start` が繰り返される現象を確認。
+
 2669) fix/build/app-unloadable-ui-batch-progress-dependency (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2668) fix/ui/trash-dialog-titlebar-back-button-layout

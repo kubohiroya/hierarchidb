@@ -54,12 +54,23 @@ export const useIdeGsmImportOnEntry = ({
     [selectionHash, sourceKey],
   );
   const inFlightRef = useRef(false);
+  const onUpdateRef = useRef<typeof onUpdate>(onUpdate);
+  const mountedRef = useRef(true);
+  const activeRunRef = useRef<{ nodeKey: string; combinedHash: string } | null>(null);
   const {
     api: workerApi,
     loading: workerLoading,
     error: workerError,
     initialize: initializeWorker,
   } = useWorkerAPI();
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
@@ -90,13 +101,20 @@ export const useIdeGsmImportOnEntry = ({
     });
     inFlightRef.current = true;
     inFlightByNode.set(nodeKey, true);
+    activeRunRef.current = { nodeKey, combinedHash };
 
     let cancelled = false;
+    const canApplyResult = () => {
+      if (!mountedRef.current) return false;
+      if (!cancelled) return true;
+      const active = activeRunRef.current;
+      return Boolean(active && active.nodeKey === nodeKey && active.combinedHash === combinedHash);
+    };
     const run = async () => {
       try {
         await initializeWorker();
-        if (cancelled) return;
-        onUpdate?.({ processingStatus: 'processing' });
+        if (!canApplyResult()) return;
+        onUpdateRef.current?.({ processingStatus: 'processing' });
         const api = await workerApi.getLocationMutationAPI();
         for (const source of validSources) {
           const result = await api.importIdeGsmLocations(
@@ -120,13 +138,13 @@ export const useIdeGsmImportOnEntry = ({
           );
           console.info(debugPrefix, 'import-result', { nodeId, tabularSourceId: source.tabularSourceId, total: result.total });
         }
-        if (cancelled) return;
+        if (!canApplyResult()) return;
         console.info(debugPrefix, 'source-complete', {
           nodeId,
           sources: validSources.map((source) => source.tabularSourceId),
         });
         console.info(debugPrefix, 'complete', { nodeId, combinedHash });
-        onUpdate?.({
+        onUpdateRef.current?.({
           ideGsmSelectionHash: combinedHash,
           processingStatus: 'completed',
           processedAt: Date.now(),
@@ -134,17 +152,17 @@ export const useIdeGsmImportOnEntry = ({
         });
         lastCompletedByNode.set(nodeKey, combinedHash);
       } catch (error) {
-        if (cancelled) return;
+        if (!canApplyResult()) return;
         const message = error instanceof Error ? error.message : String(error);
         console.error(debugPrefix, 'failed', { nodeId, message, sourceKey, selectionHash });
-        onUpdate?.({ processingStatus: 'failed' });
+        onUpdateRef.current?.({ processingStatus: 'failed' });
         updateIdeGsmProgress(nodeId, {
           phase: 'failed',
           message,
           timestamp: Date.now(),
         });
       } finally {
-        if (!cancelled) {
+        if (canApplyResult()) {
           updateIdeGsmProgress(nodeId, null);
         }
         inFlightRef.current = false;
@@ -165,7 +183,6 @@ export const useIdeGsmImportOnEntry = ({
     iso.countries,
     iso.status,
     nodeId,
-    onUpdate,
     selection,
     selectionHash,
     sourceKey,
