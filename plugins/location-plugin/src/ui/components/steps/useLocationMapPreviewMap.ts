@@ -160,7 +160,6 @@ type UseLocationMapPreviewMapArgs = {
   workerApi: Remote<WorkerAPI<TreeNodeData>> | null;
   workerLoading: boolean;
   workerError: Error | null;
-  initializeWorker: () => Promise<void>;
   locationTypeSelection: MapToggleSelection;
   iconConfig: LocationIconConfig;
   labelConfig: LocationLabelConfig;
@@ -189,7 +188,6 @@ export const useLocationMapPreviewMap = (
     workerApi,
     workerLoading,
     workerError,
-    initializeWorker,
     locationTypeSelection,
     iconConfig,
     labelConfig,
@@ -198,6 +196,7 @@ export const useLocationMapPreviewMap = (
     metadataById,
     t,
     isDarkMode,
+    refreshKey,
   } = args;
 
   const previewNodeId = nodeId ?? 'preview' as NodeId;
@@ -213,6 +212,12 @@ export const useLocationMapPreviewMap = (
   const queryRequestRef = useRef(0);
   const hoverFrameRef = useRef<number | null>(null);
   const hoverPointRef = useRef<{ x: number; y: number } | null>(null);
+  const workerApiRef = useRef(workerApi);
+  const workerReady = !workerLoading && !workerError && Boolean(workerApi);
+
+  useEffect(() => {
+    workerApiRef.current = workerApi;
+  }, [workerApi]);
 
   const enabledLocationTypes = useMemo(
     () => Object.keys(locationTypeSelection).filter((id) => locationTypeSelection[id]),
@@ -233,7 +238,7 @@ export const useLocationMapPreviewMap = (
       setPreviewPoints([]);
       return;
     }
-    if (!workerApi || workerLoading || workerError) {
+    if (!workerReady) {
       return;
     }
     const map = mapRef.current;
@@ -260,8 +265,9 @@ export const useLocationMapPreviewMap = (
     };
     const requestId = ++queryRequestRef.current;
     try {
-      await initializeWorker();
-      const api = await workerApi.getLocationQueryAPI();
+      const activeWorkerApi = workerApiRef.current;
+      if (!activeWorkerApi) return;
+      const api = await activeWorkerApi.getLocationQueryAPI();
       const zoomValue = viewState?.zoom ?? map.getZoom();
       const tileZoom = clampTileZoom(zoomValue, 0, MAX_TILE_ID_ZOOM);
       const tileIdField = resolveTileIdField(tileZoom, MAX_TILE_ID_ZOOM);
@@ -315,11 +321,8 @@ export const useLocationMapPreviewMap = (
     }
   }, [
     enabledLocationTypes,
-    initializeWorker,
     previewNodeId,
-    workerApi,
-    workerError,
-    workerLoading,
+    workerReady,
   ]);
 
   const scheduleViewportQuery = useCallback((viewState?: MapViewState) => {
@@ -339,7 +342,7 @@ export const useLocationMapPreviewMap = (
         queryTimerRef.current = null;
       }
     };
-  }, [scheduleViewportQuery]);
+  }, [refreshKey, scheduleViewportQuery]);
 
   useEffect(() => () => {
     if (hoverFrameRef.current) {

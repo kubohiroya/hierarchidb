@@ -61,7 +61,6 @@ export const useLocationMapPreviewStep = ({
     api: workerApi,
     loading: workerLoading,
     error: workerError,
-    initialize: initializeWorker,
   } = useWorkerAPI();
 
   useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
@@ -98,7 +97,6 @@ export const useLocationMapPreviewStep = ({
     workerApi,
     workerLoading,
     workerError,
-    initializeWorker,
     refreshKey: metadataRefreshKey,
   });
 
@@ -114,7 +112,6 @@ export const useLocationMapPreviewStep = ({
     workerApi,
     workerLoading,
     workerError,
-    initializeWorker,
     locationTypeSelection,
     iconConfig,
     labelConfig,

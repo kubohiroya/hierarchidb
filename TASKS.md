@@ -1,3 +1,20 @@
+2680) fix/map/location-layer-zoom-expression-invalid-in-circle-radius (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: `/map` のフォルダ単位 preview で `layers.resource-layer-*-circle.paint.circle-radius` の `zoom expression may only be used as input to a top-level "step" or "interpolate"` エラーが発生しない／Layers ウィンドウの表示が継続的に変化し続ける挙動が解消する／影響範囲の typecheck が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `app/src/router/routes/map/MapPage.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、修正前の `circle-radius` 式へ戻す
+- チェックリスト:
+  - `/map` の location GeoJSON レイヤー `circle-radius` 式が MapLibre 仕様違反となる原因を特定する
+  - `zoom` を top-level `interpolate`/`step` 入力にした式へ修正する
+  - 影響範囲の typecheck（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 21:59 JST `/map` フォルダ単位 preview で `circle-radius` の zoom 式エラーにより Layers 表示が不安定化する不具合の修正に着手。
+  - update: 2026-02-10 22:00 JST 原因は `app/src/router/routes/map/MapPage.tsx` の location GeoJSON circle paint で `circle-radius` を `case(..., locationCircleRadiusExpression)` と定義し、`locationCircleRadiusExpression` 内の `['zoom']` が top-level `interpolate/step` 入力ではない式になっていたこと。発生範囲は `/map` ルートの location layer (`resource-layer-*-circle`) 生成ロジック。
+  - update: 2026-02-10 22:00 JST 修正として `circle-radius` を top-level `interpolate(['zoom'])` に変更し、停止点ごとに `case` で selected/hover/search を評価する構造へ再構成。あわせて不要化した `locationCircleRadiusExpression` を撤去。適用範囲は `app/src/router/routes/map/MapPage.tsx` のみ。
+  - done: 2026-02-10 22:00 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --only` / `pnpm -w turbo run build --filter @hierarchidb/app --only` はいずれも exit 0（既知 warning のみ）。
+
 2679) investigate/workerapi-sharedworker-migration-and-location-plugin-followup (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2677) fix/location/preview-flicker-and-step3-empty-after-clear-all-data
@@ -17,6 +34,15 @@
   - update: 2026-02-10 21:13 JST location preview チラつきの原因は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` の effect 依存が参照揺れ（selection/countries/sources）で再評価され、同一 hash でも import が再起動し得ること。発生範囲は同 hook の実行ガードと依存配列。
   - update: 2026-02-10 21:13 JST 修正として (1) 実行キーを `sourceIds` + `combinedHash` 基準に整理し参照揺れ依存を除去、(2) `processingStatus=failed` かつ同一 hash を `lastFailedByNode` で再実行抑止、(3) 同一 hash での draft 参照揺れ時に単発実行を保証する回帰テストを追加。適用範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` と `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`。
   - done: 2026-02-10 21:14 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/location-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` はすべて exit 0（既知 warning のみ）。
+  - update: 2026-02-10 21:22 JST 追加再調査で、`useIdeGsmImportOnEntry` の失敗抑止が `draft.processingStatus` 依存だったため preview 文脈で `onUpdate` が効かないケースでは同一 hash の失敗再試行が止まらず、`metadata-fetch`/`viewport-fetch` を巻き込んで画面ブリンクが継続していたことを確認。発生範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`、および worker 参照の不安定化により再フェッチが連鎖する `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.ts` / `useLocationMapPreviewMap.ts`。
+  - update: 2026-02-10 21:22 JST 修正として (1) `useIdeGsmImportOnEntry` に失敗時バックオフ（3秒）を導入し `onUpdate` 非依存で同一 hash 連続再試行を抑止、(2) worker API/initialize を ref 経由に変更して hook dependency の参照揺れによる effect 再起動を抑止、(3) metadata/map preview fetch も同様に worker 参照を ref 化して不要再フェッチを抑止、(4) `onUpdate: undefined` かつ失敗時に再試行連打しない回帰テストを追加。適用範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMap.ts` / `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`。
+  - done: 2026-02-10 21:23 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` / `pnpm -w turbo run build --filter @hierarchidb/location-plugin` はすべて exit 0（既知 warning のみ）。途中 `typecheck` で `useLocationMapPreviewMetadata.ts` の `workerError.message` 参照により TS2339 が発生したため分岐を修正して再実行し解消。
+  - update: 2026-02-10 21:29 JST 追加調査で `LocationMutationService.importIdeGsmLocations` が `fetch` 直後に止まる原因は `loadTabularTableRows` が現在prefix固定の metadata/rowstore DB しか参照せず、SharedWorker移行時の prefix 不一致（発生範囲: `packages/runtime-worker/src/services/utils/tabular.ts`）で `Tabular table not found` に陥る可能性がある点を確認。
+  - update: 2026-02-10 21:29 JST 修正として (1) tabular読込に DB候補探索（`indexedDB.databases()`）を追加して metadata/rowstore を suffix 一致でフォールバック読込、(2) `useIdeGsmImportOnEntry` で `Tabular table not found` / `Tabular table has no columns` を非再試行エラーとして扱い同一hashの自動再試行ループを停止、(3) runtime-worker 側に prefix不一致フォールバックの回帰テストを追加。適用範囲は `packages/runtime-worker/src/services/utils/tabular.ts` / `packages/runtime-worker/src/services/utils/__tests__/tabular.test.ts` / `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`。
+  - update: 2026-02-10 21:44 JST 追加原因分析で、preview系フックが `initializeWorker()` を都度呼び出す実装になっており、`WorkerProvider` の `initialize` が毎回 `isInitialized=false` を経由して再初期化するため、`workerLoading` 変動→effect再実行→再初期化の自己ループが発生していたことを確認。発生範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMap.ts`。
+  - update: 2026-02-10 21:44 JST 修正として preview系3フックから `initializeWorker()` 呼び出しを撤去し、`workerReady` 時は既存 `workerApi` を直接使用するよう変更。あわせて step 側の不要引数を整理。適用範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMetadata.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewMap.ts` / `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.ts` / `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`。
+  - update: 2026-02-10 21:44 JST 「DB名フォールバック探索」は廃止し、`tabularDbPrefix` を必須入力として Worker API リクエストに明示的に渡す設計へ統一。runtime-worker は指定prefixのみ参照する実装へ戻し、曖昧な探索経路を撤去。適用範囲は `packages/location-api/src/ideGsmTypes.ts` / `packages/runtime-worker/src/services/LocationMutationService.ts` / `packages/runtime-worker/src/services/utils/tabular.ts` / `packages/runtime-worker/src/services/utils/__tests__/tabular.test.ts` / `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`。
+  - done: 2026-02-10 21:45 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/utils/__tests__/tabular.test.ts` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin --filter @hierarchidb/location-api --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run build --filter @hierarchidb/location-plugin --filter @hierarchidb/location-api --filter @hierarchidb/runtime-worker` はすべて exit 0（既知 warning のみ）。UI実機での再現確認はユーザー環境で継続。
 
 2678) fix/ui/tree-node-info-panel-left-back-button-replace-close-icon (P2) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph

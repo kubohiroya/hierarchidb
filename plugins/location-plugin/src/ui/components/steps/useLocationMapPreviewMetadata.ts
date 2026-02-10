@@ -70,7 +70,6 @@ type UseLocationMapPreviewMetadataArgs = {
   workerApi: Remote<WorkerAPI<TreeNodeData>> | null;
   workerLoading: boolean;
   workerError: Error | null;
-  initializeWorker: () => Promise<void>;
   refreshKey?: string | number | null;
 };
 
@@ -94,10 +93,9 @@ export const useLocationMapPreviewMetadata = (
 ): UseLocationMapPreviewMetadataResult => {
   const {
     nodeId,
-      workerApi,
+    workerApi,
     workerLoading,
     workerError,
-    initializeWorker,
     refreshKey,
   } = args;
 
@@ -108,6 +106,12 @@ export const useLocationMapPreviewMetadata = (
   const [selectedMetadataIds, setSelectedMetadataIds] = useState<Set<string>>(new Set());
   const [metadataError, setMetadataError] = useState<string | undefined>();
   const metadataRequestRef = useRef(0);
+  const workerApiRef = useRef(workerApi);
+  const workerReady = !workerLoading && !workerError && Boolean(workerApi);
+
+  useEffect(() => {
+    workerApiRef.current = workerApi;
+  }, [workerApi]);
 
   const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
     const next = new Set<string>();
@@ -134,12 +138,12 @@ export const useLocationMapPreviewMetadata = (
   const handleToggleRecycling = useCallback(async () => {
     if (!nodeId) return;
     if (selectedMetadataIds.size === 0) return;
-    if (!workerApi || workerLoading) {
-      setMetadataError('Worker is not ready. Please wait for worker initialization.');
-      return;
-    }
-    if (workerError) {
-      setMetadataError(`Worker error: ${workerError.message}`);
+    if (!workerReady) {
+      setMetadataError(
+        workerError
+          ? `Worker error: ${workerError.message}`
+          : 'Worker is not ready. Please wait for worker initialization.',
+      );
       return;
     }
     type LocationGroupItemWithData = LocationGroupItem & { data: NonNullable<LocationGroupItem['data']> };
@@ -160,21 +164,23 @@ export const useLocationMapPreviewMetadata = (
         },
       },
     }));
-    await initializeWorker();
-    const api = await workerApi.getLocationMutationAPI();
+    const activeWorkerApi = workerApiRef.current;
+    if (!activeWorkerApi) {
+      setMetadataError('Worker API is unavailable. Please retry.');
+      return;
+    }
+    const api = await activeWorkerApi.getLocationMutationAPI();
     await api.upsertLocationGroups(nodeId, updatedItems);
     const updatedMap = new Map(updatedItems.map((item) => [String(item.id), item]));
     const nextItems: LocationGroupItem[] = metadataItems.map((item) => updatedMap.get(String(item.id)) ?? item);
     setMetadataItems(nextItems);
     setMetadataRows(buildMetadataRows(nextItems));
   }, [
-    initializeWorker,
     metadataItems,
     nodeId,
     selectedMetadataIds,
-    workerApi,
     workerError,
-    workerLoading,
+    workerReady,
   ]);
 
   useEffect(() => {
@@ -198,7 +204,7 @@ export const useLocationMapPreviewMetadata = (
         cancelled = true;
       };
     }
-    if (workerLoading || !workerApi) {
+    if (!workerReady) {
       setMetadataLoadingText('Waiting for worker connection...');
       return () => {
         cancelled = true;
@@ -208,9 +214,12 @@ export const useLocationMapPreviewMetadata = (
     const run = async () => {
       try {
         setMetadataLoadingText('Initializing worker...');
-        await initializeWorker();
+        const activeWorkerApi = workerApiRef.current;
+        if (!activeWorkerApi) {
+          throw new Error('Worker API is unavailable');
+        }
         setMetadataLoadingText('Fetching metadata from worker...');
-        const api = await workerApi.getLocationQueryAPI();
+        const api = await activeWorkerApi.getLocationQueryAPI();
         const items = await api.listLocationGroups(nodeId);
         if (cancelled || requestId !== metadataRequestRef.current) return;
         console.info(DEBUG_PREFIX, 'metadata-fetch:success', { nodeId, count: items.length });
@@ -235,7 +244,7 @@ export const useLocationMapPreviewMetadata = (
     return () => {
       cancelled = true;
     };
-  }, [initializeWorker, nodeId, refreshKey, workerApi, workerError, workerLoading]);
+  }, [nodeId, refreshKey, workerError, workerReady]);
 
   const metadataById = useMemo(
     () => new Map(metadataItems.map((item) => [String(item.id), item])),

@@ -34,6 +34,7 @@ export type IdeGsmLocationPointInput = {
 export type IdeGsmLocationImportRequest = {
   nodeId: NodeId;
   tabularSourceId: string;
+  tabularDbPrefix: string;
   selectionEntries: IdeGsmSelectionEntry[];
   chunkSize?: number;
   mode?: 'replace' | 'append' | 'upsert';

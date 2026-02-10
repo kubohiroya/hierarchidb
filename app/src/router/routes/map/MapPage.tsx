@@ -500,25 +500,21 @@ export default function MapPage() {
     return expression;
   }, []);
 
-  const locationCircleRadiusExpression = useMemo(
-    () =>
-      [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        0,
-        CIRCLE_RADIUS_MIN,
-        LOCATION_MAX_ZOOM,
-        CIRCLE_RADIUS_AT_MAX,
-      ] as unknown,
-    []
-  );
-
   const locationCirclePaint = useMemo<Record<string, unknown>>(() => {
     const { searchColor, hoverColor, selectedColor } = highlightColors;
     const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
     const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
     const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
+    const radiusByState = (baseRadius: number) => [
+      'case',
+      hasSelected,
+      7,
+      hasHover,
+      6,
+      hasSearch,
+      5,
+      baseRadius,
+    ];
     const colorExpression = [
       'case',
       hasSelected,
@@ -531,22 +527,13 @@ export default function MapPage() {
     ];
     return {
       'circle-color': colorExpression,
-      'circle-radius': [
-        'case',
-        hasSelected,
-        7,
-        hasHover,
-        6,
-        hasSearch,
-        5,
-        locationCircleRadiusExpression,
-      ],
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, radiusByState(CIRCLE_RADIUS_MIN), LOCATION_MAX_ZOOM, radiusByState(CIRCLE_RADIUS_AT_MAX)],
       'circle-opacity': ['case', hasSelected, 0.95, hasHover, 0.9, hasSearch, 0.85, 0.8],
       'circle-blur': ['case', hasHover, 0.8, hasSearch, 0.6, hasSelected, 0.4, 0],
       'circle-stroke-color': colorExpression,
       'circle-stroke-width': ['case', hasSelected, 2, hasHover, 1.5, hasSearch, 1, 0],
     };
-  }, [highlightColors, locationBaseColorExpression, locationCircleRadiusExpression]);
+  }, [highlightColors, locationBaseColorExpression]);
 
   const locationIconImageExpression = useMemo(() => {
     const expression: Array<string | unknown> = ['match', ['get', 'type']];

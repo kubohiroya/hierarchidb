@@ -4,6 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
+import { resolveDbPrefix } from '@hierarchidb/util';
 import type { LocationEntity } from '../../common/types/index.js';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { BASE_LOCATION_TYPES } from '../components/steps/locationTypes.js';
@@ -13,7 +14,10 @@ import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/
 const debugPrefix = '[LocationIdeGsmImport]';
 const inFlightByNode = new Map<string, boolean>();
 const lastCompletedByNode = new Map<string, string>();
-const lastFailedByNode = new Map<string, string>();
+type FailedImportRecord = {
+  combinedHash: string;
+};
+const lastFailedByNode = new Map<string, FailedImportRecord>();
 
 export const useIdeGsmImportOnEntry = ({
   draft,
@@ -54,6 +58,7 @@ export const useIdeGsmImportOnEntry = ({
     () => sourceKey.split('|').filter((value) => value.length > 0),
     [sourceKey],
   );
+  const tabularDbPrefix = useMemo(() => resolveDbPrefix(), []);
   const combinedHash = useMemo(
     () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
     [selectionHash, sourceKey],
@@ -66,12 +71,17 @@ export const useIdeGsmImportOnEntry = ({
     api: workerApi,
     loading: workerLoading,
     error: workerError,
-    initialize: initializeWorker,
   } = useWorkerAPI();
+  const workerApiRef = useRef(workerApi);
+  const workerReady = !workerLoading && !workerError && Boolean(workerApi);
 
   useEffect(() => {
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
+
+  useEffect(() => {
+    workerApiRef.current = workerApi;
+  }, [workerApi]);
 
   useEffect(() => () => {
     mountedRef.current = false;
@@ -82,12 +92,13 @@ export const useIdeGsmImportOnEntry = ({
     if (!nodeId) return;
     const nodeKey = String(nodeId);
     if (sourceIds.length === 0) return;
-    if (workerLoading || workerError || !workerApi) return;
+    if (!workerReady) return;
     if (draft.processingStatus === 'processing') return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
+    const failedRecord = lastFailedByNode.get(nodeKey);
     if (
-      draft.processingStatus === 'failed'
-      && lastFailedByNode.get(nodeKey) === combinedHash
+      failedRecord
+      && failedRecord.combinedHash === combinedHash
     ) {
       return;
     }
@@ -109,6 +120,7 @@ export const useIdeGsmImportOnEntry = ({
       combinedHash,
       selectionEntriesCount: selectionEntries.length,
       sources: sourceIds,
+      retryingAfterFailure: Boolean(failedRecord && failedRecord.combinedHash === combinedHash),
     });
     inFlightRef.current = true;
     inFlightByNode.set(nodeKey, true);
@@ -124,15 +136,19 @@ export const useIdeGsmImportOnEntry = ({
     };
     const run = async () => {
       try {
-        await initializeWorker();
         if (!canApplyResult()) return;
         onUpdateRef.current?.({ processingStatus: 'processing' });
-        const api = await workerApi.getLocationMutationAPI();
+        const activeWorkerApi = workerApiRef.current;
+        if (!activeWorkerApi) {
+          throw new Error('Worker API is unavailable');
+        }
+        const api = await activeWorkerApi.getLocationMutationAPI();
         for (const sourceId of sourceIds) {
           const result = await api.importIdeGsmLocations(
             {
               nodeId,
               tabularSourceId: sourceId,
+              tabularDbPrefix,
               selectionEntries,
               chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
               mode: 'upsert',
@@ -171,7 +187,9 @@ export const useIdeGsmImportOnEntry = ({
         if (!canApplyResult()) return;
         const message = error instanceof Error ? error.message : String(error);
         console.error(debugPrefix, 'failed', { nodeId, message, sourceKey, selectionHash });
-        lastFailedByNode.set(nodeKey, combinedHash);
+        lastFailedByNode.set(nodeKey, {
+          combinedHash,
+        });
         onUpdateRef.current?.({ processingStatus: 'failed' });
         updateIdeGsmProgress(nodeId, {
           phase: 'failed',
@@ -200,9 +218,7 @@ export const useIdeGsmImportOnEntry = ({
     nodeId,
     selectionHash,
     sourceIds,
-    workerApi,
-    workerError,
-    workerLoading,
-    initializeWorker,
+    tabularDbPrefix,
+    workerReady,
   ]);
 };

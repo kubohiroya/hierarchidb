@@ -186,7 +186,7 @@ export class LocationMutationService implements LocationMutationAPI {
     try {
       emit({ phase: 'fetch' });
 
-      const { headers, rows } = await loadTabularTableRows('location', request.tabularSourceId);
+      const { headers, rows } = await loadTabularTableRows('location', request.tabularSourceId, request.tabularDbPrefix);
       const parsed = await parseIdeGsmRecords(headers, rows);
       emit({ phase: 'parse', total: parsed.rowCount, processed: parsed.rowCount });
 
