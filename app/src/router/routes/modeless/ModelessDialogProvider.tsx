@@ -113,6 +113,7 @@ export const ModelessDialogProvider: React.FC<ModelessDialogProviderProps> = ({
   const bringToFront = useCallback((id: string) => {
     setLayout((prev) => {
       if (!prev.order.includes(id)) return prev;
+      if (prev.order[prev.order.length - 1] === id) return prev;
       const nextOrder = prev.order.filter((entry) => entry !== id);
       nextOrder.push(id);
       return { ...prev, order: nextOrder };

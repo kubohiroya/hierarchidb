@@ -38,6 +38,7 @@ export interface FloatingWindowProps {
   children: React.ReactNode;
   initialState?: Partial<WindowState>;
   onStateChange?: (state: WindowState) => void;
+  onRequestFocus?: () => void;
   onClose?: () => void;
   minWidth?: number;
   minHeight?: number;

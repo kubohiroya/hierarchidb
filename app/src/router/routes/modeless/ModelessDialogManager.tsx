@@ -4,13 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import { PluginDialogHeader } from '@hierarchidb/plugin-ui-host';
-import type {
-  HeadlessDialogHeaderProps,
-  HeadlessDialogProps,
-  StepComponentDescriptor,
-} from '@hierarchidb/ui-dialog';
-import { ModelessDialogFrame } from '@hierarchidb/ui-dialog';
+import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type {
   LayerSetDefinition,
   LayerSetId,
@@ -48,7 +43,6 @@ import {
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
 
 const BASE_Z_INDEX_OFFSET = 100;
-const MINIMIZED_HEIGHT = 56;
 
 export type MapDialogLayerInput = {
   nodeId: string;
@@ -73,46 +67,12 @@ export type MapDialogLayerInput = {
 
 type MapDialogDefinition = MapDialogDefinitionBase & {
   title: string;
-  subtitle?: string;
   icon: React.ReactNode;
   content: React.ReactNode;
   contentPadding?: number;
   frameless?: boolean;
   transparent?: boolean;
 };
-
-const EmptyFooter: React.FC = () => null;
-
-function createHeaderComponent(title: string, subtitle: string | undefined, icon: React.ReactNode) {
-  const Header: React.FC<HeadlessDialogHeaderProps<Record<string, unknown>>> = () => (
-    <PluginDialogHeader title={title} subtitle={subtitle} icon={icon} />
-  );
-  Header.displayName = `MapDialogHeader(${title})`;
-  return Header;
-}
-
-function createContentComponent(content: React.ReactNode, padding = 2) {
-  const Content: React.FC = () => (
-    <Box sx={{ flex: 1, overflow: 'auto', p: padding }}>{content}</Box>
-  );
-  Content.displayName = 'MapDialogContent';
-  return Content;
-}
-
-function createStepComponents(
-  id: string,
-  title: string
-): StepComponentDescriptor<Record<string, unknown>>[] {
-  const StepComponent: React.FC = () => null;
-  StepComponent.displayName = `MapDialogStep(${id})`;
-  return [
-    {
-      id,
-      label: title,
-      component: StepComponent,
-    },
-  ];
-}
 
 type MapDialogWindowProps = {
   definition: MapDialogDefinition;
@@ -131,52 +91,49 @@ const MapDialogWindow: React.FC<MapDialogWindowProps> = ({
   onDisplayModeChange,
   onRequestFocus,
 }) => {
-  const headerComponent = useMemo(
-    () => createHeaderComponent(definition.title, definition.subtitle, definition.icon),
-    [definition.icon, definition.subtitle, definition.title]
+  const initialState = useMemo<Partial<WindowState>>(
+    () => ({
+      position: windowState.position,
+      size: windowState.size,
+      isMinimized: windowState.isMinimized,
+      isFullscreen: windowState.displayMode === 'full-screen',
+      isVisible: windowState.isVisible,
+      zIndex,
+    }),
+    [windowState.displayMode, windowState.isMinimized, windowState.isVisible, windowState.position, windowState.size, zIndex]
   );
-  const contentComponent = useMemo(
-    () => createContentComponent(definition.content, definition.contentPadding),
-    [definition.content, definition.contentPadding]
-  );
-  const stepComponents = useMemo(
-    () => createStepComponents(definition.id, definition.title),
-    [definition.id, definition.title]
-  );
-
-  const headlessProps: HeadlessDialogProps<Record<string, unknown>> = {
-    open: windowState.isVisible,
-    stepComponents,
-    stepData: {},
-    onStepDataChange: () => undefined,
-    activeStepIndex: 0,
-    onStepNavigate: () => undefined,
-    onRequestClose: () => {
-      onUpdate(definition.id, { isVisible: false });
+  const handleStateChange = useCallback(
+    (next: WindowState) => {
+      onUpdate(definition.id, {
+        position: next.position,
+        size: next.size,
+        isMinimized: next.isMinimized,
+        isVisible: next.isVisible,
+      });
+      const previousFullscreen = windowState.displayMode === 'full-screen';
+      const nextFullscreen = next.isFullscreen === true;
+      if (nextFullscreen !== previousFullscreen) {
+        onDisplayModeChange(definition.id, nextFullscreen ? 'full-screen' : 'normal');
+      }
     },
-    HeaderComponent: headerComponent,
-    ContentComponent: contentComponent,
-    FooterComponent: EmptyFooter,
-    position: windowState.position,
-    onPositionChange: (next) => onUpdate(definition.id, { position: next }),
-    size: windowState.size,
-    onSizeChange: (next) => onUpdate(definition.id, { size: next }),
-    displayMode: windowState.displayMode,
-    onDisplayModeChange: (nextMode) => onDisplayModeChange(definition.id, nextMode),
-    isMinimized: windowState.isMinimized,
-    onMinimizeChange: (next) => onUpdate(definition.id, { isMinimized: next }),
-  };
+    [definition.id, onDisplayModeChange, onUpdate, windowState.displayMode]
+  );
 
   return (
-    <ModelessDialogFrame
-      headlessProps={headlessProps}
-      zIndex={zIndex}
+    <FloatingWindow
+      title={definition.title}
+      titleIcon={definition.icon}
+      initialState={initialState}
+      onStateChange={handleStateChange}
       onRequestFocus={() => onRequestFocus(definition.id)}
-      disablePortal
-      minimizedHeight={MINIMIZED_HEIGHT}
-      frameless={definition.frameless}
-      transparent={definition.transparent}
-    />
+      onClose={() => onUpdate(definition.id, { isVisible: false })}
+      style={{ zIndex }}
+      className={definition.transparent ? 'map-modeless-transparent' : undefined}
+    >
+      <Box sx={{ flex: 1, overflow: 'auto', p: definition.contentPadding ?? 2 }}>
+        {definition.content}
+      </Box>
+    </FloatingWindow>
   );
 };
 
@@ -414,7 +371,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       },
       {
         id: 'map-shape-list',
-        title: 'shape一覧',
+        title: 'Shape一覧',
         icon: <TableViewIcon fontSize="small" />,
         defaultSize: { width: 760, height: 520 },
         contentPadding: 0,
@@ -422,7 +379,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       },
       {
         id: 'map-location-list',
-        title: 'location一覧',
+        title: 'Location一覧',
         icon: <PlaceOutlinedIcon fontSize="small" />,
         defaultSize: { width: 720, height: 520 },
         contentPadding: 0,
@@ -430,7 +387,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       },
       {
         id: 'map-route-list',
-        title: 'route一覧',
+        title: 'Route一覧',
         icon: <AltRouteIcon fontSize="small" />,
         defaultSize: { width: 720, height: 520 },
         contentPadding: 0,
@@ -455,7 +412,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       },
       {
         id: 'map-route-modes',
-        title: 'Settings',
+        title: 'Route Selection',
         icon: <AltRouteIcon fontSize="small" />,
         defaultSize: { width: 360, height: 220 },
         contentPadding: 0,

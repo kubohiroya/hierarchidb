@@ -54,6 +54,7 @@ export function useFloatingWindowController(
   const {
     initialState,
     onStateChange,
+    onRequestFocus,
     onClose,
     minWidth = 200,
     minHeight = 100,
@@ -215,7 +216,8 @@ export function useFloatingWindowController(
     if (host && parent && parent.lastElementChild !== host) {
       parent.appendChild(host);
     }
-  }, []);
+    onRequestFocus?.();
+  }, [onRequestFocus]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (!draggable || event.button !== 0) return;

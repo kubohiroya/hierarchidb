@@ -1,3 +1,40 @@
+2683) feat/map/floating-window-front-order-control-and-persist (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2682) refactor/map/modeless-windows-use-ui-floating-window
+- 受け入れ基準: `/map` で FloatingWindow のタイトルバークリック時に対象ウィンドウが最前面化する／最前面化時に DOM の前後関係（portal host 順）も切り替わる／ユーザー操作で決まったウィンドウ順が位置・サイズ等と同様に永続化されリロード後に復元される／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `packages/ui/floating-window/src/types/WindowState.ts` / `packages/ui/floating-window/src/components/useFloatingWindowController.ts` / `app/src/router/routes/modeless/ModelessDialogManager.tsx` / `app/src/router/routes/modeless/ModelessDialogProvider.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、表示順制御を修正前挙動へ戻す
+- チェックリスト:
+  - タイトルバークリックで front order が更新される経路を追加する
+  - DOM の前後関係と表示順 state を同期させる
+  - 既存の order 永続化へ統合しリロード復元を維持する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 22:30 JST `/map` の FloatingWindow 群でタイトルバークリック時の最前面化と表示順永続化の実装に着手。
+  - update: 2026-02-10 22:32 JST 発生範囲は `packages/ui/floating-window/src/components/useFloatingWindowController.ts` が front 化時に portal host の DOM 順（`appendChild`）だけを更新し、`/map` 側の `ModelessDialogProvider` が保持する `layout.order` へは反映されない点。これにより再読み込み時にユーザーが操作したウィンドウ順が復元されない。
+  - update: 2026-02-10 22:32 JST 修正として `FloatingWindowProps` に `onRequestFocus` を追加し、front 化処理（タイトルバー操作含む）で `onRequestFocus` を呼び出すよう変更。`ModelessDialogManager` から `bringToFront(id)` を渡し、`ModelessDialogProvider` 側 `layout.order` を更新して永続化ストレージへ同期。あわせて既に最前面の id は no-op にして無駄な order 書き換えを抑制。適用範囲は `packages/ui/floating-window/src/types/WindowState.ts` / `packages/ui/floating-window/src/components/useFloatingWindowController.ts` / `app/src/router/routes/modeless/ModelessDialogManager.tsx` / `app/src/router/routes/modeless/ModelessDialogProvider.tsx`。
+  - update: 2026-02-10 22:34 JST `@hierarchidb/app` typecheck 実行時に `FloatingWindowProps` の `onRequestFocus` が dist 型へ未反映で TS2339 が発生。原因は app 側が `@hierarchidb/ui-floating-window` の dist 型を参照しているため。
+  - done: 2026-02-10 22:35 JST `pnpm -w turbo run build --filter @hierarchidb/ui-floating-window --only` 実行後、`pnpm -w turbo run typecheck --filter @hierarchidb/app --only` / `pnpm -w turbo run build --filter @hierarchidb/app --only` はすべて exit 0（既知 warning のみ）。
+
+2682) refactor/map/modeless-windows-use-ui-floating-window (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2681) fix/map/location-points-and-layers-window-flicker-on-map-path
+- 受け入れ基準: `/map` の `Map Info` / `Layers` / `Styles` / `Shape一覧` / `Location一覧` / `Route一覧` / `Terrain Types` / `Route Selection` ウィンドウが `packages/ui/floating-window/src/components/FloatingWindow.tsx` で描画される／既存の開閉・ドラッグ・リサイズ・最小化操作が維持される／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `app/src/router/routes/modeless/ModelessDialogManager.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、`ModelessDialogFrame` ベース実装へ戻す
+- チェックリスト:
+  - `/map` の modeless window 実装を `FloatingWindow` ベースへ置換する
+  - 8種類の対象ウィンドウ定義が同一実装基盤で描画されることを確認する
+  - 開閉・位置/サイズ・最小化状態の既存連携を維持する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 22:22 JST `/map` の modeless window 群を `ui-floating-window/FloatingWindow` へ統一する修正に着手。
+  - update: 2026-02-10 22:24 JST 発生範囲は `app/src/router/routes/modeless/ModelessDialogManager.tsx` の `MapDialogWindow` 実装。従来は `ModelessDialogFrame`（headless dialog 経由）で描画しており、`/map` 専用 window 群と `FloatingWindow` 実装基盤が分離していた。
+  - update: 2026-02-10 22:24 JST 修正として `MapDialogWindow` を `FloatingWindow` ベースへ置換し、`ModelessDialogProvider` の window state（position/size/isVisible/isMinimized/displayMode）を `initialState`/`onStateChange` へ接続。対象8ウィンドウ（Map Info, Layers, Styles, Shape一覧, Location一覧, Route一覧, Terrain Types, Route Selection）を同一基盤で描画するよう統一。適用範囲は `app/src/router/routes/modeless/ModelessDialogManager.tsx` のみ。
+  - done: 2026-02-10 22:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --only` / `pnpm -w turbo run build --filter @hierarchidb/app --only` はいずれも exit 0（既知 warning のみ）。
+
 2681) fix/map/location-points-and-layers-window-flicker-on-map-path (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2680) fix/map/location-layer-zoom-expression-invalid-in-circle-radius
