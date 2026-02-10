@@ -233,6 +233,58 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('ignores later running updates after completed 100% even with higher sequence', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2d'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2d',
+        task: {
+          taskId: 'task-2d',
+          stage: 'transform',
+          status: 'completed',
+          progress: 100,
+          message: 'Cache write done',
+          index: 1,
+          sequence: 20,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+      expect(result.current.tasks[0]?.message).toBe('Cache write done');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2d',
+        task: {
+          taskId: 'task-2d',
+          stage: 'transform',
+          status: 'running',
+          progress: 97,
+          message: 'Encode start',
+          index: 1,
+          sequence: 21,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+      expect(result.current.tasks[0]?.message).toBe('Cache write done');
+    });
+  });
+
   it('promotes completed message from phase marker to concrete completion message once', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-2c'));
 

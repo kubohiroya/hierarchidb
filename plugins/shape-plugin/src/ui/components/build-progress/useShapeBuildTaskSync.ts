@@ -270,7 +270,16 @@ const shouldPreferNextTask = (
   if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
     return shouldPromoteCompletedMessage(current, next);
   }
+  if (isCompletedAtFullProgress(current) && !isCompletedAtFullProgress(next)) {
+    return false;
+  }
+  if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) {
+    return true;
+  }
   if (current.status === 'completed' && next.status === 'running') {
+    return false;
+  }
+  if (current.status === 'completed' && next.status === 'queued') {
     return false;
   }
   if (current.status === 'running' && next.status === 'completed') {
@@ -347,7 +356,13 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
       progress: progress >= 100 ? 100 : task.progress,
     };
     const completedTask = completedTasksRef.current.get(normalized.taskId);
-    if (normalized.status === 'running' && completedTask) {
+    if (!completedTask) {
+      return normalized;
+    }
+    if (normalized.status === 'running' || normalized.status === 'queued') {
+      return completedTask;
+    }
+    if (!isCompletedAtFullProgress(normalized)) {
       return completedTask;
     }
     return normalized;
@@ -365,7 +380,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const nextMap = new Map(tasksMapRef.current);
     nextMap.set(task.taskId, task);
     tasksMapRef.current = nextMap;
-    if (task.status === 'completed') {
+    if (isCompletedAtFullProgress(task)) {
       const nextCompletedMap = new Map(completedTasksRef.current);
       nextCompletedMap.set(task.taskId, task);
       completedTasksRef.current = nextCompletedMap;
@@ -379,7 +394,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
     const nextCompletedMap = new Map(completedTasksRef.current);
     resolved.forEach((task) => {
-      if (task.status === 'completed') {
+      if (isCompletedAtFullProgress(task)) {
         nextCompletedMap.set(task.taskId, task);
       }
     });
@@ -436,7 +451,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     tasksMapRef.current = new Map(tasks.map((task) => [task.taskId, task]));
     completedTasksRef.current = new Map(
       tasks
-        .filter((task) => task.status === 'completed')
+        .filter((task) => isCompletedAtFullProgress(task))
         .map((task) => [task.taskId, task]),
     );
   }, []);

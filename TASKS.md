@@ -86,6 +86,29 @@
   - `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator` (exit 0)
   - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` (exit 0)
 
+3. `fix/shape/task-status-ignore-running-after-completed100` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - 同一 taskId で `Completed(100%)` 到達後に遅延 `Running/Queued` 更新が来ても表示を逆戻りさせない
+  - `Queued -> Running -> Completed` の通常遷移と completed message 昇格を壊さない
+  - 回帰テストで `100% Completed -> 97% Running` を再現して抑止できる
+- 原因:
+  - `useShapeBuildTaskSync.ts` のマージ規則が completed 逆戻りを部分的に抑止していたが、terminal 条件が明示されておらず `Completed(100%)` の後続非終端イベントを一律拒否する保証が弱かった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` の `resolveTaskSummary` / `shouldPreferNextTask` / `mergeTask` / `handleSnapshot` / `syncTasksRef`
+  - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` のイベント順序ケース
+- 修正方法と適用範囲:
+  - `Completed(100%)` を terminal として固定し、同一 taskId の後続 `Running/Queued` および `100% 未満 Completed` を無視するガードを追加
+  - task 比較規則を `isCompletedAtFullProgress` 優先へ再編し、terminal からの逆遷移を拒否
+  - 適用範囲は上記 2 ファイルのみ
+- ロールバック手順:
+  - 上記 2 ファイルの差分を revert して従来のマージ/正規化ロジックへ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` (exit 0, 1 file / 8 tests passed)
+
 ## 今日は着手（運用ログ）
 
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
@@ -96,3 +119,7 @@
 - done: 2026-02-11 07:49 JST `vt-orchestrator` の typecheck/build と shape-plugin の関連ユニットテストを実行し、すべて exit 0 を確認。
 - start: 2026-02-11 07:45 JST 新タスク管理方針（Issue/Project主導 + `TASKS.md` ハブ）を `AGENTS.md` へ明記する移行作業に着手。
 - done: 2026-02-11 07:49 JST `AGENTS.md` を新方針へ更新し、旧 `TASKS.md` 単一SSOT 記述を Issue/Project 主体へ移行。
+- start: 2026-02-11 08:35 JST Shape Step5 の 97-100% 帯で `100% Completed -> 97% Running` に逆戻りする再発を調査し、`Completed(100%)` 後の `Running/Queued` を無視する対策に着手。
+- update: 2026-02-11 08:37 JST 原因は `useShapeBuildTaskSync.ts` の task マージ規則で `Completed(100%)` を terminal として固定する条件が明示されておらず、後続の非終端 update/snapshot を抑止する保証が弱かったこと。発生範囲は同ファイルの `resolveTaskSummary` / `shouldPreferNextTask` / `mergeTask` / `handleSnapshot` / `syncTasksRef`。
+- update: 2026-02-11 08:38 JST 修正として `Completed(100%)` を terminal に定義し、同一 taskId の後続 `Running/Queued` および `100% 未満 Completed` を無視するガードを追加。あわせて `shouldPreferNextTask` を terminal 優先に再編し、適用範囲は `useShapeBuildTaskSync.ts` と `useShapeBuildTasks.unit.test.tsx` のみ。
+- done: 2026-02-11 08:39 JST `shape-plugin` の typecheck/build/対象ユニットテスト（8 tests）を Turbo 経由で実行し、すべて exit 0 を確認。
