@@ -26,19 +26,7 @@ import { logDebug } from '../debug/persistentDebugLog.js';
 import { packTileId } from '../tiles/tileId.js';
 
 const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
-let taskDebugModuleLogged = false;
 let structuredCloneLogged = false;
-const logTaskDebugModuleOnce = (label: string, details?: Record<string, unknown>) => {
-  if (taskDebugModuleLogged) return;
-  taskDebugModuleLogged = true;
-  console.warn('[ShapeTransform][TaskDebug] module', {
-    label,
-    tag: TASKDEBUG_BUILD_TAG,
-    ...details,
-  });
-};
-
-logTaskDebugModuleOnce('loaded');
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -1013,7 +1001,7 @@ const filterFeaturesByAspectRatioAndArea = (
       const [minX, minY, maxX, maxY] = bbox;
       const width = Math.abs(maxX - minX);
       const height = Math.abs(maxY - minY);
-      const ratio = width == 0 || height == 0 ? Number.POSITIVE_INFINITY : Math.max(width / height, height / width);
+      const ratio = width === 0 || height === 0 ? Number.POSITIVE_INFINITY : Math.max(width / height, height / width);
       if (ratio > aspectRatioThreshold) return false;
     }
     return true;

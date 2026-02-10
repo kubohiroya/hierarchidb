@@ -1,3 +1,81 @@
+2654) fix/ui/shape-pause-reload-resume-button-state (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2652) fix/ui/shape-completed-status-sync-without-reload
+- 受け入れ基準: Pause 後に Build Controls が `Resume Build` enabled となった状態でリロードしても `Start Build` disabled/loading へ崩れない／pause 状態の永続化と UI 状態遷移の順序競合を解消する／回帰防止テストを追加する／影響範囲の typecheck と test と build が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`（必要に応じて `plugins/shape-plugin/src/ui/__tests__/hooks/unit/**`）
+- ロールバック手順: 変更差分を revert し、従来の pause/reload 状態遷移へ戻す
+- チェックリスト:
+  - Pause→Reload で Build Controls 表示が崩れる経路を特定する
+  - pause 永続化完了前に UI が再開可能表示へ遷移しないよう修正する
+  - 回帰防止テストを追加する
+  - 影響範囲の typecheck と test と build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 10:56 JST Pause 後に Resume 表示で有効化された直後のリロードで Start disabled/loading に崩れる不具合の原因特定と修正に着手。
+  - update: 2026-02-10 11:00 JST 原因は `useShapeBuildStep.ts` が `isPausePending` を `buildStatus !== 'running'` になった時点で解除しており、`persistDraftPatch({ processingStatus: 'paused' })` 完了前でも UI が Resume enabled に遷移しうる点。ここで即リロードすると pause 永続化が欠落し、再読込後に runtime の stale `processing` を拾って Build Controls が `Start Build` disabled/loading（running判定）へ崩れる発生範囲を確認。
+  - update: 2026-02-10 11:00 JST `executePauseBuildFlow.ts` を追加し、`pauseSession` と `persistPausedStatus` の完了まで pending を保持する順序保証へ変更。`useShapeBuildStep.ts` の `handlePause` は同フローを使用し、従来の「buildStatus変化で pending 自動解除」effect を撤去。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` と `plugins/shape-plugin/src/ui/components/build-progress/executePauseBuildFlow.ts`。
+  - update: 2026-02-10 11:01 JST 回帰防止として `executePauseBuildFlow.unit.test.ts` を追加し、(1) pause+persist 完了まで pending 維持、(2) pause 失敗時の pending 解放と error 通知、(3) persist 失敗時の pending 解放と error 通知を検証。
+  - update: 2026-02-10 11:01 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/executePauseBuildFlow.unit.test.ts` を初回実行したところ、非同期待機不足のテスト実装ミスで exit 1。`vi.waitFor` に修正して再実行。
+  - done: 2026-02-10 11:01 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/executePauseBuildFlow.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` いずれも最終的に exit 0。
+  - start: 2026-02-10 12:18 JST 再報告（Pause 後に Resume enabled 表示のままリロードすると Start disabled/loading へ戻る）を受けて 2654 を再オープン。
+  - update: 2026-02-10 12:22 JST 原因を再確認。`useShapeBuildStep.ts` の `persistDraftPatch` が非直列のため、`processingStatus: paused` 保存と並行する別パッチ（elapsed/stage系）が stale `draftData` を後書きし `processingStatus` を `processing` へ戻す競合が発生。発生範囲は同ファイルの `persistDraftPatch` と `previous === 'running' && buildStatus !== 'running'` 遷移パッチ。
+  - update: 2026-02-10 12:23 JST 修正として `persistDraftPatch` を Promise キューで直列化し、`running -> not running` の保存パッチにも `processingStatus`（paused/completed/failed）を同時保存するよう変更。Pause 永続化失敗時は `executePauseBuildFlow` で error 経路へ入るよう `handlePause` から明示エラー化。
+  - update: 2026-02-10 12:27 JST 検証コマンドを実行。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/executePauseBuildFlow.unit.test.ts src/ui/__tests__/hooks/unit/resolveBuildStatusSource.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` すべて exit 0。
+
+2655) fix/ui/shape-summary-reset-after-stage-cache-delete (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2653) fix/ui/shape-build-progress-full-scan-reduction
+- 受け入れ基準: ステージキャッシュ削除でタスクが0件になったとき、Stage summary の Completed/Skipped/Failed と進捗率が即時リセットされる／リロード不要で表示残留がない／進行中表示の単調増加ロジックを壊さない／影響範囲の typecheck が成功する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildProgressSummary.ts`
+- ロールバック手順: 変更差分を revert し、従来の effectiveProgress/lastStable 優先表示へ戻す
+- チェックリスト:
+  - タスク削除後の表示残留経路（effectiveProgress / lastStableCounts）を特定する
+  - タスク0件時は実タスク集計を優先し、残留表示を抑止する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-10 12:08 JST ステージキャッシュ削除後に Completed/Skipped Chip と進捗率が残留する不具合の修正に着手。
+  - update: 2026-02-10 12:12 JST 原因は `useShapeBuildProgressSummary` がタスク0件でも `effectiveProgress` と `lastStableCountsRef` を優先しうる経路を持ち、削除直後に stale 集計を再表示する点。発生範囲は summary/paneProgress/displayCounts の算出経路。
+  - update: 2026-02-10 12:14 JST `paneProgressWithSummary` で stage summary を実タスクベースへ寄せ、`rawDisplayCounts` は `tasks.length > 0` 条件付きで `effectiveProgress` を採用。さらに `displayCounts` の `lastStable` 再利用を `tasks.length > 0` 条件化し、0件時は monotonic 補正を無効化。
+  - done: 2026-02-10 12:15 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2653) fix/ui/shape-build-progress-full-scan-reduction (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2649) fix/ui/shape-total-elapsed-by-stage-sum
+- 受け入れ基準: 単一タスク更新時に `useShapeBuildTaskSync` と `useShapeBuildStepAtomSync` で発生している全件走査（全件 sort / 全件比較 / 全件シグネチャ化）を差分更新中心へ置換する／進捗表示（Total elapsed・stage elapsed・remaining）の既存仕様に回帰を作らない／影響範囲の typecheck が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStepAtomSync.ts`（必要に応じて `plugins/shape-plugin/src/ui/components/build-progress/**`）
+- ロールバック手順: 変更差分を revert し、従来の全件再計算方式へ戻す
+- チェックリスト:
+  - 単一 update/delete での全件 sort/全件比較を差分更新へ置換する
+  - tasksByStage の全件シグネチャ計算を廃止し、低コストな変更検知へ置換する
+  - 既存 UI 表示（elapsed/remaining/ステータス）の挙動に回帰がないことを確認する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 11:35 JST build-progress の単一タスク更新で発生する全件走査（sync/signature）削減の改修に着手。
+  - update: 2026-02-10 11:42 JST 原因は `useShapeBuildTaskSync` が update 1件ごとに `sortTasksByIndex(Array.from(map.values()))`・`areTaskListsEqual`・`new Map(cleaned.map(...))` を実行しており、`useShapeBuildStepAtomSync` でも `tasksByStage` 全件を文字列シグネチャ化していた点。タスク数が多いと UI スレッド負荷が上がる発生範囲を確認。
+  - update: 2026-02-10 11:46 JST `useShapeBuildTaskSync.ts` を差分更新方式へ変更し、単一 update/delete は配列の局所置換（binary insert + splice）で反映、全件 sort/全件比較を撤去。`useShapeBuildStepAtomSync.ts` は全件シグネチャ計算を削除し参照比較で atom 同期。加えて `useBuildProgressPanelState.ts` と `useShapeBuildProgressSummary.ts` で重複ステージ走査を集約して再利用するよう修正。
+  - done: 2026-02-10 11:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2652) fix/ui/shape-completed-status-sync-without-reload (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2646) fix/ui/shape-task-status-message-flicker-near-completion
+- 受け入れ基準: shape ビルドの実処理が完了し永続化済み（`processingStatus: completed`）のケースで、同一セッション内の UI 表示が `Running` のまま残留せず `Completed` へ遷移する／ブラウザリロードに依存せず反映される／pause/resume/cancel など既存のビルド制御に回帰を作らない／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する／影響範囲の typecheck と test が成功する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`（必要に応じて `plugins/shape-plugin/src/ui/__tests__/hooks/unit/**`）
+- ロールバック手順: 変更差分を revert し、従来の buildStatus 算出/同期ロジックへ戻す
+- チェックリスト:
+  - Completed 永続化後に UI が Running 残留する経路（状態ソース・同期タイミング）を特定する
+  - buildStatus の優先順位/更新トリガーを修正して Completed へ即時同期させる
+  - 回帰防止テストを追加または更新する
+  - 影響範囲の typecheck と test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 11:05 JST shape build 完了後に UI が Running 表示のまま残る不具合（リロードで Completed になる）の原因特定と修正に着手。
+  - update: 2026-02-10 11:53 JST 原因は `useShapeBuildStep.ts` の `statusSource` が `effectiveStatus?.status`（runtime heartbeat由来）を `processingStatus`（永続 draft）より優先しており、完了直後の stale `processing/queued` が残ると `processingStatus: completed` 済みでも UI が Running 判定へ戻る点。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の buildStatus 算出経路。
+  - update: 2026-02-10 11:53 JST 修正として `resolveBuildStatusSource.ts` を追加し、永続状態が `completed/failed/paused` の場合は runtime の `processing/queued` より永続状態を優先するルールを実装。`useShapeBuildStep.ts` の `statusSource` を同ルール経由へ変更し、リロード不要で Completed 表示へ同期するようにした。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` と `plugins/shape-plugin/src/ui/components/build-progress/resolveBuildStatusSource.ts`。
+  - update: 2026-02-10 11:53 JST 回帰防止として `resolveBuildStatusSource.unit.test.ts` を追加し、(1) completed + processing、(2) failed + queued、(3) idle + processing の優先順位を検証。
+  - done: 2026-02-10 11:53 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/resolveBuildStatusSource.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` いずれも exit 0。
+
 2651) chore/ui/shape-stage-timing-visual-unify (P2) — 完了 (2026-02-10)
 - ブランチ名: codex/chore/ui/shape-stage-timing-visual-unify
 - 依存: 2650) feat/ui/build-controls-timelapse-icon
@@ -45,6 +123,10 @@
   - update: 2026-02-10 10:46 JST ステージ遷移時の処理を更新し、前ステージ elapsed の確定（`stageElapsedByStage`）と次ステージ開始の永続化（`stageElapsedStageId/stageElapsedMs/stageResumedAt`）を同一 `persistDraftPatch` で保存するよう統合。適用範囲は `useShapeBuildStep.ts`。
   - done: 2026-02-10 10:48 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
   - update: 2026-02-10 09:25 JST 追加再検証として `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、いずれも exit 0。
+  - update: 2026-02-10 09:50 JST 追補修正として `useShapeBuildStep.ts` の Total elapsed 表示を独立 ticker 由来 state から排除し、`completedStageElapsedMs` 合計と現在ステージ表示 elapsed の差分寄与で都度導出する方式へ統一。これにより「全体 elapsed とステージ elapsed 合計の不一致」「1s 固定表示」の発生経路を除去。
+  - update: 2026-02-10 09:50 JST `useBuildProgressPanelState.ts` の duration 表示を `00m`/`00s` 形式から `0m`/`0s` 形式へ変更し、ステージ表示と Build Controls 表示のフォーマットを統一。
+  - update: 2026-02-10 09:51 JST 追補修正の検証として `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を再実行し、いずれも exit 0。
+  - update: 2026-02-10 10:33 JST `useShapeBuildProgressSummary.ts` の `stageRemainingMs` 算出に表示閾値を追加。`timingStageMs < 10_000` または `done < 10` の場合は `null` を返し、Est. remaining を非表示化。
 
 2648) fix/ui/shape-stage-elapsed-reload-and-remaining-throttle (P1) — 完了 (2026-02-10)
 - ブランチ名: codex/fix/ui/shape-stage-elapsed-reload-and-remaining-throttle
@@ -97,6 +179,9 @@
   - update: 2026-02-10 09:26 JST `useShapeBuildCacheActions` でキャッシュ削除後に「実セッションは非 running かつ draft は processing」の stale 状態を検出した場合に `processingStatus` を `idle` へリセットする処理を追加。`persistSessionReset` は `getTreeNode(nodeId)` で現行 `draftData` を取得してマージ保存する方式へ変更し、`buildConfig`/`selectedArrayByCountries` の欠落を防止。
   - update: 2026-02-10 09:28 JST `ShapeBuildProgressPanel` の `onResetSession` で `onChange` パッチに `...(data ?? {})` を含め、UI メモリ上でも Step2 の dataSource が落ちないように修正。
   - update: 2026-02-10 09:30 JST 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - update: 2026-02-10 10:11 JST 追加原因を確認。`useShapeBuildStep` と `useShapeCountrySelectionStep` の `updateTreeNode(... mode:'save-draft')` がローカル `data` 起点で `draftData` を上書きしうるため、タイミング次第で `buildConfig.dataSourceName` が欠落する。`useShapeBuildStep` は永続 `draftData` を `getTreeNode` で取得してマージ保存へ変更し、`batchConfig` ではなく `buildConfig` を保存するよう修正。`useShapeCountrySelectionStep` も同様に永続 `draftData` マージ保存へ修正。
+  - update: 2026-02-10 10:12 JST 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-10 10:13 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` が `@hierarchidb/ui-session-coordinator` の import 解決失敗（vite import-analysis）で exit 1。今回差分箇所の型検証は成功しているため、テスト基盤側の依存解決問題として別途切り分けが必要。
 
 2646) fix/ui/shape-task-status-message-flicker-near-completion (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph

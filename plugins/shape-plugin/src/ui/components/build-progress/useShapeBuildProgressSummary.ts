@@ -48,6 +48,9 @@ type SummaryResult<T extends BuildTaskSummary & TaskStageCarrier> = {
   stageRemainingMs: number | null;
 };
 
+const MIN_REMAINING_ESTIMATE_ELAPSED_MS = 10_000;
+const MIN_REMAINING_ESTIMATE_DONE_TASKS = 10;
+
 export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskStageCarrier>({
   stages,
   resolvedTaskType,
@@ -81,6 +84,26 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     tasks,
   );
 
+  const stageTaskCounts = useMemo(() => {
+    return stages.reduce<Record<string, { counts: TaskCountSummary; hasIncomplete: boolean }>>((acc, stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      if (stageTasks.length === 0) {
+        acc[stage.id] = {
+          counts: { total: 0, completed: 0, failed: 0, skipped: 0 },
+          hasIncomplete: false,
+        };
+        return acc;
+      }
+      const counts = buildTaskCountSummary(stageTasks, isSkippedTask);
+      const done = counts.completed + counts.failed + counts.skipped;
+      acc[stage.id] = {
+        counts,
+        hasIncomplete: done < counts.total,
+      };
+      return acc;
+    }, {});
+  }, [isSkippedTask, stages, tasksByStage]);
+
   const paneProgressWithSummary = useMemo(() => {
     const failureStageId = buildStatus === 'failed'
       ? taskType
@@ -103,35 +126,18 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
           || (resolvedSummary.error ?? 0) > 0
           || (resolvedSummary.skip ?? 0) > 0),
       );
-      const progressSummary = (!hasSummaryData && stage.id === resolvedTaskType && (effectiveProgress?.total ?? 0) > 0)
-        ? {
-          total: effectiveProgress?.total ?? 0,
-          success: effectiveProgress?.completed ?? 0,
-          error: effectiveProgress?.failed ?? 0,
-          skip: effectiveProgress?.skipped ?? 0,
-          percentage: effectiveProgress?.percentage,
-        }
-        : null;
       let total = hasSummaryData
         ? (resolvedSummary?.total ?? 0)
-        : progressSummary
-          ? progressSummary.total
-          : (base?.taskCount ?? 0);
+        : (base?.taskCount ?? 0);
       const success = hasSummaryData
         ? (resolvedSummary?.success ?? 0)
-        : progressSummary
-          ? progressSummary.success
-          : (base?.completedCount ?? 0);
+        : (base?.completedCount ?? 0);
       let error = hasSummaryData
         ? (resolvedSummary?.error ?? 0)
-        : progressSummary
-          ? progressSummary.error
-          : 0;
+        : 0;
       const skip = hasSummaryData
         ? (resolvedSummary?.skip ?? 0)
-        : progressSummary
-          ? progressSummary.skip
-          : 0;
+        : 0;
       if (failureStageId && stage.id === failureStageId) {
         error = Math.max(error, 1);
         total = Math.max(total, error + success + skip);
@@ -139,7 +145,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       const done = Math.min(total, success + error + skip);
       const progressValue = total > 0
         ? Math.round((done / total) * 100)
-        : progressSummary?.percentage ?? (base?.progress ?? 0);
+        : (base?.progress ?? 0);
       const status = error > 0
         ? 'failed'
         : total > 0 && success + skip >= total
@@ -156,33 +162,33 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         summary: { total, success, error, skip },
       };
     });
-  }, [buildStatus, effectiveProgress, paneProgress, resolvedTaskType, stages, taskSummary, taskType]);
+  }, [buildStatus, paneProgress, stages, taskSummary, taskType]);
 
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
     let candidate: string | undefined;
     stages.forEach((stage) => {
-      const stageTasks = tasksByStage[stage.id] ?? [];
-      if (stageTasks.length === 0) return;
-      const hasIncomplete = stageTasks.some((task) => task.status !== 'completed');
+      const stageInfo = stageTaskCounts[stage.id];
+      if (!stageInfo || stageInfo.counts.total === 0) return;
+      const hasIncomplete = stageInfo.hasIncomplete;
       if (hasIncomplete) {
         candidate = stage.id;
       }
     });
     return candidate;
-  }, [buildStatus, stages, tasksByStage]);
+  }, [buildStatus, stageTaskCounts, stages]);
 
   const displayStageId = lastUnfinishedStageId ?? resolvedTaskType;
 
   const derivedCounts = useMemo(() => {
     if (!lastUnfinishedStageId) return null;
-    const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
-    if (!stageTasks.length) return null;
-    return buildTaskCountSummary(stageTasks, isSkippedTask);
-  }, [lastUnfinishedStageId, tasksByStage, isSkippedTask]);
+    const stageInfo = stageTaskCounts[lastUnfinishedStageId];
+    if (!stageInfo || stageInfo.counts.total === 0) return null;
+    return stageInfo.counts;
+  }, [lastUnfinishedStageId, stageTaskCounts]);
 
   const rawDisplayCounts = useMemo<CountsWithPercentage>(() => {
-    if (effectiveProgress && effectiveProgress.total > 0) {
+    if (tasks.length > 0 && effectiveProgress && effectiveProgress.total > 0) {
       return {
         total: effectiveProgress.total,
         completed: effectiveProgress.completed,
@@ -215,7 +221,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       skipped: 0,
       percentage: Math.round(overallProgress),
     };
-  }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress]);
+  }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress, tasks.length]);
 
   const lastStableCountsRef = useRef<CountsWithPercentage | null>(null);
   useEffect(() => {
@@ -225,11 +231,11 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [rawDisplayCounts]);
 
   const displayCounts = useMemo(() => {
-    if (buildStatus === 'running' && rawDisplayCounts.total === 0 && hasProgressData) {
+    if (buildStatus === 'running' && rawDisplayCounts.total === 0 && hasProgressData && tasks.length > 0) {
       return lastStableCountsRef.current ?? rawDisplayCounts;
     }
     return rawDisplayCounts;
-  }, [buildStatus, hasProgressData, rawDisplayCounts]);
+  }, [buildStatus, hasProgressData, rawDisplayCounts, tasks.length]);
 
   const combinedStagePercentage = useMemo(() => {
     if (!stages.length) return rawDisplayCounts.percentage;
@@ -241,19 +247,21 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [rawDisplayCounts.percentage, stageProgress, stages]);
 
   const displayCountsWithStageProgress = useMemo(() => {
-    if (buildStatus !== 'running' || !hasProgressData) return displayCounts;
+    if (buildStatus !== 'running' || !hasProgressData || displayCounts.total <= 0) return displayCounts;
     return { ...displayCounts, percentage: combinedStagePercentage };
   }, [buildStatus, combinedStagePercentage, displayCounts, hasProgressData]);
 
   const lastDisplayedPercentageRef = useRef<number | null>(null);
   useEffect(() => {
-    if (buildStatus !== 'running' || !hasProgressData) {
+    if (buildStatus !== 'running' || !hasProgressData || displayCounts.total <= 0) {
       lastDisplayedPercentageRef.current = null;
     }
-  }, [buildStatus, hasProgressData]);
+  }, [buildStatus, displayCounts.total, hasProgressData]);
 
   const displayCountsMonotonic = useMemo(() => {
-    if (buildStatus !== 'running' || !hasProgressData) return displayCountsWithStageProgress;
+    if (buildStatus !== 'running' || !hasProgressData || displayCountsWithStageProgress.total <= 0) {
+      return displayCountsWithStageProgress;
+    }
     const current = displayCountsWithStageProgress.percentage;
     const previous = lastDisplayedPercentageRef.current;
     const next = previous === null ? current : Math.max(previous, current);
@@ -263,16 +271,18 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
 
   const stageRemainingMs = useMemo(() => {
     if (!resolvedTaskType) return null;
-    const stageTasks = tasksByStage[resolvedTaskType] ?? [];
-    if (!stageTasks.length) return null;
-    const counts = buildTaskCountSummary(stageTasks, isSkippedTask);
+    const stageInfo = stageTaskCounts[resolvedTaskType];
+    if (!stageInfo || stageInfo.counts.total === 0) return null;
+    const counts = stageInfo.counts;
     const done = counts.completed + counts.failed + counts.skipped;
     const remaining = counts.total - done;
     if (remaining <= 0 || done <= 0) return null;
+    if (timingStageMs < MIN_REMAINING_ESTIMATE_ELAPSED_MS) return null;
+    if (done < MIN_REMAINING_ESTIMATE_DONE_TASKS) return null;
     const avgPerTaskMs = timingStageMs / done;
     if (!Number.isFinite(avgPerTaskMs) || avgPerTaskMs <= 0) return null;
     return Math.max(0, Math.round(avgPerTaskMs * remaining));
-  }, [isSkippedTask, resolvedTaskType, tasksByStage, timingStageMs]);
+  }, [resolvedTaskType, stageTaskCounts, timingStageMs]);
 
   return {
     taskSummary,

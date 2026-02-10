@@ -30,6 +30,8 @@ import { useShapeBuildStages } from './useShapeBuildStages.ts';
 import { useShapeBuildProgressSummary } from './useShapeBuildProgressSummary.ts';
 import { useShapeBuildLabels } from './useShapeBuildLabels.ts';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
+import { resolveBuildStatusSource } from './resolveBuildStatusSource.ts';
+import { executePauseBuildFlow } from './executePauseBuildFlow.ts';
 import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -214,6 +216,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
+  const persistDraftPatchQueueRef = useRef<Promise<void>>(Promise.resolve());
   const persistedStageElapsedByStage = useMemo<Record<string, number>>(
     () => (data?.stageElapsedByStage ?? {}),
     [data?.stageElapsedByStage]
@@ -266,16 +269,16 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const persistedStageElapsedStageId = typeof data?.stageElapsedStageId === 'string'
     ? data.stageElapsedStageId
     : null;
-  const [displayTotalElapsedMs, setDisplayTotalElapsedMs] = useState(0);
   const [displayStageElapsedMs, setDisplayStageElapsedMs] = useState(0);
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
-  const totalTickRef = useRef<number | null>(null);
   const stageTickRef = useRef<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
   const lastDisplayStageIdRef = useRef<string | null>(null);
   const runtimeStatus = status?.status ?? null;
-  const statusSource = effectiveStatus?.status ?? processingStatus;
+  const statusSource = useMemo(() => {
+    return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
+  }, [effectiveStatus?.status, processingStatus]);
   const reportTaskFailures = statusSource === 'processing';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(statusSource)
@@ -306,12 +309,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     return baseBuildStatus;
   }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
-  useEffect(() => {
-    if (!isPausePending) return;
-    if (buildStatus !== 'running') {
-      setIsPausePending(false);
-    }
-  }, [buildStatus, isPausePending]);
 
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
@@ -351,18 +348,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return persistedStageElapsedMs + delta;
   })();
   const stageElapsedMs = hasTimingSession ? timingSnapshot.stageMs : fallbackStageElapsedMs;
-  const completedStageTotalMs = useMemo(
-    () => sumNumberRecord(completedStageElapsedMs),
-    [completedStageElapsedMs]
-  );
-  const stageIdForTotal = timingStageId ?? persistedStageElapsedStageId;
-  const stageElapsedForTotal = timingStageId ? stageElapsedMs : persistedStageElapsedMs;
-  const committedForStage = stageIdForTotal ? (completedStageElapsedMs[stageIdForTotal] ?? 0) : 0;
-  const activeStageContributionMs = stageIdForTotal
-    ? Math.max(0, stageElapsedForTotal - committedForStage)
-    : 0;
-  const totalElapsedMs = completedStageTotalMs + activeStageContributionMs;
-
   useEffect(() => {
     if (buildStatus !== 'idle') return;
     if (shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage)) return;
@@ -379,10 +364,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (persistedStageResumedAt !== null) return;
     if (persistedStageElapsedStageId !== null) return;
     if (!shallowEqualNumberRecord(persistedStageElapsedByStage, {})) return;
-    setDisplayTotalElapsedMs(0);
     setDisplayStageElapsedMs(0);
     setDisplayStageRemainingMs(null);
-    totalTickRef.current = null;
     stageTickRef.current = null;
     stageRemainingTickRef.current = null;
     lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
@@ -398,44 +381,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     persistedStageResumedAt,
     processingStatus,
   ]);
-  useEffect(() => {
-    if (buildStatus === 'idle') {
-      setDisplayTotalElapsedMs(totalElapsedMs);
-      totalTickRef.current = null;
-      return;
-    }
-    if (buildStatus !== 'running') {
-      setDisplayTotalElapsedMs((prev) => Math.max(prev, totalElapsedMs));
-      totalTickRef.current = null;
-      return;
-    }
-    if (displayTotalElapsedMs === 0 && totalElapsedMs > 0) {
-      setDisplayTotalElapsedMs(totalElapsedMs);
-    }
-    if (totalTickRef.current === null) {
-      totalTickRef.current = Date.now();
-    }
-  }, [buildStatus, displayTotalElapsedMs, totalElapsedMs]);
-
-  useEffect(() => {
-    if (buildStatus !== 'running') return;
-    const intervalId = window.setInterval(() => {
-      const now = Date.now();
-      const last = totalTickRef.current ?? now;
-      const step = Math.floor((now - last) / 1000) * 1000;
-      if (step <= 0) return;
-      totalTickRef.current = last + step;
-      setDisplayTotalElapsedMs((prev) => {
-        const target = Math.max(prev, totalElapsedMs);
-        const next = prev + step;
-        return next > target ? target : next;
-      });
-    }, 300);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [buildStatus, totalElapsedMs]);
-
   useEffect(() => {
     if (!timingStageId) {
       setDisplayStageElapsedMs(0);
@@ -499,6 +444,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     isSkippedTask: (task) => isSkippedMessage(task.message),
     timingStageMs: displayStageElapsedMs,
   });
+  const displayTotalElapsedMs = useMemo(() => {
+    const completedTotalMs = sumNumberRecord(completedStageElapsedMs);
+    if (!timingStageId) {
+      return completedTotalMs;
+    }
+    const committedCurrentStageMs = completedStageElapsedMs[timingStageId] ?? 0;
+    const activeStageContributionMs = Math.max(0, displayStageElapsedMs - committedCurrentStageMs);
+    return completedTotalMs + activeStageContributionMs;
+  }, [completedStageElapsedMs, displayStageElapsedMs, timingStageId]);
   useEffect(() => {
     latestStageRemainingMsRef.current = progressSummary.stageRemainingMs;
     if (buildStatus !== 'running') {
@@ -527,14 +481,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [buildStatus]);
 
   useEffect(() => {
-    const previousStatus = lastBuildStatusRef.current;
     lastBuildStatusRef.current = buildStatus;
     if (buildStatus === 'idle') {
       lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
-      return;
-    }
-    if (previousStatus && previousStatus !== 'running' && buildStatus === 'running') {
-      setCompletedStageElapsedMs({});
     }
   }, [buildStatus]);
   const {
@@ -612,19 +561,31 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.error('Worker client is unavailable.');
       return false;
     }
-    const baseBuildConfig = {
-      ...(data?.buildConfig ?? {}),
-      ...(patch?.buildConfig ?? {}),
-    };
     try {
       const api = workerClient.getAPI();
       const updater = await api.getTreeNodeUpdaterAPI();
+      const node = await updater.getTreeNode(activeNodeId);
+      const currentDraftData = (
+        node?.draftData && typeof node.draftData === 'object'
+          ? (node.draftData as Record<string, unknown>)
+          : {}
+      );
+      const persistedBuildConfig = (
+        currentDraftData.buildConfig && typeof currentDraftData.buildConfig === 'object'
+          ? (currentDraftData.buildConfig as Record<string, unknown>)
+          : {}
+      );
+      const nextBuildConfig = {
+        ...persistedBuildConfig,
+        ...(data?.buildConfig ?? {}),
+        ...(patch?.buildConfig ?? {}),
+      };
       await updater.updateTreeNode(activeNodeId, {
         mode: 'save-draft',
         draftData: {
-          ...sanitizeShapeDraftData(data ?? {}),
+          ...sanitizeShapeDraftData(currentDraftData),
           ...sanitizeShapeDraftData(patch ?? {}),
-          batchConfig: baseBuildConfig,
+          buildConfig: nextBuildConfig,
         } as Record<string, unknown>,
       });
       return true;
@@ -635,23 +596,36 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [activeNodeId, buildStatus, data, workerClient]);
 
-  const persistDraftPatch = useCallback(async (patch: Partial<ShapeEntity>) => {
-    if (!activeNodeId || !workerClient) return;
-    try {
-      const api = workerClient.getAPI();
-      const updater = await api.getTreeNodeUpdaterAPI();
-      await updater.updateTreeNode(activeNodeId, {
-        mode: 'save-draft',
-        draftData: {
-          ...sanitizeShapeDraftData(data ?? {}),
-          ...sanitizeShapeDraftData(patch),
-        } as Record<string, unknown>,
-      });
-      onChange(patch);
-    } catch (error) {
-      console.error('[ShapeBuildProgressStep] failed to persist build markers', error);
-    }
-  }, [activeNodeId, data, onChange, workerClient]);
+  const persistDraftPatch = useCallback(async (patch: Partial<ShapeEntity>): Promise<boolean> => {
+    if (!activeNodeId || !workerClient) return false;
+    const run = async (): Promise<boolean> => {
+      try {
+        const api = workerClient.getAPI();
+        const updater = await api.getTreeNodeUpdaterAPI();
+        const node = await updater.getTreeNode(activeNodeId);
+        const currentDraftData = (
+          node?.draftData && typeof node.draftData === 'object'
+            ? (node.draftData as Record<string, unknown>)
+            : {}
+        );
+        await updater.updateTreeNode(activeNodeId, {
+          mode: 'save-draft',
+          draftData: {
+            ...sanitizeShapeDraftData(currentDraftData),
+            ...sanitizeShapeDraftData(patch),
+          } as Record<string, unknown>,
+        });
+        onChange(patch);
+        return true;
+      } catch (error) {
+        console.error('[ShapeBuildProgressStep] failed to persist build markers', error);
+        return false;
+      }
+    };
+    const queuedRun = persistDraftPatchQueueRef.current.then(run, run);
+    persistDraftPatchQueueRef.current = queuedRun.then(() => undefined, () => undefined);
+    return queuedRun;
+  }, [activeNodeId, onChange, workerClient]);
 
   useEffect(() => {
     const previous = lastElapsedStatusRef.current;
@@ -667,6 +641,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         buildElapsedMs: nextElapsedMs,
         buildResumedAt: undefined,
       };
+      if (buildStatus === 'paused' || buildStatus === 'completed' || buildStatus === 'failed') {
+        patch.processingStatus = buildStatus;
+      }
       if (persistedStageResumedAt && timingStageId && persistedStageElapsedStageId === timingStageId) {
         const stageDelta = Math.max(0, now - persistedStageResumedAt);
         patch.stageElapsedMs = persistedStageElapsedMs + stageDelta;
@@ -1090,16 +1067,24 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       return;
     }
     if (isPausePending) return;
-    setIsPausePending(true);
-    try {
-      await bridgeRef.current.initialize();
-      await bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason);
-      await persistDraftPatch({ processingStatus: 'paused', stopReason: reason });
-    } catch (error) {
-      setIsPausePending(false);
-      notify.error('Failed to pause build.');
-      console.error('[ShapeBuildProgressStep] pause failed', error);
-    }
+    await executePauseBuildFlow({
+      reason,
+      onPendingChange: setIsPausePending,
+      pauseSession: async (pauseReason) => {
+        await bridgeRef.current.initialize();
+        await bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, pauseReason);
+      },
+      persistPausedStatus: async (pauseReason) => {
+        const persisted = await persistDraftPatch({ processingStatus: 'paused', stopReason: pauseReason });
+        if (!persisted) {
+          throw new Error('Failed to persist paused status.');
+        }
+      },
+      onError: (error) => {
+        notify.error('Failed to pause build.');
+        console.error('[ShapeBuildProgressStep] pause failed', error);
+      },
+    });
   }, [activeNodeId, isPausePending, persistDraftPatch]);
   const { canStartOrResume, isStartPending, startOrResume } = useShapeBuildAutoResume({
     activeNodeId,

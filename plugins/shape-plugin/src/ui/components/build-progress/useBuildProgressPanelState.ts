@@ -64,16 +64,35 @@ export const useBuildProgressPanelState = (params: {
     draft: params.data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
+  const stageTaskScan = useMemo(() => {
+    return stages.reduce<Record<string, { hasRunning: boolean; failedTask: ShapeBuildTaskSummary | null }>>((acc, stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      let hasRunning = false;
+      let failedTask: ShapeBuildTaskSummary | null = null;
+      for (const task of stageTasks) {
+        if (!hasRunning && task.status === 'running') {
+          hasRunning = true;
+        }
+        if (!failedTask && (task.status === 'failed' || task.status === 'regression')) {
+          failedTask = task;
+        }
+        if (hasRunning && failedTask) {
+          break;
+        }
+      }
+      acc[stage.id] = { hasRunning, failedTask };
+      return acc;
+    }, {});
+  }, [stages, tasksByStage]);
   const activeStageId = useMemo(() => {
     if (summary.buildStatus !== 'running') return null;
     for (const stage of stages) {
-      const stageTasks = tasksByStage[stage.id] ?? [];
-      if (stageTasks.some((task) => task.status === 'running')) {
+      if (stageTaskScan[stage.id]?.hasRunning) {
         return stage.id;
       }
     }
     return null;
-  }, [stages, summary.buildStatus, tasksByStage]);
+  }, [stageTaskScan, stages, summary.buildStatus]);
   const {
     startWarning,
     crashHint,
@@ -112,10 +131,8 @@ export const useBuildProgressPanelState = (params: {
     return fallback || null;
   }, []);
   const failedTaskInfo = useMemo(() => {
-    const failedStatuses = new Set(['failed', 'regression']);
     for (const stage of stages) {
-      const stageTasks = tasksByStage[stage.id] ?? [];
-      const failedTask = stageTasks.find((task) => failedStatuses.has(task.status));
+      const failedTask = stageTaskScan[stage.id]?.failedTask ?? null;
       if (!failedTask) continue;
       const failureMessage = resolveFailureMessage(failedTask);
       if (!failureMessage) continue;
@@ -125,7 +142,7 @@ export const useBuildProgressPanelState = (params: {
       };
     }
     return null;
-  }, [resolveFailureMessage, resolveTaskTitle, stages, tasksByStage]);
+  }, [resolveFailureMessage, resolveTaskTitle, stageTaskScan, stages]);
 
   const completionStageLabel = summary.stageLabel?.trim()
     ? summary.stageLabel
@@ -244,8 +261,8 @@ export const useBuildProgressPanelState = (params: {
     const seconds = totalSeconds % 60;
     return t('stage.timing.duration', '{{hours}}h {{minutes}}m {{seconds}}s', {
       hours,
-      minutes: String(minutes).padStart(2, '0'),
-      seconds: String(seconds).padStart(2, '0'),
+      minutes,
+      seconds,
     });
   }, [t]);
 
@@ -282,9 +299,8 @@ export const useBuildProgressPanelState = (params: {
       ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
     if (!buildConfig) return undefined;
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
-      const stageTasks = tasksByStage[stage.id] ?? [];
       const isStageRunning = summary.buildStatus === 'running'
-        && stageTasks.some((task) => task.status === 'running');
+        && Boolean(stageTaskScan[stage.id]?.hasRunning);
       const maxConcurrent = (() => {
         switch (stage.id) {
           case 'fetch':
@@ -301,7 +317,7 @@ export const useBuildProgressPanelState = (params: {
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
       return acc;
     }, {});
-  }, [params.data?.buildConfig, stages, tasksByStage, summary.buildStatus]);
+  }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
 
   const handleStartClick = useCallback(async () => {
     if (startWarning) {

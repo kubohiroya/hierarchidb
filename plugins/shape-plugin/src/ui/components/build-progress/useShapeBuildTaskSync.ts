@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { BuildTaskSummary } from '@hierarchidb/batch-api';
-import {
-  areTaskListsEqual,
-  shouldApplyTaskUpdate,
-  sortTasksByIndex,
-} from '@hierarchidb/ui-batch-progress';
+import { shouldApplyTaskUpdate } from '@hierarchidb/ui-batch-progress';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 
 export type RawTaskSummary = BuildTaskSummary & {
@@ -43,6 +39,61 @@ const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
 const resolveProgressValue = (value: number | undefined): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
 );
+
+const resolveTaskOrderIndex = (task: ShapeBuildTaskSummary): number => (
+  typeof task.index === 'number' && Number.isFinite(task.index)
+    ? task.index
+    : Number.MAX_SAFE_INTEGER
+);
+
+const compareTaskOrder = (left: ShapeBuildTaskSummary, right: ShapeBuildTaskSummary): number => {
+  const leftIndex = resolveTaskOrderIndex(left);
+  const rightIndex = resolveTaskOrderIndex(right);
+  if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+  return left.taskId.localeCompare(right.taskId);
+};
+
+const findInsertPosition = (items: ShapeBuildTaskSummary[], task: ShapeBuildTaskSummary): number => {
+  let low = 0;
+  let high = items.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    const midTask = items[mid];
+    if (!midTask) break;
+    if (compareTaskOrder(midTask, task) <= 0) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+};
+
+const upsertTaskInSortedList = (
+  current: ShapeBuildTaskSummary[],
+  task: ShapeBuildTaskSummary,
+): ShapeBuildTaskSummary[] => {
+  const existingIndex = current.findIndex((item) => item.taskId === task.taskId);
+  if (existingIndex < 0) {
+    const insertAt = findInsertPosition(current, task);
+    const next = current.slice();
+    next.splice(insertAt, 0, task);
+    return next;
+  }
+  const withoutCurrent = current.slice();
+  withoutCurrent.splice(existingIndex, 1);
+  const insertAt = findInsertPosition(withoutCurrent, task);
+  withoutCurrent.splice(insertAt, 0, task);
+  return withoutCurrent;
+};
+
+const removeTaskFromList = (current: ShapeBuildTaskSummary[], taskId: string): ShapeBuildTaskSummary[] => {
+  const index = current.findIndex((task) => task.taskId === taskId);
+  if (index < 0) return current;
+  const next = current.slice();
+  next.splice(index, 1);
+  return next;
+};
 
 const normalizeTaskStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
@@ -84,13 +135,14 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const committedTasksRef = useRef<ShapeBuildTaskSummary[]>([]);
   const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
-  const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
+  const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
   const flushFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       pendingTasksRef.current = null;
+      pendingDirtyRef.current = false;
       if (flushFrameRef.current !== null) {
         window.cancelAnimationFrame(flushFrameRef.current);
         flushFrameRef.current = null;
@@ -98,35 +150,28 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     };
   }, []);
 
-  const applyPendingDeletes = useCallback((next: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
-    const pendingDeletes = pendingDeleteIdsRef.current;
-    if (pendingDeletes.size === 0) return next;
-    pendingDeleteIdsRef.current = new Set();
-    return next.filter((task) => !pendingDeletes.has(task.taskId));
-  }, []);
-
-  const flushTasks = useCallback((next: ShapeBuildTaskSummary[]) => {
-    const cleaned = applyPendingDeletes(next);
-    if (areTaskListsEqual(cleaned, committedTasksRef.current)) {
-      pendingTasksRef.current = null;
+  const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
+    if (!dirty) {
       return;
     }
-    committedTasksRef.current = cleaned;
-    setTasks(cleaned);
-    pendingTasksRef.current = null;
-    tasksMapRef.current = new Map(cleaned.map((task) => [task.taskId, task]));
-  }, [applyPendingDeletes, setTasks]);
+    committedTasksRef.current = next;
+    setTasks(next);
+  }, [setTasks]);
 
-  const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[]) => {
+  const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
     pendingTasksRef.current = next;
+    pendingDirtyRef.current = pendingDirtyRef.current || dirty;
     if (flushScheduledRef.current) return;
     flushScheduledRef.current = true;
     flushFrameRef.current = window.requestAnimationFrame(() => {
       flushScheduledRef.current = false;
       flushFrameRef.current = null;
       const pending = pendingTasksRef.current;
+      const isDirty = pendingDirtyRef.current;
+      pendingTasksRef.current = null;
+      pendingDirtyRef.current = false;
       if (pending) {
-        flushTasks(pending);
+        flushTasks(pending, isDirty);
       }
     });
   }, [flushTasks]);
@@ -143,19 +188,18 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const baseList = pendingTasksRef.current ?? committedTasksRef.current;
     const currentTask = tasksMapRef.current.get(task.taskId);
     if (currentTask && !shouldPreferNextTask(currentTask, task)) {
-      return baseList;
+      return { next: baseList, changed: false } as const;
     }
     const nextMap = new Map(tasksMapRef.current);
     nextMap.set(task.taskId, task);
     tasksMapRef.current = nextMap;
-    return sortTasksByIndex(Array.from(nextMap.values()));
+    return { next: upsertTaskInSortedList(baseList, task), changed: true } as const;
   }, []);
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
-    pendingDeleteIdsRef.current = new Set();
-    const resolved = sortTasksByIndex(next.map(resolveTaskSummary));
+    const resolved = next.map(resolveTaskSummary).sort(compareTaskOrder);
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
-    scheduleFlush(resolved);
+    scheduleFlush(resolved, true);
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -166,8 +210,8 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
-    const next = mergeTask(resolved);
-    scheduleFlush(next);
+    const result = mergeTask(resolved);
+    scheduleFlush(result.next, result.changed);
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -177,10 +221,17 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   }, [mergeTask, resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
 
   const handleDelete = useCallback((taskId: string) => {
-    pendingDeleteIdsRef.current.add(taskId);
-    tasksMapRef.current.delete(taskId);
+    const existing = tasksMapRef.current.get(taskId);
+    if (!existing) {
+      scheduleFlush(pendingTasksRef.current ?? committedTasksRef.current, false);
+      return;
+    }
+    const nextMap = new Map(tasksMapRef.current);
+    nextMap.delete(taskId);
+    tasksMapRef.current = nextMap;
     const current = pendingTasksRef.current ?? committedTasksRef.current;
-    scheduleFlush(current);
+    const next = removeTaskFromList(current, taskId);
+    scheduleFlush(next, true);
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -205,6 +256,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
 
   const resetPending = useCallback(() => {
     pendingTasksRef.current = null;
+    pendingDirtyRef.current = false;
   }, []);
 
   return {

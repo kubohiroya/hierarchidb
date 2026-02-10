@@ -507,10 +507,16 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     try {
       await bridgeRef.initialize();
       const updater = await bridgeRef.getTreeNodeUpdaterAPI();
+      const node = await updater.getTreeNode(nodeId);
+      const currentDraftData = (
+        node?.draftData && typeof node.draftData === 'object'
+          ? (node.draftData as Record<string, unknown>)
+          : {}
+      );
       await updater.updateTreeNode(nodeId, {
         mode: 'save-draft',
         draftData: {
-          ...sanitizeShapeDraftData(data ?? {}),
+          ...sanitizeShapeDraftData(currentDraftData),
           selectedArrayByCountries: nextSelection,
           processingStatus: 'idle',
           buildStartedAt: undefined,
@@ -526,7 +532,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     } catch (error) {
       console.warn('[ShapeCountrySelectionStep] failed to invalidate build after selection change', error);
     }
-  }, [bridgeRef, buildSelectionSet, data, nodeId]);
+  }, [bridgeRef, buildSelectionSet, nodeId]);
 
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     return baseCountries.map((entry) => {
