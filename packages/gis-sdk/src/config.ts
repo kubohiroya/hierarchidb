@@ -74,7 +74,7 @@ export type SelfIntersectionTuningConfig = {
   maxVerticesForSplit: number;
 };
 
-export type GeometryEngine = 'turf' | 'geos';
+export type GeometryEngine = 'turf';
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];

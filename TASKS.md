@@ -19195,3 +19195,49 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - done: 2026-02-10 13:12 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
   - blocked: 2026-02-10 13:13 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/worker/__tests__/unit/api.unit.test.ts` は vitest 設定で `src/worker/**/__tests__/**` が除外対象のため No test files found（exit 1）。
   - done: 2026-02-10 13:14 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-pause-on-leave.wfl.test.ts` exit 0（1 passed）。
+
+2684) feat/shape/build-startup-step-start-finish-logs (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2633
+- 受け入れ基準: ビルド開始/再開ボタン押下から実タスク開始までの各初期化段階で start/finish ログが出力される／失敗時は finish(error) が必ず出る／既存挙動は変えない／影響範囲の build/typecheck/test が exit 0
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`（必要に応じて追加）
+- ロールバック手順: 本タスク差分を revert して従来ログへ戻す
+- チェックリスト:
+  - lock取得・draft保存・worker初期化・payload生成・session開始API・初回task待機の start/finish ログを実装する
+  - エラー時にも finish(error) を出す
+  - 影響範囲の build/typecheck/test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 22:48 JST build 再開時クラッシュ切り分けのため、開始ボタン押下から初回task開始までの各段階で start/finish ログを追加する作業に着手。
+  - update: 2026-02-10 22:52 JST `useShapeBuildStep.ts` に初期化ステップ（lock/draft/worker/payload/session/awaiting-first-task）の start/finish ログ出力を追加。中断時の `aborted`、失敗時の `error`、pause 時の `cancelled` を出力するように実装。
+  - update: 2026-02-10 22:54 JST `useShapeBuildStep` の新規依存 `useBuildSessionTransition` に合わせて `useShapeBuildStep.unit.test.tsx` の `@hierarchidb/components` モックを部分モック化し、同 hook のダミー実装を追加。
+  - update: 2026-02-10 23:09 JST `useShapeBuildStep.unit.test.tsx` の `@hierarchidb/components` モックから `importOriginal('@hierarchidb/components')` を撤去し、`executePauseBuildFlow`/`notify`/`useBuildSessionTransition` の完全手書きモックへ置換。
+  - done: 2026-02-10 23:00 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-10 23:01 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-10 23:01 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は Vitest worker が `ERR_WORKER_OUT_OF_MEMORY` で停止（`--maxWorkers 1` / `NODE_OPTIONS=--max-old-space-size=8192|16384` / `--pool vmForks --poolOptions.vmForks.memoryLimit 4096MB|12288MB` でも再現、exit 1）。
+  - done: 2026-02-10 23:10 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0（モック完全手書き化後の再確認）。
+  - done: 2026-02-10 23:10 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0（モック完全手書き化後の再確認）。
+  - blocked: 2026-02-10 23:11 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は引き続き Vitest worker が `ERR_WORKER_OUT_OF_MEMORY` で停止（collect 3.72s / tests 0ms、exit 1）。
+  - start: 2026-02-10 23:18 JST 「2.次の対策（構造改革）」として `@hierarchidb/components` のサブパス export（build-session/notify/build-status）追加と `shape-plugin` の該当 import 切替に着手。
+  - update: 2026-02-10 23:20 JST `@hierarchidb/components` に `./build-session` / `./notify` / `./build-status` サブパス export を追加し、`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の runtime import をバレル経由からサブパスへ切替。
+  - update: 2026-02-10 23:21 JST `useShapeBuildStep.unit.test.tsx` のモックをサブパス対応（`@hierarchidb/components/build-session` と `@hierarchidb/components/notify`）へ更新し、`executePauseBuildFlow` の参照先も `@hierarchidb/components/build-session` へ統一。
+  - done: 2026-02-10 23:22 JST `pnpm -w turbo run build --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-10 23:22 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-10 23:23 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は引き続き Vitest worker が `ERR_WORKER_OUT_OF_MEMORY` で停止（collect 4.07s / tests 0ms、exit 1）。
+  - update: 2026-02-10 23:24 JST 実運用メモリ計測のため `useShapeBuildStep.ts` の startup step start/finish ログへ `memoryAtStart` / `memoryAtFinish` / `memoryDelta`（used/total/limit）を追加。
+  - done: 2026-02-10 23:25 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-10 23:25 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-10 23:25 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は引き続き Vitest worker が `ERR_WORKER_OUT_OF_MEMORY` で停止（collect 3.51s / tests 0ms、exit 1）。
+  - start: 2026-02-10 23:26 JST 構造改革の継続として `useShapeBuildStep` 周辺の静的 import をさらに分離し、collect/setup 時に不要な依存を読み込まないよう最小差分で遅延化に着手。
+  - start: 2026-02-10 23:35 JST 追加対策として `geos-wasm` を撤去し、`@turf/turf` 一括 import を必要最小限の `@turf/*` 個別 import へ置換する作業に着手。
+  - update: 2026-02-10 23:45 JST `packages/gis-sdk/src/config.ts` の `GeometryEngine` を `turf` のみに固定し、`shape-plugin` の fetch/transform/metadata/vt ステージから `initGeos` 呼び出しと `geos` 分岐を削除。
+  - update: 2026-02-10 23:47 JST `plugins/shape-plugin` の Transform 設定 UI から geometry engine セレクタ（geos 選択肢）を撤去し、ローカライズ文言を turf 前提へ整理。
+  - update: 2026-02-10 23:49 JST `packages/gis-sdk/src/geos/index.ts` を geos-wasm 依存なしの Turf 実装へ差し替え、`packages/gis-sdk/src/geos/wkb.ts` と `types/geos-wasm.d.ts` を削除。
+  - update: 2026-02-10 23:50 JST `packages/gis-sdk/package.json` から `geos-wasm` / `@turf/turf` を削除し、必要な `@turf/*` 個別依存（bbox-clip / boolean-valid / boolean-contains / boolean-intersects）を追加。`packages/vt-orchestrator/package.json` と `plugins/shape-plugin/package.json` から `@turf/turf` を削除。
+  - update: 2026-02-10 23:51 JST `tsconfig.base.json` と `packages/plugin-ui-sdk/tsconfig.json` から `geos-wasm` paths を削除。
+  - done: 2026-02-10 23:52 JST `pnpm install` exit 0。
+  - done: 2026-02-10 23:53 JST `pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-10 23:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` が `packages/gis-sdk/src/geometryEngine.ts` の未使用関数（TS6133）と `packages/gis-sdk/src/geos/index.ts` の型不整合（TS2322）で exit 2。
+  - done: 2026-02-10 23:57 JST 上記型エラーを修正後、`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-11 00:06 JST `pnpm -w turbo run test --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は `@hierarchidb/shape-plugin` の長時間実行中にタイムアウト（1200s, exit 124）。
+  - done: 2026-02-11 00:07 JST `pnpm -w turbo run test --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator` exit 0。

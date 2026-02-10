@@ -3,15 +3,7 @@
   "compilerOptions": {
     "skipLibCheck": false,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "paths": {
-      "geos-wasm": [
-        "types/geos-wasm.d.ts"
-      ],
-      "geos-wasm/helpers": [
-        "types/geos-wasm.d.ts"
-      ]
-    }
+    "moduleResolution": "Bundler"
   },
   "include": [
     "src/**/*",

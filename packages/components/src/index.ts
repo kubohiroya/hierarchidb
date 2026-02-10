@@ -30,6 +30,7 @@ export * from './BuildStepStagePanel.js';
 export * from './BuildStepStageFilterContext.tsx';
 export * from './LoadingButton.tsx';
 export type { BuildStage } from './BuildStage.tsx';
+export type { BuildStatus } from './build-status/BuildStatus.ts';
 
 export { BuildStepPanel } from './BuildStepPanel.tsx';
 export { BuildProgressPanel } from './BuildProgressPanel.tsx';

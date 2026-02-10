@@ -4,7 +4,8 @@ import { LoadingButton } from './LoadingButton.js';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
-import type { BuildControlDetail, BuildStatus } from './BuildStepPanel.tsx';
+import type { BuildControlDetail } from './BuildStepPanel.tsx';
+import type { BuildStatus } from './build-status/BuildStatus.ts';
 
 type BuildControlCardProps = {
   status: BuildStatus;

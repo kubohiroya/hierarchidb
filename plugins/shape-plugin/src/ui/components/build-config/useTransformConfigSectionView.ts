@@ -20,19 +20,9 @@ export const useTransformConfigSectionView = ({
     });
   };
 
-  const handleGeometryEngineChange = (geometryEngine: 'turf' | 'geos') => {
-    update({
-      transformConfig: {
-        ...baseTransformConfig,
-        geometryEngine,
-      },
-    });
-  };
-
   return {
     t,
     baseTransformConfig,
     handleTransformWorkersChange,
-    handleGeometryEngineChange,
   };
 };

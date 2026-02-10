@@ -18,13 +18,13 @@ import {
 } from '../../../common/types/index.js';
 import {
   executePauseBuildFlow,
-  notify,
   useBuildSessionTransition,
   type BuildSessionTransitionNotificationLevel,
-  type BuildStatus,
-} from '@hierarchidb/components';
+} from '@hierarchidb/components/build-session';
+import { notify } from '@hierarchidb/components/notify';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
-import { getBuildMonitorKey } from '@hierarchidb/ui-monitoring';
+import { getBuildMonitorKey, getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildTiming } from './useShapeBuildTiming.ts';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -256,10 +256,59 @@ type BuildSessionTransitionPhase =
   | 'awaiting-first-task';
 
 type NotificationLevel = BuildSessionTransitionNotificationLevel;
+type BuildStartupStep =
+  | 'lock-acquire'
+  | 'lock-wait'
+  | 'draft-save'
+  | 'worker-initialize'
+  | 'payload-build'
+  | 'session-resume-request'
+  | 'session-start-request'
+  | 'session-status-persist'
+  | 'awaiting-first-task';
+type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
+type StartupStepMemorySnapshot = {
+  usedJSHeapSize: number | null;
+  totalJSHeapSize: number | null;
+  jsHeapSizeLimit: number | null;
+};
 
 const START_DIAGNOSTIC_WARN_MS = 10_000;
 const START_DIAGNOSTIC_LONG_WAIT_MS = 20_000;
 const START_DIAGNOSTIC_TIMEOUT_MS = 45_000;
+
+const getErrorMessage = (error: unknown): string => (
+  error instanceof Error ? error.message : String(error)
+);
+
+const toMemoryValue = (value: number | undefined): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const captureStartupStepMemorySnapshot = (): StartupStepMemorySnapshot => {
+  const snapshot = getMemorySnapshot();
+  return {
+    usedJSHeapSize: toMemoryValue(snapshot.usedJSHeapSize),
+    totalJSHeapSize: toMemoryValue(snapshot.totalJSHeapSize),
+    jsHeapSizeLimit: toMemoryValue(snapshot.jsHeapSizeLimit),
+  };
+};
+
+const subtractMemoryValues = (started: number | null | undefined, finished: number | null): number | null => {
+  if (started === null || started === undefined || finished === null) {
+    return null;
+  }
+  return finished - started;
+};
+
+const calculateMemoryDelta = (
+  started: StartupStepMemorySnapshot | null,
+  finished: StartupStepMemorySnapshot,
+): StartupStepMemorySnapshot => ({
+  usedJSHeapSize: subtractMemoryValues(started?.usedJSHeapSize, finished.usedJSHeapSize),
+  totalJSHeapSize: subtractMemoryValues(started?.totalJSHeapSize, finished.totalJSHeapSize),
+  jsHeapSizeLimit: subtractMemoryValues(started?.jsHeapSizeLimit, finished.jsHeapSizeLimit),
+});
 
 const getBuildSessionTransitionStatusLabel = (
   t: (key: string, fallback?: string) => string,
@@ -432,6 +481,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const buildSessionTransitionWarnStepRef = useRef<0 | 1 | 2 | 3>(0);
   const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
   const buildSessionTransitionWaitLogStepRef = useRef(-1);
+  const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
+  const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
+  const previousTransitionActiveRef = useRef(false);
   const progressSnackbarKeyRef = useRef<string | null>(null);
   const [buildSessionTransitionElapsedMs, setBuildSessionTransitionElapsedMs] = useState(0);
   const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
@@ -538,6 +590,56 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const finishBuildSessionTransition = useCallback((options?: { message?: string; level?: NotificationLevel }) => {
     finishBuildSessionTransitionInternal(options);
   }, [finishBuildSessionTransitionInternal]);
+  const beginBuildStartupStep = useCallback((step: BuildStartupStep, extra?: Record<string, unknown>) => {
+    const startedAt = Date.now();
+    const memoryAtStart = captureStartupStepMemorySnapshot();
+    buildStartupStepStartedAtRef.current.set(step, startedAt);
+    buildStartupStepMemoryAtStartRef.current.set(step, memoryAtStart);
+    emitBuildSessionTransitionLog('info', 'build startup step start', {
+      step,
+      startedAt,
+      memory: memoryAtStart,
+      ...(extra ?? {}),
+    });
+  }, [emitBuildSessionTransitionLog]);
+  const finishBuildStartupStep = useCallback((
+    step: BuildStartupStep,
+    outcome: BuildStartupStepOutcome,
+    extra?: Record<string, unknown>,
+  ) => {
+    const now = Date.now();
+    const startedAt = buildStartupStepStartedAtRef.current.get(step);
+    const memoryAtStart = buildStartupStepMemoryAtStartRef.current.get(step) ?? null;
+    buildStartupStepStartedAtRef.current.delete(step);
+    buildStartupStepMemoryAtStartRef.current.delete(step);
+    const memoryAtFinish = captureStartupStepMemorySnapshot();
+    const memoryDelta = calculateMemoryDelta(memoryAtStart, memoryAtFinish);
+    const elapsedMs = typeof startedAt === 'number' ? Math.max(0, now - startedAt) : null;
+    const level = outcome === 'error' ? 'error' : outcome === 'success' ? 'info' : 'warn';
+    emitBuildSessionTransitionLog(level, 'build startup step finish', {
+      step,
+      outcome,
+      startedAt: startedAt ?? null,
+      finishedAt: now,
+      elapsedMs,
+      memoryAtStart,
+      memoryAtFinish,
+      memoryDelta,
+      ...(extra ?? {}),
+    });
+  }, [emitBuildSessionTransitionLog]);
+  useEffect(() => {
+    const wasActive = previousTransitionActiveRef.current;
+    if (wasActive && !buildSessionTransition.active) {
+      const pendingSteps = Array.from(buildStartupStepStartedAtRef.current.keys());
+      pendingSteps.forEach((step) => {
+        finishBuildStartupStep(step, 'aborted', {
+          reason: 'transition-finished-before-step-completed',
+        });
+      });
+    }
+    previousTransitionActiveRef.current = buildSessionTransition.active;
+  }, [buildSessionTransition.active, finishBuildStartupStep]);
   const getRecentNonActiveState = useCallback((referenceTime: number) => {
     let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
     for (const entry of tabStateRef.current.values()) {
@@ -1417,6 +1519,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           phase: buildSessionTransition.phase,
           elapsedMs,
         });
+        if (buildSessionTransition.phase === 'awaiting-first-task') {
+          finishBuildStartupStep('awaiting-first-task', 'error', {
+            reason: 'timeout-before-task-start',
+            elapsedMs,
+          });
+        }
         finishBuildSessionTransition({
           level: 'error',
           message: `Build did not start task processing (${buildSessionTransition.phase}, ${Math.round(elapsedMs / 1000)}s).`,
@@ -1453,6 +1561,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     };
   }, [
     emitBuildSessionTransitionLog,
+    finishBuildStartupStep,
     finishBuildSessionTransition,
     pushBuildSessionTransitionNotification,
     buildSessionTransition.active,
@@ -1502,10 +1611,20 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         });
         pushBuildSessionTransitionNotification('success', 'Build task execution started.');
       }
+      finishBuildStartupStep('awaiting-first-task', 'success', {
+        reason: 'task-execution-started',
+        tasks: displayTasks.length,
+      });
       finishBuildSessionTransition();
       return;
     }
     if (buildStatus === 'completed') {
+      finishBuildStartupStep('awaiting-first-task', 'success', {
+        reason: displayTasks.length === 0
+          ? 'completed-without-generating-tasks'
+          : 'completed-before-first-task-update',
+        tasks: displayTasks.length,
+      });
       if (displayTasks.length === 0) {
         finishBuildSessionTransition({
           level: 'info',
@@ -1517,6 +1636,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       return;
     }
     if (buildStatus === 'failed') {
+      finishBuildStartupStep('awaiting-first-task', 'error', {
+        reason: 'failed-before-task-start',
+      });
       finishBuildSessionTransition({
         level: 'error',
         message: 'Build failed before task execution started.',
@@ -1524,6 +1646,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       return;
     }
     if (buildStatus === 'paused' && !isPausePending) {
+      finishBuildStartupStep('awaiting-first-task', 'cancelled', {
+        reason: 'paused-before-task-start',
+      });
       finishBuildSessionTransition({
         level: 'warning',
         message: 'Build paused before task execution started.',
@@ -1533,6 +1658,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     displayTasks.length,
     emitBuildSessionTransitionLog,
+    finishBuildStartupStep,
     finishBuildSessionTransition,
     hasStartedTasks,
     isPausePending,
@@ -1659,6 +1785,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return false;
     }
+    const startupSource = options?.autoResume ? 'auto' : 'manual';
     const shouldResumeSession = shouldResumeBuildSession({
       forceRestart: options?.forceRestart,
       buildStatus,
@@ -1680,25 +1807,73 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       });
       return false;
     }
-    const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
+    beginBuildStartupStep('lock-acquire', {
+      source: startupSource,
+      mode: shouldResumeSession ? 'resume' : 'start',
+    });
+    let acquired = false;
+    try {
+      acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
+      finishBuildStartupStep('lock-acquire', 'success', {
+        acquired,
+      });
+    } catch (error) {
+      finishBuildStartupStep('lock-acquire', 'error', {
+        errorMessage: getErrorMessage(error),
+      });
+      finishBuildSessionTransition({
+        level: 'error',
+        message: 'Failed to acquire build lock.',
+      });
+      console.error('[ShapeBuildProgressStep] lock acquire failed', error);
+      return false;
+    }
     if (!acquired) {
       advanceBuildSessionTransitionPhase('waiting-lock', {
         level: 'info',
         message: 'Waiting for build lock held by another tab...',
       });
-      const queued = await waitForBuildLock(now);
+      beginBuildStartupStep('lock-wait', {
+        source: startupSource,
+      });
+      let queued = false;
+      try {
+        queued = await waitForBuildLock(now);
+      } catch (error) {
+        finishBuildStartupStep('lock-wait', 'error', {
+          errorMessage: getErrorMessage(error),
+        });
+        finishBuildSessionTransition({
+          level: 'error',
+          message: 'Failed while waiting for build lock.',
+        });
+        console.error('[ShapeBuildProgressStep] lock wait failed', error);
+        return false;
+      }
       if (!queued) {
+        finishBuildStartupStep('lock-wait', 'cancelled', {
+          reason: 'cancelled-while-waiting-lock',
+        });
         finishBuildSessionTransition({
           level: 'warning',
           message: 'Build start was cancelled while waiting for lock.',
         });
         return false;
       }
+      finishBuildStartupStep('lock-wait', 'success', {
+        queued,
+      });
     }
     coordinator.writeActiveSessionId(String(activeNodeId));
     advanceBuildSessionTransitionPhase('saving-draft');
+    beginBuildStartupStep('draft-save', {
+      source: startupSource,
+    });
     const saved = await saveDraftBeforeBuild();
     if (!saved) {
+      finishBuildStartupStep('draft-save', 'error', {
+        reason: 'save-draft-returned-false',
+      });
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
       finishBuildSessionTransition({
@@ -1707,33 +1882,78 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       });
       return false;
     }
+    finishBuildStartupStep('draft-save', 'success');
     try {
       advanceBuildSessionTransitionPhase('initializing-worker');
-      await bridgeRef.current.initialize();
+      beginBuildStartupStep('worker-initialize', {
+        source: startupSource,
+      });
+      try {
+        await bridgeRef.current.initialize();
+        finishBuildStartupStep('worker-initialize', 'success');
+      } catch (error) {
+        finishBuildStartupStep('worker-initialize', 'error', {
+          errorMessage: getErrorMessage(error),
+        });
+        throw error;
+      }
       if (shouldResumeSession) {
         advanceBuildSessionTransitionPhase('starting-session');
         const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-        await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+        beginBuildStartupStep('session-resume-request', {
+          source: startupSource,
+          policy,
+        });
+        try {
+          await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+          finishBuildStartupStep('session-resume-request', 'success');
+        } catch (error) {
+          finishBuildStartupStep('session-resume-request', 'error', {
+            errorMessage: getErrorMessage(error),
+          });
+          throw error;
+        }
         emitBuildSessionTransitionLog('info', 'resume session requested', {
           forceRestart: Boolean(options?.forceRestart),
-          source: options?.autoResume ? 'auto' : 'manual',
+          source: startupSource,
+        });
+        beginBuildStartupStep('session-status-persist', {
+          mode: 'resume',
+          processingStatus: 'processing',
         });
         const persisted = await persistDraftPatch({
           processingStatus: 'processing',
           stopReason: undefined,
         });
         if (!persisted) {
+          finishBuildStartupStep('session-status-persist', 'error', {
+            reason: 'persist-resume-status-failed',
+          });
           throw new Error('Failed to persist resume status.');
         }
+        finishBuildStartupStep('session-status-persist', 'success', {
+          mode: 'resume',
+          processingStatus: 'processing',
+        });
         advanceBuildSessionTransitionPhase('awaiting-first-task', {
           level: 'info',
           message: 'Build resumed. Waiting for worker task updates...',
         });
+        beginBuildStartupStep('awaiting-first-task', {
+          source: startupSource,
+          mode: 'resume',
+        });
         return true;
       }
       advanceBuildSessionTransitionPhase('building-payloads');
+      beginBuildStartupStep('payload-build', {
+        source: startupSource,
+      });
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads) {
+        finishBuildStartupStep('payload-build', 'error', {
+          reason: 'payload-preparation-returned-null',
+        });
         releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
         finishBuildSessionTransition({
@@ -1742,6 +1962,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         });
         return false;
       }
+      finishBuildStartupStep('payload-build', 'success', {
+        payloadCount: payloads.length,
+      });
       if (payloads.length === 0) {
         const finishedAt = Date.now();
         const persisted = await persistDraftPatch({
@@ -1762,7 +1985,24 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       }
       advanceBuildSessionTransitionPhase('starting-session');
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
-      const statusResult = await bridgeRef.current.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+      beginBuildStartupStep('session-start-request', {
+        source: startupSource,
+        policy,
+        payloadCount: payloads.length,
+      });
+      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
+      try {
+        statusResult = await bridgeRef.current.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+        finishBuildStartupStep('session-start-request', 'success', {
+          status: statusResult.status,
+          hasError: Boolean(statusResult.error),
+        });
+      } catch (error) {
+        finishBuildStartupStep('session-start-request', 'error', {
+          errorMessage: getErrorMessage(error),
+        });
+        throw error;
+      }
       emitBuildSessionTransitionLog('info', 'start session response', {
         status: statusResult.status,
         hasError: Boolean(statusResult.error),
@@ -1772,10 +2012,22 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         : statusResult.status === 'failed'
           ? 'failed'
           : 'processing';
+      beginBuildStartupStep('session-status-persist', {
+        mode: 'start',
+        processingStatus: nextStatus,
+      });
       const persisted = await persistDraftPatch({ processingStatus: nextStatus });
       if (!persisted) {
+        finishBuildStartupStep('session-status-persist', 'error', {
+          reason: 'persist-start-status-failed',
+          processingStatus: nextStatus,
+        });
         throw new Error('Failed to persist start status.');
       }
+      finishBuildStartupStep('session-status-persist', 'success', {
+        mode: 'start',
+        processingStatus: nextStatus,
+      });
       if (nextStatus === 'failed') {
         finishBuildSessionTransition({
           level: 'error',
@@ -1790,6 +2042,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         advanceBuildSessionTransitionPhase('awaiting-first-task', {
           level: 'info',
           message: 'Build requested. Waiting for worker task updates...',
+        });
+        beginBuildStartupStep('awaiting-first-task', {
+          source: startupSource,
+          mode: 'start',
         });
       }
       return true;
@@ -1811,6 +2067,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildDownloadTaskPayloads,
     coordinator,
     emitBuildSessionTransitionLog,
+    beginBuildStartupStep,
+    finishBuildStartupStep,
     finishBuildSessionTransition,
     persistDraftPatch,
     releaseBuildLock,

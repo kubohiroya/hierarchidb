@@ -22,7 +22,7 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setTransformPlannedTotal } from './shapeProgressPlan.ts';
-import { initGeos, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformStageParams = {
   nodeId: NodeId;
@@ -262,18 +262,6 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
     }));
-
-    if (transformConfig.geometryEngine === 'geos') {
-      console.warn('[ShapeTransform][PipelineDiagnostics] init geos start', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-      }));
-      await initGeos();
-      console.warn('[ShapeTransform][PipelineDiagnostics] init geos done', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-      }));
-    }
 
     const transformByBandAbortController = new AbortController();
     console.warn('[ShapeTransform][PipelineDiagnostics] createTransformByBandHandler start', JSON.stringify({

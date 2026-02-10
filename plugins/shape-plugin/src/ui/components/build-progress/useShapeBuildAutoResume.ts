@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { BuildStatus } from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 
 type Args = {
   activeNodeId: NodeId | null;

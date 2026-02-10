@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
 
+const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
+
 export default defineConfig({
   esbuild: {
     jsx: 'automatic',
@@ -10,10 +12,21 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    // Use threads pool to avoid child-process kill errors in sandboxed CI
-    pool: 'threads',
-    // maxThreads: 1,
-    // minThreads: 1,
+    // Keep thread pool by default for CI stability; allow opt-in fork pool for local diagnostics.
+    pool: useForkPool ? 'forks' : 'threads',
+    poolOptions: useForkPool
+      ? {
+        forks: {
+          singleFork: true,
+          execArgv: ['--max-old-space-size=8192'],
+        },
+      }
+      : {
+        threads: {
+          minThreads: 1,
+          maxThreads: 1,
+        },
+      },
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',

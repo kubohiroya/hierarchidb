@@ -1,7 +1,7 @@
 import {
   executePauseBuildFlow as executePauseBuildFlowFromComponents,
   type PauseBuildReason as PauseBuildReasonFromComponents,
-} from '@hierarchidb/components';
+} from '@hierarchidb/components/build-session';
 
 /**
  * @deprecated Use `executePauseBuildFlow` from `@hierarchidb/components` directly.

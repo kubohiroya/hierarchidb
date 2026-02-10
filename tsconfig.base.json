@@ -307,12 +307,6 @@
       "@hierarchidb/ui-worker-provider/*": [
         "packages/ui/worker-provider/dist/*"
       ],
-      "geos-wasm": [
-        "types/geos-wasm.d.ts"
-      ],
-      "geos-wasm/helpers": [
-        "types/geos-wasm.d.ts"
-      ],
       "react-transition-group/Transition": [
         "types/react-transition-group/Transition.d.ts"
       ],

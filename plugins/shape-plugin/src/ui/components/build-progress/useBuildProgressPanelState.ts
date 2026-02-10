@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
-import type { BuildStatus } from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { useTranslation } from '../../i18n.js';
 import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';

@@ -2,12 +2,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  FormControl,
-  FormHelperText,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Typography,
   Tooltip,
@@ -32,13 +27,12 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
     t,
     baseTransformConfig,
     handleTransformWorkersChange,
-    handleGeometryEngineChange,
   } = useTransformConfigSectionView({ config, onChange });
 
-  const geometryEngine = baseTransformConfig.geometryEngine ?? 'turf';
-  const summaryHelp = geometryEngine === 'geos'
-    ? t('processing.transform.summaryHelpGeos', 'Transform runs geos with the configured tolerance.')
-    : t('processing.transform.summaryHelpTurf', 'Transform runs turf.simplify with the configured tolerance.');
+  const summaryHelp = t(
+    'processing.transform.summaryHelpTurf',
+    'Transform runs turf.simplify with the configured tolerance.',
+  );
 
   return (
     <Accordion defaultExpanded>
@@ -59,32 +53,6 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <FormControl fullWidth size="small" disabled={disabled}>
-                <InputLabel id="shape-transform-geometry-engine-label">
-                  {t('processing.transform.geometryEngineTitle', 'Geometry Engine')}
-                </InputLabel>
-                <Select
-                  labelId="shape-transform-geometry-engine-label"
-                  label={t('processing.transform.geometryEngineTitle', 'Geometry Engine')}
-                  value={geometryEngine}
-                  onChange={(event) => handleGeometryEngineChange(event.target.value as 'turf' | 'geos')}
-                >
-                  <MenuItem value="turf">
-                    {t('processing.transform.geometryEngineOptionTurf', 'turf')}
-                  </MenuItem>
-                  <MenuItem value="geos">
-                    {t('processing.transform.geometryEngineOptionGeos', 'geos')}
-                  </MenuItem>
-                </Select>
-                <FormHelperText>
-                  {t(
-                    'processing.transform.geometryEngineHelp',
-                    'Selects the geometry engine used during transform.',
-                  )}
-                </FormHelperText>
-              </FormControl>
-            </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <WorkerNumberConfigCard
                 title={t('processing.transform.workersStage1', 'Transform Workers (Simplification)')}

@@ -74,12 +74,7 @@
     },
     "transform": {
       "title": "Transform",
-      "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。",
-      "summaryHelpGeos": "Transform は設定した tolerance を使って geos を実行します。",
-      "geometryEngineTitle": "ジオメトリエンジン",
-      "geometryEngineHelp": "Transform で使用するジオメトリエンジンを選択します。",
-      "geometryEngineOptionTurf": "turf",
-      "geometryEngineOptionGeos": "geos"
+      "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。"
     },
     "transformByZoom": {
       "title": "Transform by zoom"

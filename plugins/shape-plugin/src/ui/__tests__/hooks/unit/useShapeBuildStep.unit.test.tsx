@@ -24,6 +24,55 @@ vi.mock('../../../components/build-progress/useBuildProgress.ts', () => ({
   }),
 }));
 
+vi.mock('../../../components/build-progress/useShapeBuildStages.ts', () => ({
+  useShapeBuildStages: () => ([
+    { id: 'fetch', title: 'Fetch', icon: null },
+    { id: 'transform', title: 'Transform', icon: null },
+    { id: 'vt', title: 'VT Generation', icon: null },
+  ]),
+}));
+
+vi.mock('../../../components/build-progress/useShapeBuildTiming.ts', () => ({
+  useShapeBuildTiming: () => ({
+    timingSnapshot: { stageId: null, stageMs: 0 },
+    session: null,
+  }),
+}));
+
+vi.mock('../../../components/build-progress/useShapeBuildProgressSummary.ts', () => ({
+  useShapeBuildProgressSummary: () => ({
+    taskSummary: {},
+    aggregatedCounts: { total: 0, completed: 0, failed: 0, skipped: 0 },
+    stageProgress: {},
+    tasksByStage: {},
+    paneProgress: [],
+    displayStageId: undefined,
+    displayCounts: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+    rawDisplayCounts: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
+    hasProgressData: false,
+    stageRemainingMs: null,
+  }),
+}));
+
+vi.mock('../../../components/build-progress/useShapeBuildLabels.ts', () => ({
+  useShapeBuildLabels: () => ({
+    statusLabel: 'Ready to start stage',
+    warningMessage: null,
+    stageLabel: 'idle',
+    taskLabel: 'Ready',
+    taskUnitLabel: 'Tasks',
+  }),
+}));
+
+vi.mock('../../../components/build-progress/useShapeBuildAutoResume.ts', () => ({
+  useShapeBuildAutoResume: () => ({
+    canStartOrResume: true,
+    isStartPending: false,
+    startOrResume: vi.fn(async () => undefined),
+    clearStartPending: vi.fn(),
+  }),
+}));
+
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
@@ -41,8 +90,26 @@ vi.mock('@hierarchidb/ui-worker-provider', () => ({
   getWorkerClientHook: () => () => null,
 }));
 
-vi.mock('@hierarchidb/components', () => ({
+vi.mock('@hierarchidb/components/build-session', () => ({
+  executePauseBuildFlow: vi.fn(async () => undefined),
+  useBuildSessionTransition: () => ({
+    buildSessionTransition: {
+      active: false,
+      phase: 'idle',
+      startedAt: 0,
+    },
+    beginBuildSessionTransition: vi.fn(),
+    advanceBuildSessionTransitionPhase: vi.fn(),
+    finishBuildSessionTransition: vi.fn(),
+    emitBuildSessionTransitionLog: vi.fn(),
+    pushBuildSessionTransitionNotification: vi.fn(),
+  }),
+}));
+
+vi.mock('@hierarchidb/components/notify', () => ({
   notify: {
+    info: vi.fn(),
+    success: vi.fn(),
     warning: vi.fn(),
     error: vi.fn(),
   },

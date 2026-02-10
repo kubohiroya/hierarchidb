@@ -9,13 +9,33 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./build-session": {
+      "types": "./dist/build-session/index.d.ts",
+      "import": "./dist/build-session/index.js",
+      "default": "./dist/build-session/index.js"
+    },
+    "./notify": {
+      "types": "./dist/notify/index.d.ts",
+      "import": "./dist/notify/index.js",
+      "default": "./dist/notify/index.js"
+    },
+    "./build-status": {
+      "types": "./dist/build-status/index.d.ts",
+      "import": "./dist/build-status/index.js",
+      "default": "./dist/build-status/index.js"
+    },
+    "./build-stage": {
+      "types": "./dist/build-stage/index.d.ts",
+      "import": "./dist/build-stage/index.js",
+      "default": "./dist/build-stage/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/build-session/index.ts src/notify/index.ts src/build-status/index.ts src/build-stage/index.ts --config ../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },

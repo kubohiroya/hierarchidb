@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createStore } from 'jotai/vanilla';
 import { useHeapPressureGuard } from '@hierarchidb/ui-memory';
-import type { BuildStatus } from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 
 export const useBuildProgressStepState = (buildStatus: BuildStatus) => {
   const store = useMemo(() => createStore(), []);

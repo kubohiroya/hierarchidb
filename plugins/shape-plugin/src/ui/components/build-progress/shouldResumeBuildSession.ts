@@ -1,4 +1,4 @@
-import type { BuildStatus } from '@hierarchidb/components';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 
 type Params = {
   forceRestart?: boolean;

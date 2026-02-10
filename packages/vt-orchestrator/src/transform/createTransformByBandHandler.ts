@@ -1378,7 +1378,7 @@ export const createTransformByBandHandler = (
     throw new Error('transform requires tolerance');
   }
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
-  if (geometryEngine !== 'turf' && geometryEngine !== 'geos') {
+  if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
   }
   const geometryOps = createGeometryOps(geometryEngine);

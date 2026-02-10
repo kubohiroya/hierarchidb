@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { BuildStage } from '@hierarchidb/components';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { getStageConcurrencyWarning, type ShapeBuildConfigSnapshot, type ShapeBuildStage } from '../../utils/buildWarnings.js';

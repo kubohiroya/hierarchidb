@@ -1,5 +1,5 @@
 import { createElement, useMemo } from 'react';
-import type { BuildStage } from '@hierarchidb/components';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
 import {
   CloudDownload as CloudDownloadIcon,
   Tune as TuneIcon,

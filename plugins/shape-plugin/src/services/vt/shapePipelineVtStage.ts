@@ -21,7 +21,7 @@ import {
   readHeapSnapshot,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
-import { initGeos, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeVtStageParams = {
   nodeId: NodeId;
@@ -40,9 +40,6 @@ export type ShapeVtStageParams = {
 export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promise<void> => {
   const vtConfig = resolveVtConfig(params.buildConfig);
   const geometryEngine = params.buildConfig.transformConfig.geometryEngine ?? 'turf';
-  if (geometryEngine === 'geos') {
-    await initGeos();
-  }
   let existingVtTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'vt')
     : [];

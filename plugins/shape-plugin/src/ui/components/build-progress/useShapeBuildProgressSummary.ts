@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
-import type { BuildStage, BuildStatus } from '@hierarchidb/components';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,

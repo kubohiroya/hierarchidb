@@ -1,23 +1,15 @@
 import type { Feature, FeatureCollection, GeoJSON, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import area from '@turf/area';
 import bbox from '@turf/bbox';
+import bboxClip from '@turf/bbox-clip';
 import bboxPolygon from '@turf/bbox-polygon';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import booleanValid from '@turf/boolean-valid';
 import simplify from '@turf/simplify';
 import { cleanCoords } from '@turf/clean-coords';
 import { point } from '@turf/helpers';
-import { bboxClip, booleanValid } from '@turf/turf';
 import unkink from '@turf/unkink-polygon';
 import type { GeometryEngine } from './config.js';
-import {
-  geosArea,
-  geosBbox,
-  geosClip,
-  geosContains,
-  geosIsValid,
-  geosMakeValid,
-  geosSimplify,
-} from './geos/index.js';
 
 type Bbox = [number, number, number, number];
 
@@ -37,53 +29,13 @@ const toFeature = (geojson: GeoJSON): Feature => {
   return { type: 'Feature', geometry: geojson as Geometry, properties: {} };
 };
 
-const collectPolygons = (geojson: GeoJSON): Polygon[] => {
-  const geometries: Geometry[] = [];
-  if (geojson.type === 'FeatureCollection') {
-    for (const feature of geojson.features) {
-      if (feature.geometry) {
-        geometries.push(feature.geometry as Geometry);
-      }
-    }
-  } else if (geojson.type === 'Feature') {
-    if (geojson.geometry) geometries.push(geojson.geometry as Geometry);
-  } else {
-    geometries.push(geojson as Geometry);
-  }
-
-  const polygons: Polygon[] = [];
-  const pushGeometry = (geometry: Geometry): void => {
-    if (geometry.type === 'Polygon') {
-      polygons.push(geometry);
-      return;
-    }
-    if (geometry.type === 'MultiPolygon') {
-      for (const coords of geometry.coordinates) {
-        polygons.push({ type: 'Polygon', coordinates: coords });
-      }
-      return;
-    }
-    if (geometry.type === 'GeometryCollection') {
-      for (const child of geometry.geometries ?? []) {
-        pushGeometry(child);
-      }
-    }
-  };
-  geometries.forEach((geometry) => pushGeometry(geometry));
-  return polygons;
-};
-
 export const geometryArea = (geojson: GeoJSON, engine: GeometryEngine): number => {
-  if (engine === 'geos') {
-    return geosArea(geojson);
-  }
+  void engine;
   return area(geojson as Geometry | Feature | FeatureCollection);
 };
 
 export const geometryBbox = (geojson: GeoJSON, engine: GeometryEngine): Bbox | null => {
-  if (engine === 'geos') {
-    return geosBbox(geojson) ?? null;
-  }
+  void engine;
   const result = bbox(geojson as Geometry | Feature | FeatureCollection) as number[];
   if (result.length !== 4) return null;
   return [result[0] ?? 0, result[1] ?? 0, result[2] ?? 0, result[3] ?? 0];
@@ -99,9 +51,7 @@ export const geometryBboxClip = (
   bounds: Bbox,
   engine: GeometryEngine,
 ): Feature | null => {
-  if (engine === 'geos') {
-    return geosClip(feature, bounds) as Feature | null;
-  }
+  void engine;
   return bboxClip(feature, bounds) as Feature | null;
 };
 
@@ -110,11 +60,7 @@ export const geometrySimplify = <T extends GeoJSON>(
   engine: GeometryEngine,
   options: SimplifyOptions,
 ): T => {
-  if (engine === 'geos') {
-    return geosSimplify(geojson, options.tolerance, {
-      preserveTopology: options.preserveTopology ?? true,
-    }) as T;
-  }
+  void engine;
   return simplify(geojson as Feature | FeatureCollection, {
     tolerance: options.tolerance,
     highQuality: options.highQuality ?? false,
@@ -123,9 +69,7 @@ export const geometrySimplify = <T extends GeoJSON>(
 };
 
 export const geometryIsValid = (geojson: GeoJSON, engine: GeometryEngine): boolean => {
-  if (engine === 'geos') {
-    return geosIsValid(geojson);
-  }
+  void engine;
   const feature = toFeature(geojson);
   return booleanValid(feature);
 };
@@ -135,10 +79,7 @@ export const geometryPointInPolygon = (
   polygon: PolygonLike,
   engine: GeometryEngine,
 ): boolean => {
-  if (engine === 'geos') {
-    const pt = { type: 'Point', coordinates: coord } as const;
-    return geosContains(polygon, pt);
-  }
+  void engine;
   const pt = point(coord);
   return booleanPointInPolygon(pt, polygon as PolygonLike);
 };
@@ -153,10 +94,7 @@ export const geometryUnkinkPolygons = (
   feature: Feature<Polygon | MultiPolygon>,
   engine: GeometryEngine,
 ): Polygon[] => {
-  if (engine === 'geos') {
-    const fixed = geosMakeValid(feature);
-    return collectPolygons(fixed);
-  }
+  void engine;
   const unkinked = unkink(feature);
   return unkinked.features
     .map((entry) => entry.geometry)

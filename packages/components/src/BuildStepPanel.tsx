@@ -6,8 +6,7 @@ import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStag
 import type { BuildStepStageMenuItem, BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
 import { BuildControlCard } from './BuildControlCard.tsx';
 import type { BuildStage } from './BuildStage.tsx';
-
-export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+import type { BuildStatus } from './build-status/BuildStatus.ts';
 
 export type BuildStepStageMenu = {
   items: BuildStepStageMenuItem[];
