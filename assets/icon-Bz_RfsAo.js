@@ -1,1 +1,0 @@
-import"./vendor-react-OyekpE5j.js";import{Dr as e}from"./index.js";const t=e;var n=t;export{t as RoutePluginIcon,n as default};

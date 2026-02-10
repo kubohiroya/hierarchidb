@@ -1,0 +1,1 @@
+import"./vendor-react-OyekpE5j.js";import{Ar as e}from"./index.js";const t=e;var n=t;export{t as StylerPluginIcon,n as default};
