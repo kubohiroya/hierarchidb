@@ -291,6 +291,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const tasksRef = useRef<ShapeBuildTaskSummary[]>([]);
   const committedTasksRef = useRef<ShapeBuildTaskSummary[]>([]);
   const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
+  const completedTasksRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
@@ -339,12 +340,17 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
     const progress = resolveProgressValue(task.progress);
-    return {
+    const normalized: ShapeBuildTaskSummary = {
       ...task,
       stage: resolveTaskStage(task),
       status: normalizeTaskStatus(task.status, progress),
       progress: progress >= 100 ? 100 : task.progress,
     };
+    const completedTask = completedTasksRef.current.get(normalized.taskId);
+    if (normalized.status === 'running' && completedTask) {
+      return completedTask;
+    }
+    return normalized;
   }, []);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
@@ -359,6 +365,11 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const nextMap = new Map(tasksMapRef.current);
     nextMap.set(task.taskId, task);
     tasksMapRef.current = nextMap;
+    if (task.status === 'completed') {
+      const nextCompletedMap = new Map(completedTasksRef.current);
+      nextCompletedMap.set(task.taskId, task);
+      completedTasksRef.current = nextCompletedMap;
+    }
     return { next: upsertTaskInSortedList(baseList, task), changed: true } as const;
   }, []);
 
@@ -366,6 +377,13 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const snapshotTasks = next.map(resolveTaskSummary);
     const resolved = mergeSnapshotWithCurrent(snapshotTasks, tasksMapRef.current);
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
+    const nextCompletedMap = new Map(completedTasksRef.current);
+    resolved.forEach((task) => {
+      if (task.status === 'completed') {
+        nextCompletedMap.set(task.taskId, task);
+      }
+    });
+    completedTasksRef.current = nextCompletedMap;
     scheduleFlush(resolved, !areTaskListsEquivalentForView(committedTasksRef.current, resolved));
     if (errorRef.current !== null) {
       setError(null);
@@ -398,6 +416,9 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const nextMap = new Map(tasksMapRef.current);
     nextMap.delete(taskId);
     tasksMapRef.current = nextMap;
+    const nextCompletedMap = new Map(completedTasksRef.current);
+    nextCompletedMap.delete(taskId);
+    completedTasksRef.current = nextCompletedMap;
     const current = pendingTasksRef.current ?? committedTasksRef.current;
     const next = removeTaskFromList(current, taskId);
     scheduleFlush(next, true);
@@ -413,6 +434,11 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     tasksRef.current = tasks;
     committedTasksRef.current = tasks;
     tasksMapRef.current = new Map(tasks.map((task) => [task.taskId, task]));
+    completedTasksRef.current = new Map(
+      tasks
+        .filter((task) => task.status === 'completed')
+        .map((task) => [task.taskId, task]),
+    );
   }, []);
 
   const syncLoadingRef = useCallback((isLoading: boolean) => {
