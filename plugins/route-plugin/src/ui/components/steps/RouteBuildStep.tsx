@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
   Dialog,
   DialogActions,
@@ -12,13 +11,16 @@ import {
   Typography,
 } from '@mui/material';
 import { CheckCircle, CloudDownload, Tune } from '@mui/icons-material';
-import { BuildProgressPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
+import {
+  BuildSessionProgressPanel,
+  type BuildStage,
+  type BuildStatus,
+} from '@hierarchidb/components';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import { proxy } from 'comlink';
-import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/route-api';
+import type { IdeGsmImportProgress } from '@hierarchidb/route-api';
 import type {
   IdeGsmRouteError,
   RouteTransportSelection,
@@ -30,12 +32,6 @@ import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
 import {
-  createSessionCoordinator,
-  type HeartbeatRecord,
-  type SessionTabState,
-  type SessionLockHandle,
-} from '@hierarchidb/session-coordinator';
-import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,
   getBuildMonitorKey,
@@ -44,6 +40,10 @@ import {
   recordBuildStart,
   type BuildMonitorStage,
 } from '@hierarchidb/ui-monitoring';
+import {
+  useRouteBuildSessionLifecycle,
+  type RouteBuildSessionTransitionPhase,
+} from './useRouteBuildSessionLifecycle.ts';
 
 interface RouteBuildStepProps {
   draft: RouteUpdaterPayload;
@@ -99,6 +99,28 @@ const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 const DEFAULT_BUFFER = 256;
 
+const getRouteBuildTransitionStatusLabel = (
+  t: (key: string, fallback?: string) => string,
+  phase: RouteBuildSessionTransitionPhase | 'idle',
+): string => {
+  switch (phase) {
+    case 'acquiring-lock':
+      return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
+    case 'initializing-worker':
+      return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
+    case 'fetch-stage':
+      return t('stage.status.fetching', 'Build running (fetch stage)...');
+    case 'transform-stage':
+      return t('stage.status.transforming', 'Build running (transform stage)...');
+    case 'vt-stage':
+      return t('stage.status.vt', 'Build running (vector tile stage)...');
+    case 'finalizing':
+      return t('stage.status.finalizing', 'Finalizing build result...');
+    default:
+      return t('stage.status.starting', 'Starting stage...');
+  }
+};
+
 const TRANSPORT_SELECTION_LABELS: Record<RouteTransportSelection, { key: string; fallback: string }> = {
   air: { key: 'transportModes.air', fallback: 'Air' },
   sea: { key: 'transportModes.sea', fallback: 'Sea' },
@@ -135,15 +157,8 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
-  const coordinator = useMemo(() => (
-    createSessionCoordinator({
-      channelName: 'sessions',
-      pollIntervalTimeout: 3000,
-      quietThresholdTimeout: 5000,
-      semaphoreTtlTimeout: 10000,
-    })
-  ), []);
   const routeData = useMemo(() => getRouteUpdaterPayload(draft), [draft]);
+  const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
   const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('stage.notConfigured', 'Not configured');
   const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('stage.notConfigured', 'Not configured');
   const transportLabel = resolveTransportLabel(draft, t);
@@ -183,19 +198,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     };
   }, [draft]);
 
-  const [status, setStatus] = useState<BuildStatus>('idle');
-  const [overallProgress, setOverallProgress] = useState(0);
-  const [isPausePending, setIsPausePending] = useState(false);
-  useEffect(() => {
-    if (!isPausePending) return;
-    if (status !== 'running') {
-      setIsPausePending(false);
-    }
-  }, [isPausePending, status]);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
-  const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
-  const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
-  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [completionSnapshot, setCompletionSnapshot] = useState<{
     status: BuildStatus;
@@ -204,230 +207,13 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     taskMessage?: string;
     reason?: string;
   } | null>(null);
-  const [crashSuspectOpen, setCrashSuspectOpen] = useState(false);
-  const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
-  const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
-  const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
-  const closeCrashSuspect = useCallback(() => {
-    setCrashSuspectOpen(false);
-    setCrashSuspectMessage(null);
-    crashCheckStartedAtRef.current = Date.now();
-  }, []);
-  const closeSuspendSuspect = useCallback(() => {
-    setSuspendSuspectOpen(false);
-    setSuspendSuspectMessage(null);
-    crashCheckStartedAtRef.current = Date.now();
-  }, []);
   const completionStatusRef = useRef<BuildStatus | null>(null);
-  const buildInFlightRef = useRef(false);
-  const tabIdRef = useRef<string>(coordinator.getTabId());
-  const lockRef = useRef<SessionLockHandle | null>(null);
-  const lockKeyRef = useRef<string | null>(null);
-  const [isLockOwner, setIsLockOwner] = useState(false);
-  const [remoteHeartbeat, setRemoteHeartbeat] = useState<HeartbeatRecord<BuildStatus, { percentage: number }> | null>(null);
-  const lastHeartbeatPruneAtRef = useRef<number | null>(null);
-  const localTabStateRef = useRef<SessionTabState>('active');
-  const lastAutoResumeAtRef = useRef<number | null>(null);
-  const crashCheckStartedAtRef = useRef<number>(Date.now());
-  const suspendTimeout = coordinator.quietThresholdTimeout * 3;
   const heapPauseRef = useRef<number | null>(null);
-  const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
-  const sessionId = routeNodeId ? String(routeNodeId) : null;
-  const lockKey = useMemo(() => (
-    sessionId ? `route:${sessionId}` : null
-  ), [sessionId]);
-  const isWebLockSupported = coordinator.isWebLockSupported();
-  const remoteUpdatedAt = remoteHeartbeat?.updatedAt ?? null;
-  const remoteExpiresAt = remoteHeartbeat?.expiresAt ?? null;
-  const remoteTabState = remoteHeartbeat?.tabState ?? null;
-  const remoteTabId = remoteHeartbeat?.tabId ?? null;
   const crashInsight = useRouteBuildCrashInsight({ draft, nodeId: routeNodeId ? String(routeNodeId) : null });
   const monitorKey = useMemo(
     () => getBuildMonitorKey(buildMonitorConfig, routeNodeId ? String(routeNodeId) : null),
     [routeNodeId],
   );
-  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
-    enabled: status === 'running' || status === 'paused',
-    workerEnabled: false,
-  });
-
-  const releaseBuildLock = useCallback(() => {
-    const lock = lockRef.current;
-    if (!lock) return;
-    lock.release();
-    lockRef.current = null;
-    lockKeyRef.current = null;
-    setIsLockOwner(false);
-  }, []);
-
-  const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
-    if (!lockKey) return false;
-    if (lockRef.current) return true;
-    if (!isWebLockSupported) {
-      if (options?.notifyOnFailure) {
-        notify.error('Web Locks API is unavailable.');
-      }
-      return false;
-    }
-    const lock = await coordinator.tryAcquireSessionLock(lockKey);
-    if (!lock) {
-      if (options?.notifyOnFailure) {
-        notify.info('Another tab is already running this build.');
-      }
-      return false;
-    }
-    lockRef.current = lock;
-    lockKeyRef.current = lockKey;
-    setIsLockOwner(true);
-    return true;
-  }, [coordinator, isWebLockSupported, lockKey]);
-
-  useEffect(() => {
-    if (!lockKeyRef.current) return;
-    if (lockKeyRef.current === lockKey) return;
-    releaseBuildLock();
-  }, [lockKey, releaseBuildLock]);
-
-  useEffect(() => {
-    return () => {
-      releaseBuildLock();
-    };
-  }, [releaseBuildLock]);
-
-  const stageProgress = useMemo(() => {
-    const map: Record<string, number> = {};
-    const ranges: Record<string, { start: number; end: number }> = {
-      fetch: { start: 0, end: FETCH_STAGE_MAX },
-      transform: { start: FETCH_STAGE_MAX, end: TRANSFORM_STAGE_MAX },
-      vt: { start: TRANSFORM_STAGE_MAX, end: VT_STAGE_MAX },
-    };
-    STAGES.forEach((stage) => {
-      const range = ranges[stage.id] ?? { start: 0, end: VT_STAGE_MAX };
-      if (overallProgress <= range.start) {
-        map[stage.id] = 0;
-        return;
-      }
-      if (overallProgress >= range.end) {
-        map[stage.id] = 100;
-        return;
-      }
-      const denom = Math.max(1, range.end - range.start);
-      map[stage.id] = Math.round(((overallProgress - range.start) / denom) * 100);
-    });
-    return map;
-  }, [overallProgress]);
-
-  useEffect(() => {
-    if (!heapEvent) return;
-    setHeapDialogOpen(true);
-  }, [heapEvent]);
-
-  useEffect(() => {
-    if (status !== 'running') {
-      setIsPausePending(false);
-    }
-  }, [status]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const handleVisibility = () => {
-      const isHidden = document.visibilityState === 'hidden';
-      localTabStateRef.current = isHidden ? 'hidden' : 'active';
-    };
-    const handlePageHide = () => {
-      localTabStateRef.current = 'frozen';
-    };
-    handleVisibility();
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('pagehide', handlePageHide);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('pagehide', handlePageHide);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    if (status !== 'running') return;
-    if (!isLockOwner) return;
-    const tick = () => {
-      const now = Date.now();
-      const activeSessionId = coordinator.readActiveSessionId();
-      if (activeSessionId !== sessionId) return;
-      void coordinator.writeHeartbeat({
-        sessionId,
-        status,
-        progress: { percentage: overallProgress },
-        tabState: localTabStateRef.current,
-        lockOwner: true,
-        timestamp: now,
-      });
-    };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator, isLockOwner, overallProgress, sessionId, status]);
-
-  useEffect(() => {
-    if (!remoteHeartbeat) return;
-    if (isLockOwner) return;
-    if (remoteHeartbeat.status && remoteHeartbeat.status !== status) {
-      setStatus(remoteHeartbeat.status);
-    }
-    const nextProgress = remoteHeartbeat.progress?.percentage;
-    if (typeof nextProgress === 'number' && Number.isFinite(nextProgress)) {
-      setOverallProgress(nextProgress);
-    }
-  }, [isLockOwner, remoteHeartbeat, status]);
-
-  useEffect(() => {
-    if (status !== 'running') {
-      heapPauseRef.current = null;
-      return;
-    }
-    if (!heapEvent) return;
-    if (heapPauseRef.current === heapEvent.timestamp) return;
-    heapPauseRef.current = heapEvent.timestamp;
-    setStatus('paused');
-    setHeapDialogOpen(true);
-  }, [heapEvent, status]);
-
-  useEffect(() => {
-    if (!monitorKey) return;
-    if (status !== 'running') return;
-    const startedAt = draft.buildStartedAt ?? Date.now();
-    recordBuildStart(buildMonitorConfig, monitorKey, {
-      nodeId: routeNodeId ? String(routeNodeId) : undefined,
-      startedAt,
-    });
-    const interval = window.setInterval(() => {
-      appendBuildSample(buildMonitorConfig, monitorKey, {
-        timestamp: Date.now(),
-        stage: resolveMonitorStage(ideGsmPhase?.phase),
-        ...getMemorySnapshot(),
-      });
-    }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [draft.buildStartedAt, ideGsmPhase?.phase, monitorKey, routeNodeId, status]);
-
-  useEffect(() => {
-    if (!monitorKey) return;
-    if (status !== 'completed' && status !== 'failed') return;
-    recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
-  }, [monitorKey, status]);
-
-
-  const errorColumns = useMemo<GridColumn<IdeGsmRouteError>[]>(() => ([
-    { id: 'rowNumber', label: t('stage.errors.columns.row', 'Row'), width: 90, sortable: true },
-    { id: 'start', label: t('stage.errors.columns.start', 'Start'), width: 160 },
-    { id: 'end', label: t('stage.errors.columns.end', 'End'), width: 160 },
-    { id: 'reason', label: t('stage.errors.columns.reason', 'Reason'), width: 360 },
-  ]), [t]);
-
   const mapIdeGsmProgress = useCallback((progress: IdeGsmImportProgress): number => {
     const total = progress.total ?? 0;
     const processed = progress.processed ?? 0;
@@ -476,6 +262,120 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         return 'IDE-GSM';
     }
   }, [t]);
+
+  const {
+    status,
+    setStatus,
+    overallProgress,
+    setOverallProgress,
+    isPausePending,
+    ideGsmPhase,
+    errorRows,
+    errorDialogOpen,
+    setErrorDialogOpen,
+    buildSessionTransition,
+    crashSuspectOpen,
+    crashSuspectMessage,
+    suspendSuspectOpen,
+    suspendSuspectMessage,
+    closeCrashSuspect,
+    closeSuspendSuspect,
+    runIdeGsmBuild,
+    handlePause,
+    isWebLockSupported,
+  } = useRouteBuildSessionLifecycle({
+    api,
+    initialize,
+    draft,
+    routeData,
+    onUpdate,
+    routeNodeId,
+    resolveZoomRange,
+    resolveVectorTileConfig,
+    mapIdeGsmProgress,
+    fetchStageMax: FETCH_STAGE_MAX,
+    transformStageMax: TRANSFORM_STAGE_MAX,
+    vtStageMax: VT_STAGE_MAX,
+    t,
+  });
+  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
+    enabled: status === 'running' || status === 'paused',
+    workerEnabled: false,
+  });
+
+  const stageProgress = useMemo(() => {
+    const map: Record<string, number> = {};
+    const ranges: Record<string, { start: number; end: number }> = {
+      fetch: { start: 0, end: FETCH_STAGE_MAX },
+      transform: { start: FETCH_STAGE_MAX, end: TRANSFORM_STAGE_MAX },
+      vt: { start: TRANSFORM_STAGE_MAX, end: VT_STAGE_MAX },
+    };
+    STAGES.forEach((stage) => {
+      const range = ranges[stage.id] ?? { start: 0, end: VT_STAGE_MAX };
+      if (overallProgress <= range.start) {
+        map[stage.id] = 0;
+        return;
+      }
+      if (overallProgress >= range.end) {
+        map[stage.id] = 100;
+        return;
+      }
+      const denom = Math.max(1, range.end - range.start);
+      map[stage.id] = Math.round(((overallProgress - range.start) / denom) * 100);
+    });
+    return map;
+  }, [overallProgress]);
+
+  useEffect(() => {
+    if (!heapEvent) return;
+    setHeapDialogOpen(true);
+  }, [heapEvent]);
+
+  useEffect(() => {
+    if (status !== 'running') {
+      heapPauseRef.current = null;
+      return;
+    }
+    if (!heapEvent) return;
+    if (heapPauseRef.current === heapEvent.timestamp) return;
+    heapPauseRef.current = heapEvent.timestamp;
+    setStatus('paused');
+    setHeapDialogOpen(true);
+  }, [heapEvent, status]);
+
+  useEffect(() => {
+    if (!monitorKey) return;
+    if (status !== 'running') return;
+    const startedAt = draft.buildStartedAt ?? Date.now();
+    recordBuildStart(buildMonitorConfig, monitorKey, {
+      nodeId: routeNodeId ? String(routeNodeId) : undefined,
+      startedAt,
+    });
+    const interval = window.setInterval(() => {
+      appendBuildSample(buildMonitorConfig, monitorKey, {
+        timestamp: Date.now(),
+        stage: resolveMonitorStage(ideGsmPhase?.phase),
+        ...getMemorySnapshot(),
+      });
+    }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [draft.buildStartedAt, ideGsmPhase?.phase, monitorKey, routeNodeId, status]);
+
+  useEffect(() => {
+    if (!monitorKey) return;
+    if (status !== 'completed' && status !== 'failed') return;
+    recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
+  }, [monitorKey, status]);
+
+
+  const errorColumns = useMemo<GridColumn<IdeGsmRouteError>[]>(() => ([
+    { id: 'rowNumber', label: t('stage.errors.columns.row', 'Row'), width: 90, sortable: true },
+    { id: 'start', label: t('stage.errors.columns.start', 'Start'), width: 160 },
+    { id: 'end', label: t('stage.errors.columns.end', 'End'), width: 160 },
+    { id: 'reason', label: t('stage.errors.columns.reason', 'Reason'), width: 360 },
+  ]), [t]);
 
   const completionStageLabel = useMemo(() => {
     if (ideGsmPhase) return resolveIdeGsmLabel(ideGsmPhase);
@@ -537,303 +437,6 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     status,
   ]);
 
-  const runIdeGsmBuild = useCallback(async (options?: { autoResume?: boolean }) => {
-    if (buildInFlightRef.current) return;
-    if (!sessionId) {
-      notify.error(t('stage.errors.missingNode', 'Route node is missing.'));
-      return;
-    }
-    if (!api) {
-      notify.error(t('stage.errors.missingApi', 'Worker API is unavailable.'));
-      return;
-    }
-    const dataSourceName = (draft as { dataSourceName?: string }).dataSourceName;
-    if (dataSourceName !== 'ide-gsm') {
-      notify.info(t('stage.errors.unsupportedSource', 'Selected data source is not supported yet.'));
-      return;
-    }
-    const sourceId = (draft as { tabularSourceId?: string }).tabularSourceId;
-    if (!sourceId) {
-      notify.error(t('stage.errors.missingSource', 'IDE-GSM source is required.'));
-      return;
-    }
-
-    const now = Date.now();
-    const hasRunner = coordinator.isRunnerTab(now);
-    const activeSessionId = coordinator.readActiveSessionId();
-    if (hasRunner && activeSessionId && activeSessionId !== sessionId) {
-      notify.info('Another build session is active in this tab.');
-      return;
-    }
-    const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
-    if (!acquired) {
-      return;
-    }
-    if (!options?.autoResume) {
-      coordinator.writeActiveSessionId(sessionId);
-    } else if (!activeSessionId) {
-      coordinator.writeActiveSessionId(sessionId);
-    }
-    buildInFlightRef.current = true;
-    setStatus('running');
-    setOverallProgress(0);
-    setErrorRows([]);
-    setErrorDialogOpen(false);
-    setIdeGsmPhase(null);
-    onUpdate({
-      processingStatus: 'processing',
-      buildStartedAt: draft.buildStartedAt ?? Date.now(),
-      buildFinishedAt: undefined,
-    });
-    try {
-      await initialize();
-      const resolvedRouteNodeId = routeNodeId as NodeId;
-      const routeMutation = await api.getRouteMutationAPI();
-      const result = await routeMutation.importIdeGsmRoutes(
-        {
-          nodeId: resolvedRouteNodeId,
-          tabularSourceId: sourceId,
-          chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
-        },
-        proxy((progress: IdeGsmImportProgress) => {
-          setIdeGsmPhase(progress);
-          setOverallProgress(mapIdeGsmProgress(progress));
-        }),
-      );
-
-      setErrorRows(result.errors);
-      if (result.errors.length > 0) {
-        setErrorDialogOpen(true);
-      }
-      setIdeGsmPhase(null);
-      setOverallProgress(FETCH_STAGE_MAX);
-
-      const [minZoom, maxZoom] = resolveZoomRange();
-      setOverallProgress(FETCH_STAGE_MAX + 1);
-      await routeMutation.buildRouteTileIndex({ nodeId: resolvedRouteNodeId, minZoom, maxZoom });
-      setOverallProgress(TRANSFORM_STAGE_MAX);
-
-      const vtConfig = resolveVectorTileConfig();
-      setOverallProgress(TRANSFORM_STAGE_MAX + 1);
-      await routeMutation.generateRouteVectorTiles({
-        nodeId: resolvedRouteNodeId,
-        minZoom,
-        maxZoom,
-        bufferSize: vtConfig.bufferSize,
-        inputFormat: vtConfig.inputFormat,
-        inputCompression: vtConfig.inputCompression,
-      });
-
-      setStatus('completed');
-      setOverallProgress(VT_STAGE_MAX);
-      onUpdate({ processingStatus: 'completed', processedAt: Date.now(), buildFinishedAt: Date.now() });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      notify.error(message);
-      setStatus('failed');
-      onUpdate({ processingStatus: 'failed', processingError: message, buildFinishedAt: Date.now() });
-    } finally {
-      buildInFlightRef.current = false;
-      releaseBuildLock();
-      coordinator.clearActiveSessionId(sessionId);
-    }
-  }, [
-    api,
-    coordinator,
-    draft,
-    initialize,
-    mapIdeGsmProgress,
-    routeNodeId,
-    sessionId,
-    onUpdate,
-    resolveVectorTileConfig,
-    resolveZoomRange,
-    releaseBuildLock,
-    t,
-    tryAcquireBuildLock,
-  ]);
-
-  const shouldAutoResume = Boolean(
-    routeData.processingStatus === 'processing' && !routeData.buildFinishedAt,
-  );
-  const maybeAutoResume = useCallback(async () => {
-    if (!sessionId) return;
-    if (!shouldAutoResume) return;
-    if (status === 'running' || buildInFlightRef.current) return;
-    if (!isWebLockSupported) return;
-    const now = Date.now();
-    if (remoteUpdatedAt && remoteTabId && remoteTabId !== tabIdRef.current) {
-      if (now - remoteUpdatedAt < coordinator.quietThresholdTimeout) return;
-    }
-    if (remoteTabState && remoteTabState !== 'active' && remoteUpdatedAt && now - remoteUpdatedAt <= suspendTimeout) return;
-    const lastAutoResumeAt = lastAutoResumeAtRef.current;
-    if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
-    const acquired = await tryAcquireBuildLock();
-    if (!acquired) return;
-    lastAutoResumeAtRef.current = now;
-    await runIdeGsmBuild({ autoResume: true });
-  }, [
-    coordinator.quietThresholdTimeout,
-    isWebLockSupported,
-    remoteTabId,
-    remoteTabState,
-    remoteUpdatedAt,
-    runIdeGsmBuild,
-    sessionId,
-    shouldAutoResume,
-    status,
-    suspendTimeout,
-    tryAcquireBuildLock,
-  ]);
-
-  useEffect(() => {
-    if (!sessionId) {
-      setRemoteHeartbeat(null);
-      return;
-    }
-    let cancelled = false;
-    const tick = async () => {
-      const now = Date.now();
-      const record = await coordinator.readHeartbeat<BuildStatus, { percentage: number }>(sessionId);
-      if (cancelled) return;
-      setRemoteHeartbeat(record);
-      if (!lastHeartbeatPruneAtRef.current || now - lastHeartbeatPruneAtRef.current > coordinator.quietThresholdTimeout) {
-        lastHeartbeatPruneAtRef.current = now;
-        void coordinator.pruneHeartbeats(now);
-      }
-      void maybeAutoResume();
-    };
-    void tick();
-    const intervalId = setInterval(() => {
-      void tick();
-    }, coordinator.pollIntervalTimeout);
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [coordinator, maybeAutoResume, sessionId]);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    const shouldMonitor = shouldAutoResume;
-    if (!shouldMonitor) {
-      if (crashSuspectOpen) {
-        closeCrashSuspect();
-      }
-      if (suspendSuspectOpen) {
-        closeSuspendSuspect();
-      }
-      return;
-    }
-    if (status === 'running' || buildInFlightRef.current) {
-      if (crashSuspectOpen) {
-        closeCrashSuspect();
-      }
-      if (suspendSuspectOpen) {
-        closeSuspendSuspect();
-      }
-      return;
-    }
-    const now = Date.now();
-    const elapsedSinceStart = now - crashCheckStartedAtRef.current;
-    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
-    let cancelled = false;
-    const check = async () => {
-      if (!lockKey) return;
-      const lockState = await coordinator.probeSessionLock(lockKey);
-      if (cancelled) return;
-      const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
-      const heartbeatFresh = Boolean(
-        remoteUpdatedAt && (
-          (typeof remoteExpiresAt === 'number' && remoteExpiresAt > now)
-          || now - remoteUpdatedAt <= suspectWindowMs
-        )
-      );
-      const recentNonActive = Boolean(
-        remoteTabState
-        && remoteTabState !== 'active'
-        && remoteUpdatedAt
-        && now - remoteUpdatedAt <= suspendTimeout
-      );
-      if (lockState === 'held') {
-        if (recentNonActive || !heartbeatFresh) {
-          if (crashSuspectOpen) {
-            closeCrashSuspect();
-          }
-          if (!suspendSuspectOpen) {
-            setSuspendSuspectMessage(
-              t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
-            );
-            setSuspendSuspectOpen(true);
-          }
-          return;
-        }
-        if (crashSuspectOpen) {
-          closeCrashSuspect();
-        }
-        if (suspendSuspectOpen) {
-          closeSuspendSuspect();
-        }
-        return;
-      }
-      if (lockState === 'unsupported') {
-        if (!crashSuspectOpen) {
-          setCrashSuspectMessage(
-            t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-          );
-          setCrashSuspectOpen(true);
-        }
-        return;
-      }
-      if (heartbeatFresh) {
-        if (crashSuspectOpen) {
-          closeCrashSuspect();
-        }
-        if (suspendSuspectOpen) {
-          closeSuspendSuspect();
-        }
-        return;
-      }
-      if (suspendSuspectOpen) {
-        closeSuspendSuspect();
-      }
-      if (!crashSuspectOpen) {
-        setCrashSuspectMessage(
-          t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-        );
-        setCrashSuspectOpen(true);
-      }
-      setStatus('paused');
-      if (sessionId) {
-        onUpdate({ processingStatus: 'pending', buildFinishedAt: undefined });
-        coordinator.clearActiveSessionId(sessionId);
-      }
-      releaseBuildLock();
-    };
-    void check();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    closeCrashSuspect,
-    closeSuspendSuspect,
-    coordinator.pollIntervalTimeout,
-    coordinator.quietThresholdTimeout,
-    crashSuspectOpen,
-    lockKey,
-    onUpdate,
-    releaseBuildLock,
-    remoteExpiresAt,
-    remoteTabState,
-    remoteUpdatedAt,
-    sessionId,
-    shouldAutoResume,
-    status,
-    suspendSuspectOpen,
-    suspendTimeout,
-    t,
-  ]);
-
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="body2" color="text.secondary">
@@ -887,7 +490,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           {resolveIdeGsmLabel(ideGsmPhase)}
         </Typography>
       ) : null}
-      <BuildProgressPanel
+      <BuildSessionProgressPanel
         status={status}
         overallProgress={overallProgress}
         stages={STAGES}
@@ -896,12 +499,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         splitViewInitialSizesByBreakpoint={SPLITVIEW_INITIAL_SIZES}
         splitViewAutoCloseCountsByBreakpoint={SPLITVIEW_AUTO_CLOSE_COUNTS}
         onPause={() => {
-          if (isPausePending) return;
-          setIsPausePending(true);
-          setStatus('paused');
-          if (sessionId) {
-            coordinator.clearActiveSessionId(sessionId);
-          }
+          void handlePause('user-pause');
         }}
         onResume={isWebLockSupported && !isPausePending ? runIdeGsmBuild : undefined}
         onComplete={() => {
@@ -910,6 +508,54 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         }}
         pauseLoading={false}
         pausePending={isPausePending}
+        startPending={buildSessionTransition.active && status !== 'running'}
+        statusLabel={buildSessionTransition.active
+          ? getRouteBuildTransitionStatusLabel(t, buildSessionTransition.phase)
+          : undefined}
+        suppressStatusFallback
+        suspendDialog={{
+          open: suspendSuspectOpen,
+          onClose: () => closeSuspendSuspect(),
+          title: t('stage.progress.suspendSuspectTitle', 'Build tab suspended'),
+          message: suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+          closeLabel: t('common.close', 'Close'),
+        }}
+        crashDialog={{
+          open: crashSuspectOpen,
+          onClose: () => closeCrashSuspect(),
+          title: t('stage.progress.crashSuspectTitle', 'Build may have stopped'),
+          message: crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+          closeLabel: t('common.close', 'Close'),
+        }}
+        completionDialog={{
+          open: completionDialogOpen,
+          onClose: () => setCompletionDialogOpen(false),
+          title: completionSnapshot?.status === 'completed'
+            ? t('stage.progress.completedTitle', 'Build completed')
+            : t('stage.progress.failedTitle', 'Build failed'),
+          closeLabel: t('common.close', 'Close'),
+          content: (
+            <>
+              <Typography variant="body2">
+                {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+              </Typography>
+              {completionSnapshot?.status === 'failed' ? (
+                <>
+                  <Typography variant="body2">
+                    {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+                  </Typography>
+                  <Typography variant="body2">
+                    {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="body2">
+                  {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+                </Typography>
+              )}
+            </>
+          ),
+        }}
         footer={(
           <>
             <HeapPressureDialog
@@ -923,78 +569,6 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
               confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
               description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
             />
-            <Dialog
-              open={suspendSuspectOpen}
-              onClose={() => closeSuspendSuspect()}
-              maxWidth="sm"
-              fullWidth
-            >
-              <DialogTitle>{t('stage.progress.suspendSuspectTitle', 'Build tab suspended')}</DialogTitle>
-              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2">
-                  {suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.')}
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button onClick={() => closeSuspendSuspect()} variant="contained">
-                  {t('common.close', 'Close')}
-                </Button>
-              </DialogActions>
-            </Dialog>
-            <Dialog
-              open={crashSuspectOpen}
-              onClose={() => closeCrashSuspect()}
-              maxWidth="sm"
-              fullWidth
-            >
-              <DialogTitle>{t('stage.progress.crashSuspectTitle', 'Build may have stopped')}</DialogTitle>
-              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2">
-                  {crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')}
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button onClick={() => closeCrashSuspect()} variant="contained">
-                  {t('common.close', 'Close')}
-                </Button>
-              </DialogActions>
-            </Dialog>
-            <Dialog
-              open={completionDialogOpen}
-              onClose={() => setCompletionDialogOpen(false)}
-              maxWidth="sm"
-              fullWidth
-            >
-              <DialogTitle>
-                {completionSnapshot?.status === 'completed'
-                  ? t('stage.progress.completedTitle', 'Build completed')
-                  : t('stage.progress.failedTitle', 'Build failed')}
-              </DialogTitle>
-              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2">
-                  {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
-                </Typography>
-                {completionSnapshot?.status === 'failed' ? (
-                  <>
-                    <Typography variant="body2">
-                      {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
-                    </Typography>
-                    <Typography variant="body2">
-                      {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
-                    </Typography>
-                  </>
-                ) : (
-                  <Typography variant="body2">
-                    {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
-                  </Typography>
-                )}
-              </DialogContent>
-              <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
-                  {t('common.close', 'Close')}
-                </Button>
-              </DialogActions>
-            </Dialog>
             <Dialog
               open={errorDialogOpen}
               onClose={() => setErrorDialogOpen(false)}

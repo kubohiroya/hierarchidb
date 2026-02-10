@@ -102,6 +102,9 @@ export const useShapeBuildAutoResume = ({
       setIsStartPending(false);
     }
   }, [handleStartOrResume, hasFailedFetchTasks, isLockSupported, isStartPending]);
+  const clearStartPending = useCallback(() => {
+    setIsStartPending(false);
+  }, []);
 
   useEffect(() => {
     if (!activeNodeId || !canStartOrResume || isStartPending) return;
@@ -127,5 +130,6 @@ export const useShapeBuildAutoResume = ({
     canStartOrResume,
     isStartPending,
     startOrResume,
+    clearStartPending,
   };
 };

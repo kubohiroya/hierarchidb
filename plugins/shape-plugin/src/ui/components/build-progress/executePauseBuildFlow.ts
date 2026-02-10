@@ -1,27 +1,14 @@
-export type PauseBuildReason = 'route-leave' | 'user-pause';
+import {
+  executePauseBuildFlow as executePauseBuildFlowFromComponents,
+  type PauseBuildReason as PauseBuildReasonFromComponents,
+} from '@hierarchidb/components';
 
-type ExecutePauseBuildFlowArgs = {
-  reason: PauseBuildReason;
-  onPendingChange: (pending: boolean) => void;
-  pauseSession: (reason: PauseBuildReason) => Promise<void>;
-  persistPausedStatus: (reason: PauseBuildReason) => Promise<void>;
-  onError: (error: unknown) => void;
-};
+/**
+ * @deprecated Use `executePauseBuildFlow` from `@hierarchidb/components` directly.
+ */
+export const executePauseBuildFlow = executePauseBuildFlowFromComponents;
 
-export const executePauseBuildFlow = async ({
-  reason,
-  onPendingChange,
-  pauseSession,
-  persistPausedStatus,
-  onError,
-}: ExecutePauseBuildFlowArgs): Promise<void> => {
-  onPendingChange(true);
-  try {
-    await pauseSession(reason);
-    await persistPausedStatus(reason);
-  } catch (error) {
-    onError(error);
-  } finally {
-    onPendingChange(false);
-  }
-};
+/**
+ * @deprecated Use `PauseBuildReason` from `@hierarchidb/components` directly.
+ */
+export type PauseBuildReason = PauseBuildReasonFromComponents;

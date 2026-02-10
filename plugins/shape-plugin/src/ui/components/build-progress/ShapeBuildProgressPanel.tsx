@@ -21,7 +21,7 @@ import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
 import { type NodeId, toNodeType } from '@hierarchidb/core-types';
-import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
+import { BuildSessionProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
@@ -873,7 +873,7 @@ export const ShapeBuildProgressPanel = ({
   ]);
 
   return (
-    <BuildProgressPanel
+    <BuildSessionProgressPanel
       status={summary.buildStatus}
       overallProgress={summary.overallProgress}
       stages={stages}
@@ -915,6 +915,49 @@ export const ShapeBuildProgressPanel = ({
       controlRightContent={(
         <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
       )}
+      suspendDialog={{
+        open: suspendSuspectOpen,
+        onClose: () => suspendSuspectControls.close(),
+        title: t('stage.progress.suspendSuspectTitle', 'Build tab suspended'),
+        message: suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build is paused while another tab is in background.'),
+        closeLabel: t('common.close', 'Close'),
+      }}
+      crashDialog={{
+        open: crashSuspectOpen,
+        onClose: () => crashSuspectControls.close(),
+        title: t('stage.progress.crashSuspectTitle', 'Build may have stopped'),
+        message: crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+        closeLabel: t('common.close', 'Close'),
+      }}
+      completionDialog={{
+        open: completionDialogOpen,
+        onClose: () => setCompletionDialogOpen(false),
+        closeLabel: t('common.close', 'Close'),
+        title: completionSnapshot?.status === 'completed'
+          ? t('stage.progress.completedTitle', 'Build completed')
+          : t('stage.progress.failedTitle', 'Build failed'),
+        content: (
+          <>
+            <Typography variant="body2">
+              {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+            </Typography>
+            {completionSnapshot?.status === 'failed' ? (
+              <>
+                <Typography variant="body2">
+                  {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+                </Typography>
+                <Typography variant="body2">
+                  {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body2">
+                {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+              </Typography>
+            )}
+          </>
+        ),
+      }}
       footer={(
         <>
           <Snackbar
@@ -937,78 +980,6 @@ export const ShapeBuildProgressPanel = ({
               {warningMessage}
             </Alert>
           </Snackbar>
-          <Dialog
-            open={suspendSuspectOpen}
-            onClose={() => suspendSuspectControls.close()}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>{t('stage.progress.suspendSuspectTitle', 'Build tab suspended')}</DialogTitle>
-            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="body2">
-                {suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build is paused while another tab is in background.')}
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={() => suspendSuspectControls.close()} variant="contained">
-                {t('common.close', 'Close')}
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            open={crashSuspectOpen}
-            onClose={() => crashSuspectControls.close()}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>{t('stage.progress.crashSuspectTitle', 'Build may have stopped')}</DialogTitle>
-            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="body2">
-                {crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')}
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={() => crashSuspectControls.close()} variant="contained">
-                {t('common.close', 'Close')}
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            open={completionDialogOpen}
-            onClose={() => setCompletionDialogOpen(false)}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>
-              {completionSnapshot?.status === 'completed'
-                ? t('stage.progress.completedTitle', 'Build completed')
-                : t('stage.progress.failedTitle', 'Build failed')}
-            </DialogTitle>
-            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="body2">
-                {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
-              </Typography>
-              {completionSnapshot?.status === 'failed' ? (
-                <>
-                  <Typography variant="body2">
-                    {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
-                  </Typography>
-                  <Typography variant="body2">
-                    {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="body2">
-                  {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
-                </Typography>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
-                {t('common.close', 'Close')}
-              </Button>
-            </DialogActions>
-          </Dialog>
           {startWarning ? (
             <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
               <DialogTitle>{startWarning.title}</DialogTitle>

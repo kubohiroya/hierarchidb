@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { executePauseBuildFlow } from '../../../components/build-progress/executePauseBuildFlow.ts';
+import { executePauseBuildFlow } from '@hierarchidb/components';
 
 describe('executePauseBuildFlow', () => {
   it('keeps pending true until pause and persist both complete', async () => {

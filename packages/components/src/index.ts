@@ -22,6 +22,9 @@ export * from './sparkle-animation/index.ts';
 export * from './SelectionMatrix/index.js';
 export * from './BuildStepPanel.tsx';
 export * from './BuildProgressPanel.tsx';
+export * from './BuildSessionProgressPanel.tsx';
+export * from './useBuildSessionTransition.ts';
+export * from './executePauseBuildFlow.ts';
 
 export * from './BuildStepStagePanel.js';
 export * from './BuildStepStageFilterContext.tsx';
