@@ -1,0 +1,1 @@
+import{i as e,s as t}from"./src-ssdUIhqd.js";import"./flatgeobuf-DojBYwV7.js";const n=e=>({taskId:e.taskId,stage:e.stage,status:e.status,progress:e.progress,message:e.message??e.errorMessage});async function r(r){return(await t(new e,r)).map(n)}const i=async()=>{};var a=i;export{a as default,r as getBatchTasks,i as registerRouteWorkerStores};

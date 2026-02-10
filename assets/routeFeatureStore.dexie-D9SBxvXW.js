@@ -1,1 +1,0 @@
-import{o as e}from"../worker.js";function t(t){return e(t)}export{t as createRouteFeatureStoreDexie};

@@ -343,6 +343,16 @@
       "confirmTrashConfirm": "ゴミ箱に移動"
     }
   },
+  "tags": {
+    "detail": {
+      "connectingWorker": "Workerに接続中...",
+      "usageAndCreated": "使用回数: {{count}}",
+      "loading": "読み込み中...",
+      "notFound": "タグが見つかりません。",
+      "empty": "このタグが付けられたノードはありません。",
+      "noAssignedAt": "—"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "すべて選択",
