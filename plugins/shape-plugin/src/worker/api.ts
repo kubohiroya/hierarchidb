@@ -1071,6 +1071,30 @@ const stopSessionTracking = (nodeId: NodeId): void => {
   sessionSubscriptions.delete(key);
 };
 
+const clearStalePausedPipelineIfSessionMissing = async (
+  nodeId: NodeId,
+  sessionRecord: ShapeBuildSessionRecord | null,
+  source: 'startBatchProcess' | 'resumeBatchSession',
+): Promise<boolean> => {
+  const pipelineKey = String(nodeId);
+  if (!activePipelines.has(pipelineKey)) return false;
+  if (sessionRecord) return false;
+  const pauseState = pauseStates.get(pipelineKey);
+  if (!pauseState?.paused) return false;
+  const taskQueue = new VtTaskQueueDb();
+  const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
+  if (runningTasks.length > 0) return false;
+  activePipelines.delete(pipelineKey);
+  activePipelineRuns.delete(pipelineKey);
+  pauseStates.delete(pipelineKey);
+  stopSessionTracking(nodeId);
+  console.warn('[shapeBatchAPI] stale paused pipeline state cleared', {
+    nodeId,
+    source,
+  });
+  return true;
+};
+
 const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
@@ -1344,6 +1368,14 @@ export const shapeBatchAPI = {
 
     const nodeForSession = draftLike.treeNodeId ?? draftId;
     const pipelineKey = String(nodeForSession);
+    const previousSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null);
+    if (activePipelines.has(pipelineKey)) {
+      await clearStalePausedPipelineIfSessionMissing(
+        nodeForSession,
+        previousSession,
+        'startBatchProcess',
+      );
+    }
     if (activePipelines.has(pipelineKey)) {
       await emitProgressSnapshot(nodeForSession, 'startBatchProcess ignored: pipeline already active');
       return nodeForSession;
@@ -1361,7 +1393,6 @@ export const shapeBatchAPI = {
     activePipelineRuns.set(pipelineKey, pipelineRunId);
 
     const taskQueue = new VtTaskQueueDb();
-    const previousSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null);
     const previousBuildConfig = previousSession?.config && isBuildProcessConfig(previousSession.config)
       ? buildConfigFromSession(previousSession.config)
       : null;
@@ -1489,9 +1520,17 @@ export const shapeBatchAPI = {
       const nodeId = payload.nodeId as NodeId;
       if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');
       const buildContinuationPolicy = payload.buildContinuationPolicy as BuildContinuationPolicy | undefined;
+      const pipelineKey = String(nodeId);
+      let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      if (activePipelines.has(pipelineKey)) {
+        await clearStalePausedPipelineIfSessionMissing(
+          nodeId,
+          sessionRecord,
+          'resumeBatchSession',
+        );
+      }
       setPaused(nodeId, false);
       await emitProgressSnapshot(nodeId);
-      const pipelineKey = String(nodeId);
       const taskQueue = new VtTaskQueueDb();
       const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
       if (runningTasks.length > 0) {
@@ -1517,7 +1556,9 @@ export const shapeBatchAPI = {
         const handler = getShapeEntityHandler();
         const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
         if (!draftLike) return;
-        const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+        if (!sessionRecord) {
+          sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+        }
         const sessionConfig = sessionRecord?.config;
         let sessionBuildConfig: ShapeBuildConfig | null = null;
         if (sessionConfig) {
