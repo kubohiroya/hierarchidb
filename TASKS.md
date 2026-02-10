@@ -1,3 +1,23 @@
+2684) fix/shape/task-status-prevent-completed-to-running-regression (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: Shapeプラグインのタスク一覧で個別タスクが `Completed` 表示後に `Running` へ逆戻りしない／既存の task update/snapshot マージ挙動を壊さない／影響範囲の検証結果を TASKS.md に記録する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`
+- ロールバック手順: 上記ファイル差分を revert し、従来の task status マージロジックへ戻す
+- チェックリスト:
+  - `Completed` 到達済みタスクの最新スナップショット/更新イベント取り込み時に `Running` へ戻さない
+  - task delete / reset 時に completed キャッシュも同期削除する
+  - 影響範囲の test/typecheck/build を実行し結果を記録する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 21:50 JST Shapeプラグイン task list で `Completed -> Running` 逆遷移を防止する修正に着手。
+  - update: 2026-02-10 21:52 JST 原因は `useShapeBuildTaskSync.ts` の `resolveTaskSummary` が受信イベントをそのまま正規化し、既に完了確定した taskId でも後続の遅延 `running` update/snapshot を採用し得たこと。発生範囲は同ファイルの task 正規化〜マージ経路（`resolveTaskSummary` / `mergeTask` / `handleSnapshot`）。
+  - update: 2026-02-10 21:53 JST 修正として `completedTasksRef` を追加し、taskId 単位で completed 到達済みタスクを保持。`resolveTaskSummary` で後続 `running` を受信しても completed キャッシュを優先返却するよう変更。加えて `mergeTask`/`handleSnapshot` で completed キャッシュを更新し、`handleDelete`/`syncTasksRef` でも整合を維持。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` のみ。
+  - blocked: 2026-02-10 21:55 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` は corepack 経由 pnpm 取得時に `ENETUNREACH` で失敗（registry 到達不可）。
+  - blocked: 2026-02-10 21:55 JST `node_modules/.bin/turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` も内部 `pnpm run build` 呼び出しで同じ `ENETUNREACH` により失敗。
+  - blocked: 2026-02-10 21:55 JST 代替として `node_modules/.bin/vitest run plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` を実行したが、依存パッケージ alias 解決（`@hierarchidb/util`）が未ビルドで import 解決失敗。
+  - done: 2026-02-10 21:56 JST ネットワーク制限で turbo/pnpm ベース検証は完走不可。コード修正は完了し、検証未完了理由と代替実行結果を記録。
+
 2683) feat/map/floating-window-front-order-control-and-persist (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2682) refactor/map/modeless-windows-use-ui-floating-window
