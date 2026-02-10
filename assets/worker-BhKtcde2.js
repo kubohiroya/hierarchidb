@@ -1,0 +1,1 @@
+async function e(e={}){e.signal?.aborted}export{e as registerSpreadsheetWorkerStores};

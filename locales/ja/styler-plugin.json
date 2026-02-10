@@ -2,7 +2,7 @@
   "styleSettings": {
     "title": "スタイル設定",
     "description": "スタイル種別・値の列・対象プロパティを選択してからアルゴリズムを設定してください。",
-    "processing": "表データを処理しています…",
+    "processing": "表データをビルドしています…",
     "accordion": {
       "styleType": "スタイルタイプ",
       "targetProperty": "ターゲットプロパティ",
@@ -149,7 +149,7 @@
     }
   },
   "filtering": {
-    "processing": "表データを処理しています…"
+    "processing": "表データをビルドしています…"
   },
   "styleAlgorithm": {
     "title": "スタイルマッピング設定",

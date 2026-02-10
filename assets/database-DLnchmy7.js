@@ -1,1 +1,0 @@
-import{Ga as e,mo as t,un as n,ut as r}from"./index.js";import"./RouteDatabase-bKK2wh_P.js";e();async function i(){await n.delete(t(`route`))}export{r as RouteDB,r as RouteDatabase,i as clearDatabases};

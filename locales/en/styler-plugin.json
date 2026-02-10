@@ -2,7 +2,7 @@
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Select the style type, data source column, and target property before configuring algorithms.",
-    "processing": "Processing tabular data...",
+    "processing": "Building tabular data...",
     "accordion": {
       "styleType": "Style Type",
       "targetProperty": "Target Property",
@@ -149,7 +149,7 @@
     }
   },
   "filtering": {
-    "processing": "Processing tabular data..."
+    "processing": "Building tabular data..."
   },
   "styleAlgorithm": {
     "title": "Style Mapping Configuration",
