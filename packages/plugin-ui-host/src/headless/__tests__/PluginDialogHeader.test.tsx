@@ -64,7 +64,7 @@ describe('PluginDialogHeader', () => {
     headerLocationRef.searchStr = '';
     headerLocationRef.hash = '';
 
-    render(
+    const { container } = render(
       <ThemeProvider theme={createTheme()}>
         <PluginDialogProvider value={contextValue}>
           <PluginDialogHeader title="Create Folder" mode="create" />
@@ -79,6 +79,9 @@ describe('PluginDialogHeader', () => {
     expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
 
     const closeButton = screen.getByLabelText('Close dialog');
+    expect(closeButton).toHaveClass('MuiIconButton-sizeLarge');
+    const headerRoot = container.querySelector('[data-dialog-drag-handle="true"]');
+    expect(headerRoot?.querySelector('button')).toBe(closeButton);
     fireEvent.click(closeButton);
     expect(onRequestClose).toHaveBeenCalledWith('close');
   });

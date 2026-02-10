@@ -49,6 +49,7 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
+    "@hierarchidb/ui-batch-progress": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",

@@ -355,6 +355,9 @@ importers:
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../packages/tree-api
+      '@hierarchidb/ui-batch-progress':
+        specifier: workspace:*
+        version: link:../packages/ui/batch
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../packages/ui/country-select
@@ -1756,9 +1759,33 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../../tree-api
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@hierarchidb/ui-icon':
+        specifier: workspace:*
+        version: link:../icon
+      '@hierarchidb/ui-session-coordinator':
+        specifier: workspace:*
+        version: link:../session-coordinator
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../worker-client
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../worker-provider
+      '@mui/icons-material':
+        specifier: ^7.3.6
+        version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      comlink:
+        specifier: '>=4.0.0'
+        version: 4.4.2
       react:
         specifier: '>=18.0.0'
         version: 18.3.1

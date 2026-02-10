@@ -1,4 +1,5 @@
 import {
+  ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
@@ -105,22 +106,33 @@ export const PluginDialogMinimizeButton: React.FC<
   );
 };
 
-export const PluginDialogCloseButton: React.FC<CommonProps & { onClick: () => void }> = ({
+type CloseButtonProps = CommonProps & {
+  onClick: () => void;
+  size?: 'small' | 'medium' | 'large';
+  iconVariant?: 'close' | 'back';
+};
+
+export const PluginDialogCloseButton: React.FC<CloseButtonProps> = ({
   onClick,
   onPointerDown,
   disabled,
+  size = 'small',
+  iconVariant = 'close',
 }) => {
   const tooltips = useDialogTooltips();
+  const icon = iconVariant === 'back'
+    ? <ArrowBackIcon fontSize={size === 'large' ? 'large' : 'small'} />
+    : <CloseIcon fontSize="small" />;
   return (
     <Tooltip title={tooltips.close}>
       <IconButton
-        size="small"
+        size={size}
         onClick={onClick}
         onPointerDown={onPointerDown}
         disabled={disabled}
         aria-label={tooltips.close}
       >
-        <CloseIcon fontSize="small" />
+        {icon}
       </IconButton>
     </Tooltip>
   );

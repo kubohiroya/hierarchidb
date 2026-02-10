@@ -150,6 +150,17 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           },
         })}
       >
+        {hideFrameControls ? null : (
+          <Stack direction="row" alignItems="flex-start" onDoubleClick={stopPointerPropagation}>
+            <PluginDialogCloseButton
+              onClick={() => ctx.onRequestClose('close')}
+              onPointerDown={stopPointerPropagation}
+              size="large"
+              iconVariant="back"
+            />
+          </Stack>
+        )}
+
         <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
           <Stack
             direction="row"
@@ -254,10 +265,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 onClick={toggleFullscreen}
                 onPointerDown={stopPointerPropagation}
                 disabled={!ctx.onDisplayModeChange || !ctx.allowFullScreen}
-              />
-              <PluginDialogCloseButton
-                onClick={() => ctx.onRequestClose('close')}
-                onPointerDown={stopPointerPropagation}
               />
             </Stack>
           </Stack>

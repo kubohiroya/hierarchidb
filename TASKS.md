@@ -1,8 +1,45 @@
-2667) fix/ui/plugin-dialog-titlebar-back-button-layout (P2) — 進行中 (2026-02-10)
+2669) fix/build/app-unloadable-ui-batch-progress-dependency (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2668) fix/ui/trash-dialog-titlebar-back-button-layout
+- 受け入れ基準: `pnpm -w turbo run build --filter @hierarchidb/app` で `Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator` が発生しない／`@hierarchidb/app` から `@hierarchidb/ui-batch-progress` import が解決できる／影響範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/package.json`（必要に応じて `pnpm-lock.yaml`）
+- ロールバック手順: 追加した依存宣言と lockfile 差分を revert し、元の依存構成へ戻す
+- チェックリスト:
+  - `@hierarchidb/ui-batch-progress` の依存解決が失敗する原因を特定する
+  - `@hierarchidb/app` の依存宣言を修正する
+  - `pnpm install` で lockfile / node_modules を同期する
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/app` を実行する
+  - `pnpm -w turbo run build --filter @hierarchidb/app` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 18:06 JST `@hierarchidb/app` build の `Could not load @hierarchidb/ui-batch-progress` / `@hierarchidb/ui-session-coordinator` 解決エラー修正に着手。
+  - update: 2026-02-10 18:08 JST 原因は `app/package.json` に `@hierarchidb/ui-batch-progress` 依存が未宣言で、`BuildSessionLauncherButtons.tsx` の import 解決時に `app/node_modules/@hierarchidb/ui-batch-progress` が存在しなかったこと。`@hierarchidb/ui-session-coordinator` のエラーは同パッケージ経由の連鎖失敗として発生。`app/package.json` へ依存追加し `pnpm install` で lockfile と node_modules を同期。
+  - done: 2026-02-10 18:10 JST `pnpm install` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて exit 0。`UNLOADABLE_DEPENDENCY` は再現せず解消を確認。
+
+2668) fix/ui/trash-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2667) fix/ui/plugin-dialog-titlebar-back-button-layout
+- 受け入れ基準: Trash系ダイアログ2種（restore / empty）のタイトルバー右端にある `Close Dialog` アイコンボタンが左端へ移動する／アイコンが `←` 表示へ変更される／ボタンサイズが `large` になり押下領域が拡大される／既存のダイアログ close 動作が維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/trash/TrashDialog.tsx`
+- ロールバック手順: TrashDialog ヘッダーの close ボタン配置・アイコン・size に関する差分を revert し、従来の右端 Close アイコン配置へ戻す
+- チェックリスト:
+  - タイトルバーの close ボタンを右端から左端へ移動する
+  - close ボタンのアイコンを `←` 表示へ変更する
+  - close ボタンの size を `large` に変更する
+  - close 動作とアクセシビリティ属性（aria-label など）を維持する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-10 18:01 JST Trash系ダイアログ2種（restore / empty）のタイトルバー close ボタンを左端 `←` / `large` へ変更する修正に着手。
+  - update: 2026-02-10 18:03 JST 原因は `app/src/router/pages/tree/trash/TrashDialog.tsx` の `TrashDialogHeader` が右端 control 群に `Close` アイコン（small）を固定配置していたこと。ヘッダー左端に `IconButton(size='large') + ArrowBack` を移設し、右端は maximize/full-screen のみ残す構成へ変更。close の click 動作は `onRequestClose('close')` を維持。
+  - blocked: 2026-02-10 18:05 JST `pnpm -w turbo run build --filter @hierarchidb/app` は既知の依存解決エラー（`Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator`）で exit 1。`pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/ui-session-coordinator` 実行後に再試行しても再現（今回差分外）。
+  - done: 2026-02-10 18:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` は exit 0。Trash ダイアログ（restore / empty 共通ヘッダー）の close ボタン左端 `←` / `large` 化を反映完了。
+
+2667) fix/ui/plugin-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2642) fix/plugin-dialog/persist-dialog-ui-state-on-window-actions
 - 受け入れ基準: PluginDialog のタイトルバー右端にある `Close Dialog` アイコンボタンが左端へ移動する／アイコンが `←` 表示へ変更される／ボタンサイズが `large` になり押下領域が拡大される／既存のダイアログ close 動作が維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/ui/dialog/src/headless/**`（必要に応じて `packages/ui/dialog/src/components/**`）
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` / `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx` / `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx`
 - ロールバック手順: タイトルバーの close ボタン配置・アイコン・size に関する差分を revert し、従来の右端 Close アイコン配置へ戻す
 - チェックリスト:
   - タイトルバーの close ボタンを右端から左端へ移動する
@@ -13,6 +50,8 @@
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-10 17:57 JST PluginDialog タイトルバーの close ボタンを左端 `←` へ移動し、押下しやすい `large` サイズへ変更する修正に着手。
+  - update: 2026-02-10 18:00 JST 原因は `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` の frame controls 末尾で `PluginDialogCloseButton` を右端 `Close` アイコン（small）として描画していたこと。`PluginDialogControls.tsx` に close ボタンの `iconVariant`/`size` 指定を追加し、ヘッダー左端へ `iconVariant='back'` + `size='large'` で移設。右側 controls から close を撤去。回帰防止として `PluginDialogHeader.test.tsx` に `MuiIconButton-sizeLarge` と先頭配置の検証を追加。
+  - done: 2026-02-10 18:00 JST `pnpm -w turbo run test --filter @hierarchidb/plugin-ui-host -- --run src/headless/__tests__/PluginDialogHeader.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` / `pnpm -w turbo run build --filter @hierarchidb/plugin-ui-host` はすべて exit 0。
 
 2666) fix/ui/shape-completed-message-stability-after-normalization (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph

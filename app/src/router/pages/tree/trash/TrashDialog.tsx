@@ -23,7 +23,7 @@ import {
 } from '@hierarchidb/ui-treeconsole-base';
 import type { DualKeyMap } from '@hierarchidb/util';
 import {
-  Close as CloseIcon,
+  ArrowBack as ArrowBackIcon,
   DeleteForever as EmptyTrashIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
@@ -142,6 +142,8 @@ function TrashDialogHeader({
   isDirty,
 }: TrashDialogHeaderProps) {
   const ctx = useDialogContext<TrashStepData>();
+  const { t } = useTranslation();
+  const closeLabel = t('dialogs.pluginDialog.tooltips.close', 'Close dialog');
 
   const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
@@ -185,21 +187,31 @@ function TrashDialogHeader({
       })}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-        <Box
-          component="span"
-          sx={{ fontSize: 24, lineHeight: 1, pointerEvents: 'none' }}
-          aria-hidden
+        <IconButton
+          size="large"
+          onClick={() => onRequestClose('close')}
+          onPointerDown={stopPropagation}
+          aria-label={closeLabel}
         >
-          🗑️
-        </Box>
-        <Typography variant="h6" noWrap>
-          {title}
-        </Typography>
-        {isDirty && (
-          <Typography variant="caption" color="text.secondary">
-            Unsaved changes
+          <ArrowBackIcon fontSize="large" />
+        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <Box
+            component="span"
+            sx={{ fontSize: 24, lineHeight: 1, pointerEvents: 'none' }}
+            aria-hidden
+          >
+            🗑️
+          </Box>
+          <Typography variant="h6" noWrap>
+            {title}
           </Typography>
-        )}
+          {isDirty && (
+            <Typography variant="caption" color="text.secondary">
+              Unsaved changes
+            </Typography>
+          )}
+        </Box>
       </Box>
       <Box sx={{ display: 'flex', gap: 1 }}>
         <IconButton
@@ -225,13 +237,6 @@ function TrashDialogHeader({
           ) : (
             <FullscreenIcon fontSize="small" />
           )}
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={() => onRequestClose('close')}
-          onPointerDown={stopPropagation}
-        >
-          <CloseIcon fontSize="small" />
         </IconButton>
       </Box>
     </Box>
