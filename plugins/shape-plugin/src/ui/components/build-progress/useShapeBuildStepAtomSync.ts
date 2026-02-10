@@ -72,6 +72,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     showResumeLabel,
     handleStartOrResume,
     handlePause,
+    isStartPending,
     isPausePending,
     authDialogOpen,
     closeAuthDialog,
@@ -288,6 +289,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
       canStartOrResume,
       statusLabel: statusLabel ?? '',
       showResumeLabel: Boolean(showResumeLabel),
+      startPending: Boolean(isStartPending),
       handleStartOrResume: stableHandleStartOrResume,
       handlePause: stableHandlePause,
       pausePending: Boolean(isPausePending),
@@ -297,6 +299,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     setControls(nextControls);
   }, [
     canStartOrResume,
+    isStartPending,
     isPausePending,
     setControls,
     statusLabel,

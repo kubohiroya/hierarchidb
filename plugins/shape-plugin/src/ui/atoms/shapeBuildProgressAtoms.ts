@@ -37,6 +37,7 @@ export type TaskProgressControls = {
   canStartOrResume: boolean;
   statusLabel: string;
   showResumeLabel?: boolean;
+  startPending?: boolean;
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void;
   pausePending?: boolean;
@@ -112,6 +113,7 @@ export const suspendSuspectControlsAtom = atom<SuspendSuspectControls>({
 export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,
   statusLabel: '',
+  startPending: false,
   handleStartOrResume: async () => {},
   handlePause: () => {},
   pausePending: false,

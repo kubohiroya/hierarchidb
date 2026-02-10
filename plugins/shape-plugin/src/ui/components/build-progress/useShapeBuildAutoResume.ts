@@ -42,7 +42,7 @@ export const useShapeBuildAutoResume = ({
 
   useEffect(() => {
     if (!isStartPending) return;
-    if (buildStatus !== 'idle') {
+    if (buildStatus === 'running' || buildStatus === 'completed' || buildStatus === 'failed') {
       setIsStartPending(false);
     }
   }, [buildStatus, isStartPending]);
@@ -101,7 +101,7 @@ export const useShapeBuildAutoResume = ({
     if (!ok) {
       setIsStartPending(false);
     }
-  }, [handleStartOrResume, hasFailedFetchTasks, isStartPending]);
+  }, [handleStartOrResume, hasFailedFetchTasks, isLockSupported, isStartPending]);
 
   useEffect(() => {
     if (!activeNodeId || !canStartOrResume || isStartPending) return;

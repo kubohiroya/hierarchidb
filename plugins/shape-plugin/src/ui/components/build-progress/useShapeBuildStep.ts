@@ -70,6 +70,52 @@ const toBuildStatus = (status?: string | null): BuildStatus => {
   }
 };
 
+type StartLifecyclePhase =
+  | 'idle'
+  | 'acquiring-lock'
+  | 'waiting-lock'
+  | 'saving-draft'
+  | 'initializing-worker'
+  | 'building-payloads'
+  | 'starting-session'
+  | 'awaiting-first-task';
+
+type StartLifecycleState = {
+  active: boolean;
+  phase: StartLifecyclePhase;
+  startedAt: number;
+};
+
+type NotificationLevel = 'info' | 'warning' | 'error' | 'success';
+
+const START_DIAGNOSTIC_WARN_MS = 10_000;
+const START_DIAGNOSTIC_LONG_WAIT_MS = 20_000;
+const START_DIAGNOSTIC_TIMEOUT_MS = 45_000;
+
+const getStartLifecycleStatusLabel = (
+  t: (key: string, fallback?: string) => string,
+  phase: StartLifecyclePhase,
+): string => {
+  switch (phase) {
+    case 'acquiring-lock':
+      return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
+    case 'waiting-lock':
+      return t('stage.status.startingQueue', 'Starting build (waiting for lock)...');
+    case 'saving-draft':
+      return t('stage.status.startingSave', 'Starting build (saving draft)...');
+    case 'initializing-worker':
+      return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
+    case 'building-payloads':
+      return t('stage.status.startingPayload', 'Starting build (preparing tasks)...');
+    case 'starting-session':
+      return t('stage.status.startingSession', 'Starting build (launching session)...');
+    case 'awaiting-first-task':
+      return t('stage.status.startingAwait', 'Build requested; waiting for first task...');
+    default:
+      return t('stage.status.starting', 'Starting stage...');
+  }
+};
+
 
 type Args = {
   data?: Partial<ShapeEntity>;
@@ -209,6 +255,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const suspendTimeout = coordinator.quietThresholdTimeout * 3;
 
   const [isPausePending, setIsPausePending] = useState(false);
+  const [startLifecycle, setStartLifecycle] = useState<StartLifecycleState>({
+    active: false,
+    phase: 'idle',
+    startedAt: 0,
+  });
+  const startLifecycleWarnStepRef = useRef<0 | 1 | 2 | 3>(0);
+  const startLifecycleTaskStartNotifiedRef = useRef(false);
+  const progressSnackbarKeyRef = useRef<string | null>(null);
   const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<BuildProgressStatus | null>(null);
   const [remoteUpdatedAt, setRemoteUpdatedAt] = useState<number | null>(null);
@@ -242,6 +296,74 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setSuspendSuspectMessage(null);
     crashCheckStartedAtRef.current = Date.now();
   }, []);
+  const emitStartLifecycleLog = useCallback((level: 'info' | 'warn' | 'error', event: string, extra?: Record<string, unknown>) => {
+    const payload = {
+      nodeId: activeNodeId ? String(activeNodeId) : null,
+      ...extra,
+    };
+    if (level === 'error') {
+      console.error(`[ShapeBuildProgressStep] ${event}`, payload);
+      return;
+    }
+    if (level === 'warn') {
+      console.warn(`[ShapeBuildProgressStep] ${event}`, payload);
+      return;
+    }
+    console.info(`[ShapeBuildProgressStep] ${event}`, payload);
+  }, [activeNodeId]);
+  const pushStartLifecycleNotification = useCallback((level: NotificationLevel, message: string) => {
+    if (level === 'error') {
+      notify.error(message);
+      return;
+    }
+    if (level === 'warning') {
+      notify.warning(message);
+      return;
+    }
+    if (level === 'success') {
+      notify.success(message);
+      return;
+    }
+    notify.info(message);
+  }, []);
+  const beginStartLifecycle = useCallback((phase: StartLifecyclePhase, message?: string) => {
+    const now = Date.now();
+    startLifecycleWarnStepRef.current = 0;
+    startLifecycleTaskStartNotifiedRef.current = false;
+    progressSnackbarKeyRef.current = null;
+    setStartLifecycle({ active: true, phase, startedAt: now });
+    emitStartLifecycleLog('info', 'start lifecycle begin', { phase });
+    if (message) {
+      pushStartLifecycleNotification('info', message);
+    }
+  }, [emitStartLifecycleLog, pushStartLifecycleNotification]);
+  const advanceStartLifecycle = useCallback((phase: StartLifecyclePhase, options?: { message?: string; level?: NotificationLevel }) => {
+    setStartLifecycle((current) => ({
+      active: true,
+      phase,
+      startedAt: current.active ? current.startedAt : Date.now(),
+    }));
+    emitStartLifecycleLog('info', 'start lifecycle phase', { phase });
+    if (options?.message) {
+      pushStartLifecycleNotification(options.level ?? 'info', options.message);
+    }
+  }, [emitStartLifecycleLog, pushStartLifecycleNotification]);
+  const finishStartLifecycle = useCallback((options?: { message?: string; level?: NotificationLevel }) => {
+    setStartLifecycle({ active: false, phase: 'idle', startedAt: 0 });
+    startLifecycleWarnStepRef.current = 0;
+    startLifecycleTaskStartNotifiedRef.current = false;
+    progressSnackbarKeyRef.current = null;
+    if (options?.message) {
+      emitStartLifecycleLog(
+        options.level === 'error' ? 'error' : options.level === 'warning' ? 'warn' : 'info',
+        'start lifecycle finish',
+        { message: options.message },
+      );
+      pushStartLifecycleNotification(options.level ?? 'info', options.message);
+      return;
+    }
+    emitStartLifecycleLog('info', 'start lifecycle finish');
+  }, [emitStartLifecycleLog, pushStartLifecycleNotification]);
   const getRecentNonActiveState = useCallback((referenceTime: number) => {
     let latest: { state: 'active' | 'hidden' | 'frozen'; at: number } | null = null;
     for (const entry of tabStateRef.current.values()) {
@@ -290,6 +412,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const displayTasks = tasks;
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
+  ), [displayTasks]);
+  const hasStartedTasks = useMemo(() => (
+    displayTasks.some((task) => (
+      task.status === 'running'
+      || task.status === 'completed'
+      || task.status === 'failed'
+      || task.status === 'regression'
+      || task.status === 'warning'
+    ))
   ), [displayTasks]);
   const tasksCompletionStatus = useMemo<BuildStatus | null>(() => {
     if (displayTasks.length === 0) return null;
@@ -509,8 +640,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [data?.buildConfig]);
 
   const showResumeLabel = useMemo(() => (
-    buildStatus === 'paused' || displayTasks.length > 0
-  ), [buildStatus, displayTasks.length]);
+    buildStatus === 'paused' || (!startLifecycle.active && displayTasks.length > 0)
+  ), [buildStatus, displayTasks.length, startLifecycle.active]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   const bridgeRef = useRef(getWorkerBridge());
@@ -899,7 +1030,141 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [activeNodeId, buildStatus, coordinator, isLockOwner, progress, status]);
 
   useEffect(() => {
+    const message = typeof effectiveProgress?.message === 'string'
+      ? effectiveProgress.message.trim()
+      : '';
+    if (!message) return;
+    if (!startLifecycle.active && buildStatus !== 'running' && runtimeStatus !== 'processing') return;
+    const key = `${resolvedTaskType ?? ''}:${message}`;
+    if (progressSnackbarKeyRef.current === key) return;
+    progressSnackbarKeyRef.current = key;
+    emitStartLifecycleLog('info', 'worker progress update', {
+      stage: resolvedTaskType ?? null,
+      message,
+      percentage: effectiveProgress?.percentage ?? null,
+    });
+    pushStartLifecycleNotification('info', `Build progress: ${message}`);
+  }, [
+    buildStatus,
+    effectiveProgress?.message,
+    effectiveProgress?.percentage,
+    emitStartLifecycleLog,
+    pushStartLifecycleNotification,
+    resolvedTaskType,
+    runtimeStatus,
+    startLifecycle.active,
+  ]);
+
+  useEffect(() => {
+    if (!startLifecycle.active) return;
+    const intervalId = window.setInterval(() => {
+      const elapsedMs = Date.now() - startLifecycle.startedAt;
+      if (elapsedMs >= START_DIAGNOSTIC_TIMEOUT_MS && startLifecycleWarnStepRef.current < 3) {
+        startLifecycleWarnStepRef.current = 3;
+        emitStartLifecycleLog('error', 'start lifecycle timeout', {
+          phase: startLifecycle.phase,
+          elapsedMs,
+        });
+        pushStartLifecycleNotification(
+          'error',
+          'Build did not start task processing. Please check worker status or restart the session.',
+        );
+        return;
+      }
+      if (elapsedMs >= START_DIAGNOSTIC_LONG_WAIT_MS && startLifecycleWarnStepRef.current < 2) {
+        startLifecycleWarnStepRef.current = 2;
+        emitStartLifecycleLog('warn', 'start lifecycle long wait', {
+          phase: startLifecycle.phase,
+          elapsedMs,
+        });
+        pushStartLifecycleNotification(
+          'warning',
+          `Build start is still waiting at "${startLifecycle.phase}".`,
+        );
+        return;
+      }
+      if (elapsedMs >= START_DIAGNOSTIC_WARN_MS && startLifecycleWarnStepRef.current < 1) {
+        startLifecycleWarnStepRef.current = 1;
+        emitStartLifecycleLog('info', 'start lifecycle wait', {
+          phase: startLifecycle.phase,
+          elapsedMs,
+        });
+        pushStartLifecycleNotification(
+          'info',
+          `Build start is taking longer than expected (${startLifecycle.phase}).`,
+        );
+      }
+    }, 1000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    emitStartLifecycleLog,
+    pushStartLifecycleNotification,
+    startLifecycle.active,
+    startLifecycle.phase,
+    startLifecycle.startedAt,
+  ]);
+
+  useEffect(() => {
+    if (!startLifecycle.active) return;
+    if (hasStartedTasks) {
+      if (!startLifecycleTaskStartNotifiedRef.current) {
+        startLifecycleTaskStartNotifiedRef.current = true;
+        emitStartLifecycleLog('info', 'task execution started', {
+          tasks: displayTasks.length,
+        });
+        pushStartLifecycleNotification('success', 'Build task execution started.');
+      }
+      finishStartLifecycle();
+      return;
+    }
+    if (buildStatus === 'completed') {
+      if (displayTasks.length === 0) {
+        finishStartLifecycle({
+          level: 'info',
+          message: 'Build completed without generating tasks.',
+        });
+        return;
+      }
+      finishStartLifecycle();
+      return;
+    }
+    if (buildStatus === 'failed') {
+      finishStartLifecycle({
+        level: 'error',
+        message: 'Build failed before task execution started.',
+      });
+      return;
+    }
+    if (buildStatus === 'paused' && !isPausePending) {
+      finishStartLifecycle({
+        level: 'warning',
+        message: 'Build paused before task execution started.',
+      });
+    }
+  }, [
+    buildStatus,
+    displayTasks.length,
+    emitStartLifecycleLog,
+    finishStartLifecycle,
+    hasStartedTasks,
+    isPausePending,
+    pushStartLifecycleNotification,
+    startLifecycle.active,
+  ]);
+
+  useEffect(() => {
     if (!activeNodeId) return;
+    if (startLifecycle.active) {
+      if (crashSuspectOpen) {
+        closeCrashSuspect();
+      }
+      if (suspendSuspectOpen) {
+        closeSuspendSuspect();
+      }
+      return;
+    }
     const shouldMonitor = data?.processingStatus === 'processing' && !data?.buildFinishedAt;
     if (!shouldMonitor) {
       if (crashSuspectOpen) {
@@ -970,6 +1235,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     data?.processingStatus,
     getRecentNonActiveState,
     runtimeStatus,
+    startLifecycle.active,
     suspendSuspectOpen,
     t,
   ]);
@@ -1006,59 +1272,137 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return false;
     }
+    beginStartLifecycle(
+      'acquiring-lock',
+      options?.autoResume
+        ? 'Resuming build session...'
+        : 'Starting build session...',
+    );
     const now = Date.now();
     const hasRunner = coordinator.isRunnerTab(now);
     const activeSessionId = coordinator.readActiveSessionId();
     if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) {
-      notify.info('Another build session is active in this tab.');
+      finishStartLifecycle({
+        level: 'warning',
+        message: 'Another build session is already active in this tab.',
+      });
       return false;
     }
     const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
     if (!acquired) {
+      advanceStartLifecycle('waiting-lock', {
+        level: 'info',
+        message: 'Waiting for build lock held by another tab...',
+      });
       const queued = await waitForBuildLock(now);
       if (!queued) {
+        finishStartLifecycle({
+          level: 'warning',
+          message: 'Build start was cancelled while waiting for lock.',
+        });
         return false;
       }
     }
     coordinator.writeActiveSessionId(String(activeNodeId));
+    advanceStartLifecycle('saving-draft');
     const saved = await saveDraftBeforeBuild();
     if (!saved) {
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
+      finishStartLifecycle({
+        level: 'error',
+        message: 'Failed to start build because draft save did not complete.',
+      });
       return false;
     }
     try {
+      advanceStartLifecycle('initializing-worker');
       await bridgeRef.current.initialize();
+      advanceStartLifecycle('building-payloads');
       const payloads = await buildDownloadTaskPayloads();
-      if (!payloads || payloads.length === 0) {
+      if (!payloads) {
         releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
+        finishStartLifecycle({
+          level: 'error',
+          message: 'Failed to start build because task payloads could not be prepared.',
+        });
         return false;
       }
+      if (payloads.length === 0) {
+        const finishedAt = Date.now();
+        const persisted = await persistDraftPatch({
+          processingStatus: 'completed',
+          buildFinishedAt: finishedAt,
+          stopReason: undefined,
+        });
+        if (!persisted) {
+          emitStartLifecycleLog('warn', 'failed to persist empty-task completion marker');
+        }
+        releaseBuildLock();
+        coordinator.clearActiveSessionId(String(activeNodeId));
+        finishStartLifecycle({
+          level: 'info',
+          message: 'No tasks were generated. Build completed immediately.',
+        });
+        return true;
+      }
+      advanceStartLifecycle('starting-session');
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       const statusResult = await bridgeRef.current.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+      emitStartLifecycleLog('info', 'start session response', {
+        status: statusResult.status,
+        hasError: Boolean(statusResult.error),
+      });
       const nextStatus = statusResult.status === 'completed'
         ? 'completed'
         : statusResult.status === 'failed'
           ? 'failed'
           : 'processing';
-      await persistDraftPatch({ processingStatus: nextStatus });
+      const persisted = await persistDraftPatch({ processingStatus: nextStatus });
+      if (!persisted) {
+        throw new Error('Failed to persist start status.');
+      }
+      if (nextStatus === 'failed') {
+        finishStartLifecycle({
+          level: 'error',
+          message: statusResult.error ?? 'Build failed before task execution started.',
+        });
+      } else if (nextStatus === 'completed') {
+        finishStartLifecycle({
+          level: 'info',
+          message: 'Build completed immediately after start.',
+        });
+      } else {
+        advanceStartLifecycle('awaiting-first-task', {
+          level: 'info',
+          message: 'Build requested. Waiting for worker task updates...',
+        });
+      }
       return true;
     } catch (error) {
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
-      notify.error('Failed to start or resume build.');
+      finishStartLifecycle({
+        level: 'error',
+        message: 'Failed to start or resume build.',
+      });
       console.error('[ShapeBuildProgressStep] start/resume failed', error);
       return false;
     }
   }, [
     activeNodeId,
+    advanceStartLifecycle,
+    beginStartLifecycle,
     buildDownloadTaskPayloads,
     coordinator,
+    emitStartLifecycleLog,
+    finishStartLifecycle,
     persistDraftPatch,
     releaseBuildLock,
     saveDraftBeforeBuild,
     tryAcquireBuildLock,
+    waitForBuildLock,
   ]);
 
   const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
@@ -1101,13 +1445,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
 
   useEffect(() => {
     if (!lockRef.current) return;
-    if (buildStatus === 'running' || runtimeStatus === 'processing' || isStartPending) return;
+    if (buildStatus === 'running' || runtimeStatus === 'processing' || isStartPending || startLifecycle.active) return;
     releaseBuildLock();
-  }, [buildStatus, isStartPending, releaseBuildLock, runtimeStatus]);
+  }, [buildStatus, isStartPending, releaseBuildLock, runtimeStatus, startLifecycle.active]);
   const effectiveBuildStatus: BuildStatus = buildStatus;
-  const effectiveStatusLabel = isStartPending && buildStatus === 'idle'
-    ? t('stage.status.starting', 'Starting stage...')
-    : statusLabel;
+  const effectiveStatusLabel = startLifecycle.active
+    ? getStartLifecycleStatusLabel(t, startLifecycle.phase)
+    : isStartPending && buildStatus === 'idle'
+      ? t('stage.status.starting', 'Starting stage...')
+      : statusLabel;
   return {
     t,
     stages,
@@ -1135,6 +1481,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,
+    isStartPending,
     isPausePending,
     authDialogOpen,
     closeAuthDialog,

@@ -1,3 +1,22 @@
+2656) fix/ui/shape-build-start-visibility-and-state-diagnostics (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2654) fix/ui/shape-pause-reload-resume-button-state
+- 受け入れ基準: Start/Resume 押下直後から Build Controls の label/disabled/loading が一貫して更新される／開始待機・ロック待ち・payload 生成・worker 開始・タスク購読・失敗を console log と Snackbar で端的に可視化する／長時間待機時に「いま何を待っているか」を明示する／タスク未開始・空タスク終了・開始失敗を明示通知し誤検出 `may have stopped unexpectedly` を抑止する／影響範囲の typecheck と test と build が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`（必要に応じて `plugins/shape-plugin/src/ui/__tests__/hooks/unit/**`）
+- ロールバック手順: 変更差分を revert し、従来の start/resume 状態遷移・クラッシュ検知挙動へ戻す
+- チェックリスト:
+  - Start/Resume 押下後の状態遷移（pending/loading/disabled）を可視化しつつ整合化する
+  - 開始処理の各段階と長時間待機を console と Snackbar へ通知する
+  - タスク未開始/空タスク/開始失敗を明示通知し誤検出ダイアログを抑止する
+  - 影響範囲の typecheck と test と build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:35 JST Start/Resume 押下後に状態遷移が見えず長時間待機と誤検出ダイアログが発生する不具合の修正に着手。
+  - update: 2026-02-10 11:44 JST 追加原因を確認。`useShapeBuildAutoResume.ts` の `isStartPending` 解除条件が `buildStatus !== 'idle'` だったため、`paused` 状態で Resume を押した直後に pending が即解除され、Build Controls の Start/Resume ボタンが loading/disabled 表示を維持できない。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts`。
+  - update: 2026-02-10 11:45 JST `isStartPending` 解除条件を `running/completed/failed` のみへ変更し、`paused` 中の Resume 開始待機で pending を維持するよう修正。あわせて `useShapeBuildAutoResume.unit.test.tsx` に「paused から Resume 中は pending 維持、running 遷移で解除」テストを追加。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts` と `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildAutoResume.unit.test.tsx`。
+  - blocked: 2026-02-10 11:44 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は `@hierarchidb/ui-session-coordinator` の import 解決失敗（vite import-analysis, `packages/ui/batch/src/hooks/useBuildSessionSnapshots.ts`）で exit 1。今回差分外の既知テスト基盤課題として継続。
+  - done: 2026-02-10 11:46 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildAutoResume.unit.test.tsx src/ui/__tests__/hooks/unit/useShapeBuildAutoResume.reload.unit.test.tsx src/ui/__tests__/hooks/unit/executePauseBuildFlow.unit.test.ts src/ui/__tests__/hooks/unit/resolveBuildStatusSource.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` はいずれも exit 0。
+
 2654) fix/ui/shape-pause-reload-resume-button-state (P1) — 進行中 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2652) fix/ui/shape-completed-status-sync-without-reload

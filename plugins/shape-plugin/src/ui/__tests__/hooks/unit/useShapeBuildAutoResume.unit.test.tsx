@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { BuildStatus } from '@hierarchidb/components';
 import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume.ts';
 
@@ -75,5 +75,31 @@ describe('useShapeBuildAutoResume', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(args.handleStartOrResume).not.toHaveBeenCalled();
     expect(window.localStorage.getItem('autoResumeBuild')).toBeNull();
+  });
+
+  it('keeps start pending while paused resume is still awaiting running state', async () => {
+    const handleStartOrResume = vi.fn(async () => true);
+    const baseArgs = createArgs({ handleStartOrResume });
+    const { result, rerender } = renderHook(({ buildStatus }: { buildStatus: BuildStatus }) => (
+      useShapeBuildAutoResume({
+        ...baseArgs,
+        buildStatus,
+      })
+    ), {
+      initialProps: { buildStatus: 'paused' as BuildStatus },
+    });
+
+    await act(async () => {
+      await result.current.startOrResume();
+    });
+
+    expect(handleStartOrResume).toHaveBeenCalledTimes(1);
+    expect(result.current.isStartPending).toBe(true);
+
+    rerender({ buildStatus: 'running' as BuildStatus });
+
+    await waitFor(() => {
+      expect(result.current.isStartPending).toBe(false);
+    });
   });
 });

@@ -906,6 +906,7 @@ export const ShapeBuildProgressPanel = ({
       pauseLabel={t('stage.controls.pause', 'Pause')}
       pauseLoading={false}
       pausePending={controls.pausePending}
+      startPending={controls.startPending}
       showResumeLabel={controls.showResumeLabel}
       startLabel={t('stage.controls.start', 'Start Build')}
       resumeLabel={t('stage.controls.resume', 'Resume Build')}
