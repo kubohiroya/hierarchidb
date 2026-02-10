@@ -82,8 +82,8 @@ export const useLocationViewportLayers = (
   const locationQueryPromiseRef = useRef<Promise<LocationQueryAPI> | null>(null);
   const locationQueryTimerRef = useRef<number | null>(null);
   const locationQueryRequestRef = useRef(0);
+  const pendingIconLoadsRef = useRef<Set<LocationType>>(new Set());
   const [locationGeoJsonLayers, setLocationGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
-  const [locationIconsReady, setLocationIconsReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
   const getLocationQueryAPI = useCallback(async (): Promise<LocationQueryAPI> => {
@@ -94,43 +94,61 @@ export const useLocationViewportLayers = (
     return locationQueryPromiseRef.current;
   }, []);
 
-  const ensureLocationIcons = useCallback((map: MapLibreMapInstance) => {
+  const resolveLocationTypeFromIconId = useCallback((iconId: string): LocationType | null => {
+    const prefix = 'location-icon-';
+    if (!iconId.startsWith(prefix)) return null;
+    const candidate = iconId.slice(prefix.length);
+    if (!Object.prototype.hasOwnProperty.call(LOCATION_ICON_COMPONENTS, candidate)) return null;
+    return candidate as LocationType;
+  }, []);
+
+  const loadLocationIcon = useCallback((map: MapLibreMapInstance, type: LocationType) => {
     const mapWithImages = map as MapLibreMapInstance & {
       hasImage?: (id: string) => boolean;
       addImage?: (id: string, image: HTMLImageElement, options?: { sdf?: boolean }) => void;
     };
     if (!mapWithImages.addImage) return;
-    const missing = (
-      Object.entries(LOCATION_ICON_COMPONENTS) as Array<[LocationType, SvgIconComponent]>
-    ).filter(([type]) => !mapWithImages.hasImage?.(`location-icon-${type}`));
-    if (missing.length === 0) {
-      setLocationIconsReady(true);
-      return;
-    }
-    setLocationIconsReady(false);
-    const loaders = missing.map(
-      ([type, Icon]) =>
-        new Promise<void>((resolve) => {
-          const iconId = `location-icon-${type}`;
-          const iconProps: LocationViewportIconProps = {
-            Icon,
-            color: LOCATION_TYPE_COLORS[type],
-          };
-          const svg = renderToStaticMarkup(createElement(LocationViewportIcon, iconProps));
-          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-          const image = new Image();
-          image.onload = () => {
-            if (!mapWithImages.hasImage?.(iconId)) {
-              mapWithImages.addImage?.(iconId, image);
-            }
-            resolve();
-          };
-          image.onerror = () => resolve();
-          image.src = dataUrl;
-        })
-    );
-    void Promise.all(loaders).then(() => setLocationIconsReady(true));
+    const iconId = `location-icon-${type}`;
+    if (mapWithImages.hasImage?.(iconId)) return;
+    if (pendingIconLoadsRef.current.has(type)) return;
+    const Icon = LOCATION_ICON_COMPONENTS[type];
+    if (!Icon) return;
+
+    pendingIconLoadsRef.current.add(type);
+    const iconProps: LocationViewportIconProps = {
+      Icon,
+      color: LOCATION_TYPE_COLORS[type],
+    };
+    const svg = renderToStaticMarkup(createElement(LocationViewportIcon, iconProps));
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const image = new Image();
+    image.onload = () => {
+      pendingIconLoadsRef.current.delete(type);
+      try {
+        if (!mapWithImages.hasImage?.(iconId)) {
+          mapWithImages.addImage?.(iconId, image);
+        }
+      } catch (error) {
+        console.warn('[MapPage] Failed to register location icon image', { iconId, error });
+      }
+    };
+    image.onerror = () => {
+      pendingIconLoadsRef.current.delete(type);
+      console.warn('[MapPage] Failed to load location icon image', { iconId });
+    };
+    image.src = dataUrl;
   }, []);
+
+  const ensureLocationIcons = useCallback(
+    (map: MapLibreMapInstance) => {
+      (
+        Object.keys(LOCATION_ICON_COMPONENTS) as LocationType[]
+      ).forEach((type) => {
+        loadLocationIcon(map, type);
+      });
+    },
+    [loadLocationIcon]
+  );
 
   const buildLocationLayersForNode = useCallback(
     (layer: LocationLayerEntry, features: Array<Feature>): ResourceGeoJsonLayer[] => {
@@ -154,9 +172,7 @@ export const useLocationViewportLayers = (
           layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
         },
-      ];
-      if (locationIconsReady) {
-        layers.push({
+        {
           layerId: `${layer.layerId}-icon`,
           sourceId,
           layerType: 'symbol',
@@ -170,15 +186,14 @@ export const useLocationViewportLayers = (
           layerPriority: resolveLayerSetEntryPriority('location', 'location-symbols'),
           layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
-        });
-      }
+        },
+      ];
       return layers;
     },
     [
       locationCirclePaint,
       locationIconImageExpression,
       locationIconSizeExpression,
-      locationIconsReady,
       locationTypeFilter,
     ]
   );
@@ -327,14 +342,27 @@ export const useLocationViewportLayers = (
 
   useEffect(() => {
     if (!mapInstance) return;
+    const mapWithImageEvent = mapInstance as MapLibreMapInstance & {
+      on: (type: string, listener: (event: unknown) => void) => void;
+      off: (type: string, listener: (event: unknown) => void) => void;
+    };
     const handleStyleData = () => {
       ensureLocationIcons(mapInstance);
     };
-    mapInstance.on('styledata', handleStyleData);
-    return () => {
-      mapInstance.off('styledata', handleStyleData);
+    const handleStyleImageMissing = (event: unknown) => {
+      const iconId = (event as { id?: unknown }).id;
+      if (typeof iconId !== 'string') return;
+      const type = resolveLocationTypeFromIconId(iconId);
+      if (!type) return;
+      loadLocationIcon(mapInstance, type);
     };
-  }, [ensureLocationIcons, mapInstance]);
+    mapWithImageEvent.on('styledata', handleStyleData);
+    mapWithImageEvent.on('styleimagemissing', handleStyleImageMissing);
+    return () => {
+      mapWithImageEvent.off('styledata', handleStyleData);
+      mapWithImageEvent.off('styleimagemissing', handleStyleImageMissing);
+    };
+  }, [ensureLocationIcons, loadLocationIcon, mapInstance, resolveLocationTypeFromIconId]);
 
   useEffect(() => {
     if (!layerSetVisibility.location) {

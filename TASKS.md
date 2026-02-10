@@ -1,3 +1,21 @@
+2681) fix/map/location-points-and-layers-window-flicker-on-map-path (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2680) fix/map/location-layer-zoom-expression-invalid-in-circle-radius
+- 受け入れ基準: `/map` の location 点群表示が継続的にちらつかない／Layers ウィンドウ内の location 関連項目が表示揺れしない／`location-icon-*` missing image エラーが連続発生しない／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `app/src/router/routes/map/useLocationViewportLayers.ts`
+- ロールバック手順: 上記ファイル差分を revert し、修正前の icon 登録・layer 構築ロジックへ戻す
+- チェックリスト:
+  - `/map` の location 点群/Layers ちらつきの根本原因を特定する
+  - icon 読み込み状態でレイヤー構成が揺れないよう修正する
+  - missing image への補完経路を追加する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 22:04 JST `/map` で location 点群と Layers ウィンドウのちらつきが継続する不具合の再調査・修正に着手。
+  - update: 2026-02-10 22:05 JST 原因は `app/src/router/routes/map/useLocationViewportLayers.ts` で (1) `locationIconsReady` の変動を `buildLocationLayersForNode` が直接参照して icon layer を追加/除外していたため Layers ウィンドウ表示が揺れること、(2) 同 state 変動で初期 empty レイヤー再設定が再発して点群描画がちらつくこと、(3) `location-icon-*` 欠落時の補完経路が弱く missing image エラーが継続し得ること。
+  - update: 2026-02-10 22:05 JST 修正として `locationIconsReady` 依存を撤去して location symbol layer を常時構成に統一し、`styleimagemissing` と `styledata` で `location-icon-*` を補完登録するローダーを追加。重複ロード抑止（`pendingIconLoadsRef`）と icon 失敗ログを実装し、レイヤー構成の揺れを抑制。適用範囲は `app/src/router/routes/map/useLocationViewportLayers.ts` のみ。
+  - done: 2026-02-10 22:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --only` / `pnpm -w turbo run build --filter @hierarchidb/app --only` はいずれも exit 0（既知 warning のみ）。
+
 2680) fix/map/location-layer-zoom-expression-invalid-in-circle-radius (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: なし
