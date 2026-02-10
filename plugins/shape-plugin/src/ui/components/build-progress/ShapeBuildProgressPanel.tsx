@@ -626,6 +626,7 @@ export const ShapeBuildProgressPanel = ({
 
   const resetSessionDraft = useCallback(() => {
     onChange?.({
+      ...(data ?? {}),
       processingStatus: 'idle',
       buildStartedAt: undefined,
       buildFinishedAt: undefined,
@@ -636,7 +637,7 @@ export const ShapeBuildProgressPanel = ({
       stageElapsedStageId: undefined,
       stageElapsedByStage: {},
     });
-  }, [onChange]);
+  }, [data, onChange]);
 
   const {
     counts,

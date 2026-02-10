@@ -14,6 +14,25 @@
   - update: 2026-02-10 09:12 JST `BuildStepPanel` でステージごとの `BuildStageFilterProvider` を `stageProgressContent`（SVG 進捗表示）にも適用し、`ShapeBuildProgressPanel` の `TaskProgressBar` で `failed/skipped/completed` の非表示状態を `fillOpacity=0.4` として反映する実装を追加。
   - done: 2026-02-10 09:13 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
 
+2647) fix/ui/shape-step5-resume-disabled-after-cache-delete (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2646) fix/ui/shape-task-status-message-flicker-near-completion
+- 受け入れ基準: Step5 でキャッシュ削除後に Resume Build の有効/無効判定が再評価される／リロード後も判定が正しく維持される／既存の Start/Resume 判定ロジックに回帰を作らない／原因・発生範囲・修正方法と適用範囲が TASKS.md に記載される／影響範囲の typecheck と test が成功する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/ui/components/build-config/**` / `plugins/shape-plugin/src/ui/atoms/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の Resume Build 判定ロジックへ戻す
+- チェックリスト:
+  - Resume Build の有効/無効条件と依存 state の更新経路を特定する
+  - キャッシュ削除後に判定 state が stale になる要因を修正する
+  - 回帰防止テストを追加または更新する
+  - 影響範囲の typecheck と test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 08:59 JST Step5 キャッシュ削除後に Resume Build が有効化されない不具合の調査と修正に着手。
+  - update: 2026-02-10 09:20 JST 原因を2系統で確認。①キャッシュ削除後に実セッションが停止済みでも `draftData.processingStatus='processing'` が残留し、Step5 の `canStartOrResume` 判定（`buildStatus !== 'running'`）が満たせず Resume が disabled のままになる。②`save-draft` 更新時の `draftData` 置換経路で `buildConfig.dataSourceName` が欠落すると Step2 が invalid 扱いになり、同様に Resume が無効化される。
+  - update: 2026-02-10 09:26 JST `useShapeBuildCacheActions` でキャッシュ削除後に「実セッションは非 running かつ draft は processing」の stale 状態を検出した場合に `processingStatus` を `idle` へリセットする処理を追加。`persistSessionReset` は `getTreeNode(nodeId)` で現行 `draftData` を取得してマージ保存する方式へ変更し、`buildConfig`/`selectedArrayByCountries` の欠落を防止。
+  - update: 2026-02-10 09:28 JST `ShapeBuildProgressPanel` の `onResetSession` で `onChange` パッチに `...(data ?? {})` を含め、UI メモリ上でも Step2 の dataSource が落ちないように修正。
+  - update: 2026-02-10 09:30 JST 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
 2646) fix/ui/shape-task-status-message-flicker-near-completion (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2645) fix/shape-fetch-failed-message-and-resume-queue

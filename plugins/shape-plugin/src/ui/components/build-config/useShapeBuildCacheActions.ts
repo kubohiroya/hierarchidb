@@ -270,25 +270,35 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     try {
       await bridgeRef.initialize();
       const updater = await bridgeRef.getTreeNodeUpdaterAPI();
+      const node = await updater.getTreeNode(nodeId);
+      const currentDraftData = (
+        node?.draftData && typeof node.draftData === 'object'
+          ? (node.draftData as Record<string, unknown>)
+          : {}
+      );
+      const sessionResetPatch = {
+        processingStatus: 'idle',
+        buildStartedAt: undefined,
+        buildFinishedAt: undefined,
+        buildElapsedMs: 0,
+        buildResumedAt: undefined,
+        stageElapsedMs: 0,
+        stageResumedAt: undefined,
+        stageElapsedStageId: undefined,
+        stageElapsedByStage: {},
+      } as Record<string, unknown>;
       await updater.updateTreeNode(nodeId, {
         mode: 'save-draft',
+        // updateTreeNode(save-draft) can replace draftData, so preserve current values explicitly.
         draftData: {
-          ...sanitizeShapeDraftData(draft ?? {}),
-          processingStatus: 'idle',
-          buildStartedAt: undefined,
-          buildFinishedAt: undefined,
-          buildElapsedMs: 0,
-          buildResumedAt: undefined,
-          stageElapsedMs: 0,
-          stageResumedAt: undefined,
-          stageElapsedStageId: undefined,
-          stageElapsedByStage: {},
+          ...sanitizeShapeDraftData(currentDraftData),
+          ...sessionResetPatch,
         } as Record<string, unknown>,
       });
     } catch (error) {
       console.warn('[ShapeDownloadConfigSection] failed to persist session reset', error);
     }
-  }, [bridgeRef, draft, nodeId]);
+  }, [bridgeRef, nodeId]);
 
   const hasPersistedOutputs = useCallback(async (): Promise<boolean> => {
     if (!nodeId) return false;
@@ -300,6 +310,31 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     return summary.tiles > 0 || featureMetadata.length > 0 || transformErrors.length > 0;
   }, [nodeId]);
 
+  const hasRunningBuildSession = useCallback(async (): Promise<boolean> => {
+    if (!nodeId) return false;
+    try {
+      await bridgeRef.initialize();
+      const status = await bridgeRef.getBuildSessionStatus(SHAPE_NODE_TYPE, nodeId);
+      return status.status === 'running';
+    } catch {
+      return false;
+    }
+  }, [bridgeRef, nodeId]);
+
+  const resetStaleProcessingSessionIfNeeded = useCallback(async (): Promise<boolean> => {
+    if (draft?.processingStatus !== 'processing') return false;
+    const running = await hasRunningBuildSession();
+    if (running) return false;
+    onResetSession?.();
+    await persistSessionReset();
+    return true;
+  }, [
+    draft?.processingStatus,
+    hasRunningBuildSession,
+    onResetSession,
+    persistSessionReset,
+  ]);
+
   const handleDeleteFetchApiCache = useCallback(async () => {
     if (!nodeId) return;
     const stagesToClear: BuildTaskType[] = ['fetch', 'transform', 'vt'];
@@ -308,10 +343,19 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await clearBuildTasksForStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
+      await resetStaleProcessingSessionIfNeeded();
       await loadCounts();
       notify.success('Deleted API cache');
     });
-  }, [clearBuildTasksForStages, loadCounts, nodeId, runDelete, setBuildTasks, setPersistedTasks]);
+  }, [
+    clearBuildTasksForStages,
+    loadCounts,
+    nodeId,
+    resetStaleProcessingSessionIfNeeded,
+    runDelete,
+    setBuildTasks,
+    setPersistedTasks,
+  ]);
 
   const handleDeleteFetchFilteredCache = useCallback(async () => {
     if (!nodeId) return;
@@ -321,12 +365,13 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await clearBuildTasksForStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
-      await loadCounts();
+      const resetByStaleProcessing = await resetStaleProcessingSessionIfNeeded();
       const shouldPreserveSession = draft?.processingStatus === 'completed' || await hasPersistedOutputs();
-      if (!shouldPreserveSession) {
+      if (!shouldPreserveSession && !resetByStaleProcessing) {
         onResetSession?.();
         await persistSessionReset();
       }
+      await loadCounts();
       notify.success('Deleted filtered cache');
     });
   }, [
@@ -337,6 +382,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     nodeId,
     onResetSession,
     persistSessionReset,
+    resetStaleProcessingSessionIfNeeded,
     runDelete,
     setBuildTasks,
     setPersistedTasks,
@@ -350,10 +396,19 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await clearBuildTasksForStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
+      await resetStaleProcessingSessionIfNeeded();
       await loadCounts();
       notify.success('Deleted transform cache');
     });
-  }, [clearBuildTasksForStages, loadCounts, nodeId, runDelete, setBuildTasks, setPersistedTasks]);
+  }, [
+    clearBuildTasksForStages,
+    loadCounts,
+    nodeId,
+    resetStaleProcessingSessionIfNeeded,
+    runDelete,
+    setBuildTasks,
+    setPersistedTasks,
+  ]);
 
   const handleDeleteVTCache = useCallback(async () => {
     if (!nodeId) return;
@@ -364,8 +419,9 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await clearTileData();
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
+      const resetByStaleProcessing = await resetStaleProcessingSessionIfNeeded();
       const shouldPreserveSession = draft?.processingStatus === 'completed' || await hasPersistedOutputs();
-      if (!shouldPreserveSession) {
+      if (!shouldPreserveSession && !resetByStaleProcessing) {
         onResetSession?.();
         await persistSessionReset();
       }
@@ -381,6 +437,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     nodeId,
     onResetSession,
     persistSessionReset,
+    resetStaleProcessingSessionIfNeeded,
     runDelete,
     setBuildTasks,
     setPersistedTasks,
