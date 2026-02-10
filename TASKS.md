@@ -1,3 +1,22 @@
+2684) fix/ui/shape-step5-elapsed-timer-live-update (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2683) feat/map/floating-window-front-order-control-and-persist
+- 受け入れ基準: Shape プラグイン step5 のビルド実行中に経過時間が毎秒更新される／ビルド進行中に経過時間表示が停止しない／停止・完了時は最後の経過時間を保持し idle では `-` 表示に戻る／影響範囲の build/typecheck を実行して結果を記録する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts`
+- ロールバック手順: 上記ファイル差分を revert し、summary.totalElapsedMs のスナップショット表示へ戻す
+- チェックリスト:
+  - step5 の Total elapsed を running 中に 1 秒刻みで再計算する
+  - progress summary の更新間隔に依存せず UI timer が停止しないようにする
+  - running 終了時に最後の elapsed を固定し、idle で初期表示へ戻ることを維持する
+  - 影響範囲の build/typecheck（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 21:53 JST Shape step5 の経過時間表示がビルド中に停止する不具合の調査と修正に着手。
+  - update: 2026-02-10 21:54 JST 原因は `useBuildProgressPanelState.ts` の `controlDetails` が `summary.totalElapsedMs` の更新イベントにのみ依存しており、`taskProgressSummaryAtom` の再配信が止まると elapsed 表示が静止すること。発生範囲は step5 の Total elapsed 表示のみ（stage 行内 elapsed は `useShapeBuildStep.ts` 側で別 timer 更新）。
+  - update: 2026-02-10 21:54 JST 修正として `useBuildProgressPanelState.ts` に running 時 1 秒 interval の UI tick を追加し、`summary.totalElapsedMs` の最新スナップショットを基準に drift を合算して `liveTotalElapsedMs` を算出。running 中は毎秒表示を更新し、summary が進んだ時は即座に再同期、running 以外ではスナップショット値をそのまま表示する挙動に統一。適用範囲は同ファイルのみ。
+  - blocked: 2026-02-10 21:55 JST `pnpm install --frozen-lockfile` / `turbo run build --filter @hierarchidb/shape-plugin --only` が Corepack の pnpm ダウンロード失敗（`https://registry.npmjs.org/pnpm/-/pnpm-10.29.2.tgz`, `ENETUNREACH`/proxy 403）で実行不能。ネットワーク制約解消後に再実行が必要。
+  - done: 2026-02-10 21:55 JST 変更反映完了。検証は上記ネットワーク制約によりコマンド実行が blocked のため、解除後に build/typecheck を再実施予定。
+
 2683) feat/map/floating-window-front-order-control-and-persist (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2682) refactor/map/modeless-windows-use-ui-floating-window
