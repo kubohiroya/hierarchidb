@@ -288,17 +288,22 @@ export const useBuildProgressPanelState = (params: {
     };
   }, [summary.buildStatus]);
 
-  const liveTotalElapsedMs = useMemo(() => {
-    const now = elapsedTickMs;
+  useEffect(() => {
     const snapshot = totalElapsedSnapshotRef.current;
     if (!snapshot || summary.totalElapsedMs > snapshot.elapsedMs || summary.buildStatus !== 'running') {
       totalElapsedSnapshotRef.current = {
         elapsedMs: summary.totalElapsedMs,
-        capturedAt: now,
+        capturedAt: elapsedTickMs,
       };
+    }
+  }, [summary.totalElapsedMs, summary.buildStatus, elapsedTickMs]);
+
+  const liveTotalElapsedMs = useMemo(() => {
+    const snapshot = totalElapsedSnapshotRef.current;
+    if (!snapshot || summary.buildStatus !== 'running') {
       return summary.totalElapsedMs;
     }
-    const drift = Math.max(0, now - snapshot.capturedAt);
+    const drift = Math.max(0, elapsedTickMs - snapshot.capturedAt);
     return snapshot.elapsedMs + drift;
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
 
