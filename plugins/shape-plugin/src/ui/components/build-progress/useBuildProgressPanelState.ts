@@ -274,7 +274,7 @@ export const useBuildProgressPanelState = (params: {
   }, [formatDuration, t]);
 
   const controlDetails = useMemo(() => {
-    const isBuildStarted = summary.buildStatus !== 'idle';
+    const isBuildStarted = summary.buildStatus !== 'idle' || summary.totalElapsedMs > 0;
     const emptyValue = t('stage.timing.unknown', '-');
     return [
       {

@@ -10,6 +10,11 @@ export interface BuildProgress {
   taskType?: string;
   timestamp?: number;
   message?: string | null;
+  progressTaskId?: string;
+  progressTaskSequence?: number;
+  progressTaskStatus?: string;
+  progressTaskStage?: string;
+  progressTaskProgress?: number;
 }
 
 export interface BuildProgressStatus {
@@ -30,6 +35,34 @@ export type ExtendedProgress = BuildUnifiedProgressInfo & {
   payload?: ExtendedPayload;
 };
 
+type ProgressTaskMeta = {
+  taskId?: unknown;
+  sequence?: unknown;
+  status?: unknown;
+  stage?: unknown;
+  progress?: unknown;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+);
+
+const readNumber = (value: unknown): number | undefined => (
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined
+);
+
+const readString = (value: unknown): string | undefined => (
+  typeof value === 'string' && value.length > 0 ? value : undefined
+);
+
+const readProgressTaskMeta = (info: ExtendedProgress): ProgressTaskMeta | null => {
+  const meta = asRecord(info.payload?.meta);
+  if (!meta) return null;
+  const progressTask = asRecord(meta.progressTask);
+  if (!progressTask) return null;
+  return progressTask;
+};
+
 export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | null {
   if (!info) return null;
   const total = info.total ?? info.payload?.total ?? 0;
@@ -40,6 +73,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
   const percentage = typeof info.percentage === 'number' && Number.isFinite(info.percentage)
     ? info.percentage
     : Math.max(0, Math.min(100, computePercentage({ total, completed, failed, skipped })));
+  const progressTaskMeta = readProgressTaskMeta(info);
   return {
     total,
     completed,
@@ -49,6 +83,11 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     taskType,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message ?? undefined,
+    progressTaskId: readString(progressTaskMeta?.taskId),
+    progressTaskSequence: readNumber(progressTaskMeta?.sequence),
+    progressTaskStatus: readString(progressTaskMeta?.status),
+    progressTaskStage: readString(progressTaskMeta?.stage),
+    progressTaskProgress: readNumber(progressTaskMeta?.progress),
   };
 }
 

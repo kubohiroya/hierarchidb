@@ -15,6 +15,7 @@ export type BuildSessionTimingRecord = {
 export type BuildSessionTimingSnapshot = {
   totalMs: number;
   stageMs: number;
+  stageId: string | null;
 };
 
 export type UseBuildSessionTimingArgs<TSession extends BuildSessionTimingRecord> = {
@@ -42,17 +43,17 @@ const computeTimingSnapshot = (
   session: BuildSessionTimingRecord | null,
   now: number,
   buildStatus: BuildStatus,
-  resolvedTaskType?: string,
 ): BuildSessionTimingSnapshot => {
   if (!session?.startedAt) {
-    return { totalMs: 0, stageMs: 0 };
+    return { totalMs: 0, stageMs: 0, stageId: null };
   }
   const baseTime = buildStatus === 'running'
     ? now
     : session.lastHeartbeatAt ?? now;
   const totalMs = Math.max(0, baseTime - session.startedAt - (session.inactiveMs ?? 0));
-  if (!session.stageId || !session.stageStartedAt || session.stageId !== resolvedTaskType) {
-    return { totalMs, stageMs: 0 };
+  const stageId = typeof session.stageId === 'string' ? session.stageId : null;
+  if (!stageId || !session.stageStartedAt) {
+    return { totalMs, stageMs: 0, stageId };
   }
   const stageBaseTime = buildStatus === 'running'
     ? now
@@ -61,7 +62,7 @@ const computeTimingSnapshot = (
     0,
     stageBaseTime - session.stageStartedAt - (session.stageInactiveMs ?? 0),
   );
-  return { totalMs, stageMs };
+  return { totalMs, stageMs, stageId };
 };
 
 export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>({
@@ -75,7 +76,11 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
   heartbeatPersistMs = DEFAULT_HEARTBEAT_PERSIST_MS,
   inactiveGraceMs = DEFAULT_INACTIVE_GRACE_MS,
 }: UseBuildSessionTimingArgs<TSession>) => {
-  const [timingSnapshot, setTimingSnapshot] = useState<BuildSessionTimingSnapshot>({ totalMs: 0, stageMs: 0 });
+  const [timingSnapshot, setTimingSnapshot] = useState<BuildSessionTimingSnapshot>({
+    totalMs: 0,
+    stageMs: 0,
+    stageId: null,
+  });
   const sessionRef = useRef<TSession | null>(null);
   const lastPersistedHeartbeatAtRef = useRef<number | null>(null);
   const lastBuildStatusRef = useRef<BuildStatus | null>(buildStatus);
@@ -99,14 +104,14 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
     const load = async () => {
       if (!sessionId) {
         sessionRef.current = null;
-        setTimingSnapshot({ totalMs: 0, stageMs: 0 });
+        setTimingSnapshot({ totalMs: 0, stageMs: 0, stageId: null });
         return;
       }
       const session = await getSessionRecord(sessionId);
       if (cancelled) return;
       sessionRef.current = session;
       lastPersistedHeartbeatAtRef.current = session?.lastHeartbeatAt ?? null;
-      setTimingSnapshot(computeTimingSnapshot(session, Date.now(), buildStatus, resolvedTaskType));
+      setTimingSnapshot(computeTimingSnapshot(session, Date.now(), buildStatus));
     };
     void load();
     return () => {
@@ -123,7 +128,7 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
       const session = await getSessionRecord(sessionId);
       if (cancelled) return;
       sessionRef.current = session;
-      setTimingSnapshot(computeTimingSnapshot(session, Date.now(), buildStatus, resolvedTaskType));
+      setTimingSnapshot(computeTimingSnapshot(session, Date.now(), buildStatus));
     };
     void tick();
     const intervalId = window.setInterval(() => {
@@ -161,7 +166,7 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
     if (Object.keys(patch).length === 0) return;
     void applySessionPatch(patch).then(() => {
       const next = sessionRef.current;
-      setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus, resolvedTaskType));
+      setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus));
     });
   }, [applySessionPatch, buildStatus, canWrite, resolvedTaskType]);
 
@@ -180,7 +185,7 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
     }
     void applySessionPatch(patch).then(() => {
       const next = sessionRef.current;
-      setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus, resolvedTaskType));
+      setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus));
     });
   }, [applySessionPatch, buildStatus, canWrite, resolvedTaskType]);
 
@@ -190,11 +195,11 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
       const now = Date.now();
       const session = sessionRef.current;
       if (!session) {
-        setTimingSnapshot({ totalMs: 0, stageMs: 0 });
+        setTimingSnapshot({ totalMs: 0, stageMs: 0, stageId: null });
         return;
       }
       if (!canWrite) {
-        setTimingSnapshot(computeTimingSnapshot(session, now, buildStatus, resolvedTaskType));
+        setTimingSnapshot(computeTimingSnapshot(session, now, buildStatus));
         return;
       }
       const lastHeartbeatAt = session.lastHeartbeatAt ?? now;
@@ -228,11 +233,11 @@ export const useBuildSessionTiming = <TSession extends BuildSessionTimingRecord>
       if (Object.keys(patch).length > 0) {
         void applySessionPatch(patch).then(() => {
           const next = sessionRef.current;
-          setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus, resolvedTaskType));
+          setTimingSnapshot(computeTimingSnapshot(next, now, buildStatus));
         });
         return;
       }
-      setTimingSnapshot(computeTimingSnapshot(session, now, buildStatus, resolvedTaskType));
+      setTimingSnapshot(computeTimingSnapshot(session, now, buildStatus));
     }, heartbeatIntervalMs);
     return () => {
       window.clearInterval(intervalId);

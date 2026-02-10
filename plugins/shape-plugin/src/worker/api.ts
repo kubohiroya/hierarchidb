@@ -551,6 +551,14 @@ type ShapeBatchTaskSummary = BatchTaskSummary & {
   stagePriority?: number;
 };
 
+type ProgressTaskMeta = {
+  taskId: string;
+  sequence?: number;
+  status: TaskQueueRecord['status'];
+  stage: TaskQueueRecord['stage'];
+  progress: number;
+};
+
 type TaskWeightMeta = {
   polygonCount?: number | null;
   weight: number;
@@ -832,13 +840,30 @@ const buildTaskSummarySnapshot = async (
 const buildProgressPayloadFromTasks = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
+  options?: { eventTask?: TaskQueueRecord; source?: 'event' | 'snapshot' },
 ): Promise<BatchProgressPayload> => {
   const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
+  const progressTask = options?.eventTask ?? selectLatestTaskBySequence(tasks) ?? undefined;
+  const meta: Record<string, unknown> = {};
+  if (progressTask) {
+    const progressTaskMeta: ProgressTaskMeta = {
+      taskId: progressTask.taskId,
+      sequence: Number.isFinite(progressTask.sequence) ? progressTask.sequence : undefined,
+      status: progressTask.status,
+      stage: progressTask.stage,
+      progress: resolveTaskProgress(progressTask),
+    };
+    meta.progressTask = progressTaskMeta;
+  }
+  if (options?.source) {
+    meta.source = options.source;
+  }
   return {
     total: summary.total,
     completed: summary.completed,
     failed: summary.failed,
     skipped: summary.skipped,
+    meta: Object.keys(meta).length > 0 ? meta : undefined,
   };
 };
 
@@ -1233,7 +1258,7 @@ const emitProgressSnapshot = async (
     const vtTasks = await listTasks(taskQueue, nodeId);
     const phase = resolveProgressPhase(nodeId, vtTasks);
     const statusSummary = summarizeTaskQueueStatus(vtTasks);
-    const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks);
+    const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks, { source: 'snapshot' });
     sub.callback({
       nodeId,
       stage: statusSummary.taskType ?? 'fetch',
@@ -1488,7 +1513,10 @@ export const shapeBatchAPI = {
               phase: resolveProgressPhase(event.nodeId, vtTasks),
               timestamp: Date.now(),
               message: event.task.message,
-              payload: await buildProgressPayloadFromTasks(event.nodeId, vtTasks),
+              payload: await buildProgressPayloadFromTasks(event.nodeId, vtTasks, {
+                eventTask: event.task,
+                source: 'event',
+              }),
             });
           } catch (error) {
             console.error('[shapeBatchAPI] progress payload build failed', error);
@@ -1813,8 +1841,25 @@ export const shapeBatchAPI = {
     const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
+    const sequenceByTaskId = new Map<string, number>();
+    const readSequence = (sequence: unknown): number | null => (
+      typeof sequence === 'number' && Number.isFinite(sequence) ? sequence : null
+    );
+    const shouldProcessEvent = (taskId: string, sequence: number | null): boolean => {
+      if (sequence === null) return true;
+      const current = sequenceByTaskId.get(taskId);
+      if (current !== undefined && sequence <= current) {
+        return false;
+      }
+      sequenceByTaskId.set(taskId, sequence);
+      return true;
+    };
     const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
       if (event.type === 'delete') {
+        sequenceByTaskId.delete(event.taskId);
+        return;
+      }
+      if (!shouldProcessEvent(event.task.taskId, readSequence(event.task.sequence))) {
         return;
       }
       void (async () => {
@@ -1826,7 +1871,10 @@ export const shapeBatchAPI = {
             phase: resolveProgressPhase(event.nodeId, vtTasks),
             timestamp: Date.now(),
             message: event.task.message,
-            payload: await buildProgressPayloadFromTasks(nodeId, vtTasks),
+            payload: await buildProgressPayloadFromTasks(nodeId, vtTasks, {
+              eventTask: event.task,
+              source: 'event',
+            }),
           });
         } catch (error) {
           console.error('[shapeBatchAPI] progress payload build failed', error);

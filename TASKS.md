@@ -1,3 +1,170 @@
+2666) fix/ui/shape-completed-message-stability-after-normalization (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2665) fix/ui/shape-transform-running-completed-blink-guard
+- 受け入れ基準: `running + 100% => completed` 正規化後でも completed task の message が後続 phase 更新で往復しない／completed 到達後の message は原則固定され最終表示がぶれない／ただし初回 message が空または `phase=` で後続に確定的な完了メッセージが来た場合は1回だけ昇格する／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` / `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`
+- ロールバック手順: 変更差分を revert し、completed 後も sequence 順で message 上書きを許可する従来ロジックへ戻す
+- チェックリスト:
+  - completed(100%) 同士の更新で message 昇格条件を厳格化する
+  - `phase=` から確定メッセージへの単発昇格ルールを実装する
+  - 回帰防止テスト（message固定/単発昇格）を追加する
+  - 影響範囲の typecheck/build/test（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 16:20 JST 「`running + 100%` 正規化で message がブリンクし最終表示がぶれる懸念」への対処として completed 後 message 安定化修正に着手。
+  - update: 2026-02-10 16:22 JST 原因は `useShapeBuildTaskSync.ts` が status を completed へ正規化しても、同一 task の後続 update（sequence 上昇）で `message` 差分を許容しており、`phase=...` を含む通知で completed 表示中の message が往復しうる点。発生範囲は同ファイルの `shouldPreferNextTask` / `areTasksEquivalentForView` 判定。
+  - update: 2026-02-10 16:24 JST 修正として completed(100%) 同士の更新は `shouldPromoteCompletedMessage` を通し、(1) current message が空、または (2) current が `phase=` で next が非 `phase=` の場合だけ昇格を許可し、それ以外の message 上書きを拒否。併せて `useShapeBuildTasks.unit.test.tsx` に「late phase 更新で message 固定」「phase→確定 message 単発昇格」テストを追加。適用範囲は上記2ファイル。
+  - blocked: 2026-02-10 16:26 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` は既知の import 解決失敗（`@hierarchidb/ui-session-coordinator`, `packages/ui/batch/src/hooks/useBuildSessionSnapshots.ts`）で exit 1。今回差分外の既知テスト基盤課題。
+  - done: 2026-02-10 16:26 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2665) fix/ui/shape-transform-running-completed-blink-guard (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2664) fix/ui/shape-progress-prefilter-and-transform-blink
+- 受け入れ基準: transform 終盤で同一 task が `Running` と `Completed` を往復表示しない／snapshot が部分欠落・順序逆転しても completed task が UI 上で running へ回帰しない／`running + progress=100` は completed 表示へ正規化される／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`
+- ロールバック手順: 変更差分を revert し、従来の snapshot 反映（snapshot 全置換）と status 正規化なしの挙動へ戻す
+- チェックリスト:
+  - snapshot 反映時に current map を保持した merge（部分欠落に耐性）へ変更する
+  - `running + progress>=100` を `completed` 扱いへ正規化する
+  - 再購読開始時に task sync 内部 map を即時クリアして旧セッション残骸を混入させない
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 16:10 JST 再報告（transform 終盤で `Running/Completed` が激しく点滅）を受け、task 同期層の回帰経路を再調査して修正に着手。
+  - update: 2026-02-10 16:14 JST 原因は `useShapeBuildTaskSync.ts` の snapshot 反映が snapshot 配列を基準に task map を再構築しており、部分欠落/順序逆転 snapshot で current の completed task を落としうる点。直後の update で running が再適用されると表示が往復する。加えて `running + progress=100` を completed へ正規化しておらず、終盤の 100% 更新で状態揺れが視覚化される。発生範囲は同ファイルと再購読初期化（`useShapeBuildTasks.ts`）。
+  - update: 2026-02-10 16:16 JST 修正として (1) snapshot merge を current map 保持型へ変更（snapshot 欠落 task を即時破棄しない）、(2) `normalizeTaskStatus` を `running + progress>=100 => completed` へ変更、(3) `useShapeBuildTasks.ts` で再購読直前に `syncTasksRef([])` を呼び内部 map を即時初期化。適用範囲は上記2ファイルのみ。
+  - done: 2026-02-10 16:17 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2664) fix/ui/shape-progress-prefilter-and-transform-blink (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2663) fix/ui/shape-buildstatus-complete-without-progress-log
+- 受け入れ基準: `skip stale worker progress update` の対象イベントが worker 側で重い progress payload 構築前に前段スキップされる／`TaskUpdate100` 後に stale progress が到着しても task 表示が `completed` から `running` へ揺り戻らない／transform ステージ終盤で `Running` と `Completed` が交互に点滅しない／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`
+- ロールバック手順: 変更差分を revert し、従来の progress 購読・snapshot 反映ロジックへ戻す
+- チェックリスト:
+  - `subscribeToProgress` で stale event を前段フィルタし、不要な payload 生成を回避する
+  - stale progress 判定時の冗長ログを削減し、UI 側で不要処理を抑止する
+  - snapshot 反映時に completed タスクを stale snapshot で running へ戻さないガードを追加する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 15:49 JST `skip stale worker progress update` のログ過多と、transform 終盤で `Running/Completed` が点滅する現象の同時修正に着手。
+  - update: 2026-02-10 15:56 JST 原因は (1) `plugins/shape-plugin/src/worker/api.ts` の `onTaskQueueUpdate` 受信ごとに `listTasks + summarize` を実行してから stale 判定しており、破棄対象イベントでも重い再計算が走る点、(2) `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` が snapshot をそのまま適用し、順序逆転した古い snapshot が completed 表示を running へ巻き戻しうる点。発生範囲は同2ファイルと stale 判定ログ経路（`useShapeBuildStep.ts`）。
+  - update: 2026-02-10 16:02 JST 修正として (1) worker 側に `taskId + sequence` の前段フィルタ（`sequenceByTaskId`）を追加し stale event は payload 構築前に return、(2) UI 側は stale progress ログをサイレントスキップ化、(3) snapshot 適用時に `shouldPreferNextTask` で current とマージして completed の巻き戻りを抑止。適用範囲は上記3ファイルのみ。
+  - blocked: 2026-02-10 16:08 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` は既知の import 解決失敗（`@hierarchidb/ui-session-coordinator`, `packages/ui/batch/src/hooks/useBuildSessionSnapshots.ts`）で exit 1。今回差分外の既知テスト基盤課題。
+  - done: 2026-02-10 16:09 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2663) fix/ui/shape-buildstatus-complete-without-progress-log (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2662) fix/ui/shape-progress-stale-order-guard
+- 受け入れ基準: `TaskUpdate100` のみ到着し `ShapeBuildProgressStep` が欠落するケースでも completed 表示へ遷移する／`running` 表示残留が解消される／`failed`/`paused`/`running` の既存判定に回帰を作らない／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- ロールバック手順: 変更差分を revert し、従来の buildStatus 算出へ戻す
+- チェックリスト:
+  - `tasksCompletionStatus === 'completed'` を buildStatus へ反映する
+  - progress stream 欠落時でも completed へ遷移することを確認する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 23:59 JST `[TaskUpdate100] ... completed` のみ到着し `ShapeBuildProgressStep` が来ないケースで `running` 表示が残留する不具合の修正に着手。
+  - update: 2026-02-11 00:01 JST 原因は `useShapeBuildStep.ts` の `buildStatus` 算出が `tasksCompletionStatus==='failed'` のみ特別扱いし、`tasksCompletionStatus==='completed'` を最終状態へ昇格していなかった点。progress stream 欠落時は `processingStatus` 側が `processing` を保持し続け、`running` 表示が残留する。発生範囲は同ファイル。
+  - update: 2026-02-11 00:02 JST 修正として `buildStatus` 算出に `tasksCompletionStatus==='completed'` 分岐を追加し、`baseBuildStatus==='paused'` を除いて `completed` を返すよう変更。これにより task stream だけで completed 判定が成立する。適用範囲は同ファイルのみ。
+  - done: 2026-02-11 00:03 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2662) fix/ui/shape-progress-stale-order-guard (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2661) fix/ui/shape-build-lock-wait-visibility
+- 受け入れ基準: `TaskUpdate100`（completed）より後に遅延到着した同一 task の `running/queued` progress ログが UI で無視される／同一 ISO2・ADM でも別 taskId の progress は無視しない／Andorra のような「completed 済みなのに running ログが後続」ケースで stale progress を抑止する／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts` / `plugins/shape-plugin/src/ui/components/build-progress/shapeBuildProgressMapping.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- ロールバック手順: 変更差分を revert し、従来の progress payload と UI ログ判定へ戻す
+- チェックリスト:
+  - progress payload に taskId/sequence/status を付与する
+  - UI で completed 済み sequence と照合し stale progress を破棄する
+  - scope 単位ではなく taskId 単位で判定する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 23:48 JST Afghanistan/Andorra で `TaskUpdate100` と `worker progress update` の順序が逆転する事象に対し、scope単位の粗い抑止ではなく taskId+sequence ベースの stale guard 追加に着手。
+  - update: 2026-02-10 23:56 JST 原因は `subscribeToTasks` と `subscribeToProgress` が別購読で順序保証がなく、progress 側は `onTaskQueueUpdate` ごとに非同期 payload 構築 (`listTasks` + summary) を行うため、同一 task の completed 更新より遅れて running 進捗が到着しうる点。発生範囲は `plugins/shape-plugin/src/worker/api.ts` と `useShapeBuildStep.ts` の progress ログ経路。
+  - update: 2026-02-10 23:58 JST 修正として worker progress payload (`BatchProgressPayload.meta.progressTask`) に `taskId/sequence/status/stage/progress` を付与し、UI 側で completed 済み sequence マップと照合して「同一 taskId で completed sequence 以上が確定済みの running/queued progress」を `skip stale worker progress update` として破棄するガードを追加。scope単位ではなく taskId 単位で判定するため、同じ `(ISO2,ADM)` の別タスク進捗は維持。適用範囲は `api.ts` / `shapeBuildProgressMapping.ts` / `useShapeBuildStep.ts`。
+  - done: 2026-02-10 23:59 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2660) fix/shape/transform-post-simplify-unkink-repair (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2578) feat/geo/geometry-engine-wrapper
+- 受け入れ基準: shape の transform ステージで simplify 後に polygon/multipolygon へ自己交差修復（turf: unkink, geos: makeValid 相当）が適用される／修復不能または無効形状は既存のエラー収集フローと整合したまま処理される／既存の transform 出力フォーマットと進捗更新に回帰を作らない／影響範囲の build・typecheck・test が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`（必要に応じて `packages/vt-orchestrator/src/transform/geometry.ts`）
+- ロールバック手順: 追加した post-simplify 修復処理を revert し、従来の simplify-only 経路へ戻す
+- チェックリスト:
+  - simplify 後に polygon/multipolygon を修復する処理を追加する
+  - 修復で geometry が変化しない/不正になるケースの安全ガードを実装する
+  - 影響範囲の build・typecheck・test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 15:17 JST 「shape transform で simplify 後に kinks 修復が未実施」の確認結果を受け、post-simplify の自己交差修復処理追加に着手。
+  - update: 2026-02-10 15:19 JST 原因は `createTransformByBandHandler` の simplify 経路が `geometrySimplify(... preserveTopology)` のみで、自己交差検知（kinks相当）は診断/メッセージ用途に限定され、修復処理が呼ばれていなかった点。発生範囲は `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の simplify 後〜出力生成前。
+  - update: 2026-02-10 15:19 JST 修正として `repairCollectionSelfIntersections` を追加し、simplify+retry 後に invalid な polygon/multipolygon のみ `geometryUnkinkPolygons`（turf=unkink / geos=makeValid）を適用。修復後も invalid の場合は元 geometry を維持するガードを実装。適用範囲は同ファイルのみ。
+  - done: 2026-02-10 15:19 JST `pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator` / `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator` / `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator` は最終的にすべて exit 0（`typecheck` は初回 TS2322 を修正後に再実行で成功。`test` は対象パッケージのテストタスク未定義のため依存 build 実行のみで成功）。
+
+2661) fix/ui/shape-build-lock-wait-visibility (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2658) fix/ui/shape-build-start-pending-and-progress-scope-stability
+- 受け入れ基準: Build Start/Resume 時のロック待機で「何を待っているか」が UI 上で継続可視化される／待機中に無音状態にならず、少なくともポーリング周期ごとに診断ログが出る／既存の排他制御（同一 node の同時開始抑止）を維持する／影響範囲の typecheck が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`（必要に応じて `packages/components/src/useBuildSessionTransition.ts`）
+- ロールバック手順: 変更差分を revert し、従来のロック待機通知・ログ挙動へ戻す
+- チェックリスト:
+  - ロック待機ループで待機時間と待機理由を遷移ログへ出力する
+  - 待機中の状態ラベルを経過時間つきで更新する
+  - 通知スパムを抑えつつ無音時間をなくす
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 23:20 JST `Build start is taking longer than expected` 表示中に待機理由と進行が見えない問題の修正に着手。ロック待機・開始遷移ログの可視化改善を実施する。
+  - update: 2026-02-10 23:28 JST 原因は `useShapeBuildStep.ts` の開始遷移ラベルが phase 固定文言で経過時間を持たず、`waiting-lock` 中は 10/20/45 秒の診断通知まで追加情報が出ない点。加えてロック待機ループは heartbeat 更新中心で、待機中の継続ログが出ない。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`。
+  - update: 2026-02-10 23:31 JST 修正として (1) 開始遷移状態に elapsed ミリ秒 state を追加し `waiting-lock` / `awaiting-first-task` ラベルへ秒数表示を反映、(2) `waiting-lock` 中に poll interval ごとの `build session waiting for lock` 診断ログを追加、(3) lock 取得完了時と transition finish 時に `queueRequestedAtRef` を明示クリアして stale 待機情報の残留を防止。適用範囲は同ファイルのみ。
+  - blocked: 2026-02-10 23:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存エラー（`createTransformByBandHandler.ts` TS2322）で exit 2。今回差分外のため、対象限定検証へ切り替え。
+  - done: 2026-02-10 23:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
+
+2662) chore/ui/shape-task-update-100-console-log (P2) — 進行中 (2026-02-11)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2658) fix/ui/shape-build-start-pending-and-progress-scope-stability
+- 受け入れ基準: UI が task update 通知を受信して表示更新する際に `progress===100` の更新だけを検出し、`[TaskUpdate100] ISO2, AdminLevel, message, status` を `console.log` 出力する／ISO2・AdminLevel が解決不能な場合は `unknown` を出力する／既存の task update 同期（順序制御・重複抑止）に回帰を作らない／影響範囲の test と typecheck が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` / `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`
+- ロールバック手順: 変更差分を revert し、task update 100% ログ出力を無効化する
+- チェックリスト:
+  - `progress===100` の task update ログ出力を追加する
+  - ISO2/AdminLevel の抽出ロジックを追加し、未解決時は `unknown` を出力する
+  - 回帰防止テストを追加する
+  - 影響範囲の test と typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-11 00:45 JST UI 側で `progress===100` task update 受信時の `[TaskUpdate100] ISO2, AdminLevel, message, status` ログ出力追加に着手。
+  - update: 2026-02-11 00:58 JST 原因は task update の受信経路（`useShapeBuildTaskSync.ts`）に 100% 完了タスク向けのログ出力が存在せず、UI で「どのタスクが100%更新されたか」を即時観測できないこと。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`。
+  - update: 2026-02-11 01:02 JST `useShapeBuildTaskSync.ts` に `progress>=100` 更新専用ログを追加し、taskId/title/message から ISO2/AdminLevel を抽出して `[TaskUpdate100] ISO2, AdminLevel, message, status` を `console.log` 出力するよう修正。未解決時は `unknown` を出力。加えて `useShapeBuildTasks.unit.test.tsx` に 100% ログ出力テストと非100%で非出力テストを追加。適用範囲は同2ファイル。
+  - blocked: 2026-02-11 01:04 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` は既知の import 解決失敗（`@hierarchidb/ui-session-coordinator`, vite import-analysis in `packages/ui/batch/src/hooks/useBuildSessionSnapshots.ts`）で exit 1。今回差分外の既知テスト基盤課題。
+  - done: 2026-02-11 01:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0。
+
+2658) fix/ui/shape-build-start-pending-and-progress-scope-stability (P1) — 進行中 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2657) fix/ui/shape-stage-elapsed-three-signal-persistence
+- 受け入れ基準: Start/Resume 押下直後に Build Controls が即 `disabled/loading` へ遷移する／`Maximum update depth exceeded` の再現経路（task update 連打時）を抑止する／`transform` 進捗ログでも `worker progress update (JP) 0` のように scope を必ず表示する／影響範囲の typecheck と build が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildAutoResume.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` / `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`（必要に応じて `useShapeBuildStepAtomSync.ts`）
+- ロールバック手順: 変更差分を revert し、従来の start pending 反映・task sync・progress log 挙動へ戻す
+- チェックリスト:
+  - Start/Resume 押下直後に pending が UI へ反映される経路を追加する
+  - task update 重複時の不要な `setTasks` 連鎖を抑止する
+  - `transform` 進捗ログ scope の解決経路を追加する
+  - 影響範囲の typecheck と build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 23:58 JST Start/Resume 押下後の無反応・`Maximum update depth exceeded`・transform 進捗ログ scope 欠落の同時修正に着手。
+  - update: 2026-02-11 00:06 JST 原因は (1) Start/Resume 押下後の `isStartPending` が通常 state 更新のみで、重い処理開始時に描画反映が遅延しやすいこと、(2) task update の重複イベントでも `setTasks` が継続発火し UI 更新連鎖が過密化すること、(3) progress scope 解決が fetch タイトル依存で transform タスクの `inputData`/`metadata` を参照していないこと。発生範囲は `useShapeBuildAutoResume.ts` / `useShapeBuildTaskSync.ts` / `useShapeBuildStep.ts`。
+  - update: 2026-02-11 00:07 JST 修正として (1) `useShapeBuildAutoResume` に `isStartPendingRef` + `flushSync` を導入し、クリック直後に pending を同期反映、(2) `useShapeBuildTaskSync` に表示同値比較（task/list）を追加し重複 update/snapshot と不要 flush を抑止、(3) `useShapeBuildStep` で scope 解決を `title` + `metadata/inputData/sourceKey` へ拡張し、transform でも `worker progress update (JP) 0` 形式を出力するよう変更。適用範囲は同3ファイル。
+  - done: 2026-02-11 00:09 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ、失敗なし）。
+  - start: 2026-02-10 16:22 JST `ShapeBuildAtomSync` 起点で `Maximum update depth exceeded` が再発したとの報告を受領。`useShapeBuildStep` / `useShapeBuildStepAtomSync` の effect 依存と state 更新連鎖の再調査に着手。
+  - update: 2026-02-10 16:25 JST 原因は `useShapeBuildStep.ts` で `useBuildSessionTransition` に渡す `context` / `onNotify` / `onFinish` を毎レンダー新規生成していたこと。これにより依存 effect（開始遷移 elapsed 監視）が毎レンダー再実行され、`setBuildSessionTransitionElapsedMs()` が連鎖して最大更新深度エラーへ至る。`useMemo/useCallback` で引数を安定化し再実行ループを遮断した。適用範囲は `useShapeBuildStep.ts`。
+  - done: 2026-02-10 16:26 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ、失敗なし）。
+
 2657) fix/ui/shape-stage-elapsed-three-signal-persistence (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2649) fix/ui/shape-total-elapsed-by-stage-sum
@@ -16,6 +183,9 @@
   - update: 2026-02-10 23:47 JST 原因は `stageElapsedByStage`（確定ミリ秒）のみを過去ステージ表示の単一ソースにしており、ステージ遷移時の確定保存が欠落したケースで再読込後に `-` 表示へ落ちる点。`useBuildSessionTiming` は現ステージの heartbeat 補正のみ保持し、過去ステージ復元に必要な stage 単位タイムシグナルを持たない。
   - update: 2026-02-10 23:50 JST `ShapeEntity` に `stageTimingByStage`（`startedAt/inactiveMs/lastHeartbeatAt/endedAt`）を追加し、`useShapeBuildStep` でステージ開始時初期化・ステージ遷移時確定・完了時確定を実装。`ShapeBuildProgressPanel` は `completedStageElapsedMs -> stageElapsedByStage -> stageTimingByStage` の順で elapsed を解決するよう変更。Reset Session/キャッシュ削除/選択変更時の初期化パッチにも `stageTimingByStage: {}` を追加。
   - done: 2026-02-10 23:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知の tsdown/rollup warning のみ、失敗なし）。
+  - update: 2026-02-11 00:18 JST 再報告（build 後に reload + resume すると stage elapsed / total elapsed が `-` に戻る）を受けて原因を再確認。`useShapeBuildStep.ts` の復元同期が `buildStatus === 'idle'` 条件に縛られており、再開直後の running 遷移で persisted 値の再hydrateがスキップされる経路を確認。加えて `processingStatus === 'idle'` 初期化 effect が hydrate 前の空データで local state を先にクリアしうる。
+  - update: 2026-02-11 00:22 JST `useShapeBuildStep.ts` で stage elapsed / stage timing の復元を idle 限定から解除し、persisted 値を `max`/merge で取り込む方式へ変更。空データ初期化 effect には `if (!data) return;` を追加して hydrate 前クリアを抑止。`useBuildProgressPanelState.ts` は `buildStatus==='idle'` でも `totalElapsedMs>0` なら `Time elapsed` を表示するよう変更し、`-` への誤フォールバックを防止。
+  - done: 2026-02-11 00:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ、失敗なし）。
 
 2656) fix/ui/shape-build-start-visibility-and-state-diagnostics (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph

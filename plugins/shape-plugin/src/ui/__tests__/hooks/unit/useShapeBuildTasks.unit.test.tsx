@@ -11,6 +11,7 @@ const subscribeMock = vi.fn<[
 ], Promise<() => void>>();
 const getBuildTasksMock = vi.fn();
 let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
+let consoleLogSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => ({
@@ -32,6 +33,8 @@ describe('useShapeBuildTasks', () => {
     getBuildTasksMock.mockReset();
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
+    consoleLogSpy?.mockRestore();
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   it('applies snapshot and update events without polling', async () => {
@@ -180,6 +183,127 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('keeps completed message stable when late phase updates arrive', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2b'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2b',
+        task: {
+          taskId: 'task-2b',
+          stage: 'transform',
+          status: 'completed',
+          progress: 100,
+          message: 'transform done',
+          index: 1,
+          sequence: 10,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toBe('transform done');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2b',
+        task: {
+          taskId: 'task-2b',
+          stage: 'transform',
+          status: 'running',
+          progress: 100,
+          message: 'phase=finalize',
+          index: 1,
+          sequence: 11,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toBe('transform done');
+    });
+  });
+
+  it('promotes completed message from phase marker to concrete completion message once', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2c'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2c',
+        task: {
+          taskId: 'task-2c',
+          stage: 'transform',
+          status: 'running',
+          progress: 100,
+          message: 'phase=encode',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toBe('phase=encode');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2c',
+        task: {
+          taskId: 'task-2c',
+          stage: 'transform',
+          status: 'completed',
+          progress: 100,
+          message: 'transform cache stored',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toBe('transform cache stored');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2c',
+        task: {
+          taskId: 'task-2c',
+          stage: 'transform',
+          status: 'running',
+          progress: 100,
+          message: 'phase=post-process',
+          index: 1,
+          sequence: 3,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toBe('transform cache stored');
+    });
+  });
+
   it('normalizes running 100% to completed across stages', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-3'));
 
@@ -227,6 +351,62 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.status).toBe('completed');
       expect(result.current.tasks[1]?.status).toBe('completed');
       expect(result.current.tasks[2]?.status).toBe('completed');
+    });
+  });
+
+  it('logs TaskUpdate100 with parsed scope when update progress reaches 100', async () => {
+    renderHook(() => useShapeBuildTasks('node-4'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-4',
+        task: {
+          taskId: 'node-4:fetch:JPN:1',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Done',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(consoleLogSpy).toHaveBeenCalledWith('[TaskUpdate100] JPN, 1, Done, completed');
+    });
+  });
+
+  it('does not log TaskUpdate100 for non-100 updates', async () => {
+    renderHook(() => useShapeBuildTasks('node-5'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-5',
+        task: {
+          taskId: 'node-5:fetch:JPN:1',
+          stage: 'fetch',
+          status: 'running',
+          progress: 99,
+          message: 'Working',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('[TaskUpdate100]'));
     });
   });
 });

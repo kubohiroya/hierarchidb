@@ -12,6 +12,7 @@ import {
   geometryBboxClip,
   geometryIsValid,
   geometrySimplify,
+  geometryUnkinkPolygons,
   latToTileY,
   lonToTileX,
   type GeometryEngine,
@@ -420,6 +421,55 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
     return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
   }
   return 0;
+};
+
+const repairCollectionSelfIntersections = (
+  collection: FeatureCollection,
+  geometryOps: GeometryOps,
+  engine: GeometryEngine,
+): { collection: FeatureCollection; repairedFeatureCount: number } => {
+  let repairedFeatureCount = 0;
+  const repairedFeatures = collection.features.map((feature) => {
+    const geometry = feature?.geometry;
+    if (!geometry) return feature;
+    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') {
+      return feature;
+    }
+    if (geometryOps.isValid(geometry)) return feature;
+    try {
+      const polygons = geometryUnkinkPolygons(feature as Feature<Polygon | MultiPolygon>, engine);
+      if (!Array.isArray(polygons) || polygons.length === 0) {
+        return feature;
+      }
+      const singlePolygon = polygons.length === 1 ? polygons[0] : null;
+      if (polygons.length === 1 && !singlePolygon) {
+        return feature;
+      }
+      const repairedGeometry: Polygon | MultiPolygon = singlePolygon
+        ? singlePolygon
+        : { type: 'MultiPolygon', coordinates: polygons.map((polygon) => polygon.coordinates) };
+      if (!geometryOps.isValid(repairedGeometry)) {
+        return feature;
+      }
+      repairedFeatureCount += 1;
+      return {
+        ...feature,
+        geometry: repairedGeometry,
+      };
+    } catch {
+      return feature;
+    }
+  });
+  if (repairedFeatureCount === 0) {
+    return { collection, repairedFeatureCount };
+  }
+  return {
+    collection: {
+      ...collection,
+      features: repairedFeatures,
+    },
+    repairedFeatureCount,
+  };
 };
 
 type BoundaryLayerSummary = {
@@ -2040,7 +2090,21 @@ export const createTransformByBandHandler = (
         };
         vertexLimitStats = { maxVertexCount, overLimitFeatureCount };
       }
-      simplified = adjustedSimplified;
+      const repairedSimplified = repairCollectionSelfIntersections(
+        adjustedSimplified,
+        geometryOps,
+        geometryEngine,
+      );
+      if (repairedSimplified.repairedFeatureCount > 0) {
+        console.info('[ShapeTransform][SimplifyOnlyMetrics] repaired self-intersections after simplify', {
+          nodeId: task.nodeId,
+          taskId,
+          bandIndex: input.bandIndex,
+          zTarget: band.zMax,
+          repairedFeatures: repairedSimplified.repairedFeatureCount,
+        });
+      }
+      simplified = repairedSimplified.collection;
 
       const simplifiedFeatureCount = simplified.features.length;
       stageLabel = 'validate:vertex-limit';

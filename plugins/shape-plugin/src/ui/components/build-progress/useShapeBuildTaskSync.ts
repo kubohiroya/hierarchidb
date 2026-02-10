@@ -40,6 +40,82 @@ const resolveProgressValue = (value: number | undefined): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
 );
 
+const UNKNOWN_SCOPE_VALUE = 'unknown';
+
+const normalizeIsoCode = (value: string): string => value.trim().toUpperCase();
+
+const parseScopeFromTaskId = (taskId: string): { iso2: string; adminLevel: string } | null => {
+  const fetchMatch = taskId.match(/:fetch:([A-Za-z]{2,3}):(\d+)$/);
+  if (fetchMatch?.[1] && fetchMatch[2]) {
+    return {
+      iso2: normalizeIsoCode(fetchMatch[1]),
+      adminLevel: fetchMatch[2],
+    };
+  }
+  const transformMatch = taskId.match(/:transform:[^:]+:([A-Za-z]{2,3}):(\d+)$/);
+  if (transformMatch?.[1] && transformMatch[2]) {
+    return {
+      iso2: normalizeIsoCode(transformMatch[1]),
+      adminLevel: transformMatch[2],
+    };
+  }
+  return null;
+};
+
+const parseScopeFromTitle = (title: string): { iso2: string; adminLevel: string } | null => {
+  const parenthesized = title.match(/\(([A-Za-z]{2,3})\)\s*(?:ADM)?(\d+)/i);
+  if (parenthesized?.[1] && parenthesized[2]) {
+    return {
+      iso2: normalizeIsoCode(parenthesized[1]),
+      adminLevel: parenthesized[2],
+    };
+  }
+  const admStyle = title.match(/\b([A-Za-z]{2,3})\s+ADM(\d+)\b/i);
+  if (admStyle?.[1] && admStyle[2]) {
+    return {
+      iso2: normalizeIsoCode(admStyle[1]),
+      adminLevel: admStyle[2],
+    };
+  }
+  return null;
+};
+
+const parseScopeFromMessage = (message: string): { iso2: string; adminLevel: string } | null => {
+  const sourceKeyMatch = message.match(/\b([A-Za-z]{2,3}):(\d+)\b/);
+  if (sourceKeyMatch?.[1] && sourceKeyMatch[2]) {
+    return {
+      iso2: normalizeIsoCode(sourceKeyMatch[1]),
+      adminLevel: sourceKeyMatch[2],
+    };
+  }
+  return null;
+};
+
+const resolveTaskScope = (task: ShapeBuildTaskSummary): { iso2: string; adminLevel: string } => {
+  const fromTaskId = parseScopeFromTaskId(task.taskId);
+  if (fromTaskId) return fromTaskId;
+  if (typeof task.title === 'string') {
+    const fromTitle = parseScopeFromTitle(task.title);
+    if (fromTitle) return fromTitle;
+  }
+  if (typeof task.message === 'string') {
+    const fromMessage = parseScopeFromMessage(task.message);
+    if (fromMessage) return fromMessage;
+  }
+  return {
+    iso2: UNKNOWN_SCOPE_VALUE,
+    adminLevel: UNKNOWN_SCOPE_VALUE,
+  };
+};
+
+const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
+  if (resolveProgressValue(task.progress) < 100) return;
+  const scope = resolveTaskScope(task);
+  const message = task.message ?? '';
+  const status = task.status;
+  console.log(`[TaskUpdate100] ${scope.iso2}, ${scope.adminLevel}, ${message}, ${status}`);
+};
+
 const resolveTaskOrderIndex = (task: ShapeBuildTaskSummary): number => (
   typeof task.index === 'number' && Number.isFinite(task.index)
     ? task.index
@@ -97,9 +173,14 @@ const removeTaskFromList = (current: ShapeBuildTaskSummary[], taskId: string): S
 
 const normalizeTaskStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
-): ShapeBuildTaskSummary['status'] => (
-  status ?? 'queued'
-);
+  progress: number,
+): ShapeBuildTaskSummary['status'] => {
+  const normalized = status ?? 'queued';
+  if (normalized === 'running' && progress >= 100) {
+    return 'completed';
+  }
+  return normalized;
+};
 
 const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
   task.status === 'completed' && resolveProgressValue(task.progress) >= 100
@@ -109,10 +190,86 @@ const isRunningAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
   task.status === 'running' && resolveProgressValue(task.progress) >= 100
 );
 
+const readNormalizedMessage = (value: string | null | undefined): string => (
+  typeof value === 'string' ? value.trim() : ''
+);
+
+const isPhaseMessage = (value: string | null | undefined): boolean => (
+  /^phase=/i.test(readNormalizedMessage(value))
+);
+
+const shouldPromoteCompletedMessage = (
+  current: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  const currentMessage = readNormalizedMessage(current.message);
+  const nextMessage = readNormalizedMessage(next.message);
+  if (!nextMessage || nextMessage === currentMessage) return false;
+  if (!currentMessage) return true;
+  if (isPhaseMessage(currentMessage) && !isPhaseMessage(nextMessage)) return true;
+  return false;
+};
+
+const areTasksEquivalentForView = (
+  left: ShapeBuildTaskSummary,
+  right: ShapeBuildTaskSummary,
+): boolean => (
+  left.taskId === right.taskId
+  && left.stage === right.stage
+  && left.status === right.status
+  && resolveProgressValue(left.progress) === resolveProgressValue(right.progress)
+  && (left.message ?? null) === (right.message ?? null)
+  && (left.title ?? null) === (right.title ?? null)
+  && (left.error ?? null) === (right.error ?? null)
+  && (left.errorMessage ?? null) === (right.errorMessage ?? null)
+  && (left.index ?? null) === (right.index ?? null)
+  && (left.stagePriority ?? null) === (right.stagePriority ?? null)
+  && (left.sequence ?? null) === (right.sequence ?? null)
+);
+
+const areTaskListsEquivalentForView = (
+  left: ShapeBuildTaskSummary[],
+  right: ShapeBuildTaskSummary[],
+): boolean => {
+  if (left === right) return true;
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const leftTask = left[index];
+    const rightTask = right[index];
+    if (!leftTask || !rightTask) return false;
+    if (!areTasksEquivalentForView(leftTask, rightTask)) return false;
+  }
+  return true;
+};
+
+const mergeSnapshotWithCurrent = (
+  snapshotTasks: ShapeBuildTaskSummary[],
+  currentMap: Map<string, ShapeBuildTaskSummary>,
+): ShapeBuildTaskSummary[] => {
+  if (snapshotTasks.length === 0) {
+    return [];
+  }
+  const mergedMap = new Map(currentMap);
+  snapshotTasks.forEach((snapshotTask) => {
+    const current = mergedMap.get(snapshotTask.taskId);
+    if (!current || shouldPreferNextTask(current, snapshotTask)) {
+      mergedMap.set(snapshotTask.taskId, snapshotTask);
+    } else {
+      mergedMap.set(snapshotTask.taskId, current);
+    }
+  });
+  const merged = [...mergedMap.values()];
+  merged.sort(compareTaskOrder);
+  return merged;
+};
+
 const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
+    return shouldPromoteCompletedMessage(current, next);
+  }
   if (current.status === 'completed' && next.status === 'running') {
     return false;
   }
@@ -154,6 +311,10 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     if (!dirty) {
       return;
     }
+    if (areTaskListsEquivalentForView(committedTasksRef.current, next)) {
+      committedTasksRef.current = next;
+      return;
+    }
     committedTasksRef.current = next;
     setTasks(next);
   }, [setTasks]);
@@ -177,16 +338,21 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   }, [flushTasks]);
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
+    const progress = resolveProgressValue(task.progress);
     return {
       ...task,
       stage: resolveTaskStage(task),
-      status: normalizeTaskStatus(task.status),
+      status: normalizeTaskStatus(task.status, progress),
+      progress: progress >= 100 ? 100 : task.progress,
     };
   }, []);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
     const baseList = pendingTasksRef.current ?? committedTasksRef.current;
     const currentTask = tasksMapRef.current.get(task.taskId);
+    if (currentTask && areTasksEquivalentForView(currentTask, task)) {
+      return { next: baseList, changed: false } as const;
+    }
     if (currentTask && !shouldPreferNextTask(currentTask, task)) {
       return { next: baseList, changed: false } as const;
     }
@@ -197,9 +363,10 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   }, []);
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
-    const resolved = next.map(resolveTaskSummary).sort(compareTaskOrder);
+    const snapshotTasks = next.map(resolveTaskSummary);
+    const resolved = mergeSnapshotWithCurrent(snapshotTasks, tasksMapRef.current);
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
-    scheduleFlush(resolved, true);
+    scheduleFlush(resolved, !areTaskListsEquivalentForView(committedTasksRef.current, resolved));
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -211,7 +378,10 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
     const result = mergeTask(resolved);
-    scheduleFlush(result.next, result.changed);
+    if (result.changed) {
+      logTaskUpdate100(resolved);
+      scheduleFlush(result.next, true);
+    }
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -223,7 +393,6 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const handleDelete = useCallback((taskId: string) => {
     const existing = tasksMapRef.current.get(taskId);
     if (!existing) {
-      scheduleFlush(pendingTasksRef.current ?? committedTasksRef.current, false);
       return;
     }
     const nextMap = new Map(tasksMapRef.current);

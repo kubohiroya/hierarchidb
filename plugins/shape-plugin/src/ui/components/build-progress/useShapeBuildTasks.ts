@@ -84,6 +84,7 @@ export function useShapeBuildTasks(
     }
     resetPending();
     if (!nodeId || !autoSubscribe) {
+      syncTasksRef([]);
       if (tasksRef.current.length > 0) {
         setTasks([]);
       }
@@ -95,6 +96,7 @@ export function useShapeBuildTasks(
       }
       return;
     }
+    syncTasksRef([]);
     if (tasksRef.current.length > 0) {
       setTasks([]);
     }
@@ -159,6 +161,7 @@ export function useShapeBuildTasks(
     setError,
     setIsLoading,
     setTasks,
+    syncTasksRef,
   ]);
 
   const refresh = useCallback(async () => {

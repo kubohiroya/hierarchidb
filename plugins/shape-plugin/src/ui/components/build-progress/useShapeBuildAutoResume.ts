@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { BuildStatus } from '@hierarchidb/components';
@@ -31,6 +32,17 @@ export const useShapeBuildAutoResume = ({
   isLockSupported,
 }: Args) => {
   const [isStartPending, setIsStartPending] = useState(false);
+  const isStartPendingRef = useRef(false);
+  const setStartPending = useCallback((next: boolean, immediate = false) => {
+    isStartPendingRef.current = next;
+    if (immediate) {
+      flushSync(() => {
+        setIsStartPending(next);
+      });
+      return;
+    }
+    setIsStartPending(next);
+  }, []);
   const canStartOrResume = useMemo(() => (
     !isStartPending
     && buildStatus !== 'running'
@@ -43,9 +55,9 @@ export const useShapeBuildAutoResume = ({
   useEffect(() => {
     if (!isStartPending) return;
     if (buildStatus === 'running' || buildStatus === 'completed' || buildStatus === 'failed') {
-      setIsStartPending(false);
+      setStartPending(false);
     }
-  }, [buildStatus, isStartPending]);
+  }, [buildStatus, isStartPending, setStartPending]);
 
   const shouldSuspendRef = useRef(false);
   const activeNodeIdRef = useRef<NodeId | null>(null);
@@ -91,20 +103,20 @@ export const useShapeBuildAutoResume = ({
   }, []);
 
   const startOrResume = useCallback(async (options?: { autoResume?: boolean }) => {
-    if (isStartPending) return;
+    if (isStartPendingRef.current) return;
     if (!isLockSupported) return;
-    setIsStartPending(true);
+    setStartPending(true, true);
     const ok = await handleStartOrResume({
       forceRestart: hasFailedFetchTasks,
       autoResume: options?.autoResume,
     });
     if (!ok) {
-      setIsStartPending(false);
+      setStartPending(false);
     }
-  }, [handleStartOrResume, hasFailedFetchTasks, isLockSupported, isStartPending]);
+  }, [handleStartOrResume, hasFailedFetchTasks, isLockSupported, setStartPending]);
   const clearStartPending = useCallback(() => {
-    setIsStartPending(false);
-  }, []);
+    setStartPending(false);
+  }, [setStartPending]);
 
   useEffect(() => {
     if (!activeNodeId || !canStartOrResume || isStartPending) return;
