@@ -14,6 +14,12 @@ const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+const readCode = (value: unknown): string | null => {
+  const text = readString(value);
+  if (!text) return null;
+  return text.trim().toUpperCase();
+};
+
 const resolveStageKey = (task: StageLike): string | undefined => (
   task.taskType ?? task.type ?? task.stage
 );
@@ -23,10 +29,19 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
 );
 
 const buildFetchTitle = (input: Record<string, unknown>): string | undefined => {
-  const country = readString(input.countryName) ?? readString(input.countryCode);
+  const admin0Name = readString(input.admin0Name)
+    ?? readString(input.countryName)
+    ?? readString(input.countryCode)
+    ?? readString(input.urlCountryCode);
+  const admin0Code = readCode(input.admin0Code)
+    ?? readCode(input.countryCode)
+    ?? readCode(input.urlCountryCode);
   const adminLevel = readNumber(input.adminLevel);
-  const adminLabel = adminLevel !== null ? `ADM${adminLevel}` : undefined;
-  const title = [country, adminLabel].filter(Boolean).join(' ');
+  if (admin0Name && admin0Code && adminLevel !== null) {
+    return `${admin0Name} (${admin0Code}) ${adminLevel}`;
+  }
+  const adminLevelLabel = adminLevel !== null ? String(adminLevel) : undefined;
+  const title = [admin0Name, admin0Code ? `(${admin0Code})` : undefined, adminLevelLabel].filter(Boolean).join(' ');
   return title.length > 0 ? title : undefined;
 };
 

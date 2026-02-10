@@ -26,7 +26,7 @@ import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
-import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
+import type { ShapeEntity, ShapeStageTimingSnapshot } from '../../../common/types/ShapeEntity.ts';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
 import { useShapeBuildCacheActions } from '../build-config/useShapeBuildCacheActions.ts';
@@ -636,6 +636,7 @@ export const ShapeBuildProgressPanel = ({
       stageResumedAt: undefined,
       stageElapsedStageId: undefined,
       stageElapsedByStage: {},
+      stageTimingByStage: {},
     });
   }, [data, onChange]);
 
@@ -767,10 +768,25 @@ export const ShapeBuildProgressPanel = ({
     });
   }, [t]);
 
+  const resolveElapsedFromStageTiming = useCallback((timing: ShapeStageTimingSnapshot | undefined): number | null => {
+    if (!timing) return null;
+    if (!Number.isFinite(timing.startedAt) || !Number.isFinite(timing.inactiveMs)) return null;
+    const baseTime = typeof timing.endedAt === 'number' && Number.isFinite(timing.endedAt)
+      ? timing.endedAt
+      : typeof timing.lastHeartbeatAt === 'number' && Number.isFinite(timing.lastHeartbeatAt)
+        ? timing.lastHeartbeatAt
+        : null;
+    if (baseTime == null) return null;
+    return Math.max(0, baseTime - timing.startedAt - timing.inactiveMs);
+  }, []);
+
   const buildTimingSummary = useCallback((stageId: string) => {
     const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
     const persistedCompletedElapsedMs = data?.stageElapsedByStage?.[stageId];
-    const completedElapsedMs = summary.completedStageElapsedMs[stageId] ?? persistedCompletedElapsedMs;
+    const persistedStageTiming = data?.stageTimingByStage?.[stageId];
+    const completedElapsedMs = summary.completedStageElapsedMs[stageId]
+      ?? persistedCompletedElapsedMs
+      ?? resolveElapsedFromStageTiming(persistedStageTiming);
     const elapsed = formatInlineDuration(
       isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
     );
@@ -807,7 +823,9 @@ export const ShapeBuildProgressPanel = ({
     );
   }, [
     data?.stageElapsedByStage,
+    data?.stageTimingByStage,
     formatInlineDuration,
+    resolveElapsedFromStageTiming,
     summary.completedStageElapsedMs,
     summary.stageElapsedMs,
     summary.stageRemainingMs,

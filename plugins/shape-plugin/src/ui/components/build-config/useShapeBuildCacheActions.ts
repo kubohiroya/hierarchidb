@@ -286,6 +286,7 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
         stageResumedAt: undefined,
         stageElapsedStageId: undefined,
         stageElapsedByStage: {},
+        stageTimingByStage: {},
       } as Record<string, unknown>;
       await updater.updateTreeNode(nodeId, {
         mode: 'save-draft',

@@ -8,6 +8,13 @@ export interface ShapePreviewMapView {
   zoom: number;
 }
 
+export interface ShapeStageTimingSnapshot {
+  startedAt: number;
+  inactiveMs: number;
+  lastHeartbeatAt?: number;
+  endedAt?: number;
+}
+
 export interface ShapeEntityPayload {
   licenseAgreement?: boolean;
   licenseAgreedAt?: string;
@@ -26,6 +33,7 @@ export interface ShapeEntityPayload {
   stageResumedAt?: number;
   stageElapsedStageId?: string;
   stageElapsedByStage?: Record<string, number>;
+  stageTimingByStage?: Record<string, ShapeStageTimingSnapshot>;
 
   // UI Preview
   previewMapView?: ShapePreviewMapView;

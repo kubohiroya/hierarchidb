@@ -1,3 +1,22 @@
+2657) fix/ui/shape-stage-elapsed-three-signal-persistence (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2649) fix/ui/shape-total-elapsed-by-stage-sum
+- 受け入れ基準: ステージ経過時間を「開始時刻・停止時間推計累積・最終時刻（またはステージ終了時刻）」の3値で管理し永続化する／過去ステージは再読込後も `-` ではなく経過時間を復元表示できる／現ステージの表示と total elapsed の既存算出（ステージ合計ベース）に回帰を作らない／Reset Session・キャッシュ削除・選択変更でステージ時刻キャッシュも初期化される／影響範囲の typecheck が成功する／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/common/types/**` / `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts` / `plugins/shape-plugin/src/ui/components/build-config/**` / `plugins/shape-plugin/src/ui/components/country-selection/**`
+- ロールバック手順: 変更差分を revert し、従来の `stageElapsedByStage` のみを使う経過時間表示へ戻す
+- チェックリスト:
+  - ステージごとの 3値永続化フィールドを型へ追加する
+  - ステージ遷移/完了時に `stageElapsedByStage` と 3値を同時永続化する
+  - 表示側で 3値から過去ステージ elapsed を復元するフォールバックを追加する
+  - Reset 系処理で 3値キャッシュを初期化する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 23:40 JST ステージ経過時間が `fetch=-` など不正表示になる問題に対し、3値（開始時刻・停止推計累積・最終時刻）での永続化と復元表示の修正に着手。
+  - update: 2026-02-10 23:47 JST 原因は `stageElapsedByStage`（確定ミリ秒）のみを過去ステージ表示の単一ソースにしており、ステージ遷移時の確定保存が欠落したケースで再読込後に `-` 表示へ落ちる点。`useBuildSessionTiming` は現ステージの heartbeat 補正のみ保持し、過去ステージ復元に必要な stage 単位タイムシグナルを持たない。
+  - update: 2026-02-10 23:50 JST `ShapeEntity` に `stageTimingByStage`（`startedAt/inactiveMs/lastHeartbeatAt/endedAt`）を追加し、`useShapeBuildStep` でステージ開始時初期化・ステージ遷移時確定・完了時確定を実装。`ShapeBuildProgressPanel` は `completedStageElapsedMs -> stageElapsedByStage -> stageTimingByStage` の順で elapsed を解決するよう変更。Reset Session/キャッシュ削除/選択変更時の初期化パッチにも `stageTimingByStage: {}` を追加。
+  - done: 2026-02-10 23:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知の tsdown/rollup warning のみ、失敗なし）。
+
 2656) fix/ui/shape-build-start-visibility-and-state-diagnostics (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2654) fix/ui/shape-pause-reload-resume-button-state
@@ -57,6 +76,11 @@
   - update: 2026-02-10 22:35 JST `useShapeBuildStep.ts` から `Build progress` 用 Snackbar 通知を削除し、同経路は console の `worker progress update` ログのみ残すよう変更。開始/完了/失敗/長時間待機などの重要通知は維持。
   - blocked: 2026-02-10 22:36 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` は `@hierarchidb/ui-session-coordinator` の import 解決失敗（vite import-analysis, `packages/ui/batch/src/hooks/useBuildSessionSnapshots.ts`）で exit 1。既知のテスト基盤課題として継続。
   - done: 2026-02-10 22:37 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は exit 0。代替確認として `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/executePauseBuildFlow.unit.test.ts src/ui/__tests__/hooks/unit/resolveBuildStatusSource.unit.test.ts` も exit 0。
+  - start: 2026-02-10 13:26 JST Fetch ステージ task title を `${admin0Name} (${admin0Code}) ${adminLevel}` 形式へ統一し、`worker progress update` の console log にも `(${admin0Code}) ${adminLevel}` を含める追加修正に着手。
+  - update: 2026-02-10 13:27 JST 原因は `plugins/shape-plugin/src/common/utils/taskTitles.ts` の fetch title 生成が `countryName + ADMx` 固定で admin code を含まないこと、および `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の進捗ログイベント名が常に `worker progress update` 固定だったこと。発生範囲は Fetch ステージ task title 表示と progress console log。
+  - done: 2026-02-10 13:27 JST `buildFetchTitle` を `${admin0Name} (${admin0Code}) ${adminLevel}` 優先へ変更し、`useShapeBuildStep.ts` で fetch タスク title から `(${admin0Code}) ${adminLevel}` を抽出して `worker progress update (...) ...` 形式でログ出力するよう修正。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` ともに exit 0。
+  - update: 2026-02-10 13:45 JST 再報告を受けて追加原因を確認。`useShapeBuildStep.ts` の fetch scope 解決が `task.title` 依存だったため、title 未同期/旧形式のタイミングで `fetchProgressScope` が null になり `worker progress update` 単体のログが残る経路があった。
+  - done: 2026-02-10 13:45 JST `useShapeBuildStep.ts` に scope 解決のフォールバックを追加（title 解析を `ADM` 形式含め許容、`selectedArrayByCountries` から `(${ISO2}) ${adminLevel}` を補完）。さらに fetch ステージで scope 不明時は進捗ログを出さないガードを追加し、`worker progress update` 単体表示を防止。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` ともに exit 0。
 
 2655) fix/ui/shape-summary-reset-after-stage-cache-delete (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
@@ -292,7 +316,7 @@
   - update: 2026-02-10 00:22 JST 原因は Step5 側 `useShapeBuildCacheActions` に `onResetSession` が未配線で、Reset 後の `onChange` パッチが呼ばれず表示状態が stale なまま維持される点。`ShapeBuildStep` から `ShapeBuildProgressPanel` へ `onChange` を渡し、Reset 時に elapsed 関連フィールドを即時初期化するコールバックを配線。
   - done: 2026-02-10 00:24 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 
-2642) fix/plugin-dialog/persist-dialog-ui-state-on-window-actions (P1) — 進行中 (2026-02-10)
+2642) fix/plugin-dialog/persist-dialog-ui-state-on-window-actions (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: なし
 - 受け入れ基準: プラグインダイアログの最大化・全画面化・通常化・サイズ変更・位置変更の各操作時に、永続化対象 `dialogUIState` が更新される／ダイアログ再表示時に直前の mode/size/position が復元される／既存の保存系（close/save-draft/step遷移）に回帰を作らない／影響範囲の typecheck を実行する／TASKS.md に運用ログと検証結果を記載する
@@ -307,6 +331,9 @@
   - start: 2026-02-10 08:25 JST window 操作（最大化/全画面/通常化/リサイズ/位置変更）で dialogUIState が永続更新されない問題の修正に着手。
   - update: 2026-02-10 08:33 JST `persistDialogWindow` からデバウンス付き `save-draft` 永続化を起動するよう修正し、displayMode/size/position の全操作を同一永続化経路へ統一。
   - done: 2026-02-10 08:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0。
+  - update: 2026-02-10 09:12 JST クローズ時の永続化で `dialogWindow`（mode/position/size）を保存直前に最新フレーム状態へ同期し、閉じる操作で確実に最終値を保存するよう補強。
+  - done: 2026-02-10 09:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0。
+  - done: 2026-02-10 09:20 JST `pnpm -w turbo run build --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/ui-dialog` exit 0（tsdown の既知 warning のみ）。
 
 2637) fix/ui/shape-step4-delete-build-outputs-reset-only (P2) — 完了 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step4-delete-build-outputs-reset-only

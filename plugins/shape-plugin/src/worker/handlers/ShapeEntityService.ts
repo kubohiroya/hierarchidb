@@ -9,6 +9,7 @@ import type { DataSourceName } from '../../common/types/index.js';
 import type {
   ShapeEntity,
   ShapePreviewMapView,
+  ShapeStageTimingSnapshot,
   SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import type { ShapeBuildConfig } from '../../common/types/build.js';
@@ -65,6 +66,20 @@ const isNumberRecord = (value: unknown): value is Record<string, number> => {
   return Object.values(value).every((entry) => isNumber(entry));
 };
 
+const isStageTimingSnapshot = (value: unknown): value is ShapeStageTimingSnapshot => {
+  if (!isRecord(value)) return false;
+  if (!isNumber(value.startedAt)) return false;
+  if (!isNumber(value.inactiveMs)) return false;
+  if (value.lastHeartbeatAt !== undefined && !isNumber(value.lastHeartbeatAt)) return false;
+  if (value.endedAt !== undefined && !isNumber(value.endedAt)) return false;
+  return true;
+};
+
+const isStageTimingByStage = (value: unknown): value is Record<string, ShapeStageTimingSnapshot> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isStageTimingSnapshot(entry));
+};
+
 const toShapeEntity = (record: Record<string, unknown>, node: {
   id: NodeId;
   createdAt: number;
@@ -96,6 +111,7 @@ const toShapeEntity = (record: Record<string, unknown>, node: {
     stageResumedAt: getNumber(record, 'stageResumedAt'),
     stageElapsedStageId: getString(record, 'stageElapsedStageId'),
     stageElapsedByStage: isNumberRecord(record.stageElapsedByStage) ? record.stageElapsedByStage : undefined,
+    stageTimingByStage: isStageTimingByStage(record.stageTimingByStage) ? record.stageTimingByStage : undefined,
     previewMapView: isPreviewMapView(previewMapViewValue) ? previewMapViewValue : undefined,
   };
 };

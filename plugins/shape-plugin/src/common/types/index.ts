@@ -8,6 +8,7 @@ export type {
   ShapeEntity,
   ShapeEntityPayload,
   ShapePreviewMapView,
+  ShapeStageTimingSnapshot,
   SelectedArrayByCountries,
 } from './ShapeEntity.js';
 export type { ShapeFeaturePayload } from './ShapeFeaturePayload.js';

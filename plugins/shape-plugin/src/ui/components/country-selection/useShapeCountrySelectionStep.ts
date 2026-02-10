@@ -527,6 +527,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
           stageResumedAt: undefined,
           stageElapsedStageId: undefined,
           stageElapsedByStage: {},
+          stageTimingByStage: {},
         } as Record<string, unknown>,
       });
     } catch (error) {

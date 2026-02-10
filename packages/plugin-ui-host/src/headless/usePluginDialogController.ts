@@ -741,27 +741,48 @@ export function usePluginDialogController(
   );
 
   const dialogWindowPersistTimerRef = useRef<number | null>(null);
-  const persistDialogUIStateDraft = useCallback(async () => {
+  const buildLatestDialogWindowState = useCallback((): DialogWindowState => {
+    const prevWindow = dialogUIStateRef.current?.dialogWindow ?? null;
+    return {
+      mode: displayMode,
+      position: dialogPosition,
+      size: dialogSize,
+      restorePosition: prevWindow?.restorePosition ?? null,
+      restoreSize: prevWindow?.restoreSize ?? null,
+    };
+  }, [dialogPosition, dialogSize, dialogUIStateRef, displayMode]);
+
+  const persistDialogUIStateDraft = useCallback(async (options?: { syncWindowStateOnPersist?: boolean }) => {
     if (dialogMode === 'create' || dialogMode === 'preview') return;
     const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
     if (!treeNodeId) return;
+    const shouldSyncWindowState = options?.syncWindowStateOnPersist === true;
+    const latestWindowState = shouldSyncWindowState ? buildLatestDialogWindowState() : null;
+    if (latestWindowState) {
+      updateDialogUIState({ dialogWindow: latestWindowState });
+    }
     try {
+      const nextDialogUIState = buildDialogUIStateForPersist();
       const payload: TreeNodeUpdaterState<PluginDefinedEntity> = {
         treeNodeId,
         draftMetadata: treeUpdater?.draftMetadata ?? null,
         draftData: nodeType === 'folder' ? undefined : treeUpdater?.draftData,
-        dialogUIState: buildDialogUIStateForPersist(),
+        dialogUIState: latestWindowState
+          ? { ...nextDialogUIState, dialogWindow: latestWindowState }
+          : nextDialogUIState,
       };
       await commitTreeNodeUpdater('save-draft', payload);
     } catch (error) {
       console.warn('[PluginDialogShell] failed to persist dialog UI state', error);
     }
   }, [
+    buildLatestDialogWindowState,
     commitTreeNodeUpdater,
     dialogMode,
     buildDialogUIStateForPersist,
     nodeId,
     nodeType,
+    updateDialogUIState,
     treeUpdater?.draftData,
     treeUpdater?.draftMetadata,
     treeUpdater?.treeNodeId,
@@ -1050,7 +1071,7 @@ export function usePluginDialogController(
       window.clearTimeout(dialogWindowPersistTimerRef.current);
       dialogWindowPersistTimerRef.current = null;
     }
-    await persistDialogUIStateDraft();
+    await persistDialogUIStateDraft({ syncWindowStateOnPersist: true });
   }, [persistDialogUIStateDraft]);
 
   const persistDialogUIStateOnClose = useCallback(async () => {
