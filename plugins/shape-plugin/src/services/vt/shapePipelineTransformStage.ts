@@ -51,6 +51,19 @@ type TransformBufferMeta = {
   vertexCount?: number;
 };
 
+type TransformTaskPreparationSummary = {
+  planned: number;
+  existing: number;
+  missing: number;
+};
+
+type TransformStepMemorySnapshot = {
+  usedJSHeapSize: number | null;
+  totalJSHeapSize: number | null;
+  jsHeapSizeLimit: number | null;
+};
+
+const TRANSFORM_TASK_PUT_CHUNK_SIZE = 500;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
@@ -64,6 +77,94 @@ const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+const toMemoryValue = (value: number | undefined): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const captureTransformStepMemorySnapshot = (): TransformStepMemorySnapshot => {
+  const memory = (
+    globalThis as {
+      performance?: {
+        memory?: {
+          usedJSHeapSize?: number;
+          totalJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+        };
+      };
+    }
+  ).performance?.memory;
+  return {
+    usedJSHeapSize: toMemoryValue(memory?.usedJSHeapSize),
+    totalJSHeapSize: toMemoryValue(memory?.totalJSHeapSize),
+    jsHeapSizeLimit: toMemoryValue(memory?.jsHeapSizeLimit),
+  };
+};
+
+const subtractMemoryValue = (start: number | null, finish: number | null): number | null => {
+  if (start === null || finish === null) return null;
+  return finish - start;
+};
+
+const calculateMemoryDelta = (
+  start: TransformStepMemorySnapshot,
+  finish: TransformStepMemorySnapshot,
+): TransformStepMemorySnapshot => ({
+  usedJSHeapSize: subtractMemoryValue(start.usedJSHeapSize, finish.usedJSHeapSize),
+  totalJSHeapSize: subtractMemoryValue(start.totalJSHeapSize, finish.totalJSHeapSize),
+  jsHeapSizeLimit: subtractMemoryValue(start.jsHeapSizeLimit, finish.jsHeapSizeLimit),
+});
+
+const runTransformStep = async <T>(
+  params: ShapeTransformStageParams,
+  step: string,
+  action: () => Promise<T>,
+): Promise<T> => {
+  const startedAt = Date.now();
+  const memoryAtStart = captureTransformStepMemorySnapshot();
+  console.warn('[ShapeTransform][Transition] step start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    step,
+    startedAt,
+    memoryAtStart,
+  }));
+  try {
+    const result = await action();
+    const finishedAt = Date.now();
+    const memoryAtFinish = captureTransformStepMemorySnapshot();
+    console.warn('[ShapeTransform][Transition] step finish', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      step,
+      outcome: 'success',
+      startedAt,
+      finishedAt,
+      elapsedMs: finishedAt - startedAt,
+      memoryAtStart,
+      memoryAtFinish,
+      memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
+    }));
+    return result;
+  } catch (error) {
+    const finishedAt = Date.now();
+    const memoryAtFinish = captureTransformStepMemorySnapshot();
+    console.warn('[ShapeTransform][Transition] step finish', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      step,
+      outcome: 'error',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      startedAt,
+      finishedAt,
+      elapsedMs: finishedAt - startedAt,
+      memoryAtStart,
+      memoryAtFinish,
+      memoryDelta: calculateMemoryDelta(memoryAtStart, memoryAtFinish),
+    }));
+    throw error;
+  }
+};
+
 export const runShapeTransformStageSection = async (params: ShapeTransformStageParams): Promise<boolean> => {
   console.warn('[ShapeTransform][PipelineDiagnostics] transform stage start', JSON.stringify({
     nodeId: params.nodeId,
@@ -74,36 +175,43 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     bands: params.bands.length,
   }));
   let existingTransformByBandTasks = params.resumeExistingTasks
-    ? await listTasksByStage(params.taskQueue, params.nodeId, 'transform')
+    ? await runTransformStep(params, 'load-existing-transform-tasks', async () => (
+      listTasksByStage(params.taskQueue, params.nodeId, 'transform')
+    ))
     : [];
   const transformConfig = resolveTransformConfig(params.buildConfig);
   const transformConfigSignature = buildStableSignature(transformConfig);
   const bandsAscending = [...params.bands].sort((a, b) => a.zMax - b.zMax);
 
-  const fetchTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
+  const fetchTasks = await runTransformStep(params, 'load-fetch-stage-tasks', async () => (
+    listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
+  ));
   console.warn('[ShapeTransform][PipelineDiagnostics] transform stage fetched inputs', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     fetchTasks: fetchTasks.length,
     existingTransformTasks: existingTransformByBandTasks.length,
   }));
-  const buffers: TransformBufferMeta[] = [];
-  fetchTasks.forEach((task) => {
-    const output = isRecord(task.outputData) ? task.outputData : null;
-    const fetchCacheId = readString(output?.fetchCacheId);
-    if (!fetchCacheId) return;
-    const input = isRecord(task.inputData) ? task.inputData : null;
-    const sourceKey = readString(input?.sourceKey);
-    if (!sourceKey) return;
-    buffers.push({
-      id: fetchCacheId,
-      sourceKey,
-      adminLevel: readNumber(input?.adminLevel) ?? undefined,
-      countryCode: readString(input?.countryCode) ?? undefined,
-      featureCount: readNumber(output?.featureCount) ?? 0,
-      inputVertexCount: readNumber(output?.vertexCount) ?? undefined,
-      vertexCount: readNumber(output?.vertexCount) ?? undefined,
+  const buffers = await runTransformStep(params, 'build-transform-buffer-metadata', async () => {
+    const next: TransformBufferMeta[] = [];
+    fetchTasks.forEach((task) => {
+      const output = isRecord(task.outputData) ? task.outputData : null;
+      const fetchCacheId = readString(output?.fetchCacheId);
+      if (!fetchCacheId) return;
+      const input = isRecord(task.inputData) ? task.inputData : null;
+      const sourceKey = readString(input?.sourceKey);
+      if (!sourceKey) return;
+      next.push({
+        id: fetchCacheId,
+        sourceKey,
+        adminLevel: readNumber(input?.adminLevel) ?? undefined,
+        countryCode: readString(input?.countryCode) ?? undefined,
+        featureCount: readNumber(output?.featureCount) ?? 0,
+        inputVertexCount: readNumber(output?.vertexCount) ?? undefined,
+        vertexCount: readNumber(output?.vertexCount) ?? undefined,
+      });
     });
+    return next;
   });
   if (buffers.length === 0) {
     console.warn('[ShapeTransform][PipelineDiagnostics] transform stage skipped (no buffers)', JSON.stringify({
@@ -113,28 +221,33 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     return false;
   }
 
-  const countryTotals = new Map<string, number>();
-  const buffersByCountry = new Map<string, TransformBufferMeta[]>();
-  buffers.forEach((buffer) => {
-    const countryKey = buffer.countryCode?.trim().toUpperCase() ?? buffer.sourceKey;
-    const currentTotal = countryTotals.get(countryKey) ?? 0;
-    const vertexCount = buffer.inputVertexCount ?? buffer.vertexCount ?? 0;
-    countryTotals.set(countryKey, currentTotal + vertexCount);
-    const bucket = buffersByCountry.get(countryKey);
-    if (bucket) {
-      bucket.push(buffer);
-    } else {
-      buffersByCountry.set(countryKey, [buffer]);
-    }
-  });
-
-  const orderedCountries = [...buffersByCountry.keys()].sort((a, b) => {
-    const totalA = countryTotals.get(a) ?? 0;
-    const totalB = countryTotals.get(b) ?? 0;
-    if (totalA !== totalB) return totalB - totalA;
-    const nameA = params.countryLookup.get(a)?.countryName ?? a;
-    const nameB = params.countryLookup.get(b)?.countryName ?? b;
-    return nameA.localeCompare(nameB);
+  const { buffersByCountry, orderedCountries } = await runTransformStep(params, 'group-buffers-by-country', async () => {
+    const countryTotals = new Map<string, number>();
+    const grouped = new Map<string, TransformBufferMeta[]>();
+    buffers.forEach((buffer) => {
+      const countryKey = buffer.countryCode?.trim().toUpperCase() ?? buffer.sourceKey;
+      const currentTotal = countryTotals.get(countryKey) ?? 0;
+      const vertexCount = buffer.inputVertexCount ?? buffer.vertexCount ?? 0;
+      countryTotals.set(countryKey, currentTotal + vertexCount);
+      const bucket = grouped.get(countryKey);
+      if (bucket) {
+        bucket.push(buffer);
+      } else {
+        grouped.set(countryKey, [buffer]);
+      }
+    });
+    const sortedCountries = [...grouped.keys()].sort((a, b) => {
+      const totalA = countryTotals.get(a) ?? 0;
+      const totalB = countryTotals.get(b) ?? 0;
+      if (totalA !== totalB) return totalB - totalA;
+      const nameA = params.countryLookup.get(a)?.countryName ?? a;
+      const nameB = params.countryLookup.get(b)?.countryName ?? b;
+      return nameA.localeCompare(nameB);
+    });
+    return {
+      buffersByCountry: grouped,
+      orderedCountries: sortedCountries,
+    };
   });
 
   const buildTasksForCountryBand = (
@@ -192,107 +305,130 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     return { tasks, nextIndex: index };
   };
 
-  const desiredTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
-  let nextIndex = 0;
-  orderedCountries.forEach((countryKey, countryIndex) => {
-    bandsAscending.forEach((band) => {
-      const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
-        countryKey,
-        countryIndex,
-        band,
-        nextIndex,
-      );
-      if (tasks.length > 0) {
-        desiredTransformTasks.push(...tasks);
-      }
-      nextIndex = updatedIndex;
-    });
-  });
-
-  const plannedTransformTotal = desiredTransformTasks.length;
-  if (plannedTransformTotal > 0) {
-    setTransformPlannedTotal(params.nodeId, plannedTransformTotal);
-  } else {
-    clearStagePlan(params.nodeId);
-  }
-
   try {
-    let missingTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
-    if (params.resumeExistingTasks && existingTransformByBandTasks.length > 0) {
-      const reconciled = reconcileStageTasksByMetadata(desiredTransformTasks, existingTransformByBandTasks);
-      if (reconciled.obsoleteTaskIds.length > 0) {
-        await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
-      }
-      const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
-      existingTransformByBandTasks = existingTransformByBandTasks.filter((task) => !obsoleteSet.has(task.taskId));
-      missingTransformTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+    let preparation: TransformTaskPreparationSummary;
+    if (!params.resumeExistingTasks) {
+      preparation = await runTransformStep(params, 'prepare-transform-tasks-chunked', async () => {
+        let nextIndex = 0;
+        let planned = 0;
+        let missing = 0;
+        const taskChunk: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+        const flushChunk = async () => {
+          if (taskChunk.length === 0) return;
+          const chunk = [...taskChunk];
+          taskChunk.length = 0;
+          await putTasks(params.taskQueue, chunk);
+        };
+        for (const [countryIndex, countryKey] of orderedCountries.entries()) {
+          for (const band of bandsAscending) {
+            const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
+              countryKey,
+              countryIndex,
+              band,
+              nextIndex,
+            );
+            nextIndex = updatedIndex;
+            if (tasks.length === 0) continue;
+            planned += tasks.length;
+            missing += tasks.length;
+            for (const task of tasks) {
+              taskChunk.push(task);
+              if (taskChunk.length >= TRANSFORM_TASK_PUT_CHUNK_SIZE) {
+                await flushChunk();
+              }
+            }
+          }
+        }
+        await flushChunk();
+        return { planned, existing: 0, missing };
+      });
     } else {
-      const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
-      missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId));
+      const desiredTransformTasks = await runTransformStep(params, 'build-desired-transform-tasks', async () => {
+        const desired: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+        let nextIndex = 0;
+        orderedCountries.forEach((countryKey, countryIndex) => {
+          bandsAscending.forEach((band) => {
+            const { tasks, nextIndex: updatedIndex } = buildTasksForCountryBand(
+              countryKey,
+              countryIndex,
+              band,
+              nextIndex,
+            );
+            if (tasks.length > 0) {
+              desired.push(...tasks);
+            }
+            nextIndex = updatedIndex;
+          });
+        });
+        return desired;
+      });
+      preparation = await runTransformStep(params, 'reconcile-transform-tasks', async () => {
+        let missingTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+        if (existingTransformByBandTasks.length > 0) {
+          const reconciled = reconcileStageTasksByMetadata(desiredTransformTasks, existingTransformByBandTasks);
+          if (reconciled.obsoleteTaskIds.length > 0) {
+            await deleteTasksByIds(params.taskQueue, reconciled.obsoleteTaskIds);
+          }
+          const obsoleteSet = new Set(reconciled.obsoleteTaskIds);
+          existingTransformByBandTasks = existingTransformByBandTasks.filter((task) => !obsoleteSet.has(task.taskId));
+          missingTransformTasks = reconciled.missingTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+        } else {
+          missingTransformTasks = desiredTransformTasks;
+        }
+        if (missingTransformTasks.length > 0) {
+          await putTasks(params.taskQueue, missingTransformTasks);
+        }
+        return {
+          planned: desiredTransformTasks.length,
+          existing: existingTransformByBandTasks.length,
+          missing: missingTransformTasks.length,
+        };
+      });
+    }
+    if (preparation.planned > 0) {
+      setTransformPlannedTotal(params.nodeId, preparation.planned);
+    } else {
+      clearStagePlan(params.nodeId);
     }
     console.warn('[ShapeTransform][PipelineDiagnostics] transform stage tasks prepared', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
-      planned: desiredTransformTasks.length,
-      existing: existingTransformByBandTasks.length,
-      missing: missingTransformTasks.length,
+      planned: preparation.planned,
+      existing: preparation.existing,
+      missing: preparation.missing,
     }));
-    if (missingTransformTasks.length > 0) {
-      await putTasks(params.taskQueue, missingTransformTasks);
-    }
-    if (existingTransformByBandTasks.length === 0 && missingTransformTasks.length === 0) {
+    if (preparation.planned === 0 || (preparation.existing === 0 && preparation.missing === 0)) {
       return false;
     }
 
-    console.warn('[ShapeTransform][PipelineDiagnostics] transform waitIfPaused start', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
-    await params.waitIfPaused?.();
-    console.warn('[ShapeTransform][PipelineDiagnostics] transform waitIfPaused done', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
-    console.warn('[ShapeTransform][PipelineDiagnostics] reset running tasks start', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
-    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
-    console.warn('[ShapeTransform][PipelineDiagnostics] reset running tasks done', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
+    await runTransformStep(params, 'wait-if-paused-before-transform', async () => {
+      await params.waitIfPaused?.();
+    });
+    await runTransformStep(params, 'reset-running-transform-tasks', async () => {
+      await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
+    });
 
     const transformByBandAbortController = new AbortController();
-    console.warn('[ShapeTransform][PipelineDiagnostics] createTransformByBandHandler start', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
-    const transformByBandHandler = createTransformByBandHandler({
-      ephemeralDB: params.ephemeralStore,
-      transformConfig,
-      bands: params.bands,
-      featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
-      abortSignal: transformByBandAbortController.signal,
-    });
-    console.warn('[ShapeTransform][PipelineDiagnostics] createTransformByBandHandler done', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-    }));
+    const transformByBandHandler = await runTransformStep(params, 'create-transform-handler', async () => (
+      createTransformByBandHandler({
+        ephemeralDB: params.ephemeralStore,
+        transformConfig,
+        bands: params.bands,
+        featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
+        abortSignal: transformByBandAbortController.signal,
+      })
+    ));
     try {
-      console.warn('[ShapeTransform][PipelineDiagnostics] runStageTasks start', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-      }));
-      await runStageTasks({
-        nodeId: params.nodeId,
-        stage: 'transform',
-        handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
-        waitIfPaused: params.waitIfPaused,
-        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-        failureHandling: params.failureHandling,
-        abortController: transformByBandAbortController,
+      await runTransformStep(params, 'run-transform-stage-tasks', async () => {
+        await runStageTasks({
+          nodeId: params.nodeId,
+          stage: 'transform',
+          handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+          waitIfPaused: params.waitIfPaused,
+          maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+          failureHandling: params.failureHandling,
+          abortController: transformByBandAbortController,
+        });
       });
     } catch (error) {
       const baseMessage = error instanceof Error ? error.message : String(error);
@@ -326,11 +462,15 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     );
     const shouldStop = shouldStopAfterStage(
       params.buildContinuationPolicy,
-      await getFailedTaskCount(params.taskQueue, params.nodeId, 'transform'),
+      await runTransformStep(params, 'count-failed-transform-tasks', async () => (
+        getFailedTaskCount(params.taskQueue, params.nodeId, 'transform')
+      )),
     );
     if (params.buildConfig.fetchConfig.deleteOnComplete) {
-      await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
-        await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+      await runTransformStep(params, 'cleanup-fetch-cache-after-transform', async () => {
+        await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
+          await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+        });
       });
     }
     return shouldStop;

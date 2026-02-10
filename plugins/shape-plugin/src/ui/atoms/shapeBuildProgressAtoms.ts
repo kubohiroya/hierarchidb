@@ -31,6 +31,12 @@ export type TaskProgressSummary = {
   totalElapsedMs: number;
   stageElapsedMs: number;
   stageRemainingMs: number | null;
+  stageTotals: Record<string, {
+    total: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+  }>;
 };
 
 export type TaskProgressControls = {
@@ -90,6 +96,7 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   totalElapsedMs: 0,
   stageElapsedMs: 0,
   stageRemainingMs: null,
+  stageTotals: {},
 });
 export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
 export const taskViewportRangeAtom = atom<TaskViewportRange | null>(null);

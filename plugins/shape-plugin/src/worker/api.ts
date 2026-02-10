@@ -6,6 +6,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import { Dexie } from 'dexie';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,
@@ -24,7 +25,6 @@ import {
   type FetchTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
-  type ShapeEntity,
   type SelectedArrayByCountries,
 } from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
@@ -50,7 +50,6 @@ import {
   listTasksByStatus,
   onTaskQueueUpdate,
   putTasks,
-  updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
@@ -64,12 +63,7 @@ import {
   resolveTaskProcessingTimestamp,
   selectLatestTaskBySequence,
 } from './taskOrdering.ts';
-import { getStagePlan } from '../services/vt/shapeProgressPlan.ts';
-
-type DraftLike = {
-  treeNodeId?: NodeId;
-  draftData?: Partial<ShapeEntity>;
-};
+import { getStagePlan, setFetchPlannedTotal } from '../services/vt/shapeProgressPlan.ts';
 
 const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
@@ -96,6 +90,64 @@ const buildConfigFromSession = (config: BuildSessionConfig): ShapeBuildConfig =>
     transformConfig: config.transformConfig,
     vtConfig: config.vectorTiles,
   });
+};
+
+const buildFetchStageOptions = (buildConfig: ShapeBuildConfig) => ({
+  timeoutMs: buildConfig.fetchConfig.timeoutMs,
+  retryAttempts: buildConfig.fetchConfig.retryAttempts,
+  retryDelay: buildConfig.fetchConfig.retryDelay,
+});
+
+const resolveFetchTaskPayloadsForPlan = async (input: {
+  nodeId: NodeId;
+  dataSource: DataSourceName;
+  selectedArrayByCountries?: SelectedArrayByCountries;
+  downloadTaskPayloads?: FetchTaskPayload[];
+}): Promise<FetchTaskPayload[]> => {
+  if (input.downloadTaskPayloads && input.downloadTaskPayloads.length > 0) {
+    return input.downloadTaskPayloads;
+  }
+  if (!input.selectedArrayByCountries) {
+    return [];
+  }
+  const strategy = resolveFetchStageStrategy(input.dataSource);
+  const countryMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId);
+  return strategy.buildFetchTaskPayloads({
+    selectedArrayByCountries: input.selectedArrayByCountries,
+    countryMetadata,
+  });
+};
+
+const estimatePlannedFetchTotal = async (input: {
+  nodeId: NodeId;
+  buildConfig: ShapeBuildConfig;
+  selectedArrayByCountries?: SelectedArrayByCountries;
+  downloadTaskPayloads?: FetchTaskPayload[];
+}): Promise<{ plannedFetchTotal: number; payloadCount: number }> => {
+  const dataSource = requireDataSourceName(
+    input.buildConfig.dataSourceName,
+    'estimatePlannedFetchTotal',
+  );
+  const payloads = await resolveFetchTaskPayloadsForPlan({
+    nodeId: input.nodeId,
+    dataSource,
+    selectedArrayByCountries: input.selectedArrayByCountries,
+    downloadTaskPayloads: input.downloadTaskPayloads,
+  });
+  if (payloads.length === 0) {
+    return { plannedFetchTotal: 0, payloadCount: 0 };
+  }
+  const strategy = resolveFetchStageStrategy(dataSource);
+  const { tasks } = await strategy.buildFetchTasks({
+    nodeId: input.nodeId,
+    fetchTaskPayloads: payloads,
+    config: buildBuildSessionConfig(input.buildConfig),
+    options: buildFetchStageOptions(input.buildConfig),
+  });
+  return {
+    plannedFetchTotal: tasks.length,
+    payloadCount: payloads.length,
+  };
 };
 
 const hasConfigDiff = <T extends object>(left: T, right: T): boolean => {
@@ -327,43 +379,91 @@ const mapBuildSessionRecordToBatchSession = (record: BuildSessionRecord): BatchS
   resourceUsage: record.resourceUsage,
 });
 
+type TaskQueueStatusCounts = {
+  total: number;
+  running: number;
+  completed: number;
+  failed: number;
+};
+
+const countTaskQueueStatuses = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+): Promise<TaskQueueStatusCounts> => {
+  const [total, running, completed, failed] = await Promise.all([
+    taskQueue.tasks.where('nodeId').equals(nodeId).count(),
+    taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
+    taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'completed']).count(),
+    taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'failed']).count(),
+  ]);
+  return { total, running, completed, failed };
+};
+
+const resolveBatchSessionStatusFromCounts = (
+  nodeId: NodeId,
+  counts: TaskQueueStatusCounts,
+): BatchSession['status'] => {
+  if (getPauseState(nodeId).paused) return 'paused';
+  if (counts.running > 0) return 'running';
+  if (counts.failed > 0) return 'failed';
+  if (counts.total > 0 && counts.completed + counts.failed >= counts.total) return 'completed';
+  if (counts.total > 0) return 'queued';
+  return 'idle';
+};
+
+const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BatchSession['progress'] => {
+  const doneCount = Math.min(counts.total, counts.completed + counts.failed);
+  return {
+    total: counts.total,
+    completed: counts.completed,
+    failed: counts.failed,
+    skipped: 0,
+    percentage: counts.total > 0 ? Math.round((doneCount / counts.total) * 100) : 0,
+  };
+};
+
 const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | undefined> => {
-  const taskQueue = new VtTaskQueueDb();
-  const vtTasks = await listTasks(taskQueue, nodeId);
-  if (vtTasks.length > 0) {
-    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
-    const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
-    let config: BuildSessionConfig | null = buildSession?.config ?? null;
-    if (!config) {
-      const handler = getShapeEntityHandler();
-      const entity = await handler.getEntity(nodeId);
-      if (!entity?.buildConfig) {
-        throw new Error('[shapeBatchAPI] buildConfig is required for build session');
-      }
-      config = buildBuildSessionConfig(entity.buildConfig);
-    }
-    const summary = await buildTaskQueueSummary(nodeId, vtTasks);
-    const paused = getPauseState(nodeId).paused;
-    const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
-    return {
-      draftId: nodeId,
-      nodeId,
-      status: paused ? 'paused' : summary.status,
-      config,
-      startedAt,
-      updatedAt: Date.now(),
-      completedAt: summary.status === 'completed' ? Date.now() : undefined,
-      progress: summary.progress,
-      canResume: paused,
-      lastActivity: Date.now(),
-      expiresAt: Date.now(),
-      stages: {},
-      resourceUsage: undefined,
-    };
-  }
-  const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId);
+  const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
   const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
-  return buildSession ? mapBuildSessionRecordToBatchSession(buildSession) : undefined;
+  if (buildSession) {
+    return mapBuildSessionRecordToBatchSession(buildSession);
+  }
+
+  const taskQueue = new VtTaskQueueDb();
+  const counts = await countTaskQueueStatuses(taskQueue, nodeId);
+  if (counts.total === 0) return undefined;
+
+  const handler = getShapeEntityHandler();
+  const entity = await handler.getEntity(nodeId);
+  const mergedBuildConfig = mergeBuildConfig(
+    DEFAULT_BUILD_CONFIG,
+    entity?.buildConfig ?? {},
+  );
+  const config = buildBuildSessionConfig(mergedBuildConfig);
+  const firstTask = await taskQueue.tasks
+    .where('[nodeId+index]')
+    .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
+    .first();
+  const now = Date.now();
+  const status = resolveBatchSessionStatusFromCounts(nodeId, counts);
+  const progress = buildProgressFromCounts(counts);
+  const startedAt = typeof firstTask?.createdAt === 'number' ? firstTask.createdAt : now;
+
+  return {
+    draftId: nodeId,
+    nodeId,
+    status,
+    config,
+    startedAt,
+    updatedAt: now,
+    completedAt: status === 'completed' ? now : undefined,
+    progress,
+    canResume: status === 'paused',
+    lastActivity: now,
+    expiresAt: resolveSessionExpiresAt(now),
+    stages: {},
+    resourceUsage: undefined,
+  };
 };
 
 interface ProgressSubscription {
@@ -447,31 +547,50 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
   };
 };
 
+const BUILD_TASK_SEED_BATCH_SIZE = 250;
+
 const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
-  const existing = await ephemeralShapeDB.getBuildTasks(nodeId);
-  if (existing.length === 0) return;
-  const tasks = existing
-    .filter((task) => task.taskType === 'fetch' || task.taskType === 'transform' || task.taskType === 'vt')
-    .map(mapBuildTaskToQueueTask);
-  if (tasks.length === 0) return;
   const taskQueue = new VtTaskQueueDb();
-  await putTasks(taskQueue, tasks);
+  let scannedCount = 0;
+  let queuedCount = 0;
+  let batch: TaskQueueRecord[] = [];
+  let writeChain = Promise.resolve();
+
+  const flushBatch = (): void => {
+    if (batch.length === 0) return;
+    const nextBatch = batch;
+    batch = [];
+    queuedCount += nextBatch.length;
+    writeChain = writeChain.then(() => putTasks(taskQueue, nextBatch));
+  };
+
+  await ephemeralShapeDB.buildTasks
+    .where('[nodeId+index]')
+    .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
+    .each((task) => {
+      scannedCount += 1;
+      if (task.taskType !== 'fetch' && task.taskType !== 'transform' && task.taskType !== 'vt') {
+        return;
+      }
+      batch.push(mapBuildTaskToQueueTask(task));
+      if (batch.length >= BUILD_TASK_SEED_BATCH_SIZE) {
+        flushBatch();
+      }
+    });
+
+  flushBatch();
+  await writeChain;
+
+  console.warn('[shapeBatchAPI] seed task queue from build tasks', JSON.stringify({
+    nodeId,
+    scannedCount,
+    queuedCount,
+  }));
 };
 
 
-const buildTaskSummaryMetadata = (meta?: TaskWeightMeta): TaskWeightMetadata | undefined => (
-  meta
-    ? {
-      polygonCount: meta.polygonCount ?? undefined,
-      weight: meta.weight,
-      weightSource: meta.source,
-    }
-    : undefined
-);
-
 const buildTaskSummaryFields = (
   task: TaskQueueRecord,
-  meta?: TaskWeightMeta,
 ): {
   message?: string;
   title?: string;
@@ -480,7 +599,6 @@ const buildTaskSummaryFields = (
   index?: number;
   sequence?: number;
   stagePriority?: number;
-  metadata?: TaskWeightMetadata;
 } => ({
   message: task.message ?? task.errorMessage,
   title: buildShapeTaskTitle(task),
@@ -489,14 +607,12 @@ const buildTaskSummaryFields = (
   index: task.index,
   sequence: task.sequence,
   stagePriority: task.stagePriority,
-  metadata: buildTaskSummaryMetadata(meta),
 });
 
 const mapTaskQueueRecordToBatchTask = (
   task: TaskQueueRecord,
-  meta?: TaskWeightMeta,
-): BuildTask & { title?: string; message?: string; metadata?: TaskWeightMetadata } => {
-  const base = buildTaskSummaryFields(task, meta);
+): BuildTask & { title?: string; message?: string } => {
+  const base = buildTaskSummaryFields(task);
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
@@ -508,15 +624,13 @@ const mapTaskQueueRecordToBatchTask = (
     error: base.error,
     message: base.message,
     title: base.title,
-    metadata: base.metadata,
   };
 };
 
 const mapTaskQueueRecordToTaskSummary = (
   task: TaskQueueRecord,
-  meta?: TaskWeightMeta,
 ): ShapeBatchTaskSummary => {
-  const base = buildTaskSummaryFields(task, meta);
+  const base = buildTaskSummaryFields(task);
   return {
     taskId: task.taskId,
     stage: task.stage,
@@ -529,21 +643,11 @@ const mapTaskQueueRecordToTaskSummary = (
     index: base.index,
     sequence: base.sequence,
     stagePriority: base.stagePriority,
-    metadata: base.metadata,
   };
-};
-
-type TaskWeightSource = 'output' | 'fetch-cache' | 'transform-cache' | 'fallback';
-
-type TaskWeightMetadata = {
-  polygonCount?: number;
-  weight: number;
-  weightSource: TaskWeightSource;
 };
 
 type ShapeBatchTaskSummary = BatchTaskSummary & {
   title?: string;
-  metadata?: TaskWeightMetadata;
   error?: string;
   errorMessage?: string;
   index?: number;
@@ -557,38 +661,6 @@ type ProgressTaskMeta = {
   status: TaskQueueRecord['status'];
   stage: TaskQueueRecord['stage'];
   progress: number;
-};
-
-type TaskWeightMeta = {
-  polygonCount?: number | null;
-  weight: number;
-  source: TaskWeightSource;
-};
-
-type TaskWeightContext = {
-  fetchCacheById: Map<string, { polygonCount: number }>;
-  fetchCacheBySourceKey: Map<string, { polygonCount: number }>;
-  transformCacheById: Map<string, { polygonCount: number }>;
-};
-
-const asRecord = (value: unknown): Record<string, unknown> | null => {
-  if (!value || typeof value !== 'object') return null;
-  return value as Record<string, unknown>;
-};
-
-const readNumber = (value: unknown): number | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return value;
-};
-
-const readString = (value: unknown): string | null => {
-  if (typeof value !== 'string') return null;
-  return value;
-};
-
-const readStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
 };
 
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
@@ -623,160 +695,6 @@ const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
   };
 };
 
-const buildTaskWeightContext = async (
-  nodeId: NodeId,
-  tasks: TaskQueueRecord[],
-): Promise<TaskWeightContext> => {
-  const fetchCacheIds = new Set<string>();
-  const fetchSourceKeys = new Set<string>();
-  const transformBufferIds = new Set<string>();
-
-  tasks.forEach((task) => {
-    const input = asRecord(task.inputData);
-    if (!input) return;
-    if (task.stage === 'fetch') {
-      const sourceKey = readString(input.sourceKey);
-      if (sourceKey) fetchSourceKeys.add(sourceKey);
-    }
-    if (task.stage === 'transform') {
-      const fetchCacheId = readString(input.fetchCacheId);
-      if (fetchCacheId) fetchCacheIds.add(fetchCacheId);
-      const sourceKey = readString(input.sourceKey);
-      if (sourceKey) fetchSourceKeys.add(sourceKey);
-    }
-    if (task.stage === 'vt') {
-      const bufferIds = readStringArray(input.bufferIds);
-      bufferIds.forEach((id) => transformBufferIds.add(id));
-    }
-  });
-
-  const fetchCaches = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
-  let invalidFetchCacheCount = 0;
-  let invalidFetchCacheIdCount = 0;
-  let invalidFetchCacheSourceKeyCount = 0;
-  for (const cache of fetchCaches as Array<unknown>) {
-    if (!cache || typeof cache !== 'object') {
-      invalidFetchCacheCount += 1;
-      continue;
-    }
-    const record = cache as { id?: unknown; sourceKey?: unknown };
-    if (typeof record.id !== 'string' || record.id.length === 0) {
-      invalidFetchCacheIdCount += 1;
-    }
-    if (typeof record.sourceKey !== 'string' || record.sourceKey.length === 0) {
-      invalidFetchCacheSourceKeyCount += 1;
-    }
-  }
-  if (invalidFetchCacheCount > 0 || invalidFetchCacheIdCount > 0 || invalidFetchCacheSourceKeyCount > 0) {
-    throw new Error(
-      `fetchCache integrity error: nodeId=${String(nodeId)} invalid=${invalidFetchCacheCount} invalidId=${invalidFetchCacheIdCount} invalidSourceKey=${invalidFetchCacheSourceKeyCount} total=${fetchCaches.length}`
-    );
-  }
-  const fetchCacheById = new Map(
-    fetchCaches.map((cache) => [cache.id, { polygonCount: cache.polygonCount ?? 0 }] as const),
-  );
-  const fetchCacheBySourceKey = new Map(
-    fetchCaches.map((cache) => [cache.sourceKey, { polygonCount: cache.polygonCount ?? 0 }] as const),
-  );
-
-  const bufferIds = [...transformBufferIds];
-  const transformCaches = bufferIds.length > 0
-    ? await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => (
-      ephemeralShapeDB.transformCache.where('id').anyOf(bufferIds).toArray()
-    ))
-    : [];
-  const transformCacheById = new Map(
-    transformCaches
-      .filter((cache) => cache.timestamp > 0)
-      .map((cache) => [cache.id, { polygonCount: cache.polygonCount }] as const),
-  );
-
-  return {
-    fetchCacheById,
-    fetchCacheBySourceKey,
-    transformCacheById,
-  };
-};
-
-const resolveTaskWeightMeta = (
-  task: TaskQueueRecord,
-  context: TaskWeightContext,
-): TaskWeightMeta => {
-  const output = asRecord(task.outputData);
-  const outputPolygonCount = readNumber(output?.polygonCount);
-  if (outputPolygonCount !== null) {
-    return { polygonCount: outputPolygonCount, weight: Math.max(0, Math.round(outputPolygonCount)), source: 'output' };
-  }
-
-  const input = asRecord(task.inputData) ?? {};
-  if (task.stage === 'fetch') {
-    const sourceKey = readString(input.sourceKey);
-    const cache = sourceKey ? context.fetchCacheBySourceKey.get(sourceKey) : undefined;
-    if (cache) {
-      return { polygonCount: cache.polygonCount, weight: Math.max(0, Math.round(cache.polygonCount)), source: 'fetch-cache' };
-    }
-  }
-
-  if (task.stage === 'transform') {
-    const fetchCacheId = readString(input.fetchCacheId);
-    const directCache = fetchCacheId ? context.fetchCacheById.get(fetchCacheId) : undefined;
-    const sourceKey = readString(input.sourceKey);
-    const sourceCache = sourceKey ? context.fetchCacheBySourceKey.get(sourceKey) : undefined;
-    const cache = directCache ?? sourceCache;
-    if (cache) {
-      return { polygonCount: cache.polygonCount, weight: Math.max(0, Math.round(cache.polygonCount)), source: 'fetch-cache' };
-    }
-  }
-
-  if (task.stage === 'vt') {
-    const bufferIds = readStringArray(input.bufferIds);
-    if (bufferIds.length > 0) {
-      let polygonTotal = 0;
-      let fallbackCount = 0;
-      bufferIds.forEach((bufferId) => {
-        const cache = context.transformCacheById.get(bufferId);
-        const polygonCount = cache ? readNumber(cache.polygonCount) : null;
-        if (polygonCount !== null) {
-          polygonTotal += polygonCount;
-        } else {
-          fallbackCount += 1;
-        }
-      });
-      const weight = Math.max(0, Math.round(polygonTotal + fallbackCount));
-      const polygonCount = polygonTotal > 0 ? polygonTotal : null;
-      const source: TaskWeightSource = polygonTotal > 0 ? 'transform-cache' : 'fallback';
-      return { polygonCount, weight, source };
-    }
-  }
-
-  return { polygonCount: null, weight: 1, source: 'fallback' };
-};
-
-const buildTaskWeightMap = async (
-  nodeId: NodeId,
-  tasks: TaskQueueRecord[],
-): Promise<Map<string, TaskWeightMeta>> => {
-  const context = await buildTaskWeightContext(nodeId, tasks);
-  const map = new Map<string, TaskWeightMeta>();
-  tasks.forEach((task) => {
-    map.set(task.taskId, resolveTaskWeightMeta(task, context));
-  });
-  return map;
-};
-
-const buildTaskWeightMapSafe = async (
-  nodeId: NodeId,
-  tasks: TaskQueueRecord[],
-): Promise<Map<string, TaskWeightMeta>> => {
-  try {
-    return await buildTaskWeightMap(nodeId, tasks);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[shapeBatchAPI] task weight map failed', { nodeId: String(nodeId), message });
-    return new Map();
-  }
-};
-
 const summarizeTaskQueueProgress = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
@@ -802,10 +720,22 @@ const summarizeTaskQueueProgress = async (
     }
   });
   const plan = getStagePlan(nodeId);
+  const fetchTasks = tasks.filter((task) => task.stage === 'fetch');
+  if (plan?.fetchTotal) {
+    const planned = Math.max(plan.fetchTotal, fetchTasks.length);
+    total = total - fetchTasks.length + planned;
+  }
+  let resolvedTaskType = taskType;
+  if (!resolvedTaskType && tasks.length === 0 && plan?.fetchTotal && plan.fetchTotal > 0) {
+    resolvedTaskType = 'fetch';
+  }
   if (plan?.transformTotal) {
     const transformTasks = tasks.filter((task) => task.stage === 'transform');
     const planned = Math.max(plan.transformTotal, transformTasks.length);
     total = total - transformTasks.length + planned;
+    if (!resolvedTaskType && tasks.length === 0 && planned > 0) {
+      resolvedTaskType = 'transform';
+    }
   }
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -815,7 +745,7 @@ const summarizeTaskQueueProgress = async (
     failed,
     skipped,
     percentage,
-    taskType,
+    taskType: resolvedTaskType,
   };
 };
 
@@ -833,8 +763,7 @@ const buildTaskSummarySnapshot = async (
   taskQueue: VtTaskQueueDb,
 ): Promise<ShapeBatchTaskSummary[]> => {
   const tasks = await listTasks(taskQueue, nodeId);
-  const weightMap = await buildTaskWeightMapSafe(nodeId, tasks);
-  return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task, weightMap.get(task.taskId)));
+  return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
 };
 
 const buildProgressPayloadFromTasks = async (
@@ -843,6 +772,7 @@ const buildProgressPayloadFromTasks = async (
   options?: { eventTask?: TaskQueueRecord; source?: 'event' | 'snapshot' },
 ): Promise<BatchProgressPayload> => {
   const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
+  const stageStatusMap = buildStageStatusMap(nodeId, tasks);
   const progressTask = options?.eventTask ?? selectLatestTaskBySequence(tasks) ?? undefined;
   const meta: Record<string, unknown> = {};
   if (progressTask) {
@@ -858,6 +788,23 @@ const buildProgressPayloadFromTasks = async (
   if (options?.source) {
     meta.source = options.source;
   }
+  meta.stageTotals = {
+    fetch: {
+      total: stageStatusMap.fetch.tasksTotal,
+      completed: stageStatusMap.fetch.tasksCompleted,
+      failed: stageStatusMap.fetch.tasksFailed,
+    },
+    transform: {
+      total: stageStatusMap.transform.tasksTotal,
+      completed: stageStatusMap.transform.tasksCompleted,
+      failed: stageStatusMap.transform.tasksFailed,
+    },
+    vt: {
+      total: stageStatusMap.vt.tasksTotal,
+      completed: stageStatusMap.vt.tasksCompleted,
+      failed: stageStatusMap.vt.tasksFailed,
+    },
+  };
   return {
     total: summary.total,
     completed: summary.completed,
@@ -920,7 +867,7 @@ const buildStageStatusMap = (
 ): Record<TaskQueueRecord['stage'], StageStatus> => {
   const plan = getStagePlan(nodeId);
   return {
-    fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch')),
+    fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch'), plan?.fetchTotal),
     transform: buildStageStatus(tasks.filter((task) => task.stage === 'transform'), plan?.transformTotal),
     vt: buildStageStatus(tasks.filter((task) => task.stage === 'vt')),
   };
@@ -982,7 +929,7 @@ const upsertBuildSessionSnapshot = async (
     draftId?: NodeId;
     config: ShapeBuildConfig;
     selectedArrayByCountries?: SelectedArrayByCountries;
-    tasks: TaskQueueRecord[];
+    tasks?: TaskQueueRecord[];
     status: ShapeBuildSessionRecord['status'];
     startedAt?: number;
     stopReason?: ShapeBuildStopReason;
@@ -991,12 +938,24 @@ const upsertBuildSessionSnapshot = async (
   },
 ): Promise<void> => {
   const now = Date.now();
-  const progress = await summarizeTaskQueueProgress(input.nodeId, input.tasks, resolveTaskType(input.tasks));
-  const stages = buildStageStatusMap(input.nodeId, input.tasks);
   const existing = await shapeQueryAPIImpl.getBuildSessionRecord(input.nodeId).catch(() => null);
+  const progress = input.tasks
+    ? await summarizeTaskQueueProgress(input.nodeId, input.tasks, resolveTaskType(input.tasks))
+    : (existing?.progress ?? {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      percentage: 0,
+    });
+  const stages = input.tasks ? buildStageStatusMap(input.nodeId, input.tasks) : (existing?.stages ?? {});
   const startedAt = existing?.startedAt ?? input.startedAt ?? now;
-  const lastActivity = resolveSessionLastActivity(input.tasks);
-  const expiresAt = resolveSessionExpiresAt(lastActivity);
+  const lastActivity = input.tasks
+    ? resolveSessionLastActivity(input.tasks)
+    : (existing?.lastActivity ?? now);
+  const expiresAt = input.tasks
+    ? resolveSessionExpiresAt(lastActivity)
+    : (existing?.expiresAt ?? resolveSessionExpiresAt(lastActivity));
   const record: ShapeBuildSessionRecord = {
     nodeId: input.nodeId,
     draftId: input.draftId ?? existing?.draftId,
@@ -1122,9 +1081,8 @@ const clearStalePausedPipelineIfSessionMissing = async (
 
 const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
   const patches: Array<{ taskId: string; updates: { taskType?: TaskQueueRecord['stage']; stage?: TaskQueueRecord['stage'] } }> = [];
-  records.forEach((record) => {
+  await taskQueue.tasks.where('nodeId').equals(nodeId).each((record) => {
     if (!record || typeof record !== 'object') return;
     const taskId = (record as { taskId?: unknown }).taskId;
     if (typeof taskId !== 'string' || taskId.length === 0) return;
@@ -1202,31 +1160,39 @@ const setPaused = (nodeId: NodeId, paused: boolean): void => {
 
 const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
-  await Promise.all(runningTasks.map((task) => updateTask(taskQueue, task.taskId, {
-    status: 'queued',
-    progress: 0,
-    startedAt: undefined,
-    completedAt: undefined,
-    errorMessage: undefined,
-  })));
+  await taskQueue.tasks
+    .where('[nodeId+status]')
+    .equals([nodeId, 'running'])
+    .modify((task) => {
+      task.status = 'queued';
+      task.progress = 0;
+      task.startedAt = undefined;
+      task.completedAt = undefined;
+      task.errorMessage = undefined;
+      task.updatedAt = Date.now();
+      const currentSequence = typeof task.sequence === 'number' ? task.sequence : 0;
+      task.sequence = currentSequence + 1;
+    });
 };
 
 
 const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  const failedTasks = await listTasksByStatus(taskQueue, nodeId, 'failed');
-  await Promise.all(failedTasks.map((task) => updateTask(taskQueue, task.taskId, {
-    status: 'queued',
-    progress: 0,
-    startedAt: undefined,
-    completedAt: undefined,
-    errorMessage: undefined,
-    message: undefined,
-    outputData: undefined,
-  }, {
-    allowTerminalStatusTransition: true,
-  })));
+  await taskQueue.tasks
+    .where('[nodeId+status]')
+    .equals([nodeId, 'failed'])
+    .modify((task) => {
+      task.status = 'queued';
+      task.progress = 0;
+      task.startedAt = undefined;
+      task.completedAt = undefined;
+      task.errorMessage = undefined;
+      task.message = undefined;
+      task.outputData = undefined;
+      task.updatedAt = Date.now();
+      const currentSequence = typeof task.sequence === 'number' ? task.sequence : 0;
+      task.sequence = currentSequence + 1;
+    });
 };
 
 const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
@@ -1366,10 +1332,59 @@ export const shapeBatchAPI = {
     if (!buildConfig.dataSourceName) {
       throw new Error('Data source is required to start batch processing');
     }
+    let startupNodeId: NodeId = draftId;
+    const startupScope = 'startBatchProcess';
+    const getStartupErrorMessage = (error: unknown): string => (
+      error instanceof Error ? error.message : String(error)
+    );
+    const emitStartupStepLog = (
+      phase: 'start' | 'finish',
+      step: string,
+      extra?: Record<string, unknown>,
+    ): void => {
+      const payload = {
+        scope: startupScope,
+        phase,
+        step,
+        draftId,
+        nodeId: startupNodeId,
+        ...extra,
+      };
+      console.warn('[shapeBatchAPI] startup', JSON.stringify(payload));
+    };
+    const executeStartupStep = async <T>(
+      step: string,
+      runner: () => Promise<T>,
+      extra?: Record<string, unknown>,
+    ): Promise<T> => {
+      const startedAt = Date.now();
+      emitStartupStepLog('start', step, extra);
+      try {
+        const result = await runner();
+        emitStartupStepLog('finish', step, {
+          ...(extra ?? {}),
+          outcome: 'success',
+          elapsedMs: Date.now() - startedAt,
+        });
+        return result;
+      } catch (error) {
+        emitStartupStepLog('finish', step, {
+          ...(extra ?? {}),
+          outcome: 'error',
+          elapsedMs: Date.now() - startedAt,
+          errorMessage: getStartupErrorMessage(error),
+        });
+        throw error;
+      }
+    };
+
     // Prefer persisted draft config when provided to avoid stale zoom settings.
     const handler = getShapeEntityHandler();
-    const draftLike = await handler.getEntity(draftId) as DraftLike;
-    const draftBuildConfig = draftLike?.draftData?.buildConfig;
+    const draftEntity = await executeStartupStep(
+      'load-draft',
+      async () => handler.getEntity(draftId),
+    );
+    const draftBuildConfig = draftEntity?.buildConfig;
     const normalizedDraftConfig = draftBuildConfig
       ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
       : null;
@@ -1383,17 +1398,21 @@ export const shapeBatchAPI = {
     }
 
     // Get draft to find the associated nodeId
-    if (!draftLike) {
+    if (!draftEntity) {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    if (!downloadTaskPayloads.length && !draftLike?.draftData?.selectedArrayByCountries) {
+    if (!downloadTaskPayloads.length && !draftEntity.selectedArrayByCountries) {
       throw new Error('Shape batch session requires download task payloads or selection');
     }
 
-    const nodeForSession = draftLike.treeNodeId ?? draftId;
+    const nodeForSession = draftId;
+    startupNodeId = nodeForSession;
     const pipelineKey = String(nodeForSession);
-    const previousSession = await shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null);
+    const previousSession = await executeStartupStep(
+      'load-session-record',
+      async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeForSession).catch(() => null),
+    );
     if (activePipelines.has(pipelineKey)) {
       await clearStalePausedPipelineIfSessionMissing(
         nodeForSession,
@@ -1405,13 +1424,28 @@ export const shapeBatchAPI = {
       await emitProgressSnapshot(nodeForSession, 'startBatchProcess ignored: pipeline already active');
       return nodeForSession;
     }
+    const fetchPlan = await executeStartupStep(
+      'plan-fetch-total',
+      async () => estimatePlannedFetchTotal({
+        nodeId: nodeForSession,
+        buildConfig: mergedBatchConfig,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        downloadTaskPayloads,
+      }),
+      { payloadCount: downloadTaskPayloads.length },
+    );
+    setFetchPlannedTotal(nodeForSession, fetchPlan.plannedFetchTotal);
     const buildStartedAt = Date.now();
     const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
-    await handler.updateEntity(nodeForSession, {
-      buildStartedAt,
-      buildFinishedAt: undefined,
-      processingStatus: 'processing',
-    });
+    await executeStartupStep(
+      'mark-processing',
+      async () => handler.updateEntity(nodeForSession, {
+        buildStartedAt,
+        buildFinishedAt: undefined,
+        processingStatus: 'processing',
+      }),
+      { payloadCount: downloadTaskPayloads.length },
+    );
 
     setPaused(nodeForSession, false);
     activePipelines.add(pipelineKey);
@@ -1421,32 +1455,73 @@ export const shapeBatchAPI = {
     const previousBuildConfig = previousSession?.config && isBuildProcessConfig(previousSession.config)
       ? buildConfigFromSession(previousSession.config)
       : null;
-    await applySelectionDiffCleanup(
-      nodeForSession,
-      previousSession?.selectedArrayByCountries,
-      draftLike?.draftData?.selectedArrayByCountries,
+    await executeStartupStep(
+        'selection-diff-cleanup',
+        async () => applySelectionDiffCleanup(
+          nodeForSession,
+          previousSession?.selectedArrayByCountries,
+          draftEntity.selectedArrayByCountries,
+        ),
+      );
+    await executeStartupStep(
+      'config-invalidation',
+      async () => applyConfigInvalidation(nodeForSession, previousBuildConfig, mergedBatchConfig),
     );
-    await applyConfigInvalidation(nodeForSession, previousBuildConfig, mergedBatchConfig);
-    let existingTasks = await listTasks(taskQueue, nodeForSession);
-    if (existingTasks.length === 0) {
-      await seedTaskQueueFromBuildTasks(nodeForSession);
-      existingTasks = await listTasks(taskQueue, nodeForSession);
+    let existingTaskCount = await executeStartupStep(
+      'count-existing-tasks',
+      async () => taskQueue.tasks.where('nodeId').equals(nodeForSession).count(),
+    );
+    if (existingTaskCount === 0) {
+      await executeStartupStep(
+        'seed-task-queue',
+        async () => {
+          await seedTaskQueueFromBuildTasks(nodeForSession);
+          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeForSession).count();
+        },
+      );
     }
-    const resumeExistingTasks = existingTasks.length > 0;
+    const resumeExistingTasks = existingTaskCount > 0;
     if (resumeExistingTasks) {
-      await resetRunningTasks(nodeForSession);
-      await resetFailedTasks(nodeForSession);
-      await normalizeTaskQueueStageFields(nodeForSession);
+      await executeStartupStep(
+        'normalize-existing-tasks',
+        async () => {
+          await resetRunningTasks(nodeForSession);
+          await resetFailedTasks(nodeForSession);
+          await normalizeTaskQueueStageFields(nodeForSession);
+        },
+        { existingTaskCount },
+      );
     }
-    await upsertBuildSessionSnapshot({
-      nodeId: nodeForSession,
-      draftId,
-      config: mergedBatchConfig,
-      selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
-      tasks: existingTasks,
-      status: 'running',
-      startedAt: buildStartedAt,
-      canResume: false,
+    const existingFetchTaskCount = await executeStartupStep(
+      'count-existing-fetch-tasks',
+      async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'fetch']).count(),
+      { existingTaskCount },
+    );
+    const plannedFetchTotal = Math.max(fetchPlan.plannedFetchTotal, existingFetchTaskCount);
+    setFetchPlannedTotal(nodeForSession, plannedFetchTotal);
+    await executeStartupStep(
+      'upsert-session-snapshot',
+      async () => upsertBuildSessionSnapshot({
+        nodeId: nodeForSession,
+        draftId,
+        config: mergedBatchConfig,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        tasks: existingTaskCount === 0 ? [] : undefined,
+        status: 'running',
+        startedAt: buildStartedAt,
+        canResume: false,
+      }),
+      { existingTaskCount, plannedFetchTotal },
+    );
+    await executeStartupStep(
+      'emit-planned-progress',
+      async () => emitProgressSnapshot(nodeForSession, 'Fetch task plan prepared.'),
+      { plannedFetchTotal },
+    );
+    emitStartupStepLog('start', 'pipeline-dispatch', {
+      runId: pipelineRunId,
+      payloadCount: downloadTaskPayloads.length,
+      resumeExistingTasks,
     });
     startSessionTracking(nodeForSession);
     console.warn('[shapeBatchAPI] startBatchProcess pipeline start', {
@@ -1458,7 +1533,7 @@ export const shapeBatchAPI = {
       nodeId: nodeForSession,
       dataSource: mergedBatchConfig.dataSourceName,
       buildConfig: mergedBatchConfig,
-      selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
+      selectedArrayByCountries: draftEntity.selectedArrayByCountries,
       downloadTaskPayloads,
       waitIfPaused: () => waitIfPaused(nodeForSession),
       buildContinuationPolicy,
@@ -1494,6 +1569,12 @@ export const shapeBatchAPI = {
       pauseStates.delete(String(nodeForSession));
       stopSessionTracking(nodeForSession);
       void emitProgressSnapshot(nodeForSession);
+    });
+    emitStartupStepLog('finish', 'pipeline-dispatch', {
+      runId: pipelineRunId,
+      payloadCount: downloadTaskPayloads.length,
+      resumeExistingTasks,
+      outcome: 'success',
     });
 
     if (progressCallback) {
@@ -1550,6 +1631,48 @@ export const shapeBatchAPI = {
       const buildContinuationPolicy = payload.buildContinuationPolicy as BuildContinuationPolicy | undefined;
       const pipelineKey = String(nodeId);
       let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      const resumeScope = 'resumeBatchSession';
+      const getResumeErrorMessage = (error: unknown): string => (
+        error instanceof Error ? error.message : String(error)
+      );
+      const emitResumeStepLog = (
+        phase: 'start' | 'finish',
+        step: string,
+        extra?: Record<string, unknown>,
+      ): void => {
+        console.warn('[shapeBatchAPI] startup', JSON.stringify({
+          scope: resumeScope,
+          phase,
+          step,
+          nodeId,
+          ...extra,
+        }));
+      };
+      const executeResumeStep = async <T>(
+        step: string,
+        runner: () => Promise<T>,
+        extra?: Record<string, unknown>,
+      ): Promise<T> => {
+        const startedAt = Date.now();
+        emitResumeStepLog('start', step, extra);
+        try {
+          const result = await runner();
+          emitResumeStepLog('finish', step, {
+            ...(extra ?? {}),
+            outcome: 'success',
+            elapsedMs: Date.now() - startedAt,
+          });
+          return result;
+        } catch (error) {
+          emitResumeStepLog('finish', step, {
+            ...(extra ?? {}),
+            outcome: 'error',
+            elapsedMs: Date.now() - startedAt,
+            errorMessage: getResumeErrorMessage(error),
+          });
+          throw error;
+        }
+      };
       if (activePipelines.has(pipelineKey)) {
         await clearStalePausedPipelineIfSessionMissing(
           nodeId,
@@ -1558,23 +1681,42 @@ export const shapeBatchAPI = {
         );
       }
       setPaused(nodeId, false);
-      await emitProgressSnapshot(nodeId);
+      await executeResumeStep('emit-progress-snapshot', async () => emitProgressSnapshot(nodeId));
       const taskQueue = new VtTaskQueueDb();
-      const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
-      if (runningTasks.length > 0) {
-        await resetRunningTasks(nodeId);
+      const runningTaskCount = await executeResumeStep(
+        'count-running-tasks',
+        async () => taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
+      );
+      if (runningTaskCount > 0) {
+        await executeResumeStep(
+          'reset-running-tasks',
+          async () => resetRunningTasks(nodeId),
+          { runningTaskCount },
+        );
         if (activePipelines.has(pipelineKey)) {
           activePipelines.delete(pipelineKey);
         }
       }
-      await resetFailedTasks(nodeId);
-      let existingTasks = await listTasks(taskQueue, nodeId);
-      if (existingTasks.length === 0) {
-        await seedTaskQueueFromBuildTasks(nodeId);
-        existingTasks = await listTasks(taskQueue, nodeId);
+      await executeResumeStep('reset-failed-tasks', async () => resetFailedTasks(nodeId));
+      let existingTaskCount = await executeResumeStep(
+        'count-existing-tasks',
+        async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
+      );
+      if (existingTaskCount === 0) {
+        await executeResumeStep(
+          'seed-task-queue',
+          async () => {
+            await seedTaskQueueFromBuildTasks(nodeId);
+            existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+          },
+        );
       }
-      if (existingTasks.length > 0) {
-        await normalizeTaskQueueStageFields(nodeId);
+      if (existingTaskCount > 0) {
+        await executeResumeStep(
+          'normalize-existing-tasks',
+          async () => normalizeTaskQueueStageFields(nodeId),
+          { existingTaskCount },
+        );
       }
       if (activePipelines.has(pipelineKey)) {
         await emitProgressSnapshot(nodeId, 'resumeBatchSession ignored: pipeline already active');
@@ -1582,10 +1724,16 @@ export const shapeBatchAPI = {
       }
       if (!activePipelines.has(pipelineKey)) {
         const handler = getShapeEntityHandler();
-        const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
-        if (!draftLike) return;
+        const draftEntity = await executeResumeStep(
+          'load-draft',
+          async () => handler.getEntity(nodeId),
+        );
+        if (!draftEntity) return;
         if (!sessionRecord) {
-          sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+          sessionRecord = await executeResumeStep(
+            'load-session-record',
+            async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null),
+          );
         }
         const sessionConfig = sessionRecord?.config;
         let sessionBuildConfig: ShapeBuildConfig | null = null;
@@ -1595,40 +1743,81 @@ export const shapeBatchAPI = {
           }
           sessionBuildConfig = buildConfigFromSession(sessionConfig);
         }
-        const draftBuildConfig = draftLike?.draftData?.buildConfig;
-        const entityBuildConfig = (draftLike as { buildConfig?: ShapeBuildConfig }).buildConfig;
-        const baseBuildConfig = sessionBuildConfig ?? draftBuildConfig ?? entityBuildConfig;
+        const draftBuildConfig = draftEntity.buildConfig;
+        const baseBuildConfig = sessionBuildConfig ?? draftBuildConfig;
         if (!baseBuildConfig) {
           throw new Error('[shapeBatchAPI] buildConfig is required to resume batch session');
         }
         const normalizedBaseConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, baseBuildConfig);
-        const mergedBuildConfig = entityBuildConfig
-          ? mergeBuildConfig(normalizedBaseConfig, entityBuildConfig)
-          : normalizedBaseConfig;
-        await applySelectionDiffCleanup(
-          nodeId,
-          sessionRecord?.selectedArrayByCountries,
-          draftLike?.draftData?.selectedArrayByCountries,
+        const mergedBuildConfig = normalizedBaseConfig;
+        const fetchPlan = await executeResumeStep(
+          'plan-fetch-total',
+          async () => estimatePlannedFetchTotal({
+            nodeId,
+            buildConfig: mergedBuildConfig,
+            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+          }),
+          { existingTaskCount },
         );
-        await applyConfigInvalidation(nodeId, sessionBuildConfig, mergedBuildConfig);
-        existingTasks = await listTasks(taskQueue, nodeId);
-        if (existingTasks.length === 0) {
-          await seedTaskQueueFromBuildTasks(nodeId);
-          existingTasks = await listTasks(taskQueue, nodeId);
+        setFetchPlannedTotal(nodeId, fetchPlan.plannedFetchTotal);
+        await executeResumeStep(
+          'selection-diff-cleanup',
+          async () => applySelectionDiffCleanup(
+            nodeId,
+            sessionRecord?.selectedArrayByCountries,
+            draftEntity.selectedArrayByCountries,
+          ),
+        );
+        await executeResumeStep(
+          'config-invalidation',
+          async () => applyConfigInvalidation(nodeId, sessionBuildConfig, mergedBuildConfig),
+        );
+        existingTaskCount = await executeResumeStep(
+          'count-existing-tasks-after-invalidation',
+          async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
+        );
+        if (existingTaskCount === 0) {
+          await executeResumeStep(
+            'seed-task-queue-after-invalidation',
+            async () => {
+              await seedTaskQueueFromBuildTasks(nodeId);
+              existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+            },
+          );
         }
+        const existingFetchTaskCount = await executeResumeStep(
+          'count-existing-fetch-tasks-after-invalidation',
+          async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'fetch']).count(),
+          { existingTaskCount },
+        );
+        const plannedFetchTotal = Math.max(fetchPlan.plannedFetchTotal, existingFetchTaskCount);
+        setFetchPlannedTotal(nodeId, plannedFetchTotal);
         const resolvedDataSource = requireDataSourceName(
           mergedBuildConfig.dataSourceName,
           'resumeBatchSession',
         );
         const pipelineRunId = `${nodeId}:${Date.now()}`;
-        await upsertBuildSessionSnapshot({
-          nodeId,
-          config: mergedBuildConfig,
-          selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
-          tasks: existingTasks,
-          status: 'running',
-          startedAt: Date.now(),
-          canResume: false,
+        await executeResumeStep(
+          'upsert-session-snapshot',
+          async () => upsertBuildSessionSnapshot({
+            nodeId,
+            config: mergedBuildConfig,
+            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+            tasks: existingTaskCount === 0 ? [] : undefined,
+            status: 'running',
+            startedAt: Date.now(),
+            canResume: false,
+          }),
+          { existingTaskCount, plannedFetchTotal },
+        );
+        await executeResumeStep(
+          'emit-planned-progress',
+          async () => emitProgressSnapshot(nodeId, 'Fetch task plan prepared.'),
+          { plannedFetchTotal },
+        );
+        emitResumeStepLog('start', 'pipeline-dispatch', {
+          runId: pipelineRunId,
+          existingTaskCount,
         });
         startSessionTracking(nodeId);
         activePipelines.add(pipelineKey);
@@ -1641,7 +1830,7 @@ export const shapeBatchAPI = {
           nodeId,
           dataSource: resolvedDataSource,
           buildConfig: mergedBuildConfig,
-          selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
+          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
           waitIfPaused: () => waitIfPaused(nodeId),
           resumeExistingTasks: true,
           buildContinuationPolicy,
@@ -1677,6 +1866,11 @@ export const shapeBatchAPI = {
           stopSessionTracking(nodeId);
           void emitProgressSnapshot(nodeId);
         });
+        emitResumeStepLog('finish', 'pipeline-dispatch', {
+          runId: pipelineRunId,
+          existingTaskCount,
+          outcome: 'success',
+        });
       }
       return;
     }
@@ -1694,8 +1888,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const weightMap = await buildTaskWeightMapSafe(nodeId, vtTasks);
-      return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task, weightMap.get(task.taskId)));
+      return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task));
     }
     return [];
   },
@@ -1774,17 +1967,33 @@ export const shapeBatchAPI = {
     lastActivity: number;
     expiresAt: number;
   }> => {
-    const taskQueue = new VtTaskQueueDb();
-    const vtTasks = await listTasks(taskQueue, nodeId);
-    if (vtTasks.length > 0) {
-      const latestTask = selectLatestTaskBySequence(vtTasks);
-      const lastActivity = latestTask ? resolveTaskActivityTimestamp(latestTask) : 0;
-      const paused = getPauseState(nodeId).paused;
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    if (sessionRecord) {
+      const fallbackLastActivity = sessionRecord.updatedAt ?? Date.now();
+      const lastActivity = sessionRecord.lastActivity ?? fallbackLastActivity;
+      const expiresAt = sessionRecord.expiresAt ?? resolveSessionExpiresAt(lastActivity);
       return {
         exists: true,
-        canResume: paused,
+        canResume: Boolean(sessionRecord.canResume ?? sessionRecord.status === 'paused'),
         lastActivity,
-        expiresAt: lastActivity + 5 * 60 * 1000,
+        expiresAt,
+      };
+    }
+
+    const taskQueue = new VtTaskQueueDb();
+    const counts = await countTaskQueueStatuses(taskQueue, nodeId);
+    if (counts.total > 0) {
+      const now = Date.now();
+      const firstTask = await taskQueue.tasks
+        .where('[nodeId+index]')
+        .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
+        .first();
+      const lastActivity = typeof firstTask?.updatedAt === 'number' ? firstTask.updatedAt : now;
+      return {
+        exists: true,
+        canResume: getPauseState(nodeId).paused,
+        lastActivity,
+        expiresAt: resolveSessionExpiresAt(lastActivity),
       };
     }
     return {
@@ -1930,12 +2139,7 @@ export const shapeBatchAPI = {
       }
       void (async () => {
         try {
-          const tasks = await listTasks(taskQueue, event.nodeId);
-          const weightMap = await buildTaskWeightMapSafe(nodeId, tasks);
-          const summary = mapTaskQueueRecordToTaskSummary(
-            event.task,
-            weightMap.get(event.task.taskId)
-          );
+          const summary = mapTaskQueueRecordToTaskSummary(event.task);
           const sequence = readSequence(summary.taskId, summary.sequence);
           if (!shouldEmitTask(summary.taskId, sequence)) {
             return;

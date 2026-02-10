@@ -37,12 +37,14 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 const TaskProgressBar = ({
   stages,
   tasksByStage,
+  stageTotals,
   buildStatus,
   activeStageId,
   resolveTaskTitle,
 }: {
   stages: BuildStage[];
   tasksByStage: Record<string, TaskWithMetadata[]>;
+  stageTotals?: TaskProgressSummary['stageTotals'];
   buildStatus: TaskProgressSummary['buildStatus'];
   activeStageId?: string | null;
   resolveTaskTitle: (task: TaskWithMetadata) => string;
@@ -95,16 +97,14 @@ const TaskProgressBar = ({
       const sourceStageId = fallbackStageId;
       const stageTasks = tasksByStage[sourceStageId] ?? [];
       nextStageOffsets.set(stage.id, totalCount);
-      if (stageTasks.length === 0) {
-        nextStageCounts.set(stage.id, 0);
-        return;
-      }
+      const plannedStageTotal = Math.max(0, stageTotals?.[stage.id]?.total ?? 0);
       const orderedTasks = stage.id === 'vt'
         ? sortVectorTileTasks(stageTasks)
         : stage.id === 'transform'
           ? sortTransformTasks(stageTasks)
         : stageTasks;
-      nextStageCounts.set(stage.id, orderedTasks.length);
+      const expectedStageTotal = Math.max(orderedTasks.length, plannedStageTotal);
+      nextStageCounts.set(stage.id, expectedStageTotal);
       orderedTasks.forEach((task) => {
         const statusValue = (task.status ?? '').toString().toLowerCase();
         let fill = waitingColor;
@@ -135,6 +135,18 @@ const TaskProgressBar = ({
         });
         totalCount += 1;
       });
+      const waitingCount = expectedStageTotal - orderedTasks.length;
+      if (waitingCount > 0) {
+        nextSegments.push({
+          fill: waitingColor,
+          fillOpacity: 1,
+          stageId: stage.id,
+          taskId: undefined,
+          title: `${stage.title ?? stage.id} pending tasks`,
+          width: waitingCount,
+        });
+        totalCount += waitingCount;
+      }
     });
     return { segments: nextSegments, stageOffsets: nextStageOffsets, stageCounts: nextStageCounts };
   }, [
@@ -149,6 +161,7 @@ const TaskProgressBar = ({
     stages,
     successColor,
     tasksByStage,
+    stageTotals,
     waitingColor,
   ]);
   const viewWidth = Math.max(1, segments.reduce((total, segment) => total + segment.width, 0));
@@ -296,18 +309,18 @@ const TaskProgressBar = ({
         ) : null}
         {segments.length > 0 ? (() => {
           let offset = 0;
-          let globalIndex = 0;
           return segments.map((segment, index) => {
-            const x = offset;
+            const segmentStart = offset;
+            const x = segmentStart;
+            const segmentEnd = segmentStart + segment.width - 1;
             const isInViewport =
               viewportStartGlobal !== null
               && viewportEndGlobal !== null
-              && globalIndex >= viewportStartGlobal
-              && globalIndex <= viewportEndGlobal;
+              && segmentStart <= viewportEndGlobal
+              && segmentEnd >= viewportStartGlobal;
             const y = isInViewport ? 0 : outRangeY;
             const height = isInViewport ? 1 : outRangeHeight;
             offset += segment.width;
-            globalIndex += 1;
             const handleActivate = (event?: React.MouseEvent | React.KeyboardEvent) => {
               event?.preventDefault();
               if (!segment.taskId) return;
@@ -848,6 +861,7 @@ export const ShapeBuildProgressPanel = ({
           <TaskProgressBar
             stages={[stage]}
             tasksByStage={{ [stage.id]: item.tasks }}
+            stageTotals={summary.stageTotals}
             buildStatus={summary.buildStatus}
             activeStageId={activeStageId}
             resolveTaskTitle={resolveTaskTitle}

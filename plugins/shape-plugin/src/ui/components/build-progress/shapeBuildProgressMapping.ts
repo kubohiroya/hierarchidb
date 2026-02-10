@@ -15,6 +15,12 @@ export interface BuildProgress {
   progressTaskStatus?: string;
   progressTaskStage?: string;
   progressTaskProgress?: number;
+  stageTotals?: Partial<Record<'fetch' | 'transform' | 'vt', {
+    total: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+  }>>;
 }
 
 export interface BuildProgressStatus {
@@ -43,6 +49,13 @@ type ProgressTaskMeta = {
   progress?: unknown;
 };
 
+type StageTotalsMeta = Partial<Record<'fetch' | 'transform' | 'vt', {
+  total: number;
+  completed: number;
+  failed: number;
+  skipped: number;
+}>>;
+
 const asRecord = (value: unknown): Record<string, unknown> | null => (
   value && typeof value === 'object' ? value as Record<string, unknown> : null
 );
@@ -63,6 +76,30 @@ const readProgressTaskMeta = (info: ExtendedProgress): ProgressTaskMeta | null =
   return progressTask;
 };
 
+const readStageTotalsMeta = (info: ExtendedProgress): StageTotalsMeta | undefined => {
+  const meta = asRecord(info.payload?.meta);
+  if (!meta) return undefined;
+  const stageTotals = asRecord(meta.stageTotals);
+  if (!stageTotals) return undefined;
+  const result: StageTotalsMeta = {};
+  (['fetch', 'transform', 'vt'] as const).forEach((stageId) => {
+    const entry = asRecord(stageTotals[stageId]);
+    if (!entry) return;
+    const total = readNumber(entry.total);
+    const completed = readNumber(entry.completed);
+    const failed = readNumber(entry.failed);
+    const skipped = readNumber(entry.skipped);
+    if (total === undefined && completed === undefined && failed === undefined && skipped === undefined) return;
+    result[stageId] = {
+      total: total ?? 0,
+      completed: completed ?? 0,
+      failed: failed ?? 0,
+      skipped: skipped ?? 0,
+    };
+  });
+  return Object.keys(result).length > 0 ? result : undefined;
+};
+
 export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | null {
   if (!info) return null;
   const total = info.total ?? info.payload?.total ?? 0;
@@ -74,6 +111,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     ? info.percentage
     : Math.max(0, Math.min(100, computePercentage({ total, completed, failed, skipped })));
   const progressTaskMeta = readProgressTaskMeta(info);
+  const stageTotals = readStageTotalsMeta(info);
   return {
     total,
     completed,
@@ -88,6 +126,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     progressTaskStatus: readString(progressTaskMeta?.status),
     progressTaskStage: readString(progressTaskMeta?.stage),
     progressTaskProgress: readNumber(progressTaskMeta?.progress),
+    stageTotals,
   };
 }
 

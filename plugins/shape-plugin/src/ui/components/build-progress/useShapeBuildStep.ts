@@ -29,7 +29,6 @@ import { useShapeBuildTiming } from './useShapeBuildTiming.ts';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import type { FetchTaskPayload } from '../../../common/types/index.js';
 import { loadTreeConsoleSettings } from '@hierarchidb/util';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import { useShapeBuildStages } from './useShapeBuildStages.ts';
@@ -244,6 +243,30 @@ const toBuildStatus = (status?: string | null): BuildStatus => {
     default:
       return 'idle';
   }
+};
+
+const summarizeSelectedEntries = (
+  selectedArrayByCountries: ShapeEntity['selectedArrayByCountries'] | null | undefined,
+): { selectedCountryCount: number; selectedAdminPairCount: number } => {
+  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+    return { selectedCountryCount: 0, selectedAdminPairCount: 0 };
+  }
+  let selectedCountryCount = 0;
+  let selectedAdminPairCount = 0;
+  Object.values(selectedArrayByCountries).forEach((row) => {
+    if (!Array.isArray(row)) return;
+    let hasSelectedInCountry = false;
+    row.forEach((selected) => {
+      if (selected) {
+        hasSelectedInCountry = true;
+        selectedAdminPairCount += 1;
+      }
+    });
+    if (hasSelectedInCountry) {
+      selectedCountryCount += 1;
+    }
+  });
+  return { selectedCountryCount, selectedAdminPairCount };
 };
 
 type BuildSessionTransitionPhase =
@@ -1753,33 +1776,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     t,
   ]);
 
-  const buildDownloadTaskPayloads = useCallback(async (): Promise<FetchTaskPayload[] | null> => {
-    if (!workerClient) {
-      notify.error('Worker client is unavailable.');
-      return null;
-    }
-    if (!activeNodeId) {
-      notify.warning('NodeId is missing.');
-      return null;
-    }
-    const resolvedDataSource = data?.buildConfig?.dataSourceName;
-    if (!resolvedDataSource) {
-      notify.warning('Data source is missing.');
-      return null;
-    }
-    const selectionRecord = data?.selectedArrayByCountries;
-    if (!selectionRecord || (typeof selectionRecord === 'object' && !Array.isArray(selectionRecord) && Object.keys(selectionRecord).length === 0)) {
-      notify.warning('Selection is empty.');
-      return null;
-    }
-    const api = workerClient.getAPI();
-    return api.generateShapeDownloadTaskPayloadsFromSelection(
-      activeNodeId,
-      resolvedDataSource,
-      selectionRecord,
-    ) as Promise<FetchTaskPayload[]>;
-  }, [activeNodeId, data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, workerClient]);
-
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
@@ -1946,60 +1942,73 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return true;
       }
       advanceBuildSessionTransitionPhase('building-payloads');
+      const resolvedDataSource = data?.buildConfig?.dataSourceName;
+      const selectionSummary = summarizeSelectedEntries(data?.selectedArrayByCountries);
       beginBuildStartupStep('payload-build', {
         source: startupSource,
+        mode: 'worker-side',
+        dataSource: resolvedDataSource ?? null,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
-      const payloads = await buildDownloadTaskPayloads();
-      if (!payloads) {
+      if (!resolvedDataSource) {
         finishBuildStartupStep('payload-build', 'error', {
-          reason: 'payload-preparation-returned-null',
+          reason: 'missing-data-source',
+          mode: 'worker-side',
         });
         releaseBuildLock();
         coordinator.clearActiveSessionId(String(activeNodeId));
         finishBuildSessionTransition({
           level: 'error',
-          message: 'Failed to start build because task payloads could not be prepared.',
+          message: 'Failed to start build because data source is missing.',
+        });
+        return false;
+      }
+      if (selectionSummary.selectedAdminPairCount === 0) {
+        finishBuildStartupStep('payload-build', 'error', {
+          reason: 'selection-empty',
+          mode: 'worker-side',
+        });
+        releaseBuildLock();
+        coordinator.clearActiveSessionId(String(activeNodeId));
+        finishBuildSessionTransition({
+          level: 'error',
+          message: 'Failed to start build because selection is empty.',
         });
         return false;
       }
       finishBuildStartupStep('payload-build', 'success', {
-        payloadCount: payloads.length,
+        mode: 'worker-side',
+        dataSource: resolvedDataSource,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
-      if (payloads.length === 0) {
-        const finishedAt = Date.now();
-        const persisted = await persistDraftPatch({
-          processingStatus: 'completed',
-          buildFinishedAt: finishedAt,
-          stopReason: undefined,
-        });
-        if (!persisted) {
-          emitBuildSessionTransitionLog('warn', 'failed to persist empty-task completion marker');
-        }
-        releaseBuildLock();
-        coordinator.clearActiveSessionId(String(activeNodeId));
-        finishBuildSessionTransition({
-          level: 'info',
-          message: 'No tasks were generated. Build completed immediately.',
-        });
-        return true;
-      }
       advanceBuildSessionTransitionPhase('starting-session');
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       beginBuildStartupStep('session-start-request', {
         source: startupSource,
         policy,
-        payloadCount: payloads.length,
+        payloadMode: 'worker-side',
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
       let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
       try {
-        statusResult = await bridgeRef.current.startBuildSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+        statusResult = await bridgeRef.current.startBuildSession(
+          SHAPE_NODE_TYPE,
+          activeNodeId,
+          undefined,
+          policy,
+        );
         finishBuildStartupStep('session-start-request', 'success', {
           status: statusResult.status,
           hasError: Boolean(statusResult.error),
+          payloadMode: 'worker-side',
         });
       } catch (error) {
         finishBuildStartupStep('session-start-request', 'error', {
           errorMessage: getErrorMessage(error),
+          payloadMode: 'worker-side',
         });
         throw error;
       }
@@ -2064,8 +2073,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     advanceBuildSessionTransitionPhase,
     beginBuildSessionTransition,
     buildStatus,
-    buildDownloadTaskPayloads,
     coordinator,
+    data?.buildConfig?.dataSourceName,
+    data?.selectedArrayByCountries,
     emitBuildSessionTransitionLog,
     beginBuildStartupStep,
     finishBuildStartupStep,
@@ -2150,6 +2160,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     failed: progressSummary.displayCounts.failed,
     skipped: progressSummary.displayCounts.skipped,
     hasProgressData: progressSummary.hasProgressData,
+    stageTotals: progressSummary.stageTotals,
     timingStageId,
     completedStageElapsedMs,
     warningMessage,

@@ -52,6 +52,7 @@ import {
 import { fetchRawDataWithPipeline } from '../utils/rawDataPipeline.js';
 import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.js';
 import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
+import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -1046,11 +1047,17 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
   const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const payloads = resolveFetchPayloads(params, metadata);
   const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
-  if (payloads.length === 0 && !reuseExistingTasks) return;
+  if (payloads.length === 0 && !reuseExistingTasks) {
+    setFetchPlannedTotal(params.nodeId, 0);
+    return;
+  }
   const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
   if (!reuseExistingTasks) {
     const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
+    setFetchPlannedTotal(params.nodeId, tasks.length);
     await reconcileFetchTasks(params, existingTasks, tasks, resumeExistingTasks);
+  } else {
+    setFetchPlannedTotal(params.nodeId, existingTasks.length);
   }
   await runStageTasks({
     nodeId: params.nodeId,

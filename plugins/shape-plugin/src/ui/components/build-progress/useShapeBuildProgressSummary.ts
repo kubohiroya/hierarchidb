@@ -33,6 +33,7 @@ type SummaryResult<T extends BuildTaskSummary & TaskStageCarrier> = {
   taskSummary: Record<string, TaskCountSummary>;
   aggregatedCounts: TaskCountSummary;
   stageProgress: Record<string, number>;
+  stageTotals: Record<string, TaskCountSummary>;
   tasksByStage: Record<string, T[]>;
   paneProgress: Array<{
     paneId: string;
@@ -105,39 +106,56 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     }, {});
   }, [isSkippedTask, stages, tasksByStage]);
 
+  const stageCountsWithPlan = useMemo(() => {
+    return stages.reduce<Record<string, { counts: TaskCountSummary; hasIncomplete: boolean }>>((acc, stage) => {
+      const stageInfo = stageTaskCounts[stage.id];
+      const actualCounts = stageInfo?.counts ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
+      const plannedCounts = effectiveProgress?.stageTotals?.[stage.id as 'fetch' | 'transform' | 'vt'];
+      const mergedCompleted = Math.max(actualCounts.completed, plannedCounts?.completed ?? 0);
+      const mergedFailed = Math.max(actualCounts.failed, plannedCounts?.failed ?? 0);
+      const mergedSkipped = Math.max(actualCounts.skipped, plannedCounts?.skipped ?? 0);
+      const mergedDone = mergedCompleted + mergedFailed + mergedSkipped;
+      const mergedTotal = Math.max(
+        actualCounts.total,
+        plannedCounts?.total ?? 0,
+        mergedDone,
+      );
+      acc[stage.id] = {
+        counts: {
+          total: mergedTotal,
+          completed: mergedCompleted,
+          failed: mergedFailed,
+          skipped: mergedSkipped,
+        },
+        hasIncomplete: mergedDone < mergedTotal,
+      };
+      return acc;
+    }, {});
+  }, [effectiveProgress?.stageTotals, stageTaskCounts, stages]);
+
   const paneProgressWithSummary = useMemo(() => {
     const failureStageId = buildStatus === 'failed'
       ? taskType
       : undefined;
     return stages.map((stage) => {
       const base = paneProgress?.find((entry) => entry.paneId === stage.id);
-      const inlineSummary = taskSummary[stage.id];
-      const resolvedSummary = inlineSummary
-        ? {
-          total: inlineSummary.total,
-          success: inlineSummary.completed,
-          error: inlineSummary.failed,
-          skip: inlineSummary.skipped,
-        }
-        : null;
-      const hasSummaryData = Boolean(
-        resolvedSummary
-        && ((resolvedSummary.total ?? 0) > 0
-          || (resolvedSummary.success ?? 0) > 0
-          || (resolvedSummary.error ?? 0) > 0
-          || (resolvedSummary.skip ?? 0) > 0),
-      );
+      const stageCounts = stageCountsWithPlan[stage.id]?.counts
+        ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
+      const hasSummaryData = stageCounts.total > 0
+        || stageCounts.completed > 0
+        || stageCounts.failed > 0
+        || stageCounts.skipped > 0;
       let total = hasSummaryData
-        ? (resolvedSummary?.total ?? 0)
+        ? stageCounts.total
         : (base?.taskCount ?? 0);
       const success = hasSummaryData
-        ? (resolvedSummary?.success ?? 0)
+        ? stageCounts.completed
         : (base?.completedCount ?? 0);
       let error = hasSummaryData
-        ? (resolvedSummary?.error ?? 0)
+        ? stageCounts.failed
         : 0;
       const skip = hasSummaryData
-        ? (resolvedSummary?.skip ?? 0)
+        ? stageCounts.skipped
         : 0;
       if (failureStageId && stage.id === failureStageId) {
         error = Math.max(error, 1);
@@ -163,13 +181,21 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         summary: { total, success, error, skip },
       };
     });
-  }, [buildStatus, paneProgress, stages, taskSummary, taskType]);
+  }, [buildStatus, paneProgress, stageCountsWithPlan, stages, taskType]);
+
+  const stageProgressWithSummary = useMemo(() => {
+    return stages.reduce<Record<string, number>>((acc, stage) => {
+      const pane = paneProgressWithSummary.find((entry) => entry.paneId === stage.id);
+      acc[stage.id] = Math.min(100, Math.max(0, pane?.progress ?? stageProgress[stage.id] ?? 0));
+      return acc;
+    }, {});
+  }, [paneProgressWithSummary, stageProgress, stages]);
 
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
     let candidate: string | undefined;
     stages.forEach((stage) => {
-      const stageInfo = stageTaskCounts[stage.id];
+      const stageInfo = stageCountsWithPlan[stage.id];
       if (!stageInfo || stageInfo.counts.total === 0) return;
       const hasIncomplete = stageInfo.hasIncomplete;
       if (hasIncomplete) {
@@ -177,19 +203,19 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       }
     });
     return candidate;
-  }, [buildStatus, stageTaskCounts, stages]);
+  }, [buildStatus, stageCountsWithPlan, stages]);
 
   const displayStageId = lastUnfinishedStageId ?? resolvedTaskType;
 
   const derivedCounts = useMemo(() => {
     if (!lastUnfinishedStageId) return null;
-    const stageInfo = stageTaskCounts[lastUnfinishedStageId];
+    const stageInfo = stageCountsWithPlan[lastUnfinishedStageId];
     if (!stageInfo || stageInfo.counts.total === 0) return null;
     return stageInfo.counts;
-  }, [lastUnfinishedStageId, stageTaskCounts]);
+  }, [lastUnfinishedStageId, stageCountsWithPlan]);
 
   const rawDisplayCounts = useMemo<CountsWithPercentage>(() => {
-    if (tasks.length > 0 && effectiveProgress && effectiveProgress.total > 0) {
+    if (effectiveProgress && effectiveProgress.total > 0 && buildStatus !== 'idle') {
       return {
         total: effectiveProgress.total,
         completed: effectiveProgress.completed,
@@ -222,7 +248,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       skipped: 0,
       percentage: Math.round(overallProgress),
     };
-  }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress, tasks.length]);
+  }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress]);
 
   const lastStableCountsRef = useRef<CountsWithPercentage | null>(null);
   useEffect(() => {
@@ -241,11 +267,11 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   const combinedStagePercentage = useMemo(() => {
     if (!stages.length) return rawDisplayCounts.percentage;
     const total = stages.reduce((sum, stage) => {
-      const value = stageProgress[stage.id] ?? 0;
+      const value = stageProgressWithSummary[stage.id] ?? 0;
       return sum + Math.min(100, Math.max(0, value));
     }, 0);
     return Math.min(100, Math.max(0, Math.round(total / stages.length)));
-  }, [rawDisplayCounts.percentage, stageProgress, stages]);
+  }, [rawDisplayCounts.percentage, stageProgressWithSummary, stages]);
 
   const displayCountsWithStageProgress = useMemo(() => {
     if (buildStatus !== 'running' || !hasProgressData || displayCounts.total <= 0) return displayCounts;
@@ -272,7 +298,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
 
   const stageRemainingMs = useMemo(() => {
     if (!resolvedTaskType) return null;
-    const stageInfo = stageTaskCounts[resolvedTaskType];
+    const stageInfo = stageCountsWithPlan[resolvedTaskType];
     if (!stageInfo || stageInfo.counts.total === 0) return null;
     const counts = stageInfo.counts;
     const done = counts.completed + counts.failed + counts.skipped;
@@ -283,12 +309,21 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     const avgPerTaskMs = timingStageMs / done;
     if (!Number.isFinite(avgPerTaskMs) || avgPerTaskMs <= 0) return null;
     return Math.max(0, Math.round(avgPerTaskMs * remaining));
-  }, [resolvedTaskType, stageTaskCounts, timingStageMs]);
+  }, [resolvedTaskType, stageCountsWithPlan, timingStageMs]);
+
+  const stageTotals = useMemo(() => {
+    return stages.reduce<Record<string, TaskCountSummary>>((acc, stage) => {
+      acc[stage.id] = stageCountsWithPlan[stage.id]?.counts
+        ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
+      return acc;
+    }, {});
+  }, [stageCountsWithPlan, stages]);
 
   return {
     taskSummary,
     aggregatedCounts,
-    stageProgress,
+    stageProgress: stageProgressWithSummary,
+    stageTotals,
     tasksByStage,
     paneProgress: paneProgressWithSummary,
     displayStageId,

@@ -19241,3 +19241,31 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - done: 2026-02-10 23:57 JST 上記型エラーを修正後、`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` exit 0。
   - blocked: 2026-02-11 00:06 JST `pnpm -w turbo run test --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は `@hierarchidb/shape-plugin` の長時間実行中にタイムアウト（1200s, exit 124）。
   - done: 2026-02-11 00:07 JST `pnpm -w turbo run test --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator` exit 0。
+  - blocked: 2026-02-11 00:23 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` を再実行したが `ERR_WORKER_OUT_OF_MEMORY`（collect/setup 後、tests 0ms）で失敗（exit 1）。
+  - start: 2026-02-11 00:24 JST 実アプリでも Step5 Start build 前後で長時間待機後にブラウザクラッシュが継続しているため、タスク開始前経路の重量初期化を削減する修正に着手。
+  - update: 2026-02-11 00:28 JST `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` で Start build 前の `generateShapeDownloadTaskPayloadsFromSelection` 呼び出しを撤去し、payload は Worker 側で selection から生成するモードへ切替。`payload-build` startup step は worker-side モードの start/finish ログ（selected country/admin pair 数を含む）を維持。
+  - update: 2026-02-11 00:29 JST `plugins/shape-plugin/src/worker/api.ts` の `startBatchProcess` に startup step ログ（`load-draft` / `load-session-record` / `mark-processing` / `selection-diff-cleanup` / `config-invalidation` / `load-existing-tasks` / `seed-task-queue` / `normalize-existing-tasks` / `upsert-session-snapshot` / `pipeline-dispatch`）の start/finish を追加。各 finish に `elapsedMs` と error 時の `errorMessage` を出力。
+  - done: 2026-02-11 00:30 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-11 00:31 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` は引き続き `ERR_WORKER_OUT_OF_MEMORY`（collect 192ms / tests 0ms, exit 1）。
+  - update: 2026-02-11 00:43 JST 原因を「`getBuildSessionStatus` ポーリング（3秒間隔）経路で `plugins/shape-plugin/src/worker/api.ts#getBatchSessionInternal` が毎回 `listTasks(...toArray())` を実行し、タスク件数が多いセッションで開始前にメモリ圧迫すること」と特定。発生範囲は `shape` の build start/resume 待機中 UI と worker のセッション取得経路。
+  - update: 2026-02-11 00:44 JST 修正として `getBatchSessionInternal` / `getBuildSessionStatus` を「session record 優先 + task counts（countクエリ）ベース」へ変更し、ポーリング時の全件 `toArray()` を撤去。適用範囲は `plugins/shape-plugin/src/worker/api.ts`。
+  - update: 2026-02-11 00:45 JST 追加で start/resume 初期化の重量処理を軽量化。`count-existing-tasks`（countクエリ）へ置換、`seedTaskQueueFromBuildTasks` を `[nodeId+index]` 走査のチャンク投入（250件）へ変更、`normalizeTaskQueueStageFields` を `each` 走査化、`resetRunningTasks`/`resetFailedTasks` を Dexie `modify` 化。適用範囲は `plugins/shape-plugin/src/worker/api.ts`。
+  - update: 2026-02-11 00:46 JST `session/resume` 経路にも startup step ログ（start/finish/error, elapsedMs）を追加し、実タスク開始前の停滞箇所を段階単位で追跡可能にした。
+  - done: 2026-02-11 00:47 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-11 00:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - blocked: 2026-02-11 00:47 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/worker/__tests__/unit/api.unit.test.ts` は Vitest 設定の除外（`src/worker/**/__tests__/**`）により No test files found（exit 1）。
+  - done: 2026-02-11 00:48 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/common/__tests__/unit/taskTitles.unit.test.ts` exit 0（1 file, 2 tests passed）。
+  - start: 2026-02-11 01:12 JST Fetch ステージのタスク総数分母を開始前に確定し、進捗%/残り時間推計/SVG進捗バーの分母を固定する改修に着手。
+  - update: 2026-02-11 01:12 JST 方針は `worker` 側で `plannedFetchTotal` を算出・保持し、`BuildProgress` の集計と `stages.fetch.tasksTotal` へ反映。`ui` 側はその分母を優先して表示計算へ利用し、タスクが後追い生成されても分母が揺れないようにする。
+  - update: 2026-02-11 01:14 JST `useShapeBuildProgressSummary.ts` で `effectiveProgress.stageTotals` を実タスク集計へマージし、stage/pane 進捗率・displayCounts・ETA（`stageRemainingMs`）の分母を固定。Fetch タスク未生成でも planned total を優先して表示するように修正。
+  - update: 2026-02-11 01:14 JST `ShapeBuildProgressPanel.tsx` の `TaskProgressBar` を拡張し、`summary.stageTotals` から不足件数を待機セグメントとして描画。実タスクが後追い作成されても SVG バーの総幅（分母）が変動しないように調整。
+  - update: 2026-02-11 01:14 JST `shapeBuildProgressAtoms.ts` / `useShapeBuildStep.ts` / `useShapeBuildStepAtomSync.ts` に `stageTotals` を追加し、worker→mapping→summary→panel まで planned totals を伝播。
+  - start: 2026-02-11 01:23 JST Fetch終了〜Transform開始の境界でメモリ枯渇クラッシュが発生するため、同区間サブステップの start/finish/error+memory ログ追加とメモリピーク削減（task準備のチャンク化）に着手。
+  - start: 2026-02-11 01:48 JST 指摘に基づき、Transform前の `fetchCache` 全件読込による task weight 集計を撤去し、進捗表示を件数ベースへ限定する軽量化修正に着手。
+  - update: 2026-02-11 01:53 JST `plugins/shape-plugin/src/worker/api.ts` から `buildTaskWeightContext` / `buildTaskWeightMapSafe` と `TaskWeightMetadata` 付与を削除。`getBatchTasks`・`buildTaskSummarySnapshot`・`subscribeToTasks(update)` を taskレコード直接マッピングへ変更し、イベントごとの `fetchCache.where('nodeId').toArray()` を撤去。
+  - done: 2026-02-11 01:54 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-11 01:54 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-11 01:54 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/common/__tests__/unit/taskTitles.unit.test.ts` exit 0（1 file, 2 tests passed）。
+  - done: 2026-02-11 01:14 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-11 01:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - done: 2026-02-11 01:15 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/common/__tests__/unit/taskTitles.unit.test.ts` exit 0（1 file, 2 tests passed）。

@@ -6,7 +6,7 @@ import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { shapeDB } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import {
   buildBands,
   buildContinentLookup,
@@ -49,16 +49,30 @@ type ShapePipelineContext = {
 };
 
 const collectRecyclingAllowlist = async (nodeId: NodeId) => {
-  const existingFeatureMetadata = await shapeQueryAPIImpl.listFeatureMetadata(nodeId);
+  const startedAt = Date.now();
   const recyclingByFeatureId = new Map<string, boolean>();
   const recyclingAllowlist = new Set<string>();
-  existingFeatureMetadata.forEach((row) => {
-    if (!row.featureId) return;
-    if (row.recycling) {
-      recyclingAllowlist.add(row.featureId);
-      recyclingByFeatureId.set(row.featureId, true);
-    }
-  });
+  let scannedCount = 0;
+  console.warn('[ShapePipeline][Startup] collect recycling allowlist start', JSON.stringify({
+    nodeId,
+  }));
+  await shapeDB.featureMetadata
+    .where('nodeId')
+    .equals(String(nodeId))
+    .each((row) => {
+      scannedCount += 1;
+      if (!row.featureId) return;
+      if (row.recycling) {
+        recyclingAllowlist.add(row.featureId);
+        recyclingByFeatureId.set(row.featureId, true);
+      }
+    });
+  console.warn('[ShapePipeline][Startup] collect recycling allowlist finish', JSON.stringify({
+    nodeId,
+    elapsedMs: Date.now() - startedAt,
+    scannedCount,
+    recyclingCount: recyclingAllowlist.size,
+  }));
   return { recyclingByFeatureId, recyclingAllowlist };
 };
 
@@ -180,12 +194,89 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
     geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
   }));
-  const stopAfterStage = await runShapeTransformStageSection({
+  const runTransitionStep = async <T>(step: string, action: () => Promise<T>): Promise<T> => {
+    const startedAt = Date.now();
+    const memoryAtStart = (
+      globalThis as {
+        performance?: {
+          memory?: {
+            usedJSHeapSize?: number;
+            totalJSHeapSize?: number;
+            jsHeapSizeLimit?: number;
+          };
+        };
+      }
+    ).performance?.memory;
+    console.warn('[ShapePipeline][Transition] step start', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      step,
+      startedAt,
+      memoryAtStart: memoryAtStart ?? null,
+    }));
+    try {
+      const result = await action();
+      const finishedAt = Date.now();
+      const memoryAtFinish = (
+        globalThis as {
+          performance?: {
+            memory?: {
+              usedJSHeapSize?: number;
+              totalJSHeapSize?: number;
+              jsHeapSizeLimit?: number;
+            };
+          };
+        }
+      ).performance?.memory;
+      console.warn('[ShapePipeline][Transition] step finish', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        step,
+        outcome: 'success',
+        startedAt,
+        finishedAt,
+        elapsedMs: finishedAt - startedAt,
+        memoryAtStart: memoryAtStart ?? null,
+        memoryAtFinish: memoryAtFinish ?? null,
+      }));
+      return result;
+    } catch (error) {
+      const finishedAt = Date.now();
+      const memoryAtFinish = (
+        globalThis as {
+          performance?: {
+            memory?: {
+              usedJSHeapSize?: number;
+              totalJSHeapSize?: number;
+              jsHeapSizeLimit?: number;
+            };
+          };
+        }
+      ).performance?.memory;
+      console.warn('[ShapePipeline][Transition] step finish', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        step,
+        outcome: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        startedAt,
+        finishedAt,
+        elapsedMs: finishedAt - startedAt,
+        memoryAtStart: memoryAtStart ?? null,
+        memoryAtFinish: memoryAtFinish ?? null,
+      }));
+      throw error;
+    }
+  };
+  const countryLookup = await runTransitionStep('load-country-lookup-for-transform', async () => (
+    loadCountryLookup()
+  ));
+  const stopAfterStage = await runTransitionStep('run-transform-stage-section', async () => runShapeTransformStageSection({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     bands,
     enableHighDetailBands,
-    countryLookup: await loadCountryLookup(),
+    countryLookup,
     taskQueue,
     waitIfPaused: params.waitIfPaused,
     resumeExistingTasks,
@@ -195,7 +286,7 @@ const runTransformStage = async (context: ShapePipelineContext): Promise<boolean
     ephemeralStore,
     diffBuildEnabled,
     recyclingAllowlist,
-  });
+  }));
   console.warn('[ShapePipeline][Stage] transform done', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
