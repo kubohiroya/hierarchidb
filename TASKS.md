@@ -1,4 +1,167 @@
-2671) fix/ui/shape-step5-start-does-not-trigger-fetch-when-draft-paused (P1) — 進行中 (2026-02-10)
+2679) investigate/workerapi-sharedworker-migration-and-location-plugin-followup (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2677) fix/location/preview-flicker-and-step3-empty-after-clear-all-data
+- 受け入れ基準: WorkerAPI の SharedWorker + Web Locks + Comlink 移行状況（実装済み/未移行/互換経路）を明確化する／location-plugin が新経路に追従できているか検証し、必要な修正を行う／location preview の再起動ループ起因のチラつきを解消する／回帰テストを追加する／影響範囲の typecheck/test/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `app/src/worker-runtime/*` / `app/src/contexts/WorkerProvider.tsx` / `packages/ui/worker-provider/*` / `plugins/location-plugin/src/ui/*`（調査結果に応じて確定）
+- ロールバック手順: 本タスクで変更したファイル差分を revert し、従来挙動へ戻す
+- チェックリスト:
+  - WorkerAPI 移行状況を実装コードベースで棚卸しする
+  - location-plugin の Worker 接続経路が移行後仕様に追従できているか検証する
+  - 不整合/再実行ループの根本原因を特定する
+  - 必要な修正と回帰テストを実装する
+  - 影響範囲の typecheck/test/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 21:02 JST SharedWorker + Web Locks + Comlink 移行状況の確認と location-plugin 追従検証、preview 再起動ループ不具合の再調査・修正に着手。
+  - update: 2026-02-10 21:13 JST 移行状況の棚卸し結果として、`app/src/worker-runtime/shared-worker.ts` に Web Locks (`navigator.locks.request`) を用いた SharedWorker 起動ガード、`app/src/worker-runtime/client.ts` に SharedWorker + Comlink 接続（非対応時 Dedicated fallback）が実装済みであることを確認。`app/src/contexts/WorkerProvider.tsx` は `useWorkerRuntimeProxy` 経由でこの初期化経路を利用している一方、`packages/ui/worker-provider` には汎用/二層 Provider が残り、App 本体との完全統合は未了。
+  - update: 2026-02-10 21:13 JST location preview チラつきの原因は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` の effect 依存が参照揺れ（selection/countries/sources）で再評価され、同一 hash でも import が再起動し得ること。発生範囲は同 hook の実行ガードと依存配列。
+  - update: 2026-02-10 21:13 JST 修正として (1) 実行キーを `sourceIds` + `combinedHash` 基準に整理し参照揺れ依存を除去、(2) `processingStatus=failed` かつ同一 hash を `lastFailedByNode` で再実行抑止、(3) 同一 hash での draft 参照揺れ時に単発実行を保証する回帰テストを追加。適用範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` と `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`。
+  - done: 2026-02-10 21:14 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `pnpm -w turbo run build --filter @hierarchidb/location-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` はすべて exit 0（既知 warning のみ）。
+
+2678) fix/ui/tree-node-info-panel-left-back-button-replace-close-icon (P2) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: なし
+- 受け入れ基準: `TreeNodeInfoPanel` の右上 `×` アイコンボタンが撤去される／同機能（親ノードへ戻る）を実行する `←` アイコンボタンが左上に配置される／`←` アイコンボタンの `size` が `large` になる／影響範囲の typecheck が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: 当該ファイル差分を revert し、右上 `×` ボタン構成へ戻す
+- チェックリスト:
+  - 右上 `×` アイコンボタンを撤去する
+  - 左上に `←` アイコンボタン（`size='large'`）を配置する
+  - 既存の close 動作（親ノードへ戻る）を維持する
+  - 影響範囲の typecheck（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:48 JST TreeNodeInfoPanel の右上 `×` を撤去し、左上 `←`（large）へ置換する修正に着手。
+  - update: 2026-02-10 20:49 JST 原因は `TreeNodeInfoPanel.tsx` が close 導線を右上 `CloseIcon + size='small'` に固定しており、左上 `←` 要件と不一致だったこと。発生範囲は `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の `showCloseButton` 描画ブロックのみ。
+  - update: 2026-02-10 20:49 JST 修正として `CloseIcon` を `ArrowBackIcon` へ置換し、`IconButton` を `size='large'` かつ `top:8,left:8` の左上配置へ変更。クリック時の遷移処理（親ノードへ戻る）は既存ロジックを維持。適用範囲は `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` のみ。
+  - done: 2026-02-10 20:49 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app --only` / `pnpm -w turbo run build --filter @hierarchidb/app --only` はいずれも exit 0（既知 warning のみ）。
+
+2677) fix/location/preview-flicker-and-step3-empty-after-clear-all-data (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview
+- 受け入れ基準: `Clear All Data` 後でも location step2(IDE-GSM CSV) → step3 で `No countries available` にならない／location preview で `useIdeGsmImportOnEntry` の `start` が多重ループせず画面チラつきが解消する／BFFログイン有無に依存せず同挙動／回帰防止テストを追加／影響範囲の typecheck/test/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `packages/ui/country-select/src/hooks/useIsoCountries.ts` / `packages/tools/gen-iso3166-2/src/store.browser.ts` / `app/src/router/init/initializeBrowserGlobals.ts`
+- ロールバック手順: 本タスクで変更した location plugin 配下ファイル差分を revert し、従来挙動へ戻す
+- チェックリスト:
+  - `Clear All Data` 後の step2→step3 で国一覧が空になる根本原因を特定する
+  - preview の import 多重 start ループの根本原因を特定する
+  - 双方を同時に解消する修正を実装する
+  - 回帰防止テストを追加する
+  - 影響範囲の typecheck/test/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:53 JST `Clear All Data` 後の step3 `No countries available` と preview の `useIdeGsmImportOnEntry` 多重 start ループによるチラつき障害の調査・修正に着手。
+  - update: 2026-02-10 21:36 JST 原因1（previewチラつき）は `useIdeGsmImportOnEntry` が同一 `combinedHash` の失敗ケースを再試行抑止できず、`processingStatus: failed` 後も `start` が連続再発していたこと。発生範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` の実行ガード。
+  - update: 2026-02-10 21:36 JST 原因2（step3空表示）は `Clear All Data` 後に ISO CSV 再取得が空配列でも `ready` 扱いになり得ることと、base path 解決が環境依存で安定しないこと。発生範囲は `packages/ui/country-select/src/hooks/useIsoCountries.ts` と `packages/tools/gen-iso3166-2/src/store.browser.ts`。
+  - update: 2026-02-10 21:36 JST 修正として (1) 同一 `combinedHash` の失敗を `lastFailedByNode` で記録し再実行ループを停止、(2) 失敗再試行抑止の回帰テスト追加、(3) ISO CSV URL を複数候補（preferred / `__HDB_APP_BASE__` / `/iso3166-2-level1.csv`）で順次解決し空結果をエラー扱い、(4) `window.__HDB_APP_BASE__` を app 初期化で公開して base 解決を安定化。適用範囲は上記5ファイル。
+  - done: 2026-02-10 21:37 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin --filter @hierarchidb/ui-country-select --filter @hierarchidb/gen-iso3166-2 --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/location-plugin --filter @hierarchidb/ui-country-select --filter @hierarchidb/gen-iso3166-2 --filter @hierarchidb/app` はすべて exit 0（既知 warning のみ）。
+
+2676) fix/ui/shape-step6-layer-set-indent-on-switch (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2674) fix/ui/shape-layer-sets-parent-child-indent-rule
+- 受け入れ基準: Layer Sets で子レイヤー（`ADM0/ADM1/ADM2` 以外）のインデントが `FormControlLabel` ではなく `Switch` に左 margin 16px として適用される／親レイヤーは `Switch` 左 margin 0 を維持する／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、`FormControlLabel` に left margin を付与する方式へ戻す
+- チェックリスト:
+  - 子インデントを `Switch` の左 margin 16px に変更する
+  - 親レイヤーの `Switch` 左 margin 0 を維持する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:47 JST Layer Sets のインデントが `FormControlLabel` では作用しないため、`Switch` 側へ移す修正に着手。
+  - update: 2026-02-10 20:48 JST 原因は `ShapePreviewStep.tsx` で子インデントを `FormControlLabel` の `sx.ml` に付与していた点。表示上のインデント対象を `Switch` にしたい要件と不一致で、視認上作用しないケースがあった。発生範囲は `ShapePreviewStep.tsx` の Layer Sets 項目描画。
+  - update: 2026-02-10 20:48 JST 修正として `FormControlLabel` の `ml` を 0 に固定し、`Switch` に対して `sx.ml`（親:0 / 子:16px）を適用。親判定は既存どおり `adm0|adm1|adm2` を使用。適用範囲は `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` のみ。
+  - done: 2026-02-10 20:49 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ）。
+
+2676) fix/ui/shape-step6-layer-sets-reopen-button-stack-under-metadata (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2675) fix/ui/shape-step6-remove-dexie-tile-stats-floating-window
+- 受け入れ基準: shape step6 preview で Layer Sets floating window を閉じた際の再表示アイコンが画面左上へ移動する／`Shape: data source / feature metadata` の再表示アイコンが表示される場合はその直下に 8px gap で積み上がる／metadata 再表示と Layer Sets 再表示のクリック挙動に回帰を作らない／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、Layer Sets 再表示ボタンを従来位置（右上）へ戻す
+- チェックリスト:
+  - Layer Sets 再表示ボタンを左上系の配置へ変更する
+  - metadata 再表示ボタン表示時に 8px gap で縦積みされるよう調整する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:28 JST step6 preview の Layer Sets 再表示ボタン位置を、metadata 再表示ボタン直下（8px gap）へ変更する修正に着手。
+  - update: 2026-02-10 20:31 JST 原因は `ShapePreviewStep.tsx` が Layer Sets 再表示ボタンを `top={layerSetsToggleTop}, right={8}`（右上固定）で描画しており、metadata 再表示ボタン（左上）との位置関係が連動していなかったこと。発生範囲は同ファイルの overlay 再表示ボタン描画ロジックと `layerSetsToggleTop` 算出 effect。
+  - update: 2026-02-10 20:31 JST 修正として再表示ボタン群を左上 `top=8,left=8` の `Stack(spacing=1)` に統合し、metadata ボタン表示時は Layer Sets ボタンを直下へ配置。metadata が開いている場合でも Layer Sets ボタン位置が変わらないよう、hidden ボタンで metadata スロットを確保。適用範囲は `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` のみ。
+  - done: 2026-02-10 20:31 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0（既知 warning のみ）。
+
+2675) fix/ui/shape-step6-remove-dexie-tile-stats-floating-window (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2674) fix/ui/shape-layer-sets-parent-child-indent-rule
+- 受け入れ基準: shape step6 preview で `Dexie Tile Stats` floating window が表示されない／step6 の Layer Sets と preview 操作（パン/ズーム/identify）に回帰を作らない／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx`
+- ロールバック手順: 上記ファイル差分を revert し、step6 preview で `Dexie Tile Stats` floating window を表示する従来挙動へ戻す
+- チェックリスト:
+  - step6 preview の `Dexie Tile Stats` floating window 設定を撤去する
+  - 不要 import/props を整理する
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:19 JST shape step6 preview から `Dexie Tile Stats` floating window を撤去する修正に着手。
+  - update: 2026-02-10 20:20 JST 原因は `ShapePreviewStep.tsx` が `MapPreviewShell` の `mapProps.stats` に `enabled: true` かつ `display: 'floating'` を固定指定しており、step6 で常に `Dexie Tile Stats` floating window と再表示トグルを描画していたこと。発生範囲は同ファイルの `stats` 設定ブロックと `QueryStatsIcon` 依存。
+  - update: 2026-02-10 20:20 JST 修正として step6 の `mapProps` から `stats` 設定を削除し、`QueryStatsIcon` import と関連オフセット計算を撤去。これにより step6 preview では `Dexie Tile Stats` floating window が表示されない。適用範囲は `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` のみ。
+  - done: 2026-02-10 20:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0（既知 warning のみ）。
+
+2674) fix/ui/shape-layer-sets-parent-child-indent-rule (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2673) feat/ui/shape-step6-layer-set-indent-and-viewport-stats
+- 受け入れ基準: Layer Sets で `ADM0/ADM1/ADM2` のみを親として扱い、それ以外は子として左 margin 16px が適用される／親には左 margin を適用しない／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` / `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`
+- ロールバック手順: 上記2ファイルの差分を revert し、既存の `indentLevel` ベース判定へ戻す
+- チェックリスト:
+  - 親子判定を `ADM0/ADM1/ADM2` 固定ルールへ変更する
+  - 子の左 margin を 16px 固定にする
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:44 JST Layer Sets の親子インデント判定を `ADM0/ADM1/ADM2` 親固定ルールへ明示化する修正に着手。
+  - update: 2026-02-10 20:45 JST 原因は `useShapePreviewStepView.ts` の toggle 定義に `indentLevel` を持たせる前提が残っており、親子関係が要件（`ADM0/ADM1/ADM2` を親固定）ではなくデータ定義依存で判定されていたこと。発生範囲は `ShapePreviewStep.tsx` の `sx.ml` 判定と `useShapePreviewStepView.ts` の toggle 型定義。
+  - update: 2026-02-10 20:45 JST 修正として `ShapePreviewStep.tsx` に親判定ヘルパー（`adm0|adm1|adm2`）を追加し、`FormControlLabel` の左 margin を「親=0、子=16px」に固定。`useShapePreviewStepView.ts` から `indentLevel` を削除し、レイヤー定義を `id/label` のみに整理。適用範囲は上記2ファイル。
+  - done: 2026-02-10 20:46 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ）。
+
+2673) feat/ui/shape-step6-layer-set-indent-and-viewport-stats (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2672) feat/ui/shape-step6-preview-layer-set-individual-toggles
+- 受け入れ基準: shape step6 preview の Layer Sets で `ADM0/ADM1/ADM2` を親、`Boundary/Fill` を子として子項目に16pxインデントが適用される／各レイヤーラベルの横に現在視野内フィーチャー件数が表示される／視野変更（pan/zoom）とレイヤー表示切替で件数が追従更新される／影響範囲の typecheck/build が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` / `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`
+- ロールバック手順: 上記2ファイルの差分を revert し、インデントと件数表示を導入する前の Layer Sets 表示へ戻す
+- チェックリスト:
+  - 子レイヤー項目に16pxインデントを適用する
+  - 現在視野内のレイヤー別フィーチャー件数を算出する
+  - ラベル横へ件数表示を追加し、pan/zoom/表示切替で更新させる
+  - 影響範囲の typecheck/build（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:27 JST shape step6 Layer Sets の親子インデント（子16px）と現在視野のレイヤー統計表示追加に着手。
+  - update: 2026-02-10 20:33 JST 原因は `ShapePreviewStep.tsx` の Layer Sets 表示が単純ラベルのみで親子構造の視覚差（子インデント）が不足していたこと、かつ `useShapePreviewStepView.ts` がレイヤー件数統計を保持しておらず current viewport の情報を表示できなかったこと。発生範囲は同2ファイル。
+  - update: 2026-02-10 20:33 JST 修正として (1) `FormControlLabel` に子要素の `ml: 16px` を適用、(2) `useShapePreviewStepView.ts` で `queryRenderedFeatures` ベースのレイヤー別件数集計（ADM0/ADM1/ADM2 と Boundary/Fill）を実装し `moveend/idle/styledata` で更新、(3) ラベル右側へ件数表示を追加。適用範囲は `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`。
+  - update: 2026-02-10 20:37 JST 親レイヤー件数で `Boundary/Fill` の同一 feature が重複しづらいよう、件数キーを layerId 依存から `source/sourceLayer/featureId` 基準へ調整。適用範囲は `useShapePreviewStepView.ts` の件数集計ヘルパー。
+  - done: 2026-02-10 20:39 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ）。
+
+2672) feat/ui/shape-step6-preview-layer-set-individual-toggles (P1) — 完了 (2026-02-10)
+- ブランチ名: ERIA-Cartograph
+- 依存: 2671) fix/ui/shape-step5-start-does-not-trigger-fetch-when-draft-paused
+- 受け入れ基準: shape step6 preview の Layer Sets floating window で `ADM0` / `ADM0 Boundary` / `ADM0 Fill` / `ADM1` / `ADM1 Boundary` / `ADM1 Fill` / `ADM2` / `ADM2 Boundary` / `ADM2 Fill` の各スイッチが表示される／各スイッチで該当 preview layer の表示・非表示を個別制御できる／`Location` と `Route` のスイッチは表示されない／影響範囲の typecheck が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx` / `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`
+- ロールバック手順: 上記2ファイルの差分を revert し、既存 `LayerSetVisibilityPanel`（location/route/shape の3スイッチ）構成へ戻す
+- チェックリスト:
+  - layer set 表示を `location/route/shape` 単位から shape preview 専用の個別レイヤー単位へ切り替える
+  - `ADM0/ADM1/ADM2` グループスイッチと boundary/fill 個別スイッチの連動ロジックを実装する
+  - `Location` / `Route` スイッチを floating window から撤去する
+  - 影響範囲の typecheck（対象限定）を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 20:05 JST shape step6 preview の Layer Sets floating window を shape レイヤー個別スイッチ構成へ変更する対応に着手。
+  - update: 2026-02-10 20:18 JST 原因は `useShapePreviewStepView.ts` が `@hierarchidb/ui-map` の `LayerSetVisibility`（`location/route/shape`）でしか表示制御しておらず、shape 内の `ADM0/ADM1/ADM2` および boundary/fill を個別に切り替えられなかったこと。発生範囲は `ShapePreviewStep.tsx`（LayerSetVisibilityPanel 描画）と `useShapePreviewStepView.ts`（vectorLayers 生成時の可視判定）。
+  - update: 2026-02-10 20:18 JST 修正として (1) shape preview 専用の9トグル状態（`ADM0`/`ADM0 Boundary`/`ADM0 Fill`/`ADM1`/`ADM1 Boundary`/`ADM1 Fill`/`ADM2`/`ADM2 Boundary`/`ADM2 Fill`）を `useShapePreviewStepView.ts` に実装、(2) vector layer 生成で adminLevel + boundary/fill を判定して個別フィルタ適用、(3) `ShapePreviewStep.tsx` の floating window を `FormControlLabel + Switch` の9項目表示へ置換し `Location/Route` スイッチを撤去。適用範囲は上記2ファイルのみ。
+  - done: 2026-02-10 20:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はいずれも exit 0（既知 warning のみ）。
+
+2671) fix/ui/shape-step5-start-does-not-trigger-fetch-when-draft-paused (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2658) fix/ui/shape-build-start-pending-and-progress-scope-stability
 - 受け入れ基準: shape step5 で `Build start` 押下後に Fetch タスクが確実に `queued/running` へ遷移する／`draftData.processingStatus: paused` が残存していても開始フローを阻害しない／開始遷移ログ（`starting-session`→`awaiting-first-task`）後に実タスク開始が観測できる／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
@@ -12,8 +175,11 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-10 19:43 JST shape step5 で `Build start` 押下後に Fetch タスクが起動しない不具合（開始遷移は完了するが実タスク未開始）の調査と修正に着手。
+  - update: 2026-02-10 19:50 JST 原因は `useShapeBuildStep.ts` の手動 Start/Resume 経路（`handleStartOrResume`）が `buildStatus=paused` でも常に `startBuildSession` を実行し、`resumeBuildSession` を呼ばない点。これにより user-pause で停止中の既存セッションを再開できず、開始遷移ログだけ進んで Fetch 実行が始まらない経路が発生。発生範囲は `useShapeBuildStep.ts` の start/resume 分岐。
+  - update: 2026-02-10 19:52 JST 修正として `shouldResumeBuildSession` 判定を追加し、`paused` かつ `forceRestart` でない場合は `resumeBuildSession` を優先実行するよう変更。resume 成功時に `processingStatus: 'processing'` と `stopReason: undefined` を永続化し、`awaiting-first-task` へ遷移。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` と新規 `shouldResumeBuildSession.ts`、およびユニットテスト追加。
+  - done: 2026-02-10 19:54 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/shouldResumeBuildSession.unit.test.ts` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はすべて exit 0。
 
-2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview (P1) — 進行中 (2026-02-10)
+2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2669) fix/build/app-unloadable-ui-batch-progress-dependency
 - 受け入れ基準: `LocationMapPreview` 表示時に同一 `nodeId + sourceKey + selectionHash` の IDE-GSM import が多重再起動しない／`metadata-fetch` と `viewport-fetch` が import の再起動ループに巻き込まれず安定表示される／`useIdeGsmImportOnEntry` の回帰防止テストを追加する／影響範囲の typecheck/test が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
@@ -27,6 +193,10 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-10 19:45 JST Location preview 表示で IDE-GSM import が再起動ループし画面がブリンクする不具合の修正に着手。ログ上で `import-result` 後に `start` が繰り返される現象を確認。
+  - update: 2026-02-10 19:46 JST 原因は `useIdeGsmImportOnEntry.ts` の effect cleanup が import 実行中に走ると `cancelled=true` になり、完了時の `ideGsmSelectionHash` / `processingStatus=completed` 更新が `if (cancelled) return` でスキップされること。発生範囲は同 hook の `run()` 内キャンセル判定と effect 依存再評価経路（`workerApi` など参照変化時）で、`metadata-fetch` / `viewport-fetch` がこの未完了状態に巻き込まれて再起動ループへ遷移。
+  - update: 2026-02-10 19:46 JST 修正として (1) `onUpdate` を `ref` 化し依存配列から外して不要 cleanup を抑止、(2) `activeRunRef(nodeId+combinedHash)` と `mountedRef` を導入して「同一 run の完了更新は cleanup 後でも適用可」「別 run/アンマウント時は破棄」に変更。併せて `useIdeGsmImportOnEntry.unit.test.tsx` を追加し、`onUpdate` 参照変化下でも import が1回で `completed` 到達する回帰防止を実装。適用範囲は `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` と新規 test 1ファイル。
+  - blocked: 2026-02-10 19:46 JST 初回 `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` は新規テスト失敗（`processing` のまま `completed` 未到達）で exit 1。`workerApi` 参照変化でも完了更新が失われる経路を追加修正して再実行へ切り替え。
+  - done: 2026-02-10 19:46 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` はいずれも exit 0。新規テストは pass し、`[LocationIdeGsmImport] source-complete` / `complete` ログ出力まで確認。
 
 2669) fix/build/app-unloadable-ui-batch-progress-dependency (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph

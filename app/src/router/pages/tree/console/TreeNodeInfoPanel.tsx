@@ -8,7 +8,7 @@ import {
 import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-field';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
 import {
-  Close as CloseIcon,
+  ArrowBack as ArrowBackIcon,
   Construction as ConstructionIcon,
   Edit as EditIcon,
   PlayArrow as PlayArrowIcon,
@@ -159,14 +159,14 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
         {showCloseButton && (
           <IconButton
             aria-label={labels.closeAria}
-            size="small"
+            size="large"
             onClick={() => {
               if (!treeId || !parentNodeId) return;
               navigate({ to: `/t/${treeId}/${parentNodeId}` });
             }}
-            sx={{ position: 'absolute', top: 8, right: 8 }}
+            sx={{ position: 'absolute', top: 8, left: 8 }}
           >
-            <CloseIcon fontSize="small" />
+            <ArrowBackIcon />
           </IconButton>
         )}
         <Tooltip title={labels.iconTooltip}>

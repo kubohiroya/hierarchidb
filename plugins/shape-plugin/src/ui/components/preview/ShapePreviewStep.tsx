@@ -1,8 +1,8 @@
 import React from 'react';
-import { Box, Alert, Button, CircularProgress, LinearProgress } from '@mui/material';
-import { Hexagon as HexagonIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
+import { Box, Alert, Button, CircularProgress, FormControlLabel, LinearProgress, Stack, Switch } from '@mui/material';
+import { Hexagon as HexagonIcon, Layers as LayersIcon } from '@mui/icons-material';
 import type { MapViewState } from '@hierarchidb/ui-map';
-import { LayerSetVisibilityPanel, MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
+import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
@@ -35,12 +35,13 @@ const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView | null =
   return { longitude, latitude, zoom };
 };
 
+const isShapeLayerParentToggle = (toggleId: string): boolean => (
+  toggleId === 'adm0' || toggleId === 'adm1' || toggleId === 'adm2'
+);
+
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
   const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
-  const [layerSetsToggleTop, setLayerSetsToggleTop] = React.useState(72);
   const lastPersistedViewRef = React.useRef<ShapePreviewMapView | null>(data.previewMapView ?? null);
-  const layerSetsResizeObserverRef = React.useRef<ResizeObserver | null>(null);
-  const layerSetsObservedControlRef = React.useRef<HTMLElement | null>(null);
   const {
     t,
     featureMetadataLoading,
@@ -76,10 +77,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
-    layerSetVisibility,
-    toggleLayerSetVisibility,
-    layerSetItems,
-    availableLayerSets,
+    shapePreviewLayerVisibility,
+    shapePreviewLayerFeatureCounts,
+    toggleShapePreviewLayerVisibility,
+    shapePreviewLayerToggleItems,
   } = useShapePreviewStepView(data ?? {}, nodeId);
   React.useEffect(() => {
     setFeatureWindowOpen(true);
@@ -93,49 +94,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     initialPosition: { x: 320, y: 96 },
     initialSize: { width: 260, height: 420 },
   });
-  const statsToggleTop = layerSetsToggleTop + 56;
-
-  React.useEffect(() => {
-    const container = mapContainerRef.current;
-    if (!container) return undefined;
-
-    const updateOffset = () => {
-      const control = container.querySelector('.maplibregl-ctrl-top-right');
-      if (!(control instanceof HTMLElement)) {
-        setLayerSetsToggleTop(8);
-        return;
-      }
-      const rect = control.getBoundingClientRect();
-      const baseTop = Math.max(8, (Number.isFinite(rect.height) ? rect.height : 0) + 8);
-      const nextTop = baseTop;
-      setLayerSetsToggleTop((prev) => (prev === nextTop ? prev : nextTop));
-      if (typeof ResizeObserver !== 'undefined' && layerSetsObservedControlRef.current !== control) {
-        layerSetsResizeObserverRef.current?.disconnect();
-        const observer = new ResizeObserver(() => updateOffset());
-        observer.observe(control);
-        layerSetsResizeObserverRef.current = observer;
-        layerSetsObservedControlRef.current = control;
-      }
-    };
-
-    updateOffset();
-
-    const handleResize = () => updateOffset();
-    window.addEventListener('resize', handleResize);
-
-    const mutationObserver = typeof MutationObserver !== 'undefined'
-      ? new MutationObserver(() => updateOffset())
-      : null;
-    mutationObserver?.observe(container, { childList: true, subtree: true });
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      mutationObserver?.disconnect();
-      layerSetsResizeObserverRef.current?.disconnect();
-      layerSetsResizeObserverRef.current = null;
-      layerSetsObservedControlRef.current = null;
-    };
-  }, [mapContainerRef]);
 
   const handleViewStateCommit = React.useCallback(
     (viewState: MapViewState) => {
@@ -147,6 +105,23 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     },
     [onChange],
   );
+  const renderLayerToggleLabel = React.useCallback((item: { id: string; label: string }) => {
+    const count = shapePreviewLayerFeatureCounts[item.id as keyof typeof shapePreviewLayerFeatureCounts];
+    const countLabel = typeof count === 'number'
+      ? count.toLocaleString()
+      : t('preview.layerSets.counts.unavailable', '—');
+    return (
+      <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" gap={1}>
+        <Box component="span">{item.label}</Box>
+        <Box component="span" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+          {countLabel}
+        </Box>
+      </Box>
+    );
+  }, [shapePreviewLayerFeatureCounts, t]);
+  const showLayerSetsReopenButton = !layerSetsWindow.windowState.isVisible;
+  const showMetadataReopenButton = !featureWindowOpen;
+  const reserveMetadataReopenSlot = showLayerSetsReopenButton && !showMetadataReopenButton;
   const renderMapPreview = () => {
     return (
       <MapPreviewShell
@@ -169,38 +144,61 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                 minWidth={220}
                 minHeight={180}
               >
-                <LayerSetVisibilityPanel
-                  layerSets={availableLayerSets}
-                  visibility={layerSetVisibility}
-                  onToggle={toggleLayerSetVisibility}
-                  items={layerSetItems}
-                />
+                <Stack spacing={0.25}>
+                  {shapePreviewLayerToggleItems.map((item) => (
+                    <FormControlLabel
+                      key={item.id}
+                      sx={{ ml: 0, mr: 0 }}
+                      control={(
+                        <Switch
+                          size="small"
+                          sx={{ ml: isShapeLayerParentToggle(item.id) ? 0 : '16px' }}
+                          checked={shapePreviewLayerVisibility[item.id]}
+                          onChange={() => toggleShapePreviewLayerVisibility(item.id)}
+                        />
+                      )}
+                      label={renderLayerToggleLabel(item)}
+                    />
+                  ))}
+                </Stack>
               </FloatingWindow>
-            ) : (
-              <Box position="absolute" top={layerSetsToggleTop} right={8} zIndex={3}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
-                  onClick={layerSetsWindow.handlers.show}
-                >
-                  <LayersIcon />
-                </Button>
-              </Box>
-            )}
-            {!featureWindowOpen ? (
-              <Box position="absolute" top={8} left={8} zIndex={3}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  aria-label={t('preview.metadata.reopenList', 'Show list')}
-                  onClick={() => setFeatureWindowOpen(true)}
-                >
-                  <HexagonIcon />
-                </Button>
-              </Box>
+            ) : null}
+            {(showMetadataReopenButton || showLayerSetsReopenButton) ? (
+              <Stack position="absolute" top={8} left={8} zIndex={3} spacing={1}>
+                {showMetadataReopenButton ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    aria-label={t('preview.metadata.reopenList', 'Show list')}
+                    onClick={() => setFeatureWindowOpen(true)}
+                  >
+                    <HexagonIcon />
+                  </Button>
+                ) : null}
+                {reserveMetadataReopenSlot ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    aria-hidden
+                    sx={{ visibility: 'hidden', pointerEvents: 'none' }}
+                  >
+                    <HexagonIcon />
+                  </Button>
+                ) : null}
+                {showLayerSetsReopenButton ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
+                    onClick={layerSetsWindow.handlers.show}
+                  >
+                    <LayersIcon />
+                  </Button>
+                ) : null}
+              </Stack>
             ) : null}
             <ScreenCenterSnackbar
               open={zoomSnackbarOpen}
@@ -219,25 +217,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           geoJsonLayers,
           attributionItems,
           highlightOverridesByType,
-          stats: {
-            enabled: true,
-            display: 'floating',
-            floatingWindow: {
-              titleIcon: <QueryStatsIcon sx={{ fontSize: '1rem', ml: 1 }} />,
-              initialState: {
-                position: { x: 24, y: 96 },
-                size: { width: 260, height: 220 },
-                isMinimized: false,
-                isFullscreen: false,
-                isVisible: true,
-                zIndex: 1200,
-              },
-              resizable: true,
-              showToggleButton: true,
-              toggleButtonIcon: <QueryStatsIcon fontSize="small" />,
-              toggleButtonPosition: { top: statsToggleTop, right: 8 },
-            },
-          },
           showTileBoundaries: true,
           showTileCoordinates: true,
           identifyFeatureOnClick: {

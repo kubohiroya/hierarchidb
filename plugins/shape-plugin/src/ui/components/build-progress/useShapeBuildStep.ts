@@ -37,6 +37,7 @@ import { useShapeBuildProgressSummary } from './useShapeBuildProgressSummary.ts'
 import { useShapeBuildLabels } from './useShapeBuildLabels.ts';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 import { resolveBuildStatusSource } from './resolveBuildStatusSource.ts';
+import { shouldResumeBuildSession } from './shouldResumeBuildSession.ts';
 import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -1658,9 +1659,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return false;
     }
+    const shouldResumeSession = shouldResumeBuildSession({
+      forceRestart: options?.forceRestart,
+      buildStatus,
+      runtimeStatus,
+    });
     beginBuildSessionTransition(
       'acquiring-lock',
-      options?.autoResume
+      options?.autoResume || shouldResumeSession
         ? 'Resuming build session...'
         : 'Starting build session...',
     );
@@ -1704,6 +1710,27 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     try {
       advanceBuildSessionTransitionPhase('initializing-worker');
       await bridgeRef.current.initialize();
+      if (shouldResumeSession) {
+        advanceBuildSessionTransitionPhase('starting-session');
+        const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+        await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+        emitBuildSessionTransitionLog('info', 'resume session requested', {
+          forceRestart: Boolean(options?.forceRestart),
+          source: options?.autoResume ? 'auto' : 'manual',
+        });
+        const persisted = await persistDraftPatch({
+          processingStatus: 'processing',
+          stopReason: undefined,
+        });
+        if (!persisted) {
+          throw new Error('Failed to persist resume status.');
+        }
+        advanceBuildSessionTransitionPhase('awaiting-first-task', {
+          level: 'info',
+          message: 'Build resumed. Waiting for worker task updates...',
+        });
+        return true;
+      }
       advanceBuildSessionTransitionPhase('building-payloads');
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads) {
@@ -1780,12 +1807,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     activeNodeId,
     advanceBuildSessionTransitionPhase,
     beginBuildSessionTransition,
+    buildStatus,
     buildDownloadTaskPayloads,
     coordinator,
     emitBuildSessionTransitionLog,
     finishBuildSessionTransition,
     persistDraftPatch,
     releaseBuildLock,
+    runtimeStatus,
     saveDraftBeforeBuild,
     tryAcquireBuildLock,
     waitForBuildLock,

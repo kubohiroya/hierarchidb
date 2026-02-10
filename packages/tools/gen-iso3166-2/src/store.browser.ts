@@ -28,23 +28,47 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
+const normalizeBasePath = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return "/";
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const url = new URL(trimmed);
+      const path = url.pathname || "/";
+      return path.endsWith("/") ? path : `${path}/`;
+    } catch {
+      return "/";
+    }
+  }
+  const withLeading = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return withLeading.endsWith("/") ? withLeading : `${withLeading}/`;
+};
+
 const resolveBaseUrl = (): string => {
   const meta = (typeof import.meta !== "undefined"
     ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
     : null);
   const envBase = meta?.env?.VITE_BASE_URL || meta?.env?.BASE_URL;
-  if (typeof envBase === "string" && envBase.length > 0) return envBase;
-  if (typeof document !== "undefined" && typeof document.baseURI === "string") {
+  if (typeof envBase === "string" && envBase.length > 0) {
+    return normalizeBasePath(envBase);
+  }
+  if (typeof window !== "undefined") {
+    const hinted = (window as Window & { __HDB_APP_BASE__?: unknown }).__HDB_APP_BASE__;
+    if (typeof hinted === "string" && hinted.length > 0) {
+      return normalizeBasePath(hinted);
+    }
+  }
+  if (typeof document !== "undefined") {
     try {
-      const url = new URL(document.baseURI);
-      return url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`;
+      const baseEl = document.querySelector("base");
+      const href = baseEl?.getAttribute("href");
+      if (typeof href === "string" && href.length > 0) {
+        const url = new URL(href, window.location.origin);
+        return normalizeBasePath(url.pathname);
+      }
     } catch {
       // ignore
     }
-  }
-  if (typeof window !== "undefined" && typeof window.location?.pathname === "string") {
-    const path = window.location.pathname;
-    return path.endsWith("/") ? path : `${path}/`;
   }
   return "/";
 };

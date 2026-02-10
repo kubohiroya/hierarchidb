@@ -13,6 +13,7 @@ import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/
 const debugPrefix = '[LocationIdeGsmImport]';
 const inFlightByNode = new Map<string, boolean>();
 const lastCompletedByNode = new Map<string, string>();
+const lastFailedByNode = new Map<string, string>();
 
 export const useIdeGsmImportOnEntry = ({
   draft,
@@ -49,6 +50,10 @@ export const useIdeGsmImportOnEntry = ({
     () => validSources.map((source) => source.tabularSourceId).sort().join('|'),
     [validSources],
   );
+  const sourceIds = useMemo(
+    () => sourceKey.split('|').filter((value) => value.length > 0),
+    [sourceKey],
+  );
   const combinedHash = useMemo(
     () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
     [selectionHash, sourceKey],
@@ -75,11 +80,17 @@ export const useIdeGsmImportOnEntry = ({
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
     if (!nodeId) return;
-    if (validSources.length === 0) return;
+    const nodeKey = String(nodeId);
+    if (sourceIds.length === 0) return;
     if (workerLoading || workerError || !workerApi) return;
     if (draft.processingStatus === 'processing') return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
-    const nodeKey = String(nodeId);
+    if (
+      draft.processingStatus === 'failed'
+      && lastFailedByNode.get(nodeKey) === combinedHash
+    ) {
+      return;
+    }
     if (lastCompletedByNode.get(nodeKey) === combinedHash) return;
     if (inFlightByNode.get(nodeKey)) return;
     if (inFlightRef.current) return;
@@ -97,10 +108,11 @@ export const useIdeGsmImportOnEntry = ({
       selectionHash,
       combinedHash,
       selectionEntriesCount: selectionEntries.length,
-      sources: validSources.map((source) => source.tabularSourceId),
+      sources: sourceIds,
     });
     inFlightRef.current = true;
     inFlightByNode.set(nodeKey, true);
+    lastFailedByNode.delete(nodeKey);
     activeRunRef.current = { nodeKey, combinedHash };
 
     let cancelled = false;
@@ -116,11 +128,11 @@ export const useIdeGsmImportOnEntry = ({
         if (!canApplyResult()) return;
         onUpdateRef.current?.({ processingStatus: 'processing' });
         const api = await workerApi.getLocationMutationAPI();
-        for (const source of validSources) {
+        for (const sourceId of sourceIds) {
           const result = await api.importIdeGsmLocations(
             {
               nodeId,
-              tabularSourceId: source.tabularSourceId,
+              tabularSourceId: sourceId,
               selectionEntries,
               chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
               mode: 'upsert',
@@ -136,12 +148,15 @@ export const useIdeGsmImportOnEntry = ({
               updateIdeGsmProgress(nodeId, progress);
             }),
           );
-          console.info(debugPrefix, 'import-result', { nodeId, tabularSourceId: source.tabularSourceId, total: result.total });
+          console.info(debugPrefix, 'import-result', { nodeId, tabularSourceId: sourceId, total: result.total });
         }
-        if (!canApplyResult()) return;
+        if (!canApplyResult()) {
+          lastCompletedByNode.set(nodeKey, combinedHash);
+          return;
+        }
         console.info(debugPrefix, 'source-complete', {
           nodeId,
-          sources: validSources.map((source) => source.tabularSourceId),
+          sources: sourceIds,
         });
         console.info(debugPrefix, 'complete', { nodeId, combinedHash });
         onUpdateRef.current?.({
@@ -151,10 +166,12 @@ export const useIdeGsmImportOnEntry = ({
           lastProcessedAt: Date.now(),
         });
         lastCompletedByNode.set(nodeKey, combinedHash);
+        lastFailedByNode.delete(nodeKey);
       } catch (error) {
         if (!canApplyResult()) return;
         const message = error instanceof Error ? error.message : String(error);
         console.error(debugPrefix, 'failed', { nodeId, message, sourceKey, selectionHash });
+        lastFailedByNode.set(nodeKey, combinedHash);
         onUpdateRef.current?.({ processingStatus: 'failed' });
         updateIdeGsmProgress(nodeId, {
           phase: 'failed',
@@ -179,14 +196,10 @@ export const useIdeGsmImportOnEntry = ({
     combinedHash,
     draft.dataSource,
     draft.ideGsmSelectionHash,
-    fallbackCountries,
-    iso.countries,
-    iso.status,
+    draft.processingStatus,
     nodeId,
-    selection,
     selectionHash,
-    sourceKey,
-    validSources,
+    sourceIds,
     workerApi,
     workerError,
     workerLoading,

@@ -4,13 +4,10 @@ import type {
   MapViewState,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
-  LayerSetId,
-  LayerSetVisibility,
   ResolvedLayerSetEntry,
-  LayerSetListItem,
 } from '@hierarchidb/ui-map';
 import type { MapLibreGeoJSONFeature } from '@hierarchidb/ui-map';
-import { DEFAULT_LAYER_SETS, buildLayerSetListItems, getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
+import { getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
 import {
   loadTreeConsoleSettings,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
@@ -120,6 +117,111 @@ const buildDefaultHoverLabel = (properties: Record<string, unknown>): string | n
   return label ? String(label) : null;
 };
 
+type ShapePreviewLayerGroupId = 'adm0' | 'adm1' | 'adm2';
+
+type ShapePreviewLayerDetailId =
+  | 'adm0Boundary'
+  | 'adm0Fill'
+  | 'adm1Boundary'
+  | 'adm1Fill'
+  | 'adm2Boundary'
+  | 'adm2Fill';
+
+export type ShapePreviewLayerToggleId = ShapePreviewLayerGroupId | ShapePreviewLayerDetailId;
+
+type ShapePreviewLayerVisibility = Record<ShapePreviewLayerToggleId, boolean>;
+type ShapePreviewLayerFeatureCounts = Record<ShapePreviewLayerToggleId, number | null>;
+
+export type ShapePreviewLayerToggleItem = {
+  id: ShapePreviewLayerToggleId;
+  label: string;
+};
+
+const SHAPE_PREVIEW_LAYER_VISIBILITY_DEFAULT: ShapePreviewLayerVisibility = {
+  adm0: true,
+  adm0Boundary: true,
+  adm0Fill: true,
+  adm1: true,
+  adm1Boundary: true,
+  adm1Fill: true,
+  adm2: true,
+  adm2Boundary: true,
+  adm2Fill: true,
+};
+
+const SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT: ShapePreviewLayerFeatureCounts = {
+  adm0: null,
+  adm0Boundary: null,
+  adm0Fill: null,
+  adm1: null,
+  adm1Boundary: null,
+  adm1Fill: null,
+  adm2: null,
+  adm2Boundary: null,
+  adm2Fill: null,
+};
+
+const SHAPE_PREVIEW_DETAIL_TOGGLE_IDS: ShapePreviewLayerDetailId[] = [
+  'adm0Boundary',
+  'adm0Fill',
+  'adm1Boundary',
+  'adm1Fill',
+  'adm2Boundary',
+  'adm2Fill',
+];
+
+const SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL: Record<number, {
+  group: ShapePreviewLayerGroupId;
+  boundary: ShapePreviewLayerDetailId;
+  fill: ShapePreviewLayerDetailId;
+}> = {
+  0: { group: 'adm0', boundary: 'adm0Boundary', fill: 'adm0Fill' },
+  1: { group: 'adm1', boundary: 'adm1Boundary', fill: 'adm1Fill' },
+  2: { group: 'adm2', boundary: 'adm2Boundary', fill: 'adm2Fill' },
+};
+
+const isResolvedLayerEntryVisible = (
+  entry: ResolvedLayerSetEntry,
+  visibility: ShapePreviewLayerVisibility,
+): boolean => {
+  if (typeof entry.adminLevel !== 'number') return true;
+  const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
+  if (!keys) return true;
+  const detailKey = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
+  return visibility[keys.group] && visibility[detailKey];
+};
+
+const areShapePreviewLayerFeatureCountsEqual = (
+  current: ShapePreviewLayerFeatureCounts,
+  next: ShapePreviewLayerFeatureCounts,
+): boolean => (
+  current.adm0 === next.adm0
+  && current.adm0Boundary === next.adm0Boundary
+  && current.adm0Fill === next.adm0Fill
+  && current.adm1 === next.adm1
+  && current.adm1Boundary === next.adm1Boundary
+  && current.adm1Fill === next.adm1Fill
+  && current.adm2 === next.adm2
+  && current.adm2Boundary === next.adm2Boundary
+  && current.adm2Fill === next.adm2Fill
+);
+
+const buildFeatureCountKey = (feature: MapLibreGeoJSONFeature): string => {
+  const source = typeof feature.source === 'string' ? feature.source : '';
+  const sourceLayer = typeof feature.sourceLayer === 'string' ? feature.sourceLayer : '';
+  const id = feature.id;
+  if (typeof id === 'string' || typeof id === 'number') {
+    return `${source}:${sourceLayer}:id:${String(id)}`;
+  }
+  const properties = feature.properties ?? {};
+  const fallbackId = properties.id ?? properties.featureId ?? properties.shapeID ?? properties.shapeId;
+  if (typeof fallbackId === 'string' || typeof fallbackId === 'number') {
+    return `${source}:${sourceLayer}:prop:${String(fallbackId)}`;
+  }
+  const name = typeof properties.name === 'string' ? properties.name : '';
+  return `${source}:${sourceLayer}:anon:${name}`;
+};
+
 export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
   const preview = useShapePreviewStep(data, nodeId);
   const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
@@ -144,14 +246,15 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     };
   }, []);
 
-  const [layerSetVisibility, setLayerSetVisibility] = useState<LayerSetVisibility>({
-    location: false,
-    route: false,
-    shape: true,
-  });
+  const [shapePreviewLayerVisibility, setShapePreviewLayerVisibility] = useState<ShapePreviewLayerVisibility>(
+    () => ({ ...SHAPE_PREVIEW_LAYER_VISIBILITY_DEFAULT }),
+  );
+  const [shapePreviewLayerFeatureCounts, setShapePreviewLayerFeatureCounts] = useState<ShapePreviewLayerFeatureCounts>(
+    () => ({ ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }),
+  );
 
-  const toggleLayerSetVisibility = useCallback((id: LayerSetId) => {
-    setLayerSetVisibility((prev: LayerSetVisibility) => ({
+  const toggleShapePreviewLayerVisibility = useCallback((id: ShapePreviewLayerToggleId) => {
+    setShapePreviewLayerVisibility((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
@@ -360,14 +463,23 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     return resolveLayerSetEntries(preview.tileLayerNames ?? [], layerSetDefinition);
   }, [layerSetDefinition, preview.tileLayerNames]);
 
-  const layerSetItems = useMemo<LayerSetListItem[]>(
-    () => buildLayerSetListItems(resolvedLayerSetEntries),
-    [resolvedLayerSetEntries],
+  const shapePreviewLayerToggleItems = useMemo<ShapePreviewLayerToggleItem[]>(
+    () => [
+      { id: 'adm0', label: preview.t('preview.layerSets.adm0', 'ADM0') },
+      { id: 'adm0Boundary', label: preview.t('preview.layerSets.adm0Boundary', 'ADM0 Boundary') },
+      { id: 'adm0Fill', label: preview.t('preview.layerSets.adm0Fill', 'ADM0 Fill') },
+      { id: 'adm1', label: preview.t('preview.layerSets.adm1', 'ADM1') },
+      { id: 'adm1Boundary', label: preview.t('preview.layerSets.adm1Boundary', 'ADM1 Boundary') },
+      { id: 'adm1Fill', label: preview.t('preview.layerSets.adm1Fill', 'ADM1 Fill') },
+      { id: 'adm2', label: preview.t('preview.layerSets.adm2', 'ADM2') },
+      { id: 'adm2Boundary', label: preview.t('preview.layerSets.adm2Boundary', 'ADM2 Boundary') },
+      { id: 'adm2Fill', label: preview.t('preview.layerSets.adm2Fill', 'ADM2 Fill') },
+    ],
+    [preview.t],
   );
 
   const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
     if (!preview.nodeId || !layerSetDefinition) return [];
-    if (!layerSetVisibility[layerSetDefinition.id]) return [];
     const hasRemoteTiles = Boolean(preview.tilesUrl);
     const tiles = hasRemoteTiles ? [preview.tilesUrl] : undefined;
     const baseLayer = {
@@ -391,6 +503,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     };
     return resolvedLayerSetEntries
       .filter((entry) => Boolean(entry.sourceLayer))
+      .filter((entry) => isResolvedLayerEntryVisible(entry, shapePreviewLayerVisibility))
       .map((entry) => ({
         ...baseLayer,
         layerPriority: entry.priority,
@@ -406,7 +519,6 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       }));
   }, [
     layerSetDefinition,
-    layerSetVisibility,
     preview.baseLayerId,
     preview.baseSourceId,
     preview.nodeId,
@@ -416,12 +528,88 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     preview.tileDbName,
     preview.tilesUrl,
     resolvedLayerSetEntries,
+    shapePreviewLayerVisibility,
   ]);
 
   const vectorLayerIds = useMemo(
     () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
     [vectorLayers],
   );
+
+  const refreshShapePreviewLayerFeatureCounts = useCallback(() => {
+    const map = preview.mapInstance;
+    if (!map || !map.isStyleLoaded()) {
+      setShapePreviewLayerFeatureCounts((current) => (
+        areShapePreviewLayerFeatureCountsEqual(current, SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT)
+          ? current
+          : { ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }
+      ));
+      return;
+    }
+
+    const layerIdsByDetail = new Map<ShapePreviewLayerDetailId, string[]>();
+    SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
+      layerIdsByDetail.set(detailId, []);
+    });
+
+    resolvedLayerSetEntries.forEach((entry) => {
+      if (!entry.sourceLayer || typeof entry.adminLevel !== 'number') return;
+      const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
+      if (!keys) return;
+      const detailId = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
+      const layerId = `${preview.baseLayerId}-${entry.id}`;
+      if (!map.getLayer(layerId)) return;
+      const existing = layerIdsByDetail.get(detailId);
+      if (!existing) return;
+      existing.push(layerId);
+    });
+
+    const featureKeysByDetail = new Map<ShapePreviewLayerDetailId, Set<string>>();
+    SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
+      const layerIds = layerIdsByDetail.get(detailId) ?? [];
+      const featureKeys = new Set<string>();
+      layerIds.forEach((layerId) => {
+        try {
+          const features = map.queryRenderedFeatures(undefined, { layers: [layerId] });
+          features.forEach((feature) => {
+            featureKeys.add(buildFeatureCountKey(feature));
+          });
+        } catch {
+          // ignore map query errors during style transitions
+        }
+      });
+      featureKeysByDetail.set(detailId, featureKeys);
+    });
+
+    const adm0Features = new Set<string>([
+      ...(featureKeysByDetail.get('adm0Boundary') ?? new Set<string>()),
+      ...(featureKeysByDetail.get('adm0Fill') ?? new Set<string>()),
+    ]);
+    const adm1Features = new Set<string>([
+      ...(featureKeysByDetail.get('adm1Boundary') ?? new Set<string>()),
+      ...(featureKeysByDetail.get('adm1Fill') ?? new Set<string>()),
+    ]);
+    const adm2Features = new Set<string>([
+      ...(featureKeysByDetail.get('adm2Boundary') ?? new Set<string>()),
+      ...(featureKeysByDetail.get('adm2Fill') ?? new Set<string>()),
+    ]);
+
+    const nextCounts: ShapePreviewLayerFeatureCounts = {
+      adm0: adm0Features.size,
+      adm0Boundary: (featureKeysByDetail.get('adm0Boundary') ?? new Set<string>()).size,
+      adm0Fill: (featureKeysByDetail.get('adm0Fill') ?? new Set<string>()).size,
+      adm1: adm1Features.size,
+      adm1Boundary: (featureKeysByDetail.get('adm1Boundary') ?? new Set<string>()).size,
+      adm1Fill: (featureKeysByDetail.get('adm1Fill') ?? new Set<string>()).size,
+      adm2: adm2Features.size,
+      adm2Boundary: (featureKeysByDetail.get('adm2Boundary') ?? new Set<string>()).size,
+      adm2Fill: (featureKeysByDetail.get('adm2Fill') ?? new Set<string>()).size,
+    };
+
+    setShapePreviewLayerFeatureCounts((current) => (
+      areShapePreviewLayerFeatureCountsEqual(current, nextCounts) ? current : nextCounts
+    ));
+  }, [preview.baseLayerId, preview.mapInstance, resolvedLayerSetEntries]);
 
   useEffect(() => {
     const map = preview.mapInstance;
@@ -438,6 +626,26 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       map.off('idle', handleIdle);
     };
   }, [preview.mapInstance, preview.nodeId, vectorLayerIds]);
+
+  useEffect(() => {
+    refreshShapePreviewLayerFeatureCounts();
+  }, [refreshShapePreviewLayerFeatureCounts, vectorLayerIds]);
+
+  useEffect(() => {
+    const map = preview.mapInstance;
+    if (!map) return;
+    const handleRefresh = () => {
+      refreshShapePreviewLayerFeatureCounts();
+    };
+    map.on('moveend', handleRefresh);
+    map.on('idle', handleRefresh);
+    map.on('styledata', handleRefresh);
+    return () => {
+      map.off('moveend', handleRefresh);
+      map.off('idle', handleRefresh);
+      map.off('styledata', handleRefresh);
+    };
+  }, [preview.mapInstance, refreshShapePreviewLayerFeatureCounts]);
 
   useEffect(() => {
     const map = preview.mapInstance;
@@ -734,10 +942,9 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
-    layerSetVisibility,
-    toggleLayerSetVisibility,
-    layerSetItems,
-    layerSetDefinition,
-    availableLayerSets: DEFAULT_LAYER_SETS,
+    shapePreviewLayerVisibility,
+    shapePreviewLayerFeatureCounts,
+    toggleShapePreviewLayerVisibility,
+    shapePreviewLayerToggleItems,
   };
 };

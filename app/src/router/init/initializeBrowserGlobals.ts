@@ -12,6 +12,7 @@ type BrowserGlobals = Window & {
   __HDB_TreeConsolePanel?: TreeConsolePanelGlobal;
   __HDB_MENU_BUILDERS__?: unknown;
   __HDB_PLUGIN_DEFS__?: unknown[];
+  __HDB_APP_BASE__?: string;
   __HDB_GET_WORKER_CLIENT_HOOK?: ReturnType<typeof getWorkerClientHook>;
   __HDB_DEBUG_DUMP__?: (options?: { limit?: number }) => Promise<unknown[]>;
   __HDB_DEBUG_CLEAR__?: () => Promise<void>;
@@ -121,6 +122,7 @@ export function initializeBrowserGlobals(): void {
   }
 
   const globalWindow = window as BrowserGlobals;
+  globalWindow.__HDB_APP_BASE__ = import.meta.env.BASE_URL || '/';
   globalWindow.__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
   globalWindow.__HDB_DEBUG_DUMP__ = async (options?: { limit?: number }) => {
     const limit = typeof options?.limit === 'number' ? options.limit : 2000;

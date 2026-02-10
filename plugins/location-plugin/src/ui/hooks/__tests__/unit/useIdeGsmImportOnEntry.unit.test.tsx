@@ -119,5 +119,81 @@ describe('useIdeGsmImportOnEntry', () => {
     expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'processing')).toBe(true);
     expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'completed')).toBe(true);
   });
-});
 
+  it('does not retry endlessly when the same hash failed once', async () => {
+    mocks.importIdeGsmLocations.mockRejectedValue(new Error('Tabular table not found'));
+
+    const nodeId = toNodeId('location-import-node-failed');
+    const { result } = renderHook(() => {
+      const [draft, setDraft] = useState<Partial<LocationEntity>>(INITIAL_DRAFT);
+      const [updatesLog, setUpdatesLog] = useState<Array<Partial<LocationEntity>>>([]);
+
+      const onUpdate = useCallback((updates: Partial<LocationEntity>) => {
+        setUpdatesLog((prev) => [...prev, updates]);
+        setDraft((prev) => ({ ...prev, ...updates }));
+      }, []);
+
+      useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
+      return { draft, updatesLog };
+    });
+
+    await waitFor(() => {
+      expect(result.current.draft.processingStatus).toBe('failed');
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.importIdeGsmLocations).toHaveBeenCalledTimes(1);
+    expect(result.current.updatesLog.some((entry) => entry.processingStatus === 'failed')).toBe(true);
+  });
+
+  it('keeps single run when draft selection reference churns with same hash', async () => {
+    const initDeferred = createDeferred<void>();
+    mocks.initialize.mockImplementation(() => initDeferred.promise);
+    mocks.importIdeGsmLocations.mockResolvedValue({ total: 1 });
+
+    const nodeId = toNodeId('location-import-node-stable-hash');
+    const { result } = renderHook(() => {
+      const [draft, setDraft] = useState<Partial<LocationEntity>>(INITIAL_DRAFT);
+      useIdeGsmImportOnEntry({ draft, nodeId, onUpdate: undefined });
+      return { draft, setDraft };
+    });
+
+    await waitFor(() => {
+      expect(mocks.initialize).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      result.current.setDraft((prev) => ({
+        ...prev,
+        selectedArrayByCountries: { ...(prev.selectedArrayByCountries ?? {}) },
+      }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      initDeferred.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(mocks.importIdeGsmLocations).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      result.current.setDraft((prev) => ({
+        ...prev,
+        selectedArrayByCountries: { ...(prev.selectedArrayByCountries ?? {}) },
+      }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.initialize).toHaveBeenCalledTimes(1);
+    expect(mocks.importIdeGsmLocations).toHaveBeenCalledTimes(1);
+  });
+});

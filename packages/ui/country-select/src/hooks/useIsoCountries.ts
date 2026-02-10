@@ -15,6 +15,30 @@ export interface UseIsoCountriesOptions {
 
 const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
+const normalizeBasePath = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '/';
+  const withLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeading.endsWith('/') ? withLeading : `${withLeading}/`;
+};
+
+const resolveCandidateCsvUrls = (preferredUrl?: string): string[] => {
+  const urls = new Set<string>();
+  const add = (value?: string) => {
+    if (!value || value.length === 0) return;
+    urls.add(value);
+  };
+  add(preferredUrl);
+  if (typeof window !== 'undefined') {
+    const hintedBase = (window as Window & { __HDB_APP_BASE__?: unknown }).__HDB_APP_BASE__;
+    if (typeof hintedBase === 'string' && hintedBase.length > 0) {
+      add(`${normalizeBasePath(hintedBase)}iso3166-2-level1.csv`);
+    }
+  }
+  add('/iso3166-2-level1.csv');
+  return Array.from(urls);
+};
+
 const normalizeContinent = (location: string | undefined): ContinentCode => {
   const trimmed = (location ?? '').trim();
   if (!trimmed) return 'XX';
@@ -40,12 +64,25 @@ export function useIsoCountries(options: UseIsoCountriesOptions = {}) {
     let cancelled = false;
     const run = async () => {
       try {
-        await ensureIso3166Data({
-          csvUrl: options.csvUrl ?? DEFAULT_CSV_URL,
-        });
-        if (cancelled) return;
-        const records: CountryRecord[] = await getAllCountries();
-        if (cancelled) return;
+        const candidateUrls = resolveCandidateCsvUrls(options.csvUrl ?? DEFAULT_CSV_URL);
+        let records: CountryRecord[] = [];
+        let lastError: unknown;
+        for (const candidateUrl of candidateUrls) {
+          try {
+            await ensureIso3166Data({ csvUrl: candidateUrl });
+            if (cancelled) return;
+            records = await getAllCountries();
+            if (cancelled) return;
+            if (records.length > 0) break;
+            lastError = new Error(`No ISO country records loaded from ${candidateUrl}`);
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        if (records.length === 0) {
+          if (lastError instanceof Error) throw lastError;
+          throw new Error('Failed to load ISO country records');
+        }
         const countries: Country[] = records.map((rec) => ({
           code: rec.alpha2,
           name: rec.countryEn,
