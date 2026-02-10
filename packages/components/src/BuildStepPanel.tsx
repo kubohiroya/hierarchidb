@@ -15,6 +15,12 @@ export type BuildStepStageMenu = {
   ariaLabel?: string;
 };
 
+export type BuildControlDetail = {
+  label: ReactNode;
+  value: string;
+  icon?: 'timelapse';
+};
+
 export interface BuildStepPanelProps {
   status: BuildStatus;
   overallProgress: number;
@@ -45,7 +51,7 @@ export interface BuildStepPanelProps {
   statusLabel?: string;
   statusContent?: ReactNode;
   suppressStatusFallback?: boolean;
-  controlDetails?: Array<{ label: string; value: string }>;
+  controlDetails?: BuildControlDetail[];
   controlRightContent?: ReactNode;
 }
 

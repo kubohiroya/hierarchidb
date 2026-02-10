@@ -47,6 +47,10 @@ const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<st
   return leftKeys.every((key) => left[key] === right[key]);
 };
 
+const sumNumberRecord = (values: Record<string, number>): number => (
+  Object.values(values).reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0)
+);
+
 const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
@@ -217,6 +221,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const [completedStageElapsedMs, setCompletedStageElapsedMs] = useState<Record<string, number>>(
     () => persistedStageElapsedByStage
   );
+  const completedStageElapsedRef = useRef<Record<string, number>>(persistedStageElapsedByStage);
   const lastTimingSnapshotRef = useRef<{ stageId: string | null; stageMs: number }>({
     stageId: null,
     stageMs: 0,
@@ -263,8 +268,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     : null;
   const [displayTotalElapsedMs, setDisplayTotalElapsedMs] = useState(0);
   const [displayStageElapsedMs, setDisplayStageElapsedMs] = useState(0);
+  const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const totalTickRef = useRef<number | null>(null);
   const stageTickRef = useRef<number | null>(null);
+  const stageRemainingTickRef = useRef<number | null>(null);
+  const latestStageRemainingMsRef = useRef<number | null>(null);
   const lastDisplayStageIdRef = useRef<string | null>(null);
   const runtimeStatus = status?.status ?? null;
   const statusSource = effectiveStatus?.status ?? processingStatus;
@@ -332,14 +340,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   });
   const timingStageId = buildStatus === 'idle' ? null : (resolvedTaskType ?? null);
   const hasTimingSession = Boolean(timingSession?.startedAt) && processingStatus !== 'idle';
-  const fallbackElapsedMs = (() => {
-    if (buildStatus !== 'running' || !persistedBuildResumedAt) {
-      return persistedBuildElapsedMs;
-    }
-    const delta = Math.max(0, Date.now() - persistedBuildResumedAt);
-    return persistedBuildElapsedMs + delta;
-  })();
-  const totalElapsedMs = hasTimingSession ? timingSnapshot.totalMs : fallbackElapsedMs;
   const fallbackStageElapsedMs = (() => {
     if (!timingStageId || persistedStageElapsedStageId !== timingStageId) {
       return 0;
@@ -351,12 +351,26 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return persistedStageElapsedMs + delta;
   })();
   const stageElapsedMs = hasTimingSession ? timingSnapshot.stageMs : fallbackStageElapsedMs;
+  const completedStageTotalMs = useMemo(
+    () => sumNumberRecord(completedStageElapsedMs),
+    [completedStageElapsedMs]
+  );
+  const stageIdForTotal = timingStageId ?? persistedStageElapsedStageId;
+  const stageElapsedForTotal = timingStageId ? stageElapsedMs : persistedStageElapsedMs;
+  const committedForStage = stageIdForTotal ? (completedStageElapsedMs[stageIdForTotal] ?? 0) : 0;
+  const activeStageContributionMs = stageIdForTotal
+    ? Math.max(0, stageElapsedForTotal - committedForStage)
+    : 0;
+  const totalElapsedMs = completedStageTotalMs + activeStageContributionMs;
 
   useEffect(() => {
     if (buildStatus !== 'idle') return;
     if (shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage)) return;
     setCompletedStageElapsedMs(persistedStageElapsedByStage);
   }, [buildStatus, completedStageElapsedMs, persistedStageElapsedByStage]);
+  useEffect(() => {
+    completedStageElapsedRef.current = completedStageElapsedMs;
+  }, [completedStageElapsedMs]);
   useEffect(() => {
     if (processingStatus !== 'idle') return;
     if (persistedBuildElapsedMs !== 0) return;
@@ -367,10 +381,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (!shallowEqualNumberRecord(persistedStageElapsedByStage, {})) return;
     setDisplayTotalElapsedMs(0);
     setDisplayStageElapsedMs(0);
+    setDisplayStageRemainingMs(null);
     totalTickRef.current = null;
     stageTickRef.current = null;
+    stageRemainingTickRef.current = null;
     lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
     lastDisplayStageIdRef.current = null;
+    latestStageRemainingMsRef.current = null;
     setCompletedStageElapsedMs({});
   }, [
     persistedBuildElapsedMs,
@@ -483,10 +500,36 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     timingStageMs: displayStageElapsedMs,
   });
   useEffect(() => {
+    latestStageRemainingMsRef.current = progressSummary.stageRemainingMs;
+    if (buildStatus !== 'running') {
+      setDisplayStageRemainingMs(progressSummary.stageRemainingMs);
+    }
+  }, [buildStatus, progressSummary.stageRemainingMs]);
+
+  useEffect(() => {
+    if (stageRemainingTickRef.current !== null) {
+      window.clearInterval(stageRemainingTickRef.current);
+      stageRemainingTickRef.current = null;
+    }
+    if (buildStatus !== 'running') {
+      return;
+    }
+    setDisplayStageRemainingMs(latestStageRemainingMsRef.current);
+    stageRemainingTickRef.current = window.setInterval(() => {
+      setDisplayStageRemainingMs(latestStageRemainingMsRef.current);
+    }, 1000);
+    return () => {
+      if (stageRemainingTickRef.current !== null) {
+        window.clearInterval(stageRemainingTickRef.current);
+        stageRemainingTickRef.current = null;
+      }
+    };
+  }, [buildStatus]);
+
+  useEffect(() => {
     const previousStatus = lastBuildStatusRef.current;
     lastBuildStatusRef.current = buildStatus;
     if (buildStatus === 'idle') {
-      setCompletedStageElapsedMs({});
       lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
       return;
     }
@@ -673,21 +716,22 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     const previousStageId = previous.stageId;
     if (previousStageId && previousStageId !== timingStageId) {
       const previousElapsedMs = previous.stageMs;
-      if (previousElapsedMs > 0) {
-        setCompletedStageElapsedMs((current) => {
-          if (current[previousStageId]) return current;
-          return { ...current, [previousStageId]: previousElapsedMs };
-        });
+      const currentCompleted = completedStageElapsedRef.current;
+      const needsCommit = previousElapsedMs > 0 && currentCompleted[previousStageId] === undefined;
+      const nextCompleted = needsCommit
+        ? { ...currentCompleted, [previousStageId]: previousElapsedMs }
+        : currentCompleted;
+      if (needsCommit) {
+        setCompletedStageElapsedMs(nextCompleted);
       }
+      lastPersistedStageMapRef.current = nextCompleted;
+      const now = Date.now();
       const patch: Partial<ShapeEntity> = {
+        stageElapsedByStage: nextCompleted,
         stageElapsedStageId: timingStageId,
         stageElapsedMs: 0,
+        stageResumedAt: buildStatus === 'running' ? now : undefined,
       };
-      if (buildStatus === 'running') {
-        patch.stageResumedAt = Date.now();
-      } else {
-        patch.stageResumedAt = undefined;
-      }
       void persistDraftPatch(patch);
     }
     lastTimingSnapshotRef.current = { stageId: timingStageId, stageMs: stageElapsedMs };
@@ -1112,7 +1156,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     handleProviderSelect,
     totalElapsedMs: displayTotalElapsedMs,
     stageElapsedMs: displayStageElapsedMs,
-    stageRemainingMs: progressSummary.stageRemainingMs,
+    stageRemainingMs: displayStageRemainingMs,
     crashSuspectOpen,
     crashSuspectMessage,
     setCrashSuspectOpen: closeCrashSuspect,

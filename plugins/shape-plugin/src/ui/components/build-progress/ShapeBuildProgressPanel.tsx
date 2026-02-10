@@ -769,7 +769,8 @@ export const ShapeBuildProgressPanel = ({
 
   const buildTimingSummary = useCallback((stageId: string) => {
     const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
-    const completedElapsedMs = summary.completedStageElapsedMs[stageId];
+    const persistedCompletedElapsedMs = data?.stageElapsedByStage?.[stageId];
+    const completedElapsedMs = summary.completedStageElapsedMs[stageId] ?? persistedCompletedElapsedMs;
     const elapsed = formatInlineDuration(
       isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
     );
@@ -780,25 +781,32 @@ export const ShapeBuildProgressPanel = ({
       <Box
         display="grid"
         gridTemplateColumns="auto auto"
-        columnGap={1}
+        columnGap={0.5}
         rowGap={0.25}
         sx={{ textAlign: 'right', justifyContent: 'end', alignItems: 'center' }}
       >
-        <Box display="flex" alignItems="center" justifyContent="flex-end" color="text.secondary">
-          <TimelapseIcon fontSize="small" titleAccess={elapsedLabel} />
+        <Box display="flex" alignItems="center" justifyContent="flex-end">
+          <TimelapseIcon
+            sx={{ fontSize: 14, color: 'text.secondary' }}
+            titleAccess={elapsedLabel}
+          />
         </Box>
-        <Typography variant="caption">
+        <Typography variant="caption" color="text.primary">
           {elapsed}
         </Typography>
-        <Box display="flex" alignItems="center" justifyContent="flex-end" color="text.secondary">
-          <HourglassTopIcon fontSize="small" titleAccess={remainingLabel} />
+        <Box display="flex" alignItems="center" justifyContent="flex-end">
+          <HourglassTopIcon
+            sx={{ fontSize: 14, color: 'text.secondary' }}
+            titleAccess={remainingLabel}
+          />
         </Box>
-        <Typography variant="caption">
+        <Typography variant="caption" color="text.primary">
           {remaining}
         </Typography>
       </Box>
     );
   }, [
+    data?.stageElapsedByStage,
     formatInlineDuration,
     summary.completedStageElapsedMs,
     summary.stageElapsedMs,

@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import type { BuildStatus } from './BuildStepPanel.tsx';
+import TimelapseIcon from '@mui/icons-material/Timelapse';
+import type { BuildControlDetail, BuildStatus } from './BuildStepPanel.tsx';
 
 type BuildControlCardProps = {
   status: BuildStatus;
@@ -18,7 +19,7 @@ type BuildControlCardProps = {
   showResumeLabel?: boolean;
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
-  details?: Array<{ label: string; value: string }>;
+  details?: BuildControlDetail[];
   rightContent?: ReactNode;
 };
 
@@ -102,11 +103,19 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-          {details.map((detail) => (
-            <Box key={detail.label} display="flex" alignItems="center" gap={0.5}>
-              <Typography variant="caption" color="text.secondary">
-                {detail.label}
-              </Typography>
+          {details.map((detail, index) => (
+            <Box key={`detail-${index.toString()}`} display="flex" alignItems="center" gap={0.5}>
+              <Box display="flex" alignItems="center" gap={0.25}>
+                {detail.icon === 'timelapse' ? (
+                  <TimelapseIcon
+                    sx={{ fontSize: 14, color: 'text.secondary' }}
+                    titleAccess={typeof detail.label === 'string' ? detail.label : undefined}
+                  />
+                ) : null}
+                <Typography variant="caption" color="text.secondary">
+                  {detail.label}
+                </Typography>
+              </Box>
               <Typography variant="caption">
                 {detail.value}
               </Typography>

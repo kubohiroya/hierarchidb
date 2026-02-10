@@ -1,3 +1,68 @@
+2651) chore/ui/shape-stage-timing-visual-unify (P2) — 完了 (2026-02-10)
+- ブランチ名: codex/chore/ui/shape-stage-timing-visual-unify
+- 依存: 2650) feat/ui/build-controls-timelapse-icon
+- 受け入れ基準: ステージヘッダの Timelapse/HourglassTop アイコン＋時間テキスト表示を BuildControlCard の Timelapse 時間表示と同じ色・サイズへ揃える／行高さと縦位置の見え方を維持する／影響範囲の typecheck を実行する／TASKS.md に運用ログを追記する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`
+- ロールバック手順: 変更差分を revert し、ステージヘッダ表示を既存スタイルへ戻す
+- チェックリスト:
+  - ステージヘッダのアイコンサイズ/色を BuildControlCard と同一にする
+  - ステージヘッダの時間テキストスタイルを BuildControlCard と同一にする
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/done を追記する
+- 運用ログ:
+  - start: 2026-02-10 09:38 JST ステージ別 Timelapse/HourglassTop と時間表示を BuildControlCard 側の表示に合わせる修正に着手。
+  - done: 2026-02-10 09:39 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
+2650) feat/ui/build-controls-timelapse-icon (P2) — 完了 (2026-02-10)
+- ブランチ名: codex/feat/ui/build-controls-timelapse-icon
+- 依存: 2649) fix/ui/shape-total-elapsed-by-stage-sum
+- 受け入れ基準: Build Controls Card の `Time elapsed`（`Total elapsed`）ラベル左に Timelapse アイコンを表示する／既存レイアウト（高さ・余白・縦位置）を崩さない／影響範囲の typecheck を実行する／TASKS.md に運用ログを追記する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx` / `packages/components/src/BuildControlCard.tsx` / `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts`
+- ロールバック手順: 変更差分を revert し、Build Controls Card のラベル表示を文字のみの従来状態へ戻す
+- チェックリスト:
+  - Build Controls Card 詳細ラベルにアイコン表示拡張を追加する
+  - `Total elapsed` 詳細に Timelapse アイコン指定を追加する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/done を追記する
+- 運用ログ:
+  - start: 2026-02-10 09:30 JST Build Controls Card の `Total elapsed` ラベル左に Timelapse アイコンを表示する改修に着手。
+  - done: 2026-02-10 09:31 JST `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin` exit 0。
+
+2649) fix/ui/shape-total-elapsed-by-stage-sum (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/fix/ui/shape-total-elapsed-by-stage-sum
+- 依存: 2648) fix/ui/shape-stage-elapsed-reload-and-remaining-throttle
+- 受け入れ基準: Total elapsed が「完了ステージ elapsed の合計 + 現在ステージ elapsed」で算出される／ステージ遷移時に「前ステージ elapsed 集計・永続化」と「次ステージ開始時刻の永続化」が同一更新で実行される／ステージ間時間が Total elapsed に加算されない／再読込後も同一算出規則で復元される／影響範囲の typecheck を実行する／TASKS.md に原因・修正方法・検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来のセッション基準 total elapsed 算出へ戻す
+- チェックリスト:
+  - Total elapsed をステージ累積ベースへ切り替える
+  - ステージ遷移時の永続化を単一パッチへ統合する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 10:35 JST Total elapsed をステージ elapsed 合計へ切り替え、ステージ遷移永続化を一体化する修正に着手。
+  - update: 2026-02-10 10:42 JST 原因は Total elapsed が `useBuildSessionTiming.totalMs`（セッション基準）を優先参照しており、ステージ間時間や heartbeat 由来の時間が含まれる設計になっていた点。`useShapeBuildStep` で Total elapsed を `completedStageElapsedMs(+永続値) + current stage elapsed` に変更し、ステージ間時間を非加算へ統一。
+  - update: 2026-02-10 10:46 JST ステージ遷移時の処理を更新し、前ステージ elapsed の確定（`stageElapsedByStage`）と次ステージ開始の永続化（`stageElapsedStageId/stageElapsedMs/stageResumedAt`）を同一 `persistDraftPatch` で保存するよう統合。適用範囲は `useShapeBuildStep.ts`。
+  - done: 2026-02-10 10:48 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+  - update: 2026-02-10 09:25 JST 追加再検証として `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、いずれも exit 0。
+
+2648) fix/ui/shape-stage-elapsed-reload-and-remaining-throttle (P1) — 完了 (2026-02-10)
+- ブランチ名: codex/fix/ui/shape-stage-elapsed-reload-and-remaining-throttle
+- 依存: 2643) fix/ui/shape-reset-session-immediate-elapsed-ui-sync
+- 受け入れ基準: ブラウザ再読込後も完了済みステージの Elapsed が `-` にならず永続値を表示する／Est. remaining の表示更新頻度は最大 1 秒に 1 回となる／進行中ステージの Elapsed と Total elapsed の既存挙動に回帰を作らない／影響範囲の typecheck を実行する／TASKS.md に原因・修正方法・検証結果を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` / `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert し、従来の再読込後 `-` 表示および remaining 高頻度更新挙動へ戻す
+- チェックリスト:
+  - 再読込後の完了ステージ elapsed が消える要因を除去する
+  - remaining 表示を 1 秒周期で反映する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-10 10:05 JST 再読込後の過去ステージ elapsed `-` 表示と remaining 更新頻度上限制御の修正に着手。
+  - update: 2026-02-10 10:12 JST 原因は `useShapeBuildStep` が `buildStatus==='idle'` のたびに `completedStageElapsedMs` を空配列化しており、再読込時の永続済みステージ経過時間が表示用 state から消去される点。`idle` での強制クリアを除去し、`ShapeBuildProgressPanel` でも `data.stageElapsedByStage` をフォールバック参照するよう補強。
+  - update: 2026-02-10 10:14 JST `stageRemainingMs` はタスク更新頻度に追従して高頻度で再計算されるため、`useShapeBuildStep` で表示用 `displayStageRemainingMs` を追加し、running 中は 1 秒 interval でのみ反映するよう変更。
+  - done: 2026-02-10 10:16 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+
 2647) feat/ui/shape-stage-svg-reflect-chip-visibility-opacity (P1) — 進行中 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: なし

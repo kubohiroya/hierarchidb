@@ -263,6 +263,7 @@ export const useBuildProgressPanelState = (params: {
       {
         label: t('stage.timing.totalElapsed', 'Total elapsed'),
         value: isBuildStarted ? formatElapsedDuration(summary.totalElapsedMs) : emptyValue,
+        icon: 'timelapse' as const,
       },
     ];
   }, [
