@@ -52,6 +52,7 @@ export const useBuildProgressPanelState = (params: {
   const suspendSuspectOpen = useAtomValue(suspendSuspectOpenAtom);
   const suspendSuspectControls = useAtomValue(suspendSuspectControlsAtom);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [elapsedTickMs, setElapsedTickMs] = useState(() => Date.now());
   const [completionSnapshot, setCompletionSnapshot] = useState<{
     status: BuildStatus;
     stageLabel: string;
@@ -60,6 +61,7 @@ export const useBuildProgressPanelState = (params: {
     reason?: string;
   } | null>(null);
   const completionKeyRef = useRef<string | null>(null);
+  const totalElapsedSnapshotRef = useRef<{ elapsedMs: number; capturedAt: number } | null>(null);
   const crashInsight = useBuildCrashInsight({
     draft: params.data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
@@ -273,18 +275,46 @@ export const useBuildProgressPanelState = (params: {
     return formatDuration(durationMs);
   }, [formatDuration, t]);
 
+  useEffect(() => {
+    setElapsedTickMs(Date.now());
+    if (summary.buildStatus !== 'running') {
+      return;
+    }
+    const timerId = window.setInterval(() => {
+      setElapsedTickMs(Date.now());
+    }, 1000);
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [summary.buildStatus]);
+
+  const liveTotalElapsedMs = useMemo(() => {
+    const now = elapsedTickMs;
+    const snapshot = totalElapsedSnapshotRef.current;
+    if (!snapshot || summary.totalElapsedMs > snapshot.elapsedMs || summary.buildStatus !== 'running') {
+      totalElapsedSnapshotRef.current = {
+        elapsedMs: summary.totalElapsedMs,
+        capturedAt: now,
+      };
+      return summary.totalElapsedMs;
+    }
+    const drift = Math.max(0, now - snapshot.capturedAt);
+    return snapshot.elapsedMs + drift;
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
+
   const controlDetails = useMemo(() => {
     const isBuildStarted = summary.buildStatus !== 'idle' || summary.totalElapsedMs > 0;
     const emptyValue = t('stage.timing.unknown', '-');
     return [
       {
         label: t('stage.timing.totalElapsed', 'Total elapsed'),
-        value: isBuildStarted ? formatElapsedDuration(summary.totalElapsedMs) : emptyValue,
+        value: isBuildStarted ? formatElapsedDuration(liveTotalElapsedMs) : emptyValue,
         icon: 'timelapse' as const,
       },
     ];
   }, [
     formatElapsedDuration,
+    liveTotalElapsedMs,
     summary.buildStatus,
     summary.totalElapsedMs,
     t,

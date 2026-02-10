@@ -1230,11 +1230,12 @@ export const createTransformByBandHandler = (
   const normalizePhaseProgress = (value: number): number => {
     if (!Number.isFinite(value)) return value;
     const clamped = Math.min(100, Math.max(0, value));
+    // Keep phase updates below 100 so completion message is finalized only by completed status updates.
     if (clamped <= taskProgressRange.decodeEnd) {
-      return Math.round((clamped / taskProgressRange.decodeEnd) * 50);
+      return Math.min(99, Math.round((clamped / taskProgressRange.decodeEnd) * 50));
     }
     const span = 100 - taskProgressRange.decodeEnd;
-    return Math.round(50 + ((clamped - taskProgressRange.decodeEnd) / span) * 50);
+    return Math.min(99, Math.round(50 + ((clamped - taskProgressRange.decodeEnd) / span) * 50));
   };
   const reportPolygonProgress = async (
     taskId: string,
