@@ -68,8 +68,7 @@
         "tools/**/*.{ts,tsx,js,mjs,cjs}",
         "*.config.{ts,js,mjs,cjs}",
         "*.config.ts",
-        "*.mjs",
-        "PluginRegistryAPI.ts"
+        "*.mjs"
       ],
       "project": [
         "scripts/**/*.{ts,tsx,js,mjs,cjs}",

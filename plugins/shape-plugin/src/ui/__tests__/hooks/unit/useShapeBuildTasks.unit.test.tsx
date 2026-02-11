@@ -220,7 +220,7 @@ describe('useShapeBuildTasks', () => {
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'phase=finalize',
+          message: 'finalize',
           index: 1,
           sequence: 11,
         },
@@ -301,7 +301,7 @@ describe('useShapeBuildTasks', () => {
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'phase=encode',
+          message: 'encode:start',
           index: 1,
           sequence: 1,
         },
@@ -310,7 +310,7 @@ describe('useShapeBuildTasks', () => {
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.status).toBe('completed');
-      expect(result.current.tasks[0]?.message).toBe('phase=encode');
+      expect(result.current.tasks[0]?.message).toBe('encode:start');
     });
 
     act(() => {
@@ -343,7 +343,7 @@ describe('useShapeBuildTasks', () => {
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'phase=post-process',
+          message: 'post-process',
           index: 1,
           sequence: 3,
         },

@@ -3,8 +3,9 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 import type { TaskCountSummary } from '@hierarchidb/ui-batch-progress';
+import { formatTaskDisplayMessage } from './taskDisplayText.ts';
 
-type Translate = (key: string, fallback?: string) => string;
+type Translate = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
@@ -70,6 +71,8 @@ export const useShapeBuildLabels = ({
   }, [buildStatus, displayStageId, stages, t]);
 
   const taskLabel = useMemo(() => {
+    const progressTaskMessage = formatTaskDisplayMessage(effectiveProgress?.progressTaskDisplay, t)
+      ?? effectiveProgress?.message;
     if (buildStatus === 'completed') {
       return t('stage.progress.done', 'Completed');
     }
@@ -87,14 +90,23 @@ export const useShapeBuildLabels = ({
           : t('stage.progress.working', 'Working...');
       }
       if (effectiveStatus?.error) return effectiveStatus.error;
-      if (effectiveProgress?.message) return effectiveProgress.message;
+      if (progressTaskMessage) return progressTaskMessage;
       return t('stage.progress.ready', 'Ready');
     }
-    return effectiveProgress?.message
+    return progressTaskMessage
       ?? (resolvedTaskType ? stages.find((stage) => stage.id === resolvedTaskType)?.title ?? resolvedTaskType : undefined)
       ?? effectiveStatus?.error
       ?? t('stage.progress.working', 'Working...');
-  }, [buildStatus, effectiveProgress?.message, effectiveStatus?.error, rawDisplayCounts, resolvedTaskType, stages, t]);
+  }, [
+    buildStatus,
+    effectiveProgress?.message,
+    effectiveProgress?.progressTaskDisplay,
+    effectiveStatus?.error,
+    rawDisplayCounts,
+    resolvedTaskType,
+    stages,
+    t,
+  ]);
 
   const taskUnitLabel = t('stage.progress.taskUnitTasks', 'Tasks');
 

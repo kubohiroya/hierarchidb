@@ -1,4 +1,4 @@
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig, VectorTileFormat } from '@hierarchidb/gis-sdk';
 import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
@@ -34,6 +34,7 @@ export interface BuildTaskBase {
   status: BuildTaskStatus;
   index: number;
   progress?: number;
+  display?: TaskDisplayPayload;
   retryCount?: number;
   error?: string;
   message?: string;

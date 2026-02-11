@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, TaskDisplayPayload, TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { Dexie } from 'dexie';
 import type { ShapeBuildConfig } from '../common/types/index.js';
@@ -58,7 +58,7 @@ import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStat
 import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
-import { isSkippedMessage } from '../common/utils/taskMessages.ts';
+import { isTaskSkipped } from '../common/utils/taskMessages.ts';
 import { buildShapeTaskTitle } from '../common/utils/taskTitles.ts';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import {
@@ -542,6 +542,7 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
     status: nextStatus,
     index: task.index,
     progress: nextStatus === 'completed' ? task.progress : 0,
+    display: nextStatus === 'completed' ? task.display : undefined,
     message: keepMessage,
     inputData: task.inputData,
     outputData: nextStatus === 'completed' ? task.outputData : undefined,
@@ -622,6 +623,8 @@ const mapTaskQueueRecordToBatchTask = (
     status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
     type: task.stage,
     index: task.index,
+    progress: resolveTaskProgress(task),
+    display: task.display,
     retryCount: task.retryCount,
     error: base.error,
     message: base.message,
@@ -638,6 +641,7 @@ const mapTaskQueueRecordToTaskSummary = (
     stage: task.stage,
     status: normalizeTaskPhase(resolveEffectiveTaskStatus(task)),
     progress: resolveTaskProgress(task),
+    display: task.display,
     message: base.message,
     title: base.title,
     error: base.error,
@@ -664,6 +668,7 @@ type ProgressTaskMeta = {
   stage: TaskQueueRecord['stage'];
   progress: number;
   title?: string;
+  display?: TaskDisplayPayload;
 };
 
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
@@ -680,10 +685,10 @@ const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
   const total = tasks.length;
   const completed = tasks.filter((task) => {
     const status = resolveEffectiveTaskStatus(task);
-    return status === 'completed' && !isSkippedMessage(task.message);
+    return status === 'completed' && !isTaskSkipped(task.display, task.message);
   }).length;
   const failed = tasks.filter((task) => resolveEffectiveTaskStatus(task) === 'failed').length;
-  const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
+  const skipped = tasks.filter((task) => isTaskSkipped(task.display, task.message)).length;
   const doneCount = Math.min(total, completed + skipped + failed);
   const status: BuildTask['status'] = failed > 0
     ? 'failed'
@@ -710,7 +715,7 @@ const summarizeTaskQueueProgress = async (
   tasks.forEach((task) => {
     total += 1;
     const status = resolveEffectiveTaskStatus(task);
-    if (isSkippedMessage(task.message)) {
+    if (isTaskSkipped(task.display, task.message)) {
       skipped += 1;
       return;
     }
@@ -787,6 +792,7 @@ const buildProgressPayloadFromTasks = async (
       stage: progressTask.stage,
       progress: resolveTaskProgress(progressTask),
       title: progressTaskSummary.title,
+      display: progressTask.display,
     };
     meta.progressTask = progressTaskMeta;
   }
@@ -837,7 +843,7 @@ const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): Stag
       return;
     }
     if (status === 'completed') {
-      if (isSkippedMessage(task.message)) {
+      if (isTaskSkipped(task.display, task.message)) {
         skipped += 1;
       } else {
         completed += 1;
@@ -1174,6 +1180,7 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
       startedAt: undefined,
       completedAt: undefined,
       errorMessage: undefined,
+      display: undefined,
       message: undefined,
       outputData: undefined,
     }, { allowTerminalStatusTransition: true })
@@ -1192,6 +1199,7 @@ const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
       startedAt: undefined,
       completedAt: undefined,
       errorMessage: undefined,
+      display: undefined,
       message: undefined,
       outputData: undefined,
     }, { allowTerminalStatusTransition: true })
@@ -1596,7 +1604,7 @@ export const shapeBatchAPI = {
               stage: event.task.stage,
               phase: resolveProgressPhase(event.nodeId, vtTasks),
               timestamp: Date.now(),
-              message: event.task.message,
+              message: event.task.errorMessage,
               payload: await buildProgressPayloadFromTasks(event.nodeId, vtTasks, {
                 eventTask: event.task,
                 source: 'event',
@@ -2082,7 +2090,7 @@ export const shapeBatchAPI = {
             stage: event.task.stage,
             phase: resolveProgressPhase(event.nodeId, vtTasks),
             timestamp: Date.now(),
-            message: event.task.message,
+            message: event.task.errorMessage,
             payload: await buildProgressPayloadFromTasks(nodeId, vtTasks, {
               eventTask: event.task,
               source: 'event',

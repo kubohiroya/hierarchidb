@@ -18,6 +18,7 @@ import {
   type GeometryEngine,
 } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
+import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
 import { buildBoundaryFeature } from './geometry.js';
 import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
 import type { TransformByBandStageContext } from '../contexts.js';
@@ -1220,22 +1221,49 @@ export const createTransformByBandHandler = (
   const { ephemeralDB, transformConfig, bands, abortSignal, featureIdAllowlist } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
-    decodeEnd: 10,
-    prepareEnd: 20,
-    simplifyStart: 20,
-    simplifyEnd: 85,
-    outputEnd: 95,
-    encodeEnd: 100,
+    transformStart: 0,
+    fetchStart: 1,
+    fetchEnd: 10,
+    decodeStart: 11,
+    decodeEnd: 20,
+    prepareStart: 21,
+    prepareEnd: 30,
+    simplifyStart: 31,
+    simplifyEnd: 80,
+    outputBuildStart: 81,
+    outputBuildEnd: 90,
+    outputCountsStart: 91,
+    outputCountsEnd: 95,
+    encodeStart: 96,
+    encodeEnd: 99,
+    cachePutStart: 99,
   } as const;
+  const normalizeDisplayToken = (value: string): string => (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+  );
+  const resolvePhaseDisplay = (phase: string): TaskDisplayPayload => {
+    const separator = phase.lastIndexOf(':');
+    const rawState = separator >= 0 ? phase.slice(separator + 1) : 'progress';
+    const phaseState = rawState === 'start' || rawState === 'done' || rawState === 'progress'
+      ? rawState
+      : 'progress';
+    const phaseCode = separator >= 0 ? phase.slice(0, separator) : phase;
+    const normalizedPhaseCode = normalizeDisplayToken(phaseCode);
+    return {
+      kind: 'phase',
+      phaseCode,
+      phaseState,
+      key: `stage.taskPhase.${normalizedPhaseCode}_${phaseState}`,
+    };
+  };
   const normalizePhaseProgress = (value: number): number => {
     if (!Number.isFinite(value)) return value;
-    const clamped = Math.min(100, Math.max(0, value));
     // Keep phase updates below 100 so completion message is finalized only by completed status updates.
-    if (clamped <= taskProgressRange.decodeEnd) {
-      return Math.min(99, Math.round((clamped / taskProgressRange.decodeEnd) * 50));
-    }
-    const span = 100 - taskProgressRange.decodeEnd;
-    return Math.min(99, Math.round(50 + ((clamped - taskProgressRange.decodeEnd) / span) * 50));
+    return Math.min(99, Math.max(0, Math.round(value)));
   };
   const reportPolygonProgress = async (
     taskId: string,
@@ -1260,7 +1288,7 @@ export const createTransformByBandHandler = (
   const updateTaskPhase = async (taskId: string, phase: string, progress?: number): Promise<void> => {
     try {
       await updateTask(taskQueue, taskId, {
-        message: `phase=${phase}`,
+        display: resolvePhaseDisplay(phase),
         ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
       });
     } catch (error) {
@@ -1284,7 +1312,11 @@ export const createTransformByBandHandler = (
       extractionRatio: number;
       tolerance: number;
     };
-    message: string;
+    metrics: {
+      features: { input: number; output: number };
+      polygons: { input: number; output: number };
+      vertices: { input: number; output: number };
+    };
     outputData: {
       processedPolygons: number;
       totalPolygons: number;
@@ -1352,7 +1384,11 @@ export const createTransformByBandHandler = (
       await ephemeralDB.buildTasks.update(params.taskId, {
         status: effectiveStatus,
         progress: 100,
-        message: params.message,
+        display: {
+          kind: 'summary',
+          key: 'stage.taskSummary.metrics',
+          metrics: params.metrics,
+        },
         outputData: params.outputData,
         completedAt,
         updatedAt: completedAt,
@@ -1498,7 +1534,8 @@ export const createTransformByBandHandler = (
     try {
       stageLabel = 'fetch:cache';
       logDebugPhase('fetch-cache:start', { fetchCacheId: input.fetchCacheId });
-      await updateTaskPhase(taskId, 'fetch-cache:start', 0);
+      await updateTaskPhase(taskId, 'transform:start', taskProgressRange.transformStart);
+      await updateTaskPhase(taskId, 'fetch-cache:start', taskProgressRange.fetchStart);
       assertNotAborted(abortSignal);
       let fetchWaitTimer: ReturnType<typeof setInterval> | null = null;
       let fetchWaitStartedAt: number | null = null;
@@ -1533,14 +1570,14 @@ export const createTransformByBandHandler = (
         byteLength: fetchCache.data.byteLength,
         elapsedMs: fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null,
       });
-      await updateTaskPhase(taskId, 'fetch-cache:done', 0);
+      await updateTaskPhase(taskId, 'fetch-cache:done', taskProgressRange.fetchEnd);
 
       stageLabel = 'decode';
       logDebugPhase('decode:start', {
         format: fetchCache.format,
         compression: fetchCache.compression ?? null,
       });
-      await updateTaskPhase(taskId, 'decode:start', 5);
+      await updateTaskPhase(taskId, 'decode:start', taskProgressRange.decodeStart);
       assertNotAborted(abortSignal);
       let collection = await runStageWithLabel('decode', () => {
         if (fetchCache.format === 'topojson') {
@@ -1582,7 +1619,11 @@ export const createTransformByBandHandler = (
             return {
               status: 'completed',
               progress: 100,
-              message: 'skipped: no recycling features in cache',
+              display: {
+                kind: 'skip',
+                key: 'stage.taskSkip.noRecyclingFeatures',
+                params: {},
+              },
               outputData: {
                 processedPolygons: 0,
                 totalPolygons: 0,
@@ -1633,7 +1674,7 @@ export const createTransformByBandHandler = (
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
       stageLabel = 'counts:input';
-      await updateTaskPhase(taskId, 'prepare:counts:start', taskProgressRange.decodeEnd);
+      await updateTaskPhase(taskId, 'prepare:counts:start', taskProgressRange.prepareStart);
       const inputStats = await runStageWithLabel('counts:input', () => {
         const polygonCounts = inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry));
         const vertexCount = inputCollection.features.reduce(
@@ -1805,7 +1846,14 @@ export const createTransformByBandHandler = (
           return {
             status: 'completed',
             progress: 100,
-            message: `skipped: simplify produced empty collection (features=0/${inputFeatureCount}, polygons=0/${inputPolygonCount})`,
+            display: {
+              kind: 'skip',
+              key: 'stage.taskSkip.emptyAfterSimplify',
+              params: {
+                inputFeatures: inputFeatureCount,
+                inputPolygons: inputPolygonCount,
+              },
+            },
             outputData: {
               processedPolygons: inputPolygonCount,
               totalPolygons: inputPolygonCount,
@@ -2193,7 +2241,7 @@ export const createTransformByBandHandler = (
         0,
       );
 
-      await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.simplifyEnd);
+      await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.outputBuildStart);
       logDebugPhase('output-build:start', {
         featureCount: simplifiedFeatureCount,
         polygonCount: simplifiedPolygonCount,
@@ -2228,7 +2276,13 @@ export const createTransformByBandHandler = (
         return {
           status: 'completed',
           progress: 100,
-          message: `skipped: empty output collection after simplify (features=0) inputFeatures=${inputFeatureCount}`,
+          display: {
+            kind: 'skip',
+            key: 'stage.taskSkip.emptyOutputAfterSimplify',
+            params: {
+              inputFeatures: inputFeatureCount,
+            },
+          },
           outputData: {
             processedPolygons: inputPolygonCount,
             totalPolygons: inputPolygonCount,
@@ -2268,14 +2322,15 @@ export const createTransformByBandHandler = (
 
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
       stageLabel = 'counts:output-vertices';
-      await updateTaskPhase(taskId, 'output:counts:start', taskProgressRange.outputEnd - 5);
+      await updateTaskPhase(taskId, 'output:counts:start', taskProgressRange.outputCountsStart);
       const vertexCount = await runStageWithLabel('counts:output-vertices', () => features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0));
       stageLabel = 'counts:output-polygons';
       const polygonCount = await runStageWithLabel('counts:output-polygons', () => features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0));
       assertNotAborted(abortSignal);
       stageLabel = 'encode';
-      await updateTaskPhase(taskId, 'output:build:done', taskProgressRange.outputEnd);
-      await updateTaskPhase(taskId, 'encode:start', taskProgressRange.outputEnd);
+      await updateTaskPhase(taskId, 'output:build:done', taskProgressRange.outputBuildEnd);
+      await updateTaskPhase(taskId, 'output:counts:done', taskProgressRange.outputCountsEnd);
+      await updateTaskPhase(taskId, 'encode:start', taskProgressRange.encodeStart);
       logDebugPhase('encode:start', { featureCount: outputCollectionValue.features.length });
       outputCollection = outputCollectionValue;
       const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
@@ -2321,28 +2376,9 @@ export const createTransformByBandHandler = (
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
-      await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.encodeEnd);
+      await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.cachePutStart);
       logDebugPhase('cache-put:start', { cacheId });
 
-      const formatCount = (value: number): string => (
-        Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
-      );
-      const formatSignedPercent = (output: number, input: number): string => {
-        if (!Number.isFinite(input) || input <= 0) return '-0.0%';
-        const percent = ((output - input) / input) * 100;
-        const prefix = percent <= 0 ? '-' : '+';
-        return `${prefix}${Math.abs(percent).toFixed(1)}%`;
-      };
-      const formatChangeSummary = (label: string, input: number, output: number): string => {
-        const safeInput = Number.isFinite(input) ? input : output;
-        const safeOutput = Number.isFinite(output) ? output : 0;
-        return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
-      };
-      const completedMessage = [
-        formatChangeSummary('features', inputFeatureCount, simplifiedFeatureCount),
-        formatChangeSummary('polygons', inputPolygonCount, simplifiedPolygonCount),
-        formatChangeSummary('vertices', inputVertexCount, simplifiedVertexCount),
-      ].join(', ');
       await finalizeTaskWithCache({
         taskId,
         cacheRecord: {
@@ -2360,7 +2396,11 @@ export const createTransformByBandHandler = (
           extractionRatio,
           tolerance: tolerance,
         },
-        message: completedMessage,
+        metrics: {
+          features: { input: inputFeatureCount, output: simplifiedFeatureCount },
+          polygons: { input: inputPolygonCount, output: simplifiedPolygonCount },
+          vertices: { input: inputVertexCount, output: simplifiedVertexCount },
+        },
         outputData: {
           processedPolygons: inputPolygonCount,
           totalPolygons: inputPolygonCount,
@@ -2439,7 +2479,15 @@ export const createTransformByBandHandler = (
       return {
         status: 'completed',
         progress: 100,
-        message: completedMessage,
+        display: {
+          kind: 'summary',
+          key: 'stage.taskSummary.metrics',
+          metrics: {
+            features: { input: inputFeatureCount, output: simplifiedFeatureCount },
+            polygons: { input: inputPolygonCount, output: simplifiedPolygonCount },
+            vertices: { input: inputVertexCount, output: simplifiedVertexCount },
+          },
+        },
         outputData: {
           processedPolygons: inputPolygonCount,
           totalPolygons: inputPolygonCount,

@@ -6,13 +6,31 @@ import { createHierarchiRouter, getBasePath, getRouterMode } from './router/inde
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.js';
 
+type HydrateLoader = {
+  setProgress: (progress: number, message?: string) => void;
+  maxProgress?: number;
+};
+
+type HydrateLoaderWindow = Window & {
+  __HDB_HYDRATE_LOADER__?: HydrateLoader;
+};
+
+const setHydrateProgress = (progress: number, message?: string): void => {
+  if (typeof window === 'undefined') return;
+  const loader = (window as HydrateLoaderWindow).__HDB_HYDRATE_LOADER__;
+  loader?.setProgress(progress, message);
+};
+
 /**
  * Initialize and mount the application with TanStack Router
  * Phase 5: React Router has been completely removed
  */
 async function initializeApp() {
+  setHydrateProgress(0, 'Preparing client bootstrap...');
   initializeBrowserGlobals();
+  setHydrateProgress(11, 'Browser globals initialized');
   await preloadPluginWorkerStores();
+  setHydrateProgress(22, 'Preloading worker stores');
   const mode = getRouterMode();
   const basename = getBasePath();
 
@@ -20,6 +38,7 @@ async function initializeApp() {
     mode,
     basename,
   });
+  setHydrateProgress(33, 'Client bootstrap complete');
 
   return router;
 }
@@ -34,17 +53,15 @@ const BootstrappedApp = () => {
   const [router, setRouter] = useState<BootRouter | null>(null);
 
   useEffect(() => {
-    removeHydrateFallback();
-  }, []);
-
-  useEffect(() => {
     let active = true;
     initializeApp()
       .then((nextRouter) => {
         if (!active) return;
+        removeHydrateFallback();
         startTransition(() => setRouter(nextRouter));
       })
       .catch((error) => {
+        setHydrateProgress(33, 'Client bootstrap failed. Check console.');
         console.error('[entry.client] initializeApp failed', error);
       });
     return () => {

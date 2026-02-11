@@ -88,7 +88,7 @@ describe('shapePipelineStageHelpers', () => {
     await updateTask(db, taskId, {
       status: 'running',
       progress: 95,
-      message: 'phase=encode',
+      message: 'encode',
     });
 
     const completed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'completed');

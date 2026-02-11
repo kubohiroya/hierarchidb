@@ -28,6 +28,7 @@ import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import type { ShapeBuildConfig } from '../../../common/types/build.js';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
+import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/taskMessages.ts';
 
 const isDev = import.meta.env.DEV;
 
@@ -129,7 +130,8 @@ export const useBuildProgressPanelState = (params: {
     const isGeneric = !message
       || normalized === 'failed'
       || normalized === 'stage task failed'
-      || normalized.startsWith('phase=');
+      || isTaskPhaseMessage(message)
+      || isTaskPhaseDisplay(task.display);
     if (fallback && isGeneric) return fallback;
     if (message) return message;
     return fallback || null;

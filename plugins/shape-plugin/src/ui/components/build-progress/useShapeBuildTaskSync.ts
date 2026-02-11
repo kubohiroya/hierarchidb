@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
 import type { BuildTaskSummary } from '@hierarchidb/batch-api';
 import { shouldApplyTaskUpdate } from '@hierarchidb/ui-batch-progress';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import { isTaskPhaseDisplay } from '../../../common/utils/taskMessages.ts';
 
 export type RawTaskSummary = BuildTaskSummary & {
   taskType?: string;
@@ -157,19 +158,71 @@ const readNormalizedMessage = (value: string | null | undefined): string => (
   typeof value === 'string' ? value.trim() : ''
 );
 
-const isPhaseMessage = (value: string | null | undefined): boolean => (
-  /^phase=/i.test(readNormalizedMessage(value))
+const isLegacyPhaseMessage = (value: string | null | undefined): boolean => (
+  /^[a-z0-9]+(?:[:_-][a-z0-9]+)*$/i.test(readNormalizedMessage(value))
 );
+
+const areMetricsEqual = (
+  left: TaskDisplayPayload['metrics'],
+  right: TaskDisplayPayload['metrics'],
+): boolean => {
+  const metricKeys: Array<'features' | 'polygons' | 'vertices'> = ['features', 'polygons', 'vertices'];
+  return metricKeys.every((metricKey) => {
+    const leftMetric = left?.[metricKey];
+    const rightMetric = right?.[metricKey];
+    if (!leftMetric && !rightMetric) return true;
+    if (!leftMetric || !rightMetric) return false;
+    return leftMetric.input === rightMetric.input && leftMetric.output === rightMetric.output;
+  });
+};
+
+const areDisplayParamsEqual = (
+  left: TaskDisplayPayload['params'],
+  right: TaskDisplayPayload['params'],
+): boolean => {
+  if (!left && !right) return true;
+  if (!left || !right) return false;
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every((key) => left[key] === right[key]);
+};
+
+const areDisplaysEqual = (
+  left: TaskDisplayPayload | undefined,
+  right: TaskDisplayPayload | undefined,
+): boolean => {
+  if (left === right) return true;
+  if (!left || !right) return false;
+  return left.kind === right.kind
+    && left.key === right.key
+    && left.phaseCode === right.phaseCode
+    && left.phaseState === right.phaseState
+    && areDisplayParamsEqual(left.params, right.params)
+    && areMetricsEqual(left.metrics, right.metrics);
+};
+
+const shouldPromoteCompletedDisplay = (
+  current: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  if (areDisplaysEqual(current.display, next.display)) return false;
+  if (!current.display && next.display) return true;
+  if (isTaskPhaseDisplay(current.display) && !isTaskPhaseDisplay(next.display)) return true;
+  if (current.display && !next.display) return false;
+  return false;
+};
 
 const shouldPromoteCompletedMessage = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (shouldPromoteCompletedDisplay(current, next)) return true;
   const currentMessage = readNormalizedMessage(current.message);
   const nextMessage = readNormalizedMessage(next.message);
   if (!nextMessage || nextMessage === currentMessage) return false;
   if (!currentMessage) return true;
-  if (isPhaseMessage(currentMessage) && !isPhaseMessage(nextMessage)) return true;
+  if (isLegacyPhaseMessage(currentMessage) && !isLegacyPhaseMessage(nextMessage)) return true;
   return false;
 };
 
@@ -181,6 +234,7 @@ const areTasksEquivalentForView = (
   && left.stage === right.stage
   && left.status === right.status
   && resolveProgressValue(left.progress) === resolveProgressValue(right.progress)
+  && areDisplaysEqual(left.display, right.display)
   && (left.message ?? null) === (right.message ?? null)
   && (left.title ?? null) === (right.title ?? null)
   && (left.error ?? null) === (right.error ?? null)

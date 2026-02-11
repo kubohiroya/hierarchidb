@@ -1,4 +1,4 @@
-import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/batch-api';
 import { computePercentage } from '@hierarchidb/ui-batch-progress';
 
 export interface BuildProgress {
@@ -16,6 +16,7 @@ export interface BuildProgress {
   progressTaskStage?: string;
   progressTaskProgress?: number;
   progressTaskTitle?: string;
+  progressTaskDisplay?: TaskDisplayPayload;
   stageTotals?: Partial<Record<'fetch' | 'transform' | 'vt', {
     total: number;
     completed: number;
@@ -49,6 +50,7 @@ type ProgressTaskMeta = {
   stage?: unknown;
   progress?: unknown;
   title?: unknown;
+  display?: unknown;
 };
 
 type StageTotalsMeta = Partial<Record<'fetch' | 'transform' | 'vt', {
@@ -69,6 +71,17 @@ const readNumber = (value: unknown): number | undefined => (
 const readString = (value: unknown): string | undefined => (
   typeof value === 'string' && value.length > 0 ? value : undefined
 );
+
+const readTaskDisplay = (value: unknown): TaskDisplayPayload | undefined => {
+  const display = asRecord(value);
+  if (!display) return undefined;
+  const kind = readString(display.kind);
+  if (!kind) return undefined;
+  if (kind !== 'phase' && kind !== 'summary' && kind !== 'skip' && kind !== 'error' && kind !== 'info') {
+    return undefined;
+  }
+  return display as TaskDisplayPayload;
+};
 
 const readProgressTaskMeta = (info: ExtendedProgress): ProgressTaskMeta | null => {
   const meta = asRecord(info.payload?.meta);
@@ -129,6 +142,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     progressTaskStage: readString(progressTaskMeta?.stage),
     progressTaskProgress: readNumber(progressTaskMeta?.progress),
     progressTaskTitle: readString(progressTaskMeta?.title),
+    progressTaskDisplay: readTaskDisplay(progressTaskMeta?.display),
     stageTotals,
   };
 }

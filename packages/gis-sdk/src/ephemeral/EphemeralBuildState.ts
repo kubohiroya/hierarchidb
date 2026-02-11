@@ -16,6 +16,22 @@ export type BuildStage = 'fetch' | 'transform' | 'vt';
 
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
+export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
+
+export type TaskDisplayMetric = {
+  input: number;
+  output: number;
+};
+
+export type TaskDisplayPayload = {
+  kind: TaskDisplayKind;
+  key?: string;
+  params?: Record<string, string | number | boolean>;
+  phaseCode?: string;
+  phaseState?: 'start' | 'progress' | 'done';
+  metrics?: Partial<Record<'features' | 'polygons' | 'vertices', TaskDisplayMetric>>;
+};
+
 export interface EphemeralStageStatus {
   status: BuildTaskStatus;
   progress: number;
@@ -66,6 +82,7 @@ export interface EphemeralBuildTaskRecord {
   index: number;
   stagePriority?: number;
   progress: number;
+  display?: TaskDisplayPayload;
   message?: string;
   errorMessage?: string;
   createdAt?: number;

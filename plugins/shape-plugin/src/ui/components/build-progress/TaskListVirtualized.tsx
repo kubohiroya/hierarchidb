@@ -3,11 +3,11 @@ import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
+import { isTaskPhaseMessage, isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import { TaskItem, TASK_ITEM_HEIGHT } from './TaskItem.tsx';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
-import { taskPhaseLabels } from './taskPhaseLabels.ts';
+import { formatTaskDisplayMessage } from './taskDisplayText.ts';
 import { useTranslation } from '../../i18n.js';
 
 export type TaskWithMetadata = ShapeBuildTaskSummary & { title?: string };
@@ -112,19 +112,6 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     if (stageId === 'transform') return sortTransformTasks(tasks);
     return tasks;
   }, [stageId, tasks]);
-  const resolvePhaseMessage = useMemo(() => {
-    return (message?: string | null): string | null => {
-      if (!message) return null;
-      const match = message.match(/^phase=([a-z0-9:-]+)$/i);
-      if (!match) return null;
-      const phase = match[1];
-      if (!phase) return null;
-      const entry = taskPhaseLabels.get(phase);
-      if (!entry) return null;
-      return t(entry.key, entry.fallback);
-    };
-  }, [t]);
-
   useEffect(() => {
     if (!shouldVirtualize) return;
     if (!scrollToTaskId || scrollRequestId == null) return;
@@ -234,19 +221,28 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
 
   const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
-    const isSkipped = isSkippedMessage(task.message);
+    const isSkipped = isTaskSkipped(task.display, task.message);
     const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
     const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
     const statusColor = resolveStatusColor(statusValue, isSkipped);
     const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-    const phaseMessage = resolvePhaseMessage(task.message);
+    const displayMessage = formatTaskDisplayMessage(task.display, t);
+    const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
+    const fallbackError = typeof task.error === 'string' ? task.error.trim() : '';
+    const failedMessage = errorMessage || fallbackError;
     const geometryDetails = parseGeometrySimplifyError(task.message);
     const baseMessage = task.message?.split(' (')[0];
-    const taskMessage = phaseMessage
+    const failedTaskMessage = (task.status === 'failed' || task.status === 'regression')
+      && failedMessage
+      && (!task.message || isTaskPhaseMessage(task.message))
+      ? failedMessage
+      : null;
+    const taskMessage = displayMessage
+      ?? failedTaskMessage
       ?? (task.message && task.message !== taskTitle
         ? (geometryDetails ? baseMessage : task.message)
         : undefined);
-    const detailLines = phaseMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
+    const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItem
@@ -260,7 +256,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
         />
       </Box>
     );
-  },[resolvePhaseMessage, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageValue]);
+  }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageValue, t]);
 
   return (
     <Box

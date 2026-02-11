@@ -8,6 +8,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskDisplayPayload } from './task-queue-types.js';
 
 export type StageKey = string;
 /** @deprecated Use BuildStatus. */
@@ -96,6 +97,7 @@ export interface BatchTaskSummary {
   status: ProgressPhase;
   progress: number;
   sequence?: number;
+  display?: TaskDisplayPayload;
   message?: string;
 }
 

@@ -46,6 +46,22 @@ export type BuildTaskType = 'fetch' | 'transform' | 'vt';
 export type BuildStage = BuildTaskType;
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
+export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
+
+export type TaskDisplayMetric = {
+  input: number;
+  output: number;
+};
+
+export type TaskDisplayPayload = {
+  kind: TaskDisplayKind;
+  key?: string;
+  params?: Record<string, string | number | boolean>;
+  phaseCode?: string;
+  phaseState?: 'start' | 'progress' | 'done';
+  metrics?: Partial<Record<'features' | 'polygons' | 'vertices', TaskDisplayMetric>>;
+};
+
 export interface ProgressInfo {
   total: number;
   completed: number;
@@ -239,6 +255,7 @@ export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = Shape
   status: TaskStatus;
   index: number;
   progress: number;
+  display?: TaskDisplayPayload;
   message?: string;
   retryCount?: number;
   inputData?: TInput;

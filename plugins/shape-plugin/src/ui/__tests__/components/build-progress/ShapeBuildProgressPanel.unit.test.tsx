@@ -81,7 +81,7 @@ describe('ShapeBuildProgressPanel', () => {
       taskType: 'transform',
       status: 'failed',
       progress: 100,
-      message: 'phase=simplify-only:done',
+      message: 'simplify-only:done',
       errorMessage: 'transform failed: max vertices per feature exceeded',
     } as ShapeBuildTaskSummary;
     store.set(tasksByStageAtom, { transform: [failedTask] });

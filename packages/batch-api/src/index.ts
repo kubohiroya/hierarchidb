@@ -8,6 +8,9 @@ export type {
 export type {
   StageHandler,
   StageHandlerResult,
+  TaskDisplayKind,
+  TaskDisplayMetric,
+  TaskDisplayPayload,
   TaskQueueEvent,
   TaskQueueRecord,
   TaskStage,

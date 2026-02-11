@@ -22,7 +22,7 @@ import {
 } from '@hierarchidb/components/build-session';
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
+import { isTaskPhaseDisplay, isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -72,18 +72,6 @@ const mergeElapsedByStage = (
 };
 
 const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
-
-const parseScopeFromTaskId = (taskId: string): string | null => {
-  const fetchMatch = taskId.match(/:fetch:([A-Za-z]{2,3}):(\d+)$/);
-  if (fetchMatch?.[1] && fetchMatch[2]) {
-    return `(${fetchMatch[1].trim().toUpperCase()}) ${fetchMatch[2]}`;
-  }
-  const transformMatch = taskId.match(/:transform:[^:]+:([A-Za-z]{2,3}):(\d+)$/);
-  if (transformMatch?.[1] && transformMatch[2]) {
-    return `(${transformMatch[1].trim().toUpperCase()}) ${transformMatch[2]}`;
-  }
-  return null;
-};
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
   switch (status) {
@@ -656,7 +644,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     taskType,
     tasks: displayTasks,
     normalizeStageKey,
-    isSkippedTask: (task) => isSkippedMessage(task.message),
+    isSkippedTask: (task) => isTaskSkipped(task.display, task.message),
     timingStageMs: stageElapsedMs,
   });
   const displayTotalElapsedMs = useMemo(() => (
@@ -1032,10 +1020,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [activeNodeId, buildStatus, coordinator, isLockOwner, progress, status]);
 
   useEffect(() => {
-    const message = typeof effectiveProgress?.message === 'string'
+    const progressMessage = typeof effectiveProgress?.message === 'string'
       ? effectiveProgress.message.trim()
       : '';
-    if (!message) return;
+    const progressDisplay = effectiveProgress?.progressTaskDisplay;
+    if (!progressDisplay && !progressMessage) return;
     if (!buildSessionTransition.active && buildStatus !== 'running' && runtimeStatus !== 'processing') return;
     const progressTaskId = effectiveProgress?.progressTaskId;
     const progressTaskSequence = effectiveProgress?.progressTaskSequence;
@@ -1043,9 +1032,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     const progressTaskTitle = typeof effectiveProgress?.progressTaskTitle === 'string'
       ? effectiveProgress.progressTaskTitle.trim()
       : '';
-    const progressTaskScope = typeof progressTaskId === 'string'
-      ? parseScopeFromTaskId(progressTaskId)
-      : null;
     const canCheckStale = (
       typeof progressTaskId === 'string'
       && typeof progressTaskSequence === 'number'
@@ -1055,40 +1041,42 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (canCheckStale) {
       const completedSequence = completedTaskSequenceById.get(progressTaskId);
       if (typeof completedSequence === 'number' && completedSequence >= progressTaskSequence) {
-        const staleKey = `${progressTaskId}:${progressTaskSequence}:${completedSequence}:${message}`;
+        const staleKey = `${progressTaskId}:${progressTaskSequence}:${completedSequence}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
         if (staleProgressLogKeyRef.current !== staleKey) {
           staleProgressLogKeyRef.current = staleKey;
           emitBuildSessionTransitionLog('warn', 'ignored stale worker progress update after completion', {
             stage: resolvedTaskType ?? null,
             taskId: progressTaskId,
             taskTitle: progressTaskTitle || null,
-            taskScope: progressTaskScope,
             taskSequence: progressTaskSequence,
             completedSequence,
             taskStatus: progressTaskStatus,
             percentage: effectiveProgress?.percentage ?? null,
-            message,
+            message: progressMessage || null,
+            displayKind: progressDisplay?.kind ?? null,
+            displayKey: progressDisplay?.key ?? null,
           });
         }
         return;
       }
     }
-    const isPhaseMessage = /^phase=/i.test(message);
+    const isPhaseMessage = isTaskPhaseDisplay(progressDisplay);
     const isTerminalUpdate = (
       progressTaskStatus === 'completed'
       || ((effectiveProgress?.percentage ?? 0) >= 100 && !isPhaseMessage)
     );
     if (!isTerminalUpdate) return;
-    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${message}`;
+    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
     if (progressTerminalLogKeyRef.current === key) return;
     progressTerminalLogKeyRef.current = key;
     emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
       stage: resolvedTaskType ?? null,
-      message,
+      message: progressMessage || null,
+      displayKind: progressDisplay?.kind ?? null,
+      displayKey: progressDisplay?.key ?? null,
       percentage: effectiveProgress?.percentage ?? null,
       taskId: progressTaskId ?? null,
       taskTitle: progressTaskTitle || null,
-      taskScope: progressTaskScope,
       taskSequence: progressTaskSequence ?? null,
       taskStatus: progressTaskStatus ?? null,
     });
@@ -1096,6 +1084,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     effectiveProgress?.message,
     effectiveProgress?.percentage,
+    effectiveProgress?.progressTaskDisplay,
     effectiveProgress?.progressTaskId,
     effectiveProgress?.progressTaskSequence,
     effectiveProgress?.progressTaskStatus,

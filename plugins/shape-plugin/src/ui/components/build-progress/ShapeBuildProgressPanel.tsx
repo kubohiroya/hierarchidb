@@ -27,7 +27,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
-import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
+import { isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
 import { useShapeBuildCacheActions } from '../build-config/useShapeBuildCacheActions.ts';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
@@ -108,7 +108,7 @@ const TaskProgressBar = ({
       orderedTasks.forEach((task) => {
         const statusValue = (task.status ?? '').toString().toLowerCase();
         let fill = waitingColor;
-        const isSkipped = isSkippedMessage(task.message);
+        const isSkipped = isTaskSkipped(task.display, task.message);
         if (isSkipped) {
           fill = skippedColor;
         } else if (statusValue === 'completed') {
@@ -436,7 +436,7 @@ const BuildProgressStageContent = ({
   const disableVirtualization = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('noTaskVirtual');
   const filteredTasks = stageTasks.filter((task) => {
-    if (isSkippedMessage(task.message)) return filter.skippedMode;
+    if (isTaskSkipped(task.display, task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed') return filter.completedMode;
     return true;
