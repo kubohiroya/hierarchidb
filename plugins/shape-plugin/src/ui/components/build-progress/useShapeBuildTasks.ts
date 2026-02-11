@@ -28,19 +28,16 @@ const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 
-const logRunningResidueEvent = (
-  keyword: string,
-  payload: {
-    nodeId: string | null;
-    source: string;
-    eventType: string;
-    reason?: string;
-    taskId?: string | null;
-  },
-): void => {
+const logRunningResidueDrop = (payload: {
+  nodeId: string | null;
+  source: string;
+  eventType: string;
+  reason?: string;
+  taskId?: string | null;
+}): void => {
   if (!isDev) return;
   console.log(
-    `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
+    `${RUNNING_RESIDUE_LOG_PREFIX} STALE_DROP`
       + ` nodeId=${payload.nodeId ?? '-'}`
       + ` source=${payload.source}`
       + ` eventType=${payload.eventType}`
@@ -145,7 +142,7 @@ export function useShapeBuildTasks(
 
     const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
       if (cancelled || subscriptionIdRef.current !== subscriptionId) {
-        logRunningResidueEvent('STALE_DROP', {
+        logRunningResidueDrop({
           nodeId: nodeId ? String(nodeId) : null,
           source: 'subscription',
           eventType: event.type,
@@ -154,12 +151,6 @@ export function useShapeBuildTasks(
         });
         return;
       }
-      logRunningResidueEvent('TASK_EVENT', {
-        nodeId: nodeId ? String(nodeId) : null,
-        source: 'subscription',
-        eventType: event.type,
-        taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
-      });
       if (event.type === 'snapshot') {
         handleSnapshotRef.current(event.tasks);
         return;

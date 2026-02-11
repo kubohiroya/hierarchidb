@@ -463,25 +463,6 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
     const snapshotTasks = next.map(resolveTaskSummary);
-    let runningCount = 0;
-    let queuedCount = 0;
-    snapshotTasks.forEach((task) => {
-      if (task.status === 'running') runningCount += 1;
-      if (task.status === 'queued') queuedCount += 1;
-    });
-    emitRunningResidueLog('TASK_EVENT', {
-      nodeId: sessionNodeId,
-      source: 'snapshot',
-      eventType: 'snapshot',
-      taskId: null,
-      stage: null,
-      sequence: null,
-      prevStatus: null,
-      nextStatus: null,
-      totalCount: snapshotTasks.length,
-      runningCount,
-      queuedCount,
-    });
     const resolved = mergeSnapshotWithCurrent(snapshotTasks, tasksMapRef.current);
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
     const nextCompletedMap = new Map(completedTasksRef.current);
@@ -503,16 +484,6 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
     const previous = tasksMapRef.current.get(resolved.taskId);
-    emitRunningResidueLog('TASK_EVENT', {
-      nodeId: sessionNodeId,
-      source: 'event',
-      eventType: 'update',
-      taskId: resolved.taskId,
-      stage: resolved.stage,
-      sequence: resolved.sequence ?? null,
-      prevStatus: previous?.status ?? null,
-      nextStatus: resolved.status ?? null,
-    });
     const result = mergeTask(resolved);
     if (previous && !result.changed) {
       emitRunningResidueLog('STALE_DROP', {
@@ -540,16 +511,6 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       });
     }
     if (result.changed) {
-      emitRunningResidueLog('TASK_APPLY', {
-        nodeId: sessionNodeId,
-        stage: resolved.stage,
-        taskId: resolved.taskId,
-        sequence: resolved.sequence ?? null,
-        prevStatus: previous?.status ?? null,
-        nextStatus: resolved.status ?? null,
-        source: 'event',
-        eventType: 'update',
-      });
       logTaskUpdate100(resolved);
       scheduleFlush(result.next, true);
     }
@@ -577,7 +538,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       });
       return;
     }
-    emitRunningResidueLog('TASK_EVENT', {
+    emitRunningResidueLog('STATUS_TRANSITION', {
       nodeId: sessionNodeId,
       source: 'event',
       eventType: 'delete',
@@ -585,7 +546,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       stage: existing.stage,
       sequence: existing.sequence ?? null,
       prevStatus: existing.status ?? null,
-      nextStatus: null,
+      nextStatus: 'deleted',
     });
     const nextMap = new Map(tasksMapRef.current);
     nextMap.delete(taskId);
