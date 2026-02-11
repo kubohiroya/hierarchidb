@@ -94,6 +94,11 @@ const isSelectedArrayByCountries = (value: unknown): value is Record<string, boo
   ));
 };
 
+const isNumberRecord = (value: unknown): value is Record<string, number> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isNumber(entry));
+};
+
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
   const fetch = value.fetch;
@@ -155,6 +160,8 @@ const toBuildSessionRecordFromEphemeral = (
     stageStartedAt: session.stageStartedAt,
     stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
+    elapsedMs: session.elapsedMs,
+    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
   };
 };
 

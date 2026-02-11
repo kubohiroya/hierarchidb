@@ -121,6 +121,8 @@ export interface BuildSessionRecord {
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
+  elapsedMs?: number;
+  elapsedByStage?: Record<string, number>;
 }
 
 export type FetchTaskPayload = {

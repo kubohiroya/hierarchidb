@@ -530,17 +530,9 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         draftData: {
           ...sanitizeShapeDraftData(currentDraftData),
           selectedArrayByCountries: nextSelection,
-          processingStatus: 'idle',
-          buildStartedAt: undefined,
-          buildFinishedAt: undefined,
-          buildElapsedMs: 0,
-          buildResumedAt: undefined,
-          stageElapsedMs: 0,
-          stageResumedAt: undefined,
-          stageElapsedStageId: undefined,
-          stageElapsedByStage: {},
         } as Record<string, unknown>,
       });
+      await shapeMutationAPIImpl.deleteBuildSession(nodeId);
     } catch (error) {
       console.warn('[ShapeCountrySelectionStep] failed to invalidate build after selection change', error);
     }

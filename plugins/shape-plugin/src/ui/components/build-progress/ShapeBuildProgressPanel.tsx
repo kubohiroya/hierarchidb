@@ -482,6 +482,10 @@ const BuildProgressStageContent = ({
       return acc;
     }, [])
   ), [orderedTasks]);
+  const hasRunningTask = useMemo(
+    () => orderedTasks.some((task) => task.status === 'running'),
+    [orderedTasks],
+  );
   const upTargetIndex = useMemo(() => {
     if (currentIndex == null) return null;
     for (let i = activeTargetIndices.length - 1; i >= 0; i -= 1) {
@@ -504,10 +508,12 @@ const BuildProgressStageContent = ({
     && currentIndex !== null
     && currentIndex === requestedTargetIndex;
   const showUpArrow = !isScrollTargetReached
+    && hasRunningTask
     && upTargetIndex !== null
     && currentIndex !== null
     && upTargetIndex < currentIndex;
   const showDownArrow = !isScrollTargetReached
+    && hasRunningTask
     && downTargetIndex !== null
     && currentIndex !== null
     && currentIndex < downTargetIndex;
@@ -647,11 +653,9 @@ const BuildProgressStageContent = ({
 export const ShapeBuildProgressPanel = ({
   data,
   nodeId,
-  onChange,
 }: {
   data?: Partial<ShapeEntity>;
   nodeId?: NodeId;
-  onChange?: (patch: Partial<ShapeEntity>) => void;
 }) => {
   const {
     t,
@@ -694,21 +698,6 @@ export const ShapeBuildProgressPanel = ({
     handleConfirmStart,
   } = useShapeBuildProgressPanel({ data, nodeId });
 
-  const resetSessionDraft = useCallback(() => {
-    onChange?.({
-      ...(data ?? {}),
-      processingStatus: 'idle',
-      buildStartedAt: undefined,
-      buildFinishedAt: undefined,
-      buildElapsedMs: 0,
-      buildResumedAt: undefined,
-      stageElapsedMs: 0,
-      stageResumedAt: undefined,
-      stageElapsedStageId: undefined,
-      stageElapsedByStage: {},
-    });
-  }, [data, onChange]);
-
   const {
     counts,
     resultCounts,
@@ -724,7 +713,7 @@ export const ShapeBuildProgressPanel = ({
     handleDeleteVTCache,
     handleDeleteMetadata,
     handleResetSession,
-  } = useShapeBuildCacheActions({ nodeId, draft: data, onResetSession: resetSessionDraft });
+  } = useShapeBuildCacheActions({ nodeId });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
@@ -905,9 +894,7 @@ export const ShapeBuildProgressPanel = ({
 
   const buildTimingSummary = useCallback((stageId: string) => {
     const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
-    const persistedCompletedElapsedMs = data?.stageElapsedByStage?.[stageId];
-    const completedElapsedMs = summary.completedStageElapsedMs[stageId]
-      ?? persistedCompletedElapsedMs;
+    const completedElapsedMs = summary.completedStageElapsedMs[stageId];
     const elapsed = formatInlineDuration(
       isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
     );
@@ -943,7 +930,6 @@ export const ShapeBuildProgressPanel = ({
       </Box>
     );
   }, [
-    data?.stageElapsedByStage,
     formatInlineDuration,
     summary.completedStageElapsedMs,
     summary.stageElapsedMs,

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
@@ -20,6 +20,7 @@ import {
 import { useVTConfigSection } from './useVTConfigSection.ts';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import type { ShapeEntity } from '../../../common/types/index.js';
+import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 /**
  * Processing configuration step for Shape plugin.
@@ -51,19 +52,6 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
       ),
     };
   }, [heapPressure, t]);
-  const resetSession = () => {
-    onChange({
-      processingStatus: 'idle',
-      buildStartedAt: undefined,
-      buildFinishedAt: undefined,
-      buildElapsedMs: 0,
-      buildResumedAt: undefined,
-      stageElapsedMs: 0,
-      stageResumedAt: undefined,
-      stageElapsedStageId: undefined,
-      stageElapsedByStage: {},
-    });
-  };
   const filteringPreviewImages = useMemo(() => ({
     weak: filteringLowUrl,
     medium: filteringMediumUrl,
@@ -72,11 +60,9 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   const { update: updateVTConfig } = useVTConfigSection({ buildConfig: config, onChange: handleChange });
   const fetchState = useFetchConfigSection({
     config,
-    draft: data,
     nodeId: nodeId as NodeId,
     disabled,
     onChange: handleChange,
-    onResetSession: resetSession,
   });
 
   return (
@@ -138,7 +124,29 @@ const ShapeBuildConfigRunningNotice: React.FC = () => {
 };
 
 export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = (props) => {
-  const isBuildRunning = props.data?.processingStatus === 'processing';
+  const [sessionStatus, setSessionStatus] = useState<string | null>(null);
+  useEffect(() => {
+    const nodeId = props.nodeId as NodeId | undefined;
+    if (!nodeId) {
+      setSessionStatus(null);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const session = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+      if (cancelled) return;
+      setSessionStatus(session?.status ?? null);
+    };
+    void load();
+    const timer = window.setInterval(() => {
+      void load();
+    }, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [props.nodeId]);
+  const isBuildRunning = sessionStatus === 'running';
   if (isBuildRunning) {
     return <ShapeBuildConfigRunningNotice />;
   }

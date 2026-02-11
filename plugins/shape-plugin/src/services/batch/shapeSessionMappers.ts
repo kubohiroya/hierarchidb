@@ -20,6 +20,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isNumberRecord = (value: unknown): value is Record<string, number> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isNumber(entry));
+};
+
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   value === 'queued'
   || value === 'running'
@@ -141,6 +146,8 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     stageStartedAt: session.stageStartedAt,
     stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
+    elapsedMs: session.elapsedMs,
+    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
   };
 };
 
@@ -173,6 +180,11 @@ export const toBuildSessionUpdates = (
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
   if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
+  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
+  if (updates.elapsedByStage !== undefined) {
+    if (!isNumberRecord(updates.elapsedByStage)) return null;
+    next.elapsedByStage = updates.elapsedByStage;
+  }
   return next;
 };
 
@@ -198,6 +210,8 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   stageStartedAt: session.stageStartedAt,
   stageHeartbeatAt: session.stageHeartbeatAt,
   stageId: session.stageId,
+  elapsedMs: session.elapsedMs,
+  elapsedByStage: session.elapsedByStage,
 });
 
 export const toShapeBuildSessionUpdates = (
@@ -226,6 +240,8 @@ export const toShapeBuildSessionUpdates = (
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
   if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
+  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
+  if (updates.elapsedByStage !== undefined) next.elapsedByStage = updates.elapsedByStage;
   return next;
 };
 

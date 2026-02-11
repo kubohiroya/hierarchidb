@@ -71,6 +71,8 @@ export interface EphemeralBuildSessionRecord {
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
+  elapsedMs?: number;
+  elapsedByStage?: Record<string, number>;
 }
 
 export interface EphemeralBuildTaskRecord {
