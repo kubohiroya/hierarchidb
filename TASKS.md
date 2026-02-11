@@ -44,6 +44,7 @@
 - #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
 - #206 / `codex/refactor/ephemeral-phased-remove-cache-meta` / start: 2026-02-12 02:04 JST
 - #207 / `codex/refactor/unify-ephemeral-db` / start: 2026-02-12 02:32 JST
+- #209 / `codex/fix/shape/build-session-restart-from-completed` / start: 2026-02-12 03:21 JST
 
 ### Blocked
 
@@ -51,6 +52,17 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 07:32 JST #209 Reset session 実行後に `Completed/Error` が残留する原因は、`plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts` の `handleResetSession` が session reset のみで task queue を削除していなかったこと。発生範囲は同ファイルの reset 経路（`handleResetSession`）。修正として `deleteTasksByNode` を追加し、reset 時に task queue を削除してから artifacts/session をクリアするよう変更。回帰テスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` を追加。
+- done: 2026-02-12 07:32 JST 検証完了（`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` すべて exit 0）。
+- update: 2026-02-12 07:15 JST #209 追加調査で、`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の `saveDraftBeforeBuild` が `buildConfig` は保存する一方で `selectedArrayByCountries` を draft へ反映しておらず、worker 側 `startBatchProcess` が selection 無しと判定して `Shape batch session requires download task payloads or selection` を返していたことを確認。発生範囲は同ファイルの draft 保存処理（`save-draft` payload 組み立て）。
+- update: 2026-02-12 07:15 JST 修正として `createBuildStartDraftData`（`plugins/shape-plugin/src/ui/components/build-progress/createBuildStartDraftData.ts`）を追加し、start 時 draftData を `patch -> liveData -> currentDraftData` 優先で組み立てるよう変更。`useShapeBuildStep.ts` は同 helper を利用する実装に差し替え、`selectedArrayByCountries` 欠落を防止。回帰テスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/createBuildStartDraftData.unit.test.ts` を追加。
+- done: 2026-02-12 07:15 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/createBuildStartDraftData.unit.test.ts` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/shouldReuseTaskQueueOnStart.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はすべて exit 0）。
+- update: 2026-02-12 03:30 JST #209 の原因は `plugins/shape-plugin/src/worker/api.ts` の `startBatchProcess` が `previousSession.status='completed'` でも既存 task queue を再利用していたこと。発生範囲は同ファイルの `count-existing-tasks` 以降（`resumeExistingTasks` 判定〜pipeline dispatch）で、完了済みキューを引き継ぐと start 直後にタスク生成なし完了へ遷移していた。
+- update: 2026-02-12 03:30 JST 修正として `shouldReuseTaskQueueOnStart`（`plugins/shape-plugin/src/worker/shouldReuseTaskQueueOnStart.ts`）を追加し、`completed` 起点では既存 task queue を `deleteTasksByNode` でクリアしてから再シードするよう変更。適用範囲は `plugins/shape-plugin/src/worker/api.ts` と上記 helper、およびユニットテスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/shouldReuseTaskQueueOnStart.unit.test.ts`。
+- done: 2026-02-12 03:30 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/shouldReuseTaskQueueOnStart.unit.test.ts` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` すべて exit 0）。
+- update: 2026-02-12 03:21 JST Issue `fix/shape/build-session-restart-from-completed` を起票し `https://github.com/kubohiroya/hierarchidb/issues/209` を作成。
+- update: 2026-02-12 03:21 JST Issue #209 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 03:21 JST ブランチ `codex/fix/shape/build-session-restart-from-completed` を作成して着手。
 - update: 2026-02-12 03:34 JST #207 で DB 名を修正（`ephemeralShapeDB -> getDBName('shape-ephemeral')`, `ephemeralRouteDB -> getDBName('route-ephemeral')`）。`ephemeral` 単一名への退行を解消。
 - update: 2026-02-12 03:34 JST API 名称統一として `HidbEphemeralDB` / `hidbEphemeralDB` / `EphemeralGisDB` / `getEphemeralRouteDB` を撤去し、`EphemeralDB` / `EphemeralShapeDB` / `EphemeralRouteDB` / `getEphemeralRouteVectorTileDB` へ統一。
 - done: 2026-02-12 03:34 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。
