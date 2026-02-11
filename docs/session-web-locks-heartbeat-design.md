@@ -1,7 +1,7 @@
 # Web Locks API ベースの Build Session 監視設計（Heartbeat 置換案）
 
 ## 目的
-BroadcastChannel による heartbeat を Web Locks API と共有ストレージ（Dexie/IndexedDB）で置換し、
+BroadcastChannel による heartbeat を Web Locks API と共有ストレージで置換し、
 Build セッションの **実行タブ判定** と **停止/サスペンド判定** の誤検知を減らす。
 
 ## 現状の役割整理（BroadcastChannel）
@@ -13,20 +13,14 @@ Build セッションの **実行タブ判定** と **停止/サスペンド判�
 
 ## 置換後の基本方針
 - **排他制御** は Web Locks API（`navigator.locks`）で実施
-- **Heartbeat** は IndexedDB に記録し、**他タブは pull で参照**
+- **Heartbeat** は軽量ストレージに記録し、**他タブは pull で参照**
 - **unexpected（停止）判定**は「processing なのに lock が free」を基準にする
 - **suspend 判定**は「lock は held だが heartbeat が stale or tab が hidden/frozen」
 
-## データスキーマ（Dexie）
-DB は既存 `hdb-session-semaphore` に統合（version bump）想定。
+## データスキーマ（補足）
+`hdb-session-semaphore`（Dexie/IndexedDB）は廃止し、DB依存を持たない構成へ移行する。
 
 ```ts
-// Dexie schema
-db.version(2).stores({
-  semaphores: '&key, ownerId, expiresAt',
-  heartbeats: '&sessionId, updatedAt, expiresAt, tabId',
-});
-
 // Record
 type HeartbeatRecord<TStatus = unknown, TProgress = unknown> = {
   sessionId: string;
@@ -46,7 +40,6 @@ type HeartbeatRecord<TStatus = unknown, TProgress = unknown> = {
 - `getTabId()`
 - `readActiveSessionId() / writeActiveSessionId() / clearActiveSessionId()`
 - `tryAcquireSessionLock(key)`（Web Locks）
-- `tryAcquireSemaphore(key, ownerId, ttlMs?)`（Dexie）
 
 ### BroadcastChannel API は廃止
 - `openChannel()`

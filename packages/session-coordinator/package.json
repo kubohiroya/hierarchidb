@@ -16,9 +16,7 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {
-    "dexie": "^4.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "typescript": "workspace:^5.9.3"
   }

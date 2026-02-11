@@ -245,7 +245,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       channelName: 'sessions',
       pollIntervalTimeout: 3000,
       quietThresholdTimeout: 5000,
-      semaphoreTtlTimeout: 10000,
     })
   ), []);
   const activeNodeId = nodeId ?? null;

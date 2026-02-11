@@ -97,7 +97,6 @@ export const useRouteBuildSessionLifecycle = ({
       channelName: 'sessions',
       pollIntervalTimeout: 3000,
       quietThresholdTimeout: 5000,
-      semaphoreTtlTimeout: 10000,
     })
   ), []);
   const [status, setStatus] = useState<BuildStatus>('idle');

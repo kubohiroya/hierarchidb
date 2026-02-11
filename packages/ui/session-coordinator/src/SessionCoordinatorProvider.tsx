@@ -18,7 +18,7 @@ export const SessionCoordinatorProvider = ({ children, options }: SessionCoordin
     options?.channelName,
     options?.pollIntervalTimeout,
     options?.quietThresholdTimeout,
-    options?.semaphoreTtlTimeout,
+    options?.heartbeatStorage,
   ]);
   return (
     <SessionCoordinatorContext.Provider value={coordinator}>

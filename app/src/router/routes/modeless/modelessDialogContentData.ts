@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeFeatureMetadata,
-  ShapeFeatureRecord,
   ShapeTransformErrorRecord,
 } from '@hierarchidb/shape-api';
 import type { RouteLineString } from '@hierarchidb/route-api';
@@ -61,13 +60,48 @@ export const buildColumns = (names: string[]): GridColumn[] =>
     sortable: true,
   }));
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
+const resolveShapeDisplayName = (feature: ShapeFeatureMetadata): string => (
+  feature.admin2Name
+  ?? feature.admin1Name
+  ?? feature.admin0Name
+  ?? feature.countryName
+  ?? ''
+);
 
-const resolveGeometryType = (geometry: unknown): string => {
-  if (!isRecord(geometry)) return '';
-  const type = geometry.type;
-  return typeof type === 'string' ? type : '';
+const resolveShapeAdminName = (feature: ShapeFeatureMetadata): string => {
+  if (feature.adminLevel === 2) {
+    return feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
+  }
+  if (feature.adminLevel === 1) {
+    return feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
+  }
+  if (feature.adminLevel === 0) {
+    return feature.admin0Name ?? feature.countryName ?? '';
+  }
+  return feature.admin2Name ?? feature.admin1Name ?? feature.admin0Name ?? feature.countryName ?? '';
+};
+
+const resolveShapeAdminCode = (feature: ShapeFeatureMetadata): string => {
+  if (feature.adminLevel === 2) {
+    return feature.admin2Code ?? feature.admin1Code ?? feature.admin0Code ?? '';
+  }
+  if (feature.adminLevel === 1) {
+    return feature.admin1Code ?? feature.admin0Code ?? '';
+  }
+  if (feature.adminLevel === 0) {
+    return feature.admin0Code ?? '';
+  }
+  return feature.admin2Code ?? feature.admin1Code ?? feature.admin0Code ?? '';
+};
+
+const isVisibleShapeFeature = (
+  feature: ShapeFeatureMetadata,
+  visibleIdSet: Set<string | number>,
+): boolean => {
+  const metadataId = String(feature.id);
+  if (visibleIdSet.has(metadataId)) return true;
+  const featureId = String(feature.featureId ?? '');
+  return featureId.length > 0 && visibleIdSet.has(featureId);
 };
 
 export const extractColumnNames = (columns: Array<unknown> | undefined | null): string[] => {
@@ -115,17 +149,17 @@ export const useShapeTableData = (
       try {
         await bridgeRef.current.initialize();
         const query = await bridgeRef.current.getShapeQueryAPI();
-        const collection = await query.listFeatures(nodeId);
+        const collection = await query.listFeatureMetadata(nodeId);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
         const visibleIdSet = filterByViewport ? new Set(visibleIds ?? []) : null;
         let totalRows = 0;
-        let items: ShapeFeatureRecord[] = [];
+        let items: ShapeFeatureMetadata[] = [];
         if (filterByViewport) {
           if (!visibleIdSet || visibleIdSet.size === 0) {
             totalRows = 0;
             items = [];
           } else {
-            const filtered = collection.filter((feature) => visibleIdSet.has(feature.id));
+            const filtered = collection.filter((feature) => isVisibleShapeFeature(feature, visibleIdSet));
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
@@ -133,14 +167,14 @@ export const useShapeTableData = (
           totalRows = collection.length;
           items = collection.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
         }
-        const rows = items.map((feature: ShapeFeatureRecord) => ({
-          id: feature.id,
-          name: feature.name ?? '',
+        const rows = items.map((feature: ShapeFeatureMetadata) => ({
+          id: feature.featureId ?? feature.id,
+          name: resolveShapeDisplayName(feature),
           countryCode: feature.countryCode ?? '',
           adminLevel: feature.adminLevel ?? '',
           area: feature.area ?? '',
-          population: feature.population ?? '',
-          geometryType: resolveGeometryType(feature.geometry),
+          population: '',
+          geometryType: '',
         }));
         if (!cancelled) {
           setState((prev) => ({
@@ -605,9 +639,9 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
       featureId: row.featureId,
       countryName: row.countryName,
       countryCode: row.countryCode,
-      adminName: row.adminName,
+      adminName: resolveShapeAdminName(row),
       adminLevel: row.adminLevel,
-      adminCode: row.adminCode,
+      adminCode: resolveShapeAdminCode(row),
       dataSource: row.dataSource,
       createdAt: row.createdAt,
       vertexCount: row.vertexCount,
