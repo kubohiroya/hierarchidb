@@ -54,7 +54,6 @@ export interface EphemeralBuildSessionRecord {
   stopReason?: StopReason;
   stage?: BuildStage;
   progress?: ShapeBuildProgressSummary | number;
-  config?: unknown;
   selectedArrayByCountries?: Record<string, boolean[]>;
   stages?: Record<BuildStage, EphemeralStageStatus>;
   resourceUsage?: unknown;
@@ -71,6 +70,8 @@ export interface EphemeralBuildSessionRecord {
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
+  elapsedMs?: number;
+  elapsedByStage?: Record<string, number>;
 }
 
 export interface EphemeralBuildTaskRecord {
@@ -118,6 +119,8 @@ export interface EphemeralFetchCacheRecord {
   timestamp: number;
 }
 
+export type EphemeralFetchCacheMetaRecord = Omit<EphemeralFetchCacheRecord, 'data'>;
+
 export interface EphemeralTransformCacheRecord {
   id: string;
   nodeId: NodeId;
@@ -134,6 +137,8 @@ export interface EphemeralTransformCacheRecord {
   tolerance: number;
   timestamp: number;
 }
+
+export type EphemeralTransformCacheMetaRecord = Omit<EphemeralTransformCacheRecord, 'data'>;
 
 export interface EphemeralTransformErrorRecord extends ShapeTransformErrorRecord {
   domainType?: EphemeralDomainType;
@@ -162,7 +167,11 @@ export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
     + ', [domainType+status]',
   fetchCache:
     '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  fetchCacheMeta:
+    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   transformCache:
+    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+  transformCacheMeta:
     '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
   transformErrors:
     '&id, nodeId, domainType',

@@ -5,7 +5,6 @@ export type ShapeBuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'co
 import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
 export interface ShapeBuildSessionRecord<
-  Config = unknown,
   Progress = ShapeBuildProgressSummary,
   StageMap = Record<string, unknown>,
   ResourceUsage = Record<string, unknown>
@@ -13,7 +12,6 @@ export interface ShapeBuildSessionRecord<
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: Config;
   selectedArrayByCountries?: Record<string, boolean[]>;
   startedAt: number;
   updatedAt: number;
@@ -31,6 +29,8 @@ export interface ShapeBuildSessionRecord<
   stageStartedAt?: number;
   stageHeartbeatAt?: number;
   stageId?: string;
+  elapsedMs?: number;
+  elapsedByStage?: Record<string, number>;
 }
 
 export interface ShapeFeatureRecord {

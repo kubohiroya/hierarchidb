@@ -34,7 +34,6 @@ import {
 } from '../utils/chunkStore.js';
 import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
 import {
-  isBuildProcessConfig,
   toBuildSessionRecord,
   toBuildSessionUpdates,
   toProgressInfo,
@@ -94,6 +93,11 @@ const isSelectedArrayByCountries = (value: unknown): value is Record<string, boo
   ));
 };
 
+const isNumberRecord = (value: unknown): value is Record<string, number> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isNumber(entry));
+};
+
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
   if (!isRecord(value)) return null;
   const fetch = value.fetch;
@@ -126,7 +130,6 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
 const toBuildSessionRecordFromEphemeral = (
   session: EphemeralBuildSessionRecord
 ): BuildSessionRecord | null => {
-  if (!isBuildProcessConfig(session.config)) return null;
   if (!isProgressSummary(session.progress)) return null;
   const stages = readStageMap(session.stages);
   if (!stages) return null;
@@ -135,7 +138,6 @@ const toBuildSessionRecordFromEphemeral = (
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
       ? session.selectedArrayByCountries
       : undefined,
@@ -155,6 +157,8 @@ const toBuildSessionRecordFromEphemeral = (
     stageStartedAt: session.stageStartedAt,
     stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
+    elapsedMs: session.elapsedMs,
+    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
   };
 };
 
@@ -210,7 +214,7 @@ const toShapeVectorTileRecord = (tile: VectorTileRecord): ShapeVectorTileRecord 
   version: tile.version,
 });
 
-const isTransformCacheComplete = (record: ShapeTransformCache | null | undefined): record is ShapeTransformCache => (
+const isTransformCacheComplete = <T extends { timestamp: number }>(record: T | null | undefined): record is T => (
   Boolean(record && record.timestamp > 0)
 );
 
@@ -713,7 +717,7 @@ export class EphemeralShapeApiImpl {
   }
 
   async countFetchCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count();
+    return ephemeralShapeDB.fetchCacheMeta.where('nodeId').equals(nodeId).count();
   }
 
   async putFetchCache(buffer: ShapeFetchCache): Promise<void> {
@@ -752,8 +756,8 @@ export class EphemeralShapeApiImpl {
   }
 
   async countTransformCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => (
-      ephemeralShapeDB.transformCache
+    return ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCacheMeta, async () => (
+      ephemeralShapeDB.transformCacheMeta
         .where('nodeId')
         .equals(nodeId)
         .filter((record) => isTransformCacheComplete(record))

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 
@@ -72,6 +72,10 @@ const makeStore = () => {
   });
   return store;
 };
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('ShapeBuildProgressPanel', () => {
   it('shows detailed error message from failed tasks', async () => {
@@ -289,16 +293,16 @@ describe('ShapeBuildProgressPanel', () => {
     });
   });
 
-  it('scrolls to queued task from down arrow when running task is absent', async () => {
+  it('scrolls to queued task from down arrow when running task exists', async () => {
     const store = makeStore();
-    const completedTask: ShapeBuildTaskSummary = {
-      taskId: 'task-completed-0',
+    const runningTask: ShapeBuildTaskSummary = {
+      taskId: 'task-running-0',
       nodeId: 'node-1',
       stage: 'fetch',
       taskType: 'fetch',
-      status: 'completed',
-      progress: 100,
-      message: 'Completed',
+      status: 'running',
+      progress: 10,
+      message: 'Running',
     } as ShapeBuildTaskSummary;
     const queuedTask: ShapeBuildTaskSummary = {
       taskId: 'task-queued-1',
@@ -309,13 +313,13 @@ describe('ShapeBuildProgressPanel', () => {
       progress: 0,
       message: 'Queued',
     } as ShapeBuildTaskSummary;
-    store.set(tasksByStageAtom, { fetch: [completedTask, queuedTask], transform: [], vt: [] });
+    store.set(tasksByStageAtom, { fetch: [runningTask, queuedTask], transform: [], vt: [] });
     store.set(taskProgressSummaryAtom, {
       stageLabel: 'Fetch',
-      taskLabel: 'Queued',
+      taskLabel: 'Running',
       taskUnitLabel: 'Tasks',
       overallProgress: 0,
-      completed: 1,
+      completed: 0,
       total: 2,
       failed: 0,
       skipped: 0,
@@ -346,6 +350,141 @@ describe('ShapeBuildProgressPanel', () => {
       expect(target?.stageId).toBe('fetch');
       expect(target?.taskId).toBe('task-queued-1');
       expect(typeof target?.requestedAt).toBe('number');
+    });
+  });
+
+  it('hides both arrows when no running task exists and visible tasks are queued', async () => {
+    const store = makeStore();
+    const queuedTaskA: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-a',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    const queuedTaskB: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-b',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksByStageAtom, { fetch: [queuedTaskA, queuedTaskB], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Queued',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 2,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+
+    await waitFor(() => {
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+    });
+  });
+
+  it('hides both arrows when viewport tasks are queued even if running task exists outside viewport', async () => {
+    const store = makeStore();
+    const queuedTop: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-top',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    const queuedVisible: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-visible',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    const runningBottom: ShapeBuildTaskSummary = {
+      taskId: 'task-running-bottom',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'running',
+      progress: 10,
+      message: 'Running',
+    } as ShapeBuildTaskSummary;
+    const queuedBottom: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-bottom',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksByStageAtom, { fetch: [queuedTop, queuedVisible, runningBottom, queuedBottom], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 5,
+      completed: 0,
+      total: 4,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+    store.set(taskViewportRangeAtom, {
+      stageId: 'fetch',
+      startTaskId: 'task-queued-visible',
+      endTaskId: 'task-queued-visible',
+      startIndex: 1,
+      endIndex: 1,
+      total: 4,
+      updatedAt: 1,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+
+    await waitFor(() => {
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
     });
   });
 

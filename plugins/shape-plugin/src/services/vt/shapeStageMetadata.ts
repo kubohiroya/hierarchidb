@@ -7,7 +7,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 
@@ -204,12 +204,15 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const lookup = buildCountryLookup(metadata);
   const now = Date.now();
-  const existingRows = await shapeQueryAPIImpl.listDataSourceMetadata(params.nodeId);
+  const existingRows = await params.shapeDb.dataSourceMetadata
+    .where('nodeId')
+    .equals(String(params.nodeId))
+    .toArray() as ShapeDataSourceMetadata[];
   const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
 
   const origins = new Map<string, DataSourceMetadata>();
 
-  const fetchCaches = await params.shapeStore.fetchCache.where('nodeId').equals(params.nodeId).toArray();
+  const fetchCaches = await params.shapeStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).toArray();
   fetchCaches.forEach((buffer) => {
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
@@ -227,7 +230,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const transformCaches = await shapeQueryAPIImpl.listTransformCaches(params.nodeId);
+  const transformCaches = await params.shapeStore.transformCacheMeta.where('nodeId').equals(params.nodeId).toArray();
   transformCaches.forEach((buffer) => {
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);

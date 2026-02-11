@@ -70,51 +70,6 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSe
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(16).stores({
-      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
-      transformCache: '&id, nodeId',
-      sessions: '&nodeId',
-      tileIdToBufferRelations: '&id, nodeId, bufferId',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      transformErrors: '&id, nodeId',
-    }).upgrade((tx) =>
-      tx.table('batchTasks')
-        .toCollection()
-        .modify((task) => {
-          if (task.status === 'waiting') {
-            task.status = 'queued';
-          }
-        })
-    );
-    this.version(17).stores({
-      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
-      transformCache: '&id, nodeId',
-      sessions: '&nodeId',
-      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      transformErrors: '&id, nodeId',
-    });
-    this.version(18).stores({
-      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
-      transformCache: '&id, nodeId, [nodeId+bandIndex]',
-      sessions: '&nodeId',
-      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      transformErrors: '&id, nodeId',
-    }).upgrade(async (tx) => {
-      await tx.table('transformCache').clear();
-      await tx.table('tileIdToBufferRelations').clear();
-    });
-    // Index-only upgrade; keep existing caches to avoid unnecessary rebuild.
-    this.version(19).stores({
-      fetchCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-      transformCache: '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
-      sessions: '&nodeId',
-      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      transformErrors: '&id, nodeId',
-    });
-    // Index-only upgrade for stage queries.
     this.version(20).stores({
       fetchCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
       transformCache: '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',

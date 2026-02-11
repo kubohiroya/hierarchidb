@@ -32,9 +32,64 @@ import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/ta
 
 const isDev = import.meta.env.DEV;
 const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
+const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 
 const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
   console.log(`${START_RESUME_TRACE_PREFIX} ${event}`, payload ?? {});
+};
+
+const formatRunningResidueValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized.replace(/\s+/g, '_') : '-';
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+};
+
+const logRunningResiduePanel = (
+  keyword: 'UI_MISMATCH' | 'UI_MISMATCH_RESOLVED',
+  payload: {
+    nodeId: string | null;
+    stage: string;
+    buildStatus: BuildStatus;
+    activeStageId: string | null;
+    indicatorIsRunning: boolean;
+    runningCount: number;
+    runningTaskIds: string[];
+    reasons: string[];
+  },
+): void => {
+  if (!isDev) return;
+  const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
+    + ` nodeId=${formatRunningResidueValue(payload.nodeId)}`
+    + ` stage=${formatRunningResidueValue(payload.stage)}`
+    + ` taskId=${formatRunningResidueValue(payload.runningTaskIds.join(','))}`
+    + ` sequence=- prevStatus=- nextStatus=-`
+    + ` source=ui`
+    + ` eventType=aggregate`
+    + ` reason=${formatRunningResidueValue(payload.reasons.join(','))}`
+    + ` runningCount=${formatRunningResidueValue(payload.runningCount)}`
+    + ` queuedCount=- totalCount=-`
+    + ` stageIsRunning=${formatRunningResidueValue(payload.indicatorIsRunning)}`
+    + ` buildStatus=${formatRunningResidueValue(payload.buildStatus)}`
+    + ` activeStageId=${formatRunningResidueValue(payload.activeStageId)}`
+    + ` timestamp=${Date.now()}`;
+  console.log(line, payload);
+};
+
+export const shouldUpdateElapsedSnapshot = (params: {
+  snapshot: { elapsedMs: number; capturedAt: number } | null;
+  totalElapsedMs: number;
+  buildStatus: BuildStatus;
+}): boolean => {
+  const { snapshot, totalElapsedMs, buildStatus } = params;
+  if (!snapshot) return true;
+  if (buildStatus !== 'running') return true;
+  // Reset Session may zero elapsed before build status settles to idle/paused.
+  if (totalElapsedMs === 0) return true;
+  return totalElapsedMs > snapshot.elapsedMs;
 };
 
 export const useBuildProgressPanelState = (params: {
@@ -70,27 +125,46 @@ export const useBuildProgressPanelState = (params: {
   } | null>(null);
   const completionKeyRef = useRef<string | null>(null);
   const totalElapsedSnapshotRef = useRef<{ elapsedMs: number; capturedAt: number } | null>(null);
+  const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
   const crashInsight = useBuildCrashInsight({
     draft: params.data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
+    status: summary.buildStatus,
   });
   const stageTaskScan = useMemo(() => {
-    return stages.reduce<Record<string, { hasRunning: boolean; failedTask: ShapeBuildTaskSummary | null }>>((acc, stage) => {
+    return stages.reduce<Record<string, {
+      hasRunning: boolean;
+      failedTask: ShapeBuildTaskSummary | null;
+      runningCount: number;
+      queuedCount: number;
+      totalCount: number;
+    }>>((acc, stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
       let hasRunning = false;
       let failedTask: ShapeBuildTaskSummary | null = null;
+      let runningCount = 0;
+      let queuedCount = 0;
       for (const task of stageTasks) {
+        if (task.status === 'running') {
+          runningCount += 1;
+        }
+        if (task.status === 'queued') {
+          queuedCount += 1;
+        }
         if (!hasRunning && task.status === 'running') {
           hasRunning = true;
         }
         if (!failedTask && (task.status === 'failed' || task.status === 'regression')) {
           failedTask = task;
         }
-        if (hasRunning && failedTask) {
-          break;
-        }
       }
-      acc[stage.id] = { hasRunning, failedTask };
+      acc[stage.id] = {
+        hasRunning,
+        failedTask,
+        runningCount,
+        queuedCount,
+        totalCount: stageTasks.length,
+      };
       return acc;
     }, {});
   }, [stages, tasksByStage]);
@@ -299,7 +373,11 @@ export const useBuildProgressPanelState = (params: {
 
   useEffect(() => {
     const snapshot = totalElapsedSnapshotRef.current;
-    if (!snapshot || summary.totalElapsedMs > snapshot.elapsedMs || summary.buildStatus !== 'running') {
+    if (shouldUpdateElapsedSnapshot({
+      snapshot,
+      totalElapsedMs: summary.totalElapsedMs,
+      buildStatus: summary.buildStatus,
+    })) {
       totalElapsedSnapshotRef.current = {
         elapsedMs: summary.totalElapsedMs,
         capturedAt: elapsedTickMs,
@@ -309,6 +387,9 @@ export const useBuildProgressPanelState = (params: {
 
   const liveTotalElapsedMs = useMemo(() => {
     const snapshot = totalElapsedSnapshotRef.current;
+    if (summary.buildStatus === 'running' && summary.totalElapsedMs === 0) {
+      return 0;
+    }
     if (!snapshot || summary.buildStatus !== 'running') {
       return summary.totalElapsedMs;
     }
@@ -343,8 +424,8 @@ export const useBuildProgressPanelState = (params: {
       ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
     if (!buildConfig) return undefined;
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
-      const isStageRunning = summary.buildStatus === 'running'
-        && Boolean(stageTaskScan[stage.id]?.hasRunning);
+      // Keep slot animation tied to actual task runtime, even if session status lags behind.
+      const isStageRunning = Boolean(stageTaskScan[stage.id]?.hasRunning);
       const maxConcurrent = (() => {
         switch (stage.id) {
           case 'fetch':
@@ -361,7 +442,88 @@ export const useBuildProgressPanelState = (params: {
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
       return acc;
     }, {});
-  }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
+  }, [params.data?.buildConfig, stageTaskScan, stages]);
+  useEffect(() => {
+    if (!isDev) return;
+    const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;
+    const nextSignatures = new Map<string, string>();
+    const previousSignatures = mismatchSignatureRef.current;
+    stages.forEach((stage) => {
+      const scan = stageTaskScan[stage.id];
+      const indicator = stageConcurrencyIndicators?.[stage.id];
+      const runningCount = scan?.runningCount ?? 0;
+      const indicatorIsRunning = Boolean(indicator?.isRunning);
+      const reasons: string[] = [];
+      if (summary.buildStatus === 'running' && indicatorIsRunning !== (runningCount > 0)) {
+        reasons.push('indicator_running_mismatch');
+      }
+      if (summary.buildStatus !== 'running' && runningCount > 0) {
+        reasons.push('running_while_build_not_running');
+      }
+      if (summary.buildStatus === 'running' && runningCount > 0 && activeStageId !== stage.id) {
+        reasons.push('running_stage_not_active');
+      }
+      if (summary.buildStatus === 'running' && activeStageId === stage.id && runningCount === 0) {
+        reasons.push('active_stage_without_running_task');
+      }
+      if (reasons.length === 0) {
+        if (previousSignatures.has(stage.id)) {
+          logRunningResiduePanel('UI_MISMATCH_RESOLVED', {
+            nodeId: nodeIdForLog,
+            stage: stage.id,
+            buildStatus: summary.buildStatus,
+            activeStageId,
+            indicatorIsRunning,
+            runningCount,
+            runningTaskIds: [],
+            reasons: ['resolved'],
+          });
+        }
+        return;
+      }
+      const runningTaskIds = (tasksByStage[stage.id] ?? [])
+        .filter((task) => task.status === 'running')
+        .slice(0, 8)
+        .map((task) => task.taskId);
+      const signature = [
+        summary.buildStatus,
+        activeStageId ?? '-',
+        runningCount,
+        indicatorIsRunning ? '1' : '0',
+        reasons.join('|'),
+        runningTaskIds.join('|'),
+      ].join('::');
+      nextSignatures.set(stage.id, signature);
+      if (previousSignatures.get(stage.id) === signature) {
+        return;
+      }
+      logRunningResiduePanel('UI_MISMATCH', {
+        nodeId: nodeIdForLog,
+        stage: stage.id,
+        buildStatus: summary.buildStatus,
+        activeStageId,
+        indicatorIsRunning,
+        runningCount,
+        runningTaskIds,
+        reasons,
+      });
+    });
+    mismatchSignatureRef.current = nextSignatures;
+  }, [
+    activeStageId,
+    resolvedNodeId,
+    stageConcurrencyIndicators,
+    stageTaskScan,
+    stages,
+    summary.buildStatus,
+    tasksByStage,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      mismatchSignatureRef.current = new Map();
+    };
+  }, []);
 
   const setLocalStartPendingImmediate = useCallback((next: boolean) => {
     flushSync(() => {

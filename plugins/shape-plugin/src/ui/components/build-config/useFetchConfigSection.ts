@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 import { useId } from 'react';
-import type { ShapeEntity } from '../../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -10,13 +9,12 @@ import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 type Args = {
   config: ShapeBuildConfig;
   nodeId: NodeId;
-  draft: Partial<ShapeEntity>;
   disabled?: boolean;
   onChange: (next: ShapeBuildConfig) => void;
   onResetSession?: () => void;
 };
 
-export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
+export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
   const baseFetchConfig = config.fetchConfig;
@@ -36,7 +34,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata,
-  } = useShapeBuildCacheActions({ nodeId, draft, disabled, onResetSession });
+  } = useShapeBuildCacheActions({ nodeId, disabled, onResetSession });
 
   const countUnit = t('processing.download.countUnit', '');
   const formatDeleteLabel = useCallback((label: string, count: number, unit = '') => (

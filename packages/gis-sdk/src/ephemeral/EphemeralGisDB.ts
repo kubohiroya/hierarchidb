@@ -25,9 +25,9 @@ export interface TransformCacheRecord {
   timestamp: number;
 }
 
-export interface BatchSessionMetadata<Config = unknown> {
+export interface BatchSessionMetadata<_LegacyConfig = never> {
   nodeId: NodeId;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'idle' | 'queued' | 'running' | 'paused' | 'completed' | 'failed';
   stage: EphemeralStage;
   progress: number;
   totalTasks: number;
@@ -35,7 +35,6 @@ export interface BatchSessionMetadata<Config = unknown> {
   failedTasks: number;
   startTime: number;
   endTime?: number;
-  config: Config;
   tableId?: string;
 }
 

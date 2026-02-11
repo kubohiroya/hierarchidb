@@ -20,6 +20,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isNumberRecord = (value: unknown): value is Record<string, number> => {
+  if (!isRecord(value)) return false;
+  return Object.values(value).every((entry) => isNumber(entry));
+};
+
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   value === 'queued'
   || value === 'running'
@@ -119,12 +124,10 @@ const toResourceUsageRecord = (usage: ResourceUsage | undefined): Record<string,
   usage ? { ...usage } : undefined;
 
 export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord | null => {
-  if (!isBuildProcessConfig(session.config)) return null;
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     selectedArrayByCountries: session.selectedArrayByCountries,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
@@ -141,6 +144,8 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     stageStartedAt: session.stageStartedAt,
     stageHeartbeatAt: session.stageHeartbeatAt,
     stageId: session.stageId,
+    elapsedMs: session.elapsedMs,
+    elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
   };
 };
 
@@ -150,10 +155,6 @@ export const toBuildSessionUpdates = (
   const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
-  if (updates.config !== undefined) {
-    if (!isBuildProcessConfig(updates.config)) return null;
-    next.config = updates.config;
-  }
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
   }
@@ -173,6 +174,11 @@ export const toBuildSessionUpdates = (
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
   if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
+  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
+  if (updates.elapsedByStage !== undefined) {
+    if (!isNumberRecord(updates.elapsedByStage)) return null;
+    next.elapsedByStage = updates.elapsedByStage;
+  }
   return next;
 };
 
@@ -180,7 +186,6 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   nodeId: session.nodeId,
   draftId: session.draftId,
   status: session.status,
-  config: session.config,
   selectedArrayByCountries: session.selectedArrayByCountries,
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
@@ -198,6 +203,8 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   stageStartedAt: session.stageStartedAt,
   stageHeartbeatAt: session.stageHeartbeatAt,
   stageId: session.stageId,
+  elapsedMs: session.elapsedMs,
+  elapsedByStage: session.elapsedByStage,
 });
 
 export const toShapeBuildSessionUpdates = (
@@ -206,7 +213,6 @@ export const toShapeBuildSessionUpdates = (
   const next: Partial<ShapeBuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
-  if (updates.config !== undefined) next.config = updates.config;
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
   }
@@ -226,6 +232,8 @@ export const toShapeBuildSessionUpdates = (
   if (updates.stageStartedAt !== undefined) next.stageStartedAt = updates.stageStartedAt;
   if (updates.stageHeartbeatAt !== undefined) next.stageHeartbeatAt = updates.stageHeartbeatAt;
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
+  if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
+  if (updates.elapsedByStage !== undefined) next.elapsedByStage = updates.elapsedByStage;
   return next;
 };
 

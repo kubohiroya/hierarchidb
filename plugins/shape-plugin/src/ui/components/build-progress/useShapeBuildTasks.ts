@@ -25,6 +25,33 @@ export interface UseShapeBuildTasksState {
 }
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
+const isDev = import.meta.env.DEV;
+const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
+const TASK_SNAPSHOT_RECONCILE_INTERVAL_MS = 5000;
+
+const isTaskInFlight = (task: ShapeBuildTaskSummary): boolean => (
+  task.status === 'running' || task.status === 'queued'
+);
+
+const logRunningResidueDrop = (payload: {
+  nodeId: string | null;
+  source: string;
+  eventType: string;
+  reason?: string;
+  taskId?: string | null;
+}): void => {
+  if (!isDev) return;
+  console.log(
+    `${RUNNING_RESIDUE_LOG_PREFIX} STALE_DROP`
+      + ` nodeId=${payload.nodeId ?? '-'}`
+      + ` source=${payload.source}`
+      + ` eventType=${payload.eventType}`
+      + ` taskId=${payload.taskId ?? '-'}`
+      + ` reason=${payload.reason ?? '-'}`
+      + ` timestamp=${Date.now()}`,
+    payload,
+  );
+};
 
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
@@ -39,6 +66,7 @@ export function useShapeBuildTasks(
   const handleSnapshotRef = useRef<(tasks: RawTaskSummary[]) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
   const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
+  const reconcileInFlightRef = useRef(false);
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
@@ -53,7 +81,12 @@ export function useShapeBuildTasks(
     syncLoadingRef,
     syncErrorRef,
     resetPending,
-  } = useShapeBuildTaskSync({ setTasks, setIsLoading, setError });
+  } = useShapeBuildTaskSync({
+    sessionNodeId: nodeId ? String(nodeId) : null,
+    setTasks,
+    setIsLoading,
+    setError,
+  });
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
@@ -83,27 +116,30 @@ export function useShapeBuildTasks(
       subscriptionRef.current = null;
     }
     resetPending();
+    const hadTasks = tasksRef.current.length > 0;
+    const hadError = errorRef.current !== null;
+    const wasLoading = isLoadingRef.current;
     if (!nodeId || !autoSubscribe) {
       syncTasksRef([]);
-      if (tasksRef.current.length > 0) {
+      if (hadTasks) {
         setTasks([]);
       }
-      if (errorRef.current !== null) {
+      if (hadError) {
         setError(null);
       }
-      if (isLoadingRef.current) {
+      if (wasLoading) {
         setIsLoading(false);
       }
       return;
     }
     syncTasksRef([]);
-    if (tasksRef.current.length > 0) {
+    if (hadTasks) {
       setTasks([]);
     }
-    if (errorRef.current !== null) {
+    if (hadError) {
       setError(null);
     }
-    if (!isLoadingRef.current) {
+    if (!wasLoading) {
       setIsLoading(true);
     }
     const subscriptionId = subscriptionIdRef.current + 1;
@@ -111,7 +147,16 @@ export function useShapeBuildTasks(
     let cancelled = false;
 
     const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
-      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
+      if (cancelled || subscriptionIdRef.current !== subscriptionId) {
+        logRunningResidueDrop({
+          nodeId: nodeId ? String(nodeId) : null,
+          source: 'subscription',
+          eventType: event.type,
+          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          reason: cancelled ? 'subscription_cancelled' : 'subscription_id_mismatch',
+        });
+        return;
+      }
       if (event.type === 'snapshot') {
         handleSnapshotRef.current(event.tasks);
         return;
@@ -148,12 +193,38 @@ export function useShapeBuildTasks(
 
     void start();
 
+    const reconcileSnapshot = async () => {
+      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
+      if (isLoadingRef.current) return;
+      if (!tasksRef.current.some((task) => isTaskInFlight(task))) return;
+      if (reconcileInFlightRef.current) return;
+      reconcileInFlightRef.current = true;
+      try {
+        const latestTasks = await bridgeRef.current.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
+        if (cancelled || subscriptionIdRef.current !== subscriptionId) {
+          return;
+        }
+        handleSnapshotRef.current(latestTasks as RawTaskSummary[]);
+      } catch (err) {
+        if (!cancelled && isDev) {
+          console.debug('[ShapeBuildStep] task snapshot reconcile skipped', err);
+        }
+      } finally {
+        reconcileInFlightRef.current = false;
+      }
+    };
+    const reconcileTimer = window.setInterval(() => {
+      void reconcileSnapshot();
+    }, TASK_SNAPSHOT_RECONCILE_INTERVAL_MS);
+
     return () => {
       cancelled = true;
+      window.clearInterval(reconcileTimer);
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
       }
+      reconcileInFlightRef.current = false;
     };
   }, [
     autoSubscribe,

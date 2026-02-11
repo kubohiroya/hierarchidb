@@ -301,12 +301,123 @@
 - ロールバック手順:
   - 上記 3 ファイルの差分を revert し、transform 削除時の従来セッション保持と startup snackbar 非表示へ戻す
 - 検証:
-  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+ - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
   - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
   - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 1 file / 5 tests passed)
 
+12. `refactor/shape/session-runtime-state-unification` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - shape ビルドのランタイム状態（status/elapsed/stopReason など）を `nodes(draftData)` ではなく `hidb-ephemeral.sessions` に統一する
+  - `ShapeBuildSessionRecord` / `BuildSessionRecord` から `config` を除去し、`config: unknown` 依存をなくす
+  - Start/Resume 中の `persistDraftPatch` 待機を解消し、セッション更新を非同期で継続できる
+  - shape-plugin の typecheck/build/test が成功する
+- 原因:
+  - Start/Resume 実行中に `persistDraftPatch` が `draftData` 更新を直列化しており、セッション状態保存待ちが UI 待機時間を増大させていた
+  - セッションに `config: unknown` を保持していたため、都度型ガードや fallback が必要で、runtime 状態の責務が分散していた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`（start/resume/pause・elapsed 永続化）
+  - `plugins/shape-plugin/src/worker/api.ts`（session snapshot・resume/start）
+  - `packages/shape-api/src/shapeDbTypes.ts` / `packages/shape-store/src/ShapeDB.ts` / `packages/runtime-worker/src/services/ShapeMutationService.ts` / `packages/runtime-worker/src/services/ShapeQueryService.ts`（session 型・変換）
+  - `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts` / `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`（ephemeral session 変換）
+- 修正方法と適用範囲:
+  - `useShapeBuildStep.ts` の `persistDraftPatch` 経路を撤去し、`shapeMutationAPIImpl.updateBuildSession` で `sessions` を直接更新
+  - worker 側の `BuildSessionRecord` 永続化から `config` を削除し、`BatchSession.config` は draft の `buildConfig` から都度構築
+  - `getProcessingStatus` は `tasks -> sessions` 順で判定し、`entity.processingStatus` fallback を撤去
+  - `steps-provider` / `useBuildCrashInsight` の status 判定を session 優先に調整
+  - 適用範囲は上記ファイル群のみ
+- ロールバック手順:
+  - 上記ファイル差分を revert し、`persistDraftPatch` を使った nodes 直書き + session `config` 保持の旧経路へ戻す
+- 検証:
+  - `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin build` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin test -- --run` (exit 0, 16 files passed / 2 skipped)
+
+13. `fix/shape/step5-stopped-fetch-timing-blink-loop` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: 12
+- 受け入れ基準:
+  - Step5 停止中に Fetch の `Elapsed` / `Remaining` 表示がブリンクしない
+  - `Maximum update depth exceeded`（`ShapeBuildAtomSync` 起点）が発生しない
+  - Running/Resume/Reset の挙動を維持する
+- 原因:
+  - `useShapeBuildStep.ts` で `timingStageId` を更新する effect が、停止中でも `resolvedTaskType`（fetch）へ復帰させる一方、`isElapsedResetState` effect が `null` へ戻す実装になっており、`fetch <-> null` の無限更新ループを発生させていた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- 修正方法と適用範囲:
+  - `timingStageId` 更新 effect に `isElapsedResetState` ガードを追加し、reset 状態では常に `null` を維持
+  - 停止中の fallback stage 選択を抑制し、`running` 時のみ `resolvedTaskType` を fallback 利用
+  - 適用範囲は上記ファイルのみ
+- ロールバック手順:
+  - 上記ファイル差分を revert し、従来の stage fallback ロジックへ戻す
+- 検証:
+  - `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin build` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 16 files passed / 2 skipped)
+
+14. `fix/shape/stage-summary-concurrency-indicator-running-condition` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: 13
+- 受け入れ基準:
+  - Fetch 実行中にステージサマリの `CircularProgress` が `indeterminate` で回転する
+  - 判定条件を「当該ステージに `running` タスクが存在するか」に一致させる
+  - 停止中・完了後の表示回帰を起こさない
+- 原因:
+  - `useBuildProgressPanelState.ts` の `stageConcurrencyIndicators` が `summary.buildStatus === 'running'` を前提条件にしており、セッション status が遅延して `paused/idle` のままでも実タスクが `running` な区間で `isRunning=false` になっていた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts`
+- 修正方法と適用範囲:
+  - `stageConcurrencyIndicators` の `isRunning` 判定を `stageTaskScan[stage.id].hasRunning` のみで決定するよう変更
+  - `summary.buildStatus` 依存を除去し、実タスク実行状態を優先
+  - 適用範囲は上記ファイルのみ
+- ロールバック手順:
+  - 上記ファイル差分を revert し、`summary.buildStatus==='running'` 前提の旧判定へ戻す
+- 検証:
+  - `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin build` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 16 files passed / 2 skipped)
+
+15. `fix/shape/fetch-transform-running-residue-ui-reconcile` — 完了 (2026-02-12)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: 14
+- 受け入れ基準:
+  - Fetch/Transform で update 取りこぼしが発生しても、UI の `running/queued` 残留が継続しない
+  - 購読中に in-flight task が存在する場合、一定間隔で authoritative snapshot を再取得して自己修復する
+  - 既存の task 同期ロジック（snapshot/update/delete）を壊さない
+- 原因:
+  - UI 側は event 駆動同期のみで、単発の update 取りこぼし時に `running/queued` 残留を自己修復する経路がなかった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`（既存同期ロジックとの整合確認）
+- 修正方法と適用範囲:
+  - `useShapeBuildTasks` に 5 秒間隔の snapshot reconcile を追加（in-flight task がある時のみ `getBuildTasks` 実行）
+  - 取得した snapshot を既存 `handleSnapshot` 経路へ投入し、UI state を authoritative task snapshot へ収束
+  - 適用範囲は `useShapeBuildTasks.ts` のみ
+- ロールバック手順:
+  - 上記ファイル差分を revert し、event-only 同期へ戻す
+- 検証:
+  - `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin build` (exit 0)
+  - `pnpm --filter @hierarchidb/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` (exit 0, 1 file / 10 tests passed)
+  - `pnpm --filter @hierarchidb/shape-plugin exec vitest run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 2 files / 12 tests passed)
+
 ## 今日は着手（運用ログ）
 
+- start: 2026-02-12 18:40 JST Fetch/Transform の task が completed 永続化後も UI で running/queued 残留する不具合の恒久対策に着手。
+- update: 2026-02-12 18:43 JST 原因は event-only 同期のため単発 update 取りこぼし時に自己修復できないこと。`useShapeBuildTasks.ts` に in-flight 中の定期 snapshot reconcile（5 秒）を追加。
+- blocked: 2026-02-12 18:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は Turbo 本体クラッシュ（report: `/var/folders/hw/tl0yhp05667b7zc_dr12kn_00000gn/T/report-58255a97-e8ab-486a-bfe8-ed1b430cfe03.toml`）。
+- done: 2026-02-12 18:52 JST package 直実行で `typecheck` / `build` / 影響テストを完了（すべて exit 0）。Fetch/Transform 共通で snapshot 再同期による自己修復を有効化。
+- start: 2026-02-11 18:33 JST Fetch 実行中なのにステージサマリの CircularProgress が回転しない不具合の調査に着手。
+- update: 2026-02-11 18:34 JST 原因は `useBuildProgressPanelState.ts` の `stageConcurrencyIndicators` が `summary.buildStatus==='running'` を要求していたこと。セッション status 遅延時に `running` タスクが存在しても `isRunning=false` になっていた。
+- done: 2026-02-11 18:35 JST `isRunning` 判定を `stageTaskScan.hasRunning` ベースへ修正。`pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` / `test -- --run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し全て exit 0。
+- start: 2026-02-11 18:22 JST Step5 停止中に Fetch の elapsed/remaining がブリンクし続け、`Maximum update depth exceeded` が出る不具合の調査に着手。
+- update: 2026-02-11 18:26 JST 原因は `useShapeBuildStep.ts` の `timingStageId` を設定する effect と reset effect の競合（`fetch <-> null` 往復）で、同一レンダーサイクル内に `setTimingStageId` が反復していたこと。発生範囲は `useShapeBuildStep.ts` の `timingStageId` 管理ロジック。
+- blocked: 2026-02-11 18:31 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は Turbo 本体クラッシュ（report: `/var/folders/hw/tl0yhp05667b7zc_dr12kn_00000gn/T/report-16270954-f679-4f88-9487-820c69a6d51e.toml`）。
+- done: 2026-02-11 18:32 JST `isElapsedResetState` ガードを追加して停止中 fallback を抑止。Turbo crash のため package 直実行（`pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` / `test -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx`）で全て exit 0 を確認。
+- start: 2026-02-11 18:00 JST Issue #198 着手。`nodes(draftData)` への runtime 状態保存を `hidb-ephemeral.sessions` へ移設し、session status語彙統一と session config 依存の撤去方針で実装開始。
+- update: 2026-02-11 18:18 JST `persistDraftPatch` を `updateBuildSession` ベースへ置換し、start/resume/pause/elapsed 永続化を sessions に一本化。`ShapeBuildSessionRecord` / `BuildSessionRecord` から `config` を削除し、worker の session 変換経路を更新。
+- done: 2026-02-11 18:18 JST `pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` / `test -- --run` を実行し、すべて exit 0 を確認。Issue #198 の実装範囲を Done へ移動。
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
 - done: 2026-02-11 07:39 JST `TASKS.obsolete.2026-02-10.md` へ凍結アーカイブし、新 `TASKS.md` と `docs/task-management.md` / `docs/templates/task-issue-template.md` を作成。
 - start: 2026-02-11 07:42 JST Shape Step5 Transform の進捗通知を再編し、`100% Completed` メッセージ上書き揺れを防ぐ修正に着手。
@@ -402,6 +513,12 @@
 - start: 2026-02-11 13:31 JST 矢印表示条件を「現在位置 vs 上下移動先」の比較式へ変更し、`現在位置===移動先` 時に矢印を非表示化する修正に着手。
 - update: 2026-02-11 13:50 JST 原因は `ShapeBuildProgressPanel.tsx` が「可視外の running 有無」中心で単一矢印の向きを決めており、`上方向移動先 < 現在位置` / `現在位置 < 下方向移動先` の比較式と、`現在位置===移動先` の完了判定を持っていなかったこと。発生範囲は同ファイルのターゲット算出・矢印表示・クリック遷移判定と、対応 unit test。
 - done: 2026-02-11 13:50 JST `running|queued` のインデックス集合から `upTargetIndex/downTargetIndex` を算出し、`upTargetIndex < currentIndex` で上矢印、`currentIndex < downTargetIndex` で下矢印を表示。`currentIndex === requestedTargetIndex` を移動完了として矢印非表示化。`ShapeBuildProgressPanel.unit.test.tsx` を更新し、下向き遷移と完了時非表示を検証。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はすべて exit 0。
+- start: 2026-02-11 13:51 JST 初期表示が queued のみの場合に上下矢印が出る不具合を修正するため、running 不在時の矢印抑止ロジック追加に着手。
+- update: 2026-02-11 13:58 JST 原因は `ShapeBuildProgressPanel.tsx` の矢印表示条件が `running|queued` の移動先比較だけに依存し、running タスク自体が存在しないケース（queuedのみ表示）を除外していなかったこと。発生範囲は同ファイルの `showUpArrow/showDownArrow` 判定と、`ShapeBuildProgressPanel.unit.test.tsx` の矢印表示系ケース。
+- done: 2026-02-11 14:03 JST `orderedTasks.some(status==='running')` を `hasRunningTask` として導入し、上下矢印表示条件へ必須化。running 不在かつ queued 可視時に矢印が出ない unit test を追加し、既存の下向き矢印テストを running 存在前提へ更新。検証は `pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` を実行し、すべて exit 0 を確認。
+- start: 2026-02-11 18:54 JST 初期表示で可視範囲が queued のみでも上下矢印が表示される残不具合の再修正に着手。
+- update: 2026-02-11 18:56 JST 原因は `ShapeBuildProgressPanel.tsx` の矢印表示条件が「ステージ全体の running 有無 + 上下移動先比較」に依存しており、可視範囲（viewportRange）が queued のみである状態を判定に反映していなかったこと。発生範囲は同ファイルの viewport/currentIndex 算出と `showUpArrow/showDownArrow`、および `ShapeBuildProgressPanel.unit.test.tsx` の矢印表示ケース。
+- done: 2026-02-11 18:58 JST `viewportIndices` と `hasOnlyQueuedInViewport` を追加し、可視範囲が queued-only のときは上下矢印を非表示化。さらに「可視範囲は queued、可視外に running がある」ケースの unit test を追加。`pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` を実行し、すべて exit 0 を確認。
 - start: 2026-02-11 13:30 JST Transformキャッシュ削除後の `Completed` 残留解消と、Start/Resume 待機中の手動dismiss Snackbar 追加に着手。
 - update: 2026-02-11 13:33 JST 原因は `handleDeleteTransformCache` が task/cache 削除後も session reset を行わず stale 完了表示を残し得ること、および Start/Resume 初期化待機区間にユーザー向け進捗通知がないこと。発生範囲は `useShapeBuildCacheActions.ts` / `ShapeBuildProgressPanel.tsx` / `ShapeBuildProgressPanel.unit.test.tsx`。
 - done: 2026-02-11 13:36 JST `handleDeleteTransformCache` で `onResetSession + persistSessionReset` を実行するよう修正し、startup pending Snackbar（手動closeのみ）と unit test 2件を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し、すべて exit 0（5 tests passed）を確認。
@@ -409,3 +526,40 @@
 - update: 2026-02-11 13:51 JST 原因は `ShapeBuildProgressPanel.tsx` のインジケータ作動判定が `activeStageId`（running task 由来）と結びついており、経過時間側の active stage（`summary.timingStageId`）と一致しない局面があり得たこと。発生範囲は `TaskProgressBar` の `showFlowBand` 判定と `stageProgressContent` の引数連携。
 - update: 2026-02-11 13:51 JST 修正として `TaskProgressBar` 内で `stages.some(stage.id===activeStageId)` による「自身がアクティブステージ」判定を明示化し、呼び出し側は `activeStageId` に `summary.timingStageId` を渡すよう変更。適用範囲は `ShapeBuildProgressPanel.tsx` のみ。
 - done: 2026-02-11 13:51 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、ともに exit 0 を確認。
+- start: 2026-02-11 14:14 JST Fetch に `running` が残留する事象の絞り込み用に、`[ShapeRunningResidue]` キーワード体系での分析ログ追加に着手。
+- update: 2026-02-11 14:14 JST 原因は現行ログが散在し、`running` 残留の発生点（購読受信/適用/破棄/集計/表示判定）を一連のキーワードで追跡できないこと。発生範囲は `useShapeBuildTaskSync.ts` / `useShapeBuildTasks.ts` / `useBuildProgressPanelState.ts`。
+- update: 2026-02-11 14:14 JST 修正として DEV 限定で `TASK_EVENT` / `TASK_APPLY` / `STATUS_TRANSITION` / `STALE_DROP` / `SCAN` / `STAGE_INDICATOR` を追加し、`nodeId/stage/taskId/sequence/prevStatus/nextStatus/source/timestamp` を共通フィールドとして出力。適用範囲は上記3ファイルのみ（動作変更なし）。
+- blocked: 2026-02-11 14:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` が Turbo 本体 panic（`system-configuration` NULL object）で連続失敗（exit 101）。ローカル環境要因のため Turbo 経由検証は継続不能。
+- done: 2026-02-11 14:14 JST 代替として `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` を実行し、ともに exit 0 を確認。
+- update: 2026-02-11 14:17 JST 再検証でも `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` は Turbo panic で exit 101（report: `report-5e725ad4-ef91-4f37-93c7-87e4def98650.toml`, `report-b2ac241b-f9f5-48fc-8140-d25d71a8d4b3.toml`）。代替の `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` は再実行で exit 0。
+- start: 2026-02-11 14:31 JST `ShapeRunningResidue` ログを UI集計不整合の追跡に特化し、無関係な大量ログを抑制する修正に着手。
+- update: 2026-02-11 15:27 JST 原因は `useShapeBuildTaskSync.ts` / `useShapeBuildTasks.ts` のタスク更新ログが heartbeat 相当の `running→running` を全件出力しており、UI集計不整合（`runningCount` と indicator 判定の齟齬）の観測信号がノイズに埋もれていたこと。発生範囲は同2ファイルと `useBuildProgressPanelState.ts` の常時 `SCAN/STAGE_INDICATOR` ログ。
+- update: 2026-02-11 15:27 JST 修正として `TASK_EVENT/TASK_APPLY/SCAN/STAGE_INDICATOR` を撤去し、`STALE_DROP` と `STATUS_TRANSITION` を中心に縮約。UI側は mismatch 発生時のみ `UI_MISMATCH`、解消時のみ `UI_MISMATCH_RESOLVED` を出力し、`runningTaskIds/reasons/runningCount/indicatorIsRunning/activeStageId` を同時に記録するよう変更。適用範囲は上記3ファイルのみ（動作変更なし）。
+- blocked: 2026-02-11 15:27 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` は Turbo panic で exit 101（report: `report-9a671264-c5ae-4a95-82cf-0edfbeef579a.toml`, `report-4436a771-46eb-49cf-a59f-4b8539455f8f.toml`）。
+- done: 2026-02-11 15:27 JST 代替として `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` を実行し、ともに exit 0 を確認。
+- start: 2026-02-11 14:02 JST `@hierarchidb/shape-plugin` の `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が real pipeline WFL 実行で長時間化する問題の切り分けに着手。
+- update: 2026-02-11 14:06 JST 原因は `shape-build-background-real-pipeline.wfl.test.ts` の重い4ケース（step1-4）が通常 `test` で常時有効だったこと。発生範囲は同テストファイルの real pipeline ケース定義。
+- done: 2026-02-11 14:08 JST `HDB_WFL_REAL_PIPELINE=1` のときのみ real pipeline 4ケースを実行するガードを追加し、通常 `test` では smoke のみ実行に変更。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` の完走確認を実施予定。
+- start: 2026-02-11 14:12 JST 「テストを通るように修正」対応として shape-plugin 全体テスト再実行と失敗修正に着手。
+- blocked: 2026-02-11 14:13 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` が turborepo 側 panic（`system-configuration` NULL object）で即時クラッシュ（exit 101）。検証は `pnpm --filter @hierarchidb/shape-plugin ...` 直実行へ切り替え。
+- update: 2026-02-11 14:22 JST 失敗原因は (1) `useShapeBuildTasks` 初期化順序バグで node切替時の tasks クリア判定が無効化され stale task が残留、(2) `ShapeBuildProgressPanel.unit.test.tsx` が cleanup 不足で startup snackbar が重複し `getByText` が失敗、(3) WFL が通常 `test` に混在して実行時間/安定性を悪化させていたこと。発生範囲は `useShapeBuildTasks.ts` / `ShapeBuildProgressPanel.unit.test.tsx` / `vitest.config.ts`。
+- done: 2026-02-11 14:36 JST `ENABLE_SHAPE_DEEP_TESTS=1` 時のみ `src/**/__tests__/wfl/**` を実行する設定へ変更し、`useShapeBuildTasks` の state クリア順序修正・`afterEach(cleanup)` 追加を適用。`pnpm --filter @hierarchidb/shape-plugin test`（exit 0, 15 passed / 2 skipped）・`pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）・`pnpm --filter @hierarchidb/shape-plugin build`（exit 0）を確認。
+- start: 2026-02-11 15:45 JST キャッシュテーブル再設計（metadata/data 分離）と、全件走査を metadata のみに限定する修正に着手。
+- update: 2026-02-11 16:30 JST 原因は `fetchCache` / `transformCache` テーブルが `data:ArrayBuffer` とメタデータを同居しており、ID抽出やサマリー集計の全件走査で重いレコードを読む経路が残っていたこと。発生範囲は `packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/ui/components/country-selection/useShapeCountrySelectionStep.ts`、`plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts`、`plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`。
+- update: 2026-02-11 16:30 JST 修正として `fetchCacheMeta` / `transformCacheMeta` を追加し、DB v4 へマイグレーション（既存 data テーブルから meta を生成）を実装。さらに `fetchCache` / `transformCache` の create/update/delete hook で meta 同期を自動化。メタデータ走査系（選択差分クリーンアップ・ステージ集計・transformタスク計画）は meta テーブル参照へ置換し、`primaryKeys()` でID抽出するよう変更。適用範囲は `packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`、`packages/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`、`packages/gis-sdk/src/index.ts`、および shape-plugin の上記関連ファイル。
+- blocked: 2026-02-11 16:31 JST `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は Turbo panic（`report-9b000410-4d10-4e87-8c3d-812d06858b48.toml`）で exit 101。
+- done: 2026-02-11 16:32 JST 代替検証として `pnpm --filter @hierarchidb/gis-sdk build`（exit 0）、`pnpm --filter @hierarchidb/gis-sdk typecheck && pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/vt-orchestrator typecheck && pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）、`pnpm --filter @hierarchidb/runtime-worker build && pnpm --filter @hierarchidb/vt-orchestrator build && pnpm --filter @hierarchidb/shape-plugin build`（exit 0）、`pnpm --filter @hierarchidb/shape-plugin test -- --run src/headless/__tests__/fetch-stage-strategy.headless.test.ts src/__tests__/unit/shapeFetchStage.unit.test.ts`（exit 0）を確認。
+- start: 2026-02-11 16:24 JST Reset Session 実行後に `Total elapsed` / stage elapsed が即時クリアされない不具合の修正に着手。
+- update: 2026-02-11 16:26 JST 原因は (1) `useBuildProgressPanelState.ts` の elapsed snapshot が「running 中の単調増加」を優先して 0 へのリセットを拒否していたこと、(2) `useShapeBuildStep.ts` の stage elapsed 同期が reset 後の空マップを stale ローカル値へ再統合し得ること。発生範囲は上記2ファイルの elapsed 同期 effect。
+- update: 2026-02-11 16:27 JST 修正として `useBuildProgressPanelState.ts` に `shouldUpdateElapsedSnapshot` を追加し、running 中でも `totalElapsedMs===0` を snapshot 更新条件に含めた。加えて running かつ totalElapsed=0 の表示は drift 加算せず 0 固定化。`useShapeBuildStep.ts` には reset 状態判定を追加し、reset 状態では stage elapsed を強制クリア・再永続化抑止・timingStageIdクリアを行うよう変更。
+- blocked: 2026-02-11 16:28 JST `pnpm -w turbo run test/typecheck/build --filter @hierarchidb/shape-plugin` は Turbo panic（`report-b05b4aad-e9b0-44ab-aafe-bfecf4a3c99b.toml`, `report-c2260eb0-796a-4431-a5ac-67935024e338.toml`, `report-b3849fd6-0a37-4998-831b-d8e8c2c1fb6f.toml`）で exit 101。
+- done: 2026-02-11 16:29 JST 代替検証として `pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts`（exit 0, 実行系設定により 18 files / 54 tests 実行）, `pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）, `pnpm --filter @hierarchidb/shape-plugin build`（exit 0）を確認。
+- start: 2026-02-11 16:49 JST Fetch/Transform の `Running/Queued` 残留（ABW/BY）再発に対し、UI task マージの整合化修正に着手。
+- update: 2026-02-11 16:50 JST 原因は `useShapeBuildTaskSync.ts` の snapshot マージが「currentMap ベースで上書き」だったため snapshot から消えた task が UI に残留し得る点と、同一/逆順 sequence の到着時に `queued/running/completed` の優先順位判定が弱く terminal を取り逃す余地があったこと。発生範囲は `mergeSnapshotWithCurrent` と `shouldPreferNextTask`、および回帰検証の `useShapeBuildTasks.unit.test.tsx`。
+- update: 2026-02-11 16:50 JST 修正として snapshot マージを「snapshot ベース再構築」へ変更し、snapshot 非存在 task を即時除去。加えて `shouldPreferNextTask` に sequence tie-break（status rank/progress/completed message）と「低 sequence でも completed(100%) を優先採用」条件を追加。`useShapeBuildTasks.unit.test.tsx` に (1) 同一 sequence 重複更新で terminal を維持、(2) snapshot から消えた task を除去、の2ケースを追加。
+- blocked: 2026-02-11 16:51 JST `pnpm -w turbo run test/typecheck/build --filter @hierarchidb/shape-plugin` は Turbo panic（`report-ff1cac4c-95d1-4c90-b1f1-67e41e7778e7.toml`, `report-88b41c25-fad2-487f-b3ac-bdeb7f6b28c7.toml`, `report-e564fcdd-6d3f-41e9-b521-27db16a11093.toml`）で exit 101。
+- done: 2026-02-11 16:52 JST 代替として `pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`（exit 0, 18 files / 56 tests）, `pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）, `pnpm --filter @hierarchidb/shape-plugin build`（exit 0）を確認。
+- start: 2026-02-11 16:53 JST ビルド中 Snackbar の表示位置を bottom-left から bottom-center へ変更する修正に着手。
+- update: 2026-02-11 16:53 JST `ShapeBuildProgressPanel.tsx` の startup/crash/size warning Snackbar 3箇所の `anchorOrigin` が `horizontal: 'left'` で固定されていたため、`horizontal: 'center'` に統一。表示条件・dismiss挙動は未変更。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` のみ。
+- blocked: 2026-02-11 16:53 JST `pnpm -w turbo run typecheck/build --filter @hierarchidb/shape-plugin` は Turbo panic で失敗（report: `report-c527b470-2e88-4a09-a06a-a966c7c8c716.toml`, `report-93016477-6c69-4390-9576-d87d88bbfa58.toml`）。
+- done: 2026-02-11 16:54 JST 代替として `pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）と `pnpm --filter @hierarchidb/shape-plugin build`（exit 0）を確認。

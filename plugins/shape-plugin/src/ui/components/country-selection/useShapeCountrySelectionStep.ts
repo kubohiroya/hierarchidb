@@ -430,32 +430,44 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     const removedKeyTuples = removedPairs.map((entry) => (
       [nodeId, entry.countryCode, entry.adminLevel] as const
     ));
-    const [fetchCaches, transformCaches, vtTasks] = await Promise.all([
-      ephemeralShapeDB.fetchCache
+    const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
+      ephemeralShapeDB.fetchCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
-        .toArray(),
-      ephemeralShapeDB.transformCache
+        .primaryKeys(),
+      ephemeralShapeDB.transformCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
-        .toArray(),
+        .primaryKeys(),
       taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
     ]);
-    const fetchCacheIds = fetchCaches.map((cache) => cache.id);
-    const transformCacheIds = transformCaches.map((cache) => cache.id);
+    const fetchCacheIds = fetchCacheIdsRaw.map((id: unknown) => String(id));
+    const transformCacheIds = transformCacheIdsRaw.map((id: unknown) => String(id));
     if (fetchCacheIds.length > 0) {
-      await ephemeralShapeDB.fetchCache
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete();
+      await Promise.all([
+        ephemeralShapeDB.fetchCache
+          .where('[nodeId+countryCode+adminLevel]')
+          .anyOf(removedKeyTuples)
+          .delete(),
+        ephemeralShapeDB.fetchCacheMeta
+          .where('[nodeId+countryCode+adminLevel]')
+          .anyOf(removedKeyTuples)
+          .delete(),
+      ]);
       await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
     }
     const removedBufferSet = new Set(transformCacheIds);
     if (transformCacheIds.length > 0) {
-      await ephemeralShapeDB.transformCache
-        .where('[nodeId+countryCode+adminLevel]')
-        .anyOf(removedKeyTuples)
-        .delete();
+      await Promise.all([
+        ephemeralShapeDB.transformCache
+          .where('[nodeId+countryCode+adminLevel]')
+          .anyOf(removedKeyTuples)
+          .delete(),
+        ephemeralShapeDB.transformCacheMeta
+          .where('[nodeId+countryCode+adminLevel]')
+          .anyOf(removedKeyTuples)
+          .delete(),
+      ]);
       const relations = await ephemeralShapeDB.tileIdToBufferRelations
         .where('bufferId')
         .anyOf(transformCacheIds)
@@ -518,17 +530,9 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         draftData: {
           ...sanitizeShapeDraftData(currentDraftData),
           selectedArrayByCountries: nextSelection,
-          processingStatus: 'idle',
-          buildStartedAt: undefined,
-          buildFinishedAt: undefined,
-          buildElapsedMs: 0,
-          buildResumedAt: undefined,
-          stageElapsedMs: 0,
-          stageResumedAt: undefined,
-          stageElapsedStageId: undefined,
-          stageElapsedByStage: {},
         } as Record<string, unknown>,
       });
+      await shapeMutationAPIImpl.deleteBuildSession(nodeId);
     } catch (error) {
       console.warn('[ShapeCountrySelectionStep] failed to invalidate build after selection change', error);
     }

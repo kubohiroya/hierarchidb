@@ -424,7 +424,7 @@ export const buildTransformByBandTasks = async (
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
 
-  await ephemeralShapeDB.fetchCache
+  await ephemeralShapeDB.fetchCacheMeta
     .where('nodeId')
     .equals(nodeId)
     .each((buffer) => {

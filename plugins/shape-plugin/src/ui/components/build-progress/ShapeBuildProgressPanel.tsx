@@ -461,19 +461,27 @@ const BuildProgressStageContent = ({
     const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
     return index >= 0 ? index : null;
   }, [orderedTasks, scrollToTaskId]);
-  const currentIndex = useMemo(() => {
+  const viewportIndices = useMemo(() => {
     if (orderedTasks.length === 0) return null;
-    if (viewportRange?.stageId !== stage.id || viewportRange == null) return 0;
+    if (viewportRange?.stageId !== stage.id || viewportRange == null) return null;
     const maxIndex = orderedTasks.length - 1;
     const clampedStart = Math.min(Math.max(viewportRange.startIndex, 0), maxIndex);
     const clampedEnd = Math.min(Math.max(viewportRange.endIndex, clampedStart), maxIndex);
+    return {
+      startIndex: clampedStart,
+      endIndex: clampedEnd,
+    };
+  }, [orderedTasks.length, stage.id, viewportRange]);
+  const currentIndex = useMemo(() => {
+    if (orderedTasks.length === 0) return null;
+    if (viewportIndices == null) return 0;
     if (requestedTargetIndex !== null
-      && requestedTargetIndex >= clampedStart
-      && requestedTargetIndex <= clampedEnd) {
+      && requestedTargetIndex >= viewportIndices.startIndex
+      && requestedTargetIndex <= viewportIndices.endIndex) {
       return requestedTargetIndex;
     }
-    return Math.floor((clampedStart + clampedEnd) / 2);
-  }, [orderedTasks.length, requestedTargetIndex, stage.id, viewportRange]);
+    return Math.floor((viewportIndices.startIndex + viewportIndices.endIndex) / 2);
+  }, [orderedTasks.length, requestedTargetIndex, viewportIndices]);
   const activeTargetIndices = useMemo(() => (
     orderedTasks.reduce<number[]>((acc, task, index) => {
       if (task.status === 'running' || task.status === 'queued') {
@@ -482,6 +490,17 @@ const BuildProgressStageContent = ({
       return acc;
     }, [])
   ), [orderedTasks]);
+  const hasRunningTask = useMemo(
+    () => orderedTasks.some((task) => task.status === 'running'),
+    [orderedTasks],
+  );
+  const hasOnlyQueuedInViewport = useMemo(() => {
+    if (viewportIndices == null) return false;
+    for (let i = viewportIndices.startIndex; i <= viewportIndices.endIndex; i += 1) {
+      if (orderedTasks[i]?.status !== 'queued') return false;
+    }
+    return true;
+  }, [orderedTasks, viewportIndices]);
   const upTargetIndex = useMemo(() => {
     if (currentIndex == null) return null;
     for (let i = activeTargetIndices.length - 1; i >= 0; i -= 1) {
@@ -504,10 +523,14 @@ const BuildProgressStageContent = ({
     && currentIndex !== null
     && currentIndex === requestedTargetIndex;
   const showUpArrow = !isScrollTargetReached
+    && !hasOnlyQueuedInViewport
+    && hasRunningTask
     && upTargetIndex !== null
     && currentIndex !== null
     && upTargetIndex < currentIndex;
   const showDownArrow = !isScrollTargetReached
+    && !hasOnlyQueuedInViewport
+    && hasRunningTask
     && downTargetIndex !== null
     && currentIndex !== null
     && currentIndex < downTargetIndex;
@@ -647,11 +670,9 @@ const BuildProgressStageContent = ({
 export const ShapeBuildProgressPanel = ({
   data,
   nodeId,
-  onChange,
 }: {
   data?: Partial<ShapeEntity>;
   nodeId?: NodeId;
-  onChange?: (patch: Partial<ShapeEntity>) => void;
 }) => {
   const {
     t,
@@ -694,21 +715,6 @@ export const ShapeBuildProgressPanel = ({
     handleConfirmStart,
   } = useShapeBuildProgressPanel({ data, nodeId });
 
-  const resetSessionDraft = useCallback(() => {
-    onChange?.({
-      ...(data ?? {}),
-      processingStatus: 'idle',
-      buildStartedAt: undefined,
-      buildFinishedAt: undefined,
-      buildElapsedMs: 0,
-      buildResumedAt: undefined,
-      stageElapsedMs: 0,
-      stageResumedAt: undefined,
-      stageElapsedStageId: undefined,
-      stageElapsedByStage: {},
-    });
-  }, [data, onChange]);
-
   const {
     counts,
     resultCounts,
@@ -724,7 +730,7 @@ export const ShapeBuildProgressPanel = ({
     handleDeleteVTCache,
     handleDeleteMetadata,
     handleResetSession,
-  } = useShapeBuildCacheActions({ nodeId, draft: data, onResetSession: resetSessionDraft });
+  } = useShapeBuildCacheActions({ nodeId });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
@@ -905,9 +911,7 @@ export const ShapeBuildProgressPanel = ({
 
   const buildTimingSummary = useCallback((stageId: string) => {
     const isTimingStage = Boolean(summary.timingStageId && summary.timingStageId === stageId);
-    const persistedCompletedElapsedMs = data?.stageElapsedByStage?.[stageId];
-    const completedElapsedMs = summary.completedStageElapsedMs[stageId]
-      ?? persistedCompletedElapsedMs;
+    const completedElapsedMs = summary.completedStageElapsedMs[stageId];
     const elapsed = formatInlineDuration(
       isTimingStage ? summary.stageElapsedMs : completedElapsedMs ?? null,
     );
@@ -943,7 +947,6 @@ export const ShapeBuildProgressPanel = ({
       </Box>
     );
   }, [
-    data?.stageElapsedByStage,
     formatInlineDuration,
     summary.completedStageElapsedMs,
     summary.stageElapsedMs,
@@ -1105,7 +1108,7 @@ export const ShapeBuildProgressPanel = ({
               if (reason === 'clickaway') return;
               setStartupNoticeDismissed(true);
             }}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="info" variant="filled" onClose={() => setStartupNoticeDismissed(true)}>
               {startupStatusMessage}
@@ -1115,7 +1118,7 @@ export const ShapeBuildProgressPanel = ({
             open={crashHintOpen}
             autoHideDuration={8000}
             onClose={() => setCrashHintOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="warning" variant="filled" onClose={() => setCrashHintOpen(false)}>
               {crashHint}
@@ -1125,7 +1128,7 @@ export const ShapeBuildProgressPanel = ({
             open={sizeWarningOpen}
             autoHideDuration={8000}
             onClose={() => setSizeWarningOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
               {warningMessage}

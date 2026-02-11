@@ -80,7 +80,6 @@ export const createContextMenuAction = (
     ): void => {
       void (async () => {
         const normalizedAction = (action === 'remove' ? 'trash' : action) as ContextAction;
-        console.log('Context menu action:', normalizedAction, 'for node:', node);
 
         const targetNodeId = node.id as NodeId;
         const parentId =

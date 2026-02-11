@@ -43,7 +43,7 @@ import {
 } from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveFetchStageStrategy.ts';
-import { isBuildProcessConfig, toBuildSessionRecord } from '../services/batch/shapeSessionMappers.ts';
+import { toBuildSessionRecord } from '../services/batch/shapeSessionMappers.ts';
 import {
   VtTaskQueueDb,
   deleteTasksByIds,
@@ -80,19 +80,6 @@ const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): BuildSessionCon
     transformConfig: buildConfig.transformConfig,
     vectorTiles: buildConfig.vtConfig,
   };
-};
-
-const buildConfigFromSession = (config: BuildSessionConfig): ShapeBuildConfig => {
-  const resolvedDataSource = requireDataSourceName(
-    config.dataSource,
-    'buildConfigFromSession',
-  );
-  return mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
-    dataSourceName: resolvedDataSource,
-    fetchConfig: config.fetchConfig,
-    transformConfig: config.transformConfig,
-    vtConfig: config.vectorTiles,
-  });
 };
 
 const buildFetchStageOptions = (buildConfig: ShapeBuildConfig) => ({
@@ -225,34 +212,45 @@ const applySelectionDiffCleanup = async (
   const removedKeyTuples = removedPairs.map((entry) => (
     [nodeId, normalizeSelectionKey(entry.countryCode), entry.adminLevel] as const
   ));
-  const [fetchCaches, transformCaches, vtTasks] = await Promise.all([
-    ephemeralShapeDB.fetchCache
+  const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
+    ephemeralShapeDB.fetchCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
-      .toArray(),
-    ephemeralShapeDB.transformCache
+      .primaryKeys(),
+    ephemeralShapeDB.transformCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
-      .toArray(),
+      .primaryKeys(),
     taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
   ]);
-
-  const fetchCacheIds = fetchCaches.map((cache) => cache.id);
+  const fetchCacheIds = fetchCacheIdsRaw.map((id: unknown) => String(id));
   if (fetchCacheIds.length > 0) {
-    await ephemeralShapeDB.fetchCache
-      .where('[nodeId+countryCode+adminLevel]')
-      .anyOf(removedKeyTuples)
-      .delete();
+    await Promise.all([
+      ephemeralShapeDB.fetchCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete(),
+      ephemeralShapeDB.fetchCacheMeta
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete(),
+    ]);
     await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
   }
 
-  const transformCacheIds = transformCaches.map((cache) => cache.id);
+  const transformCacheIds = transformCacheIdsRaw.map((id: unknown) => String(id));
   const removedBufferSet = new Set(transformCacheIds);
   if (transformCacheIds.length > 0) {
-    await ephemeralShapeDB.transformCache
-      .where('[nodeId+countryCode+adminLevel]')
-      .anyOf(removedKeyTuples)
-      .delete();
+    await Promise.all([
+      ephemeralShapeDB.transformCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete(),
+      ephemeralShapeDB.transformCacheMeta
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete(),
+    ]);
     const relations = await ephemeralShapeDB.tileIdToBufferRelations
       .where('bufferId')
       .anyOf(transformCacheIds)
@@ -365,11 +363,14 @@ const applyConfigInvalidation = async (
   });
 };
 
-const mapBuildSessionRecordToBatchSession = (record: BuildSessionRecord): BatchSession => ({
+const mapBuildSessionRecordToBatchSession = (
+  record: BuildSessionRecord,
+  config: BuildSessionConfig,
+): BatchSession => ({
   nodeId: record.nodeId,
   draftId: record.draftId,
   status: record.status,
-  config: record.config,
+  config,
   startedAt: record.startedAt,
   updatedAt: record.updatedAt,
   completedAt: record.completedAt,
@@ -380,6 +381,16 @@ const mapBuildSessionRecordToBatchSession = (record: BuildSessionRecord): BatchS
   stages: record.stages,
   resourceUsage: record.resourceUsage,
 });
+
+const resolveBatchSessionConfig = async (nodeId: NodeId): Promise<BuildSessionConfig> => {
+  const handler = getShapeEntityHandler();
+  const entity = await handler.getEntity(nodeId);
+  const mergedBuildConfig = mergeBuildConfig(
+    DEFAULT_BUILD_CONFIG,
+    entity?.buildConfig ?? {},
+  );
+  return buildBuildSessionConfig(mergedBuildConfig);
+};
 
 type TaskQueueStatusCounts = {
   total: number;
@@ -425,23 +436,17 @@ const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BatchSession['p
 };
 
 const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | undefined> => {
+  const config = await resolveBatchSessionConfig(nodeId);
   const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
   const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
   if (buildSession) {
-    return mapBuildSessionRecordToBatchSession(buildSession);
+    return mapBuildSessionRecordToBatchSession(buildSession, config);
   }
 
   const taskQueue = new VtTaskQueueDb();
   const counts = await countTaskQueueStatuses(taskQueue, nodeId);
   if (counts.total === 0) return undefined;
 
-  const handler = getShapeEntityHandler();
-  const entity = await handler.getEntity(nodeId);
-  const mergedBuildConfig = mergeBuildConfig(
-    DEFAULT_BUILD_CONFIG,
-    entity?.buildConfig ?? {},
-  );
-  const config = buildBuildSessionConfig(mergedBuildConfig);
   const firstTask = await taskQueue.tasks
     .where('[nodeId+index]')
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
@@ -938,7 +943,6 @@ const upsertBuildSessionSnapshot = async (
   input: {
     nodeId: NodeId;
     draftId?: NodeId;
-    config: ShapeBuildConfig;
     selectedArrayByCountries?: SelectedArrayByCountries;
     tasks?: TaskQueueRecord[];
     status: ShapeBuildSessionRecord['status'];
@@ -971,7 +975,6 @@ const upsertBuildSessionSnapshot = async (
     nodeId: input.nodeId,
     draftId: input.draftId ?? existing?.draftId,
     status: input.status,
-    config: buildBuildSessionConfig(input.config),
     selectedArrayByCountries: input.selectedArrayByCountries ?? existing?.selectedArrayByCountries,
     startedAt,
     updatedAt: now,
@@ -1448,24 +1451,12 @@ export const shapeBatchAPI = {
     setFetchPlannedTotal(nodeForSession, fetchPlan.plannedFetchTotal);
     const buildStartedAt = Date.now();
     const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
-    await executeStartupStep(
-      'mark-processing',
-      async () => handler.updateEntity(nodeForSession, {
-        buildStartedAt,
-        buildFinishedAt: undefined,
-        processingStatus: 'processing',
-      }),
-      { payloadCount: downloadTaskPayloads.length },
-    );
 
     setPaused(nodeForSession, false);
     activePipelines.add(pipelineKey);
     activePipelineRuns.set(pipelineKey, pipelineRunId);
 
     const taskQueue = new VtTaskQueueDb();
-    const previousBuildConfig = previousSession?.config && isBuildProcessConfig(previousSession.config)
-      ? buildConfigFromSession(previousSession.config)
-      : null;
     await executeStartupStep(
         'selection-diff-cleanup',
         async () => applySelectionDiffCleanup(
@@ -1476,7 +1467,7 @@ export const shapeBatchAPI = {
       );
     await executeStartupStep(
       'config-invalidation',
-      async () => applyConfigInvalidation(nodeForSession, previousBuildConfig, mergedBatchConfig),
+      async () => applyConfigInvalidation(nodeForSession, null, mergedBatchConfig),
     );
     let existingTaskCount = await executeStartupStep(
       'count-existing-tasks',
@@ -1515,7 +1506,6 @@ export const shapeBatchAPI = {
       async () => upsertBuildSessionSnapshot({
         nodeId: nodeForSession,
         draftId,
-        config: mergedBatchConfig,
         selectedArrayByCountries: draftEntity.selectedArrayByCountries,
         tasks: existingTaskCount === 0 ? [] : undefined,
         status: 'running',
@@ -1552,10 +1542,6 @@ export const shapeBatchAPI = {
       pipelineRunId,
     }).then(async () => {
       const completedAt = Date.now();
-      await handler.updateEntity(nodeForSession, {
-        buildFinishedAt: completedAt,
-        processingStatus: 'completed',
-      });
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'completed',
         stopReason: 'completed',
@@ -1565,9 +1551,6 @@ export const shapeBatchAPI = {
     }).catch(async (error) => {
       const failedAt = Date.now();
       console.error('[shapeBatchAPI] vt pipeline failed', error);
-      await handler.updateEntity(nodeForSession, {
-        processingStatus: 'failed',
-      });
       await updateBuildSessionFromTasks(nodeForSession, {
         status: 'failed',
         stopReason: 'failed',
@@ -1746,16 +1729,8 @@ export const shapeBatchAPI = {
             async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null),
           );
         }
-        const sessionConfig = sessionRecord?.config;
-        let sessionBuildConfig: ShapeBuildConfig | null = null;
-        if (sessionConfig) {
-          if (!isBuildProcessConfig(sessionConfig)) {
-            throw new Error('[shapeBatchAPI] invalid build session config');
-          }
-          sessionBuildConfig = buildConfigFromSession(sessionConfig);
-        }
         const draftBuildConfig = draftEntity.buildConfig;
-        const baseBuildConfig = sessionBuildConfig ?? draftBuildConfig;
+        const baseBuildConfig = draftBuildConfig;
         if (!baseBuildConfig) {
           throw new Error('[shapeBatchAPI] buildConfig is required to resume batch session');
         }
@@ -1781,7 +1756,7 @@ export const shapeBatchAPI = {
         );
         await executeResumeStep(
           'config-invalidation',
-          async () => applyConfigInvalidation(nodeId, sessionBuildConfig, mergedBuildConfig),
+          async () => applyConfigInvalidation(nodeId, null, mergedBuildConfig),
         );
         existingTaskCount = await executeResumeStep(
           'count-existing-tasks-after-invalidation',
@@ -1812,7 +1787,6 @@ export const shapeBatchAPI = {
           'upsert-session-snapshot',
           async () => upsertBuildSessionSnapshot({
             nodeId,
-            config: mergedBuildConfig,
             selectedArrayByCountries: draftEntity.selectedArrayByCountries,
             tasks: existingTaskCount === 0 ? [] : undefined,
             status: 'running',
@@ -1848,10 +1822,6 @@ export const shapeBatchAPI = {
           pipelineRunId,
         }).then(async () => {
           const completedAt = Date.now();
-          await handler.updateEntity(nodeId, {
-            buildFinishedAt: completedAt,
-            processingStatus: 'completed',
-          });
           await updateBuildSessionFromTasks(nodeId, {
             status: 'completed',
             stopReason: 'completed',
@@ -1861,9 +1831,6 @@ export const shapeBatchAPI = {
         }).catch(async (error) => {
           const failedAt = Date.now();
           console.error('[shapeBatchAPI] vt pipeline failed', error);
-          await handler.updateEntity(nodeId, {
-            processingStatus: 'failed',
-          });
           await updateBuildSessionFromTasks(nodeId, {
             status: 'failed',
             stopReason: 'failed',
@@ -2239,10 +2206,6 @@ export const shapeBatchAPI = {
   // ===================================
 
   getProcessingStatus: async (nodeId: NodeId): Promise<ProcessingStatus> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntity(nodeId);
-    if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
-
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
@@ -2269,8 +2232,24 @@ export const shapeBatchAPI = {
       };
     }
 
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    if (sessionRecord) {
+      const status = sessionRecord.status === 'running'
+        ? 'processing'
+        : sessionRecord.status;
+      return {
+        status,
+        lastProcessed: undefined,
+        totalFeatures: undefined,
+        totalVectorTiles: undefined,
+        storageUsed: undefined,
+        hasErrors: status === 'failed',
+        errorMessages: status === 'failed' ? ['Batch processing failed'] : [],
+      };
+    }
+
     return {
-      status: entity.processingStatus || 'idle',
+      status: 'idle',
       lastProcessed: undefined,
       totalFeatures: undefined,
       totalVectorTiles: undefined,

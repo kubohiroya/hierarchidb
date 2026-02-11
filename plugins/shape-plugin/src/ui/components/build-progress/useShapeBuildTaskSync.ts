@@ -20,6 +20,7 @@ export type RawTaskSummary = BuildTaskSummary & {
 };
 
 type SyncArgs = {
+  sessionNodeId: string | null;
   setTasks: (tasks: ShapeBuildTaskSummary[]) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
@@ -78,6 +79,61 @@ const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   const message = task.message ?? '';
   const status = task.status;
   console.log(`[TaskUpdate100] ${scope.iso2}, ${scope.adminLevel}, ${message}, ${status}`);
+};
+
+const isDev = import.meta.env.DEV;
+const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
+
+type RunningResidueLogPayload = {
+  nodeId: string | null;
+  stage?: string | null;
+  taskId?: string | null;
+  sequence?: number | null;
+  prevStatus?: string | null;
+  nextStatus?: string | null;
+  source?: string | null;
+  timestamp?: number;
+  reason?: string | null;
+  eventType?: string | null;
+  runningCount?: number | null;
+  queuedCount?: number | null;
+  totalCount?: number | null;
+};
+
+const formatLogValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed.replace(/\s+/g, '_') : '-';
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return JSON.stringify(value);
+};
+
+const emitRunningResidueLog = (keyword: string, payload: RunningResidueLogPayload): void => {
+  if (!isDev) return;
+  const logPayload: Required<Pick<RunningResidueLogPayload, 'nodeId'>> & RunningResidueLogPayload = {
+    ...payload,
+    nodeId: payload.nodeId,
+    timestamp: payload.timestamp ?? Date.now(),
+  };
+  const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
+    + ` nodeId=${formatLogValue(logPayload.nodeId)}`
+    + ` stage=${formatLogValue(logPayload.stage)}`
+    + ` taskId=${formatLogValue(logPayload.taskId)}`
+    + ` sequence=${formatLogValue(logPayload.sequence)}`
+    + ` prevStatus=${formatLogValue(logPayload.prevStatus)}`
+    + ` nextStatus=${formatLogValue(logPayload.nextStatus)}`
+    + ` source=${formatLogValue(logPayload.source)}`
+    + ` eventType=${formatLogValue(logPayload.eventType)}`
+    + ` reason=${formatLogValue(logPayload.reason)}`
+    + ` runningCount=${formatLogValue(logPayload.runningCount)}`
+    + ` queuedCount=${formatLogValue(logPayload.queuedCount)}`
+    + ` totalCount=${formatLogValue(logPayload.totalCount)}`
+    + ` timestamp=${formatLogValue(logPayload.timestamp)}`;
+  console.log(line, logPayload);
 };
 
 const resolveTaskOrderIndex = (task: ShapeBuildTaskSummary): number => (
@@ -266,13 +322,13 @@ const mergeSnapshotWithCurrent = (
   if (snapshotTasks.length === 0) {
     return [];
   }
-  const mergedMap = new Map(currentMap);
+  const mergedMap = new Map<string, ShapeBuildTaskSummary>();
   snapshotTasks.forEach((snapshotTask) => {
-    const current = mergedMap.get(snapshotTask.taskId);
-    if (!current || shouldPreferNextTask(current, snapshotTask)) {
+    const currentFromMap = currentMap.get(snapshotTask.taskId);
+    if (!currentFromMap || shouldPreferNextTask(currentFromMap, snapshotTask)) {
       mergedMap.set(snapshotTask.taskId, snapshotTask);
     } else {
-      mergedMap.set(snapshotTask.taskId, current);
+      mergedMap.set(snapshotTask.taskId, currentFromMap);
     }
   });
   const merged = [...mergedMap.values()];
@@ -280,10 +336,66 @@ const mergeSnapshotWithCurrent = (
   return merged;
 };
 
+const readSequence = (task: ShapeBuildTaskSummary): number | null => (
+  typeof task.sequence === 'number' && Number.isFinite(task.sequence) ? task.sequence : null
+);
+
+const readStatusRank = (task: ShapeBuildTaskSummary): number => {
+  switch (task.status) {
+    case 'queued':
+      return 0;
+    case 'running':
+      return 1;
+    case 'paused':
+      return 2;
+    case 'completed':
+    case 'failed':
+    case 'regression':
+      return 3;
+    default:
+      return 0;
+  }
+};
+
 const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  const currentSequence = readSequence(current);
+  const nextSequence = readSequence(next);
+  if (currentSequence !== null && nextSequence !== null) {
+    if (nextSequence < currentSequence) {
+      if (
+        isCompletedAtFullProgress(next)
+        && !isCompletedAtFullProgress(current)
+        && (current.status === 'queued' || current.status === 'running')
+      ) {
+        return true;
+      }
+      return false;
+    }
+    if (nextSequence === currentSequence) {
+      if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) {
+        return true;
+      }
+      if (isCompletedAtFullProgress(current) && !isCompletedAtFullProgress(next)) {
+        return false;
+      }
+      const currentStatusRank = readStatusRank(current);
+      const nextStatusRank = readStatusRank(next);
+      if (nextStatusRank !== currentStatusRank) {
+        return nextStatusRank > currentStatusRank;
+      }
+      if (resolveProgressValue(next.progress) !== resolveProgressValue(current.progress)) {
+        return resolveProgressValue(next.progress) > resolveProgressValue(current.progress);
+      }
+      if (next.status === 'completed' && current.status === 'completed') {
+        return shouldPromoteCompletedMessage(current, next);
+      }
+      return false;
+    }
+  }
+
   if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
     return shouldPromoteCompletedMessage(current, next);
   }
@@ -311,7 +423,7 @@ const shouldPreferNextTask = (
   return shouldApplyTaskUpdate(current, next);
 };
 
-export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: SyncArgs) => {
+export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, setError }: SyncArgs) => {
   const isLoadingRef = useRef(false);
   const errorRef = useRef<Error | null>(null);
   const tasksRef = useRef<ShapeBuildTaskSummary[]>([]);
@@ -423,11 +535,37 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     if (isLoadingRef.current) {
       setIsLoading(false);
     }
-  }, [resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
+  }, [resolveTaskSummary, scheduleFlush, sessionNodeId, setError, setIsLoading]);
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
+    const previous = tasksMapRef.current.get(resolved.taskId);
     const result = mergeTask(resolved);
+    if (previous && !result.changed) {
+      emitRunningResidueLog('STALE_DROP', {
+        nodeId: sessionNodeId,
+        stage: resolved.stage,
+        taskId: resolved.taskId,
+        sequence: resolved.sequence ?? null,
+        prevStatus: previous.status ?? null,
+        nextStatus: resolved.status ?? null,
+        source: 'event',
+        eventType: 'update',
+        reason: 'shouldPreferNextTask=false_or_equivalent',
+      });
+    }
+    if (previous && previous.status !== resolved.status) {
+      emitRunningResidueLog('STATUS_TRANSITION', {
+        nodeId: sessionNodeId,
+        stage: resolved.stage,
+        taskId: resolved.taskId,
+        sequence: resolved.sequence ?? null,
+        prevStatus: previous.status ?? null,
+        nextStatus: resolved.status ?? null,
+        source: 'event',
+        eventType: 'update',
+      });
+    }
     if (result.changed) {
       logTaskUpdate100(resolved);
       scheduleFlush(result.next, true);
@@ -438,13 +576,34 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     if (isLoadingRef.current) {
       setIsLoading(false);
     }
-  }, [mergeTask, resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
+  }, [mergeTask, resolveTaskSummary, scheduleFlush, sessionNodeId, setError, setIsLoading]);
 
   const handleDelete = useCallback((taskId: string) => {
     const existing = tasksMapRef.current.get(taskId);
     if (!existing) {
+      emitRunningResidueLog('STALE_DROP', {
+        nodeId: sessionNodeId,
+        stage: null,
+        taskId,
+        sequence: null,
+        prevStatus: null,
+        nextStatus: null,
+        source: 'event',
+        eventType: 'delete',
+        reason: 'task_not_found',
+      });
       return;
     }
+    emitRunningResidueLog('STATUS_TRANSITION', {
+      nodeId: sessionNodeId,
+      source: 'event',
+      eventType: 'delete',
+      taskId,
+      stage: existing.stage,
+      sequence: existing.sequence ?? null,
+      prevStatus: existing.status ?? null,
+      nextStatus: 'deleted',
+    });
     const nextMap = new Map(tasksMapRef.current);
     nextMap.delete(taskId);
     tasksMapRef.current = nextMap;
@@ -460,7 +619,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     if (isLoadingRef.current) {
       setIsLoading(false);
     }
-  }, [scheduleFlush, setError, setIsLoading]);
+  }, [scheduleFlush, sessionNodeId, setError, setIsLoading]);
 
   const syncTasksRef = useCallback((tasks: ShapeBuildTaskSummary[]) => {
     tasksRef.current = tasks;

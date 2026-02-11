@@ -21,7 +21,6 @@ import type {
   ShapeVTMetadata,
 } from '@hierarchidb/shape-api';
 import type {
-  BuildProcessConfig,
   BuildSessionRecord,
   BuildTaskType,
   ProgressInfo,
@@ -64,7 +63,6 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
@@ -133,14 +131,6 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     && (value.message === undefined || typeof value.message === 'string');
 };
 
-const isBuildProcessConfig = (value: unknown): value is BuildProcessConfig => {
-  if (!isRecord(value)) return false;
-  return isRecord(value.download)
-    && isRecord(value.extract1)
-    && isRecord(value.extract2)
-    && isRecord(value.vectorTiles);
-};
-
 const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary => {
   if (!isRecord(value)) return false;
   return isNumber(value.total)
@@ -183,7 +173,6 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
 const toBuildSessionRecordFromEphemeral = (
   session: EphemeralBuildSessionRecord
 ): BuildSessionRecord | null => {
-  if (!isBuildProcessConfig(session.config)) return null;
   if (!isProgressSummary(session.progress)) return null;
   const stages = readStageMap(session.stages);
   if (!stages) return null;
@@ -192,7 +181,6 @@ const toBuildSessionRecordFromEphemeral = (
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
