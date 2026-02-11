@@ -227,6 +227,57 @@
   - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
   - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
 
+9. `fix/shape/reset-session-skeleton-and-completed-count-reset` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - Reset Session 押下直後に、ステージごとのサマリーおよびタスク一覧を Skeleton 表示へ切り替える
+  - Reset 完了後に `Completed` 件数が残留せず、確実に 0 へ収束する
+  - shape-plugin の関連 typecheck/build/test が成功する
+- 原因:
+  - Reset は非同期削除完了待ちのため、押下直後は旧サマリー/旧タスク表示が残り UX 上の待機状態が不明瞭だった
+  - サマリー集計で `idle + task empty` 時に planned count を fallback 採用する経路があり、`Completed` 数が stale 表示で残り得た
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildProgressSummary.ts`
+  - `packages/components/src/BuildStepPanel.tsx`
+  - `packages/components/src/BuildStepStagePanel.tsx`
+- 修正方法と適用範囲:
+  - `ShapeBuildProgressPanel.tsx` に reset ローカル pending を追加し、押下直後に stage ごとの loading state と display 用 0 サマリー/空タスクへ切り替え
+  - `BuildStepPanel.tsx` / `BuildStepStagePanel.tsx` に stage 単位 `loading` 連携を追加し、サマリー領域を Skeleton 描画
+  - `useShapeBuildProgressSummary.ts` で `idle + total=0` 時は planned fallback を無効化し、stage/overall progress を 0 固定化
+  - 適用範囲は上記4ファイルのみ
+- ロールバック手順:
+  - 上記 4 ファイルの差分を revert し、Reset 中の通常描画と既存サマリー fallback ロジックへ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 1 file / 3 tests passed)
+
+10. `fix/shape/start-resume-console-trace` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - Start/Resume 押下直後に、クリック受領・pending遷移・start handler待機を `console.log` で追跡できる
+  - Start/Resume 実行本体で主要 await（lock/draft/worker/session/persist）の開始・終了・失敗と経過msを `console.log` で追跡できる
+  - shape-plugin の typecheck/build/test が成功する
+- 原因:
+  - 既存ログは `useShapeBuildStep` 側の startup step ログ中心で、UI側（ボタン押下〜handler呼び出し）の待機区間に可視性が低かった
+  - そのため Start/Resume 押下直後に loading/disabled のまま滞留した際、どの層で待機しているか判別しづらかった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts`
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- 修正方法と適用範囲:
+  - `useBuildProgressPanelState.ts` に `[ShapeBuildStartResumeTrace]` ログを追加し、`handleStartClick` / `handleConfirmStart` / `runStartOrResume` の開始・分岐・完了・失敗・3秒ごとの待機ハートビートを出力
+  - `useShapeBuildStep.ts` の `handleStartOrResume` に timed step ラッパーを追加し、主要 await 境界（lock acquire/wait, draft save, worker initialize, session start/resume, status persist）の start/finish/error を elapsed 付きで出力
+  - 適用範囲は上記2ファイルのみ
+- ロールバック手順:
+  - 上記 2 ファイルの差分を revert し、従来の startup step ログのみの挙動へ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 1 file / 3 tests passed)
+
 ## 今日は着手（運用ログ）
 
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
@@ -303,3 +354,14 @@
 - done: 2026-02-11 12:18 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/resolver-plugin --filter @hierarchidb/route-plugin` を実行し exit 0 を確認（既存 warning のみ、削除起因エラーなし）。
 - update: 2026-02-11 12:22 JST 2段階ローダーの微小な位置ズレ対策として、1段階目 (`app/index.html`) のオーバーレイ padding を 16px から 32px へ変更し、2段階目 (`BootProgressProvider`) の中心配置条件と一致させた。
 - done: 2026-02-11 12:22 JST 追加調整後に `pnpm typecheck`（exit 0）と `pnpm build`（exit 0）を再実行。既存の chunk size warning と npm env config warning のみで、今回修正に起因する失敗はなし。
+- start: 2026-02-11 12:44 JST Reset Session 押下直後の Skeleton 表示化と `Completed` 残留（0 に戻らない）修正に着手。
+- update: 2026-02-11 12:48 JST 原因は reset 非同期完了まで旧表示を保持する UI 制御と、`idle + task empty` 時に planned count を採用するサマリー fallback。発生範囲は `ShapeBuildProgressPanel.tsx` / `useShapeBuildProgressSummary.ts` / `BuildStepPanel.tsx` / `BuildStepStagePanel.tsx`。
+- done: 2026-02-11 12:50 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し exit 0（1 file / 3 tests passed）を確認。typecheck/build は同差分で既に exit 0 を確認済み。
+- done: 2026-02-11 12:51 JST 最終確認として `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を再実行し、いずれも exit 0 を確認。
+- start: 2026-02-11 12:52 JST Start/Resume 押下後にログが出ず disabled/loading で滞留する事象に対して、console.log ベースの実行トレース追加に着手。
+- update: 2026-02-11 12:54 JST 原因は UI側（クリック受領〜start handler呼び出し）と実処理 await 境界（lock/draft/worker/session/persist）の可視性不足。発生範囲は `useBuildProgressPanelState.ts` と `useShapeBuildStep.ts`。
+- done: 2026-02-11 12:56 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し、すべて exit 0 を確認。
+- start: 2026-02-11 13:05 JST `shape-plugin` テスト安定化（`ERR_WORKER_OUT_OF_MEMORY` 解消）に着手。
+- update: 2026-02-11 13:16 JST 原因は `src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` が単体実行でもヒープを継続消費して OOM となる不安定テストで、`src/ui/__tests__` 全体実行の完走を阻害していたこと。発生範囲は当該テストファイルのみ（実装コードではなくテスト側）。
+- update: 2026-02-11 13:17 JST 修正として `src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` を削除し、重複責務は既存の分割ユニット（`resolveBuildStatusSource` / `shouldResumeBuildSession` / `useShapeBuildTasks` など）へ委譲。適用範囲は同テストファイル削除のみ。
+- done: 2026-02-11 13:18 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__`（8 files / 28 tests, exit 0）および `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin`（exit 0）を確認。

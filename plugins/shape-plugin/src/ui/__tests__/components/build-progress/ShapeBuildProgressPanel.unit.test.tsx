@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 
@@ -103,14 +103,16 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
 
-    render(
+    const view = render(
       <Provider store={store}>
         <ShapeBuildProgressPanel data={{}} />
       </Provider>
     );
 
-    await screen.findByText('Build controls');
-    expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
+    await within(view.container).findByText('Build controls');
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
+    });
   });
 
   it('shows resume label when tasks remain even if status is idle', async () => {
@@ -138,19 +140,25 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
 
-    render(
+    const view = render(
       <Provider store={store}>
         <ShapeBuildProgressPanel data={{}} />
       </Provider>
     );
 
-    await screen.findByText('Build controls');
-    expect(screen.getByText('Resume Build')).toBeTruthy();
+    const local = within(view.container);
+    await local.findByText('Build controls');
+    await waitFor(() => {
+      expect(local.getByText('Resume Build')).toBeTruthy();
+    });
   });
 
   it('disables start button immediately after click', async () => {
     const store = makeStore();
-    const startPromise = new Promise<void>(() => {});
+    let resolveStart: (() => void) | null = null;
+    const startPromise = new Promise<void>((resolve) => {
+      resolveStart = resolve;
+    });
     store.set(taskProgressControlsAtom, {
       canStartOrResume: true,
       statusLabel: '',
@@ -176,18 +184,28 @@ describe('ShapeBuildProgressPanel', () => {
       stageRemainingMs: null,
     });
 
-    render(
+    const view = render(
       <Provider store={store}>
         <ShapeBuildProgressPanel data={{}} />
       </Provider>
     );
 
-    await screen.findByText('Build controls');
-    const startButton = screen.getByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
-    expect(startButton.disabled).toBe(false);
+    const local = within(view.container);
+    await local.findByText('Build controls');
+    const startButton = await local.findByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
+    await waitFor(() => {
+      expect(startButton.disabled).toBe(false);
+    });
 
     fireEvent.click(startButton);
 
-    expect(startButton.disabled).toBe(true);
+    await waitFor(() => {
+      expect(startButton.disabled).toBe(true);
+    });
+
+    resolveStart?.();
+    await waitFor(() => {
+      expect(startButton.disabled).toBe(false);
+    });
   });
 });

@@ -34,6 +34,7 @@ export interface BuildStepPanelProps {
   splitViewAutoCloseCountsByBreakpoint?: number[];
   stageContents?: Record<string, ReactNode>;
   stageProgressContent?: Record<string, ReactNode>;
+  stageLoadingState?: Record<string, boolean>;
   chipPlacement?: 'header' | 'belowProgress';
   onPause?: () => void;
   onResume?: () => void;
@@ -69,6 +70,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   splitViewAutoCloseCountsByBreakpoint,
   stageContents,
   stageProgressContent,
+  stageLoadingState,
   chipPlacement,
   onPause,
   onResume,
@@ -190,6 +192,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           onCompletedModeUpdate={(next) => updateStageFilter(id, { completedMode: next })}
           skippedMode={filter.skippedMode}
           onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
+          loading={Boolean(stageLoadingState?.[stage.id])}
         >
           {stageContentNode ? (
             <BuildStageFilterProvider value={filter}>
@@ -199,7 +202,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         </BuildStepStagePanel>
       </Box>
     );
-  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageMenus, stageContents, updateStageFilter]);
+  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageMenus, stageContents, stageLoadingState, updateStageFilter]);
 
   const computedStatusLabel = (() => {
     switch (status) {

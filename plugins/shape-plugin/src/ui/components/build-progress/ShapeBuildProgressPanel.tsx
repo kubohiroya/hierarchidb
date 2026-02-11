@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -633,8 +633,6 @@ export const ShapeBuildProgressPanel = ({
     stageConcurrencyIndicators,
     handleStartClick,
     handleConfirmStart,
-    stageProgressItems,
-    stageContentItems,
   } = useShapeBuildProgressPanel({ data, nodeId });
 
   const resetSessionDraft = useCallback(() => {
@@ -669,8 +667,59 @@ export const ShapeBuildProgressPanel = ({
     handleResetSession,
   } = useShapeBuildCacheActions({ nodeId, draft: data, onResetSession: resetSessionDraft });
 
+  const [isResetSessionPending, setIsResetSessionPending] = useState(false);
+  const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
+
+  const handleResetSessionWithSkeleton = useCallback(async () => {
+    if (isResetSessionLoading) return;
+    setIsResetSessionPending(true);
+    try {
+      await handleResetSession();
+    } finally {
+      setIsResetSessionPending(false);
+    }
+  }, [handleResetSession, isResetSessionLoading]);
+
+  const tasksByStageForDisplay = useMemo(() => {
+    if (!isResetSessionLoading) return tasksByStage;
+    return stages.reduce<Record<string, TaskWithMetadata[]>>((acc, stage) => {
+      acc[stage.id] = [];
+      return acc;
+    }, {});
+  }, [isResetSessionLoading, stages, tasksByStage]);
+
+  const paneProgressForDisplay = useMemo(() => {
+    if (!isResetSessionLoading) return paneProgress;
+    return stages.map((stage) => ({
+      paneId: stage.id,
+      progress: 0,
+      taskCount: 0,
+      completedCount: 0,
+      status: 'idle',
+      summary: { total: 0, success: 0, error: 0, skip: 0 },
+    }));
+  }, [isResetSessionLoading, paneProgress, stages]);
+
+  const stageProgressForDisplay = useMemo(() => {
+    if (!isResetSessionLoading) return stageProgress;
+    return stages.reduce<Record<string, number>>((acc, stage) => {
+      acc[stage.id] = 0;
+      return acc;
+    }, {});
+  }, [isResetSessionLoading, stageProgress, stages]);
+
+  const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
+  const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading;
+
+  const stageLoadingState = useMemo(() => (
+    stages.reduce<Record<string, boolean>>((acc, stage) => {
+      acc[stage.id] = isResetSessionLoading;
+      return acc;
+    }, {})
+  ), [isResetSessionLoading, stages]);
+
   const stageMenus = useMemo(() => {
-    const menuDisabled = summary.buildStatus === 'running';
+    const menuDisabled = summary.buildStatus === 'running' || isResetSessionLoading;
     const fetchApiBaseLabel = t('processing.download.deleteApiCache', 'APIキャッシュを削除');
     const fetchFilteredBaseLabel = t('processing.download.deleteFilteredCache', 'フィルター処理キャッシュを削除');
     const transformBaseLabel = t('processing.download.deleteStage1Cache', '簡略化キャッシュを削除');
@@ -710,8 +759,8 @@ export const ShapeBuildProgressPanel = ({
           {
             id: 'reset-session',
             label: resetSessionLabel,
-            onClick: handleResetSession,
-            disabled: deleteLoading.resetSession,
+            onClick: handleResetSessionWithSkeleton,
+            disabled: isResetSessionLoading,
           },
         ],
       },
@@ -762,6 +811,8 @@ export const ShapeBuildProgressPanel = ({
     handleDeleteVTCache,
     resultCounts.featureMetadata,
     summary.buildStatus,
+    handleResetSessionWithSkeleton,
+    isResetSessionLoading,
     t,
   ]);
 
@@ -837,13 +888,13 @@ export const ShapeBuildProgressPanel = ({
   ), [buildTimingSummary, stages]);
 
   const stageProgressContent = useMemo(() => (
-    stageProgressItems.reduce<Record<string, JSX.Element>>((acc, item) => {
-      const stage = item.stage;
+    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
+      const stageTasks = tasksByStageForDisplay[stage.id] ?? [];
       acc[stage.id] = (
         <Stack gap={1}>
           <TaskProgressBar
             stages={[stage]}
-            tasksByStage={{ [stage.id]: item.tasks }}
+            tasksByStage={{ [stage.id]: stageTasks }}
             stageTotals={summary.stageTotals}
             buildStatus={summary.buildStatus}
             activeStageId={activeStageId}
@@ -853,19 +904,18 @@ export const ShapeBuildProgressPanel = ({
       );
       return acc;
     }, {})
-  ), [activeStageId, stageProgressItems, summary.buildStatus, resolveTaskTitle]);
+  ), [activeStageId, resolveTaskTitle, stages, summary.buildStatus, summary.stageTotals, tasksByStageForDisplay]);
 
   const stageContents = useMemo(() => (
-    stageContentItems.reduce<Record<string, JSX.Element>>((acc, item) => {
-      const stage = item.stage;
+    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
       acc[stage.id] = (
         <BuildProgressStageContent
           stage={stage}
-          stageValue={item.stageValue}
-          tasksByStage={tasksByStage}
-          paneProgress={paneProgress ?? []}
-          isTasksLoading={isTasksLoading}
-          isTaskSummaryLoading={isTaskSummaryLoading}
+          stageValue={stageProgressForDisplay[stage.id] ?? 0}
+          tasksByStage={tasksByStageForDisplay}
+          paneProgress={paneProgressForDisplay ?? []}
+          isTasksLoading={isTasksLoadingForDisplay}
+          isTaskSummaryLoading={isTaskSummaryLoadingForDisplay}
           resolveStatusLabel={resolveStatusLabel}
           resolveStatusColor={resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
@@ -876,15 +926,16 @@ export const ShapeBuildProgressPanel = ({
       return acc;
     }, {})
   ), [
-    stageContentItems,
-    paneProgress,
+    isTaskSummaryLoadingForDisplay,
+    isTasksLoadingForDisplay,
+    paneProgressForDisplay,
     resolveStatusColor,
     resolveStatusLabel,
     resolveTaskTitle,
+    stageProgressForDisplay,
+    stages,
     t,
-    tasksByStage,
-    isTasksLoading,
-    isTaskSummaryLoading,
+    tasksByStageForDisplay,
   ]);
 
   return (
@@ -892,8 +943,9 @@ export const ShapeBuildProgressPanel = ({
       status={summary.buildStatus}
       overallProgress={summary.overallProgress}
       stages={stages}
-      stageProgress={stageProgress}
-      paneProgress={paneProgress}
+      stageProgress={stageProgressForDisplay}
+      paneProgress={paneProgressForDisplay}
+      stageLoadingState={stageLoadingState}
       splitViewBreakpoints={[600, 900, 1200]}
       splitViewInitialSizesByBreakpoint={[
         Array.from({ length: stages.length }, () => 250),

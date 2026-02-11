@@ -110,7 +110,10 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     return stages.reduce<Record<string, { counts: TaskCountSummary; hasIncomplete: boolean }>>((acc, stage) => {
       const stageInfo = stageTaskCounts[stage.id];
       const actualCounts = stageInfo?.counts ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
-      const plannedCounts = effectiveProgress?.stageTotals?.[stage.id as 'fetch' | 'transform' | 'vt'];
+      const shouldUsePlannedCounts = buildStatus !== 'idle' || actualCounts.total > 0;
+      const plannedCounts = shouldUsePlannedCounts
+        ? effectiveProgress?.stageTotals?.[stage.id as 'fetch' | 'transform' | 'vt']
+        : undefined;
       const mergedCompleted = Math.max(actualCounts.completed, plannedCounts?.completed ?? 0);
       const mergedFailed = Math.max(actualCounts.failed, plannedCounts?.failed ?? 0);
       const mergedSkipped = Math.max(actualCounts.skipped, plannedCounts?.skipped ?? 0);
@@ -131,7 +134,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       };
       return acc;
     }, {});
-  }, [effectiveProgress?.stageTotals, stageTaskCounts, stages]);
+  }, [buildStatus, effectiveProgress?.stageTotals, stageTaskCounts, stages]);
 
   const paneProgressWithSummary = useMemo(() => {
     const failureStageId = buildStatus === 'failed'
@@ -185,11 +188,15 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
 
   const stageProgressWithSummary = useMemo(() => {
     return stages.reduce<Record<string, number>>((acc, stage) => {
+      if (buildStatus === 'idle' && aggregatedCounts.total === 0) {
+        acc[stage.id] = 0;
+        return acc;
+      }
       const pane = paneProgressWithSummary.find((entry) => entry.paneId === stage.id);
       acc[stage.id] = Math.min(100, Math.max(0, pane?.progress ?? stageProgress[stage.id] ?? 0));
       return acc;
     }, {});
-  }, [paneProgressWithSummary, stageProgress, stages]);
+  }, [aggregatedCounts.total, buildStatus, paneProgressWithSummary, stageProgress, stages]);
 
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
@@ -246,7 +253,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       completed: 0,
       failed: 0,
       skipped: 0,
-      percentage: Math.round(overallProgress),
+      percentage: buildStatus === 'idle' ? 0 : Math.round(overallProgress),
     };
   }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress]);
 

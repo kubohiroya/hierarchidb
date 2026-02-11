@@ -1345,7 +1345,40 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   ]);
 
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
+    const requestStartedAt = Date.now();
+    const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
+      console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+        nodeId: activeNodeId ? String(activeNodeId) : null,
+        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        event,
+        ...(payload ?? {}),
+      });
+    };
+    const runTimedStep = async <T,>(stepName: string, runner: () => Promise<T>): Promise<T> => {
+      const stepStartedAt = Date.now();
+      logStartResumeTrace(`${stepName}:start`);
+      try {
+        const result = await runner();
+        logStartResumeTrace(`${stepName}:finish`, {
+          stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+        });
+        return result;
+      } catch (error) {
+        logStartResumeTrace(`${stepName}:error`, {
+          stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+          errorMessage: getErrorMessage(error),
+        });
+        throw error;
+      }
+    };
+    logStartResumeTrace('request-received', {
+      source: options?.autoResume ? 'auto' : 'manual',
+      forceRestart: Boolean(options?.forceRestart),
+      buildStatus,
+      runtimeStatus,
+    });
     if (!activeNodeId) {
+      logStartResumeTrace('abort:missing-node-id');
       notify.warning('NodeId is missing.');
       return false;
     }
@@ -1365,6 +1398,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     const hasRunner = coordinator.isRunnerTab(now);
     const activeSessionId = coordinator.readActiveSessionId();
     if (hasRunner && activeSessionId && activeSessionId !== String(activeNodeId)) {
+      logStartResumeTrace('abort:another-session-active', {
+        activeSessionId,
+      });
       finishBuildSessionTransition({
         level: 'warning',
         message: 'Another build session is already active in this tab.',
@@ -1377,7 +1413,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     });
     let acquired = false;
     try {
-      acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
+      acquired = await runTimedStep('lock-acquire', () => tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume }));
       finishBuildStartupStep('lock-acquire', 'success', {
         acquired,
       });
@@ -1402,7 +1438,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       });
       let queued = false;
       try {
-        queued = await waitForBuildLock(now);
+        queued = await runTimedStep('lock-wait', () => waitForBuildLock(now));
       } catch (error) {
         finishBuildStartupStep('lock-wait', 'error', {
           errorMessage: getErrorMessage(error),
@@ -1433,7 +1469,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     beginBuildStartupStep('draft-save', {
       source: startupSource,
     });
-    const saved = await saveDraftBeforeBuild();
+    const saved = await runTimedStep('draft-save', () => saveDraftBeforeBuild());
     if (!saved) {
       finishBuildStartupStep('draft-save', 'error', {
         reason: 'save-draft-returned-false',
@@ -1453,7 +1489,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         source: startupSource,
       });
       try {
-        await bridgeRef.current.initialize();
+        await runTimedStep('worker-initialize', () => bridgeRef.current.initialize());
         finishBuildStartupStep('worker-initialize', 'success');
       } catch (error) {
         finishBuildStartupStep('worker-initialize', 'error', {
@@ -1469,7 +1505,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           policy,
         });
         try {
-          await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+          await runTimedStep('session-resume-request', () => (
+            bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy)
+          ));
           finishBuildStartupStep('session-resume-request', 'success');
         } catch (error) {
           finishBuildStartupStep('session-resume-request', 'error', {
@@ -1485,10 +1523,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           mode: 'resume',
           processingStatus: 'processing',
         });
-        const persisted = await persistDraftPatch({
+        const persisted = await runTimedStep('session-status-persist(resume)', () => persistDraftPatch({
           processingStatus: 'processing',
           stopReason: undefined,
-        });
+        }));
         if (!persisted) {
           finishBuildStartupStep('session-status-persist', 'error', {
             reason: 'persist-resume-status-failed',
@@ -1562,12 +1600,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       });
       let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
       try {
-        statusResult = await bridgeRef.current.startBuildSession(
+        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startBuildSession(
           SHAPE_NODE_TYPE,
           activeNodeId,
           undefined,
           policy,
-        );
+        ));
         finishBuildStartupStep('session-start-request', 'success', {
           status: statusResult.status,
           hasError: Boolean(statusResult.error),
@@ -1593,7 +1631,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         mode: 'start',
         processingStatus: nextStatus,
       });
-      const persisted = await persistDraftPatch({ processingStatus: nextStatus });
+      const persisted = await runTimedStep('session-status-persist(start)', () => persistDraftPatch({ processingStatus: nextStatus }));
       if (!persisted) {
         finishBuildStartupStep('session-status-persist', 'error', {
           reason: 'persist-start-status-failed',
@@ -1625,8 +1663,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           mode: 'start',
         });
       }
+      logStartResumeTrace('request-finished:success', {
+        nextStatus,
+      });
       return true;
     } catch (error) {
+      logStartResumeTrace('request-finished:error', {
+        errorMessage: getErrorMessage(error),
+      });
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
       finishBuildSessionTransition({

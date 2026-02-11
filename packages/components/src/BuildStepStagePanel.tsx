@@ -1,5 +1,5 @@
 import { type FC, memo, type ReactNode, useState, type MouseEvent } from 'react';
-import { Box, Chip, CircularProgress, IconButton, LinearProgress, Menu, MenuItem, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Chip, CircularProgress, IconButton, LinearProgress, Menu, MenuItem, Skeleton, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
@@ -41,6 +41,7 @@ export type BuildStepStageSummaryPanelProps = {
   onCompletedModeUpdate: (newMode: boolean) => void;
   skippedMode: boolean;
   onSkippedModeUpdate: (newMode: boolean) => void;
+  loading?: boolean;
   children?: ReactNode;
 };
 
@@ -63,6 +64,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   onCompletedModeUpdate,
   skippedMode,
   onSkippedModeUpdate,
+  loading = false,
   children,
 }) => {
   const theme = useTheme();
@@ -174,6 +176,36 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
       </Stack>
     </Box>
   ) : null;
+  if (loading) {
+    return (
+      <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
+        <Stack spacing={1} sx={{ p: 2 }}>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+              {icon ? <Box>{icon}</Box> : null}
+              <Skeleton variant="text" width="40%" height={30} />
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Skeleton variant="rounded" width={96} height={20} />
+              <Skeleton variant="rounded" width={88} height={24} />
+            </Stack>
+          </Stack>
+          <Skeleton variant="rounded" height={14} />
+          <Skeleton variant="rounded" height={18} />
+          <Skeleton variant="rounded" height={18} />
+        </Stack>
+        {children ? (
+          <Box flex={1} minHeight={0}>
+            {children}
+          </Box>
+        ) : (
+          <Box sx={{ p: 2 }}>
+            <Skeleton variant="rounded" height={88} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>

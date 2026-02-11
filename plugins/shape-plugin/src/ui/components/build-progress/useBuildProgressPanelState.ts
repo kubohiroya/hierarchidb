@@ -31,6 +31,11 @@ import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.
 import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/taskMessages.ts';
 
 const isDev = import.meta.env.DEV;
+const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
+
+const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
+  console.log(`${START_RESUME_TRACE_PREFIX} ${event}`, payload ?? {});
+};
 
 export const useBuildProgressPanelState = (params: {
   data?: Partial<ShapeEntity>;
@@ -365,16 +370,69 @@ export const useBuildProgressPanelState = (params: {
   }, []);
 
   const runStartOrResume = useCallback(async () => {
-    if (localStartPending) return;
+    const requestStartedAt = Date.now();
     const startHandler = controls.handleStartOrResume;
-    if (!startHandler) return;
+    logStartResumeTrace('runStartOrResume invoked', {
+      nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+      localStartPending,
+      controlStartPending: Boolean(controls.startPending),
+      hasStartHandler: Boolean(startHandler),
+      buildStatus: summary.buildStatus,
+    });
+    if (localStartPending) {
+      logStartResumeTrace('runStartOrResume skipped (already pending)', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+      });
+      return;
+    }
+    if (!startHandler) {
+      logStartResumeTrace('runStartOrResume skipped (missing handler)', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+      });
+      return;
+    }
     setLocalStartPendingImmediate(true);
+    logStartResumeTrace('runStartOrResume pending enabled', {
+      nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+    });
+    let waitTick = 0;
+    const waitTimer: ReturnType<typeof setInterval> = setInterval(() => {
+      waitTick += 1;
+      logStartResumeTrace('runStartOrResume waiting for handler', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        waitTick,
+      });
+    }, 3000);
     try {
       await startHandler();
+      logStartResumeTrace('runStartOrResume handler resolved', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+      });
+    } catch (error) {
+      logStartResumeTrace('runStartOrResume handler rejected', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     } finally {
+      clearInterval(waitTimer);
       setLocalStartPending(false);
+      logStartResumeTrace('runStartOrResume pending cleared', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+      });
     }
-  }, [controls.handleStartOrResume, localStartPending, setLocalStartPendingImmediate]);
+  }, [
+    controls.handleStartOrResume,
+    controls.startPending,
+    localStartPending,
+    resolvedNodeId,
+    setLocalStartPendingImmediate,
+    summary.buildStatus,
+  ]);
 
   const mergedControls = useMemo(() => ({
     ...controls,
@@ -383,16 +441,35 @@ export const useBuildProgressPanelState = (params: {
 
   const handleStartClick = useCallback(async () => {
     if (startWarning) {
+      logStartResumeTrace('handleStartClick blocked by warning dialog', {
+        nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+        warningMessage,
+      });
       setWarningDialogOpen(true);
       return;
     }
+    logStartResumeTrace('handleStartClick proceed', {
+      nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+      buildStatus: summary.buildStatus,
+    });
     await runStartOrResume();
-  }, [runStartOrResume, setWarningDialogOpen, startWarning]);
+  }, [
+    resolvedNodeId,
+    runStartOrResume,
+    setWarningDialogOpen,
+    startWarning,
+    summary.buildStatus,
+    warningMessage,
+  ]);
 
   const handleConfirmStart = useCallback(async () => {
+    logStartResumeTrace('handleConfirmStart proceed', {
+      nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
+      buildStatus: summary.buildStatus,
+    });
     setWarningDialogOpen(false);
     await runStartOrResume();
-  }, [runStartOrResume, setWarningDialogOpen]);
+  }, [resolvedNodeId, runStartOrResume, setWarningDialogOpen, summary.buildStatus]);
 
   return {
     t,
