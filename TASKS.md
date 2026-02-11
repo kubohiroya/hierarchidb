@@ -158,6 +158,75 @@
   - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx --pool forks --poolOptions.forks.singleFork=true` (exit 1, OOM)
   - `NODE_OPTIONS='--max-old-space-size=8192' pnpm -w turbo run test --concurrency=1 --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx --pool forks --poolOptions.forks.singleFork=true --maxWorkers=1` (exit 1, OOM)
 
+6. `fix/shape/task-subscribe-gap-resync-and-reset-event-consistency` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - `subscribeToTasks` が sequence 欠番を検知したら即時 snapshot 再同期する（定期 snapshot は導入しない）
+  - queue clear / running reset / failed reset が購読者へ確実に反映される（直接 DB 書き換えを避ける）
+  - shape-plugin の typecheck/build が成功する
+- 原因:
+  - reset/clear の一部が Dexie 直接操作で実装され、task update/delete イベントが購読側へ流れず、UI 状態が取り残される可能性があった
+  - `subscribeToTasks` は単純な sequence 単調性フィルタのみで、欠番発生時の自己修復（snapshot 再同期）がなかった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/worker/api.ts` の `clearTaskQueueStages` / `resetRunningTasks` / `resetFailedTasks` / `subscribeToTasks`
+- 修正方法と適用範囲:
+  - `clearTaskQueueStages` を `listTasksByStage` + `deleteTasksByIds` ベースへ変更して delete イベント整合を確保
+  - `resetRunningTasks` / `resetFailedTasks` を `listTasksByStatus` + `updateTask` ベースへ変更して update イベント整合を確保
+  - `subscribeToTasks` に sequence gap 検知 (`nextSequence > current+1`) を追加し、検知時は即時 `sendSnapshot()` で再同期（定期 snapshot なし）
+  - 適用範囲は `plugins/shape-plugin/src/worker/api.ts` のみ
+- ロールバック手順:
+  - 上記ファイルの差分を revert し、従来の direct DB 更新 + gap 無検知ロジックへ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+
+7. `fix/shape/fetch-vt-pending-task-finalization-on-stage-abort` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: 6
+- 受け入れ基準:
+  - Fetch/VT ステージで例外発生時に `queued/running` の pending task が残存しない
+  - pending task は `failed` へ遷移し、`aborted: ...` メッセージが記録される
+  - shape-plugin の test/typecheck/build が成功する
+- 原因:
+  - Transform には例外時 pending 畳み込みがあった一方で、Fetch/VT はステージ例外時に pending を terminal へ収束させる処理が不足していた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/services/vt/shapePipelineFetchStage.ts`
+  - `plugins/shape-plugin/src/services/vt/shapePipelineVtStage.ts`
+- 修正方法と適用範囲:
+  - Fetch/VT 両ステージの `runStageTasks/runShapeFetchStage` 呼び出しを `try/catch` 化し、`catch` で `finalizePendingStageTasks(..., 'aborted: ...')` を実行して pending を `failed` へ畳み込み
+  - 回帰テスト `shapePipelineFetchStageSection.unit.test.ts` を追加し、ステージ例外時に `running/queued=0`・`failed=1`・`message/errorMessage` 整合を検証
+  - 適用範囲は上記2実装ファイルと新規テスト1ファイル
+- ロールバック手順:
+  - 上記 3 ファイルの差分を revert し、従来の例外伝播のみ（pending 未畳み込み）へ戻す
+- 検証:
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapePipelineFetchStageSection.unit.test.ts` (exit 0, 1 file / 1 test passed)
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+
+8. `fix/shape/fetch-skip-message-show-reduction-details` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: 7
+- 受け入れ基準:
+  - Fetch ステージで `no features after fetch filter` の skip 時に固定文言ではなく件数差分（features/polygons/vertices）を表示する
+  - 既存の completed ステータス遷移を壊さない
+  - shape-plugin の test/typecheck/build が成功する
+- 原因:
+  - Fetch フィルタで全件除外されたケースの completed message が固定文字列で、実際の除外理由（件数減少）が UI から読めなかった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` の `filteredCollection.features.length === 0` 分岐（topojson/通常系の2経路）
+- 修正方法と適用範囲:
+  - `buildFetchFilterReductionSummary` を追加し、`features/polygons/vertices` の `input -> 0` 差分メッセージを生成
+  - 全件除外分岐の completed message を同ヘルパー利用へ変更
+  - 単体テスト `shapeFetchStage.unit.test.ts` を追加し、差分メッセージを回帰検証
+  - 適用範囲は `shapeFetchStage.ts` と `shapeFetchStage.unit.test.ts` のみ
+- ロールバック手順:
+  - 上記2ファイルの差分を revert し、従来の固定 skip 文言へ戻す
+- 検証:
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeFetchStage.unit.test.ts` (exit 0, 1 file / 1 test passed)
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+
 ## 今日は着手（運用ログ）
 
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
@@ -181,3 +250,29 @@
 - update: 2026-02-11 08:56 JST 修正として stale running/queued の警告ログ化と、終端更新のみの info ログへ再編。適用範囲は `useShapeBuildStep.ts` のみ。
 - done: 2026-02-11 09:03 JST `shape-plugin` の typecheck/build は Turbo 経由で exit 0 を確認。
 - blocked: 2026-02-11 09:03 JST `useShapeBuildStep.unit.test.tsx` は Turbo 経由で複数条件（`NODE_OPTIONS` 拡張、`--pool forks`、`--concurrency=1`）を試しても `ERR_WORKER_OUT_OF_MEMORY` / heap OOM により完走不可。
+- start: 2026-02-11 09:20 JST Fetch/VT を含むタスク残存問題の根本対処として task 購読欠番再同期と reset/clear イベント整合化の実装に着手。
+- update: 2026-02-11 09:24 JST 原因は `api.ts` 内の direct DB 更新経路（delete/modify）が購読イベントを発火せず UI 取り残しを生み得る点と、`subscribeToTasks` が sequence 欠番を自己修復しない点。発生範囲は `clearTaskQueueStages` / `resetRunningTasks` / `resetFailedTasks` / `subscribeToTasks`。
+- update: 2026-02-11 09:29 JST 修正として clear/reset を `vt-orchestrator` API (`deleteTasksByIds` / `updateTask`) 経由へ統一し、`subscribeToTasks` へ gap 検知時即 snapshot 再送（初回 snapshot あり、定期 snapshot なし）を追加。適用範囲は `plugins/shape-plugin/src/worker/api.ts`。
+- done: 2026-02-11 09:34 JST `shape-plugin` の typecheck/build を実行し exit 0 を確認。実装・検証結果を Done/運用ログへ記録完了。
+- start: 2026-02-11 09:45 JST `Fetch`/`VT` の `Running + message空欄` 残留（低頻度）に対する追加調査と stage 例外時 pending 畳み込み対策に着手。
+- update: 2026-02-11 09:49 JST 原因は `shapePipelineFetchStage.ts` / `shapePipelineVtStage.ts` がステージ例外時に pending task (`queued/running`) を terminal へ収束させず、状態残留が起き得たこと。発生範囲は両ファイルの stage 実行ラッパー。
+- update: 2026-02-11 09:53 JST 修正として両ステージを `try/catch` 化し、`catch` で `finalizePendingStageTasks(..., 'aborted: ...')` を実行。加えて fetch ステージ例外時の pending 畳み込みを検証する unit test を追加。適用範囲は `shapePipelineFetchStage.ts` / `shapePipelineVtStage.ts` / `shapePipelineFetchStageSection.unit.test.ts`。
+- done: 2026-02-11 09:57 JST 追加テスト・typecheck・build（Turbo 経由）を実行し、すべて exit 0 を確認。
+- start: 2026-02-11 09:58 JST Fetch ステージ skip 理由の表示改善（固定文言から件数差分へ）に着手。
+- update: 2026-02-11 10:02 JST 原因は `shapeFetchStage.ts` の全件除外分岐が `skipped: no features after fetch filter` を返しており、発生範囲は topojson/通常系の2分岐。件数差分表示ヘルパーを導入して両分岐へ適用。
+- done: 2026-02-11 10:07 JST 追加ユニットテスト（`shapeFetchStage.unit.test.ts`）のDB不整合を修正後、test/typecheck/build（Turbo 経由）をすべて exit 0 で確認。
+- start: 2026-02-11 10:08 JST Progress `scope` の UI 推定（title/metadata/inputData/selected countries 由来）を撤去し、worker 通知ベースへ統一する修正に着手。
+- update: 2026-02-11 10:09 JST 原因は `useShapeBuildStep.ts` の `progressScope` が `displayTasks` と選択国から推定される設計で、`progressTaskId` と無関係な scope がログに混在し得たこと。発生範囲は `useShapeBuildStep.ts` と `useShapeBuildTaskSync.ts` の scope 推定処理。
+- done: 2026-02-11 10:10 JST `progressTaskTitle` を worker→UI で伝搬し、ログは `taskId/taskTitle`（scope は taskId からのみ導出）へ統一。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` をすべて exit 0 で確認。
+- start: 2026-02-11 10:12 JST Resume 実行時に `fetch` ステージ elapsed が 0 化される問題の調査・修正に着手。
+- update: 2026-02-11 10:14 JST 原因は `useShapeBuildStep.ts` の `stageElapsedByStage` / `stageTimingByStage` 永続化 effect が、再開直後の未同期 state（空 map）を先に保存し、既存 persisted 値を上書きし得ること。発生範囲は `useShapeBuildStep.ts` の `persistDraftPatch({ stageElapsedByStage ... })` / `persistDraftPatch({ stageTimingByStage ... })` 直前ガード。
+- update: 2026-02-11 10:18 JST 修正として両 effect の永続化前に persisted 値との merge を強制し、state が不足している間は setState で復元して保存をスキップするガードを追加。適用範囲は `useShapeBuildStep.ts` のみ。
+- done: 2026-02-11 10:26 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、ともに exit 0 を確認。
+- start: 2026-02-11 11:03 JST 経過時間タイマーを「停止」または「アクティブ1ステージのみ毎秒+1秒」に限定する修正に着手。
+- update: 2026-02-11 11:03 JST 原因は `useShapeBuildStep.ts` の stage timer が 300ms 間隔で経過分をまとめ加算する catch-up 実装（`Math.floor((now-last)/1000)*1000`）で、UI負荷時に大きなジャンプを許容していたこと。発生範囲は同ファイルの `displayStageElapsedMs` 更新 effect と stage 切替 snapshot 記録。
+- update: 2026-02-11 11:03 JST 修正として running 中は 1000ms interval で固定 `+1000ms` のみ加算し、停止中は加算停止に変更。あわせて stage 切替時に保持する snapshot を running 中は `displayStageElapsedMs` ベースへ統一し、総経過時間が単一ステージの tick に追従するよう調整。適用範囲は `useShapeBuildStep.ts` のみ。
+- done: 2026-02-11 11:03 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、ともに exit 0 を確認。
+- start: 2026-02-11 11:20 JST 経過時間ロジックを「アクティブステージのみ毎秒+1秒」に完全統一し、`stageTimingByStage` 依存撤去に着手。
+- update: 2026-02-11 11:20 JST 原因は `useShapeBuildStep.ts` / `ShapeBuildProgressPanel.tsx` が `stageElapsedByStage` と `stageTimingByStage` を併用しており、表示ソースが複線化して不一致・リセットが再発し得たこと。発生範囲は elapsed 集計/表示と reset patch 群。
+- update: 2026-02-11 11:20 JST 修正として elapsed の唯一ソースを `stageElapsedByStage`（state: `completedStageElapsedMs`）へ統一し、running 中は active stage のみ 1000ms interval で加算、total は stage 合計で算出。`stageTimingByStage` の読み書き・fallback を `useShapeBuildStep.ts` / `ShapeBuildProgressPanel.tsx` / reset patch 実装（`ShapeBuildConfigStep.tsx`、`useShapeBuildCacheActions.ts`、`useShapeCountrySelectionStep.ts`）から撤去。
+- done: 2026-02-11 11:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を再実行し、ともに exit 0 を確認。

@@ -133,21 +133,38 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
       }));
     },
   });
-  await runStageTasks({
-    nodeId: params.nodeId,
-    stage: 'vt',
-    handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
-    waitIfPaused: params.waitIfPaused,
-    maxConcurrent: vtConfig.maxConcurrent,
-    dynamicConcurrency: vtConfig.dynamicConcurrency?.enabled
-      ? {
-        ...vtConfig.dynamicConcurrency,
-        maxConcurrent: vtConfig.dynamicConcurrency.maxConcurrent ?? vtConfig.maxConcurrent,
-      }
-      : undefined,
-    failureHandling: params.failureHandling,
-    abortController: vtAbortController,
-  });
+  try {
+    await runStageTasks({
+      nodeId: params.nodeId,
+      stage: 'vt',
+      handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
+      waitIfPaused: params.waitIfPaused,
+      maxConcurrent: vtConfig.maxConcurrent,
+      dynamicConcurrency: vtConfig.dynamicConcurrency?.enabled
+        ? {
+          ...vtConfig.dynamicConcurrency,
+          maxConcurrent: vtConfig.dynamicConcurrency.maxConcurrent ?? vtConfig.maxConcurrent,
+        }
+        : undefined,
+      failureHandling: params.failureHandling,
+      abortController: vtAbortController,
+    });
+  } catch (error) {
+    const baseMessage = error instanceof Error ? error.message : String(error);
+    const failedTaskId = error && typeof error === 'object'
+      ? (error as { taskId?: string }).taskId
+      : undefined;
+    const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+    await finalizePendingStageTasks(
+      params.taskQueue,
+      params.nodeId,
+      'vt',
+      `aborted: ${reason}`,
+      '[ShapeVt][PipelineDiagnostics] vt stage aborted',
+      params.pipelineRunId,
+    );
+    throw error;
+  }
   await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,

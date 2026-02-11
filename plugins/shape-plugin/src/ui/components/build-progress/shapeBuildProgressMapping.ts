@@ -15,6 +15,7 @@ export interface BuildProgress {
   progressTaskStatus?: string;
   progressTaskStage?: string;
   progressTaskProgress?: number;
+  progressTaskTitle?: string;
   stageTotals?: Partial<Record<'fetch' | 'transform' | 'vt', {
     total: number;
     completed: number;
@@ -47,6 +48,7 @@ type ProgressTaskMeta = {
   status?: unknown;
   stage?: unknown;
   progress?: unknown;
+  title?: unknown;
 };
 
 type StageTotalsMeta = Partial<Record<'fetch' | 'transform' | 'vt', {
@@ -126,6 +128,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     progressTaskStatus: readString(progressTaskMeta?.status),
     progressTaskStage: readString(progressTaskMeta?.stage),
     progressTaskProgress: readNumber(progressTaskMeta?.progress),
+    progressTaskTitle: readString(progressTaskMeta?.title),
     stageTotals,
   };
 }

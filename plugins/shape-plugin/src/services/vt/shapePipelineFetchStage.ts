@@ -29,18 +29,35 @@ export type ShapeFetchStageParams = {
 export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
   const fetchAbortController = new AbortController();
   await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
-  await runShapeFetchStage({
-    nodeId: params.nodeId,
-    dataSource: params.dataSource,
-    selectedArrayByCountries: params.selectedArrayByCountries,
-    downloadTaskPayloads: params.downloadTaskPayloads,
-    buildConfig: params.buildConfig,
-    taskQueue: params.taskQueue,
-    waitIfPaused: params.waitIfPaused,
-    resumeExistingTasks: params.resumeExistingTasks,
-    abortController: fetchAbortController,
-    failureHandling: params.failureHandling,
-  });
+  try {
+    await runShapeFetchStage({
+      nodeId: params.nodeId,
+      dataSource: params.dataSource,
+      selectedArrayByCountries: params.selectedArrayByCountries,
+      downloadTaskPayloads: params.downloadTaskPayloads,
+      buildConfig: params.buildConfig,
+      taskQueue: params.taskQueue,
+      waitIfPaused: params.waitIfPaused,
+      resumeExistingTasks: params.resumeExistingTasks,
+      abortController: fetchAbortController,
+      failureHandling: params.failureHandling,
+    });
+  } catch (error) {
+    const baseMessage = error instanceof Error ? error.message : String(error);
+    const failedTaskId = error && typeof error === 'object'
+      ? (error as { taskId?: string }).taskId
+      : undefined;
+    const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+    await finalizePendingStageTasks(
+      params.taskQueue,
+      params.nodeId,
+      'fetch',
+      `aborted: ${reason}`,
+      '[ShapeFetch][PipelineDiagnostics] fetch stage aborted',
+      params.pipelineRunId,
+    );
+    throw error;
+  }
   console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,

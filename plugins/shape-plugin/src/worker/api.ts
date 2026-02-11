@@ -46,10 +46,13 @@ import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveF
 import { isBuildProcessConfig, toBuildSessionRecord } from '../services/batch/shapeSessionMappers.ts';
 import {
   VtTaskQueueDb,
+  deleteTasksByIds,
   listTasks,
+  listTasksByStage,
   listTasksByStatus,
   onTaskQueueUpdate,
   putTasks,
+  updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
@@ -305,14 +308,13 @@ const applySelectionDiffCleanup = async (
 const clearTaskQueueStages = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
   if (stages.length === 0) return;
   const taskQueue = new VtTaskQueueDb();
-  await Promise.all(
-    stages.map((stage) => (
-      taskQueue.tasks
-        .where('[nodeId+taskType]')
-        .equals([nodeId, stage])
-        .delete()
-    )),
+  const uniqueStages = Array.from(new Set(stages));
+  const taskRows = await Promise.all(
+    uniqueStages.map((stage) => listTasksByStage(taskQueue, nodeId, stage)),
   );
+  const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
+  if (taskIds.length === 0) return;
+  await deleteTasksByIds(taskQueue, taskIds);
 };
 
 const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>): Promise<void> => {
@@ -661,6 +663,7 @@ type ProgressTaskMeta = {
   status: TaskQueueRecord['status'];
   stage: TaskQueueRecord['stage'];
   progress: number;
+  title?: string;
 };
 
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
@@ -776,12 +779,14 @@ const buildProgressPayloadFromTasks = async (
   const progressTask = options?.eventTask ?? selectLatestTaskBySequence(tasks) ?? undefined;
   const meta: Record<string, unknown> = {};
   if (progressTask) {
+    const progressTaskSummary = buildTaskSummaryFields(progressTask);
     const progressTaskMeta: ProgressTaskMeta = {
       taskId: progressTask.taskId,
       sequence: Number.isFinite(progressTask.sequence) ? progressTask.sequence : undefined,
       status: progressTask.status,
       stage: progressTask.stage,
       progress: resolveTaskProgress(progressTask),
+      title: progressTaskSummary.title,
     };
     meta.progressTask = progressTaskMeta;
   }
@@ -1160,39 +1165,37 @@ const setPaused = (nodeId: NodeId, paused: boolean): void => {
 
 const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  await taskQueue.tasks
-    .where('[nodeId+status]')
-    .equals([nodeId, 'running'])
-    .modify((task) => {
-      task.status = 'queued';
-      task.progress = 0;
-      task.startedAt = undefined;
-      task.completedAt = undefined;
-      task.errorMessage = undefined;
-      task.updatedAt = Date.now();
-      const currentSequence = typeof task.sequence === 'number' ? task.sequence : 0;
-      task.sequence = currentSequence + 1;
-    });
+  const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
+  if (runningTasks.length === 0) return;
+  await Promise.all(runningTasks.map((task) => (
+    updateTask(taskQueue, task.taskId, {
+      status: 'queued',
+      progress: 0,
+      startedAt: undefined,
+      completedAt: undefined,
+      errorMessage: undefined,
+      message: undefined,
+      outputData: undefined,
+    }, { allowTerminalStatusTransition: true })
+  )));
 };
 
 
 const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  await taskQueue.tasks
-    .where('[nodeId+status]')
-    .equals([nodeId, 'failed'])
-    .modify((task) => {
-      task.status = 'queued';
-      task.progress = 0;
-      task.startedAt = undefined;
-      task.completedAt = undefined;
-      task.errorMessage = undefined;
-      task.message = undefined;
-      task.outputData = undefined;
-      task.updatedAt = Date.now();
-      const currentSequence = typeof task.sequence === 'number' ? task.sequence : 0;
-      task.sequence = currentSequence + 1;
-    });
+  const failedTasks = await listTasksByStatus(taskQueue, nodeId, 'failed');
+  if (failedTasks.length === 0) return;
+  await Promise.all(failedTasks.map((task) => (
+    updateTask(taskQueue, task.taskId, {
+      status: 'queued',
+      progress: 0,
+      startedAt: undefined,
+      completedAt: undefined,
+      errorMessage: undefined,
+      message: undefined,
+      outputData: undefined,
+    }, { allowTerminalStatusTransition: true })
+  )));
 };
 
 const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
@@ -2118,7 +2121,10 @@ export const shapeBatchAPI = {
       sequenceByTaskId.set(taskId, sequence);
       return true;
     };
+    let snapshotInFlight = false;
     const sendSnapshot = async () => {
+      if (snapshotInFlight) return;
+      snapshotInFlight = true;
       try {
         const tasks = await buildTaskSummarySnapshot(nodeId, taskQueue);
         tasks.forEach((task) => {
@@ -2128,6 +2134,8 @@ export const shapeBatchAPI = {
         callback({ type: 'snapshot', nodeId, tasks });
       } catch (error) {
         console.error('[shapeBatchAPI] task snapshot failed', error);
+      } finally {
+        snapshotInFlight = false;
       }
     };
     void sendSnapshot();
@@ -2141,6 +2149,17 @@ export const shapeBatchAPI = {
         try {
           const summary = mapTaskQueueRecordToTaskSummary(event.task);
           const sequence = readSequence(summary.taskId, summary.sequence);
+          const current = sequenceByTaskId.get(summary.taskId);
+          if (current !== undefined && sequence > current + 1) {
+            console.warn('[shapeBatchAPI] task sequence gap detected; triggering snapshot resync', {
+              nodeId: event.nodeId,
+              taskId: summary.taskId,
+              currentSequence: current,
+              nextSequence: sequence,
+            });
+            void sendSnapshot();
+            return;
+          }
           if (!shouldEmitTask(summary.taskId, sequence)) {
             return;
           }

@@ -14,7 +14,6 @@ import {
   summarizeCheckboxState,
   validateBatchConfig,
   type ShapeEntity,
-  type ShapeStageTimingSnapshot,
 } from '../../../common/types/index.js';
 import {
   executePauseBuildFlow,
@@ -24,8 +23,7 @@ import {
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
-import { getBuildMonitorKey, getMemorySnapshot } from '@hierarchidb/ui-monitoring';
-import { useShapeBuildTiming } from './useShapeBuildTiming.ts';
+import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -44,9 +42,6 @@ type StageLikeTask = {
   taskType?: TaskStage;
   type?: TaskStage;
   stage: TaskStage;
-  title?: string;
-  metadata?: Record<string, unknown>;
-  inputData?: unknown;
 };
 
 const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
@@ -60,52 +55,6 @@ const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<st
 const sumNumberRecord = (values: Record<string, number>): number => (
   Object.values(values).reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0)
 );
-
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value);
-
-const normalizeStageTimingByStage = (
-  value: ShapeEntity['stageTimingByStage'] | null | undefined,
-): Record<string, ShapeStageTimingSnapshot> => {
-  if (!value || typeof value !== 'object') return {};
-  const next: Record<string, ShapeStageTimingSnapshot> = {};
-  for (const [stageId, rawEntry] of Object.entries(value)) {
-    if (!rawEntry || typeof rawEntry !== 'object') continue;
-    const startedAt = (rawEntry as { startedAt?: unknown }).startedAt;
-    const inactiveMs = (rawEntry as { inactiveMs?: unknown }).inactiveMs;
-    if (!isFiniteNumber(startedAt) || !isFiniteNumber(inactiveMs)) continue;
-    const candidate: ShapeStageTimingSnapshot = { startedAt, inactiveMs };
-    const lastHeartbeatAt = (rawEntry as { lastHeartbeatAt?: unknown }).lastHeartbeatAt;
-    const endedAt = (rawEntry as { endedAt?: unknown }).endedAt;
-    if (isFiniteNumber(lastHeartbeatAt)) {
-      candidate.lastHeartbeatAt = lastHeartbeatAt;
-    }
-    if (isFiniteNumber(endedAt)) {
-      candidate.endedAt = endedAt;
-    }
-    next[stageId] = candidate;
-  }
-  return next;
-};
-
-const shallowEqualStageTimingMap = (
-  left: Record<string, ShapeStageTimingSnapshot>,
-  right: Record<string, ShapeStageTimingSnapshot>,
-): boolean => {
-  if (left === right) return true;
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
-  return leftKeys.every((key) => {
-    const leftEntry = left[key];
-    const rightEntry = right[key];
-    if (!leftEntry || !rightEntry) return false;
-    return leftEntry.startedAt === rightEntry.startedAt
-      && leftEntry.inactiveMs === rightEntry.inactiveMs
-      && leftEntry.lastHeartbeatAt === rightEntry.lastHeartbeatAt
-      && leftEntry.endedAt === rightEntry.endedAt;
-  });
-};
 
 const mergeElapsedByStage = (
   current: Record<string, number>,
@@ -122,112 +71,18 @@ const mergeElapsedByStage = (
   return next;
 };
 
-const timingReference = (value: ShapeStageTimingSnapshot | undefined): number => {
-  if (!value) return 0;
-  if (typeof value.endedAt === 'number' && Number.isFinite(value.endedAt)) {
-    return value.endedAt;
-  }
-  if (typeof value.lastHeartbeatAt === 'number' && Number.isFinite(value.lastHeartbeatAt)) {
-    return value.lastHeartbeatAt;
-  }
-  return value.startedAt;
-};
-
-const mergeStageTimingEntry = (
-  current: ShapeStageTimingSnapshot | undefined,
-  persisted: ShapeStageTimingSnapshot,
-): ShapeStageTimingSnapshot => {
-  if (!current) return persisted;
-  return {
-    startedAt: Math.min(current.startedAt, persisted.startedAt),
-    inactiveMs: Math.max(current.inactiveMs, persisted.inactiveMs),
-    lastHeartbeatAt: Math.max(current.lastHeartbeatAt ?? 0, persisted.lastHeartbeatAt ?? 0) || undefined,
-    endedAt: Math.max(current.endedAt ?? 0, persisted.endedAt ?? 0) || undefined,
-  };
-};
-
-const mergeStageTimingByStage = (
-  current: Record<string, ShapeStageTimingSnapshot>,
-  persisted: Record<string, ShapeStageTimingSnapshot>,
-): Record<string, ShapeStageTimingSnapshot> => {
-  const next: Record<string, ShapeStageTimingSnapshot> = { ...current };
-  Object.entries(persisted).forEach(([stageId, persistedEntry]) => {
-    const currentEntry = next[stageId];
-    const mergedEntry = mergeStageTimingEntry(currentEntry, persistedEntry);
-    if (!currentEntry || timingReference(mergedEntry) >= timingReference(currentEntry)) {
-      next[stageId] = mergedEntry;
-    }
-  });
-  return next;
-};
-
 const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null
-);
-
-const parseScopeFromTitle = (title: string): string | null => {
-  const trimmed = title.trim();
-  if (!trimmed) return null;
-  const scopeMatch = trimmed.match(/\(([^)]+)\)\s+(?:ADM)?(\d+)/i);
-  if (!scopeMatch) return null;
-  const admin0Code = scopeMatch[1]?.trim().toUpperCase();
-  const adminLevel = scopeMatch[2]?.trim();
-  if (!admin0Code || !adminLevel) return null;
-  return `(${admin0Code}) ${adminLevel}`;
-};
-
-const readScopeCode = (value: unknown): string | null => {
-  if (typeof value !== 'string') return null;
-  const code = value.trim().toUpperCase();
-  if (!code) return null;
-  return code;
-};
-
-const readScopeLevel = (value: unknown): string | null => {
-  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-    return String(Math.floor(value));
+const parseScopeFromTaskId = (taskId: string): string | null => {
+  const fetchMatch = taskId.match(/:fetch:([A-Za-z]{2,3}):(\d+)$/);
+  if (fetchMatch?.[1] && fetchMatch[2]) {
+    return `(${fetchMatch[1].trim().toUpperCase()}) ${fetchMatch[2]}`;
   }
-  if (typeof value !== 'string') return null;
-  const normalized = value.trim();
-  if (!normalized) return null;
-  const matched = normalized.match(/(\d+)/);
-  return matched?.[1] ?? null;
-};
-
-const parseScopeFromSourceKey = (value: unknown): string | null => {
-  if (typeof value !== 'string') return null;
-  const [rawCode, rawLevel] = value.split(':');
-  const code = readScopeCode(rawCode);
-  const level = readScopeLevel(rawLevel);
-  if (!code || !level) return null;
-  return `(${code}) ${level}`;
-};
-
-const parseScopeFromRecord = (value: unknown): string | null => {
-  if (!isRecord(value)) return null;
-  const sourceKeyScope = parseScopeFromSourceKey(value.sourceKey);
-  if (sourceKeyScope) return sourceKeyScope;
-  const code = readScopeCode(value.admin0Code)
-    ?? readScopeCode(value.countryCode)
-    ?? readScopeCode(value.urlCountryCode)
-    ?? readScopeCode(value.iso2);
-  const level = readScopeLevel(value.adminLevel)
-    ?? readScopeLevel(value.level)
-    ?? readScopeLevel(value.admLevel);
-  if (!code || !level) return null;
-  return `(${code}) ${level}`;
-};
-
-const resolveTaskScope = (task: StageLikeTask): string | null => {
-  if (typeof task.title === 'string') {
-    const titleScope = parseScopeFromTitle(task.title);
-    if (titleScope) return titleScope;
+  const transformMatch = taskId.match(/:transform:[^:]+:([A-Za-z]{2,3}):(\d+)$/);
+  if (transformMatch?.[1] && transformMatch[2]) {
+    return `(${transformMatch[1].trim().toUpperCase()}) ${transformMatch[2]}`;
   }
-  const metadataScope = parseScopeFromRecord(task.metadata);
-  if (metadataScope) return metadataScope;
-  return parseScopeFromRecord(task.inputData);
+  return null;
 };
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
@@ -522,26 +377,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     () => (data?.stageElapsedByStage ?? {}),
     [data?.stageElapsedByStage]
   );
-  const persistedStageTimingByStage = useMemo<Record<string, ShapeStageTimingSnapshot>>(
-    () => normalizeStageTimingByStage(data?.stageTimingByStage),
-    [data?.stageTimingByStage]
-  );
   const [completedStageElapsedMs, setCompletedStageElapsedMs] = useState<Record<string, number>>(
     () => persistedStageElapsedByStage
   );
-  const completedStageElapsedRef = useRef<Record<string, number>>(persistedStageElapsedByStage);
-  const [stageTimingByStage, setStageTimingByStage] = useState<Record<string, ShapeStageTimingSnapshot>>(
-    () => persistedStageTimingByStage
-  );
-  const stageTimingRef = useRef<Record<string, ShapeStageTimingSnapshot>>(persistedStageTimingByStage);
-  const lastTimingSnapshotRef = useRef<{ stageId: string | null; stageMs: number }>({
-    stageId: null,
-    stageMs: 0,
-  });
-  const lastBuildStatusRef = useRef<BuildStatus | null>(null);
-  const lastElapsedStatusRef = useRef<BuildStatus | null>(null);
   const lastPersistedStageMapRef = useRef<Record<string, number> | null>(null);
-  const lastPersistedStageTimingMapRef = useRef<Record<string, ShapeStageTimingSnapshot> | null>(null);
   const closeCrashSuspect = useCallback(() => {
     setCrashSuspectOpen(false);
     setCrashSuspectMessage(null);
@@ -686,19 +525,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteStatus : null)) : null;
   const stages = useShapeBuildStages(t);
   const processingStatus = data?.processingStatus ?? 'idle';
-  const persistedBuildElapsedMs = typeof data?.buildElapsedMs === 'number' ? data.buildElapsedMs : 0;
-  const persistedBuildResumedAt = typeof data?.buildResumedAt === 'number' ? data.buildResumedAt : null;
-  const persistedStageElapsedMs = typeof data?.stageElapsedMs === 'number' ? data.stageElapsedMs : 0;
-  const persistedStageResumedAt = typeof data?.stageResumedAt === 'number' ? data.stageResumedAt : null;
   const persistedStageElapsedStageId = typeof data?.stageElapsedStageId === 'string'
     ? data.stageElapsedStageId
     : null;
-  const [displayStageElapsedMs, setDisplayStageElapsedMs] = useState(0);
+  const [timingStageId, setTimingStageId] = useState<string | null>(() => persistedStageElapsedStageId);
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
-  const stageTickRef = useRef<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
-  const lastDisplayStageIdRef = useRef<string | null>(null);
   const runtimeStatus = status?.status ?? null;
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
@@ -764,176 +597,54 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const liveTaskType = taskType ?? effectiveStatus?.stage;
   const resolvedTaskType = liveTaskType ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
-  const monitorKey = useMemo(() => (
-    getBuildMonitorKey(
-      {
-        storagePrefix: 'hdb:shape:stage-monitor',
-        maxSamples: 3,
-        memoryPressureRatio: 0.85,
-        heapWarningRatio: 0.85,
-        heapCriticalRatio: 0.9,
-      },
-      nodeId ? String(nodeId) : null
-    )
-  ), [nodeId]);
-  const { timingSnapshot, session: timingSession } = useShapeBuildTiming({
-    buildStatus,
-    taskType,
-    resolvedTaskType: liveTaskType,
-    nodeId,
-    monitorKey,
-    canWrite: isLockOwner,
-  });
-  const timingSessionStageId = typeof timingSnapshot.stageId === 'string'
-    ? timingSnapshot.stageId
-    : typeof timingSession?.stageId === 'string'
-      ? timingSession.stageId
-      : null;
-  const timingStageId = buildStatus === 'idle'
-    ? null
-    : (timingSessionStageId ?? persistedStageElapsedStageId ?? liveTaskType ?? null);
-  const hasTimingSession = Boolean(timingSession?.startedAt) && processingStatus !== 'idle';
-  const fallbackStageElapsedMs = (() => {
-    if (!timingStageId || persistedStageElapsedStageId !== timingStageId) {
-      return 0;
+  useEffect(() => {
+    if (buildStatus === 'idle') {
+      if (timingStageId !== null) {
+        setTimingStageId(null);
+      }
+      return;
     }
-    if (buildStatus !== 'running' || !persistedStageResumedAt) {
-      return persistedStageElapsedMs;
+    const nextStageId = liveTaskType ?? timingStageId ?? persistedStageElapsedStageId ?? resolvedTaskType ?? null;
+    if (nextStageId && nextStageId !== timingStageId) {
+      setTimingStageId(nextStageId);
     }
-    const delta = Math.max(0, Date.now() - persistedStageResumedAt);
-    return persistedStageElapsedMs + delta;
-  })();
-  const timingStageMs = hasTimingSession && timingSessionStageId === timingStageId
-    ? timingSnapshot.stageMs
-    : 0;
-  const stageElapsedMs = Math.max(fallbackStageElapsedMs, timingStageMs);
+  }, [buildStatus, liveTaskType, persistedStageElapsedStageId, resolvedTaskType, timingStageId]);
+
+  const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
   useEffect(() => {
     const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
     if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
     setCompletedStageElapsedMs(merged);
   }, [completedStageElapsedMs, persistedStageElapsedByStage]);
-  useEffect(() => {
-    completedStageElapsedRef.current = completedStageElapsedMs;
-  }, [completedStageElapsedMs]);
-  useEffect(() => {
-    const merged = mergeStageTimingByStage(stageTimingByStage, persistedStageTimingByStage);
-    if (shallowEqualStageTimingMap(stageTimingByStage, merged)) return;
-    setStageTimingByStage(merged);
-  }, [persistedStageTimingByStage, stageTimingByStage]);
-  useEffect(() => {
-    stageTimingRef.current = stageTimingByStage;
-  }, [stageTimingByStage]);
+
   useEffect(() => {
     if (!data) return;
     if (processingStatus !== 'idle') return;
-    if (persistedBuildElapsedMs !== 0) return;
-    if (persistedStageElapsedMs !== 0) return;
-    if (persistedBuildResumedAt !== null) return;
-    if (persistedStageResumedAt !== null) return;
-    if (persistedStageElapsedStageId !== null) return;
     if (!shallowEqualNumberRecord(persistedStageElapsedByStage, {})) return;
-    if (!shallowEqualStageTimingMap(persistedStageTimingByStage, {})) return;
-    setDisplayStageElapsedMs(0);
     setDisplayStageRemainingMs(null);
-    stageTickRef.current = null;
     stageRemainingTickRef.current = null;
-    lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
-    lastDisplayStageIdRef.current = null;
     latestStageRemainingMsRef.current = null;
     setCompletedStageElapsedMs({});
-    setStageTimingByStage({});
-  }, [
-    data,
-    persistedBuildElapsedMs,
-    persistedBuildResumedAt,
-    persistedStageElapsedByStage,
-    persistedStageTimingByStage,
-    persistedStageElapsedMs,
-    persistedStageElapsedStageId,
-    persistedStageResumedAt,
-    processingStatus,
-  ]);
-  useEffect(() => {
-    if (!timingStageId) {
-      setDisplayStageElapsedMs(0);
-      stageTickRef.current = null;
-      lastDisplayStageIdRef.current = null;
-      return;
-    }
-    if (lastDisplayStageIdRef.current !== timingStageId) {
-      lastDisplayStageIdRef.current = timingStageId;
-      setDisplayStageElapsedMs(stageElapsedMs);
-      stageTickRef.current = null;
-      return;
-    }
-    if (buildStatus !== 'running') {
-      setDisplayStageElapsedMs((prev) => Math.max(prev, stageElapsedMs));
-      stageTickRef.current = null;
-      return;
-    }
-    if (displayStageElapsedMs === 0 && stageElapsedMs > 0) {
-      setDisplayStageElapsedMs(stageElapsedMs);
-    }
-    if (stageTickRef.current === null) {
-      stageTickRef.current = Date.now();
-    }
-  }, [buildStatus, displayStageElapsedMs, stageElapsedMs, timingStageId]);
+    setTimingStageId(null);
+  }, [data, persistedStageElapsedByStage, processingStatus]);
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
     if (!timingStageId) return;
     const intervalId = window.setInterval(() => {
-      const now = Date.now();
-      const last = stageTickRef.current ?? now;
-      const step = Math.floor((now - last) / 1000) * 1000;
-      if (step <= 0) return;
-      stageTickRef.current = last + step;
-      setDisplayStageElapsedMs((prev) => {
-        const fromSnapshot = Math.max(prev, stageElapsedMs);
-        const fromTick = prev + step;
-        return Math.max(fromSnapshot, fromTick);
-      });
-    }, 300);
+      setCompletedStageElapsedMs((current) => ({
+        ...current,
+        [timingStageId]: (current[timingStageId] ?? 0) + 1000,
+      }));
+    }, 1000);
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [buildStatus, stageElapsedMs, timingStageId]);
+  }, [buildStatus, timingStageId]);
 
   const hasFailedFetchTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
   ), [displayTasks]);
-  const fallbackFetchProgressScope = useMemo(() => {
-    const selection = selectedArrayByCountries;
-    if (!selection || Array.isArray(selection)) return null;
-    const scopes: string[] = [];
-    Object.entries(selection).forEach(([countryCode, levels]) => {
-      if (!Array.isArray(levels)) return;
-      levels.forEach((selected, levelIndex) => {
-        if (!selected) return;
-        const normalizedCountryCode = countryCode.trim().toUpperCase();
-        if (!normalizedCountryCode) return;
-        scopes.push(`(${normalizedCountryCode}) ${levelIndex}`);
-      });
-    });
-    if (scopes.length === 0) return null;
-    scopes.sort((left, right) => left.localeCompare(right));
-    return scopes[0] ?? null;
-  }, [selectedArrayByCountries]);
-  const progressScope = useMemo(() => {
-    if (!resolvedTaskType) return null;
-    const stageTasks = displayTasks.filter((task) => normalizeStageKey(task) === resolvedTaskType);
-    const candidates = [
-      stageTasks.find((task) => task.status === 'running'),
-      stageTasks.find((task) => task.status === 'queued'),
-      ...stageTasks,
-    ];
-    for (const candidate of candidates) {
-      if (!candidate) continue;
-      const scope = resolveTaskScope(candidate);
-      if (scope) return scope;
-    }
-    return fallbackFetchProgressScope;
-  }, [displayTasks, fallbackFetchProgressScope, resolvedTaskType]);
 
   const progressSummary = useShapeBuildProgressSummary({
     stages,
@@ -946,17 +657,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     tasks: displayTasks,
     normalizeStageKey,
     isSkippedTask: (task) => isSkippedMessage(task.message),
-    timingStageMs: displayStageElapsedMs,
+    timingStageMs: stageElapsedMs,
   });
-  const displayTotalElapsedMs = useMemo(() => {
-    const completedTotalMs = sumNumberRecord(completedStageElapsedMs);
-    if (!timingStageId) {
-      return completedTotalMs;
-    }
-    const committedCurrentStageMs = completedStageElapsedMs[timingStageId] ?? 0;
-    const activeStageContributionMs = Math.max(0, displayStageElapsedMs - committedCurrentStageMs);
-    return completedTotalMs + activeStageContributionMs;
-  }, [completedStageElapsedMs, displayStageElapsedMs, timingStageId]);
+  const displayTotalElapsedMs = useMemo(() => (
+    sumNumberRecord(completedStageElapsedMs)
+  ), [completedStageElapsedMs]);
   useEffect(() => {
     latestStageRemainingMsRef.current = progressSummary.stageRemainingMs;
     if (buildStatus !== 'running') {
@@ -988,30 +693,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         stageRemainingTickRef.current = null;
       }
     };
-  }, [buildStatus]);
-
-  useEffect(() => {
-    if (!timingStageId) return;
-    const now = Date.now();
-    const startedAt = timingSession?.stageStartedAt ?? now;
-    setStageTimingByStage((current) => {
-      if (current[timingStageId]) return current;
-      return {
-        ...current,
-        [timingStageId]: {
-          startedAt,
-          inactiveMs: 0,
-          lastHeartbeatAt: now,
-        },
-      };
-    });
-  }, [timingSession?.stageStartedAt, timingStageId]);
-
-  useEffect(() => {
-    lastBuildStatusRef.current = buildStatus;
-    if (buildStatus === 'idle') {
-      lastTimingSnapshotRef.current = { stageId: null, stageMs: 0 };
-    }
   }, [buildStatus]);
   const {
     statusLabel,
@@ -1155,155 +836,34 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [activeNodeId, onChange, workerClient]);
 
   useEffect(() => {
-    const previous = lastElapsedStatusRef.current;
-    if (previous === buildStatus) return;
-    lastElapsedStatusRef.current = buildStatus;
+    if (buildStatus !== 'running') return;
     if (!activeNodeId) return;
-    const now = Date.now();
-    if (previous === 'running' && buildStatus !== 'running') {
-      if (!persistedBuildResumedAt) return;
-      const delta = Math.max(0, now - persistedBuildResumedAt);
-      const nextElapsedMs = persistedBuildElapsedMs + delta;
-      const patch: Partial<ShapeEntity> = {
-        buildElapsedMs: nextElapsedMs,
-        buildResumedAt: undefined,
-      };
-      if (buildStatus === 'paused' || buildStatus === 'completed' || buildStatus === 'failed') {
-        patch.processingStatus = buildStatus;
-      }
-      if (persistedStageResumedAt && timingStageId && persistedStageElapsedStageId === timingStageId) {
-        const stageDelta = Math.max(0, now - persistedStageResumedAt);
-        patch.stageElapsedMs = persistedStageElapsedMs + stageDelta;
-        patch.stageResumedAt = undefined;
-      }
-      void persistDraftPatch(patch);
-      return;
+    const patch: Partial<ShapeEntity> = {};
+    if (data?.buildStartedAt === undefined) {
+      patch.buildStartedAt = Date.now();
     }
-    if (previous !== 'running' && buildStatus === 'running') {
-      const patch: Partial<ShapeEntity> = {};
-      if (data?.buildStartedAt === undefined) {
-        patch.buildStartedAt = now;
-      }
-      if (data?.buildElapsedMs === undefined) {
-        patch.buildElapsedMs = persistedBuildElapsedMs;
-      }
-      if (!persistedBuildResumedAt) {
-        patch.buildResumedAt = now;
-      }
-      if (timingStageId) {
-        if (persistedStageElapsedStageId !== timingStageId) {
-          patch.stageElapsedStageId = timingStageId;
-          patch.stageElapsedMs = 0;
-        }
-        if (!persistedStageResumedAt || persistedStageElapsedStageId !== timingStageId) {
-          patch.stageResumedAt = now;
-        }
-      }
-      if (Object.keys(patch).length > 0) {
-        void persistDraftPatch(patch);
-      }
+    if (timingStageId && data?.stageElapsedStageId !== timingStageId) {
+      patch.stageElapsedStageId = timingStageId;
+    }
+    if (Object.keys(patch).length > 0) {
+      void persistDraftPatch(patch);
     }
   }, [
     activeNodeId,
     buildStatus,
-    data?.buildElapsedMs,
-    data?.buildResumedAt,
     data?.buildStartedAt,
+    data?.stageElapsedStageId,
     persistDraftPatch,
-    persistedBuildElapsedMs,
-    persistedBuildResumedAt,
-  ]);
-
-  useEffect(() => {
-    if (!timingStageId) return;
-    const previous = lastTimingSnapshotRef.current;
-    const previousStageId = previous.stageId;
-    if (previousStageId && previousStageId !== timingStageId) {
-      const previousElapsedMs = previous.stageMs;
-      const currentCompleted = completedStageElapsedRef.current;
-      const needsCommit = previousElapsedMs > 0 && currentCompleted[previousStageId] === undefined;
-      const nextCompleted = needsCommit
-        ? { ...currentCompleted, [previousStageId]: previousElapsedMs }
-        : currentCompleted;
-      if (needsCommit) {
-        setCompletedStageElapsedMs(nextCompleted);
-      }
-      lastPersistedStageMapRef.current = nextCompleted;
-      const now = Date.now();
-      const currentTimingMap = stageTimingRef.current;
-      const nextTimingMap: Record<string, ShapeStageTimingSnapshot> = { ...currentTimingMap };
-      const previousTiming = nextTimingMap[previousStageId];
-      const normalizedPreviousElapsedMs = Math.max(0, previousElapsedMs);
-      const previousStartedAt = previousTiming?.startedAt ?? Math.max(0, now - normalizedPreviousElapsedMs);
-      const inferredPreviousInactiveMs = Math.max(0, now - previousStartedAt - normalizedPreviousElapsedMs);
-      nextTimingMap[previousStageId] = {
-        startedAt: previousStartedAt,
-        inactiveMs: Math.max(previousTiming?.inactiveMs ?? 0, inferredPreviousInactiveMs),
-        lastHeartbeatAt: now,
-        endedAt: now,
-      };
-      const existingCurrentTiming = nextTimingMap[timingStageId];
-      nextTimingMap[timingStageId] = {
-        startedAt: existingCurrentTiming?.startedAt ?? timingSession?.stageStartedAt ?? now,
-        inactiveMs: existingCurrentTiming?.inactiveMs ?? 0,
-        lastHeartbeatAt: now,
-      };
-      if (!shallowEqualStageTimingMap(currentTimingMap, nextTimingMap)) {
-        setStageTimingByStage(nextTimingMap);
-      }
-      lastPersistedStageTimingMapRef.current = nextTimingMap;
-      const patch: Partial<ShapeEntity> = {
-        stageElapsedByStage: nextCompleted,
-        stageTimingByStage: nextTimingMap,
-        stageElapsedStageId: timingStageId,
-        stageElapsedMs: 0,
-        stageResumedAt: buildStatus === 'running' ? now : undefined,
-      };
-      void persistDraftPatch(patch);
-    }
-    lastTimingSnapshotRef.current = { stageId: timingStageId, stageMs: stageElapsedMs };
-  }, [
-    buildStatus,
-    persistDraftPatch,
-    stageElapsedMs,
-    timingSession?.stageStartedAt,
     timingStageId,
   ]);
 
   useEffect(() => {
-    if (!timingStageId) return;
-    if (!['completed', 'failed'].includes(buildStatus)) return;
-    if (stageElapsedMs <= 0) return;
-    const now = Date.now();
-    setCompletedStageElapsedMs((current) => {
-      if (current[timingStageId]) return current;
-      return { ...current, [timingStageId]: stageElapsedMs };
-    });
-    setStageTimingByStage((current) => {
-      const currentEntry = current[timingStageId];
-      const startedAt = currentEntry?.startedAt ?? Math.max(0, now - stageElapsedMs);
-      const inferredInactiveMs = Math.max(0, now - startedAt - stageElapsedMs);
-      const nextEntry: ShapeStageTimingSnapshot = {
-        startedAt,
-        inactiveMs: Math.max(currentEntry?.inactiveMs ?? 0, inferredInactiveMs),
-        lastHeartbeatAt: now,
-        endedAt: now,
-      };
-      if (
-        currentEntry
-        && currentEntry.startedAt === nextEntry.startedAt
-        && currentEntry.inactiveMs === nextEntry.inactiveMs
-        && currentEntry.lastHeartbeatAt === nextEntry.lastHeartbeatAt
-        && currentEntry.endedAt === nextEntry.endedAt
-      ) {
-        return current;
-      }
-      return { ...current, [timingStageId]: nextEntry };
-    });
-  }, [buildStatus, stageElapsedMs, timingStageId]);
-
-  useEffect(() => {
     if (!activeNodeId) return;
+    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
+    if (!shallowEqualNumberRecord(completedStageElapsedMs, merged)) {
+      setCompletedStageElapsedMs(merged);
+      return;
+    }
     if (shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage)) return;
     if (lastPersistedStageMapRef.current
       && shallowEqualNumberRecord(lastPersistedStageMapRef.current, completedStageElapsedMs)) {
@@ -1312,19 +872,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     lastPersistedStageMapRef.current = completedStageElapsedMs;
     void persistDraftPatch({ stageElapsedByStage: completedStageElapsedMs });
   }, [activeNodeId, completedStageElapsedMs, persistDraftPatch, persistedStageElapsedByStage]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (shallowEqualStageTimingMap(stageTimingByStage, persistedStageTimingByStage)) return;
-    if (
-      lastPersistedStageTimingMapRef.current
-      && shallowEqualStageTimingMap(lastPersistedStageTimingMapRef.current, stageTimingByStage)
-    ) {
-      return;
-    }
-    lastPersistedStageTimingMapRef.current = stageTimingByStage;
-    void persistDraftPatch({ stageTimingByStage });
-  }, [activeNodeId, persistDraftPatch, persistedStageTimingByStage, stageTimingByStage]);
 
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;
@@ -1493,6 +1040,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     const progressTaskId = effectiveProgress?.progressTaskId;
     const progressTaskSequence = effectiveProgress?.progressTaskSequence;
     const progressTaskStatus = effectiveProgress?.progressTaskStatus;
+    const progressTaskTitle = typeof effectiveProgress?.progressTaskTitle === 'string'
+      ? effectiveProgress.progressTaskTitle.trim()
+      : '';
+    const progressTaskScope = typeof progressTaskId === 'string'
+      ? parseScopeFromTaskId(progressTaskId)
+      : null;
     const canCheckStale = (
       typeof progressTaskId === 'string'
       && typeof progressTaskSequence === 'number'
@@ -1507,8 +1060,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           staleProgressLogKeyRef.current = staleKey;
           emitBuildSessionTransitionLog('warn', 'ignored stale worker progress update after completion', {
             stage: resolvedTaskType ?? null,
-            scope: progressScope,
             taskId: progressTaskId,
+            taskTitle: progressTaskTitle || null,
+            taskScope: progressTaskScope,
             taskSequence: progressTaskSequence,
             completedSequence,
             taskStatus: progressTaskStatus,
@@ -1519,22 +1073,22 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return;
       }
     }
-    if ((resolvedTaskType === 'fetch' || resolvedTaskType === 'transform') && !progressScope) return;
     const isPhaseMessage = /^phase=/i.test(message);
     const isTerminalUpdate = (
       progressTaskStatus === 'completed'
       || ((effectiveProgress?.percentage ?? 0) >= 100 && !isPhaseMessage)
     );
     if (!isTerminalUpdate) return;
-    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${message}:${progressScope ?? ''}`;
+    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${message}`;
     if (progressTerminalLogKeyRef.current === key) return;
     progressTerminalLogKeyRef.current = key;
     emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
       stage: resolvedTaskType ?? null,
       message,
       percentage: effectiveProgress?.percentage ?? null,
-      scope: progressScope,
       taskId: progressTaskId ?? null,
+      taskTitle: progressTaskTitle || null,
+      taskScope: progressTaskScope,
       taskSequence: progressTaskSequence ?? null,
       taskStatus: progressTaskStatus ?? null,
     });
@@ -1545,9 +1099,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     effectiveProgress?.progressTaskId,
     effectiveProgress?.progressTaskSequence,
     effectiveProgress?.progressTaskStatus,
+    effectiveProgress?.progressTaskTitle,
     emitBuildSessionTransitionLog,
     completedTaskSequenceById,
-    progressScope,
     resolvedTaskType,
     runtimeStatus,
     buildSessionTransition.active,
@@ -2199,7 +1753,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     closeAuthDialog,
     handleProviderSelect,
     totalElapsedMs: displayTotalElapsedMs,
-    stageElapsedMs: displayStageElapsedMs,
+    stageElapsedMs,
     stageRemainingMs: displayStageRemainingMs,
     crashSuspectOpen,
     crashSuspectMessage,

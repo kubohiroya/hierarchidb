@@ -335,6 +335,16 @@ const formatChangeSummary = (label: string, input: number, output: number): stri
   return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
 };
 
+const buildFetchFilterReductionSummary = (inputSummary: {
+  featureCount: number;
+  polygonCount: number;
+  vertexCount: number;
+}): string => ([
+  formatChangeSummary('features', inputSummary.featureCount, 0),
+  formatChangeSummary('polygons', inputSummary.polygonCount, 0),
+  formatChangeSummary('vertices', inputSummary.vertexCount, 0),
+].join(', '));
+
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
   const collection = decoded as FeatureCollection;
@@ -863,7 +873,7 @@ const createFetchHandler = (params: {
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
         return {
           status: 'completed',
-          message: 'skipped: no features after fetch filter',
+          message: buildFetchFilterReductionSummary(inputSummary),
         };
       }
 
@@ -975,7 +985,7 @@ const createFetchHandler = (params: {
       await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       return {
         status: 'completed',
-        message: 'skipped: no features after fetch filter',
+        message: buildFetchFilterReductionSummary(inputSummary),
       };
     }
 

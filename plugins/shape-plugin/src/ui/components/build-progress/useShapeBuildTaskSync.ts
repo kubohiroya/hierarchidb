@@ -62,46 +62,9 @@ const parseScopeFromTaskId = (taskId: string): { iso2: string; adminLevel: strin
   return null;
 };
 
-const parseScopeFromTitle = (title: string): { iso2: string; adminLevel: string } | null => {
-  const parenthesized = title.match(/\(([A-Za-z]{2,3})\)\s*(?:ADM)?(\d+)/i);
-  if (parenthesized?.[1] && parenthesized[2]) {
-    return {
-      iso2: normalizeIsoCode(parenthesized[1]),
-      adminLevel: parenthesized[2],
-    };
-  }
-  const admStyle = title.match(/\b([A-Za-z]{2,3})\s+ADM(\d+)\b/i);
-  if (admStyle?.[1] && admStyle[2]) {
-    return {
-      iso2: normalizeIsoCode(admStyle[1]),
-      adminLevel: admStyle[2],
-    };
-  }
-  return null;
-};
-
-const parseScopeFromMessage = (message: string): { iso2: string; adminLevel: string } | null => {
-  const sourceKeyMatch = message.match(/\b([A-Za-z]{2,3}):(\d+)\b/);
-  if (sourceKeyMatch?.[1] && sourceKeyMatch[2]) {
-    return {
-      iso2: normalizeIsoCode(sourceKeyMatch[1]),
-      adminLevel: sourceKeyMatch[2],
-    };
-  }
-  return null;
-};
-
 const resolveTaskScope = (task: ShapeBuildTaskSummary): { iso2: string; adminLevel: string } => {
   const fromTaskId = parseScopeFromTaskId(task.taskId);
   if (fromTaskId) return fromTaskId;
-  if (typeof task.title === 'string') {
-    const fromTitle = parseScopeFromTitle(task.title);
-    if (fromTitle) return fromTitle;
-  }
-  if (typeof task.message === 'string') {
-    const fromMessage = parseScopeFromMessage(task.message);
-    if (fromMessage) return fromMessage;
-  }
   return {
     iso2: UNKNOWN_SCOPE_VALUE,
     adminLevel: UNKNOWN_SCOPE_VALUE,
