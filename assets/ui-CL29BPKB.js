@@ -1,1 +1,0 @@
-import{n as e}from"./dist-B9P4tNiv.js";e.getInstance().registerConfigProvider({nodeType:`folder`,getCreateStepConfigs(){return[]},getEditStepConfigs(){return this.getCreateStepConfigs()}});const t=()=>null;export{t as FolderDialogHost,t as default};
