@@ -35,7 +35,7 @@ import { useShapeBuildLabels } from './useShapeBuildLabels.ts';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 import { resolveBuildStatusSource } from './resolveBuildStatusSource.ts';
 import { shouldResumeBuildSession } from './shouldResumeBuildSession.ts';
-import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
+import { createBuildStartDraftData } from './createBuildStartDraftData.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
@@ -820,23 +820,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
           ? (node.draftData as Record<string, unknown>)
           : {}
       );
-      const persistedBuildConfig = (
-        currentDraftData.buildConfig && typeof currentDraftData.buildConfig === 'object'
-          ? (currentDraftData.buildConfig as Record<string, unknown>)
-          : {}
-      );
-      const nextBuildConfig = {
-        ...persistedBuildConfig,
-        ...(data?.buildConfig ?? {}),
-        ...(patch?.buildConfig ?? {}),
-      };
       await updater.updateTreeNode(activeNodeId, {
         mode: 'save-draft',
-        draftData: {
-          ...sanitizeShapeDraftData(currentDraftData),
-          ...sanitizeShapeDraftData(patch ?? {}),
-          buildConfig: nextBuildConfig,
-        } as Record<string, unknown>,
+        draftData: createBuildStartDraftData({
+          currentDraftData,
+          liveData: data,
+          patch,
+        }),
       });
       return true;
     } catch (error) {

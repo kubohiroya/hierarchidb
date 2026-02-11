@@ -46,6 +46,7 @@ import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveF
 import { toBuildSessionRecord } from '../services/batch/shapeSessionMappers.ts';
 import {
   VtTaskQueueDb,
+  deleteTasksByNode,
   deleteTasksByIds,
   listTasks,
   listTasksByStage,
@@ -67,6 +68,7 @@ import {
   selectLatestTaskBySequence,
 } from './taskOrdering.ts';
 import { getStagePlan, setFetchPlannedTotal } from '../services/vt/shapeProgressPlan.ts';
+import { shouldReuseTaskQueueOnStart } from './shouldReuseTaskQueueOnStart.ts';
 
 const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): BuildSessionConfig => {
   const resolvedDataSource = requireDataSourceName(
@@ -1477,6 +1479,20 @@ export const shapeBatchAPI = {
       'count-existing-tasks',
       async () => taskQueue.tasks.where('nodeId').equals(nodeForSession).count(),
     );
+    const canReuseTaskQueue = shouldReuseTaskQueueOnStart(previousSession?.status);
+    if (!canReuseTaskQueue && existingTaskCount > 0) {
+      await executeStartupStep(
+        'clear-completed-session-task-queue',
+        async () => {
+          await deleteTasksByNode(taskQueue, nodeForSession);
+          existingTaskCount = 0;
+        },
+        {
+          existingTaskCount,
+          previousSessionStatus: previousSession?.status ?? null,
+        },
+      );
+    }
     if (existingTaskCount === 0) {
       await executeStartupStep(
         'seed-task-queue',
@@ -1486,7 +1502,7 @@ export const shapeBatchAPI = {
         },
       );
     }
-    const resumeExistingTasks = existingTaskCount > 0;
+    const resumeExistingTasks = canReuseTaskQueue && existingTaskCount > 0;
     if (resumeExistingTasks) {
       await executeStartupStep(
         'normalize-existing-tasks',

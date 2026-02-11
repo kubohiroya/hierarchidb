@@ -5,7 +5,7 @@ import { notify } from '@hierarchidb/components';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
-import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import {
@@ -433,6 +433,8 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const handleResetSession = useCallback(async () => {
     if (!nodeId) return;
     await runDelete('resetSession', async () => {
+      const taskQueue = new VtTaskQueueDb();
+      await deleteTasksByNode(taskQueue, nodeId);
       await deleteRawDataDataSourceBuffersForNode(nodeId);
       await shapeMutationAPIImpl.clearShapeArtifacts(nodeId);
       await Promise.all([
