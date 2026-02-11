@@ -27,7 +27,7 @@ export class VtTaskQueueDb extends Dexie {
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
     // Debug logging intentionally suppressed to reduce IndexedDB overhead.
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(4).stores(EPHEMERAL_DB_SCHEMA);
     this.tasks = this.table('buildTasks');
   }
 }

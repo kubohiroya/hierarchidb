@@ -44,6 +44,7 @@
 - #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
 - #206 / `codex/refactor/ephemeral-phased-remove-cache-meta` / start: 2026-02-12 02:04 JST
 - #207 / `codex/refactor/unify-ephemeral-db` / start: 2026-02-12 02:32 JST
+- #210 / `codex/fix/shape/build-tasks-index-schemaerror-after-db-reset` / start: 2026-02-12 08:08 JST
 
 ### Blocked
 
@@ -51,6 +52,9 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 08:13 JST #210 DB全削除後の build start で SchemaError が出る原因は、`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` の `EPHEMERAL_DB_SCHEMA` が `buildTasks` の複合インデックス（`[nodeId+stage]`, `[nodeId+taskType+index]`, `[nodeId+status+index]`, `[nodeId+taskType+status+index]`）を欠いていたため。発生範囲は `packages/vt-orchestrator/src/task/taskQueue.ts` と shape-plugin の `taskQueue.tasks.where('[nodeId+stage]')` 系参照。修正として `EPHEMERAL_DB_SCHEMA` に複合インデックスを追加し、`packages/gis-sdk/src/ephemeral/EphemeralDB.ts` を version 6 に更新、`packages/vt-orchestrator/src/task/taskQueue.ts` の Dexie version を 4 に更新。
+- done: 2026-02-12 08:13 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` すべて exit 0）。
+- update: 2026-02-12 08:08 JST Issue #210 を起票し Project `hierarchidb` の Status を `In Progress` に設定、ブランチ `codex/fix/shape/build-tasks-index-schemaerror-after-db-reset` を作成して着手。
 - update: 2026-02-12 03:34 JST #207 で DB 名を修正（`ephemeralShapeDB -> getDBName('shape-ephemeral')`, `ephemeralRouteDB -> getDBName('route-ephemeral')`）。`ephemeral` 単一名への退行を解消。
 - update: 2026-02-12 03:34 JST API 名称統一として `HidbEphemeralDB` / `hidbEphemeralDB` / `EphemeralGisDB` / `getEphemeralRouteDB` を撤去し、`EphemeralDB` / `EphemeralShapeDB` / `EphemeralRouteDB` / `getEphemeralRouteVectorTileDB` へ統一。
 - done: 2026-02-12 03:34 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。

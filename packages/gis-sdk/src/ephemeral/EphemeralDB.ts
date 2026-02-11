@@ -80,6 +80,7 @@ export abstract class EphemeralDB extends Dexie {
       }
     });
     this.version(5).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(6).stores(EPHEMERAL_DB_SCHEMA);
 
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');

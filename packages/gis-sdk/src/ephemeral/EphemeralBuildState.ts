@@ -161,7 +161,8 @@ export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
     '&nodeId, status, updatedAt',
   buildTasks:
     '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+index]',
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]',
   fetchCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   fetchCacheMeta:
