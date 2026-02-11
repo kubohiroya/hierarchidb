@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
+import { flushSync } from 'react-dom';
 import { useTranslation } from '../../i18n.js';
 import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
@@ -52,6 +53,7 @@ export const useBuildProgressPanelState = (params: {
   const suspendSuspectOpen = useAtomValue(suspendSuspectOpenAtom);
   const suspendSuspectControls = useAtomValue(suspendSuspectControlsAtom);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [localStartPending, setLocalStartPending] = useState(false);
   const [elapsedTickMs, setElapsedTickMs] = useState(() => Date.now());
   const [completionSnapshot, setCompletionSnapshot] = useState<{
     status: BuildStatus;
@@ -354,18 +356,41 @@ export const useBuildProgressPanelState = (params: {
     }, {});
   }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
 
+  const setLocalStartPendingImmediate = useCallback((next: boolean) => {
+    flushSync(() => {
+      setLocalStartPending(next);
+    });
+  }, []);
+
+  const runStartOrResume = useCallback(async () => {
+    if (localStartPending) return;
+    const startHandler = controls.handleStartOrResume;
+    if (!startHandler) return;
+    setLocalStartPendingImmediate(true);
+    try {
+      await startHandler();
+    } finally {
+      setLocalStartPending(false);
+    }
+  }, [controls.handleStartOrResume, localStartPending, setLocalStartPendingImmediate]);
+
+  const mergedControls = useMemo(() => ({
+    ...controls,
+    startPending: Boolean(controls.startPending) || localStartPending,
+  }), [controls, localStartPending]);
+
   const handleStartClick = useCallback(async () => {
     if (startWarning) {
       setWarningDialogOpen(true);
       return;
     }
-    await controls.handleStartOrResume?.();
-  }, [controls, setWarningDialogOpen, startWarning]);
+    await runStartOrResume();
+  }, [runStartOrResume, setWarningDialogOpen, startWarning]);
 
   const handleConfirmStart = useCallback(async () => {
     setWarningDialogOpen(false);
-    await controls.handleStartOrResume?.();
-  }, [controls, setWarningDialogOpen]);
+    await runStartOrResume();
+  }, [runStartOrResume, setWarningDialogOpen]);
 
   return {
     t,
@@ -376,7 +401,7 @@ export const useBuildProgressPanelState = (params: {
     isTaskSummaryLoading,
     tasksByStage,
     summary,
-    controls,
+    controls: mergedControls,
     warningMessage,
     activeStageId,
     startWarning,

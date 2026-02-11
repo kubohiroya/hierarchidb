@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 
@@ -31,6 +31,10 @@ vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', (
     sizeWarningOpen: false,
     setSizeWarningOpen: vi.fn(),
   }),
+}));
+
+vi.mock('@hierarchidb/ui-batch-progress', () => ({
+  BuildSessionLauncherPanel: () => null,
 }));
 
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel.tsx';
@@ -142,5 +146,48 @@ describe('ShapeBuildProgressPanel', () => {
 
     await screen.findByText('Build controls');
     expect(screen.getByText('Resume Build')).toBeTruthy();
+  });
+
+  it('disables start button immediately after click', async () => {
+    const store = makeStore();
+    const startPromise = new Promise<void>(() => {});
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: true,
+      statusLabel: '',
+      showResumeLabel: false,
+      startPending: false,
+      handleStartOrResume: () => startPromise,
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await screen.findByText('Build controls');
+    const startButton = screen.getByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
+    expect(startButton.disabled).toBe(false);
+
+    fireEvent.click(startButton);
+
+    expect(startButton.disabled).toBe(true);
   });
 });
