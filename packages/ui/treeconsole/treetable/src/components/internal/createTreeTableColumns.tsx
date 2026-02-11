@@ -10,7 +10,7 @@ import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarc
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
-import type { BuildSessionIndicator, TreeNodeInUI } from '../../types.js';
+import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '../../types.js';
 import {
   buildTreeConsoleLinkHref,
   getPluginIconColor,
@@ -55,7 +55,7 @@ export interface ColumnBuilderParams {
   iconInteractive?: boolean;
   rowClickAction: 'Select/Navigate' | 'Edit';
   selectionMode: 'single' | 'multiple' | 'none';
-  controller: any;
+  controller: TreeTableController | null;
   validateInline: (field: 'name' | 'description', value: string) => { ok: boolean; message?: string };
   handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
   editingField: 'name' | 'description' | null;
@@ -384,7 +384,6 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               });
             }}
             aria-label="Open menu"
-            role="button"
           >
             <IconButton
               className="tree-node-icon-highlight"

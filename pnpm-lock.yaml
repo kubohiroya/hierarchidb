@@ -382,9 +382,6 @@ importers:
       '@hierarchidb/ui-search-field':
         specifier: workspace:*
         version: link:../packages/ui/search-field
-      '@hierarchidb/ui-session-coordinator':
-        specifier: workspace:*
-        version: link:../packages/ui/session-coordinator
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../packages/ui/worker-client
@@ -1761,6 +1758,9 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
+      '@hierarchidb/session-coordinator':
+        specifier: workspace:*
+        version: link:../../session-coordinator
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../../tree-api
@@ -1770,9 +1770,6 @@ importers:
       '@hierarchidb/ui-icon':
         specifier: workspace:*
         version: link:../icon
-      '@hierarchidb/ui-session-coordinator':
-        specifier: workspace:*
-        version: link:../session-coordinator
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../worker-client

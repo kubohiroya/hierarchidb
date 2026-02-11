@@ -58,7 +58,6 @@
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-plugin-shell": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
-    "@hierarchidb/ui-session-coordinator": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",

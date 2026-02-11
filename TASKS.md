@@ -41,6 +41,7 @@
 
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 - #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
+- #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
 
 ### Blocked
 
@@ -48,6 +49,10 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 01:28 JST Issue `refactor/session/remove-ui-session-coordinator` を起票し `https://github.com/kubohiroya/hierarchidb/issues/205` を作成。
+- update: 2026-02-12 01:28 JST Issue #205 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 01:28 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま (1) 作業に着手。
+- update: 2026-02-12 01:48 JST heartbeat 管理機能（session-coordinator の heartbeat/semaphore API と UI 側依存）を撤去し、`pnpm -w turbo run typecheck ...` と `pnpm -w turbo run build ...` を成功確認。
 - blocked: 2026-02-11 20:17 JST `gh auth status` 実行時に認証トークン無効で停止。
   失敗コマンド: `gh auth status`
   エラー要約: `The token in default is invalid.`

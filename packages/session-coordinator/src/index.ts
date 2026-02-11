@@ -1,4 +1,3 @@
-import { Dexie } from 'dexie';
 export type { SessionBroadcastChannel, SessionBroadcastMessage } from './broadcast.js';
 export { createSessionBroadcastChannel } from './broadcast.js';
 
@@ -15,26 +14,6 @@ export type SessionChannelMessage<TStatus = unknown, TProgress = unknown> = {
   updatedAt?: number;
 };
 
-export type HeartbeatRecord<TStatus = unknown, TProgress = unknown> = {
-  sessionId: string;
-  tabId: string;
-  updatedAt: number;
-  expiresAt: number;
-  status?: TStatus | null;
-  progress?: TProgress | null;
-  tabState?: SessionTabState;
-  lockOwner?: boolean;
-};
-
-export type HeartbeatPayload<TStatus = unknown, TProgress = unknown> = {
-  sessionId: string;
-  status?: TStatus | null;
-  progress?: TProgress | null;
-  tabState?: SessionTabState;
-  lockOwner?: boolean;
-  timestamp?: number;
-};
-
 export type SessionStorageKeys = {
   tabIdKey: string;
   activeSessionKey: string;
@@ -45,11 +24,9 @@ export type SessionCoordinatorOptions = {
   channelName?: string;
   pollIntervalTimeout?: number;
   quietThresholdTimeout?: number;
-  semaphoreTtlTimeout?: number;
   storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
   storageKeys?: Partial<SessionStorageKeys>;
   now?: () => number;
-  semaphoreDbName?: string;
 };
 
 export type SessionPollingTracker = {
@@ -58,11 +35,14 @@ export type SessionPollingTracker = {
   prune: (referenceTime?: number) => void;
 };
 
+export type SessionLockHandle = {
+  release: () => void;
+};
+
 export type SessionCoordinator = {
   channelName: string;
   pollIntervalTimeout: number;
   quietThresholdTimeout: number;
-  semaphoreTtlTimeout: number;
   getTabId: () => string;
   readActiveSessionId: () => string | null;
   writeActiveSessionId: (sessionId: string) => void;
@@ -87,30 +67,9 @@ export type SessionCoordinator = {
   ) => void;
   isSessionChannelMessage: (message: unknown) => message is SessionChannelMessage;
   isRunnerTab: (referenceTime?: number) => boolean;
-  tryAcquireSemaphore: (key: string, ownerId: string, ttlMs?: number) => Promise<boolean>;
   tryAcquireSessionLock: (key: string) => Promise<SessionLockHandle | null>;
   isWebLockSupported: () => boolean;
   probeSessionLock: (key: string) => Promise<'held' | 'free' | 'unsupported'>;
-  writeHeartbeat: <TStatus = unknown, TProgress = unknown>(payload: HeartbeatPayload<TStatus, TProgress>) => Promise<void>;
-  readHeartbeat: <TStatus = unknown, TProgress = unknown>(
-    sessionId: string,
-  ) => Promise<HeartbeatRecord<TStatus, TProgress> | null>;
-  readHeartbeats: <TStatus = unknown, TProgress = unknown>(
-    sessionId?: string,
-  ) => Promise<HeartbeatRecord<TStatus, TProgress>[]>;
-  pruneHeartbeats: (referenceTime?: number) => Promise<void>;
-  removeHeartbeat: (sessionId: string) => Promise<void>;
-};
-
-type SessionSemaphoreRecord = {
-  key: string;
-  ownerId: string;
-  acquiredAt: number;
-  expiresAt: number;
-};
-
-export type SessionLockHandle = {
-  release: () => void;
 };
 
 const DEFAULT_KEYS: SessionStorageKeys = {
@@ -153,23 +112,6 @@ const resolveStorage = (
     // ignore
   }
   return createMemoryStorage();
-};
-
-const semaphoreDbCache = new Map<string, Dexie>();
-
-const getSemaphoreDb = (dbName: string) => {
-  const existing = semaphoreDbCache.get(dbName);
-  if (existing) return existing;
-  const db = new Dexie(dbName);
-  db.version(1).stores({
-    semaphores: '&key, ownerId, expiresAt',
-  });
-  db.version(2).stores({
-    semaphores: '&key, ownerId, expiresAt',
-    heartbeats: '&sessionId, updatedAt, expiresAt, tabId',
-  });
-  semaphoreDbCache.set(dbName, db);
-  return db;
 };
 
 export const createPollingTracker = ({
@@ -227,14 +169,12 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
   const channelName = options.channelName ?? 'sessions';
   const pollIntervalTimeout = options.pollIntervalTimeout ?? 3000;
   const quietThresholdTimeout = options.quietThresholdTimeout ?? 5000;
-  const semaphoreTtlTimeout = options.semaphoreTtlTimeout ?? 10000;
   const nowFn = options.now ?? Date.now;
   const keys: SessionStorageKeys = {
     ...DEFAULT_KEYS,
     ...(options.storageKeys ?? {}),
   };
   const storage = resolveStorage(options.storage);
-  const semaphoreDbName = options.semaphoreDbName ?? 'hdb-session-semaphore';
 
   const getTabId = () => {
     try {
@@ -370,30 +310,6 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     typeof navigator !== 'undefined' && typeof navigator.locks?.request === 'function'
   );
 
-  const tryAcquireSemaphore = async (key: string, ownerId: string, ttlMs?: number) => {
-    const now = nowFn();
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<SessionSemaphoreRecord, string>('semaphores');
-    try {
-      return await db.transaction('rw', table, async () => {
-        const existing = await table.get(key);
-        if (existing && existing.expiresAt > now && existing.ownerId !== ownerId) {
-          return false;
-        }
-        await table.put({
-          key,
-          ownerId,
-          acquiredAt: now,
-          expiresAt: now + (ttlMs ?? semaphoreTtlTimeout),
-        });
-        return true;
-      });
-    } catch (error) {
-      console.warn('[session-coordinator] failed to acquire session semaphore', error);
-      return false;
-    }
-  };
-
   const tryAcquireSessionLock = async (key: string): Promise<SessionLockHandle | null> => {
     if (!isWebLockSupported()) {
       console.warn('[session-coordinator] Web Locks API is unavailable');
@@ -454,88 +370,10 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     });
   };
 
-  const writeHeartbeat = async <TStatus = unknown, TProgress = unknown>(
-    payload: HeartbeatPayload<TStatus, TProgress>,
-  ): Promise<void> => {
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
-    const now = payload.timestamp ?? nowFn();
-    const expiresAt = now + quietThresholdTimeout + pollIntervalTimeout * 2;
-    try {
-      const existing = await table.get(payload.sessionId);
-      const next: HeartbeatRecord<TStatus, TProgress> = {
-        sessionId: payload.sessionId,
-        tabId: getTabId(),
-        updatedAt: now,
-        expiresAt,
-        status: payload.status !== undefined ? payload.status : existing?.status,
-        progress: payload.progress !== undefined ? payload.progress : existing?.progress,
-        tabState: payload.tabState ?? existing?.tabState,
-        lockOwner: payload.lockOwner ?? existing?.lockOwner,
-      };
-      await table.put(next);
-      writeBroadcastAt(now);
-    } catch (error) {
-      console.warn('[session-coordinator] failed to write heartbeat', error);
-    }
-  };
-
-  const readHeartbeat = async <TStatus = unknown, TProgress = unknown>(
-    sessionId: string,
-  ): Promise<HeartbeatRecord<TStatus, TProgress> | null> => {
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
-    try {
-      return await table.get(sessionId) ?? null;
-    } catch (error) {
-      console.warn('[session-coordinator] failed to read heartbeat', error);
-      return null;
-    }
-  };
-
-  const readHeartbeats = async <TStatus = unknown, TProgress = unknown>(
-    sessionId?: string,
-  ): Promise<HeartbeatRecord<TStatus, TProgress>[]> => {
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<HeartbeatRecord<TStatus, TProgress>, string>('heartbeats');
-    try {
-      if (sessionId) {
-        const record = await table.get(sessionId);
-        return record ? [record] : [];
-      }
-      return await table.toArray();
-    } catch (error) {
-      console.warn('[session-coordinator] failed to read heartbeats', error);
-      return [];
-    }
-  };
-
-  const pruneHeartbeats = async (referenceTime?: number): Promise<void> => {
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<HeartbeatRecord, string>('heartbeats');
-    const now = referenceTime ?? nowFn();
-    try {
-      await table.where('expiresAt').belowOrEqual(now).delete();
-    } catch (error) {
-      console.warn('[session-coordinator] failed to prune heartbeats', error);
-    }
-  };
-
-  const removeHeartbeat = async (sessionId: string): Promise<void> => {
-    const db = getSemaphoreDb(semaphoreDbName);
-    const table = db.table<HeartbeatRecord, string>('heartbeats');
-    try {
-      await table.delete(sessionId);
-    } catch (error) {
-      console.warn('[session-coordinator] failed to remove heartbeat', error);
-    }
-  };
-
   return {
     channelName,
     pollIntervalTimeout,
     quietThresholdTimeout,
-    semaphoreTtlTimeout,
     getTabId,
     readActiveSessionId,
     writeActiveSessionId,
@@ -549,14 +387,8 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     sendTabState,
     isSessionChannelMessage,
     isRunnerTab,
-    tryAcquireSemaphore,
     tryAcquireSessionLock,
     isWebLockSupported,
     probeSessionLock,
-    writeHeartbeat,
-    readHeartbeat,
-    readHeartbeats,
-    pruneHeartbeats,
-    removeHeartbeat,
   };
 };

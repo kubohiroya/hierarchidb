@@ -4,7 +4,6 @@ import { SimpleBFFAuthProvider } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-plugin-shell/ui-theme';
 import { FloatingWindowPortalProvider } from '@hierarchidb/ui-floating-window';
-import { SessionCoordinatorProvider } from '@hierarchidb/ui-session-coordinator';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
@@ -71,11 +70,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   <AppIconRegistryProvider>
                     <WorkerProvider renderOverlay={false} fallback={workerFallback}>
                       <WorkerProgressReporter />
-                      <SessionCoordinatorProvider>
-                        <FloatingWindowPortalProvider>
-                          {children}
-                        </FloatingWindowPortalProvider>
-                      </SessionCoordinatorProvider>
+                      <FloatingWindowPortalProvider>
+                        {children}
+                      </FloatingWindowPortalProvider>
                     </WorkerProvider>
                   </AppIconRegistryProvider>
                 </AppThemeProvider>
