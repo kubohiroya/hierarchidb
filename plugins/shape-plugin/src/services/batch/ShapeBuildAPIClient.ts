@@ -11,7 +11,6 @@ import type {
   ShapeBuildTaskSummary,
   ShapeEphemeralSessionRecord,
   ShapeFeatureMetadata,
-  ShapeFeatureRecord,
   ShapeFetchCache,
   ShapeMutationAPI,
   ShapeProcessingStatus,
@@ -339,7 +338,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getProcessedFeatureCount(nodeId: NodeId): Promise<number> {
-    return shapeDB.features.where('nodeId').equals(nodeId).count();
+    return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).count();
   }
 
   async getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null> {
@@ -388,18 +387,6 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
       zoomMin: summary.zoomMin,
       zoomMax: summary.zoomMax,
     };
-  }
-
-  async listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]> {
-    return shapeDB.features.where('nodeId').equals(nodeId).toArray() as Promise<ShapeFeatureRecord[]>;
-  }
-
-  async listFeaturesInBbox(
-    nodeId: NodeId,
-    bbox: [number, number, number, number],
-    adminLevel?: number,
-  ): Promise<ShapeFeatureRecord[]> {
-    return shapeDB.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
@@ -564,14 +551,11 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await shapeDB.deleteVectorTilesByNode(nodeId);
   }
 
-  async deleteFeatures(nodeId: NodeId): Promise<void> {
-    await shapeDB.features.where('nodeId').equals(nodeId).delete();
-  }
-
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.deleteBuildTasks(nodeId);
     await this.deleteBuildSession(nodeId);
-    await this.deleteFeatures(nodeId);
+    await this.deleteFeatureMetadataByNode(nodeId);
+    await this.deleteDataSourceMetadataByNode(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(nodeId);
   }

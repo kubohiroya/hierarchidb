@@ -55,7 +55,7 @@ export const PLUGIN_MANIFEST = {
   },
   database: {
     dbName: 'shape',
-    tableName: 'features',
+    tableName: 'featureMetadata',
     version: 7,
     schema: {
       fields: [

@@ -325,9 +325,6 @@ export interface ShapeTileSummaryRecord {
 
 export class ShapeDB extends VectorTileDbBase {
 
-  // Feature storage tables
-  features!: Table<ShapeFeature, number>;
-
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
   tileSummaries!: Table<ShapeTileSummaryRecord, ShapeContainerNodeId>;
@@ -370,6 +367,10 @@ export class ShapeDB extends VectorTileDbBase {
       const summaryTable = tx.table('tileSummaries');
       await Promise.all(Array.from(summaries.values()).map((summary) => summaryTable.put(summary)));
     });
+    this.version(11).stores(this.mergeVectorTileStores({
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+      tileSummaries: '&nodeId',
+    }));
 
     this.initVectorTileTables();
     this.tileSummaries = this.table('tileSummaries');
@@ -381,74 +382,6 @@ export class ShapeDB extends VectorTileDbBase {
       featureMetadata: '&id, nodeId',
       sourceMetadata: '&id, nodeId',
     };
-  }
-
-  // Build Task Management
-  // Feature Management
-  async storeFeature(feature: Omit<ShapeFeature, 'id'>): Promise<number> {
-    return await this.features.add({
-      ...feature,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    } as ShapeFeature);
-  }
-
-  async storeFeatures(features: Omit<ShapeFeature, 'id'>[]): Promise<number[]> {
-    const now = Date.now();
-    const featuresWithTimestamps = features.map(
-      (feature) =>
-        ({
-          ...feature,
-          createdAt: now,
-          updatedAt: now,
-        }) as ShapeFeature,
-    );
-
-    return await this.features.bulkAdd(featuresWithTimestamps, { allKeys: true });
-  }
-
-  async getFeaturesInBbox(
-    nodeId: ShapeContainerNodeId,
-    bbox: [number, number, number, number],
-    adminLevel?: number,
-  ): Promise<ShapeFeature[]> {
-    let query = this.features.where('nodeId').equals(nodeId);
-
-    if (adminLevel !== undefined) {
-      query = this.features.where('[nodeId+adminLevel]').equals([nodeId, adminLevel]);
-    }
-
-    return await query
-      .filter((feature) => {
-        if (!feature.bbox) return false;
-        const [minX, minY, maxX, maxY] = feature.bbox;
-        const [bMinX, bMinY, bMaxX, bMaxY] = bbox;
-
-        return !(maxX < bMinX || minX > bMaxX || maxY < bMinY || minY > bMaxY);
-      })
-      .toArray();
-  }
-
-  async searchFeatures(
-    nodeId: ShapeContainerNodeId,
-    query: string,
-    limit: number = 50,
-  ): Promise<ShapeFeature[]> {
-    const searchTerm = query.toLowerCase();
-
-    return await this.features
-      .where('nodeId')
-      .equals(nodeId)
-      .filter(
-        (feature) =>
-          feature.name?.toLowerCase().includes(searchTerm) ||
-          feature.nameEn?.toLowerCase().includes(searchTerm) ||
-          Object.values(feature.properties).some(
-            (value) => typeof value === 'string' && value.toLowerCase().includes(searchTerm),
-          ),
-      )
-      .limit(limit)
-      .toArray();
   }
 
   // Vector Tile Management

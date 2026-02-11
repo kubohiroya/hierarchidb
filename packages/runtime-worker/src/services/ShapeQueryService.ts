@@ -7,7 +7,6 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
   ShapeFeatureMetadata,
-  ShapeFeatureRecord,
   ShapeFetchCache,
   ShapeProcessingStatus,
   ShapeQueryAPI,
@@ -322,7 +321,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getProcessedFeatureCount(nodeId: NodeId): Promise<number> {
     await this.ensureOpen();
-    return this.db.features.where('nodeId').equals(nodeId).count();
+    return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).count();
   }
 
   async getVectorTileInfo(
@@ -394,22 +393,6 @@ export class ShapeQueryService implements ShapeQueryAPI {
       zoomMin: summary.zoomMin,
       zoomMax: summary.zoomMax,
     };
-  }
-
-  async listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]> {
-    await this.ensureOpen();
-    return this.db.features.where('nodeId').equals(nodeId).toArray() as Promise<
-      ShapeFeatureRecord[]
-    >;
-  }
-
-  async listFeaturesInBbox(
-    nodeId: NodeId,
-    bbox: [number, number, number, number],
-    adminLevel?: number
-  ): Promise<ShapeFeatureRecord[]> {
-    await this.ensureOpen();
-    return this.db.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {

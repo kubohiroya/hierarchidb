@@ -77,6 +77,12 @@
 - update: 2026-02-11 22:15 JST ブランチ `codex/refactor/app/modeless-use-feature-metadata` を作成して着手。
 - update: 2026-02-11 22:19 JST `app/src/router/routes/modeless/modelessDialogContentData.ts` の shape一覧取得を `listFeatureMetadata` 前提へ統一し、`adminName/adminCode` を `admin0/1/2` メタデータから導出するよう修正。
 - done: 2026-02-11 22:19 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` いずれも exit 0）。
+- update: 2026-02-12 01:13 JST Issue `refactor/shape/remove-hidb-shape-features` を起票し `https://github.com/kubohiroya/hierarchidb/issues/204` を作成。
+- update: 2026-02-12 01:13 JST Issue #204 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 01:13 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま着手。
+- update: 2026-02-12 01:27 JST shape ドメインの `hidb-shape.features` 依存を撤去。`ShapeDB` から `features` テーブル利用コードを削除し、`ShapeQuery/Mutation` と `ShapeBuildAPIClient` を `featureMetadata` 基準へ移行。`EntityLifecycleManager` の shape コピー/削除も `featureMetadata` / `dataSourceMetadata` ベースへ置換。
+- update: 2026-02-12 01:27 JST `plugin-manifest` の shape database `tableName` を `featureMetadata` へ更新し、`tools:gen-plugin-registry` を実行して generated registry を同期。
+- done: 2026-02-12 01:27 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` いずれも exit 0）。
 
 ### ToDo（優先順）
 

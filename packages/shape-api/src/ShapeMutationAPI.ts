@@ -16,7 +16,6 @@ export interface ShapeMutationAPI {
   deleteBuildTasks(nodeId: NodeId): Promise<void>;
   deleteVectorTile(tileId: string): Promise<void>;
   deleteVectorTiles(nodeId: NodeId): Promise<void>;
-  deleteFeatures(nodeId: NodeId): Promise<void>;
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
   clearShapeArtifacts(nodeId: NodeId): Promise<void>;
   upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void>;

@@ -247,15 +247,11 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.deleteVectorTilesByNode(nodeId);
   }
 
-  async deleteFeatures(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await this.db.features.where('nodeId').equals(nodeId).delete?.();
-  }
-
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.deleteBuildSession(nodeId);
-    await this.deleteFeatures(nodeId);
+    await this.deleteFeatureMetadataByNode(String(nodeId));
+    await this.deleteDataSourceMetadataByNode(String(nodeId));
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(String(nodeId));
     await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
