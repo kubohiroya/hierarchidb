@@ -468,8 +468,9 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     );
     if (params.buildConfig.fetchConfig.deleteOnComplete) {
       await runTransformStep(params, 'cleanup-fetch-cache-after-transform', async () => {
-        await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
+        await params.ephemeralStore.transaction('rw', [params.ephemeralStore.fetchCache, params.ephemeralStore.fetchCacheMeta], async () => {
           await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+          await params.ephemeralStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).delete();
         });
       });
     }

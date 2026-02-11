@@ -79,6 +79,19 @@ const logRunningResiduePanel = (
   console.log(line, payload);
 };
 
+export const shouldUpdateElapsedSnapshot = (params: {
+  snapshot: { elapsedMs: number; capturedAt: number } | null;
+  totalElapsedMs: number;
+  buildStatus: BuildStatus;
+}): boolean => {
+  const { snapshot, totalElapsedMs, buildStatus } = params;
+  if (!snapshot) return true;
+  if (buildStatus !== 'running') return true;
+  // Reset Session may zero elapsed before build status settles to idle/paused.
+  if (totalElapsedMs === 0) return true;
+  return totalElapsedMs > snapshot.elapsedMs;
+};
+
 export const useBuildProgressPanelState = (params: {
   data?: Partial<ShapeEntity>;
   nodeId?: NodeId;
@@ -359,7 +372,11 @@ export const useBuildProgressPanelState = (params: {
 
   useEffect(() => {
     const snapshot = totalElapsedSnapshotRef.current;
-    if (!snapshot || summary.totalElapsedMs > snapshot.elapsedMs || summary.buildStatus !== 'running') {
+    if (shouldUpdateElapsedSnapshot({
+      snapshot,
+      totalElapsedMs: summary.totalElapsedMs,
+      buildStatus: summary.buildStatus,
+    })) {
       totalElapsedSnapshotRef.current = {
         elapsedMs: summary.totalElapsedMs,
         capturedAt: elapsedTickMs,
@@ -369,6 +386,9 @@ export const useBuildProgressPanelState = (params: {
 
   const liveTotalElapsedMs = useMemo(() => {
     const snapshot = totalElapsedSnapshotRef.current;
+    if (summary.buildStatus === 'running' && summary.totalElapsedMs === 0) {
+      return 0;
+    }
     if (!snapshot || summary.buildStatus !== 'running') {
       return summary.totalElapsedMs;
     }

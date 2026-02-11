@@ -71,6 +71,17 @@ const mergeElapsedByStage = (
   return next;
 };
 
+const shouldResetElapsedState = (params: {
+  buildStatus: BuildStatus;
+  buildElapsedMs: number | undefined;
+  stageElapsedByStage: Record<string, number>;
+}): boolean => {
+  if (params.buildStatus === 'running') return false;
+  if (!shallowEqualNumberRecord(params.stageElapsedByStage, {})) return false;
+  if (typeof params.buildElapsedMs === 'number' && params.buildElapsedMs > 0) return false;
+  return true;
+};
+
 const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
@@ -585,6 +596,15 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const liveTaskType = taskType ?? effectiveStatus?.stage;
   const resolvedTaskType = liveTaskType ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
+  const isElapsedResetState = useMemo(() => shouldResetElapsedState({
+    buildStatus,
+    buildElapsedMs: data?.buildElapsedMs,
+    stageElapsedByStage: persistedStageElapsedByStage,
+  }), [
+    buildStatus,
+    data?.buildElapsedMs,
+    persistedStageElapsedByStage,
+  ]);
   useEffect(() => {
     if (buildStatus === 'idle') {
       if (timingStageId !== null) {
@@ -600,21 +620,30 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
 
   const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
   useEffect(() => {
+    if (isElapsedResetState) {
+      if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
+        setCompletedStageElapsedMs({});
+      }
+      return;
+    }
     const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
     if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
     setCompletedStageElapsedMs(merged);
-  }, [completedStageElapsedMs, persistedStageElapsedByStage]);
+  }, [completedStageElapsedMs, isElapsedResetState, persistedStageElapsedByStage]);
 
   useEffect(() => {
-    if (!data) return;
-    if (processingStatus !== 'idle') return;
-    if (!shallowEqualNumberRecord(persistedStageElapsedByStage, {})) return;
+    if (!isElapsedResetState) return;
     setDisplayStageRemainingMs(null);
     stageRemainingTickRef.current = null;
     latestStageRemainingMsRef.current = null;
-    setCompletedStageElapsedMs({});
-    setTimingStageId(null);
-  }, [data, persistedStageElapsedByStage, processingStatus]);
+    lastPersistedStageMapRef.current = null;
+    if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
+      setCompletedStageElapsedMs({});
+    }
+    if (timingStageId !== null) {
+      setTimingStageId(null);
+    }
+  }, [completedStageElapsedMs, isElapsedResetState, timingStageId]);
 
   const isTimingStageRunning = useMemo(() => {
     if (!timingStageId) return false;
@@ -856,6 +885,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
 
   useEffect(() => {
     if (!activeNodeId) return;
+    if (isElapsedResetState) {
+      lastPersistedStageMapRef.current = null;
+      return;
+    }
     const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
     if (!shallowEqualNumberRecord(completedStageElapsedMs, merged)) {
       setCompletedStageElapsedMs(merged);
@@ -868,7 +901,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     lastPersistedStageMapRef.current = completedStageElapsedMs;
     void persistDraftPatch({ stageElapsedByStage: completedStageElapsedMs });
-  }, [activeNodeId, completedStageElapsedMs, persistDraftPatch, persistedStageElapsedByStage]);
+  }, [activeNodeId, completedStageElapsedMs, isElapsedResetState, persistDraftPatch, persistedStageElapsedByStage]);
 
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;

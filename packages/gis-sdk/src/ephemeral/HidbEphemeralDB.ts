@@ -4,42 +4,139 @@ import type {
   EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
   EphemeralFetchCacheRecord,
+  EphemeralFetchCacheMetaRecord,
   EphemeralTransformCacheRecord,
+  EphemeralTransformCacheMetaRecord,
   EphemeralTransformErrorRecord,
   EphemeralTileIdToBufferRelation,
 } from './EphemeralBuildState.js';
 import { EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
 
+const EPHEMERAL_DB_SCHEMA_V3: Record<string, string> = {
+  sessions:
+    '&nodeId, domainType, status, updatedAt'
+    + ', [domainType+status], [domainType+updatedAt]',
+  buildTasks:
+    '&taskId, nodeId, domainType, taskType, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]'
+    + ', [domainType+status]',
+  fetchCache:
+    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  transformCache:
+    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+  transformErrors:
+    '&id, nodeId, domainType',
+  tileIdToBufferRelations:
+    '&id, nodeId, domainType, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+};
+
+const applyTopLevelMods = <T extends Record<string, unknown>>(
+  current: T,
+  mods: Record<string, unknown>,
+): T => {
+  const next = { ...current };
+  Object.entries(mods).forEach(([key, value]) => {
+    if (!key || key.includes('.')) return;
+    next[key as keyof T] = value as T[keyof T];
+  });
+  return next;
+};
+
+const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
+  const { data, ...meta } = record;
+  void data;
+  return meta;
+};
+
+const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralTransformCacheMetaRecord => {
+  const { data, ...meta } = record;
+  void data;
+  return meta;
+};
+
 export class HidbEphemeralDB extends Dexie {
   sessions!: Table<EphemeralBuildSessionRecord, string>;
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
   fetchCache!: Table<EphemeralFetchCacheRecord, string>;
+  fetchCacheMeta!: Table<EphemeralFetchCacheMetaRecord, string>;
   transformCache!: Table<EphemeralTransformCacheRecord, string>;
+  transformCacheMeta!: Table<EphemeralTransformCacheMetaRecord, string>;
   transformErrors!: Table<EphemeralTransformErrorRecord, string>;
   tileIdToBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(3).stores(EPHEMERAL_DB_SCHEMA_V3);
+    this.version(4).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
+      const fetchRows = await tx.table('fetchCache').toArray() as EphemeralFetchCacheRecord[];
+      if (fetchRows.length > 0) {
+        await tx.table('fetchCacheMeta').bulkPut(fetchRows.map(toFetchCacheMeta));
+      }
+      const transformRows = await tx.table('transformCache').toArray() as EphemeralTransformCacheRecord[];
+      if (transformRows.length > 0) {
+        await tx.table('transformCacheMeta').bulkPut(transformRows.map(toTransformCacheMeta));
+      }
+    });
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
     this.fetchCache = this.table('fetchCache');
+    this.fetchCacheMeta = this.table('fetchCacheMeta');
     this.transformCache = this.table('transformCache');
+    this.transformCacheMeta = this.table('transformCacheMeta');
     this.transformErrors = this.table('transformErrors');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
+    this.fetchCache.hook('creating', (_primaryKey, record, transaction) => {
+      transaction.table('fetchCacheMeta').put(toFetchCacheMeta(record));
+    });
+    this.fetchCache.hook('updating', (mods, _primaryKey, record, transaction) => {
+      if (!record) return;
+      const next = applyTopLevelMods(
+        record as unknown as Record<string, unknown>,
+        mods as Record<string, unknown>,
+      ) as unknown as EphemeralFetchCacheRecord;
+      transaction.table('fetchCacheMeta').put(toFetchCacheMeta(next));
+      return mods;
+    });
+    this.fetchCache.hook('deleting', (primaryKey, _record, transaction) => {
+      if (typeof primaryKey === 'string') {
+        transaction.table('fetchCacheMeta').delete(primaryKey);
+      }
+    });
+    this.transformCache.hook('creating', (_primaryKey, record, transaction) => {
+      transaction.table('transformCacheMeta').put(toTransformCacheMeta(record));
+    });
+    this.transformCache.hook('updating', (mods, _primaryKey, record, transaction) => {
+      if (!record) return;
+      const next = applyTopLevelMods(
+        record as unknown as Record<string, unknown>,
+        mods as Record<string, unknown>,
+      ) as unknown as EphemeralTransformCacheRecord;
+      transaction.table('transformCacheMeta').put(toTransformCacheMeta(next));
+      return mods;
+    });
+    this.transformCache.hook('deleting', (primaryKey, _record, transaction) => {
+      if (typeof primaryKey === 'string') {
+        transaction.table('transformCacheMeta').delete(primaryKey);
+      }
+    });
   }
 
   async clearNodeData(nodeId: string): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
+      this.fetchCacheMeta,
       this.transformCache,
+      this.transformCacheMeta,
       this.sessions,
       this.tileIdToBufferRelations,
       this.buildTasks,
       this.transformErrors,
     ], async () => {
       await this.fetchCache.where('nodeId').equals(nodeId).delete();
+      await this.fetchCacheMeta.where('nodeId').equals(nodeId).delete();
       await this.transformCache.where('nodeId').equals(nodeId).delete();
+      await this.transformCacheMeta.where('nodeId').equals(nodeId).delete();
       await this.sessions.where('nodeId').equals(nodeId).delete();
       await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
       await this.buildTasks.where('nodeId').equals(nodeId).delete();
@@ -48,12 +145,12 @@ export class HidbEphemeralDB extends Dexie {
   }
 
   async hasStageData(nodeId: string, stage: 'fetch' | 'transform' | 'vt'): Promise<boolean> {
-    return this.transaction('r', [this.fetchCache, this.transformCache, this.tileIdToBufferRelations], async () => {
+    return this.transaction('r', [this.fetchCacheMeta, this.transformCacheMeta, this.tileIdToBufferRelations], async () => {
       switch (stage) {
         case 'fetch':
-          return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
+          return (await this.fetchCacheMeta.where('nodeId').equals(nodeId).count()) > 0;
         case 'transform':
-          return (await this.transformCache
+          return (await this.transformCacheMeta
             .where('nodeId')
             .equals(nodeId)
             .filter((record) => (record?.timestamp ?? 0) > 0)
@@ -69,7 +166,9 @@ export class HidbEphemeralDB extends Dexie {
   async clearStage(nodeId: string, stage: 'fetch' | 'transform' | 'vt'): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
+      this.fetchCacheMeta,
       this.transformCache,
+      this.transformCacheMeta,
       this.sessions,
       this.tileIdToBufferRelations,
       this.transformErrors,
@@ -77,9 +176,11 @@ export class HidbEphemeralDB extends Dexie {
       switch (stage) {
         case 'fetch':
           await this.fetchCache.where('nodeId').equals(nodeId).delete();
+          await this.fetchCacheMeta.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform':
           await this.transformCache.where('nodeId').equals(nodeId).delete();
+          await this.transformCacheMeta.where('nodeId').equals(nodeId).delete();
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.transformErrors.where('nodeId').equals(nodeId).delete();
           break;
@@ -99,13 +200,13 @@ export class HidbEphemeralDB extends Dexie {
     numSessions: number;
     totalSize: number;
   }> {
-    return this.transaction('r', [this.fetchCache, this.transformCache, this.sessions], async () => {
+    return this.transaction('r', [this.fetchCacheMeta, this.transformCacheMeta, this.sessions], async () => {
       const [numFetchCaches, numTransformCaches, numSessions] = await Promise.all([
-        this.fetchCache.count(),
-        this.transformCache.count(),
+        this.fetchCacheMeta.count(),
+        this.transformCacheMeta.count(),
         this.sessions.count(),
       ]);
-      const rawBuffers = await this.fetchCache.toArray();
+      const rawBuffers = await this.fetchCacheMeta.toArray();
       const totalSize = rawBuffers.reduce((sum, buffer) => (
         sum + (typeof buffer.size === 'number' ? buffer.size : 0)
       ), 0);
@@ -121,7 +222,9 @@ export class HidbEphemeralDB extends Dexie {
   async clearAll(): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
+      this.fetchCacheMeta,
       this.transformCache,
+      this.transformCacheMeta,
       this.sessions,
       this.tileIdToBufferRelations,
       this.buildTasks,
@@ -129,7 +232,9 @@ export class HidbEphemeralDB extends Dexie {
     ], async () => {
       await Promise.all([
         this.fetchCache.clear(),
+        this.fetchCacheMeta.clear(),
         this.transformCache.clear(),
+        this.transformCacheMeta.clear(),
         this.sessions.clear(),
         this.tileIdToBufferRelations.clear(),
         this.buildTasks.clear(),

@@ -210,7 +210,7 @@ const toShapeVectorTileRecord = (tile: VectorTileRecord): ShapeVectorTileRecord 
   version: tile.version,
 });
 
-const isTransformCacheComplete = (record: ShapeTransformCache | null | undefined): record is ShapeTransformCache => (
+const isTransformCacheComplete = <T extends { timestamp: number }>(record: T | null | undefined): record is T => (
   Boolean(record && record.timestamp > 0)
 );
 
@@ -713,7 +713,7 @@ export class EphemeralShapeApiImpl {
   }
 
   async countFetchCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count();
+    return ephemeralShapeDB.fetchCacheMeta.where('nodeId').equals(nodeId).count();
   }
 
   async putFetchCache(buffer: ShapeFetchCache): Promise<void> {
@@ -752,8 +752,8 @@ export class EphemeralShapeApiImpl {
   }
 
   async countTransformCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => (
-      ephemeralShapeDB.transformCache
+    return ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCacheMeta, async () => (
+      ephemeralShapeDB.transformCacheMeta
         .where('nodeId')
         .equals(nodeId)
         .filter((record) => isTransformCacheComplete(record))
