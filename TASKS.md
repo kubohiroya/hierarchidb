@@ -45,6 +45,7 @@
 - #206 / `codex/refactor/ephemeral-phased-remove-cache-meta` / start: 2026-02-12 02:04 JST
 - #207 / `codex/refactor/unify-ephemeral-db` / start: 2026-02-12 02:32 JST
 - #209 / `codex/fix/shape/build-session-restart-from-completed` / start: 2026-02-12 03:21 JST
+- #211 / `codex/fix/shape/build-session-resume-stalls` / start: 2026-02-12 08:37 JST
 
 ### Blocked
 
@@ -52,6 +53,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 08:37 JST Issue #211 を起票し Project `hierarchidb` の Status を `In Progress` に設定、ブランチ `codex/fix/shape/build-session-resume-stalls` を作成して着手。
 - update: 2026-02-12 07:32 JST #209 Reset session 実行後に `Completed/Error` が残留する原因は、`plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts` の `handleResetSession` が session reset のみで task queue を削除していなかったこと。発生範囲は同ファイルの reset 経路（`handleResetSession`）。修正として `deleteTasksByNode` を追加し、reset 時に task queue を削除してから artifacts/session をクリアするよう変更。回帰テスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` を追加。
 - done: 2026-02-12 07:32 JST 検証完了（`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` すべて exit 0）。
 - update: 2026-02-12 07:15 JST #209 追加調査で、`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の `saveDraftBeforeBuild` が `buildConfig` は保存する一方で `selectedArrayByCountries` を draft へ反映しておらず、worker 側 `startBatchProcess` が selection 無しと判定して `Shape batch session requires download task payloads or selection` を返していたことを確認。発生範囲は同ファイルの draft 保存処理（`save-draft` payload 組み立て）。
@@ -589,6 +591,9 @@
 - start: 2026-02-11 18:54 JST 初期表示で可視範囲が queued のみでも上下矢印が表示される残不具合の再修正に着手。
 - update: 2026-02-11 18:56 JST 原因は `ShapeBuildProgressPanel.tsx` の矢印表示条件が「ステージ全体の running 有無 + 上下移動先比較」に依存しており、可視範囲（viewportRange）が queued のみである状態を判定に反映していなかったこと。発生範囲は同ファイルの viewport/currentIndex 算出と `showUpArrow/showDownArrow`、および `ShapeBuildProgressPanel.unit.test.tsx` の矢印表示ケース。
 - done: 2026-02-11 18:58 JST `viewportIndices` と `hasOnlyQueuedInViewport` を追加し、可視範囲が queued-only のときは上下矢印を非表示化。さらに「可視範囲は queued、可視外に running がある」ケースの unit test を追加。`pnpm --filter @hierarchidb/shape-plugin test -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/shape-plugin build` を実行し、すべて exit 0 を確認。
+- start: 2026-02-12 08:40 JST 先頭表示で `Running, Running, Queued, ...` の並びでも上下矢印が残る不具合の追加修正に着手。
+- update: 2026-02-12 08:43 JST 原因は矢印表示判定が「現在位置と移動先の大小比較」までで、移動先が可視範囲内にある場合（押下しても実スクロールしない）を除外していなかったこと。発生範囲は `ShapeBuildProgressPanel.tsx` の `showUpArrow/showDownArrow` 判定と、`ShapeBuildProgressPanel.unit.test.tsx` の矢印表示ケース。
+- done: 2026-02-12 08:46 JST `showUpArrow/showDownArrow` に「移動先が viewport 外にあること」を必須化し、可視範囲内ターゲットでは矢印を非表示化。`taskViewportRangeAtom` 前提の下向き遷移テストを補強し、`Running, Running, Queued...` 先頭表示ケースの非表示テストを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、すべて exit 0 を確認。
 - start: 2026-02-11 13:30 JST Transformキャッシュ削除後の `Completed` 残留解消と、Start/Resume 待機中の手動dismiss Snackbar 追加に着手。
 - update: 2026-02-11 13:33 JST 原因は `handleDeleteTransformCache` が task/cache 削除後も session reset を行わず stale 完了表示を残し得ること、および Start/Resume 初期化待機区間にユーザー向け進捗通知がないこと。発生範囲は `useShapeBuildCacheActions.ts` / `ShapeBuildProgressPanel.tsx` / `ShapeBuildProgressPanel.unit.test.tsx`。
 - done: 2026-02-11 13:36 JST `handleDeleteTransformCache` で `onResetSession + persistSessionReset` を実行するよう修正し、startup pending Snackbar（手動closeのみ）と unit test 2件を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し、すべて exit 0（5 tests passed）を確認。

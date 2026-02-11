@@ -331,6 +331,15 @@ describe('ShapeBuildProgressPanel', () => {
       stageElapsedMs: 0,
       stageRemainingMs: null,
     });
+    store.set(taskViewportRangeAtom, {
+      stageId: 'fetch',
+      startTaskId: 'task-running-0',
+      endTaskId: 'task-running-0',
+      startIndex: 0,
+      endIndex: 0,
+      total: 2,
+      updatedAt: 1,
+    });
 
     const view = render(
       <Provider store={store}>
@@ -470,6 +479,126 @@ describe('ShapeBuildProgressPanel', () => {
       startIndex: 1,
       endIndex: 1,
       total: 4,
+      updatedAt: 1,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+
+    await waitFor(() => {
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+    });
+  });
+
+  it('hides both arrows when viewport top includes running and queued tasks but next targets are still visible', async () => {
+    const store = makeStore();
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'task-running-0',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'running',
+        progress: 40,
+        message: 'Running',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-running-1',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'running',
+        progress: 20,
+        message: 'Running',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-2',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-3',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-4',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-5',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-6',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-queued-7',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'queued',
+        progress: 0,
+        message: 'Queued',
+      } as ShapeBuildTaskSummary,
+    ];
+
+    store.set(tasksByStageAtom, { fetch: tasks, transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 5,
+      completed: 0,
+      total: tasks.length,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+    store.set(taskViewportRangeAtom, {
+      stageId: 'fetch',
+      startTaskId: 'task-running-0',
+      endTaskId: 'task-queued-5',
+      startIndex: 0,
+      endIndex: 5,
+      total: tasks.length,
       updatedAt: 1,
     });
 

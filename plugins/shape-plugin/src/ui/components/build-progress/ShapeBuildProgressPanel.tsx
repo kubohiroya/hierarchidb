@@ -522,18 +522,28 @@ const BuildProgressStageContent = ({
   const isScrollTargetReached = requestedTargetIndex !== null
     && currentIndex !== null
     && currentIndex === requestedTargetIndex;
+  const viewportStartIndex = viewportIndices?.startIndex;
+  const viewportEndIndex = viewportIndices?.endIndex;
   const showUpArrow = !isScrollTargetReached
     && !hasOnlyQueuedInViewport
     && hasRunningTask
     && upTargetIndex !== null
     && currentIndex !== null
-    && upTargetIndex < currentIndex;
+    && upTargetIndex < currentIndex
+    && (
+      viewportStartIndex == null
+      || upTargetIndex < viewportStartIndex
+    );
   const showDownArrow = !isScrollTargetReached
     && !hasOnlyQueuedInViewport
     && hasRunningTask
     && downTargetIndex !== null
     && currentIndex !== null
-    && currentIndex < downTargetIndex;
+    && currentIndex < downTargetIndex
+    && (
+      viewportEndIndex == null
+      || downTargetIndex > viewportEndIndex
+    );
   const handleScrollToDirection = useCallback((direction: 'up' | 'down') => {
     const targetTaskId = direction === 'up' ? upTargetTaskId : downTargetTaskId;
     if (!targetTaskId) return;
