@@ -1,0 +1,1 @@
+import"./flatgeobuf-D0FL0ocm.js";import{s as e,u as t}from"./src-BavYxGel.js";const n=e=>({taskId:e.taskId,stage:e.stage,status:e.status,progress:e.progress,message:e.message??e.errorMessage});async function r(r){return(await t(new e,r)).map(n)}const i=async()=>{};var a=i;export{a as default,r as getBatchTasks,i as registerRouteWorkerStores};
