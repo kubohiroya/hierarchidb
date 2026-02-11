@@ -396,7 +396,11 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
       await clearBuildTasksForStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
-      await resetStaleProcessingSessionIfNeeded();
+      const resetByStaleProcessing = await resetStaleProcessingSessionIfNeeded();
+      if (!resetByStaleProcessing) {
+        onResetSession?.();
+        await persistSessionReset();
+      }
       await loadCounts();
       notify.success('Deleted transform cache');
     });
@@ -404,6 +408,8 @@ export const useShapeBuildCacheActions = ({ nodeId, draft, disabled, onResetSess
     clearBuildTasksForStages,
     loadCounts,
     nodeId,
+    onResetSession,
+    persistSessionReset,
     resetStaleProcessingSessionIfNeeded,
     runDelete,
     setBuildTasks,

@@ -44,8 +44,10 @@ import {
   buildStageProgressAtom,
   taskPaneProgressAtom,
   taskProgressControlsAtom,
+  taskScrollTargetAtom,
   taskProgressSummaryAtom,
   taskSummaryLoadingAtom,
+  taskViewportRangeAtom,
   tasksLoadingAtom,
   taskWarningMessageAtom,
   tasksByStageAtom,
@@ -206,6 +208,212 @@ describe('ShapeBuildProgressPanel', () => {
     resolveStart?.();
     await waitFor(() => {
       expect(startButton.disabled).toBe(false);
+    });
+  });
+
+  it('shows startup snackbar while start is pending before running', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: false,
+      statusLabel: 'session-start-request',
+      startPending: true,
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('session-start-request')).toBeTruthy();
+    });
+  });
+
+  it('allows dismissing startup snackbar manually', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: false,
+      statusLabel: 'session-start-request',
+      startPending: true,
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('session-start-request')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('session-start-request')).toBeNull();
+    });
+  });
+
+  it('scrolls to queued task from down arrow when running task is absent', async () => {
+    const store = makeStore();
+    const completedTask: ShapeBuildTaskSummary = {
+      taskId: 'task-completed-0',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'completed',
+      progress: 100,
+      message: 'Completed',
+    } as ShapeBuildTaskSummary;
+    const queuedTask: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-1',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksByStageAtom, { fetch: [completedTask, queuedTask], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Queued',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 1,
+      total: 2,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+    const scrollButton = await local.findByRole('button', {
+      name: 'Scroll down to running or queued task',
+    });
+    fireEvent.click(scrollButton);
+
+    await waitFor(() => {
+      const target = store.get(taskScrollTargetAtom);
+      expect(target?.stageId).toBe('fetch');
+      expect(target?.taskId).toBe('task-queued-1');
+      expect(typeof target?.requestedAt).toBe('number');
+    });
+  });
+
+  it('hides arrow icon when current position reaches the scroll target', async () => {
+    const store = makeStore();
+    const runningTop: ShapeBuildTaskSummary = {
+      taskId: 'a-running-target',
+      nodeId: 'node-1',
+      stage: 'transform',
+      taskType: 'transform',
+      status: 'running',
+      progress: 40,
+      message: 'Running',
+    } as ShapeBuildTaskSummary;
+    const queuedBottom: ShapeBuildTaskSummary = {
+      taskId: 'z-queued-next',
+      nodeId: 'node-1',
+      stage: 'transform',
+      taskType: 'transform',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksByStageAtom, { fetch: [], transform: [runningTop, queuedBottom], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Transform',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 30,
+      completed: 0,
+      total: 2,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+    store.set(taskScrollTargetAtom, {
+      stageId: 'transform',
+      taskId: 'a-running-target',
+      requestedAt: 1,
+    });
+    store.set(taskViewportRangeAtom, {
+      stageId: 'transform',
+      startTaskId: 'a-running-target',
+      endTaskId: 'a-running-target',
+      startIndex: 0,
+      endIndex: 0,
+      total: 2,
+      updatedAt: 1,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+
+    await waitFor(() => {
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
     });
   });
 });

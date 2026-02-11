@@ -176,7 +176,11 @@ const TaskProgressBar = ({
   const outRangePaddingRatio = 0.2;
   const outRangeY = outRangePaddingRatio;
   const outRangeHeight = 1 - (outRangePaddingRatio * 2);
-  const showFlowBand = buildStatus === 'running' && Boolean(activeStageId);
+  const isSelfActiveStage = Boolean(
+    activeStageId
+    && stages.some((stage) => stage.id === activeStageId)
+  );
+  const showFlowBand = buildStatus === 'running' && isSelfActiveStage;
   let flowBandRange: { x: number; width: number } | null = null;
   if (showFlowBand && activeStageId) {
     const stageOffset = stageOffsets.get(activeStageId);
@@ -452,35 +456,70 @@ const BuildProgressStageContent = ({
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
   const showTaskSkeleton = !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
-  const runningTargetIndex = useMemo(() => {
-    for (let i = orderedTasks.length - 1; i >= 0; i -= 1) {
-      const task = orderedTasks[i];
-      if (!task) continue;
-      if (task.status === 'running') return i;
+  const requestedTargetIndex = useMemo(() => {
+    if (!scrollToTaskId) return null;
+    const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
+    return index >= 0 ? index : null;
+  }, [orderedTasks, scrollToTaskId]);
+  const currentIndex = useMemo(() => {
+    if (orderedTasks.length === 0) return null;
+    if (viewportRange?.stageId !== stage.id || viewportRange == null) return 0;
+    const maxIndex = orderedTasks.length - 1;
+    const clampedStart = Math.min(Math.max(viewportRange.startIndex, 0), maxIndex);
+    const clampedEnd = Math.min(Math.max(viewportRange.endIndex, clampedStart), maxIndex);
+    if (requestedTargetIndex !== null
+      && requestedTargetIndex >= clampedStart
+      && requestedTargetIndex <= clampedEnd) {
+      return requestedTargetIndex;
+    }
+    return Math.floor((clampedStart + clampedEnd) / 2);
+  }, [orderedTasks.length, requestedTargetIndex, stage.id, viewportRange]);
+  const activeTargetIndices = useMemo(() => (
+    orderedTasks.reduce<number[]>((acc, task, index) => {
+      if (task.status === 'running' || task.status === 'queued') {
+        acc.push(index);
+      }
+      return acc;
+    }, [])
+  ), [orderedTasks]);
+  const upTargetIndex = useMemo(() => {
+    if (currentIndex == null) return null;
+    for (let i = activeTargetIndices.length - 1; i >= 0; i -= 1) {
+      const candidate = activeTargetIndices[i];
+      if (candidate == null) continue;
+      if (candidate < currentIndex) return candidate;
     }
     return null;
-  }, [orderedTasks]);
-  const runningTaskId = runningTargetIndex === null ? undefined : orderedTasks[runningTargetIndex]?.taskId;
-  const isRunningVisible = runningTargetIndex !== null
-    && viewportRange?.stageId === stage.id
-    && runningTargetIndex >= viewportRange.startIndex
-    && runningTargetIndex <= viewportRange.endIndex;
-  const shouldShowScrollButton = Boolean(runningTaskId) && !isRunningVisible;
-  const scrollDirection: 'up' | 'down' | null = useMemo(() => {
-    if (!shouldShowScrollButton || runningTargetIndex === null) return null;
-    if (viewportRange?.stageId !== stage.id || viewportRange == null) return 'down';
-    if (runningTargetIndex < viewportRange.startIndex) return 'up';
-    if (runningTargetIndex > viewportRange.endIndex) return 'down';
+  }, [activeTargetIndices, currentIndex]);
+  const downTargetIndex = useMemo(() => {
+    if (currentIndex == null) return null;
+    for (const candidate of activeTargetIndices) {
+      if (candidate > currentIndex) return candidate;
+    }
     return null;
-  }, [runningTargetIndex, shouldShowScrollButton, stage.id, viewportRange]);
-  const handleScrollToRunning = useCallback(() => {
-    if (!runningTaskId) return;
+  }, [activeTargetIndices, currentIndex]);
+  const upTargetTaskId = upTargetIndex === null ? undefined : orderedTasks[upTargetIndex]?.taskId;
+  const downTargetTaskId = downTargetIndex === null ? undefined : orderedTasks[downTargetIndex]?.taskId;
+  const isScrollTargetReached = requestedTargetIndex !== null
+    && currentIndex !== null
+    && currentIndex === requestedTargetIndex;
+  const showUpArrow = !isScrollTargetReached
+    && upTargetIndex !== null
+    && currentIndex !== null
+    && upTargetIndex < currentIndex;
+  const showDownArrow = !isScrollTargetReached
+    && downTargetIndex !== null
+    && currentIndex !== null
+    && currentIndex < downTargetIndex;
+  const handleScrollToDirection = useCallback((direction: 'up' | 'down') => {
+    const targetTaskId = direction === 'up' ? upTargetTaskId : downTargetTaskId;
+    if (!targetTaskId) return;
     setScrollTarget({
       stageId: stage.id,
-      taskId: runningTaskId,
+      taskId: targetTaskId,
       requestedAt: Date.now(),
     });
-  }, [runningTaskId, setScrollTarget, stage.id]);
+  }, [downTargetTaskId, setScrollTarget, stage.id, upTargetTaskId]);
   useEffect(() => {
     const wrapper = listWrapperRef.current;
     if (!wrapper) return;
@@ -553,16 +592,16 @@ const BuildProgressStageContent = ({
             scrollRequestId={scrollRequestId}
             virtualize={!disableVirtualization}
           />
-          {scrollDirection ? (
-            <Tooltip title={t('stage.progress.scrollToRunning', 'Scroll to running task')}>
+          {showUpArrow ? (
+            <Tooltip title={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}>
               <IconButton
-                aria-label={t('stage.progress.scrollToRunning', 'Scroll to running task')}
+                aria-label={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}
                 color="primary"
-                onClick={handleScrollToRunning}
+                onClick={() => handleScrollToDirection('up')}
                 sx={{
                   position: 'absolute',
                   left: '50%',
-                  ...(scrollDirection === 'down' ? { bottom: 0 } : { top: 0 }),
+                  top: 0,
                   transform: 'translateX(-50%)',
                   bgcolor: 'transparent',
                   boxShadow: 'none',
@@ -572,9 +611,30 @@ const BuildProgressStageContent = ({
                   '&:hover': { bgcolor: 'transparent' },
                 }}
               >
-                {scrollDirection === 'down'
-                  ? <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
-                  : <ArrowCircleUpIcon sx={{ fontSize: 48 }} />}
+                <ArrowCircleUpIcon sx={{ fontSize: 48 }} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          {showDownArrow ? (
+            <Tooltip title={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}>
+              <IconButton
+                aria-label={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}
+                color="primary"
+                onClick={() => handleScrollToDirection('down')}
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: 0,
+                  transform: 'translateX(-50%)',
+                  bgcolor: 'transparent',
+                  boxShadow: 'none',
+                  zIndex: 2,
+                  width: 56,
+                  height: 56,
+                  '&:hover': { bgcolor: 'transparent' },
+                }}
+              >
+                <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
               </IconButton>
             </Tooltip>
           ) : null}
@@ -604,7 +664,6 @@ export const ShapeBuildProgressPanel = ({
     summary,
     controls,
     warningMessage,
-    activeStageId,
     startWarning,
     crashHint,
     warningDialogOpen,
@@ -669,6 +728,17 @@ export const ShapeBuildProgressPanel = ({
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
+  const [startupNoticeDismissed, setStartupNoticeDismissed] = useState(false);
+  const isBuildStartupPending = controls.startPending
+    && summary.buildStatus !== 'running'
+    && summary.buildStatus !== 'completed'
+    && summary.buildStatus !== 'failed';
+
+  useEffect(() => {
+    if (controls.startPending) {
+      setStartupNoticeDismissed(false);
+    }
+  }, [controls.startPending]);
 
   const handleResetSessionWithSkeleton = useCallback(async () => {
     if (isResetSessionLoading) return;
@@ -710,6 +780,8 @@ export const ShapeBuildProgressPanel = ({
 
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
   const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading;
+  const startupStatusMessage = controls.statusLabel?.trim()
+    || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
 
   const stageLoadingState = useMemo(() => (
     stages.reduce<Record<string, boolean>>((acc, stage) => {
@@ -897,14 +969,14 @@ export const ShapeBuildProgressPanel = ({
             tasksByStage={{ [stage.id]: stageTasks }}
             stageTotals={summary.stageTotals}
             buildStatus={summary.buildStatus}
-            activeStageId={activeStageId}
+            activeStageId={summary.timingStageId ?? null}
             resolveTaskTitle={resolveTaskTitle}
           />
         </Stack>
       );
       return acc;
     }, {})
-  ), [activeStageId, resolveTaskTitle, stages, summary.buildStatus, summary.stageTotals, tasksByStageForDisplay]);
+  ), [resolveTaskTitle, stages, summary.buildStatus, summary.stageTotals, summary.timingStageId, tasksByStageForDisplay]);
 
   const stageContents = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
@@ -1027,6 +1099,18 @@ export const ShapeBuildProgressPanel = ({
       }}
       footer={(
         <>
+          <Snackbar
+            open={isBuildStartupPending && !startupNoticeDismissed}
+            onClose={(_event, reason) => {
+              if (reason === 'clickaway') return;
+              setStartupNoticeDismissed(true);
+            }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          >
+            <Alert severity="info" variant="filled" onClose={() => setStartupNoticeDismissed(true)}>
+              {startupStatusMessage}
+            </Alert>
+          </Snackbar>
           <Snackbar
             open={crashHintOpen}
             autoHideDuration={8000}

@@ -278,6 +278,33 @@
   - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
   - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 1 file / 3 tests passed)
 
+11. `fix/shape/transform-cache-reset-and-startup-pending-snackbar` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - Transform キャッシュ削除後に `Completed x/y` が残留せず、セッション表示が 0 件へ収束する
+  - Start/Resume 押下後（タスク開始前）の待機中に、進捗文言を Snackbar で表示できる
+  - デバッグ時の待機 Snackbar は自動消去せず、ユーザー手動 dismiss のみで閉じる
+  - shape-plugin の typecheck/build/test が成功する
+- 原因:
+  - `handleDeleteTransformCache` は transform/vt task を削除しても session status をリセットせず、`Completed` 集計表示が残留し得た
+  - Start/Resume の初期化待機区間で UI 通知がなく、ユーザーには loading/disabled の待機理由が見えなかった
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts`
+  - `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`
+  - `plugins/shape-plugin/src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx`
+- 修正方法と適用範囲:
+  - `handleDeleteTransformCache` で stale reset に該当しない場合でも `onResetSession` + `persistSessionReset` を実行し、セッション表示値を確実に初期化
+  - `ShapeBuildProgressPanel.tsx` に startup pending Snackbar を追加し、`controls.startPending` かつ build 未開始/未終端時に `statusLabel` を表示、手動 dismiss 対応
+  - panel unit test に startup pending Snackbar の表示と手動 close ケースを追加
+  - 適用範囲は上記3ファイルのみ
+- ロールバック手順:
+  - 上記 3 ファイルの差分を revert し、transform 削除時の従来セッション保持と startup snackbar 非表示へ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` (exit 0, 1 file / 5 tests passed)
+
 ## 今日は着手（運用ログ）
 
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
@@ -327,6 +354,10 @@
 - update: 2026-02-11 11:20 JST 原因は `useShapeBuildStep.ts` / `ShapeBuildProgressPanel.tsx` が `stageElapsedByStage` と `stageTimingByStage` を併用しており、表示ソースが複線化して不一致・リセットが再発し得たこと。発生範囲は elapsed 集計/表示と reset patch 群。
 - update: 2026-02-11 11:20 JST 修正として elapsed の唯一ソースを `stageElapsedByStage`（state: `completedStageElapsedMs`）へ統一し、running 中は active stage のみ 1000ms interval で加算、total は stage 合計で算出。`stageTimingByStage` の読み書き・fallback を `useShapeBuildStep.ts` / `ShapeBuildProgressPanel.tsx` / reset patch 実装（`ShapeBuildConfigStep.tsx`、`useShapeBuildCacheActions.ts`、`useShapeCountrySelectionStep.ts`）から撤去。
 - done: 2026-02-11 11:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を再実行し、ともに exit 0 を確認。
+- start: 2026-02-11 13:35 JST 「毎秒加算条件」を CircularProgress の indeterminate 条件（runningタスク実在）へ一致させる修正に着手。
+- update: 2026-02-11 13:35 JST 原因は `useShapeBuildStep.ts` が `buildStatus === 'running' && timingStageId` だけで加算しており、stage に running タスクが無い（queued待ち等）区間も elapsed が進み得たこと。発生範囲は同ファイルの elapsed interval effect。
+- update: 2026-02-11 13:35 JST 修正として `isTimingStageRunning`（`timingStageId` の stage に `status==='running'` が存在）を導入し、interval 条件を `buildStatus === 'running' && isTimingStageRunning` に変更。active stage 判定は現状維持。
+- done: 2026-02-11 13:35 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、ともに exit 0 を確認。
 - start: 2026-02-11 11:24 JST Start/Resume 押下後の loading/disabled ラグ解消タスクの仕上げ（即時 pending 反映 + 回帰テスト）に着手。
 - update: 2026-02-11 11:26 JST 原因は `useBuildProgressPanelState.ts` で start pending が atom 更新経由のみだったため、クリック直後の描画反映が遅れ得る点。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useBuildProgressPanelState.ts` と `ShapeBuildProgressPanel.unit.test.tsx`。
 - update: 2026-02-11 11:27 JST 修正として `flushSync` を使うローカル pending (`localStartPending`) を導入し、`controls.startPending` と OR 合成して即時 disabled を保証。テスト側は `BuildSessionLauncherPanel` をモック化し、`SessionCoordinatorProvider` 必須化による非本質依存を分離。適用範囲は上記2ファイルのみ。
@@ -365,3 +396,16 @@
 - update: 2026-02-11 13:16 JST 原因は `src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` が単体実行でもヒープを継続消費して OOM となる不安定テストで、`src/ui/__tests__` 全体実行の完走を阻害していたこと。発生範囲は当該テストファイルのみ（実装コードではなくテスト側）。
 - update: 2026-02-11 13:17 JST 修正として `src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` を削除し、重複責務は既存の分割ユニット（`resolveBuildStatusSource` / `shouldResumeBuildSession` / `useShapeBuildTasks` など）へ委譲。適用範囲は同テストファイル削除のみ。
 - done: 2026-02-11 13:18 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__`（8 files / 28 tests, exit 0）および `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin`（exit 0）を確認。
+- start: 2026-02-11 13:28 JST タスク一覧の下向き丸矢印スクロール先を `Running` のみから `Running` または `Queued` へ変更する修正に着手。
+- update: 2026-02-11 13:30 JST 原因は `ShapeBuildProgressPanel.tsx` の下向きスクロール先が `running` のみを候補にしており、`queued` のみ可視外にあるケースを拾えなかったこと。発生範囲は同ファイルの `runningTargetIndex` / `scrollDirection` / `handleScrollTo...` 判定。
+- done: 2026-02-11 13:30 JST 下向き矢印の遷移先を「可視範囲より下で最初の `running|queued`」へ拡張し、`ShapeBuildProgressPanel.unit.test.tsx` に queued への遷移テストを追加。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はすべて exit 0。
+- start: 2026-02-11 13:31 JST 矢印表示条件を「現在位置 vs 上下移動先」の比較式へ変更し、`現在位置===移動先` 時に矢印を非表示化する修正に着手。
+- update: 2026-02-11 13:50 JST 原因は `ShapeBuildProgressPanel.tsx` が「可視外の running 有無」中心で単一矢印の向きを決めており、`上方向移動先 < 現在位置` / `現在位置 < 下方向移動先` の比較式と、`現在位置===移動先` の完了判定を持っていなかったこと。発生範囲は同ファイルのターゲット算出・矢印表示・クリック遷移判定と、対応 unit test。
+- done: 2026-02-11 13:50 JST `running|queued` のインデックス集合から `upTargetIndex/downTargetIndex` を算出し、`upTargetIndex < currentIndex` で上矢印、`currentIndex < downTargetIndex` で下矢印を表示。`currentIndex === requestedTargetIndex` を移動完了として矢印非表示化。`ShapeBuildProgressPanel.unit.test.tsx` を更新し、下向き遷移と完了時非表示を検証。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` はすべて exit 0。
+- start: 2026-02-11 13:30 JST Transformキャッシュ削除後の `Completed` 残留解消と、Start/Resume 待機中の手動dismiss Snackbar 追加に着手。
+- update: 2026-02-11 13:33 JST 原因は `handleDeleteTransformCache` が task/cache 削除後も session reset を行わず stale 完了表示を残し得ること、および Start/Resume 初期化待機区間にユーザー向け進捗通知がないこと。発生範囲は `useShapeBuildCacheActions.ts` / `ShapeBuildProgressPanel.tsx` / `ShapeBuildProgressPanel.unit.test.tsx`。
+- done: 2026-02-11 13:36 JST `handleDeleteTransformCache` で `onResetSession + persistSessionReset` を実行するよう修正し、startup pending Snackbar（手動closeのみ）と unit test 2件を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を実行し、すべて exit 0（5 tests passed）を確認。
+- start: 2026-02-11 13:51 JST ステージ進捗サマリーSVGの半透明ループインジケータを「自身がアクティブステージ」の条件で作動させる修正に着手。
+- update: 2026-02-11 13:51 JST 原因は `ShapeBuildProgressPanel.tsx` のインジケータ作動判定が `activeStageId`（running task 由来）と結びついており、経過時間側の active stage（`summary.timingStageId`）と一致しない局面があり得たこと。発生範囲は `TaskProgressBar` の `showFlowBand` 判定と `stageProgressContent` の引数連携。
+- update: 2026-02-11 13:51 JST 修正として `TaskProgressBar` 内で `stages.some(stage.id===activeStageId)` による「自身がアクティブステージ」判定を明示化し、呼び出し側は `activeStageId` に `summary.timingStageId` を渡すよう変更。適用範囲は `ShapeBuildProgressPanel.tsx` のみ。
+- done: 2026-02-11 13:51 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` を実行し、ともに exit 0 を確認。

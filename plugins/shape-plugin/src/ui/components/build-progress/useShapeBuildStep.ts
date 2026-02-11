@@ -616,9 +616,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setTimingStageId(null);
   }, [data, persistedStageElapsedByStage, processingStatus]);
 
+  const isTimingStageRunning = useMemo(() => {
+    if (!timingStageId) return false;
+    return displayTasks.some((task) => (
+      normalizeStageKey(task) === timingStageId
+      && task.status === 'running'
+    ));
+  }, [displayTasks, timingStageId]);
+
   useEffect(() => {
     if (buildStatus !== 'running') return;
     if (!timingStageId) return;
+    if (!isTimingStageRunning) return;
     const intervalId = window.setInterval(() => {
       setCompletedStageElapsedMs((current) => ({
         ...current,
@@ -628,7 +637,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [buildStatus, timingStageId]);
+  }, [buildStatus, isTimingStageRunning, timingStageId]);
 
   const hasFailedFetchTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
