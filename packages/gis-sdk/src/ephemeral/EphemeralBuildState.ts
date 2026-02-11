@@ -129,6 +129,8 @@ export interface EphemeralTileIdToBufferRelation {
   bandIndex: number;
   tileId: string;
   bufferId: string;
+  featureCount?: number;
+  cacheTimestamp?: number;
   createdAt: number;
 }
 

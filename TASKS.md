@@ -109,6 +109,55 @@
   - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
   - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` (exit 0, 1 file / 8 tests passed)
 
+4. `fix/shape/reduce-transform-vt-boundary-memory` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - Transform→VT 境界で `buildVtTasks` がタイルごとに `transformCache.anyOf(...).toArray()` を繰り返さない
+  - VTタスク生成に必要な `featureCount` を relation 側の軽量メタデータから算出できる
+  - 既存の relation 復旧（backfill）経路と互換性を維持する
+- 原因:
+  - `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` の `buildVtTasks` が、タイルごとに重い `transformCache` レコード（`data: ArrayBuffer` を含む）を反復読み込みしていた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` の `buildVtTasks` / `backfillTileRelationsFromTransformCache`
+  - `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の relation 永続化経路
+- 修正方法と適用範囲:
+  - relation レコードへ `featureCount` / `cacheTimestamp` を保持し、VTタスク生成時は relation 集計のみで `featureCount` を計算
+  - relation 欠損時の backfill でも同メタデータを再構築して保存
+  - 適用範囲は `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`、`packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`、型定義2ファイル（`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`、`packages/shape-api/src/shapeDbTypes.ts`）
+- ロールバック手順:
+  - 上記4ファイルの差分を revert し、VTタスク生成時に `transformCache` 参照で `featureCount` を計算する従来ロジックへ戻す
+- 検証:
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/common/__tests__/unit/taskTitles.unit.test.ts` (exit 0, 1 file / 2 tests passed)
+
+5. `fix/shape/reduce-build-progress-log-noise` — 完了 (2026-02-11)
+- ブランチ名: `ERIA-Cartograph`
+- 依存: なし
+- 受け入れ基準:
+  - `ShapeBuildProgressStep` の progress 連打ログ（`worker progress update`）を停止する
+  - `Completed` 到達後に同一 task の stale `Running/Queued` が来たときだけ警告ログを出す
+  - 進捗ログは終端更新（`taskStatus=completed` または非 phase の `percentage>=100`）のみに絞る
+- 原因:
+  - `useShapeBuildStep.ts` が `effectiveProgress.message` 更新ごとに info ログを出力しており、`phase=...` の大量通知が調査ノイズを増やしていた
+- 発生範囲の確認:
+  - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の progress ログ出力 effect（`emitBuildSessionTransitionLog` 呼び出し）
+- 修正方法と適用範囲:
+  - progress ログの dedupe key を `progressTerminalLogKeyRef` / `staleProgressLogKeyRef` に分離
+  - completed 到達済み task への stale `running/queued` は早期 return し、`ignored stale worker progress update after completion` を warn で 1 回のみ出力
+  - 通常ログは `worker progress terminal update`（終端更新のみ）へ限定
+  - 適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` のみ
+- ロールバック手順:
+  - 上記ファイルの差分を revert し、従来の progress message ごとの info ログ出力へ戻す
+- 検証:
+  - `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` (exit 0)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` (exit 1, `ERR_WORKER_OUT_OF_MEMORY`)
+  - `NODE_OPTIONS='--max-old-space-size=8192' pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx` (exit 1, `ERR_WORKER_OUT_OF_MEMORY`)
+  - `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx --pool forks --poolOptions.forks.singleFork=true` (exit 1, OOM)
+  - `NODE_OPTIONS='--max-old-space-size=8192' pnpm -w turbo run test --concurrency=1 --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx --pool forks --poolOptions.forks.singleFork=true --maxWorkers=1` (exit 1, OOM)
+
 ## 今日は着手（運用ログ）
 
 - start: 2026-02-11 07:31 JST 旧 `TASKS.md` 長大化のため、日付付き Obsolete アーカイブ化と新運用ハブへの移行に着手。
@@ -123,3 +172,12 @@
 - update: 2026-02-11 08:37 JST 原因は `useShapeBuildTaskSync.ts` の task マージ規則で `Completed(100%)` を terminal として固定する条件が明示されておらず、後続の非終端 update/snapshot を抑止する保証が弱かったこと。発生範囲は同ファイルの `resolveTaskSummary` / `shouldPreferNextTask` / `mergeTask` / `handleSnapshot` / `syncTasksRef`。
 - update: 2026-02-11 08:38 JST 修正として `Completed(100%)` を terminal に定義し、同一 taskId の後続 `Running/Queued` および `100% 未満 Completed` を無視するガードを追加。あわせて `shouldPreferNextTask` を terminal 優先に再編し、適用範囲は `useShapeBuildTaskSync.ts` と `useShapeBuildTasks.unit.test.tsx` のみ。
 - done: 2026-02-11 08:39 JST `shape-plugin` の typecheck/build/対象ユニットテスト（8 tests）を Turbo 経由で実行し、すべて exit 0 を確認。
+- start: 2026-02-11 08:38 JST Transform→VT ステージ境界のメモリ負荷削減タスクに着手。`buildVtTasks` の `transformCache` 反復読み込み経路を調査開始。
+- update: 2026-02-11 08:42 JST 原因は `buildVtTasks` がタイルごとに `transformCache.anyOf(...).toArray()` を実行し、同一 `bufferId` の重いレコードを繰り返しメモリへ展開していたこと。発生範囲は `shapePipelineShared.ts` の VTタスク生成と、relation metadata 永続化経路。
+- update: 2026-02-11 08:42 JST 修正として `tileIdToBufferRelations` に `featureCount/cacheTimestamp` を保存し、VTタスク生成では relation 集計のみで `featureCount` を算出する方式へ変更。欠損relation復旧（backfill）でも同メタデータを書き戻すようにした。適用範囲は `shapePipelineShared.ts`、`createTransformByBandHandler.ts`、型定義2ファイル。
+- done: 2026-02-11 08:42 JST `shape-plugin` の build/typecheck/対象ユニットテストを Turbo 経由で実行し、すべて exit 0 を確認。
+- start: 2026-02-11 08:50 JST Shape Step5 調査のため `ShapeBuildProgressStep` の冗長 progress ログ削減タスクに着手。
+- update: 2026-02-11 08:55 JST 原因は `useShapeBuildStep.ts` が progress メッセージごとに `worker progress update` を出力していたこと。発生範囲は同ファイルの progress ログ effect。
+- update: 2026-02-11 08:56 JST 修正として stale running/queued の警告ログ化と、終端更新のみの info ログへ再編。適用範囲は `useShapeBuildStep.ts` のみ。
+- done: 2026-02-11 09:03 JST `shape-plugin` の typecheck/build は Turbo 経由で exit 0 を確認。
+- blocked: 2026-02-11 09:03 JST `useShapeBuildStep.unit.test.tsx` は Turbo 経由で複数条件（`NODE_OPTIONS` 拡張、`--pool forks`、`--concurrency=1`）を試しても `ERR_WORKER_OUT_OF_MEMORY` / heap OOM により完走不可。

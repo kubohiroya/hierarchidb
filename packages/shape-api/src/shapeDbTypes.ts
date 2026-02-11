@@ -74,6 +74,8 @@ export interface ShapeTileIdToBufferRelation {
   bandIndex: number;
   tileId: string;
   bufferId: string;
+  featureCount?: number;
+  cacheTimestamp?: number;
   createdAt: number;
 }
 

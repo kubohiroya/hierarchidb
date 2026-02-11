@@ -328,7 +328,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   zBase: number;
   geometryEngine: GeometryEngine;
   ephemeralStore: HidbEphemeralDB;
-}): Promise<{ relationCount: number; tileBuffers: Map<number, string[]> }> => {
+}): Promise<{ relationCount: number; tileBuffers: Map<number, string[]>; bufferFeatureCounts: Map<string, number> }> => {
   const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
   const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
     ephemeralStore.transformCache
@@ -337,7 +337,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
       .toArray()
   ));
   const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
-  if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map() };
+  if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
   const createdAt = Date.now();
   const bufferIds = completedBuffers.map((buffer) => buffer.id);
   await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
@@ -347,9 +347,12 @@ export const backfillTileRelationsFromTransformCache = async (params: {
     bandIndex: number;
     tileId: string;
     bufferId: string;
+    featureCount: number;
+    cacheTimestamp: number;
     createdAt: number;
   }> = [];
   const tileBuffers = new Map<number, string[]>();
+  const bufferFeatureCounts = new Map<string, number>();
   let written = 0;
   const flushPending = async () => {
     if (pending.length === 0) return;
@@ -373,6 +376,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
       });
       continue;
     }
+    bufferFeatureCounts.set(buffer.id, buffer.featureCount);
     const tileIds = collectTileIdsForCollection(collection, zBase, geometryEngine);
     if (tileIds.length === 0) continue;
     tileIds.forEach((tileId) => {
@@ -388,6 +392,8 @@ export const backfillTileRelationsFromTransformCache = async (params: {
         bandIndex,
         tileId: String(tileId),
         bufferId: buffer.id,
+        featureCount: buffer.featureCount,
+        cacheTimestamp: buffer.timestamp,
         createdAt,
       });
     });
@@ -396,7 +402,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
     }
   }
   await flushPending();
-  return { relationCount: written, tileBuffers };
+  return { relationCount: written, tileBuffers, bufferFeatureCounts };
 };
 
 export const hasHighDetailSelection = (
@@ -488,19 +494,6 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
   return map;
 };
 
-const listTransformCacheIdsByTile = async (
-  store: HidbEphemeralDB,
-  nodeId: NodeId,
-  bandIndex: number,
-  tileId: number,
-): Promise<string[]> => {
-  const rows = await store.tileIdToBufferRelations
-    .where('[nodeId+bandIndex+tileId]')
-    .equals([nodeId, bandIndex, String(tileId)])
-    .toArray();
-  return rows.map((row) => row.bufferId);
-};
-
 export const buildVtTasks = async (
   nodeId: NodeId,
   ephemeralStore: HidbEphemeralDB,
@@ -516,6 +509,7 @@ export const buildVtTasks = async (
     const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
     if (isHighDetailBand && !enableHighDetailBands) continue;
     const tileBuffers = new Map<number, string[]>();
+    const bufferFeatureCounts = new Map<string, number>();
     let relationCount = 0;
     const buildTileBuffers = async () => {
       await ephemeralStore.tileIdToBufferRelations
@@ -525,6 +519,12 @@ export const buildVtTasks = async (
           relationCount += 1;
           const tileId = Number(row.tileId);
           if (!Number.isFinite(tileId)) return;
+          const featureCount = typeof row.featureCount === 'number' && Number.isFinite(row.featureCount)
+            ? row.featureCount
+            : undefined;
+          if (featureCount !== undefined && !bufferFeatureCounts.has(row.bufferId)) {
+            bufferFeatureCounts.set(row.bufferId, featureCount);
+          }
           const bucket = tileBuffers.get(tileId);
           if (bucket) {
             bucket.push(row.bufferId);
@@ -548,6 +548,9 @@ export const buildVtTasks = async (
         backfilled.tileBuffers.forEach((value, key) => {
           tileBuffers.set(key, value);
         });
+        backfilled.bufferFeatureCounts.forEach((value, key) => {
+          bufferFeatureCounts.set(key, value);
+        });
         console.warn('[shape-vt] rebuilt missing tile relations', {
           nodeId,
           bandIndex: band.bandIndex,
@@ -565,19 +568,11 @@ export const buildVtTasks = async (
     });
     const tileIds = [...tileBuffers.keys()];
     for (const tileId of tileIds) {
-      const bufferIds = tileBuffers.get(tileId)
-        ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandIndex, tileId);
+      const bufferIds = tileBuffers.get(tileId) ?? [];
       if (bufferIds.length === 0) continue;
-      const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
-        ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray()
-      ));
-      const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
-      if (completedBuffers.length === 0) continue;
-      const completedBufferIds = new Set(completedBuffers.map((buffer) => buffer.id));
-      const usableBufferIds = bufferIds.filter((bufferId) => completedBufferIds.has(bufferId));
+      const usableBufferIds = [...new Set(bufferIds)];
       if (usableBufferIds.length === 0) continue;
-      const featureById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.featureCount] as const));
-      const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (featureById.get(bufferId) ?? 0), 0);
+      const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (bufferFeatureCounts.get(bufferId) ?? 0), 0);
       tasks.push({
         taskId: `${String(nodeId)}:vt:${band.bandIndex}:${band.zBase}:${tileId}`,
         nodeId,

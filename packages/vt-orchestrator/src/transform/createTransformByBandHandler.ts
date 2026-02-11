@@ -2416,12 +2416,16 @@ export const createTransformByBandHandler = (
       }));
       if (tileIds.length > 0) {
         const createdAt = Date.now();
+        const relationFeatureCount = features.length;
+        const cacheTimestamp = createdAt;
         const relations = tileIds.map((tileId) => ({
           id: `${task.nodeId}:${input.bandIndex}:${tileId}:${cacheId}`,
           nodeId: task.nodeId,
           bandIndex: input.bandIndex,
           tileId: String(tileId),
           bufferId: cacheId,
+          featureCount: relationFeatureCount,
+          cacheTimestamp,
           createdAt,
         }));
         try {

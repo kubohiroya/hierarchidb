@@ -507,7 +507,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
   const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
   const previousTransitionActiveRef = useRef(false);
-  const progressSnackbarKeyRef = useRef<string | null>(null);
+  const progressTerminalLogKeyRef = useRef<string | null>(null);
+  const staleProgressLogKeyRef = useRef<string | null>(null);
   const [buildSessionTransitionElapsedMs, setBuildSessionTransitionElapsedMs] = useState(0);
   const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<BuildProgressStatus | null>(null);
@@ -574,7 +575,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildSessionTransitionWarnStepRef.current = 0;
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
-    progressSnackbarKeyRef.current = null;
+    progressTerminalLogKeyRef.current = null;
+    staleProgressLogKeyRef.current = null;
     queueRequestedAtRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
   }, []);
@@ -596,7 +598,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildSessionTransitionWarnStepRef.current = 0;
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
-    progressSnackbarKeyRef.current = null;
+    progressTerminalLogKeyRef.current = null;
+    staleProgressLogKeyRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
     beginBuildSessionTransitionInternal(phase, {
       message,
@@ -1499,19 +1502,41 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (canCheckStale) {
       const completedSequence = completedTaskSequenceById.get(progressTaskId);
       if (typeof completedSequence === 'number' && completedSequence >= progressTaskSequence) {
+        const staleKey = `${progressTaskId}:${progressTaskSequence}:${completedSequence}:${message}`;
+        if (staleProgressLogKeyRef.current !== staleKey) {
+          staleProgressLogKeyRef.current = staleKey;
+          emitBuildSessionTransitionLog('warn', 'ignored stale worker progress update after completion', {
+            stage: resolvedTaskType ?? null,
+            scope: progressScope,
+            taskId: progressTaskId,
+            taskSequence: progressTaskSequence,
+            completedSequence,
+            taskStatus: progressTaskStatus,
+            percentage: effectiveProgress?.percentage ?? null,
+            message,
+          });
+        }
         return;
       }
     }
     if ((resolvedTaskType === 'fetch' || resolvedTaskType === 'transform') && !progressScope) return;
-    const logEvent = progressScope ? `worker progress update ${progressScope}` : 'worker progress update';
-    const key = `${resolvedTaskType ?? ''}:${message}:${progressScope ?? ''}`;
-    if (progressSnackbarKeyRef.current === key) return;
-    progressSnackbarKeyRef.current = key;
-    emitBuildSessionTransitionLog('info', logEvent, {
+    const isPhaseMessage = /^phase=/i.test(message);
+    const isTerminalUpdate = (
+      progressTaskStatus === 'completed'
+      || ((effectiveProgress?.percentage ?? 0) >= 100 && !isPhaseMessage)
+    );
+    if (!isTerminalUpdate) return;
+    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${message}:${progressScope ?? ''}`;
+    if (progressTerminalLogKeyRef.current === key) return;
+    progressTerminalLogKeyRef.current = key;
+    emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
       stage: resolvedTaskType ?? null,
       message,
       percentage: effectiveProgress?.percentage ?? null,
       scope: progressScope,
+      taskId: progressTaskId ?? null,
+      taskSequence: progressTaskSequence ?? null,
+      taskStatus: progressTaskStatus ?? null,
     });
   }, [
     buildStatus,
