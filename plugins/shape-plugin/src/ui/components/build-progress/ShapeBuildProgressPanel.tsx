@@ -1105,7 +1105,7 @@ export const ShapeBuildProgressPanel = ({
               if (reason === 'clickaway') return;
               setStartupNoticeDismissed(true);
             }}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="info" variant="filled" onClose={() => setStartupNoticeDismissed(true)}>
               {startupStatusMessage}
@@ -1115,7 +1115,7 @@ export const ShapeBuildProgressPanel = ({
             open={crashHintOpen}
             autoHideDuration={8000}
             onClose={() => setCrashHintOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="warning" variant="filled" onClose={() => setCrashHintOpen(false)}>
               {crashHint}
@@ -1125,7 +1125,7 @@ export const ShapeBuildProgressPanel = ({
             open={sizeWarningOpen}
             autoHideDuration={8000}
             onClose={() => setSizeWarningOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
             <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
               {warningMessage}

@@ -322,13 +322,13 @@ const mergeSnapshotWithCurrent = (
   if (snapshotTasks.length === 0) {
     return [];
   }
-  const mergedMap = new Map(currentMap);
+  const mergedMap = new Map<string, ShapeBuildTaskSummary>();
   snapshotTasks.forEach((snapshotTask) => {
-    const current = mergedMap.get(snapshotTask.taskId);
-    if (!current || shouldPreferNextTask(current, snapshotTask)) {
+    const currentFromMap = currentMap.get(snapshotTask.taskId);
+    if (!currentFromMap || shouldPreferNextTask(currentFromMap, snapshotTask)) {
       mergedMap.set(snapshotTask.taskId, snapshotTask);
     } else {
-      mergedMap.set(snapshotTask.taskId, current);
+      mergedMap.set(snapshotTask.taskId, currentFromMap);
     }
   });
   const merged = [...mergedMap.values()];
@@ -336,10 +336,66 @@ const mergeSnapshotWithCurrent = (
   return merged;
 };
 
+const readSequence = (task: ShapeBuildTaskSummary): number | null => (
+  typeof task.sequence === 'number' && Number.isFinite(task.sequence) ? task.sequence : null
+);
+
+const readStatusRank = (task: ShapeBuildTaskSummary): number => {
+  switch (task.status) {
+    case 'queued':
+      return 0;
+    case 'running':
+      return 1;
+    case 'paused':
+      return 2;
+    case 'completed':
+    case 'failed':
+    case 'regression':
+      return 3;
+    default:
+      return 0;
+  }
+};
+
 const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  const currentSequence = readSequence(current);
+  const nextSequence = readSequence(next);
+  if (currentSequence !== null && nextSequence !== null) {
+    if (nextSequence < currentSequence) {
+      if (
+        isCompletedAtFullProgress(next)
+        && !isCompletedAtFullProgress(current)
+        && (current.status === 'queued' || current.status === 'running')
+      ) {
+        return true;
+      }
+      return false;
+    }
+    if (nextSequence === currentSequence) {
+      if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) {
+        return true;
+      }
+      if (isCompletedAtFullProgress(current) && !isCompletedAtFullProgress(next)) {
+        return false;
+      }
+      const currentStatusRank = readStatusRank(current);
+      const nextStatusRank = readStatusRank(next);
+      if (nextStatusRank !== currentStatusRank) {
+        return nextStatusRank > currentStatusRank;
+      }
+      if (resolveProgressValue(next.progress) !== resolveProgressValue(current.progress)) {
+        return resolveProgressValue(next.progress) > resolveProgressValue(current.progress);
+      }
+      if (next.status === 'completed' && current.status === 'completed') {
+        return shouldPromoteCompletedMessage(current, next);
+      }
+      return false;
+    }
+  }
+
   if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
     return shouldPromoteCompletedMessage(current, next);
   }

@@ -461,4 +461,155 @@ describe('useShapeBuildTasks', () => {
       expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('[TaskUpdate100]'));
     });
   });
+
+  it('keeps terminal status when duplicate sequence updates arrive', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-6'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-6',
+        task: {
+          taskId: 'node-6:fetch:BY:0',
+          stage: 'fetch',
+          status: 'queued',
+          progress: 0,
+          message: 'Queued',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('queued');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-6',
+        task: {
+          taskId: 'node-6:fetch:BY:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 50,
+          message: 'Running',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('running');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-6',
+        task: {
+          taskId: 'node-6:fetch:BY:0',
+          stage: 'fetch',
+          status: 'queued',
+          progress: 0,
+          message: 'Late queued',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('running');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-6',
+        task: {
+          taskId: 'node-6:fetch:BY:0',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Done',
+          index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+  });
+
+  it('drops stale tasks that no longer exist in snapshot', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-7'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-7',
+        tasks: [
+          {
+            taskId: 'node-7:fetch:ABW:0',
+            stage: 'fetch',
+            status: 'running',
+            progress: 70,
+            message: 'Running',
+            index: 1,
+            sequence: 2,
+          },
+          {
+            taskId: 'node-7:fetch:ABW:1',
+            stage: 'fetch',
+            status: 'queued',
+            progress: 0,
+            message: 'Queued',
+            index: 2,
+            sequence: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(2);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-7',
+        tasks: [
+          {
+            taskId: 'node-7:fetch:ABW:1',
+            stage: 'fetch',
+            status: 'running',
+            progress: 10,
+            message: 'Start',
+            index: 2,
+            sequence: 2,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.taskId).toBe('node-7:fetch:ABW:1');
+    });
+  });
 });
