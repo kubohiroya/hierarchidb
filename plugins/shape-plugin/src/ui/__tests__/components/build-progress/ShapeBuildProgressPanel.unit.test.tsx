@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 
@@ -72,6 +72,10 @@ const makeStore = () => {
   });
   return store;
 };
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('ShapeBuildProgressPanel', () => {
   it('shows detailed error message from failed tasks', async () => {

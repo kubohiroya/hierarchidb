@@ -32,9 +32,50 @@ import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/ta
 
 const isDev = import.meta.env.DEV;
 const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
+const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 
 const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
   console.log(`${START_RESUME_TRACE_PREFIX} ${event}`, payload ?? {});
+};
+
+const formatRunningResidueValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized.replace(/\s+/g, '_') : '-';
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+};
+
+const logRunningResiduePanel = (
+  keyword: 'SCAN' | 'STAGE_INDICATOR',
+  payload: {
+    nodeId: string | null;
+    stage: string;
+    source: 'scan' | 'indicator';
+    runningCount: number;
+    queuedCount: number;
+    totalCount: number;
+    stageIsRunning: boolean;
+    buildStatus: BuildStatus;
+    activeStageId: string | null;
+  },
+): void => {
+  if (!isDev) return;
+  const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
+    + ` nodeId=${formatRunningResidueValue(payload.nodeId)}`
+    + ` stage=${formatRunningResidueValue(payload.stage)}`
+    + ` taskId=- sequence=- prevStatus=- nextStatus=-`
+    + ` source=${formatRunningResidueValue(payload.source)}`
+    + ` runningCount=${formatRunningResidueValue(payload.runningCount)}`
+    + ` queuedCount=${formatRunningResidueValue(payload.queuedCount)}`
+    + ` totalCount=${formatRunningResidueValue(payload.totalCount)}`
+    + ` stageIsRunning=${formatRunningResidueValue(payload.stageIsRunning)}`
+    + ` buildStatus=${formatRunningResidueValue(payload.buildStatus)}`
+    + ` activeStageId=${formatRunningResidueValue(payload.activeStageId)}`
+    + ` timestamp=${Date.now()}`;
+  console.log(line, payload);
 };
 
 export const useBuildProgressPanelState = (params: {
@@ -75,11 +116,25 @@ export const useBuildProgressPanelState = (params: {
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
   const stageTaskScan = useMemo(() => {
-    return stages.reduce<Record<string, { hasRunning: boolean; failedTask: ShapeBuildTaskSummary | null }>>((acc, stage) => {
+    return stages.reduce<Record<string, {
+      hasRunning: boolean;
+      failedTask: ShapeBuildTaskSummary | null;
+      runningCount: number;
+      queuedCount: number;
+      totalCount: number;
+    }>>((acc, stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
       let hasRunning = false;
       let failedTask: ShapeBuildTaskSummary | null = null;
+      let runningCount = 0;
+      let queuedCount = 0;
       for (const task of stageTasks) {
+        if (task.status === 'running') {
+          runningCount += 1;
+        }
+        if (task.status === 'queued') {
+          queuedCount += 1;
+        }
         if (!hasRunning && task.status === 'running') {
           hasRunning = true;
         }
@@ -90,7 +145,13 @@ export const useBuildProgressPanelState = (params: {
           break;
         }
       }
-      acc[stage.id] = { hasRunning, failedTask };
+      acc[stage.id] = {
+        hasRunning,
+        failedTask,
+        runningCount,
+        queuedCount,
+        totalCount: stageTasks.length,
+      };
       return acc;
     }, {});
   }, [stages, tasksByStage]);
@@ -103,6 +164,24 @@ export const useBuildProgressPanelState = (params: {
     }
     return null;
   }, [stageTaskScan, stages, summary.buildStatus]);
+  useEffect(() => {
+    if (!isDev) return;
+    const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;
+    stages.forEach((stage) => {
+      const scan = stageTaskScan[stage.id];
+      logRunningResiduePanel('SCAN', {
+        nodeId: nodeIdForLog,
+        stage: stage.id,
+        source: 'scan',
+        runningCount: scan?.runningCount ?? 0,
+        queuedCount: scan?.queuedCount ?? 0,
+        totalCount: scan?.totalCount ?? 0,
+        stageIsRunning: Boolean(scan?.hasRunning),
+        buildStatus: summary.buildStatus,
+        activeStageId,
+      });
+    });
+  }, [activeStageId, resolvedNodeId, stageTaskScan, stages, summary.buildStatus]);
   const {
     startWarning,
     crashHint,
@@ -362,6 +441,32 @@ export const useBuildProgressPanelState = (params: {
       return acc;
     }, {});
   }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
+  useEffect(() => {
+    if (!isDev) return;
+    const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;
+    stages.forEach((stage) => {
+      const scan = stageTaskScan[stage.id];
+      const indicator = stageConcurrencyIndicators?.[stage.id];
+      logRunningResiduePanel('STAGE_INDICATOR', {
+        nodeId: nodeIdForLog,
+        stage: stage.id,
+        source: 'indicator',
+        runningCount: scan?.runningCount ?? 0,
+        queuedCount: scan?.queuedCount ?? 0,
+        totalCount: scan?.totalCount ?? 0,
+        stageIsRunning: Boolean(indicator?.isRunning),
+        buildStatus: summary.buildStatus,
+        activeStageId,
+      });
+    });
+  }, [
+    activeStageId,
+    resolvedNodeId,
+    stageConcurrencyIndicators,
+    stageTaskScan,
+    stages,
+    summary.buildStatus,
+  ]);
 
   const setLocalStartPendingImmediate = useCallback((next: boolean) => {
     flushSync(() => {

@@ -530,6 +530,8 @@ const withTimeout = async <T>(
 };
 
 type RealPipelineStep = 1 | 2 | 3 | 4;
+const runRealPipeline = process.env.HDB_WFL_REAL_PIPELINE === '1';
+const realPipelineIt = runRealPipeline ? it : it.skip;
 
 describe('Comlink + fake-indexeddb integration: shape build background (real pipeline)', () => {
   it('keeps pipeline running after UI disconnect (smoke)', async () => {
@@ -720,19 +722,19 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
     }
   };
 
-  it('real pipeline step 1 (tile relations)', async () => {
+  realPipelineIt('real pipeline step 1 (tile relations)', async () => {
     await runRealPipelineSteps(1);
   }, 120_000);
 
-  it('real pipeline step 1+2 (wait for pipeline)', async () => {
+  realPipelineIt('real pipeline step 1+2 (wait for pipeline)', async () => {
     await runRealPipelineSteps(2);
   }, 120_000);
 
-  it('real pipeline step 1+2+3 (task queue)', async () => {
+  realPipelineIt('real pipeline step 1+2+3 (task queue)', async () => {
     await runRealPipelineSteps(3);
   }, 120_000);
 
-  it('real pipeline step 1+2+3+4 (vector tiles)', async () => {
+  realPipelineIt('real pipeline step 1+2+3+4 (vector tiles)', async () => {
     await runRealPipelineSteps(4);
   }, 120_000);
 });

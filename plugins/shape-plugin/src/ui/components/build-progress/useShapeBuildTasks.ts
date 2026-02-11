@@ -25,6 +25,31 @@ export interface UseShapeBuildTasksState {
 }
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
+const isDev = import.meta.env.DEV;
+const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
+
+const logRunningResidueEvent = (
+  keyword: string,
+  payload: {
+    nodeId: string | null;
+    source: string;
+    eventType: string;
+    reason?: string;
+    taskId?: string | null;
+  },
+): void => {
+  if (!isDev) return;
+  console.log(
+    `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
+      + ` nodeId=${payload.nodeId ?? '-'}`
+      + ` source=${payload.source}`
+      + ` eventType=${payload.eventType}`
+      + ` taskId=${payload.taskId ?? '-'}`
+      + ` reason=${payload.reason ?? '-'}`
+      + ` timestamp=${Date.now()}`,
+    payload,
+  );
+};
 
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
@@ -53,7 +78,12 @@ export function useShapeBuildTasks(
     syncLoadingRef,
     syncErrorRef,
     resetPending,
-  } = useShapeBuildTaskSync({ setTasks, setIsLoading, setError });
+  } = useShapeBuildTaskSync({
+    sessionNodeId: nodeId ? String(nodeId) : null,
+    setTasks,
+    setIsLoading,
+    setError,
+  });
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
@@ -83,27 +113,30 @@ export function useShapeBuildTasks(
       subscriptionRef.current = null;
     }
     resetPending();
+    const hadTasks = tasksRef.current.length > 0;
+    const hadError = errorRef.current !== null;
+    const wasLoading = isLoadingRef.current;
     if (!nodeId || !autoSubscribe) {
       syncTasksRef([]);
-      if (tasksRef.current.length > 0) {
+      if (hadTasks) {
         setTasks([]);
       }
-      if (errorRef.current !== null) {
+      if (hadError) {
         setError(null);
       }
-      if (isLoadingRef.current) {
+      if (wasLoading) {
         setIsLoading(false);
       }
       return;
     }
     syncTasksRef([]);
-    if (tasksRef.current.length > 0) {
+    if (hadTasks) {
       setTasks([]);
     }
-    if (errorRef.current !== null) {
+    if (hadError) {
       setError(null);
     }
-    if (!isLoadingRef.current) {
+    if (!wasLoading) {
       setIsLoading(true);
     }
     const subscriptionId = subscriptionIdRef.current + 1;
@@ -111,7 +144,22 @@ export function useShapeBuildTasks(
     let cancelled = false;
 
     const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
-      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
+      if (cancelled || subscriptionIdRef.current !== subscriptionId) {
+        logRunningResidueEvent('STALE_DROP', {
+          nodeId: nodeId ? String(nodeId) : null,
+          source: 'subscription',
+          eventType: event.type,
+          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          reason: cancelled ? 'subscription_cancelled' : 'subscription_id_mismatch',
+        });
+        return;
+      }
+      logRunningResidueEvent('TASK_EVENT', {
+        nodeId: nodeId ? String(nodeId) : null,
+        source: 'subscription',
+        eventType: event.type,
+        taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+      });
       if (event.type === 'snapshot') {
         handleSnapshotRef.current(event.tasks);
         return;
