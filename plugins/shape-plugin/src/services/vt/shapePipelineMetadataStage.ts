@@ -11,7 +11,7 @@ import type { CountryMetadata, DataSourceName } from '../../common/types/index.j
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
-import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 import type { shapeDB } from '@hierarchidb/shape-store';
 import {
   buildCountryLookup,
@@ -24,7 +24,7 @@ import {
 export type ShapeMetadataStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  ephemeralStore: HidbEphemeralDB;
+  ephemeralStore: EphemeralShapeDB;
   shapeDb: typeof shapeDB;
   geometryEngine: GeometryEngine;
   recyclingByFeatureId?: Map<string, boolean>;
@@ -66,7 +66,7 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
 const buildFeatureMetadataFromTransformCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
-  ephemeralStore: HidbEphemeralDB,
+  ephemeralStore: EphemeralShapeDB,
   geometryEngine: GeometryEngine,
   recyclingByFeatureId?: Map<string, boolean>,
 ): Promise<ShapeFeatureMetadata[]> => {
@@ -74,9 +74,12 @@ const buildFeatureMetadataFromTransformCaches = async (
   const createdAt = Date.now();
   const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const countryLookup = buildCountryLookup(metadata as CountryMetadata[]);
-  const buffers = await ephemeralStore.transformCache.where('nodeId').equals(nodeId).toArray();
+  const transformCacheIdsRaw = await ephemeralStore.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  const transformCacheIds = transformCacheIdsRaw.map((id) => String(id));
+  if (transformCacheIds.length === 0) return records;
+  const buffers = await ephemeralStore.transformCache.bulkGet(transformCacheIds);
   for (const buffer of buffers) {
-    if (!isTransformCacheComplete(buffer)) continue;
+    if (!buffer || !isTransformCacheComplete(buffer)) continue;
     const collection = await decodeTransformCache(buffer.data);
     if (!collection) continue;
     for (let index = 0; index < collection.features.length; index += 1) {

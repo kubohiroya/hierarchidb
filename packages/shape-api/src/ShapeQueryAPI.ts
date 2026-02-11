@@ -17,7 +17,7 @@ import type {
   ShapeDataSourceMetadata,
   ShapeVTMetadata,
 } from './shapeBuildTypes.js';
-import type { ShapeBuildSessionRecord, ShapeFeatureRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
+import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeQueryAPI {
   listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]>;
@@ -38,12 +38,6 @@ export interface ShapeQueryAPI {
   getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]>;
   getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary>;
-  listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]>;
-  listFeaturesInBbox(
-    nodeId: NodeId,
-    bbox: [number, number, number, number],
-    adminLevel?: number,
-  ): Promise<ShapeFeatureRecord[]>;
   listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]>;
   getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null>;
   listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]>;

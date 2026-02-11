@@ -7,7 +7,6 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
   ShapeFeatureMetadata,
-  ShapeFeatureRecord,
   ShapeFetchCache,
   ShapeProcessingStatus,
   ShapeQueryAPI,
@@ -29,7 +28,7 @@ import type {
   StageStatus,
 } from '@hierarchidb/shape-store';
 import {
-  hidbEphemeralDB as ephemeralShapeDB,
+  ephemeralShapeDB,
   type EphemeralBuildSessionRecord,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -113,6 +112,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
+
+const isDefined = <T>(value: T | null | undefined): value is T => (
+  value !== null && value !== undefined
+);
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   value === 'queued'
@@ -322,7 +325,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getProcessedFeatureCount(nodeId: NodeId): Promise<number> {
     await this.ensureOpen();
-    return this.db.features.where('nodeId').equals(nodeId).count();
+    return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).count();
   }
 
   async getVectorTileInfo(
@@ -396,22 +399,6 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
-  async listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]> {
-    await this.ensureOpen();
-    return this.db.features.where('nodeId').equals(nodeId).toArray() as Promise<
-      ShapeFeatureRecord[]
-    >;
-  }
-
-  async listFeaturesInBbox(
-    nodeId: NodeId,
-    bbox: [number, number, number, number],
-    adminLevel?: number
-  ): Promise<ShapeFeatureRecord[]> {
-    await this.ensureOpen();
-    return this.db.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
-  }
-
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(
@@ -455,13 +442,13 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]> {
-    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
-      const records = await ephemeralShapeDB.transformCache
-        .where('nodeId')
-        .equals(nodeId)
-        .toArray();
-      return records.filter((record) => record.timestamp > 0);
-    });
+    const idsRaw = await ephemeralShapeDB.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+    if (idsRaw.length === 0) return [];
+    const ids = idsRaw.map((id) => String(id));
+    const records = await ephemeralShapeDB.transformCache.bulkGet(ids);
+    return records
+      .filter(isDefined)
+      .filter((record): record is ShapeTransformCache => record.nodeId === nodeId && record.timestamp > 0);
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {

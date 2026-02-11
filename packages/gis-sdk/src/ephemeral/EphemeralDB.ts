@@ -1,14 +1,15 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
+  BuildStage,
   EphemeralBuildSessionRecord,
   EphemeralBuildTaskRecord,
-  EphemeralFetchCacheRecord,
   EphemeralFetchCacheMetaRecord,
-  EphemeralTransformCacheRecord,
-  EphemeralTransformCacheMetaRecord,
-  EphemeralTransformErrorRecord,
+  EphemeralFetchCacheRecord,
   EphemeralTileIdToBufferRelation,
+  EphemeralTransformCacheMetaRecord,
+  EphemeralTransformCacheRecord,
+  EphemeralTransformErrorRecord,
 } from './EphemeralBuildState.js';
 import { EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
 
@@ -55,7 +56,7 @@ const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralT
   return meta;
 };
 
-export class HidbEphemeralDB extends Dexie {
+export abstract class EphemeralDB extends Dexie {
   sessions!: Table<EphemeralBuildSessionRecord, string>;
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
   fetchCache!: Table<EphemeralFetchCacheRecord, string>;
@@ -65,7 +66,7 @@ export class HidbEphemeralDB extends Dexie {
   transformErrors!: Table<EphemeralTransformErrorRecord, string>;
   tileIdToBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
 
-  constructor(dbName: string = getDBName('ephemeral')) {
+  protected constructor(dbName: string) {
     super(dbName);
     this.version(3).stores(EPHEMERAL_DB_SCHEMA_V3);
     this.version(4).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
@@ -78,6 +79,8 @@ export class HidbEphemeralDB extends Dexie {
         await tx.table('transformCacheMeta').bulkPut(transformRows.map(toTransformCacheMeta));
       }
     });
+    this.version(5).stores(EPHEMERAL_DB_SCHEMA);
+
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
     this.fetchCache = this.table('fetchCache');
@@ -86,6 +89,7 @@ export class HidbEphemeralDB extends Dexie {
     this.transformCacheMeta = this.table('transformCacheMeta');
     this.transformErrors = this.table('transformErrors');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
+
     this.fetchCache.hook('creating', (_primaryKey, record, transaction) => {
       transaction.table('fetchCacheMeta').put(toFetchCacheMeta(record));
     });
@@ -103,6 +107,7 @@ export class HidbEphemeralDB extends Dexie {
         transaction.table('fetchCacheMeta').delete(primaryKey);
       }
     });
+
     this.transformCache.hook('creating', (_primaryKey, record, transaction) => {
       transaction.table('transformCacheMeta').put(toTransformCacheMeta(record));
     });
@@ -122,7 +127,7 @@ export class HidbEphemeralDB extends Dexie {
     });
   }
 
-  async clearNodeData(nodeId: string): Promise<void> {
+  async clearNodeData(nodeId: NodeId): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
       this.fetchCacheMeta,
@@ -144,16 +149,15 @@ export class HidbEphemeralDB extends Dexie {
     });
   }
 
-  async hasStageData(nodeId: string, stage: 'fetch' | 'transform' | 'vt'): Promise<boolean> {
+  async hasStageData(nodeId: NodeId, stage: BuildStage): Promise<boolean> {
     return this.transaction('r', [this.fetchCacheMeta, this.transformCacheMeta, this.tileIdToBufferRelations], async () => {
       switch (stage) {
         case 'fetch':
           return (await this.fetchCacheMeta.where('nodeId').equals(nodeId).count()) > 0;
         case 'transform':
           return (await this.transformCacheMeta
-            .where('nodeId')
-            .equals(nodeId)
-            .filter((record) => (record?.timestamp ?? 0) > 0)
+            .where('[nodeId+timestamp]')
+            .between([nodeId, 1], [nodeId, Dexie.maxKey])
             .count()) > 0;
         case 'vt':
           return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
@@ -163,7 +167,7 @@ export class HidbEphemeralDB extends Dexie {
     });
   }
 
-  async clearStage(nodeId: string, stage: 'fetch' | 'transform' | 'vt'): Promise<void> {
+  async clearStage(nodeId: NodeId, stage: BuildStage): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
       this.fetchCacheMeta,
@@ -244,7 +248,7 @@ export class HidbEphemeralDB extends Dexie {
   }
 
   async createBuildTask(
-    task: Omit<EphemeralBuildTaskRecord, 'taskId'> & { taskId?: string }
+    task: Omit<EphemeralBuildTaskRecord, 'taskId'> & { taskId?: string },
   ): Promise<EphemeralBuildTaskRecord> {
     const taskId = task.taskId ?? crypto.randomUUID();
     const fullTask: EphemeralBuildTaskRecord = {
@@ -258,14 +262,4 @@ export class HidbEphemeralDB extends Dexie {
   async updateBuildTask(taskId: string, updates: Partial<EphemeralBuildTaskRecord>): Promise<void> {
     await this.buildTasks.update(taskId, updates);
   }
-
-  async getBuildTasks(nodeId: string): Promise<EphemeralBuildTaskRecord[]> {
-    return this.buildTasks.where('nodeId').equals(nodeId).sortBy('index');
-  }
-
-  async getTasksByStatus(nodeId: string, status: string): Promise<EphemeralBuildTaskRecord[]> {
-    return this.buildTasks.where('[nodeId+status]').equals([nodeId, status]).toArray();
-  }
 }
-
-export const hidbEphemeralDB = new HidbEphemeralDB();

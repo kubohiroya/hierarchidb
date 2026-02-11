@@ -26,11 +26,6 @@ import {
   Typography,
 } from '@mui/material';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import FastRewindIcon from '@mui/icons-material/FastRewind';
-import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import FastForwardIcon from '@mui/icons-material/FastForward';
-import ClearIcon from '@mui/icons-material/Clear';
 import type { BuildStage } from '@hierarchidb/components';
 import type { BuildSessionSnapshot } from '../hooks/useBuildSessionSnapshots.js';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
@@ -44,7 +39,6 @@ import {
 } from '@mui/icons-material';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { useBuildSessionSnapshots } from '../hooks/useBuildSessionSnapshots.js';
-import { useSessionCoordinator } from '@hierarchidb/ui-session-coordinator';
 
 export type BuildSessionLauncherEntry = {
   session: BuildSessionSnapshot;
@@ -71,7 +65,7 @@ type ProgressSummary = {
 
 type LoadingButtonProps = ComponentProps<typeof Button> & { loading?: boolean };
 
-type NormalizedStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'waiting';
+type NormalizedStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
 type ResolvedBuildSessionEntry = BuildSessionLauncherEntry & {
   stageLabel: string;
@@ -151,8 +145,6 @@ const normalizeSessionStatus = (value: unknown): NormalizedStatus => {
   switch (status) {
     case 'processing':
       return 'running';
-    case 'waiting':
-      return 'waiting';
     case 'running':
     case 'paused':
     case 'completed':
@@ -195,9 +187,7 @@ const useBuildStages = (t: (key: string, fallback: string) => string): BuildStag
   );
 };
 
-const resolveRequestedAt = (session: BuildSessionSnapshot): number => {
-  return session.requestedAt ?? session.updatedAt ?? 0;
-};
+const resolveRequestedAt = (session: BuildSessionSnapshot): number => session.updatedAt ?? 0;
 
 export function BuildSessionLauncherPanel({
   nodeType,
@@ -208,7 +198,6 @@ export function BuildSessionLauncherPanel({
   const { t } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
   const { sessions, isRunnerTab, activeSessionId } = useBuildSessionSnapshots(nodeType);
-  const coordinator = useSessionCoordinator();
   const stages = useBuildStages(t);
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
   const [entries, setEntries] = useState<BuildSessionLauncherEntry[]>([]);
@@ -328,14 +317,12 @@ export function BuildSessionLauncherPanel({
         if (status === 'running') return t('stage.progress.unknownStage', 'processing');
         if (status === 'paused') return t('stage.progress.pausedStage', 'paused');
         if (status === 'completed') return t('stage.progress.completedStage', 'completed');
-        if (status === 'waiting') return t('stage.progress.waitingStage', 'waiting');
         return t('stage.progress.idleStage', 'idle');
       })();
       const taskLabel = (() => {
         if (status === 'completed') return t('stage.progress.done', 'Completed');
         if (status === 'failed') return t('stage.progress.failed', 'Failed');
         if (status === 'paused') return t('stage.progress.paused', 'Paused');
-        if (status === 'waiting') return t('stage.progress.waiting', 'Waiting');
         if (status !== 'running') {
           if (status === 'idle' && rawCounts.total > 0) {
             const doneCount = rawCounts.completed + rawCounts.failed + rawCounts.skipped;
@@ -365,18 +352,6 @@ export function BuildSessionLauncherPanel({
     return resolvedEntries.filter((entry) => String(entry.session.nodeId) !== String(excludeNodeId));
   }, [excludeNodeId, resolvedEntries]);
 
-  const waitingEntries = useMemo(() => (
-    filteredEntries.filter((entry) => entry.status === 'waiting')
-  ), [filteredEntries]);
-
-  const waitingIndexByNodeId = useMemo(() => {
-    const map = new Map<string, number>();
-    waitingEntries.forEach((entry, index) => {
-      map.set(String(entry.session.nodeId), index);
-    });
-    return map;
-  }, [waitingEntries]);
-
   const handleOpenMenu = useCallback((event: MouseEvent<HTMLButtonElement>, entry: ResolvedBuildSessionEntry) => {
     setMenuAnchorEl(event.currentTarget);
     setMenuEntry(entry);
@@ -386,41 +361,6 @@ export function BuildSessionLauncherPanel({
     setMenuAnchorEl(null);
     setMenuEntry(null);
   }, []);
-
-  const updateWaitingRequestedAt = useCallback(async (sessionId: string, requestedAt: number) => {
-    await coordinator.writeHeartbeat({
-      sessionId,
-      status: 'waiting',
-      progress: { requestedAt },
-    });
-  }, [coordinator]);
-
-  const handleMoveToFirst = useCallback(async (entry: BuildSessionLauncherEntry) => {
-    const firstEntry = waitingEntries[0];
-    const minRequestedAt = firstEntry ? resolveRequestedAt(firstEntry.session) : Date.now();
-    await updateWaitingRequestedAt(String(entry.session.nodeId), minRequestedAt - 1);
-  }, [updateWaitingRequestedAt, waitingEntries]);
-
-  const handleMoveToLast = useCallback(async (entry: BuildSessionLauncherEntry) => {
-    const lastEntry = waitingEntries[waitingEntries.length - 1];
-    const maxRequestedAt = lastEntry ? resolveRequestedAt(lastEntry.session) : Date.now();
-    await updateWaitingRequestedAt(String(entry.session.nodeId), maxRequestedAt + 1);
-  }, [updateWaitingRequestedAt, waitingEntries]);
-
-  const handleSwapWithNeighbor = useCallback(async (entry: BuildSessionLauncherEntry, offset: number) => {
-    const index = waitingIndexByNodeId.get(String(entry.session.nodeId));
-    if (index === undefined) return;
-    const neighbor = waitingEntries[index + offset];
-    if (!neighbor) return;
-    const entryRequestedAt = resolveRequestedAt(entry.session);
-    const neighborRequestedAt = resolveRequestedAt(neighbor.session);
-    await updateWaitingRequestedAt(String(entry.session.nodeId), neighborRequestedAt);
-    await updateWaitingRequestedAt(String(neighbor.session.nodeId), entryRequestedAt);
-  }, [updateWaitingRequestedAt, waitingEntries, waitingIndexByNodeId]);
-
-  const handleClearWaiting = useCallback(async (entry: BuildSessionLauncherEntry) => {
-    await coordinator.removeHeartbeat(String(entry.session.nodeId));
-  }, [coordinator]);
 
   if (filteredEntries.length === 0) return null;
   return (
@@ -538,71 +478,6 @@ export function BuildSessionLauncherPanel({
             <FolderOpenIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('stage.progress.menu.open', 'Open')} />
-        </MenuItem>
-        <MenuItem
-          disabled={!menuEntry || menuEntry.status !== 'waiting' || waitingIndexByNodeId.get(String(menuEntry.session.nodeId)) === 0}
-          onClick={async () => {
-            if (!menuEntry) return;
-            await handleMoveToFirst(menuEntry);
-            handleCloseMenu();
-          }}
-        >
-          <ListItemIcon>
-            <FastRewindIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('stage.progress.menu.first', 'Move to first')} />
-        </MenuItem>
-        <MenuItem
-          disabled={!menuEntry || menuEntry.status !== 'waiting' || waitingIndexByNodeId.get(String(menuEntry.session.nodeId)) === 0}
-          onClick={async () => {
-            if (!menuEntry) return;
-            await handleSwapWithNeighbor(menuEntry, -1);
-            handleCloseMenu();
-          }}
-        >
-          <ListItemIcon>
-            <SkipPreviousIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('stage.progress.menu.prev', 'Move up')} />
-        </MenuItem>
-        <MenuItem
-          disabled={!menuEntry || menuEntry.status !== 'waiting' || waitingIndexByNodeId.get(String(menuEntry.session.nodeId)) === waitingEntries.length - 1}
-          onClick={async () => {
-            if (!menuEntry) return;
-            await handleSwapWithNeighbor(menuEntry, 1);
-            handleCloseMenu();
-          }}
-        >
-          <ListItemIcon>
-            <SkipNextIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('stage.progress.menu.next', 'Move down')} />
-        </MenuItem>
-        <MenuItem
-          disabled={!menuEntry || menuEntry.status !== 'waiting' || waitingIndexByNodeId.get(String(menuEntry.session.nodeId)) === waitingEntries.length - 1}
-          onClick={async () => {
-            if (!menuEntry) return;
-            await handleMoveToLast(menuEntry);
-            handleCloseMenu();
-          }}
-        >
-          <ListItemIcon>
-            <FastForwardIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('stage.progress.menu.last', 'Move to last')} />
-        </MenuItem>
-        <MenuItem
-          disabled={!menuEntry || menuEntry.status !== 'waiting'}
-          onClick={async () => {
-            if (!menuEntry) return;
-            await handleClearWaiting(menuEntry);
-            handleCloseMenu();
-          }}
-        >
-          <ListItemIcon>
-            <ClearIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('stage.progress.menu.clear', 'Remove from queue')} />
         </MenuItem>
       </Menu>
     </Card>

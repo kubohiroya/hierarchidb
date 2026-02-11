@@ -10,9 +10,7 @@ import {
 } from '@hierarchidb/route-api';
 import {
   createSessionCoordinator,
-  type HeartbeatRecord,
   type SessionLockHandle,
-  type SessionTabState,
 } from '@hierarchidb/session-coordinator';
 import {
   executePauseBuildFlow,
@@ -116,20 +114,10 @@ export const useRouteBuildSessionLifecycle = ({
   const isWebLockSupported = coordinator.isWebLockSupported();
   const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
-  const tabIdRef = useRef<string>(coordinator.getTabId());
   const lockRef = useRef<SessionLockHandle | null>(null);
   const lockKeyRef = useRef<string | null>(null);
   const [isLockOwner, setIsLockOwner] = useState(false);
-  const [remoteHeartbeat, setRemoteHeartbeat] = useState<HeartbeatRecord<BuildStatus, { percentage: number }> | null>(null);
-  const lastHeartbeatPruneAtRef = useRef<number | null>(null);
-  const localTabStateRef = useRef<SessionTabState>('active');
-  const lastAutoResumeAtRef = useRef<number | null>(null);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
-  const suspendTimeout = coordinator.quietThresholdTimeout * 3;
-  const remoteUpdatedAt = remoteHeartbeat?.updatedAt ?? null;
-  const remoteExpiresAt = remoteHeartbeat?.expiresAt ?? null;
-  const remoteTabState = remoteHeartbeat?.tabState ?? null;
-  const remoteTabId = remoteHeartbeat?.tabId ?? null;
   const shouldAutoResume = Boolean(
     routeData.processingStatus === 'processing' && !routeData.buildFinishedAt,
   );
@@ -229,58 +217,10 @@ export const useRouteBuildSessionLifecycle = ({
   }, [status]);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const handleVisibility = () => {
-      const isHidden = document.visibilityState === 'hidden';
-      localTabStateRef.current = isHidden ? 'hidden' : 'active';
-    };
-    const handlePageHide = () => {
-      localTabStateRef.current = 'frozen';
-    };
-    handleVisibility();
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('pagehide', handlePageHide);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('pagehide', handlePageHide);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!sessionId) return;
     if (status !== 'running') return;
     if (!isLockOwner) return;
-    const tick = () => {
-      const now = Date.now();
-      const activeSessionId = coordinator.readActiveSessionId();
-      if (activeSessionId !== sessionId) return;
-      void coordinator.writeHeartbeat({
-        sessionId,
-        status,
-        progress: { percentage: overallProgress },
-        tabState: localTabStateRef.current,
-        lockOwner: true,
-        timestamp: now,
-      });
-    };
-    tick();
-    const intervalId = setInterval(tick, coordinator.pollIntervalTimeout);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator, isLockOwner, overallProgress, sessionId, status]);
-
-  useEffect(() => {
-    if (!remoteHeartbeat) return;
-    if (isLockOwner) return;
-    if (remoteHeartbeat.status && remoteHeartbeat.status !== status) {
-      setStatus(remoteHeartbeat.status);
-    }
-    const nextProgress = remoteHeartbeat.progress?.percentage;
-    if (typeof nextProgress === 'number' && Number.isFinite(nextProgress)) {
-      setOverallProgress(nextProgress);
-    }
-  }, [isLockOwner, remoteHeartbeat, status]);
+  }, [isLockOwner, sessionId, status]);
 
   useEffect(() => {
     completionStatusRef.current = status;
@@ -436,63 +376,6 @@ export const useRouteBuildSessionLifecycle = ({
     vtStageMax,
   ]);
 
-  const maybeAutoResume = useCallback(async () => {
-    if (!sessionId) return;
-    if (!shouldAutoResume) return;
-    if (status === 'running' || buildInFlightRef.current) return;
-    if (!isWebLockSupported) return;
-    const now = Date.now();
-    if (remoteUpdatedAt && remoteTabId && remoteTabId !== tabIdRef.current) {
-      if (now - remoteUpdatedAt < coordinator.quietThresholdTimeout) return;
-    }
-    if (remoteTabState && remoteTabState !== 'active' && remoteUpdatedAt && now - remoteUpdatedAt <= suspendTimeout) return;
-    const lastAutoResumeAt = lastAutoResumeAtRef.current;
-    if (lastAutoResumeAt && now - lastAutoResumeAt < coordinator.quietThresholdTimeout) return;
-    const acquired = await tryAcquireBuildLock();
-    if (!acquired) return;
-    lastAutoResumeAtRef.current = now;
-    await runIdeGsmBuild({ autoResume: true });
-  }, [
-    coordinator.quietThresholdTimeout,
-    isWebLockSupported,
-    remoteTabId,
-    remoteTabState,
-    remoteUpdatedAt,
-    runIdeGsmBuild,
-    sessionId,
-    shouldAutoResume,
-    status,
-    suspendTimeout,
-    tryAcquireBuildLock,
-  ]);
-
-  useEffect(() => {
-    if (!sessionId) {
-      setRemoteHeartbeat(null);
-      return;
-    }
-    let cancelled = false;
-    const tick = async () => {
-      const now = Date.now();
-      const record = await coordinator.readHeartbeat<BuildStatus, { percentage: number }>(sessionId);
-      if (cancelled) return;
-      setRemoteHeartbeat(record);
-      if (!lastHeartbeatPruneAtRef.current || now - lastHeartbeatPruneAtRef.current > coordinator.quietThresholdTimeout) {
-        lastHeartbeatPruneAtRef.current = now;
-        void coordinator.pruneHeartbeats(now);
-      }
-      void maybeAutoResume();
-    };
-    void tick();
-    const intervalId = setInterval(() => {
-      void tick();
-    }, coordinator.pollIntervalTimeout);
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [coordinator, maybeAutoResume, sessionId]);
-
   useEffect(() => {
     if (!sessionId) return;
     const shouldMonitor = shouldAutoResume;
@@ -522,32 +405,7 @@ export const useRouteBuildSessionLifecycle = ({
       if (!lockKey) return;
       const lockState = await coordinator.probeSessionLock(lockKey);
       if (cancelled) return;
-      const suspectWindowMs = coordinator.quietThresholdTimeout + coordinator.pollIntervalTimeout * 2;
-      const heartbeatFresh = Boolean(
-        remoteUpdatedAt && (
-          (typeof remoteExpiresAt === 'number' && remoteExpiresAt > now)
-          || now - remoteUpdatedAt <= suspectWindowMs
-        )
-      );
-      const recentNonActive = Boolean(
-        remoteTabState
-        && remoteTabState !== 'active'
-        && remoteUpdatedAt
-        && now - remoteUpdatedAt <= suspendTimeout
-      );
       if (lockState === 'held') {
-        if (recentNonActive || !heartbeatFresh) {
-          if (crashSuspectOpen) {
-            closeCrashSuspect();
-          }
-          if (!suspendSuspectOpen) {
-            setSuspendSuspectMessage(
-              t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
-            );
-            setSuspendSuspectOpen(true);
-          }
-          return;
-        }
         if (crashSuspectOpen) {
           closeCrashSuspect();
         }
@@ -562,15 +420,6 @@ export const useRouteBuildSessionLifecycle = ({
             t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
           );
           setCrashSuspectOpen(true);
-        }
-        return;
-      }
-      if (heartbeatFresh) {
-        if (crashSuspectOpen) {
-          closeCrashSuspect();
-        }
-        if (suspendSuspectOpen) {
-          closeSuspendSuspect();
         }
         return;
       }
@@ -602,14 +451,10 @@ export const useRouteBuildSessionLifecycle = ({
     lockKey,
     onUpdate,
     releaseBuildLock,
-    remoteExpiresAt,
-    remoteTabState,
-    remoteUpdatedAt,
     sessionId,
     shouldAutoResume,
     status,
     suspendSuspectOpen,
-    suspendTimeout,
     t,
   ]);
 

@@ -23,7 +23,7 @@ import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/sha
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { hidbEphemeralDB as ephemeralShapeDB, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import { ephemeralShapeDB, type EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
@@ -327,16 +327,21 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   bandIndex: number;
   zBase: number;
   geometryEngine: GeometryEngine;
-  ephemeralStore: HidbEphemeralDB;
+  ephemeralStore: EphemeralShapeDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]>; bufferFeatureCounts: Map<string, number> }> => {
   const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
-  const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
-    ephemeralStore.transformCache
-      .where('[nodeId+bandIndex]')
-      .equals([nodeId, bandIndex])
-      .toArray()
+  const idsRaw = await ephemeralStore.transformCacheMeta
+    .where('[nodeId+bandIndex]')
+    .equals([nodeId, bandIndex])
+    .primaryKeys();
+  if (idsRaw.length === 0) {
+    return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
+  }
+  const ids = idsRaw.map((id) => String(id));
+  const buffers = await ephemeralStore.transformCache.bulkGet(ids);
+  const completedBuffers = buffers.filter((buffer): buffer is NonNullable<typeof buffer> => (
+    Boolean(buffer && isTransformCacheComplete(buffer))
   ));
-  const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
   if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map(), bufferFeatureCounts: new Map() };
   const createdAt = Date.now();
   const bufferIds = completedBuffers.map((buffer) => buffer.id);
@@ -496,7 +501,7 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
 
 export const buildVtTasks = async (
   nodeId: NodeId,
-  ephemeralStore: HidbEphemeralDB,
+  ephemeralStore: EphemeralShapeDB,
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,

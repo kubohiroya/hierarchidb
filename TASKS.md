@@ -41,6 +41,9 @@
 
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 - #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
+- #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
+- #206 / `codex/refactor/ephemeral-phased-remove-cache-meta` / start: 2026-02-12 02:04 JST
+- #207 / `codex/refactor/unify-ephemeral-db` / start: 2026-02-12 02:32 JST
 
 ### Blocked
 
@@ -48,6 +51,22 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 03:34 JST #207 で DB 名を修正（`ephemeralShapeDB -> getDBName('shape-ephemeral')`, `ephemeralRouteDB -> getDBName('route-ephemeral')`）。`ephemeral` 単一名への退行を解消。
+- update: 2026-02-12 03:34 JST API 名称統一として `HidbEphemeralDB` / `hidbEphemeralDB` / `EphemeralGisDB` / `getEphemeralRouteDB` を撤去し、`EphemeralDB` / `EphemeralShapeDB` / `EphemeralRouteDB` / `getEphemeralRouteVectorTileDB` へ統一。
+- done: 2026-02-12 03:34 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。
+- update: 2026-02-12 03:19 JST #207 で `HidbEphemeralDB` / `EphemeralGisDB` を `packages/gis-sdk/src/ephemeral/EphemeralDB.ts` 基底へ統合し、`EphemeralShapeDB` / `EphemeralRouteDB` の薄いサブクラスを追加。shape/route/runtime-worker/vt-orchestrator 側の import を `ephemeralShapeDB` / `EphemeralShapeDB` へ寄せて命名を統一。
+- update: 2026-02-12 03:19 JST route plugin のローカル Dexie 名を `RouteVectorTileEphemeralDB` / `getEphemeralRouteVectorTileDB` に整理し、`@hierarchidb/gis-sdk` の `ephemeralRouteDB` と責務が識別しやすい構造に調整。
+- done: 2026-02-12 03:19 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。
+- update: 2026-02-12 02:32 JST Issue `refactor: unify HidbEphemeralDB and EphemeralGisDB into EphemeralDB` を起票し `https://github.com/kubohiroya/hierarchidb/issues/207` を作成。
+- update: 2026-02-12 02:32 JST Issue #207 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 02:32 JST ブランチ `codex/refactor/unify-ephemeral-db` を作成して着手。
+- update: 2026-02-12 02:04 JST Issue `refactor: hidb-ephemeral fetchCacheMeta/transformCacheMeta phased removal` を起票し `https://github.com/kubohiroya/hierarchidb/issues/206` を作成。
+- update: 2026-02-12 02:04 JST Issue #206 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 02:04 JST ブランチ `codex/refactor/ephemeral-phased-remove-cache-meta` を作成して (2) 段階的撤去に着手。
+- update: 2026-02-12 01:28 JST Issue `refactor/session/remove-ui-session-coordinator` を起票し `https://github.com/kubohiroya/hierarchidb/issues/205` を作成。
+- update: 2026-02-12 01:28 JST Issue #205 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 01:28 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま (1) 作業に着手。
+- update: 2026-02-12 01:48 JST heartbeat 管理機能（session-coordinator の heartbeat/semaphore API と UI 側依存）を撤去し、`pnpm -w turbo run typecheck ...` と `pnpm -w turbo run build ...` を成功確認。
 - blocked: 2026-02-11 20:17 JST `gh auth status` 実行時に認証トークン無効で停止。
   失敗コマンド: `gh auth status`
   エラー要約: `The token in default is invalid.`
@@ -77,6 +96,12 @@
 - update: 2026-02-11 22:15 JST ブランチ `codex/refactor/app/modeless-use-feature-metadata` を作成して着手。
 - update: 2026-02-11 22:19 JST `app/src/router/routes/modeless/modelessDialogContentData.ts` の shape一覧取得を `listFeatureMetadata` 前提へ統一し、`adminName/adminCode` を `admin0/1/2` メタデータから導出するよう修正。
 - done: 2026-02-11 22:19 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` いずれも exit 0）。
+- update: 2026-02-12 01:13 JST Issue `refactor/shape/remove-hidb-shape-features` を起票し `https://github.com/kubohiroya/hierarchidb/issues/204` を作成。
+- update: 2026-02-12 01:13 JST Issue #204 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 01:13 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま着手。
+- update: 2026-02-12 01:27 JST shape ドメインの `hidb-shape.features` 依存を撤去。`ShapeDB` から `features` テーブル利用コードを削除し、`ShapeQuery/Mutation` と `ShapeBuildAPIClient` を `featureMetadata` 基準へ移行。`EntityLifecycleManager` の shape コピー/削除も `featureMetadata` / `dataSourceMetadata` ベースへ置換。
+- update: 2026-02-12 01:27 JST `plugin-manifest` の shape database `tableName` を `featureMetadata` へ更新し、`tools:gen-plugin-registry` を実行して generated registry を同期。
+- done: 2026-02-12 01:27 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` いずれも exit 0）。
 
 ### ToDo（優先順）
 

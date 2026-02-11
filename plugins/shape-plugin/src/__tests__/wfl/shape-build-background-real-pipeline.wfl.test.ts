@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, ShapeBuildConfig } from '../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
-import { hidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import * as Comlink from 'comlink';
 vi.mock('comlink', async () => (
   await vi.importActual('comlink')
@@ -364,7 +364,7 @@ const waitFor = async (
 };
 
 const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
-  const relations = await hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray();
+  const relations = await ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray();
   const bufferIds = Array.from(new Set(relations.map((relation) => relation.bufferId)));
   console.info('[test][debug] transformCache buffers', JSON.stringify({
     nodeId,
@@ -375,7 +375,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
   if (bufferIds.length === 0) return;
   const sampleId = bufferIds[0];
   const getStartedAt = Date.now();
-  const record = await hidbEphemeralDB.transformCache.get(sampleId);
+  const record = await ephemeralShapeDB.transformCache.get(sampleId);
   const recordData = record?.data;
   const recordDataKeys = recordData && typeof recordData === 'object'
     ? Object.keys(recordData as Record<string, unknown>).slice(0, 8)
@@ -405,7 +405,7 @@ const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
       : null,
   }));
   const bulkStartedAt = Date.now();
-  const bulk = await hidbEphemeralDB.transformCache.bulkGet([sampleId]);
+  const bulk = await ephemeralShapeDB.transformCache.bulkGet([sampleId]);
   const bulkCount = bulk.filter((item) => Boolean(item)).length;
   const bulkRecord = bulk.find((item) => Boolean(item));
   const bulkData = bulkRecord?.data;
@@ -637,14 +637,14 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         const observerAdmin = await observer.client.getShapeEphemeralAdminAPI();
         await logStructuredCloneSanity();
         logProgress(`${label}: wait for tile relations`);
-        const preRelationCount = await hidbEphemeralDB.tileIdToBufferRelations
+        const preRelationCount = await ephemeralShapeDB.tileIdToBufferRelations
           .where('nodeId')
           .equals(nodeId)
           .count();
         logProgress(`${label}: pre tile relations count`, { count: preRelationCount });
         await withTimeout(
           waitFor(async () => (
-            (await hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0
+            (await ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0
           ), { label: 'tile relation creation' }),
           { label: 'waitFor tile relations', timeoutMs: 12000 },
         );

@@ -260,7 +260,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const lockRef = useRef<SessionLockHandle | null>(null);
   const lockKeyRef = useRef<string | null>(null);
   const [isLockOwner, setIsLockOwner] = useState(false);
-  const queueRequestedAtRef = useRef<number | null>(null);
 
   const releaseBuildLock = useCallback(() => {
     const lock = lockRef.current;
@@ -287,83 +286,26 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
     lockRef.current = lock;
     lockKeyRef.current = lockKey;
-    queueRequestedAtRef.current = null;
     setIsLockOwner(true);
     return true;
   }, [coordinator, lockKey]);
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const writeWaitingHeartbeat = useCallback(async (requestedAt: number, now?: number) => {
-    if (!activeNodeId) return;
-    await coordinator.writeHeartbeat({
-      sessionId: String(activeNodeId),
-      status: 'waiting',
-      progress: { requestedAt },
-      timestamp: now ?? Date.now(),
-      lockOwner: false,
-    });
-  }, [activeNodeId, coordinator]);
-
-  const clearWaitingHeartbeat = useCallback(async () => {
-    if (!activeNodeId) return;
-    await coordinator.writeHeartbeat({
-      sessionId: String(activeNodeId),
-      status: null,
-      progress: null,
-      timestamp: Date.now(),
-      lockOwner: false,
-    });
-  }, [activeNodeId, coordinator]);
-
-  const waitForBuildLock = useCallback(async (requestedAt: number): Promise<boolean> => {
+  const waitForBuildLock = useCallback(async (_requestedAt: number): Promise<boolean> => {
     if (!lockKey || !activeNodeId) return false;
-    const sessionId = String(activeNodeId);
-    const tabId = tabIdRef.current;
     const pollInterval = coordinator.pollIntervalTimeout;
-    queueRequestedAtRef.current = requestedAt;
-
-    const claimQueueIfAvailable = async (now: number) => {
-      const heartbeat = await coordinator.readHeartbeat(sessionId);
-      if (!heartbeat || heartbeat.expiresAt <= now || heartbeat.status !== 'waiting') {
-        await writeWaitingHeartbeat(requestedAt, now);
-        return { owner: true, requestedAt };
-      }
-      const heartbeatRequestedAt = (() => {
-        const progress = heartbeat.progress as { requestedAt?: number } | null | undefined;
-        return typeof progress?.requestedAt === 'number' ? progress.requestedAt : heartbeat.updatedAt;
-      })();
-      if (heartbeat.tabId === tabId) {
-        return { owner: true, requestedAt: heartbeatRequestedAt ?? requestedAt };
-      }
-      if (heartbeatRequestedAt !== undefined && heartbeatRequestedAt <= requestedAt) {
-        return { owner: false, requestedAt: heartbeatRequestedAt };
-      }
-      await writeWaitingHeartbeat(requestedAt, now);
-      return { owner: true, requestedAt };
-    };
-
-    let queueState = await claimQueueIfAvailable(Date.now());
     while (true) {
-      if (!queueState.owner) {
-        await sleep(pollInterval);
-        queueState = await claimQueueIfAvailable(Date.now());
-        continue;
-      }
       const lock = await coordinator.tryAcquireSessionLock(lockKey);
       if (lock) {
         lockRef.current = lock;
         lockKeyRef.current = lockKey;
-        queueRequestedAtRef.current = null;
         setIsLockOwner(true);
-        await clearWaitingHeartbeat();
         return true;
       }
-      await writeWaitingHeartbeat(queueState.requestedAt ?? requestedAt, Date.now());
       await sleep(pollInterval);
-      queueState = await claimQueueIfAvailable(Date.now());
     }
-  }, [activeNodeId, clearWaitingHeartbeat, coordinator, lockKey, writeWaitingHeartbeat]);
+  }, [activeNodeId, coordinator, lockKey]);
   const tabStateRef = useRef<Map<string, { state: 'active' | 'hidden' | 'frozen'; at: number }>>(new Map());
   const pollingTrackerRef = useRef(createPollingTracker({ quietThresholdTimeout: coordinator.quietThresholdTimeout }));
   const lastAutoResumeAtRef = useRef<number | null>(null);
@@ -433,7 +375,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionWaitLogStepRef.current = -1;
     progressTerminalLogKeyRef.current = null;
     staleProgressLogKeyRef.current = null;
-    queueRequestedAtRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
   }, []);
   const {
@@ -1257,7 +1198,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         phase: buildSessionTransition.phase,
         elapsedMs,
         pollIntervalMs: intervalMs,
-        queueRequestedAt: queueRequestedAtRef.current,
       });
     };
     tick();

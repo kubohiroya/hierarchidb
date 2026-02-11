@@ -8,7 +8,7 @@ import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, Shape
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import { shapeDB } from '@hierarchidb/shape-store';
-import { hidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { shapeMutationAPIImpl } from '../services/batch/ShapeBuildAPIClient.js';
@@ -83,8 +83,8 @@ const pauseStates = new Map<string, PipelinePauseState>();
 
 async function main(endpoint?: Endpoint): Promise<void> {
   const ensureEphemeralOpen = async (): Promise<void> => {
-    if (!hidbEphemeralDB.isOpen()) {
-      await hidbEphemeralDB.open();
+    if (!ephemeralShapeDB.isOpen()) {
+      await ephemeralShapeDB.open();
     }
   };
 
@@ -93,7 +93,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       const now = Date.now();
       const data = new Uint8Array([1, 2, 3]).buffer;
-      await hidbEphemeralDB.fetchCache.put({
+      await ephemeralShapeDB.fetchCache.put({
         id: `${nodeId}-fetch-cache`,
         nodeId,
         domainType: 'shape',
@@ -114,7 +114,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         inputPolygonCount: 1,
         timestamp: now,
       });
-      await hidbEphemeralDB.transformCache.put({
+      await ephemeralShapeDB.transformCache.put({
         id: `${nodeId}-transform-cache`,
         nodeId,
         domainType: 'shape',
@@ -130,7 +130,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         tolerance: 0,
         timestamp: now,
       });
-      await hidbEphemeralDB.transformErrors.put({
+      await ephemeralShapeDB.transformErrors.put({
         id: `${nodeId}-transform-error`,
         nodeId,
         domainType: 'shape',
@@ -146,7 +146,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
           features: [],
         },
       });
-      await hidbEphemeralDB.tileIdToBufferRelations.put({
+      await ephemeralShapeDB.tileIdToBufferRelations.put({
         id: `${nodeId}-tile-buffer`,
         nodeId,
         domainType: 'shape',
@@ -160,19 +160,19 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       switch (cacheType) {
         case 'fetchCache':
-          await hidbEphemeralDB.fetchCache.where('nodeId').equals(nodeId).delete();
+          await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).delete();
           return;
         case 'transformCache':
-          await hidbEphemeralDB.transformCache.where('nodeId').equals(nodeId).delete();
+          await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).delete();
           return;
         case 'transformErrors':
-          await hidbEphemeralDB.transformErrors.where('nodeId').equals(nodeId).delete();
+          await ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).delete();
           return;
         case 'tileIdToBufferRelations':
-          await hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+          await ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           return;
         case 'buildTasks':
-          await hidbEphemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
+          await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
           return;
         default:
           return;
@@ -181,11 +181,11 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeEphemeralCounts: async (nodeId: NodeId): Promise<EphemeralCacheCounts> => {
       await ensureEphemeralOpen();
       const [fetchCache, transformCache, transformErrors, tileIdToBufferRelations, buildTasks] = await Promise.all([
-        hidbEphemeralDB.fetchCache.where('nodeId').equals(nodeId).count(),
-        hidbEphemeralDB.transformCache.where('nodeId').equals(nodeId).count(),
-        hidbEphemeralDB.transformErrors.where('nodeId').equals(nodeId).count(),
-        hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count(),
-        hidbEphemeralDB.buildTasks.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count(),
       ]);
       return {
         fetchCache,
@@ -287,7 +287,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       resumeExistingTasks,
       failureHandling,
       buildContinuationPolicy,
-      ephemeralStore: hidbEphemeralDB,
+      ephemeralStore: ephemeralShapeDB,
       diffBuildEnabled: false,
       recyclingAllowlist,
     });
@@ -303,14 +303,14 @@ async function main(endpoint?: Endpoint): Promise<void> {
       waitIfPaused: () => waitIfPaused(params.nodeId),
       resumeExistingTasks,
       failureHandling,
-      ephemeralStore: hidbEphemeralDB,
+      ephemeralStore: ephemeralShapeDB,
       loadContinentLookup,
     });
 
     await runShapeMetadataStage({
       nodeId: params.nodeId,
       dataSource,
-      ephemeralStore: hidbEphemeralDB,
+      ephemeralStore: ephemeralShapeDB,
       shapeDb: shapeDB,
       geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
       recyclingAllowlist,
@@ -320,7 +320,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     await runShapePipelineCleanup({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
-      ephemeralStore: hidbEphemeralDB,
+      ephemeralStore: ephemeralShapeDB,
     });
   };
 

@@ -189,16 +189,31 @@ export class EntityLifecycleManager {
       if (!nodeType) continue;
       if (nodeType === 'shape') {
         await shapeDB.open?.();
-        const rows = await shapeDB.features.where('nodeId').equals(src).toArray();
-        if (!rows.length) continue;
+        const [featureRows, sourceRows] = await Promise.all([
+          shapeDB.featureMetadata.where('nodeId').equals(String(src)).toArray(),
+          shapeDB.dataSourceMetadata.where('nodeId').equals(String(src)).toArray(),
+        ]);
+        if (!featureRows.length && !sourceRows.length) continue;
         const now = Date.now();
-        const copies = rows.map(({ id, createdAt, updatedAt, ...rest }) => ({
-          ...rest,
-          nodeId: dst,
-          createdAt: now,
-          updatedAt: now,
-        }));
-        await shapeDB.storeFeatures(copies);
+        if (featureRows.length > 0) {
+          const featureCopies = featureRows.map((row) => ({
+            ...row,
+            id: `${String(dst)}-${row.featureId}`,
+            nodeId: String(dst),
+            createdAt: now,
+          }));
+          await shapeDB.featureMetadata.bulkPut(featureCopies);
+        }
+        if (sourceRows.length > 0) {
+          const sourceCopies = sourceRows.map((row) => ({
+            ...row,
+            id: `${String(dst)}:${row.originKey}`,
+            nodeId: String(dst),
+            createdAt: now,
+            updatedAt: now,
+          }));
+          await shapeDB.dataSourceMetadata.bulkPut(sourceCopies);
+        }
         continue;
       }
       if (nodeType === 'location') {
@@ -280,7 +295,10 @@ export class EntityLifecycleManager {
   private async deleteFeatures(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
     if (nodeType === 'shape') {
       await shapeDB.open?.();
-      await shapeDB.features.where('nodeId').anyOf(nodeIds).delete();
+      await Promise.all([
+        shapeDB.featureMetadata.where('nodeId').anyOf(nodeIds.map((nodeId) => String(nodeId))).delete(),
+        shapeDB.dataSourceMetadata.where('nodeId').anyOf(nodeIds.map((nodeId) => String(nodeId))).delete(),
+      ]);
       return;
     }
     if (nodeType === 'location') {
