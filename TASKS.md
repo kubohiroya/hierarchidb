@@ -40,6 +40,7 @@
 ### Doing
 
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
+- #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
 
 ### Blocked
 
@@ -71,6 +72,11 @@
 - update: 2026-02-11 21:24 JST VT中盤クラッシュ抑制として `useShapeBuildTaskSync.ts` の `[ShapeRunningResidue]` / `[TaskUpdate100]` にログ上限（各 600 / 300）を追加し、過剰コンソール出力を抑制。
 - update: 2026-02-11 21:24 JST `shapePipelineVtStage.ts` で `ShapeFeatureMetadata.geojsonByteSize` の featureId マップにエイリアス（`prefix:raw:index -> raw`）を追加し、`geojsonBytes=0` になりやすい突合ずれを補正。ロード統計ログも追加。
 - done: 2026-02-11 21:24 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` いずれも exit 0）。
+- update: 2026-02-11 22:14 JST Issue `refactor/app/modeless-use-feature-metadata` を起票し `https://github.com/kubohiroya/hierarchidb/issues/201` を作成。
+- update: 2026-02-11 22:14 JST Issue #201 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-11 22:15 JST ブランチ `codex/refactor/app/modeless-use-feature-metadata` を作成して着手。
+- update: 2026-02-11 22:19 JST `app/src/router/routes/modeless/modelessDialogContentData.ts` の shape一覧取得を `listFeatureMetadata` 前提へ統一し、`adminName/adminCode` を `admin0/1/2` メタデータから導出するよう修正。
+- done: 2026-02-11 22:19 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` いずれも exit 0）。
 
 ### ToDo（優先順）
 
