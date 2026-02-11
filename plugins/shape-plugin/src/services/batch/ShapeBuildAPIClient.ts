@@ -49,7 +49,7 @@ import type {
   VectorTileRecord,
 } from '@hierarchidb/shape-store';
 import {
-  hidbEphemeralDB as ephemeralShapeDB,
+  ephemeralShapeDB,
   type EphemeralBuildSessionRecord,
 } from '@hierarchidb/gis-sdk';
 
@@ -235,6 +235,53 @@ const assertNonEmptyTransformCacheBuffers = (buffers: Array<Pick<ShapeTransformC
   buffers.forEach(assertNonEmptyTransformCacheBuffer);
 };
 
+const isDefined = <T>(value: T | null | undefined): value is T => (
+  value !== null && value !== undefined
+);
+
+const toShapeFetchCache = (record: {
+  id: string;
+  nodeId: NodeId;
+  data: ArrayBuffer;
+  featureCount: number;
+  bbox: [number, number, number, number];
+  downloadTime: number;
+  size: number;
+  timestamp: number;
+}): ShapeFetchCache => ({
+  id: record.id,
+  nodeId: record.nodeId,
+  data: record.data,
+  featureCount: record.featureCount,
+  bbox: record.bbox,
+  downloadTime: record.downloadTime,
+  size: record.size,
+  timestamp: record.timestamp,
+});
+
+const listFetchCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeFetchCache[]> => {
+  const idsRaw = await ephemeralShapeDB.fetchCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  if (idsRaw.length === 0) return [];
+  const ids = idsRaw.map((id) => String(id));
+  const records = await ephemeralShapeDB.fetchCache.bulkGet(ids);
+  return records
+    .filter(isDefined)
+    .filter((record) => record.nodeId === nodeId)
+    .map((record) => toShapeFetchCache(record));
+};
+
+const listTransformCachesWithoutHeavyIteration = async (nodeId: NodeId): Promise<ShapeTransformCache[]> => {
+  const idsRaw = await ephemeralShapeDB.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+  if (idsRaw.length === 0) return [];
+  const ids = idsRaw.map((id) => String(id));
+  const records = await ephemeralShapeDB.transformCache.bulkGet(ids);
+  return records
+    .filter(isDefined)
+    .filter((record): record is ShapeTransformCache => (
+      record.nodeId === nodeId && isTransformCacheComplete(record)
+    ));
+};
+
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
@@ -390,17 +437,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    const records = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
-    return records.map((record) => ({
-      id: record.id,
-      nodeId: record.nodeId,
-      data: record.data,
-      featureCount: record.featureCount,
-      bbox: record.bbox,
-      downloadTime: record.downloadTime,
-      size: record.size,
-      timestamp: record.timestamp,
-    }));
+    return listFetchCachesWithoutHeavyIteration(nodeId);
   }
 
   async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
@@ -430,10 +467,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
-      const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
-      return records.filter((record) => isTransformCacheComplete(record));
-    });
+    return listTransformCachesWithoutHeavyIteration(nodeId);
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
@@ -672,17 +706,7 @@ export class EphemeralShapeApiImpl {
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    const records = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
-    return records.map((record) => ({
-      id: record.id,
-      nodeId: record.nodeId,
-      data: record.data,
-      featureCount: record.featureCount,
-      bbox: record.bbox,
-      downloadTime: record.downloadTime,
-      size: record.size,
-      timestamp: record.timestamp,
-    }));
+    return listFetchCachesWithoutHeavyIteration(nodeId);
   }
 
   async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
@@ -726,10 +750,7 @@ export class EphemeralShapeApiImpl {
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
-      const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
-      return records.filter((record) => isTransformCacheComplete(record));
-    });
+    return listTransformCachesWithoutHeavyIteration(nodeId);
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
@@ -742,9 +763,8 @@ export class EphemeralShapeApiImpl {
   async countTransformCaches(nodeId: NodeId): Promise<number> {
     return ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCacheMeta, async () => (
       ephemeralShapeDB.transformCacheMeta
-        .where('nodeId')
-        .equals(nodeId)
-        .filter((record) => isTransformCacheComplete(record))
+        .where('[nodeId+timestamp]')
+        .between([nodeId, 1], [nodeId, Number.MAX_SAFE_INTEGER])
         .count()
     ));
   }

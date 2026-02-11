@@ -15,7 +15,7 @@ export type RouteVectorTileRecord = {
   contentType?: string;
 };
 
-class EphemeralRouteDexie extends Dexie {
+class RouteVectorTileEphemeralDB extends Dexie {
   vectorTiles!: Table<RouteVectorTileRecord, string>;
 
   constructor(dbName = 'hdb-ephemeral-route') {
@@ -34,22 +34,22 @@ class EphemeralRouteDexie extends Dexie {
   }
 }
 
-let dbInstance: EphemeralRouteDexie | null = null;
+let dbInstance: RouteVectorTileEphemeralDB | null = null;
 
-export const getEphemeralRouteDB = (): EphemeralRouteDexie => {
+export const getEphemeralRouteVectorTileDB = (): RouteVectorTileEphemeralDB => {
   if (!dbInstance) {
-    dbInstance = new EphemeralRouteDexie();
+    dbInstance = new RouteVectorTileEphemeralDB();
   }
   return dbInstance;
 };
 
 export const clearVectorTilesForSession = async (sessionId: string): Promise<void> => {
-  const db = getEphemeralRouteDB();
+  const db = getEphemeralRouteVectorTileDB();
   await db.vectorTiles.where('sessionId').equals(sessionId).delete();
 };
 
 export const clearExpiredVectorTiles = async (ttlMs: number): Promise<void> => {
-  const db = getEphemeralRouteDB();
+  const db = getEphemeralRouteVectorTileDB();
   const cutoff = Date.now() - ttlMs;
   await db.vectorTiles.where('timestamp').below(cutoff).delete();
 };

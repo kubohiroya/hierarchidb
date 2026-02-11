@@ -158,23 +158,20 @@ export interface EphemeralTileIdToBufferRelation {
 
 export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
   sessions:
-    '&nodeId, domainType, status, updatedAt'
-    + ', [domainType+status], [domainType+updatedAt]',
+    '&nodeId, status, updatedAt',
   buildTasks:
-    '&taskId, nodeId, domainType, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]'
-    + ', [domainType+status]',
+    '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+index]',
   fetchCache:
-    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   fetchCacheMeta:
-    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   transformCache:
-    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   transformCacheMeta:
-    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
   transformErrors:
-    '&id, nodeId, domainType',
+    '&id, nodeId',
   tileIdToBufferRelations:
-    '&id, nodeId, domainType, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };

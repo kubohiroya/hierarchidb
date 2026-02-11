@@ -54,12 +54,16 @@ export {
   type VectorTileLayerCache,
 } from './geocoding.js';
 export {
-  EphemeralGisDB,
-  type BatchSessionMetadata,
-  type EphemeralStage,
-  type FetchCacheRecord,
-  type TransformCacheRecord,
-} from './ephemeral/EphemeralGisDB.js';
+  EphemeralDB,
+} from './ephemeral/EphemeralDB.js';
+export {
+  EphemeralShapeDB,
+  ephemeralShapeDB,
+} from './ephemeral/EphemeralShapeDB.js';
+export {
+  EphemeralRouteDB,
+  ephemeralRouteDB,
+} from './ephemeral/EphemeralRouteDB.js';
 export {
   EPHEMERAL_DB_SCHEMA,
   type BuildStage,
@@ -76,10 +80,6 @@ export {
   type EphemeralTileIdToBufferRelation,
   type StopReason,
 } from './ephemeral/EphemeralBuildState.js';
-export {
-  HidbEphemeralDB,
-  hidbEphemeralDB,
-} from './ephemeral/HidbEphemeralDB.js';
 export * from './config.js';
 export * from './geos/index.js';
 export * from './geometryEngine.js';

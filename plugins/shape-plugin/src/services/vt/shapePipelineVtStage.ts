@@ -21,7 +21,7 @@ import {
   readHeapSnapshot,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
-import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeVtStageParams = {
   nodeId: NodeId;
@@ -33,7 +33,7 @@ export type ShapeVtStageParams = {
   resumeExistingTasks: boolean;
   failureHandling: 'continue' | 'stop';
   pipelineRunId?: string;
-  ephemeralStore: HidbEphemeralDB;
+  ephemeralStore: EphemeralShapeDB;
   loadContinentLookup: () => Promise<Map<string, string>>;
 };
 

@@ -42,6 +42,8 @@
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 - #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
 - #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
+- #206 / `codex/refactor/ephemeral-phased-remove-cache-meta` / start: 2026-02-12 02:04 JST
+- #207 / `codex/refactor/unify-ephemeral-db` / start: 2026-02-12 02:32 JST
 
 ### Blocked
 
@@ -49,6 +51,18 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 03:34 JST #207 で DB 名を修正（`ephemeralShapeDB -> getDBName('shape-ephemeral')`, `ephemeralRouteDB -> getDBName('route-ephemeral')`）。`ephemeral` 単一名への退行を解消。
+- update: 2026-02-12 03:34 JST API 名称統一として `HidbEphemeralDB` / `hidbEphemeralDB` / `EphemeralGisDB` / `getEphemeralRouteDB` を撤去し、`EphemeralDB` / `EphemeralShapeDB` / `EphemeralRouteDB` / `getEphemeralRouteVectorTileDB` へ統一。
+- done: 2026-02-12 03:34 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。
+- update: 2026-02-12 03:19 JST #207 で `HidbEphemeralDB` / `EphemeralGisDB` を `packages/gis-sdk/src/ephemeral/EphemeralDB.ts` 基底へ統合し、`EphemeralShapeDB` / `EphemeralRouteDB` の薄いサブクラスを追加。shape/route/runtime-worker/vt-orchestrator 側の import を `ephemeralShapeDB` / `EphemeralShapeDB` へ寄せて命名を統一。
+- update: 2026-02-12 03:19 JST route plugin のローカル Dexie 名を `RouteVectorTileEphemeralDB` / `getEphemeralRouteVectorTileDB` に整理し、`@hierarchidb/gis-sdk` の `ephemeralRouteDB` と責務が識別しやすい構造に調整。
+- done: 2026-02-12 03:19 JST 検証完了（`pnpm -w turbo run build --filter @hierarchidb/gis-sdk` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-store --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/vt-orchestrator` いずれも exit 0）。
+- update: 2026-02-12 02:32 JST Issue `refactor: unify HidbEphemeralDB and EphemeralGisDB into EphemeralDB` を起票し `https://github.com/kubohiroya/hierarchidb/issues/207` を作成。
+- update: 2026-02-12 02:32 JST Issue #207 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 02:32 JST ブランチ `codex/refactor/unify-ephemeral-db` を作成して着手。
+- update: 2026-02-12 02:04 JST Issue `refactor: hidb-ephemeral fetchCacheMeta/transformCacheMeta phased removal` を起票し `https://github.com/kubohiroya/hierarchidb/issues/206` を作成。
+- update: 2026-02-12 02:04 JST Issue #206 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 02:04 JST ブランチ `codex/refactor/ephemeral-phased-remove-cache-meta` を作成して (2) 段階的撤去に着手。
 - update: 2026-02-12 01:28 JST Issue `refactor/session/remove-ui-session-coordinator` を起票し `https://github.com/kubohiroya/hierarchidb/issues/205` を作成。
 - update: 2026-02-12 01:28 JST Issue #205 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
 - update: 2026-02-12 01:28 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま (1) 作業に着手。

@@ -21,7 +21,7 @@ import {
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';

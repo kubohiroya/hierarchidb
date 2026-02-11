@@ -2,7 +2,7 @@ import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 import type { ShapeDB } from '@hierarchidb/shape-store';
-import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
@@ -196,7 +196,7 @@ const readTileFeatureStats = (
 export type ShapeStageMetadataParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  shapeStore: HidbEphemeralDB;
+  shapeStore: EphemeralShapeDB;
   shapeDb: ShapeDB;
 };
 
@@ -212,8 +212,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
 
   const origins = new Map<string, DataSourceMetadata>();
 
-  const fetchCaches = await params.shapeStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).toArray();
-  fetchCaches.forEach((buffer) => {
+  await params.shapeStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
     const origin = ensureOrigin(origins, originKey, {
@@ -230,8 +229,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const transformCaches = await params.shapeStore.transformCacheMeta.where('nodeId').equals(params.nodeId).toArray();
-  transformCaches.forEach((buffer) => {
+  await params.shapeStore.transformCacheMeta.where('nodeId').equals(params.nodeId).each((buffer) => {
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);

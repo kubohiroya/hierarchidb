@@ -28,7 +28,7 @@ import type {
   StageStatus,
 } from '@hierarchidb/shape-store';
 import {
-  hidbEphemeralDB as ephemeralShapeDB,
+  ephemeralShapeDB,
   type EphemeralBuildSessionRecord,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -112,6 +112,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
+
+const isDefined = <T>(value: T | null | undefined): value is T => (
+  value !== null && value !== undefined
+);
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   value === 'queued'
@@ -438,13 +442,13 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]> {
-    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
-      const records = await ephemeralShapeDB.transformCache
-        .where('nodeId')
-        .equals(nodeId)
-        .toArray();
-      return records.filter((record) => record.timestamp > 0);
-    });
+    const idsRaw = await ephemeralShapeDB.transformCacheMeta.where('nodeId').equals(nodeId).primaryKeys();
+    if (idsRaw.length === 0) return [];
+    const ids = idsRaw.map((id) => String(id));
+    const records = await ephemeralShapeDB.transformCache.bulkGet(ids);
+    return records
+      .filter(isDefined)
+      .filter((record): record is ShapeTransformCache => record.nodeId === nodeId && record.timestamp > 0);
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {

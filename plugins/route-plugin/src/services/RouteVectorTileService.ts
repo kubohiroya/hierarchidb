@@ -3,12 +3,12 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { digestSha256Hex } from '@hierarchidb/util';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { getRouteRuntimeWorkerClient } from './batch/adapters/RuntimeWorkerClient.js';
-import { encodeFlatGeobufFromFeatureCollection, hidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import { encodeFlatGeobufFromFeatureCollection, ephemeralRouteDB } from '@hierarchidb/gis-sdk';
 import { writeVectorTileInput } from '@hierarchidb/runtime-worker';
 import {
   clearExpiredVectorTiles,
   clearVectorTilesForSession,
-  getEphemeralRouteDB,
+  getEphemeralRouteVectorTileDB,
   type RouteVectorTileRecord,
 } from '../database/EphemeralRouteDB.js';
 
@@ -65,8 +65,8 @@ export class RouteVectorTileService {
       throw new Error('No route geometries provided for vector tile generation');
     }
     const sessionId = `route-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const db = getEphemeralRouteDB();
-    const ephemeralDb = hidbEphemeralDB;
+    const db = getEphemeralRouteVectorTileDB();
+    const ephemeralDb = ephemeralRouteDB;
     try {
       await clearVectorTilesForSession(sessionId);
       await clearExpiredVectorTiles(VECTOR_TILE_TTL);
@@ -160,8 +160,8 @@ export class RouteVectorTileService {
     bbox?: [number, number, number, number];
     tableId?: string;
   }> {
-    const db = getEphemeralRouteDB();
-    const ephemeralDb = hidbEphemeralDB;
+    const db = getEphemeralRouteVectorTileDB();
+    const ephemeralDb = ephemeralRouteDB;
     const list = await db.vectorTiles.where('sessionId').equals(sessionId).toArray();
     if (list.length === 0) return { exists: false, layers: [], tiles: 0, sizeBytes: 0 };
     const zmin = Math.min(...list.map((r) => r.z));
