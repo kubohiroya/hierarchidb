@@ -98,6 +98,7 @@ export interface BatchTaskSummary {
   progress: number;
   sequence?: number;
   display?: TaskDisplayPayload;
+  metadata?: Record<string, unknown>;
   message?: string;
 }
 

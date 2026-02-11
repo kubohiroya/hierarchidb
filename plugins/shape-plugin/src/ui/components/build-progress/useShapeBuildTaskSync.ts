@@ -43,6 +43,65 @@ const resolveProgressValue = (value: number | undefined): number => (
 );
 
 const UNKNOWN_SCOPE_VALUE = 'unknown';
+const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
+
+type VtParentInputSummary = {
+  parentTile: {
+    z: number;
+    x: number;
+    y: number;
+  };
+  intersectingFeatureCount: number;
+  intersectingGeojsonByteSize: number;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+);
+
+const readNumber = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const readVtParentInputSummary = (metadata: Record<string, unknown> | undefined): VtParentInputSummary | null => {
+  const summaryRecord = asRecord(metadata?.[VT_PARENT_INPUT_SUMMARY_METADATA_KEY]);
+  if (!summaryRecord) return null;
+  const parentTileRecord = asRecord(summaryRecord.parentTile);
+  if (!parentTileRecord) return null;
+  const z = readNumber(parentTileRecord.z);
+  const x = readNumber(parentTileRecord.x);
+  const y = readNumber(parentTileRecord.y);
+  const intersectingFeatureCount = readNumber(summaryRecord.intersectingFeatureCount);
+  const intersectingGeojsonByteSize = readNumber(summaryRecord.intersectingGeojsonByteSize);
+  if (z === null || x === null || y === null || intersectingFeatureCount === null || intersectingGeojsonByteSize === null) {
+    return null;
+  }
+  return {
+    parentTile: {
+      z,
+      x,
+      y,
+    },
+    intersectingFeatureCount: Math.max(0, Math.round(intersectingFeatureCount)),
+    intersectingGeojsonByteSize: Math.max(0, Math.round(intersectingGeojsonByteSize)),
+  };
+};
+
+const buildVtParentInputSummaryMessage = (summary: VtParentInputSummary): string => (
+  `vt parent input z=${summary.parentTile.z} x=${summary.parentTile.x} y=${summary.parentTile.y}`
+  + ` intersects(features=${summary.intersectingFeatureCount}, geojsonBytes=${summary.intersectingGeojsonByteSize})`
+);
+
+const mergeTaskMessage = (base: string | undefined, addition: string): string => {
+  const normalizedBase = typeof base === 'string' ? base.trim() : '';
+  if (normalizedBase.length === 0) {
+    return addition;
+  }
+  if (normalizedBase.includes(addition)) {
+    return normalizedBase;
+  }
+  return `${normalizedBase} | ${addition}`;
+};
 
 const normalizeIsoCode = (value: string): string => value.trim().toUpperCase();
 
@@ -73,8 +132,21 @@ const resolveTaskScope = (task: ShapeBuildTaskSummary): { iso2: string; adminLev
   };
 };
 
+const TASK_UPDATE100_LOG_LIMIT = 300;
+let taskUpdate100LogCount = 0;
+let taskUpdate100LogLimitNotified = false;
+
 const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
+  if (!import.meta.env.DEV) return;
   if (resolveProgressValue(task.progress) < 100) return;
+  if (taskUpdate100LogCount >= TASK_UPDATE100_LOG_LIMIT) {
+    if (!taskUpdate100LogLimitNotified) {
+      taskUpdate100LogLimitNotified = true;
+      console.log(`[TaskUpdate100] log limit reached (${TASK_UPDATE100_LOG_LIMIT}); suppressing further logs`);
+    }
+    return;
+  }
+  taskUpdate100LogCount += 1;
   const scope = resolveTaskScope(task);
   const message = task.message ?? '';
   const status = task.status;
@@ -83,6 +155,9 @@ const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
 
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
+const RUNNING_RESIDUE_LOG_LIMIT = 600;
+let runningResidueLogCount = 0;
+let runningResidueLogLimitNotified = false;
 
 type RunningResidueLogPayload = {
   nodeId: string | null;
@@ -114,6 +189,14 @@ const formatLogValue = (value: unknown): string => {
 
 const emitRunningResidueLog = (keyword: string, payload: RunningResidueLogPayload): void => {
   if (!isDev) return;
+  if (runningResidueLogCount >= RUNNING_RESIDUE_LOG_LIMIT) {
+    if (!runningResidueLogLimitNotified) {
+      runningResidueLogLimitNotified = true;
+      console.log(`${RUNNING_RESIDUE_LOG_PREFIX} LOG_LIMIT_REACHED limit=${RUNNING_RESIDUE_LOG_LIMIT}`);
+    }
+    return;
+  }
+  runningResidueLogCount += 1;
   const logPayload: Required<Pick<RunningResidueLogPayload, 'nodeId'>> & RunningResidueLogPayload = {
     ...payload,
     nodeId: payload.nodeId,
@@ -430,6 +513,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
   const committedTasksRef = useRef<ShapeBuildTaskSummary[]>([]);
   const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const completedTasksRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
+  const vtParentInputDebugLogKeysRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
@@ -439,12 +523,17 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
     return () => {
       pendingTasksRef.current = null;
       pendingDirtyRef.current = false;
+      vtParentInputDebugLogKeysRef.current.clear();
       if (flushFrameRef.current !== null) {
         window.cancelAnimationFrame(flushFrameRef.current);
         flushFrameRef.current = null;
       }
     };
   }, []);
+
+  useEffect(() => {
+    vtParentInputDebugLogKeysRef.current.clear();
+  }, [sessionNodeId]);
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
     if (!dirty) {
@@ -484,6 +573,26 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       status: normalizeTaskStatus(task.status, progress),
       progress: progress >= 100 ? 100 : task.progress,
     };
+    if (normalized.stage === 'vt') {
+      const parentInputSummary = readVtParentInputSummary(normalized.metadata);
+      if (parentInputSummary) {
+        const parentInputMessage = buildVtParentInputSummaryMessage(parentInputSummary);
+        normalized.message = mergeTaskMessage(normalized.message, parentInputMessage);
+        if (isDev) {
+          const logKey = `${normalized.taskId}:${parentInputMessage}`;
+          if (!vtParentInputDebugLogKeysRef.current.has(logKey)) {
+            vtParentInputDebugLogKeysRef.current.add(logKey);
+            console.debug('[ShapeVtParentInputSummary]', {
+              nodeId: sessionNodeId,
+              taskId: normalized.taskId,
+              sequence: normalized.sequence ?? null,
+              message: parentInputMessage,
+              summary: parentInputSummary,
+            });
+          }
+        }
+      }
+    }
     const completedTask = completedTasksRef.current.get(normalized.taskId);
     if (!completedTask) {
       return normalized;
@@ -495,7 +604,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       return completedTask;
     }
     return normalized;
-  }, []);
+  }, [sessionNodeId]);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
     const baseList = pendingTasksRef.current ?? committedTasksRef.current;

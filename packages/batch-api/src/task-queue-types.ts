@@ -35,6 +35,7 @@ export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   updatedAt?: number;
   sequence?: number;
   retryCount?: number;
+  metadata?: Record<string, unknown>;
   inputData?: TInput;
   outputData?: TOutput;
   errorMessage?: string;
@@ -49,6 +50,7 @@ export type StageHandlerResult<TOutput = unknown> = {
   display?: TaskDisplayPayload;
   message?: string;
   progress?: number;
+  metadata?: Record<string, unknown>;
   outputData?: TOutput;
   errorMessage?: string;
   taskUpdated?: boolean;

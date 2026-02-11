@@ -1,7 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
-import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
-import { pickAdminCode, pickAdminName, type GeometryEngine } from '@hierarchidb/gis-sdk';
+import {
+  buildFeatureId,
+  extractGeometryStats,
+  measureFeatureGeoJsonByteSize,
+  resolveAdminHierarchyFields,
+} from './featureMetadataUtils.ts';
+import { pickAdminCode, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
@@ -82,7 +87,18 @@ const buildFeatureMetadataFromTransformCaches = async (
       const originInfo = resolveFeatureOriginInfo(properties, countryLookup);
       const countryCode = originInfo.countryCode;
       const adminLevel = originInfo.adminLevel;
-      const adminCode = pickAdminCode(properties);
+      const adminHierarchy = resolveAdminHierarchyFields({
+        properties,
+        countryCode,
+        adminLevel,
+      });
+      const resolvedAdminLevel = adminHierarchy.resolvedAdminLevel ?? adminLevel;
+      const adminCode = pickAdminCode(properties)
+        ?? (resolvedAdminLevel === 2
+          ? adminHierarchy.admin2Code
+          : resolvedAdminLevel === 1
+            ? adminHierarchy.admin1Code
+            : adminHierarchy.admin0Code);
       const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
       const stats = extractGeometryStats(feature, geometryEngine);
       const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount');
@@ -93,9 +109,13 @@ const buildFeatureMetadataFromTransformCaches = async (
         featureId,
         countryName: originInfo.countryName,
         countryCode,
-        adminName: pickAdminName(properties),
-        adminLevel,
-        adminCode,
+        adminLevel: resolvedAdminLevel,
+        admin0Name: originInfo.countryName,
+        admin0Code: adminHierarchy.admin0Code,
+        admin1Name: adminHierarchy.admin1Name,
+        admin1Code: adminHierarchy.admin1Code,
+        admin2Name: adminHierarchy.admin2Name,
+        admin2Code: adminHierarchy.admin2Code,
         dataSource,
         createdAt,
         vertexCount: stats.vertexCount,
@@ -104,6 +124,7 @@ const buildFeatureMetadataFromTransformCaches = async (
         fetchPolygonCount,
         transformVertexCount: stats.vertexCount,
         transformPolygonCount: stats.polygonCount,
+        geojsonByteSize: measureFeatureGeoJsonByteSize(feature),
         bbox: stats.bbox,
         area: stats.area,
         recycling: recyclingByFeatureId?.get(featureId),

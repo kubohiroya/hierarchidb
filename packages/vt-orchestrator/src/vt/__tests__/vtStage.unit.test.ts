@@ -35,6 +35,43 @@ describe('vtStage summary helpers', () => {
     expect(summary).toBe('features: ADM0:1, tiles -> 0/1 (skipped: no layers)');
   });
 
+  it('builds parent input summary from intersecting features and geojson bytes', () => {
+    const summary = vtStageTestUtils.buildVtParentInputSummary({
+      featureStats: [
+        {
+          bbox: { minX: 0, minY: 0, maxX: 5, maxY: 5 },
+          vertexCount: 12,
+          polygonCount: 1,
+          lineStringCount: 0,
+          bufferId: 'buffer-a',
+          geojsonByteSize: 123,
+        },
+        {
+          bbox: { minX: 20, minY: 20, maxX: 25, maxY: 25 },
+          vertexCount: 8,
+          polygonCount: 1,
+          lineStringCount: 0,
+          bufferId: 'buffer-b',
+          geojsonByteSize: 999,
+        },
+        {
+          bbox: { minX: 4, minY: 4, maxX: 10, maxY: 10 },
+          vertexCount: 20,
+          polygonCount: 2,
+          lineStringCount: 0,
+          bufferId: 'buffer-c',
+          geojsonByteSize: 77,
+        },
+      ],
+      parentBBox: { minX: -1, minY: -1, maxX: 10, maxY: 10 },
+      parentTile: { z: 6, x: 15, y: 23 },
+    });
+
+    expect(summary.parentTile).toEqual({ z: 6, x: 15, y: 23 });
+    expect(summary.intersectingFeatureCount).toBe(2);
+    expect(summary.intersectingGeojsonByteSize).toBe(200);
+  });
+
   it('computes output tile totals for polygons and vertices', () => {
     const tiles = [
       {

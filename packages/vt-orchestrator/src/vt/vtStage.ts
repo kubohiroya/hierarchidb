@@ -109,6 +109,20 @@ type InputFeatureStats = {
   polygonCount: number;
   lineStringCount: number;
   bufferId: string;
+  featureId?: string;
+  geojsonByteSize?: number;
+};
+
+const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
+
+type VtParentInputSummaryMetadata = {
+  parentTile: {
+    z: number;
+    x: number;
+    y: number;
+  };
+  intersectingFeatureCount: number;
+  intersectingGeojsonByteSize: number;
 };
 
 const canonicalLineKey = (coords: number[][]): string => {
@@ -296,6 +310,27 @@ const featureBBox = (feature: Feature): TileBBox | null => {
   visitGeometry(geometry);
   if (!Number.isFinite(minX)) return null;
   return { minX, minY, maxX, maxY };
+};
+
+const resolveFeatureId = (feature: Feature): string | undefined => {
+  const properties = feature.properties as Record<string, unknown> | undefined;
+  const metadataFeatureId = properties?.__hdbFeatureId;
+  if (typeof metadataFeatureId === 'string' && metadataFeatureId.trim().length > 0) {
+    return metadataFeatureId;
+  }
+  if (typeof feature.id === 'string' && feature.id.trim().length > 0) {
+    return feature.id;
+  }
+  if (typeof feature.id === 'number' && Number.isFinite(feature.id)) {
+    return String(feature.id);
+  }
+  return undefined;
+};
+
+const normalizeGeojsonByteSize = (value: number | undefined): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  const normalized = Math.max(0, Math.round(value));
+  return normalized;
 };
 
 const countVertices = (coords: unknown): number => {
@@ -729,12 +764,18 @@ const collectFeatures = async (
       }
       const bbox = featureBBox(feature);
       if (!bbox) return;
+      const featureId = resolveFeatureId(feature);
+      const geojsonByteSize = featureId
+        ? normalizeGeojsonByteSize(context.featureGeojsonByteSizeById?.get(featureId))
+        : undefined;
       featureStats.push({
         bbox,
         vertexCount: countVerticesFromGeometry(feature.geometry),
         polygonCount: countPolygonsFromGeometry(feature.geometry),
         lineStringCount: countLineStringsFromGeometry(feature.geometry),
         bufferId: record.id,
+        featureId,
+        geojsonByteSize,
       });
     });
     if (debugCollect) {
@@ -790,6 +831,25 @@ const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason
   `${featureSummary}, ${tileSummary} (skipped: ${reason})`
 );
 
+const buildVtParentInputSummary = (params: {
+  featureStats: InputFeatureStats[];
+  parentBBox: TileBBox;
+  parentTile: { z: number; x: number; y: number };
+}): VtParentInputSummaryMetadata => {
+  let intersectingFeatureCount = 0;
+  let intersectingGeojsonByteSize = 0;
+  params.featureStats.forEach((stats) => {
+    if (!bboxIntersects(stats.bbox, params.parentBBox)) return;
+    intersectingFeatureCount += 1;
+    intersectingGeojsonByteSize += stats.geojsonByteSize ?? 0;
+  });
+  return {
+    parentTile: params.parentTile,
+    intersectingFeatureCount,
+    intersectingGeojsonByteSize,
+  };
+};
+
 const buildGeojsonVtEmptyTileReason = (detail: {
   z: number;
   x: number;
@@ -841,6 +901,7 @@ export const vtStageTestUtils = {
   buildAdminFeatureSummary,
   buildTileSummary,
   buildSkippedMessage,
+  buildVtParentInputSummary,
   computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
@@ -1053,7 +1114,20 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       const totalTiles = Array.from(tilesByZoom.values()).reduce((sum, counts) => sum + counts.total, 0);
       const tileSummary = buildTileSummary(tilesByZoom);
       const parentBBox = tileToBBox(parent.z, parent.x, parent.y);
-      const intersectingFeatureCount = featureStats.filter((stats) => bboxIntersects(stats.bbox, parentBBox)).length;
+      const parentInputSummary = buildVtParentInputSummary({
+        featureStats,
+        parentBBox,
+        parentTile: parent,
+      });
+      const parentInputMetadata = {
+        [VT_PARENT_INPUT_SUMMARY_METADATA_KEY]: parentInputSummary,
+      };
+      const completedWithParentInputSummary = (message: string): StageHandlerResult => ({
+        status: 'completed',
+        message,
+        metadata: parentInputMetadata,
+      });
+      const intersectingFeatureCount = parentInputSummary.intersectingFeatureCount;
       if (intersectingFeatureCount === 0) {
         const sample = featureStats.slice(0, 3).map((stats) => ({
           bbox: stats.bbox,
@@ -1061,6 +1135,8 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           polygonCount: stats.polygonCount,
           lineStringCount: stats.lineStringCount,
           bufferId: stats.bufferId,
+          featureId: stats.featureId,
+          geojsonByteSize: stats.geojsonByteSize,
         }));
         console.warn('[vt] no intersecting features for parent tile', JSON.stringify({
           ...taskContext,
@@ -1070,10 +1146,9 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           featureStatsCount: featureStats.length,
           sample,
         }));
-        return {
-          status: 'completed',
-          message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no intersecting features for parent tile'),
-        };
+        return completedWithParentInputSummary(
+          buildSkippedMessage(adminFeatureSummary, tileSummary, 'no intersecting features for parent tile'),
+        );
       }
       let totalBufferBytes = 0;
       let maxBufferBytes = 0;
@@ -1161,7 +1236,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         heap: getHeapSnapshot(),
       }));
       if (totalTiles === 0) {
-        return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no tiles') };
+        return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no tiles'));
       }
       const bufferSetHash = buildBufferSetHash(input.bufferIds);
       let indexes: Map<string, GeojsonVtIndex> | null = null;
@@ -1221,7 +1296,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             totalTiles,
             continentCount: featuresByContinent?.size ?? 0,
           }));
-          return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+          return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
         }
       } else {
         const layerMap = buildLayerMap(collection);
@@ -1232,7 +1307,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           heap: getHeapSnapshot(),
         }));
         if (layerMap.size === 0) {
-          return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+          return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
         }
         if (forcePerTileIndex) {
           const perTileStats = Array.from(layerMap.values()).reduce(
@@ -1347,14 +1422,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               totalTiles,
               ...emptyTileWithFeatures,
             }));
-            return {
-              status: 'completed',
-              message: buildSkippedMessage(
+            return completedWithParentInputSummary(
+              buildSkippedMessage(
                 adminFeatureSummary,
                 tileSummary,
                 buildGeojsonVtEmptyTileReason(emptyTileWithFeatures),
               ),
-            };
+            );
           }
           if (aggregatedLayersByTileId.size === 0) {
             const layerStats = Array.from(layerMap.entries()).map(([layerName, features]) => ({
@@ -1371,12 +1445,12 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               intersectingFeatureCount,
               layerStats,
             }));
-            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+            return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
           }
         } else if (layerMap.size === 1) {
           const [entry] = layerMap.entries();
           if (!entry) {
-            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+            return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
           }
           const [layerName, features] = entry;
           const perFeatureVertexThreshold = 20000;
@@ -1476,7 +1550,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                 layerVertexCount,
                 maxFeatureVertices,
               }));
-              return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+              return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
             }
           } else {
             if (debugCollect) {
@@ -1496,7 +1570,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               }));
             }
             if (indexes.size === 0) {
-              return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+              return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
             }
           }
         } else {
@@ -1551,7 +1625,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               zRange: [band.zMin, band.zMax],
               layerCount: layerMap.size,
             }));
-            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+            return completedWithParentInputSummary(buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers'));
           }
         }
       }
@@ -1578,6 +1652,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           await updateTask(taskQueue, task.taskId, {
             progress,
             ...(shouldReportMessage && message ? { message } : {}),
+            metadata: parentInputMetadata,
             outputData: {
               tilesGenerated: generatedTiles,
               totalTiles,
@@ -1825,6 +1900,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         message: generatedTiles === 0
           ? buildSkippedMessage(adminFeatureSummary, finalTileSummary, 'no tiles')
           : `${adminFeatureSummary}, ${finalTileSummary}`,
+        metadata: parentInputMetadata,
         outputData: {
           tilesGenerated: generatedTiles,
           totalTiles,

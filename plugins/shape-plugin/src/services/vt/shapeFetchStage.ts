@@ -15,7 +15,6 @@ import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import {
   pickAdminCode,
   pickAdminLevel,
-  pickAdminName,
   pickCountryCode,
   pickCountryName,
 } from '@hierarchidb/gis-sdk';
@@ -36,7 +35,12 @@ import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
-import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
+import {
+  buildFeatureId,
+  extractGeometryStats,
+  measureFeatureGeoJsonByteSize,
+  resolveAdminHierarchyFields,
+} from './featureMetadataUtils.ts';
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
 import { buildZoomBandRanges } from '@hierarchidb/util';
 import { buildStableSignature } from './taskSignatures.ts';
@@ -514,18 +518,21 @@ const buildEmptyFeatureMetadata = (params: {
   recyclingByFeatureId?: Map<string, boolean>;
 }): ShapeFeatureMetadata => {
   const featureId = `empty:${params.originKey}`;
+  const admin0Code = params.countryCode;
   return {
     id: `${String(params.nodeId)}-${featureId}`,
     nodeId: String(params.nodeId),
     featureId,
     countryCode: params.countryCode,
     adminLevel: params.adminLevel,
+    admin0Code,
     dataSource: params.dataSource,
     createdAt: params.createdAt,
     vertexCount: 0,
     polygonCount: 0,
     fetchVertexCount: 0,
     fetchPolygonCount: 0,
+    geojsonByteSize: 0,
     area: 0,
     recycling: params.recyclingByFeatureId?.get(featureId),
   };
@@ -549,7 +556,18 @@ const buildFetchFeatureMetadata = (params: {
     const originInfo = resolveFeatureOriginInfo(properties, params.countryLookup);
     const countryCode = originInfo.countryCode;
     const adminLevel = originInfo.adminLevel;
-    const adminCode = pickAdminCode(properties);
+    const adminHierarchy = resolveAdminHierarchyFields({
+      properties,
+      countryCode,
+      adminLevel,
+    });
+    const resolvedAdminLevel = adminHierarchy.resolvedAdminLevel ?? adminLevel;
+    const adminCode = pickAdminCode(properties)
+      ?? (resolvedAdminLevel === 2
+        ? adminHierarchy.admin2Code
+        : resolvedAdminLevel === 1
+          ? adminHierarchy.admin1Code
+          : adminHierarchy.admin0Code);
     const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
     if (properties.__hdbFeatureId !== featureId) {
       properties.__hdbFeatureId = featureId;
@@ -563,15 +581,20 @@ const buildFetchFeatureMetadata = (params: {
       featureId,
       countryName: originInfo.countryName,
       countryCode,
-      adminName: pickAdminName(properties),
-      adminLevel,
-      adminCode,
+      adminLevel: resolvedAdminLevel,
+      admin0Name: originInfo.countryName,
+      admin0Code: adminHierarchy.admin0Code,
+      admin1Name: adminHierarchy.admin1Name,
+      admin1Code: adminHierarchy.admin1Code,
+      admin2Name: adminHierarchy.admin2Name,
+      admin2Code: adminHierarchy.admin2Code,
       dataSource: params.dataSource,
       createdAt: params.createdAt,
       vertexCount: stats.vertexCount,
       polygonCount: stats.polygonCount,
       fetchVertexCount,
       fetchPolygonCount,
+      geojsonByteSize: measureFeatureGeoJsonByteSize(feature),
       bbox: stats.bbox,
       area: stats.area,
       recycling: params.recyclingByFeatureId?.get(featureId),

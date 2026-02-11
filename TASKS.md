@@ -39,11 +39,38 @@
 
 ### Doing
 
-- なし
+- #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 
 ### Blocked
 
 - なし
+
+## 今日の運用ログ
+
+- blocked: 2026-02-11 20:17 JST `gh auth status` 実行時に認証トークン無効で停止。
+  失敗コマンド: `gh auth status`
+  エラー要約: `The token in default is invalid.`
+  解除条件: `gh auth login -h github.com` による再認証。
+- blocked: 2026-02-11 20:20 JST ユーザー再認証後として再確認したが `gh auth status` は引き続き
+  `The token in default is invalid.` を返し、Issue 起票ゲートを通過できず停止。
+- update: 2026-02-11 20:24 JST Issue `fix/shape/vt-parent-geojson-input-summary` を起票し
+  `https://github.com/kubohiroya/hierarchidb/issues/200` を作成。
+- blocked: 2026-02-11 20:24 JST `gh project list --owner kubohiroya` が
+  `missing required scopes [read:project]` で失敗し、Project反映で停止。
+  失敗コマンド: `gh project list --owner kubohiroya`
+  解除条件: `gh auth refresh -h github.com -s read:project -s project` によるスコープ追加。
+- update: 2026-02-11 20:27 JST `gh auth refresh -h github.com -s read:project -s project` 完了。
+- update: 2026-02-11 20:27 JST Issue #200 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-11 20:27 JST ブランチ `codex/fix/shape/vt-parent-geojson-input-summary` を作成して着手。
+- update: 2026-02-11 21:00 JST VT ステージで親タイル入力サマリー（交差 feature 数 / `ShapeFeatureMetadata.geojsonByteSize` 合計）を Worker→UI の task metadata で通知し、UI で `console.debug` と進捗 message 表示へ反映。
+- update: 2026-02-11 21:01 JST `ShapeFeatureMetadata` の現行型（`admin0/1/2*`）へ未追従だった `gis-sdk` / `shape-plugin` の `adminName/adminCode` 参照を修正。
+- done: 2026-02-11 21:02 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator -- --run src/vt/__tests__/vtStage.unit.test.ts` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` すべて exit 0）。
+- update: 2026-02-11 21:18 JST VT 中盤クラッシュ調査として `geojsonBytes=0` 問題を追跡。`buildFeatureId` で `__hdbFeatureId` を優先するよう修正し、VT 事前ロード時に `geojsonByteSize` 無効件数を warning 出力する診断を追加。
+- update: 2026-02-11 21:18 JST `[ShapeVtParentInputSummary]` の debug ログ重複を sequence 単位から task 単位へ削減し、VT中のコンソール出力量を抑制。
+- update: 2026-02-11 21:18 JST 検証（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0）。
+- update: 2026-02-11 21:24 JST VT中盤クラッシュ抑制として `useShapeBuildTaskSync.ts` の `[ShapeRunningResidue]` / `[TaskUpdate100]` にログ上限（各 600 / 300）を追加し、過剰コンソール出力を抑制。
+- update: 2026-02-11 21:24 JST `shapePipelineVtStage.ts` で `ShapeFeatureMetadata.geojsonByteSize` の featureId マップにエイリアス（`prefix:raw:index -> raw`）を追加し、`geojsonBytes=0` になりやすい突合ずれを補正。ロード統計ログも追加。
+- done: 2026-02-11 21:24 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` いずれも exit 0）。
 
 ### ToDo（優先順）
 
@@ -563,3 +590,6 @@
 - update: 2026-02-11 16:53 JST `ShapeBuildProgressPanel.tsx` の startup/crash/size warning Snackbar 3箇所の `anchorOrigin` が `horizontal: 'left'` で固定されていたため、`horizontal: 'center'` に統一。表示条件・dismiss挙動は未変更。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` のみ。
 - blocked: 2026-02-11 16:53 JST `pnpm -w turbo run typecheck/build --filter @hierarchidb/shape-plugin` は Turbo panic で失敗（report: `report-c527b470-2e88-4a09-a06a-a966c7c8c716.toml`, `report-93016477-6c69-4390-9576-d87d88bbfa58.toml`）。
 - done: 2026-02-11 16:54 JST 代替として `pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）と `pnpm --filter @hierarchidb/shape-plugin build`（exit 0）を確認。
+- start: 2026-02-11 19:47 JST `ShapeFeatureMetadata` へ admin0/1/2 別プロパティと GeoJSON バッファサイズ追加対応に着手。Issue 起票ゲートは `gh` 認証/ネットワーク不達で失敗したが、ユーザー明示の `Issue不要で進めて` 指示により同ブランチで実装継続。
+- update: 2026-02-11 20:01 JST `featureMetadataUtils.ts` に admin階層推定（`admin0Code/admin1Name/admin1Code/admin2Name/admin2Code`）と `measureFeatureGeoJsonByteSize` を追加し、`shapeFetchStage.ts` と `shapePipelineMetadataStage.ts` の metadata 生成で新フィールド保存へ切替。`transformFeatureCount` と boundary feature 挙動は未変更。
+- done: 2026-02-11 20:01 JST 検証は `pnpm -w turbo run typecheck --filter @hierarchidb/shape-api --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker` / `pnpm -w turbo run build --filter @hierarchidb/shape-api --filter @hierarchidb/shape-plugin --filter @hierarchidb/runtime-worker` が Turbo panic（exit 101, report: `report-3a513264-2ec9-4881-a073-f66f8b7f2431.toml`, `report-548b9384-3ed4-4a6e-9dd7-2d349b5acd3d.toml`）。代替として `pnpm --filter @hierarchidb/shape-api build` / `pnpm --filter @hierarchidb/shape-api typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/shape-plugin typecheck` / `pnpm --filter @hierarchidb/runtime-worker build` / `pnpm --filter @hierarchidb/shape-plugin build` / `pnpm --filter @hierarchidb/shape-plugin test -- --run src/headless/__tests__/shape-vt-pipeline.full-flow.headless.test.ts` はすべて exit 0。

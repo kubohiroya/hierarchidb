@@ -607,6 +607,7 @@ const buildTaskSummaryFields = (
   index?: number;
   sequence?: number;
   stagePriority?: number;
+  metadata?: Record<string, unknown>;
 } => ({
   message: task.message ?? task.errorMessage,
   title: buildShapeTaskTitle(task),
@@ -615,6 +616,7 @@ const buildTaskSummaryFields = (
   index: task.index,
   sequence: task.sequence,
   stagePriority: task.stagePriority,
+  metadata: task.metadata,
 });
 
 const mapTaskQueueRecordToBatchTask = (
@@ -654,6 +656,7 @@ const mapTaskQueueRecordToTaskSummary = (
     index: base.index,
     sequence: base.sequence,
     stagePriority: base.stagePriority,
+    metadata: base.metadata,
   };
 };
 
@@ -664,6 +667,7 @@ type ShapeBatchTaskSummary = BatchTaskSummary & {
   index?: number;
   sequence?: number;
   stagePriority?: number;
+  metadata?: Record<string, unknown>;
 };
 
 type ProgressTaskMeta = {

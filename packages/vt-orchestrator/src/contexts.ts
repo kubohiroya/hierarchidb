@@ -28,4 +28,5 @@ export type VTStageContext = {
   abortSignal?: AbortSignal;
   tileWriter: VtTileWriter;
   continentByCountry?: Map<string, string>;
+  featureGeojsonByteSizeById?: Map<string, number>;
 };

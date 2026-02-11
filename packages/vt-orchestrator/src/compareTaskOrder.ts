@@ -204,6 +204,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           status: nextStatus,
           progress: result.progress ?? 100,
           message: result.message,
+          metadata: result.metadata,
           outputData: result.outputData,
           errorMessage: result.errorMessage,
           completedAt: Date.now(),

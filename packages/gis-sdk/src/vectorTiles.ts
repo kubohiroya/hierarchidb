@@ -354,15 +354,35 @@ export const generateVectorTilesFromFeatureCollection = async (
       properties.id = tileFeatureId;
       ensureMetadataProperties(properties, metadataContext);
       const stats = extractGeometryStats(feature.geometry, geometryEngine);
+      const countryName = metadataContext.countryName ?? pickCountryName(properties);
+      const countryCode = metadataContext.countryCode ?? pickCountryCode(properties);
+      const adminLevel = metadataContext.adminLevel ?? pickAdminLevel(properties);
+      const adminName = pickAdminName(properties);
+      const adminCode = pickAdminCode(properties);
+      let admin1Name: string | undefined;
+      let admin1Code: string | undefined;
+      let admin2Name: string | undefined;
+      let admin2Code: string | undefined;
+      if (adminLevel === 1) {
+        admin1Name = adminName;
+        admin1Code = adminCode;
+      } else if (adminLevel === 2) {
+        admin2Name = adminName;
+        admin2Code = adminCode;
+      }
       records.push({
         id: `${nodeId}-${tileFeatureId}`,
         nodeId,
         featureId: tileFeatureId,
-        countryName: metadataContext.countryName ?? pickCountryName(properties),
-        countryCode: metadataContext.countryCode ?? pickCountryCode(properties),
-        adminName: pickAdminName(properties),
-        adminLevel: metadataContext.adminLevel ?? pickAdminLevel(properties),
-        adminCode: pickAdminCode(properties),
+        countryName,
+        countryCode,
+        adminLevel,
+        admin0Name: countryName,
+        admin0Code: countryCode,
+        admin1Name,
+        admin1Code,
+        admin2Name,
+        admin2Code,
         dataSource: metadataContext.dataSource,
         createdAt,
         vertexCount: stats.vertexCount,

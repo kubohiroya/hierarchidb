@@ -12,6 +12,7 @@ const subscribeMock = vi.fn<[
 const getBuildTasksMock = vi.fn();
 let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
 let consoleLogSpy: ReturnType<typeof vi.spyOn> | null = null;
+let consoleDebugSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => ({
@@ -34,7 +35,9 @@ describe('useShapeBuildTasks', () => {
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
     consoleLogSpy?.mockRestore();
+    consoleDebugSpy?.mockRestore();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
   });
 
   it('applies snapshot and update events without polling', async () => {
@@ -610,6 +613,44 @@ describe('useShapeBuildTasks', () => {
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
       expect(result.current.tasks[0]?.taskId).toBe('node-7:fetch:ABW:1');
+    });
+  });
+
+  it('composes vt parent input summary metadata into task message', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-vt-meta'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-vt-meta',
+        task: {
+          taskId: 'node-vt-meta:vt:2:6:123',
+          stage: 'vt',
+          status: 'running',
+          progress: 30,
+          message: 'tiles 12/40',
+          index: 1,
+          sequence: 3,
+          metadata: {
+            vtParentInputSummary: {
+              parentTile: { z: 6, x: 15, y: 23 },
+              intersectingFeatureCount: 9,
+              intersectingGeojsonByteSize: 2316360,
+            },
+          },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.message).toBe(
+        'tiles 12/40 | vt parent input z=6 x=15 y=23 intersects(features=9, geojsonBytes=2316360)',
+      );
     });
   });
 });

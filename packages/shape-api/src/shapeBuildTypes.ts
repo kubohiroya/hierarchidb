@@ -210,9 +210,13 @@ export interface ShapeFeatureMetadata {
   featureId: string;
   countryName?: string;
   countryCode?: string;
-  adminName?: string;
   adminLevel?: number;
-  adminCode?: string;
+  admin0Name?: string;
+  admin0Code?: string;
+  admin1Name?: string;
+  admin1Code?: string;
+  admin2Name?: string;
+  admin2Code?: string;
   dataSource?: string;
   createdAt: number;
   vertexCount: number;
@@ -221,6 +225,7 @@ export interface ShapeFeatureMetadata {
   fetchPolygonCount?: number;
   transformVertexCount?: number;
   transformPolygonCount?: number;
+  geojsonByteSize?: number;
   bbox?: [number, number, number, number];
   area: number;
   recycling?: boolean;

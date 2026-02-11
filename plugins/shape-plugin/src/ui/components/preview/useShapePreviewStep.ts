@@ -206,6 +206,52 @@ const buildCountryGroupKey = (countryCode?: string): string | null => {
   return `country:${normalized}`;
 };
 
+const resolveAdminNameFromMetadata = (
+  row: ShapeFeatureMetadata,
+  adminLevel: number | undefined,
+  context: { countryName?: string },
+): string | undefined => {
+  if (adminLevel === 2) {
+    return normalizeText(row.admin2Name)
+      ?? normalizeText(row.admin1Name)
+      ?? normalizeText(row.admin0Name)
+      ?? normalizeText(row.countryName)
+      ?? normalizeText(context.countryName);
+  }
+  if (adminLevel === 1) {
+    return normalizeText(row.admin1Name)
+      ?? normalizeText(row.admin0Name)
+      ?? normalizeText(row.countryName)
+      ?? normalizeText(context.countryName);
+  }
+  return normalizeText(row.admin0Name)
+    ?? normalizeText(row.countryName)
+    ?? normalizeText(context.countryName);
+};
+
+const resolveAdminCodeFromMetadata = (
+  row: ShapeFeatureMetadata,
+  adminLevel: number | undefined,
+  context: { countryCode?: string },
+): string | undefined => {
+  if (adminLevel === 2) {
+    return normalizeText(row.admin2Code)
+      ?? normalizeText(row.admin1Code)
+      ?? normalizeCountryCodeValue(row.admin0Code)
+      ?? normalizeCountryCodeValue(row.countryCode)
+      ?? normalizeCountryCodeValue(context.countryCode);
+  }
+  if (adminLevel === 1) {
+    return normalizeText(row.admin1Code)
+      ?? normalizeCountryCodeValue(row.admin0Code)
+      ?? normalizeCountryCodeValue(row.countryCode)
+      ?? normalizeCountryCodeValue(context.countryCode);
+  }
+  return normalizeCountryCodeValue(row.admin0Code)
+    ?? normalizeCountryCodeValue(row.countryCode)
+    ?? normalizeCountryCodeValue(context.countryCode);
+};
+
 
 const isNumericId = (value?: string): boolean => {
   if (!value) return false;
@@ -799,10 +845,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         dataSource: row.dataSource,
       });
       const adminLevel = context.adminLevel ?? row.adminLevel;
-      const adminName = normalizeText(row.adminName)
-        ?? (adminLevel === 0 ? context.countryName : undefined);
-      const adminCode = normalizeText(row.adminCode)
-        ?? (adminLevel === 0 ? context.countryCode : undefined);
+      const adminName = resolveAdminNameFromMetadata(row, adminLevel, context);
+      const adminCode = resolveAdminCodeFromMetadata(row, adminLevel, context);
       return {
         id: row.id,
         featureId: row.featureId,

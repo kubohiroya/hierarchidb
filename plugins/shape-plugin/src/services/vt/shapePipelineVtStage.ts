@@ -11,7 +11,7 @@ import {
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeVtTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildVtTasks, resolveVtConfig } from './shapePipelineShared.ts';
@@ -35,6 +35,59 @@ export type ShapeVtStageParams = {
   pipelineRunId?: string;
   ephemeralStore: HidbEphemeralDB;
   loadContinentLookup: () => Promise<Map<string, string>>;
+};
+
+const loadFeatureGeojsonByteSizeById = async (nodeId: NodeId): Promise<Map<string, number>> => {
+  const rows = await shapeQueryAPIImpl.listFeatureMetadata(nodeId);
+  const map = new Map<string, number>();
+  let invalidByteSizeCount = 0;
+  let positiveByteSizeCount = 0;
+  let zeroByteSizeCount = 0;
+  const upsert = (key: string, byteSize: number): void => {
+    const normalizedKey = key.trim();
+    if (normalizedKey.length === 0) return;
+    const previous = map.get(normalizedKey);
+    if (previous === undefined || byteSize > previous) {
+      map.set(normalizedKey, byteSize);
+    }
+  };
+  rows.forEach((row) => {
+    if (!row?.featureId) return;
+    if (typeof row.geojsonByteSize !== 'number' || !Number.isFinite(row.geojsonByteSize)) {
+      invalidByteSizeCount += 1;
+      return;
+    }
+    const normalizedByteSize = Math.max(0, Math.round(row.geojsonByteSize));
+    if (normalizedByteSize > 0) {
+      positiveByteSizeCount += 1;
+    } else {
+      zeroByteSizeCount += 1;
+    }
+    upsert(row.featureId, normalizedByteSize);
+    const firstColonIndex = row.featureId.indexOf(':');
+    const lastColonIndex = row.featureId.lastIndexOf(':');
+    if (firstColonIndex > 0 && lastColonIndex > firstColonIndex) {
+      const aliasKey = row.featureId.slice(firstColonIndex + 1, lastColonIndex);
+      upsert(aliasKey, normalizedByteSize);
+    }
+  });
+  if (rows.length > 0 && map.size === 0) {
+    console.warn('[ShapeVtParentInputSummary] feature metadata has no valid geojsonByteSize', {
+      nodeId: String(nodeId),
+      rowCount: rows.length,
+      invalidByteSizeCount,
+    });
+  } else if (rows.length > 0) {
+    console.info('[ShapeVtParentInputSummary] feature metadata byte-size map loaded', {
+      nodeId: String(nodeId),
+      rowCount: rows.length,
+      mapSize: map.size,
+      positiveByteSizeCount,
+      zeroByteSizeCount,
+      invalidByteSizeCount,
+    });
+  }
+  return map;
 };
 
 export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promise<void> => {
@@ -113,6 +166,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
   const continentByCountry = params.bands.some((band) => band.zMin === 0)
     ? await params.loadContinentLookup()
     : undefined;
+  const featureGeojsonByteSizeById = await loadFeatureGeojsonByteSizeById(params.nodeId);
   const vtHandler = createVtHandler({
     ephemeralDB: params.ephemeralStore,
     vtConfig,
@@ -120,6 +174,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     geometryEngine,
     abortSignal: vtAbortController.signal,
     continentByCountry,
+    featureGeojsonByteSizeById,
     tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
       await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
         nodeId: params.nodeId,
