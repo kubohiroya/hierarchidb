@@ -34,7 +34,6 @@ import {
 } from '../utils/chunkStore.js';
 import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
 import {
-  isBuildProcessConfig,
   toBuildSessionRecord,
   toBuildSessionUpdates,
   toProgressInfo,
@@ -131,7 +130,6 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
 const toBuildSessionRecordFromEphemeral = (
   session: EphemeralBuildSessionRecord
 ): BuildSessionRecord | null => {
-  if (!isBuildProcessConfig(session.config)) return null;
   if (!isProgressSummary(session.progress)) return null;
   const stages = readStageMap(session.stages);
   if (!stages) return null;
@@ -140,7 +138,6 @@ const toBuildSessionRecordFromEphemeral = (
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
       ? session.selectedArrayByCountries
       : undefined,

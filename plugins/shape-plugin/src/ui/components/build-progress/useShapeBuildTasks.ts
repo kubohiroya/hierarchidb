@@ -27,6 +27,11 @@ export interface UseShapeBuildTasksState {
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
+const TASK_SNAPSHOT_RECONCILE_INTERVAL_MS = 5000;
+
+const isTaskInFlight = (task: ShapeBuildTaskSummary): boolean => (
+  task.status === 'running' || task.status === 'queued'
+);
 
 const logRunningResidueDrop = (payload: {
   nodeId: string | null;
@@ -61,6 +66,7 @@ export function useShapeBuildTasks(
   const handleSnapshotRef = useRef<(tasks: RawTaskSummary[]) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
   const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
+  const reconcileInFlightRef = useRef(false);
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
@@ -187,12 +193,38 @@ export function useShapeBuildTasks(
 
     void start();
 
+    const reconcileSnapshot = async () => {
+      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
+      if (isLoadingRef.current) return;
+      if (!tasksRef.current.some((task) => isTaskInFlight(task))) return;
+      if (reconcileInFlightRef.current) return;
+      reconcileInFlightRef.current = true;
+      try {
+        const latestTasks = await bridgeRef.current.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
+        if (cancelled || subscriptionIdRef.current !== subscriptionId) {
+          return;
+        }
+        handleSnapshotRef.current(latestTasks as RawTaskSummary[]);
+      } catch (err) {
+        if (!cancelled && isDev) {
+          console.debug('[ShapeBuildStep] task snapshot reconcile skipped', err);
+        }
+      } finally {
+        reconcileInFlightRef.current = false;
+      }
+    };
+    const reconcileTimer = window.setInterval(() => {
+      void reconcileSnapshot();
+    }, TASK_SNAPSHOT_RECONCILE_INTERVAL_MS);
+
     return () => {
       cancelled = true;
+      window.clearInterval(reconcileTimer);
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
       }
+      reconcileInFlightRef.current = false;
     };
   }, [
     autoSubscribe,

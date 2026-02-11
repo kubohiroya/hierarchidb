@@ -129,6 +129,7 @@ export const useBuildProgressPanelState = (params: {
   const crashInsight = useBuildCrashInsight({
     draft: params.data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
+    status: summary.buildStatus,
   });
   const stageTaskScan = useMemo(() => {
     return stages.reduce<Record<string, {
@@ -423,8 +424,8 @@ export const useBuildProgressPanelState = (params: {
       ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
     if (!buildConfig) return undefined;
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
-      const isStageRunning = summary.buildStatus === 'running'
-        && Boolean(stageTaskScan[stage.id]?.hasRunning);
+      // Keep slot animation tied to actual task runtime, even if session status lags behind.
+      const isStageRunning = Boolean(stageTaskScan[stage.id]?.hasRunning);
       const maxConcurrent = (() => {
         switch (stage.id) {
           case 'fetch':
@@ -441,7 +442,7 @@ export const useBuildProgressPanelState = (params: {
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
       return acc;
     }, {});
-  }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
+  }, [params.data?.buildConfig, stageTaskScan, stages]);
   useEffect(() => {
     if (!isDev) return;
     const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;

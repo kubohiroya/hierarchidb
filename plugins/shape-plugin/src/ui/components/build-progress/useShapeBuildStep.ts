@@ -36,6 +36,8 @@ import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMap
 import { resolveBuildStatusSource } from './resolveBuildStatusSource.ts';
 import { shouldResumeBuildSession } from './shouldResumeBuildSession.ts';
 import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
+import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 type StageLikeTask = {
@@ -88,6 +90,22 @@ const toBuildStatus = (status?: string | null): BuildStatus => {
   switch (status) {
     case 'processing':
       return 'running';
+    case 'paused':
+      return 'paused';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    default:
+      return 'idle';
+  }
+};
+
+const toProcessingStatus = (status?: string | null): 'idle' | 'processing' | 'paused' | 'completed' | 'failed' => {
+  switch (status) {
+    case 'running':
+    case 'processing':
+      return 'processing';
     case 'paused':
       return 'paused';
     case 'completed':
@@ -220,7 +238,7 @@ type Args = {
   nodeId?: NodeId;
 };
 
-export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
+export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { t } = useTranslation();
   const coordinator = useMemo(() => (
     createSessionCoordinator({
@@ -371,15 +389,16 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
-  const persistDraftPatchQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const [sessionRecord, setSessionRecord] = useState<ShapeBuildSessionRecord | null>(null);
   const persistedStageElapsedByStage = useMemo<Record<string, number>>(
-    () => (data?.stageElapsedByStage ?? {}),
-    [data?.stageElapsedByStage]
+    () => (sessionRecord?.elapsedByStage ?? {}),
+    [sessionRecord?.elapsedByStage]
   );
   const [completedStageElapsedMs, setCompletedStageElapsedMs] = useState<Record<string, number>>(
     () => persistedStageElapsedByStage
   );
   const lastPersistedStageMapRef = useRef<Record<string, number> | null>(null);
+  const lastPersistedStageIdRef = useRef<string | null>(null);
   const closeCrashSuspect = useCallback(() => {
     setCrashSuspectOpen(false);
     setCrashSuspectMessage(null);
@@ -517,21 +536,68 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return latest;
   }, [suspendTimeout]);
 
+  const refreshSessionRecord = useCallback(async () => {
+    if (!activeNodeId) {
+      setSessionRecord(null);
+      return null;
+    }
+    const next = await shapeQueryAPIImpl.getBuildSessionRecord(activeNodeId).catch(() => null);
+    setSessionRecord(next);
+    return next;
+  }, [activeNodeId]);
+
+  const updateSessionRecord = useCallback(async (patch: Partial<ShapeBuildSessionRecord>): Promise<boolean> => {
+    if (!activeNodeId) return false;
+    if (Object.keys(patch).length === 0) return true;
+    try {
+      await shapeMutationAPIImpl.updateBuildSession(activeNodeId, patch);
+      setSessionRecord((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          ...patch,
+          updatedAt: Date.now(),
+        };
+      });
+      return true;
+    } catch (error) {
+      console.warn('[ShapeBuildProgressStep] failed to update build session record', error);
+      return false;
+    }
+  }, [activeNodeId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      await refreshSessionRecord();
+      if (cancelled) return;
+    };
+    void load();
+    const interval = window.setInterval(() => {
+      void load();
+    }, 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [refreshSessionRecord]);
+
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
   const remoteFresh = Boolean(remoteUpdatedAt && Date.now() - remoteUpdatedAt <= coordinator.quietThresholdTimeout);
   const effectiveProgress = hasNodeId ? (progress ?? (remoteFresh ? remoteProgress : null)) : null;
   const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteStatus : null)) : null;
   const stages = useShapeBuildStages(t);
-  const processingStatus = data?.processingStatus ?? 'idle';
-  const persistedStageElapsedStageId = typeof data?.stageElapsedStageId === 'string'
-    ? data.stageElapsedStageId
+  const persistedProcessingStatus = sessionRecord ? toProcessingStatus(sessionRecord.status) : null;
+  const processingStatus = persistedProcessingStatus ?? 'idle';
+  const persistedStageElapsedStageId = typeof sessionRecord?.stageId === 'string'
+    ? sessionRecord.stageId
     : null;
   const [timingStageId, setTimingStageId] = useState<string | null>(() => persistedStageElapsedStageId);
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
-  const runtimeStatus = status?.status ?? null;
+  const runtimeStatus = status?.status ?? sessionRecord?.status ?? null;
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
@@ -598,27 +664,38 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const isElapsedResetState = useMemo(() => shouldResetElapsedState({
     buildStatus,
-    buildElapsedMs: data?.buildElapsedMs,
+    buildElapsedMs: sessionRecord?.elapsedMs,
     stageElapsedByStage: persistedStageElapsedByStage,
   }), [
     buildStatus,
-    data?.buildElapsedMs,
+    sessionRecord?.elapsedMs,
     persistedStageElapsedByStage,
   ]);
   useEffect(() => {
-    if (buildStatus === 'idle') {
+    if (buildStatus === 'idle' || isElapsedResetState) {
       if (timingStageId !== null) {
         setTimingStageId(null);
       }
       return;
     }
-    const nextStageId = liveTaskType ?? timingStageId ?? persistedStageElapsedStageId ?? resolvedTaskType ?? null;
+    const fallbackStageId = buildStatus === 'running' ? resolvedTaskType : null;
+    const nextStageId = liveTaskType ?? timingStageId ?? persistedStageElapsedStageId ?? fallbackStageId ?? null;
     if (nextStageId && nextStageId !== timingStageId) {
       setTimingStageId(nextStageId);
     }
-  }, [buildStatus, liveTaskType, persistedStageElapsedStageId, resolvedTaskType, timingStageId]);
+  }, [
+    buildStatus,
+    isElapsedResetState,
+    liveTaskType,
+    persistedStageElapsedStageId,
+    resolvedTaskType,
+    timingStageId,
+  ]);
 
   const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
+  const totalElapsedMs = useMemo(() => (
+    sumNumberRecord(completedStageElapsedMs)
+  ), [completedStageElapsedMs]);
   useEffect(() => {
     if (isElapsedResetState) {
       if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
@@ -637,6 +714,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     stageRemainingTickRef.current = null;
     latestStageRemainingMsRef.current = null;
     lastPersistedStageMapRef.current = null;
+    lastPersistedStageIdRef.current = null;
     if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
       setCompletedStageElapsedMs({});
     }
@@ -685,9 +763,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     isSkippedTask: (task) => isTaskSkipped(task.display, task.message),
     timingStageMs: stageElapsedMs,
   });
-  const displayTotalElapsedMs = useMemo(() => (
-    sumNumberRecord(completedStageElapsedMs)
-  ), [completedStageElapsedMs]);
+  const displayTotalElapsedMs = totalElapsedMs;
   useEffect(() => {
     latestStageRemainingMsRef.current = progressSummary.stageRemainingMs;
     if (buildStatus !== 'running') {
@@ -828,65 +904,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       console.error('[ShapeBuildProgressStep] save draft failed', error);
       return false;
     }
-  }, [activeNodeId, buildStatus, data, workerClient]);
-
-  const persistDraftPatch = useCallback(async (patch: Partial<ShapeEntity>): Promise<boolean> => {
-    if (!activeNodeId || !workerClient) return false;
-    const run = async (): Promise<boolean> => {
-      try {
-        const api = workerClient.getAPI();
-        const updater = await api.getTreeNodeUpdaterAPI();
-        const node = await updater.getTreeNode(activeNodeId);
-        const currentDraftData = (
-          node?.draftData && typeof node.draftData === 'object'
-            ? (node.draftData as Record<string, unknown>)
-            : {}
-        );
-        await updater.updateTreeNode(activeNodeId, {
-          mode: 'save-draft',
-          draftData: {
-            ...sanitizeShapeDraftData(currentDraftData),
-            ...sanitizeShapeDraftData(patch),
-          } as Record<string, unknown>,
-        });
-        onChange(patch);
-        return true;
-      } catch (error) {
-        console.error('[ShapeBuildProgressStep] failed to persist build markers', error);
-        return false;
-      }
-    };
-    const queuedRun = persistDraftPatchQueueRef.current.then(run, run);
-    persistDraftPatchQueueRef.current = queuedRun.then(() => undefined, () => undefined);
-    return queuedRun;
-  }, [activeNodeId, onChange, workerClient]);
-
-  useEffect(() => {
-    if (buildStatus !== 'running') return;
-    if (!activeNodeId) return;
-    const patch: Partial<ShapeEntity> = {};
-    if (data?.buildStartedAt === undefined) {
-      patch.buildStartedAt = Date.now();
-    }
-    if (timingStageId && data?.stageElapsedStageId !== timingStageId) {
-      patch.stageElapsedStageId = timingStageId;
-    }
-    if (Object.keys(patch).length > 0) {
-      void persistDraftPatch(patch);
-    }
-  }, [
-    activeNodeId,
-    buildStatus,
-    data?.buildStartedAt,
-    data?.stageElapsedStageId,
-    persistDraftPatch,
-    timingStageId,
-  ]);
+  }, [activeNodeId, data, workerClient]);
 
   useEffect(() => {
     if (!activeNodeId) return;
     if (isElapsedResetState) {
       lastPersistedStageMapRef.current = null;
+      lastPersistedStageIdRef.current = null;
       return;
     }
     const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
@@ -894,14 +918,31 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       setCompletedStageElapsedMs(merged);
       return;
     }
-    if (shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage)) return;
+    const stageId = timingStageId ?? null;
+    const mapUnchanged = shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage);
+    const stageUnchanged = lastPersistedStageIdRef.current === stageId;
+    if (mapUnchanged && stageUnchanged) return;
     if (lastPersistedStageMapRef.current
-      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, completedStageElapsedMs)) {
+      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, completedStageElapsedMs)
+      && stageUnchanged) {
       return;
     }
     lastPersistedStageMapRef.current = completedStageElapsedMs;
-    void persistDraftPatch({ stageElapsedByStage: completedStageElapsedMs });
-  }, [activeNodeId, completedStageElapsedMs, isElapsedResetState, persistDraftPatch, persistedStageElapsedByStage]);
+    lastPersistedStageIdRef.current = stageId;
+    void updateSessionRecord({
+      elapsedByStage: completedStageElapsedMs,
+      elapsedMs: totalElapsedMs,
+      stageId: stageId ?? undefined,
+    });
+  }, [
+    activeNodeId,
+    completedStageElapsedMs,
+    isElapsedResetState,
+    persistedStageElapsedByStage,
+    timingStageId,
+    totalElapsedMs,
+    updateSessionRecord,
+  ]);
 
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;
@@ -932,7 +973,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       }
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       await bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy);
-      await persistDraftPatch({ processingStatus: 'processing' });
+      await updateSessionRecord({ status: 'running', stopReason: undefined, canResume: false });
     } catch (error) {
       releaseBuildLock();
       coordinator.clearActiveSessionId(String(activeNodeId));
@@ -944,10 +985,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     coordinator,
     getRecentNonActiveState,
-    persistDraftPatch,
     releaseBuildLock,
     runtimeStatus,
     tryAcquireBuildLock,
+    updateSessionRecord,
   ]);
 
   useEffect(() => {
@@ -1311,7 +1352,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       }
       return;
     }
-    const shouldMonitor = data?.processingStatus === 'processing' && !data?.buildFinishedAt;
+    const shouldMonitor = sessionRecord?.status === 'running' && !sessionRecord?.completedAt;
     if (!shouldMonitor) {
       if (crashSuspectOpen) {
         closeCrashSuspect();
@@ -1377,10 +1418,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     coordinator.pollIntervalTimeout,
     coordinator.quietThresholdTimeout,
     crashSuspectOpen,
-    data?.buildFinishedAt,
-    data?.processingStatus,
     getRecentNonActiveState,
     runtimeStatus,
+    sessionRecord?.completedAt,
+    sessionRecord?.status,
     buildSessionTransition.active,
     suspendSuspectOpen,
     t,
@@ -1561,24 +1602,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           forceRestart: Boolean(options?.forceRestart),
           source: startupSource,
         });
-        beginBuildStartupStep('session-status-persist', {
-          mode: 'resume',
-          processingStatus: 'processing',
-        });
-        const persisted = await runTimedStep('session-status-persist(resume)', () => persistDraftPatch({
-          processingStatus: 'processing',
-          stopReason: undefined,
-        }));
-        if (!persisted) {
-          finishBuildStartupStep('session-status-persist', 'error', {
-            reason: 'persist-resume-status-failed',
-          });
-          throw new Error('Failed to persist resume status.');
-        }
-        finishBuildStartupStep('session-status-persist', 'success', {
-          mode: 'resume',
-          processingStatus: 'processing',
-        });
+        void updateSessionRecord({ status: 'running', stopReason: undefined, canResume: false });
         advanceBuildSessionTransitionPhase('awaiting-first-task', {
           level: 'info',
           message: 'Build resumed. Waiting for worker task updates...',
@@ -1669,21 +1693,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         : statusResult.status === 'failed'
           ? 'failed'
           : 'processing';
-      beginBuildStartupStep('session-status-persist', {
-        mode: 'start',
-        processingStatus: nextStatus,
-      });
-      const persisted = await runTimedStep('session-status-persist(start)', () => persistDraftPatch({ processingStatus: nextStatus }));
-      if (!persisted) {
-        finishBuildStartupStep('session-status-persist', 'error', {
-          reason: 'persist-start-status-failed',
-          processingStatus: nextStatus,
-        });
-        throw new Error('Failed to persist start status.');
-      }
-      finishBuildStartupStep('session-status-persist', 'success', {
-        mode: 'start',
-        processingStatus: nextStatus,
+      void updateSessionRecord({
+        status: nextStatus === 'processing' ? 'running' : nextStatus,
+        stopReason: nextStatus === 'processing' ? undefined : nextStatus,
+        canResume: nextStatus === 'processing',
       });
       if (nextStatus === 'failed') {
         finishBuildSessionTransition({
@@ -1734,11 +1747,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     beginBuildStartupStep,
     finishBuildStartupStep,
     finishBuildSessionTransition,
-    persistDraftPatch,
     releaseBuildLock,
     runtimeStatus,
     saveDraftBeforeBuild,
     tryAcquireBuildLock,
+    updateSessionRecord,
     waitForBuildLock,
   ]);
 
@@ -1756,7 +1769,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         await bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, pauseReason);
       },
       persistPausedStatus: async (pauseReason) => {
-        const persisted = await persistDraftPatch({ processingStatus: 'paused', stopReason: pauseReason });
+        const persisted = await updateSessionRecord({
+          status: 'paused',
+          stopReason: pauseReason,
+          canResume: true,
+        });
         if (!persisted) {
           throw new Error('Failed to persist paused status.');
         }
@@ -1766,7 +1783,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         console.error('[ShapeBuildProgressStep] pause failed', error);
       },
     });
-  }, [activeNodeId, isPausePending, persistDraftPatch]);
+  }, [activeNodeId, isPausePending, updateSessionRecord]);
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,

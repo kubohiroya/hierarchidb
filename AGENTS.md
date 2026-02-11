@@ -20,6 +20,46 @@
 - タスク起票・運用ルールの詳細は `docs/task-management.md` を参照する。
 - Issue 本文は `docs/templates/task-issue-template.md` をテンプレートとして利用する。
 
+## タスク管理・起票ゲート（厳格運用）
+
+- 対象: 実装・修正・設定変更・コード変更を伴う調査依頼。
+- 原則: GitHub Issue を作成するまで着手禁止。
+- 例外: ユーザーが「Issue 不要」を明示した場合のみ着手可（回答内に理由を明記）。
+
+### 必須フロー（順番固定）
+
+1. DoD（受け入れ基準）を提案し、ユーザー承認を得る。
+2. `gh issue create` で Issue を起票する（`docs/templates/task-issue-template.md` を使用）。
+3. Issue を GitHub Project に追加し、`Status=Doing` を設定する。
+4. ブランチを作成する（`<type>/<scope>/<slug>`）。
+5. `TASKS.md` の `Doing` に `#<issue> / branch / start` を1行で記録する。
+6. ここまで完了してから、コード編集・コマンド実行を開始する。
+
+### 起票失敗時（必須）
+
+- `gh` の認証・権限・ネットワーク不達で起票できない場合は `blocked` として扱う。
+- `blocked` 時はコード変更を行わず停止し、失敗コマンド・エラー要約・解除条件を報告する。
+- `TASKS.md` の `Blocked` と `今日の運用ログ` に記録する。
+
+### 作業開始報告の必須項目
+
+- `Issue: #番号（URL）`
+- `Project: Status（列名）`
+- `Branch: <type>/<scope>/<slug>`
+- 上記が揃っていない場合は着手不可。
+
+### TASKS.md 記載制限
+
+- 記載可: `Doing` / `Blocked` / `今日の運用ログ` のみ。
+- 記載禁止: DoD・依存・ロールバック・検証結果・Done一覧の詳細本文。
+- これらの本体は Issue/Project 側に記載する。
+
+### 禁止事項
+
+- Issue 未起票の実装・修正・コミット。
+- `TASKS.md` の台帳化（大規模な Done/詳細記録の再持ち込み）。
+- Issue 番号なし PR の作成。
+
 # ExecPlans
 
 When writing complex features or significant refactors, use an ExecPlan (as described in PLANS.md) from design to implementation.

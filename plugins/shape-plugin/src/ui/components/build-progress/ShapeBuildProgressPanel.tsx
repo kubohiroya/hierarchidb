@@ -461,19 +461,27 @@ const BuildProgressStageContent = ({
     const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
     return index >= 0 ? index : null;
   }, [orderedTasks, scrollToTaskId]);
-  const currentIndex = useMemo(() => {
+  const viewportIndices = useMemo(() => {
     if (orderedTasks.length === 0) return null;
-    if (viewportRange?.stageId !== stage.id || viewportRange == null) return 0;
+    if (viewportRange?.stageId !== stage.id || viewportRange == null) return null;
     const maxIndex = orderedTasks.length - 1;
     const clampedStart = Math.min(Math.max(viewportRange.startIndex, 0), maxIndex);
     const clampedEnd = Math.min(Math.max(viewportRange.endIndex, clampedStart), maxIndex);
+    return {
+      startIndex: clampedStart,
+      endIndex: clampedEnd,
+    };
+  }, [orderedTasks.length, stage.id, viewportRange]);
+  const currentIndex = useMemo(() => {
+    if (orderedTasks.length === 0) return null;
+    if (viewportIndices == null) return 0;
     if (requestedTargetIndex !== null
-      && requestedTargetIndex >= clampedStart
-      && requestedTargetIndex <= clampedEnd) {
+      && requestedTargetIndex >= viewportIndices.startIndex
+      && requestedTargetIndex <= viewportIndices.endIndex) {
       return requestedTargetIndex;
     }
-    return Math.floor((clampedStart + clampedEnd) / 2);
-  }, [orderedTasks.length, requestedTargetIndex, stage.id, viewportRange]);
+    return Math.floor((viewportIndices.startIndex + viewportIndices.endIndex) / 2);
+  }, [orderedTasks.length, requestedTargetIndex, viewportIndices]);
   const activeTargetIndices = useMemo(() => (
     orderedTasks.reduce<number[]>((acc, task, index) => {
       if (task.status === 'running' || task.status === 'queued') {
@@ -486,6 +494,13 @@ const BuildProgressStageContent = ({
     () => orderedTasks.some((task) => task.status === 'running'),
     [orderedTasks],
   );
+  const hasOnlyQueuedInViewport = useMemo(() => {
+    if (viewportIndices == null) return false;
+    for (let i = viewportIndices.startIndex; i <= viewportIndices.endIndex; i += 1) {
+      if (orderedTasks[i]?.status !== 'queued') return false;
+    }
+    return true;
+  }, [orderedTasks, viewportIndices]);
   const upTargetIndex = useMemo(() => {
     if (currentIndex == null) return null;
     for (let i = activeTargetIndices.length - 1; i >= 0; i -= 1) {
@@ -508,11 +523,13 @@ const BuildProgressStageContent = ({
     && currentIndex !== null
     && currentIndex === requestedTargetIndex;
   const showUpArrow = !isScrollTargetReached
+    && !hasOnlyQueuedInViewport
     && hasRunningTask
     && upTargetIndex !== null
     && currentIndex !== null
     && upTargetIndex < currentIndex;
   const showDownArrow = !isScrollTargetReached
+    && !hasOnlyQueuedInViewport
     && hasRunningTask
     && downTargetIndex !== null
     && currentIndex !== null

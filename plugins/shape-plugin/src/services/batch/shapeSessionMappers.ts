@@ -124,12 +124,10 @@ const toResourceUsageRecord = (usage: ResourceUsage | undefined): Record<string,
   usage ? { ...usage } : undefined;
 
 export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord | null => {
-  if (!isBuildProcessConfig(session.config)) return null;
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     selectedArrayByCountries: session.selectedArrayByCountries,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
@@ -157,10 +155,6 @@ export const toBuildSessionUpdates = (
   const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
-  if (updates.config !== undefined) {
-    if (!isBuildProcessConfig(updates.config)) return null;
-    next.config = updates.config;
-  }
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
   }
@@ -192,7 +186,6 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   nodeId: session.nodeId,
   draftId: session.draftId,
   status: session.status,
-  config: session.config,
   selectedArrayByCountries: session.selectedArrayByCountries,
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
@@ -220,7 +213,6 @@ export const toShapeBuildSessionUpdates = (
   const next: Partial<ShapeBuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
-  if (updates.config !== undefined) next.config = updates.config;
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
   }

@@ -103,7 +103,6 @@ export interface BuildSessionRecord {
   nodeId: ShapeContainerNodeId;
   draftId?: ShapeContainerNodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: BuildProcessConfig;
   selectedArrayByCountries?: Record<string, boolean[]>;
   startedAt: number;
   updatedAt: number;

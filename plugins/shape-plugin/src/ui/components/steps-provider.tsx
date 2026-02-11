@@ -76,14 +76,16 @@ const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boole
   if (data.processingStatus === 'processing') return true;
   if (data.processingStatus === 'completed') return true;
   if (typeof data.buildFinishedAt === 'number') return true;
-  return data.processingStatus === 'failed';
+  if (data.processingStatus === 'failed') return true;
+  return canStartShapeBuild(data);
 };
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (typeof data.buildFinishedAt === 'number') return true;
-  return data.processingStatus === 'completed';
+  if (data.processingStatus === 'completed') return true;
+  return canStartShapeBuild(data);
 };
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({

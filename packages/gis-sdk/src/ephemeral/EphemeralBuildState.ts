@@ -54,7 +54,6 @@ export interface EphemeralBuildSessionRecord {
   stopReason?: StopReason;
   stage?: BuildStage;
   progress?: ShapeBuildProgressSummary | number;
-  config?: unknown;
   selectedArrayByCountries?: Record<string, boolean[]>;
   stages?: Record<BuildStage, EphemeralStageStatus>;
   resourceUsage?: unknown;

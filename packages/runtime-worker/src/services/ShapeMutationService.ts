@@ -12,7 +12,6 @@ import type {
   ShapeVectorTileRecord,
 } from '@hierarchidb/shape-api';
 import {
-  type BuildProcessConfig,
   type BuildSessionRecord,
   type BuildStage,
   type LayerInfo,
@@ -49,16 +48,6 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     isNumber(value.tasksCompleted) &&
     isNumber(value.tasksFailed) &&
     (value.message === undefined || typeof value.message === 'string')
-  );
-};
-
-const isBuildProcessConfig = (value: unknown): value is BuildProcessConfig => {
-  if (!isRecord(value)) return false;
-  return (
-    isRecord(value.download) &&
-    isRecord(value.extract1) &&
-    isRecord(value.extract2) &&
-    isRecord(value.vectorTiles)
   );
 };
 
@@ -121,14 +110,10 @@ const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUs
 };
 
 const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord => {
-  if (!isBuildProcessConfig(session.config)) {
-    throw new Error('Invalid shape batch session config');
-  }
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
     status: session.status,
-    config: session.config,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
@@ -154,12 +139,6 @@ const toBuildSessionUpdates = (
   const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
-  if (updates.config !== undefined) {
-    if (!isBuildProcessConfig(updates.config)) {
-      throw new Error('Invalid shape batch session config');
-    }
-    next.config = updates.config;
-  }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;

@@ -407,6 +407,87 @@ describe('ShapeBuildProgressPanel', () => {
     });
   });
 
+  it('hides both arrows when viewport tasks are queued even if running task exists outside viewport', async () => {
+    const store = makeStore();
+    const queuedTop: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-top',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    const queuedVisible: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-visible',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    const runningBottom: ShapeBuildTaskSummary = {
+      taskId: 'task-running-bottom',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'running',
+      progress: 10,
+      message: 'Running',
+    } as ShapeBuildTaskSummary;
+    const queuedBottom: ShapeBuildTaskSummary = {
+      taskId: 'task-queued-bottom',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'queued',
+      progress: 0,
+      message: 'Queued',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksByStageAtom, { fetch: [queuedTop, queuedVisible, runningBottom, queuedBottom], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 5,
+      completed: 0,
+      total: 4,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+    store.set(taskViewportRangeAtom, {
+      stageId: 'fetch',
+      startTaskId: 'task-queued-visible',
+      endTaskId: 'task-queued-visible',
+      startIndex: 1,
+      endIndex: 1,
+      total: 4,
+      updatedAt: 1,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+
+    await waitFor(() => {
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+    });
+  });
+
   it('hides arrow icon when current position reaches the scroll target', async () => {
     const store = makeStore();
     const runningTop: ShapeBuildTaskSummary = {

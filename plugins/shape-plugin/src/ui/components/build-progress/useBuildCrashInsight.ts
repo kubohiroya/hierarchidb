@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { ShapeEntity } from '../../../common/types/index.js';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
   type BuildMonitorConfig,
   getBuildMonitorKey,
@@ -12,6 +13,7 @@ import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '../../utils/buil
 type Args = {
   draft?: Partial<ShapeEntity> | null;
   nodeId?: string | null;
+  status?: BuildStatus | null;
 };
 
 const buildMonitorConfig: BuildMonitorConfig = {
@@ -23,7 +25,7 @@ const buildMonitorConfig: BuildMonitorConfig = {
 };
 
 export const useBuildCrashInsight = (
-  { draft, nodeId }: Args,
+  { draft, nodeId, status }: Args,
 ): CrashInsight<ShapeBuildStage, ShapeBuildConfigSnapshot> | null => {
   const key = useMemo(
     () => getBuildMonitorKey(buildMonitorConfig, nodeId ?? null),
@@ -33,7 +35,14 @@ export const useBuildCrashInsight = (
     if (!key) return null;
     return loadBuildMonitor<ShapeBuildStage, ShapeBuildConfigSnapshot>(buildMonitorConfig, key);
   }, [key]);
+  const normalizedStatus = useMemo(() => {
+    if (status === 'running') return 'processing';
+    if (status === 'idle' || status === 'paused' || status === 'completed' || status === 'failed') {
+      return status;
+    }
+    return draft?.processingStatus ?? null;
+  }, [draft?.processingStatus, status]);
   return useMemo(() => (
-    getCrashInsight(buildMonitorConfig, record, draft?.processingStatus ?? null)
-  ), [draft?.processingStatus, record]);
+    getCrashInsight(buildMonitorConfig, record, normalizedStatus)
+  ), [normalizedStatus, record]);
 };
