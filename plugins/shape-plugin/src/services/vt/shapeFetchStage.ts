@@ -2,7 +2,6 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
-import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import {
   type VtTaskQueueDb,
@@ -59,6 +58,7 @@ import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.j
 import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
 import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
 import { buildFetchTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import { hashFetchArtifact, resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -84,8 +84,6 @@ export type ShapeFetchTaskOutput = {
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder('utf-8');
-const FETCH_ARTIFACT_HASH_ALGORITHM = 'sha3-256' as const;
-const fetchArtifactHasher = new NobleSha3HashPort();
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -410,10 +408,6 @@ const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
     .where('[nodeId+sourceKey]')
     .equals([nodeId, sourceKey])
     .first()
-);
-
-const hashFetchArtifact = (data: ArrayBuffer): string => (
-  fetchArtifactHasher.digest(data, FETCH_ARTIFACT_HASH_ALGORITHM)
 );
 
 const putFetchCache = async (params: {
@@ -792,12 +786,7 @@ const createFetchHandler = (params: {
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
       const createdAt = Date.now();
-      let fetchArtifactHash = typeof existing.contentHash === 'string' && existing.contentHash.length > 0
-        ? existing.contentHash
-        : hashFetchArtifact(existing.data);
-      if (existing.contentHash !== fetchArtifactHash) {
-        await ephemeralShapeDB.fetchCache.update(existing.id, { contentHash: fetchArtifactHash });
-      }
+      let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralShapeDB.fetchCache, existing);
       const cachedCollection = await decodeFetchCacheData({
         data: existing.data,
         format: existing.format,
