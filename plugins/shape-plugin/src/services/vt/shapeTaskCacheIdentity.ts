@@ -97,6 +97,7 @@ export const buildFetchTaskCacheIdentity = (params: {
   dataSource: string;
   sourceKey: string;
   url: string;
+  upstreamRevision?: string;
   configSignature?: string;
   namespacePolicy?: Partial<ShapeStageCacheNamespacePolicy>;
 }): ShapeTaskCacheIdentity => {
@@ -109,6 +110,7 @@ export const buildFetchTaskCacheIdentity = (params: {
   const endpointId = encodeURIComponent(normalizeEndpointId(params.url));
   const cacheKey = `${namespacePrefix}:shape:fetch:${SHAPE_CACHE_KEY_VERSION}:${dataSource}:${sourceKey}:${endpointId}`;
   const inputHash = buildStableSignature({
+    upstreamRevision: normalizeString(params.upstreamRevision) || null,
     fetchOutputShapingSignature: normalizeString(params.configSignature) || null,
     pipelineVersion: SHAPE_FETCH_PIPELINE_VERSION,
   });
@@ -119,7 +121,7 @@ export const buildTransformTaskCacheIdentity = (params: {
   nodeId: NodeId;
   sourceKey: string;
   bandIndex: number;
-  fetchCacheId: string;
+  fetchArtifactHash: string;
   bandMinZoom?: number;
   bandMaxZoom?: number;
   configSignature?: string;
@@ -133,7 +135,7 @@ export const buildTransformTaskCacheIdentity = (params: {
   const bandIndex = normalizeInteger(params.bandIndex, 0);
   const cacheKey = `${namespacePrefix}:shape:transform:${SHAPE_CACHE_KEY_VERSION}:${sourceKey}:band${bandIndex}`;
   const inputHash = buildStableSignature({
-    fetchArtifactRef: normalizeString(params.fetchCacheId),
+    fetchArtifactHash: normalizeString(params.fetchArtifactHash),
     bandMinZoom: normalizeInteger(params.bandMinZoom, 0),
     bandMaxZoom: normalizeInteger(params.bandMaxZoom, 0),
     transformConfigSignature: normalizeString(params.configSignature) || null,
@@ -189,6 +191,7 @@ export const resolveTaskCacheIdentity = (
       dataSource: normalizeString(input.dataSource) || 'unknown',
       sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
       url: normalizeString(input.url),
+      upstreamRevision: normalizeString(input.upstreamRevision) || undefined,
       configSignature: normalizeString(input.configSignature) || undefined,
       namespacePolicy,
     });
@@ -198,7 +201,7 @@ export const resolveTaskCacheIdentity = (
       nodeId: task.nodeId,
       sourceKey: normalizeString(input.sourceKey) || `${normalizeCountryCode(input.countryCode)}:${normalizeInteger(input.adminLevel, 0)}`,
       bandIndex: normalizeInteger(input.bandIndex, 0),
-      fetchCacheId: normalizeString(input.fetchCacheId),
+      fetchArtifactHash: normalizeString(input.fetchArtifactHash),
       bandMinZoom: normalizeInteger(input.bandMinZoom, 0),
       bandMaxZoom: normalizeInteger(input.bandMaxZoom, 0),
       configSignature: normalizeString(input.configSignature) || undefined,

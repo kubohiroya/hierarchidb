@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #234 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 07:10 JST
+- #232 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 06:44 JST
 - #227 / `codex/refactor/vt-orchestrator/topojson-runtime-adapter` / start: 2026-02-13 01:12 JST
 - #226 / `codex/feat/shape/cache-key-inputhash-tdd` / start: 2026-02-13 00:36 JST
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / start: 2026-02-12 21:59 JST
@@ -61,6 +63,21 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 07:14 JST #234 原因は `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` の `buildTransformByBandTasks` が `fetchCacheMeta` を `.toArray()` で全件展開しており、大量データ時のメモリ負荷が高いことと、`fetchArtifactHash` 解決/補完ロジックが `shapeFetchStage.ts`・`shapePipelineTransformStage.ts`・`shapePipelineShared.ts` に重複していたこと。発生範囲は上記3ファイルの fetch artifact hash 解決経路。
+- update: 2026-02-13 07:14 JST #234 修正として (1) `plugins/shape-plugin/src/services/vt/shapeFetchArtifactHash.ts` を新設して `hashFetchArtifact` / `resolveFetchArtifactHashFromRecord` / `resolveFetchArtifactHashById` を共通化、(2) `shapePipelineShared.ts` の `buildTransformByBandTasks` を `FETCH_CACHE_META_CHUNK_SIZE=500` のチャンク処理へ変更し `fetchCacheMeta` 一括読み込みを撤廃、(3) `shapeFetchStage.ts` と `shapePipelineTransformStage.ts` を共通ユーティリティ利用へ置換。適用範囲は上記4ファイル。
+- update: 2026-02-13 07:14 JST #234 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts src/__tests__/unit/shapeStageReconcile.unit.test.ts`（exit 0, 2 files / 11 tests passed）。
+- blocked: 2026-02-13 07:14 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既知の `vtConfig.debug.tiles` readonly/mutable 不整合（今回差分外）で exit 2。
+- update: 2026-02-13 07:10 JST Issue `fix/shape/apply-gemini-review-on-pr-233` を起票し `https://github.com/kubohiroya/hierarchidb/issues/234` を作成。
+- update: 2026-02-13 07:10 JST Issue #234 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 07:10 JST PR #233 へ直接反映するため既存ブランチ `codex/fix/shape/cache-identity-gemini-followup` を継続利用して着手。
+- update: 2026-02-13 06:54 JST #232 の修正を `fix(shape): apply Gemini cache identity review follow-up` として PR 作成（`https://github.com/kubohiroya/hierarchidb/pull/233`, base: `ERIA-Cartograph`）。
+- update: 2026-02-13 06:52 JST #232 原因は `shapeTaskCacheIdentity` が transform `inputHash` に `fetchCacheId`（識別子）を使っており、fetch artifact 内容差分を正しく表現できていなかったことと、fetch `inputHash` で `upstreamRevision` を扱っていなかったこと。発生範囲は `plugins/shape-plugin/src/services/vt/shapeTaskCacheIdentity.ts`、fetch/transform タスク生成経路（`shapeFetchStage.ts` / `shapePipelineTransformStage.ts` / `shapePipelineShared.ts`）および仕様書 `docs/shape-cache-key-input-hash-spec.md`。
+- update: 2026-02-13 06:52 JST #232 修正として (1) fetch identity に `upstreamRevision` を追加、(2) transform identity を `fetchArtifactHash` ベースへ変更、(3) fetch stage で成果物 bytes から `contentHash` を算出して `fetchArtifactHash` として output/task input に伝搬、(4) transform task 生成で `fetchArtifactHash` を必須入力として保持、(5) spec の canonicalization/VT key 記述を実装に一致させた。適用範囲は `plugins/shape-plugin/src/services/vt/*`、`plugins/shape-plugin/src/common/types/data-source.ts`、`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`、`plugins/shape-plugin/src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts`、`docs/shape-cache-key-input-hash-spec.md`。
+- update: 2026-02-13 06:52 JST #232 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts src/__tests__/unit/shapeStageReconcile.unit.test.ts`（exit 0, 2 files / 11 tests passed）、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin`（exit 0）。
+- blocked: 2026-02-13 06:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既知の `vtConfig.debug.tiles` readonly/mutable 不整合（今回差分外）で exit 2。
+- update: 2026-02-13 06:44 JST Issue `fix/shape/cache-identity-gemini-review-followup` を起票し `https://github.com/kubohiroya/hierarchidb/issues/232` を作成。
+- update: 2026-02-13 06:44 JST Issue #232 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 06:44 JST ブランチ `codex/fix/shape/cache-identity-gemini-followup` を作成して着手。
 - update: 2026-02-13 01:16 JST #227 原因は `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` と `topojsonGrid.ts` が `topojson-server` / `topojson-simplify` を static import しており、TopoJSON 非使用時も依存解決・型解決が走っていたこと。発生範囲は transform の TopoJSON decode/simplify 経路。
 - update: 2026-02-13 01:16 JST #227 修正として TopoJSON runtime adapter（`packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts`）を追加し dynamic import へ集約。`createTransformByBandHandler.ts` では `decodeFetchCacheByFormat` を導入し、`format='topojson'` の時だけ runtime をロードするよう変更。`topojsonGrid.ts` も async 化して adapter 経由へ変更。テスト `packages/vt-orchestrator/src/transform/__tests__/fetchCacheDecoder.unit.test.ts` を追加。
 - update: 2026-02-13 01:16 JST #227 検証: `pnpm --filter @hierarchidb/vt-orchestrator typecheck`（exit 0）、`pnpm --filter @hierarchidb/vt-orchestrator exec vitest run src/vt/__tests__/vtStage.unit.test.ts src/transform/__tests__/fetchCacheDecoder.unit.test.ts`（exit 0, 9 tests passed）、`pnpm --filter @hierarchidb/vt-orchestrator build`（exit 0）。

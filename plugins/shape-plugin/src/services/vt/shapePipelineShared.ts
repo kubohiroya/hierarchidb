@@ -25,9 +25,11 @@ import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeDB, type EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { buildTransformTaskCacheIdentity, buildVtTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import { resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
+  fetchArtifactHash: string;
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -58,6 +60,7 @@ export type ShapeVtTaskInput = {
 };
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
+const FETCH_CACHE_META_CHUNK_SIZE = 500;
 
 /**
  * @deprecated Use reconcileStageTasksByMetadata instead of legacy signature filtering.
@@ -433,14 +436,35 @@ export const buildTransformByBandTasks = async (
 ): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
+  let offset = 0;
+  while (true) {
+    const fetchBufferChunk = await ephemeralShapeDB.fetchCacheMeta
+      .where('nodeId')
+      .equals(nodeId)
+      .offset(offset)
+      .limit(FETCH_CACHE_META_CHUNK_SIZE)
+      .toArray();
+    if (fetchBufferChunk.length === 0) {
+      break;
+    }
+    offset += fetchBufferChunk.length;
+    const fullBufferChunk = await ephemeralShapeDB.fetchCache.bulkGet(
+      fetchBufferChunk.map((buffer) => buffer.id),
+    );
+    const fullBufferById = new Map(
+      fullBufferChunk
+        .filter((buffer): buffer is NonNullable<typeof buffer> => buffer != null)
+        .map((buffer) => [buffer.id, buffer] as const),
+    );
 
-  await ephemeralShapeDB.fetchCacheMeta
-    .where('nodeId')
-    .equals(nodeId)
-    .each((buffer) => {
-      if (buffer.featureCount === 0) {
-        return;
-      }
+    for (const buffer of fetchBufferChunk) {
+      if (buffer.featureCount === 0) continue;
+      const fullBuffer = fullBufferById.get(buffer.id);
+      if (!fullBuffer) continue;
+      const fetchArtifactHash = await resolveFetchArtifactHashFromRecord(
+        ephemeralShapeDB.fetchCache,
+        fullBuffer,
+      );
       const adminLevel = buffer.adminLevel;
       const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
       const countryCode = buffer.countryCode?.trim().toUpperCase();
@@ -454,7 +478,7 @@ export const buildTransformByBandTasks = async (
           nodeId,
           sourceKey: buffer.sourceKey,
           bandIndex: band.bandIndex,
-          fetchCacheId: buffer.id,
+          fetchArtifactHash,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
           configSignature,
@@ -469,6 +493,7 @@ export const buildTransformByBandTasks = async (
           progress: 0,
           inputData: {
             fetchCacheId: buffer.id,
+            fetchArtifactHash,
             bandIndex: band.bandIndex,
             bandMinZoom: band.zMin,
             bandMaxZoom: band.zMax,
@@ -485,7 +510,8 @@ export const buildTransformByBandTasks = async (
         });
         index += 1;
       }
-    });
+    }
+  }
   return tasks;
 };
 

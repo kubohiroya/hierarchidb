@@ -2,7 +2,7 @@
 
 ## Status
 - Draft
-- Last updated: 2026-02-12
+- Last updated: 2026-02-13
 
 ## 1. Purpose
 This document defines how cache identity must be handled in the shape build pipeline (`fetch`, `transform`, `vt`).
@@ -42,7 +42,7 @@ The design uses two separate identifiers:
 
 ## 4. Canonicalization Rules for `inputHash`
 - Object keys are sorted lexicographically.
-- Arrays preserve original order (no sorting).
+- Arrays of unordered sets (for example transform artifact sets) are normalized by sorting; ordered arrays preserve original order.
 - ISO country codes are normalized to uppercase where applicable.
 - Numbers are normalized to canonical JSON numeric form.
 - Null/undefined policy:
@@ -83,7 +83,7 @@ All keys below are prefixed with `{namespacePrefix}:`.
 
 ### 5.3 VT Stage
 #### `cacheKey`
-`{namespacePrefix}:shape:vt:v1:{dataSource}:band{bandIndex}:z{z}:x{x}:y{y}`
+`{namespacePrefix}:shape:vt:v1:band{bandIndex}:z{zBase}:tile{tileId}`
 
 #### `inputHash` payload (exclude key fields)
 - `transformArtifactSetHash` (derived from ordered transform artifacts used for the tile)

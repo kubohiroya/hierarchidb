@@ -58,11 +58,13 @@ import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.j
 import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
 import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
 import { buildFetchTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
+import { hashFetchArtifact, resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
   dataSource: DataSourceName;
   sourceKey: string;
+  upstreamRevision?: string;
   countryCode: ISO2;
   countryName?: string;
   urlCountryCode: string;
@@ -74,6 +76,7 @@ export type ShapeFetchTaskInput = {
 
 export type ShapeFetchTaskOutput = {
   fetchCacheId?: string;
+  fetchArtifactHash?: string;
   featureCount?: number;
   vertexCount?: number;
   polygonCount?: number;
@@ -423,8 +426,9 @@ const putFetchCache = async (params: {
   polygonCount: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
-}): Promise<string> => {
+}): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
+  const contentHash = hashFetchArtifact(params.data);
   await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
     await ephemeralShapeDB.fetchCache.put({
       id: recordId,
@@ -445,10 +449,11 @@ const putFetchCache = async (params: {
       polygonCount: params.polygonCount,
       inputVertexCount: params.inputVertexCount,
       inputPolygonCount: params.inputPolygonCount,
+      contentHash,
       timestamp: Date.now(),
     });
   });
-  return recordId;
+  return { id: recordId, contentHash };
 };
 
 const buildFetchFeatureCollection = (
@@ -717,6 +722,7 @@ const buildFetchTasks = (
       dataSource: payload.dataSource,
       sourceKey,
       url: payload.url,
+      upstreamRevision: payload.upstreamRevision,
       configSignature,
     });
     return {
@@ -730,6 +736,7 @@ const buildFetchTasks = (
         url: payload.url,
         dataSource: payload.dataSource,
         sourceKey,
+        upstreamRevision: payload.upstreamRevision,
         countryCode: iso2,
         countryName: countryMeta.countryName,
         urlCountryCode: payload.countryCode.trim().toUpperCase(),
@@ -779,6 +786,7 @@ const createFetchHandler = (params: {
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
       const createdAt = Date.now();
+      let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralShapeDB.fetchCache, existing);
       const cachedCollection = await decodeFetchCacheData({
         data: existing.data,
         format: existing.format,
@@ -814,10 +822,12 @@ const createFetchHandler = (params: {
             data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
           }
           if (data) {
+            fetchArtifactHash = hashFetchArtifact(data);
             await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
               await ephemeralShapeDB.fetchCache.update(existing.id, {
                 data,
                 size: data.byteLength,
+                contentHash: fetchArtifactHash,
                 timestamp: Date.now(),
               });
             });
@@ -847,6 +857,7 @@ const createFetchHandler = (params: {
         message: `reused: fetch cache exists (${cachedSummary})`,
         outputData: {
           fetchCacheId: existing.id,
+          fetchArtifactHash,
           featureCount: existing.featureCount,
           vertexCount: cachedVertexCount,
         },
@@ -934,7 +945,7 @@ const createFetchHandler = (params: {
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
       assertNotAborted(params.abortSignal);
-      const bufferId = await putFetchCache({
+      const fetchCacheRecord = await putFetchCache({
         nodeId: params.nodeId,
         sourceKey: input.sourceKey,
         countryCode: input.countryCode,
@@ -961,7 +972,8 @@ const createFetchHandler = (params: {
         status: 'completed',
         message: reductionSummary,
         outputData: {
-          fetchCacheId: bufferId,
+          fetchCacheId: fetchCacheRecord.id,
+          fetchArtifactHash: fetchCacheRecord.contentHash,
           featureCount: outputSummary.featureCount,
           vertexCount: outputSummary.vertexCount,
           polygonCount: outputSummary.polygonCount,
@@ -1043,7 +1055,7 @@ const createFetchHandler = (params: {
     const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection, geometryEngine);
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
-    const bufferId = await putFetchCache({
+    const fetchCacheRecord = await putFetchCache({
       nodeId: params.nodeId,
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
@@ -1070,7 +1082,8 @@ const createFetchHandler = (params: {
       status: 'completed',
       message: reductionSummary,
       outputData: {
-        fetchCacheId: bufferId,
+        fetchCacheId: fetchCacheRecord.id,
+        fetchArtifactHash: fetchCacheRecord.contentHash,
         featureCount,
         vertexCount,
         polygonCount,

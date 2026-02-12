@@ -33,6 +33,7 @@ export interface CountryMetadata {
 
 export interface FetchTaskPayload {
   url: string;
+  upstreamRevision?: string;
   countryCode: CountryCode;
   countryName?: string;
   adminLevel: number;

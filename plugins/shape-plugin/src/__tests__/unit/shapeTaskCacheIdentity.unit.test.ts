@@ -53,7 +53,7 @@ describe('shapeTaskCacheIdentity', () => {
       nodeId: 'node-1',
       sourceKey: 'JP:0',
       bandIndex: 2,
-      fetchCacheId: 'fetch:a',
+      fetchArtifactHash: 'artifact:a',
       bandMinZoom: 6,
       bandMaxZoom: 8,
       configSignature: 'sig-1',
@@ -62,9 +62,30 @@ describe('shapeTaskCacheIdentity', () => {
       nodeId: 'node-1',
       sourceKey: 'JP:0',
       bandIndex: 2,
-      fetchCacheId: 'fetch:b',
+      fetchArtifactHash: 'artifact:b',
       bandMinZoom: 6,
       bandMaxZoom: 8,
+      configSignature: 'sig-1',
+    });
+    expect(first.cacheKey).toEqual(second.cacheKey);
+    expect(first.inputHash).not.toEqual(second.inputHash);
+  });
+
+  it('changes fetch inputHash when upstreamRevision changes', () => {
+    const first = buildFetchTaskCacheIdentity({
+      nodeId: 'node-1',
+      dataSource: 'gadm',
+      sourceKey: 'JP:0',
+      url: 'https://example.com/a',
+      upstreamRevision: 'etag:v1',
+      configSignature: 'sig-1',
+    });
+    const second = buildFetchTaskCacheIdentity({
+      nodeId: 'node-1',
+      dataSource: 'gadm',
+      sourceKey: 'JP:0',
+      url: 'https://example.com/a',
+      upstreamRevision: 'etag:v2',
       configSignature: 'sig-1',
     });
     expect(first.cacheKey).toEqual(second.cacheKey);
@@ -117,4 +138,3 @@ describe('shapeTaskCacheIdentity', () => {
     });
   });
 });
-
