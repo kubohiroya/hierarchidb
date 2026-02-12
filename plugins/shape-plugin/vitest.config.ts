@@ -5,10 +5,6 @@ const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
 const includeDeepTests = process.env.ENABLE_SHAPE_DEEP_TESTS === '1';
 
 export default defineConfig({
-  esbuild: {
-    jsx: 'automatic',
-    jsxDev: false,
-  },
   test: {
     globals: true,
     environment: 'jsdom',
