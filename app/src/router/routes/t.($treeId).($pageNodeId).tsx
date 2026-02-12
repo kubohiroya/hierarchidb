@@ -1,3 +1,12 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
+import {
+  BuildSessionRuntimeContextProvider,
+  PageNodeContextProvider,
+  TargetNodeBuildSessionContextProvider,
+  TargetNodeContextProvider,
+  TreeContextProvider,
+} from '@hierarchidb/ui-batch-progress';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import {
   AppBar,
@@ -52,6 +61,12 @@ type TreeDialogMatchData = {
   kind?: 'trash' | 'plugin';
   data?: unknown;
   params?: { action?: string; nodeType?: string };
+};
+
+type TargetContextState = {
+  targetNodeId: NodeId | null;
+  targetNode: TreeNode | null;
+  targetNodeType: string | null;
 };
 
 function useTreeDocumentTitle() {
@@ -118,8 +133,19 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const navigate = useNavigate();
   const { client: workerClient } = useWorker();
   const bootProgress = useOptionalBootProgress();
-  const location = useRouterState({ select: (state) => state.location });
   const matches = useRouterState({ select: (state) => state.matches });
+  const dialogRouteIds = useMemo(
+    () => [treeRouteIds.dialog, treeRouteIds.dialogMode, treeRouteIds.dialogModeStep],
+    []
+  );
+  const targetMatch = useMemo(
+    () => matches.find((match) => match.routeId === treeRouteIds.target),
+    [matches]
+  );
+  const dialogMatch = useMemo(
+    () => matches.find((match) => dialogRouteIds.includes(match.routeId)),
+    [dialogRouteIds, matches]
+  );
   const isUserMenuReady = Boolean(
     bootProgress?.steps.Auth.done && bootProgress?.steps.Theme.done && bootProgress?.steps.I18n.done
   );
@@ -146,100 +172,136 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
     })();
   }, [workerClient]);
 
-
   const pageName = data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
+  const targetContext = useMemo<TargetContextState>(() => {
+    const dialogData = dialogMatch?.loaderData as TreeDialogMatchData | undefined;
+    if (dialogData?.kind === 'plugin') {
+      const pluginData = dialogData.data as
+        | (LoadNodeActionReturn & { params?: { targetNodeId?: string; nodeType?: string } })
+        | undefined;
+      const pluginTargetNodeId = pluginData?.targetNodeId ?? pluginData?.params?.targetNodeId;
+      return {
+        targetNodeId: pluginTargetNodeId ? (pluginTargetNodeId as NodeId) : null,
+        targetNode: pluginData?.targetNode ?? null,
+        targetNodeType: pluginData?.nodeType ?? pluginData?.params?.nodeType ?? null,
+      };
+    }
+
+    const targetData = targetMatch?.loaderData as LoadTargetNodeReturn | undefined;
+    return {
+      targetNodeId: targetData?.targetNodeId ?? null,
+      targetNode: targetData?.targetNode ?? null,
+      targetNodeType: targetData?.targetNode?.nodeType ?? null,
+    };
+  }, [dialogMatch?.loaderData, targetMatch?.loaderData]);
 
   const dialogStableKeyRef = useRef(`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`);
 
   return (
     <TreeConsoleThemeBoundary treeId={data.tree?.id}>
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <AppBar position="static" color="default" elevation={1}>
-          <Toolbar>
-            <IconButton
-              onClick={() => navigate({ to: '/' })}
-              edge="start"
-              color="primary"
-              aria-label="Go to HierarchiDB home"
-              sx={{ marginLeft: '-20px' }}
-            >
-              <AppLogoIcon size={28} />
-            </IconButton>
+      <TreeContextProvider treeId={data.tree?.id}>
+        <PageNodeContextProvider pageNodeId={data.pageNodeId} pageNode={data.pageNode}>
+          <TargetNodeContextProvider
+            targetNodeId={targetContext.targetNodeId}
+            targetNode={targetContext.targetNode}
+            nodeType={targetContext.targetNodeType}
+          >
+            <BuildSessionRuntimeContextProvider>
+              <TargetNodeBuildSessionContextProvider>
+                <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                  <AppBar position="static" color="default" elevation={1}>
+                    <Toolbar>
+                      <IconButton
+                        onClick={() => navigate({ to: '/' })}
+                        edge="start"
+                        color="primary"
+                        aria-label="Go to HierarchiDB home"
+                        sx={{ marginLeft: '-20px' }}
+                      >
+                        <AppLogoIcon size={28} />
+                      </IconButton>
 
-            <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
-              {pageName}
-            </Typography>
+                      <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
+                        {pageName}
+                      </Typography>
 
-            <Box sx={{ flexGrow: 1 }} />
+                      <Box sx={{ flexGrow: 1 }} />
 
-            <Stack direction="row" spacing={1} alignItems="center">
-              {data.tree?.id ? (
-                <BuildSessionLauncherButtons
-                  treeId={data.tree.id}
-                  pageNodeId={data.pageNodeId}
-                />
-              ) : null}
-              {isUserMenuReady ? (
-                <Box sx={{ ml: '8px' }}>
-                  <UserLoginButton />
-                </Box>
-              ) : null}
-            </Stack>
-          </Toolbar>
-        </AppBar>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        {data.tree?.id ? (
+                          <BuildSessionLauncherButtons
+                            treeId={data.tree.id}
+                            pageNodeId={data.pageNodeId}
+                          />
+                        ) : null}
+                        {isUserMenuReady ? (
+                          <Box sx={{ ml: '8px' }}>
+                            <UserLoginButton />
+                          </Box>
+                        ) : null}
+                      </Stack>
+                    </Toolbar>
+                  </AppBar>
 
-        <Box sx={{ flex: 1, overflow: 'hidden' }}>
-          {nodeNotFound ? (
-            <Dialog
-              open={notFoundOpen}
-              onClose={() => navigate({ to: `/t/${data.tree?.id ?? 'r'}` })}
-            >
-              <DialogTitle>Node Not Found</DialogTitle>
-              <DialogContent>
-                <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
-              </DialogContent>
-              <DialogActions>
-                {/* Use router navigation to avoid coupling with e2e-only Playwright helpers */}
-                <Button
-                  onClick={() => navigate({ to: `/t/${data.tree?.id ?? 'r'}`, replace: true })}
-                  variant="contained"
-                  autoFocus
-                >
-                  Go to Tree Root
-                </Button>
-              </DialogActions>
-            </Dialog>
-          ) : (
-            <>
-              <Suspense
-                fallback={
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
-                    }}
-                  >
-                    <CircularProgress />
+                  <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                    {nodeNotFound ? (
+                      <Dialog
+                        open={notFoundOpen}
+                        onClose={() => navigate({ to: `/t/${data.tree?.id ?? 'r'}` })}
+                      >
+                        <DialogTitle>Node Not Found</DialogTitle>
+                        <DialogContent>
+                          <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
+                        </DialogContent>
+                        <DialogActions>
+                          {/* Use router navigation to avoid coupling with e2e-only Playwright helpers */}
+                          <Button
+                            onClick={() =>
+                              navigate({ to: `/t/${data.tree?.id ?? 'r'}`, replace: true })
+                            }
+                            variant="contained"
+                            autoFocus
+                          >
+                            Go to Tree Root
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
+                    ) : (
+                      <>
+                        <Suspense
+                          fallback={
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                height: '100%',
+                              }}
+                            >
+                              <CircularProgress />
+                            </Box>
+                          }
+                        >
+                          <MemoizedTreeConsoleIntegration
+                            key={dialogStableKeyRef.current}
+                            treeId={data.tree?.id}
+                            pageNodeId={data.pageNodeId}
+                            pageTreeNode={data.pageNode}
+                          />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          {/* Nested routes (e.g. dialog) render here */}
+                          <Outlet />
+                        </Suspense>
+                      </>
+                    )}
                   </Box>
-                }
-              >
-                <MemoizedTreeConsoleIntegration
-                  key={dialogStableKeyRef.current}
-                  treeId={data.tree?.id}
-                  pageNodeId={data.pageNodeId}
-                  pageTreeNode={data.pageNode}
-                />
-              </Suspense>
-              <Suspense fallback={null}>
-                {/* Nested routes (e.g. dialog) render here */}
-                <Outlet />
-              </Suspense>
-            </>
-          )}
-        </Box>
-      </Box>
+                </Box>
+              </TargetNodeBuildSessionContextProvider>
+            </BuildSessionRuntimeContextProvider>
+          </TargetNodeContextProvider>
+        </PageNodeContextProvider>
+      </TreeContextProvider>
     </TreeConsoleThemeBoundary>
   );
 }

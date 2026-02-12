@@ -166,8 +166,7 @@ export interface TreeTableCoreProps {
 
 export type BuildSessionIndicator = {
   runningNodeIds: Set<NodeId>;
-  activeSessionId: NodeId | null;
-  isRunnerTab: boolean;
+  activeNodeIds: Set<NodeId>;
 };
 
 // Column configuration

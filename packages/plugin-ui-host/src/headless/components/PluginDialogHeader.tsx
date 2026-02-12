@@ -30,6 +30,7 @@ export interface PluginDialogHeaderProps {
   nodeType?: string;
   nodeId?: NodeId;
   pendingAction?: DialogActionInFlight | null;
+  buildStepRunning?: boolean;
   pluginDescription?: string;
 }
 
@@ -45,6 +46,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   icon,
   dialogState,
   pendingAction,
+  buildStepRunning = false,
   pluginDescription,
 }) => {
   const {
@@ -231,8 +233,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 navigationLocked={navigationLocked}
                 workerStepMap={workerStepMap}
                 dialogState={dialogState}
-                pendingAction={pendingAction}
-                stepData={ctx.stepData as Record<string, unknown>}
+                buildStepRunning={buildStepRunning}
                 theme={theme}
               />
             </Box>

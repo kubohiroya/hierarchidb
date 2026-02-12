@@ -296,8 +296,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
       );
       const isBuildActive = isBuildRunning
-        && buildSessionIndicator?.isRunnerTab
-        && String(buildSessionIndicator.activeSessionId ?? '') === String(node.id);
+        && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
       const descendantDraftLabel = descendantDraftCount === 1
         ? params.draftChipLabels.descendant.singular
         : params.draftChipLabels.descendant.plural;

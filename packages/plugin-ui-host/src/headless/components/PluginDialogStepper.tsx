@@ -1,5 +1,4 @@
 import {
-  CircularProgress,
   Stack,
   Step,
   StepButton,
@@ -9,7 +8,6 @@ import {
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import type React from 'react';
-import type { DialogActionInFlight } from '../types.js';
 import { StepStatusIcon } from './StepStatusIcon.js';
 
 type WorkerStepState = {
@@ -19,24 +17,6 @@ type WorkerStepState = {
   error?: string | null;
 };
 type WorkerDialogState = { steps?: WorkerStepState[] };
-type StepDataSnapshot = Record<string, unknown>;
-
-const getProcessingStatus = (data?: StepDataSnapshot | null): string | undefined => {
-  if (!data || typeof data !== 'object') return undefined;
-  const draftData = (data as { draftData?: unknown }).draftData;
-  if (draftData && typeof draftData === 'object') {
-    const nestedStatus = (draftData as { processingStatus?: unknown }).processingStatus;
-    if (typeof nestedStatus === 'string') return nestedStatus;
-  }
-  const directStatus = (data as { processingStatus?: unknown }).processingStatus;
-  return typeof directStatus === 'string' ? directStatus : undefined;
-};
-
-const isBuildRunning = (data?: StepDataSnapshot | null): boolean => {
-  const status = getProcessingStatus(data);
-  if (!status) return false;
-  return ['processing', 'running'].includes(status);
-};
 
 export interface PluginDialogStepperProps {
   steps: { id: string; label?: string }[];
@@ -47,8 +27,7 @@ export interface PluginDialogStepperProps {
   navigationLocked: boolean;
   workerStepMap?: Map<string, WorkerStepState> | null;
   dialogState?: WorkerDialogState | null;
-  pendingAction?: DialogActionInFlight | null;
-  stepData?: StepDataSnapshot | null;
+  buildStepRunning?: boolean;
   theme: Theme;
 }
 
@@ -61,8 +40,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   navigationLocked,
   workerStepMap,
   dialogState,
-  pendingAction,
-  stepData,
+  buildStepRunning = false,
   theme,
 }) => {
   return (
@@ -84,7 +62,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
             : (previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1));
         const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
         const showBuildProgress =
-          step.id === 'build' && isActive && isBuildRunning(stepData) && !completed;
+          step.id === 'build' && isActive && buildStepRunning && !completed;
 
         return (
           <Step key={step.id} completed={completed}>
@@ -124,9 +102,6 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
                   >
                     {label}
                   </Typography>
-                  {pendingAction?.type === 'step' && pendingAction.index === index ? (
-                    <CircularProgress size={12} thickness={5} color="inherit" />
-                  ) : null}
                 </Stack>
               </StepLabel>
             </StepButton>

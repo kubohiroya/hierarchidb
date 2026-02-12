@@ -1,16 +1,19 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { HierarchicalTreeNode, TreeConsolePanelProps as BaseTreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-batch-progress';
+import type {
+  TreeConsolePanelProps as BaseTreeConsolePanelProps,
+  HierarchicalTreeNode,
+} from '@hierarchidb/ui-treeconsole-base';
 import { TagsLinkButton } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { createElement, useCallback, useMemo, useState } from 'react';
-import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
+import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
+import type { WorkerAPI } from '~/types/worker-api.js';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
-import { useBuildSessionSnapshots } from '@hierarchidb/ui-batch-progress';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
@@ -118,17 +121,18 @@ export function useTreeConsoleIntegrationInner({
     [location.searchStr]
   );
 
-  const buildSessionNodeType = 'shape' as NodeType;
-  const {
-    sessions: buildSessions,
-    isRunnerTab,
-    activeSessionId,
-  } = useBuildSessionSnapshots(buildSessionNodeType);
-  const buildSessionIndicator = useMemo(() => ({
-    runningNodeIds: new Set(buildSessions.map((session) => session.nodeId as NodeId)),
-    activeSessionId: activeSessionId ? (activeSessionId as NodeId) : null,
-    isRunnerTab,
-  }), [activeSessionId, buildSessions, isRunnerTab]);
+  const runtimeContext = useOptionalBuildSessionRuntimeContext();
+  const buildSessionIndicator = useMemo(
+    () => ({
+      runningNodeIds: runtimeContext?.runningNodeIds
+        ? new Set(runtimeContext.runningNodeIds)
+        : new Set<NodeId>(),
+      activeNodeIds: runtimeContext?.activeNodeIds
+        ? new Set(runtimeContext.activeNodeIds)
+        : new Set<NodeId>(),
+    }),
+    [runtimeContext?.activeNodeIds, runtimeContext?.runningNodeIds]
+  );
 
   const resolvePreviewGuardStateForNode = useCallback(
     async (node: HierarchicalTreeNode) => {
@@ -372,10 +376,10 @@ export function useTreeConsoleIntegrationInner({
   const tagsLeftSlot =
     treeId && pageNodeId
       ? createElement(TagsLinkButton, {
-        treeId: String(treeId),
-        pageNodeId: String(pageNodeId),
-        onNavigate: handleTagsNavigate,
-      })
+          treeId: String(treeId),
+          pageNodeId: String(pageNodeId),
+          onNavigate: handleTagsNavigate,
+        })
       : undefined;
 
   const breadcrumbProps: TreeConsoleBreadcrumbProps = {

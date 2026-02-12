@@ -1518,7 +1518,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         });
         try {
           await runTimedStep('session-resume-request', () => (
-            bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, policy)
+            bridgeRef.current.startOrResumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, undefined, policy)
           ));
           finishBuildStartupStep('session-resume-request', 'success');
         } catch (error) {
@@ -1593,9 +1593,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         selectedCountryCount: selectionSummary.selectedCountryCount,
         selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
-      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
+      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startOrResumeBuildSession>>;
       try {
-        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startBuildSession(
+        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startOrResumeBuildSession(
           SHAPE_NODE_TYPE,
           activeNodeId,
           undefined,
