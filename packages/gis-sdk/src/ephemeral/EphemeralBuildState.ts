@@ -112,6 +112,7 @@ export interface EphemeralFetchCacheRecord {
   bbox: [number, number, number, number];
   downloadTime: number;
   size: number;
+  contentHash?: string;
   vertexCount?: number;
   polygonCount?: number;
   inputVertexCount?: number;

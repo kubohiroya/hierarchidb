@@ -2,6 +2,7 @@ import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hi
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata } from '../../common/types/index.js';
+import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import {
   createTransformByBandHandler,
   deleteTasksByIds,
@@ -45,6 +46,7 @@ export type ShapeTransformStageParams = {
 type TransformBufferMeta = {
   id: string;
   sourceKey: string;
+  fetchArtifactHash: string;
   adminLevel?: number;
   countryCode?: string;
   featureCount: number;
@@ -65,6 +67,8 @@ type TransformStepMemorySnapshot = {
 };
 
 const TRANSFORM_TASK_PUT_CHUNK_SIZE = 500;
+const FETCH_ARTIFACT_HASH_ALGORITHM = 'sha3-256' as const;
+const fetchArtifactHasher = new NobleSha3HashPort();
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
@@ -114,6 +118,28 @@ const calculateMemoryDelta = (
   totalJSHeapSize: subtractMemoryValue(start.totalJSHeapSize, finish.totalJSHeapSize),
   jsHeapSizeLimit: subtractMemoryValue(start.jsHeapSizeLimit, finish.jsHeapSizeLimit),
 });
+
+const resolveFetchArtifactHash = async (
+  ephemeralStore: EphemeralShapeDB,
+  fetchCacheId: string,
+  outputData: Record<string, unknown> | null,
+): Promise<string | null> => {
+  const outputHash = readString(outputData?.fetchArtifactHash);
+  if (outputHash) {
+    return outputHash;
+  }
+  const record = await ephemeralStore.fetchCache.get(fetchCacheId);
+  if (!record) {
+    return null;
+  }
+  const contentHash = typeof record.contentHash === 'string' && record.contentHash.length > 0
+    ? record.contentHash
+    : fetchArtifactHasher.digest(record.data, FETCH_ARTIFACT_HASH_ALGORITHM);
+  if (record.contentHash !== contentHash) {
+    await ephemeralStore.fetchCache.update(record.id, { contentHash });
+  }
+  return contentHash;
+};
 
 const runTransformStep = async <T>(
   params: ShapeTransformStageParams,
@@ -195,23 +221,26 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
   }));
   const buffers = await runTransformStep(params, 'build-transform-buffer-metadata', async () => {
     const next: TransformBufferMeta[] = [];
-    fetchTasks.forEach((task) => {
+    for (const task of fetchTasks) {
       const output = isRecord(task.outputData) ? task.outputData : null;
       const fetchCacheId = readString(output?.fetchCacheId);
-      if (!fetchCacheId) return;
+      if (!fetchCacheId) continue;
+      const fetchArtifactHash = await resolveFetchArtifactHash(params.ephemeralStore, fetchCacheId, output);
+      if (!fetchArtifactHash) continue;
       const input = isRecord(task.inputData) ? task.inputData : null;
       const sourceKey = readString(input?.sourceKey);
-      if (!sourceKey) return;
+      if (!sourceKey) continue;
       next.push({
         id: fetchCacheId,
         sourceKey,
+        fetchArtifactHash,
         adminLevel: readNumber(input?.adminLevel) ?? undefined,
         countryCode: readString(input?.countryCode) ?? undefined,
         featureCount: readNumber(output?.featureCount) ?? 0,
         inputVertexCount: readNumber(output?.vertexCount) ?? undefined,
         vertexCount: readNumber(output?.vertexCount) ?? undefined,
       });
-    });
+    }
     return next;
   });
   if (buffers.length === 0) {
@@ -283,7 +312,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         nodeId: params.nodeId,
         sourceKey: buffer.sourceKey,
         bandIndex: band.bandIndex,
-        fetchCacheId: buffer.id,
+        fetchArtifactHash: buffer.fetchArtifactHash,
         bandMinZoom: band.zMin,
         bandMaxZoom: band.zMax,
         configSignature: transformConfigSignature,
@@ -298,6 +327,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         progress: 0,
         inputData: {
           fetchCacheId: buffer.id,
+          fetchArtifactHash: buffer.fetchArtifactHash,
           bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,

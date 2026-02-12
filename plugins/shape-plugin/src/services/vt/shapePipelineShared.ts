@@ -3,6 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import { geojson as geojsonApi } from 'flatgeobuf';
+import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import {
   geometryBboxClip,
   latToTileY,
@@ -28,6 +29,7 @@ import { buildTransformTaskCacheIdentity, buildVtTaskCacheIdentity } from './sha
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
+  fetchArtifactHash: string;
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -58,6 +60,8 @@ export type ShapeVtTaskInput = {
 };
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
+const FETCH_ARTIFACT_HASH_ALGORITHM = 'sha3-256' as const;
+const fetchArtifactHasher = new NobleSha3HashPort();
 
 /**
  * @deprecated Use reconcileStageTasksByMetadata instead of legacy signature filtering.
@@ -434,58 +438,68 @@ export const buildTransformByBandTasks = async (
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
 
-  await ephemeralShapeDB.fetchCacheMeta
+  const fetchBuffers = await ephemeralShapeDB.fetchCacheMeta
     .where('nodeId')
     .equals(nodeId)
-    .each((buffer) => {
-      if (buffer.featureCount === 0) {
-        return;
+    .toArray();
+
+  for (const buffer of fetchBuffers) {
+    if (buffer.featureCount === 0) continue;
+    const fullBuffer = await ephemeralShapeDB.fetchCache.get(buffer.id);
+    if (!fullBuffer) continue;
+    const fetchArtifactHash = typeof fullBuffer.contentHash === 'string' && fullBuffer.contentHash.length > 0
+      ? fullBuffer.contentHash
+      : fetchArtifactHasher.digest(fullBuffer.data, FETCH_ARTIFACT_HASH_ALGORITHM);
+    if (fullBuffer.contentHash !== fetchArtifactHash) {
+      await ephemeralShapeDB.fetchCache.update(fullBuffer.id, { contentHash: fetchArtifactHash });
+    }
+
+    const adminLevel = buffer.adminLevel;
+    const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
+    const countryCode = buffer.countryCode?.trim().toUpperCase();
+    const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
+    for (const band of bands) {
+      if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
+        if (!enableHighDetailBands) continue;
+        if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
       }
-      const adminLevel = buffer.adminLevel;
-      const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
-      const countryCode = buffer.countryCode?.trim().toUpperCase();
-      const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
-      for (const band of bands) {
-        if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
-          if (!enableHighDetailBands) continue;
-          if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
-        }
-        const cacheIdentity = buildTransformTaskCacheIdentity({
-          nodeId,
-          sourceKey: buffer.sourceKey,
-          bandIndex: band.bandIndex,
+      const cacheIdentity = buildTransformTaskCacheIdentity({
+        nodeId,
+        sourceKey: buffer.sourceKey,
+        bandIndex: band.bandIndex,
+        fetchArtifactHash,
+        bandMinZoom: band.zMin,
+        bandMaxZoom: band.zMax,
+        configSignature,
+      });
+      tasks.push({
+        taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
+        nodeId,
+        stage: 'transform',
+        status: 'queued',
+        index,
+        stagePriority,
+        progress: 0,
+        inputData: {
           fetchCacheId: buffer.id,
+          fetchArtifactHash,
+          bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
-          configSignature,
-        });
-        tasks.push({
-          taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
-          nodeId,
-          stage: 'transform',
-          status: 'queued',
-          index,
+          domainType: 'shape',
+          sourceKey: buffer.sourceKey,
           stagePriority,
-          progress: 0,
-          inputData: {
-            fetchCacheId: buffer.id,
-            bandIndex: band.bandIndex,
-            bandMinZoom: band.zMin,
-            bandMaxZoom: band.zMax,
-            domainType: 'shape',
-            sourceKey: buffer.sourceKey,
-            stagePriority,
-            countryCode,
-            countryName: countryMeta?.countryName,
-            adminLevel: buffer.adminLevel,
-            configSignature,
-            cacheKey: cacheIdentity.cacheKey,
-            inputHash: cacheIdentity.inputHash,
-          },
-        });
-        index += 1;
-      }
-    });
+          countryCode,
+          countryName: countryMeta?.countryName,
+          adminLevel: buffer.adminLevel,
+          configSignature,
+          cacheKey: cacheIdentity.cacheKey,
+          inputHash: cacheIdentity.inputHash,
+        },
+      });
+      index += 1;
+    }
+  }
   return tasks;
 };
 
