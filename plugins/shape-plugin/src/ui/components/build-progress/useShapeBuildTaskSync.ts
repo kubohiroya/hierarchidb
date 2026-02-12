@@ -132,12 +132,34 @@ const resolveTaskScope = (task: ShapeBuildTaskSummary): { iso2: string; adminLev
   };
 };
 
+const isDev = import.meta.env.DEV;
+type TaskSyncDebugChannel = 'taskUpdate100' | 'runningResidue';
+type TaskSyncDebugConfig = Partial<Record<TaskSyncDebugChannel | 'all', boolean>>;
+
+const readTaskSyncDebugConfig = (): TaskSyncDebugConfig | null => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__?: unknown;
+  };
+  const raw = scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as TaskSyncDebugConfig;
+};
+
+const isTaskSyncDebugEnabled = (channel: TaskSyncDebugChannel): boolean => {
+  if (!isDev) return false;
+  const config = readTaskSyncDebugConfig();
+  if (!config) return false;
+  return config.all === true || config[channel] === true;
+};
+
 const TASK_UPDATE100_LOG_LIMIT = 300;
 let taskUpdate100LogCount = 0;
 let taskUpdate100LogLimitNotified = false;
 
 const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
-  if (!import.meta.env.DEV) return;
+  if (!isTaskSyncDebugEnabled('taskUpdate100')) return;
   if (resolveProgressValue(task.progress) < 100) return;
   if (taskUpdate100LogCount >= TASK_UPDATE100_LOG_LIMIT) {
     if (!taskUpdate100LogLimitNotified) {
@@ -153,11 +175,17 @@ const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   console.log(`[TaskUpdate100] ${scope.iso2}, ${scope.adminLevel}, ${message}, ${status}`);
 };
 
-const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 const RUNNING_RESIDUE_LOG_LIMIT = 600;
 let runningResidueLogCount = 0;
 let runningResidueLogLimitNotified = false;
+
+const resetTaskSyncDebugLogCounters = (): void => {
+  taskUpdate100LogCount = 0;
+  taskUpdate100LogLimitNotified = false;
+  runningResidueLogCount = 0;
+  runningResidueLogLimitNotified = false;
+};
 
 type RunningResidueLogPayload = {
   nodeId: string | null;
@@ -188,7 +216,7 @@ const formatLogValue = (value: unknown): string => {
 };
 
 const emitRunningResidueLog = (keyword: string, payload: RunningResidueLogPayload): void => {
-  if (!isDev) return;
+  if (!isTaskSyncDebugEnabled('runningResidue')) return;
   if (runningResidueLogCount >= RUNNING_RESIDUE_LOG_LIMIT) {
     if (!runningResidueLogLimitNotified) {
       runningResidueLogLimitNotified = true;
@@ -535,6 +563,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
 
   useEffect(() => {
     vtParentInputDebugLogKeysRef.current.clear();
+    resetTaskSyncDebugLogCounters();
   }, [sessionNodeId]);
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
@@ -744,6 +773,13 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
   }, [scheduleFlush, sessionNodeId, setError, setIsLoading]);
 
   const syncTasksRef = useCallback((tasks: ShapeBuildTaskSummary[]) => {
+    pendingTasksRef.current = null;
+    pendingDirtyRef.current = false;
+    flushScheduledRef.current = false;
+    if (flushFrameRef.current !== null) {
+      window.cancelAnimationFrame(flushFrameRef.current);
+      flushFrameRef.current = null;
+    }
     tasksRef.current = tasks;
     committedTasksRef.current = tasks;
     tasksMapRef.current = new Map(tasks.map((task) => [task.taskId, task]));

@@ -26,9 +26,7 @@ import type {
   ShapeVTMetadata,
 } from '@hierarchidb/shape-api';
 import {
-  bufferDeserializer,
-  bufferSerializer,
-  createShapeChunkStore,
+  deleteRawDataDataSourceBuffersForNode,
   storeRawDataDataSourceBufferForNode,
 } from '../utils/chunkStore.js';
 import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
@@ -820,8 +818,7 @@ export class EphemeralShapeApiImpl {
     await ephemeralShapeDB.clearStage(nodeId, stage);
     if (stage === 'fetch') {
       try {
-        const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-        await store.deleteAllForNode(nodeId);
+        await deleteRawDataDataSourceBuffersForNode(nodeId);
       } catch (error) {
         console.warn('[shapeBuildAPI] failed to clear download chunk-store entries', error);
       }

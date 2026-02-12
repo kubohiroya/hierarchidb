@@ -89,6 +89,12 @@ type MetadataFetchOptions = {
   force?: boolean;
 };
 
+const METADATA_FETCH_TIMEOUT_MS = 45_000;
+
+const isAbortError = (error: unknown): boolean => (
+  error instanceof Error && error.name === 'AbortError'
+);
+
 const getCachedOrFetchForNode = async <T>(params: {
   store: ReturnType<typeof createShapeChunkStoreWithNetworkPort<T>>;
   nodeId: NodeId;
@@ -96,8 +102,17 @@ const getCachedOrFetchForNode = async <T>(params: {
   cacheKey: string;
   accept: string;
   force?: boolean;
+  timeoutMs?: number;
 }): Promise<{ value: T }> => {
-  const { store, nodeId, url, cacheKey, accept, force } = params;
+  const {
+    store,
+    nodeId,
+    url,
+    cacheKey,
+    accept,
+    force,
+    timeoutMs = METADATA_FETCH_TIMEOUT_MS,
+  } = params;
   if (!force) {
     const hasRelation = await store.hasRelationForNode(nodeId, cacheKey);
     if (hasRelation) {
@@ -111,7 +126,32 @@ const getCachedOrFetchForNode = async <T>(params: {
       }
     }
   }
-  return store.getOrFetchForNode(nodeId, url, { accept, cacheKey });
+  const canAbort = typeof AbortController === 'function';
+  const controller = canAbort ? new AbortController() : null;
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  let didTimeout = false;
+  if (controller && timeoutMs > 0) {
+    timeoutHandle = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, timeoutMs);
+  }
+  try {
+    return await store.getOrFetchForNode(nodeId, url, {
+      accept,
+      cacheKey,
+      signal: controller?.signal,
+    });
+  } catch (error) {
+    if (didTimeout && isAbortError(error)) {
+      throw new Error(`Metadata fetch timed out after ${timeoutMs}ms: ${url}`);
+    }
+    throw error;
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 };
 
 export async function fetchGeoBoundariesMetadata(
