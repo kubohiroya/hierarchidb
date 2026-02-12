@@ -65,6 +65,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 08:16 JST #236 の実装を `fix(treeconsole): prevent trash while build session is running` でコミットし、PR `https://github.com/kubohiroya/hierarchidb/pull/237`（base: `ERIA-Cartograph`）を作成。
 - update: 2026-02-13 08:13 JST #236 原因は、ビルドセッション実行中ノードに対するゴミ箱移動ガードが Command API 側に存在せず、UI 側でもコンテキストメニュー（InfoPanel / TreeTable / Breadcrumb）から trash/remove が操作可能だったこと。発生範囲は `packages/runtime-worker/src/services/TreeMutationService.ts` と tree console UI メニュー経路。
 - update: 2026-02-13 08:13 JST #236 修正として (1) `TreeMutationService.moveNodesToTrash` に `ephemeralShapeDB.sessions` を参照する running セッションガードを追加し、`TRASH_BUILD_SESSION_RUNNING` で API エラー返却、(2) `TreeNodeInfoPanel` / `TreeTableContextMenu` / `TreeConsoleBreadcrumb` で build running ノードの `canTrash/canRemove` を false に統一、(3) `useTreeConsolePanel` から `trashDisabledNodeIds` を breadcrumb へ注入、(4) error/i18n マッピング（ja/en）を追加。適用範囲は `app/src/hooks/treeconsole/actions/mutations.ts`, `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `packages/ui/treeconsole/{base,breadcrumb,treetable}` 系と locale ファイル。
 - update: 2026-02-13 08:13 JST #236 検証: `pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-trash-build-session-guard.unit.test.ts`（exit 0, 2 tests passed）、`pnpm -w turbo run test --filter @hierarchidb/ui-treeconsole-treetable -- --run src/__tests__/TreeTableContextMenu.test.ts`（exit 0, 2 tests passed）。
