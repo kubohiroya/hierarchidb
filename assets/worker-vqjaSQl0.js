@@ -1,1 +1,0 @@
-import{s as e,u as t}from"./src-DdUUmRJ1.js";var n=e=>({taskId:e.taskId,stage:e.stage,status:e.status,progress:e.progress,message:e.message??e.errorMessage});async function r(r){return(await t(new e,r)).map(n)}const i=async()=>{};var a=i;export{a as n,r,i as t};

@@ -1,1 +1,0 @@
-import"./vendor-react-OyekpE5j.js";import{Qr as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};
