@@ -33,37 +33,46 @@ Shape Pluginでは、バッチ処理の開始、進捗監視、完了/中断処�
 - **閉じる条件**:
   - Yes/Noボタン押下
 
-## 状態遷移フロー
+## 状態遷移フロー（現行実装準拠）
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idle: 初期状態
-    
-    Idle --> Editing: Edit/New Shape
-    Editing --> ConfiguringBatch: Configure Processing
-    ConfiguringBatch --> Processing: Start Processing
-    
+    Idle --> Starting: Start / Resume
+
+    state Starting {
+        [*] --> AcquiringLock
+        AcquiringLock --> WaitingLock: lock unavailable
+        AcquiringLock --> SavingDraft: lock acquired
+        WaitingLock --> SavingDraft: lock acquired
+        SavingDraft --> InitializingWorker
+        InitializingWorker --> BuildingPayloads: new start
+        InitializingWorker --> StartingSession: resume
+        BuildingPayloads --> StartingSession
+        StartingSession --> AwaitingFirstTask
+        AwaitingFirstTask --> [*]: first task update received
+    }
+
+    Starting --> Processing: startup success
+    Starting --> Failed: startup error / timeout
     Processing --> Paused: Pause
-    Paused --> Processing: Resume
+    Paused --> Starting: Resume
     Processing --> Completed: Success
     Processing --> Failed: Error
-    Processing --> Cancelled: User Cancel
-    
-    Paused --> Cancelled: Cancel
-    Failed --> Processing: Retry
-    Failed --> Idle: Abort
-    
     Completed --> Idle: Close Dialog
-    Cancelled --> Idle: Close Dialog
-    
-    state Processing {
-        [*] --> Download
-        Download --> Extract1
-        Extract1 --> Extract2
-        Extract2 --> VectorTiles
-        VectorTiles --> [*]
-    }
+    Failed --> Idle: Abort / Close
 ```
+
+```mermaid
+stateDiagram-v2
+    [*] --> fetch
+    fetch --> transform
+    transform --> vt
+    vt --> [*]
+```
+
+- 実行ステージは `fetch -> transform -> vt`。
+- 起動フェーズ `awaiting-first-task` は待機監視対象で、10s で wait 通知、20s で long-wait 警告、45s で timeout エラー終了。
 
 ## ダイアログ制御の詳細仕様
 
