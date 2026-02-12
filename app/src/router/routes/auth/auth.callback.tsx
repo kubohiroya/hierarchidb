@@ -51,6 +51,12 @@ export default function AuthCallbackRoute() {
     }
   }, [normalizeHashReturnPath]);
 
+  const consumeReturnUrl = useCallback(() => {
+    const returnUrl = localStorage.getItem('auth_return_url') || '/';
+    localStorage.removeItem('auth_return_url');
+    return returnUrl;
+  }, []);
+
   useEffect(() => {
     async function processCallback() {
       try {
@@ -59,7 +65,7 @@ export default function AuthCallbackRoute() {
 
         // If neither code nor error is present, assume a stray render and navigate away quietly.
         if (!code && !error) {
-          const returnUrl = localStorage.getItem('auth_return_url') || '/';
+          const returnUrl = consumeReturnUrl();
           const resolved = resolveReturnUrl(returnUrl);
           if (resolved.isExternal) {
             window.location.assign(resolved.url);
@@ -75,7 +81,7 @@ export default function AuthCallbackRoute() {
 
         if (!code) {
           // Nothing to process; go home without throwing.
-          const returnUrl = localStorage.getItem('auth_return_url') || '/';
+          const returnUrl = consumeReturnUrl();
           const resolved = resolveReturnUrl(returnUrl);
           if (resolved.isExternal) {
             window.location.assign(resolved.url);
@@ -88,7 +94,7 @@ export default function AuthCallbackRoute() {
         const authService = BFFAuthService.getInstance();
         await authService.handleCallback(searchParams);
 
-        const returnUrl = localStorage.getItem('auth_return_url') || '/';
+        const returnUrl = consumeReturnUrl();
         const resolved = resolveReturnUrl(returnUrl);
         if (resolved.isExternal) {
           window.location.assign(resolved.url);
@@ -102,7 +108,7 @@ export default function AuthCallbackRoute() {
     }
 
     processCallback();
-  }, [searchParams, navigate, resolveReturnUrl]);
+  }, [searchParams, navigate, resolveReturnUrl, consumeReturnUrl]);
 
   useEffect(() => {
     if (window.opener) {

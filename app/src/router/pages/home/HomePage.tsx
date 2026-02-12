@@ -46,7 +46,7 @@ const formatBuildTime = (value: string): string => {
 const treeButtonConfigs: TreeConfig[] = [
   {
     id: 'r',
-    label: 'Resoruces',
+    label: 'Resources',
     icon: Folder,
     routePath: 'r',
     color: 'primary',

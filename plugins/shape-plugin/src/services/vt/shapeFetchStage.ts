@@ -26,7 +26,7 @@ import type {
   SelectedArrayByCountries,
   ShapeFeaturePayload,
 } from '../../common/types/index.js';
-import { generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
+import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from '../datasources/strategyIds.js';
@@ -1095,21 +1095,6 @@ const createFetchHandler = (params: {
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
-  const countSelectedAdminPairs = (selectedArrayByCountries: SelectedArrayByCountries | undefined): number => {
-    if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
-      return 0;
-    }
-    let selectedAdminPairCount = 0;
-    Object.values(selectedArrayByCountries).forEach((row) => {
-      if (!Array.isArray(row)) return;
-      row.forEach((selected) => {
-        if (selected === true) {
-          selectedAdminPairCount += 1;
-        }
-      });
-    });
-    return selectedAdminPairCount;
-  };
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));

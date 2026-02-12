@@ -39,6 +39,7 @@ import { ShapeEntityHandler } from './handlers/index.js';
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { type BatchProgressEvent, type BatchProgressPayload, type BatchTaskSummary, type BatchTaskUpdateEvent, type ProgressPhase } from '@hierarchidb/batch-api';
 import {
+  countSelectedAdminPairs,
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
@@ -94,24 +95,6 @@ const buildFetchStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
   retryAttempts: buildConfig.fetchConfig.retryAttempts,
   retryDelay: buildConfig.fetchConfig.retryDelay,
 });
-
-const countSelectedAdminPairs = (
-  selectedArrayByCountries: SelectedArrayByCountries | undefined,
-): number => {
-  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
-    return 0;
-  }
-  let selectedAdminPairCount = 0;
-  Object.values(selectedArrayByCountries).forEach((row) => {
-    if (!Array.isArray(row)) return;
-    row.forEach((selected) => {
-      if (selected === true) {
-        selectedAdminPairCount += 1;
-      }
-    });
-  });
-  return selectedAdminPairCount;
-};
 
 const resolveFetchTaskPayloadsForPlan = async (input: {
   nodeId: NodeId;
