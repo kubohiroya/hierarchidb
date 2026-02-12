@@ -231,6 +231,12 @@ vi.mock('~/worker-runtime/client.ts', async () => {
         downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
         buildContinuationPolicy?: string
       ) => startBatchSessionImpl(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy),
+      startOrResumeBuildSession: async (
+        nodeType: NodeType,
+        nodeId: NodeId,
+        downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
+        buildContinuationPolicy?: string
+      ) => startBatchSessionImpl(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy),
       getBatchSessionStatus: getBatchSessionStatusImpl,
       getBuildSessionStatus: getBatchSessionStatusImpl,
       pauseBatchSession: pauseBatchSessionImpl,
@@ -245,6 +251,10 @@ vi.mock('~/worker-runtime/client.ts', async () => {
         _statuses: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[1],
         _callback: Parameters<WorkerAPI['subscribeBuildSessionRecordsByStatus']>[2]
       ) => () => {},
+      getBuildSessionRuntime: async () => null,
+      listBuildSessionRuntimes: async () => [],
+      subscribeBuildSessionRuntimes: async () => () => {},
+      deleteBuildSession: async () => {},
       subscribeBatchTasks: subscribeBatchTasksImpl,
       subscribeBuildTasks: subscribeBatchTasksImpl,
       generateShapeDownloadTaskPayloadsFromSelection: async (

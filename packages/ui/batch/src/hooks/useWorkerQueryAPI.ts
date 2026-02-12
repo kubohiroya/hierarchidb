@@ -29,9 +29,6 @@ export function useWorkerQueryAPI(): UseWorkerQueryApiResult {
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
         console.warn('[useWorkerQueryAPI] worker initialize failed', message);
-      })
-      .finally(() => {
-        initializeRequestedRef.current = false;
       });
   }, [api, initialize, loading]);
 

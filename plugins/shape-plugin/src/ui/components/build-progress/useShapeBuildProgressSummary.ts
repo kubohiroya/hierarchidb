@@ -110,7 +110,11 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     return stages.reduce<Record<string, { counts: TaskCountSummary; hasIncomplete: boolean }>>((acc, stage) => {
       const stageInfo = stageTaskCounts[stage.id];
       const actualCounts = stageInfo?.counts ?? { total: 0, completed: 0, failed: 0, skipped: 0 };
-      const shouldUsePlannedCounts = buildStatus !== 'idle' || actualCounts.total > 0;
+      const shouldUsePlannedCounts = (
+        actualCounts.total > 0
+        || buildStatus === 'running'
+        || buildStatus === 'paused'
+      );
       const plannedCounts = shouldUsePlannedCounts
         ? effectiveProgress?.stageTotals?.[stage.id as 'fetch' | 'transform' | 'vt']
         : undefined;
@@ -160,7 +164,12 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       const skip = hasSummaryData
         ? stageCounts.skipped
         : 0;
-      if (failureStageId && stage.id === failureStageId) {
+      const shouldForceFailureOnStage = (
+        failureStageId
+        && stage.id === failureStageId
+        && (stageCounts.total > 0 || aggregatedCounts.total > 0)
+      );
+      if (shouldForceFailureOnStage) {
         error = Math.max(error, 1);
         total = Math.max(total, error + success + skip);
       }
@@ -184,7 +193,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         summary: { total, success, error, skip },
       };
     });
-  }, [buildStatus, paneProgress, stageCountsWithPlan, stages, taskType]);
+  }, [aggregatedCounts.total, buildStatus, paneProgress, stageCountsWithPlan, stages, taskType]);
 
   const stageProgressWithSummary = useMemo(() => {
     return stages.reduce<Record<string, number>>((acc, stage) => {
@@ -222,7 +231,12 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [lastUnfinishedStageId, stageCountsWithPlan]);
 
   const rawDisplayCounts = useMemo<CountsWithPercentage>(() => {
-    if (effectiveProgress && effectiveProgress.total > 0 && buildStatus !== 'idle') {
+    const shouldUseRuntimeProgress = (
+      buildStatus === 'running'
+      || buildStatus === 'paused'
+      || aggregatedCounts.total > 0
+    );
+    if (effectiveProgress && effectiveProgress.total > 0 && shouldUseRuntimeProgress) {
       return {
         total: effectiveProgress.total,
         completed: effectiveProgress.completed,

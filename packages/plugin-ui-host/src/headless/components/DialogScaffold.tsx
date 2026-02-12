@@ -19,7 +19,8 @@ export const createHeaderComponent = (
   title: string,
   subtitle: string | undefined,
   icon: React.ReactNode | undefined,
-  pendingAction: DialogActionInFlight | null
+  pendingAction: DialogActionInFlight | null,
+  buildStepRunning: boolean
 ) =>
   memo(() => (
     <PluginDialogHeader
@@ -27,6 +28,7 @@ export const createHeaderComponent = (
       subtitle={subtitle}
       icon={icon || undefined}
       pendingAction={pendingAction}
+      buildStepRunning={buildStepRunning}
     />
   ));
 
