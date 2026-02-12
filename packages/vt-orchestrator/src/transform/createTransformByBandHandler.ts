@@ -171,6 +171,7 @@ const decodeTopoJsonFetchCache = async (params: {
 const EARTH_RADIUS_METERS = 6378137;
 const MVT_EXTENT = 4096;
 const MAX_VERTICES_PER_FEATURE = 65535;
+const TRANSFORM_CACHE_WRITE_SLOW_LOG_MS = 20_000;
 
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
@@ -1346,13 +1347,31 @@ export const createTransformByBandHandler = (
         elapsedMs: Date.now() - cacheStartedAt,
       });
     }, 5000);
-    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache], async () => {
-      await ephemeralDB.transformCache.put({
-        ...params.cacheRecord,
-        timestamp: 0,
+    try {
+      await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
+        const slowWriteLogId = setTimeout(() => {
+          logDebug('warn', 'ShapeTransform', 'transform cache write is still in progress', {
+            tag: TASKDEBUG_BUILD_TAG,
+            taskId: params.taskId,
+            elapsedMs: Date.now() - cacheStartedAt,
+            thresholdMs: TRANSFORM_CACHE_WRITE_SLOW_LOG_MS,
+          });
+        }, TRANSFORM_CACHE_WRITE_SLOW_LOG_MS);
+        try {
+          await ephemeralDB.transformCache.put({
+            ...params.cacheRecord,
+            timestamp: completedAt,
+          });
+        } finally {
+          clearTimeout(slowWriteLogId);
+        }
       });
-      await ephemeralDB.transformCache.update(params.cacheRecord.id, { timestamp: completedAt });
-    });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `transform failed: cache write failed (taskId=${params.taskId}, elapsedMs=${Date.now() - cacheStartedAt}, reason=${message})`
+      );
+    }
     clearTimeout(cacheWaitTimer);
     if (cacheWaitLogged) {
       logDebug('warn', 'ShapeTransform', 'transform cache write done', {
@@ -1372,8 +1391,8 @@ export const createTransformByBandHandler = (
         elapsedMs: Date.now() - taskStartedAt,
       });
     }, 5000);
-    await ephemeralDB.transaction('rw', [ephemeralDB.buildTasks], async () => {
-      const current = await ephemeralDB.buildTasks.get(params.taskId);
+    await taskQueue.transaction('rw', [taskQueue.tasks], async () => {
+      const current = await taskQueue.tasks.get(params.taskId);
       if (!current) {
         throw new Error('transform failed: task record missing');
       }
@@ -1381,7 +1400,7 @@ export const createTransformByBandHandler = (
       const nextSequence = currentSequence + 1;
       const lockedStatus = current.status === 'completed' || current.status === 'failed';
       const effectiveStatus = lockedStatus ? current.status : 'completed';
-      await ephemeralDB.buildTasks.update(params.taskId, {
+      await taskQueue.tasks.update(params.taskId, {
         status: effectiveStatus,
         progress: 100,
         display: {
@@ -1394,7 +1413,7 @@ export const createTransformByBandHandler = (
         updatedAt: completedAt,
         sequence: nextSequence,
       });
-      updatedTask = (await ephemeralDB.buildTasks.get(params.taskId)) ?? null;
+      updatedTask = (await taskQueue.tasks.get(params.taskId)) ?? null;
     });
     clearTimeout(taskWaitTimer);
     if (taskWaitLogged) {
@@ -2509,7 +2528,7 @@ export const createTransformByBandHandler = (
       await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
       return {
         status: 'failed',
-        errorMessage: `transform failed: ${stagedError}${diagnostics ? ` ${diagnostics}` : ''}`,
+        errorMessage: `transform failed: ${stagedError}${diagnostics ? ` | diagnostics: ${diagnostics}` : ''}`,
       };
     } finally {
       if (debugHeartbeat) {

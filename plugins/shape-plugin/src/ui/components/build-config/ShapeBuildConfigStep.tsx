@@ -17,10 +17,53 @@ import {
   filteringLowUrl,
   filteringMediumUrl,
 } from '../../assets/filtering-samples/filteringSamples.ts';
-import { useVTConfigSection } from './useVTConfigSection.ts';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
-import type { ShapeEntity } from '../../../common/types/index.js';
+import {
+  composeRuntimeBuildConfig,
+  DEFAULT_PROCESSING_CONFIG,
+  mergeBuildConfig,
+  mergeProcessingConfig,
+  type ShapeBuildConfig,
+  type ShapeEntity,
+  type ShapeRuntimeBuildConfig,
+} from '../../../common/types/index.js';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+
+const toBuildConfigUpdate = (
+  partial: Partial<ShapeRuntimeBuildConfig>,
+): Partial<ShapeBuildConfig> => {
+  const next: Partial<ShapeBuildConfig> = {};
+  if (partial.dataSourceName !== undefined) {
+    next.dataSourceName = partial.dataSourceName;
+  }
+  if (partial.fetchConfig) {
+    const {
+      maxConcurrent: _ignoredConcurrency,
+      retryAttempts: _ignoredRetryAttempts,
+      retryDelay: _ignoredRetryDelay,
+      retryLimit: _ignoredRetryLimit,
+      retryBackoff: _ignoredRetryBackoff,
+      ...fetchConfig
+    } = partial.fetchConfig;
+    next.fetchConfig = fetchConfig;
+  }
+  if (partial.transformConfig) {
+    const { maxConcurrent: _ignoredConcurrency, ...transformConfig } = partial.transformConfig;
+    next.transformConfig = transformConfig;
+  }
+  if (partial.vtConfig) {
+    const {
+      maxConcurrent: _ignoredConcurrency,
+      dynamicConcurrency: _ignoredDynamicConcurrency,
+      ...vtConfig
+    } = partial.vtConfig;
+    next.vtConfig = vtConfig;
+  }
+  if (partial.cleanupConfig) {
+    next.cleanupConfig = partial.cleanupConfig;
+  }
+  return next;
+};
 
 /**
  * Processing configuration step for Shape plugin.
@@ -33,6 +76,14 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { config, handleChange } = useShapeBuildConfigStep({ data, onChange });
+  const processingConfig = useMemo(
+    () => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data?.processingConfig),
+    [data?.processingConfig],
+  );
+  const runtimeBuildConfig = useMemo(
+    () => composeRuntimeBuildConfig(config, processingConfig),
+    [config, processingConfig],
+  );
   const { event: heapPressure } = useHeapPressureMonitor();
   const heapWarning = useMemo(() => {
     if (!heapPressure) return null;
@@ -57,7 +108,10 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     medium: filteringMediumUrl,
     strong: filteringHighUrl,
   }), []);
-  const { update: updateVTConfig } = useVTConfigSection({ buildConfig: config, onChange: handleChange });
+  const updateRuntimeBuildConfig = useCallback((partial: Partial<ShapeRuntimeBuildConfig>) => {
+    const nextBuildConfig = mergeBuildConfig(config, toBuildConfigUpdate(partial));
+    handleChange(nextBuildConfig);
+  }, [config, handleChange]);
   const fetchState = useFetchConfigSection({
     config,
     nodeId: nodeId as NodeId,
@@ -82,13 +136,21 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
       />
       <FetchConfigSection
         t={t}
-        buildConfig={config}
-        update={fetchState.update}
+        buildConfig={runtimeBuildConfig}
+        update={updateRuntimeBuildConfig}
         filteringPreviewImages={filteringPreviewImages}
+        showConcurrencyCard={false}
+        showRetryCard={false}
         disabled={disabled}
       />
-      <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
-      <VTConfigSection t={t} buildConfig={config} update={updateVTConfig} disabled={disabled} />
+      <TransformConfigSection disabled={disabled} />
+      <VTConfigSection
+        t={t}
+        buildConfig={runtimeBuildConfig}
+        update={updateRuntimeBuildConfig}
+        showConcurrencyCard={false}
+        disabled={disabled}
+      />
       <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
     </BuildConfigShell>
   );

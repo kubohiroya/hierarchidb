@@ -27,6 +27,7 @@ export const ShapeBuildStep: React.FC<ShapeDialogStepProps> = (props) => {
       <ShapeBuildProgressPanel
         data={props.data}
         nodeId={props.nodeId as NodeId}
+        onChange={props.onChange}
       />
       <HeapPressureDialog
         open={heapDialogOpen}

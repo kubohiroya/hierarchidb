@@ -34,7 +34,7 @@ export type {
   ShapeErrorLineFeatureCollection,
   ShapeTransformErrorRecord,
 } from './shapeBuildTypes.js';
-export { DEFAULT_BUILD_CONFIG } from './defaults.js';
+export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from './defaults.js';
 export type {
   ShapeBuildStopReason,
   ShapeBuildSessionRecord,

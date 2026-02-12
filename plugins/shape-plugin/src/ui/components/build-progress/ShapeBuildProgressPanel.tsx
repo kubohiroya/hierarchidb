@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Popover,
   Skeleton,
   Snackbar,
   Stack,
@@ -18,15 +19,24 @@ import {
 import ConstructionIcon from '@mui/icons-material/Construction';
 import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
+import DownloadingIcon from '@mui/icons-material/Downloading';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
 import { type NodeId, toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
+import { DownloadRetryControls, type DownloadRetryConfig, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
+import type { ShapeProcessingConfig } from '../../../common/types/index.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  mergeBuildConfig,
+  mergeProcessingConfig,
+} from '../../../common/types/index.js';
 import { isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
 import { useShapeBuildCacheActions } from '../build-config/useShapeBuildCacheActions.ts';
@@ -680,9 +690,11 @@ const BuildProgressStageContent = ({
 export const ShapeBuildProgressPanel = ({
   data,
   nodeId,
+  onChange,
 }: {
   data?: Partial<ShapeEntity>;
   nodeId?: NodeId;
+  onChange?: (patch: Partial<ShapeEntity>) => void;
 }) => {
   const {
     t,
@@ -744,7 +756,12 @@ export const ShapeBuildProgressPanel = ({
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
+  const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
+  const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'fetch' | 'transform' | 'vt' | null>(null);
+  const [fetchRetryEditorAnchor, setFetchRetryEditorAnchor] = useState<HTMLElement | null>(null);
   const [startupNoticeDismissed, setStartupNoticeDismissed] = useState(false);
+  const isBuildSessionStarted = controls.startPending
+    || summary.buildStatus === 'running';
   const isBuildStartupPending = controls.startPending
     && summary.buildStatus !== 'running'
     && summary.buildStatus !== 'completed'
@@ -798,6 +815,212 @@ export const ShapeBuildProgressPanel = ({
   const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading;
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
+
+  const processingConfigForEdit = useMemo<ShapeProcessingConfig>(() => {
+    const draftConfig = data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
+    return mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftConfig);
+  }, [data]);
+  const buildConfigForEdit = useMemo(
+    () => mergeBuildConfig(DEFAULT_BUILD_CONFIG, data?.buildConfig),
+    [data?.buildConfig],
+  );
+  const fetchRetryConfigForEdit = useMemo<DownloadRetryConfig>(() => ({
+    timeoutMs: buildConfigForEdit.fetchConfig.timeoutMs,
+    retryAttempts: processingConfigForEdit.fetch.retryAttempts,
+    retryDelay: processingConfigForEdit.fetch.retryDelay,
+    retryLimit: processingConfigForEdit.fetch.retryLimit,
+    retryBackoff: processingConfigForEdit.fetch.retryBackoff,
+  }), [
+    buildConfigForEdit.fetchConfig.timeoutMs,
+    processingConfigForEdit.fetch.retryAttempts,
+    processingConfigForEdit.fetch.retryBackoff,
+    processingConfigForEdit.fetch.retryDelay,
+    processingConfigForEdit.fetch.retryLimit,
+  ]);
+
+  const applyProcessingConfigUpdate = useCallback((partial: Partial<ShapeProcessingConfig>) => {
+    if (!onChange) return;
+    const merged = mergeProcessingConfig(processingConfigForEdit, partial);
+    onChange({ processingConfig: merged });
+  }, [onChange, processingConfigForEdit]);
+  const applyFetchRetryConfigUpdate = useCallback((next: DownloadRetryConfig) => {
+    if (!onChange) return;
+    const nextBuildConfig = mergeBuildConfig(buildConfigForEdit, {
+      fetchConfig: {
+        ...buildConfigForEdit.fetchConfig,
+        timeoutMs: next.timeoutMs,
+      },
+    });
+    const nextProcessingConfig = mergeProcessingConfig(processingConfigForEdit, {
+      fetch: {
+        ...processingConfigForEdit.fetch,
+        retryAttempts: next.retryAttempts,
+        retryDelay: next.retryDelay,
+        retryLimit: next.retryLimit,
+        retryBackoff: next.retryBackoff,
+      },
+    });
+    onChange({
+      buildConfig: nextBuildConfig,
+      processingConfig: nextProcessingConfig,
+    });
+  }, [buildConfigForEdit, onChange, processingConfigForEdit]);
+
+  const closeConcurrencyEditor = useCallback(() => {
+    setConcurrencyEditorAnchor(null);
+    setConcurrencyEditorStageId(null);
+  }, []);
+
+  const handleStageConcurrencyIndicatorClick = useCallback((
+    stageId: string,
+    event: ReactMouseEvent<HTMLElement>,
+  ) => {
+    if (isBuildSessionStarted) return;
+    if (stageId !== 'fetch' && stageId !== 'transform' && stageId !== 'vt') return;
+    setFetchRetryEditorAnchor(null);
+    setConcurrencyEditorStageId(stageId);
+    setConcurrencyEditorAnchor(event.currentTarget);
+  }, [isBuildSessionStarted]);
+  const closeFetchRetryEditor = useCallback(() => {
+    setFetchRetryEditorAnchor(null);
+  }, []);
+  const handleFetchRetryIndicatorClick = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+    if (isBuildSessionStarted) return;
+    setConcurrencyEditorAnchor(null);
+    setConcurrencyEditorStageId(null);
+    setFetchRetryEditorAnchor(event.currentTarget);
+  }, [isBuildSessionStarted]);
+
+  useEffect(() => {
+    if (!isBuildSessionStarted) return;
+    setConcurrencyEditorAnchor(null);
+    setConcurrencyEditorStageId(null);
+    setFetchRetryEditorAnchor(null);
+  }, [isBuildSessionStarted]);
+
+  const stageConcurrencyIndicatorAriaLabels = useMemo(() => ({
+    fetch: t('processing.download.workers', 'Concurrent Fetch Workers'),
+    transform: t('processing.transform.workersStage1', 'Transform Workers (Simplification)'),
+    vt: t('processing.tile.workers', 'Concurrent VT Workers'),
+  }), [t]);
+  const stageLeadingControls = useMemo(() => ({
+    fetch: (
+      <Tooltip title={t('processing.download.fetchRetryTitle', 'Fetch Retry')}>
+        <span>
+          <Button
+            variant="text"
+            size="small"
+            aria-label={t('processing.download.fetchRetryTitle', 'Fetch Retry')}
+            onClick={handleFetchRetryIndicatorClick}
+            disabled={!onChange || isBuildSessionStarted}
+            sx={{ minWidth: 0, px: 0.5 }}
+          >
+            <DownloadingIcon fontSize="small" />
+          </Button>
+        </span>
+      </Tooltip>
+    ),
+  }), [handleFetchRetryIndicatorClick, isBuildSessionStarted, onChange, t]);
+
+  const concurrencyEditorCard = useMemo(() => {
+    if (!concurrencyEditorStageId) return null;
+    const disabled = !onChange || isBuildSessionStarted;
+    if (concurrencyEditorStageId === 'fetch') {
+      return (
+        <WorkerNumberConfigCard
+          title={t('processing.download.workers', 'Concurrent Fetch Workers')}
+          value={processingConfigForEdit.fetch.maxConcurrent}
+          helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
+          warningText={undefined}
+          onChange={(maxConcurrent) => {
+            applyProcessingConfigUpdate({
+              fetch: {
+                ...processingConfigForEdit.fetch,
+                maxConcurrent,
+              },
+            });
+          }}
+          min={1}
+          max={4}
+          step={1}
+          formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+          disabled={disabled}
+          disableHoverEffect
+        />
+      );
+    }
+    if (concurrencyEditorStageId === 'transform') {
+      return (
+        <WorkerNumberConfigCard
+          title={t('processing.transform.workersStage1', 'Transform Workers (Simplification)')}
+          value={processingConfigForEdit.transform.maxConcurrent}
+          helperText={t(
+            'processing.transform.workersStage1Help',
+            'Higher concurrency can speed up processing but may exhaust browser memory.',
+          )}
+          warningText={undefined}
+          onChange={(maxConcurrent) => {
+            applyProcessingConfigUpdate({
+              transform: {
+                ...processingConfigForEdit.transform,
+                maxConcurrent,
+              },
+            });
+          }}
+          min={1}
+          max={4}
+          step={1}
+          formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+          disabled={disabled}
+          disableHoverEffect
+        />
+      );
+    }
+    return (
+      <WorkerNumberConfigCard
+        title={t('processing.tile.workers', 'Concurrent VT Workers')}
+        value={processingConfigForEdit.vt.maxConcurrent}
+        helperText={t('processing.tile.workersHelp', 'Concurrent workers for VT generation.')}
+        warningText={undefined}
+        onChange={(maxConcurrent) => {
+          const dynamicConcurrency = processingConfigForEdit.vt.dynamicConcurrency ?? {
+            enabled: false,
+            minConcurrent: maxConcurrent,
+            maxConcurrent,
+            highWatermark: 0.85,
+            lowWatermark: 0.6,
+            adjustStep: 1,
+            sampleMs: 2000,
+          };
+          applyProcessingConfigUpdate({
+            vt: {
+              ...processingConfigForEdit.vt,
+              maxConcurrent,
+              dynamicConcurrency: {
+                ...dynamicConcurrency,
+                enabled: maxConcurrent >= 2,
+              },
+            },
+          });
+        }}
+        min={1}
+        max={8}
+        step={1}
+        formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+        disabled={disabled}
+        disableHoverEffect
+      />
+    );
+  }, [applyProcessingConfigUpdate, concurrencyEditorStageId, isBuildSessionStarted, onChange, processingConfigForEdit, t]);
+  const fetchRetryEditorCard = useMemo(() => (
+    <DownloadRetryControls
+      baseRetryConfig={fetchRetryConfigForEdit}
+      onChange={applyFetchRetryConfigUpdate}
+      disabled={!onChange || isBuildSessionStarted}
+      t={t}
+      disableHoverEffect
+    />
+  ), [applyFetchRetryConfigUpdate, fetchRetryConfigForEdit, isBuildSessionStarted, onChange, t]);
 
   const stageLoadingState = useMemo(() => (
     stages.reduce<Record<string, boolean>>((acc, stage) => {
@@ -1047,6 +1270,9 @@ export const ShapeBuildProgressPanel = ({
       stageContents={stageContents}
       stageProgressContent={stageProgressContent}
       stageConcurrencyIndicators={stageConcurrencyIndicators}
+      onStageConcurrencyIndicatorClick={isBuildSessionStarted ? undefined : handleStageConcurrencyIndicatorClick}
+      stageConcurrencyIndicatorAriaLabels={stageConcurrencyIndicatorAriaLabels}
+      stageLeadingControls={stageLeadingControls}
       stageMenus={stageMenus}
       stageHeaderMeta={stageHeaderMeta}
       chipPlacement="belowProgress"
@@ -1112,6 +1338,28 @@ export const ShapeBuildProgressPanel = ({
       }}
       footer={(
         <>
+          <Popover
+            open={Boolean(fetchRetryEditorAnchor)}
+            anchorEl={fetchRetryEditorAnchor}
+            onClose={closeFetchRetryEditor}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          >
+            <Box sx={{ p: 2, width: 820, maxWidth: 'calc(100vw - 24px)' }}>
+              {fetchRetryEditorCard}
+            </Box>
+          </Popover>
+          <Popover
+            open={Boolean(concurrencyEditorAnchor && concurrencyEditorStageId)}
+            anchorEl={concurrencyEditorAnchor}
+            onClose={closeConcurrencyEditor}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          >
+            <Box sx={{ p: 2, width: 360, maxWidth: 'calc(100vw - 24px)' }}>
+              {concurrencyEditorCard}
+            </Box>
+          </Popover>
           <Snackbar
             open={isBuildStartupPending && !startupNoticeDismissed}
             onClose={(_event, reason) => {

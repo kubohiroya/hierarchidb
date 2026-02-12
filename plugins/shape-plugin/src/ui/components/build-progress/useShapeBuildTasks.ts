@@ -41,6 +41,10 @@ const logRunningResidueDrop = (payload: {
   taskId?: string | null;
 }): void => {
   if (!isDev) return;
+  if (payload.reason === 'subscription_cancelled') {
+    // Expected during unmount/reload/reset cleanup.
+    return;
+  }
   console.log(
     `${RUNNING_RESIDUE_LOG_PREFIX} STALE_DROP`
       + ` nodeId=${payload.nodeId ?? '-'}`

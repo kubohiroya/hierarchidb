@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import {
   type VtTaskQueueDb,
   deleteTasksByIds,
@@ -190,7 +190,7 @@ export type ShapeFetchStageParams = {
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   taskQueue: VtTaskQueueDb;
   metadata?: CountryMetadata[];
   recyclingByFeatureId?: Map<string, boolean>;
@@ -200,7 +200,7 @@ export type ShapeFetchStageParams = {
   failureHandling?: 'continue' | 'stop' | 'skip';
 };
 
-const buildRetryConfig = (config: ShapeBuildConfig): RetryConfig => {
+const buildRetryConfig = (config: ShapeRuntimeBuildConfig): RetryConfig => {
   const downloadConfig = config.fetchConfig;
   const retryAttempts = downloadConfig.retryAttempts;
   const retryDelay = downloadConfig.retryDelay;
@@ -732,7 +732,7 @@ const buildFetchTasks = (
 
 const createFetchHandler = (params: {
   nodeId: NodeId;
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   dataSource: DataSourceName;
   recyclingByFeatureId?: Map<string, boolean>;
   abortSignal?: AbortSignal;

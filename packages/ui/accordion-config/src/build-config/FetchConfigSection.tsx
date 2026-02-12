@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import type { BaseBuildConfig, OmitDetailsLevel } from '@hierarchidb/gis-sdk';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
-import { DownloadRetryControls } from './DownloadRetryControls.js';
+import { DownloadRetryControls, type DownloadRetryConfig } from './DownloadRetryControls.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
@@ -33,8 +33,12 @@ type Props<TDataSourceName = unknown> = {
   buildConfig: BaseBuildConfig<TDataSourceName>;
   update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
   disabled?: boolean;
+  showConcurrencyCard?: boolean;
+  showRetryCard?: boolean;
   filteringPreviewImages?: FilteringPreviewImages;
   detailPresets?: Partial<Record<OmitDetailsLevel, DetailPreset>>;
+  fetchRetryConfig?: DownloadRetryConfig;
+  onFetchRetryConfigChange?: (next: DownloadRetryConfig) => void;
 };
 
 const DEFAULT_DETAIL_PRESETS: Record<OmitDetailsLevel, DetailPreset> = {
@@ -50,8 +54,12 @@ export const FetchConfigSection = <TDataSourceName,>({
   buildConfig,
   update,
   disabled,
+  showConcurrencyCard = true,
+  showRetryCard = true,
   filteringPreviewImages,
   detailPresets,
+  fetchRetryConfig,
+  onFetchRetryConfigChange,
 }: Props<TDataSourceName>) => {
   const baseFetchConfig = buildConfig.fetchConfig;
   const baseTransformConfig = buildConfig.transformConfig;
@@ -67,6 +75,13 @@ export const FetchConfigSection = <TDataSourceName,>({
     }))
     .filter((item) => Boolean(item.imageUrl));
   const showPreview = previewItems.length > 0;
+  const resolvedRetryConfig: DownloadRetryConfig = fetchRetryConfig ?? {
+    timeoutMs: baseFetchConfig.timeoutMs,
+    retryAttempts: baseFetchConfig.retryAttempts,
+    retryDelay: baseFetchConfig.retryDelay,
+    retryLimit: baseFetchConfig.retryLimit,
+    retryBackoff: baseFetchConfig.retryBackoff,
+  };
 
   const applyDetailPreset = (level: OmitDetailsLevel): void => {
     const preset = resolvedPresets[level];
@@ -96,38 +111,49 @@ export const FetchConfigSection = <TDataSourceName,>({
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Grid container rowSpacing={2} columnSpacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <WorkerNumberConfigCard
-              title={t('processing.download.workers', 'Concurrent Fetch Workers')}
-              value={baseFetchConfig.maxConcurrent}
-              icon={<CloudDownloadIcon fontSize="small" color="primary" />}
-              helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
-              warningText={undefined}
-              onChange={(maxConcurrent) =>
+          {showConcurrencyCard ? (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <WorkerNumberConfigCard
+                title={t('processing.download.workers', 'Concurrent Fetch Workers')}
+                value={baseFetchConfig.maxConcurrent}
+                icon={<CloudDownloadIcon fontSize="small" color="primary" />}
+                helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
+                warningText={undefined}
+                onChange={(maxConcurrent) =>
+                  update({
+                    fetchConfig: {
+                      ...baseFetchConfig,
+                      maxConcurrent,
+                    },
+                  })
+                }
+                min={1}
+                max={4}
+                step={1}
+                formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+                disabled={disabled}
+              />
+            </Grid>
+          ) : null}
+          {showRetryCard ? (
+            <DownloadRetryControls
+              baseRetryConfig={resolvedRetryConfig}
+              disabled={disabled}
+              onChange={(next) => {
+                if (onFetchRetryConfigChange) {
+                  onFetchRetryConfigChange(next);
+                  return;
+                }
                 update({
                   fetchConfig: {
                     ...baseFetchConfig,
-                    maxConcurrent,
+                    ...next,
                   },
-                })
-              }
-              min={1}
-              max={4}
-              step={1}
-              formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
-              disabled={disabled}
+                });
+              }}
+              t={t}
             />
-          </Grid>
-          <DownloadRetryControls
-            baseDownloadConfig={baseFetchConfig}
-            disabled={disabled}
-            onChange={(next) =>
-              update({
-                fetchConfig: next,
-              })
-            }
-            t={t}
-          />
+          ) : null}
           <Grid size={{ xs: 12 }}>
             <Stack spacing={1}>
               <Typography variant="subtitle2">

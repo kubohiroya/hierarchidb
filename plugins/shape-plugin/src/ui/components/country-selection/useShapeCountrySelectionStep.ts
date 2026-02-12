@@ -122,16 +122,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       ? (anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined
       : undefined;
 
-    const batchConfig = (anyData && typeof anyData === 'object' && 'batchConfig' in anyData)
-      ? (anyData as { batchConfig?: unknown }).batchConfig as Record<string, unknown> | undefined
-      : undefined;
-
     const buildConfig = (anyData && typeof anyData === 'object' && 'buildConfig' in anyData)
       ? (anyData as { buildConfig?: unknown }).buildConfig as Record<string, unknown> | undefined
       : undefined;
 
     const dsFromEntity = isDataSourceName(buildConfig?.dataSourceName) ? buildConfig.dataSourceName : undefined;
-    const dsFromBatch = isDataSourceName(batchConfig?.dataSourceName) ? batchConfig.dataSourceName : undefined;
 
     const dsFromDraft = (() => {
       const bc = draftData?.buildConfig;
@@ -140,17 +135,15 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       return isDataSourceName(value) ? value : undefined;
     })();
 
-    const candidate = dsFromDraft ?? dsFromEntity ?? dsFromBatch;
+    const candidate = dsFromDraft ?? dsFromEntity;
     const hasBatchConfig =
-      (batchConfig && typeof batchConfig === 'object')
-      || (draftData?.buildConfig && typeof draftData.buildConfig === 'object');
+      Boolean(draftData?.buildConfig && typeof draftData.buildConfig === 'object');
 
     if (!candidate) {
       // Don't guess a data source (no implicit fallback to GADM).
       // Surface an error only after data is available.
       if (hasData && hasBatchConfig) {
         console.warn('[shape-plugin][country-selection] dataSource missing', {
-          batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
           draftDataKeys: draftData ? Object.keys(draftData) : null,
         });
         return {

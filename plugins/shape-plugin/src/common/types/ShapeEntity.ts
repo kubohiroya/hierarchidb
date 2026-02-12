@@ -1,6 +1,6 @@
 import type { ISO2, PeerEntity } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { ShapeBuildConfig } from './build.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from './build.js';
 
 export interface ShapePreviewMapView {
   longitude: number;
@@ -20,6 +20,7 @@ export interface ShapeEntityPayload {
   licenseAgreedAt?: string;
 
   buildConfig?: ShapeBuildConfig;
+  processingConfig?: ShapeProcessingConfig;
 
   selectedArrayByCountries?: SelectedArrayByCountries;
   //batchSessionId?: string;

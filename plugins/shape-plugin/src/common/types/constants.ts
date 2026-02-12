@@ -4,9 +4,9 @@
 
 import type { DataSourceConfig } from './data-source.js';
 
-import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 
-export { DEFAULT_BUILD_CONFIG };
+export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG };
 
 export const SHAPE_DATA_SOURCES = [
   {

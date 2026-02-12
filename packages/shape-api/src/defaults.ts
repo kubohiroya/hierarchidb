@@ -3,17 +3,11 @@ import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',
   fetchConfig: {
-    maxConcurrent: 4,
     deleteOnComplete: false,
     timeoutMs: 300000,
-    retryAttempts: 6,
-    retryDelay: 5000,
-    retryLimit: 6,
-    retryBackoff: 'linear',
   },
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
-    maxConcurrent: 3,
     geometryEngine: 'turf',
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
@@ -39,15 +33,6 @@ export const DEFAULT_BUILD_CONFIG = {
   },
   vtConfig: {
     enableTopojsonSimplify: true,
-    maxConcurrent: 1,
-    dynamicConcurrency: {
-      enabled: true,
-      minConcurrent: 1,
-      highWatermark: 0.85,
-      lowWatermark: 0.6,
-      adjustStep: 1,
-      sampleMs: 2000,
-    },
     tolerance: 0,
     extent: 4096,
     bufferSize: 256,
@@ -68,5 +53,29 @@ export const DEFAULT_BUILD_CONFIG = {
     deleteFetchFilteredCache: false,
     deleteTransformCache: false,
     deleteVTCache: false,
+  },
+} as const;
+
+export const DEFAULT_PROCESSING_CONFIG = {
+  fetch: {
+    maxConcurrent: 4,
+    retryAttempts: 6,
+    retryDelay: 5000,
+    retryLimit: 6,
+    retryBackoff: 'linear',
+  },
+  transform: {
+    maxConcurrent: 3,
+  },
+  vt: {
+    maxConcurrent: 1,
+    dynamicConcurrency: {
+      enabled: true,
+      minConcurrent: 1,
+      highWatermark: 0.85,
+      lowWatermark: 0.6,
+      adjustStep: 1,
+      sampleMs: 2000,
+    },
   },
 } as const;

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import type { ShapeEntity } from '../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import { getStageConcurrencyWarning, type ShapeBuildConfigSnapshot, type ShapeBuildStage } from '../../utils/buildWarnings.js';
 
 type StartWarning = {
@@ -45,16 +46,17 @@ export const useShapeBuildProgressWarnings = ({
     }
     const stage = stages.find((candidate) => candidate.id === stageId);
     const stageLabel = stage?.title ?? stageId;
-    const buildConfig = data?.buildConfig;
-    if (!buildConfig) return null;
+    const processingConfig = data?.processingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data.processingConfig)
+      : DEFAULT_PROCESSING_CONFIG;
     const currentValue = (() => {
       switch (stageId) {
         case 'fetch':
-          return buildConfig.fetchConfig.maxConcurrent;
+          return processingConfig.fetch.maxConcurrent;
         case 'transform':
-          return buildConfig.transformConfig.maxConcurrent;
+          return processingConfig.transform.maxConcurrent;
         case 'vt':
-          return buildConfig.vtConfig.maxConcurrent;
+          return processingConfig.vt.maxConcurrent;
         default:
           return undefined;
       }
@@ -77,7 +79,7 @@ export const useShapeBuildProgressWarnings = ({
         },
       ),
     };
-  }, [crashInsight, data?.buildConfig, stages, t]);
+  }, [crashInsight, data?.processingConfig, stages, t]);
 
   const crashHint = useMemo(() => {
     if (isDev) return null;

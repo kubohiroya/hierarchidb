@@ -1,7 +1,7 @@
 import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import {
@@ -17,7 +17,7 @@ export type ShapeFetchStageParams = {
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   taskQueue: VtTaskQueueDb;
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks: boolean;

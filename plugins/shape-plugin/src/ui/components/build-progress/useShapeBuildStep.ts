@@ -11,6 +11,7 @@ import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';
 import {
+  DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
   validateBatchConfig,
   type ShapeEntity,
@@ -40,10 +41,31 @@ import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
+const PAUSE_COMMAND_TIMEOUT_MS = 60_000;
 type StageLikeTask = {
   taskType?: TaskStage;
   type?: TaskStage;
   stage: TaskStage;
+};
+
+const runWithTimeout = async <T>(
+  action: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      action,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(timeoutMessage));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+  }
 };
 
 const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
@@ -538,6 +560,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
   const runtimeStatus = status?.status ?? sessionRecord?.status ?? null;
+  const stopReason = sessionRecord?.stopReason;
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
@@ -755,8 +778,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
 
   const isProcessingValid = useMemo(() => {
     if (!data?.buildConfig) return false;
-    return validateBatchConfig(data.buildConfig).isValid;
-  }, [data?.buildConfig]);
+    return validateBatchConfig(
+      data.buildConfig,
+      data.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+    ).isValid;
+  }, [data?.buildConfig, data?.processingConfig]);
 
   const showResumeLabel = useMemo(() => (
     buildStatus === 'paused' || (!buildSessionTransition.active && displayTasks.length > 0)
@@ -877,6 +903,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const maybeAutoResume = useCallback(async () => {
     if (!activeNodeId) return;
     if (buildStatus === 'running' || runtimeStatus === 'processing') return;
+    if ((buildStatus === 'paused' || runtimeStatus === 'paused') && stopReason !== 'route-leave') {
+      return;
+    }
     const now = Date.now();
     const hasRunner = coordinator.isRunnerTab(now);
     const activeSessionId = coordinator.readActiveSessionId();
@@ -917,6 +946,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     getRecentNonActiveState,
     releaseBuildLock,
     runtimeStatus,
+    stopReason,
     tryAcquireBuildLock,
     updateSessionRecord,
   ]);
@@ -1690,12 +1720,33 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       return;
     }
     if (isPausePending) return;
+    const pauseRequestedAt = Date.now();
+    const logPauseTrace = (event: string, payload?: Record<string, unknown>): void => {
+      console.log('[ShapeBuildPauseTrace] handlePause', {
+        nodeId: String(activeNodeId),
+        elapsedMs: Math.max(0, Date.now() - pauseRequestedAt),
+        event,
+        reason,
+        buildStatus,
+        runtimeStatus,
+        ...(payload ?? {}),
+      });
+    };
+    logPauseTrace('request-received');
     await executePauseBuildFlow({
       reason,
       onPendingChange: setIsPausePending,
       pauseSession: async (pauseReason) => {
+        logPauseTrace('worker-initialize:start');
         await bridgeRef.current.initialize();
-        await bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, pauseReason);
+        logPauseTrace('worker-initialize:finish');
+        logPauseTrace('pause-command:start', { pauseReason });
+        await runWithTimeout(
+          bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, pauseReason),
+          PAUSE_COMMAND_TIMEOUT_MS,
+          `Pause command timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms while worker is busy.`,
+        );
+        logPauseTrace('worker-command-finished', { pauseReason });
       },
       persistPausedStatus: async (pauseReason) => {
         const persisted = await updateSessionRecord({
@@ -1706,16 +1757,22 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         if (!persisted) {
           throw new Error('Failed to persist paused status.');
         }
+        logPauseTrace('session-persisted', { pauseReason });
       },
       onError: (error) => {
         notify.error('Failed to pause build.');
         console.error('[ShapeBuildProgressStep] pause failed', error);
+        logPauseTrace('request-failed', {
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
       },
     });
-  }, [activeNodeId, isPausePending, updateSessionRecord]);
+    logPauseTrace('request-finished');
+  }, [activeNodeId, buildStatus, isPausePending, runtimeStatus, updateSessionRecord]);
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
+    stopReason,
     runtimeStatus,
     handleStartOrResume,
     handlePause,

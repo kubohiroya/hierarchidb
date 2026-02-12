@@ -1,6 +1,6 @@
 import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { shapeDB } from '@hierarchidb/shape-store';
@@ -23,7 +23,7 @@ import { runShapePipelineCleanup } from './shapePipelineCleanup.ts';
 export type ShapePipelineParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
   waitIfPaused?: () => Promise<void>;

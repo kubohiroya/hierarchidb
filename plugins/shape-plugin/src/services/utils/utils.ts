@@ -11,9 +11,17 @@ import type {
   ShapeStepValidationResult,
   SelectedArrayByCountries,
 } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  SHAPE_DATA_SOURCES,
+} from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type {
+  ShapeBuildConfig,
+  ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+} from '../../common/types/index.js';
 import {
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,
@@ -56,10 +64,12 @@ type ShapeDraft = {
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const baseBuildConfig = entity.buildConfig;
+  const baseProcessingConfig = entity.processingConfig;
   return {
     draftData: {
       ...entity,
       buildConfig: baseBuildConfig,
+      processingConfig: baseProcessingConfig,
     },
   };
 }
@@ -67,28 +77,33 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const draftData = draft.draftData;
   const baseBuildConfig = draftData.buildConfig;
+  const baseProcessingConfig = draftData.processingConfig;
   return {
     ...draftData,
     buildConfig: baseBuildConfig,
+    processingConfig: baseProcessingConfig,
   };
 }
 
 /**
  * Validate processing configuration
  */
-export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidationResult {
+export function validateBatchConfig(
+  buildConfig: ShapeBuildConfig,
+  processingConfig?: ShapeProcessingConfig,
+): ShapeStepValidationResult {
   const errors: string[] = [];
 
-  const mergedConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, config);
-  const fetchConfig = mergedConfig.fetchConfig;
-  const transformConfig = mergedConfig.transformConfig;
+  const mergedBuildConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, buildConfig);
+  const mergedProcessingConfig = mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, processingConfig);
+  const transformConfig = mergedBuildConfig.transformConfig;
 
-  const fetchConcurrency = fetchConfig.maxConcurrent;
+  const fetchConcurrency = mergedProcessingConfig.fetch.maxConcurrent;
   if (fetchConcurrency < 1 || fetchConcurrency > 4) {
     errors.push('Concurrent downloads must be between 1 and 4');
   }
 
-  const transformConcurrentProcesses = transformConfig.maxConcurrent;
+  const transformConcurrentProcesses = mergedProcessingConfig.transform.maxConcurrent;
   if (transformConcurrentProcesses < 1 || transformConcurrentProcesses > 8) {
     errors.push('Concurrent transform processes must be between 1 and 8');
   }
@@ -346,6 +361,66 @@ export function mergeBuildConfig(
     transformConfig,
     vtConfig,
     cleanupConfig,
+  };
+}
+
+export function mergeProcessingConfig(
+  base: ShapeProcessingConfig,
+  overrides?: Partial<ShapeProcessingConfig>,
+): ShapeProcessingConfig {
+  if (!overrides) return base;
+
+  const fetch = overrides.fetch
+    ? { ...base.fetch, ...overrides.fetch }
+    : base.fetch;
+  const transform = overrides.transform
+    ? { ...base.transform, ...overrides.transform }
+    : base.transform;
+  const vt = overrides.vt
+    ? {
+      ...base.vt,
+      ...overrides.vt,
+      dynamicConcurrency: overrides.vt.dynamicConcurrency
+        ? {
+          ...(base.vt.dynamicConcurrency ?? {}),
+          ...overrides.vt.dynamicConcurrency,
+        }
+        : base.vt.dynamicConcurrency,
+    }
+    : base.vt;
+
+  return {
+    ...base,
+    ...overrides,
+    fetch,
+    transform,
+    vt,
+  };
+}
+
+export function composeRuntimeBuildConfig(
+  buildConfig: ShapeBuildConfig,
+  processingConfig: ShapeProcessingConfig,
+): ShapeRuntimeBuildConfig {
+  return {
+    ...buildConfig,
+    fetchConfig: {
+      ...buildConfig.fetchConfig,
+      maxConcurrent: processingConfig.fetch.maxConcurrent,
+      retryAttempts: processingConfig.fetch.retryAttempts,
+      retryDelay: processingConfig.fetch.retryDelay,
+      retryLimit: processingConfig.fetch.retryLimit,
+      retryBackoff: processingConfig.fetch.retryBackoff,
+    },
+    transformConfig: {
+      ...buildConfig.transformConfig,
+      maxConcurrent: processingConfig.transform.maxConcurrent,
+    },
+    vtConfig: {
+      ...buildConfig.vtConfig,
+      maxConcurrent: processingConfig.vt.maxConcurrent,
+      dynamicConcurrency: processingConfig.vt.dynamicConcurrency,
+    },
   };
 }
 

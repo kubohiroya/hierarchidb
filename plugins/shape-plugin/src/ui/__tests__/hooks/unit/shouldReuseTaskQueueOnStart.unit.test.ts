@@ -10,11 +10,11 @@ describe('shouldReuseTaskQueueOnStart', () => {
     expect(shouldReuseTaskQueueOnStart('running')).toBe(true);
     expect(shouldReuseTaskQueueOnStart('paused')).toBe(true);
     expect(shouldReuseTaskQueueOnStart('failed')).toBe(true);
-    expect(shouldReuseTaskQueueOnStart('idle')).toBe(true);
+    expect(shouldReuseTaskQueueOnStart('idle')).toBe(false);
   });
 
-  it('returns true when session status is missing', () => {
-    expect(shouldReuseTaskQueueOnStart(undefined)).toBe(true);
-    expect(shouldReuseTaskQueueOnStart(null)).toBe(true);
+  it('returns false when session status is missing', () => {
+    expect(shouldReuseTaskQueueOnStart(undefined)).toBe(false);
+    expect(shouldReuseTaskQueueOnStart(null)).toBe(false);
   });
 });

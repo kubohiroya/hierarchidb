@@ -19,32 +19,39 @@ import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
+export type DownloadRetryConfig = Pick<
+  FetchConfig,
+  'timeoutMs' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
+>;
+
 type Props = {
-  baseDownloadConfig: FetchConfig;
+  baseRetryConfig: DownloadRetryConfig;
   disabled?: boolean;
-  onChange: (next: FetchConfig) => void;
+  onChange: (next: DownloadRetryConfig) => void;
   t: TranslateFn;
+  disableHoverEffect?: boolean;
 };
 
 const RETRY_ATTEMPTS_MAX = 8;
 
 export const DownloadRetryControls: React.FC<Props> = ({
-  baseDownloadConfig,
+  baseRetryConfig,
   disabled,
   onChange,
   t,
+  disableHoverEffect = false,
 }) => {
-  const retryAttemptsValue = Math.min(baseDownloadConfig.retryAttempts, RETRY_ATTEMPTS_MAX);
+  const retryAttemptsValue = Math.min(baseRetryConfig.retryAttempts, RETRY_ATTEMPTS_MAX);
 
   useEffect(() => {
-    if (baseDownloadConfig.retryLimit === retryAttemptsValue) return;
+    if (baseRetryConfig.retryLimit === retryAttemptsValue) return;
     onChange({
-      ...baseDownloadConfig,
+      ...baseRetryConfig,
       retryLimit: retryAttemptsValue,
     });
-  }, [baseDownloadConfig, onChange, retryAttemptsValue]);
+  }, [baseRetryConfig, onChange, retryAttemptsValue]);
 
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = disableHoverEffect ? {} : getBuildConfigHoverCardSx(disabled);
 
   return (
     <>
@@ -62,12 +69,12 @@ export const DownloadRetryControls: React.FC<Props> = ({
                 <TextField
                   label={t('processing.download.timeoutMs', 'Timeout (ms)')}
                   type="number"
-                  value={baseDownloadConfig.timeoutMs}
+                  value={baseRetryConfig.timeoutMs}
                   onChange={(event) => {
                     const timeoutMs = Number(event.target.value);
                     onChange({
-                      ...baseDownloadConfig,
-                      timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseDownloadConfig.timeoutMs,
+                      ...baseRetryConfig,
+                      timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseRetryConfig.timeoutMs,
                     });
                   }}
                   fullWidth
@@ -80,12 +87,12 @@ export const DownloadRetryControls: React.FC<Props> = ({
                 <TextField
                   label={t('processing.download.retryDelay', 'Retry Delay (ms)')}
                   type="number"
-                  value={baseDownloadConfig.retryDelay}
+                  value={baseRetryConfig.retryDelay}
                   onChange={(event) => {
                     const retryDelay = Number(event.target.value);
                     onChange({
-                      ...baseDownloadConfig,
-                      retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseDownloadConfig.retryDelay,
+                      ...baseRetryConfig,
+                      retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseRetryConfig.retryDelay,
                     });
                   }}
                   fullWidth
@@ -104,9 +111,9 @@ export const DownloadRetryControls: React.FC<Props> = ({
                     onChange={(_, value) => {
                       const nextValue = value === null ? retryAttemptsValue : value;
                       const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
-                      const retryLimit = Math.min(baseDownloadConfig.retryLimit, retryAttempts);
+                      const retryLimit = Math.min(baseRetryConfig.retryLimit, retryAttempts);
                       onChange({
-                        ...baseDownloadConfig,
+                        ...baseRetryConfig,
                         retryAttempts,
                         retryLimit,
                       });
@@ -128,12 +135,12 @@ export const DownloadRetryControls: React.FC<Props> = ({
                   </InputLabel>
                   <Select
                     labelId="fetch-retry-backoff-label"
-                    value={baseDownloadConfig.retryBackoff}
+                    value={baseRetryConfig.retryBackoff}
                     label={t('processing.download.retryBackoff', 'Retry Backoff')}
                     onChange={(event) => {
-                      const retryBackoff = event.target.value as typeof baseDownloadConfig.retryBackoff;
+                      const retryBackoff = event.target.value as typeof baseRetryConfig.retryBackoff;
                       onChange({
-                        ...baseDownloadConfig,
+                        ...baseRetryConfig,
                         retryBackoff,
                       });
                     }}

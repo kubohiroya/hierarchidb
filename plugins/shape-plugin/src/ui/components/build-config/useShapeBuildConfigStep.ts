@@ -9,7 +9,12 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MAX_RANGES,
 } from '@hierarchidb/util';
-import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  mergeBuildConfig,
+  mergeProcessingConfig,
+} from '../../../common/types/index.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
@@ -66,8 +71,14 @@ export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
 
   useEffect(() => {
     const baseConfig = resolveInitialBuildConfig();
+    const nextProcessingConfig = data?.processingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data.processingConfig)
+      : DEFAULT_PROCESSING_CONFIG;
     if (!data?.buildConfig) {
-      onChange({ buildConfig: baseConfig });
+      onChange({
+        buildConfig: baseConfig,
+        processingConfig: nextProcessingConfig,
+      });
       return;
     }
     const nextConfig = normalizeZoomBandConfig(baseConfig, data.buildConfig);
@@ -76,13 +87,19 @@ export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
     const normalizedBoundaries = nextConfig.transformConfig.zoomBandBoundaries;
     const boundariesChanged = !areZoomBandBoundariesEqual(rawBoundaries, normalizedBoundaries);
     if (!Number.isFinite(coefficient)) {
-      onChange({ buildConfig: nextConfig });
+      onChange({
+        buildConfig: nextConfig,
+        processingConfig: nextProcessingConfig,
+      });
       return;
     }
-    if (boundariesChanged) {
-      onChange({ buildConfig: nextConfig });
+    if (boundariesChanged || !data.processingConfig) {
+      onChange({
+        buildConfig: nextConfig,
+        processingConfig: nextProcessingConfig,
+      });
     }
-  }, [data?.buildConfig, onChange]);
+  }, [data?.buildConfig, data?.processingConfig, onChange]);
 
   const handleChange = useCallback((nextConfig: ShapeBuildConfig) => {
     onChange({ buildConfig: nextConfig });

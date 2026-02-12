@@ -1,6 +1,6 @@
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import {
   createVtHandler,
   deleteTasksByIds,
@@ -25,7 +25,7 @@ import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeVtStageParams = {
   nodeId: NodeId;
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>;
   enableHighDetailBands: boolean;
   taskQueue: VtTaskQueueDb;

@@ -2,8 +2,13 @@ import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
-import { mergeBuildConfig } from '../../../services/utils/utils.js';
-import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCE_BY_NAME, SHAPE_DATA_SOURCES } from '../../../common/types/index.js';
+import { mergeBuildConfig, mergeProcessingConfig } from '../../../services/utils/utils.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  SHAPE_DATA_SOURCE_BY_NAME,
+  SHAPE_DATA_SOURCES,
+} from '../../../common/types/index.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -34,17 +39,24 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   }, [dataSourceId]);
 
   useEffect(() => {
-    if (dataSourceId) return;
-    if (draftData.buildConfig) {
-      onChange({
-        buildConfig: mergeBuildConfig(draftData.buildConfig, {
-          dataSourceName: DEFAULT_BUILD_CONFIG.dataSourceName,
-        }),
-      });
-      return;
-    }
-    onChange({ buildConfig: DEFAULT_BUILD_CONFIG });
-  }, [dataSourceId, draftData.buildConfig, onChange]);
+    const hasBuildConfig = Boolean(draftData.buildConfig);
+    const hasProcessingConfig = Boolean(draftData.processingConfig);
+    if (dataSourceId && hasBuildConfig && hasProcessingConfig) return;
+
+    const nextBuildConfig = draftData.buildConfig
+      ? mergeBuildConfig(draftData.buildConfig, {
+        dataSourceName: dataSourceId ?? DEFAULT_BUILD_CONFIG.dataSourceName,
+      })
+      : { ...DEFAULT_BUILD_CONFIG };
+    const nextProcessingConfig = draftData.processingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftData.processingConfig)
+      : { ...DEFAULT_PROCESSING_CONFIG };
+
+    onChange({
+      buildConfig: nextBuildConfig,
+      processingConfig: nextProcessingConfig,
+    });
+  }, [dataSourceId, draftData.buildConfig, draftData.processingConfig, onChange]);
 
   useEffect(() => {
     const existingSelection = draftData.selectedArrayByCountries;
@@ -73,6 +85,9 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
       updates.buildConfig = draftData.buildConfig
         ? mergeBuildConfig(draftData.buildConfig, { dataSourceName: nextSource })
         : { ...DEFAULT_BUILD_CONFIG, dataSourceName: nextSource };
+      updates.processingConfig = draftData.processingConfig
+        ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftData.processingConfig)
+        : { ...DEFAULT_PROCESSING_CONFIG };
     }
     if (typeof next.licenseAgreement !== 'undefined') {
       updates.licenseAgreement = next.licenseAgreement;
