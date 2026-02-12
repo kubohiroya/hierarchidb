@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 
-const sessionsGetMock = vi.hoisted(() => vi.fn());
+const sessionsBulkGetMock = vi.hoisted(() => vi.fn());
 const sessionsOpenMock = vi.hoisted(() => vi.fn(async () => undefined));
 const hasRouteReferencesToLocationsMock = vi.hoisted(() => vi.fn(async () => false));
 const hasLocationReferencesToShapesMock = vi.hoisted(() => vi.fn(async () => false));
@@ -17,7 +17,7 @@ vi.mock('@hierarchidb/gis-sdk', async (importOriginal) => {
       ...actual.ephemeralShapeDB,
       open: sessionsOpenMock,
       sessions: {
-        get: sessionsGetMock,
+        bulkGet: sessionsBulkGetMock,
       },
     },
   };
@@ -89,6 +89,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
     vi.resetModules();
     vi.clearAllMocks();
     sessionsOpenMock.mockResolvedValue(undefined);
+    sessionsBulkGetMock.mockResolvedValue([]);
     hasRouteReferencesToLocationsMock.mockResolvedValue(false);
     hasLocationReferencesToShapesMock.mockResolvedValue(false);
   });
@@ -100,7 +101,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
     ]);
     const core = createCoreMock(nodes);
     const processor = createCommandProcessorMock();
-    sessionsGetMock.mockResolvedValue({ nodeId: 'shape-1', status: 'running' });
+    sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'running' }]);
 
     const { TreeMutationService } = await import('../../TreeMutationService.js');
     const service = new TreeMutationService(
@@ -111,6 +112,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
     const result = await service.moveNodesToTrash([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: false, error: 'TRASH_BUILD_SESSION_RUNNING' });
+    expect(sessionsBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);
     expect(processor.processCommand).not.toHaveBeenCalled();
   });
 
@@ -121,7 +123,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
     ]);
     const core = createCoreMock(nodes);
     const processor = createCommandProcessorMock();
-    sessionsGetMock.mockResolvedValue({ nodeId: 'shape-1', status: 'completed' });
+    sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'completed' }]);
 
     const { TreeMutationService } = await import('../../TreeMutationService.js');
     const service = new TreeMutationService(
@@ -132,6 +134,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
     const result = await service.moveNodesToTrash([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: true });
+    expect(sessionsBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);
     expect(processor.processCommand).toHaveBeenCalledTimes(1);
   });
 });

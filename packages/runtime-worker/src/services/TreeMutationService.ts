@@ -165,18 +165,24 @@ export class TreeMutationService implements TreeMutationAPI {
 
     await ephemeralShapeDB.open?.();
 
-    for (const id of nodeIds) {
-      const node = await this.coreDB.getNode?.(id);
-      if (!node || node.nodeType !== 'shape') {
-        continue;
-      }
-      const session = await ephemeralShapeDB.sessions.get(node.id);
-      if (session?.status === RUNNING_BUILD_SESSION_STATUS) {
-        return {
-          blocked: true,
-          message: 'TRASH_BUILD_SESSION_RUNNING',
-        };
-      }
+    const nodes = await Promise.all(nodeIds.map(async (id) => this.coreDB.getNode?.(id)));
+    const shapeNodeIds = Array.from(
+      new Set(
+        nodes
+          .filter((node): node is TreeNode => Boolean(node && node.nodeType === 'shape'))
+          .map((node) => node.id as NodeId)
+      )
+    );
+    if (shapeNodeIds.length === 0) {
+      return { blocked: false };
+    }
+
+    const sessions = await ephemeralShapeDB.sessions.bulkGet(shapeNodeIds);
+    if (sessions.some((session) => session?.status === RUNNING_BUILD_SESSION_STATUS)) {
+      return {
+        blocked: true,
+        message: 'TRASH_BUILD_SESSION_RUNNING',
+      };
     }
 
     return { blocked: false };
