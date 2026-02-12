@@ -345,8 +345,8 @@ export function TreeNodeInfoPanel({
         canDuplicate={canMutate}
         canCopy={canMutate}
         canCut={canMutate}
-        canTrash={canMutate}
-        canRemove={canMutate}
+        canTrash={canMutate && !isBuildRunning}
+        canRemove={canMutate && !isBuildRunning}
         canBuild={isBuildable && !isStylerMenuNode}
         canPreview={canPreview && !previewGuardLoading}
         openSteps={openSteps}

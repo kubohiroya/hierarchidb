@@ -382,7 +382,8 @@
     "errors": {
       "trashFailed": "ゴミ箱への移動に失敗しました。",
       "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはゴミ箱に移動できません。",
-      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはゴミ箱に移動できません。"
+      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはゴミ箱に移動できません。",
+      "trashBuildSessionRunning": "ビルドセッション実行中のため、ゴミ箱へ移動できません。"
     },
     "infoPanel": {
       "noTimestamp": "—",

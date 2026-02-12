@@ -19,6 +19,8 @@ type StrategyAvailabilityProvider = {
   getAvailableAdminLevels?: (country: string) => Promise<Array<string | number>>;
 };
 
+const STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY = 8;
+
 const normalizeLevels = (levels: Array<string | number> | undefined | null): number[] => {
   if (!levels) return [];
   const resolved = levels
@@ -28,8 +30,7 @@ const normalizeLevels = (levels: Array<string | number> | undefined | null): num
       if (!match) return Number.NaN;
       return Number.parseInt(match[1] ?? '', 10);
     })
-    .filter((value) => Number.isFinite(value) && value >= 0)
-    .map((value) => Number(value));
+    .filter((value): value is number => Number.isFinite(value) && value >= 0);
   return Array.from(new Set(resolved)).sort((a, b) => a - b);
 };
 
@@ -76,20 +77,29 @@ const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promis
   if (!strategy.getAvailableCountries || !strategy.getAvailableAdminLevels) {
     return null;
   }
+  const getAvailableAdminLevels = strategy.getAvailableAdminLevels;
 
   const countries = await strategy.getAvailableCountries();
   const entries = new Map<string, number[]>();
-  for (const country of countries) {
-    try {
-      const levelsRaw = await strategy.getAvailableAdminLevels(country);
-      const levels = normalizeLevels(levelsRaw);
-      const key = country.trim().toUpperCase();
-      if (key && levels.length > 0) {
-        entries.set(key, levels);
+  for (let offset = 0; offset < countries.length; offset += STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY) {
+    const chunk = countries.slice(offset, offset + STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY);
+    const resolvedChunk = await Promise.all(chunk.map(async (country) => {
+      try {
+        const levelsRaw = await getAvailableAdminLevels(country);
+        const levels = normalizeLevels(levelsRaw);
+        return { country, levels };
+      } catch (error) {
+        console.warn('[CountryAvailabilityResolver] failed to load levels for country', country, error);
+        return null;
       }
-    } catch (error) {
-      console.warn('[CountryAvailabilityResolver] failed to load levels for country', country, error);
-    }
+    }));
+    resolvedChunk.forEach((entry) => {
+      if (!entry) return;
+      const key = entry.country.trim().toUpperCase();
+      if (key && entry.levels.length > 0) {
+        entries.set(key, entry.levels);
+      }
+    });
   }
 
   if (entries.size === 0) {

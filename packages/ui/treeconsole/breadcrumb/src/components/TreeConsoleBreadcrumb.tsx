@@ -187,6 +187,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     useTrashColumnsFlag,
     trashActionValue,
   } = useTreeConsoleBreadcrumb(props);
+  const contextMenuNodeId = contextMenuNode?.id ?? contextMenuNode?.treeNodeId;
+  const isTrashDisabledForContextNode = Boolean(
+    contextMenuNodeId && props.trashDisabledNodeIds?.has(String(contextMenuNodeId))
+  );
+  const canTrashFromContextMenu = !isRootContext && !isTrashDisabledForContextNode;
 
   return (
     <>
@@ -357,8 +362,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
         isVisible={contextMenuNode?.visible !== false}
         canCreate={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)}
         canEdit={!isRootContext}
-        canTrash={!isRootContext}
-        canRemove={!isRootContext}
+        canTrash={canTrashFromContextMenu}
+        canRemove={canTrashFromContextMenu}
         canDuplicate={!isRootContext}
         canCopy={!isRootContext}
         canCut={!isRootContext}
@@ -374,11 +379,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
           else handleContextMenuClose();
         }}
         onTrash={() => {
-          if (!isRootContext) handleTrash();
+          if (canTrashFromContextMenu) handleTrash();
           else handleContextMenuClose();
         }}
         onRemove={() => {
-          if (!isRootContext) handleTrash();
+          if (canTrashFromContextMenu) handleTrash();
           else handleContextMenuClose();
         }}
         onOpen={() =>

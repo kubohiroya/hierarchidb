@@ -11,6 +11,7 @@ import type {
   UndoPayload,
 } from '@hierarchidb/tree-api';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
+import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -28,6 +29,8 @@ const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'):
   const failure = result as Extract<CoreCommandResult, { success: false }>;
   return failure.error;
 };
+
+const RUNNING_BUILD_SESSION_STATUS = 'running';
 
 export class TreeMutationService implements TreeMutationAPI {
   // Note: Implementation now routes all mutating operations via CommandProcessor.
@@ -152,6 +155,36 @@ export class TreeMutationService implements TreeMutationAPI {
         };
       }
     }
+    return { blocked: false };
+  }
+
+  private async checkRunningBuildSessionGuard(
+    nodeIds: NodeId[]
+  ): Promise<{ blocked: boolean; message?: string }> {
+    if (nodeIds.length === 0) return { blocked: false };
+
+    await ephemeralShapeDB.open?.();
+
+    const nodes = await Promise.all(nodeIds.map(async (id) => this.coreDB.getNode?.(id)));
+    const shapeNodeIds = Array.from(
+      new Set(
+        nodes
+          .filter((node): node is TreeNode => Boolean(node && node.nodeType === 'shape'))
+          .map((node) => node.id as NodeId)
+      )
+    );
+    if (shapeNodeIds.length === 0) {
+      return { blocked: false };
+    }
+
+    const sessions = await ephemeralShapeDB.sessions.bulkGet(shapeNodeIds);
+    if (sessions.some((session) => session?.status === RUNNING_BUILD_SESSION_STATUS)) {
+      return {
+        blocked: true,
+        message: 'TRASH_BUILD_SESSION_RUNNING',
+      };
+    }
+
     return { blocked: false };
   }
 
@@ -710,6 +743,14 @@ export class TreeMutationService implements TreeMutationAPI {
    */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
+      const runningBuildGuard = await this.checkRunningBuildSessionGuard(nodeIds);
+      if (runningBuildGuard.blocked) {
+        return {
+          success: false,
+          error: runningBuildGuard.message ?? 'Cannot move to trash while build session is running.',
+        };
+      }
+
       const guard = await this.checkTrashReferenceGuard(nodeIds);
       if (guard.blocked) {
         return { success: false, error: guard.message ?? 'Cannot move to trash.' };

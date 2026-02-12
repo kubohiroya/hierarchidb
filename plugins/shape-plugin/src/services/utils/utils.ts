@@ -462,3 +462,21 @@ export function summarizeCheckboxState(state: SelectedArrayByCountries | undefin
     totalSelections,
   };
 }
+
+export function countSelectedAdminPairs(
+  selectedArrayByCountries: SelectedArrayByCountries | undefined,
+): number {
+  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+    return 0;
+  }
+  let selectedAdminPairCount = 0;
+  Object.values(selectedArrayByCountries).forEach((row) => {
+    if (!Array.isArray(row)) return;
+    row.forEach((selected) => {
+      if (selected === true) {
+        selectedAdminPairCount += 1;
+      }
+    });
+  });
+  return selectedAdminPairCount;
+}

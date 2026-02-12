@@ -4,9 +4,10 @@
  */
 
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
-import type { TreeNodeInUI, TreeTableController } from '../../types.js';
+import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '../../types.js';
 
 interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;
@@ -19,6 +20,7 @@ interface TreeTableContextMenuProps {
   onClose: () => void;
   treeId?: string;
   controller?: TreeTableController;
+  buildSessionIndicator?: BuildSessionIndicator;
   ContextMenuComponent: ComponentType<NodeContextMenuProps>;
 }
 
@@ -27,10 +29,15 @@ export function TreeTableContextMenu({
   onClose,
   treeId,
   controller,
+  buildSessionIndicator,
   ContextMenuComponent,
 }: TreeTableContextMenuProps) {
   const node = contextMenuState.node;
   const isRoot = !!node && node.depth === 0;
+  const isBuildRunning = Boolean(
+    node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
+  );
+  const canTrash = !isRoot && !isBuildRunning;
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
@@ -121,7 +128,8 @@ export function TreeTableContextMenu({
       isVisible={node?.visible ?? true}
       canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}
-      canRemove={!isRoot}
+      canRemove={canTrash}
+      canTrash={canTrash}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}

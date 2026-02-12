@@ -382,7 +382,8 @@
     "errors": {
       "trashFailed": "Move to trash failed.",
       "trashReferencedByRoutes": "Cannot move to trash because routes reference this location.",
-      "trashReferencedByLocations": "Cannot move to trash because locations reference this shape."
+      "trashReferencedByLocations": "Cannot move to trash because locations reference this shape.",
+      "trashBuildSessionRunning": "Cannot move to trash while the build session is running."
     },
     "infoPanel": {
       "noTimestamp": "—",
