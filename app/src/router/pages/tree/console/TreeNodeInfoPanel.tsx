@@ -31,7 +31,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type MouseEvent } from 'react';
 import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton.js';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
@@ -124,6 +124,17 @@ export function TreeNodeInfoPanel({
     currentNode?.depth === 0 ||
     (currentNode?.id && parentNodeId === currentNode.id);
   const showCloseButton = Boolean(treeId && parentNodeId && !isRootNode);
+  const handleNavigateToParent = useCallback(() => {
+    if (!treeId || !parentNodeId || isRootNode) return;
+    navigate({ to: `/t/${treeId}/${parentNodeId}` });
+  }, [isRootNode, navigate, parentNodeId, treeId]);
+  const handleBackdropClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (event.currentTarget !== event.target) return;
+      handleNavigateToParent();
+    },
+    [handleNavigateToParent]
+  );
   const isStylerMenuNode = menuNode?.nodeType === 'styler';
   const canCreate = isFolderNodeType(menuNode?.nodeType);
 
@@ -137,6 +148,7 @@ export function TreeNodeInfoPanel({
 
   return (
     <Box
+      onClick={showCloseButton ? handleBackdropClick : undefined}
       sx={{
         height: '100%',
         display: 'flex',
@@ -163,10 +175,7 @@ export function TreeNodeInfoPanel({
           <IconButton
             aria-label={labels.closeAria}
             size="large"
-            onClick={() => {
-              if (!treeId || !parentNodeId) return;
-              navigate({ to: `/t/${treeId}/${parentNodeId}` });
-            }}
+            onClick={handleNavigateToParent}
             sx={{ position: 'absolute', top: 8, left: 8 }}
           >
             <ArrowBackIcon />

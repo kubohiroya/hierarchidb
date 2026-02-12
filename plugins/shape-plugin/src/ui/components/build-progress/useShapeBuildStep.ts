@@ -343,7 +343,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
   const previousTransitionActiveRef = useRef(false);
   const progressTerminalLogKeyRef = useRef<string | null>(null);
-  const staleProgressLogKeyRef = useRef<string | null>(null);
   const [buildSessionTransitionElapsedMs, setBuildSessionTransitionElapsedMs] = useState(0);
   const [remoteProgress, setRemoteProgress] = useState<BuildProgress | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<BuildProgressStatus | null>(null);
@@ -396,7 +395,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
     progressTerminalLogKeyRef.current = null;
-    staleProgressLogKeyRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
   }, []);
   const {
@@ -418,7 +416,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
     progressTerminalLogKeyRef.current = null;
-    staleProgressLogKeyRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
     beginBuildSessionTransitionInternal(phase, {
       message,
@@ -1084,22 +1081,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     if (canCheckStale) {
       const completedSequence = completedTaskSequenceById.get(progressTaskId);
       if (typeof completedSequence === 'number' && completedSequence >= progressTaskSequence) {
-        const staleKey = `${progressTaskId}:${progressTaskSequence}:${completedSequence}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
-        if (staleProgressLogKeyRef.current !== staleKey) {
-          staleProgressLogKeyRef.current = staleKey;
-          emitBuildSessionTransitionLog('warn', 'ignored stale worker progress update after completion', {
-            stage: resolvedTaskType ?? null,
-            taskId: progressTaskId,
-            taskTitle: progressTaskTitle || null,
-            taskSequence: progressTaskSequence,
-            completedSequence,
-            taskStatus: progressTaskStatus,
-            percentage: effectiveProgress?.percentage ?? null,
-            message: progressMessage || null,
-            displayKind: progressDisplay?.kind ?? null,
-            displayKey: progressDisplay?.key ?? null,
-          });
-        }
         return;
       }
     }
