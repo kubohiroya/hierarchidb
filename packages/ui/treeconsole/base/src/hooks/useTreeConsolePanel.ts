@@ -105,6 +105,7 @@ export function useTreeConsolePanel({
   onBreadcrumbNavigate,
   onBreadcrumbContextAction,
   breadcrumbRenderer,
+  buildSessionIndicator,
   leftSlot,
 }: TreeConsolePanelLogicArgs): TreeConsolePanelLogicResult {
   const theme = useTheme();
@@ -243,6 +244,12 @@ export function useTreeConsolePanel({
 
   const footerTopLevel = Array.isArray(data) ? data.length : 0;
   const footerSelected = selectedIds.length;
+  const trashDisabledNodeIds = useMemo<ReadonlySet<string>>(() => {
+    if (!buildSessionIndicator?.runningNodeIds) {
+      return new Set<string>();
+    }
+    return new Set(Array.from(buildSessionIndicator.runningNodeIds, (id) => String(id)));
+  }, [buildSessionIndicator?.runningNodeIds]);
 
   const defaultBreadcrumbProps = useMemo<DefaultBreadcrumbProps>(
     () => ({
@@ -259,6 +266,7 @@ export function useTreeConsolePanel({
         : undefined,
       onContextAction: onBreadcrumbContextAction,
       resolveOpenSteps,
+      trashDisabledNodeIds,
       leftSlot,
     }),
     [
@@ -268,6 +276,7 @@ export function useTreeConsolePanel({
       onMoveNodes,
       pageNodeId,
       resolveOpenSteps,
+      trashDisabledNodeIds,
       treeId,
       trashAction,
       useTrashColumns,

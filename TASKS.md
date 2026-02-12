@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #236 / `codex/fix/tree/prevent-trash-while-build-running` / start: 2026-02-13 08:01 JST
+- #235 / `ERIA-Cartograph` / start: 2026-02-13 07:30 JST
 - #234 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 07:10 JST
 - #232 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 06:44 JST
 - #227 / `codex/refactor/vt-orchestrator/topojson-runtime-adapter` / start: 2026-02-13 01:12 JST
@@ -63,6 +65,23 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 08:13 JST #236 原因は、ビルドセッション実行中ノードに対するゴミ箱移動ガードが Command API 側に存在せず、UI 側でもコンテキストメニュー（InfoPanel / TreeTable / Breadcrumb）から trash/remove が操作可能だったこと。発生範囲は `packages/runtime-worker/src/services/TreeMutationService.ts` と tree console UI メニュー経路。
+- update: 2026-02-13 08:13 JST #236 修正として (1) `TreeMutationService.moveNodesToTrash` に `ephemeralShapeDB.sessions` を参照する running セッションガードを追加し、`TRASH_BUILD_SESSION_RUNNING` で API エラー返却、(2) `TreeNodeInfoPanel` / `TreeTableContextMenu` / `TreeConsoleBreadcrumb` で build running ノードの `canTrash/canRemove` を false に統一、(3) `useTreeConsolePanel` から `trashDisabledNodeIds` を breadcrumb へ注入、(4) error/i18n マッピング（ja/en）を追加。適用範囲は `app/src/hooks/treeconsole/actions/mutations.ts`, `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `packages/ui/treeconsole/{base,breadcrumb,treetable}` 系と locale ファイル。
+- update: 2026-02-13 08:13 JST #236 検証: `pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-trash-build-session-guard.unit.test.ts`（exit 0, 2 tests passed）、`pnpm -w turbo run test --filter @hierarchidb/ui-treeconsole-treetable -- --run src/__tests__/TreeTableContextMenu.test.ts`（exit 0, 2 tests passed）。
+- blocked: 2026-02-13 08:13 JST `pnpm -w turbo run typecheck --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/app` は既知の `@hierarchidb/shape-plugin` 型不整合（`vtConfig.debug.tiles`: readonly `[]` vs mutable `string[]`）で exit 2（今回差分外）。
+- done: 2026-02-13 08:13 JST #236 は要件2点（UI disabled / APIエラー拒否）を実装・対象テストで確認済み。全体 typecheck は既知の差分外ブロッカーを継続記録。
+- update: 2026-02-13 08:01 JST Issue `fix: prevent moving node to trash while build session is running` を起票し `https://github.com/kubohiroya/hierarchidb/issues/236` を作成。
+- update: 2026-02-13 08:01 JST Issue #236 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 08:01 JST ブランチ `codex/fix/tree/prevent-trash-while-build-running` を作成して着手。
+- update: 2026-02-13 07:47 JST #235 closed PR を降順で全33件（Gemini commenterあり）走査し、有用提案を抽出。採用対象は PR #183（typo修正・auth return URL消費）、PR #228（`countSelectedAdminPairs` 重複排除）、PR #191（country availability 逐次取得の並列化）と判断。
+- update: 2026-02-13 07:47 JST #235 原因は (1) `HomePage.tsx` の `Resoruces` typo、(2) `auth.callback.tsx` で `auth_return_url` の消費後削除漏れ、(3) shape fetch 経路で `countSelectedAdminPairs` 実装重複、(4) `CountryAvailabilityResolver` の国別 admin level 取得が逐次実行だったこと。発生範囲は `app/src/router/pages/home/HomePage.tsx`, `app/src/router/routes/auth/auth.callback.tsx`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`。
+- update: 2026-02-13 07:47 JST #235 修正として (1) typo を `Resources` へ訂正、(2) `consumeReturnUrl` を追加して callback 経路で `auth_return_url` を使用後に必ず削除、(3) `countSelectedAdminPairs` を `services/utils/utils.ts` に共通化して fetch stage/worker API から再利用、(4) availability 取得を `STRATEGY_ADMIN_LEVEL_FETCH_CONCURRENCY=8` のチャンク並列へ変更。適用範囲は上記6ファイル。
+- update: 2026-02-13 07:47 JST #235 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`（exit 0, 1 file / 13 tests passed）。
+- blocked: 2026-02-13 07:47 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既知の `vtConfig.debug.tiles` readonly/mutable 不整合（今回差分外）で exit 2。
+- blocked: 2026-02-13 07:47 JST `pnpm -w turbo run test --filter @hierarchidb/app` は既知の app 全体失敗（`geosWorkerClient.unit.test.ts` 3件失敗/timeout と `TreeConsoleIntegrationImportGuard.unit.test.tsx` import解決失敗）で exit 1。
+- update: 2026-02-13 07:30 JST Issue `chore/review/apply-gemini-pr-suggestions` を起票し `https://github.com/kubohiroya/hierarchidb/issues/235` を作成。
+- update: 2026-02-13 07:30 JST Issue #235 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 07:30 JST ユーザー指示に従い既存ブランチ `ERIA-Cartograph` のまま closed PR の Gemini 提案調査に着手。
 - update: 2026-02-13 07:14 JST #234 原因は `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts` の `buildTransformByBandTasks` が `fetchCacheMeta` を `.toArray()` で全件展開しており、大量データ時のメモリ負荷が高いことと、`fetchArtifactHash` 解決/補完ロジックが `shapeFetchStage.ts`・`shapePipelineTransformStage.ts`・`shapePipelineShared.ts` に重複していたこと。発生範囲は上記3ファイルの fetch artifact hash 解決経路。
 - update: 2026-02-13 07:14 JST #234 修正として (1) `plugins/shape-plugin/src/services/vt/shapeFetchArtifactHash.ts` を新設して `hashFetchArtifact` / `resolveFetchArtifactHashFromRecord` / `resolveFetchArtifactHashById` を共通化、(2) `shapePipelineShared.ts` の `buildTransformByBandTasks` を `FETCH_CACHE_META_CHUNK_SIZE=500` のチャンク処理へ変更し `fetchCacheMeta` 一括読み込みを撤廃、(3) `shapeFetchStage.ts` と `shapePipelineTransformStage.ts` を共通ユーティリティ利用へ置換。適用範囲は上記4ファイル。
 - update: 2026-02-13 07:14 JST #234 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts src/__tests__/unit/shapeStageReconcile.unit.test.ts`（exit 0, 2 files / 11 tests passed）。

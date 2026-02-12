@@ -417,6 +417,7 @@ export function TreeTableCore({
         onClose={handleContextMenuClose}
         treeId={treeId}
         controller={controller ?? undefined}
+        buildSessionIndicator={buildSessionIndicator}
         ContextMenuComponent={ContextMenuComponent}
       />
     </StyledTableContainer>

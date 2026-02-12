@@ -127,6 +127,11 @@ export interface TreeConsoleBreadcrumbProps {
    * Optional renderer override for host-specific breadcrumb presentation.
    */
   renderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
+
+  /**
+   * Optional node-id set where move-to-trash should be disabled.
+   */
+  trashDisabledNodeIds?: ReadonlySet<string>;
 }
 
 export type TreeConsoleBreadcrumbRendererProps = {

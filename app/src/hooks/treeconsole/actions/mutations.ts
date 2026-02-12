@@ -52,6 +52,12 @@ export const createMutationActions = (
         'Cannot move to trash because locations reference this shape.'
       );
     }
+    if (error === 'TRASH_BUILD_SESSION_RUNNING') {
+      return translateError(
+        'treeConsole.errors.trashBuildSessionRunning',
+        'Cannot move to trash while the build session is running.'
+      );
+    }
     return error;
   };
 
