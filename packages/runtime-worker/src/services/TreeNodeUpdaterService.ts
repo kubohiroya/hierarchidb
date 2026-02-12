@@ -14,7 +14,7 @@ import type {
   TreeNodeMetadata,
 } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, PeerEntity, TreeId, ValidationResult } from '@hierarchidb/core-types';
-import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
@@ -100,6 +100,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
     if (nodeType === 'shape') {
       return {
         buildConfig: DEFAULT_BUILD_CONFIG,
+        processingConfig: DEFAULT_PROCESSING_CONFIG,
       };
     }
     return undefined;

@@ -5,7 +5,11 @@ import { readFile } from 'node:fs/promises';
 import type { BatchProgressEvent, BatchProgressPayload, BatchTaskSummary, BatchTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { DEFAULT_BUILD_CONFIG, type SelectedArrayByCountries } from '@hierarchidb/shape-plugin';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  type SelectedArrayByCountries,
+} from '@hierarchidb/shape-plugin';
 import { WorkerProvider } from '../WorkerProvider.tsx';
 
 // Run with: pnpm --filter @hierarchidb/app test -- --run src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx
@@ -40,6 +44,7 @@ vi.mock('~/worker-runtime/client.ts', async () => {
     startBatchProcess: (
       nodeId: NodeId,
       buildConfig: Record<string, unknown>,
+      processingConfig: Record<string, unknown>,
       downloadTaskPayloads: unknown[],
       buildContinuationPolicy?: string
     ) => Promise<void>;
@@ -75,7 +80,9 @@ vi.mock('~/worker-runtime/client.ts', async () => {
   let workerInitCompleted = false;
   let rawWorkerInstance: { terminate: () => void } | null = null;
 
-  const resolveShapeDraftData = async (nodeId: NodeId) => {
+  const resolveShapeDraftData = async (
+    nodeId: NodeId,
+  ): Promise<{ buildConfig: Record<string, unknown>; processingConfig: Record<string, unknown> }> => {
     const services = await WorkerService.getSingleton([]);
     const updater = services.getTreeNodeUpdaterAPI();
     const node = await updater.getTreeNode(nodeId);
@@ -87,7 +94,11 @@ vi.mock('~/worker-runtime/client.ts', async () => {
     if (!buildConfig) {
       throw new Error(`[test-worker] buildConfig missing for node ${String(nodeId)}`);
     }
-    return buildConfig;
+    const processingConfig = payload.processingConfig as Record<string, unknown> | undefined;
+    if (!processingConfig) {
+      throw new Error(`[test-worker] processingConfig missing for node ${String(nodeId)}`);
+    }
+    return { buildConfig, processingConfig };
   };
 
   const toBatchSessionStatus = (nodeId: NodeId, status: string, progress?: number) => ({
@@ -142,10 +153,11 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       if (nodeType !== ('shape' as NodeType)) {
         throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
       }
-      const buildConfig = await resolveShapeDraftData(nodeId);
+      const draftConfig = await resolveShapeDraftData(nodeId);
       await shapeBatchAPI.startBatchProcess(
         nodeId,
-        buildConfig,
+        draftConfig.buildConfig,
+        draftConfig.processingConfig,
         downloadTaskPayloads ?? [],
         buildContinuationPolicy
       );
@@ -423,6 +435,7 @@ describe('Shape WorkerProvider full flow', () => {
         metadata: { name: 'JPN Shape', description: '', tags: [] },
         draftData: {
           buildConfig,
+          processingConfig: DEFAULT_PROCESSING_CONFIG,
           selectedArrayByCountries,
         },
       });

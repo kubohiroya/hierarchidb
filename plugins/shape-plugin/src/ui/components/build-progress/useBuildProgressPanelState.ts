@@ -26,7 +26,7 @@ import {
 } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
-import type { ShapeBuildConfig } from '../../../common/types/build.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/taskMessages.ts';
 
@@ -420,9 +420,9 @@ export const useBuildProgressPanelState = (params: {
   ), [stageProgress, summary.overallProgress]);
 
   const stageConcurrencyIndicators = useMemo(() => {
-    const buildConfig = params.data?.buildConfig
-      ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
-    if (!buildConfig) return undefined;
+    const processingConfig = params.data?.processingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, params.data.processingConfig)
+      : DEFAULT_PROCESSING_CONFIG;
     const isBuildRunning = summary.buildStatus === 'running';
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
       // Never animate stage slots once the build session is not running.
@@ -430,11 +430,11 @@ export const useBuildProgressPanelState = (params: {
       const maxConcurrent = (() => {
         switch (stage.id) {
           case 'fetch':
-            return buildConfig.fetchConfig.maxConcurrent;
+            return processingConfig.fetch.maxConcurrent;
           case 'transform':
-            return buildConfig.transformConfig.maxConcurrent;
+            return processingConfig.transform.maxConcurrent;
           case 'vt':
-            return buildConfig.vtConfig.maxConcurrent;
+            return processingConfig.vt.maxConcurrent;
           default:
             return undefined;
         }
@@ -443,7 +443,7 @@ export const useBuildProgressPanelState = (params: {
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
       return acc;
     }, {});
-  }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
+  }, [params.data?.processingConfig, stageTaskScan, stages, summary.buildStatus]);
   useEffect(() => {
     if (!isDev) return;
     const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;

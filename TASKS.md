@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #216 / `codex/fix/shape/stage-reset-resume-status-mismatch` / start: 2026-02-12 19:49 JST
+- #215 / `codex/refactor/shape-processing-config` / start: 2026-02-12 14:02 JST
 - #213 / `codex/refactor/build-session-subscription-unify` / start: 2026-02-12 12:49 JST
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 - #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
@@ -54,6 +56,15 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 19:57 JST #216 原因は `plugins/shape-plugin/src/worker/shouldReuseTaskQueueOnStart.ts` が `session status` 未設定（`undefined/null`）でも task queue 再利用を許可していたこと。発生範囲は `plugins/shape-plugin/src/worker/api.ts` の `startBatchProcess`（`canReuseTaskQueue` 判定〜`seed-task-queue`）で、ステージreset後に stale task が再シードされ Fetch/VT 表示が不整合になっていた。
+- update: 2026-02-12 19:57 JST 修正として (1) `shouldReuseTaskQueueOnStart` を `running/paused/failed` のみ再利用可へ厳格化、(2) `startBatchProcess` の `seed-task-queue` 実行条件を `canReuseTaskQueue === true` に限定。適用範囲は `plugins/shape-plugin/src/worker/shouldReuseTaskQueueOnStart.ts` と `plugins/shape-plugin/src/worker/api.ts`、関連テスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/shouldReuseTaskQueueOnStart.unit.test.ts`。
+- update: 2026-02-12 19:57 JST 検証完了（`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/shouldReuseTaskQueueOnStart.unit.test.ts` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` すべて exit 0）。
+- update: 2026-02-12 19:49 JST Issue `fix/shape/stage-reset-resume-status-mismatch` を起票し `https://github.com/kubohiroya/hierarchidb/issues/216` を作成。
+- update: 2026-02-12 19:49 JST Issue #216 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 19:49 JST ブランチ `codex/fix/shape/stage-reset-resume-status-mismatch` を作成して着手。
+- update: 2026-02-12 14:01 JST Issue `refactor/shape/split-processing-config-from-build-config` を起票し `https://github.com/kubohiroya/hierarchidb/issues/215` を作成。
+- update: 2026-02-12 14:01 JST Issue #215 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 14:02 JST ブランチ `codex/refactor/shape-processing-config` を作成して着手。
 - update: 2026-02-12 12:49 JST Issue `refactor/app/build-session-subscription-unify` を起票し `https://github.com/kubohiroya/hierarchidb/issues/213` を作成。
 - update: 2026-02-12 12:49 JST Issue #213 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
 - update: 2026-02-12 12:49 JST ブランチ `codex/refactor/build-session-subscription-unify` を作成して着手。

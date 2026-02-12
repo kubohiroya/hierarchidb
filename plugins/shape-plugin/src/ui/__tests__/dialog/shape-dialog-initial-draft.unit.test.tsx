@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import type { ShapeEntity } from '../../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG, summarizeCheckboxState, validateBatchConfig } from '../../../common/types/index.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  summarizeCheckboxState,
+  validateBatchConfig,
+} from '../../../common/types/index.js';
 import '../../components/steps-provider.tsx';
 
 vi.mock('../../i18n.js', () => ({
@@ -81,8 +86,12 @@ const resolveStepValidities = async (data: Partial<ShapeEntity>) => {
 
 describe('shape dialog initial draft data', () => {
   it('seeds default build config on create and validates initial steps', async () => {
-    const createDraft: Partial<ShapeEntity> = { buildConfig: DEFAULT_BUILD_CONFIG };
+    const createDraft: Partial<ShapeEntity> = {
+      buildConfig: DEFAULT_BUILD_CONFIG,
+      processingConfig: DEFAULT_PROCESSING_CONFIG,
+    };
     expect(createDraft.buildConfig).toEqual(DEFAULT_BUILD_CONFIG);
+    expect(createDraft.processingConfig).toEqual(DEFAULT_PROCESSING_CONFIG);
     expect(createDraft.selectedArrayByCountries).toBeUndefined();
 
     const validities = await resolveStepValidities(createDraft);
@@ -100,7 +109,10 @@ describe('shape dialog initial draft data', () => {
     expect(templateDraft.buildConfig?.dataSourceName).toBe('geoboundaries');
     expect(selection.hasSelection).toBe(true);
 
-    const processingValidation = validateBatchConfig(templateDraft.buildConfig ?? DEFAULT_BUILD_CONFIG);
+    const processingValidation = validateBatchConfig(
+      templateDraft.buildConfig ?? DEFAULT_BUILD_CONFIG,
+      templateDraft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+    );
 
     const validities = await resolveStepValidities(templateDraft);
     expect(validities['data-source']).toBe(true);

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { CoreDB } from '../../services/CoreDB.js';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
 
@@ -48,7 +48,15 @@ describe('TreeNodeUpdaterService draft initialization (shape)', () => {
     const data = {
       buildConfig: {
         dataSourceName: 'gadm',
-        fetchConfig: { maxConcurrent: 2 },
+      },
+      processingConfig: {
+        fetch: {
+          maxConcurrent: 2,
+          retryAttempts: 2,
+          retryDelay: 5000,
+          retryLimit: 2,
+          retryBackoff: 'linear',
+        },
       },
     };
     await core.nodes.put({
@@ -97,10 +105,16 @@ describe('TreeNodeUpdaterService draft initialization (shape)', () => {
     expect((node?.draftData as { buildConfig?: unknown } | undefined)?.buildConfig).toEqual(
       DEFAULT_BUILD_CONFIG
     );
+    expect((node?.draftData as { processingConfig?: unknown } | undefined)?.processingConfig).toEqual(
+      DEFAULT_PROCESSING_CONFIG
+    );
 
     const stored = await core.nodes.get(nodeId);
     expect((stored as { draftData?: { buildConfig?: unknown } }).draftData?.buildConfig).toEqual(
       DEFAULT_BUILD_CONFIG
+    );
+    expect((stored as { draftData?: { processingConfig?: unknown } }).draftData?.processingConfig).toEqual(
+      DEFAULT_PROCESSING_CONFIG
     );
   });
 });

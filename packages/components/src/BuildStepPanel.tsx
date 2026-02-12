@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { BuildStepStagePanel } from './BuildStepStagePanel.tsx';
@@ -27,6 +27,9 @@ export interface BuildStepPanelProps {
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
   stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
+  onStageConcurrencyIndicatorClick?: (stageId: string, event: ReactMouseEvent<HTMLElement>) => void;
+  stageConcurrencyIndicatorAriaLabels?: Record<string, string>;
+  stageLeadingControls?: Record<string, ReactNode>;
   stageMenus?: Record<string, BuildStepStageMenu>;
   stageHeaderMeta?: Record<string, ReactNode>;
   splitViewBreakpoints?: number[];
@@ -63,6 +66,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   stageProgress = {},
   paneProgress,
   stageConcurrencyIndicators,
+  onStageConcurrencyIndicatorClick,
+  stageConcurrencyIndicatorAriaLabels,
+  stageLeadingControls,
   stageMenus,
   stageHeaderMeta,
   splitViewBreakpoints,
@@ -183,6 +189,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
             count: indicator.maxConcurrent,
             isRunning: indicator.isRunning,
           } : undefined}
+          leadingControl={stageLeadingControls?.[stage.id]}
+          onConcurrencyIndicatorClick={onStageConcurrencyIndicatorClick
+            ? (event) => onStageConcurrencyIndicatorClick(stage.id, event)
+            : undefined}
+          concurrencyIndicatorAriaLabel={stageConcurrencyIndicatorAriaLabels?.[stage.id]}
           menuItems={stageMenus?.[stage.id]?.items}
           menuDisabled={stageMenus?.[stage.id]?.disabled}
           menuAriaLabel={stageMenus?.[stage.id]?.ariaLabel}
@@ -202,7 +213,21 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         </BuildStepStagePanel>
       </Box>
     );
-  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageMenus, stageContents, stageLoadingState, updateStageFilter]);
+  }, [
+    onStageConcurrencyIndicatorClick,
+    resolveStageFilter,
+    resolveStageProgress,
+    stageById,
+    stageConcurrencyIndicatorAriaLabels,
+    stageConcurrencyIndicators,
+    stageLeadingControls,
+    stageContents,
+    stageLoadingState,
+    stageMenus,
+    stageProgressContent,
+    taskCountByStage,
+    updateStageFilter,
+  ]);
 
   const computedStatusLabel = (() => {
     switch (status) {

@@ -24,6 +24,7 @@ type WorkerNumberConfigCardProps = {
   warningText?: string;
   disabled?: boolean;
   formatLabel?: (value: number) => string;
+  disableHoverEffect?: boolean;
 };
 
 const defaultFormatLabel = (value: number) => `${value} workers`;
@@ -42,6 +43,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   warningText,
   disabled,
   formatLabel,
+  disableHoverEffect = false,
 }) => {
   const clampedValue = Math.max(min, Math.min(max, value));
   const labelValue = Math.round(clampedValue);
@@ -55,7 +57,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   };
   const labelText = (formatLabel ?? defaultFormatLabel)(labelValue);
 
-  const hoverStyles = getBuildConfigHoverCardSx(disabled);
+  const hoverStyles = disableHoverEffect ? {} : getBuildConfigHoverCardSx(disabled);
 
   return (
     <Paper

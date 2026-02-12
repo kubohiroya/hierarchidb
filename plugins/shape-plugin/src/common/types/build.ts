@@ -1,6 +1,14 @@
 import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BaseBuildConfig, VectorTileFormat } from '@hierarchidb/gis-sdk';
+import type {
+  BaseBuildConfig,
+  CleanupConfig,
+  DynamicConcurrencyConfig,
+  FetchConfig,
+  TransformConfig,
+  VectorTileFormat,
+  VTConfig,
+} from '@hierarchidb/gis-sdk';
 import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';
 
@@ -8,9 +16,36 @@ import type { DataSourceName } from './data-source.js';
 //import type { ObsolateBuildConfig } from './ObsolateBuildConfig.ts';
 //import type { FeatureFilterMethod, ExtractionMode } from './processing.js';
 
-export interface ShapeBuildConfig extends BaseBuildConfig<DataSourceName> {
+export type ShapeBuildFetchConfig = Omit<
+  FetchConfig,
+  'maxConcurrent' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
+>;
+export type ShapeBuildTransformConfig = Omit<TransformConfig, 'maxConcurrent'>;
+export type ShapeBuildVtConfig = Omit<VTConfig, 'maxConcurrent' | 'dynamicConcurrency'>;
+
+export interface ShapeBuildConfig {
   dataSourceName: DataSourceName;
+  fetchConfig: ShapeBuildFetchConfig;
+  transformConfig: ShapeBuildTransformConfig;
+  vtConfig: ShapeBuildVtConfig;
+  cleanupConfig?: CleanupConfig;
 }
+
+export interface ShapeProcessingConfig {
+  fetch: Pick<
+    FetchConfig,
+    'maxConcurrent' | 'retryAttempts' | 'retryDelay' | 'retryLimit' | 'retryBackoff'
+  >;
+  transform: {
+    maxConcurrent: number;
+  };
+  vt: {
+    maxConcurrent: number;
+    dynamicConcurrency?: DynamicConcurrencyConfig;
+  };
+}
+
+export type ShapeRuntimeBuildConfig = BaseBuildConfig<DataSourceName>;
 
 export type BuildTaskType = TaskStage;
 export type BuildTaskStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'paused' | 'regression';

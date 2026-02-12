@@ -1,14 +1,14 @@
-import type { ShapeBuildConfig } from './build.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from './build.js';
 import type { SelectedArrayByCountries } from './ShapeEntity.ts';
 
-export type BatchConfig = ShapeBuildConfig;
-
 export interface CreateShapeData {
-  batchConfig: BatchConfig;
+  buildConfig: ShapeBuildConfig;
+  processingConfig: ShapeProcessingConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
 }
 
 export interface UpdateShapeData {
-  batchConfig?: BatchConfig;
+  buildConfig?: ShapeBuildConfig;
+  processingConfig?: ShapeProcessingConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
 }

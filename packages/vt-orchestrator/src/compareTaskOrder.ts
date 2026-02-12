@@ -43,6 +43,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   let loggedTaskUpdate = 0;
   let loggedTaskDone = 0;
   let loggedTaskError = 0;
+  let loggedPauseWait = 0;
   const maxTaskLogs = 2;
 
   const extractTaskId = (error: unknown): string | null => {
@@ -135,7 +136,18 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       const task = pending[index];
       if (!task) return;
       if (waitIfPaused) {
+        const pauseWaitStartedAt = Date.now();
         await waitIfPaused();
+        const pauseWaitElapsedMs = Date.now() - pauseWaitStartedAt;
+        if (pauseWaitElapsedMs > 0 && loggedPauseWait < maxTaskLogs) {
+          loggedPauseWait += 1;
+          console.warn('[vt-orchestrator][runStageTasks] pause wait resolved', {
+            nodeId,
+            stage,
+            taskId: task.taskId,
+            waitMs: pauseWaitElapsedMs,
+          });
+        }
       }
       if (aborted || abortSignal?.aborted) return;
       if (loggedTaskStart < maxTaskLogs) {

@@ -1,6 +1,6 @@
 import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata } from '../../common/types/index.js';
 import {
   createTransformByBandHandler,
@@ -26,7 +26,7 @@ import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformStageParams = {
   nodeId: NodeId;
-  buildConfig: ShapeBuildConfig;
+  buildConfig: ShapeRuntimeBuildConfig;
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>;
   enableHighDetailBands: boolean;
   countryLookup: Map<string, CountryMetadata>;

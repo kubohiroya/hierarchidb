@@ -32,6 +32,9 @@ export type BuildStepStageSummaryPanelProps = {
     count: number;
     isRunning: boolean;
   };
+  onConcurrencyIndicatorClick?: (event: MouseEvent<HTMLElement>) => void;
+  concurrencyIndicatorAriaLabel?: string;
+  leadingControl?: ReactNode;
   menuItems?: BuildStepStageMenuItem[];
   menuDisabled?: boolean;
   menuAriaLabel?: string;
@@ -55,6 +58,9 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   chipPlacement = 'header',
   taskCount,
   concurrencyIndicator,
+  onConcurrencyIndicatorClick,
+  concurrencyIndicatorAriaLabel,
+  leadingControl,
   menuItems,
   menuDisabled,
   menuAriaLabel,
@@ -92,7 +98,28 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     : theme.palette.grey[400];
   const indicatorSx = isIndicatorRunning ? undefined : { color: indicatorIdleColor };
   const indicatorNode = indicatorCount > 0 ? (
-    <Stack direction="row" spacing={0.5} alignItems="center">
+    <Stack
+      component={onConcurrencyIndicatorClick ? 'button' : 'div'}
+      type={onConcurrencyIndicatorClick ? 'button' : undefined}
+      aria-label={onConcurrencyIndicatorClick ? (concurrencyIndicatorAriaLabel ?? 'Edit stage concurrency') : undefined}
+      direction="row"
+      spacing={0.5}
+      alignItems="center"
+      onClick={onConcurrencyIndicatorClick}
+      sx={onConcurrencyIndicatorClick ? {
+        p: 0,
+        m: 0,
+        border: 0,
+        background: 'none',
+        cursor: 'pointer',
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: 2,
+          borderRadius: 1,
+        },
+      } : undefined}
+    >
       {Array.from({ length: indicatorCount }).map((_, index) => (
         <CircularProgress
           key={`stage-slot-${index}`}
@@ -168,9 +195,14 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     </Typography>
   );
   const footerChips = chipPlacement === 'belowProgress' ? (
-    <Box display="flex" justifyContent="flex-end" sx={{ mt: '2px', mb: '2px' }}>
-      <Stack direction="row" spacing={1} alignItems="center">
-        {indicatorNode}
+    <Box display="flex" alignItems="center" sx={{ mt: '2px', mb: '2px' }}>
+      {(leadingControl || indicatorNode) ? (
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {leadingControl}
+          {indicatorNode}
+        </Stack>
+      ) : null}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: 'auto' }}>
         {chips}
         {progressPercentNode}
       </Stack>
@@ -252,6 +284,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             ) : null}
             {headerChips ? (
               <Stack direction="row" spacing={1} alignItems="center">
+                {leadingControl}
                 {indicatorNode}
                 {headerChips}
                 {progressPercentNode}

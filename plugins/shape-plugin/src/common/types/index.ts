@@ -1,6 +1,13 @@
 export * from './data-source.js';
 export * from './build.ts';
-export type { ShapeBuildConfig } from './build.ts';
+export type {
+  ShapeBuildConfig,
+  ShapeBuildFetchConfig,
+  ShapeBuildTransformConfig,
+  ShapeBuildVtConfig,
+  ShapeProcessingConfig,
+  ShapeRuntimeBuildConfig,
+} from './build.ts';
 export * from './validation.js';
 export * from './create-update.js';
 export * from './constants.js';
@@ -28,7 +35,9 @@ export type {
   VTConfig,
 } from '@hierarchidb/gis-sdk';
 export {
+  composeRuntimeBuildConfig,
   mergeBuildConfig,
+  mergeProcessingConfig,
   summarizeCheckboxState,
   validateBatchConfig,
 } from '../../services/utils/utils.js';

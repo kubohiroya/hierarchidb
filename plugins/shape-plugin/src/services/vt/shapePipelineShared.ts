@@ -17,7 +17,7 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
@@ -605,9 +605,9 @@ export const buildVtTasks = async (
   return tasks;
 };
 
-export const resolveTransformConfig = (config: ShapeBuildConfig) => config.transformConfig;
+export const resolveTransformConfig = (config: ShapeRuntimeBuildConfig) => config.transformConfig;
 
-export const resolveVtConfig = (config: ShapeBuildConfig) => config.vtConfig;
+export const resolveVtConfig = (config: ShapeRuntimeBuildConfig) => config.vtConfig;
 
 const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] => (
   Object.entries(layers).map(([name, tile]) => ({

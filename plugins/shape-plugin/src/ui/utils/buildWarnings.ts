@@ -42,11 +42,11 @@ export const getStageConcurrencyWarning = (
 };
 
 export const getBuildConfigSnapshot = (config?: {
-  fetchConfig?: { maxConcurrent?: number };
-  transformConfig?: { maxConcurrent?: number };
-  vtConfig?: { maxConcurrent?: number };
+  fetch?: { maxConcurrent?: number };
+  transform?: { maxConcurrent?: number };
+  vt?: { maxConcurrent?: number };
 }): ShapeBuildConfigSnapshot => ({
-  downloadConcurrency: config?.fetchConfig?.maxConcurrent,
-  transformWorkers: config?.transformConfig?.maxConcurrent,
-  tileWorkers: config?.vtConfig?.maxConcurrent,
+  downloadConcurrency: config?.fetch?.maxConcurrent,
+  transformWorkers: config?.transform?.maxConcurrent,
+  tileWorkers: config?.vt?.maxConcurrent,
 });

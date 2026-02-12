@@ -4,13 +4,22 @@
 
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BatchConfig } from '../../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from '../../../common/types/index.js';
+import {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_PROCESSING_CONFIG,
+  mergeBuildConfig,
+  mergeProcessingConfig,
+} from '../../../common/types/index.js';
 import { shapeBatchAPI } from '../../api.js';
 
-const createBatchConfig = (
-  overrides: Partial<BatchConfig> = {},
-): BatchConfig => mergeBuildConfig(DEFAULT_BUILD_CONFIG, overrides);
+const createBuildConfig = (
+  overrides: Partial<ShapeBuildConfig> = {},
+): ShapeBuildConfig => mergeBuildConfig(DEFAULT_BUILD_CONFIG, overrides);
+
+const createProcessingConfig = (
+  overrides: Partial<ShapeProcessingConfig> = {},
+): ShapeProcessingConfig => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, overrides);
 
 describe('Shape Plugin API', () => {
   describe('Batch Session Recovery for Direct Link Access', () => {
@@ -97,15 +106,16 @@ describe('Shape Plugin API', () => {
   describe('Batch Processing', () => {
     it('should reject invalid processing config', async () => {
       const draftId = 'node-123' as NodeId;
-      const config = createBatchConfig({
-        fetchConfig: {
-          ...DEFAULT_BUILD_CONFIG.fetchConfig,
+      const buildConfig = createBuildConfig();
+      const processingConfig = createProcessingConfig({
+        fetch: {
+          ...DEFAULT_PROCESSING_CONFIG.fetch,
           maxConcurrent: 20,
         },
       });
 
       await expect(
-        shapeBatchAPI.startBatchProcess(draftId, config, []),
+        shapeBatchAPI.startBatchProcess(draftId, buildConfig, processingConfig, []),
       ).rejects.toThrow('Invalid processing config');
     });
   });

@@ -21,6 +21,12 @@ export const createBuildStartDraftData = (params: {
     ...toRecord(liveData?.buildConfig),
     ...toRecord(patch?.buildConfig),
   };
+  const persistedProcessingConfig = toRecord(currentDraftData.processingConfig);
+  const nextProcessingConfig = {
+    ...persistedProcessingConfig,
+    ...toRecord(liveData?.processingConfig),
+    ...toRecord(patch?.processingConfig),
+  };
   const nextSelectedArrayByCountries = (
     patch?.selectedArrayByCountries
     ?? liveData?.selectedArrayByCountries
@@ -31,6 +37,7 @@ export const createBuildStartDraftData = (params: {
     ...sanitizeShapeDraftData(currentDraftData),
     ...sanitizeShapeDraftData(patch ?? {}),
     buildConfig: nextBuildConfig,
+    processingConfig: nextProcessingConfig,
   };
   if (nextSelectedArrayByCountries !== undefined) {
     nextDraftData.selectedArrayByCountries = nextSelectedArrayByCountries;

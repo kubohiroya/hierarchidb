@@ -10,7 +10,7 @@ import type {
   TreeNode,
   UndoPayload,
 } from '@hierarchidb/tree-api';
-import { DEFAULT_BUILD_CONFIG } from '@hierarchidb/shape-api';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -941,6 +941,7 @@ export class TreeMutationService implements TreeMutationAPI {
     if (nodeType === 'shape') {
       return this.cloneDraftData({
         buildConfig: DEFAULT_BUILD_CONFIG,
+        processingConfig: DEFAULT_PROCESSING_CONFIG,
       });
     }
     return undefined;

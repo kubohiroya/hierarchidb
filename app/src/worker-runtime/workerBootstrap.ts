@@ -72,6 +72,7 @@ type ShapeBatchAPI = {
   startBatchProcess: (
     draftId: NodeId,
     batchConfig: unknown,
+    processingConfig: unknown,
     downloadTaskPayloads: unknown[],
     buildContinuationPolicy?: BuildContinuationPolicy
   ) => Promise<NodeId>;
@@ -568,8 +569,15 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
                 (fallbackNode as { draftData?: unknown } | undefined)?.draftData
             );
             const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
+            const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
             const payloads = downloadTaskPayloads ?? [];
-            await batchApi.startBatchProcess(nodeId, batchConfig, payloads, buildContinuationPolicy);
+            await batchApi.startBatchProcess(
+              nodeId,
+              batchConfig,
+              processingConfig,
+              payloads,
+              buildContinuationPolicy,
+            );
             const session = batchApi.getBatchSession ? await batchApi.getBatchSession(nodeId) : undefined;
             const status = toBatchSessionStatus(
               session as Record<string, unknown> | undefined,
@@ -591,10 +599,21 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           reason?: string
         ): Promise<void> => {
           const batchApi = resolveShapeBatchApiOrThrow(nodeType);
+          console.warn('[worker bootstrap][PauseTrace] pause-requested', {
+            nodeType,
+            nodeId,
+            reason: reason ?? null,
+          });
           setRuntimeTransientStatus(nodeType, nodeId, 'pausing', true);
           try {
             if (batchApi.invokeBatchCommand) {
               await batchApi.invokeBatchCommand('session/pause', { nodeId, stopReason: reason });
+              console.warn('[worker bootstrap][PauseTrace] pause-finished', {
+                nodeType,
+                nodeId,
+                reason: reason ?? null,
+                observedStatus: 'paused',
+              });
               clearRuntimeTransientStatus(nodeType, nodeId, false);
               return;
             }
@@ -606,8 +625,21 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             if (batchApi.pauseBatchProcessing) {
               await batchApi.pauseBatchProcessing(draftId);
             }
+            console.warn('[worker bootstrap][PauseTrace] pause-finished', {
+              nodeType,
+              nodeId,
+              reason: reason ?? null,
+              observedStatus: 'paused',
+            });
             clearRuntimeTransientStatus(nodeType, nodeId, false);
           } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn('[worker bootstrap][PauseTrace] pause-failed', {
+              nodeType,
+              nodeId,
+              reason: reason ?? null,
+              errorMessage: msg,
+            });
             clearRuntimeTransientStatus(nodeType, nodeId, true);
             throw error;
           }
@@ -622,7 +654,32 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           setRuntimeTransientStatus(nodeType, nodeId, 'resuming', true);
           try {
             if (batchApi.invokeBatchCommand) {
-              await batchApi.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
+              const draft = batchApi.getDraft ? await batchApi.getDraft(nodeId) : undefined;
+              const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
+              const draftData = coerceRecord(
+                (draft as { draftData?: unknown } | undefined)?.draftData ??
+                  (fallbackNode as { draftData?: unknown } | undefined)?.draftData
+              );
+              const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
+              const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
+              const processingConfigRecord = coerceRecord(processingConfig);
+              const transformConfigRecord = coerceRecord(
+                (processingConfigRecord as { transform?: unknown }).transform
+              );
+              const transformMaxConcurrent = transformConfigRecord.maxConcurrent;
+              console.warn('[worker bootstrap][ResumeTrace] resume-request-config', {
+                nodeType,
+                nodeId,
+                transformMaxConcurrent: typeof transformMaxConcurrent === 'number'
+                  ? transformMaxConcurrent
+                  : transformMaxConcurrent ?? null,
+              });
+              await batchApi.invokeBatchCommand('session/resume', {
+                nodeId,
+                buildContinuationPolicy,
+                buildConfig: batchConfig,
+                processingConfig,
+              });
               setHeapContext({ nodeType, nodeId });
               clearRuntimeTransientStatus(nodeType, nodeId, true);
               return;
@@ -649,6 +706,37 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           downloadTaskPayloads?: ShapeDownloadTaskPayloads,
           buildContinuationPolicy?: BuildContinuationPolicy
         ): Promise<BatchSessionStatus> => {
+          const RUNNING_SESSION_STALE_GRACE_MS = 20_000;
+          const inspectTasks = async (): Promise<{
+            total: number;
+            hasInFlight: boolean;
+            hasVtStageTasks: boolean;
+          }> => {
+            const provider = batchTaskProviders.get(nodeType);
+            if (!provider) {
+              return {
+                total: 0,
+                hasInFlight: false,
+                hasVtStageTasks: false,
+              };
+            }
+            try {
+              const tasks = await provider(nodeId);
+              return {
+                total: tasks.length,
+                hasInFlight: tasks.some((task) => task.status === 'running' || task.status === 'queued'),
+                hasVtStageTasks: tasks.some((task) => task.stage === 'vt'),
+              };
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : String(error);
+              console.warn('[worker bootstrap] failed to inspect build tasks:', msg);
+              return {
+                total: 0,
+                hasInFlight: false,
+                hasVtStageTasks: false,
+              };
+            }
+          };
           const batchApi = resolveShapeBatchApiOrThrow(nodeType);
           const session = batchApi.getBatchSession ? await batchApi.getBatchSession(nodeId) : undefined;
           const current = toBatchSessionStatus(
@@ -657,7 +745,31 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           );
           const currentRuntimeStatus = resolveRuntimeStatusFromBatch(current.status);
           if (currentRuntimeStatus === 'running' || currentRuntimeStatus === 'starting') {
-            return current;
+            const now = Date.now();
+            const hasRecentActivity = typeof current.lastActivity === 'number'
+              && now - current.lastActivity < RUNNING_SESSION_STALE_GRACE_MS;
+            const currentTaskState = await inspectTasks();
+            const currentHasInFlightTasks = currentTaskState.hasInFlight;
+            if (hasRecentActivity || currentHasInFlightTasks) {
+              return current;
+            }
+            await runResumeBatchSession(nodeType, nodeId, buildContinuationPolicy);
+            const resumed = batchApi.getBatchSession ? await batchApi.getBatchSession(nodeId) : undefined;
+            const resumedStatus = toBatchSessionStatus(
+              resumed as Record<string, unknown> | undefined,
+              nodeId
+            );
+            const resumedRuntimeStatus = resolveRuntimeStatusFromBatch(resumedStatus.status);
+            if (resumedRuntimeStatus === 'running' || resumedRuntimeStatus === 'starting') {
+              const resumedHasRecentActivity = typeof resumedStatus.lastActivity === 'number'
+                && Date.now() - resumedStatus.lastActivity < RUNNING_SESSION_STALE_GRACE_MS;
+              const resumedTaskState = await inspectTasks();
+              const resumedHasInFlightTasks = resumedTaskState.hasInFlight;
+              if (!resumedHasRecentActivity && !resumedHasInFlightTasks) {
+                return runStartBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+              }
+            }
+            return resumedStatus;
           }
           if (currentRuntimeStatus === 'paused' || currentRuntimeStatus === 'failed') {
             await runResumeBatchSession(nodeType, nodeId, buildContinuationPolicy);
@@ -668,7 +780,25 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             );
           }
           if (currentRuntimeStatus === 'completed') {
-            throw new Error('Build session is completed. Delete the build session before starting again.');
+            const taskState = await inspectTasks();
+            if (taskState.total === 0) {
+              return runStartBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+            }
+            if (nodeType === SHAPE_NODE_TYPE && !taskState.hasVtStageTasks) {
+              // Stage-level cache reset can leave only upstream completed tasks (e.g. fetch) in queue.
+              // Treat this as resumable work and start a new run.
+              return runStartBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+            }
+            if (nodeType === SHAPE_NODE_TYPE) {
+              // When session metadata is cleared but completed fetch tasks remain in the queue,
+              // getBatchSession may synthesize a completed status. In that case, start a new run.
+              const queryAPI = services.getShapeQueryAPI();
+              const persisted = await queryAPI.getBuildSessionRecord(nodeId).catch(() => null);
+              if (!persisted) {
+                return runStartBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+              }
+            }
+            return current;
           }
           return runStartBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
         };

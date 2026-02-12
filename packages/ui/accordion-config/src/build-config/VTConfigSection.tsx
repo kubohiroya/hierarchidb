@@ -39,6 +39,7 @@ type Props<TDataSourceName = unknown> = {
   buildConfig: BaseBuildConfig<TDataSourceName>;
   disabled?: boolean;
   update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
+  showConcurrencyCard?: boolean;
 };
 
 const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
@@ -56,14 +57,22 @@ export const VTConfigSection = <TDataSourceName,>({
   buildConfig,
   disabled,
   update,
+  showConcurrencyCard = true,
 }: Props<TDataSourceName>) => {
-  const dynamicConcurrency = useMemo(() => buildConfig.vtConfig.dynamicConcurrency
-    ?? createDefaultDynamicConcurrency(buildConfig.vtConfig.maxConcurrent), [buildConfig.vtConfig.dynamicConcurrency, buildConfig.vtConfig.maxConcurrent]);
-  const dynamicConcurrencyActive = buildConfig.vtConfig.maxConcurrent >= 2;
+  const resolvedMaxConcurrent = Number.isFinite(buildConfig.vtConfig.maxConcurrent)
+    ? buildConfig.vtConfig.maxConcurrent
+    : 1;
+  const dynamicConcurrency = useMemo(
+    () => buildConfig.vtConfig.dynamicConcurrency
+      ?? createDefaultDynamicConcurrency(resolvedMaxConcurrent),
+    [buildConfig.vtConfig.dynamicConcurrency, resolvedMaxConcurrent],
+  );
+  const dynamicConcurrencyActive = showConcurrencyCard && resolvedMaxConcurrent >= 2;
   const tileToleranceMax = Math.max(10, buildConfig.vtConfig.tolerance);
   const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   useEffect(() => {
+    if (!showConcurrencyCard) return;
     if (dynamicConcurrency.enabled === dynamicConcurrencyActive) return;
     update({
       vtConfig: {
@@ -74,7 +83,7 @@ export const VTConfigSection = <TDataSourceName,>({
         },
       },
     });
-  }, [buildConfig.vtConfig, dynamicConcurrency, dynamicConcurrencyActive, update]);
+  }, [buildConfig.vtConfig, dynamicConcurrency, dynamicConcurrencyActive, showConcurrencyCard, update]);
 
   return (
     <Accordion defaultExpanded>
@@ -234,148 +243,151 @@ export const VTConfigSection = <TDataSourceName,>({
               </Grid>
             </Stack>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-            <Stack spacing={2}>
-              <BuildConfigSectionTitle
-                icon={<SpeedIcon fontSize="small" color="primary" />}
-                title={t('processing.tile.basicPerformance', 'Concurrency')}
-              />
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <WorkerNumberConfigCard
-                    icon={<LayersIcon fontSize="small" color="primary" />}
-                    title={t('processing.tile.workers', 'Concurrent VT Workers')}
-                    value={buildConfig.vtConfig.maxConcurrent}
-                    helperText={t('processing.tile.workersHelp', 'Concurrent workers for VT generation.')}
-                    warningText={undefined}
-                    onChange={(maxConcurrent) =>
-                      update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
-                          maxConcurrent,
-                          dynamicConcurrency: {
-                            ...dynamicConcurrency,
-                            enabled: maxConcurrent >= 2,
-                          },
-                        },
-                      })
-                    }
-                    min={1}
-                    max={8}
-                    step={1}
-                    formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
-                    disabled={disabled}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle2">
-                    {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic VT concurrency')}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 8, lg: 6 }}>
-                  <Stack spacing={1}>
-                    <Typography variant="body2" fontWeight={600}>
-                      {t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
-                    </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <ArrowDownwardIcon fontSize="small" color="action" />
-                      <Slider
-                        sx={{ flex: 1 }}
-                        value={[
-                          dynamicConcurrency.lowWatermark,
-                          dynamicConcurrency.highWatermark,
-                        ]}
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        valueLabelDisplay="auto"
-                        onChange={(_, value) => {
-                          if (!Array.isArray(value) || value.length < 2) return;
-                          const [lowValue, highValue] = value;
-                          if (typeof lowValue !== 'number' || typeof highValue !== 'number') return;
-                          if (!Number.isFinite(lowValue) || !Number.isFinite(highValue)) return;
-                          const lowWatermark = Math.min(lowValue, highValue);
-                          const highWatermark = Math.max(lowValue, highValue);
-                          update({
-                            vtConfig: {
-                              ...buildConfig.vtConfig,
-                              dynamicConcurrency: {
-                                ...dynamicConcurrency,
-                                lowWatermark,
-                                highWatermark,
-                              },
+
+          {showConcurrencyCard ? (
+            <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+              <Stack spacing={2}>
+                <BuildConfigSectionTitle
+                  icon={<SpeedIcon fontSize="small" color="primary" />}
+                  title={t('processing.tile.basicPerformance', 'Concurrency')}
+                />
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <WorkerNumberConfigCard
+                      icon={<LayersIcon fontSize="small" color="primary" />}
+                      title={t('processing.tile.workers', 'Concurrent VT Workers')}
+                      value={resolvedMaxConcurrent}
+                      helperText={t('processing.tile.workersHelp', 'Concurrent workers for VT generation.')}
+                      warningText={undefined}
+                      onChange={(maxConcurrent) =>
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            maxConcurrent,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              enabled: maxConcurrent >= 2,
                             },
-                          });
-                        }}
-                        disabled={disabled || !dynamicConcurrencyActive}
-                        getAriaLabel={() => t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
-                      />
-                      <ArrowUpwardIcon fontSize="small" color="action" />
+                          },
+                        })
+                      }
+                      min={1}
+                      max={8}
+                      step={1}
+                      formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+                      disabled={disabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="subtitle2">
+                      {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic VT concurrency')}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 8, lg: 6 }}>
+                    <Stack spacing={1}>
+                      <Typography variant="body2" fontWeight={600}>
+                        {t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <ArrowDownwardIcon fontSize="small" color="action" />
+                        <Slider
+                          sx={{ flex: 1 }}
+                          value={[
+                            dynamicConcurrency.lowWatermark,
+                            dynamicConcurrency.highWatermark,
+                          ]}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          valueLabelDisplay="auto"
+                          onChange={(_, value) => {
+                            if (!Array.isArray(value) || value.length < 2) return;
+                            const [lowValue, highValue] = value;
+                            if (typeof lowValue !== 'number' || typeof highValue !== 'number') return;
+                            if (!Number.isFinite(lowValue) || !Number.isFinite(highValue)) return;
+                            const lowWatermark = Math.min(lowValue, highValue);
+                            const highWatermark = Math.max(lowValue, highValue);
+                            update({
+                              vtConfig: {
+                                ...buildConfig.vtConfig,
+                                dynamicConcurrency: {
+                                  ...dynamicConcurrency,
+                                  lowWatermark,
+                                  highWatermark,
+                                },
+                              },
+                            });
+                          }}
+                          disabled={disabled || !dynamicConcurrencyActive}
+                          getAriaLabel={() => t('processing.tile.dynamicConcurrencyWatermarkRange', 'Watermark range')}
+                        />
+                        <ArrowUpwardIcon fontSize="small" color="action" />
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.tile.dynamicConcurrencyAdjustStep', 'Adjust step')}
-                    value={dynamicConcurrency.adjustStep}
-                    onChange={(event) => {
-                      const adjustStep = Number(event.target.value);
-                      update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
-                          dynamicConcurrency: {
-                            ...dynamicConcurrency,
-                            adjustStep: Number.isFinite(adjustStep)
-                              ? adjustStep
-                              : dynamicConcurrency.adjustStep,
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyAdjustStep', 'Adjust step')}
+                      value={dynamicConcurrency.adjustStep}
+                      onChange={(event) => {
+                        const adjustStep = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              adjustStep: Number.isFinite(adjustStep)
+                                ? adjustStep
+                                : dynamicConcurrency.adjustStep,
+                            },
                           },
-                        },
-                      });
-                    }}
-                    disabled={disabled || !dynamicConcurrencyActive}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.tile.dynamicConcurrencySampleMs', 'Sample interval (ms)')}
-                    value={dynamicConcurrency.sampleMs}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <UpdateIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                    onChange={(event) => {
-                      const sampleMs = Number(event.target.value);
-                      update({
-                        vtConfig: {
-                          ...buildConfig.vtConfig,
-                          dynamicConcurrency: {
-                            ...dynamicConcurrency,
-                            sampleMs: Number.isFinite(sampleMs)
-                              ? sampleMs
-                              : dynamicConcurrency.sampleMs,
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrencyActive}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencySampleMs', 'Sample interval (ms)')}
+                      value={dynamicConcurrency.sampleMs}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <UpdateIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      onChange={(event) => {
+                        const sampleMs = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              sampleMs: Number.isFinite(sampleMs)
+                                ? sampleMs
+                                : dynamicConcurrency.sampleMs,
+                            },
                           },
-                        },
-                      });
-                    }}
-                    disabled={disabled || !dynamicConcurrencyActive}
-                  />
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrencyActive}
+                    />
+                  </Grid>
                 </Grid>
-              </Grid>
-              <Typography variant="caption" color="text.secondary">
-                {t(
-                  'processing.tile.dynamicConcurrencyHelp',
-                  'Adjusts VT worker counts based on runtime load.',
-                )}
-              </Typography>
-            </Stack>
-          </Paper>
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.tile.dynamicConcurrencyHelp',
+                    'Adjusts VT worker counts based on runtime load.',
+                  )}
+                </Typography>
+              </Stack>
+            </Paper>
+          ) : null}
 
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>
@@ -406,7 +418,6 @@ export const VTConfigSection = <TDataSourceName,>({
               />
             </Stack>
           </Paper>
-
         </Stack>
       </AccordionDetails>
     </Accordion>
