@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #222 / `codex/fix/shape/vt-empty-tile-targeted-debug-logs` / start: 2026-02-12 21:26 JST
 - #219 / `codex/fix/shape/max-update-depth-warning-loop` / start: 2026-02-12 20:30 JST
 - #216 / `codex/fix/shape/stage-reset-resume-status-mismatch` / start: 2026-02-12 19:49 JST
 - #215 / `codex/refactor/shape-processing-config` / start: 2026-02-12 14:02 JST
@@ -57,6 +58,13 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 21:24 JST Issue `fix/shape/vt-empty-tile-and-target-debug-logging` を起票し `https://github.com/kubohiroya/hierarchidb/issues/222` を作成。
+- update: 2026-02-12 21:24 JST Issue #222 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 21:26 JST ブランチ `codex/fix/shape/vt-empty-tile-targeted-debug-logs` を作成して着手。
+- update: 2026-02-12 21:35 JST #222 原因は `packages/vt-orchestrator/src/vt/vtStage.ts` の per-tile index 経路が、子タイル1件で `geojson-vt` 空タイルを検知すると親タスク全体を `skipped` で終了していたこと。発生範囲は同ファイルの `emptyTileWithFeatures` 判定～`completedWithParentInputSummary(buildSkippedMessage(...))` 早期 return。
+- update: 2026-02-12 21:35 JST 修正として (1) empty 子タイルは警告集計へ変更し親タスク継続、(2) `vtConfig.debug`（enabled/tiles/features、既定OFF）で tile/feature 一致時のみ詳細ログ出力、(3) `vtStage` ヘルパーテスト追加。適用範囲は `packages/vt-orchestrator/src/vt/vtStage.ts`, `packages/vt-orchestrator/src/vt/__tests__/vtStage.unit.test.ts`, `packages/gis-sdk/src/config.ts`, `packages/shape-api/src/defaults.ts`。
+- update: 2026-02-12 21:35 JST 検証: `pnpm exec vitest run packages/vt-orchestrator/src/vt/__tests__/vtStage.unit.test.ts` は 1 file / 7 tests passed（exit 0）。`pnpm --filter @hierarchidb/gis-sdk typecheck` と `pnpm --filter @hierarchidb/shape-api typecheck` は exit 0。`pnpm --filter @hierarchidb/vt-orchestrator typecheck` は既存の `topojson-simplify` / `topojson-server` 型宣言欠如（TS7016）で exit 2。
+- update: 2026-02-12 21:37 JST 追加回帰検証として `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` を実行し、1 file / 11 tests passed（exit 0）を確認。
 - update: 2026-02-12 20:30 JST Issue `fix/shape/max-update-depth-warning-loop` を起票し `https://github.com/kubohiroya/hierarchidb/issues/219` を作成。
 - update: 2026-02-12 20:30 JST Issue #219 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
 - update: 2026-02-12 20:30 JST ブランチ `codex/fix/shape/max-update-depth-warning-loop` を作成して着手。

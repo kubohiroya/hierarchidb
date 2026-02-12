@@ -125,6 +125,106 @@ type VtParentInputSummaryMetadata = {
   intersectingGeojsonByteSize: number;
 };
 
+type GeojsonVtEmptyTileDetail = {
+  z: number;
+  x: number;
+  y: number;
+  layerName: string;
+  clippedFeatureCount: number;
+  featureCount: number;
+  matchedFeatureIds?: string[];
+};
+
+type VtDebugFocusConfig = {
+  enabled: boolean;
+  logAll: boolean;
+  tileKeys: Set<string>;
+  featureIds: Set<string>;
+};
+
+type VtDebugFocusMatch = {
+  shouldLog: boolean;
+  tileMatched: boolean;
+  featureMatched: boolean;
+  matchedFeatureIds: string[];
+};
+
+const VT_DEBUG_MATCHED_FEATURE_SAMPLE_LIMIT = 8;
+const GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT = 20;
+
+const buildTileKey = (z: number, x: number, y: number): string => `${z}/${x}/${y}`;
+
+const normalizeStringTokens = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const normalized = new Set<string>();
+  value.forEach((entry) => {
+    if (typeof entry !== 'string') return;
+    const token = entry.trim();
+    if (token.length === 0) return;
+    normalized.add(token);
+  });
+  return Array.from(normalized);
+};
+
+const normalizeTileKey = (value: string): string | null => {
+  const match = value.match(/^(\d+)\/(\d+)\/(\d+)$/);
+  if (!match) return null;
+  const z = Number(match[1]);
+  const x = Number(match[2]);
+  const y = Number(match[3]);
+  if (!Number.isInteger(z) || !Number.isInteger(x) || !Number.isInteger(y)) return null;
+  if (z < 0 || x < 0 || y < 0) return null;
+  return buildTileKey(z, x, y);
+};
+
+const resolveVtDebugFocusConfig = (value: unknown): VtDebugFocusConfig => {
+  if (!value || typeof value !== 'object') {
+    return {
+      enabled: false,
+      logAll: false,
+      tileKeys: new Set<string>(),
+      featureIds: new Set<string>(),
+    };
+  }
+  const record = value as Record<string, unknown>;
+  const enabled = record.enabled === true;
+  const tileKeys = new Set<string>();
+  normalizeStringTokens(record.tiles).forEach((tileKey) => {
+    const normalized = normalizeTileKey(tileKey);
+    if (normalized) tileKeys.add(normalized);
+  });
+  const featureIds = new Set<string>(normalizeStringTokens(record.features));
+  const logAll = enabled && tileKeys.size === 0 && featureIds.size === 0;
+  return { enabled, logAll, tileKeys, featureIds };
+};
+
+const resolveVtDebugFocusMatch = (
+  config: VtDebugFocusConfig,
+  tileKey: string,
+  featureIds: string[],
+): VtDebugFocusMatch => {
+  if (!config.enabled) {
+    return {
+      shouldLog: false,
+      tileMatched: false,
+      featureMatched: false,
+      matchedFeatureIds: [],
+    };
+  }
+  const tileMatched = config.tileKeys.size > 0 && config.tileKeys.has(tileKey);
+  const matchedFeatureIds = config.featureIds.size > 0
+    ? featureIds.filter((featureId) => config.featureIds.has(featureId))
+    : [];
+  const featureMatched = matchedFeatureIds.length > 0;
+  const shouldLog = config.logAll || tileMatched || featureMatched;
+  return {
+    shouldLog,
+    tileMatched,
+    featureMatched,
+    matchedFeatureIds: matchedFeatureIds.slice(0, VT_DEBUG_MATCHED_FEATURE_SAMPLE_LIMIT),
+  };
+};
+
 const canonicalLineKey = (coords: number[][]): string => {
   const toKey = (points: number[][]): string =>
     points
@@ -325,6 +425,16 @@ const resolveFeatureId = (feature: Feature): string | undefined => {
     return String(feature.id);
   }
   return undefined;
+};
+
+const collectUniqueFeatureIds = (features: Feature<Geometry>[]): string[] => {
+  const unique = new Set<string>();
+  features.forEach((feature) => {
+    const featureId = resolveFeatureId(feature);
+    if (!featureId) return;
+    unique.add(featureId);
+  });
+  return Array.from(unique);
 };
 
 const normalizeGeojsonByteSize = (value: number | undefined): number | undefined => {
@@ -850,20 +960,22 @@ const buildVtParentInputSummary = (params: {
   };
 };
 
-const buildGeojsonVtEmptyTileReason = (detail: {
-  z: number;
-  x: number;
-  y: number;
-  layerName: string;
-  clippedFeatureCount: number;
-  featureCount: number;
-}): string => ([
+const buildGeojsonVtEmptyTileReason = (detail: GeojsonVtEmptyTileDetail): string => ([
   'geojson-vt produced empty tile for clipped features',
   `tile=${detail.z}/${detail.x}/${detail.y}`,
   `layer=${detail.layerName}`,
   `clippedFeatures=${detail.clippedFeatureCount}`,
   `layerFeatures=${detail.featureCount}`,
 ].join(', '));
+
+const buildGeojsonVtEmptyTileSummaryReason = (
+  emptyCount: number,
+  firstDetail: GeojsonVtEmptyTileDetail,
+): string => (
+  emptyCount <= 1
+    ? buildGeojsonVtEmptyTileReason(firstDetail)
+    : `${buildGeojsonVtEmptyTileReason(firstDetail)}, emptyTileCount=${formatCount(emptyCount)}`
+);
 
 type OutputTileTotals = {
   featureCount: number;
@@ -900,8 +1012,13 @@ const computeOutputTileTotals = (tiles: Tile[]): OutputTileTotals => {
 export const vtStageTestUtils = {
   buildAdminFeatureSummary,
   buildTileSummary,
+  buildTileKey,
   buildSkippedMessage,
   buildVtParentInputSummary,
+  buildGeojsonVtEmptyTileReason,
+  buildGeojsonVtEmptyTileSummaryReason,
+  resolveVtDebugFocusConfig,
+  resolveVtDebugFocusMatch,
   computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
@@ -1021,6 +1138,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
   if (!layerSetName) {
     throw new Error('vt stage requires layerSetName');
   }
+  const debugFocusConfig = resolveVtDebugFocusConfig(vtConfig.debug);
   const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
   const taskQueue = new VtTaskQueueDb();
 
@@ -1069,6 +1187,14 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         layerSetName,
         bufferIdSample,
       }));
+      if (debugFocusConfig.enabled) {
+        console.info('[vt][focus] enabled', JSON.stringify({
+          ...taskContext,
+          logAll: debugFocusConfig.logAll,
+          tileFilters: Array.from(debugFocusConfig.tileKeys).slice(0, GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT),
+          featureFilters: Array.from(debugFocusConfig.featureIds).slice(0, GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT),
+        }));
+      }
 
       assertNotAborted(abortSignal);
       const collectStartedAt = Date.now();
@@ -1337,14 +1463,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             zRange: [band.zMin, band.zMax],
           }));
           aggregatedLayersByTileId = new Map();
-          let emptyTileWithFeatures: {
-            z: number;
-            x: number;
-            y: number;
-            layerName: string;
-            clippedFeatureCount: number;
-            featureCount: number;
-          } | null = null;
+          const emptyTilesWithFeatures: GeojsonVtEmptyTileDetail[] = [];
           const geojsonvt = await loadGeojsonVt();
           const featuresWithBBoxByLayer = new Map<string, FeatureWithBBox[]>();
           layerMap.forEach((features, layerName) => {
@@ -1375,6 +1494,31 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                   if (featuresWithBBox.length === 0) continue;
                   const clippedFeatures = clipFeaturesForTile(featuresWithBBox, tileBBox);
                   if (clippedFeatures.length === 0) continue;
+                  const tileKey = buildTileKey(z, x, y);
+                  const clippedFeatureIds = debugFocusConfig.enabled
+                    ? collectUniqueFeatureIds(clippedFeatures)
+                    : [];
+                  const debugFocusMatch = debugFocusConfig.enabled
+                    ? resolveVtDebugFocusMatch(debugFocusConfig, tileKey, clippedFeatureIds)
+                    : {
+                      shouldLog: false,
+                      tileMatched: false,
+                      featureMatched: false,
+                      matchedFeatureIds: [],
+                    };
+                  if (debugFocusMatch.shouldLog) {
+                    console.info('[vt][focus] per-tile layer input', JSON.stringify({
+                      ...taskContext,
+                      parentTile: parent,
+                      tile: { z, x, y },
+                      layerName,
+                      featureCount: featuresWithBBox.length,
+                      clippedFeatureCount: clippedFeatures.length,
+                      tileMatched: debugFocusMatch.tileMatched,
+                      featureMatched: debugFocusMatch.featureMatched,
+                      matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
+                    }));
+                  }
                   const collection: FeatureCollection = { type: 'FeatureCollection', features: clippedFeatures };
                   const index = geojsonvt(collection, {
                     maxZoom: z,
@@ -1387,15 +1531,28 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                   }) as GeojsonVtIndex;
                   const tile = collectLayerForTile(index, layerName, z, x, y);
                   if (!tile) {
-                    if (!emptyTileWithFeatures) {
-                      emptyTileWithFeatures = {
-                        z,
-                        x,
-                        y,
+                    const detail: GeojsonVtEmptyTileDetail = {
+                      z,
+                      x,
+                      y,
+                      layerName,
+                      clippedFeatureCount: clippedFeatures.length,
+                      featureCount: featuresWithBBox.length,
+                      ...(debugFocusMatch.matchedFeatureIds.length > 0
+                        ? { matchedFeatureIds: debugFocusMatch.matchedFeatureIds }
+                        : {}),
+                    };
+                    emptyTilesWithFeatures.push(detail);
+                    if (debugFocusMatch.shouldLog) {
+                      console.warn('[vt][focus] geojson-vt empty tile', JSON.stringify({
+                        ...taskContext,
+                        parentTile: parent,
+                        tile: { z, x, y },
                         layerName,
                         clippedFeatureCount: clippedFeatures.length,
                         featureCount: featuresWithBBox.length,
-                      };
+                        matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
+                      }));
                     }
                     continue;
                   }
@@ -1414,21 +1571,28 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             duration: Date.now() - perTileIndexStartedAt,
             heap: getHeapSnapshot(),
           }));
-          if (emptyTileWithFeatures) {
+          if (emptyTilesWithFeatures.length > 0) {
+            const firstEmptyTileDetail = emptyTilesWithFeatures[0];
+            const emptyTileReason = firstEmptyTileDetail
+              ? buildGeojsonVtEmptyTileSummaryReason(emptyTilesWithFeatures.length, firstEmptyTileDetail)
+              : 'geojson-vt produced empty tile for clipped features';
             console.warn('[vt] geojson-vt produced empty tile for clipped features', JSON.stringify({
               ...taskContext,
               parentTile: parent,
               zRange: [band.zMin, band.zMax],
               totalTiles,
-              ...emptyTileWithFeatures,
+              emptyTileCount: emptyTilesWithFeatures.length,
+              firstEmptyTile: firstEmptyTileDetail,
+              sampleEmptyTiles: emptyTilesWithFeatures.slice(0, GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT),
             }));
-            return completedWithParentInputSummary(
-              buildSkippedMessage(
-                adminFeatureSummary,
-                tileSummary,
-                buildGeojsonVtEmptyTileReason(emptyTileWithFeatures),
-              ),
-            );
+            if (debugFocusConfig.enabled && firstEmptyTileDetail) {
+              console.warn('[vt][focus] empty tile summary', JSON.stringify({
+                ...taskContext,
+                parentTile: parent,
+                reason: emptyTileReason,
+                sampleEmptyTiles: emptyTilesWithFeatures.slice(0, GEOJSON_VT_EMPTY_TILE_LOG_SAMPLE_LIMIT),
+              }));
+            }
           }
           if (aggregatedLayersByTileId.size === 0) {
             const layerStats = Array.from(layerMap.entries()).map(([layerName, features]) => ({

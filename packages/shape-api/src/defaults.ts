@@ -47,6 +47,11 @@ export const DEFAULT_BUILD_CONFIG = {
     tileExpandMargin: 0,
     format: 'mvt',
     compression: 'gzip',
+    debug: {
+      enabled: false,
+      tiles: [],
+      features: [],
+    },
   },
   cleanupConfig: {
     deleteFetchApiCache: false,

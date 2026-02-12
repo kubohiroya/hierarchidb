@@ -124,6 +124,11 @@ export interface VTConfig {
   tileExpandMargin: number;
   format: 'mvt' | 'pbf';
   compression: 'gzip' | 'bz';
+  debug?: {
+    enabled?: boolean;
+    tiles?: string[];
+    features?: string[];
+  };
 }
 
 export interface BaseBuildConfig<TDataSourceName = unknown> {

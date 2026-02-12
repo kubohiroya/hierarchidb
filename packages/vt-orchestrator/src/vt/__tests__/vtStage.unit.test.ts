@@ -72,6 +72,39 @@ describe('vtStage summary helpers', () => {
     expect(summary.intersectingGeojsonByteSize).toBe(200);
   });
 
+  it('normalizes debug focus config and matches tile/feature filters', () => {
+    const config = vtStageTestUtils.resolveVtDebugFocusConfig({
+      enabled: true,
+      tiles: ['3/0/2', 'invalid', '3/0/2'],
+      features: ['feat-a', '', 'feat-a', 'feat-b'],
+    });
+    const match = vtStageTestUtils.resolveVtDebugFocusMatch(
+      config,
+      vtStageTestUtils.buildTileKey(3, 0, 2),
+      ['feat-z', 'feat-b'],
+    );
+
+    expect(match.shouldLog).toBe(true);
+    expect(match.tileMatched).toBe(true);
+    expect(match.featureMatched).toBe(true);
+    expect(match.matchedFeatureIds).toEqual(['feat-b']);
+  });
+
+  it('builds empty-tile summary reason with empty tile count', () => {
+    const detail = {
+      z: 6,
+      x: 58,
+      y: 20,
+      layerName: 'admin0',
+      clippedFeatureCount: 1,
+      featureCount: 3,
+    };
+    const reason = vtStageTestUtils.buildGeojsonVtEmptyTileSummaryReason(4, detail);
+    expect(reason).toContain('geojson-vt produced empty tile for clipped features');
+    expect(reason).toContain('tile=6/58/20');
+    expect(reason).toContain('emptyTileCount=4');
+  });
+
   it('computes output tile totals for polygons and vertices', () => {
     const tiles = [
       {
