@@ -1,8 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { Topology } from 'topojson-specification';
-import { feature as topojsonFeature } from 'topojson-client';
-import { topology as topojsonTopology } from 'topojson-server';
 import { snapGeometryToGrid } from './geometry.js';
+import { getTopojsonRuntime } from './topojsonRuntimeAdapter.js';
 
 type ZoomGridConfig = {
   zTarget: number;
@@ -29,18 +28,19 @@ const snapFeatureCollectionToGrid = (
   return { ...collection, features: snapped };
 };
 
-export const quantizeTopoJsonToGrid = (
+export const quantizeTopoJsonToGrid = async (
   topology: Topology,
   config: ZoomGridConfig,
-): Topology => {
+): Promise<Topology> => {
   const objects = topology.objects ?? {};
   const entries = Object.entries(objects);
   if (entries.length === 0) return topology;
 
+  const runtime = await getTopojsonRuntime();
   const snappedObjects: Record<string, FeatureCollection> = {};
   for (const [key, object] of entries) {
     if (!object) continue;
-    const geojson = topojsonFeature(topology, object) as FeatureCollection | Feature;
+    const geojson = runtime.feature(topology, object) as FeatureCollection | Feature;
     const collection = normalizeFeatureCollection(geojson);
     const snapped = snapFeatureCollectionToGrid(collection, config);
     snappedObjects[key] = snapped;
@@ -50,5 +50,5 @@ export const quantizeTopoJsonToGrid = (
     return topology;
   }
 
-  return topojsonTopology(snappedObjects);
+  return runtime.topology(snappedObjects);
 };
