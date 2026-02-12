@@ -62,6 +62,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 06:54 JST #232 の修正を `fix(shape): apply Gemini cache identity review follow-up` として PR 作成（`https://github.com/kubohiroya/hierarchidb/pull/233`, base: `ERIA-Cartograph`）。
 - update: 2026-02-13 06:52 JST #232 原因は `shapeTaskCacheIdentity` が transform `inputHash` に `fetchCacheId`（識別子）を使っており、fetch artifact 内容差分を正しく表現できていなかったことと、fetch `inputHash` で `upstreamRevision` を扱っていなかったこと。発生範囲は `plugins/shape-plugin/src/services/vt/shapeTaskCacheIdentity.ts`、fetch/transform タスク生成経路（`shapeFetchStage.ts` / `shapePipelineTransformStage.ts` / `shapePipelineShared.ts`）および仕様書 `docs/shape-cache-key-input-hash-spec.md`。
 - update: 2026-02-13 06:52 JST #232 修正として (1) fetch identity に `upstreamRevision` を追加、(2) transform identity を `fetchArtifactHash` ベースへ変更、(3) fetch stage で成果物 bytes から `contentHash` を算出して `fetchArtifactHash` として output/task input に伝搬、(4) transform task 生成で `fetchArtifactHash` を必須入力として保持、(5) spec の canonicalization/VT key 記述を実装に一致させた。適用範囲は `plugins/shape-plugin/src/services/vt/*`、`plugins/shape-plugin/src/common/types/data-source.ts`、`packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts`、`plugins/shape-plugin/src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts`、`docs/shape-cache-key-input-hash-spec.md`。
 - update: 2026-02-13 06:52 JST #232 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts src/__tests__/unit/shapeStageReconcile.unit.test.ts`（exit 0, 2 files / 11 tests passed）、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin`（exit 0）。
