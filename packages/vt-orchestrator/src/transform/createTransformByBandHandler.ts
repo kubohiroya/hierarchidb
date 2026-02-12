@@ -1,8 +1,6 @@
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Topology } from 'topojson-specification';
-import { feature as topojsonFeature } from 'topojson-client';
-import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from 'topojson-simplify';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import {
   applyFeatureFiltering,
@@ -26,6 +24,7 @@ import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from 
 import { VtTaskQueueDb, emitTaskUpdate, toTaskQueueRecord, updateTask, type StoredTaskRecord } from '../task/taskQueue.js';
 import { logDebug } from '../debug/persistentDebugLog.js';
 import { packTileId } from '../tiles/tileId.js';
+import { getTopojsonRuntime } from './topojsonRuntimeAdapter.js';
 
 const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
 let structuredCloneLogged = false;
@@ -61,10 +60,11 @@ const resolveTopoJsonObject = (topology: Topology): Topology['objects'][string] 
   return topology.objects[key] ?? null;
 };
 
-const normalizeTopoJsonCollection = (topology: Topology): FeatureCollection => {
+const normalizeTopoJsonCollection = async (topology: Topology): Promise<FeatureCollection> => {
   const object = resolveTopoJsonObject(topology);
   if (!object) return { type: 'FeatureCollection', features: [] };
-  const geojson = topojsonFeature(topology, object);
+  const runtime = await getTopojsonRuntime();
+  const geojson = runtime.feature(topology, object);
   if (geojson.type === 'FeatureCollection') {
     const features = Array.isArray(geojson.features) ? geojson.features : [];
     return { ...geojson, features };
@@ -144,11 +144,11 @@ const decodeTopoJsonFetchCache = async (params: {
     ? await decompressGzip(params.buffer)
     : params.buffer;
   const topology = decodeTopoJson(decompressed);
-  const snappedTopology = quantizeTopoJsonToGrid(topology, {
+  const snappedTopology = await quantizeTopoJsonToGrid(topology, {
     zTarget: params.zTarget,
     quantize: params.quantize,
   });
-  let { collection, appliedToleranceK } = simplifyTopoJsonByZoom({
+  let { collection, appliedToleranceK } = await simplifyTopoJsonByZoom({
     topology: snappedTopology,
     zTarget: params.zTarget,
     toleranceK: params.toleranceK,
@@ -156,7 +156,7 @@ const decodeTopoJsonFetchCache = async (params: {
   let maxVertices = maxVerticesInCollection(collection);
   if (maxVertices > MAX_VERTICES_PER_FEATURE) {
     const retryToleranceK = appliedToleranceK * 1.5;
-    const retry = simplifyTopoJsonByZoom({
+    const retry = await simplifyTopoJsonByZoom({
       topology,
       zTarget: params.zTarget,
       toleranceK: retryToleranceK,
@@ -278,21 +278,42 @@ const resolveTransformTolerance = (
   return baseTolerance;
 };
 
-const simplifyTopoJsonByZoom = (params: {
+const simplifyTopoJsonByZoom = async (params: {
   topology: Topology;
   zTarget: number;
   toleranceK: number;
-}): { topology: Topology; collection: FeatureCollection; appliedToleranceK: number } => {
-  const baseCollection = normalizeTopoJsonCollection(params.topology);
+}): Promise<{ topology: Topology; collection: FeatureCollection; appliedToleranceK: number }> => {
+  const baseCollection = await normalizeTopoJsonCollection(params.topology);
   const appliedToleranceK = params.toleranceK;
   const tolerance = resolveSimplifyToleranceDegrees(params.zTarget, appliedToleranceK);
   if (!Number.isFinite(tolerance) || tolerance <= 0) {
     return { topology: params.topology, collection: baseCollection, appliedToleranceK };
   }
-  const presimplified = topojsonPresimplify(params.topology);
-  const simplified = topojsonSimplify(presimplified, tolerance);
-  const simplifiedCollection = normalizeTopoJsonCollection(simplified);
+  const runtime = await getTopojsonRuntime();
+  const presimplified = runtime.presimplify(params.topology);
+  const simplified = runtime.simplify(presimplified, tolerance);
+  const simplifiedCollection = await normalizeTopoJsonCollection(simplified);
   return { topology: simplified, collection: simplifiedCollection, appliedToleranceK };
+};
+
+export const decodeFetchCacheByFormat = async (params: {
+  buffer: ArrayBuffer;
+  format?: string;
+  compression?: string;
+  zTarget: number;
+  toleranceK: number;
+  quantize?: number;
+}): Promise<FeatureCollection | null> => {
+  if (params.format === 'topojson') {
+    return decodeTopoJsonFetchCache({
+      buffer: params.buffer,
+      compression: params.compression,
+      zTarget: params.zTarget,
+      toleranceK: params.toleranceK,
+      quantize: params.quantize,
+    });
+  }
+  return decodeFetchCache(params.buffer);
 };
 
 const simplifyOnlyCollection = (
@@ -1598,18 +1619,14 @@ export const createTransformByBandHandler = (
       });
       await updateTaskPhase(taskId, 'decode:start', taskProgressRange.decodeStart);
       assertNotAborted(abortSignal);
-      let collection = await runStageWithLabel('decode', () => {
-        if (fetchCache.format === 'topojson') {
-          return decodeTopoJsonFetchCache({
-            buffer: fetchCache.data,
-            compression: fetchCache.compression,
-            zTarget: band.zMax,
-            toleranceK: baseTolerance,
-            quantize: transformConfig.quantize,
-          });
-        }
-        return decodeFetchCache(fetchCache.data);
-      });
+      let collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
+        buffer: fetchCache.data,
+        format: fetchCache.format,
+        compression: fetchCache.compression,
+        zTarget: band.zMax,
+        toleranceK: baseTolerance,
+        quantize: transformConfig.quantize,
+      }));
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
