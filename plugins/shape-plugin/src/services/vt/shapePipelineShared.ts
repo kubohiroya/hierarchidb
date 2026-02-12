@@ -24,6 +24,7 @@ import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeDB, type EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { buildTransformTaskCacheIdentity, buildVtTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
@@ -37,6 +38,8 @@ export type ShapeTransformByBandTaskInput = {
   countryName?: string;
   adminLevel?: number;
   configSignature?: string;
+  cacheKey?: string;
+  inputHash?: string;
 };
 
 export type ShapeVtTaskInput = {
@@ -50,6 +53,8 @@ export type ShapeVtTaskInput = {
   domainType: 'shape';
   sourceKey: string;
   configSignature?: string;
+  cacheKey?: string;
+  inputHash?: string;
 };
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
@@ -445,6 +450,15 @@ export const buildTransformByBandTasks = async (
           if (!enableHighDetailBands) continue;
           if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
         }
+        const cacheIdentity = buildTransformTaskCacheIdentity({
+          nodeId,
+          sourceKey: buffer.sourceKey,
+          bandIndex: band.bandIndex,
+          fetchCacheId: buffer.id,
+          bandMinZoom: band.zMin,
+          bandMaxZoom: band.zMax,
+          configSignature,
+        });
         tasks.push({
           taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
           nodeId,
@@ -465,6 +479,8 @@ export const buildTransformByBandTasks = async (
             countryName: countryMeta?.countryName,
             adminLevel: buffer.adminLevel,
             configSignature,
+            cacheKey: cacheIdentity.cacheKey,
+            inputHash: cacheIdentity.inputHash,
           },
         });
         index += 1;
@@ -578,6 +594,16 @@ export const buildVtTasks = async (
       const usableBufferIds = [...new Set(bufferIds)];
       if (usableBufferIds.length === 0) continue;
       const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (bufferFeatureCounts.get(bufferId) ?? 0), 0);
+      const cacheIdentity = buildVtTaskCacheIdentity({
+        nodeId,
+        bandIndex: band.bandIndex,
+        zBase: band.zBase,
+        tileId,
+        bufferIds: usableBufferIds,
+        bandMinZoom: band.zMin,
+        bandMaxZoom: band.zMax,
+        configSignature,
+      });
       tasks.push({
         taskId: `${String(nodeId)}:vt:${band.bandIndex}:${band.zBase}:${tileId}`,
         nodeId,
@@ -596,6 +622,8 @@ export const buildVtTasks = async (
           domainType: 'shape',
           sourceKey: 'mixed',
           configSignature,
+          cacheKey: cacheIdentity.cacheKey,
+          inputHash: cacheIdentity.inputHash,
         },
       });
       index += 1;
