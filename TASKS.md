@@ -39,6 +39,9 @@
 
 ### Doing
 
+- #227 / `codex/refactor/vt-orchestrator/topojson-runtime-adapter` / start: 2026-02-13 01:12 JST
+- #226 / `codex/feat/shape/cache-key-inputhash-tdd` / start: 2026-02-13 00:36 JST
+- #225 / `codex/fix/shape/session-reset-init-log-flood` / start: 2026-02-12 21:59 JST
 - #222 / `codex/fix/shape/vt-empty-tile-targeted-debug-logs` / start: 2026-02-12 21:26 JST
 - #219 / `codex/fix/shape/max-update-depth-warning-loop` / start: 2026-02-12 20:30 JST
 - #216 / `codex/fix/shape/stage-reset-resume-status-mismatch` / start: 2026-02-12 19:49 JST
@@ -54,10 +57,38 @@
 
 ### Blocked
 
-- なし
+- #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 01:16 JST #227 原因は `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` と `topojsonGrid.ts` が `topojson-server` / `topojson-simplify` を static import しており、TopoJSON 非使用時も依存解決・型解決が走っていたこと。発生範囲は transform の TopoJSON decode/simplify 経路。
+- update: 2026-02-13 01:16 JST #227 修正として TopoJSON runtime adapter（`packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts`）を追加し dynamic import へ集約。`createTransformByBandHandler.ts` では `decodeFetchCacheByFormat` を導入し、`format='topojson'` の時だけ runtime をロードするよう変更。`topojsonGrid.ts` も async 化して adapter 経由へ変更。テスト `packages/vt-orchestrator/src/transform/__tests__/fetchCacheDecoder.unit.test.ts` を追加。
+- update: 2026-02-13 01:16 JST #227 検証: `pnpm --filter @hierarchidb/vt-orchestrator typecheck`（exit 0）、`pnpm --filter @hierarchidb/vt-orchestrator exec vitest run src/vt/__tests__/vtStage.unit.test.ts src/transform/__tests__/fetchCacheDecoder.unit.test.ts`（exit 0, 9 tests passed）、`pnpm --filter @hierarchidb/vt-orchestrator build`（exit 0）。
+- blocked: 2026-02-13 01:16 JST `pnpm -w turbo run typecheck/test/build --filter @hierarchidb/vt-orchestrator` は Turbo 2.8.5 panic（`system-configuration dynamic_store NULL object`）で実行不可。代替として package 直実行で検証。
+- update: 2026-02-13 01:12 JST Issue `refactor/vt-orchestrator/topojson-runtime-adapter-dynamic-import` を起票し `https://github.com/kubohiroya/hierarchidb/issues/227` を作成。
+- update: 2026-02-13 01:12 JST Issue #227 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 01:12 JST ブランチ `codex/refactor/vt-orchestrator/topojson-runtime-adapter` を作成して着手。
+- update: 2026-02-13 00:48 JST #226 で `cacheKey/inputHash` 分離の実装を追加（`shapeTaskCacheIdentity` 新設、fetch/transform/vt タスク生成時に `inputData.cacheKey` と `inputData.inputHash` を保存、`shapeStageReconcile` を `taskId` 比較から `cacheKey+inputHash` 比較へ変更）。
+- update: 2026-02-13 00:48 JST #226 でユニットテスト追加・更新（`shapeTaskCacheIdentity.unit.test.ts` 新規、`shapeStageReconcile.unit.test.ts` 拡張）。`pnpm --filter @hierarchidb/shape-plugin exec vitest run src/__tests__/unit/shapeTaskCacheIdentity.unit.test.ts src/__tests__/unit/shapeStageReconcile.unit.test.ts` は exit 0（10 tests passed）。
+- blocked: 2026-02-13 00:48 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run test --filter @hierarchidb/shape-plugin ...` は Turbo 2.8.5 の panic（`system-configuration dynamic_store NULL object`）で実行不可。代替の `pnpm --filter @hierarchidb/shape-plugin typecheck` は既知の `vtConfig.debug.tiles readonly` 系エラーで exit 2（本差分ファイル由来のエラーは未検出）。
+- update: 2026-02-13 00:35 JST Issue `feat(shape): implement cacheKey/inputHash separation with TDD` を起票し `https://github.com/kubohiroya/hierarchidb/issues/226` を作成。
+- update: 2026-02-13 00:36 JST Issue #226 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 00:36 JST ブランチ `codex/feat/shape/cache-key-inputhash-tdd` を作成して着手。
+- update: 2026-02-12 22:29 JST #225 追加原因として、task 生成前に実行される metadata 取得（`plugins/shape-plugin/src/services/metadata/metadataSources.ts`）にリクエスト timeout がなく、ネットワーク待ちが長引くと session が `running` のまま task 更新ゼロで停滞し得ることを確認。発生範囲は metadata 取得の `getCachedOrFetchForNode` 経路。
+- update: 2026-02-12 22:29 JST 修正として `getCachedOrFetchForNode` に 45 秒 timeout（`METADATA_FETCH_TIMEOUT_MS`）を追加し、Abort 時は `Metadata fetch timed out ...` エラーとして上位へ伝播するよう変更。これにより無期限待ちを防ぎ、pipeline 側 `catch` で session を failed 終了できるようにした。適用範囲は `plugins/shape-plugin/src/services/metadata/metadataSources.ts`。
+- update: 2026-02-12 22:29 JST 追加検証: `pnpm -w turbo run build --filter @hierarchidb/shape-plugin`（exit 0）、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`（exit 0, 1 file / 12 tests passed）。
+- blocked: 2026-02-12 22:29 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` の既知 TS7016（`topojson-simplify` / `topojson-server` 型宣言不足）で exit 2。
+- update: 2026-02-12 22:17 JST #225 追加原因として、`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の `awaiting-first-task` が「最初の task 開始通知」を必須条件にしており、`start session response status=running` 直後に task snapshot が空のままだと 45 秒 timeout でエラー終了していたことを確認。発生範囲は同ファイルの `awaiting-first-task` 判定。
+- update: 2026-02-12 22:17 JST 修正として `displayTasks.length === 0 && buildStatus === 'running'` を検出した時点で `awaiting-first-task` を success 終了し、`Build session started. Waiting for first task update...` を info 表示する分岐を追加。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`。
+- update: 2026-02-12 22:17 JST 追加検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`（exit 0, 1 file / 12 tests passed）、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx`（exit 0, 1 file / 10 tests passed）、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/app`（exit 0）。
+- blocked: 2026-02-12 22:17 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` は依存先 `@hierarchidb/vt-orchestrator` の既知 TS7016（`topojson-simplify` / `topojson-server` 型宣言不足）で exit 2。
+- update: 2026-02-12 22:05 JST #225 原因は `useShapeBuildTaskSync.ts` で session reset 後も pending flush（RAF）を保持しうる経路と、`TaskUpdate100` / `ShapeRunningResidue` の常時ログ出力が重なり、初期化時に大量ログを誘発していたこと。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts` と `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`。
+- update: 2026-02-12 22:05 JST 修正として (1) task sync デバッグログを `globalThis.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__` 明示有効時のみ出力へ変更（既定OFF）、(2) `syncTasksRef` で pending flush を破棄して reset 後の旧差分反映を抑止、(3) `useShapeBuildTasks.ts` で `event.nodeId` ミスマッチをドロップ。適用範囲は上記2ファイルと `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`。
+- update: 2026-02-12 22:05 JST 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` は 1 file / 12 tests passed（exit 0）。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` は exit 0。
+- blocked: 2026-02-12 22:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既知 TS7016（`topojson-simplify` / `topojson-server` 型宣言不足）で exit 2。
+- update: 2026-02-12 21:58 JST Issue `fix/shape/session-reset-initialization-log-flood` を起票し `https://github.com/kubohiroya/hierarchidb/issues/225` を作成。
+- update: 2026-02-12 21:59 JST Issue #225 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 21:59 JST ブランチ `codex/fix/shape/session-reset-init-log-flood` を作成して着手。
 - update: 2026-02-12 21:24 JST Issue `fix/shape/vt-empty-tile-and-target-debug-logging` を起票し `https://github.com/kubohiroya/hierarchidb/issues/222` を作成。
 - update: 2026-02-12 21:24 JST Issue #222 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
 - update: 2026-02-12 21:26 JST ブランチ `codex/fix/shape/vt-empty-tile-targeted-debug-logs` を作成して着手。
