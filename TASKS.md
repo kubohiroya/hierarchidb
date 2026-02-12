@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #231 / `codex/docs/shape-build-transition-diagram-sync` / start: 2026-02-13 01:54 JST
 - #227 / `codex/refactor/vt-orchestrator/topojson-runtime-adapter` / start: 2026-02-13 01:12 JST
 - #226 / `codex/feat/shape/cache-key-inputhash-tdd` / start: 2026-02-13 00:36 JST
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / start: 2026-02-12 21:59 JST
@@ -61,6 +62,11 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 01:55 JST #231 で `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` を更新し、状態遷移図を現行実装準拠（起動フェーズ `acquiring-lock -> ... -> awaiting-first-task`、実行ステージ `fetch -> transform -> vt`）へ差し替え。`awaiting-first-task` の待機監視閾値（10s/20s/45s）を注記。
+- blocked: 2026-02-13 01:55 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既知の `ShapeBuildConfig` 型不整合（`vtConfig.debug.tiles` readonly 配列と mutable `string[]` の不一致）で exit 2。今回の docs 差分由来ではないため、記録のみ実施。
+- update: 2026-02-13 01:54 JST Issue `docs(shape): align build status transition diagram with current runtime` を起票し `https://github.com/kubohiroya/hierarchidb/issues/231` を作成。
+- update: 2026-02-13 01:54 JST Issue #231 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-13 01:54 JST ブランチ `codex/docs/shape-build-transition-diagram-sync` を作成して着手。
 - update: 2026-02-13 01:16 JST #227 原因は `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` と `topojsonGrid.ts` が `topojson-server` / `topojson-simplify` を static import しており、TopoJSON 非使用時も依存解決・型解決が走っていたこと。発生範囲は transform の TopoJSON decode/simplify 経路。
 - update: 2026-02-13 01:16 JST #227 修正として TopoJSON runtime adapter（`packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts`）を追加し dynamic import へ集約。`createTransformByBandHandler.ts` では `decodeFetchCacheByFormat` を導入し、`format='topojson'` の時だけ runtime をロードするよう変更。`topojsonGrid.ts` も async 化して adapter 経由へ変更。テスト `packages/vt-orchestrator/src/transform/__tests__/fetchCacheDecoder.unit.test.ts` を追加。
 - update: 2026-02-13 01:16 JST #227 検証: `pnpm --filter @hierarchidb/vt-orchestrator typecheck`（exit 0）、`pnpm --filter @hierarchidb/vt-orchestrator exec vitest run src/vt/__tests__/vtStage.unit.test.ts src/transform/__tests__/fetchCacheDecoder.unit.test.ts`（exit 0, 9 tests passed）、`pnpm --filter @hierarchidb/vt-orchestrator build`（exit 0）。
