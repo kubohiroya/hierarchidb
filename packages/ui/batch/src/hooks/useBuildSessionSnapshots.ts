@@ -1,34 +1,35 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { BuildSessionRuntimeRecord } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { createSessionCoordinator } from '@hierarchidb/session-coordinator';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { proxy } from 'comlink';
-import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-
-type BuildSessionRecordLike = {
-  nodeId: NodeId;
-  status?: unknown;
-  progress?: unknown;
-  updatedAt?: number;
-};
+import type { Remote } from 'comlink';
+import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
 
 export type BuildSessionSnapshot = {
   nodeId: NodeId;
-  status?: unknown;
-  progress?: unknown;
+  status: BuildSessionRuntimeRecord['status'];
+  progress?: BuildSessionRuntimeRecord['progress'];
   updatedAt?: number;
+  isActive: boolean;
+  revision: number;
 };
 
 export type BuildSessionSnapshotsResult = {
   sessions: BuildSessionSnapshot[];
-  isRunnerTab: boolean;
-  activeSessionId: string | null;
-  tabId: string;
 };
+
+const IN_PROGRESS_STATUSES: BuildSessionRuntimeRecord['status'][] = [
+  'starting',
+  'running',
+  'pausing',
+  'resuming',
+  'finalizing',
+];
 
 const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
   return sessions
     .map((session) => {
-      const status = typeof session.status === 'string' ? session.status : '';
       const updatedAt = session.updatedAt ?? '';
       const progressKey = (() => {
         if (session.progress === null || session.progress === undefined) return '';
@@ -41,108 +42,166 @@ const buildSessionSignature = (sessions: BuildSessionSnapshot[]): string => {
           return '';
         }
       })();
-      return `${session.nodeId}|${status}|${updatedAt}|${progressKey}`;
+      return `${session.nodeId}|${session.status}|${session.isActive ? 1 : 0}|${session.revision}|${updatedAt}|${progressKey}`;
     })
     .join('||');
 };
 
-export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapshotsResult => {
-  const { api, initialize, loading } = useWorkerAPI();
-  const coordinator = useMemo(() => (
-    createSessionCoordinator({
-      channelName: 'sessions',
-      pollIntervalTimeout: 3000,
-      quietThresholdTimeout: 5000,
-    })
-  ), []);
-  const [sessions, setSessions] = useState<BuildSessionSnapshot[]>([]);
-  const sessionMapRef = useRef<Map<string, BuildSessionSnapshot>>(new Map());
-  const signatureRef = useRef('');
-  const [isRunnerTab, setIsRunnerTab] = useState(false);
-  const tabIdRef = useRef<string>(coordinator.getTabId());
-  const initRequestedRef = useRef(false);
+type WorkerPayload = Record<string, unknown>;
+type WorkerApi = WorkerAPI<WorkerPayload>;
+type WorkerApiRemote = Remote<WorkerApi>;
+type BuildSessionListener = (sessions: BuildSessionSnapshot[]) => void;
 
-  useEffect(() => {
-    if (api || loading || initRequestedRef.current) return;
-    initRequestedRef.current = true;
-    void initialize().catch((error: unknown) => {
-      initRequestedRef.current = false;
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn('[useBuildSessionSnapshots] worker initialize failed', message);
-    });
-  }, [api, initialize, loading]);
+class SharedBuildSessionSubscription {
+  private readonly listeners = new Set<BuildSessionListener>();
+  private sessions: BuildSessionSnapshot[] = [];
+  private signature = '';
+  private unsubscribe: (() => void) | null = null;
+  private subscribeRequested = false;
+  private disposed = false;
+  private cleanedUp = false;
 
-  const updateSessions = useCallback((nextMap: Map<string, BuildSessionSnapshot>) => {
-    const nextSessions = Array.from(nextMap.values()).sort((a, b) => {
-      return String(a.nodeId).localeCompare(String(b.nodeId));
-    });
+  constructor(
+    private readonly api: WorkerApiRemote,
+    private readonly nodeType: NodeType,
+    private readonly cleanup: () => void
+  ) {}
+
+  addListener(listener: BuildSessionListener): () => void {
+    this.listeners.add(listener);
+    listener(this.sessions);
+    this.ensureSubscribed();
+    return () => {
+      this.listeners.delete(listener);
+      if (this.listeners.size === 0) {
+        this.disposeAndCleanup();
+      }
+    };
+  }
+
+  private ensureSubscribed() {
+    if (this.subscribeRequested || this.disposed) {
+      return;
+    }
+    this.subscribeRequested = true;
+    void this.start();
+  }
+
+  private async start() {
+    try {
+      const unsubscribe = await this.api.subscribeBuildSessionRuntimes(
+        this.nodeType,
+        { statuses: IN_PROGRESS_STATUSES },
+        proxy((incoming: BuildSessionRuntimeRecord[]) => {
+          this.handleIncoming(incoming);
+        })
+      );
+      if (this.disposed) {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+        return;
+      }
+      this.unsubscribe = typeof unsubscribe === 'function' ? unsubscribe : null;
+    } catch (error) {
+      if (!this.disposed) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn('[useBuildSessionSnapshots] subscribe failed', message);
+      }
+      this.subscribeRequested = false;
+    }
+  }
+
+  private handleIncoming(incoming: BuildSessionRuntimeRecord[]) {
+    if (this.disposed) {
+      return;
+    }
+    const nextSessions = incoming
+      .map((session) => ({
+        nodeId: session.nodeId,
+        status: session.status,
+        progress: session.progress,
+        updatedAt: session.updatedAt,
+        isActive: session.isActive,
+        revision: session.revision,
+      }))
+      .sort((a, b) => String(a.nodeId).localeCompare(String(b.nodeId)));
     const signature = buildSessionSignature(nextSessions);
-    if (signature === signatureRef.current) return;
-    signatureRef.current = signature;
-    setSessions(nextSessions);
-  }, []);
+    if (signature === this.signature) {
+      return;
+    }
+    this.signature = signature;
+    this.sessions = nextSessions;
+    for (const listener of this.listeners) {
+      listener(nextSessions);
+    }
+  }
+
+  private disposeAndCleanup() {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+    this.listeners.clear();
+    this.sessions = [];
+    this.signature = '';
+    if (!this.cleanedUp) {
+      this.cleanedUp = true;
+      this.cleanup();
+    }
+  }
+}
+
+const sharedSubscriptionsByApi = new WeakMap<
+  object,
+  Map<string, SharedBuildSessionSubscription>
+>();
+
+const getSharedBuildSessionSubscription = (
+  api: WorkerApiRemote,
+  nodeType: NodeType
+): SharedBuildSessionSubscription => {
+  const apiKey = api as unknown as object;
+  let subscriptionsByNodeType = sharedSubscriptionsByApi.get(apiKey);
+  if (!subscriptionsByNodeType) {
+    subscriptionsByNodeType = new Map<string, SharedBuildSessionSubscription>();
+    sharedSubscriptionsByApi.set(apiKey, subscriptionsByNodeType);
+  }
+  const nodeTypeKey = String(nodeType);
+  const existing = subscriptionsByNodeType.get(nodeTypeKey);
+  if (existing) {
+    return existing;
+  }
+  const created = new SharedBuildSessionSubscription(api, nodeType, () => {
+    const latest = sharedSubscriptionsByApi.get(apiKey);
+    if (!latest) {
+      return;
+    }
+    latest.delete(nodeTypeKey);
+    if (latest.size === 0) {
+      sharedSubscriptionsByApi.delete(apiKey);
+    }
+  });
+  subscriptionsByNodeType.set(nodeTypeKey, created);
+  return created;
+};
+
+export const useBuildSessionSnapshots = (nodeType: NodeType): BuildSessionSnapshotsResult => {
+  const { api } = useWorkerQueryAPI();
+  const [sessions, setSessions] = useState<BuildSessionSnapshot[]>([]);
 
   useEffect(() => {
     if (!api) {
-      sessionMapRef.current = new Map();
-      updateSessions(new Map());
+      setSessions([]);
       return;
     }
-    let active = true;
-    let unsubscribe: (() => void) | null = null;
-    const subscribe = async () => {
-      const unsub = await api.subscribeBuildSessionRecordsByStatus(
-        nodeType,
-        ['running'],
-        proxy(async (incoming: BuildSessionRecordLike[]) => {
-          if (!active) return;
-          const nextMap = new Map<string, BuildSessionSnapshot>();
-          incoming.forEach((session: BuildSessionRecordLike) => {
-            const key = String(session.nodeId);
-            nextMap.set(key, {
-              nodeId: session.nodeId,
-              status: session.status,
-              progress: session.progress,
-              updatedAt: session.updatedAt,
-            });
-          });
-          sessionMapRef.current = nextMap;
-          updateSessions(nextMap);
-        })
-      );
-      unsubscribe = () => {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
-      };
-    };
-    void subscribe();
-    return () => {
-      active = false;
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [api, nodeType, updateSessions]);
+    const sharedSubscription = getSharedBuildSessionSubscription(api, nodeType);
+    return sharedSubscription.addListener(setSessions);
+  }, [api, nodeType]);
 
-  useEffect(() => {
-    const updateRunner = () => {
-      const now = Date.now();
-      setIsRunnerTab(coordinator.isRunnerTab(now));
-    };
-    updateRunner();
-    const intervalId = setInterval(updateRunner, 1000);
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [coordinator]);
-
-  const activeSessionId = coordinator.readActiveSessionId();
-
-  return useMemo(() => ({
-    sessions,
-    isRunnerTab,
-    activeSessionId,
-    tabId: tabIdRef.current,
-  }), [activeSessionId, isRunnerTab, sessions]);
+  return useMemo(() => ({ sessions }), [sessions]);
 };
