@@ -423,9 +423,10 @@ export const useBuildProgressPanelState = (params: {
     const buildConfig = params.data?.buildConfig
       ?? (params.data as { batchConfig?: ShapeBuildConfig } | undefined)?.batchConfig;
     if (!buildConfig) return undefined;
+    const isBuildRunning = summary.buildStatus === 'running';
     return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
-      // Keep slot animation tied to actual task runtime, even if session status lags behind.
-      const isStageRunning = Boolean(stageTaskScan[stage.id]?.hasRunning);
+      // Never animate stage slots once the build session is not running.
+      const isStageRunning = isBuildRunning && Boolean(stageTaskScan[stage.id]?.hasRunning);
       const maxConcurrent = (() => {
         switch (stage.id) {
           case 'fetch':
@@ -442,7 +443,7 @@ export const useBuildProgressPanelState = (params: {
       acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
       return acc;
     }, {});
-  }, [params.data?.buildConfig, stageTaskScan, stages]);
+  }, [params.data?.buildConfig, stageTaskScan, stages, summary.buildStatus]);
   useEffect(() => {
     if (!isDev) return;
     const nodeIdForLog = resolvedNodeId ? String(resolvedNodeId) : null;

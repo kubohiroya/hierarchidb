@@ -3,7 +3,7 @@
  * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
@@ -637,6 +637,42 @@ export function usePluginDialogController(
           : [{ id: 'placeholder', label: 'placeholder', component: PlaceholderStep }],
       [stepDescriptors]
     );
+  const activeStepId = safeStepDescriptors[activeStepIndex]?.id ?? null;
+  const [buildStepRunning, setBuildStepRunning] = useState(false);
+
+  useEffect(() => {
+    const shouldPollBuildSession = Boolean(
+      open
+      && isDialogReady
+      && client
+      && activeStepId === 'build'
+    );
+    if (!shouldPollBuildSession) {
+      setBuildStepRunning(false);
+      return;
+    }
+    let cancelled = false;
+    const pollSessionStatus = async () => {
+      if (!client) return;
+      try {
+        const status = await client.getBuildSessionStatus(nodeType as NodeType, nodeId as NodeId);
+        if (cancelled) return;
+        const isRunning = status.status === 'running';
+        setBuildStepRunning((current) => (current === isRunning ? current : isRunning));
+      } catch {
+        if (cancelled) return;
+        setBuildStepRunning(false);
+      }
+    };
+    void pollSessionStatus();
+    const timerId = window.setInterval(() => {
+      void pollSessionStatus();
+    }, 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timerId);
+    };
+  }, [activeStepId, client, isDialogReady, nodeId, nodeType, open]);
 
   const { conflictDialog, resolveConflict, ensureNoConflict } = useConflictGuard({
     mode: stepMode,
@@ -983,8 +1019,8 @@ export function usePluginDialogController(
   const HeaderComponent = useMemo<
     HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']
   >(
-    () => createHeaderComponent(dialogTitle, headerSubtitle, icon, pendingAction),
-    [dialogTitle, headerSubtitle, icon, pendingAction]
+    () => createHeaderComponent(dialogTitle, headerSubtitle, icon, pendingAction, buildStepRunning),
+    [buildStepRunning, dialogTitle, headerSubtitle, icon, pendingAction]
   );
 
   const ContentComponent = useMemo<

@@ -198,6 +198,36 @@ export type IBuildSessionManager<TConfig = unknown, TData = unknown> = IBatchSes
 export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> =
   () => TManager;
 
+export type BuildSessionRuntimeStatus =
+  | 'idle'
+  | 'starting'
+  | 'running'
+  | 'pausing'
+  | 'paused'
+  | 'resuming'
+  | 'finalizing'
+  | 'completed'
+  | 'failed'
+  | 'deleting';
+
+export interface BuildSessionRuntimeRecord {
+  nodeId: NodeId;
+  status: BuildSessionRuntimeStatus;
+  isActive: boolean;
+  progress?: BuildProgress;
+  startedAt?: number;
+  completedAt?: number;
+  updatedAt?: number;
+  error?: string;
+  revision: number;
+}
+
+export interface BuildSessionRuntimeFilter {
+  nodeId?: NodeId;
+  statuses?: BuildSessionRuntimeStatus[];
+  activeOnly?: boolean;
+}
+
 export const isBatchControlAPIV2Enabled = (): boolean => true;
 /** Preferred alias for isBatchControlAPIV2Enabled. */
 export const isBuildControlAPIV2Enabled = (): boolean => isBatchControlAPIV2Enabled();

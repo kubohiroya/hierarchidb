@@ -12,6 +12,8 @@ import type {
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type {
   BatchProgressEvent,
+  BuildSessionRuntimeFilter,
+  BuildSessionRuntimeRecord,
   BatchSessionStatus,
   BatchTaskSummary,
   BatchTaskUpdateEvent,
@@ -96,6 +98,12 @@ export interface WorkerAPI<T> {
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
+  startOrResumeBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<BatchSessionStatus>;
   /** @deprecated Use getBuildSessionStatus. */
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   /** Preferred alias for getBatchSessionStatus. */
@@ -141,6 +149,20 @@ export interface WorkerAPI<T> {
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
     callback: (sessions: ShapeBuildSessionRecord[]) => void
   ): Promise<() => void>;
+  getBuildSessionRuntime(
+    nodeType: NodeType,
+    nodeId: NodeId
+  ): Promise<BuildSessionRuntimeRecord | null>;
+  listBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter?: BuildSessionRuntimeFilter
+  ): Promise<BuildSessionRuntimeRecord[]>;
+  subscribeBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter: BuildSessionRuntimeFilter | undefined,
+    callback: (sessions: BuildSessionRuntimeRecord[]) => void
+  ): Promise<() => void>;
+  deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,

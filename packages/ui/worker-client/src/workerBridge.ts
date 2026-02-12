@@ -1,5 +1,7 @@
 import type {
   BatchProgressEvent,
+  BuildSessionRuntimeFilter,
+  BuildSessionRuntimeRecord,
   BatchSessionStatus,
   BatchTaskSummary,
   BatchTaskUpdateEvent,
@@ -25,6 +27,12 @@ export interface WorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<BatchSessionStatus>;
+  startOrResumeBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
@@ -53,6 +61,20 @@ export interface WorkerBridge {
     nodeId: NodeId,
     cb: (event: BatchTaskUpdateEvent) => void
   ): Promise<() => void>;
+  getBuildSessionRuntime(
+    nodeType: NodeType,
+    nodeId: NodeId
+  ): Promise<BuildSessionRuntimeRecord | null>;
+  listBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter?: BuildSessionRuntimeFilter
+  ): Promise<BuildSessionRuntimeRecord[]>;
+  subscribeBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter: BuildSessionRuntimeFilter | undefined,
+    cb: (sessions: BuildSessionRuntimeRecord[]) => void
+  ): Promise<() => void>;
+  deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   getStyleQueryAPI(): ReturnType<WorkerApi['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerApi['getStyleMutationAPI']>;
   getShapeQueryAPI(): ReturnType<WorkerApi['getShapeQueryAPI']>;
@@ -138,6 +160,21 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
   }
 
+  async startOrResumeBuildSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<BatchSessionStatus> {
+    const api = await ensureWorkerAPI();
+    return api.startOrResumeBuildSession(
+      nodeType,
+      nodeId,
+      downloadTaskPayloads,
+      buildContinuationPolicy
+    );
+  }
+
   async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.getBatchSessionStatus(nodeType, nodeId);
@@ -216,6 +253,43 @@ class WorkerBridgeImpl implements WorkerBridge {
         console.warn('[WorkerBridge] unsubscribe failed', error);
       }
     };
+  }
+
+  async getBuildSessionRuntime(
+    nodeType: NodeType,
+    nodeId: NodeId
+  ): Promise<BuildSessionRuntimeRecord | null> {
+    const api = await ensureWorkerAPI();
+    return api.getBuildSessionRuntime(nodeType, nodeId);
+  }
+
+  async listBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter?: BuildSessionRuntimeFilter
+  ): Promise<BuildSessionRuntimeRecord[]> {
+    const api = await ensureWorkerAPI();
+    return api.listBuildSessionRuntimes(nodeType, filter);
+  }
+
+  async subscribeBuildSessionRuntimes(
+    nodeType: NodeType,
+    filter: BuildSessionRuntimeFilter | undefined,
+    cb: (sessions: BuildSessionRuntimeRecord[]) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    const unsubscribe = await api.subscribeBuildSessionRuntimes(nodeType, filter, proxy(cb));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[WorkerBridge] unsubscribe failed', error);
+      }
+    };
+  }
+
+  async deleteBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
+    const api = await ensureWorkerAPI();
+    await api.deleteBuildSession(nodeType, nodeId);
   }
 
   async getStyleQueryAPI(): Promise<Awaited<ReturnType<WorkerApi['getStyleQueryAPI']>>> {

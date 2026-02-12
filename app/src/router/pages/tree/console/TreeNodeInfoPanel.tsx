@@ -1,9 +1,10 @@
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
+import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-batch-progress';
 import {
+  isFolderNodeType,
   NodeContextMenu,
   NodeTypeIcon,
-  isFolderNodeType,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-field';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
@@ -18,7 +19,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
-import { useBuildSessionSnapshots } from '@hierarchidb/ui-batch-progress';
+import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton.js';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
@@ -44,7 +44,12 @@ export interface TreeNodeInfoPanelProps {
   readonly onContextMenuAction: ContextMenuHandler;
 }
 
-export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
+export function TreeNodeInfoPanel({
+  treeId,
+  pageNodeId,
+  node,
+  onContextMenuAction,
+}: TreeNodeInfoPanelProps) {
   const navigate = useNavigate();
   const {
     currentNode,
@@ -68,18 +73,10 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
     openSteps,
     openStepsLoading,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
-  const buildSessionNodeType = 'shape' as NodeType;
-  const { sessions: buildSessions, isRunnerTab, activeSessionId } = useBuildSessionSnapshots(buildSessionNodeType);
-  const runningNodeIds = useMemo(
-    () => new Set(buildSessions.map((session) => session.nodeId as NodeId)),
-    [buildSessions]
-  );
+  const runtimeContext = useOptionalBuildSessionRuntimeContext();
   const isBuildRunning = currentNode?.id
-    ? runningNodeIds.has(currentNode.id as NodeId)
+    ? Boolean(runtimeContext?.runningNodeIds.has(currentNode.id as NodeId))
     : false;
-  const isBuildActive = isBuildRunning
-    && isRunnerTab
-    && String(activeSessionId ?? '') === String(currentNode?.id ?? '');
   const isVisible = currentNode?.visible !== false;
   const displayName = currentNode ? getTreeNodeName(currentNode).trim() : '';
   const originalName =
@@ -87,11 +84,15 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
       ? currentNode.metadata.name
       : labels.unnamedNodeLabel;
   const originalDescription =
-    typeof currentNode?.metadata?.description === 'string' && currentNode.metadata.description.trim().length > 0
+    typeof currentNode?.metadata?.description === 'string' &&
+    currentNode.metadata.description.trim().length > 0
       ? currentNode.metadata.description
       : labels.emptyDescriptionLabel;
-  const resolvedPageNodeId =
-    pageNodeId ? String(pageNodeId) : (currentNode?.id ? String(currentNode.id) : null);
+  const resolvedPageNodeId = pageNodeId
+    ? String(pageNodeId)
+    : currentNode?.id
+      ? String(currentNode.id)
+      : null;
   const resolvedTreeId = treeId ? String(treeId) : null;
   const tagNames = useMemo(() => {
     const rawTags = currentNode?.metadata?.tags;
@@ -110,7 +111,9 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
   const handleTagNavigate = useCallback(
     (tagName: string) => {
       if (!resolvedTreeId || !resolvedPageNodeId) return;
-      navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/tags/${encodeURIComponent(tagName)}` });
+      navigate({
+        to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/tags/${encodeURIComponent(tagName)}`,
+      });
     },
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
@@ -207,12 +210,12 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
                 <Tooltip
                   arrow
                   placement="top"
-                  title={(
+                  title={
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 160 }}>
                       <Box sx={{ fontWeight: 600 }}>{originalName}</Box>
                       <Box>{originalDescription}</Box>
                     </Box>
-                  )}
+                  }
                 >
                   <span>
                     <Chip
@@ -225,13 +228,7 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
                   </span>
                 </Tooltip>
               )}
-              {isBuildRunning && (
-                <CircularProgress
-                  size={16}
-                  thickness={5}
-                  color={isBuildActive ? 'primary' : 'inherit'}
-                />
-              )}
+              {isBuildRunning && <BuildSessionSpinnerButton nodeId={currentNode.id as NodeId} />}
               {tagNames.map((tagName) => {
                 const isClickable = Boolean(resolvedTreeId && resolvedPageNodeId);
                 return (
@@ -241,11 +238,7 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
                     size="small"
                     variant="outlined"
                     clickable={isClickable}
-                    onClick={
-                      isClickable
-                        ? () => handleTagNavigate(tagName)
-                        : undefined
-                    }
+                    onClick={isClickable ? () => handleTagNavigate(tagName) : undefined}
                     sx={{ height: 20 }}
                   />
                 );
@@ -351,7 +344,9 @@ export function TreeNodeInfoPanel({ treeId, pageNodeId, node, onContextMenuActio
         openStepsLoading={openStepsLoading}
         onOpen={(options) => handleContextMenuTrigger('navigate', options)}
         onOpenFolder={(options) => handleContextMenuTrigger('navigate', options)}
-        onOpenStep={(step: number, options) => handleContextMenuTrigger(`open-step:${step}`, options)}
+        onOpenStep={(step: number, options) =>
+          handleContextMenuTrigger(`open-step:${step}`, options)
+        }
         onPreview={(options) => handleContextMenuTrigger('preview', options)}
         onBuild={(options) => handleContextMenuTrigger('build', options)}
         onEdit={(options) => handleContextMenuTrigger('edit', options)}
