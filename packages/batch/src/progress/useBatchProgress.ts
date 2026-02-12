@@ -21,6 +21,7 @@ export function useBatchProgress(
   const [subscribed, setSubscribed] = useState(false);
   const unsubRef = useRef<Unsubscribe | null>(null);
   const subscribedRef = useRef(false);
+  const subscriptionTokenRef = useRef(0);
   const pendingRef = useRef<BuildUnifiedProgressInfo | null>(null);
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
@@ -65,6 +66,8 @@ export function useBatchProgress(
   const subscribe = useCallback(() => {
     const currentAdapter = adapterRef.current;
     if (!currentAdapter || subscribedRef.current) return;
+    const subscriptionToken = subscriptionTokenRef.current + 1;
+    subscriptionTokenRef.current = subscriptionToken;
     const result: SubscribeResult = currentAdapter.subscribe((info: BuildUnifiedProgressInfo) => {
       pendingRef.current = info;
       if (flushFrameRef.current !== null) return;
@@ -74,27 +77,36 @@ export function useBatchProgress(
       unsubRef.current = result;
     } else if (result && typeof (result as Promise<unknown>).then === 'function') {
       void (result as Promise<Unsubscribe>).then((value) => {
-        if (typeof value === 'function') {
-          unsubRef.current = value;
+        if (typeof value !== 'function') {
+          return;
         }
+        if (subscriptionTokenRef.current !== subscriptionToken || !subscribedRef.current) {
+          value();
+          return;
+        }
+        unsubRef.current = value;
       });
     }
     subscribedRef.current = true;
-    setSubscribed(true);
+    setSubscribed((prev) => (prev ? prev : true));
   }, [update]);
 
-  const unsubscribe = useCallback(() => {
-    if (!subscribedRef.current) return;
-    unsubRef.current?.();
+  const unsubscribe = useCallback((notify = true) => {
+    if (!subscribedRef.current && !unsubRef.current) return;
+    subscriptionTokenRef.current += 1;
+    const unsubscribeCurrent = unsubRef.current;
     unsubRef.current = null;
+    unsubscribeCurrent?.();
     subscribedRef.current = false;
-    setSubscribed(false);
+    if (notify) {
+      setSubscribed((prev) => (prev ? false : prev));
+    }
   }, []);
 
   useEffect(() => {
     if (adapter && autoSubscribe) subscribe();
     return () => {
-      unsubscribe();
+      unsubscribe(false);
     };
   }, [adapter, autoSubscribe, subscribe, unsubscribe]);
 
