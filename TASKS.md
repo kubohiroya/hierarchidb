@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #213 / `codex/refactor/build-session-subscription-unify` / start: 2026-02-12 12:49 JST
 - #200 / `codex/fix/shape/vt-parent-geojson-input-summary` / start: 2026-02-11 20:27 JST
 - #201 / `codex/refactor/app/modeless-use-feature-metadata` / start: 2026-02-11 22:15 JST
 - #205 / `ERIA-Cartograph` / start: 2026-02-12 01:28 JST
@@ -52,6 +53,12 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-12 12:49 JST Issue `refactor/app/build-session-subscription-unify` を起票し `https://github.com/kubohiroya/hierarchidb/issues/213` を作成。
+- update: 2026-02-12 12:49 JST Issue #213 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。
+- update: 2026-02-12 12:49 JST ブランチ `codex/refactor/build-session-subscription-unify` を作成して着手。
+- update: 2026-02-12 12:50 JST #213 で `useBuildSessionSnapshots` に共有購読レジストリを導入し、同一 `api + nodeType` の重複 subscribe を1本化。`BuildSessionLauncherPanel` は `BuildSessionRuntimeContext` 優先利用へ変更し、Context存在時の追加購読を停止。`getQueryAPI()` は `useWorkerQueryAPI` へ共通化。
+- done: 2026-02-12 12:50 JST 検証完了（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/app` すべて exit 0）。
+- update: 2026-02-12 08:37 JST Issue #211 を起票し Project `hierarchidb` の Status を `In Progress` に設定、ブランチ `codex/fix/shape/build-session-resume-stalls` を作成して着手。
 - update: 2026-02-12 07:32 JST #209 Reset session 実行後に `Completed/Error` が残留する原因は、`plugins/shape-plugin/src/ui/components/build-config/useShapeBuildCacheActions.ts` の `handleResetSession` が session reset のみで task queue を削除していなかったこと。発生範囲は同ファイルの reset 経路（`handleResetSession`）。修正として `deleteTasksByNode` を追加し、reset 時に task queue を削除してから artifacts/session をクリアするよう変更。回帰テスト `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` を追加。
 - done: 2026-02-12 07:32 JST 検証完了（`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildCacheActions.unit.test.tsx` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` すべて exit 0）。
 - update: 2026-02-12 07:15 JST #209 追加調査で、`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` の `saveDraftBeforeBuild` が `buildConfig` は保存する一方で `selectedArrayByCountries` を draft へ反映しておらず、worker 側 `startBatchProcess` が selection 無しと判定して `Shape batch session requires download task payloads or selection` を返していたことを確認。発生範囲は同ファイルの draft 保存処理（`save-draft` payload 組み立て）。
