@@ -37,8 +37,9 @@ import {
   Layers as LayersIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
-import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { useOptionalBuildSessionRuntimeContext } from '../contexts/TreeBuildSessionContexts.js';
 import { useBuildSessionSnapshots } from '../hooks/useBuildSessionSnapshots.js';
+import { useWorkerQueryAPI } from '../hooks/useWorkerQueryAPI.js';
 
 export type BuildSessionLauncherEntry = {
   session: BuildSessionSnapshot;
@@ -52,6 +53,10 @@ type BuildSessionLauncherPanelProps = {
   nodeType: NodeType;
   excludeNodeId?: NodeId;
   onNavigateToBuild?: (entry: BuildSessionLauncherEntry, options?: { openInNewTab?: boolean }) => void;
+};
+
+type BuildSessionLauncherPanelInnerProps = Omit<BuildSessionLauncherPanelProps, 'nodeType'> & {
+  sessions: readonly BuildSessionSnapshot[];
 };
 
 type ProgressSummary = {
@@ -191,13 +196,61 @@ const resolveRequestedAt = (session: BuildSessionSnapshot): number => session.up
 
 export function BuildSessionLauncherPanel({
   nodeType,
+  treeId,
+  pageNodeId,
+  excludeNodeId,
+  onNavigateToBuild,
+}: BuildSessionLauncherPanelProps) {
+  const runtimeContext = useOptionalBuildSessionRuntimeContext();
+  if (runtimeContext && runtimeContext.nodeType === nodeType) {
+    return (
+      <BuildSessionLauncherPanelInner
+        treeId={treeId}
+        pageNodeId={pageNodeId}
+        excludeNodeId={excludeNodeId}
+        onNavigateToBuild={onNavigateToBuild}
+        sessions={runtimeContext.sessions}
+      />
+    );
+  }
+  return (
+    <BuildSessionLauncherPanelWithSubscription
+      nodeType={nodeType}
+      treeId={treeId}
+      pageNodeId={pageNodeId}
+      excludeNodeId={excludeNodeId}
+      onNavigateToBuild={onNavigateToBuild}
+    />
+  );
+}
+
+function BuildSessionLauncherPanelWithSubscription({
+  nodeType,
+  treeId,
+  pageNodeId,
+  excludeNodeId,
+  onNavigateToBuild,
+}: BuildSessionLauncherPanelProps) {
+  const { sessions } = useBuildSessionSnapshots(nodeType);
+  return (
+    <BuildSessionLauncherPanelInner
+      treeId={treeId}
+      pageNodeId={pageNodeId}
+      excludeNodeId={excludeNodeId}
+      onNavigateToBuild={onNavigateToBuild}
+      sessions={sessions}
+    />
+  );
+}
+
+function BuildSessionLauncherPanelInner({
   onNavigateToBuild,
   excludeNodeId,
-}: BuildSessionLauncherPanelProps) {
-  const { api } = useWorkerAPI();
+  sessions,
+}: BuildSessionLauncherPanelInnerProps) {
+  const { apiAvailable, getQueryAPIOrNull } = useWorkerQueryAPI();
   const { t } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
-  const { sessions, isRunnerTab, activeSessionId } = useBuildSessionSnapshots(nodeType);
   const stages = useBuildStages(t);
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
   const [entries, setEntries] = useState<BuildSessionLauncherEntry[]>([]);
@@ -232,8 +285,8 @@ export function BuildSessionLauncherPanel({
     });
   }, []);
 
-  const refreshEntries = useCallback(async (sessionSnapshots: BuildSessionSnapshot[]) => {
-    if (!api) {
+  const refreshEntries = useCallback(async (sessionSnapshots: readonly BuildSessionSnapshot[]) => {
+    if (!apiAvailable) {
       scheduleEntriesUpdate([]);
       return;
     }
@@ -243,7 +296,7 @@ export function BuildSessionLauncherPanel({
     }
     const currentRefreshId = refreshIdRef.current + 1;
     refreshIdRef.current = currentRefreshId;
-    const queryAPI = await api.getQueryAPI().catch(() => null);
+    const queryAPI = await getQueryAPIOrNull();
     if (!queryAPI) {
       if (currentRefreshId === refreshIdRef.current) {
         const fallbackEntries: BuildSessionLauncherEntry[] = sessionSnapshots.map((session) => ({
@@ -284,7 +337,7 @@ export function BuildSessionLauncherPanel({
       return a.nodePath.localeCompare(b.nodePath);
     });
     scheduleEntriesUpdate(nextEntries);
-  }, [api, scheduleEntriesUpdate]);
+  }, [apiAvailable, getQueryAPIOrNull, scheduleEntriesUpdate]);
 
   useEffect(() => {
     void refreshEntries(sessions);
@@ -379,8 +432,8 @@ export function BuildSessionLauncherPanel({
           const nodeTypeResolved = entry.node?.nodeType ?? 'folder';
           const nodePath = entry.nodePath || nodeName;
           const icon = resolveIcon({ nodeType: nodeTypeResolved });
-          const isActive = isRunnerTab && activeSessionId === String(entry.session.nodeId);
-          const variant = isRunnerTab ? 'outlined' : 'text';
+          const isActive = entry.session.isActive;
+          const variant = isActive ? 'outlined' : 'text';
           const color = isActive ? 'primary' : 'inherit';
           const countsText = t(
             'stage.progress.countsWithUnit',
