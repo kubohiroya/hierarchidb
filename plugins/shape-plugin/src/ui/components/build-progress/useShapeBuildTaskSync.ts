@@ -518,9 +518,11 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
   const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
   const flushFrameRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       pendingTasksRef.current = null;
       pendingDirtyRef.current = false;
       vtParentInputDebugLogKeysRef.current.clear();
@@ -544,10 +546,21 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       return;
     }
     committedTasksRef.current = next;
+    if (!isMountedRef.current) {
+      return;
+    }
     setTasks(next);
   }, [setTasks]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
+    if (!isMountedRef.current) {
+      return;
+    }
+    const pendingCurrent = pendingTasksRef.current;
+    if (pendingCurrent && areTaskListsEquivalentForView(pendingCurrent, next)) {
+      pendingDirtyRef.current = pendingDirtyRef.current || dirty;
+      return;
+    }
     pendingTasksRef.current = next;
     pendingDirtyRef.current = pendingDirtyRef.current || dirty;
     if (flushScheduledRef.current) return;
