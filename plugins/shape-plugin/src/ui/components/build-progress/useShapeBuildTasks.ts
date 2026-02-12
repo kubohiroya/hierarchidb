@@ -27,7 +27,28 @@ export interface UseShapeBuildTasksState {
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
-const TASK_SNAPSHOT_RECONCILE_INTERVAL_MS = 5000;
+const TASK_SNAPSHOT_RECONCILE_INTERVAL_MS = 1000;
+const EMPTY_TASK_RECONCILE_WINDOW_MS = 60_000;
+
+type TaskSyncDebugConfig = Partial<Record<'runningResidue' | 'all', boolean>>;
+
+const readTaskSyncDebugConfig = (): TaskSyncDebugConfig | null => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__?: unknown;
+  };
+  const raw = scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as TaskSyncDebugConfig;
+};
+
+const isRunningResidueDebugEnabled = (): boolean => {
+  if (!isDev) return false;
+  const config = readTaskSyncDebugConfig();
+  if (!config) return false;
+  return config.all === true || config.runningResidue === true;
+};
 
 const isTaskInFlight = (task: ShapeBuildTaskSummary): boolean => (
   task.status === 'running' || task.status === 'queued'
@@ -40,7 +61,7 @@ const logRunningResidueDrop = (payload: {
   reason?: string;
   taskId?: string | null;
 }): void => {
-  if (!isDev) return;
+  if (!isRunningResidueDebugEnabled()) return;
   if (payload.reason === 'subscription_cancelled') {
     // Expected during unmount/reload/reset cleanup.
     return;
@@ -151,6 +172,16 @@ export function useShapeBuildTasks(
     let cancelled = false;
 
     const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
+      if (String(event.nodeId) !== String(nodeId)) {
+        logRunningResidueDrop({
+          nodeId: nodeId ? String(nodeId) : null,
+          source: 'subscription',
+          eventType: event.type,
+          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          reason: 'node_id_mismatch',
+        });
+        return;
+      }
       if (cancelled || subscriptionIdRef.current !== subscriptionId) {
         logRunningResidueDrop({
           nodeId: nodeId ? String(nodeId) : null,
@@ -174,33 +205,14 @@ export function useShapeBuildTasks(
       }
     };
 
-    const start = async () => {
-      try {
-        await bridgeRef.current.initialize();
-        const unsubscribe = await bridgeRef.current.subscribeBuildTasks(
-          SHAPE_NODE_TYPE,
-          nodeId,
-          handleEvent,
-        );
-        if (cancelled) {
-          unsubscribe();
-          return;
-        }
-        subscriptionRef.current = unsubscribe;
-      } catch (err) {
-        if (cancelled) return;
-        const errObj = err instanceof Error ? err : new Error('Failed to subscribe build tasks');
-        setError(errObj);
-        setIsLoading(false);
-      }
-    };
-
-    void start();
+    const subscribedAt = Date.now();
 
     const reconcileSnapshot = async () => {
       if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
-      if (isLoadingRef.current) return;
-      if (!tasksRef.current.some((task) => isTaskInFlight(task))) return;
+      const hasInFlightTasks = tasksRef.current.some((task) => isTaskInFlight(task));
+      const hasNoTasks = tasksRef.current.length === 0;
+      const withinEmptyTaskWindow = Date.now() - subscribedAt <= EMPTY_TASK_RECONCILE_WINDOW_MS;
+      if (!hasInFlightTasks && !(hasNoTasks && withinEmptyTaskWindow)) return;
       if (reconcileInFlightRef.current) return;
       reconcileInFlightRef.current = true;
       try {
@@ -217,6 +229,30 @@ export function useShapeBuildTasks(
         reconcileInFlightRef.current = false;
       }
     };
+
+    const start = async () => {
+      try {
+        await bridgeRef.current.initialize();
+        const unsubscribe = await bridgeRef.current.subscribeBuildTasks(
+          SHAPE_NODE_TYPE,
+          nodeId,
+          handleEvent,
+        );
+        if (cancelled) {
+          unsubscribe();
+          return;
+        }
+        subscriptionRef.current = unsubscribe;
+        void reconcileSnapshot();
+      } catch (err) {
+        if (cancelled) return;
+        const errObj = err instanceof Error ? err : new Error('Failed to subscribe build tasks');
+        setError(errObj);
+        setIsLoading(false);
+      }
+    };
+
+    void start();
     const reconcileTimer = window.setInterval(() => {
       void reconcileSnapshot();
     }, TASK_SNAPSHOT_RECONCILE_INTERVAL_MS);

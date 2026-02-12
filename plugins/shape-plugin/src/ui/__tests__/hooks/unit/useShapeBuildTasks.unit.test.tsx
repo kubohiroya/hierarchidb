@@ -14,6 +14,19 @@ let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
 let consoleLogSpy: ReturnType<typeof vi.spyOn> | null = null;
 let consoleDebugSpy: ReturnType<typeof vi.spyOn> | null = null;
 
+const setTaskSyncDebugConfig = (
+  config: Partial<Record<'taskUpdate100' | 'runningResidue' | 'all', boolean>> | undefined,
+): void => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__?: Partial<Record<'taskUpdate100' | 'runningResidue' | 'all', boolean>>;
+  };
+  if (!config) {
+    delete scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__;
+    return;
+  }
+  scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__ = config;
+};
+
 vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => ({
     initialize: initializeMock,
@@ -34,6 +47,7 @@ describe('useShapeBuildTasks', () => {
     getBuildTasksMock.mockReset();
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
+    setTaskSyncDebugConfig(undefined);
     consoleLogSpy?.mockRestore();
     consoleDebugSpy?.mockRestore();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -110,7 +124,8 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.status).toBe('completed');
     });
 
-    expect(getBuildTasksMock).not.toHaveBeenCalled();
+    expect(getBuildTasksMock).toHaveBeenCalledTimes(1);
+    expect(getBuildTasksMock).toHaveBeenCalledWith('shape', 'node-1');
   });
 
   it('keeps completed 100% when a running 100% update arrives later', async () => {
@@ -410,6 +425,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('logs TaskUpdate100 with parsed scope when update progress reaches 100', async () => {
+    setTaskSyncDebugConfig({ taskUpdate100: true });
     renderHook(() => useShapeBuildTasks('node-4'));
 
     await waitFor(() => {
@@ -462,6 +478,34 @@ describe('useShapeBuildTasks', () => {
 
     await waitFor(() => {
       expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('[TaskUpdate100]'));
+    });
+  });
+
+  it('ignores task events when nodeId does not match the active subscription', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-other',
+        task: {
+          taskId: 'node-other:fetch:JP:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 50,
+          message: 'running',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(0);
     });
   });
 
@@ -653,4 +697,58 @@ describe('useShapeBuildTasks', () => {
       );
     });
   });
+
+  it('recovers task snapshot when initial subscription events are missing', async () => {
+    vi.useFakeTimers();
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+      return window.setTimeout(() => cb(performance.now()), 0);
+    });
+    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number) => {
+      window.clearTimeout(id);
+    });
+    try {
+      getBuildTasksMock.mockResolvedValue([
+        {
+          taskId: 'node-reconcile:fetch:JP:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 20,
+          message: 'Running',
+          index: 1,
+          sequence: 1,
+        },
+      ]);
+
+      const { result } = renderHook(() => useShapeBuildTasks('node-reconcile'));
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(subscribeMock).toHaveBeenCalled();
+
+      await act(async () => {
+        vi.advanceTimersByTime(5000);
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(5000);
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(getBuildTasksMock).toHaveBeenCalled();
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.status).toBe('running');
+      expect(result.current.isLoading).toBe(false);
+    } finally {
+      rafSpy.mockRestore();
+      cancelSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  }, 10000);
 });

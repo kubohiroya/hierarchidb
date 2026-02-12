@@ -1070,6 +1070,21 @@ const createFetchHandler = (params: {
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const countSelectedAdminPairs = (selectedArrayByCountries: SelectedArrayByCountries | undefined): number => {
+    if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+      return 0;
+    }
+    let selectedAdminPairCount = 0;
+    Object.values(selectedArrayByCountries).forEach((row) => {
+      if (!Array.isArray(row)) return;
+      row.forEach((selected) => {
+        if (selected === true) {
+          selectedAdminPairCount += 1;
+        }
+      });
+    });
+    return selectedAdminPairCount;
+  };
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
@@ -1077,16 +1092,34 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
   const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
-  const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-  const payloads = resolveFetchPayloads(params, metadata);
+  let metadataForPayloads = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  let payloads = resolveFetchPayloads(params, metadataForPayloads);
+  const selectedAdminPairCount = countSelectedAdminPairs(params.selectedArrayByCountries);
+  if (
+    payloads.length === 0
+    && selectedAdminPairCount > 0
+    && (!params.downloadTaskPayloads || params.downloadTaskPayloads.length === 0)
+    && !params.metadata
+  ) {
+    metadataLoader.clearCache(params.dataSource);
+    const refreshedMetadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId, { force: true });
+    metadataForPayloads = refreshedMetadata;
+    payloads = resolveFetchPayloads(params, metadataForPayloads);
+  }
   const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
   if (payloads.length === 0 && !reuseExistingTasks) {
+    if (selectedAdminPairCount > 0) {
+      throw new Error(
+        `[shape-fetch] No fetch tasks generated for ${selectedAdminPairCount}`
+        + ' selected entries. Metadata may be stale or incompatible with the selection.',
+      );
+    }
     setFetchPlannedTotal(params.nodeId, 0);
     return;
   }
   const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
   if (!reuseExistingTasks) {
-    const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
+    const tasks = buildFetchTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
     setFetchPlannedTotal(params.nodeId, tasks.length);
     await reconcileFetchTasks(params, existingTasks, tasks, resumeExistingTasks);
   } else {

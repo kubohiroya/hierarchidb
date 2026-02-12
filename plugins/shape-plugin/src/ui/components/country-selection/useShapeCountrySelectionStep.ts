@@ -10,7 +10,7 @@ import {
 } from '../../../common/utils/estimates.js';
 import { isDataSourceName, SHAPE_DATA_SOURCE_BY_NAME } from '../../../common/types/index.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../../workers/countryAvailability.types.js';
-import { wrap, releaseProxy, proxy } from 'comlink';
+import { wrap, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -26,6 +26,51 @@ import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 const createAvailabilityWorker = () => new Worker(
   new URL('../../workers/countryAvailability.worker.ts', import.meta.url),
   { type: 'module' },
+);
+
+type AvailabilityWorkerHandle = {
+  worker: Worker;
+  api: ReturnType<typeof wrap<CountryAvailabilityWorkerAPI>>;
+  bridgeReady: Promise<void>;
+};
+
+let sharedAvailabilityWorkerHandle: AvailabilityWorkerHandle | null = null;
+
+const getOrCreateAvailabilityWorkerHandle = (): AvailabilityWorkerHandle => {
+  if (sharedAvailabilityWorkerHandle) return sharedAvailabilityWorkerHandle;
+  const worker = createAvailabilityWorker();
+  const api = wrap<CountryAvailabilityWorkerAPI>(worker);
+  const bridgeReady = api.setUiStorageBridge(
+    proxy({
+      getItem: async (key: string) => localStorage.getItem(key),
+      setItem: async (key: string, value: string) => {
+        localStorage.setItem(key, value);
+      },
+      removeItem: async (key: string) => {
+        localStorage.removeItem(key);
+      },
+    }),
+  ).catch((error) => {
+    console.warn('[ShapeCountrySelectionStep] failed to register storage bridge', error);
+  });
+  sharedAvailabilityWorkerHandle = {
+    worker,
+    api,
+    bridgeReady,
+  };
+  return sharedAvailabilityWorkerHandle;
+};
+
+type CountrySelectionBootstrapCacheEntry = {
+  countries: CountryMetadata[];
+  availability: SerializedCountryAvailability | null;
+  fetchedAt: number;
+};
+
+const countrySelectionBootstrapCache = new Map<string, CountrySelectionBootstrapCacheEntry>();
+
+const buildBootstrapCacheKey = (nodeId: NodeId, dataSourceKey: string): string => (
+  `${String(nodeId)}:${dataSourceKey}`
 );
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN', 'XX'];
@@ -184,42 +229,29 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   const availabilityBridgeReadyRef = useRef<Promise<void> | null>(null);
   const availabilityRequestIdRef = useRef(0);
 
+  const ensureAvailabilityWorker = useCallback(() => {
+    if (availabilityWorkerRef.current && availabilityBridgeReadyRef.current) {
+      return availabilityWorkerRef.current;
+    }
+    const handle = getOrCreateAvailabilityWorkerHandle();
+    availabilityWorkerRef.current = { worker: handle.worker, api: handle.api };
+    availabilityBridgeReadyRef.current = handle.bridgeReady;
+    return availabilityWorkerRef.current;
+  }, []);
+
   useEffect(() => {
-    const worker = createAvailabilityWorker();
-    const api = wrap<CountryAvailabilityWorkerAPI>(worker);
-    availabilityBridgeReadyRef.current = api.setUiStorageBridge(
-      proxy({
-        getItem: async (key: string) => localStorage.getItem(key),
-        setItem: async (key: string, value: string) => {
-          localStorage.setItem(key, value);
-        },
-        removeItem: async (key: string) => {
-          localStorage.removeItem(key);
-        },
-      }),
-    ).catch((error) => {
-      console.warn('[ShapeCountrySelectionStep] failed to register storage bridge', error);
-    });
-    availabilityWorkerRef.current = { worker, api };
     return () => {
       availabilityWorkerRef.current = null;
       availabilityBridgeReadyRef.current = null;
-      try {
-        api[releaseProxy]?.();
-      } catch (releaseError) {
-        console.warn('[ShapeCountrySelectionStep] failed to release availability worker', releaseError);
-      }
-      worker.terminate();
     };
   }, []);
 
-  const loadAvailability = useCallback(async () => {
+  const loadAvailability = useCallback(async (): Promise<SerializedCountryAvailability | null> => {
     if (!dataSourceKey) {
       setAvailability(null);
-      return;
+      return null;
     }
-    const ref = availabilityWorkerRef.current;
-    if (!ref) return;
+    const ref = ensureAvailabilityWorker();
     const requestId = availabilityRequestIdRef.current + 1;
     availabilityRequestIdRef.current = requestId;
 
@@ -232,29 +264,30 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       }
       await bridgeReady;
       const result = await ref.api.loadAvailability(dataSourceKey, nodeId);
-      if (requestId !== availabilityRequestIdRef.current) return;
+      if (requestId !== availabilityRequestIdRef.current) return null;
       setAvailability(result);
+      return result;
     } catch (e) {
-      if (requestId !== availabilityRequestIdRef.current) return;
+      if (requestId !== availabilityRequestIdRef.current) return null;
       const err = e instanceof Error ? e : new Error(String(e));
       setAvailabilityError(err);
       setAvailability(null);
+      return null;
     } finally {
       if (requestId === availabilityRequestIdRef.current) {
         setAvailabilityLoading(false);
       }
     }
-  }, [dataSourceKey, nodeId]);
+  }, [dataSourceKey, ensureAvailabilityWorker, nodeId]);
 
-  const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
+  const loadMetadata = useCallback(async (options?: { force?: boolean }): Promise<CountryMetadata[] | null> => {
     if (!dataSourceKey) {
       setCountries([]);
       setMetadataError(null);
       setMetadataLoading(false);
-      return;
+      return null;
     }
-    const ref = availabilityWorkerRef.current;
-    if (!ref) return;
+    const ref = ensureAvailabilityWorker();
     const requestId = metadataRequestIdRef.current + 1;
     metadataRequestIdRef.current = requestId;
 
@@ -267,27 +300,56 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       }
       await bridgeReady;
       const result = await ref.api.loadMetadata(dataSourceKey, nodeId, options);
-      if (requestId !== metadataRequestIdRef.current) return;
+      if (requestId !== metadataRequestIdRef.current) return null;
       setCountries(Array.isArray(result) ? result : []);
       if (!result?.length) {
         throw new Error(`No country metadata returned for data source: ${dataSourceKey}`);
       }
+      return Array.isArray(result) ? result : [];
     } catch (e) {
-      if (requestId !== metadataRequestIdRef.current) return;
+      if (requestId !== metadataRequestIdRef.current) return null;
       const err = e instanceof Error ? e : new Error(String(e));
       setMetadataError(err);
       setCountries([]);
+      return null;
     } finally {
       if (requestId === metadataRequestIdRef.current) {
         setMetadataLoading(false);
       }
     }
-  }, [dataSourceKey, nodeId]);
+  }, [dataSourceKey, ensureAvailabilityWorker, nodeId]);
 
   const loadAll = useCallback(async (options?: { force?: boolean }) => {
-    await loadMetadata(options);
-    await loadAvailability();
-  }, [loadAvailability, loadMetadata]);
+    if (!dataSourceKey) {
+      await loadMetadata(options);
+      await loadAvailability();
+      return;
+    }
+    const cacheKey = buildBootstrapCacheKey(nodeId, dataSourceKey);
+    if (!options?.force) {
+      const cached = countrySelectionBootstrapCache.get(cacheKey);
+      if (cached) {
+        setCountries(cached.countries);
+        setMetadataError(null);
+        setMetadataLoading(false);
+        setAvailability(cached.availability);
+        setAvailabilityError(null);
+        setAvailabilityLoading(false);
+        return;
+      }
+    } else {
+      countrySelectionBootstrapCache.delete(cacheKey);
+    }
+    const metadata = await loadMetadata(options);
+    const availabilityResult = await loadAvailability();
+    if (metadata && metadata.length > 0) {
+      countrySelectionBootstrapCache.set(cacheKey, {
+        countries: metadata,
+        availability: availabilityResult,
+        fetchedAt: Date.now(),
+      });
+    }
+  }, [dataSourceKey, loadAvailability, loadMetadata, nodeId]);
 
   useEffect(() => {
     void loadAll();
@@ -653,8 +715,9 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   const reloadAll = useCallback(async () => {
     if (!dataSourceKey) return;
+    countrySelectionBootstrapCache.delete(buildBootstrapCacheKey(nodeId, dataSourceKey));
     await loadAll({ force: true });
-  }, [dataSourceKey, loadAll]);
+  }, [dataSourceKey, loadAll, nodeId]);
 
   const combinedLoading = metadataLoading || (availabilityLoading && !availability);
 

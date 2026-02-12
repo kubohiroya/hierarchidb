@@ -43,9 +43,7 @@ import {
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
 import {
-  bufferDeserializer,
-  bufferSerializer,
-  createShapeChunkStore,
+  deleteRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNodeKeys,
 } from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
@@ -97,6 +95,24 @@ const buildFetchStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
   retryDelay: buildConfig.fetchConfig.retryDelay,
 });
 
+const countSelectedAdminPairs = (
+  selectedArrayByCountries: SelectedArrayByCountries | undefined,
+): number => {
+  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+    return 0;
+  }
+  let selectedAdminPairCount = 0;
+  Object.values(selectedArrayByCountries).forEach((row) => {
+    if (!Array.isArray(row)) return;
+    row.forEach((selected) => {
+      if (selected === true) {
+        selectedAdminPairCount += 1;
+      }
+    });
+  });
+  return selectedAdminPairCount;
+};
+
 const resolveFetchTaskPayloadsForPlan = async (input: {
   nodeId: NodeId;
   dataSource: DataSourceName;
@@ -110,11 +126,31 @@ const resolveFetchTaskPayloadsForPlan = async (input: {
     return [];
   }
   const strategy = resolveFetchStageStrategy(input.dataSource);
-  const countryMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId);
-  return strategy.buildFetchTaskPayloads({
+  const selectedAdminPairCount = countSelectedAdminPairs(input.selectedArrayByCountries);
+  const buildPayloads = (countryMetadata: CountryMetadata[]): FetchTaskPayload[] => strategy.buildFetchTaskPayloads({
     selectedArrayByCountries: input.selectedArrayByCountries,
     countryMetadata,
   });
+  const countryMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId);
+  const payloadsFromCache = buildPayloads(countryMetadata);
+  if (payloadsFromCache.length > 0 || selectedAdminPairCount === 0) {
+    return payloadsFromCache;
+  }
+  console.warn('[shapeBatchAPI] no fetch payloads from cached metadata; retrying with force refresh', {
+    nodeId: input.nodeId,
+    dataSource: input.dataSource,
+    selectedAdminPairCount,
+  });
+  metadataLoader.clearCache(input.dataSource);
+  const refreshedMetadata = await metadataLoader.loadMetadata(input.dataSource, input.nodeId, { force: true });
+  const payloadsFromRefreshedMetadata = buildPayloads(refreshedMetadata);
+  if (payloadsFromRefreshedMetadata.length > 0) {
+    return payloadsFromRefreshedMetadata;
+  }
+  throw new Error(
+    `[shapeBatchAPI] No fetch task payloads generated for ${selectedAdminPairCount}`
+    + ' selected entries. Metadata may be stale or incompatible with the current selection.',
+  );
 };
 
 const estimatePlannedFetchTotal = async (input: {
@@ -1525,7 +1561,8 @@ export const shapeBatchAPI = {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    if (!downloadTaskPayloads.length && !draftEntity.selectedArrayByCountries) {
+    const selectedAdminPairCount = countSelectedAdminPairs(draftEntity.selectedArrayByCountries);
+    if (!downloadTaskPayloads.length && selectedAdminPairCount === 0) {
       throw new Error('Shape batch session requires download task payloads or selection');
     }
 
@@ -1557,6 +1594,12 @@ export const shapeBatchAPI = {
       }),
       { payloadCount: downloadTaskPayloads.length },
     );
+    if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && fetchPlan.plannedFetchTotal === 0) {
+      throw new Error(
+        '[shapeBatchAPI] Build has selected inputs but generated 0 fetch tasks.'
+        + ' Please reload country metadata and retry.',
+      );
+    }
     setFetchPlannedTotal(nodeForSession, fetchPlan.plannedFetchTotal);
     const buildStartedAt = Date.now();
     const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
@@ -1939,6 +1982,16 @@ export const shapeBatchAPI = {
           }),
           { existingTaskCount },
         );
+        const selectedAdminPairCount = countSelectedAdminPairs(draftEntity.selectedArrayByCountries);
+        if (existingTaskCount === 0 && selectedAdminPairCount === 0) {
+          throw new Error('[shapeBatchAPI] Resume requires selected countries/admin levels or existing queued tasks.');
+        }
+        if (existingTaskCount === 0 && selectedAdminPairCount > 0 && fetchPlan.plannedFetchTotal === 0) {
+          throw new Error(
+            '[shapeBatchAPI] Resume has selected inputs but generated 0 fetch tasks.'
+            + ' Please reload country metadata and retry.',
+          );
+        }
         setFetchPlannedTotal(nodeId, fetchPlan.plannedFetchTotal);
         await executeResumeStep(
           'selection-diff-cleanup',
@@ -2453,8 +2506,7 @@ export const shapeBatchAPI = {
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
     await shapeMutationAPIImpl.cleanupProcessingData(nodeId);
     try {
-      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-      await store.deleteAllForNode(nodeId);
+      await deleteRawDataDataSourceBuffersForNode(nodeId);
     } catch (error) {
       console.warn('[shapeBatchAPI] failed to clean chunk-store relations', error);
     }
