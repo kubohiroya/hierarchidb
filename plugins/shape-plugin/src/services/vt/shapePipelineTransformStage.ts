@@ -23,6 +23,7 @@ import {
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setTransformPlannedTotal } from './shapeProgressPlan.ts';
 import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { buildTransformTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 
 export type ShapeTransformStageParams = {
   nodeId: NodeId;
@@ -278,6 +279,15 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
           continue;
         }
       }
+      const cacheIdentity = buildTransformTaskCacheIdentity({
+        nodeId: params.nodeId,
+        sourceKey: buffer.sourceKey,
+        bandIndex: band.bandIndex,
+        fetchCacheId: buffer.id,
+        bandMinZoom: band.zMin,
+        bandMaxZoom: band.zMax,
+        configSignature: transformConfigSignature,
+      });
       tasks.push({
         taskId: `${String(params.nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
         nodeId: params.nodeId,
@@ -298,6 +308,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
           countryName,
           adminLevel: buffer.adminLevel,
           configSignature: transformConfigSignature,
+          cacheKey: cacheIdentity.cacheKey,
+          inputHash: cacheIdentity.inputHash,
         },
       });
       index += 1;

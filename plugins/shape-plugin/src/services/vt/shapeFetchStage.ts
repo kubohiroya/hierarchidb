@@ -57,6 +57,7 @@ import { fetchRawDataWithPipeline } from '../utils/rawDataPipeline.js';
 import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.js';
 import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
 import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
+import { buildFetchTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -67,6 +68,8 @@ export type ShapeFetchTaskInput = {
   urlCountryCode: string;
   adminLevel: number;
   configSignature?: string;
+  cacheKey?: string;
+  inputHash?: string;
 };
 
 export type ShapeFetchTaskOutput = {
@@ -709,6 +712,13 @@ const buildFetchTasks = (
       throw new Error(`[shape-fetch] Missing ISO2 for ${payload.countryCode}`);
     }
     const sourceKey = `${iso2}:${payload.adminLevel}`;
+    const cacheIdentity = buildFetchTaskCacheIdentity({
+      nodeId,
+      dataSource: payload.dataSource,
+      sourceKey,
+      url: payload.url,
+      configSignature,
+    });
     return {
       taskId: buildShapeFetchTaskId(nodeId, sourceKey),
       nodeId,
@@ -725,6 +735,8 @@ const buildFetchTasks = (
         urlCountryCode: payload.countryCode.trim().toUpperCase(),
         adminLevel: payload.adminLevel,
         configSignature,
+        cacheKey: cacheIdentity.cacheKey,
+        inputHash: cacheIdentity.inputHash,
       },
     };
   });
