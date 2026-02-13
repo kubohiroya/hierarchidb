@@ -62,6 +62,8 @@ const COMLINK_NOISE_TYPES = new Set([
   'HANDLER',
 ]);
 
+const ENABLE_SHARED_WORKER = import.meta.env.VITE_HDB_ENABLE_SHARED_WORKER === '1';
+
 function resolveWorkerUrl(): URL {
   if (typeof workerScriptUrl === 'string') {
     if (typeof window !== 'undefined') {
@@ -102,7 +104,7 @@ function resolveSharedWorkerUrl(): URL {
   return fallbackUrl;
 }
 
-const isSharedWorkerSupported = () => typeof SharedWorker === 'function';
+const isSharedWorkerSupported = () => ENABLE_SHARED_WORKER && typeof SharedWorker === 'function';
 
 function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
@@ -239,6 +241,11 @@ const ensureMaintenanceUnlocked = (): void => {
 
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   ensureMaintenanceUnlocked();
+  console.info('[client:initWorker] worker mode gate', {
+    marker: WORKER_CLIENT_DEBUG_MARKER,
+    sharedWorkerEnabled: ENABLE_SHARED_WORKER,
+    sharedWorkerAvailable: typeof SharedWorker === 'function',
+  });
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     // Reduce console noise; log only via bootLog when explicitly enabled
