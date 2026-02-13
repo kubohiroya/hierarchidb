@@ -122,9 +122,9 @@
         "restore": "アーカイブから戻す"
       },
       "confirm": {
-        "title": "ゴミ箱を空にしますか?",
+        "title": "アーカイブを空にしますか?",
         "description": "{{unit}}を{{count}}件、完全に削除しますか?",
-        "empty": "ゴミ箱内の項目をすべて完全に削除します。",
+        "empty": "アーカイブ内の項目をすべて完全に削除します。",
         "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。"
       },
       "buttons": {
@@ -135,9 +135,9 @@
         "empty": "削除",
         "emptyWithCount": "削除 ({{count}})"
       },
-      "searchPlaceholder": "ゴミ箱を検索…",
-      "panelTitle": "ゴミ箱",
-      "stepLabel": "ゴミ箱",
+      "searchPlaceholder": "アーカイブを検索…",
+      "panelTitle": "アーカイブ",
+      "stepLabel": "アーカイブ",
       "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。",
       "aria": {
         "restore": "選択した項目を復元",
@@ -278,7 +278,7 @@
       },
       "aria": {
         "toolbarLabel": "ツリーコンソールツールバー",
-        "trashMenuButton": "ゴミ箱メニューを開く",
+        "trashMenuButton": "アーカイブメニューを開く",
         "importExportButton": "インポート／エクスポートメニューを開く",
         "settingsButton": "ツールバー設定を開く"
       },
@@ -402,7 +402,7 @@
     "content": {
       "loading": "読み込み中...",
       "empty": {
-        "restore": "ゴミ箱に復元できるアイテムはありません。",
+        "restore": "アーカイブに復元できるアイテムはありません。",
         "dispose": "完全削除できるアイテムはありません。",
         "projects": "プロジェクトがありません。新しいプロジェクトを作成してください。",
         "resources": "リソースがありません。新しいリソースを作成してください。",
@@ -413,7 +413,7 @@
       "blockedDescendantMove": "子孫に移動することはできません"
     },
     "errors": {
-      "trashFailed": "ゴミ箱への移動に失敗しました。",
+      "trashFailed": "アーカイブへの移動に失敗しました。",
       "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはアーカイブに移動できません。",
       "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはアーカイブに移動できません。",
       "trashBuildSessionRunning": "ビルドセッション実行中のため、アーカイブに移動できません。"

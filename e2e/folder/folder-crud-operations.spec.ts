@@ -137,7 +137,7 @@ test.describe('Folder CRUD Operations', () => {
     ).not.toBeVisible();
   });
 
-  test('フォルダの削除（ゴミ箱移動）', async ({ page }) => {
+  test('フォルダの削除（アーカイブ移動）', async ({ page }) => {
     // テストフォルダを作成
     const folderName = await createTestFolder(page, 'Delete Test');
 
@@ -149,7 +149,7 @@ test.describe('Folder CRUD Operations', () => {
       page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)
     ).not.toBeVisible();
 
-    // ゴミ箱にフォルダが移動されることを確認
+    // アーカイブにフォルダが移動されることを確認
     await page.locator('[data-testid="trash-button"]').click();
     await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
     await expect(
@@ -157,12 +157,12 @@ test.describe('Folder CRUD Operations', () => {
     ).toBeVisible();
   });
 
-  test('ゴミ箱からの復元', async ({ page }) => {
+  test('アーカイブからの復元', async ({ page }) => {
     // テストフォルダを作成して削除
     const folderName = await createTestFolder(page, 'Restore Test');
     await moveToTrash(page, folderName);
 
-    // ゴミ箱を開く
+    // アーカイブを開く
     await page.locator('[data-testid="trash-button"]').click();
     await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
 
@@ -178,7 +178,7 @@ test.describe('Folder CRUD Operations', () => {
     await expect(page.locator('[data-testid="restore-confirmation-base-dialog"]')).toBeVisible();
     await page.locator('[data-testid="confirm-restore"]').click();
 
-    // ゴミ箱を閉じる
+    // アーカイブを閉じる
     await page.locator('[data-testid="close-trash-panel"]').click();
 
     // メインビューに復元されることを確認
@@ -187,12 +187,12 @@ test.describe('Folder CRUD Operations', () => {
     });
   });
 
-  test('ゴミ箱からの完全削除', async ({ page }) => {
+  test('アーカイブからの完全削除', async ({ page }) => {
     // テストフォルダを作成して削除
     const folderName = await createTestFolder(page, 'Permanent Delete Test');
     await moveToTrash(page, folderName);
 
-    // ゴミ箱を開く
+    // アーカイブを開く
     await page.locator('[data-testid="trash-button"]').click();
     await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
 
@@ -210,7 +210,7 @@ test.describe('Folder CRUD Operations', () => {
     ).toBeVisible();
     await page.locator('[data-testid="confirm-permanent-delete"]').click();
 
-    // ゴミ箱からも削除されることを確認
+    // アーカイブからも削除されることを確認
     await expect(
       page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`)
     ).not.toBeVisible({ timeout: 5000 });

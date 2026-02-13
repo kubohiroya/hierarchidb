@@ -135,7 +135,7 @@ describe('TreeConsoleContent', () => {
       </TestWrapper>,
     );
 
-    expect(screen.getByText('ゴミ箱に復元可能なアイテムはありません。')).toBeInTheDocument();
+    expect(screen.getByText('アーカイブに復元可能なアイテムはありません。')).toBeInTheDocument();
   });
 
   it('完全削除モードでの空状態を正しく表示する', () => {
