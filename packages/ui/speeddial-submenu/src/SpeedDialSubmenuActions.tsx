@@ -215,6 +215,7 @@ export function SpeedDialSubmenuActions({
                 {action.icon}
                 {hasChildren(action) ? (
                   <Fab
+                    component="span"
                     size="small"
                     color="default"
                     aria-label={`${action.label} submenu trigger`}
