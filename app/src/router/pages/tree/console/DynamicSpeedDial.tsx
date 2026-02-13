@@ -104,10 +104,13 @@ export function DynamicSpeedDial({
           label: buildItemLabel(item),
           icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
           tooltipTitle: buildTooltipLabel(item),
+          onClick: (event) =>
+            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
           backgroundColor: item.backgroundColor,
           hoverBackgroundColor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
           testId: `${testIdBase}-action`,
           submenuTestId: `${testIdBase}-submenu`,
+          submenuTriggerTestId: `${testIdBase}-submenu-trigger`,
           children: item.children!.map((child, childIndex) =>
             buildLeafAction(child, `${testIdBase}-submenu-action-${childIndex + 1}`)
           ),

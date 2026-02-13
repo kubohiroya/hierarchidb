@@ -87,7 +87,7 @@ describe('DynamicSpeedDial', () => {
     expect(screen.getByTestId('speed-dial-icon')).toBeInTheDocument();
   });
 
-  it('opens right-to-left submenu on hover and triggers child action click', () => {
+  it('runs parent default action on click and opens submenu from trigger hover', () => {
     menuItemsModule.usePluginMenuItems.mockReturnValue([
       {
         key: 'shape',
@@ -145,8 +145,16 @@ describe('DynamicSpeedDial', () => {
     fireEvent.click(fab);
 
     const shapeAction = screen.getByTestId('create-shape-action');
-    fireEvent.mouseEnter(shapeAction);
+    fireEvent.click(shapeAction);
+    expect(onCreateAction).toHaveBeenCalledWith(
+      'create:shape',
+      expect.any(Object),
+      expect.objectContaining({ openInNewTab: false })
+    );
 
+    fireEvent.click(fab);
+    expect(screen.queryByTestId('create-shape-submenu')).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId('create-shape-submenu-trigger'));
     const submenu = screen.getByTestId('create-shape-submenu');
     expect(submenu).toBeInTheDocument();
     const popperRoot = submenu.closest('[data-popper-placement]');
@@ -160,7 +168,7 @@ describe('DynamicSpeedDial', () => {
     );
   });
 
-  it('opens folder submenu and triggers template create action', () => {
+  it('does not auto-open submenu on parent hover and opens from submenu trigger', () => {
     menuItemsModule.usePluginMenuItems.mockReturnValue([
       {
         key: 'folder',
@@ -203,7 +211,9 @@ describe('DynamicSpeedDial', () => {
 
     const folderAction = screen.getByTestId('create-folder-action');
     fireEvent.mouseEnter(folderAction);
+    expect(screen.queryByTestId('create-folder-submenu')).not.toBeInTheDocument();
 
+    fireEvent.mouseEnter(screen.getByTestId('create-folder-submenu-trigger'));
     expect(screen.getByTestId('create-folder-submenu')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('create-folder-submenu-action-1'));
     expect(onCreateAction).toHaveBeenCalledWith(

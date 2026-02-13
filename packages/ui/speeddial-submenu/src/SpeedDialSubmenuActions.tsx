@@ -1,4 +1,6 @@
 import {
+  Box,
+  Fab,
   Grow,
   MenuItem,
   MenuList,
@@ -7,6 +9,10 @@ import {
   type PopperProps,
   SpeedDialAction,
 } from '@mui/material';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
+import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +36,7 @@ export interface SpeedDialSubmenuAction {
   hoverBackgroundColor?: string;
   testId?: string;
   submenuTestId?: string;
+  submenuTriggerTestId?: string;
 }
 
 export interface SpeedDialSubmenuActionsProps {
@@ -49,6 +56,50 @@ function hasChildren(action: SpeedDialSubmenuAction): action is SpeedDialSubmenu
   children: SpeedDialSubmenuItem[];
 } {
   return Array.isArray(action.children) && action.children.length > 0;
+}
+
+function getPlacementDirection(placement: PopperProps['placement']): 'left' | 'right' | 'top' | 'bottom' {
+  if (!placement) return 'left';
+  if (placement.startsWith('right')) return 'right';
+  if (placement.startsWith('top')) return 'top';
+  if (placement.startsWith('bottom')) return 'bottom';
+  return 'left';
+}
+
+function getSubmenuDirectionIcon(direction: 'left' | 'right' | 'top' | 'bottom') {
+  if (direction === 'right') return <ArrowRightIcon fontSize="small" />;
+  if (direction === 'top') return <ArrowUpwardIcon fontSize="small" />;
+  if (direction === 'bottom') return <ArrowDownwardIcon fontSize="small" />;
+  return <ArrowLeftIcon fontSize="small" />;
+}
+
+function getTriggerPositionSx(direction: 'left' | 'right' | 'top' | 'bottom'): SxProps<Theme> {
+  if (direction === 'right') {
+    return {
+      right: -12,
+      top: '50%',
+      transform: 'translate(50%, -50%)',
+    };
+  }
+  if (direction === 'top') {
+    return {
+      top: -12,
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+    };
+  }
+  if (direction === 'bottom') {
+    return {
+      bottom: -12,
+      left: '50%',
+      transform: 'translate(-50%, 50%)',
+    };
+  }
+  return {
+    left: -12,
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+  };
 }
 
 export function SpeedDialSubmenuActions({
@@ -120,15 +171,11 @@ export function SpeedDialSubmenuActions({
 
   const handlePrimaryActionClick = useCallback(
     (action: SpeedDialSubmenuAction, event: ReactMouseEvent<HTMLElement>) => {
-      if (hasChildren(action)) {
-        handlePrimaryActionEnter(action, event.currentTarget as HTMLElement);
-        return;
-      }
       action.onClick?.(event);
       closeSubmenu();
       onRequestClose();
     },
-    [closeSubmenu, handlePrimaryActionEnter, onRequestClose]
+    [closeSubmenu, onRequestClose]
   );
 
   const handleSubmenuItemClick = useCallback(
@@ -140,38 +187,77 @@ export function SpeedDialSubmenuActions({
     [closeSubmenu, onRequestClose]
   );
 
+  const submenuDirection = getPlacementDirection(submenuPlacement);
+  const submenuDirectionIcon = getSubmenuDirectionIcon(submenuDirection);
+  const triggerPositionSx = getTriggerPositionSx(submenuDirection);
+
   return (
     <>
       {actions.map((action) => {
         const parentOpen = submenuOpen && action.id === activeParentId;
         const tooltipTitle = action.tooltipTitle ?? action.label;
+        const triggerTestId = action.submenuTriggerTestId ?? `${action.testId ?? action.id}-submenu-trigger`;
         return (
           <SpeedDialAction
             key={action.id}
             open={open}
-            icon={action.icon}
-            tooltipTitle={tooltipTitle}
-            onMouseEnter={(event) =>
-              handlePrimaryActionEnter(action, event.currentTarget as HTMLElement)
+            icon={
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {action.icon}
+                {hasChildren(action) ? (
+                  <Fab
+                    size="small"
+                    color="default"
+                    aria-label={`${action.label} submenu trigger`}
+                    aria-haspopup="menu"
+                    aria-expanded={parentOpen}
+                    onMouseEnter={(event) =>
+                      handlePrimaryActionEnter(action, event.currentTarget as HTMLElement)
+                    }
+                    onMouseLeave={scheduleCloseSubmenu}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    data-testid={triggerTestId}
+                    sx={{
+                      position: 'absolute',
+                      minWidth: 20,
+                      minHeight: 20,
+                      width: 20,
+                      height: 20,
+                      p: 0,
+                      boxShadow: 2,
+                      pointerEvents: 'auto',
+                      ...triggerPositionSx,
+                    }}
+                  >
+                    {submenuDirectionIcon}
+                  </Fab>
+                ) : null}
+              </Box>
             }
-            onMouseLeave={() => {
-              if (hasChildren(action)) scheduleCloseSubmenu();
-            }}
+            tooltipTitle={tooltipTitle}
             onClick={(event) => handlePrimaryActionClick(action, event)}
             FabProps={{
               size: 'medium',
               color: 'default',
               'aria-haspopup': hasChildren(action) ? 'menu' : undefined,
               'aria-expanded': hasChildren(action) ? parentOpen : undefined,
-              onMouseEnter: (event) =>
-                handlePrimaryActionEnter(action, event.currentTarget as HTMLElement),
-              onMouseLeave: () => {
-                if (hasChildren(action)) scheduleCloseSubmenu();
-              },
               sx: {
                 pointerEvents: 'auto',
                 touchAction: 'manipulation',
                 transform: 'translate3d(0,0,0)',
+                overflow: 'visible',
                 bgcolor: action.backgroundColor,
                 '&:hover': {
                   bgcolor: action.hoverBackgroundColor ?? action.backgroundColor,
