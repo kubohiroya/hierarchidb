@@ -77,8 +77,8 @@
         "exitFullscreen": "全画面を終了"
       },
       "title": {
-        "empty": "ゴミ箱を空にする",
-        "restore": "ゴミ箱から復元"
+        "empty": "アーカイブから削除する",
+        "restore": "アーカイブから戻す"
       },
       "confirm": {
         "title": "ゴミ箱を空にしますか?",
@@ -88,7 +88,7 @@
       },
       "buttons": {
         "cancel": "キャンセル",
-        "confirmDelete": "ゴミ箱を空にする",
+        "confirmDelete": "アーカイブから削除する",
         "restore": "復元",
         "restoreWithCount": "復元 ({{count}})",
         "empty": "削除",
@@ -101,7 +101,7 @@
       "aria": {
         "restore": "選択した項目を復元",
         "restoreWithCount": "{{unit}}を{{count}}件復元",
-        "empty": "ゴミ箱を空にする",
+        "empty": "アーカイブから削除する",
         "emptyWithCount": "{{unit}}を{{count}}件削除"
       },
       "units": {
@@ -249,11 +249,11 @@
         "copy": "コピー ({{shortcut}})",
         "paste": "貼り付け ({{shortcut}})",
         "duplicate": "複製 ({{shortcut}})",
-        "moveToTrash": "ゴミ箱に移動 ({{shortcut}})"
+        "moveToTrash": "アーカイブに移動する ({{shortcut}})"
       },
       "trashMenu": {
-        "restore": "ゴミ箱から復元",
-        "empty": "ゴミ箱を空にする"
+        "restore": "アーカイブから戻す",
+        "empty": "アーカイブから削除する"
       },
       "importExportMenu": {
         "import": "JSONファイルからインポート",
@@ -318,7 +318,7 @@
       "duplicate": "複製",
       "import": "インポート",
       "export": "エクスポート",
-      "moveToTrash": "ゴミ箱に移動",
+      "moveToTrash": "アーカイブに移動する",
       "visible": "表示",
       "hidden": "非表示",
       "checkReference": "参照を確認",
@@ -363,9 +363,9 @@
     },
     "errors": {
       "trashFailed": "ゴミ箱への移動に失敗しました。",
-      "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはゴミ箱に移動できません。",
-      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはゴミ箱に移動できません。",
-      "trashBuildSessionRunning": "ビルドセッション実行中のため、ゴミ箱へ移動できません。"
+      "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはアーカイブに移動できません。",
+      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはアーカイブに移動できません。",
+      "trashBuildSessionRunning": "ビルドセッション実行中のため、アーカイブに移動できません。"
     },
     "infoPanel": {
       "noTimestamp": "—",
@@ -384,10 +384,10 @@
       "noNode": "このページではノード情報を表示できません。",
       "createdLabel": "作成",
       "updatedLabel": "更新",
-      "confirmTrashTitle": "ゴミ箱に移動",
-      "confirmTrashDescription": "この項目と子要素をゴミ箱に移動しますか？",
+      "confirmTrashTitle": "アーカイブに移動する",
+      "confirmTrashDescription": "この項目と子要素をアーカイブに移動しますか？",
       "confirmTrashCancel": "キャンセル",
-      "confirmTrashConfirm": "ゴミ箱に移動"
+      "confirmTrashConfirm": "アーカイブに移動する"
     }
   },
   "tags": {
