@@ -108,7 +108,6 @@ const WorkerContext = createContext<WorkerContextValue | null>(null);
 const noopAsync = async () => undefined;
 const noopSync = () => undefined;
 const DEFAULT_WORKER_INIT_TIMEOUT_MS = 30_000;
-const WORKER_INIT_BUILD_MARKER = 'HDB_WORKER_INIT_MARKER_20260213_EA7BA2BDE';
 
 const createFallbackWorkerClient = (): Remote<WorkerAPI> => {
   const services = {
@@ -509,12 +508,10 @@ export const WorkerProvider = ({
         ? Math.floor(timeout)
         : DEFAULT_WORKER_INIT_TIMEOUT_MS;
       const currentProxyState = proxy.getState();
-      console.info('[WorkerProvider] build marker', WORKER_INIT_BUILD_MARKER);
       console.info('[WorkerProvider] initialization started', {
         timeoutMs,
         proxyState: currentProxyState,
         debug,
-        marker: WORKER_INIT_BUILD_MARKER,
       });
 
       bootLog('WorkerProvider initialize() start');

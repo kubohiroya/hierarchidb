@@ -12,15 +12,6 @@ const ports = new Set<MessagePort>();
 let initCompleted = false;
 let bootstrapPromise: Promise<{ api: unknown; servicesReadyAt: number }> | null = null;
 
-const logSharedWorkerInit = (event: string, detail?: Record<string, unknown>) => {
-  if (!import.meta.env.DEV) return;
-  if (detail) {
-    console.info(`[shared worker:init] ${event}`, detail);
-    return;
-  }
-  console.info(`[shared worker:init] ${event}`);
-};
-
 const broadcastMessage = (message: unknown) => {
   for (const port of ports) {
     try {
@@ -51,7 +42,6 @@ reporter.reportStepProgress('Load Comlink', 0);
 
 const ensureBootstrap = async () => {
   if (!bootstrapPromise) {
-    logSharedWorkerInit('bootstrap:start');
     const bootstrap = async () => ensureRuntimeWorkerBootstrap({
       reporter,
       messageTarget: {
@@ -103,7 +93,6 @@ globalScope.addEventListener('connect', ((event: Event) => {
   const connectEvent = event as SharedWorkerConnectEvent;
   const port = connectEvent.ports[0];
   if (!port) return;
-  logSharedWorkerInit('port:connect', { ports: ports.size + 1 });
   ports.add(port);
   port.start();
 
@@ -116,7 +105,6 @@ globalScope.addEventListener('connect', ((event: Event) => {
   });
 
   void ensureBootstrap().then(async ({ api, servicesReadyAt }) => {
-    logSharedWorkerInit('bootstrap:ready');
     const Comlink = await import('comlink');
     if (!initCompleted) {
       reporter.reportStepProgress('Expose API', 10);
@@ -131,9 +119,5 @@ globalScope.addEventListener('connect', ((event: Event) => {
 
     sendServicesReady(port, servicesReadyAt);
     reporter.sendStatusTo(port);
-  }).catch((error) => {
-    logSharedWorkerInit('bootstrap:error', {
-      message: error instanceof Error ? error.message : String(error),
-    });
-  });
+  }).catch(() => {});
 }) as EventListener);

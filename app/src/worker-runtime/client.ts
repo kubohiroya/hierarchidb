@@ -45,7 +45,6 @@ let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;
 let rawSharedWorkerPort: MessagePort | null = null;
 let workerInitCompleted = false;
-const WORKER_CLIENT_DEBUG_MARKER = 'HDB_WORKER_CLIENT_MARKER_20260213_INIT_HANDSHAKE';
 
 const logInitWorkerWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -148,11 +147,6 @@ const attachMessageHandlers = (target: Worker | MessagePort) => {
     }
 
     if (isWorkerInitMessage(data)) {
-      console.info('[client:initWorker] init message', {
-        marker: WORKER_CLIENT_DEBUG_MARKER,
-        type: data.type,
-        payload: data.payload ?? null,
-      });
       if (data.type === 'INIT_PROGRESS') {
         const bootWindow = getBootWindow();
         if (bootWindow) {
@@ -204,25 +198,6 @@ const attachMessageHandlers = (target: Worker | MessagePort) => {
   }
 };
 
-const requestWorkerInitStatus = (target: Worker | MessagePort) => {
-  try {
-    target.postMessage({
-      type: 'INIT_REQUEST',
-      payload: { timestamp: Date.now() },
-    } satisfies WorkerInitMessage);
-    target.postMessage({
-      type: 'PING',
-      payload: { timestamp: Date.now() },
-    } satisfies WorkerInitMessage);
-    console.info('[client:initWorker] sent init handshake', {
-      marker: WORKER_CLIENT_DEBUG_MARKER,
-      target: target instanceof Worker ? 'dedicated-worker' : 'shared-worker-port',
-    });
-  } catch (error) {
-    logInitWorkerWarning('Failed to send worker init handshake', error);
-  }
-};
-
 const cleanupWorkerHandles = () => {
   rawWorkerInstance?.terminate();
   rawWorkerInstance = null;
@@ -241,11 +216,6 @@ const ensureMaintenanceUnlocked = (): void => {
 
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   ensureMaintenanceUnlocked();
-  console.info('[client:initWorker] worker mode gate', {
-    marker: WORKER_CLIENT_DEBUG_MARKER,
-    sharedWorkerEnabled: ENABLE_SHARED_WORKER,
-    sharedWorkerAvailable: typeof SharedWorker === 'function',
-  });
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     // Reduce console noise; log only via bootLog when explicitly enabled
@@ -258,17 +228,10 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       if (isSharedWorkerSupported()) {
         const workerUrl = resolveSharedWorkerUrl();
         workerUrl.searchParams.set('retry', String(attempt));
-        console.info('[client:initWorker] creating worker', {
-          marker: WORKER_CLIENT_DEBUG_MARKER,
-          mode: 'shared',
-          url: workerUrl.toString(),
-          attempt: attempt + 1,
-        });
         const sharedWorker = new SharedWorker(workerUrl, { type: 'module' });
         rawSharedWorkerPort = sharedWorker.port;
         rawSharedWorkerPort.start();
         attachMessageHandlers(rawSharedWorkerPort);
-        requestWorkerInitStatus(rawSharedWorkerPort);
 
         const Comlink = await import('comlink');
         const worker = Comlink.wrap<WorkerAPI>(rawSharedWorkerPort);
@@ -279,17 +242,10 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
 
       const workerUrl = resolveWorkerUrl();
       workerUrl.searchParams.set('retry', String(attempt));
-      console.info('[client:initWorker] creating worker', {
-        marker: WORKER_CLIENT_DEBUG_MARKER,
-        mode: 'dedicated',
-        url: workerUrl.toString(),
-        attempt: attempt + 1,
-      });
       rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
 
       const Comlink = await import('comlink');
       attachMessageHandlers(rawWorkerInstance);
-      requestWorkerInitStatus(rawWorkerInstance);
 
       const worker = Comlink.wrap<WorkerAPI>(rawWorkerInstance);
       workerInstance = worker;
