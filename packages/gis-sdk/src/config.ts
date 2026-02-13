@@ -126,8 +126,8 @@ export interface VTConfig {
   compression: 'gzip' | 'bz';
   debug?: {
     enabled?: boolean;
-    tiles?: string[];
-    features?: string[];
+    tiles?: readonly string[];
+    features?: readonly string[];
   };
 }
 
