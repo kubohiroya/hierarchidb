@@ -238,6 +238,11 @@ export function SpeedDialSubmenuActions({
                       p: 0,
                       boxShadow: 2,
                       pointerEvents: 'auto',
+                      color: 'inherit',
+                      bgcolor: action.backgroundColor,
+                      '&:hover': {
+                        bgcolor: action.hoverBackgroundColor ?? action.backgroundColor,
+                      },
                       ...triggerPositionSx,
                     }}
                   >
