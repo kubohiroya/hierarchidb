@@ -1,10 +1,8 @@
-import type { ImportData } from '~/types/import-export.js';
-import type { WorkerAPI } from '~/types/worker-api.js';
 import type {
   BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
-import type { NodeId, NodeType, TreeId, PeerEntity } from '@hierarchidb/core-types';
-import type { TreeNode, NodePayload } from '@hierarchidb/tree-api';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type {
   TreeConsoleToolbar,
@@ -16,16 +14,8 @@ import {
   TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   TREE_CONSOLE_SETTINGS_STORAGE_KEY,
 } from '@hierarchidb/util';
-import type { Remote } from 'comlink';
 import { useCallback, useEffect, useState } from 'react';
 import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
-
-type TemplateData = {
-  nodes?: TemplateNodeInput[];
-  rootNodeIds?: string[];
-};
-
-type ImportNode = ImportData['nodes'][number];
 
 type IntegrationActions = {
   handleUndo?: () => void;
@@ -49,39 +39,18 @@ type IntegrationState = {
   canTrash: boolean;
 };
 
-type TemplateNodeInput = {
-  metadata?: unknown;
-  nodeType?: unknown;
-  treeNodeType?: unknown;
-  description?: unknown;
-  draftMetadata?: unknown;
-  draftData?: unknown;
-  data?: unknown;
-  children?: unknown;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const normalizeRecord = (value: unknown): Record<string, unknown> | null | undefined => {
-  if (value === null) return null;
-  if (isRecord(value)) return value;
-  return undefined;
-};
-
-const isPeerEntityPayload = (value: Record<string, unknown>): value is PeerEntity<NodePayload> =>
-  typeof value.id === 'string' &&
-  typeof value.createdAt === 'number' &&
-  typeof value.updatedAt === 'number' &&
-  typeof value.version === 'number';
-
 const isTreeNodeLike = (value: unknown): value is HierarchicalTreeNode | TreeNode =>
-  isRecord(value) && typeof value.id === 'string' && typeof value.nodeType === 'string';
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  typeof (value as { id?: unknown }).id === 'string' &&
+  typeof (value as { nodeType?: unknown }).nodeType === 'string';
 
 const hasNodeIdParam = (value: unknown): value is { nodeId: NodeId } =>
-  isRecord(value) && typeof value.nodeId === 'string';
-
-const toNodeType = (value: string): NodeType => value as NodeType;
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  typeof (value as { nodeId?: unknown }).nodeId === 'string';
 
 export type ToolbarControllerResult = {
   toolbarProps: React.ComponentProps<typeof TreeConsoleToolbar>;
@@ -98,7 +67,6 @@ export type ToolbarControllerResult = {
 };
 
 export function useTreeConsoleToolbarActions({
-  client,
   treeId,
   pageNodeId,
   pageTreeNode,
@@ -107,14 +75,12 @@ export function useTreeConsoleToolbarActions({
   navigate,
   actions,
   state,
-  availableTemplateOptions,
   developerModeEnabled,
   handleIndexedDbReset,
   requestEdit,
   searchTerm,
   selectedCount,
 }: {
-  client?: Remote<WorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -123,7 +89,6 @@ export function useTreeConsoleToolbarActions({
   navigate: (args: { to: string; replace?: boolean }) => void;
   actions: IntegrationActions;
   state: IntegrationState;
-  availableTemplateOptions: { id: string; label: string }[];
   developerModeEnabled: boolean;
   handleIndexedDbReset: () => void;
   requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void>;
@@ -210,128 +175,6 @@ export function useTreeConsoleToolbarActions({
     (action: string, params?: TreeConsoleToolbarActionParams) => {
       const currentPageNodeId = pageNodeId || 'root';
 
-      const importTemplate = async (templateId: string) => {
-        try {
-          const computeBase = (): string => {
-            const envBase = import.meta.env.BASE_URL || '';
-            if (envBase.length > 0) return envBase;
-            if (typeof document !== 'undefined' && document.baseURI) {
-              try {
-                return new URL(document.baseURI).pathname || '/';
-              } catch (error) {
-                logIntegrationWarning('Failed to parse document.baseURI for import base', error);
-                return '/';
-              }
-            }
-            return '/';
-          };
-          const base = computeBase().replace(/\/+$/, '/');
-          const candidateBases = Array.from(new Set([base, '/hierarchidb/', '/']));
-
-          const tryFetch = async (u: string): Promise<TemplateData> => {
-            const res = await fetch(u, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const ct = res.headers.get('content-type') || '';
-            if (!/json/i.test(ct)) {
-              const text = await res.text();
-              if (text.trim().startsWith('<')) {
-                throw new Error('NOT_JSON');
-              }
-              try {
-                return JSON.parse(text);
-              } catch {
-                throw new Error('INVALID_JSON');
-              }
-            }
-            return (await res.json()) as TemplateData;
-          };
-
-          let templateData: TemplateData | undefined;
-          let lastErr: unknown;
-          const candidates = ['population-by-countries-2023.json'];
-          for (const b of candidateBases) {
-            for (const fname of candidates) {
-              const u = `${String(b).replace(/\/+$/, '/')}templates/${templateId}/${fname}`;
-              try {
-                templateData = await tryFetch(u);
-                break;
-              } catch (e) {
-                lastErr = e;
-              }
-            }
-            if (templateData) break;
-          }
-          if (!templateData) {
-            throw new Error(`Failed to load template: ${templateId} (${String(lastErr)})`);
-          }
-
-          const toImportNode = (node: TemplateNodeInput): ImportNode => {
-            if (!isRecord(node)) throw new Error('Invalid template node');
-            const rawMetadata = node.metadata;
-            if (!isRecord(rawMetadata)) throw new Error('Template node missing metadata');
-            if (typeof rawMetadata.name !== 'string' || rawMetadata.name.trim().length === 0) {
-              throw new Error('Template node missing metadata.name');
-            }
-            const name = rawMetadata.name;
-            const description =
-              typeof rawMetadata.description === 'string' ? rawMetadata.description : undefined;
-            const children = Array.isArray(node.children)
-              ? node.children.map((child) => toImportNode(child))
-              : undefined;
-            const resolvedNodeType =
-              typeof node.nodeType === 'string'
-                ? toNodeType(node.nodeType)
-                : typeof node.treeNodeType === 'string'
-                  ? toNodeType(node.treeNodeType)
-                  : toNodeType('folder');
-            const normalizedData = normalizeRecord(node.data);
-            const data = normalizedData && isPeerEntityPayload(normalizedData)
-              ? normalizedData
-              : undefined;
-            return {
-              name,
-              nodeType: resolvedNodeType,
-              description,
-              metadata: rawMetadata,
-              draftMetadata: normalizeRecord(node.draftMetadata),
-              draftData: normalizeRecord(node.draftData) ?? undefined,
-              data,
-              children: children && children.length ? children : undefined,
-            };
-          };
-
-          if (!Array.isArray(templateData.nodes)) {
-            throw new Error('Template nodes must be an array with nested children.');
-          }
-
-          const importNodes: ImportData['nodes'] = templateData.nodes.map((n) => toImportNode(n));
-
-          if (!client) {
-            throw new Error('WorkerClient not available');
-          }
-
-          const importExportAPI = await client.getImportExportAPI();
-          await importExportAPI.importNodes({
-            treeId: (treeId as TreeId) || ('' as TreeId),
-            targetParentId: currentPageNodeId as NodeId,
-            data: { nodes: importNodes },
-            format: 'json',
-            conflictResolution: 'rename',
-          });
-
-          await actions.handleRefresh?.();
-        } catch (error) {
-          logIntegrationWarning('Import template handler failed', error);
-          const hint =
-            ' If this is a dev stage under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
-          try {
-            alert(`Import Template failed: ${String(error)}${hint}`);
-          } catch (alertError) {
-            logIntegrationWarning('Failed to alert template import failure', alertError);
-          }
-        }
-      };
-
       const normalizedAction = action === 'remove' ? 'trash' : action;
 
       switch (normalizedAction) {
@@ -357,16 +200,6 @@ export function useTreeConsoleToolbarActions({
           if (Array.isArray(params)) {
             setZoomBandBoundaries(params);
             persistSettings({ zoomBandBoundaries: params });
-          }
-          break;
-        case 'import-template':
-          if (
-            params &&
-            typeof params === 'object' &&
-            'templateId' in params &&
-            typeof params.templateId === 'string'
-          ) {
-            void importTemplate(params.templateId);
           }
           break;
         case 'restore': {
@@ -438,7 +271,6 @@ export function useTreeConsoleToolbarActions({
     },
     [
       pageNodeId,
-      client,
       treeId,
       actions,
       developerModeEnabled,
@@ -468,7 +300,6 @@ export function useTreeConsoleToolbarActions({
     canDuplicate: selectedCount > 0,
     canTrash: state.canTrash,
     canRemove: state.canTrash,
-    availableTemplates: availableTemplateOptions,
     allowImport: canImportFromNode(pageTreeNode),
     developerModeEnabled,
     autosaveEnabled,

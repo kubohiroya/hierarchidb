@@ -14,7 +14,6 @@ import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import type { WorkerAPI } from '~/types/worker-api.js';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
-import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
 import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions.js';
@@ -255,21 +254,7 @@ export function useTreeConsoleIntegrationInner({
     [client, nodeIndex, pageTreeNode]
   );
 
-  const availableTemplateOptions = useMemo(
-    () =>
-      treeId === 'r'
-        ? [
-            {
-              id: 'population-2023',
-              label: 'Total Population by Country',
-            },
-          ]
-        : [],
-    [treeId]
-  );
-
   const { toolbarProps, rowClickAction } = useTreeConsoleToolbarActions({
-    client,
     treeId,
     pageNodeId,
     pageTreeNode,
@@ -296,7 +281,6 @@ export function useTreeConsoleIntegrationInner({
       canPaste: state.canPaste,
       canTrash,
     },
-    availableTemplateOptions,
     developerModeEnabled,
     handleIndexedDbReset,
     requestEdit,
@@ -414,5 +398,3 @@ export function useTreeConsoleIntegrationInner({
     infoPanelProps,
   };
 }
-
-export { canImportFromNode };

@@ -133,6 +133,8 @@ export function TreeTableContextMenu({
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
+      canImport={isFolderNodeType(node?.nodeType)}
+      canExport={isFolderNodeType(node?.nodeType)}
       canPreview={canPreview}
       onToggleVisible={(nextVisible) => {
         if (node) {
@@ -189,6 +191,16 @@ export function TreeTableContextMenu({
       onCut={() => {
         if (node) {
           triggerContextAction('cut', { navigateToParent: true, source: 'treetable' });
+        }
+      }}
+      onImport={() => {
+        if (node) {
+          triggerContextAction('import', { source: 'treetable' });
+        }
+      }}
+      onExport={() => {
+        if (node) {
+          triggerContextAction('export', { source: 'treetable' });
         }
       }}
       onOpen={(options) => {

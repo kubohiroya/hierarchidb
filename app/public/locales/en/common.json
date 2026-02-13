@@ -59,6 +59,9 @@
       "confirm": "Clear All Data",
       "cancel": "Cancel",
       "error": "Failed to clear some cache data. Please try again."
+    },
+    "maintenance": {
+      "label": "IndexedDB Maintenance"
     }
   },
   "dialogs": {
@@ -354,12 +357,42 @@
       "open": "Open",
       "edit": "Edit",
       "duplicate": "Duplicate",
+      "import": "Import",
+      "export": "Export",
       "moveToTrash": "Move to Trash",
       "visible": "Visible",
       "hidden": "Hidden",
       "checkReference": "Check reference",
       "preview": "Preview",
       "build": "Build"
+    },
+    "shapePresets": {
+      "japanLevel01": {
+        "name": "Japan level0+1 (prefectures)",
+        "description": "Select Japan only. Include admin level 0 and level 1 boundaries.",
+        "nodeNameTemplate": "Japan L0+1 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Includes tuned simplify settings."
+      },
+      "worldLevel0": {
+        "name": "World countries level0",
+        "description": "Select all countries at admin level 0 for compact global coverage.",
+        "nodeNameTemplate": "World L0 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Prioritizes compact simplification."
+      },
+      "worldLevel1CnInLevel12": {
+        "name": "World level1, China/India level1+2",
+        "description": "Select level 1 globally; extend China and India to level 2.",
+        "nodeNameTemplate": "World L1 + CN/IN L1+2 {{date}}",
+        "nodeDescriptionTemplate": "Preset: {{preset}}. Uses balanced simplify settings."
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "populationByCountries": {
+          "name": "Population by Countries",
+          "description": "Create a folder template with country-level population summary nodes."
+        }
+      }
     },
     "errors": {
       "trashFailed": "Move to trash failed.",

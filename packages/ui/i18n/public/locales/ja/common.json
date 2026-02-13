@@ -49,6 +49,9 @@
       "confirm": "全データを削除",
       "cancel": "キャンセル",
       "error": "キャッシュの削除に失敗しました。もう一度お試しください。"
+    },
+    "maintenance": {
+      "label": "IndexedDB メンテナンス"
     }
   },
   "common": {
@@ -359,12 +362,42 @@
       "copy": "コピー",
       "cut": "切り取り",
       "duplicate": "複製",
+      "import": "インポート",
+      "export": "エクスポート",
       "moveToTrash": "ゴミ箱に移動",
       "visible": "表示",
       "hidden": "非表示",
       "checkReference": "参照を確認",
       "preview": "プレビュー",
       "build": "ビルド"
+    },
+    "shapePresets": {
+      "japanLevel01": {
+        "name": "日本レベル0+1(都道府県)",
+        "description": "日本のみを対象に、行政レベル0とレベル1(都道府県)を選択します。",
+        "nodeNameTemplate": "日本 L0+1 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。簡略化設定を日本向けに調整しています。"
+      },
+      "worldLevel0": {
+        "name": "世界各国レベル0",
+        "description": "全世界の国境(行政レベル0)を選択し、軽量なグローバル表示に最適化します。",
+        "nodeNameTemplate": "世界 L0 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。軽量化を優先した簡略化設定です。"
+      },
+      "worldLevel1CnInLevel12": {
+        "name": "世界各国レベル1、中国とインドはレベル1+2",
+        "description": "全世界は行政レベル1を選択し、中国とインドのみレベル2まで拡張します。",
+        "nodeNameTemplate": "世界 L1 + 中国/インド L1+2 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。詳細度とサイズのバランスを取った設定です。"
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "populationByCountries": {
+          "name": "各国人口（Population by Countries）",
+          "description": "国別人口の集計ノードを含むフォルダーテンプレートを作成します。"
+        }
+      }
     },
     "content": {
       "loading": "読み込み中...",

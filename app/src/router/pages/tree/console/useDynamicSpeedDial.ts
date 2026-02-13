@@ -36,7 +36,7 @@ export interface UseDynamicSpeedDialResult extends DynamicSpeedDialState {
   translateWithFallback: (key: string, fallback: string) => string;
   handleClose: () => void;
   toggleOpen: () => void;
-  handleVMActionClick: (nodeType: string, options?: { openInNewTab?: boolean }) => void;
+  handleVMActionClick: (createType: string, options?: { openInNewTab?: boolean }) => void;
   transitionDuration: number;
 }
 
@@ -125,8 +125,8 @@ export function useDynamicSpeedDial(params: {
   }, []);
 
   const handleVMActionClick = useCallback(
-    (nodeType: string, options?: { openInNewTab?: boolean }) => {
-      const action = `create:${nodeType}`;
+    (createType: string, options?: { openInNewTab?: boolean }) => {
+      const action = `create:${createType}`;
       onSuppress?.();
       handleClose();
       onCreateAction(action, {} as HierarchicalTreeNode, options);

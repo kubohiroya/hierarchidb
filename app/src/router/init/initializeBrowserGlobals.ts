@@ -1,4 +1,5 @@
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
+import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannel.js';
 import { pluginRegistry } from '~/plugin-loaders/index.ts';
 import { useWorker } from '../../contexts/WorkerProvider.js';
 import { bootLog } from '../../utils/bootLog.ts';
@@ -105,6 +106,7 @@ export function initializeBrowserGlobals(): void {
   if (initialized) return;
   initialized = true;
 
+  initializeMaintenanceChannel();
   registerWorkerClientHook(useWorker);
 
   const localBuildTime = (() => {

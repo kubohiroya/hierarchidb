@@ -30,6 +30,8 @@ interface UseTreeConsoleBreadcrumbResult {
   handleDuplicate: () => void;
   handleCopy: () => void;
   handleCut: () => void;
+  handleImport: () => void;
+  handleExport: () => void;
   handleBuild: () => void;
   handleTrash: () => void;
   isRootContext: boolean;
@@ -214,6 +216,18 @@ export const useTreeConsoleBreadcrumb = (
     }
   }, [contextMenuNode, onContextAction]);
 
+  const handleImport = useCallback(() => {
+    if (contextMenuNode && onContextAction) {
+      onContextAction('import', contextMenuNode, { source: 'breadcrumb' });
+    }
+  }, [contextMenuNode, onContextAction]);
+
+  const handleExport = useCallback(() => {
+    if (contextMenuNode && onContextAction) {
+      onContextAction('export', contextMenuNode, { source: 'breadcrumb' });
+    }
+  }, [contextMenuNode, onContextAction]);
+
   const handleBuild = useCallback(() => {
     if (contextMenuNode && onContextAction) {
       onContextAction('build', contextMenuNode, { source: 'breadcrumb' });
@@ -256,6 +270,8 @@ export const useTreeConsoleBreadcrumb = (
     handleDuplicate,
     handleCopy,
     handleCut,
+    handleImport,
+    handleExport,
     handleBuild,
     handleTrash,
     isRootContext,

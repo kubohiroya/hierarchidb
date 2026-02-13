@@ -49,4 +49,19 @@ describe('menu-builders', () => {
     const tByTreeId = buildMenuItemsForTreeId('t' as TreeId);
     expect(pByContext.map((i) => i.nodeType)).toEqual(tByTreeId.map((i) => i.nodeType));
   });
+
+  it('provides folder template submenu entries for resources context', () => {
+    const items = buildMenuItemsForTreeId('r' as TreeId);
+    const folderItem = items.find((item) => item.nodeType === 'folder');
+    expect(folderItem).toBeDefined();
+    const createTypes = (folderItem?.children ?? []).map((child) => child.createType);
+    expect(createTypes).toContain('folder::template:population-2023');
+  });
+
+  it('omits resources-only folder templates in projects context', () => {
+    const items = buildMenuItemsForTreeId('t' as TreeId);
+    const folderItem = items.find((item) => item.nodeType === 'folder');
+    const createTypes = (folderItem?.children ?? []).map((child) => child.createType);
+    expect(createTypes).not.toContain('folder::template:population-2023');
+  });
 });
