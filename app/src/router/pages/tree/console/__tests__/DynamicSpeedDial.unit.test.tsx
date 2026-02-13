@@ -159,4 +159,57 @@ describe('DynamicSpeedDial', () => {
       expect.objectContaining({ openInNewTab: false })
     );
   });
+
+  it('opens folder submenu and triggers template create action', () => {
+    menuItemsModule.usePluginMenuItems.mockReturnValue([
+      {
+        key: 'folder',
+        nodeType: 'folder',
+        label: 'Folder',
+        icon: {
+          muiIconName: 'Folder',
+          color: '#445566',
+        },
+        priority: 1,
+        description: 'Folder node',
+        backgroundColor: '#44556622',
+        children: [
+          {
+            key: 'folder-template-population-2023',
+            nodeType: 'folder',
+            createType: 'folder::template:population-2023',
+            label: 'Population by Countries',
+            description: 'Create a population-by-country folder template.',
+            icon: {
+              muiIconName: 'Folder',
+              color: '#445566',
+            },
+            priority: 2,
+            backgroundColor: '#44556622',
+          },
+        ],
+      },
+    ]);
+
+    const onCreateAction = vi.fn();
+    render(<DynamicSpeedDial treeId={'r' as TreeId} onCreateAction={onCreateAction} />);
+
+    const fab = document.body.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
+    expect(fab).not.toBeNull();
+    if (!fab) {
+      throw new Error('SpeedDial fab not found');
+    }
+    fireEvent.click(fab);
+
+    const folderAction = screen.getByTestId('create-folder-action');
+    fireEvent.mouseEnter(folderAction);
+
+    expect(screen.getByTestId('create-folder-submenu')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('create-folder-submenu-action-1'));
+    expect(onCreateAction).toHaveBeenCalledWith(
+      'create:folder::template:population-2023',
+      expect.any(Object),
+      expect.objectContaining({ openInNewTab: false })
+    );
+  });
 });

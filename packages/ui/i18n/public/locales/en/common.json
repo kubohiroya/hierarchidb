@@ -362,6 +362,8 @@
       "copy": "Copy",
       "cut": "Cut",
       "duplicate": "Duplicate",
+      "import": "Import",
+      "export": "Export",
       "moveToTrash": "Move to Trash",
       "visible": "Visible",
       "hidden": "Hidden",
@@ -387,6 +389,14 @@
         "description": "Select level 1 globally; extend China and India to level 2.",
         "nodeNameTemplate": "World L1 + CN/IN L1+2 {{date}}",
         "nodeDescriptionTemplate": "Preset: {{preset}}. Uses balanced simplify settings."
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "populationByCountries": {
+          "name": "Population by Countries",
+          "description": "Create a folder template with country-level population summary nodes."
+        }
       }
     },
     "content": {

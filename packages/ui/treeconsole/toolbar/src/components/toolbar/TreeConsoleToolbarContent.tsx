@@ -2,10 +2,9 @@ import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams, TreeConsoleSearchMode } from '../../types.js';
 import { ActionButtons } from './ActionButtons.js';
-import { ImportExportMenu } from './ImportExportMenu.js';
 import { SearchField } from './SearchField.js';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 import { SettingsMenu } from './SettingsMenu.js';
@@ -41,8 +40,6 @@ interface TreeConsoleToolbarContentProps {
   canDuplicate: boolean;
   canTrash?: boolean;
   canRemove?: boolean;
-  availableTemplates: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
-  allowImport: boolean;
   developerModeEnabled: boolean;
   searchStrings: SearchStrings;
 }
@@ -69,25 +66,11 @@ export function TreeConsoleToolbarContent({
   canDuplicate,
   canTrash,
   canRemove,
-  availableTemplates,
-  allowImport,
   searchStrings,
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [trashAnchorEl, setTrashAnchorEl] = useState<HTMLElement | null>(null);
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
-
-  const resolvedTemplates = useMemo(() => {
-    try {
-      if (!Array.isArray(availableTemplates)) return [];
-      return availableTemplates.filter(
-        (item): item is { id: string; label?: string } => Boolean(item && typeof item.id === 'string')
-      );
-    } catch (error) {
-      console.warn('[TreeConsoleToolbar] availableTemplates parse failed', error);
-      return [];
-    }
-  }, [availableTemplates]);
 
   const handleAction = useCallback(
     (action: string, params?: TreeConsoleToolbarActionParams) => {
@@ -131,16 +114,11 @@ export function TreeConsoleToolbarContent({
   } as const;
 
   const trashButtonLabel = t('aria.trashMenuButton');
-  const importExportButtonLabel = t('aria.importExportButton');
   const settingsButtonLabel = t('aria.settingsButton');
 
   const labels = {
     trashRestore: t('trashMenu.restore'),
     trashEmpty: t('trashMenu.empty'),
-    import: t('importExportMenu.import'),
-    export: t('importExportMenu.export'),
-    importTemplate: t('importExportMenu.importTemplate'),
-    importTemplateFallback: t('importExportMenu.importTemplateFallback'),
     rowClickTitle: t('rowClick.title'),
     rowClickSelectNavigate: t('rowClick.options.selectNavigate'),
     rowClickEdit: t('rowClick.options.edit'),
@@ -227,20 +205,6 @@ export function TreeConsoleToolbarContent({
       />
 
       <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-        <ImportExportMenu
-          buttonLabel={importExportButtonLabel}
-          allowImport={allowImport}
-          templates={resolvedTemplates}
-          importLabel={labels.import}
-          exportLabel={labels.export}
-          importTemplateLabel={labels.importTemplate}
-          importTemplateFallback={labels.importTemplateFallback}
-          onImport={() => handleAction('import')}
-          onExport={() => handleAction('export')}
-          onImportTemplate={(templateId) => handleAction('import-template', { templateId })}
-          portalContainer={portalContainer}
-        />
-
         <SettingsMenu
           rowClickAction={rowClickAction}
           onRowClickActionChange={onRowClickActionChange}

@@ -29,8 +29,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canPaste = false,
     canDuplicate = false,
     canTrash,
-    availableTemplates = [],
-    allowImport = true,
     developerModeEnabled = false,
   } = props;
 
@@ -79,8 +77,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canPaste={canPaste}
         canDuplicate={canDuplicate}
         canTrash={canTrash}
-        availableTemplates={availableTemplates}
-        allowImport={allowImport}
         developerModeEnabled={developerModeEnabled}
         searchStrings={searchStrings}
       />

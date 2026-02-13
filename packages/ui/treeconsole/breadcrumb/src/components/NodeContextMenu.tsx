@@ -14,6 +14,8 @@ import {
   ContentCut as ContentCutIcon,
   Construction as ConstructionIcon,
   Edit as EditIcon,
+  FileDownload as FileDownloadIcon,
+  FileUpload as FileUploadIcon,
   FileCopy as DuplicateIcon,
   Folder as FolderIcon,
   OpenInNew as OpenInNewIcon,
@@ -63,6 +65,8 @@ export interface NodeContextMenuProps {
   canDuplicate?: boolean;
   canCopy?: boolean;
   canCut?: boolean;
+  canImport?: boolean;
+  canExport?: boolean;
   canBuild?: boolean;
   canPreview?: boolean;
   onOpen?: (options?: { openInNewTab?: boolean }) => void;
@@ -78,6 +82,8 @@ export interface NodeContextMenuProps {
   onTrash?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
+  onImport?: () => void;
+  onExport?: () => void;
   onToggleVisible?: (nextValue: boolean) => void;
   isVisible?: boolean;
   isTrashRoot?: boolean;
@@ -129,6 +135,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canDuplicate = true,
     canCopy = true,
     canCut = true,
+    canImport = true,
+    canExport = true,
     canBuild,
     canPreview: canPreviewOverride,
     onOpen: _onOpen,
@@ -143,6 +151,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onTrash: _onTrash,
     onCopy: _onCopy,
     onCut: _onCut,
+    onImport: _onImport,
+    onExport: _onExport,
     onToggleVisible: _onToggleVisible,
     isVisible,
     openSteps = [],
@@ -180,6 +190,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const cutLabel = translateWithFallback('treeConsole.contextMenu.cut', 'Cut');
   const duplicateLabel = translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate');
   const moveToTrashLabel = translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash');
+  const importLabel = translateWithFallback('treeConsole.contextMenu.import', 'Import');
+  const exportLabel = translateWithFallback('treeConsole.contextMenu.export', 'Export');
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
   const hiddenLabel = translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden');
@@ -369,6 +381,20 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onCut?.(); }, 0);
   }, [blurActive, handleMainMenuClose]);
 
+  const handleImportClick = useCallback(() => {
+    const onImport = propsRef.current.onImport;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onImport?.(); }, 0);
+  }, [blurActive, handleMainMenuClose]);
+
+  const handleExportClick = useCallback(() => {
+    const onExport = propsRef.current.onExport;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onExport?.(); }, 0);
+  }, [blurActive, handleMainMenuClose]);
+
   const handlePreviewClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onPreview = propsRef.current.onPreview;
     const openInNewTab = resolveOpenInNew(event);
@@ -432,6 +458,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const isFolder = isFolderNodeType(nodeType);
   const hasOpenSteps = Boolean(_onOpenStep && (openSteps.length > 0 || openStepsLoading));
+  const showImport = isFolder && Boolean(_onImport) && canImport;
+  const showExport = isFolder && Boolean(_onExport) && canExport;
 
   // Build Create submenu items
   const builtCreateItems: Array<CreateMenuEntry> = (() => {
@@ -547,6 +575,26 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         )}
 
         {canCreate && <Divider />}
+
+        {showImport && (
+          <MenuItem onClick={handleImportClick} aria-label={importLabel}>
+            <ListItemIcon>
+              <FileUploadIcon />
+            </ListItemIcon>
+            <ListItemText primary={importLabel} />
+          </MenuItem>
+        )}
+
+        {showExport && (
+          <MenuItem onClick={handleExportClick} aria-label={exportLabel}>
+            <ListItemIcon>
+              <FileDownloadIcon />
+            </ListItemIcon>
+            <ListItemText primary={exportLabel} />
+          </MenuItem>
+        )}
+
+        {(showImport || showExport) && <Divider />}
 
         <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label={cutLabel}>
           <ListItemIcon>
