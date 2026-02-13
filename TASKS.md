@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #241 / `codex/feat/ui/speeddial-submenu` / start: 2026-02-13 11:13 JST
 - #239 / `codex/feat/maintenance/indexeddb-maintenance-url` / start: 2026-02-13 09:51 JST
 - #236 / `codex/fix/tree/prevent-trash-while-build-running` / start: 2026-02-13 08:01 JST
 - #235 / `ERIA-Cartograph` / start: 2026-02-13 07:30 JST
@@ -62,10 +63,24 @@
 
 ### Blocked
 
+- #241 / `codex/feat/ui/speeddial-submenu` / blocked: 2026-02-13 11:57 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/app` が差分外 `@hierarchidb/shape-plugin` の既知型不整合 `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
 
+- blocked: 2026-02-13 11:57 JST #241 `pnpm -w turbo run typecheck --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/app` は差分外既知ブロッカー `@hierarchidb/shape-plugin`（`vtConfig.debug.tiles` readonly `[]` vs mutable `string[]`）で exit 2。`@hierarchidb/ui-speeddial-submenu` / `@hierarchidb/ui-treeconsole-breadcrumb` の typecheck 自体は cache hit で通過。
+- update: 2026-02-13 11:56 JST #241 再検証: `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx src/features/shape/__tests__/shapeCreatePresets.unit.test.ts` は exit 0（2 files / 5 tests passed）。
+- update: 2026-02-13 11:56 JST #241 再検証: `pnpm install` は exit 0、`pnpm -w turbo run build --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/app` も exit 0 を確認。
+- update: 2026-02-13 11:56 JST #241 追加要件（shapeプリセット選択 + i18n化）を反映。`app/src/features/shape/shapeCreatePresets.ts` を追加し、3プリセット（日本L0+1 / 世界L0 / 世界L1+中国・インドL1+2）の `name/description/template/buildConfig/processingConfig/selectedArrayByCountries` を定義。`create:shape::preset:<id>` の encode/decode と create直後の draft patch 適用を実装。
+- update: 2026-02-13 11:56 JST #241 UI統合として SpeedDial (`app/src/router/pages/tree/console/DynamicSpeedDial.tsx`) と ContextMenu (`packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx`) の create項目に `children` サブメニューを追加し、hover起点の右→左展開で shapeプリセットを選択可能にした。非shape create は従来どおり単一アクションを維持。
+- update: 2026-02-13 11:56 JST #241 i18n（ja/en）を `app/public/locales/*/common.json` と `packages/ui/i18n/public/locales/*/common.json` に追加。`treeConsole.shapePresets.*` の name/description/node template を定義し、SpeedDial/ContextMenu のラベル・tooltip・create時ノード名/説明がロケールに応じて切替されるようにした。
+- update: 2026-02-13 11:22 JST #241 で新規パッケージ `@hierarchidb/ui-speeddial-submenu`（`packages/ui/speeddial-submenu`）を追加し、`SpeedDialSubmenuActions` を実装。一次アクション hover/click で `Popper`（`left-start`）サブメニューを右→左展開し、単一表示切替・クローズ遅延・親/子クリック時の閉鎖制御を実装。
+- update: 2026-02-13 11:22 JST #241 の app 統合として `app/src/router/pages/tree/console/DynamicSpeedDial.tsx` を `SpeedDialSubmenuActions` 利用へ切替。`vmItems` の `group` が複数項目の場合のみ親アクション＋サブメニュー化し、単一項目は従来どおり `create:<nodeType>` を即時実行する後方互換挙動を維持。
+- update: 2026-02-13 11:22 JST #241 テスト追加: `app/src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` に hover 起点サブメニュー表示と子項目クリック実行の検証を追加。`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` は exit 0（1 file / 2 tests passed）。
+- update: 2026-02-13 11:24 JST #241 追補: Biome 整形（import order/formatter）を `DynamicSpeedDial.tsx` と `SpeedDialSubmenuActions.tsx` へ適用し、同テスト `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` を再実行して exit 0 を再確認。
+- blocked: 2026-02-13 11:22 JST #241 `pnpm -w turbo run typecheck --filter @hierarchidb/app` は差分外既知ブロッカー `@hierarchidb/shape-plugin`（`vtConfig.debug.tiles`: readonly `[]` vs mutable `string[]`）で exit 2。補助確認として `pnpm -w turbo run typecheck --filter @hierarchidb/ui-speeddial-submenu` は exit 0。
+- update: 2026-02-13 11:22 JST #241 ビルド確認: `pnpm -w turbo run build --filter @hierarchidb/ui-speeddial-submenu` と `pnpm -w turbo run build --filter @hierarchidb/app` はともに exit 0。依存同期として `pnpm install` も exit 0。
+- update: 2026-02-13 11:13 JST Issue #241（`feat/ui/speeddial-submenu-package`）を起票し Project `hierarchidb` へ追加、Status を `In Progress` に設定したうえで、`ERIA-Cartograph` 起点の worktree `/Users/hiroya/WebstormProjects/hierarchidb-ui-speeddial-submenu` とブランチ `codex/feat/ui/speeddial-submenu` を作成して着手。
 - update: 2026-02-13 10:38 JST #239 でメンテナンス専用URLフローを実装。`packages/ui/usermenu` に「IndexedDB Maintenance」メニュー導線（ログイン時のみ表示）を追加し、`app/src/maintenance/maintenanceSession.ts` で短命ワンタイムセッション（`msid/msk`）を発行、`app/src/router/pages/maintenance/MaintenancePage.tsx` でURL検証・確認フレーズ入力・メール再確認を通過した場合のみ destructive 処理を実行する構成に変更。
 - update: 2026-02-13 10:38 JST #239 の実行系として `app/src/maintenance/maintenanceExecution.ts` を追加し、(1) maintenance lock 設定、(2) BroadcastChannel による shutdown 要求、(3) local worker shutdown/reset + Dexie close、(4) `indexedDB.deleteDatabase` の blocked リトライ削除、(5) lock解除後 worker 再初期化（upgradeトリガー）を順次実行するよう実装。`app/src/worker-runtime/client.ts` には lock 有効時の初期化拒否ガードを追加。
 - update: 2026-02-13 10:38 JST #239 の適用範囲は `app/src/maintenance/*`, `app/src/router/pages/maintenance/MaintenancePage.tsx`, `app/src/router/routes/maintenanceRoute.tsx`, `app/src/router/index.tsx`, `app/src/router/init/initializeBrowserGlobals.ts`, `app/src/router/pages/home/HomePage.tsx`, `app/src/router/routes/t.($treeId).($pageNodeId).tsx`, `packages/ui/usermenu/src/components/{UserMenu,UserLoginButton}.tsx`, `app/public/locales/*/common.json`, `packages/ui/i18n/public/locales/*/common.json`。

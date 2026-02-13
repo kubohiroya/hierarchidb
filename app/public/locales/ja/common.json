@@ -323,6 +323,26 @@
       "preview": "プレビュー",
       "build": "ビルド"
     },
+    "shapePresets": {
+      "japanLevel01": {
+        "name": "日本レベル0+1(都道府県)",
+        "description": "日本のみを対象に、行政レベル0とレベル1(都道府県)を選択します。",
+        "nodeNameTemplate": "日本 L0+1 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。簡略化設定を日本向けに調整しています。"
+      },
+      "worldLevel0": {
+        "name": "世界各国レベル0",
+        "description": "全世界の国境(行政レベル0)を選択し、軽量なグローバル表示に最適化します。",
+        "nodeNameTemplate": "世界 L0 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。軽量化を優先した簡略化設定です。"
+      },
+      "worldLevel1CnInLevel12": {
+        "name": "世界各国レベル1、中国とインドはレベル1+2",
+        "description": "全世界は行政レベル1を選択し、中国とインドのみレベル2まで拡張します。",
+        "nodeNameTemplate": "世界 L1 + 中国/インド L1+2 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。詳細度とサイズのバランスを取った設定です。"
+      }
+    },
     "errors": {
       "trashFailed": "ゴミ箱への移動に失敗しました。",
       "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはゴミ箱に移動できません。",

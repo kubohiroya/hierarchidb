@@ -604,6 +604,12 @@
       "@hierarchidb/ui-search-field/*": [
         "packages/ui/search-field/dist/*"
       ],
+      "@hierarchidb/ui-speeddial-submenu": [
+        "packages/ui/speeddial-submenu/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-speeddial-submenu/*": [
+        "packages/ui/speeddial-submenu/dist/*"
+      ],
       "@hierarchidb/ui-treeconsole-treetable": [
         "packages/ui/treeconsole/treetable/dist/index.d.ts"
       ],

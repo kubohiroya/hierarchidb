@@ -4,6 +4,7 @@
  */
 
 import type { TreeId } from '@hierarchidb/core-types';
+import { getShapePresetMenuEntries } from '../features/shape/shapeCreatePresets.ts';
 import { getPresentation, prefetchAllIcons } from '../plugin-runtime/plugin-presentation.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../plugin-runtime/plugin-registry.ts';
 import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
@@ -13,7 +14,9 @@ export type TreeContext = 'resources' | 'projects';
 export interface PluginMenuItem {
   key: string;
   nodeType: string;
+  createType?: string;
   label: string;
+  labelKey?: string;
   icon?: {
     muiIconName?: string;
     emoji?: string;
@@ -22,15 +25,18 @@ export interface PluginMenuItem {
   group?: MenuGroup | string;
   priority: number;
   description: string;
+  descriptionKey?: string;
   backgroundColor: string;
+  children?: PluginMenuItem[];
 }
 
 function createMenuItem(plugin: InstalledPlugin, group: string, priority: number): PluginMenuItem {
   const presentation = getPresentation(plugin.nodeType);
   const localizedDescription = presentation?.description?.trim();
-  return {
+  const item: PluginMenuItem = {
     key: plugin.nodeType,
     nodeType: plugin.nodeType,
+    createType: plugin.nodeType,
     label: presentation?.label ?? plugin.label,
     icon: presentation?.icon ?? plugin.icon,
     group,
@@ -41,6 +47,23 @@ function createMenuItem(plugin: InstalledPlugin, group: string, priority: number
         : plugin.description,
     backgroundColor: plugin.backgroundColor,
   };
+  if (plugin.nodeType === 'shape') {
+    const shapePresetChildren = getShapePresetMenuEntries().map((preset, index) => ({
+      key: preset.key,
+      nodeType: preset.nodeType,
+      createType: preset.createType,
+      label: preset.label,
+      labelKey: preset.labelKey,
+      description: preset.description,
+      descriptionKey: preset.descriptionKey,
+      icon: item.icon,
+      group,
+      priority: priority + index + 1,
+      backgroundColor: plugin.backgroundColor,
+    }));
+    item.children = shapePresetChildren;
+  }
+  return item;
 }
 
 export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuItem[] {

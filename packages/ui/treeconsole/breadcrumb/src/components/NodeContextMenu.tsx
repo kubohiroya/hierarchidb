@@ -24,7 +24,17 @@ import {
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { isFolderNodeType } from '../utils/nodeTypeIconColor.js';
-type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
+type CreateMenuEntry = {
+  key: string;
+  nodeType: string;
+  createType?: string;
+  label: string;
+  labelKey?: string;
+  description?: string;
+  descriptionKey?: string;
+  icon?: { muiIconName?: string; emoji?: string; color?: string };
+  children?: CreateMenuEntry[];
+};
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 const buildableNodeTypes = new Set(['styler', 'shape', 'route']);
@@ -75,7 +85,24 @@ export interface NodeContextMenuProps {
   onRestoreToOriginal?: () => void;
   onRestoreToCurrent?: () => void;
   /** Optional explicit create items list; if omitted, tries to stage from global builders */
-  createItems?: Array<{ type: string; label: string; description?: string }>;
+  createItems?: Array<{
+    type: string;
+    createType?: string;
+    label: string;
+    labelKey?: string;
+    description?: string;
+    descriptionKey?: string;
+    icon?: { muiIconName?: string; emoji?: string; color?: string };
+    children?: Array<{
+      type: string;
+      createType?: string;
+      label: string;
+      labelKey?: string;
+      description?: string;
+      descriptionKey?: string;
+      icon?: { muiIconName?: string; emoji?: string; color?: string };
+    }>;
+  }>;
   /** Optional step options for "Open" submenu */
   openSteps?: OpenStepOption[];
   /** Optional loading flag for async step options */
@@ -124,6 +151,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [createSubmenuOpen, setCreateSubmenuOpen] = useState(false);
+  const [createSubmenuAnchor, setCreateSubmenuAnchor] = useState<HTMLElement | null>(null);
+  const [createSubmenuItems, setCreateSubmenuItems] = useState<CreateMenuEntry[]>([]);
   const [openStepMenuOpen, setOpenStepMenuOpen] = useState(false);
   const [openStepMenuAnchor, setOpenStepMenuAnchor] = useState<HTMLElement | null>(null);
   const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
@@ -223,6 +253,16 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   },[]);
 
+  const openCreateSubmenu = useCallback((event: MouseEvent<HTMLElement>, children: CreateMenuEntry[]) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const menuItem = event.currentTarget.closest('li');
+    if (!menuItem) return;
+    setCreateSubmenuAnchor(menuItem as HTMLElement);
+    setCreateSubmenuItems(children);
+    setCreateSubmenuOpen(true);
+  }, []);
+
   const handleOpenStepMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
@@ -237,6 +277,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     // Close all submenus as well
     setAddMenuOpen(false);
     setAddMenuAnchor(null);
+    setCreateSubmenuOpen(false);
+    setCreateSubmenuAnchor(null);
+    setCreateSubmenuItems([]);
     setOpenStepMenuOpen(false);
     setOpenStepMenuAnchor(null);
     onClose();
@@ -355,6 +398,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     if (!anchorEl) {
       setAddMenuOpen(false);
       setAddMenuAnchor(null);
+      setCreateSubmenuOpen(false);
+      setCreateSubmenuAnchor(null);
+      setCreateSubmenuItems([]);
       setOpenStepMenuOpen(false);
       setOpenStepMenuAnchor(null);
     }
@@ -388,23 +434,62 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const hasOpenSteps = Boolean(_onOpenStep && (openSteps.length > 0 || openStepsLoading));
 
   // Build Create submenu items
-  type BuiltItem = { type: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
-  const builtCreateItems: Array<BuiltItem> = (() => {
-    if (props.createItems?.length) return props.createItems;
+  const builtCreateItems: Array<CreateMenuEntry> = (() => {
+    if (props.createItems?.length) {
+      return props.createItems.map((item) => ({
+        key: item.createType ?? item.type,
+        nodeType: item.type,
+        createType: item.createType,
+        label: item.label,
+        labelKey: item.labelKey,
+        description: item.description,
+        descriptionKey: item.descriptionKey,
+        icon: item.icon,
+        children: (item.children ?? []).map((child) => ({
+          key: child.createType ?? child.type,
+          nodeType: child.type,
+          createType: child.createType,
+          label: child.label,
+          labelKey: child.labelKey,
+          description: child.description,
+          descriptionKey: child.descriptionKey,
+          icon: child.icon,
+        })),
+      }));
+    }
     try {
       const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
       const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
       if (typeof builder === 'function') {
         const items = builder(treeId) as CreateMenuEntry[];
-        return (items || []).map((i) => ({ type: i.nodeType, label: i.label, description: i.description, icon: i.icon }));
+        return (items || []).map((i) => ({
+          key: i.key ?? (i.createType ?? i.nodeType),
+          nodeType: i.nodeType,
+          createType: i.createType,
+          label: i.label,
+          labelKey: i.labelKey,
+          description: i.description,
+          descriptionKey: i.descriptionKey,
+          icon: i.icon,
+          children: (i.children ?? []).map((child) => ({
+            key: child.key ?? (child.createType ?? child.nodeType),
+            nodeType: child.nodeType,
+            createType: child.createType,
+            label: child.label,
+            labelKey: child.labelKey,
+            description: child.description,
+            descriptionKey: child.descriptionKey,
+            icon: child.icon,
+          })),
+        }));
       }
     } catch (error) {
       logNodeContextMenuWarning('Failed to stage dynamic create menu items', error);
     }
     // Fallback minimal entries
     return [
-      { type: 'folder', label: 'Folder', description: undefined, icon: { muiIconName: 'Folder' } },
-      { type: 'note', label: 'Note', description: undefined, icon: { muiIconName: 'Extension' } },
+      { key: 'folder', nodeType: 'folder', label: 'Folder', description: undefined, icon: { muiIconName: 'Folder' } },
+      { key: 'note', nodeType: 'note', label: 'Note', description: undefined, icon: { muiIconName: 'Extension' } },
     ];
   })();
 
@@ -615,15 +700,36 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         }}
       >
         {builtCreateItems.map((ci) => {
-          const IconEl = resolveIcon({ nodeType: ci.type, icon: ci.icon });
-          const localizedLabel = translateWithFallback(`plugins.${ci.type}.name`, ci.label);
-          const localizedDescription = translateWithFallback(`plugins.${ci.type}.description`, ci.description ?? '').trim();
+          const createType = ci.createType ?? ci.nodeType;
+          const hasChildren = Array.isArray(ci.children) && ci.children.length > 0;
+          const IconEl = resolveIcon({ nodeType: ci.nodeType, icon: ci.icon });
+          const localizedLabel = ci.labelKey
+            ? translateWithFallback(ci.labelKey, ci.label)
+            : translateWithFallback(`plugins.${ci.nodeType}.name`, ci.label);
+          const localizedDescription = (ci.descriptionKey
+            ? translateWithFallback(ci.descriptionKey, ci.description ?? '')
+            : translateWithFallback(`plugins.${ci.nodeType}.description`, ci.description ?? '')).trim();
+
+          if (hasChildren) {
+            return (
+              <MenuItem
+                key={`${createType}-${language}`}
+                onMouseEnter={(event) => openCreateSubmenu(event, ci.children ?? [])}
+                onClick={(event) => openCreateSubmenu(event, ci.children ?? [])}
+                aria-label={localizedLabel}
+              >
+                <ListItemIcon>{IconEl}</ListItemIcon>
+                <ListItemText>{localizedLabel}</ListItemText>
+                <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
+              </MenuItem>
+            );
+          }
 
           if (localizedDescription.length === 0) {
             return (
               <MenuItem
-                key={`${ci.type}-${language}`}
-                onClick={(event) => handleCreateClick(ci.type, event)}
+                key={`${createType}-${language}`}
+                onClick={(event) => handleCreateClick(createType, event)}
                 aria-label={localizedLabel}
               >
                 <ListItemIcon>{IconEl}</ListItemIcon>
@@ -634,9 +740,91 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           }
 
           return (
-            <Tooltip key={`${ci.type}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
+            <Tooltip key={`${createType}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
               <span style={{ display: 'block' }}>
-                <MenuItem onClick={(event) => handleCreateClick(ci.type, event)} aria-label={localizedLabel}>
+                <MenuItem onClick={(event) => handleCreateClick(createType, event)} aria-label={localizedLabel}>
+                  <ListItemIcon>{IconEl}</ListItemIcon>
+                  <ListItemText>{localizedLabel}</ListItemText>
+                  {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
+                </MenuItem>
+              </span>
+            </Tooltip>
+          );
+        })}
+      </Menu>
+
+      <Menu
+        anchorEl={createSubmenuAnchor}
+        open={createSubmenuOpen}
+        onClose={() => {
+          setCreateSubmenuOpen(false);
+          setCreateSubmenuAnchor(null);
+          setCreateSubmenuItems([]);
+        }}
+        disablePortal={false}
+        disableScrollLock={true}
+        keepMounted={false}
+        disableAutoFocus
+        disableAutoFocusItem
+        disableEnforceFocus
+        disableRestoreFocus
+        MenuListProps={{
+          autoFocusItem: false,
+          dense: true,
+          disablePadding: false,
+        }}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        slotProps={{
+          paper: {
+            elevation: 8,
+            sx: {
+              zIndex: 9999,
+              minWidth: 180,
+            },
+          },
+        }}
+      >
+        {createSubmenuItems.map((item) => {
+          const createType = item.createType ?? item.nodeType;
+          const IconEl = resolveIcon({ nodeType: item.nodeType, icon: item.icon });
+          const localizedLabel = item.labelKey
+            ? translateWithFallback(item.labelKey, item.label)
+            : translateWithFallback(`plugins.${item.nodeType}.name`, item.label);
+          const localizedDescription = (item.descriptionKey
+            ? translateWithFallback(item.descriptionKey, item.description ?? '')
+            : translateWithFallback(`plugins.${item.nodeType}.description`, item.description ?? '')).trim();
+
+          if (localizedDescription.length === 0) {
+            return (
+              <MenuItem
+                key={`${createType}-submenu-${language}`}
+                onClick={(event) => handleCreateClick(createType, event)}
+                aria-label={localizedLabel}
+              >
+                <ListItemIcon>{IconEl}</ListItemIcon>
+                <ListItemText>{localizedLabel}</ListItemText>
+                {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
+              </MenuItem>
+            );
+          }
+
+          return (
+            <Tooltip
+              key={`${createType}-submenu-${language}`}
+              title={localizedDescription}
+              placement="right"
+              enterDelay={300}
+              arrow
+            >
+              <span style={{ display: 'block' }}>
+                <MenuItem onClick={(event) => handleCreateClick(createType, event)} aria-label={localizedLabel}>
                   <ListItemIcon>{IconEl}</ListItemIcon>
                   <ListItemText>{localizedLabel}</ListItemText>
                   {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}

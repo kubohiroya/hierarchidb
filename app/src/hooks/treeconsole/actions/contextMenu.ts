@@ -7,6 +7,11 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { notify } from '@hierarchidb/components';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import {
+  buildShapePresetDraftDataPatch,
+  parseCreateAction,
+  resolveShapePresetNodeDefaults,
+} from '~/features/shape/shapeCreatePresets.ts';
 import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 import type { ContextAction, TreeConsoleActionDeps } from '../types.js';
@@ -63,8 +68,11 @@ export const createContextMenuAction = (
     setSSOT,
     loadChildrenOf,
     refreshUndoRedo,
+    translateWithFallback,
   } = deps;
   const { applyClipboard, openEditDialog, resolvePreviewGuardState, navigation } = helpers;
+  const translate = (key: string, fallback: string) =>
+    translateWithFallback ? translateWithFallback(key, fallback) : fallback;
 
   return {
     handleContextMenuAction: (
@@ -124,7 +132,13 @@ export const createContextMenuAction = (
         if (normalizedAction.startsWith('create:')) {
           if (!client || !treeId) return;
           const source = options?.source ?? 'speedDial';
-          const newType = normalizedAction.replace('create:', '') as NodeType;
+          const parsedCreate = parseCreateAction(normalizedAction);
+          if (!parsedCreate) {
+            showCommandError('INVALID_OPERATION', `Invalid create action: ${normalizedAction}`);
+            return;
+          }
+          const newType = parsedCreate.nodeType as NodeType;
+          const shapePreset = parsedCreate.nodeType === 'shape' ? parsedCreate.shapePresetId : undefined;
           try {
             const mutationAPI = await client.getMutationAPI();
             const queryAPI = await client.getQueryAPI();
@@ -132,14 +146,19 @@ export const createContextMenuAction = (
             const siblingNames = siblings
               .map((node) => (typeof node?.metadata?.name === 'string' ? node.metadata.name : ''))
               .filter((name): name is string => Boolean(name));
-            const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
-            const baseName = `New ${displayName}`;
+            const displayName = translate(`plugins.${newType}.name`, newType);
+            const defaultBaseName = `New ${displayName}`;
+            const presetNodeDefaults = shapePreset
+              ? resolveShapePresetNodeDefaults(shapePreset, translate)
+              : undefined;
+            const baseName = presetNodeDefaults?.name || defaultBaseName;
             const resolvedName = createUniqueName(siblingNames, baseName);
             const res = await mutationAPI.createNode({
               nodeType: newType,
               treeId: treeId as TreeId,
               parentId: targetNodeId,
               name: resolvedName,
+              description: presetNodeDefaults?.description,
               isTemporary: true,
             });
             if (!res?.success) {
@@ -148,6 +167,14 @@ export const createContextMenuAction = (
               return;
             }
             const wcNodeId = res.nodeId as NodeId;
+
+            if (shapePreset) {
+              const updaterAPI = await client.getTreeNodeUpdaterAPI();
+              await updaterAPI.updateTreeNodeDraftData(
+                wcNodeId,
+                buildShapePresetDraftDataPatch(shapePreset)
+              );
+            }
 
             const navigateToCreateDialog = () => {
               const nodeTypePath = String(newType);
