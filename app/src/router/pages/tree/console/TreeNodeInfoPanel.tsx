@@ -345,6 +345,8 @@ export function TreeNodeInfoPanel({
         canDuplicate={canMutate}
         canCopy={canMutate}
         canCut={canMutate}
+        canImport={canCreate}
+        canExport={canCreate}
         canTrash={canMutate && !isBuildRunning}
         canRemove={canMutate && !isBuildRunning}
         canBuild={isBuildable && !isStylerMenuNode}
@@ -363,6 +365,8 @@ export function TreeNodeInfoPanel({
         onDuplicate={() => handleContextMenuTrigger('duplicate')}
         onCopy={() => handleContextMenuTrigger('copy')}
         onCut={() => handleContextMenuTrigger('cut')}
+        onImport={() => handleContextMenuTrigger('import')}
+        onExport={() => handleContextMenuTrigger('export')}
         onTrash={() => handleContextMenuTrigger('trash')}
         onRemove={() => handleContextMenuTrigger('trash')}
         onToggleVisible={(nextVisible) =>

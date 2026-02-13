@@ -4,7 +4,10 @@
  */
 
 import type { TreeId } from '@hierarchidb/core-types';
-import { getShapePresetMenuEntries } from '../features/shape/shapeCreatePresets.ts';
+import {
+  getNodeCreateTemplateMenuEntries,
+  type TemplateTreeContext,
+} from '../features/templates/nodeCreateTemplates.ts';
 import { getPresentation, prefetchAllIcons } from '../plugin-runtime/plugin-presentation.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../plugin-runtime/plugin-registry.ts';
 import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
@@ -30,7 +33,12 @@ export interface PluginMenuItem {
   children?: PluginMenuItem[];
 }
 
-function createMenuItem(plugin: InstalledPlugin, group: string, priority: number): PluginMenuItem {
+function createMenuItem(
+  plugin: InstalledPlugin,
+  group: string,
+  priority: number,
+  treeContext: TreeContext
+): PluginMenuItem {
   const presentation = getPresentation(plugin.nodeType);
   const localizedDescription = presentation?.description?.trim();
   const item: PluginMenuItem = {
@@ -47,21 +55,22 @@ function createMenuItem(plugin: InstalledPlugin, group: string, priority: number
         : plugin.description,
     backgroundColor: plugin.backgroundColor,
   };
-  if (plugin.nodeType === 'shape') {
-    const shapePresetChildren = getShapePresetMenuEntries().map((preset, index) => ({
-      key: preset.key,
-      nodeType: preset.nodeType,
-      createType: preset.createType,
-      label: preset.label,
-      labelKey: preset.labelKey,
-      description: preset.description,
-      descriptionKey: preset.descriptionKey,
+  const templateContext = treeContext satisfies TemplateTreeContext;
+  const templateChildren = getNodeCreateTemplateMenuEntries(plugin.nodeType, templateContext);
+  if (templateChildren.length > 0) {
+    item.children = templateChildren.map((entry, index) => ({
+      key: entry.key,
+      nodeType: entry.nodeType,
+      createType: entry.createType,
+      label: entry.label,
+      labelKey: entry.labelKey,
+      description: entry.description,
+      descriptionKey: entry.descriptionKey,
       icon: item.icon,
       group,
       priority: priority + index + 1,
       backgroundColor: plugin.backgroundColor,
     }));
-    item.children = shapePresetChildren;
   }
   return item;
 }
@@ -88,7 +97,7 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
     if (!plugin) return;
     const group = spec.groupOf[nodeType] || 'core';
     const priority = spec.groups.indexOf(group) * 100 + index;
-    items.push(createMenuItem(plugin, group, priority));
+    items.push(createMenuItem(plugin, group, priority, treeContext));
     used.add(nodeType);
   });
 
@@ -112,16 +121,19 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
     const group = (spec.groupOf[plugin.nodeType] ?? plugin.menuGroup ?? fallbackGroup) as string;
     const groupIndex = Math.max(spec.groups.indexOf(group as (typeof spec.groups)[number]), 0);
     const priority = groupIndex * 100 + baseOffset + idx;
-    items.push(createMenuItem(plugin, group, priority));
+    items.push(createMenuItem(plugin, group, priority, treeContext));
   });
 
   return items;
 }
 
 export function buildMenuItemsForTreeId(treeId?: TreeId | null): PluginMenuItem[] {
+  return buildMenuItemsForContext(normalizeContextFromTreeId(treeId));
+}
+
+export function normalizeContextFromTreeId(treeId?: TreeId | null): TreeContext {
   const t = (treeId || '').toLowerCase();
-  const ctx: TreeContext = t === 'r' ? 'resources' : 'projects';
-  return buildMenuItemsForContext(ctx);
+  return t === 'r' ? 'resources' : 'projects';
 }
 
 export async function prefetchIconsForAllContexts() {

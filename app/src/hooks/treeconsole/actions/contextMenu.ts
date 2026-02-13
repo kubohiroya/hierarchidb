@@ -8,10 +8,11 @@ import { notify } from '@hierarchidb/components';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import {
-  buildShapePresetDraftDataPatch,
-  parseCreateAction,
-  resolveShapePresetNodeDefaults,
-} from '~/features/shape/shapeCreatePresets.ts';
+  importNodeTemplateById,
+  parseNodeCreateAction,
+  resolveNodeCreateDefaults,
+  resolveNodeTemplateExecution,
+} from '~/features/templates/nodeCreateTemplates.ts';
 import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 import type { ContextAction, TreeConsoleActionDeps } from '../types.js';
@@ -68,6 +69,7 @@ export const createContextMenuAction = (
     setSSOT,
     loadChildrenOf,
     refreshUndoRedo,
+    importExport,
     translateWithFallback,
   } = deps;
   const { applyClipboard, openEditDialog, resolvePreviewGuardState, navigation } = helpers;
@@ -132,14 +134,34 @@ export const createContextMenuAction = (
         if (normalizedAction.startsWith('create:')) {
           if (!client || !treeId) return;
           const source = options?.source ?? 'speedDial';
-          const parsedCreate = parseCreateAction(normalizedAction);
+          const parsedCreate = parseNodeCreateAction(normalizedAction);
           if (!parsedCreate) {
             showCommandError('INVALID_OPERATION', `Invalid create action: ${normalizedAction}`);
             return;
           }
           const newType = parsedCreate.nodeType as NodeType;
-          const shapePreset = parsedCreate.nodeType === 'shape' ? parsedCreate.shapePresetId : undefined;
+          const selectedTemplateId = parsedCreate.shapePresetId ?? parsedCreate.templateId;
+          const execution = selectedTemplateId
+            ? resolveNodeTemplateExecution(parsedCreate.nodeType, selectedTemplateId)
+            : null;
+          if (selectedTemplateId && !execution) {
+            showCommandError('INVALID_OPERATION', `Unknown template: ${selectedTemplateId}`);
+            return;
+          }
           try {
+            if (execution?.kind === 'importTemplate') {
+              await importNodeTemplateById({
+                client,
+                treeId: treeId as TreeId,
+                targetParentId: targetNodeId,
+                templateId: execution.templateId,
+              });
+              await refreshParent(targetNodeId);
+              await refreshUndoRedo();
+              fireCmdEvent();
+              return;
+            }
+
             const mutationAPI = await client.getMutationAPI();
             const queryAPI = await client.getQueryAPI();
             const siblings = (await queryAPI.listChildren(targetNodeId)) as TreeNode[];
@@ -148,17 +170,17 @@ export const createContextMenuAction = (
               .filter((name): name is string => Boolean(name));
             const displayName = translate(`plugins.${newType}.name`, newType);
             const defaultBaseName = `New ${displayName}`;
-            const presetNodeDefaults = shapePreset
-              ? resolveShapePresetNodeDefaults(shapePreset, translate)
+            const templateDefaults = execution
+              ? resolveNodeCreateDefaults(execution, translate)
               : undefined;
-            const baseName = presetNodeDefaults?.name || defaultBaseName;
+            const baseName = templateDefaults?.name || defaultBaseName;
             const resolvedName = createUniqueName(siblingNames, baseName);
             const res = await mutationAPI.createNode({
               nodeType: newType,
               treeId: treeId as TreeId,
               parentId: targetNodeId,
               name: resolvedName,
-              description: presetNodeDefaults?.description,
+              description: templateDefaults?.description,
               isTemporary: true,
             });
             if (!res?.success) {
@@ -168,12 +190,9 @@ export const createContextMenuAction = (
             }
             const wcNodeId = res.nodeId as NodeId;
 
-            if (shapePreset) {
+            if (templateDefaults?.draftPatch) {
               const updaterAPI = await client.getTreeNodeUpdaterAPI();
-              await updaterAPI.updateTreeNodeDraftData(
-                wcNodeId,
-                buildShapePresetDraftDataPatch(shapePreset)
-              );
+              await updaterAPI.updateTreeNodeDraftData(wcNodeId, templateDefaults.draftPatch);
             }
 
             const navigateToCreateDialog = () => {
@@ -223,6 +242,67 @@ export const createContextMenuAction = (
             showCommandError('UNKNOWN_ERROR');
             return;
           }
+        }
+
+        if (normalizedAction === 'import') {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.json,.csv';
+          input.onchange = async (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            const detected = importExport.detectFileFormat(file) ?? null;
+            const format: 'json' | 'csv' = detected === 'csv' ? 'csv' : 'json';
+            try {
+              await importExport.importFile({
+                file,
+                targetNodeId,
+                format,
+                onProgress: (progress) => {
+                  console.log('Import progress:', progress);
+                },
+              });
+              await refreshParent(targetNodeId);
+              await refreshUndoRedo();
+              fireCmdEvent();
+            } catch (error) {
+              console.error('Import failed:', error);
+              showCommandError('UNKNOWN_ERROR');
+            }
+          };
+          input.click();
+          return;
+        }
+
+        if (normalizedAction === 'export') {
+          if (!selectedIds.length && !targetNodeId) return;
+          const exportIds =
+            selectedIds.length > 0 && selectedIds.includes(targetNodeId)
+              ? selectedIds
+              : [targetNodeId];
+          try {
+            const blob = await importExport.exportNodes({
+              nodeIds: exportIds,
+              format: 'json',
+              includeChildren: true,
+              onProgress: (progress) => {
+                console.log('Export progress:', progress);
+              },
+            });
+
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `export-${Date.now()}.json`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error('Export failed:', error);
+            showCommandError('UNKNOWN_ERROR');
+          }
+          return;
         }
 
         if (normalizedAction === 'preview') {

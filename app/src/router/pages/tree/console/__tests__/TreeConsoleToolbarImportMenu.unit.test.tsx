@@ -35,49 +35,11 @@ function renderToolbar(props?: Partial<TreeConsoleToolbarProps>) {
 }
 
 describe('TreeConsoleToolbar import menu restrictions', () => {
-  it('disables Import menu entries when allowImport is false', async () => {
-    const onAction = vi.fn();
-    renderToolbar({
-      allowImport: false,
-      onAction,
-      availableTemplates: [{ id: 'template-1', label: 'Folder Template' }],
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'aria.importExportButton' }));
-
-    const importItem = await screen.findByRole('menuitem', {
-      name: 'importExportMenu.import',
-    });
-    expect(importItem).toHaveAttribute('aria-disabled', 'true');
-
+  it('does not render Import/Export toolbar button', () => {
+    renderToolbar();
     expect(
-      screen.queryByRole('menuitem', {
-        name: 'importExportMenu.importTemplate',
-      })
+      screen.queryByRole('button', { name: 'aria.importExportButton' })
     ).toBeNull();
-  });
-
-  it('enables Import menu entries when allowImport is true', async () => {
-    const onAction = vi.fn();
-    renderToolbar({
-      allowImport: true,
-      onAction,
-      availableTemplates: [{ id: 'template-1', label: 'Folder Template' }],
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'aria.importExportButton' }));
-
-    const templateItem = await screen.findByRole('menuitem', {
-      name: 'importExportMenu.importTemplate',
-    });
-    expect(templateItem).not.toHaveAttribute('aria-disabled', 'true');
-
-    const importItem = await screen.findByRole('menuitem', {
-      name: 'importExportMenu.import',
-    });
-    expect(importItem).not.toHaveAttribute('aria-disabled', 'true');
-    fireEvent.click(importItem);
-    expect(onAction).toHaveBeenCalledWith('import', undefined);
   });
 
   it('hides developer IndexedDB reset option when developer mode is disabled', async () => {

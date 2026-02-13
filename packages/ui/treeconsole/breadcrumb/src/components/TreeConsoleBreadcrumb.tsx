@@ -176,6 +176,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     handleDuplicate,
     handleCopy,
     handleCut,
+    handleImport,
+    handleExport,
     handleBuild,
     handleTrash,
     isRootContext,
@@ -370,6 +372,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
         onCreate={handleCreate}
         onCopy={handleCopy}
         onCut={handleCut}
+        onImport={handleImport}
+        onExport={handleExport}
         onEdit={() => {
           if (!isRootContext) handleEdit();
           else handleContextMenuClose();

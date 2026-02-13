@@ -362,6 +362,8 @@
       "copy": "コピー",
       "cut": "切り取り",
       "duplicate": "複製",
+      "import": "インポート",
+      "export": "エクスポート",
       "moveToTrash": "ゴミ箱に移動",
       "visible": "表示",
       "hidden": "非表示",
@@ -387,6 +389,14 @@
         "description": "全世界は行政レベル1を選択し、中国とインドのみレベル2まで拡張します。",
         "nodeNameTemplate": "世界 L1 + 中国/インド L1+2 {{date}}",
         "nodeDescriptionTemplate": "プリセット: {{preset}}。詳細度とサイズのバランスを取った設定です。"
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "populationByCountries": {
+          "name": "各国人口（Population by Countries）",
+          "description": "国別人口の集計ノードを含むフォルダーテンプレートを作成します。"
+        }
       }
     },
     "content": {
