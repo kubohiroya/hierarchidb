@@ -23,6 +23,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
+      '@hierarchidb/ui-i18n': path.resolve(__dirname, '../../packages/ui/i18n/src/index.ts'),
     },
   },
 });

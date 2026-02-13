@@ -39,6 +39,17 @@ const mergeRouteData = (current: RouteStepData | undefined, updates: Partial<Rou
   ...updates,
 });
 
+const createRouteDataUpdater = (
+  initial: RouteStepData | undefined,
+  onChange: (next: RouteStepData) => void,
+): ((updates: Partial<RouteEntity>) => void) => {
+  let latest = initial ?? {};
+  return (updates) => {
+    latest = mergeRouteData(latest, updates);
+    onChange(latest);
+  };
+};
+
 const hasAnyRouteSelection = (selection?: Record<string, boolean[]>): boolean =>
   Boolean(selection && Object.values(selection).some((row) => row?.some(Boolean)));
 
@@ -84,10 +95,11 @@ registry.registerConfigProvider<RouteStepData>({
         componentFactory: (p: StepProps) => {
           const routeData = p.data ?? {};
           const draft = toStepDraftPayload(routeData, p.nodeId);
+          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
           return (
             <RouteDataSourceStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeRouteData(routeData, updates))}
+              onUpdate={handleUpdate}
               onValidationChange={p.setValid}
               nodeId={resolveNodeId(p.nodeId)}
             />
@@ -101,10 +113,11 @@ registry.registerConfigProvider<RouteStepData>({
         componentFactory: (p: StepProps) => {
           const routeData = p.data ?? {};
           const draft = toStepDraftPayload(routeData, p.nodeId);
+          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
           return (
             <RouteSelectionStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeRouteData(routeData, updates))}
+              onUpdate={handleUpdate}
               onValidationChange={p.setValid}
               mode={p.mode}
               nodeId={resolveNodeId(p.nodeId)}
@@ -120,10 +133,11 @@ registry.registerConfigProvider<RouteStepData>({
         componentFactory: (p: StepProps) => {
           const routeData = p.data ?? {};
           const draft = toStepDraftPayload(routeData, p.nodeId);
+          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
           return (
             <RouteProcessingStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeRouteData(routeData, updates))}
+              onUpdate={handleUpdate}
               nodeId={resolveNodeId(p.nodeId)}
               disabled={Boolean(p.disabled)}
             />
@@ -138,10 +152,11 @@ registry.registerConfigProvider<RouteStepData>({
         componentFactory: (p: StepProps) => {
           const routeData = p.data ?? {};
           const draft = toStepDraftPayload(routeData, p.nodeId);
+          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
           return (
             <RouteBuildStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeRouteData(routeData, updates))}
+              onUpdate={handleUpdate}
               nodeId={resolveNodeId(p.nodeId)}
               parentId={resolveNodeId(p.parentId)}
               mode={p.mode}
