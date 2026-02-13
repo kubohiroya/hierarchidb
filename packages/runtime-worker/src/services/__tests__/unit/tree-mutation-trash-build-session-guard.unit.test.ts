@@ -84,7 +84,7 @@ const createCommandProcessorMock = () => ({
   processCommand: vi.fn(async () => ({ success: true, seq: 1 })),
 });
 
-describe('TreeMutationService moveNodesToTrash running session guard', () => {
+describe('TreeMutationService moveNodesToArchive running session guard', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -109,7 +109,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
       processor as unknown as CommandProcessor
     );
 
-    const result = await service.moveNodesToTrash([asNodeId('shape-1')]);
+    const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: false, error: 'TRASH_BUILD_SESSION_RUNNING' });
     expect(sessionsBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);
@@ -131,7 +131,7 @@ describe('TreeMutationService moveNodesToTrash running session guard', () => {
       processor as unknown as CommandProcessor
     );
 
-    const result = await service.moveNodesToTrash([asNodeId('shape-1')]);
+    const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
 
     expect(result).toEqual({ success: true });
     expect(sessionsBulkGetMock).toHaveBeenCalledWith([asNodeId('shape-1')]);

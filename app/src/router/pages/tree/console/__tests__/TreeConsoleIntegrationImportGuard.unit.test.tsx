@@ -35,7 +35,7 @@ const mockHookActions = {
   handleCopy: vi.fn(),
   handlePaste: vi.fn(),
   handleDuplicate: vi.fn(),
-  handleTrash: vi.fn(),
+  handleArchive: vi.fn(),
   handleImport: vi.fn(),
   handleExport: vi.fn(),
   handleContextMenuAction: vi.fn(),
@@ -74,7 +74,7 @@ const useTreeConsoleIntegrationMock = vi.fn(() => ({
   viewMode: 'list' as const,
   canCreate: true,
   canEdit: true,
-  canTrash: true,
+  canArchive: true,
   actions: mockHookActions,
   state: {
     canUndo: false,

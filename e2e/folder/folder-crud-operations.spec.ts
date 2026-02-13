@@ -5,7 +5,7 @@ import {
   clearTestData,
   createTestFolder,
   createChildFolder,
-  moveToTrash,
+  moveToArchive,
   waitForSubTreeUpdate,
   waitForDraftUpdate,
   buildAppUrl,
@@ -142,7 +142,7 @@ test.describe('Folder CRUD Operations', () => {
     const folderName = await createTestFolder(page, 'Delete Test');
 
     // フォルダを削除
-    await moveToTrash(page, folderName);
+    await moveToArchive(page, folderName);
 
     // メインビューからフォルダが消えることを確認
     await expect(
@@ -160,7 +160,7 @@ test.describe('Folder CRUD Operations', () => {
   test('アーカイブからの復元', async ({ page }) => {
     // テストフォルダを作成して削除
     const folderName = await createTestFolder(page, 'Restore Test');
-    await moveToTrash(page, folderName);
+    await moveToArchive(page, folderName);
 
     // アーカイブを開く
     await page.locator('[data-testid="trash-button"]').click();
@@ -190,7 +190,7 @@ test.describe('Folder CRUD Operations', () => {
   test('アーカイブからの完全削除', async ({ page }) => {
     // テストフォルダを作成して削除
     const folderName = await createTestFolder(page, 'Permanent Delete Test');
-    await moveToTrash(page, folderName);
+    await moveToArchive(page, folderName);
 
     // アーカイブを開く
     await page.locator('[data-testid="trash-button"]').click();

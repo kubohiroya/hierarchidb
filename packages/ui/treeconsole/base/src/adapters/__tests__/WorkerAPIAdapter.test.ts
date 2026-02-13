@@ -30,9 +30,9 @@ const createMockWorkerAPI = () =>
     moveNodes: vi.fn(),
     duplicateNodes: vi.fn(),
     pasteNodes: vi.fn(),
-    moveToTrash: vi.fn(),
+    moveToArchive: vi.fn(),
     remove: vi.fn(),
-    restoreFromTrash: vi.fn(),
+    restoreFromArchive: vi.fn(),
     importNodes: vi.fn(),
     undo: vi.fn(),
     redo: vi.fn(),
@@ -56,9 +56,9 @@ describe('WorkerAPIAdapter', () => {
     mockWorkerAPI.getMutationAPI = vi.fn().mockResolvedValue({
       moveNodes: mockWorkerAPI.moveNodes,
       duplicateNodes: mockWorkerAPI.duplicateNodes,
-      moveNodesToTrash: mockWorkerAPI.moveToTrash,
+      moveNodesToArchive: mockWorkerAPI.moveToArchive,
       removeNodes: mockWorkerAPI.remove,
-      restoreNodesFromTrash: mockWorkerAPI.restoreFromTrash,
+      restoreNodesFromArchive: mockWorkerAPI.restoreFromArchive,
     });
 
     updaterAPI = {
@@ -187,17 +187,17 @@ describe('WorkerAPIAdapter', () => {
       );
     });
 
-    it('should handle deleteNodes (moveToTrash) conversion', async () => {
+    it('should handle deleteNodes (moveToArchive) conversion', async () => {
       const successResult: CommandResult = {
         success: true,
         seq: 123,
       };
 
-      mockWorkerAPI.moveToTrash.mockResolvedValue(successResult);
+      mockWorkerAPI.moveToArchive.mockResolvedValue(successResult);
 
       await adapter.trashNodes(['node1', 'node2'] as any);
 
-      expect(mockWorkerAPI.moveToTrash).toHaveBeenCalledWith(['node1', 'node2']);
+      expect(mockWorkerAPI.moveToArchive).toHaveBeenCalledWith(['node1', 'node2']);
     });
   });
 

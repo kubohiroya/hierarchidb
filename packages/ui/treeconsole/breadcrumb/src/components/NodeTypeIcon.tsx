@@ -5,7 +5,7 @@
 import type { MouseEvent, ReactElement } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
-  Delete as TrashIcon,
+  Delete as ArchiveIcon,
   Description as FileIcon,
   Folder as FolderIcon,
   Home as HomeIcon,
@@ -74,9 +74,9 @@ function getIconByType(nodeType: string) {
     case 'ProjectsRoot':
     case 'ResourcesRoot':
       return HomeIcon;
-    case 'ProjectsTrashRoot':
-    case 'ResourcesTrashRoot':
-      return TrashIcon;
+    case 'ProjectsArchiveRoot':
+    case 'ResourcesArchiveRoot':
+      return ArchiveIcon;
     default:
       return FolderIcon;
   }

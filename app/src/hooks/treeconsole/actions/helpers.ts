@@ -164,7 +164,7 @@ async function buildAncestryChain(params: {
   }
 }
 
-export async function resolveTrashNavigationTarget(params: {
+export async function resolveArchiveNavigationTarget(params: {
   client: Remote<WorkerAPI> | undefined;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;

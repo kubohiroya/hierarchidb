@@ -37,7 +37,7 @@ export function TreeTableContextMenu({
   const isBuildRunning = Boolean(
     node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
   );
-  const canTrash = !isRoot && !isBuildRunning;
+  const canArchive = !isRoot && !isBuildRunning;
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
@@ -128,8 +128,8 @@ export function TreeTableContextMenu({
       isVisible={node?.visible ?? true}
       canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}
-      canRemove={canTrash}
-      canTrash={canTrash}
+      canRemove={canArchive}
+      canArchive={canArchive}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
@@ -167,7 +167,7 @@ export function TreeTableContextMenu({
         triggerContextAction('duplicate', { expandTarget: true, source: 'treetable' });
         handleClose();
       }}
-      onTrash={() => {
+      onArchive={() => {
         if (!node || isRoot) {
           handleClose();
           return;

@@ -17,7 +17,7 @@ import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
 import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions.js';
-import { useTreeConsoleTrashWatcher } from './useTreeConsoleTrashWatcher.js';
+import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher.js';
 
 type TreeConsolePanelProps = BaseTreeConsolePanelProps;
 type TreeConsoleBreadcrumbProps = React.ComponentProps<
@@ -75,7 +75,7 @@ export function useTreeConsoleIntegrationInner({
     viewMode,
     canCreate,
     canEdit,
-    canTrash,
+    canArchive,
     actions,
     state,
   } = useTreeConsoleIntegration({
@@ -145,7 +145,7 @@ export function useTreeConsoleIntegrationInner({
     [client]
   );
 
-  const { hasTrashItems, trashRootIdRef } = useTreeConsoleTrashWatcher({
+  const { hasArchiveItems, trashRootIdRef } = useTreeConsoleArchiveWatcher({
     client,
     treeId,
   });
@@ -258,7 +258,7 @@ export function useTreeConsoleIntegrationInner({
     treeId,
     pageNodeId,
     pageTreeNode,
-    hasTrashItems,
+    hasArchiveItems,
     trashRootIdRef,
     navigate,
     actions: {
@@ -268,7 +268,7 @@ export function useTreeConsoleIntegrationInner({
       handleCopy: actions.handleCopy,
       handlePaste: actions.handlePaste,
       handleDuplicate: actions.handleDuplicate,
-      handleTrash: actions.handleTrash,
+      handleArchive: actions.handleArchive,
       handleImport: actions.handleImport,
       handleExport: actions.handleExport,
       handleRefresh: actions.handleRefresh,
@@ -279,7 +279,7 @@ export function useTreeConsoleIntegrationInner({
       canUndo: state.canUndo,
       canRedo: state.canRedo,
       canPaste: state.canPaste,
-      canTrash,
+      canArchive,
     },
     developerModeEnabled,
     handleIndexedDbReset,
@@ -294,7 +294,7 @@ export function useTreeConsoleIntegrationInner({
     (pageTreeNode.nodeType ?? '').toLowerCase() === 'trash_highlight_placeholder';
 
   const lowerPageNodeId = pageNodeId ? String(pageNodeId).toLowerCase() : '';
-  const isTrashPage =
+  const isArchivePage =
     pageTreeNode?.nodeType === 'trash' ||
     lowerPageNodeId.endsWith(':trash') ||
     lowerPageNodeId === 'trash';
@@ -322,7 +322,7 @@ export function useTreeConsoleIntegrationInner({
     rowClickAction,
     canCreate,
     canEdit,
-    canTrash,
+    canArchive,
     showNavigationButtons: true,
     dense: false,
     onNodeClick: actions.handleNodeClick,
@@ -332,7 +332,7 @@ export function useTreeConsoleIntegrationInner({
     onSearchClear: actions.handleSearchClear,
     onCreate: actions.handleCreate,
     onEdit: actions.handleEdit,
-    onDelete: actions.handleTrash,
+    onDelete: actions.handleArchive,
     onRefresh: actions.handleRefresh,
     onExpandAll: actions.handleExpandAll,
     onCollapseAll: actions.handleCollapseAll,
@@ -351,7 +351,7 @@ export function useTreeConsoleIntegrationInner({
     onMoveNodes: actions.handleMoveNodes,
     buildSessionIndicator,
     onNavigateTags: handleTagsNavigate,
-    useTrashColumns: isTrashPage,
+    useArchiveColumns: isArchivePage,
     speedDialSuppressed,
     setSpeedDialSuppressed,
     isDialogRoute,
@@ -371,8 +371,8 @@ export function useTreeConsoleIntegrationInner({
     onNodeClick: actions.handleBreadcrumbNavigate,
     treeId,
     pageNodeId,
-    useTrashColumns: isTrashPage,
-    iconInteractive: !isTrashPage,
+    useArchiveColumns: isArchivePage,
+    iconInteractive: !isArchivePage,
     onContextAction: handleBreadcrumbContextAction,
     resolveOpenSteps,
     leftSlot: tagsLeftSlot,

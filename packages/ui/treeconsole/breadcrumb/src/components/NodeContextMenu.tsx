@@ -59,9 +59,9 @@ export interface NodeContextMenuProps {
   canOpen?: boolean;
   canEdit?: boolean;
   canCreate?: boolean;
-  /** @deprecated Use canTrash */
+  /** @deprecated Use canArchive */
   canRemove?: boolean;
-  canTrash?: boolean;
+  canArchive?: boolean;
   canDuplicate?: boolean;
   canCopy?: boolean;
   canCut?: boolean;
@@ -77,16 +77,16 @@ export interface NodeContextMenuProps {
   onEdit?: (options?: { openInNewTab?: boolean }) => void;
   onCreate?: (type: string, options?: { openInNewTab?: boolean }) => void;
   onDuplicate?: () => void;
-  /** @deprecated Use onTrash */
+  /** @deprecated Use onArchive */
   onRemove?: () => void;
-  onTrash?: () => void;
+  onArchive?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
   onImport?: () => void;
   onExport?: () => void;
   onToggleVisible?: (nextValue: boolean) => void;
   isVisible?: boolean;
-  isTrashRoot?: boolean;
+  isArchiveRoot?: boolean;
   mode?: 'restore' | 'dispose';
   onRestoreToOriginal?: () => void;
   onRestoreToCurrent?: () => void;
@@ -131,7 +131,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canEdit = true,
     canCreate = true,
     canRemove,
-    canTrash = true,
+    canArchive = true,
     canDuplicate = true,
     canCopy = true,
     canCut = true,
@@ -148,7 +148,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onCreate: _onCreate,
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
-    onTrash: _onTrash,
+    onArchive: _onArchive,
     onCopy: _onCopy,
     onCut: _onCut,
     onImport: _onImport,
@@ -189,10 +189,10 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const copyLabel = translateWithFallback('treeConsole.contextMenu.copy', 'Copy');
   const cutLabel = translateWithFallback('treeConsole.contextMenu.cut', 'Cut');
   const duplicateLabel = translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate');
-  const moveToTrashLabel = translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash');
+  const moveToArchiveLabel = translateWithFallback('treeConsole.contextMenu.moveToArchive', 'Move to Archive');
   const importLabel = translateWithFallback('treeConsole.contextMenu.import', 'Import');
   const exportLabel = translateWithFallback('treeConsole.contextMenu.export', 'Export');
-  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
+  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? (canRemove ?? true);
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
   const hiddenLabel = translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
@@ -359,9 +359,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onDuplicate?.(); }, 0);
   }, [blurActive, handleMainMenuClose]);
 
-  const handleTrashClick = useCallback(() => {
+  const handleArchiveClick = useCallback(() => {
     const current = propsRef.current;
-    const handler = current.onTrash ?? current.onRemove;
+    const handler = current.onArchive ?? current.onRemove;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { handler?.(); }, 0);
@@ -617,11 +617,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText primary={duplicateLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label={moveToTrashLabel}>
+        <MenuItem onClick={handleArchiveClick} disabled={!allowArchive} aria-label={moveToArchiveLabel}>
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>
-          <ListItemText primary={moveToTrashLabel} />
+          <ListItemText primary={moveToArchiveLabel} />
         </MenuItem>
 
         <Divider />

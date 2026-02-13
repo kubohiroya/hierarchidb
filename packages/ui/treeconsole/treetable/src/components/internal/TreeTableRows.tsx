@@ -35,11 +35,11 @@ export interface TreeTableRowsProps {
   controller: {onMoveNodes?: (nodes: string[], target: string) => void | Promise<void>} | undefined;
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
-  useTrashColumns: boolean;
+  useArchiveColumns: boolean;
   trashAction?: 'restore' | 'empty';
 }
 
-export function getTrashRowSx(theme: Theme): Record<string, unknown> {
+export function getArchiveRowSx(theme: Theme): Record<string, unknown> {
   if (theme.palette.mode !== 'dark') {
     return {};
   }
@@ -78,7 +78,7 @@ export function TreeTableRows({
   controller,
   disableDragAndDrop,
   visualSelectionSet,
-  useTrashColumns,
+  useArchiveColumns,
 }: TreeTableRowsProps) {
   const renderFallbackRow = useCallback((node: TreeNode) => {
     const inheritedSelection = hasSelectedAncestor(node.id as NodeId);
@@ -86,7 +86,7 @@ export function TreeTableRows({
     const visuallyChecked = forcedSelectAll || visualSelectionSet.has(node.id as NodeId);
     const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
     const baseDepth = Math.max(0, ((node.depth ?? 1) + depthOffset) - 1);
-    const indentDepth = useTrashColumns ? Math.max(0, baseDepth - 1) : baseDepth;
+    const indentDepth = useArchiveColumns ? Math.max(0, baseDepth - 1) : baseDepth;
 
     return (
       <StyledTableRow
@@ -94,7 +94,7 @@ export function TreeTableRows({
         selected={visualSelectionSet.has(node.id as NodeId)}
         draggable={false}
         onClick={(e) => handleRowClick(node, e)}
-        sx={useTrashColumns ? ((theme: Theme) => getTrashRowSx(theme)) : undefined}
+        sx={useArchiveColumns ? ((theme: Theme) => getArchiveRowSx(theme)) : undefined}
       >
         <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
           <Checkbox
@@ -151,7 +151,7 @@ export function TreeTableRows({
         </TableCell>
       </StyledTableRow>
     );
-  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, useTrashColumns, visualSelectionSet]);
+  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, useArchiveColumns, visualSelectionSet]);
 
   return (
     <TableBody>
@@ -186,9 +186,9 @@ export function TreeTableRows({
           outlineOffset: '-2px',
         };
 
-        const appliedRowSx: SxProps<Theme> = useTrashColumns
+        const appliedRowSx: SxProps<Theme> = useArchiveColumns
           ? (theme: Theme) => ({
-              ...getTrashRowSx(theme),
+              ...getArchiveRowSx(theme),
               ...baseRowSx,
             })
           : baseRowSx;

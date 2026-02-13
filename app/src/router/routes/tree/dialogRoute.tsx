@@ -10,9 +10,9 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import type {
-  TrashDialogData,
-  TrashDialogRouteParams,
-} from '~/router/pages/tree/trash/TrashDialog.js';
+  ArchiveDialogData,
+  ArchiveDialogRouteParams,
+} from '~/router/pages/tree/trash/ArchiveDialog.js';
 import {
   type LoadNodeActionReturn,
   loadNodeAction,
@@ -24,15 +24,15 @@ import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRo
 export type TreeDialogLoaderResult =
   | {
       kind: 'trash';
-      data: TrashDialogData;
-      params: TrashDialogRouteParams;
+      data: ArchiveDialogData;
+      params: ArchiveDialogRouteParams;
     }
   | {
       kind: 'plugin';
       data: PluginDialogLoaderData;
     };
 
-const TrashDialogLazy = lazy(() => import('~/router/pages/tree/trash/TrashDialog.js'));
+const ArchiveDialogLazy = lazy(() => import('~/router/pages/tree/trash/ArchiveDialog.js'));
 
 const loadTreeDialog = async ({
   params,
@@ -67,9 +67,9 @@ const loadTreeDialog = async ({
 
   // Special handling for trash dialog
   if (normalizedNodeType === 'trash') {
-    const trashDialogModule = await import('~/router/pages/tree/trash/TrashDialog.js');
+    const trashDialogModule = await import('~/router/pages/tree/trash/ArchiveDialog.js');
     if (trashDialogModule.clientLoader) {
-      const trashParams = toTrashDialogParams(resolvedParams);
+      const trashParams = toArchiveDialogParams(resolvedParams);
       const data = await trashDialogModule.clientLoader({ params: trashParams });
       return {
         kind: 'trash',
@@ -116,7 +116,7 @@ const renderTreeDialog = (loaderResult: TreeDialogLoaderResult) => {
     const { data, params } = loaderResult;
     return (
       <Suspense fallback={null}>
-        <TrashDialogLazy data={data} params={params} />
+        <ArchiveDialogLazy data={data} params={params} />
       </Suspense>
     );
   }
@@ -168,7 +168,7 @@ type TreeDialogResolvedParams = {
   step?: string;
 };
 
-function toTrashDialogParams(params: TreeDialogResolvedParams): TrashDialogRouteParams {
+function toArchiveDialogParams(params: TreeDialogResolvedParams): ArchiveDialogRouteParams {
   return {
     treeId: params.treeId,
     pageNodeId: params.pageNodeId,

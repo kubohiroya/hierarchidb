@@ -53,11 +53,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       if (selectedIds.length !== 1) return;
       await dialogHelpers.openEditDialog(selectedIds[0] as NodeId);
     },
-    handleTrash: () => {
-      void mutationActions.moveSelectionToTrash();
+    handleArchive: () => {
+      void mutationActions.moveSelectionToArchive();
     },
     handleRemove: () => {
-      void mutationActions.moveSelectionToTrash();
+      void mutationActions.moveSelectionToArchive();
     },
     handleRefresh: async () => {
       const root = pageNodeId as NodeId;

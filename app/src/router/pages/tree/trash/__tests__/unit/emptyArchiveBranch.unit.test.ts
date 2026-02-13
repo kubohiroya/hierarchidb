@@ -1,14 +1,14 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
-import { emptyTrashBranch } from '../../emptyTrashBranch.js';
+import { emptyArchiveBranch } from '../../emptyArchiveBranch.js';
 
 const nodeA = 'trash-node-a' as NodeId;
 const nodeB = 'trash-node-b' as NodeId;
 
-describe('emptyTrashBranch', () => {
+describe('emptyArchiveBranch', () => {
   it('removes the provided node ids', async () => {
     const removeNodes = vi.fn().mockResolvedValue({ success: true });
-    const result = await emptyTrashBranch({
+    const result = await emptyArchiveBranch({
       nodeIds: [nodeA, nodeB],
       getMutationAPI: async () => ({ removeNodes }),
     });
@@ -19,7 +19,7 @@ describe('emptyTrashBranch', () => {
 
   it('skips execution when list is empty', async () => {
     const removeNodes = vi.fn();
-    const result = await emptyTrashBranch({
+    const result = await emptyArchiveBranch({
       nodeIds: [],
       getMutationAPI: async () => ({ removeNodes }),
     });
@@ -30,7 +30,7 @@ describe('emptyTrashBranch', () => {
 
   it('propagates worker failures', async () => {
     const removeNodes = vi.fn().mockResolvedValue({ success: false, error: 'boom' });
-    const result = await emptyTrashBranch({
+    const result = await emptyArchiveBranch({
       nodeIds: [nodeA],
       getMutationAPI: async () => ({ removeNodes }),
     });

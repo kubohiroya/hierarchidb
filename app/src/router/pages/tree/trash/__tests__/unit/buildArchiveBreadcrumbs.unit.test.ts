@@ -5,7 +5,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { buildTrashBreadcrumbs } from '../../buildTrashBreadcrumbs.js';
+import { buildArchiveBreadcrumbs } from '../../buildArchiveBreadcrumbs.js';
 
 function createNode(
   id: string,
@@ -44,12 +44,12 @@ function createNode(
   } satisfies TreeNode;
 }
 
-describe('buildTrashBreadcrumbs', () => {
+describe('buildArchiveBreadcrumbs', () => {
   const trashRoot = createNode('r:trash', {
     parentId: 'r:root' as NodeId,
     nodeType: 'trash' as TreeNode['nodeType'],
     depth: 0,
-    metadata: { name: 'Trash', description: '', tags: [] },
+    metadata: { name: 'Archive', description: '', tags: [] },
     draftMetadata: null,
   });
 
@@ -65,7 +65,7 @@ describe('buildTrashBreadcrumbs', () => {
       [String(trashedNode.id), trashedNode],
     ]);
 
-    const breadcrumbs = buildTrashBreadcrumbs({
+    const breadcrumbs = buildArchiveBreadcrumbs({
       treeId: 'r',
       rootNode: trashRoot,
       targetNodeId: trashedNode.id,
@@ -91,7 +91,7 @@ describe('buildTrashBreadcrumbs', () => {
       [String(trashedNode.id), trashedNode],
     ]);
 
-    const breadcrumbs = buildTrashBreadcrumbs({
+    const breadcrumbs = buildArchiveBreadcrumbs({
       treeId: 'r',
       rootNode: trashRoot,
       targetNodeId: trashedNode.id,

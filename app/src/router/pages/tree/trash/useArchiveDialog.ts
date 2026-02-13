@@ -17,15 +17,15 @@ import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
-import { buildTrashBreadcrumbs } from './buildTrashBreadcrumbs.js';
-import { buildTrashTreeData } from './buildTrashTreeData.js';
-import { emptyTrashBranch } from './emptyTrashBranch.js';
-import { getTrashDisplayName } from './getTrashDisplayName.js';
-import type { TrashDialogData, TrashDialogRouteParams } from './TrashDialog.js';
+import { buildArchiveBreadcrumbs } from './buildArchiveBreadcrumbs.js';
+import { buildArchiveTreeData } from './buildArchiveTreeData.js';
+import { emptyArchiveBranch } from './emptyArchiveBranch.js';
+import { getArchiveDisplayName } from './getArchiveDisplayName.js';
+import type { ArchiveDialogData, ArchiveDialogRouteParams } from './ArchiveDialog.js';
 
 const DEFAULT_SIZE: DialogSize = { width: 960, height: 640 };
 
-export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
+export function useArchiveFrameState(initialMode: DialogDisplayMode = 'normal') {
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>(initialMode);
   const [dialogSize, setDialogSize] = useState<DialogSize>(DEFAULT_SIZE);
   const [dialogPosition, setDialogPosition] = useState<DialogPosition>(
@@ -176,7 +176,7 @@ function createTreeNodeMap(nodes: TreeNode[] | undefined): Map<string, TreeNode>
   return map;
 }
 
-export function useTrashDialog(data: TrashDialogData, params: TrashDialogRouteParams) {
+export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogRouteParams) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
@@ -188,7 +188,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
   const pageNodeId = (pageNodeIdParam ??
     (data.tree?.rootId as NodeId | undefined) ??
     null) as NodeId | null;
-  const trashViewRootId = (data.activeTrashNodeId ??
+  const trashViewRootId = (data.activeArchiveNodeId ??
     targetNodeId ??
     data.trashRootNode?.id ??
     null) as NodeId | null;
@@ -204,19 +204,19 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
     if (data.trashRootNode?.id) {
       map.set(String(data.trashRootNode.id), data.trashRootNode);
     }
-    if (data.activeTrashNode?.id) {
-      map.set(String(data.activeTrashNode.id), data.activeTrashNode);
+    if (data.activeArchiveNode?.id) {
+      map.set(String(data.activeArchiveNode.id), data.activeArchiveNode);
     }
     return map;
-  }, [data.activeTrashNode, data.trashItems, data.trashRootNode]);
+  }, [data.activeArchiveNode, data.trashItems, data.trashRootNode]);
 
   const treeData = useMemo(() => {
-    const viewRoot = data.activeTrashNode ?? data.trashRootNode;
+    const viewRoot = data.activeArchiveNode ?? data.trashRootNode;
     if (!viewRoot) return [] as HierarchicalTreeNode[];
 
-    const { nodes } = buildTrashTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
+    const { nodes } = buildArchiveTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
     return nodes;
-  }, [data.activeTrashNode, data.trashRootNode, nodeMap, treeId]);
+  }, [data.activeArchiveNode, data.trashRootNode, nodeMap, treeId]);
 
   useEffect(() => {
     const hasDrafts = treeData.some((node) => (node as TreeNode).draftData);
@@ -250,7 +250,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
         ...source,
         metadata: {
           ...(source as { metadata?: TreeNode['metadata'] }).metadata,
-          name: getTrashDisplayName(node),
+          name: getArchiveDisplayName(node),
           description:
             (
               (source as { metadata?: TreeNode['metadata'] }).metadata as
@@ -292,22 +292,22 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
   }, [data.trashRootNode, nodeMap, trashViewRootId, treeData]);
 
   const breadcrumbItems = useMemo(() => {
-    const breadcrumbRoot = data.trashRootNode ?? data.activeTrashNode;
+    const breadcrumbRoot = data.trashRootNode ?? data.activeArchiveNode;
     if (!breadcrumbRoot || !treeId) return [];
-    return buildTrashBreadcrumbs({
+    return buildArchiveBreadcrumbs({
       treeId,
       rootNode: breadcrumbRoot,
       targetNodeId: trashViewRootId,
       nodeMap,
     });
-  }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
+  }, [data.activeArchiveNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
 
   const locale = useMemo(
     () => i18n.resolvedLanguage ?? i18n.language ?? 'en',
     [i18n.language, i18n.resolvedLanguage]
   );
 
-  const formatTrashTimestamp = useCallback(
+  const formatArchiveTimestamp = useCallback(
     (input?: unknown): string => {
       const numeric =
         typeof input === 'number' ? input : typeof input === 'string' ? Number(input) : undefined;
@@ -362,7 +362,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
         label: t('trash.columns.name'),
         sortable: true,
         width: 300,
-        render: (_value: unknown, node: HierarchicalTreeNode) => getTrashDisplayName(node),
+        render: (_value: unknown, node: HierarchicalTreeNode) => getArchiveDisplayName(node),
       },
       {
         id: 'nodeType',
@@ -381,11 +381,11 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
             removedAt?: number | string;
             deletedAt?: number | string;
           };
-          return formatTrashTimestamp(typed.removedAt ?? typed.deletedAt);
+          return formatArchiveTimestamp(typed.removedAt ?? typed.deletedAt);
         },
       },
     ],
-    [formatTrashTimestamp, t]
+    [formatArchiveTimestamp, t]
   );
 
   const closeDialog = useCallback(
@@ -416,7 +416,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
     try {
       const client = WorkerAPIClient.getSingleton();
       const mutationAPI = await client.getMutationAPI();
-      const result = await mutationAPI.restoreNodesFromTrash({ nodeIds: selectedIds });
+      const result = await mutationAPI.restoreNodesFromArchive({ nodeIds: selectedIds });
       if (!result.success) {
         console.error('Restore failed:', result.error);
         return;
@@ -442,7 +442,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
     }
     setLoading(true);
     try {
-      const result = await emptyTrashBranch({
+      const result = await emptyArchiveBranch({
         nodeIds: removalNodeIds,
         getMutationAPI: async () => {
           const client = WorkerAPIClient.getSingleton();
@@ -476,7 +476,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
     });
   }, []);
 
-  const frameState = useTrashFrameState('normal');
+  const frameState = useArchiveFrameState('normal');
 
   const frameSx = useMemo(
     () => ({

@@ -72,7 +72,7 @@ function renderPanel(data: HierarchicalTreeNode[]): TreeTableController {
     viewMode: 'list',
     canCreate: true,
     canEdit: true,
-    canTrash: true,
+    canArchive: true,
     onNodeClick: noop,
     onNodeSelect: noop,
     onNodeExpand: noop,

@@ -154,8 +154,8 @@ export const useTreeConsoleContent = (
       onDuplicate: controller.onDuplicate
         ? (nodeId: string) => controller.onDuplicate?.(nodeId as NodeId)
         : undefined,
-      onTrash: controller.onTrash
-        ? (nodeIds: string[]) => controller.onTrash?.(nodeIds as NodeId[])
+      onArchive: controller.onArchive
+        ? (nodeIds: string[]) => controller.onArchive?.(nodeIds as NodeId[])
         : undefined,
     };
   }, [controller]);

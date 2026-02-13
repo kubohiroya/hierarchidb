@@ -51,7 +51,7 @@ export interface TreeConsoleToolbarController {
 export interface TreeConsoleToolbarContext {
   isProjectsPage?: boolean;
   isResourcesPage?: boolean;
-  isTrashPage?: boolean;
+  isArchivePage?: boolean;
 }
 
 export interface TreeConsoleToolbarProps {
@@ -84,7 +84,7 @@ export interface TreeConsoleToolbarProps {
   /**
    * Whether there are items in trash
    */
-  hasTrashItems?: boolean;
+  hasArchiveItems?: boolean;
 
   /**
    * Identifier for the trash root or folder used when opening the trash dialog.
@@ -170,9 +170,9 @@ export interface TreeConsoleToolbarProps {
    */
   canDuplicate?: boolean;
   /**
-   * Enables the "Move to Trash" toolbar action.
+   * Enables the "Move to Archive" toolbar action.
    */
-  canTrash?: boolean;
+  canArchive?: boolean;
 
   /**
    * Importable templates for the current console. If empty or undefined,

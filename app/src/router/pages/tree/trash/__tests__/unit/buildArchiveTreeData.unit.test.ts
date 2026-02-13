@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { buildTrashTreeData } from '../../buildTrashTreeData.js';
+import { buildArchiveTreeData } from '../../buildArchiveTreeData.js';
 
 function createNode(
   id: string,
@@ -40,7 +40,7 @@ function createNode(
   } satisfies TreeNode;
 }
 
-describe('buildTrashTreeData', () => {
+describe('buildArchiveTreeData', () => {
   const root = createNode('trash-root', { parentId: 'console-root' as NodeId, depth: 0 });
 
   it('prefers original metadata and marks entries as trash', () => {
@@ -64,7 +64,7 @@ describe('buildTrashTreeData', () => {
       [child.id, child],
     ]);
 
-    const { nodes, rootId } = buildTrashTreeData({
+    const { nodes, rootId } = buildArchiveTreeData({
       treeId: 'r',
       rootNode: root,
       nodeMap,
@@ -91,7 +91,7 @@ describe('buildTrashTreeData', () => {
       [orphan.id, orphan],
     ]);
 
-    const { nodes } = buildTrashTreeData({
+    const { nodes } = buildArchiveTreeData({
       treeId: 'r',
       rootNode: root,
       nodeMap,

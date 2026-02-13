@@ -52,7 +52,7 @@ const defaultProps: TreeConsoleHeaderProps = {
   currentNodeInfo: null,
   controller: mockController,
   previousNodePath: [],
-  isTrashPage: false,
+  isArchivePage: false,
   isProjectsPage: false,
   isResourcesPage: true,
   currentNodeId: 'test-node',
@@ -81,8 +81,8 @@ describe('TreeConsoleHeader', () => {
     expect(screen.getByText(/projects/i)).toBeDefined();
   });
 
-  it('should show trash indicator when isTrashPage is true', () => {
-    render(<TreeConsoleHeader {...defaultProps} isTrashPage={true} />);
+  it('should show trash indicator when isArchivePage is true', () => {
+    render(<TreeConsoleHeader {...defaultProps} isArchivePage={true} />);
 
     const items = screen.getAllByText(/trash/i);
     expect(items.length).toBeGreaterThan(0);

@@ -211,7 +211,7 @@ export async function createChildFolder(
 /**
  * Moves a folder-plugin to trash
  */
-export async function moveToTrash(page: Page, folderName: string): Promise<void> {
+export async function moveToArchive(page: Page, folderName: string): Promise<void> {
   const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
   await folderNode.click({ button: 'right' });
 
@@ -269,7 +269,7 @@ export async function renameFolder(
 /**
  * Restores a folder from the trash panel back to the main console.
  */
-export async function restoreFromTrash(page: Page, folderName: string): Promise<void> {
+export async function restoreFromArchive(page: Page, folderName: string): Promise<void> {
   const trashButton = page.locator('[data-testid="trash-button"]');
   await trashButton.click();
 

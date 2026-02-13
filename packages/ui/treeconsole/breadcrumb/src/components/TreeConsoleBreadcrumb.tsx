@@ -170,7 +170,7 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     openStepsLoading,
     confirmDialogOpen,
     setConfirmDialogOpen,
-    handleConfirmTrash,
+    handleConfirmArchive,
     handleCreate,
     handleEdit,
     handleDuplicate,
@@ -179,21 +179,21 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     handleImport,
     handleExport,
     handleBuild,
-    handleTrash,
+    handleArchive,
     isRootContext,
     isNavigating,
     hoverId,
     setHoverId,
     hoverBlocked,
     setHoverBlocked,
-    useTrashColumnsFlag,
+    useArchiveColumnsFlag,
     trashActionValue,
   } = useTreeConsoleBreadcrumb(props);
   const contextMenuNodeId = contextMenuNode?.id ?? contextMenuNode?.treeNodeId;
-  const isTrashDisabledForContextNode = Boolean(
+  const isArchiveDisabledForContextNode = Boolean(
     contextMenuNodeId && props.trashDisabledNodeIds?.has(String(contextMenuNodeId))
   );
-  const canTrashFromContextMenu = !isRootContext && !isTrashDisabledForContextNode;
+  const canArchiveFromContextMenu = !isRootContext && !isArchiveDisabledForContextNode;
 
   return (
     <>
@@ -248,7 +248,7 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                 nodeId: nodeIdString,
                 pageNodeId,
                 holderType: node.holderType as 'draft' | 'trash' | undefined,
-                useTrashColumns: useTrashColumnsFlag,
+                useArchiveColumns: useArchiveColumnsFlag,
                 trashAction: trashActionValue,
                 isRootLike,
               };
@@ -364,8 +364,8 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
         isVisible={contextMenuNode?.visible !== false}
         canCreate={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)}
         canEdit={!isRootContext}
-        canTrash={canTrashFromContextMenu}
-        canRemove={canTrashFromContextMenu}
+        canArchive={canArchiveFromContextMenu}
+        canRemove={canArchiveFromContextMenu}
         canDuplicate={!isRootContext}
         canCopy={!isRootContext}
         canCut={!isRootContext}
@@ -382,12 +382,12 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
           if (!isRootContext) handleDuplicate();
           else handleContextMenuClose();
         }}
-        onTrash={() => {
-          if (canTrashFromContextMenu) handleTrash();
+        onArchive={() => {
+          if (canArchiveFromContextMenu) handleArchive();
           else handleContextMenuClose();
         }}
         onRemove={() => {
-          if (canTrashFromContextMenu) handleTrash();
+          if (canArchiveFromContextMenu) handleArchive();
           else handleContextMenuClose();
         }}
         onOpen={() =>
@@ -421,14 +421,14 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
       />
 
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Move to Trash</DialogTitle>
+        <DialogTitle>Move to Archive</DialogTitle>
         <DialogContent>
           <Typography>Move this item and all its children to trash?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConfirmTrash} color="error" variant="contained">
-            Move to Trash
+          <Button onClick={handleConfirmArchive} color="error" variant="contained">
+            Move to Archive
           </Button>
         </DialogActions>
       </Dialog>

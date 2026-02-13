@@ -1,15 +1,15 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { getTrashDisplayName } from './getTrashDisplayName.js';
+import { getArchiveDisplayName } from './getArchiveDisplayName.js';
 
-export interface BuildTrashTreeDataParams {
+export interface BuildArchiveTreeDataParams {
   treeId: string;
   rootNode: TreeNode;
   nodeMap?: Map<string, TreeNode>;
 }
 
-export interface BuildTrashTreeDataResult {
+export interface BuildArchiveTreeDataResult {
   nodes: HierarchicalTreeNode[];
   rootId: string;
 }
@@ -25,7 +25,7 @@ export interface BuildTrashTreeDataResult {
  * Typical usage in the trash dialog:
  *
  * ```ts
- * const { nodes, rootId } = buildTrashTreeData({
+ * const { nodes, rootId } = buildArchiveTreeData({
  *   treeId,
  *   rootNode: trashRoot,
  *   nodeMap,
@@ -33,16 +33,16 @@ export interface BuildTrashTreeDataResult {
  * ```
  *
  * @param params.treeId Current console identifier (e.g. "r"). Used for diagnostics only.
- * @param params.rootNode Trash root node returned by the worker.
+ * @param params.rootNode Archive root node returned by the worker.
  * @param params.nodeMap Optional lookup of node id -> TreeNode from IndexedDB snapshots.
  *
  * @returns Flat TreeConsole rows for every known trash node (excluding the root).
  */
-export function buildTrashTreeData({
+export function buildArchiveTreeData({
   treeId: _treeId,
   rootNode,
   nodeMap,
-}: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
+}: BuildArchiveTreeDataParams): BuildArchiveTreeDataResult {
   const rootId = String(rootNode.id);
   const sourceMap = new Map<string, TreeNode>();
 
@@ -76,7 +76,7 @@ export function buildTrashTreeData({
     const originalParentId = (node as { originalParentId?: NodeId }).originalParentId;
     const removedAt = (node as { removedAt?: number }).removedAt;
 
-    const displayName = getTrashDisplayName(node) || rawId;
+    const displayName = getArchiveDisplayName(node) || rawId;
 
     selectedNodes.push({
       id,

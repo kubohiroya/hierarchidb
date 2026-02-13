@@ -1,12 +1,12 @@
 import type { TreeMutationAPI } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
-export type EmptyTrashBranchDeps = {
+export type EmptyArchiveBranchDeps = {
   nodeIds: ReadonlyArray<NodeId>;
   getMutationAPI: () => Promise<Pick<TreeMutationAPI, 'removeNodes'>>;
 };
 
-export type EmptyTrashBranchResult = {
+export type EmptyArchiveBranchResult = {
   success: boolean;
 };
 
@@ -17,10 +17,10 @@ export type EmptyTrashBranchResult = {
  * For the trash container view, pass the visible row IDs. For branch views,
  * pass the branch root identifier.
  */
-export async function emptyTrashBranch({
+export async function emptyArchiveBranch({
   nodeIds,
   getMutationAPI,
-}: EmptyTrashBranchDeps): Promise<EmptyTrashBranchResult> {
+}: EmptyArchiveBranchDeps): Promise<EmptyArchiveBranchResult> {
   const targets = nodeIds.filter((id): id is NodeId => Boolean(id));
   if (targets.length === 0) {
     return { success: false };

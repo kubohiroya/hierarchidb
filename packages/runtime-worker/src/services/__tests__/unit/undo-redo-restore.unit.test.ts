@@ -8,8 +8,8 @@ import type { CoreDB } from '../../CoreDB.js';
 
 // fulltext tables removed; stub without fulltext support
 
-describe('Undo/Redo for restoreFromTrash', () => {
-  type TrashedNode = TreeNode & {
+describe('Undo/Redo for restoreFromArchive', () => {
+  type ArchivedNode = TreeNode & {
     removedAt?: number;
     originalParentId?: NodeId;
     originalName?: string;
@@ -19,15 +19,15 @@ describe('Undo/Redo for restoreFromTrash', () => {
     CoreDB,
     'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'
   > & {
-    state: Map<NodeId, TrashedNode>;
+    state: Map<NodeId, ArchivedNode>;
     changeSubject: Subject<TreeChangeEvent>;
   };
 
   type CoreStub = CoreStubBase;
 
   let core: CoreStub;
-  let state: Map<NodeId, TrashedNode>;
-  const makeNode = (id: string, parentId: string, name: string): TrashedNode => ({
+  let state: Map<NodeId, ArchivedNode>;
+  const makeNode = (id: string, parentId: string, name: string): ArchivedNode => ({
     id: id as NodeId,
     parentId: parentId as NodeId,
     nodeType: 'folder' as NodeType,
@@ -46,8 +46,8 @@ describe('Undo/Redo for restoreFromTrash', () => {
   });
 
   beforeEach(async () => {
-    state = new Map<NodeId, TrashedNode>();
-    state.set('t_trash' as NodeId, makeNode('t_trash', 'r_root', 'Trash'));
+    state = new Map<NodeId, ArchivedNode>();
+    state.set('t_trash' as NodeId, makeNode('t_trash', 'r_root', 'Archive'));
     state.set('x' as NodeId, makeNode('x', 't_trash', 'X'));
 
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
@@ -67,7 +67,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
         state.delete(id);
       }),
       createNode: vi.fn(async (node: TreeNode) => {
-        const extended: TrashedNode = {
+        const extended: ArchivedNode = {
           ...node,
           removedAt: undefined,
           originalParentId: node.parentId,
@@ -85,9 +85,9 @@ describe('Undo/Redo for restoreFromTrash', () => {
     // nothing to destroy; no fulltext DB
   });
 
-  it('undo/redo restoreFromTrash', async () => {
+  it('undo/redo restoreFromArchive', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('restoreFromTrash', {
+    const env = cp.createEnvelope('restoreFromArchive', {
       nodeIds: ['x' as NodeId],
       toParentId: 'r_root' as NodeId,
     });

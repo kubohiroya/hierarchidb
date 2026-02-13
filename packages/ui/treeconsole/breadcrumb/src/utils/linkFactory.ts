@@ -9,7 +9,7 @@ export interface BuildTreeConsoleLinkOptions {
   holderType?: HolderType | null;
   holderTargetId?: NodeId | string | null;
   holderMetaParentId?: NodeId | string | null;
-  useTrashColumns?: boolean;
+  useArchiveColumns?: boolean;
   trashAction?: 'restore' | 'empty';
   isRootLike?: boolean;
 }
@@ -21,7 +21,7 @@ export function buildTreeConsoleLinkHref({
   holderType: _holderType,
   holderTargetId: _holderTargetId,
   holderMetaParentId,
-  useTrashColumns,
+  useArchiveColumns,
   trashAction,
   isRootLike,
 }: BuildTreeConsoleLinkOptions): string {
@@ -42,8 +42,8 @@ export function buildTreeConsoleLinkHref({
     return `/t/${normalizedTreeId}`;
   }
 
-  const isTrashContext = Boolean(useTrashColumns);
-  if (!isTrashContext) {
+  const isArchiveContext = Boolean(useArchiveColumns);
+  if (!isArchiveContext) {
     return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
   }
 

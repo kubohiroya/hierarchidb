@@ -14,7 +14,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
     currentNodeInfo,
     controller: _controller,
     previousNodePath: _previousNodePath,
-    isTrashPage,
+    isArchivePage,
     isProjectsPage,
     isResourcesPage,
     currentNodeId,
@@ -23,7 +23,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
     depthOffset: _depthOffset = 0,
   } = props;
 
-  const pageType = isTrashPage
+  const pageType = isArchivePage
     ? 'trash'
     : isProjectsPage
       ? 'projects'
@@ -31,7 +31,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         ? 'resources'
         : 'default';
 
-  const pageColor = isTrashPage
+  const pageColor = isArchivePage
     ? '#d32f2f'
     : isProjectsPage
       ? '#1976d2'
@@ -80,7 +80,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           {pageType}
         </Typography>
 
-        {isTrashPage && (
+        {isArchivePage && (
           <Typography
             variant="caption"
             sx={{

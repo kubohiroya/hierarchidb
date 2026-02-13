@@ -95,11 +95,11 @@ export function useTreeConsoleLoader({
             })),
           });
         }
-        const shouldFlattenTrash =
+        const shouldFlattenArchive =
           pageTreeNode?.nodeType === 'trash' && parentId === (pageNodeId as NodeId);
         let displayNodes: TreeNode[] = children;
 
-        if (shouldFlattenTrash) {
+        if (shouldFlattenArchive) {
           const batches: TreeNode[][] = await Promise.all(
             children.map((child) => queryAPI.listChildren(child.id as NodeId))
           );

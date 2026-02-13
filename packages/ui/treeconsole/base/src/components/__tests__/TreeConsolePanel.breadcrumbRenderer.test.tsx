@@ -66,7 +66,7 @@ function buildProps(overrides: Partial<TreeConsolePanelProps> = {}): TreeConsole
     viewMode: 'list',
     canCreate: true,
     canEdit: true,
-    canTrash: true,
+    canArchive: true,
     onNodeClick: noop,
     onNodeSelect: noop,
     onNodeExpand: noop,
@@ -103,7 +103,7 @@ describe('TreeConsolePanel breadcrumbRenderer', () => {
   });
 
   it('invokes the custom renderer with default props and allows fallback rendering', () => {
-    const items = [{ id: 'trash', name: 'Trash' }];
+    const items = [{ id: 'trash', name: 'Archive' }];
     let capturedDefaultProps: TreeConsoleBreadcrumbRendererProps['defaultRendererProps'] | undefined;
     const renderer = vi.fn((params: TreeConsoleBreadcrumbRendererProps) => {
       capturedDefaultProps = params.defaultRendererProps;

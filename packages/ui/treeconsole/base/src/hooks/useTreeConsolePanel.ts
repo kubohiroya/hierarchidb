@@ -34,7 +34,7 @@ export interface TreeConsolePanelLogicArgs {
   readonly treeId?: string;
   readonly pageTreeNode?: TreeNode;
   readonly infoPanel?: ReactElement;
-  readonly useTrashColumns?: boolean;
+  readonly useArchiveColumns?: boolean;
   readonly trashAction?: 'restore' | 'empty';
   readonly onNodeClick?: (node: HierarchicalTreeNode) => void;
   readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
@@ -93,7 +93,7 @@ export function useTreeConsolePanel({
   treeId,
   pageTreeNode,
   infoPanel,
-  useTrashColumns,
+  useArchiveColumns,
   trashAction,
   onNodeClick,
   onNodeSelect,
@@ -143,7 +143,7 @@ export function useTreeConsolePanel({
       const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
       const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
       const originalNameValue =
-        useTrashColumns && typeof (node as { originalName?: string }).originalName === 'string'
+        useArchiveColumns && typeof (node as { originalName?: string }).originalName === 'string'
           ? (node as { originalName?: string }).originalName
           : undefined;
       const displayName =
@@ -239,7 +239,7 @@ export function useTreeConsolePanel({
     resolvePreviewGuardState,
     rootNodeId,
     selectedIds,
-    useTrashColumns,
+    useArchiveColumns,
   ]);
 
   const footerTopLevel = Array.isArray(data) ? data.length : 0;
@@ -258,9 +258,9 @@ export function useTreeConsolePanel({
       treeId,
       variant: 'default',
       pageNodeId,
-      useTrashColumns: useTrashColumns ?? false,
+      useArchiveColumns: useArchiveColumns ?? false,
       trashAction,
-      iconInteractive: !useTrashColumns,
+      iconInteractive: !useArchiveColumns,
       onDropToNode: onMoveNodes
         ? (targetId: string, draggedId: string) => onMoveNodes?.([draggedId], targetId)
         : undefined,
@@ -279,7 +279,7 @@ export function useTreeConsolePanel({
       trashDisabledNodeIds,
       treeId,
       trashAction,
-      useTrashColumns,
+      useArchiveColumns,
       leftSlot,
     ]
   );
