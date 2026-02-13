@@ -3,10 +3,11 @@ import {
   type PluginStepProps,
   type PluginStepConfig,
   type StartBatchContext,
+  type StepData,
 } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import type { RouteEntity } from '@hierarchidb/route-api';
 import type { RouteUpdaterPayload } from '../../common/types/index.js';
+import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
@@ -17,64 +18,63 @@ import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
-type RouteStepData = Partial<RouteEntity>;
+type RouteStepData = StepData & RouteUpdaterPayload;
 
 type StepProps = PluginStepProps<RouteStepData>;
+
+const ensureDraft = (data?: PluginStepProps['data']): RouteStepData => {
+  const fallbackId = 'route-draft' as NodeId;
+  if (data && typeof data === 'object') {
+    const cast = data as Partial<RouteUpdaterPayload> & { id?: string; parentId?: NodeId };
+    const base = toRouteUpdaterPayload(
+      cast as RouteUpdaterPayload,
+      (cast.treeNodeId ?? cast.id ?? fallbackId) as NodeId,
+    );
+    return {
+      ...(base as RouteUpdaterPayload),
+    };
+  }
+  const base = toRouteUpdaterPayload(null, fallbackId);
+  return {
+    ...(base as RouteUpdaterPayload),
+  };
+};
 
 const resolveNodeId = (nodeId?: string): NodeId | undefined => (
   typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined
 );
 
-const toStepDraftPayload = (data: RouteStepData | undefined, nodeId?: string): RouteUpdaterPayload => {
-  const fallbackId = 'route-draft' as NodeId;
+const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): RouteStepData => {
+  const nextDraftMetadata = updates.draftMetadata ?? current.draftMetadata ?? null;
+  const nextDraftData = {
+    ...(current.draftData ?? {}),
+    ...(updates.draftData ?? {}),
+  };
   return {
-    treeNodeId: resolveNodeId(nodeId) ?? fallbackId,
-    draftMetadata: { name: '', description: '', tags: [] },
-    draftData: { ...(data ?? {}) } as RouteEntity,
-  } as RouteUpdaterPayload;
-};
-
-const mergeRouteData = (current: RouteStepData | undefined, updates: Partial<RouteEntity>): RouteStepData => ({
-  ...(current ?? {}),
-  ...updates,
-});
-
-const createRouteDataUpdater = (
-  initial: RouteStepData | undefined,
-  onChange: (next: RouteStepData) => void,
-): ((updates: Partial<RouteEntity>) => void) => {
-  let latest = initial ?? {};
-  return (updates) => {
-    latest = mergeRouteData(latest, updates);
-    onChange(latest);
+    ...current,
+    ...updates,
+    draftMetadata: nextDraftMetadata,
+    draftData: nextDraftData,
   };
 };
 
 const hasAnyRouteSelection = (selection?: Record<string, boolean[]>): boolean =>
   Boolean(selection && Object.values(selection).some((row) => row?.some(Boolean)));
 
-const hasRouteDataSourceReady = (draftData?: Partial<RouteEntity>): boolean => {
-  if (!draftData?.dataSourceName) {
-    return false;
-  }
-  if (draftData.dataSourceName === 'ide-gsm') {
-    return Boolean(draftData.tabularSourceId);
-  }
-  return true;
-};
-
 const hasRouteConfig = (data?: RouteStepData): boolean => {
-  const draftData = data ?? {};
-  return Boolean(hasRouteDataSourceReady(draftData) && hasAnyRouteSelection(draftData.selectedArrayByCountries));
+  const draftData = data?.draftData ?? {};
+  return Boolean(draftData.dataSourceName && hasAnyRouteSelection(draftData.selectedArrayByCountries));
 };
 
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
-  data?.processingStatus === 'completed';
+  data?.draftData?.processingStatus === 'completed';
 
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
   const { t } = getTranslation();
-  const draft = data ?? {};
-  const hasEssentials = Boolean(hasRouteDataSourceReady(draft) && hasAnyRouteSelection(draft.selectedArrayByCountries));
+  const draft = data?.draftData ?? {};
+  const hasEssentials = Boolean(
+    draft.dataSourceName && hasAnyRouteSelection(draft.selectedArrayByCountries),
+  );
 
   if (!hasEssentials) {
     notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a stage.'));
@@ -93,31 +93,27 @@ registry.registerConfigProvider<RouteStepData>({
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (p: StepProps) => {
-          const routeData = p.data ?? {};
-          const draft = toStepDraftPayload(routeData, p.nodeId);
-          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
+          const draft = ensureDraft(p.data);
           return (
             <RouteDataSourceStep
               draft={draft}
-              onUpdate={handleUpdate}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
               nodeId={resolveNodeId(p.nodeId)}
             />
           );
         },
-        validate: (data?: RouteStepData) => hasRouteDataSourceReady(data),
+        validate: (data?: RouteStepData) => Boolean(data?.draftData?.dataSourceName),
       },
       {
         id: 'route-config',
         label: t('steps.routeConfig.label', 'Route Selection'),
         componentFactory: (p: StepProps) => {
-          const routeData = p.data ?? {};
-          const draft = toStepDraftPayload(routeData, p.nodeId);
-          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
+          const draft = ensureDraft(p.data);
           return (
             <RouteSelectionStep
               draft={draft}
-              onUpdate={handleUpdate}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
               mode={p.mode}
               nodeId={resolveNodeId(p.nodeId)}
@@ -131,13 +127,11 @@ registry.registerConfigProvider<RouteStepData>({
         id: 'processing',
         label: t('steps.processing.label', 'Settings'),
         componentFactory: (p: StepProps) => {
-          const routeData = p.data ?? {};
-          const draft = toStepDraftPayload(routeData, p.nodeId);
-          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
+          const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
               draft={draft}
-              onUpdate={handleUpdate}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               nodeId={resolveNodeId(p.nodeId)}
               disabled={Boolean(p.disabled)}
             />
@@ -150,13 +144,11 @@ registry.registerConfigProvider<RouteStepData>({
         label: t('steps.stage.label', 'Build'),
         optional: false,
         componentFactory: (p: StepProps) => {
-          const routeData = p.data ?? {};
-          const draft = toStepDraftPayload(routeData, p.nodeId);
-          const handleUpdate = createRouteDataUpdater(routeData, p.onChange);
+          const draft = ensureDraft(p.data);
           return (
             <RouteBuildStep
               draft={draft}
-              onUpdate={handleUpdate}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               nodeId={resolveNodeId(p.nodeId)}
               parentId={resolveNodeId(p.parentId)}
               mode={p.mode}
@@ -165,9 +157,9 @@ registry.registerConfigProvider<RouteStepData>({
         },
         capabilities: {
           canStartBatch: (data: RouteStepData) => {
-            const draft = data ?? {};
+            const draft = data?.draftData ?? {};
             return Boolean(
-              hasRouteDataSourceReady(draft) && hasAnyRouteSelection(draft.selectedArrayByCountries),
+              draft.dataSourceName && hasAnyRouteSelection(draft.selectedArrayByCountries),
             );
           },
           startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),
@@ -179,7 +171,7 @@ registry.registerConfigProvider<RouteStepData>({
         label: t('steps.preview.label', 'Preview'),
         optional: true,
         componentFactory: (p: StepProps) => {
-          const draft = toStepDraftPayload(p.data ?? {}, p.nodeId);
+          const draft = ensureDraft(p.data);
           return <RoutePreviewStep draft={draft} nodeId={resolveNodeId(p.nodeId)} />;
         },
         validate: (data?: RouteStepData) => isRouteBuildPersisted(data),

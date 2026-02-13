@@ -80,10 +80,9 @@ describe('route steps provider update merge', () => {
       }),
     ) as RouteDataSourceElement;
 
-    element.props.onUpdate({ dataSourceName: 'ide-gsm' });
+    element.props.onUpdate({ buildConfig: { dataSourceName: 'ide-gsm' } });
     element.props.onUpdate({ tabularSourceId: 'tabular-1' });
-
-    expect(latestData.dataSourceName).toBe('ide-gsm');
-    expect(latestData.tabularSourceId).toBe('tabular-1');
+    expect(latestData.draftData?.buildConfig?.dataSourceName).toBe('ide-gsm');
+    expect(latestData.draftData?.tabularSourceId).toBe('tabular-1');
   });
 });
