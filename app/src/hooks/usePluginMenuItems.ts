@@ -27,6 +27,17 @@ const globalMenuBuilders = globalThis as typeof globalThis & {
   __HDB_MENU_BUILDERS__?: MenuBuildersCache;
 };
 
+const collectIconNames = (list: PluginMenuItem[]): string[] =>
+  list.flatMap((item) => {
+    const own = item.icon?.muiIconName ? [item.icon.muiIconName] : [];
+    const childIcons = Array.isArray(item.children)
+      ? item.children
+        .map((child) => child.icon?.muiIconName)
+        .filter((name): name is string => Boolean(name))
+      : [];
+    return [...own, ...childIcons];
+  });
+
 export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
   const [items, setItems] = useState<PluginMenuItem[]>([]);
 
@@ -44,7 +55,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
                 cached.normalizeContextFromTreeId?.(treeId) ?? 'projects'
               ) ?? []);
           if (active) setItems(list);
-          await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName).filter(Boolean));
+          await prefetchMuiIcons(collectIconNames(list));
           return;
         }
       }
@@ -64,7 +75,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
               cache.normalizeContextFromTreeId?.(treeId) ?? 'projects'
             ) ?? []);
         if (active) setItems(list);
-        await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName).filter(Boolean));
+        await prefetchMuiIcons(collectIconNames(list));
         return;
       } catch (err) {
         console.warn('[usePluginMenuItems] Failed to load menu-builders:', err);

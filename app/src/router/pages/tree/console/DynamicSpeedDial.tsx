@@ -6,14 +6,24 @@
  */
 
 import type { TreeId } from '@hierarchidb/core-types';
+import {
+  type SpeedDialSubmenuAction,
+  SpeedDialSubmenuActions,
+  type SpeedDialSubmenuItem,
+} from '@hierarchidb/ui-speeddial-submenu';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
+import { Box, Portal, SpeedDial, SpeedDialIcon } from '@mui/material';
+import { useMemo } from 'react';
 import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  onCreateAction: (action: string, node: HierarchicalTreeNode, options?: { openInNewTab?: boolean }) => void;
+  onCreateAction: (
+    action: string,
+    node: HierarchicalTreeNode,
+    options?: { openInNewTab?: boolean }
+  ) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
   menuContext?: TreeContext; // Optional explicit context to stage items from VM
@@ -46,6 +56,79 @@ export function DynamicSpeedDial({
   } = useDynamicSpeedDial({ treeId, hidden, onCreateAction, onSuppress });
   const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
   const effectiveHidden = hidden || dialogOpen;
+  const submenuActions = useMemo<SpeedDialSubmenuAction[]>(() => {
+    if (!useVM) return [];
+
+    const actions: SpeedDialSubmenuAction[] = [];
+
+    const buildItemLabel = (item: PluginMenuItem) => {
+      if (item.labelKey) {
+        return translateWithFallback(item.labelKey, item.label);
+      }
+      return translateWithFallback(`plugins.${item.nodeType}.name`, item.label);
+    };
+
+    const buildTooltipLabel = (item: PluginMenuItem) => {
+      const localizedLabel = buildItemLabel(item);
+      const localizedDescription = item.descriptionKey
+        ? translateWithFallback(item.descriptionKey, (item.description ?? '').trim()).trim()
+        : translateWithFallback(`plugins.${item.nodeType}.description`, (item.description ?? '').trim()).trim();
+      const tooltipTemplate = translateWithFallback(
+        'treeConsole.contextMenu.createTooltip',
+        '{{label}}: {{description}}'
+      );
+      if (localizedDescription.length === 0) {
+        return localizedLabel;
+      }
+      return tooltipTemplate
+        .replace('{{label}}', localizedLabel)
+        .replace('{{description}}', localizedDescription);
+    };
+
+    const toCreateType = (item: PluginMenuItem) => item.createType ?? item.nodeType;
+
+    const buildLeafAction = (item: PluginMenuItem, testId: string): SpeedDialSubmenuItem => ({
+      id: `create:${toCreateType(item)}:${language}`,
+      label: buildItemLabel(item),
+      icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
+      onClick: (event) => handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
+      testId,
+    });
+
+    for (const item of vmItems) {
+      const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+      const testIdBase = `create-${item.nodeType}`;
+      if (hasChildren) {
+        actions.push({
+          id: `create:${toCreateType(item)}:${language}`,
+          label: buildItemLabel(item),
+          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
+          tooltipTitle: buildTooltipLabel(item),
+          backgroundColor: item.backgroundColor,
+          hoverBackgroundColor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
+          testId: `${testIdBase}-action`,
+          submenuTestId: `${testIdBase}-submenu`,
+          children: item.children!.map((child, childIndex) =>
+            buildLeafAction(child, `${testIdBase}-submenu-action-${childIndex + 1}`)
+          ),
+        });
+      } else {
+        actions.push({
+          id: `create:${toCreateType(item)}:${language}`,
+          label: buildItemLabel(item),
+          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
+          tooltipTitle: buildTooltipLabel(item),
+          onClick: (event) =>
+            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
+          backgroundColor: item.backgroundColor,
+          hoverBackgroundColor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
+          testId: `${testIdBase}-action`,
+        });
+      }
+    }
+
+    return actions;
+  }, [handleVMActionClick, language, resolveIcon, translateWithFallback, useVM, vmItems]);
 
   // Don't render if hidden
   if (effectiveHidden) {
@@ -119,60 +202,18 @@ export function DynamicSpeedDial({
             'aria-label': createLabel,
           }}
         >
-          {useVM
-            ? vmItems.map((item: PluginMenuItem) => {
-                const localizedLabel = translateWithFallback(
-                  `plugins.${item.nodeType}.name`,
-                  item.label
-                );
-                const localizedDescription = translateWithFallback(
-                  `plugins.${item.nodeType}.description`,
-                  (item.description ?? '').trim()
-                ).trim();
-                const tooltipTemplate = translateWithFallback(
-                  'treeConsole.contextMenu.createTooltip',
-                  '{{label}}: {{description}}'
-                );
-                const tooltipLabel =
-                  localizedDescription.length > 0
-                    ? tooltipTemplate
-                        .replace('{{label}}', localizedLabel)
-                        .replace('{{description}}', localizedDescription)
-                    : localizedLabel;
-
-                return (
-                  <SpeedDialAction
-                    key={`${item.key}-${language}`}
-                    icon={resolveIcon({ nodeType: item.nodeType, icon: item.icon })}
-                    tooltipTitle={tooltipLabel}
-                    onClick={(event) =>
-                      handleVMActionClick(item.nodeType, { openInNewTab: event.shiftKey })
-                    }
-                    sx={{
-                      '& .MuiTooltip-tooltip': {
-                        maxWidth: 300,
-                        fontSize: '0.875rem',
-                      },
-                    }}
-                    FabProps={{
-                      size: 'medium',
-                      color: 'default',
-                      sx: {
-                        pointerEvents: 'auto',
-                        touchAction: 'manipulation',
-                        transform: 'translate3d(0,0,0)',
-                        bgcolor: item.backgroundColor,
-                        '&:hover': {
-                          bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
-                        },
-                      },
-                    }}
-                    tooltipPlacement="left"
-                    data-testid={`create-${item.nodeType}-action`}
-                  />
-                );
-              })
-            : null}
+          {useVM ? (
+            <SpeedDialSubmenuActions
+              actions={submenuActions}
+              open={open}
+              onRequestClose={handleClose}
+              actionFabSx={{
+                pointerEvents: 'auto',
+                touchAction: 'manipulation',
+                transform: 'translate3d(0,0,0)',
+              }}
+            />
+          ) : null}
         </SpeedDial>
 
         {/* Debug overlays: fixed boxes showing current hitboxes and top element at FAB center */}
