@@ -20,6 +20,7 @@ import type { Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { Link as RouterLink } from '@tanstack/react-router';
 import type { DragEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
 import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
 import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
@@ -146,6 +147,7 @@ const BreadcrumbLink = styled(RouterLink, {
 type TreeConsoleBreadcrumbBaseProps = Omit<TreeConsoleBreadcrumbProps, 'renderer'>;
 
 function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): ReactElement | null {
+  const { t } = useTranslation();
   const {
     depthOffset: _depthOffset = 0,
     pageNodeId,
@@ -421,14 +423,18 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
       />
 
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Move to Archive</DialogTitle>
+        <DialogTitle>{t('treeConsole.infoPanel.confirmArchiveTitle', 'Move to Archive')}</DialogTitle>
         <DialogContent>
-          <Typography>Move this item and all its children to trash?</Typography>
+          <Typography>
+            {t('treeConsole.infoPanel.confirmArchiveDescription', 'Move this item and all its children to archive?')}
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmDialogOpen(false)}>
+            {t('treeConsole.infoPanel.confirmArchiveCancel', 'Cancel')}
+          </Button>
           <Button onClick={handleConfirmArchive} color="error" variant="contained">
-            Move to Archive
+            {t('treeConsole.infoPanel.confirmArchiveConfirm', 'Move to Archive')}
           </Button>
         </DialogActions>
       </Dialog>

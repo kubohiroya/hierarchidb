@@ -289,7 +289,8 @@
         "copy": "コピー ({{shortcut}})",
         "paste": "貼り付け ({{shortcut}})",
         "duplicate": "複製 ({{shortcut}})",
-        "moveToTrash": "アーカイブに移動する ({{shortcut}})"
+        "moveToTrash": "アーカイブに移動する ({{shortcut}})",
+        "moveToArchive": "アーカイブに移動する ({{shortcut}})"
       },
       "trashMenu": {
         "restore": "アーカイブから戻す",
@@ -365,6 +366,7 @@
       "import": "インポート",
       "export": "エクスポート",
       "moveToTrash": "アーカイブに移動する",
+      "moveToArchive": "アーカイブに移動する",
       "visible": "表示",
       "hidden": "非表示",
       "checkReference": "参照を確認",
@@ -438,7 +440,11 @@
       "confirmTrashTitle": "アーカイブに移動する",
       "confirmTrashDescription": "この項目と子要素をアーカイブに移動しますか？",
       "confirmTrashCancel": "キャンセル",
-      "confirmTrashConfirm": "アーカイブに移動する"
+      "confirmTrashConfirm": "アーカイブに移動する",
+      "confirmArchiveTitle": "アーカイブに移動する",
+      "confirmArchiveDescription": "この項目と子要素をアーカイブに移動しますか？",
+      "confirmArchiveCancel": "キャンセル",
+      "confirmArchiveConfirm": "アーカイブに移動する"
     }
   },
   "treeTable": {
