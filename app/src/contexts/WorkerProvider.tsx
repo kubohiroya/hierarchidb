@@ -44,10 +44,7 @@ import {
   getWorkerInitFallbackMessage,
   getWorkerInitStartMessage,
 } from '~/i18n/workerInitMessages.js';
-import type {
-  WorkerClientProxy,
-  WorkerInitializationProgress,
-} from '~/worker-runtime/WorkerClientProxy.ts';
+import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
 import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
 import { bootLog } from '../utils/bootLog.ts';
 import { resetWorkerState } from '../worker-runtime/WorkerStateStore.js';
@@ -110,6 +107,7 @@ const WorkerContext = createContext<WorkerContextValue | null>(null);
 
 const noopAsync = async () => undefined;
 const noopSync = () => undefined;
+const DEFAULT_WORKER_INIT_TIMEOUT_MS = 30_000;
 
 const createFallbackWorkerClient = (): Remote<WorkerAPI> => {
   const services = {
@@ -156,9 +154,6 @@ const fallbackWorkerContextValue: WorkerContextValue = {
   },
   getAPI: () => noopWorkerClient,
 };
-
-let initStarted = false;
-let initCompleted = false;
 
 function useBootProgressSafe() {
   return useOptionalBootProgress();
@@ -249,7 +244,6 @@ type WorkerClientGateProps = {
   status: WorkerStatusState;
   renderOverlay: boolean;
   onRetry: () => void;
-  proxy: WorkerClientProxy;
   children: ReactNode;
 };
 
@@ -257,31 +251,8 @@ function WorkerClientGate({
   status,
   renderOverlay,
   onRetry,
-  proxy,
   children,
 }: WorkerClientGateProps) {
-  const initPromiseRef = useRef<Promise<Remote<WorkerAPI>> | null>(null);
-
-  useEffect(() => {
-    if (status.isInitialized) {
-      initPromiseRef.current = null;
-    }
-  }, [status.isInitialized]);
-
-  useEffect(() => {
-    if (!status.client || !status.isInitialized) {
-      if (!initPromiseRef.current) {
-        const promise = proxy.ensureInitialized();
-        initPromiseRef.current = promise;
-        promise.catch(() => {
-          if (initPromiseRef.current === promise) {
-            initPromiseRef.current = null;
-          }
-        });
-      }
-    }
-  }, [proxy, status.client, status.isInitialized]);
-
   if (status.error) {
     return renderOverlay ? <ErrorOverlay error={status.error} onRetry={onRetry} /> : null;
   }
@@ -345,6 +316,8 @@ declare global {
 
 export const WorkerProvider = ({
   children,
+  timeout = DEFAULT_WORKER_INIT_TIMEOUT_MS,
+  debug = false,
   renderOverlay = true,
   fallback = null,
 }: WorkerProviderProps) => {
@@ -361,6 +334,11 @@ export const WorkerProvider = ({
   }));
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
+  const latestProgressMessageRef = useRef(getWorkerInitStartMessage());
+  const lastLoggedProgressRef = useRef(-1);
+  const lastLoggedMessageRef = useRef('');
+  const initializationInFlightRef = useRef<Promise<void> | null>(null);
+  const completionMarkedRef = useRef(false);
   const lastAuthTokenRef = useRef<string | null>(null);
 
   const resetState = useCallback(() => {
@@ -376,6 +354,22 @@ export const WorkerProvider = ({
   useEffect(() => {
     const unsubscribe = proxy.subscribeProgress((detail: WorkerInitializationProgress) => {
       const progressMessage = detail.message ?? getWorkerInitFallbackMessage();
+      latestProgressRef.current = detail.progress;
+      latestProgressMessageRef.current = progressMessage;
+      const normalizedProgress = Math.max(0, Math.min(100, Math.round(detail.progress)));
+      const shouldLogProgress =
+        normalizedProgress <= 0
+        || normalizedProgress >= 100
+        || Math.abs(normalizedProgress - lastLoggedProgressRef.current) >= 10
+        || progressMessage !== lastLoggedMessageRef.current;
+      if (shouldLogProgress) {
+        lastLoggedProgressRef.current = normalizedProgress;
+        lastLoggedMessageRef.current = progressMessage;
+        console.info('[WorkerProvider] init progress', {
+          progress: normalizedProgress,
+          message: progressMessage,
+        });
+      }
       setStatus((prev) => ({
         ...prev,
         initProgress: detail.progress,
@@ -486,12 +480,8 @@ export const WorkerProvider = ({
   }, []);
 
   const markComplete = useCallback(async () => {
-    if (initCompleted) {
-      if (!isWorkerClientReady()) {
-        return;
-      }
-    }
-    initCompleted = true;
+    if (completionMarkedRef.current) return;
+    completionMarkedRef.current = true;
     const readyLabel = t('workerInit.status.ready');
     try {
       if (typeof window !== 'undefined') {
@@ -502,54 +492,119 @@ export const WorkerProvider = ({
     }
     bootProgress?.setStepProgress('Worker', 100, readyLabel);
     bootProgress?.markStepDone('Worker', readyLabel);
+    console.info('[WorkerProvider] initialization complete');
     await finalizeInitialized();
   }, [bootProgress, finalizeInitialized, t]);
 
   const runInitialization = useCallback(async () => {
-    bootLog('WorkerProvider initialize() start');
-    latestProgressRef.current = 0;
-    const initializingLabel = t('workerInit.progressFallback');
-    setStatus((prev) => ({
-      ...prev,
-      error: null,
-      initProgress: 0,
-      initMessage: getWorkerInitStartMessage(),
-      isInitialized: false,
-    }));
-    bootProgress?.setStepProgress('Worker', 0, initializingLabel);
-
-    try {
-      if (typeof window !== 'undefined') {
-        (window as BootWindow).__HDB_INIT_STARTED__ = true;
-      }
-    } catch (error) {
-      logWorkerProviderWarning('Failed to set __HDB_INIT_STARTED__ flag', error);
+    if (initializationInFlightRef.current) {
+      return initializationInFlightRef.current;
     }
+    const initializationTask = (async () => {
+      completionMarkedRef.current = false;
+      lastLoggedProgressRef.current = -1;
+      lastLoggedMessageRef.current = '';
+      const timeoutMs = Number.isFinite(timeout) && timeout > 0
+        ? Math.floor(timeout)
+        : DEFAULT_WORKER_INIT_TIMEOUT_MS;
+      const currentProxyState = proxy.getState();
+      console.info('[WorkerProvider] initialization started', {
+        timeoutMs,
+        proxyState: currentProxyState,
+        debug,
+      });
 
-    try {
-      const client = await proxy.ensureInitialized();
+      bootLog('WorkerProvider initialize() start');
+      latestProgressRef.current = 0;
+      latestProgressMessageRef.current = getWorkerInitStartMessage();
+      const initializingLabel = t('workerInit.progressFallback');
       setStatus((prev) => ({
         ...prev,
-        client,
-        isInitialized: true,
         error: null,
+        initProgress: 0,
+        initMessage: getWorkerInitStartMessage(),
+        isInitialized: false,
       }));
-      await markComplete();
-    } catch (error) {
-      const normalized = normalizeError(error);
-      console.error('[WorkerProvider] ensureInitialized failed', normalized);
-      setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
-      const errorLabel = normalized.message || t('workerInit.error.unknown');
-      bootProgress?.setStepProgress('Worker', latestProgressRef.current, errorLabel);
-    }
-  }, [bootProgress, markComplete, proxy, t]);
+      bootProgress?.setStepProgress('Worker', 0, initializingLabel);
+
+      try {
+        if (typeof window !== 'undefined') {
+          (window as BootWindow).__HDB_INIT_STARTED__ = true;
+        }
+      } catch (error) {
+        logWorkerProviderWarning('Failed to set __HDB_INIT_STARTED__ flag', error);
+      }
+
+      try {
+        const abortController = new AbortController();
+        const client = await new Promise<Remote<WorkerAPI>>((resolve, reject) => {
+          let settled = false;
+          const timeoutId = window.setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            abortController.abort();
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          }, timeoutMs);
+
+          proxy.ensureInitialized({ signal: abortController.signal }).then(
+            (value) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timeoutId);
+              resolve(value);
+            },
+            (error) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timeoutId);
+              reject(error);
+            }
+          );
+        });
+        setStatus((prev) => ({
+          ...prev,
+          client,
+          isInitialized: true,
+          error: null,
+        }));
+        await markComplete();
+      } catch (error) {
+        const normalizedRaw = normalizeError(error);
+        const timedOut = normalizedRaw.name === 'AbortError';
+        const normalized = timedOut
+          ? new Error(
+            `Worker initialization timed out after ${Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS)}ms `
+            + `(progress=${latestProgressRef.current}%, step="${latestProgressMessageRef.current}").`
+          )
+          : normalizedRaw;
+        console.error('[WorkerProvider] ensureInitialized diagnostic', {
+          timedOut,
+          timeoutMs: Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS),
+          progress: latestProgressRef.current,
+          message: latestProgressMessageRef.current,
+          proxyState: currentProxyState,
+          hasCachedClient: Boolean(proxy.getCachedClient()),
+        });
+        console.error('[WorkerProvider] ensureInitialized failed', normalized);
+        setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
+        const errorLabel = normalized.message || t('workerInit.error.unknown');
+        bootProgress?.setStepProgress('Worker', latestProgressRef.current, errorLabel);
+      }
+    })().finally(() => {
+      if (initializationInFlightRef.current === initializationTask) {
+        initializationInFlightRef.current = null;
+      }
+    });
+    initializationInFlightRef.current = initializationTask;
+    return initializationTask;
+  }, [bootProgress, debug, markComplete, proxy, t, timeout]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
     resetWorkerClient();
     resetWorkerState();
-    initCompleted = false;
-    initStarted = false;
+    completionMarkedRef.current = false;
+    initializationInFlightRef.current = null;
     latestProgressRef.current = 0;
     resetState();
     const initializingLabel = t('workerInit.progressFallback');
@@ -568,8 +623,8 @@ export const WorkerProvider = ({
     bootLog('WorkerProvider reset requested');
     resetWorkerClient();
     resetWorkerState();
-    initCompleted = false;
-    initStarted = false;
+    completionMarkedRef.current = false;
+    initializationInFlightRef.current = null;
     latestProgressRef.current = 0;
     resetState();
   }, [resetState]);
@@ -599,10 +654,11 @@ export const WorkerProvider = ({
       }
     }
 
-    if (!initStarted) {
-      initStarted = true;
-      void runInitialization();
-    } else if (initCompleted || isWorkerClientReady()) {
+    if (!status.isInitialized && !status.error) {
+      if (proxyState !== 'initializing') {
+        void runInitialization();
+      }
+    } else if (status.isInitialized || isWorkerClientReady()) {
       void markComplete();
     }
 
@@ -637,7 +693,7 @@ export const WorkerProvider = ({
       if (pollTimer) window.clearInterval(pollTimer);
       if (devFallbackTimer) window.clearTimeout(devFallbackTimer);
     };
-  }, [markComplete, runInitialization]);
+  }, [markComplete, proxyState, runInitialization, status.error, status.isInitialized]);
 
   const contextValue = useMemo<WorkerContextValue>(
     () => ({
@@ -679,7 +735,6 @@ export const WorkerProvider = ({
           status={status}
           renderOverlay={renderOverlay}
           onRetry={retryInitialization}
-          proxy={proxy}
         >
           {children}
         </WorkerClientGate>
