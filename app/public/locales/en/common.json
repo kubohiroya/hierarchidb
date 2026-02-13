@@ -367,6 +367,10 @@
       "build": "Build"
     },
     "shapePresets": {
+      "default": {
+        "name": "Default",
+        "description": "Create a shape with no countries selected."
+      },
       "japanLevel01": {
         "name": "Japan level0+1 (prefectures)",
         "description": "Select Japan only. Include admin level 0 and level 1 boundaries.",
@@ -388,6 +392,10 @@
     },
     "nodeTemplates": {
       "folder": {
+        "default": {
+          "name": "Default",
+          "description": "Create an empty folder with no child nodes."
+        },
         "populationByCountries": {
           "name": "Population by Countries",
           "description": "Create a folder template with country-level population summary nodes."

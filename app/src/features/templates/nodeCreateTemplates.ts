@@ -37,6 +37,7 @@ type FolderTemplateDefinition = {
 
 const CREATE_ACTION_PREFIX = 'create:';
 const GENERIC_TEMPLATE_MARKER = '::template:';
+const DEFAULT_TEMPLATE_ID = 'default';
 
 const FOLDER_TEMPLATE_DEFINITIONS: readonly FolderTemplateDefinition[] = [
   {
@@ -219,6 +220,9 @@ export function parseNodeCreateAction(action: string): ParsedNodeCreateAction | 
 
   const templateId = templateRaw.trim();
   if (!templateId) return null;
+  if (templateId === DEFAULT_TEMPLATE_ID) {
+    return { nodeType };
+  }
 
   return { nodeType, templateId };
 }
@@ -269,17 +273,30 @@ export function getNodeCreateTemplateMenuEntries(
   }
 
   if (nodeType === 'folder') {
-    return FOLDER_TEMPLATE_DEFINITIONS.filter((definition) =>
-      definition.contexts.includes(context)
-    ).map((definition) => ({
-      key: `folder-template-${definition.id}`,
-      nodeType: definition.nodeType,
-      createType: buildTemplateCreateType(definition.nodeType, definition.id),
-      labelKey: definition.labelKey,
-      label: definition.labelFallback,
-      descriptionKey: definition.descriptionKey,
-      description: definition.descriptionFallback,
-    }));
+    const defaultEntry: NodeCreateTemplateMenuEntry = {
+      key: 'folder-template-default',
+      nodeType: 'folder',
+      createType: buildTemplateCreateType('folder', DEFAULT_TEMPLATE_ID),
+      labelKey: 'treeConsole.nodeTemplates.folder.default.name',
+      label: 'Default',
+      descriptionKey: 'treeConsole.nodeTemplates.folder.default.description',
+      description: 'Create an empty folder with no child nodes.',
+    };
+
+    return [
+      defaultEntry,
+      ...FOLDER_TEMPLATE_DEFINITIONS.filter((definition) =>
+        definition.contexts.includes(context)
+      ).map((definition) => ({
+        key: `folder-template-${definition.id}`,
+        nodeType: definition.nodeType,
+        createType: buildTemplateCreateType(definition.nodeType, definition.id),
+        labelKey: definition.labelKey,
+        label: definition.labelFallback,
+        descriptionKey: definition.descriptionKey,
+        description: definition.descriptionFallback,
+      })),
+    ];
   }
 
   return [];

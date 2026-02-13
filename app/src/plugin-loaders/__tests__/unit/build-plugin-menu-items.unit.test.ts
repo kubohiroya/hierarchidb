@@ -55,6 +55,7 @@ describe('menu-builders', () => {
     const folderItem = items.find((item) => item.nodeType === 'folder');
     expect(folderItem).toBeDefined();
     const createTypes = (folderItem?.children ?? []).map((child) => child.createType);
+    expect(createTypes[0]).toBe('folder::template:default');
     expect(createTypes).toContain('folder::template:population-2023');
   });
 
@@ -62,6 +63,7 @@ describe('menu-builders', () => {
     const items = buildMenuItemsForTreeId('t' as TreeId);
     const folderItem = items.find((item) => item.nodeType === 'folder');
     const createTypes = (folderItem?.children ?? []).map((child) => child.createType);
+    expect(createTypes[0]).toBe('folder::template:default');
     expect(createTypes).not.toContain('folder::template:population-2023');
   });
 });

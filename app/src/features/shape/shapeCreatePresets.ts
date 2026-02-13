@@ -37,6 +37,7 @@ export interface ShapePresetMenuEntry {
 
 const CREATE_ACTION_PREFIX = 'create:';
 const SHAPE_PRESET_MARKER = '::preset:';
+const SHAPE_DEFAULT_PRESET_ID = 'default';
 
 const WORLD_ISO2_CODES = [
   'AD',
@@ -392,6 +393,9 @@ export function parseCreateAction(action: string): {
     return null;
   }
   const presetId = presetRaw.trim();
+  if (presetId === SHAPE_DEFAULT_PRESET_ID) {
+    return { nodeType: normalizedNodeType };
+  }
   if (!isShapeCreatePresetId(presetId)) {
     return null;
   }
@@ -399,15 +403,28 @@ export function parseCreateAction(action: string): {
 }
 
 export function getShapePresetMenuEntries(): readonly ShapePresetMenuEntry[] {
-  return SHAPE_CREATE_PRESET_DEFINITIONS.map((preset) => ({
-    key: `shape-preset-${preset.id}`,
+  const defaultEntry: ShapePresetMenuEntry = {
+    key: 'shape-preset-default',
     nodeType: 'shape',
-    createType: buildCreateType('shape', preset.id),
-    labelKey: preset.labelKey,
-    label: preset.labelFallback,
-    descriptionKey: preset.descriptionKey,
-    description: preset.descriptionFallback,
-  }));
+    createType: `shape${SHAPE_PRESET_MARKER}${SHAPE_DEFAULT_PRESET_ID}`,
+    labelKey: 'treeConsole.shapePresets.default.name',
+    label: 'Default',
+    descriptionKey: 'treeConsole.shapePresets.default.description',
+    description: 'Create a shape with no countries selected.',
+  };
+
+  return [
+    defaultEntry,
+    ...SHAPE_CREATE_PRESET_DEFINITIONS.map((preset) => ({
+      key: `shape-preset-${preset.id}`,
+      nodeType: 'shape',
+      createType: buildCreateType('shape', preset.id),
+      labelKey: preset.labelKey,
+      label: preset.labelFallback,
+      descriptionKey: preset.descriptionKey,
+      description: preset.descriptionFallback,
+    })),
+  ];
 }
 
 export function buildShapePresetDraftDataPatch(

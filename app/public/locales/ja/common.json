@@ -326,6 +326,10 @@
       "build": "ビルド"
     },
     "shapePresets": {
+      "default": {
+        "name": "デフォルト",
+        "description": "国が選択されていない状態の shape を作成します。"
+      },
       "japanLevel01": {
         "name": "日本レベル0+1(都道府県)",
         "description": "日本のみを対象に、行政レベル0とレベル1(都道府県)を選択します。",
@@ -347,6 +351,10 @@
     },
     "nodeTemplates": {
       "folder": {
+        "default": {
+          "name": "デフォルト",
+          "description": "子ノードがない空のフォルダーを作成します。"
+        },
         "populationByCountries": {
           "name": "各国人口（Population by Countries）",
           "description": "国別人口の集計ノードを含むフォルダーテンプレートを作成します。"

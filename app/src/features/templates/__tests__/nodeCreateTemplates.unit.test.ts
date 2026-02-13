@@ -22,6 +22,13 @@ describe('nodeCreateTemplates', () => {
     });
   });
 
+  it('parses default folder submenu action as plain folder create', () => {
+    const parsed = parseNodeCreateAction('create:folder::template:default');
+    expect(parsed).toEqual({
+      nodeType: 'folder',
+    });
+  });
+
   it('resolves folder template execution', () => {
     const execution = resolveNodeTemplateExecution('folder', 'population-2023');
     expect(execution).toEqual({
@@ -33,9 +40,11 @@ describe('nodeCreateTemplates', () => {
   it('returns folder template menu entries only for resources', () => {
     const resourcesEntries = getNodeCreateTemplateMenuEntries('folder', 'resources');
     const projectsEntries = getNodeCreateTemplateMenuEntries('folder', 'projects');
+    expect(resourcesEntries[0]?.createType).toBe('folder::template:default');
+    expect(projectsEntries[0]?.createType).toBe('folder::template:default');
     expect(resourcesEntries.map((entry) => entry.createType)).toContain(
       'folder::template:population-2023'
     );
-    expect(projectsEntries).toHaveLength(0);
+    expect(projectsEntries).toHaveLength(1);
   });
 });

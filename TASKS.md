@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #247 / `codex/fix/shape/no-task-complete-guard` / start: 2026-02-13 14:56 JST
 - #241 / `codex/feat/ui/speeddial-submenu` / start: 2026-02-13 11:13 JST
 - #243 / `codex/feat/app/ssot-template-create-menus` / start: 2026-02-13 12:04 JST
 - #241 / `codex/feat/ui/speeddial-submenu` / start: 2026-02-13 11:13 JST
@@ -71,6 +72,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 14:56 JST Issue `fix(shape): prevent silent build completion without tasks` を起票し `https://github.com/kubohiroya/hierarchidb/issues/247` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/shape/no-task-complete-guard` を作成して着手。
 - update: 2026-02-13 12:30 JST #243 で SSOT `app/src/features/templates/nodeCreateTemplates.ts` を導入し、ノードタイプ別テンプレート一覧（shape presets / folder template `population-2023`）を一元定義。`create:shape::preset:*` と `create:folder::template:*` の parser・実行解決を共通化し、folder template は import API 実行で即作成できるようにした。
 - update: 2026-02-13 12:30 JST #243 UI再編として `app/src/plugin-loaders/menu-builders.ts` をSSOT参照に変更し、SpeedDial/ContextMenu の create submenu をノードタイプ別テンプレートから自動構築。resources ツリーでは folder submenu から `Population by Countries` を選択可能にした。
 - update: 2026-02-13 12:30 JST #243 で toolbar の Import/Export メニューを撤去（`packages/ui/treeconsole/toolbar/src/components/toolbar/TreeConsoleToolbarContent.tsx`）。代わりに folder ノード向け context menu（SpeedDial/Breadcrumb/TreeTable/InfoPanel 経由）へ `Import`/`Export` を追加し、`app/src/hooks/treeconsole/actions/contextMenu.ts` で実行処理を統合。
