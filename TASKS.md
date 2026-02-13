@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #243 / `codex/feat/app/ssot-template-create-menus` / start: 2026-02-13 12:04 JST
 - #241 / `codex/feat/ui/speeddial-submenu` / start: 2026-02-13 11:13 JST
 - #239 / `codex/feat/maintenance/indexeddb-maintenance-url` / start: 2026-02-13 09:51 JST
 - #236 / `codex/fix/tree/prevent-trash-while-build-running` / start: 2026-02-13 08:01 JST
@@ -68,6 +69,8 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 12:04 JST #241 を `codex/feat/ui/speeddial-submenu` でコミット・PR化し、PR `https://github.com/kubohiroya/hierarchidb/pull/242` を `ERIA-Cartograph` へ squash merge（commit: `a257fda1eba36882d59d1cd1f559e79528b44658`）して反映完了。
+- update: 2026-02-13 12:04 JST ユーザー指示に基づき後続作業を新規 Issue #243（`feat/app: SSOT-driven template create menus + folder import/export relocation`）として起票し、Project `hierarchidb` の Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-ssot-template-menus` とブランチ `codex/feat/app/ssot-template-create-menus` を作成して着手。
 - blocked: 2026-02-13 11:57 JST #241 `pnpm -w turbo run typecheck --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/app` は差分外既知ブロッカー `@hierarchidb/shape-plugin`（`vtConfig.debug.tiles` readonly `[]` vs mutable `string[]`）で exit 2。`@hierarchidb/ui-speeddial-submenu` / `@hierarchidb/ui-treeconsole-breadcrumb` の typecheck 自体は cache hit で通過。
 - update: 2026-02-13 11:56 JST #241 再検証: `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx src/features/shape/__tests__/shapeCreatePresets.unit.test.ts` は exit 0（2 files / 5 tests passed）。
 - update: 2026-02-13 11:56 JST #241 再検証: `pnpm install` は exit 0、`pnpm -w turbo run build --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/app` も exit 0 を確認。
