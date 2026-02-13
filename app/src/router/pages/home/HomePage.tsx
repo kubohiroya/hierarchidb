@@ -1,6 +1,9 @@
 import type { TreeConfig } from '@hierarchidb/ui-plugin-shell/components';
 import { TreeToggleButtonGroup } from '@hierarchidb/ui-plugin-shell/components';
-import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
+import {
+  type OpenMaintenanceContext,
+  UserLoginButton,
+} from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import {
   Extension as ExtensionIcon,
   Folder,
@@ -11,6 +14,7 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
+import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
 import { APP_VERSION, BUILD_TIME } from '../../../version.ts';
 import { TitleLogo } from './TitleLogo.js';
 import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
@@ -86,6 +90,14 @@ export default function HomePage() {
     );
   }, [githubHref]);
 
+  const handleOpenMaintenance = (context: OpenMaintenanceContext) => {
+    if (typeof window === 'undefined') return;
+    const { url } = createMaintenanceSessionUrl({
+      expectedEmail: context.userEmail,
+    });
+    window.location.assign(url);
+  };
+
   return (
     <>
       <Box
@@ -120,7 +132,7 @@ export default function HomePage() {
           </div>
           {isUserMenuReady ? (
             <Box data-tour-id="home-user-menu">
-              <UserLoginButton />
+              <UserLoginButton onOpenMaintenance={handleOpenMaintenance} />
             </Box>
           ) : null}
         </div>

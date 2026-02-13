@@ -10,6 +10,15 @@ import { ThemeMenu } from './ThemeMenu.js';
 import { UserMenu } from './UserMenu.js';
 import { useUserMenu } from './useUserMenu.js';
 
+export interface OpenMaintenanceContext {
+  userEmail: string | null;
+  isAuthenticated: boolean;
+}
+
+interface UserLoginButtonProps {
+  onOpenMaintenance?: (context: OpenMaintenanceContext) => void;
+}
+
 const buildLanguageOptions = (
   supportedLanguages: Array<{ code: string; name?: string; nativeName?: string; flag?: string }>,
   t: (key: string, defaultValue?: string) => string
@@ -30,7 +39,7 @@ const buildLanguageOptions = (
   return [systemOption, ...mapped];
 };
 
-export const UserLoginButton: React.FC = () => {
+export const UserLoginButton: React.FC<UserLoginButtonProps> = ({ onOpenMaintenance }) => {
   const { t } = useTranslation('common');
   const [pendingAuthDialogOpen, setPendingAuthDialogOpen] = useState(false);
 
@@ -94,6 +103,14 @@ export const UserLoginButton: React.FC = () => {
     menu.openAuthDialog();
   };
 
+  const handleOpenMaintenance = () => {
+    onOpenMaintenance?.({
+      userEmail: menu.userEmail || null,
+      isAuthenticated: menu.isAuthenticated,
+    });
+    handleMenuClose();
+  };
+
   return (
     <>
       <IconButton
@@ -132,6 +149,7 @@ export const UserLoginButton: React.FC = () => {
         onOpenThemeMenu={menu.openThemeMenu}
         onOpenLanguageMenu={menu.openLanguageMenu}
         onOpenClearDialog={menu.openClearDatabaseDialog}
+        onOpenMaintenance={onOpenMaintenance ? handleOpenMaintenance : undefined}
         onLogin={handleLogin}
         onMenuExited={handleMenuExited}
         onLogout={menu.handleLogout}

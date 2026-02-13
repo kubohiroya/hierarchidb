@@ -16,12 +16,17 @@ vi.mock('../../loaders/uiPlugins.js', () => ({
   }),
 }));
 
-vi.mock('@tanstack/react-router', () => ({
-  createRouter: vi.fn(({ history }) => ({ history })),
-  createBrowserHistory: vi.fn(() => ({ location: {} })),
-  createHashHistory: vi.fn(() => ({ location: {} })),
-  createMemoryHistory: vi.fn(() => ({ location: {} })),
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    createRoute: vi.fn(() => createMockRoute()),
+    createRouter: vi.fn(({ history }) => ({ history })),
+    createBrowserHistory: vi.fn(() => ({ location: {} })),
+    createHashHistory: vi.fn(() => ({ location: {} })),
+    createMemoryHistory: vi.fn(() => ({ location: {} })),
+  };
+});
 
 vi.mock('../../routes/rootRoute.js', () => ({
   rootRoute: createMockRoute(),
@@ -37,6 +42,10 @@ vi.mock('../../routes/infoRoute.js', () => ({
 
 vi.mock('../../routes/mapRoute.js', () => ({
   mapRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/maintenanceRoute.js', () => ({
+  maintenanceRoute: createMockRoute(),
 }));
 
 vi.mock('../../routes/auth/index.js', () => ({

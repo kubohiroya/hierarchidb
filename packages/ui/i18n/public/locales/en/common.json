@@ -49,6 +49,9 @@
       "confirm": "Clear All Data",
       "cancel": "Cancel",
       "error": "Failed to clear some cache data. Please try again."
+    },
+    "maintenance": {
+      "label": "IndexedDB Maintenance"
     }
   },
   "common": {
