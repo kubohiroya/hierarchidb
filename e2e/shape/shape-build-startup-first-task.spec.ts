@@ -1,5 +1,5 @@
 import '../utils/skip-if-disabled';
-import { test, expect, type ConsoleMessage } from '@playwright/test';
+import { test, expect, type ConsoleMessage, type Page, type Worker } from '@playwright/test';
 import {
   buildAppUrl,
   clearTestData,
@@ -11,6 +11,7 @@ import {
 type SelectedArrayByCountries = Record<string, boolean[]>;
 
 type ConsolePayload = Record<string, unknown>;
+type WorkerDiagnostics = Record<string, unknown>;
 
 type E2EAuthSeed = {
   accessToken: string;
@@ -62,6 +63,88 @@ const readConsolePayload = async (msg: ConsoleMessage): Promise<ConsolePayload |
 const readString = (payload: ConsolePayload | null, key: string): string | null => {
   const value = payload?.[key];
   return typeof value === 'string' ? value : null;
+};
+
+const appendWorkerTraceLog = (
+  workerStartupLogs: string[],
+  source: string,
+  text: string,
+): void => {
+  workerStartupLogs.push(`[${source}] ${text}`);
+  if (workerStartupLogs.length > 200) {
+    workerStartupLogs.splice(0, workerStartupLogs.length - 200);
+  }
+};
+
+const collectWorkerDiagnostics = async (page: Page, nodeId: string): Promise<WorkerDiagnostics> => {
+  return page.evaluate(async (targetNodeId) => {
+    const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+    if (!ref) {
+      return { error: 'worker-ref-missing' };
+    }
+    try {
+      if (!ref.isInitialized && typeof ref.initialize === 'function') {
+        await ref.initialize();
+      }
+      const api = ref.client ?? ref.getAPI?.();
+      if (!api) {
+        return { error: 'worker-api-missing' };
+      }
+      const [tasksResult, statusResult, sessionRecordResult] = await Promise.all([
+        (async () => {
+          try {
+            const tasks = await api.getBuildTasks('shape', targetNodeId);
+            return { ok: true, tasks };
+          } catch (error) {
+            return { ok: false, error: error instanceof Error ? error.message : String(error) };
+          }
+        })(),
+        (async () => {
+          try {
+            const status = await api.getBuildSessionStatus('shape', targetNodeId);
+            return { ok: true, status };
+          } catch (error) {
+            return { ok: false, error: error instanceof Error ? error.message : String(error) };
+          }
+        })(),
+        (async () => {
+          try {
+            const queryApi = await api.getShapeQueryAPI();
+            const sessionRecord = await queryApi.getBuildSessionRecord(targetNodeId);
+            return { ok: true, sessionRecord };
+          } catch (error) {
+            return { ok: false, error: error instanceof Error ? error.message : String(error) };
+          }
+        })(),
+      ]);
+      const tasks = tasksResult.ok && Array.isArray(tasksResult.tasks) ? tasksResult.tasks : [];
+      const status = statusResult.ok ? statusResult.status : null;
+      const sessionRecord = sessionRecordResult.ok ? sessionRecordResult.sessionRecord : null;
+      return {
+        taskCount: tasks.length,
+        taskHead: tasks.slice(0, 5).map((task: Record<string, unknown>) => ({
+          taskId: task.taskId,
+          type: task.type ?? task.stage,
+          status: task.status,
+          progress: task.progress,
+        })),
+        batchStatus: status,
+        sessionStatus: sessionRecord?.status ?? null,
+        sessionStopReason: sessionRecord?.stopReason ?? null,
+        sessionProgressTotal: sessionRecord?.progress?.total ?? null,
+        sessionProgressCompleted: sessionRecord?.progress?.completed ?? null,
+        sessionProgressFailed: sessionRecord?.progress?.failed ?? null,
+        sessionStageId: sessionRecord?.stageId ?? null,
+        sessionStageHeartbeatAt: sessionRecord?.stageHeartbeatAt ?? null,
+        sessionUpdatedAt: sessionRecord?.updatedAt ?? null,
+        taskQueryError: tasksResult.ok ? null : tasksResult.error,
+        statusQueryError: statusResult.ok ? null : statusResult.error,
+        sessionQueryError: sessionRecordResult.ok ? null : sessionRecordResult.error,
+      };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
+  }, nodeId);
 };
 
 test.describe('Shape build startup first-task UX', () => {
@@ -249,6 +332,7 @@ test.describe('Shape build startup first-task UX', () => {
     const firstTaskSuccessLogs: string[] = [];
     const firstTaskFailureLogs: string[] = [];
     const authRequiredLogs: string[] = [];
+    const workerStartupLogs: string[] = [];
     const startupTrace: string[] = [];
     const pushStartupTrace = (entry: string): void => {
       startupTrace.push(entry);
@@ -260,8 +344,19 @@ test.describe('Shape build startup first-task UX', () => {
     const handleStartupConsole = (msg: ConsoleMessage) => {
       const pending = (async () => {
         const text = msg.text();
-        if (text.includes('[ShapeBuildProgressStep]') || text.includes('[ShapeBuildStartResumeTrace]')) {
+        if (
+          text.includes('[ShapeBuildProgressStep]')
+          || text.includes('[ShapeBuildStartResumeTrace]')
+          || text.includes('[ShapeAwaitingFirstTaskDecisionTrace]')
+          || text.includes('[ShapeBuildWorkerStageTrace]')
+        ) {
           pushStartupTrace(text);
+        }
+        if (text.includes('[shapeBatchAPI] startup')) {
+          workerStartupLogs.push(text);
+          if (workerStartupLogs.length > 120) {
+            workerStartupLogs.splice(0, workerStartupLogs.length - 120);
+          }
         }
         if (text.includes('Authentication required')) {
           authRequiredLogs.push(text);
@@ -309,6 +404,34 @@ test.describe('Shape build startup first-task UX', () => {
         pendingConsoleTasks.delete(pending);
       });
     };
+
+    const workerConsoleHandlers = new Map<Worker, (msg: ConsoleMessage) => void>();
+    const attachWorkerConsole = (worker: Worker) => {
+      if (workerConsoleHandlers.has(worker)) return;
+      appendWorkerTraceLog(workerStartupLogs, 'worker-attach', worker.url());
+      const handler = (msg: ConsoleMessage) => {
+        const text = msg.text();
+        if (
+          text.includes('[shapeBatchAPI] startup')
+          || text.includes('[shapeBatchAPI] progress snapshot')
+          || text.includes('[ShapePipeline]')
+        ) {
+          appendWorkerTraceLog(workerStartupLogs, `worker:${worker.url()}`, text);
+        }
+      };
+      workerConsoleHandlers.set(worker, handler);
+      worker.on('console', handler);
+    };
+    const detachWorkerConsoles = () => {
+      workerConsoleHandlers.forEach((handler, worker) => {
+        worker.off('console', handler);
+        appendWorkerTraceLog(workerStartupLogs, 'worker-detach', worker.url());
+      });
+      workerConsoleHandlers.clear();
+    };
+
+    page.workers().forEach(attachWorkerConsole);
+    page.on('worker', attachWorkerConsole);
     page.on('console', handleStartupConsole);
 
     try {
@@ -331,14 +454,32 @@ test.describe('Shape build startup first-task UX', () => {
       const waitStartMs = Date.now();
       while (Date.now() - waitStartMs < 60000) {
         await Promise.allSettled(Array.from(pendingConsoleTasks));
+        const workerTrace = workerStartupLogs.slice(-20).join('\n');
         if (authRequiredLogs.length > 0) {
-          throw new Error(`Auth required during build start: ${authRequiredLogs[0]}`);
+          throw new Error(
+            `Auth required during build start: ${authRequiredLogs[0]}`
+            + `\nRecent worker startup trace:\n${workerTrace || '(none)'}`
+          );
         }
         if (startupTimeoutLogs.length > 0) {
-          throw new Error(`Startup timeout detected: ${startupTimeoutLogs[0]}`);
+          const workerDiagnostics = await collectWorkerDiagnostics(page, String(shapeNode.nodeId));
+          const recentTrace = startupTrace.slice(-25).join('\n');
+          throw new Error(
+            `Startup timeout detected: ${startupTimeoutLogs[0]}`
+            + `\nRecent startup trace:\n${recentTrace || '(none)'}`
+            + `\nRecent worker startup trace:\n${workerTrace || '(none)'}`
+            + `\nWorker diagnostics:\n${JSON.stringify(workerDiagnostics)}`
+          );
         }
         if (firstTaskFailureLogs.length > 0) {
-          throw new Error(`Startup failed before first-task signal: ${firstTaskFailureLogs[0]}`);
+          const workerDiagnostics = await collectWorkerDiagnostics(page, String(shapeNode.nodeId));
+          const recentTrace = startupTrace.slice(-25).join('\n');
+          throw new Error(
+            `Startup failed before first-task signal: ${firstTaskFailureLogs[0]}`
+            + `\nRecent startup trace:\n${recentTrace || '(none)'}`
+            + `\nRecent worker startup trace:\n${workerTrace || '(none)'}`
+            + `\nWorker diagnostics:\n${JSON.stringify(workerDiagnostics)}`
+          );
         }
         if (firstTaskSuccessLogs.length > 0) {
           break;
@@ -347,8 +488,10 @@ test.describe('Shape build startup first-task UX', () => {
       }
       if (firstTaskSuccessLogs.length === 0) {
         const recentTrace = startupTrace.slice(-15).join('\n');
+        const workerTrace = workerStartupLogs.slice(-20).join('\n');
         throw new Error(
           `No explicit startup outcome within 60s.\nRecent startup trace:\n${recentTrace || '(none)'}`
+          + `\nRecent worker startup trace:\n${workerTrace || '(none)'}`
         );
       }
 
@@ -357,6 +500,8 @@ test.describe('Shape build startup first-task UX', () => {
       expect(firstTaskFailureLogs).toHaveLength(0);
       expect(firstTaskSuccessLogs.length).toBeGreaterThan(0);
     } finally {
+      page.off('worker', attachWorkerConsole);
+      detachWorkerConsoles();
       page.off('console', handleStartupConsole);
     }
   });

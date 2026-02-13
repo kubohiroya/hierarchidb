@@ -55,19 +55,49 @@ stateDiagram-v2
         InitializingWorker --> StartingSession: resume ❓
         BuildingPayloads --> StartingSession: payload ready ❓
         StartingSession --> AwaitingFirstTask: request accepted ✅
-        AwaitingFirstTask --> [*]: first task signal observed ✅
-        AwaitingFirstTask --> [*]: completed without tasks ✅
-        AwaitingFirstTask --> [*]: timeout / failed / paused ❓
     }
 
     Starting --> Processing: startup success ✅
-    Starting --> Failed: startup error / timeout ❓
+    Starting --> Failed: startup error / timeout ❌
     Processing --> Paused: Pause ❓
     Paused --> Starting: Resume ❓
     Processing --> Completed: Success ❓
     Processing --> Failed: Error ❓
     Completed --> Idle: Close Dialog ❓
     Failed --> Idle: Abort / Close ❓
+```
+
+### AwaitingFirstTask 以降の詳細分岐（実装準拠）
+
+```mermaid
+flowchart TD
+    A["AwaitingFirstTask"] --> B{"hasFirstTaskSignal?"}
+    A --> T["timeout (45s)"]:::ng
+
+    B -->|"yes + started task"| S1["startup success: task-execution-started"]:::ok
+    B -->|"yes + queued/progress only"| S2["startup success: task-queue-observed"]:::ok
+    B -->|"no"| C{"buildStatus"}
+
+    C -->|"running"| W1["continue waiting"]:::ok
+    C -->|"failed"| E1["startup error: failed-before-task-start"]:::ok
+    C -->|"paused"| P{"isPausePending?"}
+    C -->|"completed"| D{"isTaskStreamReady?"}
+
+    P -->|"true"| W2["continue waiting"]:::ok
+    P -->|"false"| X1["startup cancelled: paused-before-task-start"]:::ok
+
+    D -->|"false"| W3["continue waiting"]:::ok
+    D -->|"true"| E{"taskCount is number?"}
+    E -->|"no (undefined)"| W4["continue waiting"]:::ok
+    E -->|"yes"| F{"taskCount === 0?"}
+
+    F -->|"no"| S3["startup success: completed-before-first-task-update"]:::ok
+    F -->|"yes"| G{"expectTaskGeneration?"}
+    G -->|"true"| W5["continue waiting"]:::ok
+    G -->|"false"| S4["startup success: completed-without-generating-tasks"]:::ok
+
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef ng fill:#ffebee,stroke:#c62828,color:#b71c1c
 ```
 
 ```mermaid
@@ -80,23 +110,42 @@ stateDiagram-v2
 
 - 実行ステージは `fetch -> transform -> vt`。
 - 起動フェーズ `awaiting-first-task` は待機監視対象で、10s で wait 通知、20s で long-wait 警告、45s で timeout エラー終了。
-- `awaiting-first-task` のテスト済みシグナル判定:
+- `awaiting-first-task` の task-signal 判定:
   - `running/completed/failed/...` タスク受信
   - `queued` タスク受信
   - progress メタデータ（`progressTaskId` または `total > 0`）受信
-- 遷移テストの主要証跡:
-  - ユニット: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
-  - ユニット: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts`
-  - 結合（hook）: `plugins/shape-plugin/src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx`
-  - E2E（Step5 起動）: `e2e/shape/shape-build-startup-first-task.spec.ts`
-- MCP 実ブラウザ確認（`localhost:4200`, 2026-02-13 12:00 JST）:
-  - `start session response: { status: "running", hasError: false }` の後、`awaiting-first-task` は `outcome: "success"` で終了（`reason: "completed-without-generating-tasks"`, `elapsedMs: 48`）。
-  - 同 run では `build session transition timeout` ログは未観測（timeout 再発なし）。
-- E2E 自動検証（Playwright, 2026-02-13 12:14 JST）:
-  - `e2e/shape/shape-build-startup-first-task.spec.ts` は `E2E_AUTH_ACCESS_TOKEN` 注入 + `/auth/verify` 成功を前提に pass（`awaiting-first-task` timeout 非発生を確認）。
-  - 実行導線: `pnpm e2e:shape-startup`（`e2e/.auth/shape-startup-auth.json` または `E2E_AUTH_ACCESS_TOKEN` を利用）。
-- 現在の blocked（❌）:
-  - 認証シード未設定時の Playwright 実行は `Authentication required` で startup 検証に未到達（環境依存のため `E2E_AUTH_ACCESS_TOKEN` などの注入が必要）。
+- task stream の初回同期完了前は `taskCount` を `undefined` として扱う。
+- ただし Worker session の `progress.total > 0` が確認できた場合は、task stream 未同期でも `completed-with-session-progress-evidence` で成功遷移する。
+- `buildStatus=failed` で失敗遷移する場合は Worker `stageId` をエラーメッセージへ埋め込み、失敗位置を UI ログから直接追跡できるようにする。
+
+### AwaitingFirstTask 遷移マトリクス（矢印とテスト証跡）
+
+| ID | 遷移 | 条件（要約） | 状態 | 主な証跡 |
+| --- | --- | --- | --- | --- |
+| AFT-01 | `AwaitingFirstTask -> success(task-execution-started)` | `hasFirstTaskSignal && hasStartedTasks` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-02 | `AwaitingFirstTask -> success(task-queue-observed)` | `hasFirstTaskSignal && !hasStartedTasks` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` / integration: `buildSessionStartup.integration.test.tsx` |
+| AFT-03 | `AwaitingFirstTask -> continue(wait)` | `buildStatus=running && no signal` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-04 | `AwaitingFirstTask -> continue(wait)` | `buildStatus=completed && !isTaskStreamReady && sessionProgressTotal<=0` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-05 | `AwaitingFirstTask -> continue(wait)` | `buildStatus=completed && taskCount=undefined && sessionProgressTotal<=0` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-06 | `AwaitingFirstTask -> success(completed-before-first-task-update)` | `buildStatus=completed && taskCount>0` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-07 | `AwaitingFirstTask -> continue(wait)` | `buildStatus=completed && taskCount=0 && expectTaskGeneration=true` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-08 | `AwaitingFirstTask -> success(completed-without-generating-tasks)` | `buildStatus=completed && taskCount=0 && expectTaskGeneration=false` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` / e2e: `shape-build-startup-first-task.spec.ts` |
+| AFT-09 | `AwaitingFirstTask -> success(completed-with-session-progress-evidence)` | `buildStatus=completed && sessionProgressTotal>0 && (task stream未同期 or taskCount未確定 or taskCount=0)` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` / e2e: `shape-build-startup-first-task.spec.ts` |
+| AFT-10 | `AwaitingFirstTask -> error(failed-before-task-start)` | `buildStatus=failed`（`sessionStageId` があればメッセージへ付与） | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-11 | `AwaitingFirstTask -> cancelled(paused-before-task-start)` | `buildStatus=paused && !isPausePending` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-12 | `AwaitingFirstTask -> continue(wait)` | `buildStatus=paused && isPausePending` | ✅ | unit: `resolveAwaitingFirstTaskDecision.unit.test.ts` |
+| AFT-13 | `AwaitingFirstTask -> error(timeout)` | `awaiting-first-task elapsed >= 45s` | ✅ | unit: `resolveStartupTransitionWatchdogEvent.unit.test.ts` |
+
+### 検証ソース一覧
+
+- Unit:
+  - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
+  - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts`
+  - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveStartupTransitionWatchdogEvent.unit.test.ts`
+- Integration:
+  - `plugins/shape-plugin/src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx`
+- E2E:
+  - `e2e/shape/shape-build-startup-first-task.spec.ts`
 
 ## ダイアログ制御の詳細仕様
 

@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #252 / `codex/chore/repo/unify-trash-to-archive` / start: 2026-02-13 18:44 JST
+- #250 / `codex/fix/shape/worker-init-stall-no-log` / start: 2026-02-13 18:02 JST
 - #247 / `codex/fix/shape/no-task-complete-guard` / start: 2026-02-13 14:56 JST
 - #241 / `codex/feat/ui/speeddial-submenu` / start: 2026-02-13 11:13 JST
 - #243 / `codex/feat/app/ssot-template-create-menus` / start: 2026-02-13 12:04 JST
@@ -66,12 +68,22 @@
 
 ### Blocked
 
+- #252 / `codex/chore/repo/unify-trash-to-archive` / blocked: 2026-02-13 18:52 JST（`pnpm typecheck` が差分外既知ブロッカー `@hierarchidb/route-plugin` の型不整合で exit 2、`pnpm test` が差分外既知ブロッカー `@hierarchidb/ui-routing` の `packages/_obsolate_common/api` 参照不整合で exit 1）
+- #250 / `codex/fix/shape/worker-init-stall-no-log` / blocked: 2026-02-13 18:11 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外既知ブロッカー `@hierarchidb/shape-plugin` の `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
 - #243 / `codex/feat/app/ssot-template-create-menus` / blocked: 2026-02-13 12:30 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-i18n --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-treetable` が差分外 `@hierarchidb/shape-plugin` の既知型不整合 `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
 - #241 / `codex/feat/ui/speeddial-submenu` / blocked: 2026-02-13 11:57 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/ui-speeddial-submenu --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/app` が差分外 `@hierarchidb/shape-plugin` の既知型不整合 `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 18:52 JST #252 `Trash/ゴミ箱` → `Archive/アーカイブ` の全置換を実施。追跡ファイル 223 件を対象に識別子・i18n・文言・ルート・ドキュメントを置換し、`app/src/router/pages/tree/archive/*` や `packages/ui/treeconsole/toolbar/src/components/toolbar/ArchiveMenu.tsx` など `trash` 含みのファイル/ディレクトリを `git mv` で改名。`pnpm build` は初回失敗（`RestoreFromArchive` icon 未存在）を `Restore` icon へ修正後、exit 0 で完了。
+- blocked: 2026-02-13 18:52 JST #252 検証結果: `pnpm install --frozen-lockfile` exit 0 / `pnpm build` exit 0。`pnpm typecheck` は `@hierarchidb/route-plugin` 既知型不整合（Dexie ctor, RouteTileSettings型）で exit 2。`pnpm test` は `@hierarchidb/ui-routing` の Vitest 設定で `packages/_obsolate_common/api` 参照不整合により exit 1。対象差分で追加実行した `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/archive/__tests__/unit/*.test.ts` も `vitest.setup.base.ts` の `node-fetch` import 解決失敗で exit 1。
+- update: 2026-02-13 18:44 JST Issue `chore(repo): unify Trash/ゴミ箱 naming to Archive/アーカイブ` を起票し `https://github.com/kubohiroya/hierarchidb/issues/252` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-archive-unify` とブランチ `codex/chore/repo/unify-trash-to-archive` を作成して着手。
+- update: 2026-02-13 18:11 JST #250 で `app/src/contexts/WorkerProvider.tsx` を修正。`initStarted/initCompleted` のモジュールグローバル制御を撤去し、コンポーネントローカルの in-flight/complete ref へ置換。再マウント時にも初期化を再実行できるようにし、`ensureInitialized` の明示タイムアウト race・開始/進捗/完了/失敗の診断ログを追加した。
+- update: 2026-02-13 18:11 JST #250 で回帰テスト `app/src/contexts/WorkerProvider.remount.unit.test.tsx` を追加し、「初回マウント中の初期化が未完でも再マウントで初期化呼び出しが増える」ことを検証。
+- update: 2026-02-13 18:11 JST #250 検証結果: `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/contexts/WorkerProvider.remount.unit.test.tsx` exit 0、`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/worker-runtime/__tests__/unit/initialize-worker-state.unit.test.ts` exit 0、`pnpm -w turbo run build --filter @hierarchidb/app` exit 0。
+- blocked: 2026-02-13 18:11 JST #250 `pnpm e2e:shape-startup` は `waitForTreeTableLoad` で timeout（`Received: waiting`）かつ `504 Outdated Optimize Dep` により失敗（exit 1）。Worker初期化不具合そのものの成否判定に入る前段で停止。
+- update: 2026-02-13 18:02 JST Issue `fix(shape): Worker initialization stalls at 50% without diagnostics` を起票し `https://github.com/kubohiroya/hierarchidb/issues/250` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/shape/worker-init-stall-no-log` を作成して着手。
 - update: 2026-02-13 14:56 JST Issue `fix(shape): prevent silent build completion without tasks` を起票し `https://github.com/kubohiroya/hierarchidb/issues/247` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/shape/no-task-complete-guard` を作成して着手。
 - update: 2026-02-13 12:30 JST #243 で SSOT `app/src/features/templates/nodeCreateTemplates.ts` を導入し、ノードタイプ別テンプレート一覧（shape presets / folder template `population-2023`）を一元定義。`create:shape::preset:*` と `create:folder::template:*` の parser・実行解決を共通化し、folder template は import API 実行で即作成できるようにした。
 - update: 2026-02-13 12:30 JST #243 UI再編として `app/src/plugin-loaders/menu-builders.ts` をSSOT参照に変更し、SpeedDial/ContextMenu の create submenu をノードタイプ別テンプレートから自動構築。resources ツリーでは folder submenu から `Population by Countries` を選択可能にした。

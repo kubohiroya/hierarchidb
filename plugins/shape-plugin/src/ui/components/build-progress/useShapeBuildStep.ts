@@ -39,6 +39,10 @@ import { shouldResumeBuildSession } from './shouldResumeBuildSession.ts';
 import { createBuildStartDraftData } from './createBuildStartDraftData.ts';
 import { hasAwaitingFirstTaskSignal } from './awaitingFirstTaskSignal.ts';
 import { resolveAwaitingFirstTaskDecision } from './resolveAwaitingFirstTaskDecision.ts';
+import {
+  resolveStartupTransitionWatchdogEvent,
+  type BuildStartupTransitionWarnStep,
+} from './resolveStartupTransitionWatchdogEvent.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
@@ -192,10 +196,6 @@ type StartupStepMemorySnapshot = {
   jsHeapSizeLimit: number | null;
 };
 
-const START_DIAGNOSTIC_WARN_MS = 10_000;
-const START_DIAGNOSTIC_LONG_WAIT_MS = 20_000;
-const START_DIAGNOSTIC_TIMEOUT_MS = 45_000;
-
 const getErrorMessage = (error: unknown): string => (
   error instanceof Error ? error.message : String(error)
 );
@@ -337,9 +337,10 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
 
   const [isPausePending, setIsPausePending] = useState(false);
   const clearStartPendingRef = useRef<(() => void) | null>(null);
-  const buildSessionTransitionWarnStepRef = useRef<0 | 1 | 2 | 3>(0);
+  const buildSessionTransitionWarnStepRef = useRef<BuildStartupTransitionWarnStep>(0);
   const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
   const buildSessionTransitionWaitLogStepRef = useRef(-1);
+  const awaitingFirstTaskExpectationRef = useRef(false);
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
   const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
   const previousTransitionActiveRef = useRef(false);
@@ -353,6 +354,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
   const [sessionRecord, setSessionRecord] = useState<ShapeBuildSessionRecord | null>(null);
+  const lastWorkerStageTraceKeyRef = useRef<string | null>(null);
+  const lastAwaitingFirstTaskDecisionTraceKeyRef = useRef<string | null>(null);
   const persistedStageElapsedByStage = useMemo<Record<string, number>>(
     () => (sessionRecord?.elapsedByStage ?? {}),
     [sessionRecord?.elapsedByStage]
@@ -395,6 +398,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionWarnStepRef.current = 0;
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
+    awaitingFirstTaskExpectationRef.current = false;
     progressTerminalLogKeyRef.current = null;
     setBuildSessionTransitionElapsedMs(0);
   }, []);
@@ -542,6 +546,31 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     };
   }, [refreshSessionRecord]);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (!activeNodeId) return;
+    const stageId = sessionRecord?.stageId ?? null;
+    const status = sessionRecord?.status ?? null;
+    const stageHeartbeatAt = sessionRecord?.stageHeartbeatAt ?? null;
+    const updatedAt = sessionRecord?.updatedAt ?? null;
+    const key = `${String(activeNodeId)}:${status ?? '-'}:${stageId ?? '-'}:${stageHeartbeatAt ?? '-'}`;
+    if (lastWorkerStageTraceKeyRef.current === key) return;
+    lastWorkerStageTraceKeyRef.current = key;
+    console.log('[ShapeBuildWorkerStageTrace]', {
+      nodeId: String(activeNodeId),
+      status,
+      stageId,
+      stageHeartbeatAt,
+      updatedAt,
+    });
+  }, [
+    activeNodeId,
+    sessionRecord?.stageHeartbeatAt,
+    sessionRecord?.stageId,
+    sessionRecord?.status,
+    sessionRecord?.updatedAt,
+  ]);
+
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
   const remoteFresh = Boolean(remoteUpdatedAt && Date.now() - remoteUpdatedAt <= coordinator.quietThresholdTimeout);
@@ -566,7 +595,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(statusSource)
   ), [statusSource]);
-  const { tasks, isLoading: isTasksLoading } = useShapeBuildTasks(activeNodeId, {
+  const { tasks, isLoading: isTasksLoading, isTaskStreamReady } = useShapeBuildTasks(activeNodeId, {
     reportFailures: reportTaskFailures,
   });
   const isTaskSummaryLoading = false;
@@ -1149,8 +1178,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     const intervalId = window.setInterval(() => {
       const elapsedMs = Date.now() - buildSessionTransition.startedAt;
       setBuildSessionTransitionElapsedMs(elapsedMs);
-      if (elapsedMs >= START_DIAGNOSTIC_TIMEOUT_MS && buildSessionTransitionWarnStepRef.current < 3) {
-        buildSessionTransitionWarnStepRef.current = 3;
+      const watchdogEvent = resolveStartupTransitionWatchdogEvent({
+        elapsedMs,
+        warnStep: buildSessionTransitionWarnStepRef.current,
+      });
+      if (watchdogEvent.kind === 'none') {
+        return;
+      }
+      buildSessionTransitionWarnStepRef.current = watchdogEvent.nextWarnStep;
+      if (watchdogEvent.kind === 'timeout') {
         emitBuildSessionTransitionLog('error', 'build session transition timeout', {
           phase: buildSessionTransition.phase,
           elapsedMs,
@@ -1167,8 +1203,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         });
         return;
       }
-      if (elapsedMs >= START_DIAGNOSTIC_LONG_WAIT_MS && buildSessionTransitionWarnStepRef.current < 2) {
-        buildSessionTransitionWarnStepRef.current = 2;
+      if (watchdogEvent.kind === 'long-wait') {
         emitBuildSessionTransitionLog('warn', 'build session transition long wait', {
           phase: buildSessionTransition.phase,
           elapsedMs,
@@ -1179,8 +1214,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         );
         return;
       }
-      if (elapsedMs >= START_DIAGNOSTIC_WARN_MS && buildSessionTransitionWarnStepRef.current < 1) {
-        buildSessionTransitionWarnStepRef.current = 1;
+      if (watchdogEvent.kind === 'wait') {
         emitBuildSessionTransitionLog('info', 'build session transition wait', {
           phase: buildSessionTransition.phase,
           elapsedMs,
@@ -1238,14 +1272,49 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   useEffect(() => {
     if (!buildSessionTransition.active) return;
     if (buildSessionTransition.phase !== 'awaiting-first-task') return;
-    const decision = resolveAwaitingFirstTaskDecision({
+    const decisionInput = {
       hasFirstTaskSignal,
       hasStartedTasks,
       hasProgressTaskSignal,
       buildStatus,
-      taskCount: displayTasks.length,
+      taskCount: isTaskStreamReady ? displayTasks.length : undefined,
+      isTaskStreamReady,
       isPausePending,
+      expectTaskGeneration: awaitingFirstTaskExpectationRef.current,
+      sessionProgressTotal: sessionRecord?.progress?.total,
+      sessionStageId: sessionRecord?.stageId ?? null,
+    };
+    const decisionTraceKey = import.meta.env.DEV
+      ? JSON.stringify({
+        phase: buildSessionTransition.phase,
+        buildStatus: decisionInput.buildStatus,
+        hasFirstTaskSignal: decisionInput.hasFirstTaskSignal,
+        hasStartedTasks: decisionInput.hasStartedTasks,
+        hasProgressTaskSignal: decisionInput.hasProgressTaskSignal,
+        taskCount: decisionInput.taskCount,
+        isTaskStreamReady: decisionInput.isTaskStreamReady,
+        isPausePending: decisionInput.isPausePending,
+        expectTaskGeneration: decisionInput.expectTaskGeneration,
+        sessionProgressTotal: decisionInput.sessionProgressTotal ?? null,
+        sessionStageId: decisionInput.sessionStageId ?? null,
+      })
+      : null;
+    if (decisionTraceKey && lastAwaitingFirstTaskDecisionTraceKeyRef.current !== decisionTraceKey) {
+      lastAwaitingFirstTaskDecisionTraceKeyRef.current = decisionTraceKey;
+      console.log('[ShapeAwaitingFirstTaskDecisionTrace] input', JSON.stringify({
+        nodeId: activeNodeId ? String(activeNodeId) : null,
+        ...decisionInput,
+      }));
+    }
+    const decision = resolveAwaitingFirstTaskDecision({
+      ...decisionInput,
     });
+    if (import.meta.env.DEV && decision.kind !== 'continue') {
+      console.log('[ShapeAwaitingFirstTaskDecisionTrace] decision', JSON.stringify({
+        nodeId: activeNodeId ? String(activeNodeId) : null,
+        decision,
+      }));
+    }
     if (decision.kind === 'continue') return;
 
     if (decision.kind === 'success') {
@@ -1286,6 +1355,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     });
     finishBuildSessionTransition(decision.transitionFinish);
   }, [
+    activeNodeId,
     buildStatus,
     displayTasks.length,
     emitBuildSessionTransitionLog,
@@ -1295,7 +1365,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasProgressTaskSignal,
     hasStartedTasks,
     isPausePending,
+    isTaskStreamReady,
     pushBuildSessionTransitionNotification,
+    sessionRecord?.progress?.total,
     buildSessionTransition.active,
     buildSessionTransition.phase,
   ]);
@@ -1562,6 +1634,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
           source: startupSource,
         });
         void updateSessionRecord({ status: 'running', stopReason: undefined, canResume: false });
+        awaitingFirstTaskExpectationRef.current = false;
         advanceBuildSessionTransitionPhase('awaiting-first-task', {
           level: 'info',
           message: 'Build resumed. Waiting for worker task updates...',
@@ -1668,6 +1741,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
           message: 'Build completed immediately after start.',
         });
       } else {
+        awaitingFirstTaskExpectationRef.current = true;
         advanceBuildSessionTransitionPhase('awaiting-first-task', {
           level: 'info',
           message: 'Build requested. Waiting for worker task updates...',

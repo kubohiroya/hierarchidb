@@ -9,7 +9,9 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: true,
       buildStatus: 'running',
       taskCount: 3,
+      isTaskStreamReady: true,
       isPausePending: false,
+      expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
       kind: 'success',
@@ -31,7 +33,9 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'running',
       taskCount: 1,
+      isTaskStreamReady: true,
       isPausePending: false,
+      expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
       kind: 'success',
@@ -53,7 +57,9 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 0,
+      isTaskStreamReady: true,
       isPausePending: false,
+      expectTaskGeneration: false,
     });
     expect(decision).toEqual({
       kind: 'success',
@@ -65,20 +71,18 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
-  it('returns success without extra transition when completed with tasks', () => {
+  it('continues waiting when completed without tasks but task generation is expected', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
-      taskCount: 2,
+      taskCount: 0,
+      isTaskStreamReady: true,
       isPausePending: false,
+      expectTaskGeneration: true,
     });
-    expect(decision).toEqual({
-      kind: 'success',
-      reason: 'completed-before-first-task-update',
-      transitionFinish: undefined,
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('returns error when build fails before first task start', () => {
@@ -88,7 +92,9 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: 0,
+      isTaskStreamReady: false,
       isPausePending: false,
+      expectTaskGeneration: true,
     });
     expect(decision).toEqual({
       kind: 'error',
@@ -100,6 +106,28 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
+  it('includes worker stageId in failure message when available', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'failed',
+      taskCount: 0,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionStageId: 'pipeline:fetch-stage:error',
+    });
+    expect(decision).toEqual({
+      kind: 'error',
+      reason: 'failed-before-task-start',
+      transitionFinish: {
+        level: 'error',
+        message: 'Build failed before task execution started (worker stage: pipeline:fetch-stage:error).',
+      },
+    });
+  });
+
   it('returns cancelled when paused before first task start and pause is not pending', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,
@@ -107,7 +135,9 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'paused',
       taskCount: 0,
+      isTaskStreamReady: false,
       isPausePending: false,
+      expectTaskGeneration: true,
     });
     expect(decision).toEqual({
       kind: 'cancelled',
@@ -126,7 +156,135 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       hasProgressTaskSignal: false,
       buildStatus: 'paused',
       taskCount: 0,
+      isTaskStreamReady: false,
       isPausePending: true,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
+  it('continues waiting while task stream is not ready even if status is completed', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: 0,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
+  it('returns success when stream is not ready but worker session progress proves completion', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: undefined,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 5,
+    });
+    expect(decision).toEqual({
+      kind: 'success',
+      reason: 'completed-with-session-progress-evidence',
+      transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+    });
+  });
+
+  it('continues waiting while task count is still unknown after stream becomes ready', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: undefined,
+      isTaskStreamReady: true,
+      isPausePending: false,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
+  it('returns success when task count is unknown but worker session progress proves completion', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: undefined,
+      isTaskStreamReady: true,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 5,
+    });
+    expect(decision).toEqual({
+      kind: 'success',
+      reason: 'completed-with-session-progress-evidence',
+      transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+    });
+  });
+
+  it('returns success when completed after at least one task record is observed', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: 2,
+      isTaskStreamReady: true,
+      isPausePending: false,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({
+      kind: 'success',
+      reason: 'completed-before-first-task-update',
+      transitionFinish: undefined,
+    });
+  });
+
+  it('returns success when completed with zero UI tasks but worker session progress proves task execution', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: 0,
+      isTaskStreamReady: true,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 5,
+    });
+    expect(decision).toEqual({
+      kind: 'success',
+      reason: 'completed-with-session-progress-evidence',
+      transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+    });
+  });
+
+  it('continues waiting while build is still running and no first-task signal exists', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'running',
+      taskCount: undefined,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });

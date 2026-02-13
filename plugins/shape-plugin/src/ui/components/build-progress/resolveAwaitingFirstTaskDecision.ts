@@ -24,7 +24,8 @@ export type AwaitingFirstTaskDecision =
       | 'task-execution-started'
       | 'task-queue-observed'
       | 'completed-without-generating-tasks'
-      | 'completed-before-first-task-update';
+      | 'completed-before-first-task-update'
+      | 'completed-with-session-progress-evidence';
     taskExecutionStarted?: TaskExecutionStarted;
     notification?: Notification;
     transitionFinish?: TransitionFinish;
@@ -45,13 +46,28 @@ export type AwaitingFirstTaskDecisionInput = {
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
   buildStatus: BuildStatus;
-  taskCount: number;
+  taskCount: number | undefined;
+  isTaskStreamReady: boolean;
   isPausePending: boolean;
+  expectTaskGeneration: boolean;
+  sessionProgressTotal?: number;
+  sessionStageId?: string | null;
+};
+
+const buildFailedBeforeTaskStartMessage = (sessionStageId?: string | null): string => {
+  if (typeof sessionStageId === 'string' && sessionStageId.length > 0) {
+    return `Build failed before task execution started (worker stage: ${sessionStageId}).`;
+  }
+  return 'Build failed before task execution started.';
 };
 
 export const resolveAwaitingFirstTaskDecision = (
   input: AwaitingFirstTaskDecisionInput,
 ): AwaitingFirstTaskDecision => {
+  const hasSessionProgressEvidence = (
+    typeof input.sessionProgressTotal === 'number'
+    && input.sessionProgressTotal > 0
+  );
   if (input.hasFirstTaskSignal) {
     return {
       kind: 'success',
@@ -72,7 +88,46 @@ export const resolveAwaitingFirstTaskDecision = (
     };
   }
   if (input.buildStatus === 'completed') {
+    if (!input.isTaskStreamReady) {
+      if (hasSessionProgressEvidence) {
+        return {
+          kind: 'success',
+          reason: 'completed-with-session-progress-evidence',
+          transitionFinish: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
+        };
+      }
+      return { kind: 'continue' };
+    }
+    if (typeof input.taskCount !== 'number') {
+      if (hasSessionProgressEvidence) {
+        return {
+          kind: 'success',
+          reason: 'completed-with-session-progress-evidence',
+          transitionFinish: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
+        };
+      }
+      return { kind: 'continue' };
+    }
     const completedWithoutTasks = input.taskCount === 0;
+    if (completedWithoutTasks && input.expectTaskGeneration) {
+      if (hasSessionProgressEvidence) {
+        return {
+          kind: 'success',
+          reason: 'completed-with-session-progress-evidence',
+          transitionFinish: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
+        };
+      }
+      return { kind: 'continue' };
+    }
     return {
       kind: 'success',
       reason: completedWithoutTasks
@@ -92,7 +147,7 @@ export const resolveAwaitingFirstTaskDecision = (
       reason: 'failed-before-task-start',
       transitionFinish: {
         level: 'error',
-        message: 'Build failed before task execution started.',
+        message: buildFailedBeforeTaskStartMessage(input.sessionStageId),
       },
     };
   }

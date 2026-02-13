@@ -24,6 +24,7 @@ type SyncArgs = {
   setTasks: (tasks: ShapeBuildTaskSummary[]) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
+  markTaskStreamSynchronized?: () => void;
 };
 
 const isTaskStage = (value: unknown): value is TaskStage => (
@@ -535,7 +536,13 @@ const shouldPreferNextTask = (
   return shouldApplyTaskUpdate(current, next);
 };
 
-export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, setError }: SyncArgs) => {
+export const useShapeBuildTaskSync = ({
+  sessionNodeId,
+  setTasks,
+  setIsLoading,
+  setError,
+  markTaskStreamSynchronized,
+}: SyncArgs) => {
   const isLoadingRef = useRef(false);
   const errorRef = useRef<Error | null>(null);
   const tasksRef = useRef<ShapeBuildTaskSummary[]>([]);
@@ -574,18 +581,22 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
     if (!dirty) {
+      markTaskStreamSynchronized?.();
       return;
     }
     if (areTaskListsEquivalentForView(committedTasksRef.current, next)) {
       committedTasksRef.current = next;
+      markTaskStreamSynchronized?.();
       return;
     }
     committedTasksRef.current = next;
     if (!isMountedRef.current) {
+      markTaskStreamSynchronized?.();
       return;
     }
     setTasks(next);
-  }, [setTasks]);
+    markTaskStreamSynchronized?.();
+  }, [markTaskStreamSynchronized, setTasks]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
     if (!isMountedRef.current) {
