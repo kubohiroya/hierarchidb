@@ -96,6 +96,30 @@ const buildFetchStageOptions = (buildConfig: ShapeRuntimeBuildConfig) => ({
   retryDelay: buildConfig.fetchConfig.retryDelay,
 });
 
+const summarizeSelectedArrayByCountries = (
+  selectedArrayByCountries: SelectedArrayByCountries | undefined,
+): { selectedCountryCount: number; selectedAdminPairCount: number } => {
+  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
+    return { selectedCountryCount: 0, selectedAdminPairCount: 0 };
+  }
+  let selectedCountryCount = 0;
+  let selectedAdminPairCount = 0;
+  Object.values(selectedArrayByCountries).forEach((row) => {
+    if (!Array.isArray(row)) return;
+    let hasSelectedInCountry = false;
+    row.forEach((selected) => {
+      if (selected === true) {
+        hasSelectedInCountry = true;
+        selectedAdminPairCount += 1;
+      }
+    });
+    if (hasSelectedInCountry) {
+      selectedCountryCount += 1;
+    }
+  });
+  return { selectedCountryCount, selectedAdminPairCount };
+};
+
 const resolveFetchTaskPayloadsForPlan = async (input: {
   nodeId: NodeId;
   dataSource: DataSourceName;
@@ -1335,7 +1359,15 @@ const emitProgressSnapshot = async (
   message?: string,
 ): Promise<void> => {
   const sub = progressCallbacks.get(String(nodeId));
-  if (!sub?.callback) return;
+  if (!sub?.callback) {
+    if (typeof message === 'string' && message.length > 0) {
+      console.warn('[shapeBatchAPI] progress snapshot skipped (no subscriber)', JSON.stringify({
+        nodeId,
+        message,
+      }));
+    }
+    return;
+  }
   try {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
@@ -1353,6 +1385,23 @@ const emitProgressSnapshot = async (
   } catch (error) {
     console.error('[shapeBatchAPI] progress snapshot build failed', error);
   }
+};
+
+const toErrorDiagnostics = (error: unknown): {
+  errorMessage: string;
+  errorName?: string;
+  errorStack?: string;
+} => {
+  if (error instanceof Error) {
+    return {
+      errorMessage: error.message,
+      errorName: error.name,
+      errorStack: error.stack,
+    };
+  }
+  return {
+    errorMessage: String(error),
+  };
 };
 
 
@@ -1460,6 +1509,10 @@ export const shapeBatchAPI = {
       step: string,
       extra?: Record<string, unknown>,
     ): void => {
+      void shapeMutationAPIImpl.updateBuildSession(startupNodeId, {
+        stageId: `startup:${step}:${phase}`,
+        stageHeartbeatAt: Date.now(),
+      }).catch(() => {});
       const payload = {
         scope: startupScope,
         phase,
@@ -1544,7 +1597,11 @@ export const shapeBatchAPI = {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    const selectedAdminPairCount = countSelectedAdminPairs(draftEntity.selectedArrayByCountries);
+    const selectionSummary = await executeStartupStep(
+      'summarize-selection',
+      async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
+    );
+    const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
     if (!downloadTaskPayloads.length && selectedAdminPairCount === 0) {
       throw new Error('Shape batch session requires download task payloads or selection');
     }
@@ -1575,7 +1632,11 @@ export const shapeBatchAPI = {
         selectedArrayByCountries: draftEntity.selectedArrayByCountries,
         downloadTaskPayloads,
       }),
-      { payloadCount: downloadTaskPayloads.length },
+      {
+        payloadCount: downloadTaskPayloads.length,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
     );
     if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && fetchPlan.plannedFetchTotal === 0) {
       throw new Error(
@@ -1684,6 +1745,11 @@ export const shapeBatchAPI = {
         runId: pipelineRunId,
         payloadCount: downloadTaskPayloads.length,
       });
+      void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+        stageId: 'startup:pipeline-dispatch:start',
+        stageHeartbeatAt: Date.now(),
+      }).catch(() => {});
+      let terminalProgressMessage: string | undefined;
       void runShapePipeline({
         nodeId: nodeForSession,
         dataSource: resolvedDataSource,
@@ -1694,27 +1760,48 @@ export const shapeBatchAPI = {
         buildContinuationPolicy,
         resumeExistingTasks,
         pipelineRunId,
-      }).then(async () => {
-        const completedAt = Date.now();
-        await updateBuildSessionFromTasks(nodeForSession, {
-          status: 'completed',
-          stopReason: 'completed',
-          completedAt,
-          canResume: false,
+        }).then(async () => {
+          const completedAt = Date.now();
+          terminalProgressMessage = undefined;
+          void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+            stageId: 'startup:pipeline-dispatch:success',
+            stageHeartbeatAt: completedAt,
+          }).catch(() => {});
+          await updateBuildSessionFromTasks(nodeForSession, {
+            status: 'completed',
+            stopReason: 'completed',
+            completedAt,
+            canResume: false,
+          });
+        }).catch(async (error) => {
+          const failedAt = Date.now();
+          const diagnostics = toErrorDiagnostics(error);
+          console.error('[shapeBatchAPI] vt pipeline failed', error);
+          console.error('[shapeBatchAPI] startup', JSON.stringify({
+            scope: startupScope,
+            phase: 'finish',
+            step: 'pipeline-run',
+            nodeId: nodeForSession,
+            runId: pipelineRunId,
+            outcome: 'error',
+            failedAt,
+            ...diagnostics,
+          }));
+          terminalProgressMessage = `Pipeline failed (${diagnostics.errorName ?? 'Error'}): ${diagnostics.errorMessage}`;
+          void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
+            stageId: 'startup:pipeline-dispatch:error',
+            stageHeartbeatAt: failedAt,
+          }).catch(() => {});
+          await updateBuildSessionFromTasks(nodeForSession, {
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
+          });
+        }).finally(() => {
+          clearActivePipelineRuntimeState(nodeForSession);
+          void emitProgressSnapshot(nodeForSession, terminalProgressMessage);
         });
-      }).catch(async (error) => {
-        const failedAt = Date.now();
-        console.error('[shapeBatchAPI] vt pipeline failed', error);
-        await updateBuildSessionFromTasks(nodeForSession, {
-          status: 'failed',
-          stopReason: 'failed',
-          completedAt: failedAt,
-          canResume: false,
-        });
-      }).finally(() => {
-        clearActivePipelineRuntimeState(nodeForSession);
-        void emitProgressSnapshot(nodeForSession);
-      });
       emitStartupStepLog('finish', 'pipeline-dispatch', {
         runId: pipelineRunId,
         payloadCount: downloadTaskPayloads.length,
@@ -1818,6 +1905,10 @@ export const shapeBatchAPI = {
         step: string,
         extra?: Record<string, unknown>,
       ): void => {
+        void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+          stageId: `startup:${step}:${phase}`,
+          stageHeartbeatAt: Date.now(),
+        }).catch(() => {});
         console.warn('[shapeBatchAPI] startup', JSON.stringify({
           scope: resumeScope,
           phase,
@@ -1956,6 +2047,11 @@ export const shapeBatchAPI = {
             payloadProcessingConfig: Boolean(payloadProcessingConfig),
           },
         });
+        const selectionSummary = await executeResumeStep(
+          'summarize-selection',
+          async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
+          { existingTaskCount },
+        );
         const fetchPlan = await executeResumeStep(
           'plan-fetch-total',
           async () => estimatePlannedFetchTotal({
@@ -1963,9 +2059,13 @@ export const shapeBatchAPI = {
             buildConfig: mergedRuntimeConfig,
             selectedArrayByCountries: draftEntity.selectedArrayByCountries,
           }),
-          { existingTaskCount },
+          {
+            existingTaskCount,
+            selectedCountryCount: selectionSummary.selectedCountryCount,
+            selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+          },
         );
-        const selectedAdminPairCount = countSelectedAdminPairs(draftEntity.selectedArrayByCountries);
+        const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
         if (existingTaskCount === 0 && selectedAdminPairCount === 0) {
           throw new Error('[shapeBatchAPI] Resume requires selected countries/admin levels or existing queued tasks.');
         }
@@ -2041,6 +2141,11 @@ export const shapeBatchAPI = {
           nodeId,
           runId: pipelineRunId,
         });
+        void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+          stageId: 'startup:pipeline-dispatch:start',
+          stageHeartbeatAt: Date.now(),
+        }).catch(() => {});
+        let terminalProgressMessage: string | undefined;
         void runShapePipeline({
           nodeId,
           dataSource: resolvedDataSource,
@@ -2052,6 +2157,11 @@ export const shapeBatchAPI = {
           pipelineRunId,
         }).then(async () => {
           const completedAt = Date.now();
+          terminalProgressMessage = undefined;
+          void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+            stageId: 'startup:pipeline-dispatch:success',
+            stageHeartbeatAt: completedAt,
+          }).catch(() => {});
           await updateBuildSessionFromTasks(nodeId, {
             status: 'completed',
             stopReason: 'completed',
@@ -2060,7 +2170,23 @@ export const shapeBatchAPI = {
           });
         }).catch(async (error) => {
           const failedAt = Date.now();
+          const diagnostics = toErrorDiagnostics(error);
           console.error('[shapeBatchAPI] vt pipeline failed', error);
+          console.error('[shapeBatchAPI] startup', JSON.stringify({
+            scope: resumeScope,
+            phase: 'finish',
+            step: 'pipeline-run',
+            nodeId,
+            runId: pipelineRunId,
+            outcome: 'error',
+            failedAt,
+            ...diagnostics,
+          }));
+          terminalProgressMessage = `Pipeline failed (${diagnostics.errorName ?? 'Error'}): ${diagnostics.errorMessage}`;
+          void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+            stageId: 'startup:pipeline-dispatch:error',
+            stageHeartbeatAt: failedAt,
+          }).catch(() => {});
           await updateBuildSessionFromTasks(nodeId, {
             status: 'failed',
             stopReason: 'failed',
@@ -2069,7 +2195,7 @@ export const shapeBatchAPI = {
           });
         }).finally(() => {
           clearActivePipelineRuntimeState(nodeId);
-          void emitProgressSnapshot(nodeId);
+          void emitProgressSnapshot(nodeId, terminalProgressMessage);
         });
         emitResumeStepLog('finish', 'pipeline-dispatch', {
           runId: pipelineRunId,

@@ -56,6 +56,7 @@ describe('useShapeBuildTasks', () => {
 
   it('applies snapshot and update events without polling', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-1'));
+    expect(result.current.isTaskStreamReady).toBe(false);
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -82,6 +83,7 @@ describe('useShapeBuildTasks', () => {
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
       expect(result.current.isLoading).toBe(false);
+      expect(result.current.isTaskStreamReady).toBe(true);
     });
 
     act(() => {

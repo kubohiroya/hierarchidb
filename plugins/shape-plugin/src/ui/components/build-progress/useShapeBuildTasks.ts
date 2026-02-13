@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtom } from 'jotai';
@@ -21,6 +21,7 @@ export interface UseShapeBuildTasksState {
   tasks: ShapeBuildTaskSummary[];
   isLoading: boolean;
   error: Error | null;
+  isTaskStreamReady: boolean;
   refresh: () => Promise<void>;
 }
 
@@ -87,6 +88,7 @@ export function useShapeBuildTasks(
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
+  const [isTaskStreamReady, setIsTaskStreamReady] = useState(false);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const handleSnapshotRef = useRef<(tasks: RawTaskSummary[]) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
@@ -94,6 +96,10 @@ export function useShapeBuildTasks(
   const reconcileInFlightRef = useRef(false);
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
+
+  const markTaskStreamSynchronized = useCallback(() => {
+    setIsTaskStreamReady((current) => (current ? current : true));
+  }, []);
 
   const {
     tasksRef,
@@ -111,6 +117,7 @@ export function useShapeBuildTasks(
     setTasks,
     setIsLoading,
     setError,
+    markTaskStreamSynchronized,
   });
 
   useEffect(() => {
@@ -140,6 +147,7 @@ export function useShapeBuildTasks(
       subscriptionRef.current();
       subscriptionRef.current = null;
     }
+    setIsTaskStreamReady(false);
     resetPending();
     const hadTasks = tasksRef.current.length > 0;
     const hadError = errorRef.current !== null;
@@ -306,8 +314,9 @@ export function useShapeBuildTasks(
       tasks,
       isLoading,
       error,
+      isTaskStreamReady,
       refresh,
     }),
-    [error, isLoading, refresh, tasks],
+    [error, isLoading, isTaskStreamReady, refresh, tasks],
   );
 }

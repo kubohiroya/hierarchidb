@@ -357,15 +357,63 @@ const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => 
 
 export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
   const context = await createShapePipelineContext(params);
-  await preparePipelineRun(context);
+  const markPipelineCheckpoint = (stage: string, phase: 'start' | 'success' | 'error'): void => {
+    void shapeMutationAPIImpl.updateBuildSession(params.nodeId, {
+      stageId: `pipeline:${stage}:${phase}`,
+      stageHeartbeatAt: Date.now(),
+    }).catch(() => {});
+  };
+  const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => {
+    const startedAt = Date.now();
+    markPipelineCheckpoint(stage, 'start');
+    console.warn('[ShapePipeline][Checkpoint] start', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      stage,
+      startedAt,
+    }));
+    try {
+      const result = await action();
+      const finishedAt = Date.now();
+      markPipelineCheckpoint(stage, 'success');
+      console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        stage,
+        outcome: 'success',
+        startedAt,
+        finishedAt,
+        elapsedMs: finishedAt - startedAt,
+      }));
+      return result;
+    } catch (error) {
+      const finishedAt = Date.now();
+      markPipelineCheckpoint(stage, 'error');
+      console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        stage,
+        outcome: 'error',
+        startedAt,
+        finishedAt,
+        elapsedMs: finishedAt - startedAt,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : undefined,
+        errorStack: error instanceof Error ? error.stack : undefined,
+      }));
+      throw error;
+    }
+  };
 
-  let stopAfterStage = await runFetchStage(context);
+  await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
+
+  let stopAfterStage = await checkpoint('fetch-stage', async () => runFetchStage(context));
   if (!stopAfterStage) {
-    stopAfterStage = await runTransformStage(context);
+    stopAfterStage = await checkpoint('transform-stage', async () => runTransformStage(context));
   }
   if (!stopAfterStage) {
-    await runVtStage(context);
+    await checkpoint('vt-stage', async () => runVtStage(context));
   }
-  await runMetadataStage(context);
-  await runCleanupStage(context);
+  await checkpoint('metadata-stage', async () => runMetadataStage(context));
+  await checkpoint('cleanup-stage', async () => runCleanupStage(context));
 };

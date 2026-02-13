@@ -38,6 +38,7 @@ describe('buildSessionStartup integration baseline', () => {
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     try {
       const { result } = renderHook(() => useShapeBuildTasks('node-integration'));
+      expect(result.current.isTaskStreamReady).toBe(false);
 
       await act(async () => {
         await Promise.resolve();
@@ -66,6 +67,7 @@ describe('buildSessionStartup integration baseline', () => {
       });
 
       expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.isTaskStreamReady).toBe(true);
 
       const hasQueuedTasks = result.current.tasks.some((task) => task.status === 'queued');
       const hasStartedTasks = result.current.tasks.some((task) => (

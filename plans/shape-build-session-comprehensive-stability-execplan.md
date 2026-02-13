@@ -22,6 +22,7 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 - [x] (2026-02-13 12:00 JST) Validated Create Shape Step5 startup path with Chrome DevTools MCP (`localhost:4200`) and captured payload evidence.
 - [x] (2026-02-13 12:14 JST) Ran Playwright E2E with explicit auth seed (`E2E_AUTH_ACCESS_TOKEN`) and `/auth/verify` precheck; scenario passed without startup timeout.
 - [x] (2026-02-13 12:50 JST) Added `pnpm e2e:shape-startup` wrapper and local auth-seed file support (`e2e/.auth/shape-startup-auth.json`), including fail-fast checks for missing seed.
+- [x] (2026-02-13 15:20 JST) Added `task stream ready` gating so `awaiting-first-task` does not finalize on uninitialized `taskCount` (undefined), and updated unit/integration coverage.
 - [ ] Update this plan with final outcomes and retrospective.
 
 ## Surprises & Discoveries
