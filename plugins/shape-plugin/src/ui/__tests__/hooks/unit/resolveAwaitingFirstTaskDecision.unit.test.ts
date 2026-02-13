@@ -128,6 +128,21 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
+  it('continues waiting when status is failed but startup stage is still progressing', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'failed',
+      taskCount: 0,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionStageId: 'startup:plan-fetch-total:start',
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
   it('returns cancelled when paused before first task start and pause is not pending', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,

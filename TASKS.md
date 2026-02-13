@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #258 / `codex/fix/i18n/move-to-archive-ja-locale` / start: 2026-02-14 08:02 JST
 - #255 / `codex/refactor/repo/rename-trash-to-archive` / start: 2026-02-13 22:11 JST
 - #252 / `codex/chore/repo/unify-trash-to-archive` / start: 2026-02-13 18:44 JST
 - #250 / `codex/fix/shape/worker-init-stall-no-log` / start: 2026-02-13 18:02 JST
@@ -78,6 +79,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-14 08:02 JST Issue `fix(i18n): localize Move to Archive for ja locale` を起票し `https://github.com/kubohiroya/hierarchidb/issues/258` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/i18n/move-to-archive-ja-locale` を作成して着手。
 - blocked: 2026-02-13 22:20 JST #255 検証結果: `pnpm -w turbo run build --filter @hierarchidb/app --filter @hierarchidb/runtime-worker --filter @hierarchidb/tree-api --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable` は初回 `RestoreFromArchive` icon 未存在で失敗（exit 1）後、`Restore` へ修正して再実行し exit 0。`pnpm typecheck` は差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418`（`ShapePresetMenuEntry` 型不整合）で exit 1。`pnpm test` は差分外既知ブロッカー `ui/worker-client` 系 `window is not defined` と `runtime-worker/src/__tests__/wfl/undo-folder-operations.wfl.test.ts` timeout で exit 1。
 - update: 2026-02-13 22:20 JST #255 で `Trashed -> Archived`、識別子内 `Trash -> Archive` をコードファイルへ適用し、`Trash` を含むファイル名 13 件（`TrashDialog.tsx`、`TrashMenu.tsx`、`useTreeConsoleTrashWatcher.ts` など）を `Archive` へ `git mv` で改名。参照側 import/export と呼び出し名も追従更新し、コードファイル上の `Trash` 識別子残存を解消。
 - update: 2026-02-13 22:11 JST Issue `refactor(repo): rename Trash identifiers/files to Archive` を起票し `https://github.com/kubohiroya/hierarchidb/issues/255` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/refactor/repo/rename-trash-to-archive` を作成して着手。

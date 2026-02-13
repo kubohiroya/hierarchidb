@@ -2,20 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import { ROUTE_MODES, type IdeGsmRouteCoverageResult, type RouteMode } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { type GridColumn } from '@hierarchidb/ui-grid';
-import {
-  buildDefaultRouteStyleConfig,
-  mergeRouteStyleConfig,
-} from '../../../common/styles/routeStyle.js';
 
 export interface RouteSelectionStepProps {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   mode: 'create' | 'edit';
@@ -79,24 +74,24 @@ export const useRouteSelectionStep = ({
   const { t, translations } = useTranslation();
   const { api, initialize } = useWorkerAPI();
   const iso = useIsoCountries();
-  const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
+  const draft = draftProp;
   const dataSourceName = draft.dataSourceName ?? null;
   const ideGsmSourceId = draft.tabularSourceId ?? null;
   const isIdeGsm = dataSourceName === 'ide-gsm';
-  const routeNodeId = (draftProp.treeNodeId ?? _nodeId) as NodeId | undefined;
-  const styleDefaults = useMemo(() => buildDefaultRouteStyleConfig(), []);
-  const styleConfig = useMemo(
-    () => mergeRouteStyleConfig(draft.routeStyleConfig ?? styleDefaults),
-    [draft.routeStyleConfig, styleDefaults],
-  );
+  const routeNodeId = _nodeId as NodeId | undefined;
   const policy = useMemo(() => resolveModePolicy(dataSourceName), [dataSourceName]);
   const allowedModeSet = useMemo(() => new Set(policy.allowedModes), [policy.allowedModes]);
   const lastDataSourceRef = useRef<string | null>(dataSourceName);
   const lastCoverageRef = useRef<string | null>(null);
+  const lastCoverageRequestKeyRef = useRef<string | null>(null);
   const [coverage, setCoverage] = useState<IdeGsmRouteCoverageResult | null>(null);
   const [coverageError, setCoverageError] = useState<string | null>(null);
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const coverageRequestKey = useMemo(() => {
+    if (!isIdeGsm || !ideGsmSourceId || !routeNodeId) return null;
+    return `${String(routeNodeId)}:${ideGsmSourceId}`;
+  }, [ideGsmSourceId, isIdeGsm, routeNodeId]);
 
   const emitUpdate = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -111,23 +106,33 @@ export const useRouteSelectionStep = ({
 
   useEffect(() => {
     if (!isIdeGsm) {
+      lastCoverageRequestKeyRef.current = null;
       setCoverage(null);
       setCoverageError(null);
       setCoverageLoading(false);
       return;
     }
     if (!ideGsmSourceId) {
+      lastCoverageRequestKeyRef.current = null;
       setCoverage(null);
       setCoverageError(t('routeConfig.ideGsmMissingSource', 'IDE-GSM source is required.'));
       setCoverageLoading(false);
       return;
     }
     if (!routeNodeId) {
+      lastCoverageRequestKeyRef.current = null;
       setCoverage(null);
       setCoverageError(t('routeConfig.ideGsmMissingNode', 'Route node is not available.'));
       setCoverageLoading(false);
       return;
     }
+    if (!coverageRequestKey) {
+      return;
+    }
+    if (lastCoverageRequestKeyRef.current === coverageRequestKey) {
+      return;
+    }
+    lastCoverageRequestKeyRef.current = coverageRequestKey;
     let cancelled = false;
     setCoverageLoading(true);
     setCoverageError(null);
@@ -162,7 +167,7 @@ export const useRouteSelectionStep = ({
     return () => {
       cancelled = true;
     };
-  }, [api, ideGsmSourceId, initialize, isIdeGsm, routeNodeId, t]);
+  }, [api, coverageRequestKey, ideGsmSourceId, initialize, isIdeGsm, routeNodeId, t]);
 
   const coverageModeMap = useMemo(() => {
     const map = new Map<string, Set<RouteMode>>();
@@ -209,21 +214,14 @@ export const useRouteSelectionStep = ({
     },
   }), [t]);
 
-  const deepEqualSelectionRecord = useCallback((
-    current: Record<string, boolean[]>,
-    next: Record<string, boolean[]>,
-  ): boolean => {
-    if (iso.status !== 'ready') return true;
-    for (const country of iso.countries) {
-      const rowA = current[country.code] ?? [];
-      const rowB = next[country.code] ?? [];
-      if (rowA.length !== rowB.length) return false;
-      for (let j = 0; j < rowA.length; j += 1) {
-        if (rowA[j] !== rowB[j]) return false;
-      }
-    }
-    return true;
-  }, [iso.countries, iso.status]);
+  const selectionSignature = useCallback((selection: Record<string, boolean[]>) => {
+    if (iso.status !== 'ready') return '';
+    return iso.countries.map((country) => {
+      const row = selection[country.code] ?? [];
+      const bits = matrixConfig.columns.map((_, colIdx) => (row[colIdx] ? '1' : '0')).join('');
+      return `${country.code}:${bits}`;
+    }).join('|');
+  }, [iso.countries, iso.status, matrixConfig.columns]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];
@@ -272,6 +270,7 @@ export const useRouteSelectionStep = ({
 
   useEffect(() => {
     if (iso.status !== 'ready') return;
+    if (isIdeGsm && !coverage) return;
     const dataSourceChanged = lastDataSourceRef.current !== dataSourceName;
     if (dataSourceChanged) {
       lastDataSourceRef.current = dataSourceName;
@@ -285,20 +284,20 @@ export const useRouteSelectionStep = ({
       (!isIdeGsm && policy.defaultChecked && (dataSourceChanged || !hasAnySelection))
     );
     const normalized = normalizeSelectionRecord(shouldApplyDefaults);
-    if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
+    if (selectionSignature(selectionRecordSource) !== selectionSignature(normalized)) {
       emitUpdate({ selectedArrayByCountries: normalized });
     }
   }, [
     coverage,
     coverageKey,
     dataSourceName,
-    deepEqualSelectionRecord,
     emitUpdate,
     hasAnySelection,
     isIdeGsm,
     iso.status,
     normalizeSelectionRecord,
     policy.defaultChecked,
+    selectionSignature,
     selectionRecordSource,
   ]);
 
@@ -314,43 +313,12 @@ export const useRouteSelectionStep = ({
           return allowedByCountry.has(col.id as RouteMode) ? Boolean(selections[col.id]) : false;
         });
       });
-      if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
+      if (selectionSignature(selectionRecordSource) !== selectionSignature(normalized)) {
         emitUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [deepEqualSelectionRecord, emitUpdate, iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionRecordSource],
+    [emitUpdate, iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionRecordSource, selectionSignature],
   );
-
-  const updateStyleConfig = useCallback((next: typeof styleConfig) => {
-    emitUpdate({ routeStyleConfig: next });
-  }, [emitUpdate]);
-
-  const handleModeColorChange = useCallback((mode: RouteMode, value: string) => {
-    updateStyleConfig({
-      ...styleConfig,
-      modeColors: {
-        ...styleConfig.modeColors,
-        [mode]: value,
-      },
-    });
-  }, [styleConfig, updateStyleConfig]);
-
-  const handleLineWidthChange = useCallback((value: number | number[]) => {
-    const raw = Array.isArray(value) ? value[0] ?? styleConfig.lineWidth : value;
-    const nextWidth = Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, Number(raw)));
-    updateStyleConfig({
-      ...styleConfig,
-      lineWidth: nextWidth,
-    });
-  }, [styleConfig, updateStyleConfig]);
-
-  const handleLineStyleChange = useCallback((value: string) => {
-    const nextStyle = ROUTE_STYLE_OPTIONS.find((option) => option.id === value)?.id ?? 'solid';
-    updateStyleConfig({
-      ...styleConfig,
-      lineStyle: nextStyle,
-    });
-  }, [styleConfig, updateStyleConfig]);
 
   useEffect(() => {
     const isValid =
@@ -411,9 +379,5 @@ export const useRouteSelectionStep = ({
     applySelections,
     resolveAllowedModesForCountry,
     policy,
-    styleConfig,
-    handleModeColorChange,
-    handleLineWidthChange,
-    handleLineStyleChange,
   };
 };

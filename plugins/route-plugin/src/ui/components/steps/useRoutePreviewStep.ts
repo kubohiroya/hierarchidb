@@ -20,9 +20,15 @@ import {
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { RouteLineString, RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
+import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { RouteEntity, RouteLineString, RouteNearestLineResponse } from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
-import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
+import {
+  LINE_WIDTH_MAX,
+  LINE_WIDTH_MIN,
+  ROUTE_MODE_COLUMNS,
+  ROUTE_STYLE_OPTIONS,
+} from './useRouteSelectionStep.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 import { getDBName } from '@hierarchidb/util';
@@ -99,12 +105,14 @@ const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
 export const useRoutePreviewStep = ({
   draft,
   nodeId,
+  onUpdate,
 }: {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   nodeId?: NodeId;
+  onUpdate: (updates: Partial<RouteEntity>) => void;
 }) => {
   const { t, locale } = useTranslation();
-  const previewNodeId = nodeId ?? draft.treeNodeId;
+  const previewNodeId = nodeId;
   const workerBridgeRef = useRef(getWorkerBridge());
   const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);
   const [lineStringsLoading, setLineStringsLoading] = useState(false);
@@ -138,15 +146,20 @@ export const useRoutePreviewStep = ({
   ), [lineStrings]);
   const bounds = useMemo(() => resolveBoundsForLines(lineGeometries), [lineGeometries]);
   const dataSourceConfig = useMemo(() => {
-    const name = draft.draftData?.dataSourceName;
+    const name = draft.dataSourceName;
     if (!name) return undefined;
     const normalized = name.toLowerCase();
     return ROUTE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
-  }, [draft.draftData?.dataSourceName]);
+  }, [draft.dataSourceName]);
   const routeStyleConfig = useMemo(
-    () => mergeRouteStyleConfig(draft.draftData?.routeStyleConfig),
-    [draft.draftData?.routeStyleConfig],
+    () => mergeRouteStyleConfig(draft.routeStyleConfig),
+    [draft.routeStyleConfig],
   );
+  const styleWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:route:style-config',
+    initialPosition: { x: 640, y: 96 },
+    initialSize: { width: 360, height: 520 },
+  });
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceConfig) return [];
     return [{
@@ -359,6 +372,33 @@ export const useRoutePreviewStep = ({
       },
     ]),
   ), [routeStyleConfig.modeColors, t]);
+  const updateStyleConfig = useCallback((next: typeof routeStyleConfig) => {
+    onUpdate({ routeStyleConfig: next });
+  }, [onUpdate, routeStyleConfig]);
+  const handleModeColorChange = useCallback((mode: RouteMode, value: string) => {
+    updateStyleConfig({
+      ...routeStyleConfig,
+      modeColors: {
+        ...routeStyleConfig.modeColors,
+        [mode]: value,
+      },
+    });
+  }, [routeStyleConfig, updateStyleConfig]);
+  const handleLineWidthChange = useCallback((value: number | number[]) => {
+    const raw = Array.isArray(value) ? value[0] ?? routeStyleConfig.lineWidth : value;
+    const nextWidth = Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, Number(raw)));
+    updateStyleConfig({
+      ...routeStyleConfig,
+      lineWidth: nextWidth,
+    });
+  }, [routeStyleConfig, updateStyleConfig]);
+  const handleLineStyleChange = useCallback((value: string) => {
+    const nextStyle = ROUTE_STYLE_OPTIONS.find((option) => option.id === value)?.id ?? 'solid';
+    updateStyleConfig({
+      ...routeStyleConfig,
+      lineStyle: nextStyle,
+    });
+  }, [routeStyleConfig, updateStyleConfig]);
   const getRowId = useCallback((row: (typeof listRows)[number]) => String(row.id), []);
   const buildSearchText = useCallback((row: (typeof listRows)[number]) => {
     const modeLabel = row.routeMode ? routeModeMeta[row.routeMode]?.label : undefined;
@@ -456,5 +496,11 @@ export const useRoutePreviewStep = ({
       errorCount: t('preview.list.columns.errorCount', 'Errors'),
       errorMessage: t('preview.list.columns.errorMessage', 'Error Message'),
     },
+    routeStyleConfig,
+    styleWindow,
+    showStyleWindowButton: !styleWindow.windowState.isVisible,
+    handleModeColorChange,
+    handleLineWidthChange,
+    handleLineStyleChange,
   };
 };

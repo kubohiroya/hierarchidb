@@ -6,7 +6,6 @@ import {
   type IdeGsmImportProgress,
   type IdeGsmRouteError,
   type RouteEntity,
-  type RouteUpdaterPayload,
 } from '@hierarchidb/route-api';
 import {
   createSessionCoordinator,
@@ -55,7 +54,7 @@ type RouteWorkerApi = {
 type UseRouteBuildSessionLifecycleArgs = {
   api: RouteWorkerApi | null;
   initialize: () => Promise<void>;
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   routeData: {
     processingStatus?: string;
     buildFinishedAt?: number | null;
@@ -236,12 +235,12 @@ export const useRouteBuildSessionLifecycle = ({
       notify.error(t('stage.errors.missingApi', 'Worker API is unavailable.'));
       return;
     }
-    const dataSourceName = (draft as { dataSourceName?: string }).dataSourceName;
+    const dataSourceName = draft.dataSourceName;
     if (dataSourceName !== 'ide-gsm') {
       notify.info(t('stage.errors.unsupportedSource', 'Selected data source is not supported yet.'));
       return;
     }
-    const sourceId = (draft as { tabularSourceId?: string }).tabularSourceId;
+    const sourceId = draft.tabularSourceId;
     if (!sourceId) {
       notify.error(t('stage.errors.missingSource', 'IDE-GSM source is required.'));
       return;

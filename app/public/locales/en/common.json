@@ -290,7 +290,8 @@
         "copy": "Copy ({{shortcut}})",
         "paste": "Paste ({{shortcut}})",
         "duplicate": "Duplicate ({{shortcut}})",
-        "moveToTrash": "Move to Trash ({{shortcut}})"
+        "moveToTrash": "Move to Trash ({{shortcut}})",
+        "moveToArchive": "Move to Archive ({{shortcut}})"
       },
       "trashMenu": {
         "restore": "Restore from Trash",
@@ -360,6 +361,7 @@
       "import": "Import",
       "export": "Export",
       "moveToTrash": "Move to Trash",
+      "moveToArchive": "Move to Archive",
       "visible": "Visible",
       "hidden": "Hidden",
       "checkReference": "Check reference",
@@ -428,7 +430,11 @@
       "confirmTrashTitle": "Move to Trash",
       "confirmTrashDescription": "Move this item and all its children to trash?",
       "confirmTrashCancel": "Cancel",
-      "confirmTrashConfirm": "Move to Trash"
+      "confirmTrashConfirm": "Move to Trash",
+      "confirmArchiveTitle": "Move to Archive",
+      "confirmArchiveDescription": "Move this item and all its children to archive?",
+      "confirmArchiveCancel": "Cancel",
+      "confirmArchiveConfirm": "Move to Archive"
     },
     "developerMenu": {
       "clearIndexedDb": "Delete all IndexedDB created by this app",

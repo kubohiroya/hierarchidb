@@ -80,6 +80,7 @@
     "style": {
       "title": "Route style",
       "description": "Configure colors and line styles per transport mode.",
+      "reopen": "Show route style",
       "modeColorsTitle": "Mode colors",
       "modeColorLabel": "Color",
       "lineWidthLabel": "Line width",

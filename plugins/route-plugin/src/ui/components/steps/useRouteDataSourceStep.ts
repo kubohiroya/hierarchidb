@@ -4,13 +4,12 @@ import {
   type IdeGsmImportPayload,
 } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '../../../common/i18n/index.js';
-import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
-import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 import { createRouteTabularApi } from '../../../common/tabular/createRouteTabularApi.js';
 
 export interface RouteDataSourceStepHookParams {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
@@ -50,7 +49,7 @@ export const useRouteDataSourceStep = ({
   const { t } = useTranslation();
   const tabularApi = useMemo(() => createRouteTabularApi(), []);
   const [importInProgress, setImportInProgress] = useState(false);
-  const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
+  const draft = draftProp;
   const resolvedSource = (draft.dataSourceName as DataSourceKey | undefined) ?? 'ide-gsm';
   const dataSourceMap = useMemo(
     () => new Map(ROUTE_DATA_SOURCES.map((source) => [source.name, source])),

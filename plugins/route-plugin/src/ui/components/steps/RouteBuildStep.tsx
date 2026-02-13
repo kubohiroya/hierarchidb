@@ -24,11 +24,9 @@ import type { IdeGsmImportProgress } from '@hierarchidb/route-api';
 import type {
   IdeGsmRouteError,
   RouteTransportSelection,
-  RouteUpdaterPayload,
   RouteEntity,
 } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
 import {
@@ -46,7 +44,7 @@ import {
 } from './useRouteBuildSessionLifecycle.ts';
 
 interface RouteBuildStepProps {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   nodeId?: string;
   parentId?: string;
@@ -134,9 +132,8 @@ const isTransportSelection = (value: unknown): value is RouteTransportSelection 
   typeof value === 'string' && value in TRANSPORT_SELECTION_LABELS
 );
 
-const resolveTransportLabel = (draft: RouteUpdaterPayload, t: (key: string, fallback?: string) => string): string => {
-  const data = getRouteUpdaterPayload(draft);
-  const selection = data.transportSelection;
+const resolveTransportLabel = (draft: Partial<RouteEntity>, t: (key: string, fallback?: string) => string): string => {
+  const selection = draft.transportSelection;
   if (selection == null) {
     return t('stage.notConfigured', 'Not configured');
   }
@@ -157,28 +154,28 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
-  const routeData = useMemo(() => getRouteUpdaterPayload(draft), [draft]);
-  const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
-  const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('stage.notConfigured', 'Not configured');
-  const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('stage.notConfigured', 'Not configured');
+  const routeData = draft;
+  const routeNodeId = nodeId as NodeId | undefined;
+  const dataSource = draft.dataSourceName ?? t('stage.notConfigured', 'Not configured');
+  const generationMethod = draft.generationMethod ?? t('stage.notConfigured', 'Not configured');
   const transportLabel = resolveTransportLabel(draft, t);
-  const startLocation = (draft as { startLocationId?: string }).startLocationId ?? t('stage.notConfigured', 'Not configured');
-  const endLocation = (draft as { endLocationId?: string }).endLocationId ?? t('stage.notConfigured', 'Not configured');
+  const startLocation = draft.startLocationId ?? t('stage.notConfigured', 'Not configured');
+  const endLocation = draft.endLocationId ?? t('stage.notConfigured', 'Not configured');
 
   const hasRequiredFields = Boolean(
-    (draft as { dataSourceName?: string }).dataSourceName &&
-      (draft as { transportMode?: string }).transportMode &&
-      (draft as { generationMethod?: string }).generationMethod &&
-      (draft as { startLocationId?: string }).startLocationId &&
-      (draft as { endLocationId?: string }).endLocationId,
+    draft.dataSourceName &&
+      draft.transportMode &&
+      draft.generationMethod &&
+      draft.startLocationId &&
+      draft.endLocationId,
   );
 
   const resolveZoomRange = useCallback((): [number, number] => {
-    const zoomRange = (draft as { zoomRange?: [number, number] }).zoomRange;
+    const zoomRange = draft.zoomRange;
     if (zoomRange && zoomRange.length === 2) {
       return zoomRange;
     }
-    const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
+    const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
       transformConfig?: { zoomBandBoundaries?: number[] };
     };
     const boundaries = buildConfig.transformConfig?.zoomBandBoundaries ?? [DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM];
@@ -188,7 +185,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   }, [draft]);
 
   const resolveVectorTileConfig = useCallback(() => {
-    const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
+    const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
       vtConfig?: { bufferSize?: number; inputFormat?: 'geojson' | 'flatgeobuf'; inputCompression?: 'gzip' | 'none' };
     };
     return {
@@ -387,12 +384,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     return title?.trim() ? title : t('stage.tasks.unknown', '(Task unavailable)');
   }, [completionStageLabel, ideGsmPhase, resolveIdeGsmLabel, t]);
   const completionTaskMessage = useMemo(() => {
-    return (draft as { processingError?: string }).processingError
+    return draft.processingError
       ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
   }, [draft, t]);
   const completionReason = useMemo(() => {
     if (status === 'failed') {
-      return (draft as { processingError?: string }).processingError
+      return draft.processingError
         ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
     }
     if (status === 'completed') {

@@ -225,12 +225,13 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         if (loggedTaskError < maxTaskLogs) {
           loggedTaskError += 1;
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.warn('[vt-orchestrator][runStageTasks] task error', {
-            nodeId,
-            stage,
-            taskId: task.taskId,
-            error: errorMessage,
-          });
+          console.warn(
+            `[vt-orchestrator][runStageTasks] task error`
+            + ` nodeId=${nodeId}`
+            + ` stage=${stage}`
+            + ` taskId=${task.taskId}`
+            + ` error=${errorMessage}`,
+          );
         }
         const err = normalizeErrorMessage(error);
         if (skipOnFailure) {

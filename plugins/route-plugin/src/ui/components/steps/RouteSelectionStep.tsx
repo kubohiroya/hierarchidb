@@ -7,9 +7,6 @@ import type React from 'react';
 import { Suspense } from 'react';
 import {
   Alert,
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   CircularProgress,
@@ -17,28 +14,17 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
-  Grid,
-  MenuItem,
-  Select,
-  Slider,
-  TextField,
   Typography,
 } from '@mui/material';
-import { ExpandMore } from '@mui/icons-material';
-import type { RouteMode } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import {
-  LINE_WIDTH_MAX,
-  LINE_WIDTH_MIN,
-  ROUTE_MODE_COLUMNS,
-  ROUTE_STYLE_OPTIONS,
   type RouteSelectionStepProps,
   useRouteSelectionStep,
 } from './useRouteSelectionStep.js';
+import type { RouteMode } from '@hierarchidb/route-api';
 
 const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
   const {
@@ -60,10 +46,6 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
     applySelections,
     resolveAllowedModesForCountry,
     policy,
-    styleConfig,
-    handleModeColorChange,
-    handleLineWidthChange,
-    handleLineStyleChange,
   } = useRouteSelectionStep(props);
 
   if (iso.status === 'loading') {
@@ -171,76 +153,6 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
           {t('routeConfig.customSelectionNote', 'Choose the Route Selection to fetch for each country.')}
         </Typography>
       )}
-      <Accordion sx={{ mt: 2 }}>
-        <AccordionSummary expandIcon={<ExpandMore />}>
-          <Box>
-            <Typography variant="subtitle1">
-              {t('routeConfig.style.title', 'Route style')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t('routeConfig.style.description', 'Configure colors and line styles per transport mode.')}
-            </Typography>
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="subtitle2">
-              {t('routeConfig.style.modeColorsTitle', 'Mode colors')}
-            </Typography>
-            <Grid container spacing={2}>
-              {ROUTE_MODE_COLUMNS.map((mode) => (
-                <Grid key={mode.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <mode.icon fontSize="small" />
-                    <Typography variant="body2" sx={{ flex: 1 }}>
-                      {t(mode.labelKey, mode.id)}
-                    </Typography>
-                    <TextField
-                      type="color"
-                      size="small"
-                      value={styleConfig.modeColors[mode.id]}
-                      onChange={(event) => handleModeColorChange(mode.id, event.target.value)}
-                      inputProps={{ 'aria-label': t('routeConfig.style.modeColorLabel', 'Color') }}
-                    />
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-            <Divider />
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('routeConfig.style.lineWidthLabel', 'Line width')}
-                </Typography>
-                <Slider
-                  min={LINE_WIDTH_MIN}
-                  max={LINE_WIDTH_MAX}
-                  value={styleConfig.lineWidth}
-                  onChange={(_, next) => handleLineWidthChange(next)}
-                  valueLabelDisplay="auto"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('routeConfig.style.lineStyleLabel', 'Line style')}
-                </Typography>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={styleConfig.lineStyle}
-                  onChange={(event) => handleLineStyleChange(String(event.target.value))}
-                >
-                  {ROUTE_STYLE_OPTIONS.map((option) => (
-                    <MenuItem key={option.id} value={option.id}>
-                      {t(option.labelKey, option.fallback)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Grid>
-            </Grid>
-          </Box>
-        </AccordionDetails>
-      </Accordion>
     </Box>
   );
 };

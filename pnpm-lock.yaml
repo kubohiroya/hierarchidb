@@ -3721,6 +3721,9 @@ importers:
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
+      '@hierarchidb/ui-floating-window':
+        specifier: workspace:*
+        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map

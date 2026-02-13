@@ -8,11 +8,11 @@ import {
   DataSourceSelectionStep,
   IdeGsmImportPanel,
 } from '@hierarchidb/ui-datasource';
-import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import { useRouteDataSourceStep } from './useRouteDataSourceStep.ts';
 
 export interface RouteDataSourceStepProps {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;

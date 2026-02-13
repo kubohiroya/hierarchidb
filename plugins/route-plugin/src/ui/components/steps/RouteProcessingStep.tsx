@@ -8,7 +8,7 @@ import { useCallback, useMemo } from 'react';
 import { BuildConfigShell, FetchConfigSection, VTConfigSection, ZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
-import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
 import { mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
@@ -19,7 +19,7 @@ import {
 } from '../../assets/filtering-samples/filteringSamples.ts';
 
 export interface RouteProcessingStepProps {
-  draft: RouteUpdaterPayload;
+  draft: Partial<RouteEntity>;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   nodeId?: NodeId;
   disabled?: boolean;
@@ -34,7 +34,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { config, handleChange } = useRouteBuildConfigStep({
-    data: draft.draftData ?? {},
+    data: draft,
     onChange: onUpdate,
   });
   const updateBuildConfig = useCallback((partial: Partial<BuildConfig>) => {
