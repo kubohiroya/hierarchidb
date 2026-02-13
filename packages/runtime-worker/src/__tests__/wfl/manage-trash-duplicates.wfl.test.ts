@@ -66,10 +66,10 @@ describe('trash duplicate names handling', () => {
     const first = await createCommittedNode(client, rootId, 'duplicate');
     const second = await createCommittedNode(client, rootId, 'duplicate');
 
-    const moveFirst = await mutationAPI.moveNodesToTrash([first]);
+    const moveFirst = await mutationAPI.moveNodesToArchive([first]);
     expect(moveFirst?.success).toBe(true);
 
-    const moveSecond = await mutationAPI.moveNodesToTrash([second]);
+    const moveSecond = await mutationAPI.moveNodesToArchive([second]);
     expect(moveSecond?.success).toBe(true);
 
     const trashChildren = await queryAPI.listChildren(trashRootId);

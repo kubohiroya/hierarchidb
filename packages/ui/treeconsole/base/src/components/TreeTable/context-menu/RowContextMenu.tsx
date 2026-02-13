@@ -31,16 +31,16 @@ export interface RowContextMenuProps {
   readonly onCreate: (type: string) => void;
   readonly onDuplicate: () => void;
   readonly onRemove?: () => void;
-  readonly onTrash?: () => void;
+  readonly onArchive?: () => void;
   readonly onToggleVisible?: (nextValue: boolean) => void;
   readonly isVisible?: boolean;
   readonly canOpen: boolean;
   readonly canEdit: boolean;
   readonly canCreate: boolean;
   readonly canRemove?: boolean;
-  readonly canTrash?: boolean;
+  readonly canArchive?: boolean;
   readonly canDuplicate: boolean;
-  readonly isTrashRoot?: boolean;
+  readonly isArchiveRoot?: boolean;
   readonly mode?: 'restore' | 'dispose';
   readonly onRestoreToOriginal?: () => void;
   readonly onRestoreToCurrent?: () => void;
@@ -173,9 +173,9 @@ export const RowContextMenu = memo(
       });
     };
 
-    const handleTrashClick = () => {
+    const handleArchiveClick = () => {
       const current = propsRef.current;
-      const handler = current.onTrash ?? current.onRemove;
+      const handler = current.onArchive ?? current.onRemove;
       handleMainMenuClose();
       requestAnimationFrame(() => {
         handler?.();
@@ -219,7 +219,7 @@ export const RowContextMenu = memo(
       }
     }, [safeAnchorEl]);
 
-    const allowTrash = (props.canTrash ?? props.canRemove ?? true);
+    const allowArchive = (props.canArchive ?? props.canRemove ?? true);
 
     return (
       <>
@@ -310,14 +310,14 @@ export const RowContextMenu = memo(
           </MenuItem>
 
           <MenuItem
-            onClick={handleTrashClick}
-            disabled={!allowTrash}
-            aria-label={t('treeConsole.contextMenu.moveToTrash', 'Move to Trash')}
+            onClick={handleArchiveClick}
+            disabled={!allowArchive}
+            aria-label={t('treeConsole.contextMenu.moveToArchive', 'Move to Archive')}
           >
             <ListItemIcon>
               <ClearIcon color="error" />
             </ListItemIcon>
-            <ListItemText>{t('treeConsole.contextMenu.moveToTrash', 'Move to Trash')}</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.moveToArchive', 'Move to Archive')}</ListItemText>
           </MenuItem>
 
           <Divider />
@@ -472,14 +472,14 @@ export const RowContextMenu = memo(
     );
   },
   (prevProps, nextProps) => {
-    const prevTrash = prevProps.canTrash ?? prevProps.canRemove;
-    const nextTrash = nextProps.canTrash ?? nextProps.canRemove;
+    const prevArchive = prevProps.canArchive ?? prevProps.canRemove;
+    const nextArchive = nextProps.canArchive ?? nextProps.canRemove;
     return (
       prevProps.nodeType === nextProps.nodeType &&
       prevProps.canOpen === nextProps.canOpen &&
       prevProps.canEdit === nextProps.canEdit &&
       prevProps.canCreate === nextProps.canCreate &&
-      prevTrash === nextTrash &&
+      prevArchive === nextArchive &&
       prevProps.canDuplicate === nextProps.canDuplicate &&
       prevProps.isVisible === nextProps.isVisible &&
       prevProps.parentElem === nextProps.parentElem &&

@@ -105,7 +105,7 @@ const runFolderUndoRedoFlow = async () => {
     );
 
     const trashResult = await commandProcessor.processCommand(
-      await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [resolvedNodeId] })
+      await commandProcessor.createEnvelope('moveToArchive', { nodeIds: [resolvedNodeId] })
     );
     expect(trashResult.success).toBe(true);
     await waitFor(async () => {
@@ -118,7 +118,7 @@ const runFolderUndoRedoFlow = async () => {
     });
 
     const restoreResult = await commandProcessor.processCommand(
-      await commandProcessor.createEnvelope('restoreFromTrash', {
+      await commandProcessor.createEnvelope('restoreFromArchive', {
         nodeIds: [resolvedNodeId],
         toParentId: rootId,
         onNameConflict: 'auto-rename',
@@ -132,7 +132,7 @@ const runFolderUndoRedoFlow = async () => {
     const nodeAfterRestore = await queryAPI.getNode(resolvedNodeId);
     expect(typeof nodeAfterRestore?.metadata.name).toBe('string');
 
-    const expectInTrash = async () => {
+    const expectInArchive = async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
       expect(node?.removedAt).toBeTruthy();
       const trashChildren = await queryAPI.listChildren(trashRootId);
@@ -162,10 +162,10 @@ const runFolderUndoRedoFlow = async () => {
     const undoRestore = await commandProcessor.undo();
     expect(undoRestore.success).toBe(true);
     await waitFor(async () => Boolean((await queryAPI.getNode(resolvedNodeId))?.removedAt));
-    await expectInTrash();
+    await expectInArchive();
 
-    const undoTrash = await commandProcessor.undo();
-    expect(undoTrash.success).toBe(true);
+    const undoArchive = await commandProcessor.undo();
+    expect(undoArchive.success).toBe(true);
     await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.removedAt === undefined);
     await expectInTreeWithRenamed();
 
@@ -188,10 +188,10 @@ const runFolderUndoRedoFlow = async () => {
     await waitFor(async () => Boolean(await queryAPI.getNode(resolvedNodeId)));
     await expectInTreeWithRenamed();
 
-    const redoTrash = await commandProcessor.redo();
-    expect(redoTrash.success).toBe(true);
+    const redoArchive = await commandProcessor.redo();
+    expect(redoArchive.success).toBe(true);
     await waitFor(async () => Boolean((await queryAPI.getNode(resolvedNodeId))?.removedAt));
-    await expectInTrash();
+    await expectInArchive();
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);

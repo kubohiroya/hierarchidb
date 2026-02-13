@@ -122,7 +122,7 @@ export class TreeMutationService implements TreeMutationAPI {
   }
 
 
-  private async checkTrashReferenceGuard(
+  private async checkArchiveReferenceGuard(
     nodeIds: NodeId[]
   ): Promise<{ blocked: boolean; message?: string }> {
     if (nodeIds.length === 0) return { blocked: false };
@@ -362,13 +362,13 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
-  async restoreNodesFromTrash(params: {
+  async restoreNodesFromArchive(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
     onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }> {
     const conflictPolicy = params.onNameConflict ?? 'auto-rename';
-    const cmd = this.commandProcessor.createEnvelope('restoreFromTrash', {
+    const cmd = this.commandProcessor.createEnvelope('restoreFromArchive', {
       nodeIds: params.nodeIds,
       toParentId: params.toParentId,
       onNameConflict: conflictPolicy,
@@ -387,7 +387,7 @@ export class TreeMutationService implements TreeMutationAPI {
           await this.recomputeDepthForSubtree(params.toParentId, rootId);
         }
       } catch (error) {
-        this.logRecoverableWarning('restoreNodesFromTrash: recomputeDepthForSubtree failed', error);
+        this.logRecoverableWarning('restoreNodesFromArchive: recomputeDepthForSubtree failed', error);
       }
     } else {
       await this.ensureAncestorsHaveChildrenFromNodes(params.nodeIds);
@@ -741,7 +741,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * : folder-plugin-operations.test.ts isRemoved
    * : docs/13-trash-operations-analysis.md
    */
-  async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
+  async moveNodesToArchive(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
       const runningBuildGuard = await this.checkRunningBuildSessionGuard(nodeIds);
       if (runningBuildGuard.blocked) {
@@ -751,7 +751,7 @@ export class TreeMutationService implements TreeMutationAPI {
         };
       }
 
-      const guard = await this.checkTrashReferenceGuard(nodeIds);
+      const guard = await this.checkArchiveReferenceGuard(nodeIds);
       if (guard.blocked) {
         return { success: false, error: guard.message ?? 'Cannot move to trash.' };
       }
@@ -766,7 +766,7 @@ export class TreeMutationService implements TreeMutationAPI {
       const n = await this.coreDB.getNode?.(nid);
       if (n?.parentId) originalParents.add(n.parentId);
     }
-    const env = this.commandProcessor.createEnvelope('moveToTrash', { nodeIds });
+    const env = this.commandProcessor.createEnvelope('moveToArchive', { nodeIds });
     const res = await this.commandProcessor.processCommand(env);
     if (res.success) {
       for (const pid of Array.from(originalParents))
@@ -833,7 +833,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * : folder-plugin-operations.test.tsisRemovedfalse
    * : docs/13-trash-operations-analysis.md
    */
-  // restoreFromTrash legacy removed: handled by CommandProcessor
+  // restoreFromArchive legacy removed: handled by CommandProcessor
 
   async importNodes(
     cmd: CommandEnvelope<'importNodes', ImportNodesPayload>

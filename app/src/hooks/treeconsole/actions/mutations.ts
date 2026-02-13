@@ -10,7 +10,7 @@ import {
   confirmOverwrite,
   fireCmdEvent,
   isNameConflictError,
-  resolveTrashNavigationTarget,
+  resolveArchiveNavigationTarget,
   showCommandError,
 } from './helpers.ts';
 import type { NavigationHelpers } from './navigation.ts';
@@ -38,7 +38,7 @@ export const createMutationActions = (
   const translateError = (key: string, fallback: string): string => (
     translateWithFallback ? translateWithFallback(key, fallback) : fallback
   );
-  const resolveTrashErrorMessage = (error?: string): string => {
+  const resolveArchiveErrorMessage = (error?: string): string => {
     if (!error) return translateError('treeConsole.errors.trashFailed', 'Move to trash failed.');
     if (error === 'TRASH_REF_ROUTE') {
       return translateError(
@@ -61,14 +61,14 @@ export const createMutationActions = (
     return error;
   };
 
-  const moveSelectionToTrash = async () => {
+  const moveSelectionToArchive = async () => {
     if (!client || selectedIds.length === 0) return;
     const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
     if (!ok) return;
 
     let navigationParentId: NodeId | null | undefined;
     if (pageNodeId) {
-      navigationParentId = await resolveTrashNavigationTarget({
+      navigationParentId = await resolveArchiveNavigationTarget({
         client,
         pageNodeId: pageNodeId as NodeId,
         pageTreeNode,
@@ -84,9 +84,9 @@ export const createMutationActions = (
         await teardownSubscription(pageNodeId as NodeId);
       }
       const mutationAPI = await client.getMutationAPI();
-      const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
+      const res = await mutationAPI.moveNodesToArchive(selectedIds as NodeId[]);
       if (!res.success) {
-        const message = resolveTrashErrorMessage(res.error);
+        const message = resolveArchiveErrorMessage(res.error);
         notify.error(message);
         showCommandError('INVALID_OPERATION', message);
         return;
@@ -100,7 +100,7 @@ export const createMutationActions = (
       fireCmdEvent();
       await setupSubscription(refreshTarget);
     } catch (error) {
-      console.error('Trash failed:', error);
+      console.error('Archive failed:', error);
       showCommandError('UNKNOWN_ERROR');
     }
   };
@@ -212,7 +212,7 @@ export const createMutationActions = (
   };
 
   return {
-    moveSelectionToTrash,
+    moveSelectionToArchive,
     handleCreate,
     handleDuplicate,
     handleMoveNodes,

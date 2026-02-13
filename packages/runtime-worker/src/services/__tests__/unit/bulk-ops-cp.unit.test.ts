@@ -87,7 +87,7 @@ describe('CommandProcessor bulk operations', () => {
     expect(await core.getNode(nodeB.id as NodeId)).toBeUndefined();
   });
 
-  it('restoreFromTrash uses bulkUpdateNodes for multiple nodes (without holders)', async () => {
+  it('restoreFromArchive uses bulkUpdateNodes for multiple nodes (without holders)', async () => {
     const { core, cp } = harness;
     const parent = await seedNode(core, {
       id: 'folder-root' as NodeId,
@@ -98,7 +98,7 @@ describe('CommandProcessor bulk operations', () => {
     const trashed1 = await seedNode(core, {
       id: 't1' as NodeId,
       parentId: trashRootId,
-      name: 'Trash Node 1',
+      name: 'Archive Node 1',
       originalName: 'n1',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
@@ -106,7 +106,7 @@ describe('CommandProcessor bulk operations', () => {
     const trashed2 = await seedNode(core, {
       id: 't2' as NodeId,
       parentId: trashRootId,
-      name: 'Trash Node 2',
+      name: 'Archive Node 2',
       originalName: 'n2',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
@@ -115,7 +115,7 @@ describe('CommandProcessor bulk operations', () => {
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
     const bulkDeleteSpy = vi.spyOn(core, 'bulkDeleteNodes');
 
-    const env = cp.createEnvelope('restoreFromTrash', {
+    const env = cp.createEnvelope('restoreFromArchive', {
       nodeIds: [trashed1.id as NodeId, trashed2.id as NodeId],
       toParentId: parent.id as NodeId,
     });
@@ -133,7 +133,7 @@ describe('CommandProcessor bulk operations', () => {
     expect(restored2?.removedAt).toBeUndefined();
   });
 
-  it('restoreFromTrash auto-renames conflicting nodes when requested', async () => {
+  it('restoreFromArchive auto-renames conflicting nodes when requested', async () => {
     const { core, cp } = harness;
     const parent = await seedNode(core, {
       id: 'restore-parent' as NodeId,
@@ -149,7 +149,7 @@ describe('CommandProcessor bulk operations', () => {
     const trashed1 = await seedNode(core, {
       id: 't1' as NodeId,
       parentId: trashRootId,
-      name: 'Trash Node 1',
+      name: 'Archive Node 1',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
@@ -157,7 +157,7 @@ describe('CommandProcessor bulk operations', () => {
     const trashed2 = await seedNode(core, {
       id: 't2' as NodeId,
       parentId: trashRootId,
-      name: 'Trash Node 2',
+      name: 'Archive Node 2',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
@@ -165,7 +165,7 @@ describe('CommandProcessor bulk operations', () => {
 
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
 
-    const env = cp.createEnvelope('restoreFromTrash', {
+    const env = cp.createEnvelope('restoreFromArchive', {
       nodeIds: [trashed1.id as NodeId, trashed2.id as NodeId],
       toParentId: parent.id as NodeId,
       onNameConflict: 'auto-rename',
@@ -184,7 +184,7 @@ describe('CommandProcessor bulk operations', () => {
     expect(restoredNames.every((name) => name.length > 0)).toBe(true);
   });
 
-  it('restoreFromTrash returns NAME_NOT_UNIQUE when conflicts remain and policy is error', async () => {
+  it('restoreFromArchive returns NAME_NOT_UNIQUE when conflicts remain and policy is error', async () => {
     const { core, cp } = harness;
     const parent = await seedNode(core, {
       id: 'restore-parent' as NodeId,
@@ -200,7 +200,7 @@ describe('CommandProcessor bulk operations', () => {
     const trashed = await seedNode(core, {
       id: 't1' as NodeId,
       parentId: trashRootId,
-      name: 'Trash Node',
+      name: 'Archive Node',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
@@ -208,7 +208,7 @@ describe('CommandProcessor bulk operations', () => {
 
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
 
-    const env = cp.createEnvelope('restoreFromTrash', {
+    const env = cp.createEnvelope('restoreFromArchive', {
       nodeIds: [trashed.id as NodeId],
       toParentId: parent.id as NodeId,
       onNameConflict: 'error',

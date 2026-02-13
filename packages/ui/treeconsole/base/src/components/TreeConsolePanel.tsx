@@ -53,7 +53,7 @@ export interface TreeConsolePanelProps {
   readonly viewMode: 'list' | 'grid';
   readonly canCreate: boolean;
   readonly canEdit: boolean;
-  readonly canTrash: boolean;
+  readonly canArchive: boolean;
   readonly showNavigationButtons?: boolean;
   readonly maxHeight?: number | string;
   readonly dense?: boolean;
@@ -115,14 +115,14 @@ export interface TreeConsolePanelProps {
   /** Optional build session indicator state for row-level status */
   readonly buildSessionIndicator?: BuildSessionIndicator;
   /** Enable trash-specific columns and behaviours */
-  readonly useTrashColumns?: boolean;
+  readonly useArchiveColumns?: boolean;
   readonly trashAction?: 'restore' | 'empty';
   /**
    * Whether to render the built-in static SpeedDial.
    * Set to false when an external DynamicSpeedDial is provided by the host app.
    */
   readonly renderBuiltInSpeedDial?: boolean;
-  /** Hide the drag handle column when true (e.g., Trash dialog). */
+  /** Hide the drag handle column when true (e.g., Archive dialog). */
   readonly hideDragHandler?: boolean;
   /** Optional custom breadcrumb renderer for host-specific presentation. */
   readonly breadcrumbRenderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
@@ -162,7 +162,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     treeId: props.treeId,
     pageTreeNode: props.pageTreeNode,
     infoPanel: props.infoPanel,
-    useTrashColumns: props.useTrashColumns,
+    useArchiveColumns: props.useArchiveColumns,
     trashAction: props.trashAction,
     onNodeClick: props.onNodeClick,
     onNodeSelect: props.onNodeSelect,
@@ -227,7 +227,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               selectAllPersistence={props.selectAllPersistence}
               selectionIdPrefix={props.selectAllIdPrefix}
               buildSessionIndicator={props.buildSessionIndicator}
-              useTrashColumns={props.useTrashColumns ?? false}
+              useArchiveColumns={props.useArchiveColumns ?? false}
               trashAction={props.trashAction}
               depthOffset={controller.depthOffset ?? 0}
               disableDragAndDrop={false}
@@ -258,7 +258,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             selectAllPersistence={props.selectAllPersistence}
             selectionIdPrefix={props.selectAllIdPrefix}
             buildSessionIndicator={props.buildSessionIndicator}
-            useTrashColumns={props.useTrashColumns ?? false}
+            useArchiveColumns={props.useArchiveColumns ?? false}
             trashAction={props.trashAction}
             depthOffset={controller.depthOffset ?? 0}
             disableDragAndDrop={false}
@@ -269,7 +269,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         </Box>
       )}
 
-      {!props.useTrashColumns && (
+      {!props.useArchiveColumns && (
         <TreeConsoleFooter
           controller={null} // TODO: Convert TreeTableController to TreeViewController
           onStartTour={props.onStartTour}

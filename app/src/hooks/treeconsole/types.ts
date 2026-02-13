@@ -71,8 +71,8 @@ export interface TreeConsoleActions {
   handleSearchModeChange: (mode: TreeConsoleSearchMode) => void;
   handleCreate: () => void;
   handleEdit: () => void;
-  handleTrash: () => void;
-  /** @deprecated Use handleTrash */
+  handleArchive: () => void;
+  /** @deprecated Use handleArchive */
   handleRemove?: () => void;
   handleRefresh: () => void;
   handleExpandAll: () => void;

@@ -24,10 +24,10 @@ import {
 import type { DualKeyMap } from '@hierarchidb/util';
 import {
   ArrowBack as ArrowBackIcon,
-  DeleteForever as EmptyTrashIcon,
+  DeleteForever as EmptyArchiveIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
-  RestoreFromTrash as RestoreIcon,
+  Restore as RestoreIcon,
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import {
@@ -48,9 +48,9 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
-import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';
-import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
-import { useTrashDialog } from './useTrashDialog.js';
+import { getArchiveDisplayName } from '../trash/getArchiveDisplayName.js';
+import { ArchiveBreadcrumb } from '../trash/ArchiveBreadcrumb.js';
+import { useArchiveDialog } from './useArchiveDialog.js';
 
 const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 
@@ -58,7 +58,7 @@ const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 // Loader & data types
 // ----------------------------------------
 
-export type TrashDialogRouteParams = {
+export type ArchiveDialogRouteParams = {
   treeId?: string;
   pageNodeId?: string;
   targetNodeId?: string;
@@ -71,8 +71,8 @@ export type TrashDialogRouteParams = {
 export async function clientLoader({
   params,
 }: {
-  params: TrashDialogRouteParams;
-}): Promise<TrashDialogData> {
+  params: ArchiveDialogRouteParams;
+}): Promise<ArchiveDialogData> {
   const { treeId, targetNodeId } = params;
   if (!treeId) {
     throw new Response('Missing treeId parameter.', { status: 400 });
@@ -82,66 +82,66 @@ export async function clientLoader({
   if (!treeData.tree) {
     return {
       ...treeData,
-      activeTrashNodeId: (targetNodeId as NodeId | undefined) ?? null,
+      activeArchiveNodeId: (targetNodeId as NodeId | undefined) ?? null,
       params,
-    } satisfies TrashDialogData;
+    } satisfies ArchiveDialogData;
   }
 
   const client = treeData.client;
   const queryAPI = await client.getQueryAPI();
-  const fallbackTrashId = treeData.tree.trashRootId as NodeId | undefined;
-  const activeTrashNodeId = (targetNodeId as NodeId | undefined) ?? fallbackTrashId;
-  if (!activeTrashNodeId) {
-    throw new Response('Trash root not found.', { status: 404 });
+  const fallbackArchiveId = treeData.tree.trashRootId as NodeId | undefined;
+  const activeArchiveNodeId = (targetNodeId as NodeId | undefined) ?? fallbackArchiveId;
+  if (!activeArchiveNodeId) {
+    throw new Response('Archive root not found.', { status: 404 });
   }
 
-  const trashRootNode = fallbackTrashId ? await queryAPI.getNode(fallbackTrashId) : undefined;
-  const activeTrashNode = await queryAPI.getNode(activeTrashNodeId);
-  const targetDepth = activeTrashNodeId === fallbackTrashId ? 2 : 1;
-  const trashItems = (await queryAPI.listChildren(activeTrashNodeId, {
+  const trashRootNode = fallbackArchiveId ? await queryAPI.getNode(fallbackArchiveId) : undefined;
+  const activeArchiveNode = await queryAPI.getNode(activeArchiveNodeId);
+  const targetDepth = activeArchiveNodeId === fallbackArchiveId ? 2 : 1;
+  const trashItems = (await queryAPI.listChildren(activeArchiveNodeId, {
     prefetch: { depth: targetDepth },
   })) as TreeNode[];
 
   return {
     ...treeData,
-    activeTrashNode,
+    activeArchiveNode,
     trashRootNode,
     trashItems,
-    activeTrashNodeId,
+    activeArchiveNodeId,
     params,
-  } satisfies TrashDialogData;
+  } satisfies ArchiveDialogData;
 }
 
-export type TrashDialogData = LoadTreeReturn & {
+export type ArchiveDialogData = LoadTreeReturn & {
   trashRootNode?: TreeNode;
-  activeTrashNode?: TreeNode;
+  activeArchiveNode?: TreeNode;
   trashItems?: TreeNode[];
-  activeTrashNodeId: NodeId | null;
-  params: TrashDialogRouteParams;
+  activeArchiveNodeId: NodeId | null;
+  params: ArchiveDialogRouteParams;
 };
 
 // ----------------------------------------
 // Dialog internals
 // ----------------------------------------
 
-type TrashStepData = Record<string, never>;
+type ArchiveStepData = Record<string, never>;
 
 // ----------------------------------------
 // Presentation components
 // ----------------------------------------
 
-interface TrashDialogHeaderProps extends HeadlessHeaderRenderProps<TrashStepData> {
+interface ArchiveDialogHeaderProps extends HeadlessHeaderRenderProps<ArchiveStepData> {
   title: string;
 }
 
-function TrashDialogHeader({
+function ArchiveDialogHeader({
   title,
   displayMode,
   onDisplayModeChange,
   onRequestClose,
   isDirty,
-}: TrashDialogHeaderProps) {
-  const ctx = useDialogContext<TrashStepData>();
+}: ArchiveDialogHeaderProps) {
+  const ctx = useDialogContext<ArchiveStepData>();
   const { t } = useTranslation();
   const closeLabel = t('dialogs.pluginDialog.tooltips.close', 'Close dialog');
 
@@ -243,7 +243,7 @@ function TrashDialogHeader({
   );
 }
 
-interface TrashDialogFooterProps extends HeadlessFooterRenderProps<TrashStepData> {
+interface ArchiveDialogFooterProps extends HeadlessFooterRenderProps<ArchiveStepData> {
   mode: 'restore' | 'empty';
   totalCount: number;
   selectedCount: number;
@@ -253,7 +253,7 @@ interface TrashDialogFooterProps extends HeadlessFooterRenderProps<TrashStepData
   hasDraftsInView: boolean;
 }
 
-function TrashDialogFooter({
+function ArchiveDialogFooter({
   mode,
   totalCount,
   selectedCount,
@@ -262,7 +262,7 @@ function TrashDialogFooter({
   onEmptyAll,
   onRequestClose,
   hasDraftsInView,
-}: TrashDialogFooterProps) {
+}: ArchiveDialogFooterProps) {
   const { t } = useTranslation();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const handleConfirmOpen = () => setConfirmOpen(true);
@@ -329,7 +329,7 @@ function TrashDialogFooter({
           <Button
             variant="contained"
             color="error"
-            startIcon={<EmptyTrashIcon />}
+            startIcon={<EmptyArchiveIcon />}
             onClick={handleConfirmOpen}
             disabled={emptyDisabled}
             aria-label={emptyAria}
@@ -390,7 +390,7 @@ function TrashDialogFooter({
   );
 }
 
-interface TrashDialogContentProps {
+interface ArchiveDialogContentProps {
   loading: boolean;
   treeData: HierarchicalTreeNode[];
   columns: TreeTableColumn[];
@@ -410,7 +410,7 @@ interface TrashDialogContentProps {
   hasDraftsInView: boolean;
 }
 
-function TrashDialogContent({
+function ArchiveDialogContent({
   loading,
   treeData,
   columns,
@@ -427,13 +427,13 @@ function TrashDialogContent({
   onToggleExpand,
   nodeIndex,
   hasDraftsInView,
-}: TrashDialogContentProps) {
+}: ArchiveDialogContentProps) {
   const { t } = useTranslation();
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return treeData;
     return treeData.filter((node) => {
-      const name = getTrashDisplayName(node).toLowerCase();
+      const name = getArchiveDisplayName(node).toLowerCase();
       const type = (node.nodeType ?? '').toLowerCase();
       return name.includes(term) || type.includes(term);
     });
@@ -499,8 +499,8 @@ function TrashDialogContent({
           viewMode="list"
           canCreate={false}
           canEdit={false}
-          canTrash={mode === 'empty'}
-          useTrashColumns
+          canArchive={mode === 'empty'}
+          useArchiveColumns
           selectAllIdPrefix="trash-row-selection"
           selectAllPersistence="session"
           trashAction={mode}
@@ -508,7 +508,7 @@ function TrashDialogContent({
           breadcrumbRenderer={({
             defaultRendererProps,
           }: TreeConsoleBreadcrumbRendererProps) => (
-            <TrashBreadcrumb {...defaultRendererProps} />
+            <ArchiveBreadcrumb {...defaultRendererProps} />
           )}
           onNodeClick={(_node: HierarchicalTreeNode) => undefined}
           onNodeSelect={(nodeIds: string[], selected: boolean) => {
@@ -562,12 +562,12 @@ function TrashDialogContent({
 // Main component
 // ----------------------------------------
 
-export interface TrashDialogProps {
-  data: TrashDialogData;
-  params: TrashDialogRouteParams;
+export interface ArchiveDialogProps {
+  data: ArchiveDialogData;
+  params: ArchiveDialogRouteParams;
 }
 
-export function TrashDialog({ data, params }: TrashDialogProps) {
+export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
   const {
     t,
     treeId,
@@ -592,7 +592,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     closeDialog,
     frameState,
     frameSx,
-  } = useTrashDialog(data, params);
+  } = useArchiveDialog(data, params);
 
   const handleClose = useCallback(() => {
     closeDialog();
@@ -604,7 +604,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           id: 'trash-root',
           label: t('dialogs.trash.stepLabel'),
           component: () => (
-            <TrashDialogContent
+            <ArchiveDialogContent
               loading={loading}
               treeData={treeData}
               columns={columns}
@@ -648,7 +648,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     ]
   );
 
-  const headlessProps: HeadlessPluginDialogProps<TrashStepData> = useMemo(
+  const headlessProps: HeadlessPluginDialogProps<ArchiveStepData> = useMemo(
     () => ({
       open: true,
       stepComponents,
@@ -665,15 +665,15 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
       onSizeChange: (next: DialogSize) => frameState.setSize(next),
       onDisplayModeChange: (mode: DialogDisplayMode) => frameState.setDisplayMode(mode),
       renderHeader: (props) => (
-        <TrashDialogHeader
+        <ArchiveDialogHeader
           {...props}
           title={
             mode === 'restore' ? t('dialogs.trash.title.restore') : t('dialogs.trash.title.empty')
           }
         />
       ),
-      renderFooter: (props: HeadlessFooterRenderProps<TrashStepData>) => (
-        <TrashDialogFooter
+      renderFooter: (props: HeadlessFooterRenderProps<ArchiveStepData>) => (
+        <ArchiveDialogFooter
           {...props}
           mode={mode}
           totalCount={removalTargetCount}
@@ -703,4 +703,4 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   return <PluginDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;
 }
 
-export default TrashDialog;
+export default ArchiveDialog;

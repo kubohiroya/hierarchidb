@@ -57,7 +57,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
      isResourcesPage,
      viewHeight,
      viewWidth,
-     useTrashColumns,
+     useArchiveColumns,
      depthOffset: _depthOffset,
      rootNodeId: _treeRootNodeId,
      currentNodeInfo: _currentNodeInfo,
@@ -79,7 +79,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
       isResourcesPage,
       viewHeight,
       viewWidth,
-      useTrashColumns,
+      useArchiveColumns,
       depthOffset: _depthOffset,
       rootNodeId: _treeRootNodeId,
       currentNodeInfo: _currentNodeInfo,
@@ -118,7 +118,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                 controller={treeTableController}
                 viewHeight={viewHeight || 400}
                 viewWidth={viewWidth || 800}
-                useTrashColumns={useTrashColumns}
+                useArchiveColumns={useArchiveColumns}
                 depthOffset={_depthOffset}
                 disableDragAndDrop={false}
                 hideDragHandler={hideDragHandler}

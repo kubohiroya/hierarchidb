@@ -1,7 +1,7 @@
-import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RecyclingIcon } from '@mui/icons-material';
+import { DeleteForever as EmptyArchiveIcon, Restore as RecyclingIcon } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 
-export interface TrashMenuProps {
+export interface ArchiveMenuProps {
   anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;
@@ -11,7 +11,7 @@ export interface TrashMenuProps {
   emptyLabel: string;
 }
 
-export function TrashMenu({
+export function ArchiveMenu({
   anchorEl,
   open,
   onClose,
@@ -19,7 +19,7 @@ export function TrashMenu({
   onEmpty,
   restoreLabel,
   emptyLabel,
-}: TrashMenuProps) {
+}: ArchiveMenuProps) {
   return (
     <Menu anchorEl={anchorEl} open={open} onClose={onClose} keepMounted>
       <MenuItem
@@ -42,7 +42,7 @@ export function TrashMenu({
         aria-label={emptyLabel}
       >
         <ListItemIcon>
-          <EmptyTrashIcon fontSize="small" />
+          <EmptyArchiveIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText primary={emptyLabel} />
       </MenuItem>

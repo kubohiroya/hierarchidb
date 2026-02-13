@@ -519,7 +519,7 @@ export const createContextMenuAction = (
               setSSOT({ selectedIds: [targetNodeId] });
             }
             const mutationAPI = await client.getMutationAPI();
-            const res = await mutationAPI.moveNodesToTrash(resolvedIds);
+            const res = await mutationAPI.moveNodesToArchive(resolvedIds);
             if (!res.success) {
               showCommandError('INVALID_OPERATION', res.error || 'Delete failed');
               return;

@@ -39,7 +39,7 @@ export class CommandHistoryManager {
     CommandId,
     Map<NodeId, { nextParentId: NodeId; nextName: string }>
   >();
-  private readonly preMoveToTrashState = new Map<
+  private readonly preMoveToArchiveState = new Map<
     CommandId,
     Array<{
       nodeId: NodeId;
@@ -65,9 +65,9 @@ export class CommandHistoryManager {
     'createNode',
     'updateNode',
     'moveNodes',
-    'moveToTrash',
+    'moveToArchive',
     'remove',
-    'restoreFromTrash',
+    'restoreFromArchive',
     'commitDraft',
   ]);
 
@@ -149,7 +149,7 @@ export class CommandHistoryManager {
     this.preRemoveState.clear();
     this.preRestoreState.clear();
     this.redoRestoreState.clear();
-    this.preMoveToTrashState.clear();
+    this.preMoveToArchiveState.clear();
     this.preCommitDraftState.clear();
   }
 
@@ -253,7 +253,7 @@ export class CommandHistoryManager {
     this.redoRestoreState.set(commandId, snapshotMap);
   }
 
-  storePreMoveToTrashState(
+  storePreMoveToArchiveState(
     commandId: CommandId,
     entries: Array<{
       nodeId: NodeId;
@@ -267,10 +267,10 @@ export class CommandHistoryManager {
       trashName: string;
     }>
   ): void {
-    if (this.preMoveToTrashState.has(commandId)) {
+    if (this.preMoveToArchiveState.has(commandId)) {
       return;
     }
-    this.preMoveToTrashState.set(
+    this.preMoveToArchiveState.set(
       commandId,
       entries.map((entry) => ({ ...entry }))
     );
@@ -366,7 +366,7 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'restoreFromTrash': {
+      case 'restoreFromArchive': {
         const commandId = command.commandId as CommandId;
         const snapshot = this.preRestoreState.get(commandId) || [];
         for (const entry of snapshot) {
@@ -379,9 +379,9 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'moveToTrash': {
+      case 'moveToArchive': {
         const commandId = command.commandId as CommandId;
-        const entries = this.preMoveToTrashState.get(commandId) || [];
+        const entries = this.preMoveToArchiveState.get(commandId) || [];
         for (const entry of entries) {
           const node = await this.deps.coreDB.getNode?.(entry.nodeId);
           if (!node) {
@@ -523,7 +523,7 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'restoreFromTrash': {
+      case 'restoreFromArchive': {
         const payload = command.payload as {
           nodeIds: NodeId[];
           toParentId?: NodeId;
@@ -564,9 +564,9 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'moveToTrash': {
+      case 'moveToArchive': {
         const commandId = command.commandId as CommandId;
-        const entries = this.preMoveToTrashState.get(commandId) || [];
+        const entries = this.preMoveToArchiveState.get(commandId) || [];
         for (const entry of entries) {
           const node = await this.deps.coreDB.getNode?.(entry.nodeId);
           if (!node) {

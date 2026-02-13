@@ -79,7 +79,7 @@ const defaultParams: ColumnBuilderParams = {
   treeId: 'console',
   setContextMenuState: () => {},
   visualSelectionSet: new Set(),
-  useTrashColumns: false,
+  useArchiveColumns: false,
   trashAction: 'restore',
   formatTimestamp: () => '-',
   columnLabels: {

@@ -29,7 +29,7 @@ const createNode = (id: string): TreeNode => {
 };
 
 describe('TreeTableContextMenu trash disable for running build session', () => {
-  it('passes canTrash=false when node is running', () => {
+  it('passes canArchive=false when node is running', () => {
     let latestProps: NodeContextMenuProps | null = null;
     const ContextMenuComponent = (props: NodeContextMenuProps) => {
       latestProps = props;
@@ -55,11 +55,11 @@ describe('TreeTableContextMenu trash disable for running build session', () => {
       })
     );
 
-    expect(latestProps?.canTrash).toBe(false);
+    expect(latestProps?.canArchive).toBe(false);
     expect(latestProps?.canRemove).toBe(false);
   });
 
-  it('passes canTrash=true when node is not running', () => {
+  it('passes canArchive=true when node is not running', () => {
     let latestProps: NodeContextMenuProps | null = null;
     const ContextMenuComponent = (props: NodeContextMenuProps) => {
       latestProps = props;
@@ -85,7 +85,7 @@ describe('TreeTableContextMenu trash disable for running build session', () => {
       })
     );
 
-    expect(latestProps?.canTrash).toBe(true);
+    expect(latestProps?.canArchive).toBe(true);
     expect(latestProps?.canRemove).toBe(true);
   });
 });

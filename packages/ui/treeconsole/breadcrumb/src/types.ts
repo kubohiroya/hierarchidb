@@ -21,7 +21,7 @@ export interface BreadcrumbNode {
 }
 
 export interface TreeConsoleBreadcrumbContext {
-  isTrashPage?: boolean;
+  isArchivePage?: boolean;
   isProjectsPage?: boolean;
 }
 
@@ -78,17 +78,17 @@ export interface TreeConsoleBreadcrumbProps {
   onDropToNode?: (targetNodeId: string, draggedNodeId: string) => void;
 
   /**
-   * Optional page node id (e.g., Trash dialog context)
+   * Optional page node id (e.g., Archive dialog context)
    */
   pageNodeId?: string;
 
   /**
    * Enable trash-specific link generation for breadcrumb items.
    */
-  useTrashColumns?: boolean;
+  useArchiveColumns?: boolean;
 
   /**
-   * Trash action context when useTrashColumns is true.
+   * Archive action context when useArchiveColumns is true.
    */
   trashAction?: 'restore' | 'empty';
 

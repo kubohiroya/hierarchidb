@@ -73,11 +73,11 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     );
     expect(moveRes.success).toBe(true);
 
-    const mt = await cp.processCommand(cp.createEnvelope('moveToTrash', { nodeIds: [nodeId] }));
+    const mt = await cp.processCommand(cp.createEnvelope('moveToArchive', { nodeIds: [nodeId] }));
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(
-      cp.createEnvelope('restoreFromTrash', { nodeIds: [nodeId] })
+      cp.createEnvelope('restoreFromArchive', { nodeIds: [nodeId] })
     );
     expect(rec.success).toBe(true);
   });

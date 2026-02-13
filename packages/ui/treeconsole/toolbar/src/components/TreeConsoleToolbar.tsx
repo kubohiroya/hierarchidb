@@ -10,7 +10,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     hideConsole = false,
     showSearchOnly = false,
     controller,
-    hasTrashItems = false,
+    hasArchiveItems = false,
     trashNodeId,
     onAction,
     rowClickAction = 'Select/Navigate',
@@ -28,7 +28,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canCopy = false,
     canPaste = false,
     canDuplicate = false,
-    canTrash,
+    canArchive,
     developerModeEnabled = false,
   } = props;
 
@@ -58,7 +58,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     >
       <TreeConsoleToolbarContent
         controller={controller}
-        hasTrashItems={hasTrashItems}
+        hasArchiveItems={hasArchiveItems}
         trashNodeId={trashNodeId}
         onAction={onAction}
         rowClickAction={rowClickAction}
@@ -76,7 +76,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canCopy={canCopy}
         canPaste={canPaste}
         canDuplicate={canDuplicate}
-        canTrash={canTrash}
+        canArchive={canArchive}
         developerModeEnabled={developerModeEnabled}
         searchStrings={searchStrings}
       />

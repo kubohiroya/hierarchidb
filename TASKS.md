@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #255 / `codex/refactor/repo/rename-trash-to-archive` / start: 2026-02-13 22:11 JST
 - #252 / `codex/chore/repo/unify-trash-to-archive` / start: 2026-02-13 18:44 JST
 - #250 / `codex/fix/shape/worker-init-stall-no-log` / start: 2026-02-13 18:02 JST
 - #247 / `codex/fix/shape/no-task-complete-guard` / start: 2026-02-13 14:56 JST
@@ -68,6 +69,7 @@
 
 ### Blocked
 
+- #255 / `codex/refactor/repo/rename-trash-to-archive` / blocked: 2026-02-13 22:20 JST（`pnpm typecheck` が差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418` の型不整合で exit 1、`pnpm test` が差分外既知ブロッカー `ui/worker-client e2e` の `window is not defined` と `runtime-worker undo-folder-operations.wfl` timeout で exit 1）
 - #252 / `codex/chore/repo/unify-trash-to-archive` / blocked: 2026-02-13 18:52 JST（`pnpm typecheck` が差分外既知ブロッカー `@hierarchidb/route-plugin` の型不整合で exit 2、`pnpm test` が差分外既知ブロッカー `@hierarchidb/ui-routing` の `packages/_obsolate_common/api` 参照不整合で exit 1）
 - #250 / `codex/fix/shape/worker-init-stall-no-log` / blocked: 2026-02-13 18:11 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外既知ブロッカー `@hierarchidb/shape-plugin` の `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
 - #243 / `codex/feat/app/ssot-template-create-menus` / blocked: 2026-02-13 12:30 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-i18n --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-treetable` が差分外 `@hierarchidb/shape-plugin` の既知型不整合 `vtConfig.debug.tiles` readonly/mutable 競合で exit 2）
@@ -76,6 +78,9 @@
 
 ## 今日の運用ログ
 
+- blocked: 2026-02-13 22:20 JST #255 検証結果: `pnpm -w turbo run build --filter @hierarchidb/app --filter @hierarchidb/runtime-worker --filter @hierarchidb/tree-api --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable` は初回 `RestoreFromArchive` icon 未存在で失敗（exit 1）後、`Restore` へ修正して再実行し exit 0。`pnpm typecheck` は差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418`（`ShapePresetMenuEntry` 型不整合）で exit 1。`pnpm test` は差分外既知ブロッカー `ui/worker-client` 系 `window is not defined` と `runtime-worker/src/__tests__/wfl/undo-folder-operations.wfl.test.ts` timeout で exit 1。
+- update: 2026-02-13 22:20 JST #255 で `Trashed -> Archived`、識別子内 `Trash -> Archive` をコードファイルへ適用し、`Trash` を含むファイル名 13 件（`TrashDialog.tsx`、`TrashMenu.tsx`、`useTreeConsoleTrashWatcher.ts` など）を `Archive` へ `git mv` で改名。参照側 import/export と呼び出し名も追従更新し、コードファイル上の `Trash` 識別子残存を解消。
+- update: 2026-02-13 22:11 JST Issue `refactor(repo): rename Trash identifiers/files to Archive` を起票し `https://github.com/kubohiroya/hierarchidb/issues/255` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/refactor/repo/rename-trash-to-archive` を作成して着手。
 - update: 2026-02-13 18:52 JST #252 `Trash/ゴミ箱` → `Archive/アーカイブ` の全置換を実施。追跡ファイル 223 件を対象に識別子・i18n・文言・ルート・ドキュメントを置換し、`app/src/router/pages/tree/archive/*` や `packages/ui/treeconsole/toolbar/src/components/toolbar/ArchiveMenu.tsx` など `trash` 含みのファイル/ディレクトリを `git mv` で改名。`pnpm build` は初回失敗（`RestoreFromArchive` icon 未存在）を `Restore` icon へ修正後、exit 0 で完了。
 - blocked: 2026-02-13 18:52 JST #252 検証結果: `pnpm install --frozen-lockfile` exit 0 / `pnpm build` exit 0。`pnpm typecheck` は `@hierarchidb/route-plugin` 既知型不整合（Dexie ctor, RouteTileSettings型）で exit 2。`pnpm test` は `@hierarchidb/ui-routing` の Vitest 設定で `packages/_obsolate_common/api` 参照不整合により exit 1。対象差分で追加実行した `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/archive/__tests__/unit/*.test.ts` も `vitest.setup.base.ts` の `node-fetch` import 解決失敗で exit 1。
 - update: 2026-02-13 18:44 JST Issue `chore(repo): unify Trash/ゴミ箱 naming to Archive/アーカイブ` を起票し `https://github.com/kubohiroya/hierarchidb/issues/252` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-archive-unify` とブランチ `codex/chore/repo/unify-trash-to-archive` を作成して着手。

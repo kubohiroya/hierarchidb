@@ -98,7 +98,6 @@ type WorkerContextValue = WorkerClientRef;
 type WorkerProviderProps = {
   children: ReactNode;
   timeout?: number;
-  debug?: boolean;
   renderOverlay?: boolean;
   fallback?: ReactNode | null;
 };
@@ -317,7 +316,6 @@ declare global {
 export const WorkerProvider = ({
   children,
   timeout = DEFAULT_WORKER_INIT_TIMEOUT_MS,
-  debug = false,
   renderOverlay = true,
   fallback = null,
 }: WorkerProviderProps) => {
@@ -335,9 +333,6 @@ export const WorkerProvider = ({
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
   const latestProgressMessageRef = useRef(getWorkerInitStartMessage());
-  const lastLoggedProgressRef = useRef(-1);
-  const lastLoggedProgressBucketRef = useRef(-1);
-  const lastLoggedMessageRef = useRef('');
   const initializationInFlightRef = useRef<Promise<void> | null>(null);
   const completionMarkedRef = useRef(false);
   const lastAuthTokenRef = useRef<string | null>(null);
@@ -357,27 +352,6 @@ export const WorkerProvider = ({
       const progressMessage = detail.message ?? getWorkerInitFallbackMessage();
       latestProgressRef.current = detail.progress;
       latestProgressMessageRef.current = progressMessage;
-      const normalizedProgress = Math.max(0, Math.min(100, Math.round(detail.progress)));
-      const progressBucket = normalizedProgress >= 100
-        ? 100
-        : Math.floor(Math.max(0, normalizedProgress) / 25) * 25;
-      const shouldLogProgress = debug
-        ? (
-          normalizedProgress <= 0
-          || normalizedProgress >= 100
-          || Math.abs(normalizedProgress - lastLoggedProgressRef.current) >= 10
-          || progressMessage !== lastLoggedMessageRef.current
-        )
-        : progressBucket !== lastLoggedProgressBucketRef.current;
-      if (shouldLogProgress) {
-        lastLoggedProgressRef.current = normalizedProgress;
-        lastLoggedProgressBucketRef.current = progressBucket;
-        lastLoggedMessageRef.current = progressMessage;
-        console.info('[WorkerProvider] init progress', {
-          progress: normalizedProgress,
-          message: progressMessage,
-        });
-      }
       setStatus((prev) => ({
         ...prev,
         initProgress: detail.progress,
@@ -500,7 +474,6 @@ export const WorkerProvider = ({
     }
     bootProgress?.setStepProgress('Worker', 100, readyLabel);
     bootProgress?.markStepDone('Worker', readyLabel);
-    console.info('[WorkerProvider] initialization complete');
     await finalizeInitialized();
   }, [bootProgress, finalizeInitialized, t]);
 
@@ -525,18 +498,9 @@ export const WorkerProvider = ({
     }
     const initializationTask = (async () => {
       completionMarkedRef.current = false;
-      lastLoggedProgressRef.current = -1;
-      lastLoggedProgressBucketRef.current = -1;
-      lastLoggedMessageRef.current = '';
       const timeoutMs = Number.isFinite(timeout) && timeout > 0
         ? Math.floor(timeout)
         : DEFAULT_WORKER_INIT_TIMEOUT_MS;
-      const currentProxyState = proxy.getState();
-      console.info('[WorkerProvider] initialization started', {
-        timeoutMs,
-        proxyState: currentProxyState,
-        debug,
-      });
 
       bootLog('WorkerProvider initialize() start');
       latestProgressRef.current = 0;
@@ -627,7 +591,7 @@ export const WorkerProvider = ({
     });
     initializationInFlightRef.current = initializationTask;
     return initializationTask;
-  }, [bootProgress, debug, isInitializationSatisfied, markComplete, proxy, t, timeout]);
+  }, [bootProgress, isInitializationSatisfied, markComplete, proxy, t, timeout]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');

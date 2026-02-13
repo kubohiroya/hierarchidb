@@ -32,8 +32,15 @@ export function toRouteUpdaterPayload(
 }
 
 export function getRouteUpdaterPayload(draft: RouteUpdaterPayload): Partial<RouteEntity> {
-  if (draft && typeof draft === 'object' && 'draftData' in draft && draft.draftData) {
+  if (
+    draft
+    && typeof draft === 'object'
+    && 'draftData' in draft
+    && typeof draft.draftData === 'object'
+    && draft.draftData !== null
+  ) {
     return draft.draftData as Partial<RouteEntity>;
   }
-  return draft as unknown as Partial<RouteEntity>;
+
+  return {};
 }

@@ -1,9 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
-import { getTrashDisplayName } from './getTrashDisplayName.js';
+import { getArchiveDisplayName } from './getArchiveDisplayName.js';
 
-export interface BuildTrashBreadcrumbsParams {
+export interface BuildArchiveBreadcrumbsParams {
   treeId: string;
   rootNode: TreeNode;
   targetNodeId: NodeId | null | undefined;
@@ -16,7 +16,7 @@ const DEFAULT_MAX_DEPTH = 32;
 /**
  * Generate breadcrumb entries for the trash dialog.
  *
- * Trash data in the worker is organized by storing canonical nodes directly under
+ * Archive data in the worker is organized by storing canonical nodes directly under
  * the trash root. Each node carries optional metadata (`originalName`,
  * `originalParentId`) describing its source location. The UI still needs to render
  * a logical breadcrumb path for the trashed node; this helper constructs the list
@@ -26,19 +26,19 @@ const DEFAULT_MAX_DEPTH = 32;
  * Typical usage in the trash dialog:
  *
  * ```ts
- * const breadcrumbs = buildTrashBreadcrumbs({
+ * const breadcrumbs = buildArchiveBreadcrumbs({
  *   treeId,
  *   rootNode: trashRoot,
  *   targetNodeId: selectedNodeId,
  *   nodeMap,
  * });
  * // breadcrumbs is passed to the TreeConsole breadcrumb renderer to display
- * // "Trash / Node" (or deeper paths when children exist) while still using
+ * // "Archive / Node" (or deeper paths when children exist) while still using
  * // the original label when it is available.
  * ```
  *
  * @param params.treeId Current console identifier (e.g. "r" for resources console).
- * @param params.rootNode Trash root node supplied by the worker.
+ * @param params.rootNode Archive root node supplied by the worker.
  * @param params.targetNodeId The trashed node we want to stage a path for.
  * @param params.nodeMap Optional map of node id to worker-provided TreeNode instances.
  * @param params.maxDepth Safety cap to avoid infinite loops on malformed data (defaults to 32).
@@ -46,17 +46,17 @@ const DEFAULT_MAX_DEPTH = 32;
  * @returns Breadcrumb nodes ordered from root to target. The first element always
  *          represents the trash root.
  */
-export function buildTrashBreadcrumbs({
+export function buildArchiveBreadcrumbs({
   treeId,
   rootNode,
   targetNodeId,
   nodeMap,
   maxDepth = DEFAULT_MAX_DEPTH,
-}: BuildTrashBreadcrumbsParams): BreadcrumbNode[] {
+}: BuildArchiveBreadcrumbsParams): BreadcrumbNode[] {
   const rootId = String(rootNode.id);
   const rootCrumb: BreadcrumbNode = {
     id: rootId,
-    name: 'Trash',
+    name: 'Archive',
     nodeType: rootNode.nodeType ?? 'trash',
     parentId: `${treeId}:root`,
     isClickable: true,
@@ -83,7 +83,7 @@ export function buildTrashBreadcrumbs({
     const parentRaw: NodeId | undefined = currentNode?.parentId;
     const parentId: string = parentRaw ? String(parentRaw) : rootId;
 
-    const displayName = getTrashDisplayName(currentNode) || currentId;
+    const displayName = getArchiveDisplayName(currentNode) || currentId;
 
     chain.unshift({
       id: currentId,

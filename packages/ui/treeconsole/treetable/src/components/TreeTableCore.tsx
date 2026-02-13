@@ -34,7 +34,7 @@ export function TreeTableCore({
   controller,
   viewHeight,
   viewWidth: _viewWidth,
-  useTrashColumns = false,
+  useArchiveColumns = false,
   trashAction = 'restore',
   depthOffset = 0,
   disableDragAndDrop = false,
@@ -236,7 +236,7 @@ export function TreeTableCore({
       hideDragHandler,
       disableDragAndDrop,
       IconComponent,
-      iconInteractive: !useTrashColumns,
+      iconInteractive: !useArchiveColumns,
       rowClickAction,
       selectionMode,
       controller,
@@ -251,10 +251,10 @@ export function TreeTableCore({
       treeId,
       setContextMenuState,
       visualSelectionSet,
-      useTrashColumns,
+      useArchiveColumns,
       trashAction,
       formatTimestamp,
-      trashRemovedHeader: useTrashColumns ? removedLabel : undefined,
+      trashRemovedHeader: useArchiveColumns ? removedLabel : undefined,
       selectionIdPrefix,
       columnLabels: {
         name: nameLabel,
@@ -274,7 +274,7 @@ export function TreeTableCore({
       emptyValue: commonT('treeTable.emptyCell', '-'),
       buildSessionIndicator,
     });
-  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix, buildSessionIndicator]);
+  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useArchiveColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix, buildSessionIndicator]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};
@@ -400,7 +400,7 @@ export function TreeTableCore({
               controller={controller ?? undefined}
               disableDragAndDrop={disableDragAndDrop}
               visualSelectionSet={visualSelectionSet}
-              useTrashColumns={useTrashColumns}
+              useArchiveColumns={useArchiveColumns}
               trashAction={trashAction}
             />
           </>

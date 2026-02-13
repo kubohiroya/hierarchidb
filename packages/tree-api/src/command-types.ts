@@ -53,13 +53,13 @@ export type CommandResult =
       wcVersion?: number;
     };
 
-export interface RecoverFromTrashPayload {
+export interface RecoverFromArchivePayload {
   nodeIds: NodeId[];
   toParentId?: NodeId;
   onNameConflict?: OnNameConflict;
 }
 
-export type RestoreFromTrashPayload = RecoverFromTrashPayload;
+export type RestoreFromArchivePayload = RecoverFromArchivePayload;
 
 
 export type TreeChangeEventType =

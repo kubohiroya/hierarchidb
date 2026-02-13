@@ -5,8 +5,8 @@ const folderNodeTypeAliases = new Set<string>([
   'ResourceFolder',
   'ProjectsRoot',
   'ResourcesRoot',
-  'ProjectsTrashRoot',
-  'ResourcesTrashRoot',
+  'ProjectsArchiveRoot',
+  'ResourcesArchiveRoot',
 ]);
 
 function normalizeColor(value: unknown): string | undefined {

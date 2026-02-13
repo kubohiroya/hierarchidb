@@ -8,8 +8,8 @@ import type { TreeMutationAPI } from '@hierarchidb/tree-api';
 import type {
   DuplicateNodesPayload,
   MoveNodesPayload,
-  MoveToTrashPayload,
-  RestoreFromTrashPayload,
+  MoveToArchivePayload,
+  RestoreFromArchivePayload,
 } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { createCommand } from '../utils.js';
@@ -82,10 +82,10 @@ export class TreeMutationCommandsAdapter<T> {
   async deleteNodes(nodeIds: NodeId[], options: CommandAdapterOptions): Promise<void> {
     try {
       const command = createCommand(
-        'moveToTrash',
+        'moveToArchive',
         {
           nodeIds,
-        } as MoveToTrashPayload,
+        } as MoveToArchivePayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
@@ -93,7 +93,7 @@ export class TreeMutationCommandsAdapter<T> {
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
-      const result = await mutationAPI.moveNodesToTrash(command.payload.nodeIds);
+      const result = await mutationAPI.moveNodesToArchive(command.payload.nodeIds);
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
           `Failed to delete nodes: ${result?.error || 'Unknown error'}`,
@@ -237,19 +237,19 @@ export class TreeMutationCommandsAdapter<T> {
    * @param options
    * @returns Promise<void>
       */
-  async restoreFromTrash(
+  async restoreFromArchive(
     nodeIds: NodeId[],
     targetParentId: NodeId | undefined,
     options: CommandAdapterOptions,
   ): Promise<void> {
     try {
       const command = createCommand(
-        'restoreFromTrash',
+        'restoreFromArchive',
         {
           nodeIds,
           toParentId: targetParentId,
           onNameConflict: options.context?.onNameConflict,
-        } as RestoreFromTrashPayload,
+        } as RestoreFromArchivePayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
@@ -257,7 +257,7 @@ export class TreeMutationCommandsAdapter<T> {
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
-      const result = await mutationAPI.restoreNodesFromTrash({
+      const result = await mutationAPI.restoreNodesFromArchive({
         nodeIds: command.payload.nodeIds,
         toParentId: command.payload.toParentId,
       });

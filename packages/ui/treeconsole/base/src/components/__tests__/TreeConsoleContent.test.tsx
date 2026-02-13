@@ -62,7 +62,7 @@ const defaultProps: TreeConsoleContentProps = {
   isResourcesPage: true,
   viewHeight: 600,
   viewWidth: 800,
-  useTrashColumns: false,
+  useArchiveColumns: false,
   depthOffset: 0,
   rootNodeId: 'test-root-node-id' as NodeId,
   currentNodeInfo: null,
@@ -135,7 +135,7 @@ describe('TreeConsoleContent', () => {
       </TestWrapper>,
     );
 
-    expect(screen.getByText('ゴミ箱に復元可能なアイテムはありません。')).toBeInTheDocument();
+    expect(screen.getByText('アーカイブに復元可能なアイテムはありません。')).toBeInTheDocument();
   });
 
   it('完全削除モードでの空状態を正しく表示する', () => {

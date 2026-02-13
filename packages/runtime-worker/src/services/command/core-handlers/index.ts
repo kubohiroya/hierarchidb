@@ -37,14 +37,14 @@ export async function executeCoreCommand(
       return handleUpdateNode(envelope, deps);
     case 'moveNodes':
       return handleMoveNodes(envelope, deps);
-    case 'moveToTrash':
-      return handleMoveToTrash(envelope, deps);
+    case 'moveToArchive':
+      return handleMoveToArchive(envelope, deps);
     case 'remove':
       return handleRemove(envelope, deps);
     case 'removeSubtree':
       return handleRemoveSubtree(envelope, deps);
-    case 'restoreFromTrash':
-      return handleRestoreFromTrash(envelope, deps);
+    case 'restoreFromArchive':
+      return handleRestoreFromArchive(envelope, deps);
     case 'commitDraft':
       return handleCommitDraft(envelope, deps);
     case 'invalidCommand':
@@ -283,7 +283,7 @@ async function handleMoveNodes(
   }
 }
 
-async function handleMoveToTrash(
+async function handleMoveToArchive(
   envelope: CommandEnvelope<string, unknown>,
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
@@ -308,7 +308,7 @@ async function handleMoveToTrash(
       trees = undefined;
     }
 
-    const rootToTrash = new Map<NodeId, NodeId>(
+    const rootToArchive = new Map<NodeId, NodeId>(
       Array.isArray(trees) ? trees.map((tree) => [tree.rootId, tree.trashRootId]) : []
     );
 
@@ -328,10 +328,10 @@ async function handleMoveToTrash(
       let lastVisited: NodeId | undefined;
 
       while (cursor) {
-        if (rootToTrash.has(cursor)) {
-          const mappedTrashRootId = rootToTrash.get(cursor);
-          if (mappedTrashRootId) {
-            trashRootId = mappedTrashRootId;
+        if (rootToArchive.has(cursor)) {
+          const mappedArchiveRootId = rootToArchive.get(cursor);
+          if (mappedArchiveRootId) {
+            trashRootId = mappedArchiveRootId;
             break;
           }
         }
@@ -404,12 +404,12 @@ async function handleMoveToTrash(
       });
     }
 
-    deps.history.storePreMoveToTrashState(envelope.commandId as CommandId, snapshotEntries);
+    deps.history.storePreMoveToArchiveState(envelope.commandId as CommandId, snapshotEntries);
 
     return { success: true, seq: deps.getNextSeq() };
   } catch (error) {
     return deps.createErrorResult(
-      error instanceof Error ? error.message : 'MoveToTrash failed',
+      error instanceof Error ? error.message : 'MoveToArchive failed',
       WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
@@ -537,7 +537,7 @@ async function handleRemoveSubtree(
   }
 }
 
-async function handleRestoreFromTrash(
+async function handleRestoreFromArchive(
   envelope: CommandEnvelope<string, unknown>,
   deps: CoreCommandDeps
 ): Promise<CommandResult> {

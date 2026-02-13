@@ -9,7 +9,7 @@ interface TreeConsoleNodeContextMenuProps {
   onClose: () => void;
   nodeType?: string;
   canRemove?: boolean;
-  canTrash?: boolean;
+  canArchive?: boolean;
   isVisible?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
@@ -18,7 +18,7 @@ interface TreeConsoleNodeContextMenuProps {
   onCreate?: (type: string) => void;
   onDuplicate?: () => void;
   onRemove?: () => void;
-  onTrash?: () => void;
+  onArchive?: () => void;
   onToggleVisible?: (nextValue: boolean) => void;
 }
 
@@ -28,7 +28,7 @@ interface NodeContextMenuLabels {
   open: string;
   edit: string;
   duplicate: string;
-  moveToTrash: string;
+  moveToArchive: string;
   visible: string;
   hidden: string;
   preview: string;
@@ -41,7 +41,7 @@ interface UseTreeConsoleNodeContextMenuResult {
   addMenuOpen: boolean;
   addMenuAnchor: HTMLElement | null;
   isFolder: boolean;
-  allowTrash: boolean;
+  allowArchive: boolean;
   safeAnchorEl: HTMLElement | null;
   fallbackAnchorPosition: { top: number; left: number } | null;
   effectiveVisible: boolean;
@@ -54,7 +54,7 @@ interface UseTreeConsoleNodeContextMenuResult {
   handleEditClick: () => void;
   handleCreateClick: (type: string) => void;
   handleDuplicateClick: () => void;
-  handleTrashClick: () => void;
+  handleArchiveClick: () => void;
   handlePreviewClick: () => void;
   handleToggleVisible: () => void;
   setLocalInvisible: Dispatch<SetStateAction<boolean | null>>;
@@ -83,7 +83,7 @@ export const useTreeConsoleNodeContextMenu = (
     onClose,
     nodeType = 'folder',
     canRemove,
-    canTrash,
+    canArchive,
     isVisible,
   } = props;
 
@@ -97,7 +97,7 @@ export const useTreeConsoleNodeContextMenu = (
       open: translateWithFallback('treeConsole.contextMenu.open', 'Open'),
       edit: translateWithFallback('treeConsole.contextMenu.edit', 'Edit'),
       duplicate: translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate'),
-      moveToTrash: translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash'),
+      moveToArchive: translateWithFallback('treeConsole.contextMenu.moveToArchive', 'Move to Archive'),
       visible: translateWithFallback('treeConsole.contextMenu.visible', 'Visible'),
       hidden: translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden'),
       preview: translateWithFallback('treeConsole.contextMenu.preview', 'Preview'),
@@ -187,9 +187,9 @@ export const useTreeConsoleNodeContextMenu = (
     });
   }, [handleMainMenuClose]);
 
-  const handleTrashClick = useCallback(() => {
+  const handleArchiveClick = useCallback(() => {
     const current = propsRef.current;
-    const handler = current.onTrash ?? current.onRemove;
+    const handler = current.onArchive ?? current.onRemove;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       handler?.();
@@ -225,7 +225,7 @@ export const useTreeConsoleNodeContextMenu = (
   }, [anchorEl]);
 
   const isFolder = nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
-  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
+  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
 
   const safeAnchorEl = useMemo(() => {
     try {
@@ -256,7 +256,7 @@ export const useTreeConsoleNodeContextMenu = (
     addMenuOpen,
     addMenuAnchor,
     isFolder,
-    allowTrash,
+    allowArchive,
     safeAnchorEl,
     fallbackAnchorPosition,
     effectiveVisible,
@@ -269,7 +269,7 @@ export const useTreeConsoleNodeContextMenu = (
     handleEditClick,
     handleCreateClick,
     handleDuplicateClick,
-    handleTrashClick,
+    handleArchiveClick,
     handlePreviewClick,
     handleToggleVisible,
     setLocalInvisible,

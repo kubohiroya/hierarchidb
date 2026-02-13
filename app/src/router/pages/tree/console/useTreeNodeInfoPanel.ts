@@ -57,8 +57,8 @@ export function useTreeNodeInfoPanel({
   );
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [menuNode, setMenuNode] = useState<HierarchicalTreeNode | null>(nodeData ?? null);
-  const [confirmTrashOpen, setConfirmTrashOpen] = useState(false);
-  const [pendingTrashNode, setPendingTrashNode] = useState<HierarchicalTreeNode | null>(null);
+  const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
+  const [pendingArchiveNode, setPendingArchiveNode] = useState<HierarchicalTreeNode | null>(null);
   const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
   const [openStepsLoading, setOpenStepsLoading] = useState(false);
 
@@ -261,8 +261,8 @@ export function useTreeNodeInfoPanel({
     (action: string, options?: Parameters<ContextMenuHandler>[2]) => {
       if (!nodeData) return;
       if (action === 'trash') {
-        setPendingTrashNode(nodeData);
-        setConfirmTrashOpen(true);
+        setPendingArchiveNode(nodeData);
+        setConfirmArchiveOpen(true);
         return;
       }
       const navigateToParent = options?.navigateToParent ?? action === 'trash';
@@ -315,17 +315,17 @@ export function useTreeNodeInfoPanel({
     setMenuAnchorEl(null);
   }, []);
 
-  const handleTrashConfirm = useCallback(() => {
-    if (pendingTrashNode) {
-      onContextMenuAction('trash', pendingTrashNode, { navigateToParent: true });
+  const handleArchiveConfirm = useCallback(() => {
+    if (pendingArchiveNode) {
+      onContextMenuAction('trash', pendingArchiveNode, { navigateToParent: true });
     }
-    setConfirmTrashOpen(false);
-    setPendingTrashNode(null);
-  }, [onContextMenuAction, pendingTrashNode]);
+    setConfirmArchiveOpen(false);
+    setPendingArchiveNode(null);
+  }, [onContextMenuAction, pendingArchiveNode]);
 
-  const handleTrashCancel = useCallback(() => {
-    setConfirmTrashOpen(false);
-    setPendingTrashNode(null);
+  const handleArchiveCancel = useCallback(() => {
+    setConfirmArchiveOpen(false);
+    setPendingArchiveNode(null);
   }, []);
 
   const descriptionText = currentNode ? getTreeNodeDescription(currentNode).trim() : '';
@@ -359,13 +359,13 @@ export function useTreeNodeInfoPanel({
     updatedAtLabel: formatTimestamp(currentNode?.updatedAt),
     description,
     emptyDescriptionLabel,
-    confirmTrashTitle: getString('treeConsole.infoPanel.confirmTrashTitle', 'Move to Trash'),
-    confirmTrashDescription: getString(
-      'treeConsole.infoPanel.confirmTrashDescription',
+    confirmArchiveTitle: getString('treeConsole.infoPanel.confirmArchiveTitle', 'Move to Archive'),
+    confirmArchiveDescription: getString(
+      'treeConsole.infoPanel.confirmArchiveDescription',
       'Move this item and all its children to trash?'
     ),
-    confirmTrashCancel: getString('treeConsole.infoPanel.confirmTrashCancel', 'Cancel'),
-    confirmTrashConfirm: getString('treeConsole.infoPanel.confirmTrashConfirm', 'Move to Trash'),
+    confirmArchiveCancel: getString('treeConsole.infoPanel.confirmArchiveCancel', 'Cancel'),
+    confirmArchiveConfirm: getString('treeConsole.infoPanel.confirmArchiveConfirm', 'Move to Archive'),
     nodeTypeLabel,
     iconTooltip: getString('treeConsole.infoPanel.openContextMenu', 'Node actions'),
     nodeTypeCaption: getString('treeConsole.infoPanel.nodeTypeLabel', '{{type}}', {
@@ -399,9 +399,9 @@ export function useTreeNodeInfoPanel({
     handleIconClick,
     handleMenuClose,
     handleBuild,
-    handleTrashConfirm,
-    handleTrashCancel,
-    confirmTrashOpen,
+    handleArchiveConfirm,
+    handleArchiveCancel,
+    confirmArchiveOpen,
     labels,
     nodeIconColor,
     canMutate,

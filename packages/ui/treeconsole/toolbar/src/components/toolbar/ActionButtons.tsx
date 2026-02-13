@@ -4,7 +4,7 @@ import {
   ContentPaste as ContentPasteIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Redo as RedoIcon,
-  Delete as TrashIcon,
+  Delete as ArchiveIcon,
   Undo as UndoIcon,
   FileCopy as DuplicateIcon,
   Clear as ClearIcon,
@@ -18,11 +18,11 @@ export interface ActionButtonsProps {
   canCopy: boolean;
   canPaste: boolean;
   canDuplicate: boolean;
-  allowTrash: boolean;
+  allowArchive: boolean;
   trashButtonLabel: string;
-  hasTrashItems: boolean;
+  hasArchiveItems: boolean;
   onAction: (action: string) => void;
-  onTrashClick: (event: MouseEvent<HTMLElement>) => void;
+  onArchiveClick: (event: MouseEvent<HTMLElement>) => void;
   tooltips: {
     undo: string;
     redo: string;
@@ -30,7 +30,7 @@ export interface ActionButtonsProps {
     copy: string;
     paste: string;
     duplicate: string;
-    moveToTrash: string;
+    moveToArchive: string;
   };
 }
 
@@ -40,11 +40,11 @@ export function ActionButtons({
   canCopy,
   canPaste,
   canDuplicate,
-  allowTrash,
+  allowArchive,
   trashButtonLabel,
-  hasTrashItems,
+  hasArchiveItems,
   onAction,
-  onTrashClick,
+  onArchiveClick,
   tooltips,
 }: ActionButtonsProps) {
   return (
@@ -107,9 +107,9 @@ export function ActionButtons({
           <DuplicateIcon fontSize="small" />
         </Button>
         <Button
-          title={tooltips.moveToTrash}
-          aria-label={tooltips.moveToTrash}
-          disabled={!allowTrash}
+          title={tooltips.moveToArchive}
+          aria-label={tooltips.moveToArchive}
+          disabled={!allowArchive}
           onClick={() => onAction('trash')}
           color="error"
         >
@@ -119,14 +119,14 @@ export function ActionButtons({
 
       <ButtonGroup size="small">
         <Button
-          disabled={!hasTrashItems}
+          disabled={!hasArchiveItems}
           endIcon={<KeyboardArrowDownIcon />}
-          onClick={onTrashClick}
+          onClick={onArchiveClick}
           color="error"
           title={trashButtonLabel}
           aria-label={trashButtonLabel}
         >
-          <TrashIcon fontSize="small" />
+          <ArchiveIcon fontSize="small" />
         </Button>
       </ButtonGroup>
     </>

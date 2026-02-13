@@ -53,8 +53,8 @@ export interface TreeTableController {
   // Context menu actions
   onCreate?: (parentId: string, type: string) => void;
   onDuplicate?: (nodeId: string) => void;
-  onTrash?: (nodeIds: string[]) => void;
-  /** @deprecated Use onTrash */
+  onArchive?: (nodeIds: string[]) => void;
+  /** @deprecated Use onArchive */
   onRemove?: (nodeIds: string[]) => void;
   // Move nodes to a new parent
   onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
@@ -95,7 +95,7 @@ export interface TreeTableCoreProps {
   /**
    * Table configuration
    */
-  useTrashColumns?: boolean;
+  useArchiveColumns?: boolean;
   trashAction?: 'restore' | 'empty';
   depthOffset?: number;
 

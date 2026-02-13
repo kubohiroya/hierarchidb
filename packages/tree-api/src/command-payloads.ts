@@ -55,7 +55,7 @@ export type MoveNodesPayload = {
   onNameConflict?: OnNameConflict;
 };
 
-export type MoveToTrashPayload = {
+export type MoveToArchivePayload = {
   nodeIds: NodeId[];
 };
 

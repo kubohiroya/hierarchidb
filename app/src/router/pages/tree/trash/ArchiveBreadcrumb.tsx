@@ -2,15 +2,15 @@ import type { TreeConsoleBreadcrumbProps } from '@hierarchidb/ui-plugin-shell/ui
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { ReactElement } from 'react';
 
-export interface TrashBreadcrumbProps extends TreeConsoleBreadcrumbProps {
+export interface ArchiveBreadcrumbProps extends TreeConsoleBreadcrumbProps {
   trashAction?: 'restore' | 'empty';
 }
 
-export function TrashBreadcrumb(props: TrashBreadcrumbProps): ReactElement {
+export function ArchiveBreadcrumb(props: ArchiveBreadcrumbProps): ReactElement {
   return (
     <TreeConsoleBreadcrumb
       {...props}
-      useTrashColumns={true}
+      useArchiveColumns={true}
       trashAction={props.trashAction ?? 'restore'}
     />
   );
