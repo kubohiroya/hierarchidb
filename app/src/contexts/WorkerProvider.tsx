@@ -504,6 +504,21 @@ export const WorkerProvider = ({
     await finalizeInitialized();
   }, [bootProgress, finalizeInitialized, t]);
 
+  const isInitializationSatisfied = useCallback(() => {
+    const currentProxyState = proxy.getState();
+    const hasCachedClient = Boolean(proxy.getCachedClient());
+    const workerClientReady = isWorkerClientReady();
+    const bootCompleted =
+      typeof window !== 'undefined' && (window as BootWindow).__HDB_INIT_COMPLETE__ === true;
+    return (
+      currentProxyState === 'ready'
+      || hasCachedClient
+      || workerClientReady
+      || bootCompleted
+      || completionMarkedRef.current
+    );
+  }, [proxy]);
+
   const runInitialization = useCallback(async () => {
     if (initializationInFlightRef.current) {
       return initializationInFlightRef.current;
@@ -586,13 +601,19 @@ export const WorkerProvider = ({
             + `(progress=${latestProgressRef.current}%, step="${latestProgressMessageRef.current}").`
           )
           : normalizedRaw;
+        const latestProxyState = proxy.getState();
+        const hasCachedClient = Boolean(proxy.getCachedClient());
+        if (timedOut && isInitializationSatisfied()) {
+          await markComplete();
+          return;
+        }
         console.error('[WorkerProvider] ensureInitialized diagnostic', {
           timedOut,
           timeoutMs: Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS),
           progress: latestProgressRef.current,
           message: latestProgressMessageRef.current,
-          proxyState: currentProxyState,
-          hasCachedClient: Boolean(proxy.getCachedClient()),
+          proxyState: latestProxyState,
+          hasCachedClient,
         });
         console.error('[WorkerProvider] ensureInitialized failed', normalized);
         setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
@@ -606,7 +627,7 @@ export const WorkerProvider = ({
     });
     initializationInFlightRef.current = initializationTask;
     return initializationTask;
-  }, [bootProgress, debug, markComplete, proxy, t, timeout]);
+  }, [bootProgress, debug, isInitializationSatisfied, markComplete, proxy, t, timeout]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
