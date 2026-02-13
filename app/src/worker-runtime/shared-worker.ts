@@ -11,7 +11,15 @@ import { ensureRuntimeWorkerBootstrap } from './workerBootstrap.ts';
 const ports = new Set<MessagePort>();
 let initCompleted = false;
 let bootstrapPromise: Promise<{ api: unknown; servicesReadyAt: number }> | null = null;
-const WORKER_LOCK_KEY = 'hdb:worker:shared-runtime';
+
+const logSharedWorkerInit = (event: string, detail?: Record<string, unknown>) => {
+  if (!import.meta.env.DEV) return;
+  if (detail) {
+    console.info(`[shared worker:init] ${event}`, detail);
+    return;
+  }
+  console.info(`[shared worker:init] ${event}`);
+};
 
 const broadcastMessage = (message: unknown) => {
   for (const port of ports) {
@@ -43,6 +51,7 @@ reporter.reportStepProgress('Load Comlink', 0);
 
 const ensureBootstrap = async () => {
   if (!bootstrapPromise) {
+    logSharedWorkerInit('bootstrap:start');
     const bootstrap = async () => ensureRuntimeWorkerBootstrap({
       reporter,
       messageTarget: {
@@ -52,21 +61,13 @@ const ensureBootstrap = async () => {
       },
     });
 
-    const runWithLock = async () => {
-      if (typeof navigator !== 'undefined' && navigator.locks?.request) {
-        return await navigator.locks.request(
-          WORKER_LOCK_KEY,
-          { mode: 'exclusive' },
-          () => bootstrap()
-        );
-      }
-      return await bootstrap();
-    };
-
-    bootstrapPromise = runWithLock().catch((error) => {
+    // SharedWorker is already single-runtime per origin/process.
+    // Avoid Web Locks here to prevent lock-wait deadlocks across stale contexts.
+    bootstrapPromise = bootstrap().catch((error) => {
       const err = error instanceof Error ? error : new Error(String(error));
       console.warn('[shared worker] bootstrap failed:', err.message);
       reporter.reportError(err);
+      bootstrapPromise = null;
       throw err;
     });
   }
@@ -102,6 +103,7 @@ globalScope.addEventListener('connect', ((event: Event) => {
   const connectEvent = event as SharedWorkerConnectEvent;
   const port = connectEvent.ports[0];
   if (!port) return;
+  logSharedWorkerInit('port:connect', { ports: ports.size + 1 });
   ports.add(port);
   port.start();
 
@@ -114,6 +116,7 @@ globalScope.addEventListener('connect', ((event: Event) => {
   });
 
   void ensureBootstrap().then(async ({ api, servicesReadyAt }) => {
+    logSharedWorkerInit('bootstrap:ready');
     const Comlink = await import('comlink');
     if (!initCompleted) {
       reporter.reportStepProgress('Expose API', 10);
@@ -128,5 +131,9 @@ globalScope.addEventListener('connect', ((event: Event) => {
 
     sendServicesReady(port, servicesReadyAt);
     reporter.sendStatusTo(port);
+  }).catch((error) => {
+    logSharedWorkerInit('bootstrap:error', {
+      message: error instanceof Error ? error.message : String(error),
+    });
   });
 }) as EventListener);

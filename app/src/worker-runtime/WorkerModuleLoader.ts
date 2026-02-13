@@ -131,17 +131,13 @@ export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
         }),
       ]);
       const client = await WorkerAPIClient.getOrInit();
+      // Keep worker availability independent from optional preload completion.
+      // Preloads can be expensive and should never block initial UI readiness.
       startPluginWorkerPreloads();
 
       // ensure module paths cache populated for subsequent synchronous access
       if (!getModulePaths()) {
         cachedModulePaths = modulePaths;
-      }
-      const preloadPromise = pluginLoadPromise;
-      if (preloadPromise) {
-        await preloadPromise.catch(() => {
-          // individual plugin errors are logged above; swallow to avoid failing initialization
-        });
       }
       return client;
     })();

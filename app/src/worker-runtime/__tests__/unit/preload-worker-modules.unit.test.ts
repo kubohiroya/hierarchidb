@@ -104,6 +104,7 @@ describe('WorkerModuleLoader', () => {
 
     await ensureWorkerRuntime();
     await ensureWorkerRuntime();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(importPluginWorkerMock).toHaveBeenCalledTimes(10);
     expect(loaderMap.basemap).toHaveBeenCalledTimes(1);
