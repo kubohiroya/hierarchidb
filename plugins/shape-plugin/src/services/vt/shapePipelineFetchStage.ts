@@ -6,7 +6,6 @@ import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import {
   finalizePendingStageTasks,
-  getFailedTaskCount,
   resetStageRunningTasks,
   shouldStopAfterStage,
   summarizeStageCounts,
@@ -58,10 +57,11 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     );
     throw error;
   }
+  const stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
   console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
-    counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch'),
+    counts: stageCounts,
   }));
   await finalizePendingStageTasks(
     params.taskQueue,
@@ -71,8 +71,11 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     '[ShapeFetch][PipelineDiagnostics] fetch stage finalized pending tasks',
     params.pipelineRunId,
   );
+  if (stageCounts.failed > 0 && stageCounts.completed === 0) {
+    return true;
+  }
   return shouldStopAfterStage(
     params.buildContinuationPolicy,
-    await getFailedTaskCount(params.taskQueue, params.nodeId, 'fetch'),
+    stageCounts.failed,
   );
 };

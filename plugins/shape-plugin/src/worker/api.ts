@@ -1763,16 +1763,25 @@ export const shapeBatchAPI = {
         }).then(async () => {
           const completedAt = Date.now();
           terminalProgressMessage = undefined;
+          const taskQueue = new VtTaskQueueDb();
+          const tasks = await listTasks(taskQueue, nodeForSession);
+          const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
+          const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
           void shapeMutationAPIImpl.updateBuildSession(nodeForSession, {
-            stageId: 'startup:pipeline-dispatch:success',
+            stageId: pipelineFinishedWithFailure
+              ? 'startup:pipeline-dispatch:error'
+              : 'startup:pipeline-dispatch:success',
             stageHeartbeatAt: completedAt,
           }).catch(() => {});
           await updateBuildSessionFromTasks(nodeForSession, {
-            status: 'completed',
-            stopReason: 'completed',
+            status: pipelineFinishedWithFailure ? 'failed' : 'completed',
+            stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
             completedAt,
             canResume: false,
           });
+          if (pipelineFinishedWithFailure) {
+            terminalProgressMessage = 'Pipeline finished with failed tasks.';
+          }
         }).catch(async (error) => {
           const failedAt = Date.now();
           const diagnostics = toErrorDiagnostics(error);
@@ -2158,16 +2167,25 @@ export const shapeBatchAPI = {
         }).then(async () => {
           const completedAt = Date.now();
           terminalProgressMessage = undefined;
+          const taskQueue = new VtTaskQueueDb();
+          const tasks = await listTasks(taskQueue, nodeId);
+          const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
+          const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
           void shapeMutationAPIImpl.updateBuildSession(nodeId, {
-            stageId: 'startup:pipeline-dispatch:success',
+            stageId: pipelineFinishedWithFailure
+              ? 'startup:pipeline-dispatch:error'
+              : 'startup:pipeline-dispatch:success',
             stageHeartbeatAt: completedAt,
           }).catch(() => {});
           await updateBuildSessionFromTasks(nodeId, {
-            status: 'completed',
-            stopReason: 'completed',
+            status: pipelineFinishedWithFailure ? 'failed' : 'completed',
+            stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
             completedAt,
             canResume: false,
           });
+          if (pipelineFinishedWithFailure) {
+            terminalProgressMessage = 'Pipeline finished with failed tasks.';
+          }
         }).catch(async (error) => {
           const failedAt = Date.now();
           const diagnostics = toErrorDiagnostics(error);

@@ -105,10 +105,17 @@ const resolveOmitDetailsThreshold = (
   zTarget: number,
 ): OmitDetailsThreshold => {
   const presets = OMIT_DETAILS_PRESETS[config.level];
+  if (!Array.isArray(presets) || presets.length === 0) {
+    throw new Error(`omit-details thresholds missing for level: ${String(config.level)}`);
+  }
   for (const threshold of presets) {
     if (zTarget <= threshold.maxZoom) return threshold;
   }
-  return presets[presets.length - 1]!;
+  const fallback = presets[presets.length - 1];
+  if (!fallback) {
+    throw new Error(`omit-details thresholds missing fallback for level: ${String(config.level)}`);
+  }
+  return fallback;
 };
 
 const shouldOmitByDetails = (

@@ -343,6 +343,9 @@ export function mergeBuildConfig(
       hybridFilterConfig: bandOverrides.hybridFilterConfig
         ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
         : base.transformConfig.hybridFilterConfig,
+      omitDetailsConfig: bandOverrides.omitDetailsConfig
+        ? { ...base.transformConfig.omitDetailsConfig, ...bandOverrides.omitDetailsConfig }
+        : base.transformConfig.omitDetailsConfig,
     }
     : base.transformConfig;
 

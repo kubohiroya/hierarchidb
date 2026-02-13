@@ -1,10 +1,11 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { runShapeFetchStageSection } from '../../services/vt/shapePipelineFetchStage.ts';
+import * as shapeFetchStageModule from '../../services/vt/shapeFetchStage.js';
 import {
   listTasksByStageAndStatus,
   putTasks,
@@ -24,6 +25,20 @@ const createRunningFetchTask = (taskId: string): TaskQueueRecord => ({
   progress: 1,
   createdAt: Date.now(),
   updatedAt: Date.now(),
+});
+
+const createFailedFetchTask = (taskId: string): TaskQueueRecord => ({
+  taskId,
+  nodeId: NODE_ID,
+  stage: 'fetch',
+  index: 0,
+  status: 'failed',
+  progress: 100,
+  message: 'failed in prior run',
+  errorMessage: 'failed in prior run',
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  completedAt: Date.now(),
 });
 
 describe('runShapeFetchStageSection', () => {
@@ -61,5 +76,34 @@ describe('runShapeFetchStageSection', () => {
     expect(queued).toHaveLength(0);
     expect(failed[0]?.message?.startsWith('aborted:')).toBe(true);
     expect(failed[0]?.errorMessage).toBe(failed[0]?.message);
+  });
+
+  it('stops pipeline when fetch stage has only failed tasks even with finish_all_stages policy', async () => {
+    db = createDb();
+    await putTasks(db, [
+      createFailedFetchTask('fetch-failed-1'),
+      createFailedFetchTask('fetch-failed-2'),
+    ]);
+
+    const runShapeFetchStageSpy = vi
+      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+      .mockResolvedValue(undefined);
+
+    try {
+      const stopAfterStage = await runShapeFetchStageSection({
+        nodeId: NODE_ID,
+        dataSource: 'geoboundaries',
+        buildConfig: DEFAULT_BUILD_CONFIG,
+        taskQueue: db,
+        resumeExistingTasks: true,
+        failureHandling: 'continue',
+        buildContinuationPolicy: 'finish_all_stages',
+        pipelineRunId: 'test-run-2',
+      });
+
+      expect(stopAfterStage).toBe(true);
+    } finally {
+      runShapeFetchStageSpy.mockRestore();
+    }
   });
 });

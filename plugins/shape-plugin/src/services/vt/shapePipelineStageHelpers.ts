@@ -2,6 +2,13 @@ import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batc
 import type { NodeId } from '@hierarchidb/core-types';
 import { listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
+export type StageCounts = {
+  queued: number;
+  running: number;
+  completed: number;
+  failed: number;
+};
+
 export const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' => (
   policy === 'stop_on_first_error' ? 'stop' : 'continue'
 );
@@ -23,7 +30,7 @@ export const summarizeStageCounts = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
   stage: TaskQueueRecord['stage'],
-): Promise<Record<string, number>> => {
+): Promise<StageCounts> => {
   const [queued, running, completed, failed] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
