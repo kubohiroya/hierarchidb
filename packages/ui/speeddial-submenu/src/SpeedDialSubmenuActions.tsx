@@ -148,6 +148,7 @@ export function SpeedDialSubmenuActions({
         return (
           <SpeedDialAction
             key={action.id}
+            open={open}
             icon={action.icon}
             tooltipTitle={tooltipTitle}
             onMouseEnter={(event) =>
