@@ -336,6 +336,7 @@ export const WorkerProvider = ({
   const latestProgressRef = useRef(0);
   const latestProgressMessageRef = useRef(getWorkerInitStartMessage());
   const lastLoggedProgressRef = useRef(-1);
+  const lastLoggedProgressBucketRef = useRef(-1);
   const lastLoggedMessageRef = useRef('');
   const initializationInFlightRef = useRef<Promise<void> | null>(null);
   const completionMarkedRef = useRef(false);
@@ -357,13 +358,20 @@ export const WorkerProvider = ({
       latestProgressRef.current = detail.progress;
       latestProgressMessageRef.current = progressMessage;
       const normalizedProgress = Math.max(0, Math.min(100, Math.round(detail.progress)));
-      const shouldLogProgress =
-        normalizedProgress <= 0
-        || normalizedProgress >= 100
-        || Math.abs(normalizedProgress - lastLoggedProgressRef.current) >= 10
-        || progressMessage !== lastLoggedMessageRef.current;
+      const progressBucket = normalizedProgress >= 100
+        ? 100
+        : Math.floor(Math.max(0, normalizedProgress) / 25) * 25;
+      const shouldLogProgress = debug
+        ? (
+          normalizedProgress <= 0
+          || normalizedProgress >= 100
+          || Math.abs(normalizedProgress - lastLoggedProgressRef.current) >= 10
+          || progressMessage !== lastLoggedMessageRef.current
+        )
+        : progressBucket !== lastLoggedProgressBucketRef.current;
       if (shouldLogProgress) {
         lastLoggedProgressRef.current = normalizedProgress;
+        lastLoggedProgressBucketRef.current = progressBucket;
         lastLoggedMessageRef.current = progressMessage;
         console.info('[WorkerProvider] init progress', {
           progress: normalizedProgress,
@@ -503,6 +511,7 @@ export const WorkerProvider = ({
     const initializationTask = (async () => {
       completionMarkedRef.current = false;
       lastLoggedProgressRef.current = -1;
+      lastLoggedProgressBucketRef.current = -1;
       lastLoggedMessageRef.current = '';
       const timeoutMs = Number.isFinite(timeout) && timeout > 0
         ? Math.floor(timeout)
