@@ -660,6 +660,99 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('ignores updates for different nodeId in active subscription', async () => {
+    getBuildTasksMock.mockResolvedValue([]);
+    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-other',
+        task: {
+          taskId: 'node-other:fetch:JP:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 15,
+          message: 'foreign',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+  });
+
+  it('drops stale subscriber updates after node switch', async () => {
+    getBuildTasksMock.mockResolvedValue([]);
+    const { result, rerender } = renderHook(
+      ({ nodeId }: { nodeId: string }) => useShapeBuildTasks(nodeId),
+      { initialProps: { nodeId: 'node-old' } },
+    );
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalledTimes(1);
+    });
+
+    const staleSubscriber = subscriber;
+    rerender({ nodeId: 'node-new' });
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalledTimes(2);
+    });
+
+    act(() => {
+      staleSubscriber?.({
+        type: 'update',
+        nodeId: 'node-old',
+        task: {
+          taskId: 'node-old:fetch:JP:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 20,
+          message: 'stale',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.tasks).toHaveLength(0);
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-new',
+        task: {
+          taskId: 'node-new:fetch:JP:0',
+          stage: 'fetch',
+          status: 'queued',
+          progress: 0,
+          message: 'queued',
+          index: 1,
+          sequence: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.taskId).toBe('node-new:fetch:JP:0');
+    });
+  });
+
   it('composes vt parent input summary metadata into task message', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-vt-meta'));
 
@@ -751,4 +844,49 @@ describe('useShapeBuildTasks', () => {
       vi.useRealTimers();
     }
   }, 10000);
+
+  it('flushes task updates via timeout fallback when requestAnimationFrame does not fire', async () => {
+    vi.useFakeTimers();
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 4242);
+    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    try {
+      const { result } = renderHook(() => useShapeBuildTasks('node-raf-fallback'));
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(subscribeMock).toHaveBeenCalled();
+
+      act(() => {
+        subscriber?.({
+          type: 'update',
+          nodeId: 'node-raf-fallback',
+          task: {
+            taskId: 'node-raf-fallback:fetch:JP:0',
+            stage: 'fetch',
+            status: 'queued',
+            progress: 0,
+            message: 'Queued',
+            index: 1,
+            sequence: 1,
+          },
+        });
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+      });
+
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.tasks[0]?.status).toBe('queued');
+      expect(result.current.isLoading).toBe(false);
+      expect(cancelSpy).toHaveBeenCalledWith(4242);
+    } finally {
+      rafSpy.mockRestore();
+      cancelSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
 });

@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #239 / `codex/feat/maintenance/indexeddb-maintenance-url` / start: 2026-02-13 09:51 JST
+- #238 / `codex/fix/shape/build-session-comprehensive-stability` / start: 2026-02-13 08:56 JST
 - #236 / `codex/fix/tree/prevent-trash-while-build-running` / start: 2026-02-13 08:01 JST
 - #235 / `ERIA-Cartograph` / start: 2026-02-13 07:30 JST
 - #234 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 07:10 JST
@@ -65,6 +67,32 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 12:50 JST #238 E2E実行の自動化として `scripts/e2e/run-shape-startup-e2e.mjs` と npm script `pnpm e2e:shape-startup` を追加。認証シードを `E2E_AUTH_ACCESS_TOKEN` 直接指定または `e2e/.auth/shape-startup-auth.json`（`accessToken` / `accessTokenB64`）から読み込み、`PLAYWRIGHT_SKIP_WEBSERVER=1` と `/auth/verify` 前提の spec を一括実行する導線を整備。
+- update: 2026-02-13 12:50 JST #238 `.gitignore` に `e2e/.auth/*.json` を追加し、テンプレート `e2e/.auth/shape-startup-auth.template.json` を作成。実トークンはリポジトリ追跡外で運用。
+- update: 2026-02-13 12:50 JST #238 検証: `pnpm e2e:shape-startup` は seed ファイルありで exit 0（1 passed, 14.7s）。seed 不在時は `Missing E2E auth seed...` で即時失敗し、待機タイムアウトに依存しない fail-fast を確認。
+- update: 2026-02-13 12:14 JST #238 `e2e/shape/shape-build-startup-first-task.spec.ts` を改善し、固定ダミートークン注入を廃止。`E2E_AUTH_ACCESS_TOKEN`（+ optional `E2E_AUTH_ID_TOKEN` / `E2E_AUTH_USERINFO` or `E2E_AUTH_USERINFO_B64`）を注入し、`ビルド開始` 前に `/auth/verify` を実行して認証有効性を明示検証する方式へ変更。
+- update: 2026-02-13 12:14 JST #238 検証: `HIERARCHIDB_E2E=1 PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm exec playwright test e2e/shape/shape-build-startup-first-task.spec.ts --project=chromium` を実行し、実セッショントークン注入時に exit 0（1 passed, 14.3s）を確認。`awaiting-first-task` 45s timeout は未発生。
+- blocked: 2026-02-13 12:14 JST #238 同コマンドを認証シード未設定で実行した場合は `E2E auth seed is missing: set E2E_AUTH_ACCESS_TOKEN` で即時失敗（fail-fast）。タイムアウト待ちには依存しないことを確認。
+- update: 2026-02-13 12:03 JST #238 再検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx` は exit 0（4 files / 29 tests passed）。
+- blocked: 2026-02-13 12:03 JST #238 `HIERARCHIDB_E2E=1 PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm exec playwright test e2e/shape/shape-build-startup-first-task.spec.ts --project=chromium` は `Authentication required`（`session-start-request:error`）で exit 1。startup timeout 判定経路まで到達不可。
+- update: 2026-02-13 12:03 JST #238 `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` は exit 0（1 file / 1 test passed）。メニュー操作の `aria-label` 安定化がテスト上も有効。
+- update: 2026-02-13 12:00 JST #238 MCP 実ブラウザ（`localhost:4200`）で再発確認を実施。node `a91d0933-925b-4e87-8fcf-91256cd1d90f` の Step5 で `ビルド開始` 後、`start session response: running` → `awaiting-first-task` は `outcome=success`（`reason=completed-without-generating-tasks`, `elapsedMs=48`）で終了し、`build session transition timeout` ログは未観測（当該 run で再発なし）。
+- blocked: 2026-02-13 12:00 JST #238 比較対象として node `37c61f12-c7ca-45d4-9875-2624402fe6e9` を確認したが Step5 の `ビルド開始` が disabled で同条件比較は未実施。
+- update: 2026-02-13 12:00 JST #238 上記結果を Issue コメントへ追記（`https://github.com/kubohiroya/hierarchidb/issues/238#issuecomment-3894543426`）し、状態遷移図 `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` と ExecPlan を更新。
+- update: 2026-02-13 11:20 JST #238 で `awaiting-first-task` 分岐を純関数 `resolveAwaitingFirstTaskDecision`（`plugins/shape-plugin/src/ui/components/build-progress/resolveAwaitingFirstTaskDecision.ts`）へ抽出し、`useShapeBuildStep.ts` から呼び出す形へ整理。遷移判定（success/error/cancelled/continue）を hook 実装から独立させ、分岐単位での切り分けテストを可能化。
+- update: 2026-02-13 11:20 JST #238 テスト追加: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts`（7件）と `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx` に nodeId mismatch / stale subscriber update の回帰ケース2件を追加。状態遷移ドキュメント `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` へ新規テスト証跡と現行失敗シグナル（`awaiting-first-task` timeout）を反映。
+- update: 2026-02-13 11:20 JST #238 E2E `e2e/shape/shape-build-startup-first-task.spec.ts` の判定を改善。`console.text()` 依存を排し、console payload（第2引数）を構造化して `awaiting-first-task` の `outcome` / `phase` / `message` を明示判定する実装へ変更。
+- update: 2026-02-13 11:20 JST #238 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx` は exit 0（3 files / 24 tests passed）。
+- blocked: 2026-02-13 11:20 JST #238 検証: `HIERARCHIDB_E2E=1 PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm exec playwright test e2e/shape/shape-build-startup-first-task.spec.ts --project=chromium` は `Authentication required` を明示検知して exit 1（`session-start-request:error`）。
+- blocked: 2026-02-13 11:20 JST #238 型チェック: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は既知の `vtConfig.debug.tiles` readonly/mutable 不整合（今回差分外）で exit 2。
+- update: 2026-02-13 09:51 JST Issue `feat(maintenance): secure IndexedDB maintenance URL with explicit consent` を起票し `https://github.com/kubohiroya/hierarchidb/issues/239` を作成。
+- update: 2026-02-13 09:51 JST Issue #239 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。Assignee を `kubohiroya` に設定。
+- update: 2026-02-13 09:51 JST `ERIA-Cartograph` 起点でブランチ `codex/feat/maintenance/indexeddb-maintenance-url` を作成し、ワークツリー `/Users/hiroya/WebstormProjects/hierarchidb-maintenance-url` を作成して着手。
+- update: 2026-02-13 09:25 JST #238 で Create メニュー（DynamicSpeedDial）のテスト安定化を実施。`app/src/router/pages/tree/console/DynamicSpeedDial.tsx` に `data-testid="speed-dial-fab"` と `data-testid="create-<nodeType>-action"` を維持したまま、各 action の `aria-label` を説明文付き tooltip ではなくノード名（例: `Basemap` / `シェイプ`）へ固定。これにより E2E が長文ラベルや文言差分に依存せず選択可能になった。
+- update: 2026-02-13 09:25 JST #238 検証: `pnpm -w turbo run test --filter @hierarchidb/app -- --run src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` は exit 0（1 file / 1 test passed）。
+- update: 2026-02-13 08:56 JST Issue `fix(shape): comprehensive build-session stability + test pyramid` を起票し `https://github.com/kubohiroya/hierarchidb/issues/238` を作成。
+- update: 2026-02-13 08:56 JST Issue #238 を Project `hierarchidb` に追加し、Status を `In Progress`（Doing 相当）へ設定。Assignee を `kubohiroya` に設定。
+- update: 2026-02-13 08:56 JST ブランチ `codex/fix/shape/build-session-comprehensive-stability` を作成して着手。
 - update: 2026-02-13 08:24 JST #236 PR #237 のレビュー指摘（`checkRunningBuildSessionGuard` の逐次 I/O）を反映。`TreeMutationService` で `coreDB.getNode` を `Promise.all` 並列化し、shape node 抽出後に `ephemeralShapeDB.sessions.bulkGet` で一括取得する実装へ変更。対応テスト `tree-mutation-trash-build-session-guard.unit.test.ts` も `bulkGet` モックに更新。`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-trash-build-session-guard.unit.test.ts` は exit 0（2 tests passed）。
 - update: 2026-02-13 08:16 JST #236 の実装を `fix(treeconsole): prevent trash while build session is running` でコミットし、PR `https://github.com/kubohiroya/hierarchidb/pull/237`（base: `ERIA-Cartograph`）を作成。
 - update: 2026-02-13 08:13 JST #236 原因は、ビルドセッション実行中ノードに対するゴミ箱移動ガードが Command API 側に存在せず、UI 側でもコンテキストメニュー（InfoPanel / TreeTable / Breadcrumb）から trash/remove が操作可能だったこと。発生範囲は `packages/runtime-worker/src/services/TreeMutationService.ts` と tree console UI メニュー経路。

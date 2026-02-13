@@ -35,32 +35,39 @@ Shape Pluginでは、バッチ処理の開始、進捗監視、完了/中断処�
 
 ## 状態遷移フロー（現行実装準拠）
 
+凡例:
+- `✅`: 自動テストで遷移を検証済み
+- `❌`: 自動テストが存在し、現在失敗
+- `❓`: まだ自動テスト未整備
+
 ```mermaid
 stateDiagram-v2
     [*] --> Idle: 初期状態
-    Idle --> Starting: Start / Resume
+    Idle --> Starting: Start / Resume ✅
 
     state Starting {
         [*] --> AcquiringLock
-        AcquiringLock --> WaitingLock: lock unavailable
-        AcquiringLock --> SavingDraft: lock acquired
-        WaitingLock --> SavingDraft: lock acquired
-        SavingDraft --> InitializingWorker
-        InitializingWorker --> BuildingPayloads: new start
-        InitializingWorker --> StartingSession: resume
-        BuildingPayloads --> StartingSession
-        StartingSession --> AwaitingFirstTask
-        AwaitingFirstTask --> [*]: first task update received
+        AcquiringLock --> WaitingLock: lock unavailable ❓
+        AcquiringLock --> SavingDraft: lock acquired ❓
+        WaitingLock --> SavingDraft: lock acquired ❓
+        SavingDraft --> InitializingWorker: draft saved ❓
+        InitializingWorker --> BuildingPayloads: new start ❓
+        InitializingWorker --> StartingSession: resume ❓
+        BuildingPayloads --> StartingSession: payload ready ❓
+        StartingSession --> AwaitingFirstTask: request accepted ✅
+        AwaitingFirstTask --> [*]: first task signal observed ✅
+        AwaitingFirstTask --> [*]: completed without tasks ✅
+        AwaitingFirstTask --> [*]: timeout / failed / paused ❓
     }
 
-    Starting --> Processing: startup success
-    Starting --> Failed: startup error / timeout
-    Processing --> Paused: Pause
-    Paused --> Starting: Resume
-    Processing --> Completed: Success
-    Processing --> Failed: Error
-    Completed --> Idle: Close Dialog
-    Failed --> Idle: Abort / Close
+    Starting --> Processing: startup success ✅
+    Starting --> Failed: startup error / timeout ❓
+    Processing --> Paused: Pause ❓
+    Paused --> Starting: Resume ❓
+    Processing --> Completed: Success ❓
+    Processing --> Failed: Error ❓
+    Completed --> Idle: Close Dialog ❓
+    Failed --> Idle: Abort / Close ❓
 ```
 
 ```mermaid
@@ -73,6 +80,23 @@ stateDiagram-v2
 
 - 実行ステージは `fetch -> transform -> vt`。
 - 起動フェーズ `awaiting-first-task` は待機監視対象で、10s で wait 通知、20s で long-wait 警告、45s で timeout エラー終了。
+- `awaiting-first-task` のテスト済みシグナル判定:
+  - `running/completed/failed/...` タスク受信
+  - `queued` タスク受信
+  - progress メタデータ（`progressTaskId` または `total > 0`）受信
+- 遷移テストの主要証跡:
+  - ユニット: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
+  - ユニット: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts`
+  - 結合（hook）: `plugins/shape-plugin/src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx`
+  - E2E（Step5 起動）: `e2e/shape/shape-build-startup-first-task.spec.ts`
+- MCP 実ブラウザ確認（`localhost:4200`, 2026-02-13 12:00 JST）:
+  - `start session response: { status: "running", hasError: false }` の後、`awaiting-first-task` は `outcome: "success"` で終了（`reason: "completed-without-generating-tasks"`, `elapsedMs: 48`）。
+  - 同 run では `build session transition timeout` ログは未観測（timeout 再発なし）。
+- E2E 自動検証（Playwright, 2026-02-13 12:14 JST）:
+  - `e2e/shape/shape-build-startup-first-task.spec.ts` は `E2E_AUTH_ACCESS_TOKEN` 注入 + `/auth/verify` 成功を前提に pass（`awaiting-first-task` timeout 非発生を確認）。
+  - 実行導線: `pnpm e2e:shape-startup`（`e2e/.auth/shape-startup-auth.json` または `E2E_AUTH_ACCESS_TOKEN` を利用）。
+- 現在の blocked（❌）:
+  - 認証シード未設定時の Playwright 実行は `Authentication required` で startup 検証に未到達（環境依存のため `E2E_AUTH_ACCESS_TOKEN` などの注入が必要）。
 
 ## ダイアログ制御の詳細仕様
 

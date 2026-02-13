@@ -37,6 +37,8 @@ import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMap
 import { resolveBuildStatusSource } from './resolveBuildStatusSource.ts';
 import { shouldResumeBuildSession } from './shouldResumeBuildSession.ts';
 import { createBuildStartDraftData } from './createBuildStartDraftData.ts';
+import { hasAwaitingFirstTaskSignal } from './awaitingFirstTaskSignal.ts';
+import { resolveAwaitingFirstTaskDecision } from './resolveAwaitingFirstTaskDecision.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
@@ -252,7 +254,6 @@ const getBuildSessionTransitionStatusLabel = (
       return t('stage.status.starting', 'Starting stage...');
   }
 };
-
 
 type Args = {
   data?: Partial<ShapeEntity>;
@@ -582,6 +583,26 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       || task.status === 'warning'
     ))
   ), [displayTasks]);
+  const hasQueuedTasks = useMemo(() => (
+    displayTasks.some((task) => task.status === 'queued')
+  ), [displayTasks]);
+  const hasProgressTaskSignal = useMemo(() => hasAwaitingFirstTaskSignal({
+    hasStartedTasks: false,
+    hasQueuedTasks: false,
+    progressTaskId: effectiveProgress?.progressTaskId ?? null,
+    progressTotal: effectiveProgress?.total ?? null,
+  }), [effectiveProgress?.progressTaskId, effectiveProgress?.total]);
+  const hasFirstTaskSignal = useMemo(() => hasAwaitingFirstTaskSignal({
+    hasStartedTasks,
+    hasQueuedTasks,
+    progressTaskId: effectiveProgress?.progressTaskId ?? null,
+    progressTotal: effectiveProgress?.total ?? null,
+  }), [
+    effectiveProgress?.progressTaskId,
+    effectiveProgress?.total,
+    hasQueuedTasks,
+    hasStartedTasks,
+  ]);
   const completedTaskSequenceById = useMemo(() => {
     const map = new Map<string, number>();
     displayTasks.forEach((task) => {
@@ -1217,63 +1238,61 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   useEffect(() => {
     if (!buildSessionTransition.active) return;
     if (buildSessionTransition.phase !== 'awaiting-first-task') return;
-    if (hasStartedTasks) {
-      if (!buildSessionTransitionTaskStartNotifiedRef.current) {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal,
+      hasStartedTasks,
+      hasProgressTaskSignal,
+      buildStatus,
+      taskCount: displayTasks.length,
+      isPausePending,
+    });
+    if (decision.kind === 'continue') return;
+
+    if (decision.kind === 'success') {
+      if (decision.taskExecutionStarted && !buildSessionTransitionTaskStartNotifiedRef.current) {
         buildSessionTransitionTaskStartNotifiedRef.current = true;
         emitBuildSessionTransitionLog('info', 'task execution started', {
           tasks: displayTasks.length,
+          queuedOnly: decision.taskExecutionStarted.queuedOnly,
+          hasProgressTaskSignal: decision.taskExecutionStarted.hasProgressTaskSignal,
         });
-        pushBuildSessionTransitionNotification('success', 'Build task execution started.');
+        if (decision.notification) {
+          pushBuildSessionTransitionNotification(decision.notification.level, decision.notification.message);
+        }
       }
       finishBuildStartupStep('awaiting-first-task', 'success', {
-        reason: 'task-execution-started',
+        reason: decision.reason,
         tasks: displayTasks.length,
+        hasProgressTaskSignal,
       });
-      finishBuildSessionTransition();
-      return;
-    }
-    if (buildStatus === 'completed') {
-      finishBuildStartupStep('awaiting-first-task', 'success', {
-        reason: displayTasks.length === 0
-          ? 'completed-without-generating-tasks'
-          : 'completed-before-first-task-update',
-        tasks: displayTasks.length,
-      });
-      if (displayTasks.length === 0) {
-        finishBuildSessionTransition({
-          level: 'info',
-          message: 'Build completed without generating tasks.',
-        });
-        return;
+      if (decision.transitionFinish) {
+        finishBuildSessionTransition(decision.transitionFinish);
+      } else {
+        finishBuildSessionTransition();
       }
-      finishBuildSessionTransition();
       return;
     }
-    if (buildStatus === 'failed') {
+
+    if (decision.kind === 'error') {
       finishBuildStartupStep('awaiting-first-task', 'error', {
-        reason: 'failed-before-task-start',
+        reason: decision.reason,
       });
-      finishBuildSessionTransition({
-        level: 'error',
-        message: 'Build failed before task execution started.',
-      });
+      finishBuildSessionTransition(decision.transitionFinish);
       return;
     }
-    if (buildStatus === 'paused' && !isPausePending) {
-      finishBuildStartupStep('awaiting-first-task', 'cancelled', {
-        reason: 'paused-before-task-start',
-      });
-      finishBuildSessionTransition({
-        level: 'warning',
-        message: 'Build paused before task execution started.',
-      });
-    }
+
+    finishBuildStartupStep('awaiting-first-task', 'cancelled', {
+      reason: decision.reason,
+    });
+    finishBuildSessionTransition(decision.transitionFinish);
   }, [
     buildStatus,
     displayTasks.length,
     emitBuildSessionTransitionLog,
     finishBuildStartupStep,
     finishBuildSessionTransition,
+    hasFirstTaskSignal,
+    hasProgressTaskSignal,
     hasStartedTasks,
     isPausePending,
     pushBuildSessionTransitionNotification,

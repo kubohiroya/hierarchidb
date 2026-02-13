@@ -8,12 +8,42 @@ const normalizeBasePath = (value: string | undefined): string => {
 const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
 const defaultBaseURL = (() => {
   const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4173${basePath}`;
+  return `http://localhost:4200${basePath}`;
 })();
 
 const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
 const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
 const baseURLWithSlash = `${normalizedBaseURL}/`;
+const SERVER_READY_TIMEOUT_MS = 180000;
+const NAVIGATION_TIMEOUT_MS = 120000;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const waitForServerReady = async (serverUrl: string, timeoutMs: number): Promise<void> => {
+  const startedAt = Date.now();
+  let lastError = 'unknown';
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const response = await fetch(serverUrl, {
+        method: 'GET',
+        redirect: 'manual',
+        cache: 'no-store',
+      });
+      if (response.ok || (response.status >= 300 && response.status < 400)) {
+        return;
+      }
+      lastError = `HTTP ${response.status}`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+    await sleep(1000);
+  }
+
+  throw new Error(`Server readiness check timed out (${timeoutMs}ms): ${serverUrl} (${lastError})`);
+};
 
 /**
  * Global setup for E2E tests
@@ -42,9 +72,11 @@ async function globalSetup(config: FullConfig) {
       console.log(`   … ${new Date().toLocaleTimeString()} 時点: サーバー応答待ち`);
     }, 15000);
 
+    await waitForServerReady(serverUrl, SERVER_READY_TIMEOUT_MS);
+
     await page.goto(serverUrl, {
-      waitUntil: 'networkidle',
-      timeout: 60000,
+      waitUntil: 'domcontentloaded',
+      timeout: NAVIGATION_TIMEOUT_MS,
     });
 
     clearInterval(progressTimer);

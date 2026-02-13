@@ -15,7 +15,7 @@ const normalizeBasePath = (value: string | undefined): string => {
 const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
 const defaultBaseURL = (() => {
   const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4173${basePath}`;
+  return `http://localhost:4200${basePath}`;
 })();
 
 const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
@@ -97,7 +97,7 @@ export default defineConfig({
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
         command:
-          'pnpm --filter @hierarchidb/app stage && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4173',
+          'pnpm --filter @hierarchidb/app stage && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4200',
         url: baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
         timeout: 480 * 1000, // allow enough headroom because the app stage routinely exceeds 3 minutes

@@ -7,7 +7,7 @@ const normalizeBasePath = (value: string | undefined): string => {
 const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
 const defaultBaseURL = (() => {
   const basePath = appName ? `/${appName}` : '';
-  return `http://localhost:4173${basePath}`;
+  return `http://localhost:4200${basePath}`;
 })();
 
 const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
@@ -77,8 +77,24 @@ export async function dismissGuidedTour(page: Page): Promise<void> {
  * Waits for the TreeTable to fully load
  */
 export async function waitForTreeTableLoad(page: Page): Promise<void> {
-  // Wait for the main TreeTable component
-  await expect(page.locator('[data-testid="console-table"], [data-tour-id="tree-table"]')).toBeVisible();
+  const treeTable = page.locator('[data-testid="console-table"], [data-tour-id="tree-table"]').first();
+
+  await expect.poll(async () => {
+    const tableVisible = await treeTable.isVisible().catch(() => false);
+    if (tableVisible) return 'ready';
+
+    const navigateToResourcesButton = page.getByRole('button', { name: /Navigate to Resources view/i });
+    const canNavigateToResources = await navigateToResourcesButton.isVisible().catch(() => false);
+    if (canNavigateToResources) {
+      await navigateToResourcesButton.click({ force: true }).catch(() => {
+        // No-op: retry on next poll tick.
+      });
+    }
+    return 'waiting';
+  }, {
+    timeout: 30000,
+    intervals: [200, 500, 1000],
+  }).toBe('ready');
 
   // Wait for loading indicators to disappear
   await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();

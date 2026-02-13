@@ -185,6 +185,8 @@ references/eria-cartograph/
 e2e-results
 e2e-results.json
 e2e-results.xml
+e2e/.auth/*.json
+!e2e/.auth/*.template.json
 tsup.config.bundled*.mjs
 vitest.config.ts.*.mjs
 app/build-analysis/

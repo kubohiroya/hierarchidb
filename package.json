@@ -55,6 +55,7 @@
     "dev:start:production": "bash -lc 'set -a; source scripts/env/production.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; pnpm --filter @hierarchidb/app dev'",
     "dev:with-watch": "node ./scripts/run-dev-with-turbo-watch.mjs",
     "e2e": "turbo run e2e",
+    "e2e:shape-startup": "node scripts/e2e/run-shape-startup-e2e.mjs",
     "eslint:deprecations": "eslint -f stylish --max-warnings=0 packages/runtime-worker/worker packages/plugins/shape-plugin",
     "format": "turbo run format",
     "generate-gadm-iso-mapping": "tsx scripts/data-generation/generate-gadm-iso-mapping.ts",

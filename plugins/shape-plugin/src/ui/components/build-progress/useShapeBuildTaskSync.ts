@@ -177,6 +177,7 @@ const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
 
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 const RUNNING_RESIDUE_LOG_LIMIT = 600;
+const TASK_FLUSH_FALLBACK_TIMEOUT_MS = 120;
 let runningResidueLogCount = 0;
 let runningResidueLogLimitNotified = false;
 
@@ -546,6 +547,7 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
   const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
   const flushFrameRef = useRef<number | null>(null);
+  const flushTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -557,6 +559,10 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       if (flushFrameRef.current !== null) {
         window.cancelAnimationFrame(flushFrameRef.current);
         flushFrameRef.current = null;
+      }
+      if (flushTimeoutRef.current !== null) {
+        window.clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
       }
     };
   }, []);
@@ -594,9 +600,17 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
     pendingDirtyRef.current = pendingDirtyRef.current || dirty;
     if (flushScheduledRef.current) return;
     flushScheduledRef.current = true;
-    flushFrameRef.current = window.requestAnimationFrame(() => {
+    const flushPending = () => {
+      if (!flushScheduledRef.current) return;
       flushScheduledRef.current = false;
-      flushFrameRef.current = null;
+      if (flushFrameRef.current !== null) {
+        window.cancelAnimationFrame(flushFrameRef.current);
+        flushFrameRef.current = null;
+      }
+      if (flushTimeoutRef.current !== null) {
+        window.clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
+      }
       const pending = pendingTasksRef.current;
       const isDirty = pendingDirtyRef.current;
       pendingTasksRef.current = null;
@@ -604,7 +618,15 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
       if (pending) {
         flushTasks(pending, isDirty);
       }
+    };
+    flushFrameRef.current = window.requestAnimationFrame(() => {
+      flushFrameRef.current = null;
+      flushPending();
     });
+    flushTimeoutRef.current = window.setTimeout(() => {
+      flushTimeoutRef.current = null;
+      flushPending();
+    }, TASK_FLUSH_FALLBACK_TIMEOUT_MS);
   }, [flushTasks]);
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
@@ -779,6 +801,10 @@ export const useShapeBuildTaskSync = ({ sessionNodeId, setTasks, setIsLoading, s
     if (flushFrameRef.current !== null) {
       window.cancelAnimationFrame(flushFrameRef.current);
       flushFrameRef.current = null;
+    }
+    if (flushTimeoutRef.current !== null) {
+      window.clearTimeout(flushTimeoutRef.current);
+      flushTimeoutRef.current = null;
     }
     tasksRef.current = tasks;
     committedTasksRef.current = tasks;
