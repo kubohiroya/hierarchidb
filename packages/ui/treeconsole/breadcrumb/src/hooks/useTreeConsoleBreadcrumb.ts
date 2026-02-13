@@ -24,7 +24,7 @@ interface UseTreeConsoleBreadcrumbResult {
   openStepsLoading: boolean;
   confirmDialogOpen: boolean;
   setConfirmDialogOpen: Dispatch<SetStateAction<boolean>>;
-  handleConfirmTrash: () => void;
+  handleConfirmArchive: () => void;
   handleCreate: (type: string) => void;
   handleEdit: () => void;
   handleDuplicate: () => void;
@@ -33,14 +33,14 @@ interface UseTreeConsoleBreadcrumbResult {
   handleImport: () => void;
   handleExport: () => void;
   handleBuild: () => void;
-  handleTrash: () => void;
+  handleArchive: () => void;
   isRootContext: boolean;
   isNavigating: boolean;
   hoverId: string | null;
   setHoverId: Dispatch<SetStateAction<string | null>>;
   hoverBlocked: boolean;
   setHoverBlocked: Dispatch<SetStateAction<boolean>>;
-  useTrashColumnsFlag: boolean;
+  useArchiveColumnsFlag: boolean;
   trashActionValue: 'restore' | 'empty' | undefined;
 }
 
@@ -57,7 +57,7 @@ export const useTreeConsoleBreadcrumb = (
   } = props;
 
   const { isProjectsPage } = context;
-  const useTrashColumnsFlag: boolean = Boolean(props.useTrashColumns);
+  const useArchiveColumnsFlag: boolean = Boolean(props.useArchiveColumns);
   const trashActionValue: 'restore' | 'empty' | undefined = props.trashAction;
   const iconInteractive = props.iconInteractive ?? true;
 
@@ -120,7 +120,7 @@ export const useTreeConsoleBreadcrumb = (
     [onContextAction, onNodeClick]
   );
 
-  const handleConfirmTrash = useCallback(() => {
+  const handleConfirmArchive = useCallback(() => {
     if (pendingDeleteNodeId && pendingDeleteNode && onContextAction) {
       onContextAction('trash', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
     }
@@ -234,7 +234,7 @@ export const useTreeConsoleBreadcrumb = (
     }
   }, [contextMenuNode, onContextAction]);
 
-  const handleTrash = useCallback(() => {
+  const handleArchive = useCallback(() => {
     if (contextMenuNode) {
       setPendingDeleteNodeId(contextMenuNode.id || contextMenuNode.id || '');
       setPendingDeleteNode(contextMenuNode);
@@ -264,7 +264,7 @@ export const useTreeConsoleBreadcrumb = (
     openStepsLoading,
     confirmDialogOpen,
     setConfirmDialogOpen,
-    handleConfirmTrash,
+    handleConfirmArchive,
     handleCreate,
     handleEdit,
     handleDuplicate,
@@ -273,14 +273,14 @@ export const useTreeConsoleBreadcrumb = (
     handleImport,
     handleExport,
     handleBuild,
-    handleTrash,
+    handleArchive,
     isRootContext,
     isNavigating,
     hoverId,
     setHoverId,
     hoverBlocked,
     setHoverBlocked,
-    useTrashColumnsFlag,
+    useArchiveColumnsFlag,
     trashActionValue,
   };
 };

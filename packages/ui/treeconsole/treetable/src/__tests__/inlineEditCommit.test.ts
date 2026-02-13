@@ -89,7 +89,7 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
     treeId: 'console',
     setContextMenuState: () => {},
     visualSelectionSet: new Set(),
-    useTrashColumns: false,
+    useArchiveColumns: false,
     trashAction: 'restore',
     formatTimestamp: () => '-',
     columnLabels: {

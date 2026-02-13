@@ -53,15 +53,15 @@ describe('CommandRegistry types: envelope inference', () => {
     } satisfies PayloadOf<'createDraftForCreate'>);
     expectTypeOf(c1.payload).toEqualTypeOf<PayloadOf<'createDraftForCreate'>>();
 
-    // Trash related
-    const mt = createEnvelope('moveToTrash', {
+    // Archive related
+    const mt = createEnvelope('moveToArchive', {
       nodeIds: [] as NodeId[],
-    } satisfies PayloadOf<'moveToTrash'>);
-    expectTypeOf(mt.payload).toEqualTypeOf<PayloadOf<'moveToTrash'>>();
+    } satisfies PayloadOf<'moveToArchive'>);
+    expectTypeOf(mt.payload).toEqualTypeOf<PayloadOf<'moveToArchive'>>();
 
-    const rt = createEnvelope('restoreFromTrash', {
+    const rt = createEnvelope('restoreFromArchive', {
       nodeIds: [] as NodeId[],
-    } satisfies PayloadOf<'restoreFromTrash'>);
-    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'restoreFromTrash'>>();
+    } satisfies PayloadOf<'restoreFromArchive'>);
+    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'restoreFromArchive'>>();
   });
 });

@@ -83,11 +83,11 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       return canonicalId;
     };
 
-    const parentId = await createAndCommit('Integration Trash Parent', rootId);
-    const childOneId = await createAndCommit('Integration Trash Child C', parentId);
-    const childTwoId = await createAndCommit('Integration Trash Child D', parentId);
+    const parentId = await createAndCommit('Integration Archive Parent', rootId);
+    const childOneId = await createAndCommit('Integration Archive Child C', parentId);
+    const childTwoId = await createAndCommit('Integration Archive Child D', parentId);
 
-    const moveResult = await mutationAPI.moveNodesToTrash([childOneId, childTwoId]);
+    const moveResult = await mutationAPI.moveNodesToArchive([childOneId, childTwoId]);
     expect(moveResult.success).toBe(true);
 
     await waitFor(async () => {
@@ -114,14 +114,14 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(trashedChildTwo.parentId).toBe(trashRootId);
     expect(trashedChildOne.removedAt).toBeTruthy();
     expect(trashedChildTwo.removedAt).toBeTruthy();
-    expect(trashedChildOne.metadata.name).not.toBe('Integration Trash Child C');
-    expect(trashedChildTwo.metadata.name).not.toBe('Integration Trash Child D');
-    expect(trashedChildOne.originalName).toBe('Integration Trash Child C');
-    expect(trashedChildTwo.originalName).toBe('Integration Trash Child D');
+    expect(trashedChildOne.metadata.name).not.toBe('Integration Archive Child C');
+    expect(trashedChildTwo.metadata.name).not.toBe('Integration Archive Child D');
+    expect(trashedChildOne.originalName).toBe('Integration Archive Child C');
+    expect(trashedChildTwo.originalName).toBe('Integration Archive Child D');
     expect(trashedChildOne.originalParentId).toBe(parentId);
     expect(trashedChildTwo.originalParentId).toBe(parentId);
 
-    const restoreResult = await mutationAPI.restoreNodesFromTrash({
+    const restoreResult = await mutationAPI.restoreNodesFromArchive({
       nodeIds: [childOneId],
       toParentId: parentId,
     });
@@ -139,13 +139,13 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(childTwoAfterRestore?.parentId).toBe(trashRootId);
     expect(childTwoAfterRestore?.removedAt).toBeTruthy();
     expect(childTwoAfterRestore?.originalParentId).toBe(parentId);
-    expect(childTwoAfterRestore?.originalName).toBe('Integration Trash Child D');
+    expect(childTwoAfterRestore?.originalName).toBe('Integration Archive Child D');
 
     const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
     expect(trashChildrenAfterRestore.some((node) => node.id === childTwoId)).toBe(true);
     expect(trashChildrenAfterRestore.some((node) => node.id === childOneId)).toBe(false);
 
-    const secondMoveResult = await mutationAPI.moveNodesToTrash([childOneId]);
+    const secondMoveResult = await mutationAPI.moveNodesToArchive([childOneId]);
     expect(secondMoveResult.success).toBe(true);
 
     await waitFor(async () => {

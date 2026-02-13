@@ -293,12 +293,12 @@ export class CoreDB extends Dexie {
               parentId: getRootNodeId(treeId, 'superRoot'),
               id: getRootNodeId(treeId, 'trash'),
               nodeType: 'trash' as NodeType,
-              depth: 0, // Trash root also has depth 0
+              depth: 0, // Archive root also has depth 0
               createdAt: now,
               updatedAt: now,
               version: 1,
               metadata: {
-                name: 'Trash',
+                name: 'Archive',
                 description: undefined,
                 tags: [],
               },
@@ -983,7 +983,7 @@ export class CoreDB extends Dexie {
     return { newRootId, idMap: idMapping };
   }
 
-  // Legacy restoreFromTrash removed. Use CommandProcessor.restoreFromTrash with holder-based model.
+  // Legacy restoreFromArchive removed. Use CommandProcessor.restoreFromArchive with holder-based model.
 
   /**
    * Paste nodes with correct depth calculation

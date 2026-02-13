@@ -59,9 +59,9 @@ export function TreeNodeInfoPanel({
     handleIconClick,
     handleMenuClose,
     handleBuild,
-    handleTrashConfirm,
-    handleTrashCancel,
-    confirmTrashOpen,
+    handleArchiveConfirm,
+    handleArchiveCancel,
+    confirmArchiveOpen,
     labels,
     nodeIconColor,
     canMutate,
@@ -318,15 +318,15 @@ export function TreeNodeInfoPanel({
         </Stack>
       </Paper>
 
-      <Dialog open={confirmTrashOpen} onClose={handleTrashCancel}>
-        <DialogTitle>{labels.confirmTrashTitle}</DialogTitle>
+      <Dialog open={confirmArchiveOpen} onClose={handleArchiveCancel}>
+        <DialogTitle>{labels.confirmArchiveTitle}</DialogTitle>
         <DialogContent>
-          <Typography>{labels.confirmTrashDescription}</Typography>
+          <Typography>{labels.confirmArchiveDescription}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleTrashCancel}>{labels.confirmTrashCancel}</Button>
-          <Button onClick={handleTrashConfirm} color="error" variant="contained">
-            {labels.confirmTrashConfirm}
+          <Button onClick={handleArchiveCancel}>{labels.confirmArchiveCancel}</Button>
+          <Button onClick={handleArchiveConfirm} color="error" variant="contained">
+            {labels.confirmArchiveConfirm}
           </Button>
         </DialogActions>
       </Dialog>
@@ -347,7 +347,7 @@ export function TreeNodeInfoPanel({
         canCut={canMutate}
         canImport={canCreate}
         canExport={canCreate}
-        canTrash={canMutate && !isBuildRunning}
+        canArchive={canMutate && !isBuildRunning}
         canRemove={canMutate && !isBuildRunning}
         canBuild={isBuildable && !isStylerMenuNode}
         canPreview={canPreview && !previewGuardLoading}
@@ -367,7 +367,7 @@ export function TreeNodeInfoPanel({
         onCut={() => handleContextMenuTrigger('cut')}
         onImport={() => handleContextMenuTrigger('import')}
         onExport={() => handleContextMenuTrigger('export')}
-        onTrash={() => handleContextMenuTrigger('trash')}
+        onArchive={() => handleContextMenuTrigger('trash')}
         onRemove={() => handleContextMenuTrigger('trash')}
         onToggleVisible={(nextVisible) =>
           handleContextMenuTrigger('toggle-visibility', { nextVisible })

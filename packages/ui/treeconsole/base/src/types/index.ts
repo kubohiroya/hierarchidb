@@ -29,7 +29,7 @@ export interface TreeTableConsolePanelProps<T> {
   enableRowSelection?: boolean;
   hideConsole?: boolean;
   showSearchOnly?: boolean;
-  useTrashColumns?: boolean;
+  useArchiveColumns?: boolean;
   trashAction?: 'restore' | 'empty';
   containerWidth?: number;
   containerHeight?: number;
@@ -52,7 +52,7 @@ export interface TreeConsoleHeaderProps {
   currentNodeInfo: NodeInfo | null;
   controller: TreeViewController | null;
   previousNodePath: TreeNodeWithChildren[];
-  isTrashPage: boolean;
+  isArchivePage: boolean;
   isProjectsPage: boolean;
   isResourcesPage: boolean;
   currentNodeId?: string;
@@ -83,7 +83,7 @@ export interface TreeConsoleBreadcrumbProps {
    * -
    */
   context?: {
-    isTrashPage?: boolean;
+    isArchivePage?: boolean;
     isProjectsPage?: boolean;
     isResourcesPage?: boolean;
     mode?: 'restore' | 'dispose' | 'normal';
@@ -116,7 +116,7 @@ export interface TreeConsoleToolbarProps {
   isResourcesPage: boolean;
   rootNodeId: NodeId;
   controller: TreeViewController | null;
-  hasTrashItems?: boolean;
+  hasArchiveItems?: boolean;
   hasChildren?: boolean;
 }
 
@@ -126,7 +126,7 @@ export interface TreeConsoleContentProps {
   isResourcesPage: boolean;
   viewHeight: number;
   viewWidth: number;
-  useTrashColumns: boolean;
+  useArchiveColumns: boolean;
   depthOffset: number;
   rootNodeId: NodeId;
   currentNodeInfo?: NodeInfo | null;
@@ -162,7 +162,7 @@ export interface TreeConsoleFooterProps {
 export interface TreeConsoleActionsProps {
   isProjectsPage: boolean;
   isResourcesPage: boolean;
-  isTrashPage: boolean;
+  isArchivePage: boolean;
   onClose: () => void;
   closeLink?: string;
   backLink: string;
@@ -256,7 +256,7 @@ export interface TreeViewController {
   cancelEdit?: () => void;
   onCreate?: (parentId: NodeId, nodeType: string) => void;
   onDuplicate?: (nodeId: NodeId) => void;
-  onTrash?: (nodeIds: NodeId[]) => void;
+  onArchive?: (nodeIds: NodeId[]) => void;
   createNode?: (nodeType: string) => void;
 
   rootNodeId?: NodeId;

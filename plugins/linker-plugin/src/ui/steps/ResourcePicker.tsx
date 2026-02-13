@@ -6,7 +6,7 @@ import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worke
 import { DualKeyMap } from '@hierarchidb/util';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useTranslation } from '../../common/i18n/index.js';
-// Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
+// Use TreeConsolePanel in readonly + multi-select mode (same基盤 as ArchiveBin)
 // Avoid static import to keep this plugin decoupled from host bundling; read from app global if provided
 type Row = { id: string; name: string; nodeType?: string; hasChildren?: boolean; depth: number };
 type BreadcrumbItem = { id: string; name: string };

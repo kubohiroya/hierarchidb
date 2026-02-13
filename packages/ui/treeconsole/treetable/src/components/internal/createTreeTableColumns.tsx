@@ -71,7 +71,7 @@ export interface ColumnBuilderParams {
     node: TreeNodeInUI | TreeNode | null;
   }>>;
   visualSelectionSet: Set<NodeId>;
-  useTrashColumns: boolean;
+  useArchiveColumns: boolean;
   trashAction: 'restore' | 'empty';
   formatTimestamp: (value?: number) => string;
   trashRemovedHeader?: string;
@@ -179,7 +179,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     treeId,
     setContextMenuState,
     visualSelectionSet,
-    useTrashColumns,
+    useArchiveColumns,
     trashAction,
     formatTimestamp,
     trashRemovedHeader,
@@ -249,7 +249,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const node = row.original;
       const reportedDepth = typeof node.depth === 'number' ? node.depth : undefined;
       const baseDepth = Math.max(0, ((reportedDepth ?? 1) + depthOffset) - 1);
-      const depth = useTrashColumns ? Math.max(0, baseDepth - 1) : baseDepth;
+      const depth = useArchiveColumns ? Math.max(0, baseDepth - 1) : baseDepth;
       const nodeMetrics = node as TreeNode & {
         children?: readonly string[];
         childCount?: number;
@@ -479,7 +479,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               holderType: (node as { holderType?: 'draft' | 'trash' }).holderType,
               holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
               holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
-              useTrashColumns,
+              useArchiveColumns,
               trashAction,
             });
 
@@ -698,7 +698,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
 
   const columns: ColumnDef<TreeNode>[] = [selectionColumn, nameColumn, descriptionColumn, createdColumn, updatedColumn];
 
-  if (useTrashColumns) {
+  if (useArchiveColumns) {
     const removedColumn: ColumnDef<TreeNode> = {
       id: 'removedAt',
       accessorFn: (row) => (row as { removedAt?: number; deletedAt?: number }).removedAt ?? (row as { deletedAt?: number }).deletedAt,

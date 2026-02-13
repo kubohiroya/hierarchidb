@@ -106,20 +106,20 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
       subtreeEvents.some((event) => event?.nodeId === canonicalId && typeof event.type === 'string')
     );
 
-    const mvRes = await mutationAPI.moveNodesToTrash([canonicalId]);
+    const mvRes = await mutationAPI.moveNodesToArchive([canonicalId]);
     if (!mvRes?.success) {
-      throw new Error(`moveNodesToTrash failed: ${JSON.stringify(mvRes)}`);
+      throw new Error(`moveNodesToArchive failed: ${JSON.stringify(mvRes)}`);
     }
 
     await waitFor(() => trashEvents.length > 0);
 
     const afterRootChildren = await queryAPI.listChildren(rootId);
-    const afterTrashChildren = await queryAPI.listChildren(trashRootId);
+    const afterArchiveChildren = await queryAPI.listChildren(trashRootId);
     expect(afterRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
-    const trashedNode = afterTrashChildren.find((node) => node.id === canonicalId);
+    const trashedNode = afterArchiveChildren.find((node) => node.id === canonicalId);
     expect(trashedNode).toBeTruthy();
-    if (!trashedNode) throw new Error('Trashed node not found');
+    if (!trashedNode) throw new Error('Archived node not found');
     expect(trashedNode.parentId).toBe(trashRootId);
     expect(trashedNode.removedAt).toBeTruthy();
     expect(trashedNode.metadata.name).not.toBe('tmp');
@@ -127,7 +127,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedNode.originalParentId).toBe(rootId);
 
     const subtreeEventsBeforeRestore = subtreeEvents.length;
-    const restoreRes = await mutationAPI.restoreNodesFromTrash({
+    const restoreRes = await mutationAPI.restoreNodesFromArchive({
       nodeIds: [canonicalId],
       toParentId: rootId,
     });
@@ -145,9 +145,9 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
 
     const trashEventsBeforeSecondMove = trashEvents.length;
     const subtreeEventsBeforeSecondMove = subtreeEvents.length;
-    const moveAgainRes = await mutationAPI.moveNodesToTrash([canonicalId]);
+    const moveAgainRes = await mutationAPI.moveNodesToArchive([canonicalId]);
     if (!moveAgainRes?.success) {
-      throw new Error(`moveNodesToTrash (second) failed: ${JSON.stringify(moveAgainRes)}`);
+      throw new Error(`moveNodesToArchive (second) failed: ${JSON.stringify(moveAgainRes)}`);
     }
 
     await waitFor(() =>
@@ -164,10 +164,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const afterSecondRootChildren = await queryAPI.listChildren(rootId);
     expect(afterSecondRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
-    const afterSecondTrashChildren = await queryAPI.listChildren(trashRootId);
-    const trashedAgain = afterSecondTrashChildren.find((node) => node.id === canonicalId);
+    const afterSecondArchiveChildren = await queryAPI.listChildren(trashRootId);
+    const trashedAgain = afterSecondArchiveChildren.find((node) => node.id === canonicalId);
     expect(trashedAgain).toBeTruthy();
-    if (!trashedAgain) throw new Error('Trashed node (second) not found');
+    if (!trashedAgain) throw new Error('Archived node (second) not found');
     expect(trashedAgain.parentId).toBe(trashRootId);
     expect(trashedAgain.removedAt).toBeTruthy();
     expect(trashedAgain.metadata.name).not.toBe('tmp');

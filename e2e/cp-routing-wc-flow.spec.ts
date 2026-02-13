@@ -5,7 +5,7 @@ import {
   setupConsoleErrorTracking,
   clearTestData,
   createTestFolder,
-  moveToTrash,
+  moveToArchive,
   waitForSubTreeUpdate,
   waitForDraftUpdate,
   performDragDrop,
@@ -59,7 +59,7 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
       await expect(movedNode).toBeVisible({ timeout: 7000 });
     }
 
-    await moveToTrash(page, renamedName);
+    await moveToArchive(page, renamedName);
     await waitForSubTreeUpdate(page);
     await expect(page.locator(nodeSelector(renamedName))).not.toBeVisible({ timeout: 7000 });
 

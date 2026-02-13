@@ -45,7 +45,7 @@ function isDraftNode(node?: TreeNode): boolean {
     (node as { draftMetadata?: unknown }).draftMetadata !== null;
 }
 
-function isInTrash(ancestors: TreeNode[], node?: TreeNode): boolean {
+function isInArchive(ancestors: TreeNode[], node?: TreeNode): boolean {
   if (node?.nodeType === 'trash') return true;
   return ancestors.some((ancestor) => ancestor.nodeType === 'trash');
 }
@@ -155,7 +155,7 @@ export function useTagsPage(tagName?: string) {
           if (!node) continue;
           if (isDraftNode(node)) continue;
           const ancestors = await getAncestors(assoc.nodeId);
-          if (isInTrash(ancestors, node)) continue;
+          if (isInArchive(ancestors, node)) continue;
           count += 1;
         }
         counts.set(String(tag.id), count);
@@ -257,7 +257,7 @@ export function useTagsPage(tagName?: string) {
             continue;
           }
           const ancestors = await queryAPI.listAncestors(association.nodeId);
-          if (isInTrash(ancestors, node)) {
+          if (isInArchive(ancestors, node)) {
             continue;
           }
           const breadcrumbNodes = [...ancestors, node];

@@ -81,7 +81,7 @@ export interface TreeMutationAPI {
    * @param nodeIds - Node identifiers targeted for soft deletion.
    * @returns A promise resolving to the success flag and optional error message.
    */
-  moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
+  moveNodesToArchive(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 
   /**
    * Restore previously trashed nodes.
@@ -91,7 +91,7 @@ export interface TreeMutationAPI {
    * - `params.nodeIds`: Node identifiers to restore.
    * - `params.toParentId`: Optional destination parent; defaults to the original parent.
    */
-  restoreNodesFromTrash(params: {
+  restoreNodesFromArchive(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
     onNameConflict?: 'error' | 'auto-rename' | 'overwrite';

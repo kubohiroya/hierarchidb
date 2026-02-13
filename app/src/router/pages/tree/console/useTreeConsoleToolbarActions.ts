@@ -24,7 +24,7 @@ type IntegrationActions = {
   handleCopy?: () => void;
   handlePaste?: () => void;
   handleDuplicate?: () => void;
-  handleTrash?: () => void;
+  handleArchive?: () => void;
   handleImport?: () => void;
   handleExport?: () => void;
   handleRefresh?: () => void;
@@ -36,7 +36,7 @@ type IntegrationState = {
   canUndo: boolean;
   canRedo: boolean;
   canPaste?: boolean;
-  canTrash: boolean;
+  canArchive: boolean;
 };
 
 const isTreeNodeLike = (value: unknown): value is HierarchicalTreeNode | TreeNode =>
@@ -70,7 +70,7 @@ export function useTreeConsoleToolbarActions({
   treeId,
   pageNodeId,
   pageTreeNode,
-  hasTrashItems,
+  hasArchiveItems,
   trashRootIdRef,
   navigate,
   actions,
@@ -84,7 +84,7 @@ export function useTreeConsoleToolbarActions({
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
-  hasTrashItems: boolean;
+  hasArchiveItems: boolean;
   trashRootIdRef: React.MutableRefObject<NodeId | null>;
   navigate: (args: { to: string; replace?: boolean }) => void;
   actions: IntegrationActions;
@@ -204,23 +204,23 @@ export function useTreeConsoleToolbarActions({
           break;
         case 'restore': {
           if (!treeId) break;
-          const resolvedTrashNodeId =
+          const resolvedArchiveNodeId =
             params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
               ? params.trashNodeId
               : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore`,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/trash/restore`,
           });
           break;
         }
         case 'empty': {
           if (!treeId) break;
-          const resolvedTrashNodeId =
+          const resolvedArchiveNodeId =
             params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
               ? params.trashNodeId
               : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty`,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/trash/empty`,
           });
           break;
         }
@@ -249,7 +249,7 @@ export function useTreeConsoleToolbarActions({
           actions.handleDuplicate?.();
           break;
         case 'trash':
-          actions.handleTrash?.();
+          actions.handleArchive?.();
           break;
         case 'import':
           actions.handleImport?.();
@@ -290,7 +290,7 @@ export function useTreeConsoleToolbarActions({
       handleSearchTextChange: actions.handleSearchChange ?? (() => {}),
       handleSearchCommit: actions.handleSearchCommit ?? (() => {}),
     },
-    hasTrashItems,
+    hasArchiveItems,
     onAction: handleToolbarAction,
     rowClickAction,
     canUndo: state.canUndo,
@@ -298,8 +298,8 @@ export function useTreeConsoleToolbarActions({
     canCopy: selectedCount > 0,
     canPaste: state.canPaste || false,
     canDuplicate: selectedCount > 0,
-    canTrash: state.canTrash,
-    canRemove: state.canTrash,
+    canArchive: state.canArchive,
+    canRemove: state.canArchive,
     allowImport: canImportFromNode(pageTreeNode),
     developerModeEnabled,
     autosaveEnabled,

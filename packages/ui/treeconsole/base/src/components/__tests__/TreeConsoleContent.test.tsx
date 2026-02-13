@@ -62,7 +62,7 @@ const defaultProps: TreeConsoleContentProps = {
   isResourcesPage: true,
   viewHeight: 600,
   viewWidth: 800,
-  useTrashColumns: false,
+  useArchiveColumns: false,
   depthOffset: 0,
   rootNodeId: 'test-root-node-id' as NodeId,
   currentNodeInfo: null,

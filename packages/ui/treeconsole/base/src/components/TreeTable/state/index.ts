@@ -65,7 +65,7 @@ export {
 export {
   viewHeightAtom,
   viewWidthAtom,
-  useTrashColumnsAtom,
+  useArchiveColumnsAtom,
   depthOffsetAtom,
 } from './config/view.atoms.js';
 

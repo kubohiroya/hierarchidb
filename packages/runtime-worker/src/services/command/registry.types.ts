@@ -16,10 +16,10 @@ import type {
   ExportNodesPayload,
   ImportNodesPayload,
   MoveNodesPayload,
-  MoveToTrashPayload,
+  MoveToArchivePayload,
   PasteNodesPayload,
   RedoPayload,
-  RestoreFromTrashPayload,
+  RestoreFromArchivePayload,
   TreeNodeData,
   UndoPayload,
 } from '@hierarchidb/tree-api';
@@ -32,8 +32,8 @@ export interface CommandMap {
   duplicateNodes: { payload: DuplicateNodesPayload; result: CoreCommandResult };
   pasteNodes: { payload: PasteNodesPayload; result: CoreCommandResult };
   remove: { payload: { nodeIds: NodeId[] }; result: CoreCommandResult };
-  moveToTrash: { payload: MoveToTrashPayload; result: CoreCommandResult };
-  restoreFromTrash: { payload: RestoreFromTrashPayload; result: CoreCommandResult };
+  moveToArchive: { payload: MoveToArchivePayload; result: CoreCommandResult };
+  restoreFromArchive: { payload: RestoreFromArchivePayload; result: CoreCommandResult };
   importNodes: { payload: ImportNodesPayload; result: CoreCommandResult };
   copyNodes: { payload: CopyNodesPayload; result: CoreCommandResult };
   exportNodes: { payload: ExportNodesPayload; result: CoreCommandResult };

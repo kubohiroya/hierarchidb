@@ -23,7 +23,7 @@ function renderToolbar(props?: Partial<TreeConsoleToolbarProps>) {
 
   const defaultProps: TreeConsoleToolbarProps = {
     controller: defaultController,
-    hasTrashItems: false,
+    hasArchiveItems: false,
     availableTemplates: [],
   };
 

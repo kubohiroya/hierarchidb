@@ -81,7 +81,7 @@ describe('TreeTable Name column indentation', () => {
     treeId: 'console',
   setContextMenuState: () => {},
   visualSelectionSet: new Set(),
-  useTrashColumns: false,
+  useArchiveColumns: false,
   trashAction: 'restore',
   formatTimestamp: () => '-',
   columnLabels: {
@@ -161,13 +161,13 @@ describe('TreeTable Name column indentation', () => {
   });
 
   it('caps indentation at zero when trash columns reduce depth', () => {
-    const params = { ...defaultParams, useTrashColumns: true };
+    const params = { ...defaultParams, useArchiveColumns: true };
     const depth = renderNameCell(params, buildNode({ depth: 1 }));
     expect(depth).toBe(0);
   });
 
   it('reduces indentation by one level for trash columns when possible', () => {
-    const params = { ...defaultParams, useTrashColumns: true };
+    const params = { ...defaultParams, useArchiveColumns: true };
     const depth = renderNameCell(params, buildNode({ depth: 4 }));
     expect(depth).toBe(2);
   });

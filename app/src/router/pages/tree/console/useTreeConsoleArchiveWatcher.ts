@@ -6,26 +6,26 @@ import { useEffect, useRef, useState } from 'react';
 import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import { isSubscriptionDebug, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
-export type TrashWatcherState = {
-  hasTrashItems: boolean;
+export type ArchiveWatcherState = {
+  hasArchiveItems: boolean;
   trashRootIdRef: React.MutableRefObject<NodeId | null>;
 };
 
-export function useTreeConsoleTrashWatcher({
+export function useTreeConsoleArchiveWatcher({
   client,
   treeId,
 }: {
   client?: Remote<WorkerAPI>;
   treeId?: string;
-}): TrashWatcherState {
-  const [hasTrashItems, setHasTrashItems] = useState(false);
+}): ArchiveWatcherState {
+  const [hasArchiveItems, setHasArchiveItems] = useState(false);
   const trashRootIdRef = useRef<NodeId | null>(null);
   const trashSubRef = useRef<string | null>(null);
   const trashCallbackRef = useRef<SubscriptionCallback | null>(null);
   const trashRefreshTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const checkTrashItems = async () => {
+    const checkArchiveItems = async () => {
       if (client && treeId) {
         const queryAPI = await client.getQueryAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
@@ -33,14 +33,14 @@ export function useTreeConsoleTrashWatcher({
           const trashNodeId = tree.trashRootId as NodeId;
           trashRootIdRef.current = trashNodeId;
           const trashChildren = await queryAPI.listChildren(trashNodeId);
-          setHasTrashItems(trashChildren.length > 0);
+          setHasArchiveItems(trashChildren.length > 0);
         } else {
           trashRootIdRef.current = null;
-          setHasTrashItems(false);
+          setHasArchiveItems(false);
         }
       }
     };
-    void checkTrashItems();
+    void checkArchiveItems();
   }, [client, treeId]);
 
   useEffect(() => {
@@ -51,18 +51,18 @@ export function useTreeConsoleTrashWatcher({
         const queryAPI = await client.getQueryAPI();
         await client.getSubscriptionAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
-        const nextTrashRootId = tree?.trashRootId;
-        if (!nextTrashRootId) {
+        const nextArchiveRootId = tree?.trashRootId;
+        if (!nextArchiveRootId) {
           trashRootIdRef.current = null;
-          setHasTrashItems(false);
+          setHasArchiveItems(false);
           return;
         }
-        trashRootIdRef.current = nextTrashRootId as NodeId;
+        trashRootIdRef.current = nextArchiveRootId as NodeId;
 
-        if (trashSubRef.current && typeof nextTrashRootId === 'string') {
+        if (trashSubRef.current && typeof nextArchiveRootId === 'string') {
           if (isSubscriptionDebug()) {
             console.log('[Subscription][trash] already active', {
-              trashRootId: nextTrashRootId,
+              trashRootId: nextArchiveRootId,
               subId: trashSubRef.current,
             });
           }
@@ -74,8 +74,8 @@ export function useTreeConsoleTrashWatcher({
           trashRefreshTimerRef.current = window.setTimeout(async () => {
             trashRefreshTimerRef.current = null;
             try {
-              const children = await queryAPI.listChildren(nextTrashRootId);
-              setHasTrashItems((children?.length || 0) > 0);
+              const children = await queryAPI.listChildren(nextArchiveRootId);
+              setHasArchiveItems((children?.length || 0) > 0);
             } catch (error) {
               logIntegrationWarning('Failed to refresh trash children', error);
             }
@@ -91,22 +91,22 @@ export function useTreeConsoleTrashWatcher({
           requestRefresh();
         });
         trashCallbackRef.current = cb;
-        const existing = Subscriptions.getActive('trash', nextTrashRootId);
+        const existing = Subscriptions.getActive('trash', nextArchiveRootId);
         if (existing) return;
         const { subId: sid, created } = await Subscriptions.subscribe(
           'trash',
           client,
-          nextTrashRootId,
+          nextArchiveRootId,
           cb
         );
         if (created && isSubscriptionDebug()) {
           console.log('[Subscription][trash] subscribed', {
-            trashRootId: nextTrashRootId,
+            trashRootId: nextArchiveRootId,
             subId: sid,
           });
         }
         if (disposed) {
-          await Subscriptions.release('trash', client, nextTrashRootId);
+          await Subscriptions.release('trash', client, nextArchiveRootId);
           return;
         }
         trashSubRef.current = sid ?? null;
@@ -126,9 +126,9 @@ export function useTreeConsoleTrashWatcher({
         try {
           const queryAPI = await client?.getQueryAPI();
           const tree = await queryAPI?.getTree(treeId as TreeId);
-          const nextTrashRootId = tree?.trashRootId;
-          if (nextTrashRootId && client) {
-            await Subscriptions.release('trash', client, nextTrashRootId);
+          const nextArchiveRootId = tree?.trashRootId;
+          if (nextArchiveRootId && client) {
+            await Subscriptions.release('trash', client, nextArchiveRootId);
           }
         } catch (error) {
           logIntegrationWarning('Failed to release trash subscription', error);
@@ -140,5 +140,5 @@ export function useTreeConsoleTrashWatcher({
     };
   }, [client, treeId]);
 
-  return { hasTrashItems, trashRootIdRef };
+  return { hasArchiveItems, trashRootIdRef };
 }

@@ -5,7 +5,7 @@
 export const TREE_ROOT_NODE_TYPES = {
   SUPER_ROOT: 'SuperRoot',
   ROOT: 'Root',
-  TRASH: 'Trash',
+  TRASH: 'Archive',
 } as const;
 
 /**

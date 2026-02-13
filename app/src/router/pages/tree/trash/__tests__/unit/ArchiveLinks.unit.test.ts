@@ -6,7 +6,7 @@ const treeId = 'r';
 const pageNodeId = 'r:root' as NodeId;
 const grandchildId = 'grandchild-1' as NodeId;
 
-describe('TrashDialog link wiring', () => {
+describe('ArchiveDialog link wiring', () => {
   it('generates trash-specific URLs with page node id segment', () => {
     const href = buildTreeConsoleLinkHref({
       treeId,
@@ -15,7 +15,7 @@ describe('TrashDialog link wiring', () => {
       holderType: 'trash',
       holderTargetId: grandchildId,
       holderMetaParentId: pageNodeId,
-      useTrashColumns: true,
+      useArchiveColumns: true,
       trashAction: 'restore',
     });
 

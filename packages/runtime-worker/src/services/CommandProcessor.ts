@@ -208,9 +208,9 @@ export class CommandProcessor {
       'createNode',
       'updateNode',
       'moveNodes',
-      'moveToTrash',
+      'moveToArchive',
       'remove',
-      'restoreFromTrash',
+      'restoreFromArchive',
       'removeSubtree',
       'commitDraft',
     ]);

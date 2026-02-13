@@ -8,7 +8,7 @@ import { ActionButtons } from './ActionButtons.js';
 import { SearchField } from './SearchField.js';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 import { SettingsMenu } from './SettingsMenu.js';
-import { TrashMenu } from './TrashMenu.js';
+import { ArchiveMenu } from './ArchiveMenu.js';
 
 const TreeConsoleToolbarContainer = styled(Box)(() => ({
   display: 'flex',
@@ -20,7 +20,7 @@ const TreeConsoleToolbarContainer = styled(Box)(() => ({
 
 interface TreeConsoleToolbarContentProps {
   controller?: TreeConsoleToolbarProps['controller'];
-  hasTrashItems: boolean;
+  hasArchiveItems: boolean;
   trashNodeId?: string;
   onAction?: TreeConsoleToolbarProps['onAction'];
   rowClickAction?: TreeConsoleToolbarProps['rowClickAction'];
@@ -38,7 +38,7 @@ interface TreeConsoleToolbarContentProps {
   canCopy: boolean;
   canPaste: boolean;
   canDuplicate: boolean;
-  canTrash?: boolean;
+  canArchive?: boolean;
   canRemove?: boolean;
   developerModeEnabled: boolean;
   searchStrings: SearchStrings;
@@ -46,7 +46,7 @@ interface TreeConsoleToolbarContentProps {
 
 export function TreeConsoleToolbarContent({
   controller,
-  hasTrashItems,
+  hasArchiveItems,
   trashNodeId,
   onAction,
   rowClickAction = 'Select/Navigate',
@@ -64,12 +64,12 @@ export function TreeConsoleToolbarContent({
   canCopy,
   canPaste,
   canDuplicate,
-  canTrash,
+  canArchive,
   canRemove,
   searchStrings,
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
-  const [trashAnchorEl, setTrashAnchorEl] = useState<HTMLElement | null>(null);
+  const [trashAnchorEl, setArchiveAnchorEl] = useState<HTMLElement | null>(null);
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
 
   const handleAction = useCallback(
@@ -96,7 +96,7 @@ export function TreeConsoleToolbarContent({
 
   const currentSearchMode: TreeConsoleSearchMode = 'local';
 
-  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
+  const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
 
   const trashMenuHandlers = {
     onRestore: () => handleAction('restore', trashNodeId ? { trashNodeId } : undefined),
@@ -110,7 +110,7 @@ export function TreeConsoleToolbarContent({
     copy: t('tooltips.copy', { shortcut: '⌘+C' }),
     paste: t('tooltips.paste', { shortcut: '⌘+V' }),
     duplicate: t('tooltips.duplicate', { shortcut: '⌘+D' }),
-    moveToTrash: t('tooltips.moveToTrash', { shortcut: '⌘+X' }),
+    moveToArchive: t('tooltips.moveToArchive', { shortcut: '⌘+X' }),
   } as const;
 
   const trashButtonLabel = t('aria.trashMenuButton');
@@ -186,18 +186,18 @@ export function TreeConsoleToolbarContent({
         canCopy={canCopy}
         canPaste={canPaste}
         canDuplicate={canDuplicate}
-        allowTrash={allowTrash}
+        allowArchive={allowArchive}
         trashButtonLabel={trashButtonLabel}
-        hasTrashItems={hasTrashItems}
+        hasArchiveItems={hasArchiveItems}
         onAction={handleAction}
-        onTrashClick={(event) => setTrashAnchorEl(event.currentTarget)}
+        onArchiveClick={(event) => setArchiveAnchorEl(event.currentTarget)}
         tooltips={tooltips}
       />
 
-      <TrashMenu
+      <ArchiveMenu
         anchorEl={trashAnchorEl}
         open={Boolean(trashAnchorEl)}
-        onClose={() => setTrashAnchorEl(null)}
+        onClose={() => setArchiveAnchorEl(null)}
         onRestore={trashMenuHandlers.onRestore}
         onEmpty={trashMenuHandlers.onEmpty}
         restoreLabel={labels.trashRestore}
