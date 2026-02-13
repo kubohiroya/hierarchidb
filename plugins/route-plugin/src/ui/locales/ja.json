@@ -79,6 +79,7 @@
     "style": {
       "title": "ルートのスタイル",
       "description": "交通モードごとの色と線のスタイルを設定します。",
+      "reopen": "ルートのスタイルを表示",
       "modeColorsTitle": "交通モード別の色",
       "modeColorLabel": "色",
       "lineWidthLabel": "線の太さ",

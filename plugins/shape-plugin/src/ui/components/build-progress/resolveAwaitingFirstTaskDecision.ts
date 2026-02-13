@@ -61,6 +61,16 @@ const buildFailedBeforeTaskStartMessage = (sessionStageId?: string | null): stri
   return 'Build failed before task execution started.';
 };
 
+const isTransientStartupStage = (sessionStageId?: string | null): boolean => {
+  if (typeof sessionStageId !== 'string' || sessionStageId.length === 0) {
+    return false;
+  }
+  if (!sessionStageId.startsWith('startup:')) {
+    return false;
+  }
+  return !sessionStageId.endsWith(':error');
+};
+
 export const resolveAwaitingFirstTaskDecision = (
   input: AwaitingFirstTaskDecisionInput,
 ): AwaitingFirstTaskDecision => {
@@ -142,6 +152,11 @@ export const resolveAwaitingFirstTaskDecision = (
     };
   }
   if (input.buildStatus === 'failed') {
+    // During resume/startup, build status can remain "failed" briefly while worker stage
+    // has already moved into startup:*:start/finish. Avoid premature failure finalization.
+    if (isTransientStartupStage(input.sessionStageId)) {
+      return { kind: 'continue' };
+    }
     return {
       kind: 'error',
       reason: 'failed-before-task-start',

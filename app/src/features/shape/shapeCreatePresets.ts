@@ -415,7 +415,7 @@ export function getShapePresetMenuEntries(): readonly ShapePresetMenuEntry[] {
 
   return [
     defaultEntry,
-    ...SHAPE_CREATE_PRESET_DEFINITIONS.map((preset) => ({
+    ...SHAPE_CREATE_PRESET_DEFINITIONS.map((preset): ShapePresetMenuEntry => ({
       key: `shape-preset-${preset.id}`,
       nodeType: 'shape',
       createType: buildCreateType('shape', preset.id),

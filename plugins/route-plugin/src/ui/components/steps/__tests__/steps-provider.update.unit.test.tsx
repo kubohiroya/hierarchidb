@@ -1,7 +1,7 @@
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
-import type { RouteUpdaterPayload } from '../../../../common/types/index.js';
+import type { RouteEntity } from '@hierarchidb/route-api';
 
 vi.mock('../RouteDataSourceStep.js', () => ({
   RouteDataSourceStep: (_props: unknown) => null,
@@ -32,10 +32,11 @@ vi.mock('@hierarchidb/components', () => ({
 
 import '../../steps-provider.tsx';
 
-type RouteStepData = PluginStepProps<RouteUpdaterPayload>['data'] & RouteUpdaterPayload;
+type RouteStepData = Partial<RouteEntity>;
 
 type RouteDataSourceElement = React.ReactElement<{
-  onUpdate: (updates: Partial<RouteUpdaterPayload['draftData']>) => void;
+  draft: RouteStepData;
+  onUpdate: (updates: RouteStepData) => void;
 }>;
 
 const getRouteCreateConfigs = () => {
@@ -73,16 +74,55 @@ describe('route steps provider update merge', () => {
       throw new Error('data-source step config not found');
     }
 
-    let latestData = {} as RouteStepData;
+    let latestData: RouteStepData = {};
     const element = dataSourceConfig.componentFactory(
-      createStepProps({} as RouteStepData, (next) => {
+      createStepProps({}, (next) => {
         latestData = next;
       }),
     ) as RouteDataSourceElement;
 
-    element.props.onUpdate({ buildConfig: { dataSourceName: 'ide-gsm' } });
+    element.props.onUpdate({ dataSourceName: 'ide-gsm' });
     element.props.onUpdate({ tabularSourceId: 'tabular-1' });
-    expect(latestData.draftData?.buildConfig?.dataSourceName).toBe('ide-gsm');
-    expect(latestData.draftData?.tabularSourceId).toBe('tabular-1');
+    expect(latestData.dataSourceName).toBe('ide-gsm');
+    expect(latestData.tabularSourceId).toBe('tabular-1');
+  });
+
+  it('keeps incoming draft data when step is re-opened', () => {
+    const configs = getRouteCreateConfigs();
+    const dataSourceConfig = configs.find((cfg) => cfg.id === 'data-source');
+    if (!dataSourceConfig) {
+      throw new Error('data-source step config not found');
+    }
+
+    const initialData: RouteStepData = {
+      dataSourceName: 'ide-gsm',
+      tabularSourceId: 'tabular-1',
+      ideGsmFileName: 'routes.csv',
+    };
+    const element = dataSourceConfig.componentFactory(
+      createStepProps(initialData, () => undefined),
+    ) as RouteDataSourceElement;
+
+    expect(element.props.draft).toMatchObject(initialData);
+  });
+
+  it('does not emit onChange for identical updates', () => {
+    const configs = getRouteCreateConfigs();
+    const dataSourceConfig = configs.find((cfg) => cfg.id === 'data-source');
+    if (!dataSourceConfig) {
+      throw new Error('data-source step config not found');
+    }
+
+    let changeCount = 0;
+    const element = dataSourceConfig.componentFactory(
+      createStepProps({ dataSourceName: 'ide-gsm' }, () => {
+        changeCount += 1;
+      }),
+    ) as RouteDataSourceElement;
+
+    element.props.onUpdate({ dataSourceName: 'ide-gsm' });
+    element.props.onUpdate({ dataSourceName: 'ide-gsm' });
+
+    expect(changeCount).toBe(0);
   });
 });
