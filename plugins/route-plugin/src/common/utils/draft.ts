@@ -1,6 +1,14 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-store';
+import {
+  DEFAULT_ROUTE_BUILD_CONFIG,
+  mergeRouteBuildConfig,
+} from '../config/buildConfig.js';
+import {
+  DEFAULT_ROUTE_PROCESSING_CONFIG,
+  mergeRouteProcessingConfig,
+} from '../config/processingConfig.js';
 
 export function toRouteUpdaterPayload(
   routeDraft: RouteUpdaterPayload | null,
@@ -32,8 +40,42 @@ export function toRouteUpdaterPayload(
 }
 
 export function getRouteUpdaterPayload(draft: RouteUpdaterPayload): Partial<RouteEntity> {
-  if (draft && typeof draft === 'object' && 'draftData' in draft && draft.draftData) {
+  if (
+    draft &&
+    typeof draft === 'object' &&
+    'draftData' in draft &&
+    draft.draftData &&
+    typeof draft.draftData === 'object'
+  ) {
     return draft.draftData as Partial<RouteEntity>;
   }
-  return draft as unknown as Partial<RouteEntity>;
+  return {};
+}
+
+type RouteDraftLike = RouteUpdaterPayload | null | undefined;
+
+export function extractRouteEntity(data: RouteDraftLike | null | undefined): Partial<RouteEntity> {
+  if (!data || typeof data !== 'object') return {};
+  if ('draftData' in data && data.draftData && typeof data.draftData === 'object') {
+    return data.draftData as Partial<RouteEntity>;
+  }
+  return {};
+}
+
+export function resolveRouteBuildConfig(data: RouteDraftLike | null | undefined) {
+  const entity = extractRouteEntity(data);
+  return mergeRouteBuildConfig(DEFAULT_ROUTE_BUILD_CONFIG, entity.buildConfig);
+}
+
+export function resolveRouteProcessingConfig(data: RouteDraftLike | null | undefined) {
+  const entity = extractRouteEntity(data);
+  return mergeRouteProcessingConfig(DEFAULT_ROUTE_PROCESSING_CONFIG, entity.processingConfig);
+}
+
+export function resolveRouteDataSourceName(data: RouteDraftLike | null | undefined): string | undefined {
+  return resolveRouteBuildConfig(data).dataSourceName;
+}
+
+export function hasAnyRouteSelection(selection?: Record<string, boolean[]>): boolean {
+  return Boolean(selection && Object.values(selection).some((row) => row?.some(Boolean)));
 }
