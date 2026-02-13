@@ -59,6 +59,9 @@
       "confirm": "全データを削除",
       "cancel": "キャンセル",
       "error": "キャッシュの削除に失敗しました。もう一度お試しください。"
+    },
+    "maintenance": {
+      "label": "IndexedDB メンテナンス"
     }
   },
   "dialogs": {

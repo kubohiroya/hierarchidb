@@ -7,7 +7,10 @@ import {
   TargetNodeContextProvider,
   TreeContextProvider,
 } from '@hierarchidb/ui-batch-progress';
-import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
+import {
+  type OpenMaintenanceContext,
+  UserLoginButton,
+} from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import {
   AppBar,
   Box,
@@ -30,6 +33,7 @@ import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherButtons.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
+import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
 import type {
   LoadNodeActionReturn,
@@ -173,6 +177,14 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   }, [workerClient]);
 
   const pageName = data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
+  const handleOpenMaintenance = (context: OpenMaintenanceContext) => {
+    if (typeof window === 'undefined') return;
+    const { url } = createMaintenanceSessionUrl({
+      expectedEmail: context.userEmail,
+    });
+    window.location.assign(url);
+  };
+
   const targetContext = useMemo<TargetContextState>(() => {
     const dialogData = dialogMatch?.loaderData as TreeDialogMatchData | undefined;
     if (dialogData?.kind === 'plugin') {
@@ -236,7 +248,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
                         ) : null}
                         {isUserMenuReady ? (
                           <Box sx={{ ml: '8px' }}>
-                            <UserLoginButton />
+                            <UserLoginButton onOpenMaintenance={handleOpenMaintenance} />
                           </Box>
                         ) : null}
                       </Stack>

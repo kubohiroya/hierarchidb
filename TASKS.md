@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #239 / `codex/feat/maintenance/indexeddb-maintenance-url` / start: 2026-02-13 09:51 JST
 - #236 / `codex/fix/tree/prevent-trash-while-build-running` / start: 2026-02-13 08:01 JST
 - #235 / `ERIA-Cartograph` / start: 2026-02-13 07:30 JST
 - #234 / `codex/fix/shape/cache-identity-gemini-followup` / start: 2026-02-13 07:10 JST
@@ -65,6 +66,15 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-13 10:38 JST #239 でメンテナンス専用URLフローを実装。`packages/ui/usermenu` に「IndexedDB Maintenance」メニュー導線（ログイン時のみ表示）を追加し、`app/src/maintenance/maintenanceSession.ts` で短命ワンタイムセッション（`msid/msk`）を発行、`app/src/router/pages/maintenance/MaintenancePage.tsx` でURL検証・確認フレーズ入力・メール再確認を通過した場合のみ destructive 処理を実行する構成に変更。
+- update: 2026-02-13 10:38 JST #239 の実行系として `app/src/maintenance/maintenanceExecution.ts` を追加し、(1) maintenance lock 設定、(2) BroadcastChannel による shutdown 要求、(3) local worker shutdown/reset + Dexie close、(4) `indexedDB.deleteDatabase` の blocked リトライ削除、(5) lock解除後 worker 再初期化（upgradeトリガー）を順次実行するよう実装。`app/src/worker-runtime/client.ts` には lock 有効時の初期化拒否ガードを追加。
+- update: 2026-02-13 10:38 JST #239 の適用範囲は `app/src/maintenance/*`, `app/src/router/pages/maintenance/MaintenancePage.tsx`, `app/src/router/routes/maintenanceRoute.tsx`, `app/src/router/index.tsx`, `app/src/router/init/initializeBrowserGlobals.ts`, `app/src/router/pages/home/HomePage.tsx`, `app/src/router/routes/t.($treeId).($pageNodeId).tsx`, `packages/ui/usermenu/src/components/{UserMenu,UserLoginButton}.tsx`, `app/public/locales/*/common.json`, `packages/ui/i18n/public/locales/*/common.json`。
+- update: 2026-02-13 10:38 JST #239 テスト: `pnpm exec turbo run test --filter @hierarchidb/app -- --run src/maintenance/__tests__/maintenanceSession.unit.test.ts src/maintenance/__tests__/maintenanceLock.unit.test.ts src/maintenance/__tests__/maintenanceExecution.unit.test.ts` は exit 0（3 files / 8 tests passed）。
+- blocked: 2026-02-13 10:38 JST #239 `pnpm exec turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/runtime-worker` は差分外ブロッカー `@hierarchidb/spreadsheet-store#build:types`（`@hierarchidb/ui-grid` 等の module 解決失敗）で exit 2。追加確認として `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/ui-usermenu typecheck` は exit 0。`pnpm --filter @hierarchidb/app typecheck` は差分外 `@hierarchidb/tools-load-plugin-manifest` 解決失敗で exit 1。
+- update: 2026-02-13 10:54 JST #239 追補: `app/src/router/__tests__/unit/configure-router-mode.unit.test.ts` の `@tanstack/react-router` モック不足（`createRoute` / `Link`）を部分モック化で修正し、`maintenanceRoute` 追加後も単体テストが崩れないように調整。
+- update: 2026-02-13 10:56 JST #239 再検証: `pnpm exec turbo run test --filter @hierarchidb/app -- --run src/router/__tests__/unit/configure-router-mode.unit.test.ts src/maintenance/__tests__/maintenanceSession.unit.test.ts src/maintenance/__tests__/maintenanceLock.unit.test.ts src/maintenance/__tests__/maintenanceExecution.unit.test.ts` は exit 0（4 files / 25 tests passed）。
+- update: 2026-02-13 10:57 JST #239 型検証: `pnpm exec turbo run typecheck --filter @hierarchidb/ui-usermenu --filter @hierarchidb/runtime-worker` は exit 0。
+- blocked: 2026-02-13 10:58 JST #239 `pnpm exec turbo run typecheck --filter @hierarchidb/app` は差分外既知ブロッカー `@hierarchidb/shape-plugin`（`vtConfig.debug.tiles` readonly `[]` vs mutable `string[]`）で exit 2。
 - update: 2026-02-13 08:24 JST #236 PR #237 のレビュー指摘（`checkRunningBuildSessionGuard` の逐次 I/O）を反映。`TreeMutationService` で `coreDB.getNode` を `Promise.all` 並列化し、shape node 抽出後に `ephemeralShapeDB.sessions.bulkGet` で一括取得する実装へ変更。対応テスト `tree-mutation-trash-build-session-guard.unit.test.ts` も `bulkGet` モックに更新。`pnpm -w turbo run test --filter @hierarchidb/runtime-worker -- --run src/services/__tests__/unit/tree-mutation-trash-build-session-guard.unit.test.ts` は exit 0（2 tests passed）。
 - update: 2026-02-13 08:16 JST #236 の実装を `fix(treeconsole): prevent trash while build session is running` でコミットし、PR `https://github.com/kubohiroya/hierarchidb/pull/237`（base: `ERIA-Cartograph`）を作成。
 - update: 2026-02-13 08:13 JST #236 原因は、ビルドセッション実行中ノードに対するゴミ箱移動ガードが Command API 側に存在せず、UI 側でもコンテキストメニュー（InfoPanel / TreeTable / Breadcrumb）から trash/remove が操作可能だったこと。発生範囲は `packages/runtime-worker/src/services/TreeMutationService.ts` と tree console UI メニュー経路。

@@ -6,6 +6,7 @@ import type { WorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { bootLog } from '~/utils/bootLog.ts';
 import { APP_VERSION } from '~/version.ts';
+import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock.js';
 import workerScriptUrl from './worker.ts?worker&url';
 import sharedWorkerScriptUrl from './shared-worker.ts?sharedworker&url';
 
@@ -205,7 +206,14 @@ const cleanupWorkerHandles = () => {
   workerInitCompleted = false;
 };
 
+const ensureMaintenanceUnlocked = (): void => {
+  if (!isMaintenanceLockActive()) return;
+  cleanupWorkerHandles();
+  throw new Error('maintenance-lock-active');
+};
+
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
+  ensureMaintenanceUnlocked();
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     // Reduce console noise; log only via bootLog when explicitly enabled
@@ -256,6 +264,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
 }
 
 export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
+  ensureMaintenanceUnlocked();
   if (!workerInstance) return await initializeWorker();
   return workerInstance;
 }

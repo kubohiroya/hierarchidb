@@ -1,6 +1,7 @@
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import {
   DarkMode as DarkModeIcon,
+  Engineering as EngineeringIcon,
   DeleteForever as DeleteForeverIcon,
   Language as LanguageIcon,
   LightMode as LightModeIcon,
@@ -27,6 +28,7 @@ interface UserMenuProps {
   onOpenThemeMenu: (anchor: HTMLElement) => void;
   onOpenLanguageMenu: (anchor: HTMLElement) => void;
   onOpenClearDialog: () => void;
+  onOpenMaintenance?: () => void;
   onLogin: () => void;
   onMenuExited?: () => void;
   onLogout: () => void;
@@ -54,6 +56,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onOpenThemeMenu,
   onOpenLanguageMenu,
   onOpenClearDialog,
+  onOpenMaintenance,
   onLogin,
   onMenuExited,
   onLogout,
@@ -145,6 +148,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         </ListItemIcon>
         <ListItemText>{t('userMenu.clear.label', 'Clear All Data')}</ListItemText>
       </MenuItem>
+
+      {onOpenMaintenance && isAuthenticated ? (
+        <MenuItem
+          onClick={onOpenMaintenance}
+          aria-label={String(t('userMenu.maintenance.label', 'IndexedDB Maintenance'))}
+        >
+          <ListItemIcon>
+            <EngineeringIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>
+            {t('userMenu.maintenance.label', 'IndexedDB Maintenance')}
+          </ListItemText>
+        </MenuItem>
+      ) : null}
 
       <Divider />
 
