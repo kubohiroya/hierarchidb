@@ -117,8 +117,9 @@ const getCountryDisplayName = (countryCode: string): string => {
   if (typeof Intl === 'undefined' || typeof Intl.DisplayNames !== 'function') {
     return countryCode;
   }
+  const locale = typeof navigator === 'undefined' || !navigator?.language ? 'en' : navigator.language;
   try {
-    return new Intl.DisplayNames(['en'], { type: 'region' }).of(countryCode) ?? countryCode;
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(countryCode) ?? countryCode;
   } catch {
     return countryCode;
   }

@@ -479,9 +479,7 @@ export class LocationMutationService implements LocationMutationAPI {
       ? await routeDb.features.bulkGet(Array.from(candidateIds))
       : [];
     const matchedIds = new Set<NodeId>();
-
-    for (const route of candidateRows) {
-      if (!route) continue;
+    const addRouteMatch = (route: RouteLineString): void => {
       const startFeatureId = route.startPoint?.locationFeatureId
         ? String(route.startPoint.locationFeatureId)
         : null;
@@ -501,33 +499,37 @@ export class LocationMutationService implements LocationMutationAPI {
       )
         && endFeatureId !== null
         && locationFeatureSet.has(endFeatureId);
+
       if (startMatched || endMatched) {
         matchedIds.add(route.id);
       }
+    };
+
+    for (const route of candidateRows) {
+      if (!route) continue;
+      addRouteMatch(route);
     }
 
-    // Fallback for legacy records where indexed fields are not populated.
-    if (matchedIds.size === 0) {
-      const fallbackRows = await routeDb.features
-        .toArray()
-        .then((rows) => rows.filter((route): route is RouteLineString => {
-          const startFeatureId = route.startPoint?.locationFeatureId
-            ? String(route.startPoint.locationFeatureId)
-            : null;
-          const endFeatureId = route.endPoint?.locationFeatureId
-            ? String(route.endPoint.locationFeatureId)
-            : null;
-          const startMatched = route.startPoint?.locationId === locationNodeId
-            && startFeatureId !== null
-            && locationFeatureSet.has(startFeatureId);
-          const endMatched = route.endPoint?.locationId === locationNodeId
-            && endFeatureId !== null
-            && locationFeatureSet.has(endFeatureId);
-          return startMatched || endMatched;
-        }));
-      fallbackRows.forEach((route) => {
-        matchedIds.add(route.id);
-      });
+    const fallbackRows = await routeDb.features.toArray();
+    for (const route of fallbackRows) {
+      const typedRoute = route as RouteLineString;
+      const startFeatureId = route.startPoint?.locationFeatureId
+        ? String(route.startPoint.locationFeatureId)
+        : null;
+      const endFeatureId = route.endPoint?.locationFeatureId
+        ? String(route.endPoint.locationFeatureId)
+        : null;
+      const hasLegacyLocationMatch = (
+        (typedRoute.startLocationId === undefined && typedRoute.startPoint?.locationId === locationNodeId)
+        || (typedRoute.endLocationId === undefined && typedRoute.endPoint?.locationId === locationNodeId)
+      );
+      const hasLegacyFeatureMatch = (
+        (startFeatureId !== null && locationFeatureSet.has(startFeatureId))
+        || (endFeatureId !== null && locationFeatureSet.has(endFeatureId))
+      );
+      if (hasLegacyLocationMatch && hasLegacyFeatureMatch) {
+        addRouteMatch(typedRoute);
+      }
     }
 
     return Array.from(matchedIds);

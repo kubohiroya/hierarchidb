@@ -123,14 +123,12 @@ export async function countRouteReferencesToLocations(
     .where('endLocationId')
     .anyOf(locationNodeIds)
     .primaryKeys();
-  const indexedIds = new Set<string>([...startIds.map(String), ...endIds.map(String)]);
-
-  if (indexedIds.size > 0) {
-    return indexedIds.size;
-  }
+  const uniqueIds = new Set<string>([
+    ...startIds.map(String),
+    ...endIds.map(String),
+  ]);
 
   const legacyRows = await db.features.toArray();
-  const legacyMatches = new Set<string>();
   for (const row of legacyRows) {
     const startLocationId = row.startPoint?.locationId;
     const endLocationId = row.endPoint?.locationId;
@@ -138,8 +136,8 @@ export async function countRouteReferencesToLocations(
       (startLocationId !== undefined && locationIdSet.has(String(startLocationId)))
       || (endLocationId !== undefined && locationIdSet.has(String(endLocationId)))
     ) {
-      legacyMatches.add(String(row.id));
+      uniqueIds.add(String(row.id));
     }
   }
-  return legacyMatches.size;
+  return uniqueIds.size;
 }
