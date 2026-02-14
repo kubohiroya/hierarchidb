@@ -815,7 +815,7 @@ export const ShapeBuildProgressPanel = ({
   }, [isResetSessionLoading, stageProgress, stages]);
 
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
-  const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading;
+  const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading || controls.startPending;
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
 
@@ -1033,7 +1033,7 @@ export const ShapeBuildProgressPanel = ({
   ), [isResetSessionLoading, stages]);
 
   const stageMenus = useMemo(() => {
-    const menuDisabled = summary.buildStatus === 'running' || isResetSessionLoading;
+    const menuDisabled = summary.buildStatus === 'running' || isResetSessionLoading || controls.startPending;
     const fetchApiBaseLabel = t('processing.download.deleteApiCache', 'APIキャッシュを削除');
     const fetchFilteredBaseLabel = t('processing.download.deleteFilteredCache', 'フィルター処理キャッシュを削除');
     const transformBaseLabel = t('processing.download.deleteStage1Cache', '簡略化キャッシュを削除');
@@ -1127,6 +1127,7 @@ export const ShapeBuildProgressPanel = ({
     summary.buildStatus,
     handleResetSessionWithSkeleton,
     isResetSessionLoading,
+    controls.startPending,
     t,
   ]);
 

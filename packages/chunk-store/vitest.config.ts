@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [path.resolve(__dirname, '../../../vitest.setup.ts')],
+    setupFiles: [path.resolve(__dirname, '../../vitest.setup.ts')],
     root: __dirname,
     include: ['src/__tests__/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
@@ -13,7 +13,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/download': path.resolve(__dirname, '../download/src/index.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      '@hierarchidb/util': path.resolve(__dirname, '../util/src/index.ts'),
+      '@hierarchidb/core-types': path.resolve(__dirname, '../core-types/src/index.ts'),
     },
   },
 });

@@ -45,7 +45,7 @@ import {
 } from '../services/utils/utils.js';
 import {
   deleteRawDataDataSourceBuffersForNode,
-  deleteRawDataDataSourceBuffersForNodeKeys,
+  deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveFetchStageStrategy.ts';
@@ -285,7 +285,7 @@ const applySelectionDiffCleanup = async (
         .anyOf(removedKeyTuples)
         .delete(),
     ]);
-    await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
+      await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, fetchCacheIds);
   }
 
   const transformCacheIds = transformCacheIdsRaw.map((id: unknown) => String(id));

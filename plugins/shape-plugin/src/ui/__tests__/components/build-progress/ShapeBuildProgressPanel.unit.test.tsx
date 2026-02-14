@@ -289,6 +289,50 @@ describe('ShapeBuildProgressPanel', () => {
     expect(screen.queryByText('No tasks yet.')).toBeNull();
   });
 
+  it('shows task skeleton while start is pending and no task list is available yet', async () => {
+    const store = makeStore();
+    store.set(tasksLoadingAtom, false);
+    store.set(taskSummaryLoadingAtom, false);
+    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: true,
+      statusLabel: '',
+      startPending: true,
+      handleStartOrResume: () => Promise.resolve(),
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Build controls')).toBeTruthy();
+    });
+
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
+    expect(skeletons.length).toBeGreaterThan(0);
+    expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
   it('allows dismissing startup snackbar manually', async () => {
     const store = makeStore();
     store.set(taskProgressControlsAtom, {

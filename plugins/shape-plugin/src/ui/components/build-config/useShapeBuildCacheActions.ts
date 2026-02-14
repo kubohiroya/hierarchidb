@@ -323,6 +323,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       try {
         await deleteRawDataDataSourceBuffersForNode(nodeId);
         deletedApiCache = true;
+        setCounts((prev) => ({ ...prev, fetchApi: 0 }));
       } catch (error) {
         console.warn('[shapeBuildCache] failed to delete fetch API cache', error);
         notify.error('Failed to delete API cache.');
@@ -346,12 +347,12 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   }, [
     clearBuildTasksForStages,
     loadCountsSafely,
-    loadCounts,
     nodeId,
-    resetStaleProcessingSessionIfNeeded,
     runDelete,
+    resetStaleProcessingSessionIfNeeded,
     setBuildTasks,
     setPersistedTasks,
+    setCounts,
   ]);
 
   const handleDeleteFetchFilteredCache = useCallback(async () => {
@@ -368,13 +369,13 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
         onResetSession?.();
         await persistSessionReset();
       }
-      await loadCounts();
+      await loadCountsSafely();
       notify.success('Deleted filtered cache');
     });
   }, [
     clearBuildTasksForStages,
     hasPersistedOutputs,
-    loadCounts,
+    loadCountsSafely,
     nodeId,
     onResetSession,
     persistSessionReset,
@@ -398,12 +399,12 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
         onResetSession?.();
         await persistSessionReset();
       }
-      await loadCounts();
+      await loadCountsSafely();
       notify.success('Deleted transform cache');
     });
   }, [
     clearBuildTasksForStages,
-    loadCounts,
+    loadCountsSafely,
     nodeId,
     onResetSession,
     persistSessionReset,
@@ -428,14 +429,14 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
         onResetSession?.();
         await persistSessionReset();
       }
-      await loadCounts();
+      await loadCountsSafely();
       notify.success('Deleted tile data');
     });
   }, [
     clearBuildTasksForStages,
     clearTileData,
     hasPersistedOutputs,
-    loadCounts,
+    loadCountsSafely,
     nodeId,
     onResetSession,
     persistSessionReset,
@@ -450,10 +451,10 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     if (!nodeId) return;
     await runDelete('metadata', async () => {
       await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-      await loadCounts();
+      await loadCountsSafely();
       notify.success('Deleted feature metadata');
     });
-  }, [loadCounts, nodeId, runDelete]);
+  }, [loadCountsSafely, nodeId, runDelete]);
 
   const handleResetSession = useCallback(async () => {
     if (!nodeId) return;
@@ -470,11 +471,11 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       setPersistedTasks([]);
       onResetSession?.();
       await persistSessionReset();
-      await loadCounts();
+      await loadCountsSafely();
       notify.success('Reset session data');
     });
   }, [
-    loadCounts,
+    loadCountsSafely,
     nodeId,
     onResetSession,
     persistSessionReset,

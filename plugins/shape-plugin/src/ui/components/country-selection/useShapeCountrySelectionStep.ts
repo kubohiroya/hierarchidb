@@ -17,7 +17,7 @@ import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
-import { deleteRawDataDataSourceBuffersForNodeKeys } from '../../../services/utils/chunkStore.ts';
+import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '../../../services/utils/chunkStore.ts';
 import { shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
 
@@ -509,7 +509,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
           .anyOf(removedKeyTuples)
           .delete(),
       ]);
-      await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
+      await deleteRawDataDataSourceBuffersForNodeMetadataIds(nodeId, fetchCacheIds);
     }
     const removedBufferSet = new Set(transformCacheIds);
     if (transformCacheIds.length > 0) {

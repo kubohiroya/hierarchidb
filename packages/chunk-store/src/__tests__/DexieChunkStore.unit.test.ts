@@ -95,4 +95,66 @@ describe('DexieChunkStore', () => {
     expect(first.value).toBe('cached');
     expect(second.value).toBe('cached');
   });
+
+  it('removes node-specific relation without deleting shared cache file', async () => {
+    const dbName = `chunk-store-test-${Date.now()}-${Math.random()}`;
+    dbNames.push(dbName);
+    const store = createStore(dbName);
+    const sharedCacheKey = 'https://example.com/shared';
+
+    await store.setForNode('node-a' as NodeId, sharedCacheKey, 'shared');
+    await store.setForNode('node-b' as NodeId, sharedCacheKey, 'shared');
+    const beforeMeta = await store.listMetadataForNode('node-a' as NodeId);
+    expect(beforeMeta).toHaveLength(1);
+
+    const metadataId = beforeMeta[0]?.metadataId;
+    expect(metadataId).toBeTypeOf('string');
+
+    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
+      'node-a' as NodeId,
+      metadataId ?? '',
+    );
+
+    const afterNodeAMetadata = await store.listMetadataForNode('node-a' as NodeId);
+    const afterNodeBMetadata = await store.listMetadataForNode('node-b' as NodeId);
+    expect(afterNodeAMetadata).toHaveLength(0);
+    expect(afterNodeBMetadata).toHaveLength(1);
+    expect(afterNodeBMetadata[0]?.metadataId).toBe(metadataId);
+    expect(await store.get(sharedCacheKey)).toBeTruthy();
+  });
+
+  it('deletes metadata only when no remaining relations remain', async () => {
+    const dbName = `chunk-store-test-${Date.now()}-${Math.random()}`;
+    dbNames.push(dbName);
+    const store = createStore(dbName);
+    const sharedCacheKey = 'https://example.com/shared';
+    const soloCacheKey = 'https://example.com/solo';
+
+    await store.setForNode('node-a' as NodeId, sharedCacheKey, 'shared');
+    await store.setForNode('node-b' as NodeId, sharedCacheKey, 'shared');
+    await store.setForNode('node-a' as NodeId, soloCacheKey, 'solo');
+
+    const metaForA = await store.listMetadataForNode('node-a' as NodeId);
+    const sharedMetadataId = metaForA.find((entry) => entry.cacheKey === sharedCacheKey)?.metadataId;
+    const soloMetadataId = metaForA.find((entry) => entry.cacheKey === soloCacheKey)?.metadataId;
+    expect(sharedMetadataId).toBeTypeOf('string');
+    expect(soloMetadataId).toBeTypeOf('string');
+
+    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
+      'node-a' as NodeId,
+      sharedMetadataId ?? '',
+    );
+    await (store as { deleteForNodeByMetadataId: (nodeId: NodeId, metadataId: string) => Promise<void> }).deleteForNodeByMetadataId(
+      'node-a' as NodeId,
+      soloMetadataId ?? '',
+    );
+
+    const nodeAMetadata = await store.listMetadataForNode('node-a' as NodeId);
+    const nodeBMetadata = await store.listMetadataForNode('node-b' as NodeId);
+    expect(nodeAMetadata).toHaveLength(0);
+    expect(nodeBMetadata).toHaveLength(1);
+    expect(await store.get(sharedCacheKey)).toBeTruthy();
+    expect((await store.get(soloCacheKey))).toBeUndefined();
+    expect(nodeBMetadata[0]?.cacheKey).toBe(sharedCacheKey);
+  });
 });

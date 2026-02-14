@@ -200,25 +200,27 @@ export const deleteRawDataDataSourceBuffersForDataSource = async (
   return keys.length;
 };
 
-export const deleteRawDataDataSourceBuffersForNodeKeys = async (
+export const deleteRawDataDataSourceBuffersForNodeMetadataIds = async (
   nodeId: NodeId,
-  cacheKeys: string[],
+  metadataIds: string[],
 ): Promise<number> => {
-  if (!cacheKeys.length) return 0;
+  if (!metadataIds.length) return 0;
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-  const uniqueKeys = Array.from(new Set(cacheKeys)).filter((key) => key.length > 0);
-  for (const key of uniqueKeys) {
-    await store.deleteForNode(nodeId, key);
+  const uniqueMetadataIds = Array.from(new Set(metadataIds)).filter((metadataId) => metadataId.length > 0);
+  for (const metadataId of uniqueMetadataIds) {
+    await store.deleteForNodeByMetadataId(nodeId, metadataId);
   }
-  return uniqueKeys.length;
+  return uniqueMetadataIds.length;
 };
 
 export const deleteRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
   const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-  const cacheKeys = metadata
-    .map((entry) => entry.cacheKey)
-    .filter((key): key is string => isRawDataDataSourceCacheKey(key));
-  return deleteRawDataDataSourceBuffersForNodeKeys(nodeId, cacheKeys);
+  return deleteRawDataDataSourceBuffersForNodeMetadataIds(
+    nodeId,
+    metadata
+      .filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey))
+      .map((entry) => entry.metadataId),
+  );
 };
 
 export const ensureRawDataDataSourceBufferForNode = async (

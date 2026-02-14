@@ -234,6 +234,10 @@ export class DexieChunkStore<T> implements StoragePort {
   async deleteForNode(nodeId: NodeId, cacheKey: string): Promise<void> {
     const metadataId = await this.getMetadataIdByCacheKey(cacheKey);
     if (!metadataId) return;
+    await this.deleteForNodeByMetadataId(nodeId, metadataId);
+  }
+
+  async deleteForNodeByMetadataId(nodeId: NodeId, metadataId: ChunkStoreMetadataId): Promise<void> {
     await this.relations.delete([nodeId, metadataId]);
     const remaining = await this.relations.where('metadataId').equals(metadataId).count();
     if (remaining > 0) return;
@@ -247,15 +251,7 @@ export class DexieChunkStore<T> implements StoragePort {
     if (relations.length === 0) return 0;
     let deleted = 0;
     for (const relation of relations) {
-      await this.relations.delete([nodeId, relation.metadataId]);
-      const remaining = await this.relations.where('metadataId').equals(relation.metadataId).count();
-      if (remaining > 0) {
-        deleted += 1;
-        continue;
-      }
-      await this.files.delete(relation.metadataId);
-      await this.chunks.where('metadataId').equals(relation.metadataId).delete();
-      await this.keys.where('metadataId').equals(relation.metadataId).delete();
+      await this.deleteForNodeByMetadataId(nodeId, relation.metadataId);
       deleted += 1;
     }
     return deleted;
