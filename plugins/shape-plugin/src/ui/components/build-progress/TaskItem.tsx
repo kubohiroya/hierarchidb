@@ -37,9 +37,9 @@ export const TaskItem: React.FC<Props> = ({
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-        <Stack direction="row" spacing={1} alignItems="flex-end" sx={{ mb: '2px' }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: '2px' }}>
           {leadingIcon ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: '1px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {leadingIcon}
             </Box>
           ) : null}
