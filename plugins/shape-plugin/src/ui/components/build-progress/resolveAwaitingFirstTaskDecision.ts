@@ -157,11 +157,6 @@ export const resolveAwaitingFirstTaskDecision = (
     if (isTransientStartupStage(input.sessionStageId) || hasSessionProgressEvidence || input.hasProgressTaskSignal) {
       return { kind: 'continue' };
     }
-    // If unified progress already reports task activity (e.g. task count staged or task signal exists)
-    // avoid concluding startup failed before task records are synchronized.
-    if (hasSessionProgressEvidence || input.hasProgressTaskSignal) {
-      return { kind: 'continue' };
-    }
     return {
       kind: 'error',
       reason: 'failed-before-task-start',
