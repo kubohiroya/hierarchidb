@@ -6,6 +6,36 @@ type Unsubscribe = () => void;
 type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
 type Adapter = BuildProgressAdapter | null;
+type ImportMetaEnv = Partial<Record<'DEV', boolean>>;
+type ImportMetaWithEnv = { env?: ImportMetaEnv };
+
+const isDev = typeof import.meta !== 'undefined'
+  ? ((import.meta as ImportMetaWithEnv).env?.DEV === true)
+  : false;
+type ProgressDebugConfig = Partial<Record<'event' | 'skip' | 'all', boolean>>;
+
+const readProgressDebugConfig = (): ProgressDebugConfig | null => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_BATCH_PROGRESS_DEBUG__?: unknown;
+  };
+  const raw = scope.__HDB_BATCH_PROGRESS_DEBUG__;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as ProgressDebugConfig;
+};
+
+const isProgressDebugEnabled = (channel: 'event' | 'skip'): boolean => {
+  if (!isDev) return false;
+  const config = readProgressDebugConfig();
+  if (!config) return false;
+  return config.all === true || config[channel] === true;
+};
+
+const logProgressEvent = (event: string, payload: Record<string, unknown>): void => {
+  if (!isDev) return;
+  console.debug('[BatchProgressTrace]', event, payload);
+};
 
 const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
   const payload = info.payload as Record<string, unknown> | undefined;
@@ -14,7 +44,9 @@ const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
 };
 
 const asRecord = (value: unknown): Record<string, unknown> | null => (
-  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
 );
 
 const readString = (meta: Record<string, unknown> | null, key: string): string | undefined => {
@@ -33,10 +65,14 @@ const readPayloadMeta = (info: BuildUnifiedProgressInfo | null): Record<string, 
   return asRecord(payload.meta);
 };
 
+const readTaskPayloadMeta = (meta: Record<string, unknown> | null): Record<string, unknown> | null => (
+  asRecord(meta?.progressTask)
+);
+
 const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
-  const meta = readPayloadMeta(info);
-  if (!meta) return undefined;
-  const progressTask = asRecord(meta.progressTask);
+  const payloadMeta = readPayloadMeta(info);
+  if (!payloadMeta) return undefined;
+  const progressTask = readTaskPayloadMeta(payloadMeta);
   if (!progressTask) return undefined;
   const progress = readNumber(progressTask, 'progress');
   return [
@@ -50,9 +86,9 @@ const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): stri
 };
 
 const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
-  const meta = readPayloadMeta(info);
-  if (!meta) return undefined;
-  const stageTotals = asRecord(meta.stageTotals);
+  const payloadMeta = readPayloadMeta(info);
+  if (!payloadMeta) return undefined;
+  const stageTotals = asRecord(payloadMeta.stageTotals);
   if (!stageTotals) return undefined;
   const stages = ['fetch', 'transform', 'vt'] as const;
   return stages
@@ -95,11 +131,22 @@ export function useBatchProgress(
     const next = pendingRef.current;
     pendingRef.current = null;
     if (next) {
+      const hasMeta = !!readPayloadMeta(next);
       const prev = lastProgressRef.current;
       if (next.phase === 'completed') {
         const skipped = resolveSkippedCount(next);
         const done = next.completed + next.failed + skipped;
         if (next.total > 0 && done < next.total) {
+          logProgressEvent('drop-complete-incomplete', {
+            nodeId: next.nodeId,
+            stage: next.stage,
+            phase: next.phase,
+            total: next.total,
+            completed: next.completed,
+            failed: next.failed,
+            skipped,
+            hasMeta,
+          });
           return;
         }
       }
@@ -120,7 +167,35 @@ export function useBatchProgress(
         && lastSignaturesRef.current.progressTask === progressTaskSignature
         && lastSignaturesRef.current.stageTotals === stageTotalsSignature
       );
-      if (isSame) return;
+      if (isSame) {
+        if (isProgressDebugEnabled('skip')) {
+          logProgressEvent('skip-unchanged', {
+            nodeId: next.nodeId,
+            stage: next.stage,
+            phase: next.phase,
+            percentage: normalized.percentage,
+            progressTaskSignature,
+            stageTotalsSignature,
+            hasMeta,
+          });
+        }
+        return;
+      }
+      if (isProgressDebugEnabled('event')) {
+        logProgressEvent('apply', {
+          nodeId: next.nodeId,
+          stage: next.stage,
+          phase: next.phase,
+          percentage: normalized.percentage,
+          total: normalized.total,
+          completed: normalized.completed,
+          failed: normalized.failed,
+          skipped: resolveSkippedCount(normalized),
+          progressTaskSignature,
+          stageTotalsSignature,
+          hasMeta,
+        });
+      }
       lastProgressRef.current = normalized;
       lastSignaturesRef.current = {
         progressTask: progressTaskSignature,
@@ -136,6 +211,22 @@ export function useBatchProgress(
     const subscriptionToken = subscriptionTokenRef.current + 1;
     subscriptionTokenRef.current = subscriptionToken;
     const result: SubscribeResult = currentAdapter.subscribe((info: BuildUnifiedProgressInfo) => {
+      if (isProgressDebugEnabled('event')) {
+        const payloadMeta = readPayloadMeta(info);
+        logProgressEvent('received', {
+          nodeId: info.nodeId,
+          stage: info.stage,
+          phase: info.phase,
+          percentage: info.percentage,
+          total: info.total,
+          completed: info.completed,
+          failed: info.failed,
+          skipped: resolveSkippedCount(info),
+          hasPayloadMeta: Boolean(payloadMeta),
+          hasProgressTaskMeta: Boolean(payloadMeta && asRecord(payloadMeta.progressTask)),
+          hasStageTotalsMeta: Boolean(payloadMeta && asRecord(payloadMeta.stageTotals)),
+        });
+      }
       pendingRef.current = info;
       if (flushFrameRef.current !== null) return;
       flushFrameRef.current = window.requestAnimationFrame(update);
