@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #259 / `codex/fix/shape/build-omit-details-threshold-none` / start: 2026-02-14 09:15 JST
 - #258 / `codex/fix/i18n/move-to-archive-ja-locale` / start: 2026-02-14 08:02 JST
 - #255 / `codex/refactor/repo/rename-trash-to-archive` / start: 2026-02-13 22:11 JST
 - #252 / `codex/chore/repo/unify-trash-to-archive` / start: 2026-02-13 18:44 JST
@@ -80,6 +81,10 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-14 09:22 JST #259 原因は `app/src/features/shape/shapeCreatePresets.ts` のプリセットが `omitDetailsConfig.level` に未対応値（`none` / `moderate`）を設定していたこと。発生範囲は shape プリセット経由で作成された draft の build 実行時（`plugins/shape-plugin/src/services/vt/fetchGeometryFilters.ts`）で、`omit-details thresholds missing for level: ...` により fetch タスクが失敗していた。
+- update: 2026-02-14 09:22 JST #259 修正としてプリセット値を `weak` / `medium` に修正し、`plugins/shape-plugin/src/services/utils/utils.ts` の `mergeBuildConfig` に legacy 値正規化（`none -> weak`, `moderate -> medium`）と不正値ガードを追加。適用範囲は `app/src/features/shape/shapeCreatePresets.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, 関連 unit test 2 件。
+- update: 2026-02-14 09:22 JST #259 検証結果: `pnpm install --frozen-lockfile` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/mergeBuildConfig.unit.test.ts` exit 0、`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/features/shape/__tests__/shapeCreatePresets.unit.test.ts` exit 0、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- update: 2026-02-14 09:15 JST Issue `fix(shape): resolve omit-details threshold level none build failure` を起票し `https://github.com/kubohiroya/hierarchidb/issues/259` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-shape-threshold-none` とブランチ `codex/fix/shape/build-omit-details-threshold-none` を作成して着手。
 - blocked: 2026-02-14 08:31 JST #258 検証結果: `pnpm -w turbo run build --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` は exit 0。`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` は差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418`（`ShapePresetMenuEntry` 型不整合）で exit 1。`pnpm -w turbo run test --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` は差分外既知ブロッカー `src/geos/__tests__/geosWorkerClient.unit.test.ts` の area/makeValid 失敗および 600s timeout、`TreeConsoleIntegrationImportGuard.unit.test.tsx` の `@hierarchidb/ui-treeconsole-base` import 解決失敗で exit 1。
 - update: 2026-02-14 08:02 JST Issue `fix(i18n): localize Move to Archive for ja locale` を起票し `https://github.com/kubohiroya/hierarchidb/issues/258` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/i18n/move-to-archive-ja-locale` を作成して着手。
 - blocked: 2026-02-13 22:20 JST #255 検証結果: `pnpm -w turbo run build --filter @hierarchidb/app --filter @hierarchidb/runtime-worker --filter @hierarchidb/tree-api --filter @hierarchidb/ui-treeconsole-toolbar --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable` は初回 `RestoreFromArchive` icon 未存在で失敗（exit 1）後、`Restore` へ修正して再実行し exit 0。`pnpm typecheck` は差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418`（`ShapePresetMenuEntry` 型不整合）で exit 1。`pnpm test` は差分外既知ブロッカー `ui/worker-client` 系 `window is not defined` と `runtime-worker/src/__tests__/wfl/undo-folder-operations.wfl.test.ts` timeout で exit 1。

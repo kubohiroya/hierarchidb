@@ -336,6 +336,23 @@ export function mergeBuildConfig(
     : base.fetchConfig;
 
   const bandOverrides = overrides.transformConfig;
+  const resolveOmitDetailsLevel = (
+    level: unknown,
+  ): ShapeBuildConfig['transformConfig']['omitDetailsConfig']['level'] => {
+    if (level === undefined) {
+      return base.transformConfig.omitDetailsConfig.level;
+    }
+    if (level === 'weak' || level === 'medium' || level === 'strong') {
+      return level;
+    }
+    if (level === 'none') {
+      return 'weak';
+    }
+    if (level === 'moderate') {
+      return 'medium';
+    }
+    throw new Error(`unsupported omit-details level: ${String(level)}`);
+  };
   const transformConfig = bandOverrides
     ? {
       ...base.transformConfig,
@@ -344,7 +361,11 @@ export function mergeBuildConfig(
         ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
         : base.transformConfig.hybridFilterConfig,
       omitDetailsConfig: bandOverrides.omitDetailsConfig
-        ? { ...base.transformConfig.omitDetailsConfig, ...bandOverrides.omitDetailsConfig }
+        ? {
+          ...base.transformConfig.omitDetailsConfig,
+          ...bandOverrides.omitDetailsConfig,
+          level: resolveOmitDetailsLevel(bandOverrides.omitDetailsConfig.level),
+        }
         : base.transformConfig.omitDetailsConfig,
     }
     : base.transformConfig;

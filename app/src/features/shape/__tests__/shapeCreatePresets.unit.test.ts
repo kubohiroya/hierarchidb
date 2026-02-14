@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SHAPE_CREATE_PRESET_IDS,
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,
   parseCreateAction,
@@ -37,5 +38,17 @@ describe('shapeCreatePresets', () => {
       key: 'shape-preset-default',
       createType: 'shape::preset:default',
     });
+  });
+
+  it('uses supported omit-details levels for all shape presets', () => {
+    const supportedLevels = new Set(['weak', 'medium', 'strong']);
+    for (const presetId of SHAPE_CREATE_PRESET_IDS) {
+      const patch = buildShapePresetDraftDataPatch(presetId);
+      const level = (
+        patch.buildConfig as { transformConfig?: { omitDetailsConfig?: { level?: string } } } | undefined
+      )?.transformConfig?.omitDetailsConfig?.level;
+      expect(level).toBeDefined();
+      expect(supportedLevels.has(level ?? '')).toBe(true);
+    }
   });
 });

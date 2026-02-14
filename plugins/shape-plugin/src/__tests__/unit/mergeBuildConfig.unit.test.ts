@@ -30,4 +30,45 @@ describe('mergeBuildConfig', () => {
 
     expect(merged.transformConfig.omitDetailsConfig.level).toBe('weak');
   });
+
+  it('normalizes legacy omitDetailsConfig level aliases from persisted drafts', () => {
+    const mergedFromNone = mergeBuildConfig(
+      DEFAULT_BUILD_CONFIG,
+      {
+        transformConfig: {
+          omitDetailsConfig: {
+            level: 'none',
+          },
+        },
+      } as unknown as Partial<ShapeBuildConfig>,
+    );
+    const mergedFromModerate = mergeBuildConfig(
+      DEFAULT_BUILD_CONFIG,
+      {
+        transformConfig: {
+          omitDetailsConfig: {
+            level: 'moderate',
+          },
+        },
+      } as unknown as Partial<ShapeBuildConfig>,
+    );
+
+    expect(mergedFromNone.transformConfig.omitDetailsConfig.level).toBe('weak');
+    expect(mergedFromModerate.transformConfig.omitDetailsConfig.level).toBe('medium');
+  });
+
+  it('throws for unsupported omitDetailsConfig level values', () => {
+    expect(() =>
+      mergeBuildConfig(
+        DEFAULT_BUILD_CONFIG,
+        {
+          transformConfig: {
+            omitDetailsConfig: {
+              level: 'invalid-level',
+            },
+          },
+        } as unknown as Partial<ShapeBuildConfig>,
+      ),
+    ).toThrow('unsupported omit-details level: invalid-level');
+  });
 });
