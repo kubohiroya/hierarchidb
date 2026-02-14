@@ -19,7 +19,7 @@ const asRecord = (value: unknown): Record<string, unknown> | null => (
 
 const readString = (meta: Record<string, unknown> | null, key: string): string | undefined => {
   const value = meta?.[key];
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
+  return typeof value === 'string' ? value : undefined;
 };
 
 const readNumber = (meta: Record<string, unknown> | null, key: string): number | undefined => {
