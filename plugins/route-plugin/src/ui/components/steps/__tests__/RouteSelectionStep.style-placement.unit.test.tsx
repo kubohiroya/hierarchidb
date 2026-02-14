@@ -48,7 +48,7 @@ vi.mock('../useRouteSelectionStep.js', () => ({
     },
     currentSelections: [],
     applySelections: vi.fn(),
-    resolveAllowedModesForCountry: () => new Set(['airway']),
+    isCellEnabledForCountry: () => true,
     policy: { defaultChecked: null },
     styleConfig: {
       modeColors: { airway: '#1f77b4' },

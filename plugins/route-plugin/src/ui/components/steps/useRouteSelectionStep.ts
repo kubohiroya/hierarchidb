@@ -32,6 +32,45 @@ export const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
   { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road', icon: DirectionsCar },
 ];
 
+export type RouteSelectionCondition = 'or' | 'and';
+export type RouteSelectionColumnId = `${RouteSelectionCondition}:${RouteMode}`;
+
+type RouteSelectionColumn = {
+  id: RouteSelectionColumnId;
+  mode: RouteMode;
+  condition: RouteSelectionCondition;
+  labelKey: string;
+  icon: SvgIconComponent;
+};
+
+const buildRouteSelectionColumnId = (condition: RouteSelectionCondition, mode: RouteMode): RouteSelectionColumnId => (
+  `${condition}:${mode}` as RouteSelectionColumnId
+);
+
+const parseRouteSelectionColumnId = (id: string): { condition: RouteSelectionCondition; mode: RouteMode } | null => {
+  const [condition, mode] = id.split(':');
+  if ((condition !== 'or' && condition !== 'and') || !mode) return null;
+  if (!ROUTE_MODE_COLUMNS.some((column) => column.id === mode)) return null;
+  return { condition, mode: mode as RouteMode };
+};
+
+export const ROUTE_SELECTION_COLUMNS: RouteSelectionColumn[] = [
+  ...ROUTE_MODE_COLUMNS.map((column) => ({
+    id: buildRouteSelectionColumnId('or', column.id),
+    condition: 'or' as const,
+    mode: column.id,
+    labelKey: column.labelKey,
+    icon: column.icon,
+  })),
+  ...ROUTE_MODE_COLUMNS.map((column) => ({
+    id: buildRouteSelectionColumnId('and', column.id),
+    condition: 'and' as const,
+    mode: column.id,
+    labelKey: column.labelKey,
+    icon: column.icon,
+  })),
+];
+
 export const ROUTE_STYLE_OPTIONS = [
   { id: 'solid', labelKey: 'routeConfig.style.lineStyle.solid', fallback: 'Solid' },
   { id: 'dashed', labelKey: 'routeConfig.style.lineStyle.dashed', fallback: 'Dashed' },
@@ -64,6 +103,40 @@ const resolveModePolicy = (source?: string | null): ModePolicy => {
       return { allowedModes: ROUTE_MODE_COLUMNS.map((col) => col.id), defaultChecked: null };
   }
 };
+
+const toSelectionArrayByColumn = (row: boolean[] | undefined): Record<RouteSelectionColumnId, boolean> => {
+  const normalized: Record<RouteSelectionColumnId, boolean> = {} as Record<RouteSelectionColumnId, boolean>;
+  ROUTE_SELECTION_COLUMNS.forEach((column, index) => {
+    normalized[column.id] = Boolean(row?.[index]);
+  });
+  // Backward compatibility: legacy 5-cell format (OR only).
+  if (Array.isArray(row) && row.length === ROUTE_MODE_COLUMNS.length) {
+    ROUTE_MODE_COLUMNS.forEach((modeColumn, index) => {
+      const checked = Boolean(row[index]);
+      const orId = buildRouteSelectionColumnId('or', modeColumn.id);
+      const andId = buildRouteSelectionColumnId('and', modeColumn.id);
+      normalized[orId] = checked;
+      normalized[andId] = checked;
+    });
+  }
+  return normalized;
+};
+
+const enforceOrAndRule = (rowByColumn: Record<RouteSelectionColumnId, boolean>): Record<RouteSelectionColumnId, boolean> => {
+  const next = { ...rowByColumn };
+  ROUTE_MODE_COLUMNS.forEach((modeColumn) => {
+    const orId = buildRouteSelectionColumnId('or', modeColumn.id);
+    const andId = buildRouteSelectionColumnId('and', modeColumn.id);
+    if (next[orId]) {
+      next[andId] = true;
+    }
+  });
+  return next;
+};
+
+const toSelectionArray = (rowByColumn: Record<RouteSelectionColumnId, boolean>): boolean[] => (
+  ROUTE_SELECTION_COLUMNS.map((column) => Boolean(rowByColumn[column.id]))
+);
 
 export const useRouteSelectionStep = ({
   draft: draftProp,
@@ -148,7 +221,7 @@ export const useRouteSelectionStep = ({
           tabularSourceId: ideGsmSourceId,
         });
         if (cancelled) return;
-        if (!result || Object.keys(result.coverageByCountry ?? {}).length === 0) {
+        if (!result || Object.keys(result.coverageByCountryOr ?? result.coverageByCountry ?? {}).length === 0) {
           throw new Error(t('routeConfig.ideGsmEmptyCoverage', 'No routes found in IDE-GSM data.'));
         }
         setCoverage(result);
@@ -169,45 +242,71 @@ export const useRouteSelectionStep = ({
     };
   }, [api, coverageRequestKey, ideGsmSourceId, initialize, isIdeGsm, routeNodeId, t]);
 
-  const coverageModeMap = useMemo(() => {
+  const coverageOrModeMap = useMemo(() => {
     const map = new Map<string, Set<RouteMode>>();
     if (!coverage) return map;
-    Object.entries(coverage.coverageByCountry ?? {}).forEach(([country, modes]) => {
+    const source = coverage.coverageByCountryOr ?? coverage.coverageByCountry ?? {};
+    Object.entries(source).forEach(([country, modes]) => {
       map.set(country, new Set(modes));
     });
     return map;
   }, [coverage]);
 
-  const resolveAllowedModesForCountry = useCallback((countryCode: string) => {
-    const allowed = new Set<RouteMode>();
+  const coverageAndModeMap = useMemo(() => {
+    const map = new Map<string, Set<RouteMode>>();
+    if (!coverage) return map;
+    Object.entries(coverage.coverageByCountryAnd ?? {}).forEach(([country, modes]) => {
+      map.set(country, new Set(modes));
+    });
+    return map;
+  }, [coverage]);
+
+  const resolveAvailableColumnSetForCountry = useCallback((countryCode: string) => {
+    const available = new Set<RouteSelectionColumnId>();
     if (isIdeGsm) {
-      const coverageModes = coverageModeMap.get(countryCode);
-      if (!coverageModes) return allowed;
-      coverageModes.forEach((mode) => {
-        if (allowedModeSet.has(mode)) {
-          allowed.add(mode);
+      const coverageOrModes = coverageOrModeMap.get(countryCode);
+      const coverageAndModes = coverageAndModeMap.get(countryCode);
+      ROUTE_MODE_COLUMNS.forEach((modeColumn) => {
+        if (!allowedModeSet.has(modeColumn.id)) return;
+        if (coverageOrModes?.has(modeColumn.id)) {
+          available.add(buildRouteSelectionColumnId('or', modeColumn.id));
+        }
+        if (coverageAndModes?.has(modeColumn.id)) {
+          available.add(buildRouteSelectionColumnId('and', modeColumn.id));
         }
       });
-      return allowed;
+      return available;
     }
-    policy.allowedModes.map((mode) => allowed.add(mode));
-    return allowed;
-  }, [allowedModeSet, coverageModeMap, isIdeGsm, policy.allowedModes]);
+    ROUTE_MODE_COLUMNS.forEach((modeColumn) => {
+      if (!allowedModeSet.has(modeColumn.id)) return;
+      available.add(buildRouteSelectionColumnId('or', modeColumn.id));
+      available.add(buildRouteSelectionColumnId('and', modeColumn.id));
+    });
+    return available;
+  }, [allowedModeSet, coverageAndModeMap, coverageOrModeMap, isIdeGsm]);
 
   const coverageKey = useMemo(() => {
     if (!isIdeGsm || !coverage) return null;
-    return JSON.stringify(coverage.coverageByCountry ?? {});
+    return JSON.stringify({
+      or: coverage.coverageByCountryOr ?? coverage.coverageByCountry ?? {},
+      and: coverage.coverageByCountryAnd ?? {},
+    });
   }, [coverage, isIdeGsm]);
 
   const matrixConfig: MatrixConfig = useMemo(() => ({
-    columns: ROUTE_MODE_COLUMNS.map((mode) => ({
-      id: mode.id,
-      label: t(mode.labelKey, mode.id),
-      description: t(mode.labelKey, mode.id),
-      type: 'custom',
-      width: 150,
-      icon: mode.icon,
-    })),
+    columns: ROUTE_SELECTION_COLUMNS.map((column) => {
+      const conditionLabel = column.condition === 'or'
+        ? t('routeConfig.conditionOr', 'OR')
+        : t('routeConfig.conditionAnd', 'AND');
+      return {
+        id: column.id,
+        label: `${conditionLabel} ${t(column.labelKey, column.mode)}`,
+        description: `${conditionLabel} ${t(column.labelKey, column.mode)}`,
+        type: 'custom',
+        width: 168,
+        icon: column.icon,
+      };
+    }),
     virtualization: {
       rowHeight: 40,
       overscan: 8,
@@ -236,10 +335,10 @@ export const useRouteSelectionStep = ({
   const currentSelections: MatrixSelection[] = useMemo(() => {
     if (iso.status !== 'ready') return [];
     return iso.countries.map((country, index) => {
-      const row = selectionMatrixSource[index] ?? [];
+      const row = toSelectionArrayByColumn(selectionMatrixSource[index]);
       const selections: Record<string, boolean> = {};
-      matrixConfig.columns.forEach((col, colIdx) => {
-        selections[col.id] = Boolean(row[colIdx]);
+      matrixConfig.columns.forEach((col) => {
+        selections[col.id] = Boolean(row[col.id as RouteSelectionColumnId]);
       });
       return { countryCode: country.code, selections };
     });
@@ -249,16 +348,21 @@ export const useRouteSelectionStep = ({
     if (iso.status !== 'ready') return {};
     const normalized: Record<string, boolean[]> = {};
     iso.countries.forEach((country) => {
-      const row = selectionByCountries[country.code] ?? [];
-      const allowedByCountry = resolveAllowedModesForCountry(country.code);
-      normalized[country.code] = matrixConfig.columns.map((col, colIdx) => {
-        if (!allowedByCountry.has(col.id as RouteMode)) return false;
-        if (applyDefaults) return true;
-        return Boolean(row[colIdx]);
+      const currentRow = toSelectionArrayByColumn(selectionByCountries[country.code]);
+      const availableColumns = resolveAvailableColumnSetForCountry(country.code);
+      const nextRowByColumn: Record<RouteSelectionColumnId, boolean> = {} as Record<RouteSelectionColumnId, boolean>;
+      ROUTE_SELECTION_COLUMNS.forEach((column) => {
+        const isAvailable = availableColumns.has(column.id);
+        if (!isAvailable) {
+          nextRowByColumn[column.id] = false;
+          return;
+        }
+        nextRowByColumn[column.id] = applyDefaults ? true : Boolean(currentRow[column.id]);
       });
+      normalized[country.code] = toSelectionArray(enforceOrAndRule(nextRowByColumn));
     });
     return normalized;
-  }, [iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionByCountries]);
+  }, [iso.countries, iso.status, resolveAvailableColumnSetForCountry, selectionByCountries]);
 
   const hasAnySelection = useMemo(() => {
     if (iso.status !== 'ready') return false;
@@ -308,17 +412,36 @@ export const useRouteSelectionStep = ({
       iso.countries.forEach((country) => {
         const entry = nextSelections.find((sel) => sel.countryCode === country.code);
         const selections = entry?.selections ?? {};
-        const allowedByCountry = resolveAllowedModesForCountry(country.code);
-        normalized[country.code] = matrixConfig.columns.map((col) => {
-          return allowedByCountry.has(col.id as RouteMode) ? Boolean(selections[col.id]) : false;
+        const availableColumns = resolveAvailableColumnSetForCountry(country.code);
+        const nextRowByColumn: Record<RouteSelectionColumnId, boolean> = {} as Record<RouteSelectionColumnId, boolean>;
+        ROUTE_SELECTION_COLUMNS.forEach((column) => {
+          if (!availableColumns.has(column.id)) {
+            nextRowByColumn[column.id] = false;
+            return;
+          }
+          nextRowByColumn[column.id] = Boolean(selections[column.id]);
         });
+        normalized[country.code] = toSelectionArray(enforceOrAndRule(nextRowByColumn));
       });
       if (selectionSignature(selectionRecordSource) !== selectionSignature(normalized)) {
         emitUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [emitUpdate, iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionRecordSource, selectionSignature],
+    [emitUpdate, iso.countries, iso.status, resolveAvailableColumnSetForCountry, selectionRecordSource, selectionSignature],
   );
+
+  const isCellEnabledForCountry = useCallback((countryCode: string, columnId: string) => {
+    const parsed = parseRouteSelectionColumnId(columnId);
+    if (!parsed) return false;
+    const availableColumns = resolveAvailableColumnSetForCountry(countryCode);
+    if (!availableColumns.has(columnId as RouteSelectionColumnId)) return false;
+    if (parsed.condition === 'and') {
+      const row = toSelectionArrayByColumn(selectionByCountries[countryCode]);
+      const orId = buildRouteSelectionColumnId('or', parsed.mode);
+      if (row[orId]) return false;
+    }
+    return true;
+  }, [resolveAvailableColumnSetForCountry, selectionByCountries]);
 
   useEffect(() => {
     const isValid =
@@ -377,7 +500,7 @@ export const useRouteSelectionStep = ({
     matrixConfig,
     currentSelections,
     applySelections,
-    resolveAllowedModesForCountry,
+    isCellEnabledForCountry,
     policy,
   };
 };

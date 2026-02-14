@@ -34,7 +34,7 @@ vi.mock('../useRoutePreviewStep.js', () => ({
     matchedIdSet: new Set<string>(),
     selectedIds: [],
     setSelectedIds: vi.fn(),
-    emptyErrorSummary: new Map(),
+    staleSummaryById: new Map(),
     emptyContentProps: undefined,
     modeMeta: {},
     columnLabels: {
@@ -92,6 +92,11 @@ vi.mock('../useRoutePreviewStep.js', () => ({
     handleModeColorChange: vi.fn(),
     handleLineWidthChange: vi.fn(),
     handleLineStyleChange: vi.fn(),
+    metadataSyncSummary: null,
+    metadataSyncRunning: false,
+    metadataSyncError: null,
+    metadataSyncBadgeText: '',
+    runMetadataSyncCheck: vi.fn(),
   }),
 }));
 

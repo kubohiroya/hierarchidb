@@ -145,6 +145,14 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
               'Removing this file will discard its locations and re-import the remaining files.',
             )}
           </Typography>
+          {routeRefCount != null && routeRefCount > 0 ? (
+            <Typography variant="body2" color="warning.main">
+              {t(
+                'dataSource.ideGsm.removeCascadeWarning',
+                'Referenced routes will also be deleted to keep route/location consistency.',
+              )}
+            </Typography>
+          ) : null}
           {routeRefLoading ? (
             <Typography variant="body2" color="text.secondary">
               {t('dataSource.ideGsm.routeRefLoading', 'Checking route references...')}

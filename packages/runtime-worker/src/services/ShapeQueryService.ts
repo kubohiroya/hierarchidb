@@ -180,10 +180,13 @@ const toBuildSessionRecordFromEphemeral = (
   const stages = readStageMap(session.stages);
   if (!stages) return null;
   if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
+  const status: BuildSessionRecord['status'] = session.status === 'rebuild-reserved'
+    ? 'failed'
+    : session.status;
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
-    status: session.status,
+    status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
@@ -258,7 +261,12 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const sessions = await ephemeralShapeDB.sessions.toArray();
-    const filtered = sessions.filter((session) => statuses.includes(session.status));
+    const filtered = sessions.filter((session) => {
+      const status: BuildSessionRecord['status'] = session.status === 'rebuild-reserved'
+        ? 'failed'
+        : session.status;
+      return statuses.includes(status);
+    });
     const records = filtered.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
     return records.map(toShapeBuildSessionRecord);
   }

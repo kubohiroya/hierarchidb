@@ -18,6 +18,27 @@
 交通路・輸送ルート情報の収集、管理、可視化を行うHierarchiDBプラグインです。
 OpenStreetMapやNatural Earth等のオープンデータソースから、航路、海路、道路、鉄道等のルートデータをバッチダウンロードし、地図上で可視化・分析できます。
 
+## 2026-02-14 確定仕様（優先）
+
+この節は、route の「ビルド前〜ビルド」仕様の現行定義です。既存の Step 説明と衝突する場合は本節を優先してください。
+詳細は `docs/route-build-flow-spec.md` を参照してください。
+
+- route の成果物は location の始点・終点座標に依存するため、location/shape のレイトバインディングとは異なる。
+- Step3 は国×交通モードの OR/AND マトリクス（1国あたり 10 チェック）で `selectedArrayByCountries` を更新する。
+  - OR を選択したモードは同一行の AND が自動 `checked/disabled` になる。
+  - チェックボックスは Step2 で読み込んだデータ上で実在する国×モードのみ生成し、初期状態は `checked`。
+- Step4 は shape の build 設定 UI（VT 設定カードを含む）を共用する。
+- Step5 は shape と同じ UI/実行構成を最大限共用するが、route は transform で filtering と simplification を一括実行する。
+  - fetch の `featureCache` はズーム帯別コピーではなく、オリジナルの LineString GeoJSON 1 本のみ保存する。
+  - metadata には location 由来の座標、admin0〜2 の name/code、距離、中継点数を保存する。
+- Step6 は shape/location と同等のプレビュー UI を共用する。
+  - FloatingWindow で Metadata: routes / 交通モードトグル / スタイル設定を重ね表示可能。
+  - 交通モードは 5 アイコンの複数 on/off トグル。保存先は shape と同様の FloatingWindow 永続化設定。
+- location 変更時は route への波及を前提とし、削除/変更のたびに location UI 側で警告ダイアログを表示する。
+  - 削除: 参照中 route もカスケード削除するかキャンセル。
+  - 変更: カスケード変更するかキャンセル。座標/admin code 変更時は fetch キャッシュ削除 + `rebuild required` 表示 + sessions に「再ビルド予約」を route ノード単位で作成する。
+  - それ以外の項目変更時は route metadata を即時更新する。
+
 ## 主要機能
 
 - 🛤️ **多様なルートタイプ**: 航路、海路、道路、鉄道、高速鉄道

@@ -3,9 +3,11 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { proxy } from 'comlink';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
+  type IdeGsmRouteSelectionEntry,
   type IdeGsmImportProgress,
   type IdeGsmRouteError,
   type RouteEntity,
+  type RouteMode,
 } from '@hierarchidb/route-api';
 import {
   createSessionCoordinator,
@@ -18,6 +20,7 @@ import {
   type PauseBuildReason,
   useBuildSessionTransition,
 } from '@hierarchidb/components';
+import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
 
 export type RouteBuildSessionTransitionPhase =
   | 'acquiring-lock'
@@ -32,6 +35,7 @@ type RouteMutationApi = {
     args: {
       nodeId: NodeId;
       tabularSourceId: string;
+      selectionEntries?: IdeGsmRouteSelectionEntry[];
       chunkSize: number;
     },
     onProgress: (progress: IdeGsmImportProgress) => void,
@@ -72,6 +76,40 @@ type UseRouteBuildSessionLifecycleArgs = {
   transformStageMax: number;
   vtStageMax: number;
   t: (key: string, fallback?: string) => string;
+};
+
+const buildIdeGsmSelectionEntries = (
+  selectedArrayByCountries?: Record<string, boolean[]>,
+): IdeGsmRouteSelectionEntry[] => {
+  if (!selectedArrayByCountries) return [];
+  const entries: IdeGsmRouteSelectionEntry[] = [];
+  Object.entries(selectedArrayByCountries).forEach(([countryCodeRaw, rawRow]) => {
+    const countryCode = countryCodeRaw.trim().toUpperCase();
+    if (!countryCode) return;
+    const row = Array.isArray(rawRow) ? rawRow : [];
+    const orModes: RouteMode[] = [];
+    const andModes: RouteMode[] = [];
+    ROUTE_MODE_COLUMNS.forEach((modeColumn, modeIndex) => {
+      const orChecked = Boolean(row[modeIndex]);
+      const andChecked = row.length >= ROUTE_MODE_COLUMNS.length * 2
+        ? Boolean(row[modeIndex + ROUTE_MODE_COLUMNS.length])
+        : orChecked;
+      if (orChecked) {
+        orModes.push(modeColumn.id);
+      }
+      if (andChecked || orChecked) {
+        andModes.push(modeColumn.id);
+      }
+    });
+    if (orModes.length === 0 && andModes.length === 0) return;
+    entries.push({
+      countryCode,
+      countryName: countryCode,
+      orModes,
+      andModes,
+    });
+  });
+  return entries;
 };
 
 export const useRouteBuildSessionLifecycle = ({
@@ -245,6 +283,7 @@ export const useRouteBuildSessionLifecycle = ({
       notify.error(t('stage.errors.missingSource', 'IDE-GSM source is required.'));
       return;
     }
+    const selectionEntries = buildIdeGsmSelectionEntries(draft.selectedArrayByCountries);
 
     beginBuildSessionTransition('acquiring-lock', {
       message: options?.autoResume
@@ -298,6 +337,7 @@ export const useRouteBuildSessionLifecycle = ({
         {
           nodeId: resolvedRouteNodeId,
           tabularSourceId: sourceId,
+          selectionEntries,
           chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
         },
         proxy((progress: IdeGsmImportProgress) => {

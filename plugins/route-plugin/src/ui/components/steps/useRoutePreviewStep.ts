@@ -21,7 +21,12 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
-import type { RouteEntity, RouteLineString, RouteNearestLineResponse } from '@hierarchidb/route-api';
+import type {
+  RouteEntity,
+  RouteLineString,
+  RouteMetadataSyncSummary,
+  RouteNearestLineResponse,
+} from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
 import {
   LINE_WIDTH_MAX,
@@ -51,6 +56,28 @@ const ROUTE_MODE_OPTIONS: RouteModeOption[] = [
   { id: ROUTE_MODES.H_RAILWAY, label: 'High-speed Rail', Icon: SpeedIcon, modes: [ROUTE_MODES.H_RAILWAY] },
   { id: ROUTE_MODES.ROAD, label: 'Road', Icon: DirectionsCarIcon, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
 ];
+
+const ROUTE_MODE_SELECTION_PERSIST_KEY = 'hierarchidb:ui:floating-window:route:mode-selection';
+
+const loadRouteModeSelection = (): MapToggleSelection => {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+    }
+    const raw = localStorage.getItem(ROUTE_MODE_SELECTION_PERSIST_KEY);
+    if (!raw) {
+      return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+    }
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const next: Record<string, boolean> = {};
+    ROUTE_MODE_OPTIONS.forEach((option) => {
+      next[option.id] = parsed[option.id] !== false;
+    });
+    return next as MapToggleSelection;
+  } catch {
+    return Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection;
+  }
+};
 
 const resolveBoundsForLines = (lines: [number, number][][]): Bounds | null => {
   if (!lines.length) return null;
@@ -118,12 +145,13 @@ export const useRoutePreviewStep = ({
   const [lineStringsLoading, setLineStringsLoading] = useState(false);
   const [lineStringsError, setLineStringsError] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
-  const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(() =>
-    Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
-  );
+  const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(loadRouteModeSelection);
   const [listSearch, setListSearch] = useState('');
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [metadataSyncSummary, setMetadataSyncSummary] = useState<RouteMetadataSyncSummary | null>(null);
+  const [metadataSyncRunning, setMetadataSyncRunning] = useState(false);
+  const [metadataSyncError, setMetadataSyncError] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<RouteNearestLineResponse | null>(null);
   const [hoverOpen, setHoverOpen] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
@@ -175,6 +203,8 @@ export const useRoutePreviewStep = ({
   useEffect(() => {
     if (!previewNodeId) {
       setLineStrings([]);
+      setMetadataSyncSummary(null);
+      setMetadataSyncError(null);
       return;
     }
     let active = true;
@@ -201,6 +231,15 @@ export const useRoutePreviewStep = ({
       active = false;
     };
   }, [previewNodeId]);
+
+  useEffect(() => {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(ROUTE_MODE_SELECTION_PERSIST_KEY, JSON.stringify(routeModeSelection));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [routeModeSelection]);
 
   const formatTemplate = useCallback(
     (template: string, values: Record<string, string | number>) =>
@@ -358,6 +397,22 @@ export const useRoutePreviewStep = ({
   const handleRouteModeToggle = useCallback((id: string) => {
     setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
+
+  const runMetadataSyncCheck = useCallback(async () => {
+    if (!previewNodeId) return;
+    setMetadataSyncRunning(true);
+    setMetadataSyncError(null);
+    try {
+      const api = await workerBridgeRef.current.getRouteQueryAPI();
+      const summary = await api.checkRouteMetadataSync(previewNodeId);
+      setMetadataSyncSummary(summary);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setMetadataSyncError(message);
+    } finally {
+      setMetadataSyncRunning(false);
+    }
+  }, [previewNodeId]);
   const listRows = useMemo(
     () => (hasGeometry ? buildRoutePreviewRows(lineStrings) : []),
     [hasGeometry, lineStrings],
@@ -429,7 +484,24 @@ export const useRoutePreviewStep = ({
     setMatchedIds,
   );
   const matchedIdSet = useMemo(() => new Set(matchedIds), [matchedIds]);
-  const emptyErrorSummary = useMemo(() => new Map(), []);
+  const staleSummaryById = useMemo(() => {
+    const map = new Map<string, { count: number; messages: string[] }>();
+    if (!metadataSyncSummary) return map;
+    metadataSyncSummary.rows.forEach((row) => {
+      if (row.status !== 'stale') return;
+      map.set(row.lineId, {
+        count: 1,
+        messages: row.reason ? [row.reason] : ['metadata mismatch'],
+      });
+    });
+    return map;
+  }, [metadataSyncSummary]);
+
+  const metadataSyncBadgeText = useMemo(() => {
+    if (!metadataSyncSummary) return '';
+    return `${t('preview.metadataSync.synced', '✅ Synced')}(${metadataSyncSummary.syncedCount}/${metadataSyncSummary.totalCount}) `
+      + `${t('preview.metadataSync.stale', '⚠️ Rebuild required')}(${metadataSyncSummary.staleCount}/${metadataSyncSummary.totalCount})`;
+  }, [metadataSyncSummary, t]);
 
   const hoverSnackbarProps = {
     open: hoverOpen && Boolean(hoverMessage),
@@ -461,7 +533,7 @@ export const useRoutePreviewStep = ({
     matchedIdSet,
     selectedIds,
     setSelectedIds,
-    emptyErrorSummary,
+    staleSummaryById,
     emptyContentProps,
     modeMeta: routeModeMeta,
     columnLabels: {
@@ -488,8 +560,8 @@ export const useRoutePreviewStep = ({
       ariaLabel: t('preview.list.searchAriaLabel', 'Search routes'),
     },
     statusLabels: {
-      failed: t('preview.list.status.failed', 'Failed'),
-      completed: t('preview.list.status.completed', 'Completed'),
+      failed: t('preview.metadataSync.stale', '⚠️ Rebuild required'),
+      completed: t('preview.metadataSync.synced', '✅ Synced'),
     },
     errorColumnLabels: {
       status: t('preview.list.columns.status', 'Status'),
@@ -502,5 +574,10 @@ export const useRoutePreviewStep = ({
     handleModeColorChange,
     handleLineWidthChange,
     handleLineStyleChange,
+    metadataSyncSummary,
+    metadataSyncRunning,
+    metadataSyncError,
+    metadataSyncBadgeText,
+    runMetadataSyncCheck,
   };
 };

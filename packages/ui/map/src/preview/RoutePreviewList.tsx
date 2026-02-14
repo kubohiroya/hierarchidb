@@ -77,6 +77,7 @@ export type RoutePreviewListProps = {
   title: string;
   rows: RoutePreviewLineRow[];
   columnLabels: RoutePreviewColumnLabels;
+  toolbarActions?: React.ReactNode;
   search?: MapPreviewSearchConfig;
   matchedRows?: Set<string>;
   modeMeta?: Record<string, RoutePreviewModeMeta>;
@@ -154,6 +155,7 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
   title,
   rows,
   columnLabels,
+  toolbarActions,
   search,
   matchedRows,
   modeMeta,
@@ -295,6 +297,7 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
         errorSummaryById={errorSummaryById}
         errorColumnLabels={errorColumnLabels}
         statusLabels={statusLabels}
+        toolbarActions={toolbarActions}
         maxHeight={maxHeight}
         containerSx={{
           position: 'static',

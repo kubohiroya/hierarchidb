@@ -47,6 +47,8 @@
     "emptyCountries": "No countries available. Please try again later.",
     "defaultSelectionNote": "Default selections are applied based on the data source.",
     "customSelectionNote": "Choose the Route Selection to fetch for each country.",
+    "conditionOr": "OR",
+    "conditionAnd": "AND",
     "transportModeLabel": "Transport mode",
     "transportModeHelperText": "Choose the primary transport mode for this route.",
     "routeTypeLabel": "Route type",
@@ -215,6 +217,12 @@
         "errorCount": "Errors",
         "errorMessage": "Error Message"
       }
+    },
+    "metadataSync": {
+      "checkButton": "Check sync status",
+      "checking": "Checking...",
+      "synced": "✅ Synced",
+      "stale": "⚠️ Rebuild required"
     }
   },
   "batch": {

@@ -24,7 +24,6 @@ import {
   type RouteSelectionStepProps,
   useRouteSelectionStep,
 } from './useRouteSelectionStep.js';
-import type { RouteMode } from '@hierarchidb/route-api';
 
 const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
   const {
@@ -44,7 +43,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
     matrixConfig,
     currentSelections,
     applySelections,
-    resolveAllowedModesForCountry,
+    isCellEnabledForCountry,
     policy,
   } = useRouteSelectionStep(props);
 
@@ -88,7 +87,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = (props) => {
         showAlphabetIndex
         showRegionIndex
         rowHeight={40}
-        isCellEnabled={(country, columnId) => resolveAllowedModesForCountry(country.code).has(columnId as RouteMode)}
+        isCellEnabled={(country, columnId) => isCellEnabledForCountry(country.code, columnId)}
         loading={isIdeGsm && coverageLoading}
         errorMessage={selectionErrorMessage}
         height="100%"

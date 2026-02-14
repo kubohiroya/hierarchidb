@@ -58,7 +58,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     matchedIdSet,
     selectedIds,
     setSelectedIds,
-    emptyErrorSummary,
+    staleSummaryById,
     emptyContentProps,
     modeMeta,
     columnLabels,
@@ -72,6 +72,10 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     handleModeColorChange,
     handleLineWidthChange,
     handleLineStyleChange,
+    metadataSyncRunning,
+    metadataSyncError,
+    metadataSyncBadgeText,
+    runMetadataSyncCheck,
   } = useRoutePreviewStep({ draft, nodeId, onUpdate });
 
   return (
@@ -154,13 +158,37 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 matchedRows={matchedIdSet}
                 selectedRows={new Set(selectedIds)}
                 onSelectionChange={(next: Set<string | number>) => setSelectedIds(Array.from(next).map(String))}
-                errorSummaryById={emptyErrorSummary}
+                errorSummaryById={staleSummaryById}
                 errorColumnLabels={errorColumnLabels}
                 statusLabels={statusLabels}
+                toolbarActions={(
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => void runMetadataSyncCheck()}
+                      disabled={metadataSyncRunning}
+                    >
+                      {metadataSyncRunning
+                        ? t('preview.metadataSync.checking', 'Checking...')
+                        : t('preview.metadataSync.checkButton', 'Check sync status')}
+                    </Button>
+                    {metadataSyncBadgeText ? (
+                      <Typography variant="caption" color="text.secondary">
+                        {metadataSyncBadgeText}
+                      </Typography>
+                    ) : null}
+                  </Box>
+                )}
                 emptyContent={emptyContentProps ? (
                   <RoutePreviewEmptyContent {...emptyContentProps} />
                 ) : undefined}
               />
+              {metadataSyncError ? (
+                <Box sx={{ position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 4 }}>
+                  <Alert severity="error">{metadataSyncError}</Alert>
+                </Box>
+              ) : null}
               {styleWindow.windowState.isVisible ? (
                 <FloatingWindow
                   title={t('routeConfig.style.title', 'Route style')}

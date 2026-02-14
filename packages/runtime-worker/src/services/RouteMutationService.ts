@@ -25,7 +25,7 @@ import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { SingletonMixin } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
-import { parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
+import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
 import { loadTabularTableRows } from './utils/tabular.js';
 import { getStageProcessingClient } from './StageProcessingService.js';
 import { writeVectorTileInput } from './vectorTileStageRunner.js';
@@ -94,10 +94,12 @@ export class RouteMutationService implements RouteMutationAPI {
     const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
     const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, locationNodeIds);
     const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
-    const coverageByCountry = buildCoverageByCountry(lineStrings);
+    const coverage = buildCoverageByCountry(lineStrings);
     const rowCount = lineStrings.length + errors.length;
     return {
-      coverageByCountry,
+      coverageByCountryOr: coverage.or,
+      coverageByCountryAnd: coverage.and,
+      coverageByCountry: coverage.or,
       rowCount,
       errorCount: errors.length,
       errors,
@@ -128,13 +130,17 @@ export class RouteMutationService implements RouteMutationAPI {
       );
       const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
       const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
-      emit({ phase: 'parse', total: lineStrings.length, processed: lineStrings.length });
+      const filteredLineStrings = filterIdeGsmRoutesBySelection(
+        lineStrings,
+        request.selectionEntries ?? [],
+      );
+      emit({ phase: 'parse', total: filteredLineStrings.length, processed: filteredLineStrings.length });
 
       const generator = await getIdeGsmRouteGenerator();
-      emit({ phase: 'waypoints', total: lineStrings.length, processed: 0 });
+      emit({ phase: 'waypoints', total: filteredLineStrings.length, processed: 0 });
       const waypointResults: RouteWaypointResult[] = [];
-      for (let i = 0; i < lineStrings.length; i += 1) {
-        const line = lineStrings[i]!;
+      for (let i = 0; i < filteredLineStrings.length; i += 1) {
+        const line = filteredLineStrings[i]!;
         const result = await buildWaypoints(
           {
             id: line.id,
@@ -147,11 +153,11 @@ export class RouteMutationService implements RouteMutationAPI {
           generator
         );
         waypointResults.push(result);
-        emit({ phase: 'waypoints', total: lineStrings.length, processed: i + 1 });
+        emit({ phase: 'waypoints', total: filteredLineStrings.length, processed: i + 1 });
       }
 
       const waypointMap = new Map(waypointResults.map((result) => [result.id, result]));
-      const linesWithWaypoints = lineStrings.map((line) => {
+      const linesWithWaypoints = filteredLineStrings.map((line) => {
         const result = waypointMap.get(line.id);
         if (!result) return line;
         return {
@@ -425,30 +431,48 @@ const pushUniqueIds = (target: NodeId[], seen: Set<NodeId>, nodes: TreeNode[]) =
   }
 };
 
-const buildCoverageByCountry = (lineStrings: RouteLineString[]): Record<ISO2, RouteLineString['routeMode'][]> => {
-  const coverage = new Map<ISO2, Set<RouteLineString['routeMode']>>();
+const buildCoverageByCountry = (
+  lineStrings: RouteLineString[],
+): {
+  or: Record<ISO2, RouteLineString['routeMode'][]>;
+  and: Record<ISO2, RouteLineString['routeMode'][]>;
+} => {
+  const coverageOr = new Map<ISO2, Set<RouteLineString['routeMode']>>();
+  const coverageAnd = new Map<ISO2, Set<RouteLineString['routeMode']>>();
   for (const line of lineStrings) {
     const startCode = line.startPoint?.admin0Code;
     const endCode = line.endPoint?.admin0Code;
     if (startCode) {
-      const existing = coverage.get(startCode as ISO2) ?? new Set();
+      const existing = coverageOr.get(startCode as ISO2) ?? new Set();
       existing.add(line.routeMode);
-      coverage.set(startCode as ISO2, existing);
+      coverageOr.set(startCode as ISO2, existing);
     }
     if (endCode) {
-      const existing = coverage.get(endCode as ISO2) ?? new Set();
+      const existing = coverageOr.get(endCode as ISO2) ?? new Set();
       existing.add(line.routeMode);
-      coverage.set(endCode as ISO2, existing);
+      coverageOr.set(endCode as ISO2, existing);
+    }
+    if (startCode && endCode && startCode === endCode) {
+      const existing = coverageAnd.get(startCode as ISO2) ?? new Set();
+      existing.add(line.routeMode);
+      coverageAnd.set(startCode as ISO2, existing);
     }
   }
-  const result: Record<ISO2, RouteLineString['routeMode'][]> = {} as Record<
+  const resultOr: Record<ISO2, RouteLineString['routeMode'][]> = {} as Record<
     ISO2,
     RouteLineString['routeMode'][]
   >;
-  for (const [country, modes] of coverage.entries()) {
-    result[country] = Array.from(modes);
+  for (const [country, modes] of coverageOr.entries()) {
+    resultOr[country] = Array.from(modes);
   }
-  return result;
+  const resultAnd: Record<ISO2, RouteLineString['routeMode'][]> = {} as Record<
+    ISO2,
+    RouteLineString['routeMode'][]
+  >;
+  for (const [country, modes] of coverageAnd.entries()) {
+    resultAnd[country] = Array.from(modes);
+  }
+  return { or: resultOr, and: resultAnd };
 };
 
 
