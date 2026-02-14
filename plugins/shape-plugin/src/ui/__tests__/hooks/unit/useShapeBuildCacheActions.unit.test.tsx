@@ -19,6 +19,17 @@ const mocks = vi.hoisted(() => ({
   deleteTasksByNode: vi.fn(),
   initializeBridge: vi.fn(),
   getBuildSessionStatus: vi.fn(),
+  listBuildTasksByType: vi.fn(),
+  deleteBuildTasksByIds: vi.fn(),
+  notifySuccess: vi.fn(),
+  notifyError: vi.fn(),
+}));
+
+vi.mock('@hierarchidb/components', () => ({
+  notify: {
+    success: mocks.notifySuccess,
+    error: mocks.notifyError,
+  },
 }));
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
@@ -37,6 +48,8 @@ vi.mock('../../../../services/batch/ShapeBuildAPIClient.ts', () => ({
   ephemeralShapeAPIImpl: {
     countFetchCaches: mocks.countFetchCaches,
     countTransformCaches: mocks.countTransformCaches,
+    listBuildTasksByType: mocks.listBuildTasksByType,
+    deleteBuildTasksByIds: mocks.deleteBuildTasksByIds,
   },
   shapeMutationAPIImpl: {
     clearShapeArtifacts: mocks.clearShapeArtifacts,
@@ -54,12 +67,24 @@ vi.mock('../../../../services/batch/ShapeBuildAPIClient.ts', () => ({
 vi.mock('@hierarchidb/vt-orchestrator', () => {
   class MockTaskQueueDb {
     tasks = {
-      where: () => ({
-        equals: () => ({
-          count: async () => 0,
-          delete: async () => 0,
-        }),
-      }),
+      where: (query: string) => {
+        if (query === 'nodeId') {
+          return {
+            equals: async () => ({
+              toArray: async () => [],
+              and: () => ({
+                delete: async () => 0,
+              }),
+            }),
+          };
+        }
+        return {
+          equals: () => ({
+            count: async () => 0,
+            delete: async () => 0,
+          }),
+        };
+      },
     };
   }
   return {
@@ -89,8 +114,77 @@ describe('useShapeBuildCacheActions', () => {
     mocks.countRawDataDataSourceBuffersForNode.mockResolvedValue(0);
     mocks.deleteRawDataDataSourceBuffersForNode.mockResolvedValue(undefined);
     mocks.deleteTasksByNode.mockResolvedValue(undefined);
+    mocks.listBuildTasksByType.mockResolvedValue([]);
+    mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
     mocks.initializeBridge.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
+  });
+
+  it('reloads cache counts after deleting fetch API cache', async () => {
+    mocks.countRawDataDataSourceBuffersForNode
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(0);
+    mocks.countFetchCaches.mockResolvedValue(0);
+    mocks.listBuildTasksByType
+      .mockResolvedValueOnce([{ taskId: 'task-fetch' }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
+
+    const { result } = renderHook(
+      () => useShapeBuildCacheActions({ nodeId: 'node-1' }),
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(result.current.counts.fetchApi).toBe(2);
+      expect(result.current.canDeleteFetchApiCache).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteFetchApiCache();
+    });
+
+    await waitFor(() => {
+      expect(result.current.counts.fetchApi).toBe(0);
+      expect(result.current.canDeleteFetchApiCache).toBe(false);
+    });
+
+    expect(mocks.deleteRawDataDataSourceBuffersForNode).toHaveBeenCalledWith('node-1');
+    expect(mocks.listBuildTasksByType).toHaveBeenCalledWith('node-1', 'fetch');
+    expect(mocks.deleteBuildTasksByIds).toHaveBeenCalledWith(['task-fetch']);
+    expect(mocks.notifySuccess).toHaveBeenCalledWith('Deleted API cache');
+  });
+
+  it('still refreshes counts when task metadata cleanup fails during API cache deletion', async () => {
+    mocks.countRawDataDataSourceBuffersForNode
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(0);
+    mocks.countFetchCaches.mockResolvedValue(0);
+    mocks.listBuildTasksByType.mockResolvedValueOnce([{ taskId: 'task-1' }]);
+    mocks.deleteBuildTasksByIds.mockRejectedValue(new Error('task clear failed'));
+    mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
+    mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
+
+    const { result } = renderHook(
+      () => useShapeBuildCacheActions({ nodeId: 'node-1' }),
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(result.current.counts.fetchApi).toBe(2);
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteFetchApiCache();
+    });
+
+    await waitFor(() => {
+      expect(result.current.counts.fetchApi).toBe(0);
+      expect(result.current.canDeleteFetchApiCache).toBe(false);
+    });
+
+    expect(mocks.notifyError).toHaveBeenCalledWith('Failed to remove API cache related task data.');
   });
 
   it('clears task queue rows when reset session is executed', async () => {

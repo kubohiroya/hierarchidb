@@ -465,7 +465,7 @@ const BuildProgressStageContent = ({
   const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
-  const showTaskSkeleton = !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
+  const showTaskSkeleton = !hasTasks && !showSummarySkeleton && isTasksLoading;
   const requestedTargetIndex = useMemo(() => {
     if (!scrollToTaskId) return null;
     const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
@@ -591,8 +591,11 @@ const BuildProgressStageContent = ({
           <Skeleton variant="text" width="70%" />
           <Skeleton variant="rounded" height={88} />
         </>
-      ) : showTaskSkeleton ? showHeader && (
-            <Typography variant="subtitle2">{stage.title}</Typography>
+      ) : showTaskSkeleton ? (
+        <>
+          <Skeleton variant="text" width="35%" />
+          <Skeleton variant="rounded" height={88} />
+        </>
       ) : !hasTasks ? (
         <>
           {showHeader ? (

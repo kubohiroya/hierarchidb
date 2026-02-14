@@ -221,6 +221,14 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     }
   }, []);
 
+  const loadCountsSafely = useCallback(async (): Promise<void> => {
+    try {
+      await loadCounts();
+    } catch (error) {
+      console.warn('[shapeBuildCache] failed to reload delete counts', error);
+    }
+  }, [loadCounts]);
+
   const clearBuildTasksForStages = useCallback(async (taskTypes: BuildTaskType[]) => {
     if (!nodeId) return;
     const uniqueTypes = Array.from(new Set(taskTypes));
@@ -311,16 +319,33 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     if (!nodeId) return;
     const stagesToClear: BuildTaskType[] = ['fetch', 'transform', 'vt'];
     await runDelete('fetchApi', async () => {
-      await deleteRawDataDataSourceBuffersForNode(nodeId);
-      await clearBuildTasksForStages(stagesToClear);
-      setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
-      setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
-      await resetStaleProcessingSessionIfNeeded();
-      await loadCounts();
-      notify.success('Deleted API cache');
+      let deletedApiCache = false;
+      try {
+        await deleteRawDataDataSourceBuffersForNode(nodeId);
+        deletedApiCache = true;
+      } catch (error) {
+        console.warn('[shapeBuildCache] failed to delete fetch API cache', error);
+        notify.error('Failed to delete API cache.');
+      }
+
+      try {
+        await clearBuildTasksForStages(stagesToClear);
+        setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
+        setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
+        await resetStaleProcessingSessionIfNeeded();
+      } catch (error) {
+        console.warn('[shapeBuildCache] failed to clear build task metadata', error);
+        notify.error('Failed to remove API cache related task data.');
+      }
+
+      await loadCountsSafely();
+      if (deletedApiCache) {
+        notify.success('Deleted API cache');
+      }
     });
   }, [
     clearBuildTasksForStages,
+    loadCountsSafely,
     loadCounts,
     nodeId,
     resetStaleProcessingSessionIfNeeded,
