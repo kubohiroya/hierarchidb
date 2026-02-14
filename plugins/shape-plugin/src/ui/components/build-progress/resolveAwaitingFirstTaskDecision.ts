@@ -78,6 +78,7 @@ export const resolveAwaitingFirstTaskDecision = (
     typeof input.sessionProgressTotal === 'number'
     && input.sessionProgressTotal > 0
   );
+  const hasTaskProgressSignal = input.hasStartedTasks || input.hasProgressTaskSignal;
   if (input.hasFirstTaskSignal) {
     return {
       kind: 'success',
@@ -99,7 +100,7 @@ export const resolveAwaitingFirstTaskDecision = (
   }
   if (input.buildStatus === 'completed') {
     if (!input.isTaskStreamReady) {
-      if (hasSessionProgressEvidence) {
+      if (hasSessionProgressEvidence && hasTaskProgressSignal) {
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',
@@ -112,7 +113,7 @@ export const resolveAwaitingFirstTaskDecision = (
       return { kind: 'continue' };
     }
     if (typeof input.taskCount !== 'number') {
-      if (hasSessionProgressEvidence) {
+      if (hasSessionProgressEvidence && hasTaskProgressSignal) {
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',
@@ -126,7 +127,7 @@ export const resolveAwaitingFirstTaskDecision = (
     }
     const completedWithoutTasks = input.taskCount === 0;
     if (completedWithoutTasks && input.expectTaskGeneration) {
-      if (hasSessionProgressEvidence) {
+      if (hasSessionProgressEvidence && hasTaskProgressSignal) {
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',

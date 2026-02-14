@@ -670,20 +670,27 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const hasQueuedTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'queued')
   ), [displayTasks]);
+  const taskProgressTotal = effectiveProgress?.total ?? sessionRecord?.progress?.total ?? null;
   const hasProgressTaskSignal = useMemo(() => hasAwaitingFirstTaskSignal({
-    hasStartedTasks: false,
-    hasQueuedTasks: false,
+    hasStartedTasks,
+    hasQueuedTasks,
     progressTaskId: effectiveProgress?.progressTaskId ?? null,
-    progressTotal: effectiveProgress?.total ?? null,
-  }), [effectiveProgress?.progressTaskId, effectiveProgress?.total]);
+    progressTotal: taskProgressTotal,
+  }), [
+    effectiveProgress?.progressTaskId,
+    hasQueuedTasks,
+    hasStartedTasks,
+    sessionRecord?.progress?.total,
+    taskProgressTotal,
+  ]);
   const hasFirstTaskSignal = useMemo(() => hasAwaitingFirstTaskSignal({
     hasStartedTasks,
     hasQueuedTasks,
     progressTaskId: effectiveProgress?.progressTaskId ?? null,
-    progressTotal: effectiveProgress?.total ?? null,
+    progressTotal: taskProgressTotal,
   }), [
     effectiveProgress?.progressTaskId,
-    effectiveProgress?.total,
+    sessionRecord?.progress?.total,
     hasQueuedTasks,
     hasStartedTasks,
   ]);

@@ -251,7 +251,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns success when stream is not ready but worker session progress proves completion', () => {
+  it('continues when stream is not ready and only session progress is known', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,
       hasStartedTasks: false,
@@ -263,14 +263,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toEqual({
-      kind: 'success',
-      reason: 'completed-with-session-progress-evidence',
-      transitionFinish: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('continues waiting while task count is still unknown after stream becomes ready', () => {
@@ -287,7 +280,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns success when task count is unknown but worker session progress proves completion', () => {
+  it('continues when session progress exists but progress-task signal is still unknown', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,
       hasStartedTasks: false,
@@ -299,14 +292,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toEqual({
-      kind: 'success',
-      reason: 'completed-with-session-progress-evidence',
-      transitionFinish: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('returns success when completed after at least one task record is observed', () => {
@@ -327,14 +313,36 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
-  it('returns success when completed with zero UI tasks but worker session progress proves task execution', () => {
+  it('returns success when completed with zero UI tasks and progress signal exists', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,
       hasStartedTasks: false,
-      hasProgressTaskSignal: false,
+      hasProgressTaskSignal: true,
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: true,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 5,
+    });
+    expect(decision).toEqual({
+      kind: 'success',
+      reason: 'completed-with-session-progress-evidence',
+      transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+    });
+  });
+
+  it('returns success when completed and started task is observed', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: true,
+      hasProgressTaskSignal: false,
+      buildStatus: 'completed',
+      taskCount: 0,
+      isTaskStreamReady: false,
       isPausePending: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
