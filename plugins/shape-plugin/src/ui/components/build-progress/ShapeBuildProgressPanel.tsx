@@ -27,8 +27,8 @@ import { BuildSessionProgressPanel, useBuildStageFilter } from '@hierarchidb/com
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { DownloadRetryControls, type DownloadRetryConfig, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
-import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
+import type { TaskItemWithMetadata } from './TaskItemCardListCard.tsx';
+import { TaskItemCardListCard, sortTransformTasks, sortVectorTileTasks } from './TaskItemCardListCard.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import type { ShapeProcessingConfig } from '../../../common/types/index.js';
 import {
@@ -53,11 +53,11 @@ const TaskProgressBar = ({
   resolveTaskTitle,
 }: {
   stages: BuildStage[];
-  tasksByStage: Record<string, TaskWithMetadata[]>;
+  tasksByStage: Record<string, TaskItemWithMetadata[]>;
   stageTotals?: TaskProgressSummary['stageTotals'];
   buildStatus: TaskProgressSummary['buildStatus'];
   activeStageId?: string | null;
-  resolveTaskTitle: (task: TaskWithMetadata) => string;
+  resolveTaskTitle: (task: TaskItemWithMetadata) => string;
 }) => {
   const theme = useTheme();
   const filter = useBuildStageFilter();
@@ -429,13 +429,13 @@ const BuildProgressStageContent = ({
   showHeader?: boolean;
   stage: BuildStage;
   stageValue: number;
-  tasksByStage: Record<string, TaskWithMetadata[]>;
+  tasksByStage: Record<string, TaskItemWithMetadata[]>;
   paneProgress?: Array<{ paneId?: string; progress?: number; taskCount?: number; completedCount?: number; status?: string }>;
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
-  resolveTaskTitle: (task: TaskWithMetadata) => string;
+  resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
 }) => {
   const filter = useBuildStageFilter();
@@ -626,7 +626,7 @@ const BuildProgressStageContent = ({
           }}
           ref={listWrapperRef}
         >
-          <TaskListVirtualized
+          <TaskItemCardListCard
             ref={listScrollRef}
             stageId={stage.id}
             tasks={displayTasks}
@@ -815,7 +815,7 @@ export const ShapeBuildProgressPanel = ({
 
   const tasksByStageForDisplay = useMemo(() => {
     if (!isResetSessionLoading) return tasksByStage;
-    return stages.reduce<Record<string, TaskWithMetadata[]>>((acc, stage) => {
+    return stages.reduce<Record<string, TaskItemWithMetadata[]>>((acc, stage) => {
       acc[stage.id] = [];
       return acc;
     }, {});

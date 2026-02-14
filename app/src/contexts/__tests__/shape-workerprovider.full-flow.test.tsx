@@ -129,8 +129,7 @@ vi.mock('~/worker-runtime/client.ts', async () => {
             status === 'queued' ||
             status === 'completed' ||
             status === 'failed' ||
-            status === 'paused' ||
-            status === 'regression'
+            status === 'paused'
           ? status
           : 'queued';
     return {

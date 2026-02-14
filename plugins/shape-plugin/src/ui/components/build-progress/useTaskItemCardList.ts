@@ -1,33 +1,30 @@
-import { type CSSProperties, type MutableRefObject, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Box } from '@mui/material';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import RecyclingIcon from '@mui/icons-material/Recycling';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import { isTaskPhaseMessage, isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
-import { TaskItem, TASK_ITEM_HEIGHT } from './TaskItem.tsx';
-import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
-import { formatTaskDisplayMessage } from './taskDisplayText.ts';
-import { useTranslation } from '../../i18n.js';
+import { TASK_ITEM_HEIGHT } from './TaskItem.tsx';
 
-export type TaskWithMetadata = ShapeBuildTaskSummary & { title?: string };
+export type TaskItemWithMetadata = ShapeBuildTaskSummary & { title?: string };
 
-type TaskListProps = {
+type TaskItemCardListArgs = {
   stageId: string;
   tasks: ShapeBuildTaskSummary[];
-  stageValue: number;
-  resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
-  resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
-  resolveTaskTitle: (task: TaskWithMetadata) => string;
   scrollToTaskId?: string;
   scrollRequestId?: number;
   virtualize?: boolean;
+  ref?: ForwardedRef<HTMLDivElement>;
+};
+
+type TaskItemCardListState = {
+  orderedTasks: ShapeBuildTaskSummary[];
+  shouldVirtualize: boolean;
+  setRefs: (node: HTMLDivElement | null) => void;
+  virtualizer: Virtualizer<HTMLDivElement, Element>;
 };
 
 const getVectorTileCoordsFromTitle = (task: ShapeBuildTaskSummary): { z: number; x: number; y: number } | null => {
-  const title = (task as TaskWithMetadata).title;
+  const title = (task as TaskItemWithMetadata).title;
   if (!title) return null;
   const match = title.match(/z\s*(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)/i);
   if (!match) return null;
@@ -70,18 +67,14 @@ export const sortTransformTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTa
   return sorted;
 };
 
-export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
+export const useTaskItemCardList = ({
   stageId,
   tasks,
-  stageValue,
-  resolveStatusLabel,
-  resolveStatusColor,
-  resolveTaskTitle,
   scrollToTaskId,
   scrollRequestId,
   virtualize = true,
-}: TaskListProps, ref) => {
-  const { t } = useTranslation();
+  ref,
+}: TaskItemCardListArgs): TaskItemCardListState => {
   const shouldVirtualize = virtualize;
   const parentRef = useRef<HTMLDivElement | null>(null);
   const setRefs = useCallback((node: HTMLDivElement | null) => {
@@ -103,17 +96,18 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     endTaskId: string;
     total: number;
   } | null>(null);
-  const virtualizer = useVirtualizer({
-    count: tasks.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => TASK_ITEM_HEIGHT,
-    overscan: 8,
-  });
   const orderedTasks = useMemo(() => {
     if (stageId === 'vt') return sortVectorTileTasks(tasks);
     if (stageId === 'transform') return sortTransformTasks(tasks);
     return tasks;
   }, [stageId, tasks]);
+  const virtualizer = useVirtualizer<HTMLDivElement, Element>({
+    count: orderedTasks.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => TASK_ITEM_HEIGHT,
+    overscan: 8,
+  });
+
   useEffect(() => {
     if (!shouldVirtualize) return;
     if (!scrollToTaskId || scrollRequestId == null) return;
@@ -129,7 +123,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     const scrollEl = parentRef.current;
     if (!scrollEl) return;
     const updateViewport = () => {
-      if (tasks.length === 0) {
+      if (orderedTasks.length === 0) {
         setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
         lastViewportRef.current = null;
         return;
@@ -180,11 +174,11 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     return () => {
       scrollEl.removeEventListener('scroll', handleScroll);
     };
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
 
   useEffect(() => {
     if (shouldVirtualize) return;
-    if (tasks.length === 0) {
+    if (orderedTasks.length === 0) {
       setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
       lastViewportRef.current = null;
       return;
@@ -219,86 +213,12 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
 
-  const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
-    const statusValue = task.status;
-    const isSkipped = isTaskSkipped(task.display, task.message);
-    const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
-    const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
-    const statusColor = resolveStatusColor(statusValue, isSkipped);
-    const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-    const displayMessage = formatTaskDisplayMessage(task.display, t);
-    const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
-    const fallbackError = typeof task.error === 'string' ? task.error.trim() : '';
-    const failedMessage = errorMessage || fallbackError;
-    const geometryDetails = parseGeometrySimplifyError(task.message);
-    const baseMessage = task.message?.split(' (')[0];
-    const failedTaskMessage = task.status === 'failed'
-      && failedMessage
-      && (!task.message || isTaskPhaseMessage(task.message))
-      ? failedMessage
-      : null;
-    const taskMessage = displayMessage
-      ?? failedTaskMessage
-      ?? (task.message && task.message !== taskTitle
-        ? (geometryDetails ? baseMessage : task.message)
-        : undefined);
-    const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
-    const leadingIcon = task.status === 'recycled' ? (
-      <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
-    ) : (
-      <AddBoxIcon data-testid="task-icon-add" color="primary" sx={{ fontSize: 16 }} />
-    );
-    return (
-      <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
-        <TaskItem
-          title={taskTitle}
-          leadingIcon={leadingIcon}
-          statusLabel={statusLabelValue}
-          statusColor={statusColor}
-          message={taskMessage}
-          detailLines={detailLines}
-          progress={displayProgress}
-          fallbackProgress={stageValue}
-        />
-      </Box>
-    );
-  }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageValue, t]);
-
-  return (
-    <Box
-      ref={setRefs}
-      onWheel={(event) => event.stopPropagation()}
-      sx={{ flex: 1, minHeight: 0, height: '100%', overflow: 'auto' }}
-    >
-      {shouldVirtualize ? (
-        <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const task = orderedTasks[virtualRow.index];
-            if (!task) return null;
-            const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-            const key = task.taskId ?? `${virtualRow.index}-${taskTitle}`;
-            return renderTaskItem(task, key, {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-              paddingRight: 2,
-              height: `${TASK_ITEM_HEIGHT}px`,
-            });
-          })}
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pr: 1 }}>
-          {orderedTasks.map((task, index) => {
-            const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-            const key = task.taskId ?? `${index}-${taskTitle}`;
-            return renderTaskItem(task, key);
-          })}
-        </Box>
-      )}
-    </Box>
-  );
-});
+  return {
+    orderedTasks,
+    shouldVirtualize,
+    setRefs,
+    virtualizer,
+  };
+};
