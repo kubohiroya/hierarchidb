@@ -124,6 +124,20 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
   };
 };
 
+const normalizeBuildSessionStatus = (status: string | undefined): BuildSessionRecord['status'] => {
+  if (status === 'idle'
+    || status === 'running'
+    || status === 'paused'
+    || status === 'completed'
+    || status === 'failed') {
+    return status;
+  }
+  if (status === 'queued' || status === 'regression' || status === 'warning' || status === 'rebuild-reserved') {
+    return 'running';
+  }
+  return 'idle';
+};
+
 const toBuildSessionRecordFromEphemeral = (
   session: EphemeralBuildSessionRecord
 ): BuildSessionRecord | null => {
@@ -134,7 +148,7 @@ const toBuildSessionRecordFromEphemeral = (
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
-    status: session.status,
+    status: normalizeBuildSessionStatus(session.status),
     selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
       ? session.selectedArrayByCountries
       : undefined,
