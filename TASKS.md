@@ -39,6 +39,7 @@
 
 ### Doing
 
+- #274 / `codex/fix/ui/shape-step5-task-skeleton` / start: 2026-02-14 21:24 JST
 - #262 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:33 JST
 - #261 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:27 JST
 - #259 / `codex/fix/shape/build-omit-details-threshold-none` / start: 2026-02-14 09:15 JST
@@ -83,6 +84,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-14 21:24 JST Issue `fix(ui): keep step5 skeleton until task stream sync` を起票し `https://github.com/kubohiroya/hierarchidb/issues/274` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/ui/shape-step5-task-skeleton` を作成して着手。
 - update: 2026-02-14 14:33 JST Issue `feat(route): implement location-coupled build flow spec` を起票し `https://github.com/kubohiroya/hierarchidb/issues/262` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、既存専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-route-build-flow-docs` とブランチ `codex/docs/route/build-flow-location-coupling-2` を継続利用して実装に着手。
 - update: 2026-02-14 14:29 JST #261 で `plugins/route-plugin/README.md` に「2026-02-14 確定仕様（優先）」節を追加し、Step3〜Step6・location 連動カスケード・rebuild required/再ビルド予約・stale 運用の要点を明記。`docs/route-build-flow-spec.md` を新規作成して pre-build→build 詳細仕様（OR/AND 10チェック、fetch key 正規化、transform 差分、Step6 手動整合チェック）を文書化し、`docs/vt-route-pipeline-design.md` から参照リンクを追加。
 - update: 2026-02-14 14:27 JST Issue `docs(route): document build flow with location-coupled behavior` を起票し `https://github.com/kubohiroya/hierarchidb/issues/261` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-route-build-flow-docs` とブランチ `codex/docs/route/build-flow-location-coupling-2` を作成して着手。

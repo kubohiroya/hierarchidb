@@ -758,6 +758,7 @@ export const ShapeBuildProgressPanel = ({
   } = useShapeBuildCacheActions({ nodeId });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
+  const [startPendingHold, setStartPendingHold] = useState(false);
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
   const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
   const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'fetch' | 'transform' | 'vt' | null>(null);
@@ -770,11 +771,37 @@ export const ShapeBuildProgressPanel = ({
     && summary.buildStatus !== 'completed'
     && summary.buildStatus !== 'failed';
 
+  const hasAnyTasks = useMemo(() => (
+    stages.some((stage) => (tasksByStage[stage.id] ?? []).length > 0)
+  ), [stages, tasksByStage]);
+  const hasAnySummaryTasks = useMemo(() => (
+    (paneProgress ?? []).some((entry) => (entry.taskCount ?? 0) > 0)
+  ), [paneProgress]);
+  const isTerminalStatus = summary.buildStatus === 'completed' || summary.buildStatus === 'failed';
+
   useEffect(() => {
     if (controls.startPending) {
       setStartupNoticeDismissed(false);
+      setStartPendingHold(true);
     }
   }, [controls.startPending]);
+
+  useEffect(() => {
+    if (!startPendingHold) return;
+    if (hasAnyTasks || hasAnySummaryTasks || isTerminalStatus) {
+      setStartPendingHold(false);
+    }
+  }, [hasAnySummaryTasks, hasAnyTasks, isTerminalStatus, startPendingHold]);
+
+  const handleStartClickWithHold = useCallback(async () => {
+    setStartPendingHold(true);
+    await handleStartClick();
+  }, [handleStartClick]);
+
+  const handleConfirmStartWithHold = useCallback(async () => {
+    setStartPendingHold(true);
+    await handleConfirmStart();
+  }, [handleConfirmStart]);
 
   const handleResetSessionWithSkeleton = useCallback(async () => {
     if (isResetSessionLoading) return;
@@ -815,7 +842,10 @@ export const ShapeBuildProgressPanel = ({
   }, [isResetSessionLoading, stageProgress, stages]);
 
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
-  const isTasksLoadingForDisplay = isTasksLoading || isResetSessionLoading || controls.startPending;
+  const isTasksLoadingForDisplay = isTasksLoading
+    || isResetSessionLoading
+    || controls.startPending
+    || startPendingHold;
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
 
@@ -1282,7 +1312,7 @@ export const ShapeBuildProgressPanel = ({
       chipPlacement="belowProgress"
       suppressStatusFallback
       startIcon={<ConstructionIcon fontSize="small" />}
-      onResume={controls.canStartOrResume ? handleStartClick : undefined}
+      onResume={controls.canStartOrResume ? handleStartClickWithHold : undefined}
       onPause={controls.pausePending ? undefined : controls.handlePause}
       controlLabel={t('stage.controls.title', 'Build controls')}
       pauseLabel={t('stage.controls.pause', 'Pause')}
@@ -1408,7 +1438,7 @@ export const ShapeBuildProgressPanel = ({
                 <Button onClick={() => setWarningDialogOpen(false)}>
                   {t('stage.warning.cancel', 'Cancel')}
                 </Button>
-                <Button variant="contained" onClick={handleConfirmStart}>
+                <Button variant="contained" onClick={handleConfirmStartWithHold}>
                   {t('stage.warning.proceed', 'Proceed')}
                 </Button>
               </DialogActions>
