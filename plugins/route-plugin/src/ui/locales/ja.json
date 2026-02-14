@@ -47,6 +47,8 @@
     "emptyCountries": "利用可能な国がありません。時間をおいて再試行してください。",
     "defaultSelectionNote": "データソースに応じた既定の選択が適用されています。",
     "customSelectionNote": "国ごとに読み込む交通経路を選択してください。",
+    "conditionOr": "OR条件",
+    "conditionAnd": "AND条件",
     "transportModeLabel": "交通モード",
     "transportModeHelperText": "このルートの主な交通モードを選択してください。",
     "routeTypeLabel": "経路タイプ",
@@ -214,6 +216,12 @@
         "errorCount": "エラー数",
         "errorMessage": "エラーメッセージ"
       }
+    },
+    "metadataSync": {
+      "checkButton": "同期状態を確認",
+      "checking": "確認中...",
+      "synced": "✅同期済み",
+      "stale": "⚠️更新が必要"
     }
   },
   "batch": {

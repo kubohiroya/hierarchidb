@@ -94,7 +94,18 @@ export async function hasRouteReferencesToLocations(
     .anyOf(locationNodeIds)
     .limit(1)
     .toArray();
-  return endMatch.length > 0;
+  if (endMatch.length > 0) return true;
+
+  const rows = await db.features.toArray();
+  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
+  return rows.some((row) => {
+    const startLocationId = row.startPoint?.locationId;
+    const endLocationId = row.endPoint?.locationId;
+    return (
+      (startLocationId && locationIdSet.has(String(startLocationId)))
+      || (endLocationId && locationIdSet.has(String(endLocationId)))
+    );
+  });
 }
 
 export async function countRouteReferencesToLocations(
@@ -111,6 +122,18 @@ export async function countRouteReferencesToLocations(
     .where('endLocationId')
     .anyOf(locationNodeIds)
     .primaryKeys();
-  const unique = new Set([...startIds, ...endIds]);
+  const unique = new Set<string>([...startIds.map(String), ...endIds.map(String)]);
+  const rows = await db.features.toArray();
+  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
+  rows.forEach((row) => {
+    const startLocationId = row.startPoint?.locationId;
+    const endLocationId = row.endPoint?.locationId;
+    if (
+      (startLocationId && locationIdSet.has(String(startLocationId)))
+      || (endLocationId && locationIdSet.has(String(endLocationId)))
+    ) {
+      unique.add(String(row.id));
+    }
+  });
   return unique.size;
 }

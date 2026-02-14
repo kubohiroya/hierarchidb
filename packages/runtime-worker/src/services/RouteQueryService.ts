@@ -1,6 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   RouteLineString,
+  RouteMetadataSyncRow,
+  RouteMetadataSyncSummary,
   RouteNearestEndpoint,
   RouteNearestLine,
   RouteNearestLineQuery,
@@ -9,6 +11,8 @@ import type {
 } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { countRouteReferencesToLocations } from '@hierarchidb/route-store';
+import { getLocationDB } from '@hierarchidb/location-store';
+import type { LocationFeature } from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,
@@ -113,6 +117,53 @@ export class RouteQueryService implements RouteQueryAPI {
   async listRouteLineStrings(nodeId: NodeId): Promise<RouteLineStringRecord[]> {
     await this.db.open?.();
     return this.getLineStrings(nodeId);
+  }
+
+  async checkRouteMetadataSync(nodeId: NodeId): Promise<RouteMetadataSyncSummary> {
+    await this.db.open?.();
+    const routeLines = await this.getLineStrings(nodeId);
+    const locationDb = getLocationDB();
+    await locationDb.open?.();
+    const locationCache = new Map<string, LocationFeature | null>();
+    const rows: RouteMetadataSyncRow[] = [];
+
+    for (const line of routeLines) {
+      const staleFields = new Set<RouteMetadataSyncRow['staleFields'][number]>();
+      const reasons: string[] = [];
+      const startResult = await compareRoutePointWithLocation(
+        'start',
+        line.startPoint,
+        locationDb,
+        locationCache,
+      );
+      const endResult = await compareRoutePointWithLocation(
+        'end',
+        line.endPoint,
+        locationDb,
+        locationCache,
+      );
+
+      [...startResult.staleFields, ...endResult.staleFields].forEach((field) => staleFields.add(field));
+      if (startResult.reason) reasons.push(startResult.reason);
+      if (endResult.reason) reasons.push(endResult.reason);
+
+      rows.push({
+        lineId: String(line.id),
+        status: staleFields.size === 0 ? 'synced' : 'stale',
+        staleFields: Array.from(staleFields),
+        reason: reasons.length > 0 ? reasons.join(' / ') : undefined,
+      });
+    }
+
+    const staleCount = rows.filter((row) => row.status === 'stale').length;
+    const syncedCount = rows.length - staleCount;
+    return {
+      checkedAt: Date.now(),
+      totalCount: rows.length,
+      syncedCount,
+      staleCount,
+      rows,
+    };
   }
 
   async countRouteReferencesToLocations(locationNodeIds: NodeId[]): Promise<number> {
@@ -298,3 +349,69 @@ const buildFeatureId = (line: RouteLineStringRecord): string | undefined => {
   if (startId && endId) return `${startId}+${endId}`;
   return undefined;
 };
+
+type RoutePointLike = RouteLineStringRecord['startPoint'];
+
+type RoutePointComparisonResult = {
+  staleFields: Array<RouteMetadataSyncRow['staleFields'][number]>;
+  reason?: string;
+};
+
+const compareRoutePointWithLocation = async (
+  side: 'start' | 'end',
+  point: RoutePointLike | undefined,
+  locationDb: ReturnType<typeof getLocationDB>,
+  cache: Map<string, LocationFeature | null>,
+): Promise<RoutePointComparisonResult> => {
+  const staleFields: Array<RouteMetadataSyncRow['staleFields'][number]> = [];
+  if (!point?.locationId || !point?.locationFeatureId) {
+    staleFields.push('reference');
+    return { staleFields, reason: `${side}: location reference missing` };
+  }
+
+  const cacheKey = `${String(point.locationId)}::${String(point.locationFeatureId)}`;
+  let location = cache.get(cacheKey);
+  if (typeof location === 'undefined') {
+    location = await locationDb.features.get([point.locationId, String(point.locationFeatureId)]);
+    cache.set(cacheKey, location ?? null);
+  }
+  if (!location?.data) {
+    staleFields.push('reference');
+    return { staleFields, reason: `${side}: location row not found` };
+  }
+
+  const coordinateMismatch = !isNearlyEqual(point.longitude, location.data.longitude)
+    || !isNearlyEqual(point.latitude, location.data.latitude);
+  if (coordinateMismatch) {
+    staleFields.push('coordinates');
+  }
+
+  const adminCodeMismatch = !equalsNullableString(point.admin0Code, location.data.admin0Code)
+    || !equalsNullableString(point.admin1Code, location.data.admin1Code)
+    || !equalsNullableString(point.admin2Code, location.data.admin2Code);
+  if (adminCodeMismatch) {
+    staleFields.push('adminCode');
+  }
+
+  const adminNameMismatch = !equalsNullableString(point.admin0Name, location.data.admin0)
+    || !equalsNullableString(point.admin1Name, location.data.admin1)
+    || !equalsNullableString(point.admin2Name, location.data.admin2);
+  if (adminNameMismatch) {
+    staleFields.push('adminName');
+  }
+
+  if (staleFields.length === 0) return { staleFields };
+  return {
+    staleFields,
+    reason: `${side}: ${staleFields.join(', ')}`,
+  };
+};
+
+const isNearlyEqual = (left?: number, right?: number): boolean => {
+  if (typeof left !== 'number' || typeof right !== 'number') return false;
+  return Math.abs(left - right) <= 1e-9;
+};
+
+const equalsNullableString = (left?: string | null, right?: string | null): boolean => (
+  (left ?? '').trim() === (right ?? '').trim()
+);

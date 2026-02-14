@@ -2,6 +2,7 @@
 
 本ドキュメントは、route 固有の差分のみを記述する。
 共通仕様は `docs/vt-pipeline-design.md` を参照。
+2026-02-14 時点の Step3〜Step6、location 連動、stale 運用の確定仕様は `docs/route-build-flow-spec.md` を優先する。
 
 ## 対象ジオメトリ
 

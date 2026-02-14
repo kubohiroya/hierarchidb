@@ -34,7 +34,9 @@ export interface RoutePoint {
   admin0Name?: string;
   admin0Code?: string;
   admin1Name?: string;
+  admin1Code?: string;
   admin2Name?: string;
+  admin2Code?: string;
 }
 
 export interface RouteFeature extends GroupEntity {
@@ -127,6 +129,7 @@ export interface RouteEntityPayload {
   processing?: RouteProcessingConfig;
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  rebuildRequired?: boolean;
   processingError?: string;
   zoomRange?: [number, number];
   buildStartedAt?: number;
@@ -216,6 +219,29 @@ export interface RouteNearestLineResponse {
     latitude: number;
   };
   matches: RouteNearestLineMatch[];
+}
+
+export type RouteMetadataSyncField =
+  | 'reference'
+  | 'coordinates'
+  | 'adminCode'
+  | 'adminName';
+
+export type RouteMetadataSyncStatus = 'synced' | 'stale';
+
+export interface RouteMetadataSyncRow {
+  lineId: string;
+  status: RouteMetadataSyncStatus;
+  staleFields: RouteMetadataSyncField[];
+  reason?: string;
+}
+
+export interface RouteMetadataSyncSummary {
+  checkedAt: number;
+  totalCount: number;
+  syncedCount: number;
+  staleCount: number;
+  rows: RouteMetadataSyncRow[];
 }
 
 export interface RouteWaypointPoint {

@@ -8,7 +8,7 @@ import type {
 
 export type EphemeralDomainType = 'shape' | 'route' | 'vt';
 
-export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'rebuild-reserved';
 
 export type StopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
 

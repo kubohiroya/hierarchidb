@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
 import type { RouteLineString, RouteMode, RoutePoint } from './routeTypes.js';
 import { ROUTE_MODES } from './routeTypes.js';
+import type { IdeGsmRouteSelectionEntry } from './ideGsmRouteTypes.js';
 
 export type IdeGsmRouteError = {
   id: string;
@@ -239,7 +240,9 @@ function buildRoutePoint(
     admin0Name: admin0Name ?? location.admin0Name ?? location.admin0Code ?? '',
     admin0Code: location.admin0Code,
     admin1Name: admin1Name ?? location.admin1Name ?? location.admin1Code ?? '',
+    admin1Code: location.admin1Code,
     admin2Name: location.admin2Name ?? location.admin2Code,
+    admin2Code: location.admin2Code,
     locationFeatureId: location.locationFeatureId,
     locationId: location.locationNodeId,
     pointId,
@@ -319,3 +322,45 @@ function normalizeMetadata(
   }
   return normalized;
 }
+
+const normalizeCountryCode = (value?: string): string | null => {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+};
+
+export const filterIdeGsmRoutesBySelection = (
+  lineStrings: RouteLineString[],
+  entries: IdeGsmRouteSelectionEntry[],
+): RouteLineString[] => {
+  if (entries.length === 0) return lineStrings;
+  const selectionByCountry = new Map<string, { orModes: Set<RouteMode>; andModes: Set<RouteMode> }>();
+  entries.forEach((entry) => {
+    const countryCode = normalizeCountryCode(entry.countryCode);
+    if (!countryCode) return;
+    const existing = selectionByCountry.get(countryCode) ?? {
+      orModes: new Set<RouteMode>(),
+      andModes: new Set<RouteMode>(),
+    };
+    entry.orModes.forEach((mode) => existing.orModes.add(mode));
+    entry.andModes.forEach((mode) => existing.andModes.add(mode));
+    selectionByCountry.set(countryCode, existing);
+  });
+  if (selectionByCountry.size === 0) return lineStrings;
+
+  return lineStrings.filter((line) => {
+    const mode = line.routeMode;
+    const startCountry = normalizeCountryCode(line.startPoint?.admin0Code);
+    const endCountry = normalizeCountryCode(line.endPoint?.admin0Code);
+    const matchedOr = [startCountry, endCountry]
+      .filter((country): country is string => Boolean(country))
+      .some((country) => {
+        const selection = selectionByCountry.get(country);
+        return Boolean(selection && selection.orModes.has(mode));
+      });
+    if (matchedOr) return true;
+    if (!startCountry || !endCountry || startCountry !== endCountry) return false;
+    const selection = selectionByCountry.get(startCountry);
+    return Boolean(selection && selection.andModes.has(mode));
+  });
+};

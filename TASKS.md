@@ -39,6 +39,8 @@
 
 ### Doing
 
+- #262 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:33 JST
+- #261 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:27 JST
 - #259 / `codex/fix/shape/build-omit-details-threshold-none` / start: 2026-02-14 09:15 JST
 - #258 / `codex/fix/i18n/move-to-archive-ja-locale` / start: 2026-02-14 08:02 JST
 - #255 / `codex/refactor/repo/rename-trash-to-archive` / start: 2026-02-13 22:11 JST
@@ -81,6 +83,9 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-14 14:33 JST Issue `feat(route): implement location-coupled build flow spec` を起票し `https://github.com/kubohiroya/hierarchidb/issues/262` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、既存専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-route-build-flow-docs` とブランチ `codex/docs/route/build-flow-location-coupling-2` を継続利用して実装に着手。
+- update: 2026-02-14 14:29 JST #261 で `plugins/route-plugin/README.md` に「2026-02-14 確定仕様（優先）」節を追加し、Step3〜Step6・location 連動カスケード・rebuild required/再ビルド予約・stale 運用の要点を明記。`docs/route-build-flow-spec.md` を新規作成して pre-build→build 詳細仕様（OR/AND 10チェック、fetch key 正規化、transform 差分、Step6 手動整合チェック）を文書化し、`docs/vt-route-pipeline-design.md` から参照リンクを追加。
+- update: 2026-02-14 14:27 JST Issue `docs(route): document build flow with location-coupled behavior` を起票し `https://github.com/kubohiroya/hierarchidb/issues/261` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-route-build-flow-docs` とブランチ `codex/docs/route/build-flow-location-coupling-2` を作成して着手。
 - update: 2026-02-14 09:22 JST #259 原因は `app/src/features/shape/shapeCreatePresets.ts` のプリセットが `omitDetailsConfig.level` に未対応値（`none` / `moderate`）を設定していたこと。発生範囲は shape プリセット経由で作成された draft の build 実行時（`plugins/shape-plugin/src/services/vt/fetchGeometryFilters.ts`）で、`omit-details thresholds missing for level: ...` により fetch タスクが失敗していた。
 - update: 2026-02-14 09:22 JST #259 修正としてプリセット値を `weak` / `medium` に修正し、`plugins/shape-plugin/src/services/utils/utils.ts` の `mergeBuildConfig` に legacy 値正規化（`none -> weak`, `moderate -> medium`）と不正値ガードを追加。適用範囲は `app/src/features/shape/shapeCreatePresets.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, 関連 unit test 2 件。
 - update: 2026-02-14 09:22 JST #259 検証結果: `pnpm install --frozen-lockfile` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/unit/mergeBuildConfig.unit.test.ts` exit 0、`pnpm -w turbo run test --filter @hierarchidb/app -- --run src/features/shape/__tests__/shapeCreatePresets.unit.test.ts` exit 0、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。

@@ -1,11 +1,14 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeature, LocationPointProperties } from '@hierarchidb/location-store';
 import type { LocationMutationAPI } from '@hierarchidb/location-api';
+import type { RouteLineString } from '@hierarchidb/route-api';
+import { ephemeralRouteDB } from '@hierarchidb/gis-sdk';
 import {
   filterIdeGsmPointsBySelection,
   getLocationDB,
   mortonKeyFromLonLat,
 } from '@hierarchidb/location-store';
+import { getRouteDB } from '@hierarchidb/route-store';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -26,6 +29,13 @@ type LocationPointWriteProgress = {
   chunkSize: number;
 };
 
+type LocationUpsertDiff = {
+  featureId: string;
+  nextData: LocationPointProperties;
+  structuralChanged: boolean;
+  metadataChanged: boolean;
+};
+
 export class LocationMutationService implements LocationMutationAPI {
   static async getSingleton(): Promise<LocationMutationService> {
     return SingletonMixin.getSingleton(
@@ -37,9 +47,26 @@ export class LocationMutationService implements LocationMutationAPI {
   async upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void> {
     const db = getLocationDB();
     await db.open?.();
+    const existingRows = items.length > 0
+      ? await db.features.bulkGet(
+        items.map((item) => [nodeId, String(item.id)] as [NodeId, string]),
+      )
+      : [];
+    const updateDiffs: LocationUpsertDiff[] = [];
     const now = Date.now();
-    const rows: LocationFeature[] = items.map((item) => {
+    const rows: LocationFeature[] = items.map((item, index) => {
       const data = item.data as LocationPointProperties;
+      const existing = existingRows[index];
+      const structuralChanged = hasStructuralLocationDiff(existing?.data, data);
+      const metadataChanged = hasMetadataLocationDiff(existing?.data, data);
+      if (existing && (structuralChanged || metadataChanged)) {
+        updateDiffs.push({
+          featureId: String(item.id),
+          nextData: data,
+          structuralChanged,
+          metadataChanged: !structuralChanged && metadataChanged,
+        });
+      }
       const longitude = data?.longitude;
       const latitude = data?.latitude;
       const mortonKey = typeof longitude === 'number' && Number.isFinite(longitude)
@@ -60,6 +87,9 @@ export class LocationMutationService implements LocationMutationAPI {
       };
     });
     await db.features.bulkPut(rows);
+    if (updateDiffs.length > 0) {
+      await this.syncRoutesAfterLocationUpdates(nodeId, updateDiffs);
+    }
   }
 
   async deleteLocationGroups(nodeId: NodeId, itemIds: string[]): Promise<void> {
@@ -105,6 +135,7 @@ export class LocationMutationService implements LocationMutationAPI {
       })
       .map((row) => row.id);
     if (!targetIds.length) return;
+    await this.deleteRoutesReferencingLocationRows(nodeId, targetIds.map((id) => String(id)));
     await db.transaction('rw', db.features, async () => {
       for (const id of targetIds) {
         await db.features.delete([nodeId, String(id)]);
@@ -319,4 +350,188 @@ export class LocationMutationService implements LocationMutationAPI {
       options?.onProgress?.({ total: points.length, saved, chunkIndex, chunkSize });
     }
   }
+
+  private async deleteRoutesReferencingLocationRows(
+    locationNodeId: NodeId,
+    locationFeatureIds: string[],
+  ): Promise<void> {
+    if (!locationFeatureIds.length) return;
+    const routeDb = getRouteDB();
+    await routeDb.open?.();
+    const locationFeatureSet = new Set(locationFeatureIds.map((id) => String(id)));
+    const rows = await routeDb.features.toArray();
+    const impacted = (rows as RouteLineString[]).filter((row) => {
+      const startLocationId = row.startPoint?.locationId;
+      const endLocationId = row.endPoint?.locationId;
+      const startFeatureId = row.startPoint?.locationFeatureId;
+      const endFeatureId = row.endPoint?.locationFeatureId;
+      const startMatched = startLocationId === locationNodeId && startFeatureId && locationFeatureSet.has(String(startFeatureId));
+      const endMatched = endLocationId === locationNodeId && endFeatureId && locationFeatureSet.has(String(endFeatureId));
+      return Boolean(startMatched || endMatched);
+    });
+    if (!impacted.length) return;
+    const impactedRouteNodeIds = new Set(impacted.map((row) => row.nodeId));
+    await routeDb.transaction('rw', routeDb.features, routeDb.vectorTiles, routeDb.tileIndex, async () => {
+      for (const route of impacted) {
+        await routeDb.features.delete(route.id);
+      }
+      for (const routeNodeId of impactedRouteNodeIds) {
+        await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+        await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
+      }
+    });
+    for (const routeNodeId of impactedRouteNodeIds) {
+      await this.clearFetchCacheAndReserveRouteRebuild(routeNodeId);
+    }
+  }
+
+  private async syncRoutesAfterLocationUpdates(
+    locationNodeId: NodeId,
+    diffs: LocationUpsertDiff[],
+  ): Promise<void> {
+    if (!diffs.length) return;
+    const routeDb = getRouteDB();
+    await routeDb.open?.();
+    const diffByFeatureId = new Map(diffs.map((diff) => [diff.featureId, diff]));
+    const rows = await routeDb.features.toArray();
+    const metadataUpdates: RouteLineString[] = [];
+    const structuralRouteNodes = new Set<NodeId>();
+
+    (rows as RouteLineString[]).forEach((route) => {
+      const startFeatureId = route.startPoint?.locationFeatureId ? String(route.startPoint.locationFeatureId) : null;
+      const endFeatureId = route.endPoint?.locationFeatureId ? String(route.endPoint.locationFeatureId) : null;
+      const startMatched = route.startPoint?.locationId === locationNodeId && startFeatureId
+        ? diffByFeatureId.get(startFeatureId)
+        : undefined;
+      const endMatched = route.endPoint?.locationId === locationNodeId && endFeatureId
+        ? diffByFeatureId.get(endFeatureId)
+        : undefined;
+      if (!startMatched && !endMatched) return;
+
+      if (startMatched?.structuralChanged || endMatched?.structuralChanged) {
+        structuralRouteNodes.add(route.nodeId);
+        return;
+      }
+
+      let changed = false;
+      const nextRoute: RouteLineString = {
+        ...route,
+        startPoint: route.startPoint ? { ...route.startPoint } : route.startPoint,
+        endPoint: route.endPoint ? { ...route.endPoint } : route.endPoint,
+      };
+      if (startMatched?.metadataChanged && nextRoute.startPoint) {
+        nextRoute.startPoint = applyLocationMetadataToRoutePoint(nextRoute.startPoint, startMatched.nextData);
+        changed = true;
+      }
+      if (endMatched?.metadataChanged && nextRoute.endPoint) {
+        nextRoute.endPoint = applyLocationMetadataToRoutePoint(nextRoute.endPoint, endMatched.nextData);
+        changed = true;
+      }
+      if (!changed) return;
+      nextRoute.updatedAt = Date.now();
+      metadataUpdates.push(nextRoute);
+    });
+
+    await routeDb.transaction('rw', routeDb.features, routeDb.vectorTiles, routeDb.tileIndex, async () => {
+      if (metadataUpdates.length > 0) {
+        await routeDb.features.bulkPut(metadataUpdates);
+      }
+      for (const routeNodeId of structuralRouteNodes) {
+        await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
+        await routeDb.tileIndex.where('nodeId').equals(routeNodeId).delete();
+      }
+    });
+
+    for (const routeNodeId of structuralRouteNodes) {
+      await this.clearFetchCacheAndReserveRouteRebuild(routeNodeId);
+    }
+  }
+
+  private async clearFetchCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
+    await ephemeralRouteDB.open?.();
+    const now = Date.now();
+    await ephemeralRouteDB.transaction(
+      'rw',
+      [ephemeralRouteDB.fetchCache, ephemeralRouteDB.fetchCacheMeta, ephemeralRouteDB.sessions],
+      async () => {
+        await ephemeralRouteDB.fetchCache.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralRouteDB.fetchCacheMeta.where('nodeId').equals(routeNodeId).delete();
+        const current = await ephemeralRouteDB.sessions.get(routeNodeId);
+        if (current?.status === 'running') return;
+        await ephemeralRouteDB.sessions.put({
+          ...(current ?? {}),
+          nodeId: routeNodeId,
+          domainType: 'route',
+          status: 'rebuild-reserved',
+          stage: 'fetch',
+          progress: 0,
+          updatedAt: now,
+          startedAt: current?.startedAt ?? now,
+          completedAt: undefined,
+          stopReason: 'unknown',
+        });
+      },
+    );
+  }
 }
+
+const hasStructuralLocationDiff = (
+  prev?: LocationPointProperties,
+  next?: LocationPointProperties,
+): boolean => {
+  if (!prev || !next) return false;
+  return !isEqualNumber(prev.longitude, next.longitude)
+    || !isEqualNumber(prev.latitude, next.latitude)
+    || !isEqualString(prev.admin0Code, next.admin0Code)
+    || !isEqualString(prev.admin1Code, next.admin1Code)
+    || !isEqualString(prev.admin2Code, next.admin2Code);
+};
+
+const hasMetadataLocationDiff = (
+  prev?: LocationPointProperties,
+  next?: LocationPointProperties,
+): boolean => {
+  if (!prev || !next) return false;
+  const prevComparable = {
+    name: prev.name,
+    type: prev.type,
+    admin0: prev.admin0,
+    admin1: prev.admin1,
+    admin2: prev.admin2,
+    pointId: prev.pointId,
+    metadata: prev.metadata ?? {},
+  };
+  const nextComparable = {
+    name: next.name,
+    type: next.type,
+    admin0: next.admin0,
+    admin1: next.admin1,
+    admin2: next.admin2,
+    pointId: next.pointId,
+    metadata: next.metadata ?? {},
+  };
+  return JSON.stringify(prevComparable) !== JSON.stringify(nextComparable);
+};
+
+const applyLocationMetadataToRoutePoint = (
+  point: NonNullable<RouteLineString['startPoint']>,
+  source: LocationPointProperties,
+): NonNullable<RouteLineString['startPoint']> => ({
+  ...point,
+  name: source.name,
+  locationName: source.name,
+  admin0Name: source.admin0,
+  admin1Name: source.admin1,
+  admin2Name: source.admin2,
+  admin0Code: source.admin0Code,
+  admin1Code: source.admin1Code,
+  admin2Code: source.admin2Code,
+});
+
+const isEqualNumber = (left?: number, right?: number): boolean => {
+  if (left == null && right == null) return true;
+  if (typeof left !== 'number' || typeof right !== 'number') return false;
+  return Math.abs(left - right) <= 1e-9;
+};
+
+const isEqualString = (left?: string, right?: string): boolean => (left ?? '') === (right ?? '');
