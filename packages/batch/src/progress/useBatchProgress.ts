@@ -13,6 +13,64 @@ const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
   return typeof skipped === 'number' && Number.isFinite(skipped) ? skipped : 0;
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+);
+
+const readString = (meta: Record<string, unknown> | null, key: string): string | undefined => {
+  const value = meta?.[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const readNumber = (meta: Record<string, unknown> | null, key: string): number | undefined => {
+  const value = meta?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+};
+
+const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+  const payload = asRecord(info?.payload);
+  if (!payload) return undefined;
+  const meta = asRecord(payload.meta);
+  if (!meta) return undefined;
+  const progressTask = asRecord(meta.progressTask);
+  if (!progressTask) return undefined;
+  return [
+    typeof progressTask.taskId === 'string' ? progressTask.taskId : '',
+    typeof progressTask.sequence === 'number' && Number.isFinite(progressTask.sequence)
+      ? `${progressTask.sequence}`
+      : '',
+    typeof progressTask.status === 'string' ? progressTask.status : '',
+    readString(progressTask, 'stage') ?? '',
+    Number.isFinite(readNumber(progressTask, 'progress'))
+      ? `${readNumber(progressTask, 'progress')}`
+      : '',
+    readString(progressTask, 'title') ?? '',
+  ].join('|');
+};
+
+const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+  const payload = asRecord(info?.payload);
+  if (!payload) return undefined;
+  const meta = asRecord(payload.meta);
+  if (!meta) return undefined;
+  const stageTotals = asRecord(meta.stageTotals);
+  if (!stageTotals) return undefined;
+  const stages = ['fetch', 'transform', 'vt'] as const;
+  const lines = stages
+    .map((stage) => {
+      const stageValue = asRecord(stageTotals[stage]);
+      if (!stageValue) return `${stage}:`;
+      const readValue = (key: string): string => {
+        const value = readNumber(stageValue, key);
+        if (typeof value !== 'number' || !Number.isFinite(value)) return 'x';
+        return `${value}`;
+      };
+      return `${stage}:${readValue('total')}/${readValue('completed')}/${readValue('failed')}/${readValue('skipped')}`;
+    })
+    .join(';');
+  return lines;
+};
+
 export function useBatchProgress(
   adapter: Adapter,
   { autoSubscribe = true }: UseBuildProgressOptions = {},
@@ -56,6 +114,8 @@ export function useBatchProgress(
         && prev.failed === normalized.failed
         && prev.total === normalized.total
         && prev.message === normalized.message
+        && buildProgressTaskSignature(prev) === buildProgressTaskSignature(normalized)
+        && buildStageTotalsSignature(prev) === buildStageTotalsSignature(normalized)
       );
       if (isSame) return;
       lastProgressRef.current = normalized;
