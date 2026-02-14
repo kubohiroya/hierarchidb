@@ -215,6 +215,59 @@ describe('ShapeBuildProgressPanel', () => {
     });
   });
 
+  it('keeps task skeleton after start resolves until tasks arrive', async () => {
+    const store = makeStore();
+    let resolveStart: (() => void) | null = null;
+    const startPromise = new Promise<void>((resolve) => {
+      resolveStart = resolve;
+    });
+    store.set(tasksLoadingAtom, false);
+    store.set(taskSummaryLoadingAtom, false);
+    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: true,
+      statusLabel: '',
+      showResumeLabel: false,
+      startPending: false,
+      handleStartOrResume: () => startPromise,
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    const view = render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    const local = within(view.container);
+    await local.findByText('Build controls');
+    const startButton = await local.findByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
+    fireEvent.click(startButton);
+    resolveStart?.();
+
+    await waitFor(() => {
+      const skeletons = document.querySelectorAll('.MuiSkeleton-root');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
   it('shows startup snackbar while start is pending before running', async () => {
     const store = makeStore();
     store.set(taskProgressControlsAtom, {
