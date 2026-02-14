@@ -31,16 +31,17 @@ export const summarizeStageCounts = async (
   nodeId: NodeId,
   stage: TaskQueueRecord['stage'],
 ): Promise<StageCounts> => {
-  const [queued, running, completed, failed] = await Promise.all([
+  const [queued, running, completed, failed, recycled] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'recycled'),
   ]);
   return {
     queued: queued.length,
     running: running.length,
-    completed: completed.length,
+    completed: completed.length + recycled.length,
     failed: failed.length,
   };
 };
@@ -62,6 +63,28 @@ export const readHeapSnapshot = () => {
     total: memory.totalJSHeapSize ?? null,
     limit: memory.jsHeapSizeLimit ?? null,
   };
+};
+
+export const markStageTasksRecycled = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<void> => {
+  const completedTasks = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed');
+  if (completedTasks.length === 0) return;
+  const now = Date.now();
+  await Promise.all(
+    completedTasks.map((task) => updateTask(
+      taskQueue,
+      task.taskId,
+      {
+        status: 'recycled',
+        progress: 100,
+        completedAt: task.completedAt ?? now,
+      },
+      { allowTerminalStatusTransition: true },
+    )),
+  );
 };
 
 export const resetStageRunningTasks = async (

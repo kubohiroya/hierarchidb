@@ -10,7 +10,7 @@ describe('shouldUpdateElapsedSnapshot', () => {
     })).toBe(true);
   });
 
-  it('returns false for running regressions above zero', () => {
+  it('returns false when elapsed decreases while running', () => {
     expect(shouldUpdateElapsedSnapshot({
       snapshot: { elapsedMs: 10_000, capturedAt: 1_000 },
       totalElapsedMs: 9_000,

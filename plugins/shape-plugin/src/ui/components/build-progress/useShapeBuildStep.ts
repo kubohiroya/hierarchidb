@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import { useAtomValue, useSetAtom } from 'jotai';
 import {
   createPollingTracker,
   createSessionCoordinator,
@@ -45,6 +46,7 @@ import {
 } from './resolveStartupTransitionWatchdogEvent.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const PAUSE_COMMAND_TIMEOUT_MS = 60_000;
@@ -650,11 +652,25 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(statusSource)
   ), [statusSource]);
-  const { tasks, isLoading: isTasksLoading, isTaskStreamReady } = useShapeBuildTasks(activeNodeId, {
+  const { tasks, isLoading: isTasksLoading, isTaskStreamReady, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
     reportFailures: reportTaskFailures,
   });
+  const persistedTasks = useAtomValue(persistedTasksAtom);
+  const setPersistedTasks = useSetAtom(persistedTasksAtom);
+  const lastPersistedNodeIdRef = useRef<NodeId | null>(null);
+  useEffect(() => {
+    const currentNodeId = activeNodeId ?? null;
+    if (lastPersistedNodeIdRef.current && lastPersistedNodeIdRef.current !== currentNodeId) {
+      setPersistedTasks([]);
+    }
+    lastPersistedNodeIdRef.current = currentNodeId;
+  }, [activeNodeId, setPersistedTasks]);
+  useEffect(() => {
+    if (tasks.length === 0) return;
+    setPersistedTasks(tasks);
+  }, [setPersistedTasks, tasks]);
   const isTaskSummaryLoading = false;
-  const displayTasks = tasks;
+  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
@@ -662,9 +678,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     displayTasks.some((task) => (
       task.status === 'running'
       || task.status === 'completed'
+      || task.status === 'recycled'
       || task.status === 'failed'
-      || task.status === 'regression'
-      || task.status === 'warning'
     ))
   ), [displayTasks]);
   const hasQueuedTasks = useMemo(() => (
@@ -697,7 +712,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const completedTaskSequenceById = useMemo(() => {
     const map = new Map<string, number>();
     displayTasks.forEach((task) => {
-      if (task.status !== 'completed') return;
+      if (task.status !== 'completed' && task.status !== 'recycled') return;
       if (!(typeof task.sequence === 'number' && Number.isFinite(task.sequence))) return;
       const current = map.get(task.taskId);
       if (current === undefined || task.sequence > current) {
@@ -1585,6 +1600,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       buildStatus,
       runtimeStatus,
     });
+    if (shouldResumeSession) {
+      void refreshTasks();
+    }
     beginBuildSessionTransition(
       'acquiring-lock',
       options?.autoResume || shouldResumeSession
@@ -1870,6 +1888,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     releaseBuildLock,
     runtimeStatus,
     saveDraftBeforeBuild,
+    refreshTasks,
+    setPersistedTasks,
     tryAcquireBuildLock,
     updateSessionRecord,
     waitForBuildLock,

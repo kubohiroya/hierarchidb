@@ -19,8 +19,7 @@ export type BatchStatus =
   | 'paused'
   | 'completed'
   | 'failed'
-  | 'regression'
-  | 'warning';
+  | 'recycled';
 export type ProgressPhase = BatchStatus;
 
 export interface BaseBatchConfig {

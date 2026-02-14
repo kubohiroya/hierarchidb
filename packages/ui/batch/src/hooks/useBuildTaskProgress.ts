@@ -34,7 +34,9 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
   overallProgress: number,
   buildStatus: BuildStatus,
   tasks: T[],
+  options?: { isExcludedTask?: (task: T) => boolean },
 ) => {
+  const isExcludedTask = options?.isExcludedTask;
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
     if (buildStatus === 'completed') {
@@ -71,13 +73,16 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
   const paneProgress = useMemo(() => {
     return stages.map((stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
-      const taskCount = stageTasks.length;
-      const counts = buildTaskCountSummary(stageTasks, isSkippedTask);
+      const effectiveTasks = isExcludedTask
+        ? stageTasks.filter((task) => !isExcludedTask(task))
+        : stageTasks;
+      const taskCount = effectiveTasks.length;
+      const counts = buildTaskCountSummary(stageTasks, isSkippedTask, { isExcluded: isExcludedTask });
       const taskCountEffective = Math.max(0, counts.total - counts.skipped);
       const completedCount = counts.completed;
       const failedCount = counts.failed;
       const progressValue = taskCount > 0
-        ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
+        ? Math.round(effectiveTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
         : 0;
       const derivedStatus = failedCount > 0 ? 'failed' : buildStatus;
       return {
@@ -88,7 +93,7 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
         status: derivedStatus,
       };
     });
-  }, [buildStatus, stages, tasksByStage]);
+  }, [buildStatus, isExcludedTask, stages, tasksByStage]);
 
   return {
     stageProgress,

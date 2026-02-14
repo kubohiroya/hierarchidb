@@ -1,5 +1,7 @@
 import { type CSSProperties, type MutableRefObject, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Box } from '@mui/material';
+import AddBoxIcon from '@mui/icons-material/AddBox';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
@@ -232,7 +234,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     const failedMessage = errorMessage || fallbackError;
     const geometryDetails = parseGeometrySimplifyError(task.message);
     const baseMessage = task.message?.split(' (')[0];
-    const failedTaskMessage = (task.status === 'failed' || task.status === 'regression')
+    const failedTaskMessage = task.status === 'failed'
       && failedMessage
       && (!task.message || isTaskPhaseMessage(task.message))
       ? failedMessage
@@ -243,10 +245,16 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
         ? (geometryDetails ? baseMessage : task.message)
         : undefined);
     const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
+    const leadingIcon = task.status === 'recycled' ? (
+      <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
+    ) : (
+      <AddBoxIcon data-testid="task-icon-add" color="primary" sx={{ fontSize: 16 }} />
+    );
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItem
           title={taskTitle}
+          leadingIcon={leadingIcon}
           statusLabel={statusLabelValue}
           statusColor={statusColor}
           message={taskMessage}

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
 export type TaskStage = 'fetch' | 'transform' | 'vt';
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
 

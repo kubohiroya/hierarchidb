@@ -284,8 +284,23 @@ export function useShapeBuildTasks(
   ]);
 
   const refresh = useCallback(async () => {
-    return;
-  }, []);
+    if (!nodeId) return;
+    const wasLoading = isLoadingRef.current;
+    if (!wasLoading) {
+      setIsLoading(true);
+    }
+    try {
+      const latestTasks = await bridgeRef.current.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
+      handleSnapshotRef.current(latestTasks as RawTaskSummary[]);
+    } catch (err) {
+      const errObj = err instanceof Error ? err : new Error('Failed to refresh build tasks');
+      setError(errObj);
+    } finally {
+      if (!wasLoading) {
+        setIsLoading(false);
+      }
+    }
+  }, [nodeId, setError, setIsLoading]);
 
   useEffect(() => {
     if (!reportFailures) return;

@@ -16,16 +16,24 @@ export type TaskStageCarrier = TaskLike & {
   stage?: string;
 };
 
+type TaskCountSummaryOptions<T> = {
+  isExcluded?: (task: T) => boolean;
+};
+
 export const isFailureStatus = (status?: string | null): boolean => (
-  status === 'failed' || status === 'regression'
+  status === 'failed'
 );
 
 export const buildTaskCountSummary = <T extends TaskLike>(
   tasks: T[],
   isSkipped: (task: T) => boolean,
+  options?: TaskCountSummaryOptions<T>,
 ): TaskCountSummary => {
   const counts: TaskCountSummary = { total: 0, completed: 0, failed: 0, skipped: 0 };
   tasks.forEach((task) => {
+    if (options?.isExcluded?.(task)) {
+      return;
+    }
     counts.total += 1;
     if (isSkipped(task)) {
       counts.skipped += 1;
@@ -46,9 +54,13 @@ export const buildStageTaskSummary = <T extends TaskStageCarrier>(
   tasks: T[],
   getStageKey: (task: T) => string,
   isSkipped: (task: T) => boolean,
+  options?: TaskCountSummaryOptions<T>,
 ): Record<string, TaskCountSummary> => {
   const summary: Record<string, TaskCountSummary> = {};
   tasks.forEach((task) => {
+    if (options?.isExcluded?.(task)) {
+      return;
+    }
     const stageKey = getStageKey(task);
     if (!summary[stageKey]) {
       summary[stageKey] = { total: 0, completed: 0, failed: 0, skipped: 0 };

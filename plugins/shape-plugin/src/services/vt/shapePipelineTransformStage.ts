@@ -17,6 +17,7 @@ import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   getFailedTaskCount,
+  markStageTasksRecycled,
   resetStageRunningTasks,
   shouldStopAfterStage,
   summarizeStageCounts,
@@ -425,6 +426,11 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     await runTransformStep(params, 'reset-running-transform-tasks', async () => {
       await resetStageRunningTasks(params.taskQueue, params.nodeId, 'transform');
     });
+    if (params.resumeExistingTasks) {
+      await runTransformStep(params, 'mark-recycled-transform-tasks', async () => {
+        await markStageTasksRecycled(params.taskQueue, params.nodeId, 'transform');
+      });
+    }
 
     const transformByBandAbortController = new AbortController();
     const transformByBandHandler = await runTransformStep(params, 'create-transform-handler', async () => (

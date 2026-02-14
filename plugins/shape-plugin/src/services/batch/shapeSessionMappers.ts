@@ -30,7 +30,7 @@ const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   || value === 'running'
   || value === 'completed'
   || value === 'failed'
-  || value === 'regression';
+  || value === 'recycled';
 
 const isStageStatus = (value: unknown): value is StageStatus => {
   if (!isRecord(value)) return false;

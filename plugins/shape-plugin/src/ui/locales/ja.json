@@ -434,6 +434,7 @@
       "running": "実行中",
       "paused": "一時停止",
       "completed": "完了",
+      "recycled": "再利用",
       "skipped": "スキップ",
       "failed": "失敗"
     },

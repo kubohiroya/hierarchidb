@@ -7,8 +7,7 @@ const phaseValues: Set<ProgressPhase> = new Set([
   'paused',
   'completed',
   'failed',
-  'regression',
-  'warning',
+  'recycled',
 ]);
 
 export const normalizeProgressPhase = (status?: string | null): ProgressPhase => {

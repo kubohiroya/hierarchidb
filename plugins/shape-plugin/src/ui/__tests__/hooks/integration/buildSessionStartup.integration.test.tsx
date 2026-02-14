@@ -73,9 +73,8 @@ describe('buildSessionStartup integration baseline', () => {
       const hasStartedTasks = result.current.tasks.some((task) => (
         task.status === 'running'
         || task.status === 'completed'
+        || task.status === 'recycled'
         || task.status === 'failed'
-        || task.status === 'regression'
-        || task.status === 'warning'
       ));
       expect(hasAwaitingFirstTaskSignal({
         hasStartedTasks,

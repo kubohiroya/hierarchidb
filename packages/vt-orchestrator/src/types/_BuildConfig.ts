@@ -20,7 +20,7 @@ export const BuildTaskResult = {
   CANCEL: 'cancel',
 } as const;
 export type BuildTaskResultType = (typeof BuildTaskResult)[keyof typeof BuildTaskResult];
-export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 export interface BuildTaskBase {
   taskId: string;
   type: BuildTaskType,

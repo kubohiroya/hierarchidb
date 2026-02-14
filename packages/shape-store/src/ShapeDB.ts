@@ -44,7 +44,7 @@ export interface BuildSessionConfig extends CommonSessionConfig {
 export type BuildProcessConfig = BuildSessionConfig;
 export type BuildTaskType = 'fetch' | 'transform' | 'vt';
 export type BuildStage = BuildTaskType;
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
 

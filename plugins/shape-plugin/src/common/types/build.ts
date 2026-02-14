@@ -48,7 +48,7 @@ export interface ShapeProcessingConfig {
 export type ShapeRuntimeBuildConfig = BaseBuildConfig<DataSourceName>;
 
 export type BuildTaskType = TaskStage;
-export type BuildTaskStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'paused' | 'regression';
+export type BuildTaskStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'paused' | 'recycled';
 
 export const BuildTaskResult = {
   WAIT: 'wait',

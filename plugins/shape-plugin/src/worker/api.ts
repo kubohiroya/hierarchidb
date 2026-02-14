@@ -451,41 +451,46 @@ type TaskQueueStatusCounts = {
   running: number;
   completed: number;
   failed: number;
+  recycled: number;
 };
 
 const countTaskQueueStatuses = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
 ): Promise<TaskQueueStatusCounts> => {
-  const [total, running, completed, failed] = await Promise.all([
+  const [total, running, completed, failed, recycled] = await Promise.all([
     taskQueue.tasks.where('nodeId').equals(nodeId).count(),
     taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
     taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'completed']).count(),
     taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'failed']).count(),
+    taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'recycled']).count(),
   ]);
-  return { total, running, completed, failed };
+  return { total, running, completed, failed, recycled };
 };
 
 const resolveBatchSessionStatusFromCounts = (
   nodeId: NodeId,
   counts: TaskQueueStatusCounts,
 ): BatchSession['status'] => {
+  const effectiveTotal = Math.max(0, counts.total - counts.recycled);
   if (getPauseState(nodeId).paused) return 'paused';
   if (counts.running > 0) return 'running';
   if (counts.failed > 0) return 'failed';
-  if (counts.total > 0 && counts.completed + counts.failed >= counts.total) return 'completed';
-  if (counts.total > 0) return 'queued';
+  if (effectiveTotal > 0 && counts.completed + counts.failed >= effectiveTotal) return 'completed';
+  if (effectiveTotal > 0) return 'queued';
+  if (counts.recycled > 0) return 'completed';
   return 'idle';
 };
 
 const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BatchSession['progress'] => {
-  const doneCount = Math.min(counts.total, counts.completed + counts.failed);
+  const effectiveTotal = Math.max(0, counts.total - counts.recycled);
+  const doneCount = Math.min(effectiveTotal, counts.completed + counts.failed);
   return {
-    total: counts.total,
+    total: effectiveTotal,
     completed: counts.completed,
     failed: counts.failed,
     skipped: 0,
-    percentage: counts.total > 0 ? Math.round((doneCount / counts.total) * 100) : 0,
+    percentage: effectiveTotal > 0 ? Math.round((doneCount / effectiveTotal) * 100) : 0,
   };
 };
 
@@ -565,20 +570,32 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
   return task.progress ?? 0;
 };
 
-const normalizeTaskStatus = (status: TaskQueueRecord['status'] | string): BuildTask['status'] => {
-  if (status === 'warning') return 'queued';
-  return status as BuildTask['status'];
-};
+const validTaskStages: TaskQueueRecord['stage'][] = ['fetch', 'transform', 'vt'];
+const validTaskStatuses: TaskQueueRecord['status'][] = [
+  'queued',
+  'running',
+  'completed',
+  'failed',
+  'recycled',
+];
 
-const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): ProgressPhase => (
-  status as ProgressPhase
+const isValidTaskStage = (value: unknown): value is TaskQueueRecord['stage'] => (
+  typeof value === 'string' && validTaskStages.includes(value as TaskQueueRecord['stage'])
 );
+
+const isValidTaskStatus = (value: unknown): value is TaskQueueRecord['status'] => (
+  typeof value === 'string' && validTaskStatuses.includes(value as TaskQueueRecord['status'])
+);
+
+const normalizeTaskStatus = (status: TaskQueueRecord['status']): BuildTask['status'] => status;
+
+const normalizeTaskPhase = (status: TaskQueueRecord['status']): ProgressPhase => status;
 
 
 type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
 
 const normalizeResumedTaskStatus = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
-  if (status === 'failed' || status === 'regression' || status === 'running') {
+  if (status === 'failed' || status === 'running') {
     return 'queued';
   }
   return status;
@@ -594,18 +611,22 @@ const isStopReason = (value: string): value is ShapeBuildStopReason => (
 
 const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => {
   const nextStatus = normalizeResumedTaskStatus(task.status);
-  const keepMessage = nextStatus === 'completed' ? task.message : undefined;
+  const shouldKeepOutput = nextStatus === 'completed' || nextStatus === 'recycled';
+  const resolvedProgress = shouldKeepOutput
+    ? (Number.isFinite(task.progress) ? Math.min(100, Math.max(0, task.progress)) : 100)
+    : 0;
+  const keepMessage = shouldKeepOutput ? task.message : undefined;
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
     stage: task.taskType,
     status: nextStatus,
     index: task.index,
-    progress: nextStatus === 'completed' ? task.progress : 0,
-    display: nextStatus === 'completed' ? task.display : undefined,
+    progress: resolvedProgress,
+    display: shouldKeepOutput ? task.display : undefined,
     message: keepMessage,
     inputData: task.inputData,
-    outputData: nextStatus === 'completed' ? task.outputData : undefined,
+    outputData: shouldKeepOutput ? task.outputData : undefined,
     errorMessage: undefined,
   };
 };
@@ -616,6 +637,7 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   let scannedCount = 0;
   let queuedCount = 0;
+  let skippedCount = 0;
   let batch: TaskQueueRecord[] = [];
   let writeChain = Promise.resolve();
 
@@ -632,7 +654,8 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
     .each((task) => {
       scannedCount += 1;
-      if (task.taskType !== 'fetch' && task.taskType !== 'transform' && task.taskType !== 'vt') {
+      if (!isValidTaskStage(task.taskType) || !isValidTaskStatus(task.status)) {
+        skippedCount += 1;
         return;
       }
       batch.push(mapBuildTaskToQueueTask(task));
@@ -648,7 +671,58 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     nodeId,
     scannedCount,
     queuedCount,
+    skippedCount,
   }));
+};
+
+const purgeLegacyBuildTasks = async (nodeId: NodeId): Promise<number> => {
+  const invalidTaskIds: string[] = [];
+  await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).each((task) => {
+    if (!isValidTaskStatus(task.status) || !isValidTaskStage(task.taskType)) {
+      invalidTaskIds.push(task.taskId);
+    }
+  });
+  if (invalidTaskIds.length === 0) return 0;
+  await ephemeralShapeDB.buildTasks.bulkDelete(invalidTaskIds);
+  console.warn('[shapeBatchAPI] purged legacy build tasks', JSON.stringify({
+    nodeId,
+    removedCount: invalidTaskIds.length,
+  }));
+  return invalidTaskIds.length;
+};
+
+const purgeLegacyTaskQueue = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): Promise<number> => {
+  const removedTaskIds: string[] = [];
+  const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
+  tasks.forEach((task) => {
+    if (!isValidTaskStatus(task.status) || !isValidTaskStage(task.stage)) {
+      removedTaskIds.push(task.taskId);
+      return;
+    }
+    if (task.metadata && typeof task.metadata === 'object') {
+      const metadata = task.metadata as Record<string, unknown>;
+      if (metadata.cacheReuse === true) {
+        removedTaskIds.push(task.taskId);
+      }
+    }
+  });
+  if (removedTaskIds.length === 0) return 0;
+  await deleteTasksByIds(taskQueue, removedTaskIds);
+  console.warn('[shapeBatchAPI] purged legacy task queue records', JSON.stringify({
+    nodeId,
+    removedCount: removedTaskIds.length,
+  }));
+  return removedTaskIds.length;
+};
+
+const ensureTaskQueueSeeded = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): Promise<void> => {
+  await purgeLegacyTaskQueue(nodeId, taskQueue);
+  await purgeLegacyBuildTasks(nodeId);
+  const existingCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+  if (existingCount > 0) return;
+  const buildTaskCount = await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count();
+  if (buildTaskCount === 0) return;
+  await seedTaskQueueFromBuildTasks(nodeId);
 };
 
 
@@ -740,27 +814,31 @@ const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | u
   return stageOrder.find((stage) => (
     tasks.some((task) => {
       const status = resolveEffectiveTaskStatus(task);
-      return task.stage === stage && status !== 'completed' && status !== 'failed';
+      return task.stage === stage && status !== 'completed' && status !== 'failed' && status !== 'recycled';
     })
   ));
 };
 
 const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
-  const total = tasks.length;
-  const completed = tasks.filter((task) => {
+  const nonRecycled = tasks.filter((task) => resolveEffectiveTaskStatus(task) !== 'recycled');
+  const total = nonRecycled.length;
+  const completed = nonRecycled.filter((task) => {
     const status = resolveEffectiveTaskStatus(task);
     return status === 'completed' && !isTaskSkipped(task.display, task.message);
   }).length;
-  const failed = tasks.filter((task) => resolveEffectiveTaskStatus(task) === 'failed').length;
-  const skipped = tasks.filter((task) => isTaskSkipped(task.display, task.message)).length;
+  const failed = nonRecycled.filter((task) => resolveEffectiveTaskStatus(task) === 'failed').length;
+  const skipped = nonRecycled.filter((task) => isTaskSkipped(task.display, task.message)).length;
   const doneCount = Math.min(total, completed + skipped + failed);
+  const hasRecycled = tasks.length > total;
   const status: BuildTask['status'] = failed > 0
     ? 'failed'
     : total > 0 && doneCount >= total
       ? 'completed'
       : total > 0
         ? 'running'
-        : 'idle';
+        : hasRecycled
+          ? 'completed'
+          : 'idle';
   return {
     status,
     taskType: resolveTaskType(tasks),
@@ -772,42 +850,58 @@ const summarizeTaskQueueProgress = async (
   tasks: TaskQueueRecord[],
   taskType?: TaskQueueRecord['stage'],
 ): Promise<ProgressInfo> => {
-  let total = 0;
-  let completed = 0;
-  let failed = 0;
-  let skipped = 0;
+  const stageCounts: Record<TaskQueueRecord['stage'], {
+    total: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+    recycled: number;
+  }> = {
+    fetch: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+    transform: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+    vt: { total: 0, completed: 0, failed: 0, skipped: 0, recycled: 0 },
+  };
   tasks.forEach((task) => {
-    total += 1;
+    const bucket = stageCounts[task.stage];
     const status = resolveEffectiveTaskStatus(task);
+    if (status === 'recycled') {
+      bucket.recycled += 1;
+      return;
+    }
+    bucket.total += 1;
     if (isTaskSkipped(task.display, task.message)) {
-      skipped += 1;
+      bucket.skipped += 1;
       return;
     }
     if (status === 'failed') {
-      failed += 1;
+      bucket.failed += 1;
       return;
     }
     if (status === 'completed') {
-      completed += 1;
+      bucket.completed += 1;
     }
   });
+  const completed = stageCounts.fetch.completed + stageCounts.transform.completed + stageCounts.vt.completed;
+  const failed = stageCounts.fetch.failed + stageCounts.transform.failed + stageCounts.vt.failed;
+  const skipped = stageCounts.fetch.skipped + stageCounts.transform.skipped + stageCounts.vt.skipped;
   const plan = getStagePlan(nodeId);
-  const fetchTasks = tasks.filter((task) => task.stage === 'fetch');
-  if (plan?.fetchTotal) {
-    const planned = Math.max(plan.fetchTotal, fetchTasks.length);
-    total = total - fetchTasks.length + planned;
-  }
+  const resolveStageTotal = (
+    counts: typeof stageCounts[keyof typeof stageCounts],
+    planned?: number,
+  ): number => {
+    if (typeof planned !== 'number') return counts.total;
+    const adjustedPlan = Math.max(0, planned - counts.recycled);
+    return Math.max(counts.total, adjustedPlan);
+  };
+  const total = resolveStageTotal(stageCounts.fetch, plan?.fetchTotal)
+    + resolveStageTotal(stageCounts.transform, plan?.transformTotal)
+    + resolveStageTotal(stageCounts.vt);
   let resolvedTaskType = taskType;
   if (!resolvedTaskType && tasks.length === 0 && plan?.fetchTotal && plan.fetchTotal > 0) {
     resolvedTaskType = 'fetch';
   }
-  if (plan?.transformTotal) {
-    const transformTasks = tasks.filter((task) => task.stage === 'transform');
-    const planned = Math.max(plan.transformTotal, transformTasks.length);
-    total = total - transformTasks.length + planned;
-    if (!resolvedTaskType && tasks.length === 0 && planned > 0) {
-      resolvedTaskType = 'transform';
-    }
+  if (!resolvedTaskType && tasks.length === 0 && plan?.transformTotal && plan.transformTotal > 0) {
+    resolvedTaskType = 'transform';
   }
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -894,14 +988,19 @@ const isTaskStageValue = (value: unknown): value is TaskQueueRecord['stage'] => 
 );
 
 const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): StageStatus => {
-  const actualTotal = tasks.length;
-  const total = typeof plannedTotal === 'number' ? Math.max(plannedTotal, actualTotal) : actualTotal;
   let completed = 0;
   let failed = 0;
   let skipped = 0;
   let running = 0;
+  let recycled = 0;
+  let actualTotal = 0;
   tasks.forEach((task) => {
     const status = resolveEffectiveTaskStatus(task);
+    if (status === 'recycled') {
+      recycled += 1;
+      return;
+    }
+    actualTotal += 1;
     if (status === 'failed') {
       failed += 1;
       return;
@@ -918,6 +1017,12 @@ const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): Stag
       running += 1;
     }
   });
+  const adjustedPlannedTotal = typeof plannedTotal === 'number'
+    ? Math.max(0, plannedTotal - recycled)
+    : undefined;
+  const total = typeof adjustedPlannedTotal === 'number'
+    ? Math.max(adjustedPlannedTotal, actualTotal)
+    : actualTotal;
   const doneCount = Math.min(total, completed + skipped + failed);
   const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   const status: StageStatus['status'] = failed > 0
@@ -926,7 +1031,9 @@ const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): Stag
       ? 'completed'
       : running > 0
         ? 'running'
-        : 'queued';
+        : recycled > 0
+          ? 'completed'
+          : 'queued';
   return {
     status,
     progress,
@@ -2235,6 +2342,7 @@ export const shapeBatchAPI = {
 
   getBatchTasks: async (nodeId: NodeId): Promise<BuildTask[]> => {
     const taskQueue = new VtTaskQueueDb();
+    await ensureTaskQueueSeeded(nodeId, taskQueue);
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task));
@@ -2256,6 +2364,7 @@ export const shapeBatchAPI = {
       };
     }
     const taskQueue = new VtTaskQueueDb();
+    await ensureTaskQueueSeeded(nodeId, taskQueue);
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       const summary = await buildTaskQueueSummary(nodeId, vtTasks);
@@ -2281,6 +2390,7 @@ export const shapeBatchAPI = {
     totalTasks?: number;
   }> => {
     const taskQueue = new VtTaskQueueDb();
+    await ensureTaskQueueSeeded(nodeId, taskQueue);
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       const summary = await buildTaskQueueSummary(nodeId, vtTasks);
@@ -2472,7 +2582,8 @@ export const shapeBatchAPI = {
       if (snapshotInFlight) return;
       snapshotInFlight = true;
       try {
-        const tasks = await buildTaskSummarySnapshot(nodeId, taskQueue);
+        await ensureTaskQueueSeeded(nodeId, taskQueue);
+        let tasks = await buildTaskSummarySnapshot(nodeId, taskQueue);
         tasks.forEach((task) => {
           const sequence = readSequence(task.taskId, task.sequence);
           sequenceByTaskId.set(task.taskId, sequence);

@@ -434,6 +434,7 @@
       "running": "Running",
       "paused": "Paused",
       "completed": "Completed",
+      "recycled": "Recycled",
       "skipped": "Skipped",
       "failed": "Failed"
     },

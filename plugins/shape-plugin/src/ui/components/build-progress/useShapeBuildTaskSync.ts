@@ -315,8 +315,12 @@ const normalizeTaskStatus = (
   return normalized;
 };
 
+const isCompletedLikeStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean => (
+  status === 'completed' || status === 'recycled'
+);
+
 const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
-  task.status === 'completed' && resolveProgressValue(task.progress) >= 100
+  isCompletedLikeStatus(task.status) && resolveProgressValue(task.progress) >= 100
 );
 
 const isRunningAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
@@ -462,8 +466,8 @@ const readStatusRank = (task: ShapeBuildTaskSummary): number => {
     case 'paused':
       return 2;
     case 'completed':
+    case 'recycled':
     case 'failed':
-    case 'regression':
       return 3;
     default:
       return 0;
@@ -502,7 +506,7 @@ const shouldPreferNextTask = (
       if (resolveProgressValue(next.progress) !== resolveProgressValue(current.progress)) {
         return resolveProgressValue(next.progress) > resolveProgressValue(current.progress);
       }
-      if (next.status === 'completed' && current.status === 'completed') {
+      if (isCompletedLikeStatus(next.status) && isCompletedLikeStatus(current.status)) {
         return shouldPromoteCompletedMessage(current, next);
       }
       return false;
@@ -518,13 +522,13 @@ const shouldPreferNextTask = (
   if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) {
     return true;
   }
-  if (current.status === 'completed' && next.status === 'running') {
+  if (isCompletedLikeStatus(current.status) && next.status === 'running') {
     return false;
   }
-  if (current.status === 'completed' && next.status === 'queued') {
+  if (isCompletedLikeStatus(current.status) && next.status === 'queued') {
     return false;
   }
-  if (current.status === 'running' && next.status === 'completed') {
+  if (current.status === 'running' && isCompletedLikeStatus(next.status)) {
     return true;
   }
   if (isCompletedAtFullProgress(current) && isRunningAtFullProgress(next)) {
