@@ -131,6 +131,8 @@ export function parseIdeGsmRouteTable(
         createdAt: now,
         updatedAt: now,
         name: parsed.name,
+        startLocationId: startLocation.locationNodeId,
+        endLocationId: endLocation.locationNodeId,
         startPoint,
         endPoint,
         featureId,

@@ -83,27 +83,27 @@ export async function hasRouteReferencesToLocations(
   if (!locationNodeIds.length) return false;
   const db = getRouteDB();
   await db.open?.();
-  const startMatch = await db.features
+  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
+  const hasStartReference = await db.features
     .where('startLocationId')
     .anyOf(locationNodeIds)
     .limit(1)
-    .toArray();
-  if (startMatch.length > 0) return true;
-  const endMatch = await db.features
+    .count();
+  if (hasStartReference > 0) return true;
+  const hasEndReference = await db.features
     .where('endLocationId')
     .anyOf(locationNodeIds)
     .limit(1)
-    .toArray();
-  if (endMatch.length > 0) return true;
+    .count();
+  if (hasEndReference > 0) return true;
 
-  const rows = await db.features.toArray();
-  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
-  return rows.some((row) => {
+  const legacyRows = await db.features.toArray();
+  return legacyRows.some((row) => {
     const startLocationId = row.startPoint?.locationId;
     const endLocationId = row.endPoint?.locationId;
     return (
-      (startLocationId && locationIdSet.has(String(startLocationId)))
-      || (endLocationId && locationIdSet.has(String(endLocationId)))
+      (startLocationId !== undefined && locationIdSet.has(String(startLocationId)))
+      || (endLocationId !== undefined && locationIdSet.has(String(endLocationId)))
     );
   });
 }
@@ -114,6 +114,7 @@ export async function countRouteReferencesToLocations(
   if (!locationNodeIds.length) return 0;
   const db = getRouteDB();
   await db.open?.();
+  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
   const startIds = await db.features
     .where('startLocationId')
     .anyOf(locationNodeIds)
@@ -122,18 +123,23 @@ export async function countRouteReferencesToLocations(
     .where('endLocationId')
     .anyOf(locationNodeIds)
     .primaryKeys();
-  const unique = new Set<string>([...startIds.map(String), ...endIds.map(String)]);
-  const rows = await db.features.toArray();
-  const locationIdSet = new Set(locationNodeIds.map((id) => String(id)));
-  rows.forEach((row) => {
+  const indexedIds = new Set<string>([...startIds.map(String), ...endIds.map(String)]);
+
+  if (indexedIds.size > 0) {
+    return indexedIds.size;
+  }
+
+  const legacyRows = await db.features.toArray();
+  const legacyMatches = new Set<string>();
+  for (const row of legacyRows) {
     const startLocationId = row.startPoint?.locationId;
     const endLocationId = row.endPoint?.locationId;
     if (
-      (startLocationId && locationIdSet.has(String(startLocationId)))
-      || (endLocationId && locationIdSet.has(String(endLocationId)))
+      (startLocationId !== undefined && locationIdSet.has(String(startLocationId)))
+      || (endLocationId !== undefined && locationIdSet.has(String(endLocationId)))
     ) {
-      unique.add(String(row.id));
+      legacyMatches.add(String(row.id));
     }
-  });
-  return unique.size;
+  }
+  return legacyMatches.size;
 }

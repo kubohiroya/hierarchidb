@@ -358,22 +358,19 @@ export class LocationMutationService implements LocationMutationAPI {
     if (!locationFeatureIds.length) return;
     const routeDb = getRouteDB();
     await routeDb.open?.();
-    const locationFeatureSet = new Set(locationFeatureIds.map((id) => String(id)));
-    const rows = await routeDb.features.toArray();
-    const impacted = (rows as RouteLineString[]).filter((row) => {
-      const startLocationId = row.startPoint?.locationId;
-      const endLocationId = row.endPoint?.locationId;
-      const startFeatureId = row.startPoint?.locationFeatureId;
-      const endFeatureId = row.endPoint?.locationFeatureId;
-      const startMatched = startLocationId === locationNodeId && startFeatureId && locationFeatureSet.has(String(startFeatureId));
-      const endMatched = endLocationId === locationNodeId && endFeatureId && locationFeatureSet.has(String(endFeatureId));
-      return Boolean(startMatched || endMatched);
-    });
+    const impactedRouteIds = await this.findRouteIdsReferencingLocationFeatures(
+      routeDb,
+      locationNodeId,
+      locationFeatureIds,
+    );
+    if (!impactedRouteIds.length) return;
+    const impactedRows = await routeDb.features.bulkGet(impactedRouteIds as NodeId[]);
+    const impacted = impactedRows.filter((row): row is RouteLineString => Boolean(row));
     if (!impacted.length) return;
     const impactedRouteNodeIds = new Set(impacted.map((row) => row.nodeId));
     await routeDb.transaction('rw', routeDb.features, routeDb.vectorTiles, routeDb.tileIndex, async () => {
-      for (const route of impacted) {
-        await routeDb.features.delete(route.id);
+      for (const routeId of impactedRouteIds) {
+        await routeDb.features.delete(routeId);
       }
       for (const routeNodeId of impactedRouteNodeIds) {
         await routeDb.vectorTiles.where('nodeId').equals(routeNodeId).delete();
@@ -393,17 +390,30 @@ export class LocationMutationService implements LocationMutationAPI {
     const routeDb = getRouteDB();
     await routeDb.open?.();
     const diffByFeatureId = new Map(diffs.map((diff) => [diff.featureId, diff]));
-    const rows = await routeDb.features.toArray();
+    const impactedRouteIds = await this.findRouteIdsReferencingLocationFeatures(
+      routeDb,
+      locationNodeId,
+      diffs.map((diff) => String(diff.featureId)),
+    );
+    if (!impactedRouteIds.length) return;
+    const impactedRows = await routeDb.features.bulkGet(impactedRouteIds as NodeId[]);
+    const rows = impactedRows.filter((row): row is RouteLineString => Boolean(row));
     const metadataUpdates: RouteLineString[] = [];
     const structuralRouteNodes = new Set<NodeId>();
 
-    (rows as RouteLineString[]).forEach((route) => {
-      const startFeatureId = route.startPoint?.locationFeatureId ? String(route.startPoint.locationFeatureId) : null;
-      const endFeatureId = route.endPoint?.locationFeatureId ? String(route.endPoint.locationFeatureId) : null;
-      const startMatched = route.startPoint?.locationId === locationNodeId && startFeatureId
+    rows.forEach((route) => {
+      const startFeatureId = route.startPoint?.locationFeatureId
+        ? String(route.startPoint.locationFeatureId)
+        : null;
+      const endFeatureId = route.endPoint?.locationFeatureId
+        ? String(route.endPoint.locationFeatureId)
+        : null;
+      const startMatched = (route.startLocationId === locationNodeId || route.startPoint?.locationId === locationNodeId)
+        && startFeatureId
         ? diffByFeatureId.get(startFeatureId)
         : undefined;
-      const endMatched = route.endPoint?.locationId === locationNodeId && endFeatureId
+      const endMatched = (route.endLocationId === locationNodeId || route.endPoint?.locationId === locationNodeId)
+        && endFeatureId
         ? diffByFeatureId.get(endFeatureId)
         : undefined;
       if (!startMatched && !endMatched) return;
@@ -445,6 +455,82 @@ export class LocationMutationService implements LocationMutationAPI {
     for (const routeNodeId of structuralRouteNodes) {
       await this.clearFetchCacheAndReserveRouteRebuild(routeNodeId);
     }
+  }
+
+  private async findRouteIdsReferencingLocationFeatures(
+    routeDb: ReturnType<typeof getRouteDB>,
+    locationNodeId: NodeId,
+    locationFeatureIds: string[],
+  ): Promise<NodeId[]> {
+    if (!locationFeatureIds.length) return [];
+    const locationFeatureSet = new Set(locationFeatureIds.map((id) => String(id)));
+
+    const startIds = await routeDb.features
+      .where('startLocationId')
+      .equals(locationNodeId)
+      .primaryKeys();
+    const endIds = await routeDb.features
+      .where('endLocationId')
+      .equals(locationNodeId)
+      .primaryKeys();
+    const candidateIds = new Set<NodeId>([...startIds, ...endIds].map((id) => id as NodeId));
+
+    const candidateRows = candidateIds.size > 0
+      ? await routeDb.features.bulkGet(Array.from(candidateIds))
+      : [];
+    const matchedIds = new Set<NodeId>();
+
+    for (const route of candidateRows) {
+      if (!route) continue;
+      const startFeatureId = route.startPoint?.locationFeatureId
+        ? String(route.startPoint.locationFeatureId)
+        : null;
+      const endFeatureId = route.endPoint?.locationFeatureId
+        ? String(route.endPoint.locationFeatureId)
+        : null;
+
+      const startMatched = (
+        route.startLocationId === locationNodeId
+        || route.startPoint?.locationId === locationNodeId
+      )
+        && startFeatureId !== null
+        && locationFeatureSet.has(startFeatureId);
+      const endMatched = (
+        route.endLocationId === locationNodeId
+        || route.endPoint?.locationId === locationNodeId
+      )
+        && endFeatureId !== null
+        && locationFeatureSet.has(endFeatureId);
+      if (startMatched || endMatched) {
+        matchedIds.add(route.id);
+      }
+    }
+
+    // Fallback for legacy records where indexed fields are not populated.
+    if (matchedIds.size === 0) {
+      const fallbackRows = await routeDb.features
+        .toArray()
+        .then((rows) => rows.filter((route): route is RouteLineString => {
+          const startFeatureId = route.startPoint?.locationFeatureId
+            ? String(route.startPoint.locationFeatureId)
+            : null;
+          const endFeatureId = route.endPoint?.locationFeatureId
+            ? String(route.endPoint.locationFeatureId)
+            : null;
+          const startMatched = route.startPoint?.locationId === locationNodeId
+            && startFeatureId !== null
+            && locationFeatureSet.has(startFeatureId);
+          const endMatched = route.endPoint?.locationId === locationNodeId
+            && endFeatureId !== null
+            && locationFeatureSet.has(endFeatureId);
+          return startMatched || endMatched;
+        }));
+      fallbackRows.forEach((route) => {
+        matchedIds.add(route.id);
+      });
+    }
+
+    return Array.from(matchedIds);
   }
 
   private async clearFetchCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
@@ -492,25 +578,54 @@ const hasMetadataLocationDiff = (
   next?: LocationPointProperties,
 ): boolean => {
   if (!prev || !next) return false;
-  const prevComparable = {
-    name: prev.name,
-    type: prev.type,
-    admin0: prev.admin0,
-    admin1: prev.admin1,
-    admin2: prev.admin2,
-    pointId: prev.pointId,
-    metadata: prev.metadata ?? {},
-  };
-  const nextComparable = {
-    name: next.name,
-    type: next.type,
-    admin0: next.admin0,
-    admin1: next.admin1,
-    admin2: next.admin2,
-    pointId: next.pointId,
-    metadata: next.metadata ?? {},
-  };
-  return JSON.stringify(prevComparable) !== JSON.stringify(nextComparable);
+  const prevComparable = normalizeMetadataComparable(prev);
+  const nextComparable = normalizeMetadataComparable(next);
+  return !isMetadataComparableEqual(prevComparable, nextComparable);
+};
+
+const normalizeMetadataComparable = (value: LocationPointProperties): {
+  name: string;
+  type: string;
+  admin0?: string;
+  admin1?: string;
+  admin2?: string;
+  pointId?: string;
+  metadata: Record<string, string | number | boolean>;
+} => ({
+  name: value.name,
+  type: value.type,
+  admin0: value.admin0,
+  admin1: value.admin1,
+  admin2: value.admin2,
+  pointId: value.pointId,
+  metadata: normalizeLocationMetadata(value.metadata ?? {}),
+});
+
+const isMetadataComparableEqual = (
+  left: ReturnType<typeof normalizeMetadataComparable>,
+  right: ReturnType<typeof normalizeMetadataComparable>,
+): boolean => {
+  if (left.name !== right.name) return false;
+  if (left.type !== right.type) return false;
+  if ((left.admin0 ?? '') !== (right.admin0 ?? '')) return false;
+  if ((left.admin1 ?? '') !== (right.admin1 ?? '')) return false;
+  if ((left.admin2 ?? '') !== (right.admin2 ?? '')) return false;
+  if ((left.pointId ?? '') !== (right.pointId ?? '')) return false;
+  if (Object.keys(left.metadata).length !== Object.keys(right.metadata).length) return false;
+  return Object.entries(left.metadata).every(([key, value]) => right.metadata[key] === value);
+};
+
+const normalizeLocationMetadata = (metadata: Record<string, unknown>): Record<string, string | number | boolean> => {
+  const normalized: Record<string, string | number | boolean> = {};
+  Object.keys(metadata)
+    .sort()
+    .forEach((key) => {
+      const value = metadata[key];
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        normalized[key] = value;
+      }
+    });
+  return normalized;
 };
 
 const applyLocationMetadataToRoutePoint = (
