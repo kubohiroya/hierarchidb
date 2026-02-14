@@ -234,7 +234,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
     const failedMessage = errorMessage || fallbackError;
     const geometryDetails = parseGeometrySimplifyError(task.message);
     const baseMessage = task.message?.split(' (')[0];
-    const failedTaskMessage = (task.status === 'failed' || task.status === 'regression')
+    const failedTaskMessage = task.status === 'failed'
       && failedMessage
       && (!task.message || isTaskPhaseMessage(task.message))
       ? failedMessage
@@ -245,11 +245,7 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
         ? (geometryDetails ? baseMessage : task.message)
         : undefined);
     const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
-    const metadata = task.metadata;
-    const isCacheReuse = metadata && typeof metadata === 'object'
-      ? (metadata as Record<string, unknown>).cacheReuse === true
-      : false;
-    const leadingIcon = isCacheReuse ? (
+    const leadingIcon = task.status === 'recycled' ? (
       <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
     ) : (
       <AddBoxIcon data-testid="task-icon-add" color="primary" sx={{ fontSize: 16 }} />

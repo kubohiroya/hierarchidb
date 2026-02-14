@@ -550,7 +550,7 @@ export class LocationMutationService implements LocationMutationAPI {
           ...(current ?? {}),
           nodeId: routeNodeId,
           domainType: 'route',
-          status: 'rebuild-reserved',
+          status: 'idle',
           stage: 'fetch',
           progress: 0,
           updatedAt: now,

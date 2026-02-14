@@ -45,7 +45,7 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
     return s ?? defaults.getSignal();
   };
 
-  // NOTE: registerTasks 内で regression retry の output 更新など特別扱いがある実装も想定する
+  // NOTE: registerTasks may include output updates for retry-specific handling.
   await taskRegistry.registerTasks('vectortile', tasks, undefined, inputsByTaskId);
 
   const { runnableTasks, total, baseCompleted, baseFailed, baseDone } = await resolveRunnableVectorTileTasks({

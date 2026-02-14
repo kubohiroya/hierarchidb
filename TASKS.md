@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #276 / `codex/fix/shape/step5-resume-task-list` / start: 2026-02-14 22:13 JST
 - #275 / `codex/fix/shape/step5-task-history-icons` / start: 2026-02-14 21:44 JST
 - #262 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:33 JST
 - #261 / `codex/docs/route/build-flow-location-coupling-2` / start: 2026-02-14 14:27 JST
@@ -83,6 +84,9 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-14 23:45 JST #276 タスク status の `regression`/`warning`/`rebuild-reserved` を削除し、task queue seed/legacy purge と EphemeralDB v7 を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/batch-api --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/vectortile-orchestrator --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx` を exit 0 で確認。
+- update: 2026-02-14 23:41 JST #276 で recycled status 対応（cacheReuse 廃止・進捗集計から除外・UI表示/アイコン更新）を実装し、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` を exit 0 で確認。
+- update: 2026-02-14 22:13 JST Issue `fix(shape): send full task list on session resume` を起票し `https://github.com/kubohiroya/hierarchidb/issues/276` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/shape/step5-resume-task-list` を作成して着手。
 - update: 2026-02-14 21:45 JST #275 追補要件として「再試行時にキャッシュ再利用のみの処理でも TaskQueue にタスクを保存し title/message/status を表示する」ことを Issue に反映。
 - update: 2026-02-14 21:44 JST Issue `fix(shape): show step5 task history and cache reuse icons` を起票し `https://github.com/kubohiroya/hierarchidb/issues/275` を作成。Project `hierarchidb` に追加して Status を `In Progress` に設定し、ブランチ `codex/fix/shape/step5-task-history-icons` を作成して着手。
 - done: 2026-02-14 21:32 JST #274 Step5 タスク表示のスケルトン維持（Start Build 直後〜タスク/サマリー到着 or 終了）を実装し、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` を exit 0 で確認。`ERIA-Cartograph` へマージ済み。

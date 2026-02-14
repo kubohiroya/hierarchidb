@@ -8,13 +8,13 @@ import type {
 
 export type EphemeralDomainType = 'shape' | 'route' | 'vt';
 
-export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'rebuild-reserved';
+export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
 export type StopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
 
 export type BuildStage = 'fetch' | 'transform' | 'vt';
 
-export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type TaskDisplayKind = 'phase' | 'summary' | 'skip' | 'error' | 'info';
 

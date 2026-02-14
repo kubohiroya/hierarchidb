@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
@@ -66,13 +66,15 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   isSkippedTask,
   timingStageMs,
 }: Args<T>): SummaryResult<T> => {
+  const isRecycledTask = useCallback((task: T): boolean => task.status === 'recycled', []);
   const taskSummary = useMemo(() => (
-    buildStageTaskSummary(tasks, normalizeStageKey, isSkippedTask)
-  ), [tasks, normalizeStageKey, isSkippedTask]);
+    buildStageTaskSummary(tasks, normalizeStageKey, isSkippedTask, { isExcluded: isRecycledTask })
+  ), [isRecycledTask, tasks, normalizeStageKey, isSkippedTask]);
 
   const aggregatedCounts = useMemo(() => (
-    buildTaskCountSummary(tasks, isSkippedTask)
-  ), [tasks, isSkippedTask]);
+    buildTaskCountSummary(tasks, isSkippedTask, { isExcluded: isRecycledTask })
+  ), [isRecycledTask, tasks, isSkippedTask]);
+  const hasEffectiveTasks = aggregatedCounts.total > 0;
 
   const hasProgressData = Boolean(effectiveProgress)
     || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
@@ -84,6 +86,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     overallProgress,
     buildStatus,
     tasks,
+    { isExcludedTask: isRecycledTask },
   );
 
   const stageTaskCounts = useMemo(() => {
@@ -96,7 +99,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         };
         return acc;
       }
-      const counts = buildTaskCountSummary(stageTasks, isSkippedTask);
+      const counts = buildTaskCountSummary(stageTasks, isSkippedTask, { isExcluded: isRecycledTask });
       const done = counts.completed + counts.failed + counts.skipped;
       acc[stage.id] = {
         counts,
@@ -104,7 +107,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       };
       return acc;
     }, {});
-  }, [isSkippedTask, stages, tasksByStage]);
+  }, [isRecycledTask, isSkippedTask, stages, tasksByStage]);
 
   const stageCountsWithPlan = useMemo(() => {
     return stages.reduce<Record<string, { counts: TaskCountSummary; hasIncomplete: boolean }>>((acc, stage) => {
@@ -267,7 +270,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
       completed: 0,
       failed: 0,
       skipped: 0,
-      percentage: buildStatus === 'idle' ? 0 : Math.round(overallProgress),
+      percentage: 0,
     };
   }, [aggregatedCounts, buildStatus, derivedCounts, effectiveProgress, overallProgress]);
 
@@ -279,11 +282,11 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [rawDisplayCounts]);
 
   const displayCounts = useMemo(() => {
-    if (buildStatus === 'running' && rawDisplayCounts.total === 0 && hasProgressData && tasks.length > 0) {
+    if (buildStatus === 'running' && rawDisplayCounts.total === 0 && hasProgressData && hasEffectiveTasks) {
       return lastStableCountsRef.current ?? rawDisplayCounts;
     }
     return rawDisplayCounts;
-  }, [buildStatus, hasProgressData, rawDisplayCounts, tasks.length]);
+  }, [buildStatus, hasEffectiveTasks, hasProgressData, rawDisplayCounts]);
 
   const combinedStagePercentage = useMemo(() => {
     if (!stages.length) return rawDisplayCounts.percentage;

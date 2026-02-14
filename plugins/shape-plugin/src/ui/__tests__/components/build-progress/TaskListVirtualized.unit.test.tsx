@@ -10,16 +10,15 @@ vi.mock('../../../i18n.js', () => ({
 }));
 
 describe('TaskListVirtualized', () => {
-  it('renders cache reuse and new task icons', () => {
+  it('renders recycled and new task icons', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'task-1',
         nodeId: 'node-1',
         stage: 'fetch',
         taskType: 'fetch',
-        status: 'completed',
+        status: 'recycled',
         progress: 100,
-        metadata: { cacheReuse: true },
       } as ShapeBuildTaskSummary,
       {
         taskId: 'task-2',

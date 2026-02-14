@@ -5,7 +5,7 @@ export type ShapeBuildStage =
   | 'fetch'
   | 'transform'
   | 'vt';
-export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'recycled';
 
 export type ShapeFetchTaskPayload = {
   url?: string;

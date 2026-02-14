@@ -130,6 +130,35 @@ describe('useShapeBuildTasks', () => {
     expect(getBuildTasksMock).toHaveBeenCalledWith('shape', 'node-1');
   });
 
+  it('refreshes task snapshot from worker', async () => {
+    getBuildTasksMock.mockResolvedValue([
+      {
+        taskId: 'node-refresh:fetch:JP:0',
+        stage: 'fetch',
+        status: 'completed',
+        progress: 100,
+        message: 'Done',
+        index: 1,
+        sequence: 2,
+      },
+    ]);
+
+    const { result } = renderHook(() => useShapeBuildTasks('node-refresh'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(getBuildTasksMock).toHaveBeenCalledWith('shape', 'node-refresh');
+      expect(result.current.tasks).toHaveLength(1);
+    });
+  });
+
   it('keeps completed 100% when a running 100% update arrives later', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-2'));
 

@@ -127,7 +127,7 @@ export async function updateTask(
       const nextSequence = currentSequence + 1;
       const currentStatus = current?.status;
       const nextStatusCandidate = updates.status;
-      const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed')
+      const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
         && !options?.allowTerminalStatusTransition;
       const blocksStatusRegression = lockedStatus
         && nextStatusCandidate !== undefined

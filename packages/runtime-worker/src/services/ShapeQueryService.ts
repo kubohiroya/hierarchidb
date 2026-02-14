@@ -122,7 +122,7 @@ const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
   || value === 'running'
   || value === 'completed'
   || value === 'failed'
-  || value === 'regression';
+  || value === 'recycled';
 
 const isStageStatus = (value: unknown): value is StageStatus => {
   if (!isRecord(value)) return false;
@@ -180,13 +180,10 @@ const toBuildSessionRecordFromEphemeral = (
   const stages = readStageMap(session.stages);
   if (!stages) return null;
   if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
-  const status: BuildSessionRecord['status'] = session.status === 'rebuild-reserved'
-    ? 'failed'
-    : session.status;
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
-    status,
+    status: session.status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
@@ -261,12 +258,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const sessions = await ephemeralShapeDB.sessions.toArray();
-    const filtered = sessions.filter((session) => {
-      const status: BuildSessionRecord['status'] = session.status === 'rebuild-reserved'
-        ? 'failed'
-        : session.status;
-      return statuses.includes(status);
-    });
+    const filtered = sessions.filter((session) => statuses.includes(session.status));
     const records = filtered.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
     return records.map(toShapeBuildSessionRecord);
   }

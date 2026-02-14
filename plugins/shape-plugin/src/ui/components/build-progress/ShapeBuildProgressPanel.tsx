@@ -121,7 +121,7 @@ const TaskProgressBar = ({
         const isSkipped = isTaskSkipped(task.display, task.message);
         if (isSkipped) {
           fill = skippedColor;
-        } else if (statusValue === 'completed') {
+        } else if (statusValue === 'completed' || statusValue === 'recycled') {
           fill = successColor;
         } else if (statusValue === 'failed') {
           fill = failedColor;
@@ -133,7 +133,7 @@ const TaskProgressBar = ({
         const isDimmed =
           (isSkipped && !filter.skippedMode)
           || (statusValue === 'failed' && !filter.failedMode)
-          || (statusValue === 'completed' && !filter.completedMode);
+          || ((statusValue === 'completed' || statusValue === 'recycled') && !filter.completedMode);
         const isExternalStage = sourceStageId !== stage.id;
         nextSegments.push({
           fill,
@@ -452,7 +452,7 @@ const BuildProgressStageContent = ({
   const filteredTasks = stageTasks.filter((task) => {
     if (isTaskSkipped(task.display, task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
-    if (task.status === 'completed') return filter.completedMode;
+    if (task.status === 'completed' || task.status === 'recycled') return filter.completedMode;
     return true;
   });
   const orderedTasks = stage.id === 'vt'

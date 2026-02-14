@@ -31,16 +31,17 @@ export const summarizeStageCounts = async (
   nodeId: NodeId,
   stage: TaskQueueRecord['stage'],
 ): Promise<StageCounts> => {
-  const [queued, running, completed, failed] = await Promise.all([
+  const [queued, running, completed, failed, recycled] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'recycled'),
   ]);
   return {
     queued: queued.length,
     running: running.length,
-    completed: completed.length,
+    completed: completed.length + recycled.length,
     failed: failed.length,
   };
 };
@@ -64,39 +65,26 @@ export const readHeapSnapshot = () => {
   };
 };
 
-const CACHE_REUSE_METADATA_KEY = 'cacheReuse';
-
-const resolveMetadataWithCacheReuse = (metadata: TaskQueueRecord['metadata'] | undefined): Record<string, unknown> => {
-  if (metadata && typeof metadata === 'object') {
-    const base = metadata as Record<string, unknown>;
-    if (base[CACHE_REUSE_METADATA_KEY] === true) {
-      return base;
-    }
-    return { ...base, [CACHE_REUSE_METADATA_KEY]: true };
-  }
-  return { [CACHE_REUSE_METADATA_KEY]: true };
-};
-
-const isCacheReuseMarked = (metadata: TaskQueueRecord['metadata'] | undefined): boolean => {
-  if (!metadata || typeof metadata !== 'object') return false;
-  return (metadata as Record<string, unknown>)[CACHE_REUSE_METADATA_KEY] === true;
-};
-
-export const markStageTasksCacheReused = async (
+export const markStageTasksRecycled = async (
   taskQueue: VtTaskQueueDb,
   nodeId: NodeId,
   stage: TaskQueueRecord['stage'],
 ): Promise<void> => {
   const completedTasks = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed');
   if (completedTasks.length === 0) return;
-  const updates = completedTasks.map((task) => {
-    if (isCacheReuseMarked(task.metadata)) return null;
-    return updateTask(taskQueue, task.taskId, {
-      metadata: resolveMetadataWithCacheReuse(task.metadata),
-    });
-  }).filter((update): update is Promise<void> => Boolean(update));
-  if (updates.length === 0) return;
-  await Promise.all(updates);
+  const now = Date.now();
+  await Promise.all(
+    completedTasks.map((task) => updateTask(
+      taskQueue,
+      task.taskId,
+      {
+        status: 'recycled',
+        progress: 100,
+        completedAt: task.completedAt ?? now,
+      },
+      { allowTerminalStatusTransition: true },
+    )),
+  );
 };
 
 export const resetStageRunningTasks = async (

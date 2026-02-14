@@ -154,7 +154,7 @@ export const useBuildProgressPanelState = (params: {
         if (!hasRunning && task.status === 'running') {
           hasRunning = true;
         }
-        if (!failedTask && (task.status === 'failed' || task.status === 'regression')) {
+        if (!failedTask && task.status === 'failed') {
           failedTask = task;
         }
       }
@@ -303,10 +303,10 @@ export const useBuildProgressPanelState = (params: {
         return t('stage.taskStatus.running', 'Running');
       case 'completed':
         return t('stage.taskStatus.completed', 'Completed');
+      case 'recycled':
+        return t('stage.taskStatus.recycled', 'Recycled');
       case 'failed':
         return t('stage.taskStatus.failed', 'Failed');
-      case 'regression':
-        return t('stage.taskStatus.regression', 'Regression');
       case 'paused':
         return t('stage.taskStatus.paused', 'Paused');
       case 'queued':
@@ -322,11 +322,10 @@ export const useBuildProgressPanelState = (params: {
     }
     switch (statusValue) {
       case 'completed':
+      case 'recycled':
         return 'success';
       case 'failed':
         return 'error';
-      case 'regression':
-        return 'warning';
       case 'paused':
         return 'warning';
       case 'running':

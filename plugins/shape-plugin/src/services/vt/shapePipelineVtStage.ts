@@ -18,7 +18,7 @@ import { buildShapeVectorTileRecord, buildVtTasks, resolveVtConfig } from './sha
 import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
-  markStageTasksCacheReused,
+  markStageTasksRecycled,
   readHeapSnapshot,
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
@@ -132,7 +132,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     }
   }
   if (params.resumeExistingTasks) {
-    await markStageTasksCacheReused(params.taskQueue, params.nodeId, 'vt');
+    await markStageTasksRecycled(params.taskQueue, params.nodeId, 'vt');
   }
   if (params.resumeExistingTasks && existingVtTasks.length === 0) {
     missingVtTasks = desiredVtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>;

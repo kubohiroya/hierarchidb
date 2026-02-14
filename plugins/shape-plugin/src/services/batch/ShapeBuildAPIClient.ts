@@ -132,7 +132,7 @@ const normalizeBuildSessionStatus = (status: string | undefined): BuildSessionRe
     || status === 'failed') {
     return status;
   }
-  if (status === 'queued' || status === 'regression' || status === 'warning' || status === 'rebuild-reserved') {
+  if (status === 'queued') {
     return 'running';
   }
   return 'idle';

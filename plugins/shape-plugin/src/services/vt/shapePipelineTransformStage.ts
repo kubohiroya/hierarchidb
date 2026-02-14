@@ -17,7 +17,7 @@ import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
   getFailedTaskCount,
-  markStageTasksCacheReused,
+  markStageTasksRecycled,
   resetStageRunningTasks,
   shouldStopAfterStage,
   summarizeStageCounts,
@@ -428,7 +428,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     });
     if (params.resumeExistingTasks) {
       await runTransformStep(params, 'mark-recycled-transform-tasks', async () => {
-        await markStageTasksCacheReused(params.taskQueue, params.nodeId, 'transform');
+        await markStageTasksRecycled(params.taskQueue, params.nodeId, 'transform');
       });
     }
 
