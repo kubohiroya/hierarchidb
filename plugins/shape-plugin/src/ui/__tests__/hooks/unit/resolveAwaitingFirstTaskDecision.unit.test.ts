@@ -143,6 +143,35 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     expect(decision).toEqual({ kind: 'continue' });
   });
 
+  it('continues waiting when status is failed and task progress total is already known', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'failed',
+      taskCount: 0,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 2,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
+  it('continues waiting when status is failed and progress task signal is present', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: true,
+      buildStatus: 'failed',
+      taskCount: 0,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
   it('returns cancelled when paused before first task start and pause is not pending', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,

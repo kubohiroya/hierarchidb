@@ -240,6 +240,20 @@ const getErrorMessage = (error: unknown): string => (
   error instanceof Error ? error.message : String(error)
 );
 
+const toTransitionErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'string' && error.length > 0) {
+    return error;
+  }
+  const message = getErrorMessage(error);
+  if (error === null || error === undefined) {
+    return fallback;
+  }
+  if (message === 'undefined' || message === '[object Object]') {
+    return fallback;
+  }
+  return message;
+};
+
 const toMemoryValue = (value: number | undefined): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
@@ -1793,9 +1807,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         canResume: nextStatus === 'processing',
       });
       if (nextStatus === 'failed') {
+        const startRequestErrorMessage = toTransitionErrorMessage(
+          statusResult.error,
+          'Build failed before task execution started.',
+        );
         finishBuildSessionTransition({
           level: 'error',
-          message: statusResult.error ?? 'Build failed before task execution started.',
+          message: startRequestErrorMessage,
         });
       } else if (nextStatus === 'completed') {
         finishBuildSessionTransition({
