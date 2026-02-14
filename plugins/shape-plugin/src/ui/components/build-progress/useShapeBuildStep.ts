@@ -48,6 +48,46 @@ import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const PAUSE_COMMAND_TIMEOUT_MS = 60_000;
+const isDev = import.meta.env.DEV;
+type ShapeProgressStepDebugConfig = Partial<Record<'progress' | 'all', boolean>>;
+type ShapeProgressStepTracePayload = {
+  nodeId: string | null;
+  phase: BuildStatus;
+  progressTaskId: string | null;
+  progressTaskStatus: string | null;
+  progressTaskStage: string | null;
+  progressTaskProgress: number | null;
+  percentage: number | null;
+  total: number;
+  completed: number;
+  failed: number;
+  skipped: number;
+  message: string | null;
+};
+
+const readShapeProgressStepDebugConfig = (): ShapeProgressStepDebugConfig | null => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_SHAPE_PROGRESS_STEP_DEBUG__?: unknown;
+  };
+  const raw = scope.__HDB_SHAPE_PROGRESS_STEP_DEBUG__;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as ShapeProgressStepDebugConfig;
+};
+
+const isShapeProgressStepDebugEnabled = (): boolean => {
+  if (!isDev) return false;
+  const config = readShapeProgressStepDebugConfig();
+  if (!config) return false;
+  return config.all === true || config.progress === true;
+};
+
+const emitShapeProgressStepTrace = (payload: ShapeProgressStepTracePayload): void => {
+  if (!isDev) return;
+  console.debug('[ShapeBuildProgressStepTrace]', payload);
+};
+
 type StageLikeTask = {
   taskType?: TaskStage;
   type?: TaskStage;
@@ -576,6 +616,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const remoteFresh = Boolean(remoteUpdatedAt && Date.now() - remoteUpdatedAt <= coordinator.quietThresholdTimeout);
   const effectiveProgress = hasNodeId ? (progress ?? (remoteFresh ? remoteProgress : null)) : null;
   const effectiveStatus = hasNodeId ? (status ?? (remoteFresh ? remoteStatus : null)) : null;
+  const effectiveProgressTraceRef = useRef<string | null>(null);
   const stages = useShapeBuildStages(t);
   const persistedProcessingStatus = sessionRecord ? toProcessingStatus(sessionRecord.status) : null;
   const processingStatus = persistedProcessingStatus ?? 'idle';
@@ -665,6 +706,27 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
     return baseBuildStatus;
   }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
+  useEffect(() => {
+    if (!isShapeProgressStepDebugEnabled()) return;
+    const nextTrace: ShapeProgressStepTracePayload = {
+      nodeId: activeNodeId,
+      phase: buildStatus,
+      progressTaskId: effectiveProgress?.progressTaskId ?? null,
+      progressTaskStatus: effectiveProgress?.progressTaskStatus ?? null,
+      progressTaskStage: effectiveProgress?.progressTaskStage ?? null,
+      progressTaskProgress: effectiveProgress?.progressTaskProgress ?? null,
+      percentage: effectiveProgress?.percentage ?? null,
+      total: effectiveProgress?.total ?? 0,
+      completed: effectiveProgress?.completed ?? 0,
+      failed: effectiveProgress?.failed ?? 0,
+      skipped: effectiveProgress?.skipped ?? 0,
+      message: effectiveProgress?.message ?? null,
+    };
+    const signature = JSON.stringify(nextTrace);
+    if (signature === effectiveProgressTraceRef.current) return;
+    effectiveProgressTraceRef.current = signature;
+    emitShapeProgressStepTrace(nextTrace);
+  }, [activeNodeId, buildStatus, effectiveProgress]);
 
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 

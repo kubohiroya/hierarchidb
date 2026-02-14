@@ -61,7 +61,9 @@ type StageTotalsMeta = Partial<Record<'fetch' | 'transform' | 'vt', {
 }>>;
 
 const asRecord = (value: unknown): Record<string, unknown> | null => (
-  value && typeof value === 'object' ? value as Record<string, unknown> : null
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
 );
 
 const readNumber = (value: unknown): number | undefined => (
@@ -83,8 +85,12 @@ const readTaskDisplay = (value: unknown): TaskDisplayPayload | undefined => {
   return display as TaskDisplayPayload;
 };
 
+const readPayloadMeta = (info: ExtendedProgress): Record<string, unknown> | null => {
+  return asRecord(info.payload?.meta);
+};
+
 const readProgressTaskMeta = (info: ExtendedProgress): ProgressTaskMeta | null => {
-  const meta = asRecord(info.payload?.meta);
+  const meta = readPayloadMeta(info);
   if (!meta) return null;
   const progressTask = asRecord(meta.progressTask);
   if (!progressTask) return null;
@@ -92,7 +98,7 @@ const readProgressTaskMeta = (info: ExtendedProgress): ProgressTaskMeta | null =
 };
 
 const readStageTotalsMeta = (info: ExtendedProgress): StageTotalsMeta | undefined => {
-  const meta = asRecord(info.payload?.meta);
+  const meta = readPayloadMeta(info);
   if (!meta) return undefined;
   const stageTotals = asRecord(meta.stageTotals);
   if (!stageTotals) return undefined;
