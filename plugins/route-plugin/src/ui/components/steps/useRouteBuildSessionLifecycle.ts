@@ -104,12 +104,25 @@ const buildIdeGsmSelectionEntries = (
     if (orModes.length === 0 && andModes.length === 0) return;
     entries.push({
       countryCode,
-      countryName: countryCode,
+      countryName: getCountryDisplayName(countryCode),
       orModes,
       andModes,
     });
   });
   return entries;
+};
+
+const getCountryDisplayName = (countryCode: string): string => {
+  if (!countryCode) return '';
+  if (typeof Intl === 'undefined' || typeof Intl.DisplayNames !== 'function') {
+    return countryCode;
+  }
+  const locale = typeof navigator === 'undefined' || !navigator?.language ? 'en' : navigator.language;
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(countryCode) ?? countryCode;
+  } catch {
+    return countryCode;
+  }
 };
 
 export const useRouteBuildSessionLifecycle = ({
