@@ -13,6 +13,61 @@ const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
   return typeof skipped === 'number' && Number.isFinite(skipped) ? skipped : 0;
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null
+);
+
+const readString = (meta: Record<string, unknown> | null, key: string): string | undefined => {
+  const value = meta?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+const readNumber = (meta: Record<string, unknown> | null, key: string): number | undefined => {
+  const value = meta?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+};
+
+const readPayloadMeta = (info: BuildUnifiedProgressInfo | null): Record<string, unknown> | null => {
+  const payload = asRecord(info?.payload);
+  if (!payload) return null;
+  return asRecord(payload.meta);
+};
+
+const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+  const meta = readPayloadMeta(info);
+  if (!meta) return undefined;
+  const progressTask = asRecord(meta.progressTask);
+  if (!progressTask) return undefined;
+  const progress = readNumber(progressTask, 'progress');
+  return [
+    readString(progressTask, 'taskId') ?? '',
+    readString(progressTask, 'sequence') ?? readNumber(progressTask, 'sequence')?.toString() ?? '',
+    readString(progressTask, 'status') ?? '',
+    readString(progressTask, 'stage') ?? '',
+    progress === undefined ? '' : `${progress}`,
+    readString(progressTask, 'title') ?? '',
+  ].join('|');
+};
+
+const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+  const meta = readPayloadMeta(info);
+  if (!meta) return undefined;
+  const stageTotals = asRecord(meta.stageTotals);
+  if (!stageTotals) return undefined;
+  const stages = ['fetch', 'transform', 'vt'] as const;
+  return stages
+    .map((stage) => {
+      const stageValue = asRecord(stageTotals[stage]);
+      if (!stageValue) return `${stage}:`;
+      const readValue = (key: string): string => {
+        const value = readNumber(stageValue, key);
+        return Number.isFinite(value) ? `${value}` : 'x';
+      };
+      return `${stage}:${readValue('total')}/${readValue('completed')}/${readValue('failed')}/${readValue('skipped')}`;
+    })
+    .join(';');
+};
+
 export function useBatchProgress(
   adapter: Adapter,
   { autoSubscribe = true }: UseBuildProgressOptions = {},
@@ -26,6 +81,10 @@ export function useBatchProgress(
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
   const lastProgressRef = useRef<BuildUnifiedProgressInfo | null>(null);
+  const lastSignaturesRef = useRef<{ progressTask: string | undefined; stageTotals: string | undefined }>({
+    progressTask: undefined,
+    stageTotals: undefined,
+  });
 
   useEffect(() => {
     adapterRef.current = adapter;
@@ -47,6 +106,8 @@ export function useBatchProgress(
       const normalized = prev && next.percentage < prev.percentage
         ? { ...next, percentage: prev.percentage }
         : next;
+      const progressTaskSignature = buildProgressTaskSignature(normalized);
+      const stageTotalsSignature = buildStageTotalsSignature(normalized);
       const isSame = Boolean(
         prev
         && prev.stage === normalized.stage
@@ -56,9 +117,15 @@ export function useBatchProgress(
         && prev.failed === normalized.failed
         && prev.total === normalized.total
         && prev.message === normalized.message
+        && lastSignaturesRef.current.progressTask === progressTaskSignature
+        && lastSignaturesRef.current.stageTotals === stageTotalsSignature
       );
       if (isSame) return;
       lastProgressRef.current = normalized;
+      lastSignaturesRef.current = {
+        progressTask: progressTaskSignature,
+        stageTotals: stageTotalsSignature,
+      };
       setProgress(normalized);
     }
   }, []);
