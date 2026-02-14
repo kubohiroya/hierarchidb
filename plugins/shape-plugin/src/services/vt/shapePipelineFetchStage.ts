@@ -6,6 +6,7 @@ import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import {
   finalizePendingStageTasks,
+  markStageTasksCacheReused,
   resetStageRunningTasks,
   shouldStopAfterStage,
   summarizeStageCounts,
@@ -28,6 +29,9 @@ export type ShapeFetchStageParams = {
 export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
   const fetchAbortController = new AbortController();
   await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
+  if (params.resumeExistingTasks) {
+    await markStageTasksCacheReused(params.taskQueue, params.nodeId, 'fetch');
+  }
   try {
     await runShapeFetchStage({
       nodeId: params.nodeId,

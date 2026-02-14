@@ -3,6 +3,7 @@ import { Box, Chip, LinearProgress, Stack, Tooltip, Typography } from '@mui/mate
 
 type Props = {
   title: string;
+  leadingIcon?: React.ReactNode;
   statusLabel: string;
   statusColor: 'default' | 'success' | 'error' | 'warning' | 'info';
   message?: string;
@@ -15,6 +16,7 @@ export const TASK_ITEM_HEIGHT = 56;
 
 export const TaskItem: React.FC<Props> = ({
   title,
+  leadingIcon,
   statusLabel,
   statusColor,
   message,
@@ -36,6 +38,11 @@ export const TaskItem: React.FC<Props> = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         <Stack direction="row" spacing={1} alignItems="flex-end" sx={{ mb: '2px' }}>
+          {leadingIcon ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: '1px' }}>
+              {leadingIcon}
+            </Box>
+          ) : null}
           <Typography variant="caption" sx={{ flex: 1, fontSize: '14px' }}>
             {title}
           </Typography>

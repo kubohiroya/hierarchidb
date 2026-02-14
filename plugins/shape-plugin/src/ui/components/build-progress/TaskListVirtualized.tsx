@@ -1,5 +1,7 @@
 import { type CSSProperties, type MutableRefObject, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Box } from '@mui/material';
+import AddBoxIcon from '@mui/icons-material/AddBox';
+import RecyclingIcon from '@mui/icons-material/Recycling';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
@@ -243,10 +245,20 @@ export const TaskListVirtualized = forwardRef<HTMLDivElement, TaskListProps>(({
         ? (geometryDetails ? baseMessage : task.message)
         : undefined);
     const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
+    const metadata = task.metadata;
+    const isCacheReuse = metadata && typeof metadata === 'object'
+      ? (metadata as Record<string, unknown>).cacheReuse === true
+      : false;
+    const leadingIcon = isCacheReuse ? (
+      <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
+    ) : (
+      <AddBoxIcon data-testid="task-icon-add" color="primary" sx={{ fontSize: 16 }} />
+    );
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItem
           title={taskTitle}
+          leadingIcon={leadingIcon}
           statusLabel={statusLabelValue}
           statusColor={statusColor}
           message={taskMessage}
