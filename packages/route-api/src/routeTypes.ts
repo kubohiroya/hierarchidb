@@ -43,6 +43,8 @@ export interface RouteFeature extends GroupEntity {
   featureId: string;
   name: string;
   routeMode: RouteMode;
+  startLocationId?: NodeId;
+  endLocationId?: NodeId;
   startPoint: RoutePoint;
   endPoint: RoutePoint;
   waypoints?: [number, number][];

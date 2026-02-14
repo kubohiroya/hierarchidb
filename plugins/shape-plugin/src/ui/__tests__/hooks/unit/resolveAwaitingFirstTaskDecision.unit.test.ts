@@ -128,6 +128,36 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
+  it('continues when build failed but session progress evidence exists', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'failed',
+      taskCount: undefined,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+      sessionProgressTotal: 2,
+      sessionStageId: 'pipeline:fetch-stage:error',
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
+  it('continues when build failed but progress-task signal exists', () => {
+    const decision = resolveAwaitingFirstTaskDecision({
+      hasFirstTaskSignal: false,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: true,
+      buildStatus: 'failed',
+      taskCount: undefined,
+      isTaskStreamReady: false,
+      isPausePending: false,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toEqual({ kind: 'continue' });
+  });
+
   it('continues waiting when status is failed but startup stage is still progressing', () => {
     const decision = resolveAwaitingFirstTaskDecision({
       hasFirstTaskSignal: false,

@@ -89,6 +89,8 @@ const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): strin
   const payloadMeta = readPayloadMeta(info);
   if (!payloadMeta) return undefined;
   const stageTotals = asRecord(payloadMeta.stageTotals);
+  const meta = readPayloadMeta(info);
+  if (!meta) return undefined;
   if (!stageTotals) return undefined;
   const stages = ['fetch', 'transform', 'vt'] as const;
   return stages
