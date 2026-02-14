@@ -154,7 +154,7 @@ export const resolveAwaitingFirstTaskDecision = (
   if (input.buildStatus === 'failed') {
     // During resume/startup, build status can remain "failed" briefly while worker stage
     // has already moved into startup:*:start/finish. Avoid premature failure finalization.
-    if (isTransientStartupStage(input.sessionStageId)) {
+    if (isTransientStartupStage(input.sessionStageId) || hasSessionProgressEvidence || input.hasProgressTaskSignal) {
       return { kind: 'continue' };
     }
     return {
