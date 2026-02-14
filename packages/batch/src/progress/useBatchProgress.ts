@@ -14,7 +14,7 @@ const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
 };
 
 const asRecord = (value: unknown): Record<string, unknown> | null => (
-  value && typeof value === 'object' ? value as Record<string, unknown> : null
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null
 );
 
 const readString = (meta: Record<string, unknown> | null, key: string): string | undefined => {
@@ -27,48 +27,45 @@ const readNumber = (meta: Record<string, unknown> | null, key: string): number |
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 };
 
-const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+const readPayloadMeta = (info: BuildUnifiedProgressInfo | null): Record<string, unknown> | null => {
   const payload = asRecord(info?.payload);
-  if (!payload) return undefined;
-  const meta = asRecord(payload.meta);
+  if (!payload) return null;
+  return asRecord(payload.meta);
+};
+
+const buildProgressTaskSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
+  const meta = readPayloadMeta(info);
   if (!meta) return undefined;
   const progressTask = asRecord(meta.progressTask);
   if (!progressTask) return undefined;
+  const progress = readNumber(progressTask, 'progress');
   return [
-    typeof progressTask.taskId === 'string' ? progressTask.taskId : '',
-    typeof progressTask.sequence === 'number' && Number.isFinite(progressTask.sequence)
-      ? `${progressTask.sequence}`
-      : '',
-    typeof progressTask.status === 'string' ? progressTask.status : '',
+    readString(progressTask, 'taskId') ?? '',
+    readString(progressTask, 'sequence') ?? readNumber(progressTask, 'sequence')?.toString() ?? '',
+    readString(progressTask, 'status') ?? '',
     readString(progressTask, 'stage') ?? '',
-    Number.isFinite(readNumber(progressTask, 'progress'))
-      ? `${readNumber(progressTask, 'progress')}`
-      : '',
+    progress === undefined ? '' : `${progress}`,
     readString(progressTask, 'title') ?? '',
   ].join('|');
 };
 
 const buildStageTotalsSignature = (info: BuildUnifiedProgressInfo | null): string | undefined => {
-  const payload = asRecord(info?.payload);
-  if (!payload) return undefined;
-  const meta = asRecord(payload.meta);
+  const meta = readPayloadMeta(info);
   if (!meta) return undefined;
   const stageTotals = asRecord(meta.stageTotals);
   if (!stageTotals) return undefined;
   const stages = ['fetch', 'transform', 'vt'] as const;
-  const lines = stages
+  return stages
     .map((stage) => {
       const stageValue = asRecord(stageTotals[stage]);
       if (!stageValue) return `${stage}:`;
       const readValue = (key: string): string => {
         const value = readNumber(stageValue, key);
-        if (typeof value !== 'number' || !Number.isFinite(value)) return 'x';
-        return `${value}`;
+        return Number.isFinite(value) ? `${value}` : 'x';
       };
       return `${stage}:${readValue('total')}/${readValue('completed')}/${readValue('failed')}/${readValue('skipped')}`;
     })
     .join(';');
-  return lines;
 };
 
 export function useBatchProgress(
@@ -84,6 +81,10 @@ export function useBatchProgress(
   const flushFrameRef = useRef<number | null>(null);
   const adapterRef = useRef<Adapter>(adapter);
   const lastProgressRef = useRef<BuildUnifiedProgressInfo | null>(null);
+  const lastSignaturesRef = useRef<{ progressTask: string | undefined; stageTotals: string | undefined }>({
+    progressTask: undefined,
+    stageTotals: undefined,
+  });
 
   useEffect(() => {
     adapterRef.current = adapter;
@@ -105,6 +106,8 @@ export function useBatchProgress(
       const normalized = prev && next.percentage < prev.percentage
         ? { ...next, percentage: prev.percentage }
         : next;
+      const progressTaskSignature = buildProgressTaskSignature(normalized);
+      const stageTotalsSignature = buildStageTotalsSignature(normalized);
       const isSame = Boolean(
         prev
         && prev.stage === normalized.stage
@@ -114,11 +117,15 @@ export function useBatchProgress(
         && prev.failed === normalized.failed
         && prev.total === normalized.total
         && prev.message === normalized.message
-        && buildProgressTaskSignature(prev) === buildProgressTaskSignature(normalized)
-        && buildStageTotalsSignature(prev) === buildStageTotalsSignature(normalized)
+        && lastSignaturesRef.current.progressTask === progressTaskSignature
+        && lastSignaturesRef.current.stageTotals === stageTotalsSignature
       );
       if (isSame) return;
       lastProgressRef.current = normalized;
+      lastSignaturesRef.current = {
+        progressTask: progressTaskSignature,
+        stageTotals: stageTotalsSignature,
+      };
       setProgress(normalized);
     }
   }, []);
