@@ -24,7 +24,7 @@ import {
   suspendSuspectOpenAtom,
   suspendSuspectControlsAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
-import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
+import type { TaskItemWithMetadata } from './TaskItemCardListCard.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
@@ -196,7 +196,7 @@ export const useBuildProgressPanelState = (params: {
   });
 
   const resolveTaskTitle = useCallback(
-    (task: TaskWithMetadata): string =>
+    (task: TaskItemWithMetadata): string =>
       resolveShapeTaskTitle(task, t('stage.tasks.unknown', '(Title unavailable)')),
     [t],
   );
@@ -222,7 +222,7 @@ export const useBuildProgressPanelState = (params: {
       const failureMessage = resolveFailureMessage(failedTask);
       if (!failureMessage) continue;
       return {
-        title: resolveTaskTitle(failedTask as TaskWithMetadata),
+        title: resolveTaskTitle(failedTask as TaskItemWithMetadata),
         message: failureMessage,
       };
     }
