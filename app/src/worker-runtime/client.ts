@@ -105,6 +105,15 @@ function resolveSharedWorkerUrl(): URL {
 
 const isSharedWorkerSupported = () => ENABLE_SHARED_WORKER && typeof SharedWorker === 'function';
 
+const MAINTENANCE_LOCK_POLL_MS = 1_000;
+const MAINTENANCE_LOCK_MAX_WAIT_MS = 30_000;
+
+const wait = (ms: number): Promise<void> => (
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  })
+);
+
 function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
   return window as BootWindow;
@@ -214,10 +223,25 @@ const ensureMaintenanceUnlocked = (): void => {
   throw new Error('maintenance-lock-active');
 };
 
+const waitForMaintenanceUnlock = async (deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_MS): Promise<void> => {
+  const startedAt = Date.now();
+  let delayMs = MAINTENANCE_LOCK_POLL_MS;
+  while (isMaintenanceLockActive()) {
+    const elapsedMs = Date.now() - startedAt;
+    if (elapsedMs >= deadlineMs) {
+      ensureMaintenanceUnlocked();
+    }
+    await wait(delayMs);
+    if (delayMs < 2_000) {
+      delayMs = 2_000;
+    }
+  }
+};
+
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
-  ensureMaintenanceUnlocked();
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    await waitForMaintenanceUnlock();
     // Reduce console noise; log only via bootLog when explicitly enabled
     bootLog('client:initWorker attempt=%d', attempt + 1);
     try {
@@ -266,7 +290,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
 }
 
 export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
-  ensureMaintenanceUnlocked();
+  await waitForMaintenanceUnlock();
   if (!workerInstance) return await initializeWorker();
   return workerInstance;
 }
