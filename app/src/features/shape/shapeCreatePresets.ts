@@ -279,7 +279,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       dataSourceName: 'geoboundaries',
       transformConfig: {
         tolerance: 0.12,
-        omitDetailsConfig: { level: 'none' },
+        omitDetailsConfig: { level: 'weak' },
         boundaryDisableAtZoomOrAbove: 5,
       },
       vtConfig: {
@@ -339,7 +339,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       dataSourceName: 'geoboundaries',
       transformConfig: {
         tolerance: 0.45,
-        omitDetailsConfig: { level: 'moderate' },
+        omitDetailsConfig: { level: 'medium' },
         boundaryDisableAtZoomOrAbove: 3,
       },
       vtConfig: {
