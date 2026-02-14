@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
 - #279 / `codex/refactor/ui/shape-task-item-card-list` / start: 2026-02-15 06:43 JST
 - #280 / `codex/fix/ui/task-item-card-vertical-align` / start: 2026-02-15 07:03 JST
 - #276 / `codex/fix/shape/step5-resume-task-list` / start: 2026-02-14 22:13 JST

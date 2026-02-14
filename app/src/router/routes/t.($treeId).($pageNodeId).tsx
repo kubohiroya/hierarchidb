@@ -34,6 +34,7 @@ import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherBu
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
+import { resolveTreePageTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
 import type {
   LoadNodeActionReturn,
@@ -76,56 +77,8 @@ type TargetContextState = {
 function useTreeDocumentTitle() {
   const matches = useRouterState({ select: (state) => state.matches });
 
-  const pageMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeRouteIds.page),
-    [matches]
-  );
-  const targetMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeRouteIds.target),
-    [matches]
-  );
-  const dialogRouteIds = useMemo(
-    () => [treeRouteIds.dialog, treeRouteIds.dialogMode, treeRouteIds.dialogModeStep],
-    []
-  );
-  const dialogMatch = useMemo(
-    () => matches.find((match) => dialogRouteIds.includes(match.routeId)),
-    [dialogRouteIds, matches]
-  );
-
-  const nextTitle = useMemo(() => {
-    const defaultTitle = 'HierarchiDB App';
-
-    const dialogData = dialogMatch?.loaderData as TreeDialogMatchData | undefined;
-    if (dialogData?.kind === 'plugin') {
-      const { targetNode, params } = dialogData.data as LoadNodeActionReturn & {
-        params?: { action?: string; nodeType?: string };
-      };
-      const dialogTargetName = targetNode?.metadata?.name;
-      if (dialogTargetName && params?.action && params?.nodeType) {
-        return `${dialogTargetName} (${params.action} ${params.nodeType})`;
-      }
-    }
-
-    const targetData = targetMatch?.loaderData as LoadTargetNodeReturn | undefined;
-    const targetTitle = targetData?.targetNode?.metadata?.name;
-    if (targetTitle) {
-      return targetTitle;
-    }
-
-    const pageData = pageMatch?.loaderData as LoadPageNodeReturn | undefined;
-    const pageTitle = pageData?.pageNode?.metadata?.name ?? pageData?.tree?.name;
-    if (pageTitle) {
-      return pageTitle;
-    }
-
-    return defaultTitle;
-  }, [dialogMatch?.loaderData, targetMatch?.loaderData, pageMatch?.loaderData]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.title = nextTitle;
-  }, [nextTitle]);
+  const nextTitle = useMemo(() => resolveTreePageTitle(matches), [matches]);
+  useAppDocumentTitle(nextTitle);
 }
 
 export default function TLayout() {

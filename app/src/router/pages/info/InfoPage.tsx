@@ -3,6 +3,7 @@ import { Info as InfoIcon } from '@mui/icons-material';
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type { LoadAppConfigReturn } from '../../../loader.ts';
+import { useAppDocumentTitle } from '~/router/title/pageTitle.js';
 import { LicenseInfo } from './LicenseInfo.js';
 
 // LicenseInfo temporarily commented out until component is available
@@ -14,6 +15,7 @@ import { LicenseInfo } from './LicenseInfo.js';
 
 export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
   const navigate = useNavigate();
+  useAppDocumentTitle('Info');
 
   return (
     <FullScreenDialog

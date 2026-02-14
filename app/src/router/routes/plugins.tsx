@@ -5,6 +5,8 @@ import { useIconRegistry } from '@hierarchidb/ui-icon';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
+import { loadAppConfig } from '~/loadAppConfig.js';
+import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
 import {
   AccountTree as AccountTreeIcon,
   CheckCircle as CheckCircleIcon,
@@ -60,8 +62,9 @@ import type { DisplayPlugin } from './pluginsTypes.js';
 
 // Meta function for React Router v7
 export function meta() {
+  const { appName } = loadAppConfig();
   return [
-    { title: 'Plugin Registry - HierarchiDB' },
+    { title: formatAppTitle('plugin-loaders', appName) },
     { name: 'description', content: 'View and manage all registered plugin-loaders' },
   ];
 }
@@ -511,6 +514,7 @@ function DeletePluginDialog({
 }
 
 export default function PluginsPage() {
+  useAppDocumentTitle('plugin-loaders');
   const navigate = useNavigate();
   const { t } = useTranslation('common');
   const { resolveIcon } = useIconRegistry();
