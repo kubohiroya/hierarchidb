@@ -213,6 +213,22 @@ export const deleteRawDataDataSourceBuffersForNodeMetadataIds = async (
   return uniqueMetadataIds.length;
 };
 
+export const deleteRawDataDataSourceBuffersForNodeKeys = async (
+  nodeId: NodeId,
+  cacheKeys: string[],
+): Promise<number> => {
+  if (!cacheKeys.length) return 0;
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  let deleted = 0;
+  const uniqueCacheKeys = Array.from(new Set(cacheKeys));
+  for (const cacheKey of uniqueCacheKeys) {
+    if (!cacheKey || !isRawDataDataSourceCacheKey(cacheKey)) continue;
+    await store.deleteForNode(nodeId, cacheKey);
+    deleted += 1;
+  }
+  return deleted;
+};
+
 export const deleteRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
   const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
   return deleteRawDataDataSourceBuffersForNodeMetadataIds(
