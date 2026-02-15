@@ -81,4 +81,48 @@ describe('mergeBuildConfig', () => {
 
     expect(merged.transformConfig.simplifyAlgorithm).toBe('geojson');
   });
+
+  it('merges intake guard and anomaly guard overrides', () => {
+    const merged = mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
+      fetchConfig: {
+        geometryIntakeGuard: {
+          validationLevel: 'strict',
+          dedupeEpsilon: 0.00001,
+          minRingAreaThreshold: 0.0001,
+          normalizeRingOrientation: true,
+          keepBaselineSnapshot: true,
+        },
+      },
+      transformConfig: {
+        executionLogLevel: 'verbose',
+        anomalyDetection: {
+          enabled: true,
+          maxEdgeLengthRatio: 6,
+          maxAreaDriftPercent: 15,
+          maxSelfIntersectionCount: 0,
+          maxLineLengthDriftPercent: 20,
+        },
+        anomalyRetry: {
+          enabled: true,
+          maxRetries: 3,
+          toleranceScale: 0.8,
+          fallbackMode: 'switch_algorithm',
+        },
+      },
+      vtConfig: {
+        outputQualityGuard: {
+          enabled: true,
+          minZoom: 3,
+          maxZoom: 8,
+          actionOnAnomaly: 'mark_warning',
+          enablePreviewOverlay: true,
+        },
+      },
+    });
+
+    expect(merged.fetchConfig.geometryIntakeGuard?.validationLevel).toBe('strict');
+    expect(merged.transformConfig.executionLogLevel).toBe('verbose');
+    expect(merged.transformConfig.anomalyRetry?.fallbackMode).toBe('switch_algorithm');
+    expect(merged.vtConfig.outputQualityGuard?.enablePreviewOverlay).toBe(true);
+  });
 });

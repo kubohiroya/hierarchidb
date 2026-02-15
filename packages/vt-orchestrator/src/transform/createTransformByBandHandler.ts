@@ -183,6 +183,54 @@ const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): Trans
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
 );
 
+type SimplifyExecutionPath =
+  | 'topojson_decode_simplify_geojson_skip'
+  | 'topojson_decode_only_geojson_run'
+  | 'geojson_decode_geojson_run';
+
+export const resolveSimplifyExecutionPath = (params: {
+  fetchFormat?: string;
+  simplifyAlgorithm: TransformSimplifyAlgorithm;
+}): SimplifyExecutionPath => {
+  const isTopojsonInput = params.fetchFormat === 'topojson';
+  if (!isTopojsonInput) {
+    return 'geojson_decode_geojson_run';
+  }
+  return params.simplifyAlgorithm === 'topojson'
+    ? 'topojson_decode_simplify_geojson_skip'
+    : 'topojson_decode_only_geojson_run';
+};
+
+type TransformTraceLogLevel = 'off' | 'summary' | 'verbose';
+
+const TRACE_LOG_PRIORITY: Record<TransformTraceLogLevel, number> = {
+  off: 0,
+  summary: 1,
+  verbose: 2,
+};
+
+const normalizeTraceLogLevel = (level?: string): TransformTraceLogLevel => {
+  if (level === 'off' || level === 'summary' || level === 'verbose') {
+    return level;
+  }
+  return 'summary';
+};
+
+const shouldLogTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel,
+): boolean => TRACE_LOG_PRIORITY[configuredLevel] >= TRACE_LOG_PRIORITY[requestedLevel];
+
+const emitTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel,
+  message: string,
+  payload: Record<string, unknown>,
+): void => {
+  if (!shouldLogTransformTrace(configuredLevel, requestedLevel)) return;
+  console.info('[ShapeTransform][ExecutionTrace]', message, payload);
+};
+
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
 };
@@ -207,7 +255,11 @@ type GeometryOps = {
   ) => boolean;
 };
 
-const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
+const createGeometryOps = (
+  engine: GeometryEngine,
+  options?: { preserveTopology?: boolean },
+): GeometryOps => {
+  const preserveTopology = options?.preserveTopology ?? true;
   const simplifyCollection = (collection: FeatureCollection, zTarget: number, toleranceK: number): FeatureCollection => {
     const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
     if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
@@ -215,7 +267,7 @@ const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
       tolerance,
       highQuality: false,
       mutate: false,
-      preserveTopology: true,
+      preserveTopology,
     });
     if (!simplified || simplified.type !== 'FeatureCollection') {
       throw new Error('simplify returned non-FeatureCollection');
@@ -230,7 +282,7 @@ const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
       tolerance,
       highQuality: false,
       mutate: false,
-      preserveTopology: true,
+      preserveTopology,
     });
     if (!simplified || simplified.type !== 'Feature') {
       throw new Error('simplify returned non-Feature');
@@ -456,6 +508,253 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
     return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
   }
   return 0;
+};
+
+const countLinesFromGeometry = (geometry?: Geometry | null): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child: Geometry) => sum + countLinesFromGeometry(child), 0);
+  }
+  if (geometry.type === 'LineString') return 1;
+  if (geometry.type === 'MultiLineString') {
+    return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
+  }
+  return 0;
+};
+
+const segmentLength = (pointA: number[], pointB: number[]): number => {
+  const ax = pointA[0];
+  const ay = pointA[1];
+  const bx = pointB[0];
+  const by = pointB[1];
+  if (
+    ax === undefined
+    || ay === undefined
+    || bx === undefined
+    || by === undefined
+    || !Number.isFinite(ax)
+    || !Number.isFinite(ay)
+    || !Number.isFinite(bx)
+    || !Number.isFinite(by)
+  ) {
+    return 0;
+  }
+  const dx = bx - ax;
+  const dy = by - ay;
+  return Math.sqrt((dx * dx) + (dy * dy));
+};
+
+const collectLineLengths = (coords: number[][]): { total: number; max: number } => {
+  let total = 0;
+  let max = 0;
+  for (let index = 1; index < coords.length; index += 1) {
+    const current = coords[index];
+    const prev = coords[index - 1];
+    if (!current || !prev) continue;
+    const length = segmentLength(prev, current);
+    total += length;
+    if (length > max) {
+      max = length;
+    }
+  }
+  return { total, max };
+};
+
+const collectGeometryLengthMetrics = (geometry?: Geometry | null): { total: number; max: number } => {
+  if (!geometry) return { total: 0, max: 0 };
+  if (geometry.type === 'LineString') {
+    return collectLineLengths(Array.isArray(geometry.coordinates) ? geometry.coordinates as number[][] : []);
+  }
+  if (geometry.type === 'MultiLineString') {
+    let total = 0;
+    let max = 0;
+    const lines = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    for (const line of lines) {
+      const metrics = collectLineLengths(Array.isArray(line) ? line as number[][] : []);
+      total += metrics.total;
+      if (metrics.max > max) {
+        max = metrics.max;
+      }
+    }
+    return { total, max };
+  }
+  if (geometry.type === 'Polygon') {
+    let total = 0;
+    let max = 0;
+    const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    for (const ring of rings) {
+      const metrics = collectLineLengths(Array.isArray(ring) ? ring as number[][] : []);
+      total += metrics.total;
+      if (metrics.max > max) {
+        max = metrics.max;
+      }
+    }
+    return { total, max };
+  }
+  if (geometry.type === 'MultiPolygon') {
+    let total = 0;
+    let max = 0;
+    const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    for (const polygon of polygons) {
+      if (!Array.isArray(polygon)) continue;
+      for (const ring of polygon) {
+        const metrics = collectLineLengths(Array.isArray(ring) ? ring as number[][] : []);
+        total += metrics.total;
+        if (metrics.max > max) {
+          max = metrics.max;
+        }
+      }
+    }
+    return { total, max };
+  }
+  if (geometry.type === 'GeometryCollection') {
+    let total = 0;
+    let max = 0;
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    for (const child of geometries) {
+      const metrics = collectGeometryLengthMetrics(child);
+      total += metrics.total;
+      if (metrics.max > max) {
+        max = metrics.max;
+      }
+    }
+    return { total, max };
+  }
+  return { total: 0, max: 0 };
+};
+
+type CollectionAnomalyMetrics = {
+  featureCount: number;
+  vertexCount: number;
+  polygonCount: number;
+  lineCount: number;
+  totalArea: number;
+  totalLength: number;
+  maxEdgeLength: number;
+  selfIntersectionCount: number;
+};
+
+const collectCollectionAnomalyMetrics = (
+  collection: FeatureCollection,
+  geometryOps: GeometryOps,
+): CollectionAnomalyMetrics => {
+  let vertexCount = 0;
+  let polygonCount = 0;
+  let lineCount = 0;
+  let totalArea = 0;
+  let totalLength = 0;
+  let maxEdgeLength = 0;
+  let selfIntersectionCount = 0;
+  for (const feature of collection.features) {
+    if (!feature?.geometry) continue;
+    const geometry = feature.geometry;
+    vertexCount += countVerticesFromGeometry(geometry);
+    polygonCount += countPolygonsFromGeometry(geometry);
+    lineCount += countLinesFromGeometry(geometry);
+    if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+      totalArea += Math.abs(geometryOps.area(feature as Feature<Geometry>));
+      selfIntersectionCount += geometryOps.countSelfIntersections(geometry);
+    }
+    const lineMetrics = collectGeometryLengthMetrics(geometry);
+    totalLength += lineMetrics.total;
+    if (lineMetrics.max > maxEdgeLength) {
+      maxEdgeLength = lineMetrics.max;
+    }
+  }
+  return {
+    featureCount: collection.features.length,
+    vertexCount,
+    polygonCount,
+    lineCount,
+    totalArea,
+    totalLength,
+    maxEdgeLength,
+    selfIntersectionCount,
+  };
+};
+
+type AnomalyProfile = 'polygon' | 'line';
+
+type AnomalyAssessment = {
+  isAnomalous: boolean;
+  score: number;
+  edgeLengthRatio: number;
+  areaDriftPercent: number;
+  lineLengthDriftPercent: number;
+  selfIntersectionCount: number;
+  reasons: string[];
+};
+
+const safeRatio = (numerator: number, denominator: number): number => {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
+    return 1;
+  }
+  return numerator / denominator;
+};
+
+export const assessAnomalyRisk = (params: {
+  profile: AnomalyProfile;
+  baseline: CollectionAnomalyMetrics;
+  candidate: CollectionAnomalyMetrics;
+  thresholds?: {
+    maxEdgeLengthRatio?: number;
+    maxAreaDriftPercent?: number;
+    maxSelfIntersectionCount?: number;
+    maxLineLengthDriftPercent?: number;
+  };
+}): AnomalyAssessment => {
+  const maxEdgeLengthRatio = params.thresholds?.maxEdgeLengthRatio ?? Number.POSITIVE_INFINITY;
+  const maxAreaDriftPercent = params.thresholds?.maxAreaDriftPercent ?? Number.POSITIVE_INFINITY;
+  const maxSelfIntersectionCount = params.thresholds?.maxSelfIntersectionCount ?? Number.POSITIVE_INFINITY;
+  const maxLineLengthDriftPercent = params.thresholds?.maxLineLengthDriftPercent ?? Number.POSITIVE_INFINITY;
+
+  const edgeLengthRatio = safeRatio(params.candidate.maxEdgeLength, params.baseline.maxEdgeLength);
+  const areaDriftPercent = params.profile === 'polygon' && params.baseline.totalArea > 0
+    ? Math.abs(params.candidate.totalArea - params.baseline.totalArea) / params.baseline.totalArea * 100
+    : 0;
+  const lineLengthDriftPercent = params.baseline.totalLength > 0
+    ? Math.abs(params.candidate.totalLength - params.baseline.totalLength) / params.baseline.totalLength * 100
+    : 0;
+  const selfIntersectionCount = params.candidate.selfIntersectionCount;
+
+  const reasons: string[] = [];
+  if (edgeLengthRatio > maxEdgeLengthRatio) {
+    reasons.push(`edgeLengthRatio>${maxEdgeLengthRatio}`);
+  }
+  if (params.profile === 'polygon' && areaDriftPercent > maxAreaDriftPercent) {
+    reasons.push(`areaDriftPercent>${maxAreaDriftPercent}`);
+  }
+  if (params.profile === 'polygon' && selfIntersectionCount > maxSelfIntersectionCount) {
+    reasons.push(`selfIntersectionCount>${maxSelfIntersectionCount}`);
+  }
+  if (params.profile === 'line' && lineLengthDriftPercent > maxLineLengthDriftPercent) {
+    reasons.push(`lineLengthDriftPercent>${maxLineLengthDriftPercent}`);
+  }
+
+  const edgeScore = Number.isFinite(maxEdgeLengthRatio) && maxEdgeLengthRatio > 0
+    ? edgeLengthRatio / maxEdgeLengthRatio
+    : 0;
+  const areaScore = params.profile === 'polygon' && Number.isFinite(maxAreaDriftPercent) && maxAreaDriftPercent > 0
+    ? areaDriftPercent / maxAreaDriftPercent
+    : 0;
+  const selfIntersectionScore = params.profile === 'polygon' && Number.isFinite(maxSelfIntersectionCount)
+    ? Math.max(0, selfIntersectionCount - maxSelfIntersectionCount)
+    : 0;
+  const lineScore = params.profile === 'line' && Number.isFinite(maxLineLengthDriftPercent) && maxLineLengthDriftPercent > 0
+    ? lineLengthDriftPercent / maxLineLengthDriftPercent
+    : 0;
+  const score = edgeScore + areaScore + selfIntersectionScore + lineScore;
+
+  return {
+    isAnomalous: reasons.length > 0,
+    score,
+    edgeLengthRatio,
+    areaDriftPercent,
+    lineLengthDriftPercent,
+    selfIntersectionCount,
+    reasons,
+  };
 };
 
 const repairCollectionSelfIntersections = (
@@ -810,6 +1109,185 @@ const computeRingArea = (ring: number[][]): number | null => {
     sum += (x1 * y2) - (x2 * y1);
   }
   return sum / 2;
+};
+
+const dedupeConsecutiveCoords = (coords: number[][], epsilon: number): number[][] => {
+  if (coords.length === 0) return coords;
+  if (epsilon <= 0) return coords;
+  const deduped: number[][] = [coords[0] as number[]];
+  for (let index = 1; index < coords.length; index += 1) {
+    const current = coords[index];
+    const previous = deduped[deduped.length - 1];
+    if (!current || !previous) continue;
+    const dx = Math.abs((current[0] ?? 0) - (previous[0] ?? 0));
+    const dy = Math.abs((current[1] ?? 0) - (previous[1] ?? 0));
+    if (dx <= epsilon && dy <= epsilon) continue;
+    deduped.push(current);
+  }
+  return deduped;
+};
+
+const ensureClosedRingCoords = (ring: number[][]): number[][] => {
+  if (ring.length === 0) return ring;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (isSameCoord(first, last)) return ring;
+  return [...ring, first as number[]];
+};
+
+const normalizeRingOrientation = (ring: number[][], clockwise: boolean): number[][] => {
+  const area = computeRingArea(ring);
+  if (area === null || Math.abs(area) < 1e-15) return ring;
+  const isClockwise = area < 0;
+  if (isClockwise === clockwise) return ring;
+  return [...ring].reverse();
+};
+
+const sanitizePolygonRings = (params: {
+  rings: number[][][];
+  epsilon: number;
+  minRingAreaThreshold: number;
+  normalizeOrientation: boolean;
+}): number[][][] => {
+  const out: number[][][] = [];
+  for (let index = 0; index < params.rings.length; index += 1) {
+    const ring = params.rings[index];
+    if (!Array.isArray(ring)) continue;
+    let nextRing = dedupeConsecutiveCoords(ring as number[][], params.epsilon);
+    nextRing = ensureClosedRingCoords(nextRing);
+    if (nextRing.length < 4) continue;
+    const area = computeRingArea(nextRing);
+    if (area === null) continue;
+    if (params.minRingAreaThreshold > 0 && Math.abs(area) < params.minRingAreaThreshold) {
+      continue;
+    }
+    if (params.normalizeOrientation) {
+      const isOuter = index === 0;
+      nextRing = normalizeRingOrientation(nextRing, !isOuter);
+    }
+    out.push(nextRing);
+  }
+  return out;
+};
+
+const sanitizeGeometryForIntakeGuard = (params: {
+  geometry: Geometry;
+  epsilon: number;
+  minRingAreaThreshold: number;
+  normalizeRingOrientation: boolean;
+}): Geometry | null => {
+  const { geometry } = params;
+  if (geometry.type === 'LineString') {
+    const deduped = dedupeConsecutiveCoords(geometry.coordinates as number[][], params.epsilon);
+    if (deduped.length < 2) return null;
+    return { ...geometry, coordinates: deduped };
+  }
+  if (geometry.type === 'MultiLineString') {
+    const lines = (geometry.coordinates ?? [])
+      .map((line) => dedupeConsecutiveCoords(line as number[][], params.epsilon))
+      .filter((line) => line.length >= 2);
+    if (lines.length === 0) return null;
+    return { ...geometry, coordinates: lines };
+  }
+  if (geometry.type === 'Polygon') {
+    const rings = sanitizePolygonRings({
+      rings: geometry.coordinates as number[][][],
+      epsilon: params.epsilon,
+      minRingAreaThreshold: params.minRingAreaThreshold,
+      normalizeOrientation: params.normalizeRingOrientation,
+    });
+    if (rings.length === 0) return null;
+    return { ...geometry, coordinates: rings };
+  }
+  if (geometry.type === 'MultiPolygon') {
+    const polygons = (geometry.coordinates ?? [])
+      .map((polygon) => sanitizePolygonRings({
+        rings: polygon as number[][][],
+        epsilon: params.epsilon,
+        minRingAreaThreshold: params.minRingAreaThreshold,
+        normalizeOrientation: params.normalizeRingOrientation,
+      }))
+      .filter((polygon) => polygon.length > 0);
+    if (polygons.length === 0) return null;
+    return { ...geometry, coordinates: polygons };
+  }
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = (geometry.geometries ?? [])
+      .map((child) => sanitizeGeometryForIntakeGuard({
+        geometry: child,
+        epsilon: params.epsilon,
+        minRingAreaThreshold: params.minRingAreaThreshold,
+        normalizeRingOrientation: params.normalizeRingOrientation,
+      }))
+      .filter((child): child is Geometry => Boolean(child));
+    if (geometries.length === 0) return null;
+    return { ...geometry, geometries };
+  }
+  return geometry;
+};
+
+const applyGeometryIntakeGuard = (params: {
+  collection: FeatureCollection;
+  validationLevel: 'off' | 'basic' | 'strict';
+  dedupeEpsilon: number;
+  minRingAreaThreshold: number;
+  normalizeRingOrientation: boolean;
+  geometryOps: GeometryOps;
+}): {
+  collection: FeatureCollection;
+  modifiedFeatureCount: number;
+  droppedFeatureCount: number;
+} => {
+  if (params.validationLevel === 'off') {
+    return {
+      collection: params.collection,
+      modifiedFeatureCount: 0,
+      droppedFeatureCount: 0,
+    };
+  }
+  let modifiedFeatureCount = 0;
+  let droppedFeatureCount = 0;
+  const features: Feature[] = [];
+  for (const feature of params.collection.features) {
+    if (!feature?.geometry) {
+      if (params.validationLevel === 'strict') {
+        droppedFeatureCount += 1;
+        continue;
+      }
+      features.push(feature);
+      continue;
+    }
+    const normalizedGeometry = sanitizeGeometryForIntakeGuard({
+      geometry: feature.geometry,
+      epsilon: Math.max(0, params.dedupeEpsilon),
+      minRingAreaThreshold: Math.max(0, params.minRingAreaThreshold),
+      normalizeRingOrientation: params.normalizeRingOrientation,
+    });
+    if (!normalizedGeometry) {
+      droppedFeatureCount += 1;
+      continue;
+    }
+    const valid = params.geometryOps.isValid(normalizedGeometry);
+    if (params.validationLevel === 'strict' && !valid) {
+      droppedFeatureCount += 1;
+      continue;
+    }
+    if (normalizedGeometry !== feature.geometry) {
+      modifiedFeatureCount += 1;
+    }
+    features.push({
+      ...feature,
+      geometry: normalizedGeometry,
+    });
+  }
+  return {
+    collection: {
+      ...params.collection,
+      features,
+    },
+    modifiedFeatureCount,
+    droppedFeatureCount,
+  };
 };
 
 const countSelfIntersections = (geometry: Geometry, geometryOps: GeometryOps): number => (
@@ -1252,7 +1730,15 @@ export const createTransformByBandHandler = (
     bandCount: context.bands.length,
     geometryEngine: context.transformConfig.geometryEngine ?? 'turf',
   });
-  const { ephemeralDB, transformConfig, bands, abortSignal, featureIdAllowlist } = context;
+  const {
+    ephemeralDB,
+    fetchConfig,
+    transformConfig,
+    vtConfig,
+    bands,
+    abortSignal,
+    featureIdAllowlist,
+  } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
     transformStart: 0,
@@ -1468,10 +1954,33 @@ export const createTransformByBandHandler = (
   }
   const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
+  const preserveTopology = transformConfig.preserveTopology ?? true;
+  const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
+  const anomalyDetectionConfig = {
+    enabled: transformConfig.anomalyDetection?.enabled ?? false,
+    maxEdgeLengthRatio: transformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
+    maxAreaDriftPercent: transformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
+    maxSelfIntersectionCount: transformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
+    maxLineLengthDriftPercent: transformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
+  };
+  const anomalyRetryConfig = {
+    enabled: transformConfig.anomalyRetry?.enabled ?? false,
+    maxRetries: Math.max(0, transformConfig.anomalyRetry?.maxRetries ?? 0),
+    toleranceScale: Math.min(1, Math.max(0.1, transformConfig.anomalyRetry?.toleranceScale ?? 0.7)),
+    fallbackMode: transformConfig.anomalyRetry?.fallbackMode ?? 'best_score',
+  } as const;
+  const intakeGuardConfig = {
+    validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
+    dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
+    minRingAreaThreshold: fetchConfig.geometryIntakeGuard?.minRingAreaThreshold ?? 0,
+    normalizeRingOrientation: fetchConfig.geometryIntakeGuard?.normalizeRingOrientation ?? false,
+    keepBaselineSnapshot: fetchConfig.geometryIntakeGuard?.keepBaselineSnapshot ?? false,
+  } as const;
+  const vtOutputQualityGuard = vtConfig.outputQualityGuard;
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
   }
-  const geometryOps = createGeometryOps(geometryEngine);
+  const geometryOps = createGeometryOps(geometryEngine, { preserveTopology });
   const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
   let debugTaskId: string | null = null;
   let debugTaskStartedAt: number | null = null;
@@ -1529,10 +2038,24 @@ export const createTransformByBandHandler = (
         appliedTolerance: tolerance,
       }));
     }
+    emitTransformTrace(traceLogLevel, 'summary', 'task-config', {
+      sessionId: String(task.nodeId),
+      taskId,
+      stage: 'transform',
+      simplifyAlgorithm,
+      preserveTopology,
+      tolerance,
+      fetchIntakeGuard: intakeGuardConfig,
+      anomalyDetection: anomalyDetectionConfig,
+      anomalyRetry: anomalyRetryConfig,
+      vtOutputQualityGuard: vtOutputQualityGuard ?? null,
+    });
 
     let workingCollection: FeatureCollection | null = null;
     let simplified: FeatureCollection | null = null;
     let outputCollection: FeatureCollection | null = null;
+    let baselineMetrics: CollectionAnomalyMetrics | null = null;
+    let anomalyProfile: AnomalyProfile = input.domainType === 'route' ? 'line' : 'polygon';
     let stageLabel = 'start';
     let inputPolygonCount = 0;
     let inputVertexCount = 0;
@@ -1623,6 +2146,20 @@ export const createTransformByBandHandler = (
         byteLength: fetchCache.data.byteLength,
         elapsedMs: fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null,
       });
+      const executionPath = resolveSimplifyExecutionPath({
+        fetchFormat: fetchCache.format,
+        simplifyAlgorithm,
+      });
+      emitTransformTrace(traceLogLevel, 'summary', 'execution-path', {
+        sessionId: String(task.nodeId),
+        taskId,
+        stage: 'decode',
+        algorithm: simplifyAlgorithm,
+        executionPath,
+        fetchFormat: fetchCache.format ?? 'unknown',
+        compression: fetchCache.compression ?? null,
+        preserveTopology,
+      });
       await updateTaskPhase(taskId, 'fetch-cache:done', taskProgressRange.fetchEnd);
 
       stageLabel = 'decode';
@@ -1645,6 +2182,16 @@ export const createTransformByBandHandler = (
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
       logDebugPhase('decode:done', { featureCount: collection.features.length });
+      emitTransformTrace(traceLogLevel, 'summary', 'decode-done', {
+        sessionId: String(task.nodeId),
+        taskId,
+        stage: 'decode',
+        outputFeatureCount: collection.features.length,
+        outputVertexCount: collection.features.reduce(
+          (sum, feature) => sum + countVerticesFromGeometry(feature?.geometry ?? null),
+          0,
+        ),
+      });
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
 
       if (featureIdAllowlist && featureIdAllowlist.size > 0) {
@@ -1684,6 +2231,29 @@ export const createTransformByBandHandler = (
         }
       }
       workingCollection = collection;
+      if (intakeGuardConfig.validationLevel !== 'off') {
+        stageLabel = 'intake-guard';
+        await updateTaskPhase(taskId, 'intake-guard:start', taskProgressRange.prepareStart);
+        const guarded = applyGeometryIntakeGuard({
+          collection: workingCollection,
+          validationLevel: intakeGuardConfig.validationLevel,
+          dedupeEpsilon: intakeGuardConfig.dedupeEpsilon,
+          minRingAreaThreshold: intakeGuardConfig.minRingAreaThreshold,
+          normalizeRingOrientation: intakeGuardConfig.normalizeRingOrientation,
+          geometryOps,
+        });
+        workingCollection = guarded.collection;
+        emitTransformTrace(traceLogLevel, 'summary', 'intake-guard', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'prepare',
+          validationLevel: intakeGuardConfig.validationLevel,
+          modifiedFeatureCount: guarded.modifiedFeatureCount,
+          droppedFeatureCount: guarded.droppedFeatureCount,
+          outputFeatureCount: guarded.collection.features.length,
+        });
+        await updateTaskPhase(taskId, 'intake-guard:done', taskProgressRange.prepareEnd);
+      }
       if (enableFeatureFiltering && transformConfig.enableFeatureFiltering) {
         stageLabel = 'filter:featureFiltering';
         await updateTaskPhase(taskId, 'filtering:start', taskProgressRange.decodeEnd);
@@ -1736,6 +2306,21 @@ export const createTransformByBandHandler = (
       const inputPolygonCounts = inputStats.polygonCounts;
       inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
       inputVertexCount = inputStats.vertexCount;
+      baselineMetrics = collectCollectionAnomalyMetrics(inputCollection, geometryOps);
+      if (input.domainType === 'route') {
+        anomalyProfile = 'line';
+      } else if (baselineMetrics.lineCount > 0 && baselineMetrics.polygonCount === 0) {
+        anomalyProfile = 'line';
+      } else {
+        anomalyProfile = 'polygon';
+      }
+      emitTransformTrace(traceLogLevel, 'verbose', 'baseline-metrics', {
+        sessionId: String(task.nodeId),
+        taskId,
+        stage: 'prepare',
+        profile: anomalyProfile,
+        metrics: baselineMetrics,
+      });
       await updateTaskPhase(taskId, 'prepare:counts:done', taskProgressRange.prepareEnd);
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       if (input.adminLevel === 0 && band.zMax >= 6) {
@@ -1814,6 +2399,17 @@ export const createTransformByBandHandler = (
           await reportPolygonProgress(taskId, processedPolygonCount, inputPolygonCount);
         };
         await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
+        emitTransformTrace(traceLogLevel, 'summary', 'simplify-start', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'simplify',
+          algorithm: simplifyAlgorithm,
+          tolerance,
+          preserveTopology,
+          inputFeatureCount,
+          inputPolygonCount,
+          inputVertexCount,
+        });
         const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
         if (skipGeojsonSimplify) {
           simplified = inputCollection;
@@ -1837,11 +2433,170 @@ export const createTransformByBandHandler = (
           });
           processedPolygonCount = inputPolygonCount;
         }
+        if (simplified && baselineMetrics && anomalyDetectionConfig.enabled && intakeGuardConfig.keepBaselineSnapshot) {
+          type Candidate = {
+            label: string;
+            collection: FeatureCollection;
+            tolerance: number;
+            algorithm: TransformSimplifyAlgorithm;
+            assessment: AnomalyAssessment;
+          };
+          const evaluateCandidate = (
+            label: string,
+            collection: FeatureCollection,
+            candidateTolerance: number,
+            candidateAlgorithm: TransformSimplifyAlgorithm,
+          ): Candidate => {
+            const metrics = collectCollectionAnomalyMetrics(collection, geometryOps);
+            const assessment = assessAnomalyRisk({
+              profile: anomalyProfile,
+              baseline: baselineMetrics as CollectionAnomalyMetrics,
+              candidate: metrics,
+              thresholds: anomalyDetectionConfig,
+            });
+            return {
+              label,
+              collection,
+              tolerance: candidateTolerance,
+              algorithm: candidateAlgorithm,
+              assessment,
+            };
+          };
+
+          const candidates: Candidate[] = [evaluateCandidate('initial', simplified, tolerance, simplifyAlgorithm)];
+          if (anomalyRetryConfig.enabled && candidates[0]?.assessment.isAnomalous) {
+            for (let retryIndex = 0; retryIndex < anomalyRetryConfig.maxRetries; retryIndex += 1) {
+              const retryTolerance = tolerance * Math.pow(anomalyRetryConfig.toleranceScale, retryIndex + 1);
+              const retryCollection = await runWithStallTimeout({
+                promise: runStageWithLabel('simplify-only:retry-anomaly', () => (
+                  simplifyOnlyCollection(inputCollection, band.zMax, retryTolerance, geometryOps)
+                )),
+                stage: 'simplify-only:retry-anomaly',
+                nodeId: String(task.nodeId),
+                taskId,
+                timeoutMs: 300000,
+                getLastProgressAt: () => Date.now(),
+              });
+              const retryCandidate = evaluateCandidate(
+                `retry-${retryIndex + 1}`,
+                retryCollection,
+                retryTolerance,
+                simplifyAlgorithm,
+              );
+              candidates.push(retryCandidate);
+              emitTransformTrace(traceLogLevel, 'summary', 'anomaly-retry', {
+                sessionId: String(task.nodeId),
+                taskId,
+                stage: 'simplify',
+                retryIndex: retryIndex + 1,
+                profile: anomalyProfile,
+                tolerance: retryTolerance,
+                score: retryCandidate.assessment.score,
+                reasons: retryCandidate.assessment.reasons,
+                accepted: !retryCandidate.assessment.isAnomalous,
+              });
+              if (!retryCandidate.assessment.isAnomalous) {
+                break;
+              }
+            }
+          }
+
+          const initialCandidate = candidates[0];
+          if (!initialCandidate) {
+            throw new Error('transform failed: anomaly candidate initialization failed');
+          }
+          const pickBestCandidate = (list: Candidate[], fallback: Candidate): Candidate => {
+            const sorted = [...list].sort((a, b) => a.assessment.score - b.assessment.score);
+            return sorted[0] ?? fallback;
+          };
+          let selectedCandidate: Candidate = pickBestCandidate(candidates, initialCandidate);
+          const allAnomalous = candidates.every((candidate) => candidate.assessment.isAnomalous);
+          if (allAnomalous) {
+            if (anomalyRetryConfig.fallbackMode === 'disable_simplify') {
+              const fallbackCandidate = evaluateCandidate(
+                'fallback-disable-simplify',
+                inputCollection,
+                0,
+                simplifyAlgorithm,
+              );
+              candidates.push(fallbackCandidate);
+              selectedCandidate = fallbackCandidate;
+            } else if (anomalyRetryConfig.fallbackMode === 'switch_algorithm') {
+              const switchedAlgorithm: TransformSimplifyAlgorithm = simplifyAlgorithm === 'topojson'
+                ? 'geojson'
+                : 'topojson';
+              if (switchedAlgorithm === 'geojson') {
+                const switchedTolerance = tolerance * anomalyRetryConfig.toleranceScale;
+                const switchedCollection = await runWithStallTimeout({
+                  promise: runStageWithLabel('simplify-only:fallback-switch-geojson', () => (
+                    simplifyOnlyCollection(inputCollection, band.zMax, switchedTolerance, geometryOps)
+                  )),
+                  stage: 'simplify-only:fallback-switch-geojson',
+                  nodeId: String(task.nodeId),
+                  taskId,
+                  timeoutMs: 300000,
+                  getLastProgressAt: () => Date.now(),
+                });
+                const switchedCandidate = evaluateCandidate(
+                  'fallback-switch-algorithm',
+                  switchedCollection,
+                  switchedTolerance,
+                  switchedAlgorithm,
+                );
+                candidates.push(switchedCandidate);
+                selectedCandidate = pickBestCandidate([selectedCandidate, switchedCandidate], selectedCandidate);
+              } else {
+                const fallbackCandidate = evaluateCandidate(
+                  'fallback-switch-unavailable-use-input',
+                  inputCollection,
+                  0,
+                  switchedAlgorithm,
+                );
+                candidates.push(fallbackCandidate);
+                selectedCandidate = pickBestCandidate([selectedCandidate, fallbackCandidate], selectedCandidate);
+              }
+            }
+          }
+
+          simplified = selectedCandidate.collection;
+          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-selection', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'simplify',
+            profile: anomalyProfile,
+            selected: {
+              label: selectedCandidate.label,
+              algorithm: selectedCandidate.algorithm,
+              tolerance: selectedCandidate.tolerance,
+              score: selectedCandidate.assessment.score,
+              reasons: selectedCandidate.assessment.reasons,
+            },
+            totalCandidates: candidates.length,
+          });
+        } else if (anomalyDetectionConfig.enabled && !intakeGuardConfig.keepBaselineSnapshot) {
+          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-skipped', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'simplify',
+            reason: 'baseline snapshot disabled',
+          });
+        }
         logDebugPhase('simplify:done', {
           featureCount: simplified?.features.length ?? 0,
           polygonCount: inputPolygonCount,
           algorithm: simplifyAlgorithm,
           skipped: skipGeojsonSimplify,
+        });
+        emitTransformTrace(traceLogLevel, 'summary', 'simplify-done', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'simplify',
+          algorithm: simplifyAlgorithm,
+          skipGeojsonSimplify,
+          outputFeatureCount: simplified?.features.length ?? 0,
+          outputVertexCount: simplified
+            ? simplified.features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0)
+            : 0,
         });
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
@@ -2206,21 +2961,31 @@ export const createTransformByBandHandler = (
         };
         vertexLimitStats = { maxVertexCount, overLimitFeatureCount };
       }
-      const repairedSimplified = repairCollectionSelfIntersections(
-        adjustedSimplified,
-        geometryOps,
-        geometryEngine,
-      );
-      if (repairedSimplified.repairedFeatureCount > 0) {
-        console.info('[ShapeTransform][SimplifyOnlyMetrics] repaired self-intersections after simplify', {
-          nodeId: task.nodeId,
+      if (anomalyProfile === 'polygon') {
+        const repairedSimplified = repairCollectionSelfIntersections(
+          adjustedSimplified,
+          geometryOps,
+          geometryEngine,
+        );
+        if (repairedSimplified.repairedFeatureCount > 0) {
+          console.info('[ShapeTransform][SimplifyOnlyMetrics] repaired self-intersections after simplify', {
+            nodeId: task.nodeId,
+            taskId,
+            bandIndex: input.bandIndex,
+            zTarget: band.zMax,
+            repairedFeatures: repairedSimplified.repairedFeatureCount,
+          });
+        }
+        simplified = repairedSimplified.collection;
+      } else {
+        simplified = adjustedSimplified;
+        emitTransformTrace(traceLogLevel, 'summary', 'polygon-repair-skipped', {
+          sessionId: String(task.nodeId),
           taskId,
-          bandIndex: input.bandIndex,
-          zTarget: band.zMax,
-          repairedFeatures: repairedSimplified.repairedFeatureCount,
+          stage: 'simplify',
+          profile: anomalyProfile,
         });
       }
-      simplified = repairedSimplified.collection;
 
       const simplifiedFeatureCount = simplified.features.length;
       stageLabel = 'validate:vertex-limit';
@@ -2333,7 +3098,7 @@ export const createTransformByBandHandler = (
         }
       }
 
-      const outputCollectionValue: FeatureCollection = {
+      let outputCollectionValue: FeatureCollection = {
         type: 'FeatureCollection',
         features,
       };
@@ -2355,6 +3120,47 @@ export const createTransformByBandHandler = (
             totalPolygons: inputPolygonCount,
           },
         };
+      }
+      if (vtOutputQualityGuard?.enabled && baselineMetrics) {
+        const isWithinZoomRange = band.zMax >= vtOutputQualityGuard.minZoom
+          && band.zMax <= vtOutputQualityGuard.maxZoom;
+        if (isWithinZoomRange) {
+          const outputMetrics = collectCollectionAnomalyMetrics(outputCollectionValue, geometryOps);
+          const outputAssessment = assessAnomalyRisk({
+            profile: anomalyProfile,
+            baseline: baselineMetrics,
+            candidate: outputMetrics,
+            thresholds: anomalyDetectionConfig,
+          });
+          emitTransformTrace(traceLogLevel, 'summary', 'vt-quality-guard', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'output',
+            profile: anomalyProfile,
+            zTarget: band.zMax,
+            actionOnAnomaly: vtOutputQualityGuard.actionOnAnomaly,
+            assessment: outputAssessment,
+          });
+          if (outputAssessment.isAnomalous && vtOutputQualityGuard.actionOnAnomaly === 'drop_tile') {
+            await reportPolygonProgress(taskId, inputPolygonCount, inputPolygonCount);
+            return {
+              status: 'completed',
+              progress: 100,
+              display: {
+                kind: 'info',
+                key: 'stage.taskWarning.vtQualityGuardDropped',
+                params: {
+                  score: outputAssessment.score.toFixed(3),
+                  reasons: outputAssessment.reasons.join(','),
+                },
+              },
+              outputData: {
+                processedPolygons: inputPolygonCount,
+                totalPolygons: inputPolygonCount,
+              },
+            };
+          }
+        }
       }
 
       const boundaryDiagnostics = buildBoundaryDiagnostics(outputCollectionValue);

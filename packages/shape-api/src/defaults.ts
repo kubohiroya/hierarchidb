@@ -5,11 +5,33 @@ export const DEFAULT_BUILD_CONFIG = {
   fetchConfig: {
     deleteOnComplete: false,
     timeoutMs: 300000,
+    geometryIntakeGuard: {
+      validationLevel: 'basic',
+      dedupeEpsilon: 0.000001,
+      minRingAreaThreshold: 0.0,
+      normalizeRingOrientation: true,
+      keepBaselineSnapshot: true,
+    },
   },
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     geometryEngine: 'turf',
     simplifyAlgorithm: 'topojson',
+    preserveTopology: true,
+    executionLogLevel: 'summary',
+    anomalyDetection: {
+      enabled: true,
+      maxEdgeLengthRatio: 12,
+      maxAreaDriftPercent: 35,
+      maxSelfIntersectionCount: 0,
+      maxLineLengthDriftPercent: 45,
+    },
+    anomalyRetry: {
+      enabled: true,
+      maxRetries: 2,
+      toleranceScale: 0.7,
+      fallbackMode: 'best_score',
+    },
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,
@@ -52,6 +74,13 @@ export const DEFAULT_BUILD_CONFIG = {
       enabled: false,
       tiles: [],
       features: [],
+    },
+    outputQualityGuard: {
+      enabled: false,
+      minZoom: 0,
+      maxZoom: 22,
+      actionOnAnomaly: 'mark_warning',
+      enablePreviewOverlay: false,
     },
   },
   cleanupConfig: {

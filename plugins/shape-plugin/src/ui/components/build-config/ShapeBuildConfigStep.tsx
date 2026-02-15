@@ -6,6 +6,8 @@ import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarch
 import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
+import { FetchGeometryIntakeGuardCard } from './FetchGeometryIntakeGuardCard.tsx';
+import { VtOutputQualityGuardCard } from './VtOutputQualityGuardCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
@@ -143,6 +145,11 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showRetryCard={false}
         disabled={disabled}
       />
+      <FetchGeometryIntakeGuardCard
+        config={config}
+        onChange={handleChange}
+        disabled={disabled}
+      />
       <TransformConfigSection
         config={config}
         onChange={handleChange}
@@ -153,6 +160,11 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         buildConfig={runtimeBuildConfig}
         update={updateRuntimeBuildConfig}
         showConcurrencyCard={false}
+        disabled={disabled}
+      />
+      <VtOutputQualityGuardCard
+        config={config}
+        onChange={handleChange}
         disabled={disabled}
       />
       <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
