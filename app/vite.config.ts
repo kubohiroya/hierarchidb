@@ -1140,6 +1140,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
     },
     server: {
       port: 4200,
+      strictPort: true,
       open: true,
       host: true,
       fs: {
