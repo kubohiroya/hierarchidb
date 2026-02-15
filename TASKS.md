@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #298 / `codex/chore/merge/eria-commit-integration` / start: 2026-02-15 16:42 JST
 - #296 / `codex/fix/e2e/shape-build-startup-any` / start: 2026-02-15 16:05 JST
 - #294 / `codex/fix/ui-auth/clear-auth-data` / start: 2026-02-15 15:43 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
