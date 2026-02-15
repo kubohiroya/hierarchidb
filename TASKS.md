@@ -38,7 +38,7 @@
 ## Kanban
 
 ### Doing
-- #299 / `codex/fix/e2e/shape-startup-any-cleanup` / start: 2026-02-15 16:53 JST
+- #300 / `codex/fix/env/require-cors-proxy-base-url` / start: 2026-02-15 18:07 JST
 - #298 / `codex/chore/merge/eria-commit-integration` / start: 2026-02-15 16:42 JST
 - #296 / `codex/fix/e2e/shape-build-startup-any` / start: 2026-02-15 16:05 JST
 - #294 / `codex/fix/ui-auth/clear-auth-data` / start: 2026-02-15 15:43 JST
@@ -96,7 +96,7 @@
 
 ## 今日の運用ログ
 
-- update: 2026-02-15 16:55 JST #299 `pnpm e2e` を実行し exit 0 を確認。
+- start: 2026-02-15 18:07 JST Issue #300 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/fix/env/require-cors-proxy-base-url` を作成して着手。
 - update: 2026-02-15 16:45 JST #298 指定コミット（81f63ed9/9f413bd9）を merge commit として ERIA-Cartograph に合流し、origin へ push まで完了。
 - update: 2026-02-15 16:16 JST #296 `pnpm e2e` を実行し exit 0 を確認。
 - update: 2026-02-15 14:48 JST #291 デフォルト認証シードを `e2e/.auth/auth.json` に変更し、テンプレートを改名、`run-shape-startup-e2e.mjs` の参照先を更新。検証は有効トークン待ち。
