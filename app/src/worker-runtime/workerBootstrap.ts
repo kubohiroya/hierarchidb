@@ -246,11 +246,14 @@ if (!globalShim.process) {
 if (!globalShim.process.env) {
   globalShim.process.env = {};
 }
-if (typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string') {
-  const value = import.meta.env.VITE_CORS_PROXY_BASE_URL;
-  if (value.length > 0) {
-    setCorsProxyBaseURL(value);
+{
+  const value = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
+    ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
+    : '';
+  if (!value) {
+    throw new Error('VITE_CORS_PROXY_BASE_URL is required for worker startup.');
   }
+  setCorsProxyBaseURL(value);
 }
 
 let bootstrapPromise: Promise<RuntimeWorkerBootstrap> | null = null;

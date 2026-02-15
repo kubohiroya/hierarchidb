@@ -23,11 +23,14 @@ import { AppIconRegistryProvider } from './IconRegistryProvider.js';
 import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 
 // UI-thread default CORS proxy (worker側と同等に初期化しておく)
-if (typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string') {
-  const value = import.meta.env.VITE_CORS_PROXY_BASE_URL;
-  if (value.length > 0) {
-    setCorsProxyBaseURL(value);
+{
+  const value = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
+    ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
+    : '';
+  if (!value) {
+    throw new Error('VITE_CORS_PROXY_BASE_URL is required for app startup.');
   }
+  setCorsProxyBaseURL(value);
 }
 
 /**
