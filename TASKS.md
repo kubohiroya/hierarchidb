@@ -38,6 +38,8 @@
 ## Kanban
 
 ### Doing
+- #315 / `codex/fix/shape-build-duration-summary-stable` / start: 2026-02-16 02:57 JST
+- #312 / `codex/chore/integration/eria-main-sync-latest-312` / start: 2026-02-16 02:35 JST
 - #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
 - #297 / `codex/fix/shape/task-list-empty-ui` / start: 2026-02-15 17:26 JST
 - #310 / `chore/integration/eria-cartograph-sync-20260216` / start: 2026-02-16 01:51 JST
@@ -101,6 +103,12 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-16 08:22 JST #315 `useShapeBuildStep.ts` の elapsed reset 条件を修正。persisted elapsed が空でも local elapsed スナップショット（completedStageElapsedMs）が残っている場合はリセットしないようにし、ビルド完了直後に総経過時間/ステージ経過時間が `-` へ戻る回帰を防止。
+- update: 2026-02-16 08:22 JST #315 検証結果: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.elapsed.unit.test.ts` exit 0（5 passed）、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0。
+- start: 2026-02-16 02:57 JST #315 を Project `hierarchidb` へ追加し、Status を `In Progress` に設定。ブランチ `codex/fix/shape-build-duration-summary-stable` を作成して着手。
+- start: 2026-02-16 02:35 JST #312 を起票し、Issue `https://github.com/kubohiroya/hierarchidb/issues/312` を作成。
+- start: 2026-02-16 02:35 JST #312 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。
+- start: 2026-02-16 02:35 JST ブランチ `codex/chore/integration/eria-main-sync-latest-312` を作成して着手。
 
 - done: 2026-02-16 01:54 JST #310 `origin/codex/chore/app/vite-dev-port-4200`・`origin/codex/refactor/ephemeral-route-shape-301`・`origin/codex/fix/shape-ephemeral-types` を `ERIA-Cartograph` へ統合し、`pnpm typecheck` exit 0 と `git push origin HEAD:ERIA-Cartograph` 成功を確認。
 - blocked: 2026-02-16 01:53 JST #310 `git merge origin/main` は rename/delete を含む広範囲競合で安全な最小差分解消が困難（`TASKS.md` 以外で多数競合）だったため中止し、今回統合対象は codex 系最新ブランチに限定。
