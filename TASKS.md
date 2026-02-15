@@ -85,6 +85,7 @@
 
 ### Blocked
 
+- #305 / `codex/chore/app/vite-dev-port-4200` / blocked: 2026-02-15 22:10 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外 `packages/shape-store` の `build:types` で `@hierarchidb/tabular-store` の型解決に失敗し exit 2）
 - #289 / `codex/fix/shape/build-progress-task-visibility` / blocked: 2026-02-15 14:35 JST（`pnpm e2e:shape-startup` が `/auth/verify` 401 で失敗。`e2e/.auth/auth.json` の token が無効。E2E auth seed 更新が必要）
 - #258 / `codex/fix/i18n/move-to-archive-ja-locale` / blocked: 2026-02-14 08:31 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` が差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418` の型不整合で exit 1、`pnpm -w turbo run test --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` が差分外既知ブロッカー `src/geos/__tests__/geosWorkerClient.unit.test.ts` の失敗/timeout と `TreeConsoleIntegrationImportGuard` の import 解決失敗で exit 1）
 - #255 / `codex/refactor/repo/rename-trash-to-archive` / blocked: 2026-02-13 22:20 JST（`pnpm typecheck` が差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418` の型不整合で exit 1、`pnpm test` が差分外既知ブロッカー `ui/worker-client e2e` の `window is not defined` と `runtime-worker undo-folder-operations.wfl` timeout で exit 1）
@@ -96,6 +97,8 @@
 
 ## 今日の運用ログ
 
+- blocked: 2026-02-15 22:10 JST #305 `pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外 `packages/shape-store` の `build:types` で `@hierarchidb/tabular-store` の型解決失敗（`src/ShapeDB.ts:15`）により exit 2。解除には `@hierarchidb/tabular-store` の型出力/依存解決の復旧が必要。
+- start: 2026-02-15 22:09 JST Issue #305 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/app/vite-dev-port-4200` を作成して着手。
 - start: 2026-02-15 18:07 JST Issue #300 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/fix/env/require-cors-proxy-base-url` を作成して着手。
 - update: 2026-02-15 16:45 JST #298 指定コミット（81f63ed9/9f413bd9）を merge commit として ERIA-Cartograph に合流し、origin へ push まで完了。
 - update: 2026-02-15 16:16 JST #296 `pnpm e2e` を実行し exit 0 を確認。
