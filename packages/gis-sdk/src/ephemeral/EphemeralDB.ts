@@ -1,5 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
+import { getDBName } from '@hierarchidb/util';
 import type {
   BuildStage,
   EphemeralBuildSessionRecord,
@@ -12,25 +13,6 @@ import type {
   EphemeralTransformErrorRecord,
 } from './EphemeralBuildState.js';
 import { EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
-
-const EPHEMERAL_DB_SCHEMA_V3: Record<string, string> = {
-  sessions:
-    '&nodeId, domainType, status, updatedAt'
-    + ', [domainType+status], [domainType+updatedAt]',
-  buildTasks:
-    '&taskId, nodeId, domainType, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]'
-    + ', [domainType+status]',
-  fetchCache:
-    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
-  transformCache:
-    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
-  transformErrors:
-    '&id, nodeId, domainType',
-  tileIdToBufferRelations:
-    '&id, nodeId, domainType, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
-};
 
 const applyTopLevelMods = <T extends Record<string, unknown>>(
   current: T,
@@ -56,7 +38,30 @@ const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralT
   return meta;
 };
 
-export abstract class EphemeralDB extends Dexie {
+type HookTransaction = {
+  storeNames?: string[] | { contains?: (name: string) => boolean };
+  table: (name: string) => Table<unknown, string>;
+};
+
+const hasStore = (transaction: HookTransaction, storeName: string): boolean => {
+  const { storeNames } = transaction;
+  if (!storeNames) return false;
+  if (Array.isArray(storeNames)) {
+    return storeNames.includes(storeName);
+  }
+  if (typeof storeNames.contains === 'function') {
+    return storeNames.contains(storeName);
+  }
+  return false;
+};
+
+const fireAndForgetMetaOperation = (operation: () => Promise<unknown>, label: string): void => {
+  void Dexie.ignoreTransaction(operation).catch((error: unknown) => {
+    console.warn(`[EphemeralDB] failed to sync ${label}`, error);
+  });
+};
+
+export class EphemeralDB extends Dexie {
   sessions!: Table<EphemeralBuildSessionRecord, string>;
   buildTasks!: Table<EphemeralBuildTaskRecord, string>;
   fetchCache!: Table<EphemeralFetchCacheRecord, string>;
@@ -66,31 +71,9 @@ export abstract class EphemeralDB extends Dexie {
   transformErrors!: Table<EphemeralTransformErrorRecord, string>;
   tileIdToBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
 
-  protected constructor(dbName: string) {
+  constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA_V3);
-    this.version(4).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
-      const fetchRows = await tx.table('fetchCache').toArray() as EphemeralFetchCacheRecord[];
-      if (fetchRows.length > 0) {
-        await tx.table('fetchCacheMeta').bulkPut(fetchRows.map(toFetchCacheMeta));
-      }
-      const transformRows = await tx.table('transformCache').toArray() as EphemeralTransformCacheRecord[];
-      if (transformRows.length > 0) {
-        await tx.table('transformCacheMeta').bulkPut(transformRows.map(toTransformCacheMeta));
-      }
-    });
-    this.version(5).stores(EPHEMERAL_DB_SCHEMA);
-    this.version(6).stores(EPHEMERAL_DB_SCHEMA);
-    this.version(7).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
-      const fetchRows = await tx.table('fetchCache').toArray() as EphemeralFetchCacheRecord[];
-      if (fetchRows.length > 0) {
-        await tx.table('fetchCacheMeta').bulkPut(fetchRows.map(toFetchCacheMeta));
-      }
-      const transformRows = await tx.table('transformCache').toArray() as EphemeralTransformCacheRecord[];
-      if (transformRows.length > 0) {
-        await tx.table('transformCacheMeta').bulkPut(transformRows.map(toTransformCacheMeta));
-      }
-    });
+    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
 
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
@@ -102,7 +85,13 @@ export abstract class EphemeralDB extends Dexie {
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
 
     this.fetchCache.hook('creating', (_primaryKey, record, transaction) => {
-      transaction.table('fetchCacheMeta').put(toFetchCacheMeta(record));
+      const tx = transaction as HookTransaction;
+      const meta = toFetchCacheMeta(record);
+      if (hasStore(tx, 'fetchCacheMeta')) {
+        void tx.table('fetchCacheMeta').put(meta);
+        return;
+      }
+      fireAndForgetMetaOperation(() => this.fetchCacheMeta.put(meta), 'fetchCacheMeta:create');
     });
     this.fetchCache.hook('updating', (mods, _primaryKey, record, transaction) => {
       if (!record) return;
@@ -110,17 +99,37 @@ export abstract class EphemeralDB extends Dexie {
         record as unknown as Record<string, unknown>,
         mods as Record<string, unknown>,
       ) as unknown as EphemeralFetchCacheRecord;
-      transaction.table('fetchCacheMeta').put(toFetchCacheMeta(next));
+      const tx = transaction as HookTransaction;
+      const meta = toFetchCacheMeta(next);
+      if (hasStore(tx, 'fetchCacheMeta')) {
+        void tx.table('fetchCacheMeta').put(meta);
+      } else {
+        fireAndForgetMetaOperation(() => this.fetchCacheMeta.put(meta), 'fetchCacheMeta:update');
+      }
       return mods;
     });
     this.fetchCache.hook('deleting', (primaryKey, _record, transaction) => {
       if (typeof primaryKey === 'string') {
-        transaction.table('fetchCacheMeta').delete(primaryKey);
+        const tx = transaction as HookTransaction;
+        if (hasStore(tx, 'fetchCacheMeta')) {
+          void tx.table('fetchCacheMeta').delete(primaryKey);
+          return;
+        }
+        fireAndForgetMetaOperation(
+          () => this.fetchCacheMeta.delete(primaryKey),
+          'fetchCacheMeta:delete',
+        );
       }
     });
 
     this.transformCache.hook('creating', (_primaryKey, record, transaction) => {
-      transaction.table('transformCacheMeta').put(toTransformCacheMeta(record));
+      const tx = transaction as HookTransaction;
+      const meta = toTransformCacheMeta(record);
+      if (hasStore(tx, 'transformCacheMeta')) {
+        void tx.table('transformCacheMeta').put(meta);
+        return;
+      }
+      fireAndForgetMetaOperation(() => this.transformCacheMeta.put(meta), 'transformCacheMeta:create');
     });
     this.transformCache.hook('updating', (mods, _primaryKey, record, transaction) => {
       if (!record) return;
@@ -128,12 +137,29 @@ export abstract class EphemeralDB extends Dexie {
         record as unknown as Record<string, unknown>,
         mods as Record<string, unknown>,
       ) as unknown as EphemeralTransformCacheRecord;
-      transaction.table('transformCacheMeta').put(toTransformCacheMeta(next));
+      const tx = transaction as HookTransaction;
+      const meta = toTransformCacheMeta(next);
+      if (hasStore(tx, 'transformCacheMeta')) {
+        void tx.table('transformCacheMeta').put(meta);
+      } else {
+        fireAndForgetMetaOperation(
+          () => this.transformCacheMeta.put(meta),
+          'transformCacheMeta:update',
+        );
+      }
       return mods;
     });
     this.transformCache.hook('deleting', (primaryKey, _record, transaction) => {
       if (typeof primaryKey === 'string') {
-        transaction.table('transformCacheMeta').delete(primaryKey);
+        const tx = transaction as HookTransaction;
+        if (hasStore(tx, 'transformCacheMeta')) {
+          void tx.table('transformCacheMeta').delete(primaryKey);
+          return;
+        }
+        fireAndForgetMetaOperation(
+          () => this.transformCacheMeta.delete(primaryKey),
+          'transformCacheMeta:delete',
+        );
       }
     });
   }
@@ -274,3 +300,5 @@ export abstract class EphemeralDB extends Dexie {
     await this.buildTasks.update(taskId, updates);
   }
 }
+
+export const ephemeralDB = new EphemeralDB();

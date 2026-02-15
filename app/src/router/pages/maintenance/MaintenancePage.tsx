@@ -97,6 +97,12 @@ export default function MaintenancePage() {
 
     setExecution(result);
     setRunning(false);
+
+    if (result.success && typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 0);
+    }
   };
 
   if (!validation.ok) {

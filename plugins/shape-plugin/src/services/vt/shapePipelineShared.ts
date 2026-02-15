@@ -23,7 +23,7 @@ import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/sha
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB, type EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildTransformTaskCacheIdentity, buildVtTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import { resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';
 
@@ -335,7 +335,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   bandIndex: number;
   zBase: number;
   geometryEngine: GeometryEngine;
-  ephemeralStore: EphemeralShapeDB;
+  ephemeralStore: EphemeralDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]>; bufferFeatureCounts: Map<string, number> }> => {
   const { nodeId, bandIndex, zBase, geometryEngine, ephemeralStore } = params;
   const idsRaw = await ephemeralStore.transformCacheMeta
@@ -438,7 +438,7 @@ export const buildTransformByBandTasks = async (
   let index = 0;
   let offset = 0;
   while (true) {
-    const fetchBufferChunk = await ephemeralShapeDB.fetchCacheMeta
+    const fetchBufferChunk = await ephemeralDB.fetchCacheMeta
       .where('nodeId')
       .equals(nodeId)
       .offset(offset)
@@ -448,7 +448,7 @@ export const buildTransformByBandTasks = async (
       break;
     }
     offset += fetchBufferChunk.length;
-    const fullBufferChunk = await ephemeralShapeDB.fetchCache.bulkGet(
+    const fullBufferChunk = await ephemeralDB.fetchCache.bulkGet(
       fetchBufferChunk.map((buffer) => buffer.id),
     );
     const fullBufferById = new Map(
@@ -462,7 +462,7 @@ export const buildTransformByBandTasks = async (
       const fullBuffer = fullBufferById.get(buffer.id);
       if (!fullBuffer) continue;
       const fetchArtifactHash = await resolveFetchArtifactHashFromRecord(
-        ephemeralShapeDB.fetchCache,
+        ephemeralDB.fetchCache,
         fullBuffer,
       );
       const adminLevel = buffer.adminLevel;
@@ -543,7 +543,7 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
 
 export const buildVtTasks = async (
   nodeId: NodeId,
-  ephemeralStore: EphemeralShapeDB,
+  ephemeralStore: EphemeralDB,
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,

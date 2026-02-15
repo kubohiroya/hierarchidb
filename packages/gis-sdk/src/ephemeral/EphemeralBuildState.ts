@@ -1,8 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeBuildProgressSummary,
-  ShapeBuildTaskPayload,
-  ShapeBuildTaskResult,
   ShapeTransformErrorRecord,
 } from '@hierarchidb/shape-api';
 
@@ -41,11 +39,6 @@ export interface EphemeralStageStatus {
   message?: string;
 }
 
-export type EphemeralBuildTaskOutput = ShapeBuildTaskResult | {
-  processedPolygons: number;
-  totalPolygons: number;
-};
-
 export interface EphemeralBuildSessionRecord {
   nodeId: NodeId;
   draftId?: NodeId;
@@ -74,7 +67,7 @@ export interface EphemeralBuildSessionRecord {
   elapsedByStage?: Record<string, number>;
 }
 
-export interface EphemeralBuildTaskRecord {
+export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   taskId: string;
   nodeId: NodeId;
   domainType?: EphemeralDomainType;
@@ -85,13 +78,14 @@ export interface EphemeralBuildTaskRecord {
   progress: number;
   display?: TaskDisplayPayload;
   message?: string;
+  metadata?: Record<string, unknown>;
   errorMessage?: string;
   createdAt?: number;
   updatedAt?: number;
   sequence?: number;
   stage?: BuildStage;
-  inputData?: ShapeBuildTaskPayload;
-  outputData?: EphemeralBuildTaskOutput;
+  inputData?: TInput;
+  outputData?: TOutput;
   retryCount?: number;
   startedAt?: number;
   completedAt?: number;

@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeBuildProgressPanel } from './ShapeBuildProgressPanel.js';
 import {
   taskStatusAtom,
-} from '../../atoms/shapeBuildProgressAtoms.ts';
+} from '../../atoms/shapeBuildProgressAtoms.js';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import { useBuildProgressStepState } from './useBuildProgressStepState.ts';

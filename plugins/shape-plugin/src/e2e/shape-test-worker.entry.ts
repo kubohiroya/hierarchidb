@@ -1,16 +1,17 @@
 // Test-only worker entry that exposes Shape APIs over a MessagePort/Comlink endpoint.
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
-import type { NodeId } from '@hierarchidb/core-types';
+import type { BatchProgressEvent, BatchProgressPayload, BatchTaskUpdateEvent, BuildTaskSummary, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig } from '../common/types/index.js';
+import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index.js';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import { shapeDB } from '@hierarchidb/shape-store';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
+import { shapeBatchAPI } from '../worker/api.js';
 import { shapeMutationAPIImpl } from '../services/batch/ShapeBuildAPIClient.js';
 import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared.js';
 import { runShapeFetchStageSection } from '../services/vt/shapePipelineFetchStage.js';
@@ -19,7 +20,7 @@ import { runShapeVtStageSection } from '../services/vt/shapePipelineVtStage.js';
 import { runShapeMetadataStage } from '../services/vt/shapePipelineMetadataStage.js';
 import { runShapePipelineCleanup } from '../services/vt/shapePipelineCleanup.js';
 import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers.js';
-import { ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
+import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
@@ -64,6 +65,33 @@ type ShapePipelineTestAPI = {
   getPipelineState(nodeId: NodeId): Promise<PipelineState>;
 };
 
+type ShapeDraftSeedPayload = {
+  nodeId: NodeId;
+  buildConfig: ShapeBuildConfig;
+  processingConfig: ShapeProcessingConfig;
+  selectedArrayByCountries: SelectedArrayByCountries;
+};
+
+type ShapeBatchTestAPI = {
+  seedDraftNode(payload: ShapeDraftSeedPayload): Promise<void>;
+  startBatchProcess(payload: {
+    nodeId: NodeId;
+    buildConfig: ShapeBuildConfig;
+    processingConfig: ShapeProcessingConfig;
+    downloadTaskPayloads: FetchTaskPayload[];
+    buildContinuationPolicy?: BuildContinuationPolicy;
+  }): Promise<NodeId>;
+  subscribeToProgress(
+    nodeId: NodeId,
+    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+  ): () => void;
+  subscribeToTasks(
+    nodeId: NodeId,
+    callback: (event: BatchTaskUpdateEvent<BuildTaskSummary>) => void
+  ): () => void;
+  getBatchTasks(nodeId: NodeId): Promise<BuildTaskSummary[]>;
+};
+
 type PipelinePauseState = {
   paused: boolean;
   waiters: Array<() => void>;
@@ -74,6 +102,7 @@ type ShapeWorkerTestAPI = {
   getShapeMutationAPI(): ShapeMutationAPI;
   getShapeEphemeralAdminAPI(): ShapeEphemeralAdminAPI;
   getShapePipelineTestAPI(): ShapePipelineTestAPI;
+  getShapeBatchTestAPI(): ShapeBatchTestAPI;
 };
 
 
@@ -83,8 +112,8 @@ const pauseStates = new Map<string, PipelinePauseState>();
 
 async function main(endpoint?: Endpoint): Promise<void> {
   const ensureEphemeralOpen = async (): Promise<void> => {
-    if (!ephemeralShapeDB.isOpen()) {
-      await ephemeralShapeDB.open();
+    if (!ephemeralDB.isOpen()) {
+      await ephemeralDB.open();
     }
   };
 
@@ -93,7 +122,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       const now = Date.now();
       const data = new Uint8Array([1, 2, 3]).buffer;
-      await ephemeralShapeDB.fetchCache.put({
+      await ephemeralDB.fetchCache.put({
         id: `${nodeId}-fetch-cache`,
         nodeId,
         domainType: 'shape',
@@ -114,7 +143,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         inputPolygonCount: 1,
         timestamp: now,
       });
-      await ephemeralShapeDB.transformCache.put({
+      await ephemeralDB.transformCache.put({
         id: `${nodeId}-transform-cache`,
         nodeId,
         domainType: 'shape',
@@ -130,7 +159,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
         tolerance: 0,
         timestamp: now,
       });
-      await ephemeralShapeDB.transformErrors.put({
+      await ephemeralDB.transformErrors.put({
         id: `${nodeId}-transform-error`,
         nodeId,
         domainType: 'shape',
@@ -146,7 +175,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
           features: [],
         },
       });
-      await ephemeralShapeDB.tileIdToBufferRelations.put({
+      await ephemeralDB.tileIdToBufferRelations.put({
         id: `${nodeId}-tile-buffer`,
         nodeId,
         domainType: 'shape',
@@ -160,19 +189,19 @@ async function main(endpoint?: Endpoint): Promise<void> {
       await ensureEphemeralOpen();
       switch (cacheType) {
         case 'fetchCache':
-          await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).delete();
+          await ephemeralDB.fetchCache.where('nodeId').equals(nodeId).delete();
           return;
         case 'transformCache':
-          await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).delete();
+          await ephemeralDB.transformCache.where('nodeId').equals(nodeId).delete();
           return;
         case 'transformErrors':
-          await ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).delete();
+          await ephemeralDB.transformErrors.where('nodeId').equals(nodeId).delete();
           return;
         case 'tileIdToBufferRelations':
-          await ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+          await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           return;
         case 'buildTasks':
-          await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
+          await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
           return;
         default:
           return;
@@ -181,11 +210,11 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeEphemeralCounts: async (nodeId: NodeId): Promise<EphemeralCacheCounts> => {
       await ensureEphemeralOpen();
       const [fetchCache, transformCache, transformErrors, tileIdToBufferRelations, buildTasks] = await Promise.all([
-        ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count(),
-        ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).count(),
-        ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).count(),
-        ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count(),
-        ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.fetchCache.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.transformCache.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.transformErrors.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count(),
+        ephemeralDB.buildTasks.where('nodeId').equals(nodeId).count(),
       ]);
       return {
         fetchCache,
@@ -287,7 +316,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
       resumeExistingTasks,
       failureHandling,
       buildContinuationPolicy,
-      ephemeralStore: ephemeralShapeDB,
+      ephemeralStore: ephemeralDB,
       diffBuildEnabled: false,
       recyclingAllowlist,
     });
@@ -303,14 +332,14 @@ async function main(endpoint?: Endpoint): Promise<void> {
       waitIfPaused: () => waitIfPaused(params.nodeId),
       resumeExistingTasks,
       failureHandling,
-      ephemeralStore: ephemeralShapeDB,
+      ephemeralStore: ephemeralDB,
       loadContinentLookup,
     });
 
     await runShapeMetadataStage({
       nodeId: params.nodeId,
       dataSource,
-      ephemeralStore: ephemeralShapeDB,
+      ephemeralStore: ephemeralDB,
       shapeDb: shapeDB,
       geometryEngine: params.buildConfig.transformConfig.geometryEngine ?? 'turf',
       recyclingAllowlist,
@@ -320,7 +349,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     await runShapePipelineCleanup({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
-      ephemeralStore: ephemeralShapeDB,
+      ephemeralStore: ephemeralDB,
     });
   };
 
@@ -372,6 +401,68 @@ async function main(endpoint?: Endpoint): Promise<void> {
     ),
   };
 
+  const ensureRootNode = async (coreDB: CoreDB): Promise<NodeId> => {
+    const rootId = 'r:root' as NodeId;
+    const existing = await coreDB.getNode(rootId);
+    if (existing) return rootId;
+    const now = Date.now();
+    await coreDB.nodes.put({
+      id: rootId,
+      parentId: null,
+      nodeType: 'root' as NodeType,
+      metadata: { name: 'Root', description: undefined, tags: [] },
+      draftMetadata: null,
+      data: null,
+      draftData: undefined,
+      depth: 0,
+      visible: true,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      lastTouchedAt: now,
+    });
+    return rootId;
+  };
+
+  const batchApi: ShapeBatchTestAPI = {
+    seedDraftNode: async (payload) => {
+      const coreDB = await CoreDB.getSingleton();
+      const rootId = await ensureRootNode(coreDB);
+      const now = Date.now();
+      const existing = await coreDB.getNode(payload.nodeId);
+      await coreDB.nodes.put({
+        id: payload.nodeId,
+        parentId: existing?.parentId ?? rootId,
+        nodeType: 'shape' as NodeType,
+        metadata: existing?.metadata ?? { name: 'Shape Draft', description: undefined, tags: [] },
+        draftMetadata: existing?.draftMetadata ?? null,
+        data: existing?.data ?? null,
+        draftData: {
+          buildConfig: payload.buildConfig,
+          processingConfig: payload.processingConfig,
+          selectedArrayByCountries: payload.selectedArrayByCountries,
+        },
+        depth: existing?.depth ?? 1,
+        visible: existing?.visible ?? true,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+        version: (existing?.version ?? 0) + 1,
+        lastTouchedAt: now,
+      });
+    },
+    startBatchProcess: async (payload) =>
+      shapeBatchAPI.startBatchProcess(
+        payload.nodeId,
+        payload.buildConfig,
+        payload.processingConfig,
+        payload.downloadTaskPayloads,
+        payload.buildContinuationPolicy,
+      ),
+    subscribeToProgress: (nodeId, callback) => proxy(shapeBatchAPI.subscribeToProgress(nodeId, callback)),
+    subscribeToTasks: (nodeId, callback) => proxy(shapeBatchAPI.subscribeToTasks(nodeId, callback)),
+    getBatchTasks: async (nodeId) => shapeBatchAPI.getBatchTasks(nodeId),
+  };
+
   const queryService = await ShapeQueryService.getSingleton(shapeDB);
   const mutationService = await ShapeMutationService.getSingleton(shapeDB);
   const api: ShapeWorkerTestAPI = {
@@ -379,6 +470,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeMutationAPI: () => proxy(mutationService),
     getShapeEphemeralAdminAPI: () => proxy(adminApi),
     getShapePipelineTestAPI: () => proxy(pipelineApi),
+    getShapeBatchTestAPI: () => proxy(batchApi),
   };
 
   if (endpoint) {

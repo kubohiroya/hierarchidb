@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeature, LocationPointProperties } from '@hierarchidb/location-store';
 import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import type { RouteLineString } from '@hierarchidb/route-api';
-import { ephemeralRouteDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import {
   filterIdeGsmPointsBySelection,
   getLocationDB,
@@ -536,17 +536,17 @@ export class LocationMutationService implements LocationMutationAPI {
   }
 
   private async clearFetchCacheAndReserveRouteRebuild(routeNodeId: NodeId): Promise<void> {
-    await ephemeralRouteDB.open?.();
+    await ephemeralDB.open?.();
     const now = Date.now();
-    await ephemeralRouteDB.transaction(
+    await ephemeralDB.transaction(
       'rw',
-      [ephemeralRouteDB.fetchCache, ephemeralRouteDB.fetchCacheMeta, ephemeralRouteDB.sessions],
+      [ephemeralDB.fetchCache, ephemeralDB.fetchCacheMeta, ephemeralDB.sessions],
       async () => {
-        await ephemeralRouteDB.fetchCache.where('nodeId').equals(routeNodeId).delete();
-        await ephemeralRouteDB.fetchCacheMeta.where('nodeId').equals(routeNodeId).delete();
-        const current = await ephemeralRouteDB.sessions.get(routeNodeId);
+        await ephemeralDB.fetchCache.where('nodeId').equals(routeNodeId).delete();
+        await ephemeralDB.fetchCacheMeta.where('nodeId').equals(routeNodeId).delete();
+        const current = await ephemeralDB.sessions.get(routeNodeId);
         if (current?.status === 'running') return;
-        await ephemeralRouteDB.sessions.put({
+        await ephemeralDB.sessions.put({
           ...(current ?? {}),
           nodeId: routeNodeId,
           domainType: 'route',

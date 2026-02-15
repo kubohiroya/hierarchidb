@@ -1,4 +1,4 @@
-# 第8部 Worker (Web Worker Layer)
+ 第8部 Worker (Web Worker Layer)
 
 ## Chapter 21: Worker アーキテクチャ (Worker Architecture) ⭐️⭐️⭐️⭐️⭐️
 

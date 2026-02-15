@@ -73,6 +73,10 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     deleteTransformCache: false,
     deleteVTCache: false,
   },
+  routeTransformConfig: {
+    minDistanceMetersByBand: [0, 5_000, 10_000],
+    simplifyToleranceByBand: [0.00005, 0.0001, 0.0002],
+  },
 } as const;
 
 export const mergeRouteBuildConfig = (
@@ -104,6 +108,13 @@ export const mergeRouteBuildConfig = (
     ? { ...(base.cleanupConfig ?? {}), ...overrides.cleanupConfig }
     : base.cleanupConfig;
 
+  const routeTransformConfig = overrides.routeTransformConfig
+    ? {
+      ...(base.routeTransformConfig ?? {}),
+      ...overrides.routeTransformConfig,
+    }
+    : base.routeTransformConfig;
+
   return {
     ...base,
     ...overrides,
@@ -111,5 +122,6 @@ export const mergeRouteBuildConfig = (
     transformConfig,
     vtConfig,
     cleanupConfig,
+    routeTransformConfig,
   };
 };

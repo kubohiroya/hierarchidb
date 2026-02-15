@@ -37,9 +37,6 @@ const loadRowsFromStore = async (
 ): Promise<TabularRowRecord[]> => {
   const db = new Dexie(dbName) as RowStoreLookupDB;
   db.version(1).stores({
-    rowChunks: '&id, [pluginId+tableId], tableId, pluginId, chunkIndex, createdAt',
-  });
-  db.version(2).stores({
     rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
     rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]',
   });

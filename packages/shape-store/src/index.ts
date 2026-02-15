@@ -29,10 +29,3 @@ export {
   clearShapeDatabases,
   clearShapeDatabases as clearDatabases,
 } from './ShapeDB.js';
-export {
-  EphemeralShapeDB,
-  type BuildSessionMetadata,
-  type TransformCacheRecord,
-  type TileIdToBufferRelation,
-  ephemeralShapeDB
-} from './EphemeralShapeDB.js';

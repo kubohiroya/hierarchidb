@@ -5,6 +5,7 @@
 
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
+import { Stack, TextField, Typography } from '@mui/material';
 import { BuildConfigShell, FetchConfigSection, VTConfigSection, ZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
@@ -45,6 +46,23 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     medium: filteringMediumUrl,
     strong: filteringHighUrl,
   }), []);
+  const boundaries = config.transformConfig.zoomBandBoundaries ?? [];
+  const bandCount = Math.max(0, boundaries.length - 1);
+  const minDistanceValue = useMemo(
+    () => (config.routeTransformConfig?.minDistanceMetersByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeTransformConfig?.minDistanceMetersByBand],
+  );
+  const simplifyToleranceValue = useMemo(
+    () => (config.routeTransformConfig?.simplifyToleranceByBand ?? []).slice(0, bandCount).join(', '),
+    [bandCount, config.routeTransformConfig?.simplifyToleranceByBand],
+  );
+  const parseBandNumbers = useCallback((raw: string): number[] => (
+    raw
+      .split(',')
+      .map((entry) => Number(entry.trim()))
+      .filter((entry) => Number.isFinite(entry))
+      .slice(0, bandCount)
+  ), [bandCount]);
 
   return (
     <BuildConfigShell padding={0} spacing={3}>
@@ -74,6 +92,45 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         update={updateBuildConfig}
         disabled={disabled}
       />
+      <Stack spacing={1.5}>
+        <Typography variant="subtitle2">
+          {t('route.processing.routeTransform.title', 'Route transform by zoom band')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t(
+            'route.processing.routeTransform.description',
+            'Provide comma-separated values per band (same order as zoom bands).',
+          )}
+        </Typography>
+        <TextField
+          label={t('route.processing.routeTransform.minDistance', 'Min distance per band (meters)')}
+          value={minDistanceValue}
+          onChange={(event) => {
+            updateBuildConfig({
+              routeTransformConfig: {
+                ...config.routeTransformConfig,
+                minDistanceMetersByBand: parseBandNumbers(event.target.value),
+              },
+            });
+          }}
+          disabled={disabled}
+          fullWidth
+        />
+        <TextField
+          label={t('route.processing.routeTransform.tolerance', 'Simplify tolerance per band')}
+          value={simplifyToleranceValue}
+          onChange={(event) => {
+            updateBuildConfig({
+              routeTransformConfig: {
+                ...config.routeTransformConfig,
+                simplifyToleranceByBand: parseBandNumbers(event.target.value),
+              },
+            });
+          }}
+          disabled={disabled}
+          fullWidth
+        />
+      </Stack>
     </BuildConfigShell>
   );
 };

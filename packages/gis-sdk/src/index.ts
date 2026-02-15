@@ -55,15 +55,8 @@ export {
 } from './geocoding.js';
 export {
   EphemeralDB,
+  ephemeralDB,
 } from './ephemeral/EphemeralDB.js';
-export {
-  EphemeralShapeDB,
-  ephemeralShapeDB,
-} from './ephemeral/EphemeralShapeDB.js';
-export {
-  EphemeralRouteDB,
-  ephemeralRouteDB,
-} from './ephemeral/EphemeralRouteDB.js';
 export {
   EPHEMERAL_DB_SCHEMA,
   type BuildStage,

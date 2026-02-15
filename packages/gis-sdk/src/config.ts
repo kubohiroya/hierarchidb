@@ -131,10 +131,16 @@ export interface VTConfig {
   };
 }
 
+export interface RouteTransformConfig {
+  minDistanceMetersByBand?: number[];
+  simplifyToleranceByBand?: number[];
+}
+
 export interface BaseBuildConfig<TDataSourceName = unknown> {
   dataSourceName?: TDataSourceName;
   fetchConfig: FetchConfig;
   transformConfig: TransformConfig;
   vtConfig: VTConfig;
   cleanupConfig?: CleanupConfig;
+  routeTransformConfig?: RouteTransformConfig;
 }

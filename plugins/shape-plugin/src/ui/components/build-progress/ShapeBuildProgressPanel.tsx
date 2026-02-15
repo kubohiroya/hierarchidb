@@ -40,8 +40,8 @@ import {
 import { isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
 import { useShapeBuildCacheActions } from '../build-config/useShapeBuildCacheActions.ts';
-import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
-import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
+import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 
 const TaskProgressBar = ({

@@ -3,6 +3,8 @@ import * as path from 'path';
 
 const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
 const includeDeepTests = process.env.ENABLE_SHAPE_DEEP_TESTS === '1';
+const explicitlyRequestedWflTest = process.argv.some((arg) => arg.includes('__tests__/wfl/'));
+const includeWflTests = includeDeepTests || explicitlyRequestedWflTest;
 
 export default defineConfig({
   test: {
@@ -31,7 +33,7 @@ export default defineConfig({
 
     exclude: [
       'src/**/migration/**',
-      ...(includeDeepTests ? [] : ['src/**/__tests__/wfl/**']),
+      ...(includeWflTests ? [] : ['src/**/__tests__/wfl/**']),
       'src/**/__tests__/integration/**',
       'src/services/workers/__tests__/**',
       'src/services/**/__tests__/**',

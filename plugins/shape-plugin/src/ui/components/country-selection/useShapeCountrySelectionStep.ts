@@ -16,7 +16,7 @@ import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '../../../services/utils/chunkStore.ts';
 import { shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
@@ -486,11 +486,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       [nodeId, entry.countryCode, entry.adminLevel] as const
     ));
     const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
-      ephemeralShapeDB.fetchCacheMeta
+      ephemeralDB.fetchCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .primaryKeys(),
-      ephemeralShapeDB.transformCacheMeta
+      ephemeralDB.transformCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .primaryKeys(),
@@ -500,11 +500,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     const transformCacheIds = transformCacheIdsRaw.map((id: unknown) => String(id));
     if (fetchCacheIds.length > 0) {
       await Promise.all([
-        ephemeralShapeDB.fetchCache
+        ephemeralDB.fetchCache
           .where('[nodeId+countryCode+adminLevel]')
           .anyOf(removedKeyTuples)
           .delete(),
-        ephemeralShapeDB.fetchCacheMeta
+        ephemeralDB.fetchCacheMeta
           .where('[nodeId+countryCode+adminLevel]')
           .anyOf(removedKeyTuples)
           .delete(),
@@ -514,21 +514,21 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     const removedBufferSet = new Set(transformCacheIds);
     if (transformCacheIds.length > 0) {
       await Promise.all([
-        ephemeralShapeDB.transformCache
+        ephemeralDB.transformCache
           .where('[nodeId+countryCode+adminLevel]')
           .anyOf(removedKeyTuples)
           .delete(),
-        ephemeralShapeDB.transformCacheMeta
+        ephemeralDB.transformCacheMeta
           .where('[nodeId+countryCode+adminLevel]')
           .anyOf(removedKeyTuples)
           .delete(),
       ]);
-      const relations = await ephemeralShapeDB.tileIdToBufferRelations
+      const relations = await ephemeralDB.tileIdToBufferRelations
         .where('bufferId')
         .anyOf(transformCacheIds)
         .toArray();
       const affectedTileIds = new Set(relations.map((row) => row.tileId));
-      await ephemeralShapeDB.tileIdToBufferRelations
+      await ephemeralDB.tileIdToBufferRelations
         .where('bufferId')
         .anyOf(transformCacheIds)
         .delete();

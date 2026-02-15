@@ -13,31 +13,7 @@ export class LocationDB extends Dexie {
 
   constructor() {
     super(getDBName('location'));
-
-    // Legacy schemas retained for migration compatibility only.
-    this.version(9).stores({
-      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], updatedAt',
-      vectorTiles: '&id, nodeId, [z+x+y], timestamp',
-      pendingSessions: '&nodeId, storedAt',
-    }).upgrade(async (tx) => {
-      await tx.table('features').clear();
-      await tx.table('vectorTiles').clear();
-    });
-    this.version(10).stores({
-      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
-      vectorTiles: '&id, nodeId, [z+x+y], timestamp',
-      pendingSessions: '&nodeId, storedAt',
-    });
-    this.version(11).stores({
-      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
-    });
-    this.version(12).stores({
-      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
-    });
-    this.version(13).stores({
-      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, centroidForShapeContainerNodeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
-    });
-    this.version(14).stores({
+    this.version(1).stores({
       features: '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
     });
 

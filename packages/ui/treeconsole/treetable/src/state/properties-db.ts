@@ -31,8 +31,7 @@ class UIStateDB extends Dexie {
 
   constructor() {
     super(getDBName('ui-atoms'));
-    // v4: add treetableExpanded alongside treetableProps
-    this.version(4).stores({
+    this.version(1).stores({
       treetableProps: '&pageNodeId',
       treetableExpanded: '&[pageNodeId+nodeId], pageNodeId, nodeId',
     });

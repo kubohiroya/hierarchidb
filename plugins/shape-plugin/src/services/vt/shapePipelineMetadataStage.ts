@@ -11,7 +11,7 @@ import type { CountryMetadata, DataSourceName } from '../../common/types/index.j
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
-import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { shapeDB } from '@hierarchidb/shape-store';
 import {
   buildCountryLookup,
@@ -24,7 +24,7 @@ import {
 export type ShapeMetadataStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  ephemeralStore: EphemeralShapeDB;
+  ephemeralStore: EphemeralDB;
   shapeDb: typeof shapeDB;
   geometryEngine: GeometryEngine;
   recyclingByFeatureId?: Map<string, boolean>;
@@ -66,7 +66,7 @@ export const runShapeMetadataStage = async (params: ShapeMetadataStageParams): P
 const buildFeatureMetadataFromTransformCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
-  ephemeralStore: EphemeralShapeDB,
+  ephemeralStore: EphemeralDB,
   geometryEngine: GeometryEngine,
   recyclingByFeatureId?: Map<string, boolean>,
 ): Promise<ShapeFeatureMetadata[]> => {

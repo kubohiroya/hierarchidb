@@ -17,6 +17,7 @@ import { useTreeConsoleSpeedDial } from './useTreeConsoleSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
+import { useCallback } from 'react';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
@@ -60,6 +61,29 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     speedDialSuppressed,
     setSpeedDialSuppressed,
   });
+
+  const handleSpeedDialCreate = useCallback(
+    (action: string, _: unknown, options?: { openInNewTab?: boolean }) => {
+      const hasPageNode = Boolean(treeConsolePanelProps.pageTreeNode);
+      if (!hasPageNode && treeConsolePanelProps.selectedIds.length === 1) {
+        const selectedId = treeConsolePanelProps.selectedIds[0];
+        const selectedNode = treeConsolePanelProps.data.find(
+          (node) => String(node.id) === String(selectedId)
+        );
+        if (selectedNode) {
+          speedDial.onContextMenuAction(action, selectedNode, options);
+          return;
+        }
+      }
+      speedDial.onContextMenuAction(action, speedDial.speedDialContextNode, options);
+    },
+    [
+      speedDial,
+      treeConsolePanelProps.data,
+      treeConsolePanelProps.pageTreeNode,
+      treeConsolePanelProps.selectedIds,
+    ]
+  );
   if (workerLoading) {
     return (
       <Box
@@ -108,9 +132,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
             />
             <DynamicSpeedDial
               treeId={treeConsolePanelProps.treeId as TreeId | undefined}
-              onCreateAction={(action: string, _, options) =>
-                speedDial.onContextMenuAction(action, speedDial.speedDialContextNode, options)
-              }
+              onCreateAction={handleSpeedDialCreate}
               position={{ bottom: 16, right: 16 }}
               hidden={speedDial.hideSpeedDial}
               onSuppress={speedDial.suppressSpeedDial}

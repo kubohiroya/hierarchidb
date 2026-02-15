@@ -11,7 +11,7 @@ import { GadmFetchStageStrategy } from '../../services/batch/strategies/GadmFetc
 import { GeoBoundariesFetchStageStrategy } from '../../services/batch/strategies/GeoBoundariesFetchStageStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { buildRawDataDataSourceCacheKey } from '../../services/utils/chunkStore.js';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
@@ -49,11 +49,11 @@ describe('Fetch stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
 
   beforeEach(async () => {
-    await ephemeralShapeDB.clearAll();
+    await ephemeralDB.clearAll();
   });
 
   afterEach(async () => {
-    await ephemeralShapeDB.clearAll();
+    await ephemeralDB.clearAll();
   });
 
   it('GADM strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
@@ -162,7 +162,7 @@ describe('Fetch stage strategies', () => {
     const encoded = await encodeFlatGeoJson(collection);
     const bufferId0 = `${nodeId}-download-0`;
     const bufferId1 = `${nodeId}-download-1`;
-    await ephemeralShapeDB.fetchCache.put({
+    await ephemeralDB.fetchCache.put({
       id: bufferId0,
       nodeId,
       data: encoded,
@@ -172,7 +172,7 @@ describe('Fetch stage strategies', () => {
       size: encoded.byteLength,
       timestamp: Date.now(),
     });
-    ephemeralShapeDB.fetchCache.put({
+    ephemeralDB.fetchCache.put({
       id: bufferId1,
       nodeId,
       data: encoded,
