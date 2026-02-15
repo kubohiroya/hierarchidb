@@ -143,7 +143,11 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showRetryCard={false}
         disabled={disabled}
       />
-      <TransformConfigSection disabled={disabled} />
+      <TransformConfigSection
+        config={config}
+        onChange={handleChange}
+        disabled={disabled}
+      />
       <VTConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}

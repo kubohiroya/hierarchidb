@@ -14,6 +14,7 @@ import {
   latToTileY,
   lonToTileX,
   type GeometryEngine,
+  type TransformSimplifyAlgorithm,
 } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
@@ -139,11 +140,15 @@ const decodeTopoJsonFetchCache = async (params: {
   zTarget: number;
   toleranceK: number;
   quantize?: number;
+  simplifyAlgorithm?: TransformSimplifyAlgorithm;
 }): Promise<FeatureCollection | null> => {
   const decompressed = params.compression === 'gzip'
     ? await decompressGzip(params.buffer)
     : params.buffer;
   const topology = decodeTopoJson(decompressed);
+  if (params.simplifyAlgorithm === 'geojson') {
+    return normalizeTopoJsonCollection(topology);
+  }
   const snappedTopology = await quantizeTopoJsonToGrid(topology, {
     zTarget: params.zTarget,
     quantize: params.quantize,
@@ -172,6 +177,11 @@ const EARTH_RADIUS_METERS = 6378137;
 const MVT_EXTENT = 4096;
 const MAX_VERTICES_PER_FEATURE = 65535;
 const TRANSFORM_CACHE_WRITE_SLOW_LOG_MS = 20_000;
+const DEFAULT_SIMPLIFY_ALGORITHM: TransformSimplifyAlgorithm = 'topojson';
+
+const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): TransformSimplifyAlgorithm => (
+  algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
+);
 
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
@@ -303,6 +313,7 @@ export const decodeFetchCacheByFormat = async (params: {
   zTarget: number;
   toleranceK: number;
   quantize?: number;
+  simplifyAlgorithm?: TransformSimplifyAlgorithm;
 }): Promise<FeatureCollection | null> => {
   if (params.format === 'topojson') {
     return decodeTopoJsonFetchCache({
@@ -311,6 +322,7 @@ export const decodeFetchCacheByFormat = async (params: {
       zTarget: params.zTarget,
       toleranceK: params.toleranceK,
       quantize: params.quantize,
+      simplifyAlgorithm: resolveSimplifyAlgorithm(params.simplifyAlgorithm),
     });
   }
   return decodeFetchCache(params.buffer);
@@ -1454,6 +1466,7 @@ export const createTransformByBandHandler = (
   if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
+  const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
@@ -1626,6 +1639,7 @@ export const createTransformByBandHandler = (
         zTarget: band.zMax,
         toleranceK: baseTolerance,
         quantize: transformConfig.quantize,
+        simplifyAlgorithm,
       }));
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
@@ -1787,10 +1801,12 @@ export const createTransformByBandHandler = (
           featureCount: inputFeatureCount,
           polygonCount: inputPolygonCount,
           missingGeometry: inputMissingGeometry,
+          algorithm: simplifyAlgorithm,
+          fetchFormat: fetchCache.format,
           heap: readHeapSnapshot(),
         });
         let processedPolygonCount = 0;
-                let lastReportAt = 0;
+        let lastReportAt = 0;
         const reportProgressMaybe = async (force: boolean) => {
           const now = Date.now();
           if (!force && now - lastReportAt < 2000) return;
@@ -1798,21 +1814,34 @@ export const createTransformByBandHandler = (
           await reportPolygonProgress(taskId, processedPolygonCount, inputPolygonCount);
         };
         await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
-        const simplifyPromise = runStageWithLabel('simplify-only', () => (
-          simplifyOnlyCollection(inputCollection, band.zMax, tolerance, geometryOps)
-        ));
-        simplified = await runWithStallTimeout({
-          promise: simplifyPromise,
-          stage: 'simplify-only',
-          nodeId: String(task.nodeId),
-          taskId,
-          timeoutMs: 300000,
-          getLastProgressAt: () => Date.now(),
-        });
-        processedPolygonCount = inputPolygonCount;
+        const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
+        if (skipGeojsonSimplify) {
+          simplified = inputCollection;
+          processedPolygonCount = inputPolygonCount;
+          logDebugPhase('simplify:skipped', {
+            algorithm: simplifyAlgorithm,
+            fetchFormat: fetchCache.format,
+            featureCount: simplified.features.length,
+          });
+        } else {
+          const simplifyPromise = runStageWithLabel('simplify-only', () => (
+            simplifyOnlyCollection(inputCollection, band.zMax, tolerance, geometryOps)
+          ));
+          simplified = await runWithStallTimeout({
+            promise: simplifyPromise,
+            stage: 'simplify-only',
+            nodeId: String(task.nodeId),
+            taskId,
+            timeoutMs: 300000,
+            getLastProgressAt: () => Date.now(),
+          });
+          processedPolygonCount = inputPolygonCount;
+        }
         logDebugPhase('simplify:done', {
           featureCount: simplified?.features.length ?? 0,
           polygonCount: inputPolygonCount,
+          algorithm: simplifyAlgorithm,
+          skipped: skipGeojsonSimplify,
         });
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
@@ -1822,6 +1851,8 @@ export const createTransformByBandHandler = (
           durationMs: Date.now() - simplifyStartAt,
           processedPolygons: processedPolygonCount,
           totalPolygons: inputPolygonCount,
+          algorithm: simplifyAlgorithm,
+          skipped: skipGeojsonSimplify,
           heap: readHeapSnapshot(),
         });
         await reportProgressMaybe(true);

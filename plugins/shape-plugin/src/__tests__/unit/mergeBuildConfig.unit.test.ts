@@ -71,4 +71,14 @@ describe('mergeBuildConfig', () => {
       ),
     ).toThrow('unsupported omit-details level: invalid-level');
   });
+
+  it('applies simplify algorithm override', () => {
+    const merged = mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
+      transformConfig: {
+        simplifyAlgorithm: 'geojson',
+      },
+    });
+
+    expect(merged.transformConfig.simplifyAlgorithm).toBe('geojson');
+  });
 });

@@ -61,11 +61,16 @@ export const geometrySimplify = <T extends GeoJSON>(
   options: SimplifyOptions,
 ): T => {
   void engine;
-  return simplify(geojson as Feature | FeatureCollection, {
+  const simplifyOptions: Parameters<typeof simplify>[1] = {
     tolerance: options.tolerance,
     highQuality: options.highQuality ?? false,
     mutate: options.mutate ?? false,
-  }) as T;
+  };
+  if (options.preserveTopology !== undefined) {
+    (simplifyOptions as Parameters<typeof simplify>[1] & { preserveTopology?: boolean }).preserveTopology =
+      options.preserveTopology;
+  }
+  return simplify(geojson as Feature | FeatureCollection, simplifyOptions) as T;
 };
 
 export const geometryIsValid = (geojson: GeoJSON, engine: GeometryEngine): boolean => {

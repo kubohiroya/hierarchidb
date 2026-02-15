@@ -9,6 +9,7 @@ export const DEFAULT_BUILD_CONFIG = {
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     geometryEngine: 'turf',
+    simplifyAlgorithm: 'topojson',
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,
