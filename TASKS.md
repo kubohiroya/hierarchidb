@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #312 / `codex/chore/integration/eria-main-sync-latest-312` / start: 2026-02-16 02:35 JST
 - #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
 - #297 / `codex/fix/shape/task-list-empty-ui` / start: 2026-02-15 17:26 JST
 - #300 / `codex/fix/env/require-cors-proxy-base-url` / start: 2026-02-15 18:07 JST
@@ -98,6 +99,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-16 02:35 JST #312 を起票し、Issue `https://github.com/kubohiroya/hierarchidb/issues/312` を作成。
+- start: 2026-02-16 02:35 JST #312 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。
+- start: 2026-02-16 02:35 JST ブランチ `codex/chore/integration/eria-main-sync-latest-312` を作成して着手。
 
 - done: 2026-02-16 02:08 JST #308 Step4 Transform に `simplifyAlgorithm`（`topojson` / `geojson`）設定を追加し、Transform 実行でアルゴリズム選択を反映。`topojson` 選択時は decode 側の簡略化結果を再利用して二重簡略化を回避。`pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm exec vitest run packages/vt-orchestrator/src/transform/__tests__/fetchCacheDecoder.unit.test.ts plugins/shape-plugin/src/__tests__/unit/mergeBuildConfig.unit.test.ts` は全て exit 0。
 - update: 2026-02-16 01:58 JST #308 依存 `@hierarchidb/ui-monitoring` の型解決エラーで `shape-plugin` typecheck が一度失敗したため、`pnpm -w turbo run build --filter @hierarchidb/ui-monitoring --filter @hierarchidb/shape-plugin` 実行後に再度 typecheck を実施し解消。
