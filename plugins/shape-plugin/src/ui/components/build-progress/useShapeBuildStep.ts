@@ -742,6 +742,36 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
     return baseBuildStatus;
   }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
+  const lastTaskRefreshRef = useRef<{ nodeId: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (displayTasks.length > 0) return;
+    const shouldRefresh = (
+      hasProgressTaskSignal
+      || buildStatus === 'running'
+      || buildStatus === 'completed'
+      || runtimeStatus === 'processing'
+      || processingStatus === 'processing'
+      || buildSessionTransition.active
+    );
+    if (!shouldRefresh) return;
+    const now = Date.now();
+    const last = lastTaskRefreshRef.current;
+    if (last && last.nodeId === String(activeNodeId) && now - last.at < 2000) {
+      return;
+    }
+    lastTaskRefreshRef.current = { nodeId: String(activeNodeId), at: now };
+    void refreshTasks();
+  }, [
+    activeNodeId,
+    buildStatus,
+    buildSessionTransition.active,
+    displayTasks.length,
+    hasProgressTaskSignal,
+    processingStatus,
+    refreshTasks,
+    runtimeStatus,
+  ]);
   useEffect(() => {
     if (!isShapeProgressStepDebugEnabled()) return;
     const nextTrace: ShapeProgressStepTracePayload = {

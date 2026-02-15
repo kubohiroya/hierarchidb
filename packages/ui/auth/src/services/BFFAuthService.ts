@@ -5,6 +5,7 @@
  */
 
 import type { AuthProviderType } from '../types/AuthProviderType.js';
+import { maybeEmitBffWarning, readWarningFromResponse } from './BffWarning.js';
 
 export interface BFFUser {
   id: string;
@@ -77,6 +78,7 @@ export class BFFAuthService {
   } as const;
   private baseUrl: string;
   private popupWindow: Window | null = null;
+  private refreshDisabled = false;
 
   private static readonly DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
 
@@ -360,6 +362,7 @@ export class BFFAuthService {
       }
 
       const data = await response.json();
+      maybeEmitBffWarning(data?.warning);
 
       // Store tokens
       if (data.access_token) {
@@ -369,11 +372,13 @@ export class BFFAuthService {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      // Clean up OAuth flow state (keep return URL until caller consumes it)
-      this.clearAuthFlowState({ preserveReturnUrl: true });
+      // Clean up (keep return URL until caller consumes it)
+      this.clearAuthData({ preserveReturnUrl: true });
+      localStorage.removeItem('oauth_state');
 
       // Parse user from token response
       const user = this.parseTokenResponse(data);
+      this.refreshDisabled = false;
       this.persistUser(user);
       return user;
     })();
@@ -399,13 +404,14 @@ export class BFFAuthService {
     if (token) {
       try {
         const { authBase } = this.resolveAuthBase();
-        await fetch(`${authBase}/revoke`, {
+        const response = await fetch(`${authBase}/revoke`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
           },
           credentials: 'include',
         });
+        await readWarningFromResponse(response);
       } catch {
         // Ignore revoke errors
       }
@@ -420,6 +426,9 @@ export class BFFAuthService {
    */
   async refreshToken(): Promise<BFFUser | null> {
     try {
+      if (this.refreshDisabled) {
+        return null;
+      }
       const token = localStorage.getItem('access_token');
       const refreshTokenId = localStorage.getItem('refresh_token_id');
 
@@ -440,23 +449,31 @@ export class BFFAuthService {
         credentials: 'include',
       });
 
+      const data = await response.json().catch(() => ({}));
+      const warning = maybeEmitBffWarning((data as { warning?: unknown })?.warning);
+      if (warning?.operation === 'refresh') {
+        this.refreshDisabled = true;
+      }
+
       if (!response.ok) {
-        // Clear auth data on refresh failure
+        if (warning?.operation === 'refresh') {
+          return null;
+        }
+        // Clear tokens on refresh failure
         this.clearAuthData();
         return null;
       }
 
-      const data = await response.json();
-
       // Update tokens
-      if (data.access_token) {
+      if (data && 'access_token' in data && data.access_token) {
         localStorage.setItem('access_token', data.access_token);
       }
-      if (data.refresh_token_id) {
+      if (data && 'refresh_token_id' in data && data.refresh_token_id) {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      const user = this.parseTokenResponse(data);
+      const user = this.parseTokenResponse(data as TokenResponsePayload);
+      this.refreshDisabled = false;
       this.persistUser(user);
       return user;
     } catch {
@@ -583,6 +600,10 @@ export class BFFAuthService {
 
     // Clear OAuth atoms
     localStorage.removeItem('oauth_state');
+
+    // Clear tokens (keep these for getCurrentUser)
+    // localStorage.removeItem('access_token');
+    // localStorage.removeItem('refresh_token_id');
 
     // Clear provider and return URL
     localStorage.removeItem('auth_provider');

@@ -153,7 +153,7 @@ stateDiagram-v2
 結論: 本文書は一部 outdated。
 
 ### 不一致点（要点）
-- 「リアルタイム進捗購読（ポーリングのみ）」は不正確。実装は `subscribeBatchProgress` / `subscribeBatchTasks` の購読に加え、UI 側で 1s 間隔のリコンシル (`getBuildTasks`) を併用している。
+- 「リアルタイム進捗購読（ポーリングのみ）」は不正確。実装は `subscribeBatchProgress` / `subscribeBuildTasks` の購読に加え、UI 側で 1s 間隔のリコンシル (`getBuildTasks`) を併用している。
   - 参照: `packages/ui/batch/src/hooks/useBatchProgressState.ts`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/worker/api.ts`
 - 実行ステージは `fetch -> transform -> vt` だけではなく、`metadata-stage` と `cleanup-stage` を含む。
   - 参照: `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
@@ -195,25 +195,39 @@ flowchart TD
 
 ### Worker↔UI シーケンス（通知の欠落候補）
 
+- 通信は **progress subscribe** が起点（`subscribeBatchProgress/subscribeBuildTasks`）。
+- **初回は progress snapshot** → **task item snapshot** の順で UI に届く。
+- 以降は **task item updates** をバッファリングし、rAF で最新シーケンスのみ UI 反映。
+
 ```mermaid
 sequenceDiagram
   participant User
-  participant UI as ShapeBuildStep(UI)
-  participant Bridge as WorkerBridge
-  participant Worker as shapeBatchAPI/ShapePipeline
-  participant Queue as VtTaskQueueDb
+  participant UI as "ShapeBuildStep (UI)"
+  participant Bridge as "WorkerBridge"
+  participant Worker as "shapeBatchAPI / ShapePipeline"
+  participant Queue as "VtTaskQueueDb"
+  participant Cache as "EphemeralShapeDB (fetch/transform/vt caches)"
 
-  UI->>Bridge: subscribeBatchProgress/subscribeBuildTasks (auto on mount)
-  User->>UI: Start
-  UI->>Bridge: startOrResumeBuildSession(nodeId)
-  Bridge->>Worker: startOrResumeBuildSession
-  Worker->>Worker: startBatchProcess (load-draft...emit-planned-progress)
-  Worker-->>UI: progress snapshot (if subscribed)
-  Note over Worker,UI: 購読が遅い場合は<br/>`progress snapshot skipped (no subscriber)`
-  Worker->>Queue: enqueue tasks
-  Worker-->>UI: task snapshot / updates (if subscribed)
-  UI->>Bridge: getBuildTasks (reconcile when empty/in-flight)
-  UI->>UI: タスク一覧・サマリー更新
+  UI->>Bridge: "subscribeBatchProgress/subscribeBuildTasks (progress subscribe)"
+  User->>UI: "Start"
+  UI->>Bridge: "startOrResumeBuildSession(nodeId)"
+  Bridge->>Worker: "startOrResumeBuildSession"
+  Worker->>Worker: "startBatchProcess (load-draft...pipeline-dispatch)"
+  Worker->>Queue: "deleteTasksByNode (clear fetch/transform/vt tasks)"
+  Worker->>Cache: "read/write cache (fetchCache/transformCache/transformErrors/tileIdToBufferRelations)"
+  Worker->>Queue: "enqueue tasks"
+  Worker-->>UI: "progress snapshot (initial, if subscribed)"
+  Note over Worker,UI: "購読が遅い場合は progress snapshot skipped (no subscriber)"
+  Worker->>Worker: "runShapePipeline (fetch/transform/vt)"
+  Worker->>Queue: "updateTask status (queued/running/completed)"
+  Queue-->>Worker: "onTaskQueueUpdate"
+  Worker-->>UI: "task item snapshot (initial)"
+  Worker-->>UI: "task item updates (incremental)"
+  Worker-->>UI: "progress events (payload from current tasks)"
+  UI->>UI: "buffer task item updates (keep latest sequence per task)"
+  UI->>UI: "requestAnimationFrame -> apply latest sequence, ignore older than committed"
+  UI->>Bridge: "getBuildTasks (reconcile when empty/in-flight)"
+  UI->>UI: "タスク一覧・サマリー更新"
 ```
 
 ### 通知/呼び出しの欠落ポイント（現状の候補）

@@ -1,4 +1,6 @@
 import React from 'react';
+import { BffKvWarningDialog } from '../components/BffKvWarningDialog.js';
+import { maybeEmitBffWarning, readWarningFromResponse } from '../services/BffWarning.js';
 import { PopupDetectionService } from '../services/PopupDetectionService.js';
 import type { AuthContextType } from '../types/AuthContextType.js';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
@@ -149,6 +151,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAuthenticating, setIsAuthenticating] = React.useState(false);
   const refreshInProgressRef = React.useRef(false);
+  const refreshDisabledRef = React.useRef(false);
   const lastRefreshAttemptRef = React.useRef<number>(0);
 
   // HMR support: re-register provider on hot update
@@ -212,6 +215,12 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
     loadUser();
   }, []);
+
+  React.useEffect(() => {
+    if (user?.access_token) {
+      refreshDisabledRef.current = false;
+    }
+  }, [user?.access_token]);
 
   const signIn = React.useCallback(
     async (options?: {
@@ -557,6 +566,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
   const signOut = React.useCallback(async () => {
     try {
+      const token = localStorage.getItem('access_token');
+
       // Clear local storage
       localStorage.removeItem('access_token');
       localStorage.removeItem('id_token');
@@ -582,7 +593,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
       // Optional: Call BFF logout endpoint
       const authBase = normalizeAuthBase(import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL);
-      const token = localStorage.getItem('access_token');
 
       if (token) {
         await fetch(buildAuthUrl(authBase, '/logout').toString(), {
@@ -590,9 +600,11 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }).catch(() => {
-          // Ignore logout errors
-        });
+        })
+          .then((response) => readWarningFromResponse(response))
+          .catch(() => {
+            // Ignore logout errors
+          });
       }
 
       // Redirect to home using replace to avoid history entry
@@ -623,6 +635,9 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     if (refreshInProgressRef.current) {
       return false;
     }
+    if (refreshDisabledRef.current) {
+      return false;
+    }
 
     // Prevent rapid refresh attempts (wait at least 30 seconds between attempts)
     const now = Date.now();
@@ -651,6 +666,12 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         credentials: 'include', // Include cookies if BFF uses them
       });
 
+      const data = await response.json().catch(() => null);
+      const warning = maybeEmitBffWarning((data as { warning?: unknown })?.warning);
+      if (warning?.operation === 'refresh') {
+        refreshDisabledRef.current = true;
+      }
+
       if (!response.ok) {
         if (response.status === 401) {
           // Clear auth storage and trigger re-authentication
@@ -673,12 +694,10 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
           return false;
         }
-        throw new Error(`Token refresh failed with status: ${response.status}`);
+        return false;
       }
 
-      const data = await response.json();
-
-      if (data.access_token) {
+      if (data && 'access_token' in data && data.access_token) {
         // Update tokens in local storage
         localStorage.setItem('access_token', data.access_token);
         if (data.id_token) {
@@ -705,9 +724,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         }
 
         return true;
-      } else {
-        throw new Error('No access token in refresh response');
       }
+      return false;
     } catch {
       return false;
     } finally {
@@ -881,6 +899,9 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
   }, [contextValue]);
 
   return (
-    <SimpleBFFAuthContext.Provider value={contextValue}>{children}</SimpleBFFAuthContext.Provider>
+    <SimpleBFFAuthContext.Provider value={contextValue}>
+      {children}
+      <BffKvWarningDialog />
+    </SimpleBFFAuthContext.Provider>
   );
 }

@@ -2,6 +2,7 @@ import { type BffContext, getEnv } from '../utils/env.js';
 import { createSessionToken, extractBearerToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
 import { parseEnvInt } from '../utils/number.js';
+import { buildKvWarning } from '../utils/kv-warning.js';
 
 /**
  * Refresh token endpoint handler
@@ -23,14 +24,34 @@ export async function refreshToken(c: BffContext) {
 
     if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
-      return c.json({ error: 'Token refresh is not available' }, 503);
+      return c.json(
+        {
+          error: 'kv_unavailable',
+          error_description: 'Token refresh is not available',
+          warning: buildKvWarning('refresh', 'missing_kv', 'relogin'),
+        },
+        503
+      );
     }
 
     const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
     const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
 
     // Create new session token first
-    const userData = await kvManager.getUserAuthBySession(token);
+    let userData: Awaited<ReturnType<typeof kvManager.getUserAuthBySession>>;
+    try {
+      userData = await kvManager.getUserAuthBySession(token);
+    } catch (error) {
+      console.error('Failed to read session from KV:', error);
+      return c.json(
+        {
+          error: 'kv_unavailable',
+          error_description: 'Token refresh is not available',
+          warning: buildKvWarning('refresh', 'kv_error', 'relogin'),
+        },
+        503
+      );
+    }
     if (!userData) {
       return c.json({ error: 'Session not found' }, 401);
     }
@@ -49,12 +70,25 @@ export async function refreshToken(c: BffContext) {
     );
 
     // Refresh with new token and rotation
-    const result = await kvManager.refreshUserToken(
-      token,
-      newSessionToken,
-      sessionDuration,
-      refresh_token_id
-    );
+    let result: Awaited<ReturnType<typeof kvManager.refreshUserToken>>;
+    try {
+      result = await kvManager.refreshUserToken(
+        token,
+        newSessionToken,
+        sessionDuration,
+        refresh_token_id
+      );
+    } catch (error) {
+      console.error('Failed to refresh token in KV:', error);
+      return c.json(
+        {
+          error: 'kv_unavailable',
+          error_description: 'Token refresh is not available',
+          warning: buildKvWarning('refresh', 'kv_error', 'relogin'),
+        },
+        503
+      );
+    }
 
     if (!result.success) {
       if (result.error === 'Token reuse detected - all sessions revoked') {
@@ -117,17 +151,37 @@ export async function revokeToken(c: BffContext) {
 
     if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
-      return c.json({ error: 'Token revocation is not available' }, 503);
+      return c.json({
+        message: 'Token revocation completed locally',
+        warning: buildKvWarning('revoke', 'missing_kv', 'none'),
+      });
     }
 
     const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
-    const userData = await kvManager.getUserAuthBySession(token);
+    let userData: Awaited<ReturnType<typeof kvManager.getUserAuthBySession>>;
+    try {
+      userData = await kvManager.getUserAuthBySession(token);
+    } catch (error) {
+      console.error('Failed to read session from KV:', error);
+      return c.json({
+        message: 'Token revocation completed locally',
+        warning: buildKvWarning('revoke', 'kv_error', 'none'),
+      });
+    }
 
     if (!userData) {
       return c.json({ error: 'Session not found' }, 404);
     }
 
-    await kvManager.revokeUser(userData.userId);
+    try {
+      await kvManager.revokeUser(userData.userId);
+    } catch (error) {
+      console.error('Failed to revoke session in KV:', error);
+      return c.json({
+        message: 'Token revocation completed locally',
+        warning: buildKvWarning('revoke', 'kv_error', 'none'),
+      });
+    }
     return c.json({ message: 'Tokens revoked successfully' });
   } catch (error) {
     console.error('Token revocation error:', error);
