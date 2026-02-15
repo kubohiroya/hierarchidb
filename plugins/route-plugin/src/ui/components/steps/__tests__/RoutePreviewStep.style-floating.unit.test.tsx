@@ -68,6 +68,48 @@ vi.mock('../useRoutePreviewStep.js', () => ({
       lineWidth: 2,
       lineStyle: 'solid',
     },
+    modeWindow: {
+      windowState: {
+        position: { x: 96, y: 96 },
+        size: { width: 260, height: 220 },
+        isVisible: true,
+        isMinimized: false,
+        isFullscreen: false,
+        zIndex: 1000,
+      },
+      handlers: {
+        onStateChange: vi.fn(),
+        onClose: vi.fn(),
+        onMinimize: vi.fn(),
+        onRestore: vi.fn(),
+        setPosition: vi.fn(),
+        setSize: vi.fn(),
+        show: vi.fn(),
+        hide: vi.fn(),
+      },
+    },
+    showModeWindowButton: false,
+    listWindow: {
+      windowState: {
+        position: { x: 96, y: 356 },
+        size: { width: 640, height: 280 },
+        isVisible: true,
+        isMinimized: false,
+        isFullscreen: false,
+        zIndex: 1000,
+      },
+      handlers: {
+        onStateChange: vi.fn(),
+        onClose: vi.fn(),
+        onMinimize: vi.fn(),
+        onRestore: vi.fn(),
+        setPosition: vi.fn(),
+        setSize: vi.fn(),
+        show: vi.fn(),
+        hide: vi.fn(),
+      },
+    },
+    showListWindowButton: false,
     styleWindow: {
       windowState: {
         position: { x: 640, y: 96 },
@@ -97,6 +139,7 @@ vi.mock('../useRoutePreviewStep.js', () => ({
     metadataSyncError: null,
     metadataSyncBadgeText: '',
     runMetadataSyncCheck: vi.fn(),
+    buildErrors: [],
   }),
 }));
 
@@ -106,6 +149,8 @@ describe('RoutePreviewStep style floating window', () => {
   it('renders route style controls in preview overlay', () => {
     render(<RoutePreviewStep draft={{}} nodeId="route-node-1" onUpdate={() => undefined} />);
 
+    expect(screen.getByText('Route mode filters')).toBeTruthy();
+    expect(screen.getByText('Route metadata')).toBeTruthy();
     expect(screen.getByText('Route style')).toBeTruthy();
     expect(screen.getByText('Mode colors')).toBeTruthy();
     expect(screen.getByText('Line width')).toBeTruthy();

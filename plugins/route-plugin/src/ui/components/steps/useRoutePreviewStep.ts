@@ -22,6 +22,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import type {
+  RouteBuildError,
   RouteEntity,
   RouteLineString,
   RouteMetadataSyncSummary,
@@ -150,6 +151,7 @@ export const useRoutePreviewStep = ({
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [metadataSyncSummary, setMetadataSyncSummary] = useState<RouteMetadataSyncSummary | null>(null);
+  const [buildErrors, setBuildErrors] = useState<RouteBuildError[]>([]);
   const [metadataSyncRunning, setMetadataSyncRunning] = useState(false);
   const [metadataSyncError, setMetadataSyncError] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<RouteNearestLineResponse | null>(null);
@@ -183,10 +185,20 @@ export const useRoutePreviewStep = ({
     () => mergeRouteStyleConfig(draft.routeStyleConfig),
     [draft.routeStyleConfig],
   );
+  const modeWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:route:mode-toggle',
+    initialPosition: { x: 96, y: 96 },
+    initialSize: { width: 260, height: 220 },
+  });
   const styleWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:route:style-config',
     initialPosition: { x: 640, y: 96 },
     initialSize: { width: 360, height: 520 },
+  });
+  const listWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:route:metadata-list',
+    initialPosition: { x: 96, y: 356 },
+    initialSize: { width: 640, height: 280 },
   });
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceConfig) return [];
@@ -203,6 +215,7 @@ export const useRoutePreviewStep = ({
   useEffect(() => {
     if (!previewNodeId) {
       setLineStrings([]);
+      setBuildErrors([]);
       setMetadataSyncSummary(null);
       setMetadataSyncError(null);
       return;
@@ -213,14 +226,19 @@ export const useRoutePreviewStep = ({
     void (async () => {
       try {
         const api = await workerBridgeRef.current.getRouteQueryAPI();
-        const rows = await api.listRouteLineStrings(previewNodeId);
+        const [rows, errors] = await Promise.all([
+          api.listRouteLineStrings(previewNodeId),
+          api.listRouteBuildErrors(previewNodeId),
+        ]);
         if (!active) return;
         setLineStrings(rows);
+        setBuildErrors(errors);
       } catch (error) {
         if (!active) return;
         const message = error instanceof Error ? error.message : String(error);
         setLineStringsError(message);
         setLineStrings([]);
+        setBuildErrors([]);
       } finally {
         if (active) {
           setLineStringsLoading(false);
@@ -568,9 +586,13 @@ export const useRoutePreviewStep = ({
       errorCount: t('preview.list.columns.errorCount', 'Errors'),
       errorMessage: t('preview.list.columns.errorMessage', 'Error Message'),
     },
+    modeWindow,
+    showModeWindowButton: !modeWindow.windowState.isVisible,
     routeStyleConfig,
     styleWindow,
     showStyleWindowButton: !styleWindow.windowState.isVisible,
+    listWindow,
+    showListWindowButton: !listWindow.windowState.isVisible,
     handleModeColorChange,
     handleLineWidthChange,
     handleLineStyleChange,
@@ -579,5 +601,6 @@ export const useRoutePreviewStep = ({
     metadataSyncError,
     metadataSyncBadgeText,
     runMetadataSyncCheck,
+    buildErrors,
   };
 };
