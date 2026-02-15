@@ -27,7 +27,7 @@ import {
 import type { TaskItemWithMetadata } from './TaskItemCardListCard.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
-import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
+import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/taskMessages.ts';
 
 const isDev = import.meta.env.DEV;

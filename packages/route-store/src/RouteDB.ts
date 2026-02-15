@@ -39,13 +39,7 @@ export class RouteDB extends VectorTileDbBase {
 
   constructor(dbName: string = getDBName('route')) {
     super(dbName);
-    this.version(4).stores(this.mergeVectorTileStores({
-      features:
-        '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], z, timestamp',
-      tileIndex: '&id, nodeId, [nodeId+z+x+y], z, x, y, updatedAt',
-    }));
-    this.version(5).stores(this.mergeVectorTileStores({
+    this.version(1).stores(this.mergeVectorTileStores({
       features: '&id, nodeId, startLocationId, endLocationId',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
       tileIndex: '&id, nodeId, [nodeId+z+x+y]',

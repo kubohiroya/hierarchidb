@@ -40,11 +40,19 @@ type RouteMutationApi = {
     },
     onProgress: (progress: IdeGsmImportProgress) => void,
   ) => Promise<{ errors: IdeGsmRouteError[] }>;
-  buildRouteTileIndex: (args: { nodeId: NodeId; minZoom: number; maxZoom: number }) => Promise<unknown>;
+  buildRouteTileIndex: (args: {
+    nodeId: NodeId;
+    minZoom: number;
+    maxZoom: number;
+    zoomBandBoundaries?: number[];
+    minDistanceMetersByBand?: number[];
+    simplifyToleranceByBand?: number[];
+  }) => Promise<unknown>;
   generateRouteVectorTiles: (args: {
     nodeId: NodeId;
     minZoom: number;
     maxZoom: number;
+    zoomBandBoundaries?: number[];
     bufferSize: number;
     inputFormat: 'geojson' | 'flatgeobuf';
     inputCompression: 'gzip' | 'none';
@@ -66,6 +74,11 @@ type UseRouteBuildSessionLifecycleArgs = {
   onUpdate: (updates: Partial<RouteEntity>) => void;
   routeNodeId: NodeId | undefined;
   resolveZoomRange: () => [number, number];
+  resolveRouteTransformConfig: () => {
+    zoomBandBoundaries?: number[];
+    minDistanceMetersByBand?: number[];
+    simplifyToleranceByBand?: number[];
+  };
   resolveVectorTileConfig: () => {
     bufferSize: number;
     inputFormat: 'geojson' | 'flatgeobuf';
@@ -133,6 +146,7 @@ export const useRouteBuildSessionLifecycle = ({
   onUpdate,
   routeNodeId,
   resolveZoomRange,
+  resolveRouteTransformConfig,
   resolveVectorTileConfig,
   mapIdeGsmProgress,
   fetchStageMax,
@@ -367,9 +381,17 @@ export const useRouteBuildSessionLifecycle = ({
       setOverallProgress(fetchStageMax);
 
       const [minZoom, maxZoom] = resolveZoomRange();
+      const routeTransformConfig = resolveRouteTransformConfig();
       advanceBuildSessionTransitionPhase('transform-stage');
       setOverallProgress(fetchStageMax + 1);
-      await routeMutation.buildRouteTileIndex({ nodeId: resolvedRouteNodeId, minZoom, maxZoom });
+      await routeMutation.buildRouteTileIndex({
+        nodeId: resolvedRouteNodeId,
+        minZoom,
+        maxZoom,
+        zoomBandBoundaries: routeTransformConfig.zoomBandBoundaries,
+        minDistanceMetersByBand: routeTransformConfig.minDistanceMetersByBand,
+        simplifyToleranceByBand: routeTransformConfig.simplifyToleranceByBand,
+      });
       setOverallProgress(transformStageMax);
 
       const vtConfig = resolveVectorTileConfig();
@@ -379,6 +401,7 @@ export const useRouteBuildSessionLifecycle = ({
         nodeId: resolvedRouteNodeId,
         minZoom,
         maxZoom,
+        zoomBandBoundaries: routeTransformConfig.zoomBandBoundaries,
         bufferSize: vtConfig.bufferSize,
         inputFormat: vtConfig.inputFormat,
         inputCompression: vtConfig.inputCompression,
@@ -418,6 +441,7 @@ export const useRouteBuildSessionLifecycle = ({
     mapIdeGsmProgress,
     onUpdate,
     releaseBuildLock,
+    resolveRouteTransformConfig,
     resolveVectorTileConfig,
     resolveZoomRange,
     routeNodeId,

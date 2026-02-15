@@ -20,7 +20,7 @@ import {
   suspendSuspectControlsAtom,
   buildStageProgressAtom,
   buildStagesAtom,
-} from '../../atoms/shapeBuildProgressAtoms.ts';
+} from '../../atoms/shapeBuildProgressAtoms.js';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import { useShapeBuildStep } from './useShapeBuildStep.ts';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';

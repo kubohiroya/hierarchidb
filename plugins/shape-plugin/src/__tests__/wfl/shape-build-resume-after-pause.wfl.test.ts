@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BatchProgressEvent, BatchProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { FetchTaskPayload, ShapeBuildConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../../../../plugins/shape-plugin/src/common/types/constants.ts';
+import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../../../../plugins/shape-plugin/src/common/types/constants.ts';
 import * as Comlink from 'comlink';
 vi.mock('comlink', async () => (
   await vi.importActual('comlink')
@@ -232,11 +232,32 @@ type ShapePipelineTestAPI = {
   getPipelineState(nodeId: NodeId): Promise<PipelineState>;
 };
 
+type ShapeBatchTestAPI = {
+  seedDraftNode(payload: {
+    nodeId: NodeId;
+    buildConfig: ShapeBuildConfig;
+    processingConfig: ShapeProcessingConfig;
+    selectedArrayByCountries: SelectedArrayByCountries;
+  }): Promise<void>;
+  startBatchProcess(payload: {
+    nodeId: NodeId;
+    buildConfig: ShapeBuildConfig;
+    processingConfig: ShapeProcessingConfig;
+    downloadTaskPayloads: FetchTaskPayload[];
+    buildContinuationPolicy?: BuildContinuationPolicy;
+  }): Promise<NodeId>;
+  subscribeToProgress(
+    nodeId: NodeId,
+    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+  ): Promise<() => void> | (() => void);
+};
+
 type WorkerTestAPI = {
   getShapeQueryAPI(): Promise<ShapeQueryAPI>;
   getShapeMutationAPI(): Promise<ShapeMutationAPI>;
   getShapeEphemeralAdminAPI(): Promise<ShapeEphemeralAdminAPI>;
   getShapePipelineTestAPI(): Promise<ShapePipelineTestAPI>;
+  getShapeBatchTestAPI(): Promise<ShapeBatchTestAPI>;
 };
 
 type WorkerSetup = {
@@ -417,6 +438,75 @@ const shouldAutoResume = (record: ShapeBuildSessionRecord | null): boolean => {
 };
 
 describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeline)', () => {
+  it('emits progress snapshot after enqueue (regression)', async () => {
+    const nodeId = 'shape-build-progress-snapshot' as NodeId;
+    const setup = await setupWorker();
+
+    try {
+      const mutation = await setup.client.getShapeMutationAPI();
+      const admin = await setup.client.getShapeEphemeralAdminAPI();
+      const batch = await setup.client.getShapeBatchTestAPI();
+
+      await mutation.deleteBuildSession(nodeId);
+      await mutation.deleteBuildTasks(nodeId);
+      await admin.clearShapeEphemeralCache(nodeId, 'fetchCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'transformCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'transformErrors');
+      await admin.clearShapeEphemeralCache(nodeId, 'tileIdToBufferRelations');
+
+      const buildConfig = createTestBuildConfig();
+      const buildConfigForBatch: ShapeBuildConfig = {
+        ...buildConfig,
+        transformConfig: {
+          ...buildConfig.transformConfig,
+          zoomBandBoundaries: [1, 3],
+        },
+      };
+      const processingConfig = DEFAULT_PROCESSING_CONFIG;
+      const selectedArrayByCountries: SelectedArrayByCountries = { JP: [true] };
+
+      await batch.seedDraftNode({
+        nodeId,
+        buildConfig: buildConfigForBatch,
+        processingConfig,
+        selectedArrayByCountries,
+      });
+
+      const progressEvents: Array<BatchProgressEvent<BatchProgressPayload>> = [];
+      const unsubscribe = await batch.subscribeToProgress(
+        nodeId,
+        Comlink.proxy((event: BatchProgressEvent<BatchProgressPayload>) => {
+          progressEvents.push(event);
+        }),
+      );
+
+      await batch.startBatchProcess({
+        nodeId,
+        buildConfig: buildConfigForBatch,
+        processingConfig,
+        downloadTaskPayloads,
+      });
+
+      await waitFor(async () => progressEvents.length > 0, { label: 'progress snapshot' });
+
+      const snapshotEvent =
+        progressEvents.find((event) => (
+          (event.payload?.meta as { source?: string } | undefined)?.source === 'snapshot'
+        )) ?? progressEvents[0];
+      const stageTotals = (snapshotEvent.payload?.meta as {
+        stageTotals?: { fetch?: { total?: number } };
+      } | undefined)?.stageTotals;
+
+      expect(stageTotals?.fetch?.total ?? 0).toBeGreaterThan(0);
+
+      if (typeof unsubscribe === 'function') {
+        await unsubscribe();
+      }
+    } finally {
+      await cleanupWorker(setup);
+    }
+  });
+
   it('pauses and resumes a pipeline run to completion', async () => {
     const nodeId = 'shape-build-pipeline-pause' as NodeId;
     const setup = await setupWorker();

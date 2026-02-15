@@ -30,13 +30,7 @@ export class RowStoreDB extends Dexie {
   constructor(name: string = getDBName('tabular-source-rowstore-db')) {
     super(name);
     this.version(1).stores({
-      rowChunks: '&id, [pluginId+tableId], tableId, pluginId, chunkIndex, createdAt',
-    });
-    // v2: add indexes table and additional compound indexes for faster row resolution
-    this.version(2).stores({
-      // Query by plugin+table+startRowIndex to locate chunks for specific rowIds quickly
       rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
-      // Inverted index: one entry per (plugin, table, column, value)
       rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]',
     });
   }

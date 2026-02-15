@@ -1,5 +1,5 @@
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import type { EphemeralFetchCacheRecord, EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralFetchCacheRecord, EphemeralDB } from '@hierarchidb/gis-sdk';
 
 const FETCH_ARTIFACT_HASH_ALGORITHM = 'sha3-256' as const;
 const fetchArtifactHasher = new NobleSha3HashPort();
@@ -9,7 +9,7 @@ export const hashFetchArtifact = (data: ArrayBuffer): string => (
 );
 
 export const resolveFetchArtifactHashFromRecord = async (
-  fetchCacheStore: Pick<EphemeralShapeDB['fetchCache'], 'update'>,
+  fetchCacheStore: Pick<EphemeralDB['fetchCache'], 'update'>,
   record: Pick<EphemeralFetchCacheRecord, 'id' | 'data' | 'contentHash'>,
 ): Promise<string> => {
   const contentHash = typeof record.contentHash === 'string' && record.contentHash.length > 0
@@ -22,7 +22,7 @@ export const resolveFetchArtifactHashFromRecord = async (
 };
 
 export const resolveFetchArtifactHashById = async (
-  ephemeralStore: EphemeralShapeDB,
+  ephemeralStore: EphemeralDB,
   fetchCacheId: string,
 ): Promise<string | null> => {
   const record = await ephemeralStore.fetchCache.get(fetchCacheId);

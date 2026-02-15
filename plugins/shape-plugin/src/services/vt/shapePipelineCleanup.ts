@@ -2,12 +2,12 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';
-import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeCleanupStageParams = {
   nodeId: NodeId;
   buildConfig: ShapeRuntimeBuildConfig;
-  ephemeralStore: EphemeralShapeDB;
+  ephemeralStore: EphemeralDB;
 };
 
 export const runShapePipelineCleanup = async (params: ShapeCleanupStageParams): Promise<void> => {

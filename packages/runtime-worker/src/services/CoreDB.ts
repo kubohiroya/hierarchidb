@@ -140,95 +140,20 @@ export class CoreDB extends Dexie {
 
   private constructor(name: string) {
     super(name);
-
-    this.version(4)
-      .stores({
-        trees: '&id, rootId, trashRootId, superRootId',
-        nodes: [
-          '&id',
-          'parentId',
-          '&[parentId+metadata.name]',
-          '[parentId+updatedAt]',
-          'depth',
-          '*references',
-        ].join(', '),
-        rootStates: '&rootNodeId',
-        tags: '&id, name, category, usageCount, createdAt',
-        tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
-      })
-      .upgrade(async (tx) => {
-        // Drop holder metadata and clear legacy draftData on non-draft nodes
-        const nodesTable = tx.table<TreeNode, NodeId>('nodes');
-        await nodesTable.toCollection().modify((node) => {
-          if ((node as { holderType?: string }).holderType) {
-            (node as { holderType?: string }).holderType = undefined;
-            (node as { holderTargetId?: string }).holderTargetId = undefined;
-            (node as { holderMetaParentId?: string }).holderMetaParentId = undefined;
-          }
-          if (typeof (node as { draftData?: unknown }).draftData !== 'undefined') {
-            // keep draftData if present; no special handling needed
-          }
-        });
-      });
-
-    this.version(5)
-      .stores({
-        trees: '&id, rootId, trashRootId, superRootId',
-        nodes: [
-          '&id',
-          'parentId',
-          '&[parentId+metadata.name]',
-          '[parentId+updatedAt]',
-          'depth',
-          '*references',
-        ].join(', '),
-        rootStates: '&rootNodeId',
-        tags: '&id, name, createdAt',
-        tagAssociations: 'nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
-      })
-      .upgrade(async (tx) => {
-        const tagAssociations = tx.table<NodeTagAssociation>('tagAssociations');
-        await tagAssociations.toCollection().modify((assoc) => {
-          const current = assoc as NodeTagAssociation & { scope?: TagAssociationScope };
-          if (!current.scope) {
-            (assoc as NodeTagAssociation).scope = 'published';
-          }
-        });
-      });
-
-    this.version(6)
-      .stores({
-        trees: '&id, rootId, trashRootId, superRootId',
-        nodes: [
-          '&id',
-          'parentId',
-          '&[parentId+metadata.name]',
-          '[parentId+updatedAt]',
-          'depth',
-          '*references',
-        ].join(', '),
-        rootStates: '&rootNodeId',
-        tags: '&id, name, createdAt',
-        tagAssociations: '&id, nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
-      })
-      .upgrade(async (tx) => {
-        const tagAssociations = tx.table<NodeTagAssociation>('tagAssociations');
-        await tagAssociations.toCollection().modify((assoc) => {
-          const current = assoc as NodeTagAssociation & { scope?: TagAssociationScope };
-          if (!current.scope) {
-            (assoc as NodeTagAssociation).scope = 'published';
-          }
-          if (!current.id) {
-            const nodeId = String(current.nodeId);
-            const tagId = String(current.tagId);
-            const scope = current.scope ?? 'published';
-            (assoc as NodeTagAssociation).id = `${nodeId}_${tagId}_${scope}` as NodeTagAssociation['id'];
-          }
-        });
-      });
-
-    // Version 3 previously added fulltext tables; now a no-op to avoid creating them.
-    // Version 4 defines the current schema with metadata-based name index.
+    this.version(1).stores({
+      trees: '&id, rootId, trashRootId, superRootId',
+      nodes: [
+        '&id',
+        'parentId',
+        '&[parentId+metadata.name]',
+        '[parentId+updatedAt]',
+        'depth',
+        '*references',
+      ].join(', '),
+      rootStates: '&rootNodeId',
+      tags: '&id, name, createdAt',
+      tagAssociations: '&id, nodeId, tagId, scope, createdAt, &[nodeId+tagId+scope]',
+    });
   }
 
   // console name helper was unused in the current implementation

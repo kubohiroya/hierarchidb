@@ -11,7 +11,7 @@ import type {
   UndoPayload,
 } from '@hierarchidb/tree-api';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -163,7 +163,7 @@ export class TreeMutationService implements TreeMutationAPI {
   ): Promise<{ blocked: boolean; message?: string }> {
     if (nodeIds.length === 0) return { blocked: false };
 
-    await ephemeralShapeDB.open?.();
+    await ephemeralDB.open?.();
 
     const nodes = await Promise.all(nodeIds.map(async (id) => this.coreDB.getNode?.(id)));
     const shapeNodeIds = Array.from(
@@ -177,7 +177,7 @@ export class TreeMutationService implements TreeMutationAPI {
       return { blocked: false };
     }
 
-    const sessions = await ephemeralShapeDB.sessions.bulkGet(shapeNodeIds);
+    const sessions = await ephemeralDB.sessions.bulkGet(shapeNodeIds);
     if (sessions.some((session) => session?.status === RUNNING_BUILD_SESSION_STATUS)) {
       return {
         blocked: true,

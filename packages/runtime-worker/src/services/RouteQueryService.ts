@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
+  RouteBuildError,
   RouteLineString,
   RouteMetadataSyncRow,
   RouteMetadataSyncSummary,
@@ -13,6 +14,7 @@ import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { countRouteReferencesToLocations } from '@hierarchidb/route-store';
 import { getLocationDB } from '@hierarchidb/location-store';
 import type { LocationFeature } from '@hierarchidb/location-api';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,
@@ -117,6 +119,21 @@ export class RouteQueryService implements RouteQueryAPI {
   async listRouteLineStrings(nodeId: NodeId): Promise<RouteLineStringRecord[]> {
     await this.db.open?.();
     return this.getLineStrings(nodeId);
+  }
+
+  async listRouteBuildErrors(nodeId: NodeId): Promise<RouteBuildError[]> {
+    const rows = await ephemeralDB.transformErrors.where('nodeId').equals(nodeId).toArray();
+    return rows
+      .filter((row) => row.domainType === 'route')
+      .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
+      .map((row) => ({
+        id: row.id,
+        stage: normalizeRouteBuildErrorStage(row.stage),
+        message: row.message ?? 'Unknown route build error',
+        sourceKey: row.sourceKey,
+        featureId: row.featureId,
+        createdAt: row.createdAt ?? Date.now(),
+      }));
   }
 
   async checkRouteMetadataSync(nodeId: NodeId): Promise<RouteMetadataSyncSummary> {
@@ -415,3 +432,8 @@ const isNearlyEqual = (left?: number, right?: number): boolean => {
 const equalsNullableString = (left?: string | null, right?: string | null): boolean => (
   (left ?? '').trim() === (right ?? '').trim()
 );
+
+const normalizeRouteBuildErrorStage = (stage: unknown): RouteBuildError['stage'] => {
+  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
+  return 'transform';
+};

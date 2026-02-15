@@ -23,13 +23,14 @@ import {
 import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
-import { SingletonMixin } from '@hierarchidb/util';
+import { ephemeralDB, type EphemeralFetchCacheRecord, type EphemeralTileIdToBufferRelation } from '@hierarchidb/gis-sdk';
+import { SingletonMixin, buildZoomBandRanges, normalizeZoomBandBoundaries } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
 import { filterIdeGsmRoutesBySelection, parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
 import { loadTabularTableRows } from './utils/tabular.js';
 import { getStageProcessingClient } from './StageProcessingService.js';
 import { writeVectorTileInput } from './vectorTileStageRunner.js';
-import { clampZoom } from './nearest/tileNearest.js';
+import { clampZoom, haversineMeters } from './nearest/tileNearest.js';
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(
@@ -167,6 +168,89 @@ export class RouteMutationService implements RouteMutationAPI {
           speed: result.speed,
         };
       });
+      const fetchStageErrors = errors.map((error, index) => (
+        buildRouteBuildErrorRecord({
+          nodeId: request.nodeId,
+          stage: 'fetch',
+          message: error.reason,
+          sourceKey: `${error.start}:${error.end}`,
+          featureId: error.id,
+          sequence: index,
+        })
+      ));
+      const fetchCacheRecords: EphemeralFetchCacheRecord[] = [];
+      linesWithWaypoints.forEach((line, index) => {
+        const sourceKey = buildRouteFetchSourceKey(line);
+        if (!sourceKey) {
+          fetchStageErrors.push(
+            buildRouteBuildErrorRecord({
+              nodeId: request.nodeId,
+              stage: 'fetch',
+              message: 'Route line is missing start/end locationId.',
+              sourceKey: line.featureId,
+              featureId: String(line.id),
+              sequence: errors.length + index,
+            }),
+          );
+          return;
+        }
+        const coordinates = resolveRoutePoints(line);
+        if (coordinates.length < 2) {
+          fetchStageErrors.push(
+            buildRouteBuildErrorRecord({
+              nodeId: request.nodeId,
+              stage: 'fetch',
+              message: 'Route line has fewer than 2 points.',
+              sourceKey,
+              featureId: String(line.id),
+              sequence: errors.length + index,
+            }),
+          );
+          return;
+        }
+        const payload = {
+          type: 'FeatureCollection' as const,
+          features: [{
+            type: 'Feature' as const,
+            id: String(line.id),
+            properties: {
+              id: String(line.id),
+              sourceKey,
+              routeMode: line.routeMode,
+              distance: line.distance ?? computeRouteDistanceMeters(coordinates),
+              startLocationId: line.startLocationId ? String(line.startLocationId) : '',
+              endLocationId: line.endLocationId ? String(line.endLocationId) : '',
+            },
+            geometry: {
+              type: 'LineString' as const,
+              coordinates,
+            },
+          }],
+        };
+        const data = new TextEncoder().encode(JSON.stringify(payload)).buffer;
+        const now = Date.now();
+        const bbox = computeLineBbox(coordinates);
+        const record: EphemeralFetchCacheRecord = {
+          id: `${String(request.nodeId)}:fetch:${sourceKey}`,
+          nodeId: request.nodeId,
+          domainType: 'route',
+          sourceKey,
+          data,
+          format: 'topojson',
+          compression: 'none',
+          featureCount: 1,
+          inputFeatureCount: 1,
+          bbox,
+          downloadTime: 0,
+          size: data.byteLength,
+          vertexCount: coordinates.length,
+          polygonCount: 0,
+          inputVertexCount: coordinates.length,
+          inputPolygonCount: 0,
+          timestamp: now,
+        };
+        fetchCacheRecords.push(record);
+      });
 
       await this.ensureOpen();
       await this.db.features.where('nodeId').equals(request.nodeId).delete?.();
@@ -187,6 +271,33 @@ export class RouteMutationService implements RouteMutationAPI {
           chunkSize,
         });
       }
+      await ephemeralDB.transaction(
+        'rw',
+        [
+          ephemeralDB.fetchCache,
+          ephemeralDB.fetchCacheMeta,
+          ephemeralDB.transformCache,
+          ephemeralDB.transformCacheMeta,
+          ephemeralDB.tileIdToBufferRelations,
+          ephemeralDB.transformErrors,
+        ],
+        async () => {
+          await ephemeralDB.fetchCache.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.fetchCacheMeta.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.transformCache.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(request.nodeId).delete();
+          await ephemeralDB.transformErrors.where('nodeId').equals(request.nodeId).delete();
+          if (fetchCacheRecords.length > 0) {
+            await ephemeralDB.fetchCache.bulkPut(fetchCacheRecords);
+          }
+          if (fetchStageErrors.length > 0) {
+            await ephemeralDB.transformErrors.bulkPut(fetchStageErrors);
+          }
+        },
+      );
+      await this.db.tileIndex.where('nodeId').equals(request.nodeId).delete?.();
+      await this.db.vectorTiles.where('nodeId').equals(request.nodeId).delete?.();
 
       emit({ phase: 'completed', total: linesWithWaypoints.length, processed: saved });
       return { saved, errorCount: errors.length, errors };
@@ -200,29 +311,158 @@ export class RouteMutationService implements RouteMutationAPI {
   async buildRouteTileIndex(request: RouteTileIndexRequest): Promise<RouteTileIndexResult> {
     await this.ensureOpen();
     const [minZoom, maxZoom] = normalizeZoomRange(request.minZoom, request.maxZoom);
-    const lines = await this.db.features.where('nodeId').equals(request.nodeId).toArray();
+    const allLines = await this.db.features.where('nodeId').equals(request.nodeId).toArray();
+    const lineById = new Map(allLines.map((line) => [String(line.id), line]));
+    const boundaries = normalizeZoomBandBoundaries(
+      request.zoomBandBoundaries ?? [minZoom, maxZoom],
+      minZoom,
+      maxZoom,
+    );
+    const ranges = buildZoomBandRanges(boundaries, minZoom, maxZoom);
+    const bands = ranges.map((range, index) => ({
+      bandIndex: index,
+      zMin: range.min,
+      zMax: index === ranges.length - 1 ? range.max : Math.max(range.min, range.max - 1),
+      zBase: range.min,
+    }));
+    const fetchBuffers = await ephemeralDB.fetchCacheMeta.where('nodeId').equals(request.nodeId).toArray();
+    const transformRecords: Array<{
+      id: string;
+      nodeId: NodeId;
+      domainType: 'route';
+      bandIndex: number;
+      sourceKey: string;
+      data: ArrayBuffer;
+      featureCount: number;
+      vertexCount: number;
+      polygonCount: number;
+      extractionRatio: number;
+      tolerance: number;
+      timestamp: number;
+    }> = [];
+    const relationRecords: EphemeralTileIdToBufferRelation[] = [];
+    const transformErrors = await ephemeralDB.transformErrors.where('nodeId').equals(request.nodeId).toArray();
     const tileIndex = new Map<string, Set<string>>();
-    for (const line of lines) {
-      const points = resolveRoutePoints(line);
-      if (points.length < 2) continue;
-      for (let i = 0; i < points.length - 1; i += 1) {
-        const start = points[i] as [number, number];
-        const end = points[i + 1] as [number, number];
-        for (let z = minZoom; z <= maxZoom; z += 1) {
-          const range = resolveTileRangeForSegment(start, end, z);
-          for (let x = range.x1; x <= range.x2; x += 1) {
-            for (let y = range.y1; y <= range.y2; y += 1) {
-              const key = buildTileKey(request.nodeId, z, x, y);
-              const existing = tileIndex.get(key) ?? new Set<string>();
-              existing.add(String(line.id));
-              tileIndex.set(key, existing);
+    let transformErrorSequence = transformErrors.length;
+    const now = Date.now();
+
+    for (const meta of fetchBuffers) {
+      const full = await ephemeralDB.fetchCache.get(meta.id);
+      if (!full) continue;
+      const sourceFeature = decodeRouteFeatureCollection(full.data);
+      if (!sourceFeature) {
+        transformErrors.push(buildRouteBuildErrorRecord({
+          nodeId: request.nodeId,
+          stage: 'transform',
+          message: 'Failed to decode fetch cache payload.',
+          sourceKey: meta.sourceKey,
+          sequence: transformErrorSequence,
+        }));
+        transformErrorSequence += 1;
+        continue;
+      }
+      const sourceLineId = sourceFeature.id;
+      const sourceLine = sourceLineId ? lineById.get(sourceLineId) : undefined;
+      const original = sourceFeature.coordinates;
+      const distanceMeters = sourceFeature.distanceMeters ?? computeRouteDistanceMeters(original);
+      for (const band of bands) {
+        const minDistance = resolveBandValue(request.minDistanceMetersByBand, band.bandIndex, 0);
+        if (distanceMeters < minDistance) {
+          transformErrors.push(buildRouteBuildErrorRecord({
+            nodeId: request.nodeId,
+            stage: 'transform',
+            message: `Dropped by minDistance rule: ${distanceMeters.toFixed(0)}m < ${minDistance.toFixed(0)}m`,
+            sourceKey: meta.sourceKey,
+            featureId: sourceLineId,
+            sequence: transformErrorSequence,
+          }));
+          transformErrorSequence += 1;
+          continue;
+        }
+        const tolerance = resolveBandValue(request.simplifyToleranceByBand, band.bandIndex, 0);
+        const simplified = simplifyLine(original, tolerance);
+        if (simplified.length < 2) {
+          transformErrors.push(buildRouteBuildErrorRecord({
+            nodeId: request.nodeId,
+            stage: 'transform',
+            message: 'Simplification removed required route vertices.',
+            sourceKey: meta.sourceKey,
+            featureId: sourceLineId,
+            sequence: transformErrorSequence,
+          }));
+          transformErrorSequence += 1;
+          continue;
+        }
+        const bufferId = `${String(request.nodeId)}:transform:${band.bandIndex}:${meta.sourceKey}`;
+        const payload = {
+          type: 'FeatureCollection' as const,
+          features: [{
+            type: 'Feature' as const,
+            id: sourceLineId,
+            properties: {
+              id: sourceLineId,
+              sourceKey: meta.sourceKey,
+              routeMode: sourceFeature.routeMode,
+              distance: distanceMeters,
+              startLocationId: sourceFeature.startLocationId,
+              endLocationId: sourceFeature.endLocationId,
+            },
+            geometry: {
+              type: 'LineString' as const,
+              coordinates: simplified,
+            },
+          }],
+        };
+        const data = new TextEncoder().encode(JSON.stringify(payload)).buffer;
+        transformRecords.push({
+          id: bufferId,
+          nodeId: request.nodeId,
+          domainType: 'route',
+          bandIndex: band.bandIndex,
+          sourceKey: meta.sourceKey,
+          data,
+          featureCount: 1,
+          vertexCount: simplified.length,
+          polygonCount: 0,
+          extractionRatio: Math.max(0, Math.min(1, simplified.length / Math.max(1, original.length))),
+          tolerance,
+          timestamp: now,
+        });
+        const lineId = sourceLine ? String(sourceLine.id) : sourceLineId;
+        const tileIds = collectRouteTileIds(simplified, band.zBase);
+        tileIds.forEach((tileId) => {
+          relationRecords.push({
+            id: `${String(request.nodeId)}:${band.bandIndex}:${tileId}:${bufferId}`,
+            nodeId: request.nodeId,
+            domainType: 'route',
+            bandIndex: band.bandIndex,
+            tileId,
+            bufferId,
+            featureCount: 1,
+            cacheTimestamp: now,
+            createdAt: now,
+          });
+        });
+        if (lineId) {
+          for (let i = 0; i < simplified.length - 1; i += 1) {
+            const start = simplified[i]!;
+            const end = simplified[i + 1]!;
+            for (let zoom = band.zMin; zoom <= band.zMax; zoom += 1) {
+              const range = resolveTileRangeForSegment(start, end, zoom);
+              for (let x = range.x1; x <= range.x2; x += 1) {
+                for (let y = range.y1; y <= range.y2; y += 1) {
+                  const key = buildTileKey(request.nodeId, zoom, x, y);
+                  const existing = tileIndex.get(key) ?? new Set<string>();
+                  existing.add(lineId);
+                  tileIndex.set(key, existing);
+                }
+              }
             }
           }
         }
       }
     }
 
-    const now = Date.now();
     const records = Array.from(tileIndex.entries()).map(([key, lineIds]) => {
       const { nodeId, z, x, y } = parseTileKey(key);
       return {
@@ -235,13 +475,36 @@ export class RouteMutationService implements RouteMutationAPI {
         updatedAt: now,
       };
     });
+    await ephemeralDB.transaction(
+      'rw',
+      [
+        ephemeralDB.transformCache,
+        ephemeralDB.transformCacheMeta,
+        ephemeralDB.tileIdToBufferRelations,
+        ephemeralDB.transformErrors,
+      ],
+      async () => {
+        await ephemeralDB.transformCache.where('nodeId').equals(request.nodeId).delete();
+        await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).delete();
+        await ephemeralDB.tileIdToBufferRelations.where('nodeId').equals(request.nodeId).delete();
+        if (transformRecords.length > 0) {
+          await ephemeralDB.transformCache.bulkPut(transformRecords);
+        }
+        if (relationRecords.length > 0) {
+          await ephemeralDB.tileIdToBufferRelations.bulkPut(relationRecords);
+        }
+        if (transformErrors.length > 0) {
+          await ephemeralDB.transformErrors.bulkPut(transformErrors);
+        }
+      },
+    );
     await this.db.tileIndex.where('nodeId').equals(request.nodeId).delete?.();
     if (records.length > 0) {
       await this.db.tileIndex.bulkPut?.(records);
     }
     return {
       tileCount: records.length,
-      lineCount: lines.length,
+      lineCount: allLines.length,
       minZoom,
       maxZoom,
     };
@@ -253,56 +516,58 @@ export class RouteMutationService implements RouteMutationAPI {
     await this.ensureOpen();
     const [minZoom, maxZoom] = normalizeZoomRange(request.minZoom, request.maxZoom);
     await this.db.vectorTiles.where('nodeId').equals(request.nodeId).delete?.();
-    const lines = await this.db.features.where('nodeId').equals(request.nodeId).toArray();
-    const features = lines
-      .map((line) => {
-        const points = resolveRoutePoints(line);
-        if (points.length < 2) return null;
-        return {
-          type: 'Feature' as const,
-          id: String(line.id),
-          properties: {
-            id: String(line.id),
-            routeMode: line.routeMode,
-          },
-          geometry: {
-            type: 'LineString' as const,
-            coordinates: points,
-          },
-        };
-      })
-      .filter((feature): feature is NonNullable<typeof feature> => Boolean(feature));
-
-    const collection = {
-      type: 'FeatureCollection' as const,
-      features,
-    };
-    const buffer = new TextEncoder().encode(JSON.stringify(collection)).buffer;
-    const bufferId = `${String(request.nodeId)}-route-vt`;
-    await writeVectorTileInput(bufferId, buffer, {
-      inputFormat: request.inputFormat ?? 'geojson',
-      inputCompression: request.inputCompression ?? 'none',
-      nodeId: request.nodeId,
-      tileId: bufferId,
-      chunkStoreName: 'hidb-chunks',
-    });
-
     const stage = await getStageProcessingClient();
-    const result = await stage.vectortile.generateTiles(bufferId, {
-      format: 'mvt',
-      compression: 'gzip',
+    const boundaries = normalizeZoomBandBoundaries(
+      request.zoomBandBoundaries ?? [minZoom, maxZoom],
       minZoom,
       maxZoom,
-      inputFormat: request.inputFormat ?? 'geojson',
-      inputCompression: request.inputCompression ?? 'none',
-      buffer: request.bufferSize,
-      targetNodeId: request.nodeId,
-      targetNodeType: 'route',
-    });
-
+    );
+    const ranges = buildZoomBandRanges(boundaries, minZoom, maxZoom);
+    const bands = ranges.map((range, index) => ({
+      bandIndex: index,
+      zMin: range.min,
+      zMax: index === ranges.length - 1 ? range.max : Math.max(range.min, range.max - 1),
+    }));
+    const metas = await ephemeralDB.transformCacheMeta.where('nodeId').equals(request.nodeId).toArray();
+    let tilesGenerated = 0;
+    let totalBytes = 0;
+    for (const band of bands) {
+      const bandMetas = metas.filter((meta) => meta.bandIndex === band.bandIndex);
+      if (bandMetas.length === 0) continue;
+      const buffers = await ephemeralDB.transformCache.bulkGet(bandMetas.map((meta) => meta.id));
+      const features = buffers
+        .flatMap((buffer) => (buffer ? decodeRouteFeaturesFromTransform(buffer.data) : []));
+      if (features.length === 0) continue;
+      const collection = {
+        type: 'FeatureCollection' as const,
+        features,
+      };
+      const encoded = new TextEncoder().encode(JSON.stringify(collection)).buffer;
+      const bufferId = `${String(request.nodeId)}-route-vt-band-${band.bandIndex}`;
+      await writeVectorTileInput(bufferId, encoded, {
+        inputFormat: request.inputFormat ?? 'geojson',
+        inputCompression: request.inputCompression ?? 'none',
+        nodeId: request.nodeId,
+        tileId: bufferId,
+        chunkStoreName: 'hidb-chunks',
+      });
+      const result = await stage.vectortile.generateTiles(bufferId, {
+        format: 'mvt',
+        compression: 'gzip',
+        minZoom: band.zMin,
+        maxZoom: band.zMax,
+        inputFormat: request.inputFormat ?? 'geojson',
+        inputCompression: request.inputCompression ?? 'none',
+        buffer: request.bufferSize,
+        targetNodeId: request.nodeId,
+        targetNodeType: 'route',
+      });
+      tilesGenerated += result.tilesGenerated;
+      totalBytes += result.totalBytes;
+    }
     return {
-      tilesGenerated: result.tilesGenerated,
-      totalBytes: result.totalBytes,
+      tilesGenerated,
+      totalBytes,
       zoomMin: minZoom,
       zoomMax: maxZoom,
     };
@@ -364,6 +629,269 @@ export class RouteMutationService implements RouteMutationAPI {
     return results;
   }
 }
+
+type DecodedRouteFeature = {
+  id?: string;
+  sourceKey: string;
+  routeMode?: string;
+  distanceMeters?: number;
+  startLocationId?: string;
+  endLocationId?: string;
+  coordinates: [number, number][];
+};
+
+const buildRouteFetchSourceKey = (line: RouteLineString): string | null => {
+  const startId = line.startLocationId ? String(line.startLocationId) : '';
+  const endId = line.endLocationId ? String(line.endLocationId) : '';
+  if (!startId || !endId) return null;
+  const routeMode = String(line.routeMode ?? '').trim();
+  if (!routeMode) return null;
+  if (isBidirectionalRoute(line)) {
+    const swap = shouldSwapBidirectionalEndpoints(line);
+    const from = swap ? endId : startId;
+    const to = swap ? startId : endId;
+    return `${routeMode}:${from}:${to}`;
+  }
+  return `${routeMode}:${startId}:${endId}`;
+};
+
+const shouldSwapBidirectionalEndpoints = (line: RouteLineString): boolean => {
+  const start = line.startPoint;
+  const end = line.endPoint;
+  if (!start || !end) {
+    const startId = line.startLocationId ? String(line.startLocationId) : '';
+    const endId = line.endLocationId ? String(line.endLocationId) : '';
+    return startId.localeCompare(endId) > 0;
+  }
+  const lonDelta = start.longitude - end.longitude;
+  if (lonDelta !== 0) {
+    return lonDelta > 0;
+  }
+  const latDelta = start.latitude - end.latitude;
+  if (latDelta !== 0) {
+    return latDelta > 0;
+  }
+  const startId = line.startLocationId ? String(line.startLocationId) : '';
+  const endId = line.endLocationId ? String(line.endLocationId) : '';
+  return startId.localeCompare(endId) > 0;
+};
+
+const isBidirectionalRoute = (line: RouteLineString): boolean => {
+  const metadata = line.metadata ?? {};
+  const bidirectionalRaw = metadata.bidirectional;
+  if (bidirectionalRaw !== undefined) {
+    return normalizeBooleanValue(bidirectionalRaw, false);
+  }
+  const oneWayRaw = metadata.oneway;
+  if (oneWayRaw !== undefined) {
+    return !normalizeBooleanValue(oneWayRaw, true);
+  }
+  return false;
+};
+
+const normalizeBooleanValue = (raw: unknown, fallback: boolean): boolean => {
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number') return raw !== 0;
+  if (typeof raw !== 'string') return fallback;
+  const value = raw.trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'on', 'bidirectional', 'both', 'two-way', 'two_way'].includes(value)) return true;
+  if (['false', '0', 'no', 'n', 'off', 'oneway', 'one-way', 'one_way'].includes(value)) return false;
+  return fallback;
+};
+
+const computeLineBbox = (coords: [number, number][]): [number, number, number, number] => {
+  if (coords.length === 0) return [0, 0, 0, 0];
+  let minLon = Number.POSITIVE_INFINITY;
+  let minLat = Number.POSITIVE_INFINITY;
+  let maxLon = Number.NEGATIVE_INFINITY;
+  let maxLat = Number.NEGATIVE_INFINITY;
+  coords.forEach(([lon, lat]) => {
+    if (lon < minLon) minLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lon > maxLon) maxLon = lon;
+    if (lat > maxLat) maxLat = lat;
+  });
+  return [minLon, minLat, maxLon, maxLat];
+};
+
+const computeRouteDistanceMeters = (coords: [number, number][]): number => {
+  if (coords.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < coords.length - 1; i += 1) {
+    const [startLon, startLat] = coords[i]!;
+    const [endLon, endLat] = coords[i + 1]!;
+    total += haversineMeters(startLat, startLon, endLat, endLon);
+  }
+  return total;
+};
+
+const resolveBandValue = (values: number[] | undefined, bandIndex: number, fallback: number): number => {
+  if (!values || values.length === 0) return fallback;
+  const raw = values[Math.min(values.length - 1, Math.max(0, bandIndex))];
+  return Number.isFinite(raw) ? Number(raw) : fallback;
+};
+
+const simplifyLine = (coords: [number, number][], tolerance: number): [number, number][] => {
+  if (coords.length <= 2) return coords;
+  if (!Number.isFinite(tolerance) || tolerance <= 0) return coords;
+  const kept = douglasPeucker(coords, tolerance);
+  if (kept.length < 2) return coords;
+  return kept;
+};
+
+const douglasPeucker = (coords: [number, number][], tolerance: number): [number, number][] => {
+  const squaredTolerance = tolerance * tolerance;
+  const keep = new Array<boolean>(coords.length).fill(false);
+  keep[0] = true;
+  keep[coords.length - 1] = true;
+
+  const simplifySegment = (startIndex: number, endIndex: number): void => {
+    if (endIndex - startIndex <= 1) return;
+    let maxDistance = 0;
+    let index = -1;
+    for (let i = startIndex + 1; i < endIndex; i += 1) {
+      const distance = pointSegmentDistanceSquared(coords[i]!, coords[startIndex]!, coords[endIndex]!);
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        index = i;
+      }
+    }
+    if (index > -1 && maxDistance > squaredTolerance) {
+      keep[index] = true;
+      simplifySegment(startIndex, index);
+      simplifySegment(index, endIndex);
+    }
+  };
+
+  simplifySegment(0, coords.length - 1);
+  const result: [number, number][] = [];
+  for (let i = 0; i < coords.length; i += 1) {
+    if (keep[i]) result.push(coords[i]!);
+  }
+  return result;
+};
+
+const pointSegmentDistanceSquared = (
+  point: [number, number],
+  start: [number, number],
+  end: [number, number],
+): number => {
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  if (dx === 0 && dy === 0) {
+    const deltaX = point[0] - start[0];
+    const deltaY = point[1] - start[1];
+    return deltaX * deltaX + deltaY * deltaY;
+  }
+  const t = Math.max(
+    0,
+    Math.min(1, ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / (dx * dx + dy * dy)),
+  );
+  const projectedX = start[0] + t * dx;
+  const projectedY = start[1] + t * dy;
+  const deltaX = point[0] - projectedX;
+  const deltaY = point[1] - projectedY;
+  return deltaX * deltaX + deltaY * deltaY;
+};
+
+const decodeRouteFeatureCollection = (buffer: ArrayBuffer): DecodedRouteFeature | null => {
+  try {
+    const json = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer))) as {
+      features?: Array<{
+        id?: string | number;
+        properties?: Record<string, unknown>;
+        geometry?: { type?: string; coordinates?: unknown };
+      }>;
+    };
+    const feature = Array.isArray(json.features) ? json.features[0] : undefined;
+    if (!feature || feature.geometry?.type !== 'LineString' || !Array.isArray(feature.geometry.coordinates)) return null;
+    const coordinates = feature.geometry.coordinates
+      .map((point) => (
+        Array.isArray(point) && point.length >= 2
+          ? [Number(point[0]), Number(point[1])] as [number, number]
+          : null
+      ))
+      .filter((point): point is [number, number] => Boolean(point && Number.isFinite(point[0]) && Number.isFinite(point[1])));
+    if (coordinates.length < 2) return null;
+    const props = feature.properties ?? {};
+    return {
+      id: feature.id != null ? String(feature.id) : undefined,
+      sourceKey: typeof props.sourceKey === 'string' ? props.sourceKey : '',
+      routeMode: typeof props.routeMode === 'string' ? props.routeMode : undefined,
+      distanceMeters: typeof props.distance === 'number' ? props.distance : undefined,
+      startLocationId: typeof props.startLocationId === 'string' ? props.startLocationId : undefined,
+      endLocationId: typeof props.endLocationId === 'string' ? props.endLocationId : undefined,
+      coordinates,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const decodeRouteFeaturesFromTransform = (buffer: ArrayBuffer) => {
+  const decoded = decodeRouteFeatureCollection(buffer);
+  if (!decoded) return [];
+  return [{
+    type: 'Feature' as const,
+    id: decoded.id,
+    properties: {
+      id: decoded.id,
+      sourceKey: decoded.sourceKey,
+      routeMode: decoded.routeMode,
+      distance: decoded.distanceMeters,
+      startLocationId: decoded.startLocationId,
+      endLocationId: decoded.endLocationId,
+    },
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: decoded.coordinates,
+    },
+  }];
+};
+
+const collectRouteTileIds = (coords: [number, number][], zBase: number): string[] => {
+  const ids = new Set<string>();
+  for (let i = 0; i < coords.length - 1; i += 1) {
+    const start = coords[i]!;
+    const end = coords[i + 1]!;
+    const range = resolveTileRangeForSegment(start, end, zBase);
+    for (let x = range.x1; x <= range.x2; x += 1) {
+      for (let y = range.y1; y <= range.y2; y += 1) {
+        ids.add(`${zBase}/${x}/${y}`);
+      }
+    }
+  }
+  return Array.from(ids);
+};
+
+const buildRouteBuildErrorRecord = (params: {
+  nodeId: NodeId;
+  stage: 'fetch' | 'transform' | 'vt';
+  message: string;
+  sourceKey?: string;
+  featureId?: string;
+  sequence: number;
+}) => ({
+  id: `${String(params.nodeId)}:route-error:${params.stage}:${params.sequence}`,
+  nodeId: params.nodeId,
+  domainType: 'route' as const,
+  taskId: `${String(params.nodeId)}:${params.stage}`,
+  stage: params.stage,
+  issueStage: params.stage,
+  issueKind: 'route-build',
+  sourceKey: params.sourceKey,
+  featureId: params.featureId,
+  polygonCount: 0,
+  ringCount: 0,
+  polygonErrorCount: 0,
+  ringErrorCount: 0,
+  message: params.message,
+  createdAt: Date.now(),
+  lineFeatures: {
+    type: 'FeatureCollection' as const,
+    features: [],
+  },
+});
 
 const isFolderNodeType = (nodeType?: string | null): boolean => {
   if (!nodeType) return false;
@@ -491,10 +1019,10 @@ async function buildWaypoints(
   line: RouteWaypointInput,
   generator: RouteGenerator
 ): Promise<RouteWaypointResult> {
-  const method = resolveIdeGsmMethod(line.routeMode);
+  const strategy = resolveRouteFetchStrategy(line.routeMode);
   const start = line.startPoint?.coordinates ?? resolveLegacyCoordinates(line.startPoint);
   const end = line.endPoint?.coordinates ?? resolveLegacyCoordinates(line.endPoint);
-  if (!method || !start || !end) {
+  if (!strategy || !start || !end) {
     return {
       id: line.id,
       waypoints: undefined,
@@ -503,7 +1031,7 @@ async function buildWaypoints(
     };
   }
 
-  const result = await generator.generate([start, end], { method });
+  const result = await strategy.generate(generator, start, end);
   const distance = result.distance ?? line.distance;
   const speed = result.duration && result.distance ? result.distance / result.duration : undefined;
   return {
@@ -514,19 +1042,43 @@ async function buildWaypoints(
   };
 }
 
-function resolveIdeGsmMethod(routeMode?: string): 'direct' | 'great_circle' | 'searoute' | null {
-  if (routeMode === ROUTE_MODES.AIRWAY) return 'great_circle';
-  if (routeMode === ROUTE_MODES.WATERWAY) return 'searoute';
-  if (
-    routeMode === ROUTE_MODES.RAILWAY ||
-    routeMode === ROUTE_MODES.H_RAILWAY ||
-    routeMode === ROUTE_MODES.ROAD ||
-    routeMode === ROUTE_MODES.HIGHWAY
-  ) {
-    return 'direct';
-  }
-  return null;
-}
+type RouteFetchStrategy = {
+  id: string;
+  supports: (routeMode?: string) => boolean;
+  generate: (
+    generator: RouteGenerator,
+    start: [number, number],
+    end: [number, number],
+  ) => ReturnType<RouteGenerator['generate']>;
+};
+
+const ROUTE_FETCH_STRATEGIES: RouteFetchStrategy[] = [
+  {
+    id: 'air-great-circle',
+    supports: (routeMode) => routeMode === ROUTE_MODES.AIRWAY,
+    generate: (generator, start, end) => generator.generate([start, end], { method: 'great_circle' }),
+  },
+  {
+    id: 'sea-searoute',
+    supports: (routeMode) => routeMode === ROUTE_MODES.WATERWAY,
+    generate: (generator, start, end) => generator.generate([start, end], { method: 'searoute' }),
+  },
+  {
+    id: 'land-direct',
+    supports: (routeMode) => (
+      routeMode === ROUTE_MODES.RAILWAY
+      || routeMode === ROUTE_MODES.H_RAILWAY
+      || routeMode === ROUTE_MODES.ROAD
+      || routeMode === ROUTE_MODES.HIGHWAY
+    ),
+    generate: (generator, start, end) => generator.generate([start, end], { method: 'direct' }),
+  },
+];
+
+const resolveRouteFetchStrategy = (routeMode?: string): RouteFetchStrategy | null => {
+  const strategy = ROUTE_FETCH_STRATEGIES.find((candidate) => candidate.supports(routeMode));
+  return strategy ?? null;
+};
 
 const resolveRoutePoints = (line: RouteLineString): [number, number][] => {
   if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {

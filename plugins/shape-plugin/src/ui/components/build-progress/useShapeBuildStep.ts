@@ -46,7 +46,7 @@ import {
 } from './resolveStartupTransitionWatchdogEvent.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
-import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
+import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const PAUSE_COMMAND_TIMEOUT_MS = 60_000;

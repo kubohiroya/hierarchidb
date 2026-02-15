@@ -12,6 +12,7 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Geometry } from 'geojson';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
+import type { TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 import type {
   FeatureFilterMethod, FetchConfig,
   HybridFilterConfig, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
@@ -328,52 +329,19 @@ export class ShapeDB extends VectorTileDbBase {
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
   tileSummaries!: Table<ShapeTileSummaryRecord, ShapeContainerNodeId>;
+  tabularMetadata!: Table<TabularTableMetadataLike, string>;
 
   constructor() {
     super(getDBName('shape'));
 
-    this.version(9).stores(this.mergeVectorTileStores({
-      features: '++id, nodeId, [nodeId+adminLevel]',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-    }));
-    this.version(10).stores(this.mergeVectorTileStores({
-      features: '++id, nodeId, [nodeId+adminLevel]',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
-      tileSummaries: '&nodeId',
-    })).upgrade(async (tx) => {
-      const tiles = await tx.table('vectorTiles').toArray();
-      if (tiles.length === 0) return;
-      const summaries = new Map<string, ShapeTileSummaryRecord>();
-      const now = Date.now();
-      for (const tile of tiles) {
-        const nodeKey = String(tile.nodeId);
-        const existing = summaries.get(nodeKey);
-        if (!existing) {
-          summaries.set(nodeKey, {
-            nodeId: tile.nodeId,
-            tiles: 1,
-            totalBytes: tile.size,
-            zoomMin: tile.z,
-            zoomMax: tile.z,
-            updatedAt: now,
-          });
-          continue;
-        }
-        existing.tiles += 1;
-        existing.totalBytes += tile.size;
-        existing.zoomMin = existing.zoomMin === undefined ? tile.z : Math.min(existing.zoomMin, tile.z);
-        existing.zoomMax = existing.zoomMax === undefined ? tile.z : Math.max(existing.zoomMax, tile.z);
-      }
-      const summaryTable = tx.table('tileSummaries');
-      await Promise.all(Array.from(summaries.values()).map((summary) => summaryTable.put(summary)));
-    });
-    this.version(11).stores(this.mergeVectorTileStores({
+    this.version(1).stores(this.mergeVectorTileStores({
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
       tileSummaries: '&nodeId',
     }));
 
     this.initVectorTileTables();
     this.tileSummaries = this.table('tileSummaries');
+    this.tabularMetadata = this.table('tabularMetadata');
   }
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
@@ -381,6 +349,7 @@ export class ShapeDB extends VectorTileDbBase {
       ...stores,
       featureMetadata: '&id, nodeId',
       sourceMetadata: '&id, nodeId',
+      tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
     };
   }
 
@@ -518,5 +487,4 @@ export const shapeDB = new ShapeDB();
 
 export async function clearShapeDatabases(): Promise<void> {
   await Dexie.delete(getDBName('shape'));
-  await Dexie.delete(getDBName('shape-ephemeral'));
 }

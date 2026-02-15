@@ -21,7 +21,7 @@ import {
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
@@ -201,13 +201,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
   }
 
   private async ensureEphemeralOpen(): Promise<void> {
-    await ephemeralShapeDB.open?.();
+    await ephemeralDB.open?.();
   }
 
   async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    await ephemeralShapeDB.sessions.put(toBuildSessionRecord(session));
+    await ephemeralDB.sessions.put(toBuildSessionRecord(session));
     publishBuildSessionUpdate({ nodeId: session.nodeId, status: session.status });
   }
 
@@ -218,7 +218,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const patch = toBuildSessionUpdates(updates);
-    await ephemeralShapeDB.sessions.update(nodeId, {
+    await ephemeralDB.sessions.update(nodeId, {
       ...patch,
       updatedAt: Date.now(),
     });
@@ -228,13 +228,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
-    await ephemeralShapeDB.sessions.delete(nodeId);
+    await ephemeralDB.sessions.delete(nodeId);
     publishBuildSessionUpdate({ nodeId, status: 'deleted' });
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete?.();
+    await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete?.();
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
@@ -254,23 +254,23 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.deleteDataSourceMetadataByNode(String(nodeId));
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(String(nodeId));
-    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
+    await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
     await this.cleanupProcessingData(nodeId);
-    await ephemeralShapeDB.clearNodeData(nodeId);
+    await ephemeralDB.clearNodeData(nodeId);
   }
 
   async upsertBuildTasks(tasks: ReadonlyArray<ShapeBuildTaskRecordInput>): Promise<void> {
     await this.ensureOpen();
     if (tasks.length === 0) return;
-    await ephemeralShapeDB.buildTasks.bulkPut?.(tasks);
+    await ephemeralDB.buildTasks.bulkPut?.(tasks);
   }
 
   async updateBuildTask(taskId: string, updates: ShapeBuildTaskRecordUpdate): Promise<void> {
     await this.ensureOpen();
-    await ephemeralShapeDB.buildTasks.update?.(taskId, updates);
+    await ephemeralDB.buildTasks.update?.(taskId, updates);
   }
 
   async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
@@ -293,12 +293,12 @@ export class ShapeMutationService implements ShapeMutationAPI {
       throw new Error(`[shape-mutation] empty transform cache buffer: ${emptyBuffer.id}`);
     }
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
-      await ephemeralShapeDB.transformCache.bulkPut(pending);
+    await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
+      await ephemeralDB.transformCache.bulkPut(pending);
       const completedAt = Date.now();
       await Promise.all(
         pending.map((buffer) =>
-          ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
+          ephemeralDB.transformCache.update(buffer.id, { timestamp: completedAt })
         )
       );
     });

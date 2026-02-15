@@ -195,6 +195,21 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     };
   }, [draft]);
 
+  const resolveRouteTransformConfig = useCallback(() => {
+    const buildConfig = (draft.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
+      transformConfig?: { zoomBandBoundaries?: number[] };
+      routeTransformConfig?: {
+        minDistanceMetersByBand?: number[];
+        simplifyToleranceByBand?: number[];
+      };
+    };
+    return {
+      zoomBandBoundaries: buildConfig.transformConfig?.zoomBandBoundaries,
+      minDistanceMetersByBand: buildConfig.routeTransformConfig?.minDistanceMetersByBand,
+      simplifyToleranceByBand: buildConfig.routeTransformConfig?.simplifyToleranceByBand,
+    };
+  }, [draft]);
+
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [completionSnapshot, setCompletionSnapshot] = useState<{
@@ -288,6 +303,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     onUpdate,
     routeNodeId,
     resolveZoomRange,
+    resolveRouteTransformConfig,
     resolveVectorTileConfig,
     mapIdeGsmProgress,
     fetchStageMax: FETCH_STAGE_MAX,

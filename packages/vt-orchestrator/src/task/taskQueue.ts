@@ -1,34 +1,29 @@
 import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
-import { EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
 // import { logDebug } from '../debug/persistentDebugLog.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 
 
 
-export type StoredTaskRecord<TInput = unknown, TOutput = unknown> = Omit<TaskQueueRecord<TInput, TOutput>, 'stage'> & {
-  stage?: TaskStage;
-  taskType: TaskStage;
-  domainType?: string;
-};
+export type StoredTaskRecord = EphemeralBuildTaskRecord;
 
-export const toTaskQueueRecord = <TInput = unknown, TOutput = unknown>(
-  task: StoredTaskRecord<TInput, TOutput>
-): TaskQueueRecord<TInput, TOutput> => {
+export const toTaskQueueRecord = (
+  task: StoredTaskRecord
+): TaskQueueRecord => {
   const { taskType, ...rest } = task;
   return { ...rest, stage: rest.stage ?? taskType };
 };
 
-export class VtTaskQueueDb extends Dexie {
-  tasks!: Table<StoredTaskRecord, string>;
+export class VtTaskQueueDb {
+  tasks: Table<StoredTaskRecord, string>;
+  private readonly db = ephemeralDB;
+  readonly transaction = this.db.transaction.bind(this.db);
 
-  constructor(dbName: string = getDBName('ephemeral')) {
-    super(dbName);
+  constructor() {
     // Debug logging intentionally suppressed to reduce IndexedDB overhead.
-    this.version(4).stores(EPHEMERAL_DB_SCHEMA);
-    this.tasks = this.table('buildTasks');
+    this.tasks = this.db.buildTasks;
   }
 }
 
@@ -116,7 +111,7 @@ export async function putTasks(
 export async function updateTask(
   db: VtTaskQueueDb,
   taskId: string,
-  updates: Partial<TaskQueueRecord>,
+  updates: Partial<StoredTaskRecord>,
   options?: { allowTerminalStatusTransition?: boolean }
 ): Promise<void> {
   const now = Date.now();
@@ -132,7 +127,7 @@ export async function updateTask(
       const blocksStatusRegression = lockedStatus
         && nextStatusCandidate !== undefined
         && nextStatusCandidate !== currentStatus;
-      const payload = blocksStatusRegression
+      const payload: Partial<StoredTaskRecord> = blocksStatusRegression
         ? {
           status: currentStatus,
           updatedAt: now,
