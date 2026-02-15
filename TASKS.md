@@ -38,6 +38,8 @@
 ## Kanban
 
 ### Doing
+- #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
+- #297 / `codex/fix/shape/task-list-empty-ui` / start: 2026-02-15 17:26 JST
 - #310 / `chore/integration/eria-cartograph-sync-20260216` / start: 2026-02-16 01:51 JST
 - #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
 - #297 / `codex/fix/shape/task-list-empty-ui` / start: 2026-02-15 17:26 JST
@@ -100,8 +102,20 @@
 
 ## 今日の運用ログ
 
+- start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
+- update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
+- blocked: 2026-02-15 22:31 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts --env-mode=loose` が `CACError: Unknown option --envMode` で exit 1。
+- blocked: 2026-02-15 22:40 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts` が `No test files found` で exit 1（`vitest.config.ts` で `src/**/__tests__/wfl/**` が除外対象）。
+- blocked: 2026-02-15 22:41 JST #301 `ENABLE_SHAPE_DEEP_TESTS=1 pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts` も `No test files found` で exit 1（Turbo の strict env で `ENABLE_SHAPE_DEEP_TESTS` がタスクへ伝播していない）。
+- update: 2026-02-15 22:44 JST #301 `plugins/shape-plugin/vitest.config.ts` を修正し、`--run src/__tests__/wfl/...` で明示指定された WFL テストは除外しないように変更。
+- update: 2026-02-15 22:44 JST #301 `plugins/shape-plugin/src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts` で batch regression ケースのみ `zoomBandBoundaries: [1, 3]` を使うよう分離し、共通 build config は `[2, 3]` を維持。
+- update: 2026-02-15 22:44 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts` は exit 0（11 passed）。
+- update: 2026-02-15 22:44 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --output-logs errors-only` は exit 0。
 - blocked: 2026-02-15 22:10 JST #305 `pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外 `packages/shape-store` の `build:types` で `@hierarchidb/tabular-store` の型解決失敗（`src/ShapeDB.ts:15`）により exit 2。解除には `@hierarchidb/tabular-store` の型出力/依存解決の復旧が必要。
 - start: 2026-02-15 22:09 JST Issue #305 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/app/vite-dev-port-4200` を作成して着手。
+- update: 2026-02-15 20:43 JST #301 Dexie のスキーマ version を全て 1 に統一し、最新スキーマに一本化（CoreDB/EphemeralDB/ShapeDB/RouteDB/LocationDB/UIStateDB/ChunkStore/RowStore/Route Ephemeral ほか）。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/runtime-worker --filter @hierarchidb/ui-treeconsole-treetable --filter @hierarchidb/shape-store --filter @hierarchidb/location-store --filter @hierarchidb/route-store --filter @hierarchidb/chunk-store --filter @hierarchidb/tabular-store --filter @hierarchidb/route-plugin` exit 0 を確認。
+- update: 2026-02-15 19:02 JST #301 /maintenance 後リロードで SpeedDial からの create が失敗する可能性に備え、`TreeConsoleIntegration.tsx` で pageNode 未取得時は selected node を SpeedDial の create 対象として使うフォールバックを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0。
+- update: 2026-02-15 18:26 JST #301 `hidb-shape-ephemeral` が version 70 で残っており、EphemeralDB の version(7) では upgrade が走らず `fetchCacheMeta` が欠落する状態を確認。`packages/gis-sdk/src/ephemeral/EphemeralDB.ts` に version(71) を追加して meta 再生成 upgrade を実装。`pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk` は exit 0。
 - start: 2026-02-16 01:51 JST Issue #310 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `chore/integration/eria-cartograph-sync-20260216` を作成して着手。
 - start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
 - update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
