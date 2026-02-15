@@ -30,6 +30,12 @@ export type ShapePipelineParams = {
   resumeExistingTasks?: boolean;
   buildContinuationPolicy?: BuildContinuationPolicy;
   pipelineRunId?: string;
+  onTasksEnqueued?: (payload: {
+    nodeId: NodeId;
+    stage: 'fetch';
+    taskCount: number;
+    source: 'created' | 'reused';
+  }) => Promise<void> | void;
 };
 
 type ShapePipelineContext = {
@@ -164,6 +170,7 @@ const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> =>
     failureHandling,
     buildContinuationPolicy,
     pipelineRunId: params.pipelineRunId,
+    onTasksEnqueued: params.onTasksEnqueued,
   });
   console.warn('[ShapePipeline][Stage] fetch done', JSON.stringify({
     nodeId: params.nodeId,

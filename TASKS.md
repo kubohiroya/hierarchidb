@@ -88,6 +88,8 @@
 
 ## 今日の運用ログ
 
+- done: 2026-02-15 10:05 JST #287 fetch enqueue 後に progress snapshot を emit するよう修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0 を確認。
+- start: 2026-02-15 09:35 JST #287 enqueue 後の progress snapshot 通知修正に着手。
 - update: 2026-02-15 09:32 JST #284 Shape Step5 の状態遷移レビュー結果を反映し、Worker内部状態遷移/Worker↔UIシーケンス図と不一致点を追記。
 - update: 2026-02-15 08:54 JST #283 Step1 タイトルで i18n キー露出（basicinfo.title）を防ぐため、タイトル生成で存在チェック+ロード完了再評価+key露出ガードを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0 を確認。
 - update: 2026-02-15 09:32 JST #284 Shape Step5 の状態遷移レビュー結果を反映し、Worker内部状態遷移/Worker↔UIシーケンス図と不一致点を追記。
