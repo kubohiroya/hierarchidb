@@ -102,6 +102,8 @@
 
 ## 今日の運用ログ
 
+- done: 2026-02-16 01:54 JST #310 `origin/codex/chore/app/vite-dev-port-4200`・`origin/codex/refactor/ephemeral-route-shape-301`・`origin/codex/fix/shape-ephemeral-types` を `ERIA-Cartograph` へ統合し、`pnpm typecheck` exit 0 と `git push origin HEAD:ERIA-Cartograph` 成功を確認。
+- blocked: 2026-02-16 01:53 JST #310 `git merge origin/main` は rename/delete を含む広範囲競合で安全な最小差分解消が困難（`TASKS.md` 以外で多数競合）だったため中止し、今回統合対象は codex 系最新ブランチに限定。
 - start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
 - update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
 - blocked: 2026-02-15 22:31 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts --env-mode=loose` が `CACError: Unknown option --envMode` で exit 1。
