@@ -5,6 +5,7 @@
     "propertyMapping": { "label": "Property Mapping" },
     "validationRules": { "label": "Validation Rules" },
     "duplicateResolution": { "label": "Duplicate Resolution" },
+    "stage": { "label": "Build" },
     "previewTest": { "label": "Preview & Test" }
   },
   "header": {

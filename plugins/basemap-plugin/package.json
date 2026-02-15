@@ -116,6 +116,12 @@
       "nodeType": "basemap",
       "name": "BaseMap Plugin",
       "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap.",
+      "i18nNamespace": "basemap-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "mapStyle",
+        "3": "viewport"
+      },
       "icon": {
         "mui": "Public",
         "emoji": "🌍",

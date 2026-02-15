@@ -160,6 +160,7 @@ export function sanitizeManifest(
   addString(result, 'id', manifest.id);
   addString(result, 'name', manifest.name);
   addString(result, 'displayName', manifest.displayName);
+  addString(result, 'i18nNamespace', (manifest as Record<string, unknown>).i18nNamespace);
   addString(result, 'nodeType', manifest.nodeType);
   addString(result, 'version', manifest.version);
   addString(result, 'description', manifest.description);
@@ -175,6 +176,20 @@ export function sanitizeManifest(
 
   if (Array.isArray(manifest.dependencies)) {
     result.dependencies = manifest.dependencies.map(String);
+  }
+
+  const stepTitleKeys = (manifest as Record<string, unknown>).stepTitleKeys;
+  if (isRecord(stepTitleKeys)) {
+    const sanitized: Record<string, string> = {};
+    for (const [key, value] of Object.entries(stepTitleKeys)) {
+      if (typeof value !== 'string') continue;
+      const trimmed = value.trim();
+      if (!trimmed) continue;
+      sanitized[key] = trimmed;
+    }
+    if (Object.keys(sanitized).length > 0) {
+      result.stepTitleKeys = sanitized;
+    }
   }
 
   if (isRecord(manifest.icon)) {

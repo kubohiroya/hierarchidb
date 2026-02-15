@@ -12,6 +12,8 @@ export type AppTitleOptions = {
   appNameOnly?: boolean;
 };
 
+export type StepTitleResolver = (nodeType: string, step: number) => string | null;
+
 type RouterMatchLike = {
   routeId: string;
   loaderData?: unknown;
@@ -66,7 +68,17 @@ const decodeTagName = (raw?: string): string | null => {
   }
 };
 
-export const resolveTreePageTitle = (matches: RouterMatchLike[]): string | null => {
+const parseStepNumber = (value?: string): number | null => {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  return parsed;
+};
+
+export const resolveTreePageTitle = (
+  matches: RouterMatchLike[],
+  options: { resolveStepTitle?: StepTitleResolver } = {}
+): string | null => {
   const pageMatch = matches.find((match) => match.routeId === treeRouteIds.page);
   const targetMatch = matches.find((match) => match.routeId === treeRouteIds.target);
   const tagMatch = matches.find((match) => match.routeId === treeRouteIds.tags);
@@ -90,13 +102,20 @@ export const resolveTreePageTitle = (matches: RouterMatchLike[]): string | null 
   if (dialogMatch) {
     const dialogData = dialogMatch.loaderData as TreeDialogMatchData | undefined;
     if (dialogData?.kind === 'plugin') {
-      const { targetNode } = dialogData.data as LoadNodeActionReturn & {
+      const { targetNode, nodeType, params } = dialogData.data as LoadNodeActionReturn & {
         params?: { action?: string; nodeType?: string; step?: string };
       };
       const dialogTargetName = resolveNodeDisplayName(targetNode);
       if (dialogTargetName) {
         if (dialogMatch.routeId === treeRouteIds.dialogModeStep) {
-          return `Build: ${dialogTargetName}`;
+          const stepValue = params?.step ?? dialogMatch.params?.step;
+          const stepNumber = parseStepNumber(stepValue);
+          const resolvedNodeType = nodeType ?? params?.nodeType ?? dialogData.params?.nodeType;
+          const stepTitle =
+            resolvedNodeType && stepNumber && options.resolveStepTitle
+              ? options.resolveStepTitle(resolvedNodeType, stepNumber)
+              : null;
+          return stepTitle ? `${stepTitle}: ${dialogTargetName}` : dialogTargetName;
         }
         return dialogTargetName;
       }

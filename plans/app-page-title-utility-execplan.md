@@ -6,19 +6,24 @@ PLANS.md is checked into the repository root at `PLANS.md`. This ExecPlan must b
 
 ## Purpose / Big Picture
 
-Users should see consistent, meaningful page titles across the app, with the application name appended in a uniform way. After this change, navigating to the specified URLs will show titles like "Build: New Shape - ERIA-Cartograph" or "Info - ERIA-Cartograph" in the browser tab, and the home page will show only the app name. This is visible immediately by visiting the routes and observing the browser tab title.
+Users should see consistent, meaningful page titles across the app, with the application name appended in a uniform way. Dialog step titles must be resolved from the current step number and locale using plugin manifest metadata. After this change, navigating to the specified URLs will show titles like "Build: New Shape - ERIA-Cartograph" or "Info - ERIA-Cartograph" in the browser tab, and the home page will show only the app name. This is visible immediately by visiting the routes and observing the browser tab title.
 
 ## Progress
 
 - [x] (2026-02-15 07:38 JST) Created the ExecPlan and recorded the current context and acceptance requirements.
 - [x] (2026-02-15 08:02 JST) Implemented centralized title utility and integrated it into required routes/pages.
-- [x] (2026-02-15 08:05 JST) Ran app typecheck after integration (exit 0).
+- [x] (2026-02-15 09:24 JST) Added step title metadata to plugin manifests and exposed a shared step-title resolver API.
+- [x] (2026-02-15 09:28 JST) Updated resolver/styler/spreadsheet/route i18n resources to support step title resolution.
+- [x] (2026-02-15 09:31 JST) Regenerated the plugin registry and rebuilt plugin-base/plugin-registry types.
+- [x] (2026-02-15 09:33 JST) Ran app typecheck after step-title integration (exit 0).
 - [ ] Validate title behavior across the required URLs in a running app session.
 
 ## Surprises & Discoveries
 
 - Observation: TypeScript rejected `includes()` against the dialog route ID tuple because match route IDs are `string`.
   Evidence: `src/router/title/pageTitle.ts(75,71): error TS2345` during initial typecheck.
+- Observation: Typecheck initially failed because plugin-base and plugin-registry dist typings did not include the new manifest fields/exports.
+  Evidence: `route-plugin/src/plugin-manifest.ts` and app route typecheck errors until the builds were rerun.
 
 ## Decision Log
 
@@ -27,6 +32,12 @@ Users should see consistent, meaningful page titles across the app, with the app
   Date/Author: 2026-02-15 (Codex)
 - Decision: Use a `Set<string>` for dialog route ID matching to avoid string/union mismatches.
   Rationale: Keeps the routing logic simple and type-safe while preserving the intended match semantics.
+  Date/Author: 2026-02-15 (Codex)
+- Decision: Resolve dialog step titles from plugin manifest metadata using a shared resolver API and locale-aware translation.
+  Rationale: Avoids app → plugin coupling while keeping step title localization consistent across plugins.
+  Date/Author: 2026-02-15 (Codex)
+- Decision: Treat `basicInfo` as a common step key mapped to `common.basicInfo.title` rather than duplicating the label in every plugin locale.
+  Rationale: Keeps plugin i18n resources focused on plugin-specific steps without introducing fallback behavior.
   Date/Author: 2026-02-15 (Codex)
 
 ## Outcomes & Retrospective
@@ -106,7 +117,7 @@ The changes are safe to reapply; re-running the update will overwrite the same t
 
 ## Artifacts and Notes
 
-Typecheck (post-change):
+Typecheck (post-step-title integration):
   pnpm -w turbo run typecheck --filter @hierarchidb/app
   Tasks: 126 successful, 126 total
   Status: exit 0 (tsdown warning about `define` persists)

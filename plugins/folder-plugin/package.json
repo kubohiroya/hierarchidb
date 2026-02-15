@@ -119,6 +119,10 @@
       "nodeType": "folder",
       "name": "Folder Plugin",
       "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions.",
+      "i18nNamespace": "folder-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo"
+      },
       "icon": {
         "mui": "Folder",
         "emoji": "📁",

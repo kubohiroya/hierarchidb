@@ -195,6 +195,15 @@
       "nodeType": "shape",
       "name": "Shape Plugin",
       "description": "Import country and administrative-area shape files from online data sources, analyze them, and present the results in coordinated map views.",
+      "i18nNamespace": "shape-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "dataSource",
+        "3": "countrySelection",
+        "4": "processing",
+        "5": "stage",
+        "6": "preview"
+      },
       "icon": {
         "mui": "Hexagon",
         "emoji": "♦️",

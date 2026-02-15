@@ -7,6 +7,7 @@ import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
+import { i18n } from '../i18n.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -15,6 +16,9 @@ type ResolverData = StepData & ResolverUpdaterPayload & {
 };
 
 type ResolverStepProps = PluginStepProps<ResolverUpdaterPayload>;
+
+const t = (key: string, fallback: string) =>
+  String(i18n.t(key, { ns: 'resolver-plugin', defaultValue: fallback }));
 
 const isResolverBuildPersisted = (data?: ResolverUpdaterPayload): boolean =>
   Boolean(data?.draftData?.isCompiled || data?.draftData?.compiledFunction);
@@ -63,7 +67,9 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
   getCreateStepConfigs(): PluginStepConfig<ResolverUpdaterPayload>[] {
     return [
       {
-        id: 'schema', label: 'Schema Selection', validate: () => true,
+        id: 'schema',
+        label: t('steps.schemaSelection.label', 'Schema Selection'),
+        validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (
@@ -84,7 +90,9 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
       },
       {
-        id: 'mapping', label: 'Property Mapping', validate: () => true,
+        id: 'mapping',
+        label: t('steps.propertyMapping.label', 'Property Mapping'),
+        validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (
@@ -101,7 +109,9 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
       },
       {
-        id: 'validation', label: 'Validation Rules', validate: () => true,
+        id: 'validation',
+        label: t('steps.validationRules.label', 'Validation Rules'),
+        validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (
@@ -118,7 +128,9 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
       },
       {
-        id: 'dedupe', label: 'Duplicate Resolution', validate: () => true,
+        id: 'dedupe',
+        label: t('steps.duplicateResolution.label', 'Duplicate Resolution'),
+        validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (
@@ -134,7 +146,7 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
       },
       {
         id: 'stage',
-        label: 'Build',
+        label: t('steps.stage.label', 'Build'),
         optional: true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
@@ -147,7 +159,9 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
       },
       {
-        id: 'preview', label: 'Preview/Test', validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
+        id: 'preview',
+        label: t('steps.previewTest.label', 'Preview / Test'),
+        validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (

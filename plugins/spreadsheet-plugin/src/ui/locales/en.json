@@ -1,4 +1,8 @@
 {
+  "steps": {
+    "dataSource": { "label": "Data Source" },
+    "filtering": { "label": "Filtering" }
+  },
   "styleSettings": {
     "source": {
       "label": "Source Columns"

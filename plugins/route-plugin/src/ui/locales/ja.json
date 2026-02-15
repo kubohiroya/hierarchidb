@@ -5,6 +5,7 @@
     "processing": { "label": "処理設定" },
     "tileSettings": { "label": "ベクタタイル設定" },
     "build": { "label": "ビルド" },
+    "stage": { "label": "ビルド" },
     "preview": { "label": "プレビュー" }
   },
   "auth": {

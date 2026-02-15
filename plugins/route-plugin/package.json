@@ -133,6 +133,15 @@
       "nodeType": "route",
       "name": "Route Plugin",
       "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views.",
+      "i18nNamespace": "route-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "dataSource",
+        "3": "routeConfig",
+        "4": "processing",
+        "5": "stage",
+        "6": "preview"
+      },
       "icon": {
         "mui": "Route",
         "emoji": "〰️",

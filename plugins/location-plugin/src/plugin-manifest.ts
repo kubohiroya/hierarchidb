@@ -12,6 +12,13 @@ export const PLUGIN_MANIFEST = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'location-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'dataSource',
+    '3': 'selection',
+    '4': 'mapPreview',
+  },
   extends: 'folder',
   dependencies: ['folder'],
   priority: 40,

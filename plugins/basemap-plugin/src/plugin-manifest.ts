@@ -14,6 +14,12 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'basemap-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'mapStyle',
+    '3': 'viewport',
+  },
   extends: 'folder',
   priority: 900,
   dependencies: ['folder'],

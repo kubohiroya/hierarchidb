@@ -5,6 +5,7 @@
     "propertyMapping": { "label": "プロパティマッピング" },
     "validationRules": { "label": "検証ルール" },
     "duplicateResolution": { "label": "重複解決" },
+    "stage": { "label": "ビルド" },
     "previewTest": { "label": "プレビューとテスト" }
   },
   "header": {

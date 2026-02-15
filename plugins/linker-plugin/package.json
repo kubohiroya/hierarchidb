@@ -117,6 +117,13 @@
       "name": "Linker Plugin",
       "description": "Link compiled resources to map for usage",
       "displayName": "Linker",
+      "i18nNamespace": "linker-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "resources",
+        "3": "aggregated",
+        "4": "preview"
+      },
       "icon": {
         "mui": "AccountTree",
         "emoji": "🌲",
