@@ -2,6 +2,10 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
   Stack,
   Typography,
   Tooltip,
@@ -12,18 +16,29 @@ import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
+import { useTransformConfigSection } from './useTransformConfigSection.ts';
 
 type Props = {
+  config: ShapeBuildConfig;
+  onChange: (next: ShapeBuildConfig) => void;
   disabled?: boolean;
 };
 
-export const TransformConfigSection: React.FC<Props> = ({ disabled }) => {
+export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disabled }) => {
   const { t } = useTranslation();
+  const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
+  const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
 
-  const summaryHelp = t(
-    'processing.transform.summaryHelpTurf',
-    'Transform runs turf.simplify with the configured tolerance.',
-  );
+  const summaryHelp = simplifyAlgorithm === 'topojson'
+    ? t(
+      'processing.transform.summaryHelpTopojson',
+      'Transform uses topojson simplify first, then runs topology repair checks.',
+    )
+    : t(
+      'processing.transform.summaryHelpGeojson',
+      'Transform runs turf.simplify with the configured tolerance.',
+    );
 
   return (
     <Accordion defaultExpanded>
@@ -49,6 +64,35 @@ export const TransformConfigSection: React.FC<Props> = ({ disabled }) => {
               'Transform concurrency has moved to the Build step. Click the stage spinner in progress summary to edit it.',
             )}
           </Typography>
+          <FormControl disabled={disabled}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t('processing.transform.algorithm', 'Simplify Algorithm')}
+            </Typography>
+            <RadioGroup
+              row
+              value={simplifyAlgorithm}
+              onChange={(_event, value) => {
+                if (value !== 'geojson' && value !== 'topojson') return;
+                update({
+                  transformConfig: {
+                    ...baseTransformConfig,
+                    simplifyAlgorithm: value,
+                  },
+                });
+              }}
+            >
+              <FormControlLabel
+                value="topojson"
+                control={<Radio size="small" />}
+                label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
+              />
+              <FormControlLabel
+                value="geojson"
+                control={<Radio size="small" />}
+                label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
+              />
+            </RadioGroup>
+          </FormControl>
         </Stack>
       </AccordionDetails>
     </Accordion>

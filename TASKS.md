@@ -99,6 +99,9 @@
 
 ## 今日の運用ログ
 
+- done: 2026-02-16 02:08 JST #308 Step4 Transform に `simplifyAlgorithm`（`topojson` / `geojson`）設定を追加し、Transform 実行でアルゴリズム選択を反映。`topojson` 選択時は decode 側の簡略化結果を再利用して二重簡略化を回避。`pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` / `pnpm exec vitest run packages/vt-orchestrator/src/transform/__tests__/fetchCacheDecoder.unit.test.ts plugins/shape-plugin/src/__tests__/unit/mergeBuildConfig.unit.test.ts` は全て exit 0。
+- update: 2026-02-16 01:58 JST #308 依存 `@hierarchidb/ui-monitoring` の型解決エラーで `shape-plugin` typecheck が一度失敗したため、`pnpm -w turbo run build --filter @hierarchidb/ui-monitoring --filter @hierarchidb/shape-plugin` 実行後に再度 typecheck を実施し解消。
+- start: 2026-02-16 00:54 JST #308 ブランチ `codex/feat/shape-transform-algorithm-toggle` で「異常三角形対策（二重簡略化排除 + topojson/geojson 切替）」実装に着手。
 - start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
 - update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
 - blocked: 2026-02-15 22:31 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts --env-mode=loose` が `CACError: Unknown option --envMode` で exit 1。

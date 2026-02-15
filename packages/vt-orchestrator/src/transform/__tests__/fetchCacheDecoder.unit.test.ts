@@ -79,9 +79,23 @@ describe('decodeFetchCacheByFormat', () => {
       zTarget: 5,
       toleranceK: 0,
       quantize: 1_000_000,
+      simplifyAlgorithm: 'topojson',
+    });
+    expect(decoded?.features.length).toBe(1);
+    expect(__getTopojsonRuntimeLoadCount()).toBe(1);
+  });
+
+  it('supports geojson simplify algorithm for topojson fetch cache', async () => {
+    const buffer = buildSimpleTopojsonBuffer();
+    const decoded = await decodeFetchCacheByFormat({
+      buffer,
+      format: 'topojson',
+      zTarget: 5,
+      toleranceK: 0.5,
+      quantize: 1_000_000,
+      simplifyAlgorithm: 'geojson',
     });
     expect(decoded?.features.length).toBe(1);
     expect(__getTopojsonRuntimeLoadCount()).toBe(1);
   });
 });
-
