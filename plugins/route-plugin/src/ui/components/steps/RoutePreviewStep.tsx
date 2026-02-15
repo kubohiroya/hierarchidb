@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Palette } from '@mui/icons-material';
+import { FilterAlt, Palette, TableChart } from '@mui/icons-material';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { RoutePreviewEmptyContent, RoutePreviewHoverSnackbar } from './RoutePreviewStepElements.js';
 import { DEFAULT_MAP_CONFIG, MapToggleCard, ResourceLayerMap, RoutePreviewList } from '@hierarchidb/ui-map';
@@ -76,6 +76,11 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     metadataSyncError,
     metadataSyncBadgeText,
     runMetadataSyncCheck,
+    buildErrors,
+    modeWindow,
+    showModeWindowButton,
+    listWindow,
+    showListWindowButton,
   } = useRoutePreviewStep({ draft, nodeId, onUpdate });
 
   return (
@@ -95,6 +100,22 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
           {lineStringsError}
         </Alert>
       )}
+      {buildErrors.length > 0 && (
+        <Alert severity="warning">
+          <Typography variant="body2" fontWeight={600}>
+            {t('preview.buildErrors', 'Build errors detected')}: {buildErrors.length}
+          </Typography>
+          <Box component="ul" sx={{ mb: 0, mt: 1, pl: 2 }}>
+            {buildErrors.slice(0, 5).map((error) => (
+              <Box component="li" key={error.id} sx={{ mb: 0.5 }}>
+                <Typography variant="caption">
+                  [{error.stage}] {error.sourceKey ?? '-'}: {error.message}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Alert>
+      )}
 
       {hasGeometry && (
         <>
@@ -103,18 +124,6 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
           </Alert>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle1">{t('preview.mapTitle', 'Map Preview')}</Typography>
-            <Box sx={{ mt: 2 }}>
-              <MapToggleCard
-                title="Route Selection"
-                options={routeModeOptions.map((option) => ({
-                  id: option.id,
-                  label: option.label,
-                  icon: <option.Icon fontSize="small" />,
-                }))}
-                selection={routeModeSelection}
-                onToggle={handleRouteModeToggle}
-              />
-            </Box>
             <Box
               sx={{
                 position: 'relative',
@@ -138,52 +147,88 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
                 onLoad={setMapInstance}
               />
-              <RoutePreviewList
-                title={t('preview.list.title', 'Routes')}
-                rows={listRows}
-                loading={lineStringsLoading}
-                error={lineStringsError ?? undefined}
-                columnLabels={columnLabels}
-                modeMeta={Object.fromEntries(Object.entries(modeMeta).map(([key, meta]) => [
-                  key,
-                  { ...meta, icon: <meta.Icon fontSize="small" /> },
-                ]))}
-                search={{
-                  value: listSearch,
-                  onChange: setListSearch,
-                  placeholder: searchLabels.placeholder,
-                  ariaLabel: searchLabels.ariaLabel,
-                }}
-                countLabels={countLabels}
-                matchedRows={matchedIdSet}
-                selectedRows={new Set(selectedIds)}
-                onSelectionChange={(next: Set<string | number>) => setSelectedIds(Array.from(next).map(String))}
-                errorSummaryById={staleSummaryById}
-                errorColumnLabels={errorColumnLabels}
-                statusLabels={statusLabels}
-                toolbarActions={(
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => void runMetadataSyncCheck()}
-                      disabled={metadataSyncRunning}
-                    >
-                      {metadataSyncRunning
-                        ? t('preview.metadataSync.checking', 'Checking...')
-                        : t('preview.metadataSync.checkButton', 'Check sync status')}
-                    </Button>
-                    {metadataSyncBadgeText ? (
-                      <Typography variant="caption" color="text.secondary">
-                        {metadataSyncBadgeText}
-                      </Typography>
-                    ) : null}
-                  </Box>
-                )}
-                emptyContent={emptyContentProps ? (
-                  <RoutePreviewEmptyContent {...emptyContentProps} />
-                ) : undefined}
-              />
+              {modeWindow.windowState.isVisible ? (
+                <FloatingWindow
+                  title={t('preview.modeFilters.title', 'Route mode filters')}
+                  titleIcon={<FilterAlt fontSize="small" />}
+                  initialState={modeWindow.windowState}
+                  onStateChange={modeWindow.handlers.onStateChange}
+                  onClose={modeWindow.handlers.onClose}
+                  resizable
+                  minWidth={220}
+                  minHeight={180}
+                >
+                  <MapToggleCard
+                    title={t('preview.routeSelection', 'Route selection')}
+                    options={routeModeOptions.map((option) => ({
+                      id: option.id,
+                      label: option.label,
+                      icon: <option.Icon fontSize="small" />,
+                    }))}
+                    selection={routeModeSelection}
+                    onToggle={handleRouteModeToggle}
+                  />
+                </FloatingWindow>
+              ) : null}
+              {listWindow.windowState.isVisible ? (
+                <FloatingWindow
+                  title={t('preview.listWindow.title', 'Route metadata')}
+                  titleIcon={<TableChart fontSize="small" />}
+                  initialState={listWindow.windowState}
+                  onStateChange={listWindow.handlers.onStateChange}
+                  onClose={listWindow.handlers.onClose}
+                  resizable
+                  minWidth={420}
+                  minHeight={220}
+                >
+                  <RoutePreviewList
+                    title={t('preview.list.title', 'Routes')}
+                    rows={listRows}
+                    loading={lineStringsLoading}
+                    error={lineStringsError ?? undefined}
+                    columnLabels={columnLabels}
+                    modeMeta={Object.fromEntries(Object.entries(modeMeta).map(([key, meta]) => [
+                      key,
+                      { ...meta, icon: <meta.Icon fontSize="small" /> },
+                    ]))}
+                    search={{
+                      value: listSearch,
+                      onChange: setListSearch,
+                      placeholder: searchLabels.placeholder,
+                      ariaLabel: searchLabels.ariaLabel,
+                    }}
+                    countLabels={countLabels}
+                    matchedRows={matchedIdSet}
+                    selectedRows={new Set(selectedIds)}
+                    onSelectionChange={(next: Set<string | number>) => setSelectedIds(Array.from(next).map(String))}
+                    errorSummaryById={staleSummaryById}
+                    errorColumnLabels={errorColumnLabels}
+                    statusLabels={statusLabels}
+                    toolbarActions={(
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => void runMetadataSyncCheck()}
+                          disabled={metadataSyncRunning}
+                        >
+                          {metadataSyncRunning
+                            ? t('preview.metadataSync.checking', 'Checking...')
+                            : t('preview.metadataSync.checkButton', 'Check sync status')}
+                        </Button>
+                        {metadataSyncBadgeText ? (
+                          <Typography variant="caption" color="text.secondary">
+                            {metadataSyncBadgeText}
+                          </Typography>
+                        ) : null}
+                      </Box>
+                    )}
+                    emptyContent={emptyContentProps ? (
+                      <RoutePreviewEmptyContent {...emptyContentProps} />
+                    ) : undefined}
+                  />
+                </FloatingWindow>
+              ) : null}
               {metadataSyncError ? (
                 <Box sx={{ position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 4 }}>
                   <Alert severity="error">{metadataSyncError}</Alert>
@@ -259,17 +304,43 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   </Box>
                 </FloatingWindow>
               ) : null}
-              {showStyleWindowButton ? (
+              {(showModeWindowButton || showListWindowButton || showStyleWindowButton) ? (
                 <Box position="absolute" top={8} right={8} zIndex={3}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    aria-label={t('routeConfig.style.reopen', 'Show route style')}
-                    onClick={styleWindow.handlers.show}
-                  >
-                    <Palette />
-                  </Button>
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    {showModeWindowButton ? (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        aria-label={t('preview.modeFilters.reopen', 'Show route mode filters')}
+                        onClick={modeWindow.handlers.show}
+                      >
+                        <FilterAlt />
+                      </Button>
+                    ) : null}
+                    {showListWindowButton ? (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        aria-label={t('preview.listWindow.reopen', 'Show route metadata')}
+                        onClick={listWindow.handlers.show}
+                      >
+                        <TableChart />
+                      </Button>
+                    ) : null}
+                    {showStyleWindowButton ? (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        aria-label={t('routeConfig.style.reopen', 'Show route style')}
+                        onClick={styleWindow.handlers.show}
+                      >
+                        <Palette />
+                      </Button>
+                    ) : null}
+                  </Box>
                 </Box>
               ) : null}
               {mapInstance ? <RoutePreviewHoverSnackbar {...hoverSnackbarProps} /> : null}
