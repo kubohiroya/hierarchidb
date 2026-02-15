@@ -16,7 +16,18 @@ export interface FetchConfig {
   retryDelay: number;
   retryLimit: number;
   retryBackoff: 'linear' | 'exponential';
+  geometryIntakeGuard?: FetchGeometryIntakeGuardConfig;
 }
+
+export type GeometryIntakeValidationLevel = 'off' | 'basic' | 'strict';
+
+export type FetchGeometryIntakeGuardConfig = {
+  validationLevel: GeometryIntakeValidationLevel;
+  dedupeEpsilon: number;
+  minRingAreaThreshold: number;
+  normalizeRingOrientation: boolean;
+  keepBaselineSnapshot: boolean;
+};
 
 export interface CleanupConfig {
   deleteFetchApiCache?: boolean;
@@ -76,12 +87,33 @@ export type SelfIntersectionTuningConfig = {
 
 export type GeometryEngine = 'turf';
 export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
+export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
+export type TransformFallbackMode = 'switch_algorithm' | 'disable_simplify' | 'best_score';
+
+export type TransformAnomalyDetectionConfig = {
+  enabled: boolean;
+  maxEdgeLengthRatio: number;
+  maxAreaDriftPercent: number;
+  maxSelfIntersectionCount: number;
+  maxLineLengthDriftPercent: number;
+};
+
+export type TransformAnomalyRetryConfig = {
+  enabled: boolean;
+  maxRetries: number;
+  toleranceScale: number;
+  fallbackMode: TransformFallbackMode;
+};
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
   geometryEngine?: GeometryEngine;
   simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  preserveTopology?: boolean;
+  executionLogLevel?: TransformExecutionLogLevel;
+  anomalyDetection?: TransformAnomalyDetectionConfig;
+  anomalyRetry?: TransformAnomalyRetryConfig;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
   minVertexCountForAreaFilter: number;
@@ -131,7 +163,18 @@ export interface VTConfig {
     tiles?: readonly string[];
     features?: readonly string[];
   };
+  outputQualityGuard?: VTOutputQualityGuardConfig;
 }
+
+export type VTGuardAction = 'mark_warning' | 'fallback_less_simplified' | 'drop_tile';
+
+export type VTOutputQualityGuardConfig = {
+  enabled: boolean;
+  minZoom: number;
+  maxZoom: number;
+  actionOnAnomaly: VTGuardAction;
+  enablePreviewOverlay: boolean;
+};
 
 export interface RouteTransformConfig {
   minDistanceMetersByBand?: number[];

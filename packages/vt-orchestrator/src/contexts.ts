@@ -1,10 +1,12 @@
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
-import type { GeometryEngine, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
+import type { FetchConfig, GeometryEngine, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
 import type { BandConfig } from './types/types.js';
 
 export type TransformByBandStageContext = {
   ephemeralDB: EphemeralDB;
+  fetchConfig: FetchConfig;
   transformConfig: TransformConfig;
+  vtConfig: VTConfig;
   bands: BandConfig[];
   featureIdAllowlist?: Set<string>;
   abortSignal?: AbortSignal;

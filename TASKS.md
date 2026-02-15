@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #318 / `codex/feat/shape/step4-anomaly-guard-controls` / start: 2026-02-16 08:40 JST
 - #315 / `codex/fix/shape-build-duration-summary-stable` / start: 2026-02-16 02:57 JST
 - #312 / `codex/chore/integration/eria-main-sync-latest-312` / start: 2026-02-16 02:35 JST
 - #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
@@ -103,6 +104,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-16 08:55 JST #318 Step4 に `Fetch Geometry Intake Guard` / `Anomaly Detection & Auto Retry` / `Tile Output Quality Guard` を追加し、Transform 実行に `execution-path` ログ（topojson/geojson 判別）・intake guard・異常スコア判定+再試行・shape/route での polygon 修復スキップ分岐を実装。`pnpm -w turbo run build --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は exit 0。追加テスト `packages/vt-orchestrator/src/transform/__tests__/transformAnomalyAssessment.unit.test.ts` を含む `pnpm exec vitest run ...` も exit 0。
+- blocked: 2026-02-16 08:55 JST #318 `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は差分外既知失敗 `plugins/shape-plugin/src/__tests__/unit/shapeFetchStage.unit.test.ts` ほか3ファイルで `TypeError: db.delete is not a function` により exit 1（今回差分由来ではない）。
+- start: 2026-02-16 08:40 JST #318 を起票し（https://github.com/kubohiroya/hierarchidb/issues/318）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/shape/step4-anomaly-guard-controls` を `origin/ERIA-Cartograph` 起点で作成して着手。
 - update: 2026-02-16 08:22 JST #315 `useShapeBuildStep.ts` の elapsed reset 条件を修正。persisted elapsed が空でも local elapsed スナップショット（completedStageElapsedMs）が残っている場合はリセットしないようにし、ビルド完了直後に総経過時間/ステージ経過時間が `-` へ戻る回帰を防止。
 - update: 2026-02-16 08:22 JST #315 検証結果: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useShapeBuildStep.elapsed.unit.test.ts` exit 0（5 passed）、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0。
 - start: 2026-02-16 02:57 JST #315 を Project `hierarchidb` へ追加し、Status を `In Progress` に設定。ブランチ `codex/fix/shape-build-duration-summary-stable` を作成して着手。
