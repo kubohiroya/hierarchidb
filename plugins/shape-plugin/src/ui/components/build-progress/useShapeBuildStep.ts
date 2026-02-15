@@ -128,6 +128,10 @@ const sumNumberRecord = (values: Record<string, number>): number => (
   Object.values(values).reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0)
 );
 
+const hasPositiveElapsed = (values: Record<string, number>): boolean => (
+  Object.values(values).some((value) => Number.isFinite(value) && value > 0)
+);
+
 const mergeElapsedByStage = (
   current: Record<string, number>,
   persisted: Record<string, number>,
@@ -143,14 +147,16 @@ const mergeElapsedByStage = (
   return next;
 };
 
-const shouldResetElapsedState = (params: {
+export const shouldResetElapsedState = (params: {
   buildStatus: BuildStatus;
   buildElapsedMs: number | undefined;
   stageElapsedByStage: Record<string, number>;
+  localElapsedByStage: Record<string, number>;
 }): boolean => {
   if (params.buildStatus === 'running') return false;
-  if (!shallowEqualNumberRecord(params.stageElapsedByStage, {})) return false;
+  if (hasPositiveElapsed(params.stageElapsedByStage)) return false;
   if (typeof params.buildElapsedMs === 'number' && params.buildElapsedMs > 0) return false;
+  if (hasPositiveElapsed(params.localElapsedByStage)) return false;
   return true;
 };
 
@@ -804,8 +810,10 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildStatus,
     buildElapsedMs: sessionRecord?.elapsedMs,
     stageElapsedByStage: persistedStageElapsedByStage,
+    localElapsedByStage: completedStageElapsedMs,
   }), [
     buildStatus,
+    completedStageElapsedMs,
     sessionRecord?.elapsedMs,
     persistedStageElapsedByStage,
   ]);
@@ -883,6 +891,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       window.clearInterval(intervalId);
     };
   }, [buildStatus, isTimingStageRunning, timingStageId]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') return;
+    if (hasPositiveElapsed(persistedStageElapsedByStage)) return;
+    if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) return;
+    setCompletedStageElapsedMs((current) => (
+      shallowEqualNumberRecord(current, {}) ? current : {}
+    ));
+  }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
 
   const hasFailedFetchTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
