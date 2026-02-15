@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #296 / `codex/fix/e2e/shape-build-startup-any` / start: 2026-02-15 16:05 JST
 - #294 / `codex/fix/ui-auth/clear-auth-data` / start: 2026-02-15 15:43 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
 - #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
@@ -89,6 +90,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-15 16:16 JST #296 `pnpm e2e` を実行し exit 0 を確認。
 - done: 2026-02-15 10:05 JST #287 fetch enqueue 後に progress snapshot を emit するよう修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0 を確認。
 - start: 2026-02-15 09:35 JST #287 enqueue 後の progress snapshot 通知修正に着手。
 - update: 2026-02-15 09:32 JST #284 Shape Step5 の状態遷移レビュー結果を反映し、Worker内部状態遷移/Worker↔UIシーケンス図と不一致点を追記。

@@ -13,6 +13,77 @@ type SelectedArrayByCountries = Record<string, boolean[]>;
 type ConsolePayload = Record<string, unknown>;
 type WorkerDiagnostics = Record<string, unknown>;
 
+type TreeSummary = {
+  id: string;
+  rootId: string;
+};
+
+type CreateNodeResult = {
+  success: boolean;
+  nodeId: string;
+  error?: unknown;
+};
+
+type TreeQueryAPI = {
+  listTrees: () => Promise<TreeSummary[]>;
+};
+
+type TreeMutationAPI = {
+  createNode: (input: {
+    nodeType: string;
+    treeId: string;
+    parentId: string;
+    name: string;
+  }) => Promise<CreateNodeResult>;
+};
+
+type TreeNodeUpdaterAPI = {
+  updateTreeNode: (nodeId: string, payload: {
+    mode: string;
+    data: unknown;
+    draftData: unknown;
+  }) => Promise<void>;
+};
+
+type BuildSessionRecord = {
+  status?: unknown;
+  stopReason?: unknown;
+  progress?: {
+    total?: unknown;
+    completed?: unknown;
+    failed?: unknown;
+  };
+  stageId?: unknown;
+  stageHeartbeatAt?: unknown;
+  updatedAt?: unknown;
+};
+
+type ShapeQueryAPI = {
+  getBuildSessionRecord: (nodeId: string) => Promise<BuildSessionRecord | null>;
+};
+
+type WorkerAPI = {
+  getBuildTasks?: (nodeType: string, nodeId: string) => Promise<unknown>;
+  getBuildSessionStatus?: (nodeType: string, nodeId: string) => Promise<unknown>;
+  getShapeQueryAPI?: () => Promise<ShapeQueryAPI>;
+  getQueryAPI?: () => Promise<TreeQueryAPI>;
+  getMutationAPI?: () => Promise<TreeMutationAPI>;
+  getTreeNodeUpdaterAPI?: () => Promise<TreeNodeUpdaterAPI>;
+  setCorsProxyBaseURL?: (value: string) => Promise<void> | void;
+  setAuthToken?: (token: string, scheme?: string) => Promise<void> | void;
+};
+
+type WorkerClientRef = {
+  isInitialized?: boolean;
+  initialize?: () => Promise<void> | void;
+  client?: WorkerAPI;
+  getAPI?: () => WorkerAPI | undefined;
+};
+
+type WindowWithWorkerRef = Window & {
+  __HDB_WORKER_CLIENT_REF__?: WorkerClientRef;
+};
+
 type E2EAuthSeed = {
   accessToken: string;
   idToken: string;
@@ -78,7 +149,7 @@ const appendWorkerTraceLog = (
 
 const collectWorkerDiagnostics = async (page: Page, nodeId: string): Promise<WorkerDiagnostics> => {
   return page.evaluate(async (targetNodeId) => {
-    const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+    const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
     if (!ref) {
       return { error: 'worker-ref-missing' };
     }
@@ -87,7 +158,7 @@ const collectWorkerDiagnostics = async (page: Page, nodeId: string): Promise<Wor
         await ref.initialize();
       }
       const api = ref.client ?? ref.getAPI?.();
-      if (!api) {
+      if (!api?.getBuildTasks || !api?.getBuildSessionStatus || !api?.getShapeQueryAPI) {
         return { error: 'worker-api-missing' };
       }
       const [tasksResult, statusResult, sessionRecordResult] = await Promise.all([
@@ -178,12 +249,12 @@ test.describe('Shape build startup first-task UX', () => {
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
-    await page.waitForFunction(() => Boolean((window as any).__HDB_WORKER_CLIENT_REF__?.client), null, {
+    await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
       timeout: 20000,
     });
 
     await page.evaluate(async (accessToken: string) => {
-      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
@@ -282,8 +353,10 @@ test.describe('Shape build startup first-task UX', () => {
     });
 
     const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries }) => {
-      const client = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
-      if (!client) throw new Error('Worker client not ready');
+      const client = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client;
+      if (!client?.getQueryAPI || !client?.getMutationAPI || !client?.getTreeNodeUpdaterAPI) {
+        throw new Error('Worker client not ready');
+      }
       const queryAPI = await client.getQueryAPI();
       const mutationAPI = await client.getMutationAPI();
       const updaterAPI = await client.getTreeNodeUpdaterAPI();
