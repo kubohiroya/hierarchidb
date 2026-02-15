@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #291 / `codex/chore/e2e/auth-seed-default` / start: 2026-02-15 14:36 JST
 - #289 / `codex/fix/shape/build-progress-task-visibility` / start: 2026-02-15 10:29 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
 - #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
@@ -90,6 +91,8 @@
 
 ## 今日の運用ログ
 
+- start: 2026-02-15 14:36 JST Issue #291 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/e2e/auth-seed-default` を作成して着手。
+- update: 2026-02-15 14:48 JST #291 デフォルト認証シードを `e2e/.auth/auth.json` に変更し、テンプレートを改名、`run-shape-startup-e2e.mjs` の参照先を更新。検証は有効トークン待ち。
 - update: 2026-02-15 14:35 JST #289 Playwright で `pnpm e2e:shape-startup` を実行し、追加した task list/summary 可視化テストを含む 2 テストが `/auth/verify` 401 で失敗。E2E auth seed 更新待ち。
 - update: 2026-02-15 12:45 JST #289 Task refresh のトリガー条件を `processing/runtimeStatus/buildSessionTransition` まで拡張し、`useShapeBuildStep.ts` の `buildStatus` TDZ エラーを解消。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0 を確認。
 - blocked: 2026-02-15 12:45 JST #289 Chrome MCP の transport が close しており E2E が未実行。Playwright も `Cannot find module 'playwright'` で実行不可のため、MCP 再接続 or 実行手段の指示待ち。
