@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
 - #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
 - #279 / `codex/refactor/ui/shape-task-item-card-list` / start: 2026-02-15 06:43 JST
 - #280 / `codex/fix/ui/task-item-card-vertical-align` / start: 2026-02-15 07:03 JST
@@ -87,6 +88,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-15 09:32 JST #284 Shape Step5 の状態遷移レビュー結果を反映し、Worker内部状態遷移/Worker↔UIシーケンス図と不一致点を追記。
 - update: 2026-02-15 08:54 JST #283 Step1 タイトルで i18n キー露出（basicinfo.title）を防ぐため、タイトル生成で存在チェック+ロード完了再評価+key露出ガードを追加。`pnpm -w turbo run typecheck --filter @hierarchidb/app` exit 0 を確認。
 - update: 2026-02-14 23:45 JST #276 タスク status の `regression`/`warning`/`rebuild-reserved` を削除し、task queue seed/legacy purge と EphemeralDB v7 を追加。`pnpm -w turbo run typecheck --filter @hierarchidb/batch-api --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/gis-sdk --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-api --filter @hierarchidb/shape-store --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/vectortile-orchestrator --filter @hierarchidb/shape-plugin` と `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/useBuildProgressPanelState.unit.test.ts src/ui/__tests__/hooks/integration/buildSessionStartup.integration.test.tsx` を exit 0 で確認。
 - update: 2026-02-14 23:41 JST #276 で recycled status 対応（cacheReuse 廃止・進捗集計から除外・UI表示/アイコン更新）を実装し、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin` を exit 0 で確認。

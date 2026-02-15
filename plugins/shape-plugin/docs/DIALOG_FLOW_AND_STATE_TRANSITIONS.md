@@ -147,6 +147,80 @@ stateDiagram-v2
 - E2E:
   - `e2e/shape/shape-build-startup-first-task.spec.ts`
 
+## 2026-02-15 検証結果（Worker実装/テスト照合）
+
+### 最新性の判定
+結論: 本文書は一部 outdated。
+
+### 不一致点（要点）
+- 「リアルタイム進捗購読（ポーリングのみ）」は不正確。実装は `subscribeBatchProgress` / `subscribeBatchTasks` の購読に加え、UI 側で 1s 間隔のリコンシル (`getBuildTasks`) を併用している。
+  - 参照: `packages/ui/batch/src/hooks/useBatchProgressState.ts`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/worker/api.ts`
+- 実行ステージは `fetch -> transform -> vt` だけではなく、`metadata-stage` と `cleanup-stage` を含む。
+  - 参照: `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
+- Worker 側は購読者がいない場合に `emitProgressSnapshot` をスキップする。ログ上 `progress snapshot skipped (no subscriber)` が出力されるため、UI 購読が遅れると初期 progress が欠落し得る。
+  - 参照: `plugins/shape-plugin/src/worker/api.ts`
+- ダイアログ間状態共有は `DialogContextProvider` ではなく、Jotai atoms + `useShapeBuildStep` が中心。
+  - 参照: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- 自動クローズ/エラーリカバリー/セッション復旧の仕様は本文書にのみ存在し、実装側の呼び出し箇所が確認できない。
+  - 参照: `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` 以外に該当コードなし
+
+### Worker 内部状態遷移（詳細・実装準拠）
+
+```mermaid
+flowchart TD
+  A["Start / Resume"] --> B["lock-acquire"]
+  B -->|lock acquired| C["draft-save"]
+  B -->|lock unavailable| B1["waiting-lock"]
+  B1 --> C
+  C --> D["worker-initialize"]
+  D --> E["payload-build"]
+  E --> F["session-start-request"]
+  F --> G["awaiting-first-task"]
+  G -->|task signal| P["pipeline-dispatch"]
+  G -->|timeout / failed / cancelled| X["startup error/cancel"]
+  P --> S1["prepare-pipeline-run"]
+  S1 --> S2["fetch-stage"]
+  S2 --> S3["transform-stage"]
+  S3 --> S4["vt-stage"]
+  S4 --> S5["metadata-stage"]
+  S5 --> S6["cleanup-stage"]
+  S6 --> Z["completed"]
+```
+
+### AwaitingFirstTask のガード条件（補足）
+- `hasFirstTaskSignal` は `queued` / `running` / `completed` / `progressTaskId` / `progress.total` のいずれかで成立。
+- `buildStatus=completed` かつ `sessionProgressTotal>0` の場合は、task stream 未同期でも成功遷移となる。
+- 45s 超過で `timeout` エラー遷移となる。
+  - 参照: `plugins/shape-plugin/src/ui/__tests__/hooks/unit/resolveAwaitingFirstTaskDecision.unit.test.ts`, `resolveStartupTransitionWatchdogEvent.unit.test.ts`
+
+### Worker↔UI シーケンス（通知の欠落候補）
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI as ShapeBuildStep(UI)
+  participant Bridge as WorkerBridge
+  participant Worker as shapeBatchAPI/ShapePipeline
+  participant Queue as VtTaskQueueDb
+
+  UI->>Bridge: subscribeBatchProgress/subscribeBuildTasks (auto on mount)
+  User->>UI: Start
+  UI->>Bridge: startOrResumeBuildSession(nodeId)
+  Bridge->>Worker: startOrResumeBuildSession
+  Worker->>Worker: startBatchProcess (load-draft...emit-planned-progress)
+  Worker-->>UI: progress snapshot (if subscribed)
+  Note over Worker,UI: 購読が遅い場合は<br/>`progress snapshot skipped (no subscriber)`
+  Worker->>Queue: enqueue tasks
+  Worker-->>UI: task snapshot / updates (if subscribed)
+  UI->>Bridge: getBuildTasks (reconcile when empty/in-flight)
+  UI->>UI: タスク一覧・サマリー更新
+```
+
+### 通知/呼び出しの欠落ポイント（現状の候補）
+- `emit-planned-progress` 時点で UI 側購読が未接続だと progress 初期通知が欠落する。
+- `subscribeBuildTasks` が `nodeId` 不一致でフィルタされると、タスク更新が UI に届かない。
+  - 参照: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`（`node_id_mismatch` で drop）
+
 ## ダイアログ制御の詳細仕様
 
 ### 1. ShapeEditDialog 内の Build Progress への遷移
