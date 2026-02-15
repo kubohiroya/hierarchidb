@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #310 / `chore/integration/eria-cartograph-sync-20260216` / start: 2026-02-16 01:51 JST
 - #301 / `codex/fix/shape-ephemeral-types` / start: 2026-02-15 22:26 JST
 - #297 / `codex/fix/shape/task-list-empty-ui` / start: 2026-02-15 17:26 JST
 - #300 / `codex/fix/env/require-cors-proxy-base-url` / start: 2026-02-15 18:07 JST
@@ -99,6 +100,7 @@
 
 ## 今日の運用ログ
 
+- start: 2026-02-16 01:51 JST Issue #310 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `chore/integration/eria-cartograph-sync-20260216` を作成して着手。
 - start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
 - update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
 - blocked: 2026-02-15 22:31 JST #301 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts --env-mode=loose` が `CACError: Unknown option --envMode` で exit 1。
