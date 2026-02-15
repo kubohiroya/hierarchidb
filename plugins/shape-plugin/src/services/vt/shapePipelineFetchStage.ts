@@ -24,6 +24,12 @@ export type ShapeFetchStageParams = {
   failureHandling: 'continue' | 'stop';
   buildContinuationPolicy: BuildContinuationPolicy;
   pipelineRunId?: string;
+  onTasksEnqueued?: (payload: {
+    nodeId: NodeId;
+    stage: 'fetch';
+    taskCount: number;
+    source: 'created' | 'reused';
+  }) => Promise<void> | void;
 };
 
 export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
@@ -44,6 +50,7 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
       resumeExistingTasks: params.resumeExistingTasks,
       abortController: fetchAbortController,
       failureHandling: params.failureHandling,
+      onTasksEnqueued: params.onTasksEnqueued,
     });
   } catch (error) {
     const baseMessage = error instanceof Error ? error.message : String(error);

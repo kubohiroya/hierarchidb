@@ -204,6 +204,12 @@ export type ShapeFetchStageParams = {
   resumeExistingTasks?: boolean;
   abortController?: AbortController;
   failureHandling?: 'continue' | 'stop' | 'skip';
+  onTasksEnqueued?: (payload: {
+    nodeId: NodeId;
+    stage: 'fetch';
+    taskCount: number;
+    source: 'created' | 'reused';
+  }) => Promise<void> | void;
 };
 
 const buildRetryConfig = (config: ShapeRuntimeBuildConfig): RetryConfig => {
@@ -1095,6 +1101,22 @@ const createFetchHandler = (params: {
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const notifyTasksEnqueued = async (payload: {
+    taskCount: number;
+    source: 'created' | 'reused';
+  }): Promise<void> => {
+    if (!params.onTasksEnqueued) return;
+    try {
+      await params.onTasksEnqueued({
+        nodeId: params.nodeId,
+        stage: 'fetch',
+        taskCount: payload.taskCount,
+        source: payload.source,
+      });
+    } catch (error) {
+      console.warn('[ShapeFetch] notify tasks enqueued failed', error);
+    }
+  };
   if (!resumeExistingTasks) {
     const staleTasks = await listTasksByStage(params.taskQueue, params.nodeId, 'fetch');
     await deleteTasksByIds(params.taskQueue, staleTasks.map((task) => task.taskId));
@@ -1125,6 +1147,7 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       );
     }
     setFetchPlannedTotal(params.nodeId, 0);
+    await notifyTasksEnqueued({ taskCount: 0, source: 'created' });
     return;
   }
   const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
@@ -1132,8 +1155,10 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     const tasks = buildFetchTasks(params.nodeId, payloads, metadataForPayloads, configSignature);
     setFetchPlannedTotal(params.nodeId, tasks.length);
     await reconcileFetchTasks(params, existingTasks, tasks, resumeExistingTasks);
+    await notifyTasksEnqueued({ taskCount: tasks.length, source: 'created' });
   } else {
     setFetchPlannedTotal(params.nodeId, existingTasks.length);
+    await notifyTasksEnqueued({ taskCount: existingTasks.length, source: 'reused' });
   }
   await runStageTasks({
     nodeId: params.nodeId,

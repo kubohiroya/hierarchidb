@@ -1832,11 +1832,15 @@ export const shapeBatchAPI = {
         }),
         { existingTaskCount, plannedFetchTotal },
       );
-      await executeStartupStep(
-        'emit-planned-progress',
-        async () => emitProgressSnapshot(nodeForSession, 'Fetch task plan prepared.'),
-        { plannedFetchTotal },
-      );
+      const emitQueuedProgressSnapshot = async (payload: {
+        nodeId: NodeId;
+        stage: 'fetch';
+        taskCount: number;
+        source: 'created' | 'reused';
+      }): Promise<void> => {
+        if (payload.stage !== 'fetch') return;
+        await emitProgressSnapshot(payload.nodeId, 'Fetch task plan prepared.');
+      };
       emitStartupStepLog('start', 'pipeline-dispatch', {
         runId: pipelineRunId,
         payloadCount: downloadTaskPayloads.length,
@@ -1867,6 +1871,7 @@ export const shapeBatchAPI = {
         buildContinuationPolicy,
         resumeExistingTasks,
         pipelineRunId,
+        onTasksEnqueued: emitQueuedProgressSnapshot,
         }).then(async () => {
           const completedAt = Date.now();
           terminalProgressMessage = undefined;
@@ -2241,11 +2246,15 @@ export const shapeBatchAPI = {
           }),
           { existingTaskCount, plannedFetchTotal },
         );
-        await executeResumeStep(
-          'emit-planned-progress',
-          async () => emitProgressSnapshot(nodeId, 'Fetch task plan prepared.'),
-          { plannedFetchTotal },
-        );
+        const emitQueuedProgressSnapshot = async (payload: {
+          nodeId: NodeId;
+          stage: 'fetch';
+          taskCount: number;
+          source: 'created' | 'reused';
+        }): Promise<void> => {
+          if (payload.stage !== 'fetch') return;
+          await emitProgressSnapshot(payload.nodeId, 'Fetch task plan prepared.');
+        };
         emitResumeStepLog('start', 'pipeline-dispatch', {
           runId: pipelineRunId,
           existingTaskCount,
@@ -2271,6 +2280,7 @@ export const shapeBatchAPI = {
           resumeExistingTasks: true,
           buildContinuationPolicy,
           pipelineRunId,
+          onTasksEnqueued: emitQueuedProgressSnapshot,
         }).then(async () => {
           const completedAt = Date.now();
           terminalProgressMessage = undefined;
