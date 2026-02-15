@@ -96,6 +96,9 @@ export function useDynamicSpeedDial(params: {
       const root = containerRef.current;
       const target = ev.target as Node | null;
       if (!root) return;
+      if (target && target instanceof Element) {
+        if (target.closest('[data-hdb-speed-dial-submenu="1"]')) return;
+      }
       if (target && root.contains(target)) return;
       setOpen(false);
     };

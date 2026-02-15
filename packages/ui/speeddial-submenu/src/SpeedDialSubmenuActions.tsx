@@ -281,6 +281,7 @@ export function SpeedDialSubmenuActions({
         anchorEl={anchorEl}
         placement={submenuPlacement}
         transition
+        data-hdb-speed-dial-submenu="1"
         modifiers={[
           {
             name: 'offset',
