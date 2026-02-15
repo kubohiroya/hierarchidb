@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #292 / `codex/feat/bff/kv-quota-fallback-warning` / start: 2026-02-15 15:08 JST
 - #291 / `codex/chore/e2e/auth-seed-default` / start: 2026-02-15 14:36 JST
 - #289 / `codex/fix/shape/build-progress-task-visibility` / start: 2026-02-15 10:29 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
