@@ -100,6 +100,8 @@
 
 ## 今日の運用ログ
 
+- blocked: 2026-02-15 22:10 JST #305 `pnpm -w turbo run typecheck --filter @hierarchidb/app` が差分外 `packages/shape-store` の `build:types` で `@hierarchidb/tabular-store` の型解決失敗（`src/ShapeDB.ts:15`）により exit 2。解除には `@hierarchidb/tabular-store` の型出力/依存解決の復旧が必要。
+- start: 2026-02-15 22:09 JST Issue #305 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/app/vite-dev-port-4200` を作成して着手。
 - start: 2026-02-16 01:51 JST Issue #310 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `chore/integration/eria-cartograph-sync-20260216` を作成して着手。
 - start: 2026-02-15 22:26 JST #301 Project `hierarchidb` の Status を `In Progress` に設定し、ブランチ `codex/fix/shape-ephemeral-types` を作成して着手。
 - update: 2026-02-15 22:29 JST #301 `pnpm -w turbo run typecheck --filter @hierarchidb/tabular-store --filter @hierarchidb/gis-sdk --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-store --filter @hierarchidb/shape-plugin --filter @hierarchidb/route-plugin --output-logs errors-only` は exit 0。
