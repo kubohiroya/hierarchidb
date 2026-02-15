@@ -138,6 +138,13 @@
       "name": "Location Plugin",
       "displayName": "Location",
       "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views.",
+      "i18nNamespace": "location-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "dataSource",
+        "3": "selection",
+        "4": "mapPreview"
+      },
       "icon": {
         "mui": "LocationOn",
         "emoji": "📍",

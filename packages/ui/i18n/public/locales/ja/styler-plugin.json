@@ -82,14 +82,14 @@
     }
   },
   "steps": {
-    "dataSource": "データソース",
-    "filtering": "フィルタリング",
-    "mappingKeys": "キーのマッピング",
-    "targetBehavior": "適用対象",
-    "styleSettings": "スタイル設定",
-    "target": "適用対象",
-    "styleAlgorithm": "アルゴリズム",
-    "preview": "プレビュー"
+    "dataSource": { "label": "データソース" },
+    "filtering": { "label": "フィルタリング" },
+    "mappingKeys": { "label": "キーのマッピング" },
+    "targetBehavior": { "label": "適用対象" },
+    "styleSettings": { "label": "スタイル設定" },
+    "target": { "label": "適用対象" },
+    "styleAlgorithm": { "label": "アルゴリズム" },
+    "preview": { "label": "プレビュー" }
   },
   "step5": {
     "target": {

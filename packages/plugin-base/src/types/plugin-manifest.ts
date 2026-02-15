@@ -61,6 +61,8 @@ export interface PluginManifest {
   id?: string;
   name?: string;
   displayName?: string;
+  i18nNamespace?: string;
+  stepTitleKeys?: Record<string, string>;
   nodeType?: NodeType;
   version?: string;
   description?: string;

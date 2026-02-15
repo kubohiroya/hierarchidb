@@ -13,6 +13,13 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'timeline-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'frames',
+    '3': 'map',
+    '4': 'final',
+  },
   icon: {
     mui: 'AccessTime',
     muiIconName: 'AccessTime',

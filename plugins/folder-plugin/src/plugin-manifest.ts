@@ -13,6 +13,10 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'folder-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+  },
   priority: 1000,
   dependencies: [],
   icon: {

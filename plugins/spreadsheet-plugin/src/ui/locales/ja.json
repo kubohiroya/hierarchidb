@@ -1,4 +1,8 @@
 {
+  "steps": {
+    "dataSource": { "label": "データソース" },
+    "filtering": { "label": "フィルタリング" }
+  },
   "styleSettings": {
     "source": {
       "label": "参照する列"

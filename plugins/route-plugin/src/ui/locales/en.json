@@ -5,6 +5,7 @@
     "processing": { "label": "Settings" },
     "tileSettings": { "label": "Vector Tile Settings" },
     "build": { "label": "Build" },
+    "stage": { "label": "Build" },
     "preview": { "label": "Preview" }
   },
   "auth": {

@@ -90,7 +90,7 @@ registry.registerConfigProvider<StylerStepData>({
     return [
       {
         id: 'data-source',
-        label: t('steps.dataSource', 'Data Source'),
+        label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: DataSourceWithValidation,
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
@@ -99,7 +99,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-filter',
-        label: t('steps.filtering', 'Filtering'),
+        label: t('steps.filtering.label', 'Filtering'),
         componentFactory: FilterWithValidation,
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
@@ -108,7 +108,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'mapping-keys',
-        label: t('steps.mappingKeys', 'Mapping Keys'),
+        label: t('steps.mappingKeys.label', 'Mapping Keys'),
         componentFactory: StylerMappingKeysStep,
         validate: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
         capabilities: {
@@ -117,7 +117,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'target-behavior',
-        label: t('steps.target', 'Apply Target'),
+        label: t('steps.target.label', 'Apply Target'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => (
           <StylerTargetStep {...p} showTargetPanel={false} />
         ),
@@ -128,7 +128,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-scaling',
-        label: t('steps.styleAlgorithm', 'Algorithm'),
+        label: t('steps.styleAlgorithm.label', 'Algorithm'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerAlgorithmStep2 {...p} />,
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
@@ -137,7 +137,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-preview',
-        label: t('steps.preview', 'Preview'),
+        label: t('steps.preview.label', 'Preview'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => (
           <StylerPreviewStep
             data={p.data}

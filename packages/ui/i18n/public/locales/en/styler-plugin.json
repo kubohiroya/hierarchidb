@@ -82,14 +82,14 @@
     }
   },
   "steps": {
-    "dataSource": "Data Source",
-    "filtering": "Filtering",
-    "mappingKeys": "Mapping Keys",
-    "targetBehavior": "Apply Target",
-    "styleSettings": "Style Mapping",
-    "target": "Apply Target",
-    "styleAlgorithm": "Algorithm",
-    "preview": "Preview"
+    "dataSource": { "label": "Data Source" },
+    "filtering": { "label": "Filtering" },
+    "mappingKeys": { "label": "Mapping Keys" },
+    "targetBehavior": { "label": "Apply Target" },
+    "styleSettings": { "label": "Style Mapping" },
+    "target": { "label": "Apply Target" },
+    "styleAlgorithm": { "label": "Algorithm" },
+    "preview": { "label": "Preview" }
   },
   "step5": {
     "target": {

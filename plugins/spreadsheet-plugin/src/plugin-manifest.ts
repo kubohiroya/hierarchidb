@@ -15,6 +15,12 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: SPREADSHEET_NODE_TYPE,
   version: SPREADSHEET_PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'spreadsheet-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'dataSource',
+    '3': 'filtering',
+  },
   extends: 'folder',
   priority: 600,
   dependencies: ['folder'],

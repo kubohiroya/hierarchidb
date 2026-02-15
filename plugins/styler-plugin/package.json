@@ -140,6 +140,16 @@
       "nodeType": "styler",
       "name": "Styler Plugin",
       "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps.",
+      "i18nNamespace": "styler-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "dataSource",
+        "3": "filtering",
+        "4": "mappingKeys",
+        "5": "target",
+        "6": "styleAlgorithm",
+        "7": "preview"
+      },
       "icon": {
         "mui": "Palette",
         "emoji": "🎨",

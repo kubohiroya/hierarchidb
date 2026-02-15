@@ -13,6 +13,15 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'route-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'dataSource',
+    '3': 'routeConfig',
+    '4': 'processing',
+    '5': 'stage',
+    '6': 'preview',
+  },
   extends: 'shape',
   dependencies: ['shape'],
   icon: {

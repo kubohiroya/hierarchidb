@@ -11,6 +11,7 @@ import {
   type OpenMaintenanceContext,
   UserLoginButton,
 } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   AppBar,
   Box,
@@ -29,11 +30,18 @@ import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import type { i18n as I18nInstance } from 'i18next';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherButtons.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
+import {
+  resolveStepTitleFromRegistry,
+  type StepTitleTranslator,
+} from '@hierarchidb/plugin-registry/derivations';
+import { pluginRegistry } from '~/plugin-loaders/index.js';
+import { resolveTreePageTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
 import type {
   LoadNodeActionReturn,
@@ -75,57 +83,48 @@ type TargetContextState = {
 
 function useTreeDocumentTitle() {
   const matches = useRouterState({ select: (state) => state.matches });
-
-  const pageMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeRouteIds.page),
-    [matches]
-  );
-  const targetMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeRouteIds.target),
-    [matches]
-  );
-  const dialogRouteIds = useMemo(
-    () => [treeRouteIds.dialog, treeRouteIds.dialogMode, treeRouteIds.dialogModeStep],
-    []
-  );
-  const dialogMatch = useMemo(
-    () => matches.find((match) => dialogRouteIds.includes(match.routeId)),
-    [dialogRouteIds, matches]
-  );
-
-  const nextTitle = useMemo(() => {
-    const defaultTitle = 'HierarchiDB App';
-
-    const dialogData = dialogMatch?.loaderData as TreeDialogMatchData | undefined;
-    if (dialogData?.kind === 'plugin') {
-      const { targetNode, params } = dialogData.data as LoadNodeActionReturn & {
-        params?: { action?: string; nodeType?: string };
-      };
-      const dialogTargetName = targetNode?.metadata?.name;
-      if (dialogTargetName && params?.action && params?.nodeType) {
-        return `${dialogTargetName} (${params.action} ${params.nodeType})`;
+  const { i18n } = useTranslation();
+  const i18nReadyVersion = useI18nReadyVersion(i18n);
+  const translateStepTitle = useMemo<StepTitleTranslator>(
+    () => (namespace, key) => {
+      if (!i18n.exists(key, { ns: namespace })) {
+        return '';
       }
-    }
+      const translated = String(i18n.t(key, { ns: namespace }));
+      return translated === key ? '' : translated;
+    },
+    [i18n, i18nReadyVersion]
+  );
+  const resolveStepTitle = useMemo(
+    () => (nodeType: string, step: number) =>
+      resolveStepTitleFromRegistry(pluginRegistry, nodeType, step, translateStepTitle),
+    [translateStepTitle]
+  );
+  const nextTitle = useMemo(
+    () => resolveTreePageTitle(matches, { resolveStepTitle }),
+    [matches, resolveStepTitle]
+  );
+  useAppDocumentTitle(nextTitle);
+}
 
-    const targetData = targetMatch?.loaderData as LoadTargetNodeReturn | undefined;
-    const targetTitle = targetData?.targetNode?.metadata?.name;
-    if (targetTitle) {
-      return targetTitle;
-    }
-
-    const pageData = pageMatch?.loaderData as LoadPageNodeReturn | undefined;
-    const pageTitle = pageData?.pageNode?.metadata?.name ?? pageData?.tree?.name;
-    if (pageTitle) {
-      return pageTitle;
-    }
-
-    return defaultTitle;
-  }, [dialogMatch?.loaderData, targetMatch?.loaderData, pageMatch?.loaderData]);
+function useI18nReadyVersion(i18n: I18nInstance): number {
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.title = nextTitle;
-  }, [nextTitle]);
+    const bump = () => {
+      setVersion((current) => current + 1);
+    };
+
+    i18n.on('initialized', bump);
+    i18n.on('loaded', bump);
+
+    return () => {
+      i18n.off('initialized', bump);
+      i18n.off('loaded', bump);
+    };
+  }, [i18n]);
+
+  return version;
 }
 
 export default function TLayout() {

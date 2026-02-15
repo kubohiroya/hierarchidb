@@ -15,16 +15,17 @@ import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
+import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
 import { APP_VERSION, BUILD_TIME } from '../../../version.ts';
 import { TitleLogo } from './TitleLogo.js';
 import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { useHomePage } from './useHomePage.js';
 
 export function meta() {
-  const { appPrefix, appFavicon, appTitle, appDescription } = loadAppConfig();
+  const { appPrefix, appFavicon, appName, appDescription } = loadAppConfig();
   const faviconHref = resolveAssetHref(appPrefix, appFavicon);
   return [
-    { title: appTitle },
+    { title: formatAppTitle(null, appName, { appNameOnly: true }) },
     { name: 'description', content: appDescription },
     {
       tagName: 'link',
@@ -59,6 +60,7 @@ const treeButtonConfigs: TreeConfig[] = [
 ];
 
 export default function HomePage() {
+  useAppDocumentTitle(null, { appNameOnly: true });
   const {
     appDescription,
     appTitle,

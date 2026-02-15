@@ -34,6 +34,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/basemap-plugin",
         "name": "BaseMap Plugin",
         "displayName": "BaseMap",
+        "i18nNamespace": "basemap-plugin",
         "nodeType": "basemap",
         "version": "1.0.0",
         "description": "BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management",
@@ -61,6 +62,11 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "jotai",
           "react"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "mapStyle",
+          "3": "viewport"
+        },
         "icon": {
           "mui": "Public",
           "emoji": "🌍",
@@ -139,6 +145,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/folder-plugin",
         "name": "Folder Plugin",
         "displayName": "Folder",
+        "i18nNamespace": "folder-plugin",
         "nodeType": "folder",
         "version": "1.0.0",
         "description": "Basic folder plugin for HierarchiDB UI layer",
@@ -166,6 +173,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/plugin-base"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo"
+        },
         "icon": {
           "mui": "Folder",
           "emoji": "📁",
@@ -246,6 +256,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/linker-plugin",
         "name": "Linker Plugin",
         "displayName": "Linker",
+        "i18nNamespace": "linker-plugin",
         "nodeType": "linker",
         "version": "0.0.1",
         "description": "Linker plugin for HierarchiDB: link compiled resources into maps",
@@ -276,6 +287,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-base",
           "@hierarchidb/worker-api"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "resources",
+          "3": "aggregated",
+          "4": "preview"
+        },
         "icon": {
           "mui": "AccountTree",
           "emoji": "🌲",
@@ -376,6 +393,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/location-plugin",
         "name": "Location Plugin",
         "displayName": "Location",
+        "i18nNamespace": "location-plugin",
         "nodeType": "location",
         "version": "0.1.0",
         "description": "Geographic location nodes with Shape integration",
@@ -430,6 +448,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "react-dom",
           "react-virtuoso"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "dataSource",
+          "3": "selection",
+          "4": "mapPreview"
+        },
         "icon": {
           "mui": "LocationOn",
           "emoji": "📍",
@@ -531,6 +555,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/resolver-plugin",
         "name": "Resolver Plugin",
         "displayName": "Resolver",
+        "i18nNamespace": "resolver-plugin",
         "nodeType": "resolver",
         "version": "1.0.0",
         "description": "Resolver node type plugin for property mapping between different data schemas",
@@ -557,6 +582,15 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/runtime-worker",
           "@hierarchidb/plugin-base"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "schemaSelection",
+          "3": "propertyMapping",
+          "4": "validationRules",
+          "5": "duplicateResolution",
+          "6": "stage",
+          "7": "previewTest"
+        },
         "icon": {
           "mui": "Extension",
           "emoji": "🧩",
@@ -667,6 +701,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/route-plugin",
         "name": "Route Plugin",
         "displayName": "Route",
+        "i18nNamespace": "route-plugin",
         "nodeType": "route",
         "version": "1.0.0",
         "description": "Route management plugin extending Shape plugin for HierarchiDB",
@@ -719,6 +754,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-tabular",
           "@hierarchidb/ui-accordion-config"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "dataSource",
+          "3": "routeConfig",
+          "4": "processing",
+          "5": "stage",
+          "6": "preview"
+        },
         "icon": {
           "mui": "Route",
           "emoji": "〰️",
@@ -878,6 +921,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/shape-plugin",
         "name": "Shape Plugin",
         "displayName": "Shape",
+        "i18nNamespace": "shape-plugin",
         "nodeType": "shape",
         "version": "0.1.0",
         "description": "Geographic shape data management plugin for HierarchiDB",
@@ -952,6 +996,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "topojson-server",
           "topojson-simplify"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "dataSource",
+          "3": "countrySelection",
+          "4": "processing",
+          "5": "stage",
+          "6": "preview"
+        },
         "icon": {
           "mui": "Hexagon",
           "emoji": "♦️",
@@ -1074,6 +1126,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/spreadsheet-plugin",
         "name": "Spreadsheet Plugin",
         "displayName": "Spreadsheet",
+        "i18nNamespace": "spreadsheet-plugin",
         "nodeType": "spreadsheet",
         "version": "0.2.0",
         "description": "Spreadsheet plugin powered by the shared tabular ingestion stack",
@@ -1107,6 +1160,11 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/auth-api",
           "@hierarchidb/ui-i18n"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "dataSource",
+          "3": "filtering"
+        },
         "icon": {
           "mui": "Assessment",
           "emoji": "📈",
@@ -1214,6 +1272,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/styler-plugin",
         "name": "Styler Plugin",
         "displayName": "Styler",
+        "i18nNamespace": "styler-plugin",
         "nodeType": "styler",
         "version": "1.0.0",
         "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
@@ -1257,6 +1316,15 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "react-dom",
           "react-i18next"
         ],
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "dataSource",
+          "3": "filtering",
+          "4": "mappingKeys",
+          "5": "target",
+          "6": "styleAlgorithm",
+          "7": "preview"
+        },
         "icon": {
           "mui": "Palette",
           "emoji": "🎨",
@@ -1338,9 +1406,16 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "id": "@hierarchidb/timeline-plugin",
         "name": "Timeline Plugin",
         "displayName": "Timeline",
+        "i18nNamespace": "timeline-plugin",
         "nodeType": "timeline",
         "version": "0.0.1",
         "description": "Timeline plugin scaffold for HierarchiDB (new design)",
+        "stepTitleKeys": {
+          "1": "basicInfo",
+          "2": "frames",
+          "3": "map",
+          "4": "final"
+        },
         "icon": {
           "muiIconName": "AccessTime",
           "mui": "AccessTime",

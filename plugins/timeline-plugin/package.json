@@ -92,6 +92,13 @@
       "nodeType": "timeline",
       "name": "Timeline Plugin",
       "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node.",
+      "i18nNamespace": "timeline-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "frames",
+        "3": "map",
+        "4": "final"
+      },
       "icon": {
         "mui": "AccessTime",
         "emoji": "🕒",

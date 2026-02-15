@@ -13,6 +13,13 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  i18nNamespace: 'linker-plugin',
+  stepTitleKeys: {
+    '1': 'basicInfo',
+    '2': 'resources',
+    '3': 'aggregated',
+    '4': 'preview',
+  },
   priority: 10,
   dependencies: [],
   icon: {

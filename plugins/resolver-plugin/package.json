@@ -97,6 +97,16 @@
       "name": "Resolver Plugin",
       "description": "Map heterogeneous schemas and properties into a unified structure so downstream plugins read consistent attributes.",
       "displayName": "Resolver",
+      "i18nNamespace": "resolver-plugin",
+      "stepTitleKeys": {
+        "1": "basicInfo",
+        "2": "schemaSelection",
+        "3": "propertyMapping",
+        "4": "validationRules",
+        "5": "duplicateResolution",
+        "6": "stage",
+        "7": "previewTest"
+      },
       "icon": {
         "mui": "Extension",
         "emoji": "🧩",
