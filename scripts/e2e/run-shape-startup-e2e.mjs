@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const DEFAULT_AUTH_SEED_FILE = 'e2e/.auth/shape-startup-auth.json';
+const DEFAULT_AUTH_SEED_FILE = 'e2e/.auth/auth.json';
 const PLAYWRIGHT_TARGET = 'e2e/shape/shape-build-startup-first-task.spec.ts';
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');

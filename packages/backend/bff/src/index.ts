@@ -15,6 +15,7 @@ import { validateOrigin } from './middleware/origin-validator.js';
 import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
 import { type BffBindings, getEnv } from './utils/env.js';
 import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
+import { buildKvWarning, type KvWarning } from './utils/kv-warning.js';
 import { parseEnvInt } from './utils/number.js';
 import { getDynamicRedirectUri, resolveStateOrigin } from './utils/redirect-uri.js';
 import { StateManager } from './utils/state-manager.js';
@@ -429,7 +430,12 @@ app.post('/auth/revoke', revokeToken);
 // Logout endpoint (invalidate session)
 app.post('/auth/logout', async (c) => {
   const env = getEnv(c);
-  if (env.AUTH_KV) {
+  let kvWarning: KvWarning | undefined;
+
+  if (!env.AUTH_KV) {
+    console.error('KV namespace AUTH_KV is not configured');
+    kvWarning = buildKvWarning('logout', 'missing_kv', 'none');
+  } else {
     try {
       const authHeader = c.req.header('Authorization');
       const token = extractBearerToken(authHeader);
@@ -447,10 +453,14 @@ app.post('/auth/logout', async (c) => {
       }
     } catch (error) {
       console.error('Failed to revoke tokens during logout:', error);
+      kvWarning = buildKvWarning('logout', 'kv_error', 'none');
     }
   }
 
-  return c.json({ message: 'Logged out successfully' });
+  return c.json({
+    message: 'Logged out successfully',
+    ...(kvWarning ? { warning: kvWarning } : {}),
+  });
 });
 
 // ============================================================================

@@ -9,6 +9,7 @@ import {
   validateRedirectUri,
 } from '../utils/redirect-uri.js';
 import { StateManager } from '../utils/state-manager.js';
+import { buildKvWarning, type KvWarning } from '../utils/kv-warning.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   type GitHubOAuth2Config,
@@ -265,20 +266,28 @@ export async function exchangeCodeForToken(c: BffContext) {
       env.JWT_ISSUER
     );
 
-    // Store in KV if available
-    if (env.AUTH_KV) {
+    let kvWarning: KvWarning | undefined;
+    if (!env.AUTH_KV) {
+      console.error('KV namespace AUTH_KV is not configured');
+      kvWarning = buildKvWarning('login', 'missing_kv', 'none');
+    } else {
       const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
-      await kvManager.storeUserAuth(userInfo.id, {
-        email: userInfo.email,
-        name: userInfo.name,
-        picture: userInfo.picture,
-        provider,
-        googleRefreshToken: provider === 'google' ? tokens.refresh_token : undefined,
-        githubAccessToken: provider === 'github' ? tokens.access_token : undefined,
-        microsoftRefreshToken: provider === 'microsoft' ? tokens.refresh_token : undefined,
-        sessionToken,
-        sessionDuration,
-      });
+      try {
+        await kvManager.storeUserAuth(userInfo.id, {
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+          provider,
+          googleRefreshToken: provider === 'google' ? tokens.refresh_token : undefined,
+          githubAccessToken: provider === 'github' ? tokens.access_token : undefined,
+          microsoftRefreshToken: provider === 'microsoft' ? tokens.refresh_token : undefined,
+          sessionToken,
+          sessionDuration,
+        });
+      } catch (error) {
+        console.error('Failed to store session in KV:', error);
+        kvWarning = buildKvWarning('login', 'kv_error', 'none');
+      }
     }
 
     return c.json({
@@ -293,6 +302,7 @@ export async function exchangeCodeForToken(c: BffContext) {
         name: userInfo.name,
         picture: userInfo.picture,
       },
+      ...(kvWarning ? { warning: kvWarning } : {}),
     });
   } catch (error) {
     console.error('Token exchange error:', error);

@@ -39,6 +39,9 @@
 
 ### Doing
 - #294 / `codex/fix/ui-auth/clear-auth-data` / start: 2026-02-15 15:43 JST
+- #292 / `codex/feat/bff/kv-quota-fallback-warning` / start: 2026-02-15 15:08 JST
+- #291 / `codex/chore/e2e/auth-seed-default` / start: 2026-02-15 14:36 JST
+- #289 / `codex/fix/shape/build-progress-task-visibility` / start: 2026-02-15 10:29 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
 - #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
 - #279 / `codex/refactor/ui/shape-task-item-card-list` / start: 2026-02-15 06:43 JST
@@ -79,6 +82,7 @@
 
 ### Blocked
 
+- #289 / `codex/fix/shape/build-progress-task-visibility` / blocked: 2026-02-15 14:35 JST（`pnpm e2e:shape-startup` が `/auth/verify` 401 で失敗。`e2e/.auth/auth.json` の token が無効。E2E auth seed 更新が必要）
 - #258 / `codex/fix/i18n/move-to-archive-ja-locale` / blocked: 2026-02-14 08:31 JST（`pnpm -w turbo run typecheck --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` が差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418` の型不整合で exit 1、`pnpm -w turbo run test --filter @hierarchidb/app --filter @hierarchidb/ui-treeconsole-breadcrumb --filter @hierarchidb/ui-treeconsole-toolbar` が差分外既知ブロッカー `src/geos/__tests__/geosWorkerClient.unit.test.ts` の失敗/timeout と `TreeConsoleIntegrationImportGuard` の import 解決失敗で exit 1）
 - #255 / `codex/refactor/repo/rename-trash-to-archive` / blocked: 2026-02-13 22:20 JST（`pnpm typecheck` が差分外既知ブロッカー `app/src/features/shape/shapeCreatePresets.ts:418` の型不整合で exit 1、`pnpm test` が差分外既知ブロッカー `ui/worker-client e2e` の `window is not defined` と `runtime-worker undo-folder-operations.wfl` timeout で exit 1）
 - #252 / `codex/chore/repo/unify-trash-to-archive` / blocked: 2026-02-13 18:52 JST（`pnpm typecheck` が差分外既知ブロッカー `@hierarchidb/route-plugin` の型不整合で exit 2、`pnpm test` が差分外既知ブロッカー `@hierarchidb/ui-routing` の `packages/_obsolate_common/api` 参照不整合で exit 1）
@@ -89,6 +93,11 @@
 
 ## 今日の運用ログ
 
+- start: 2026-02-15 14:36 JST Issue #291 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/e2e/auth-seed-default` を作成して着手。
+- update: 2026-02-15 14:48 JST #291 デフォルト認証シードを `e2e/.auth/auth.json` に変更し、テンプレートを改名、`run-shape-startup-e2e.mjs` の参照先を更新。検証は有効トークン待ち。
+- update: 2026-02-15 14:35 JST #289 Playwright で `pnpm e2e:shape-startup` を実行し、追加した task list/summary 可視化テストを含む 2 テストが `/auth/verify` 401 で失敗。E2E auth seed 更新待ち。
+- update: 2026-02-15 12:45 JST #289 Task refresh のトリガー条件を `processing/runtimeStatus/buildSessionTransition` まで拡張し、`useShapeBuildStep.ts` の `buildStatus` TDZ エラーを解消。`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0 を確認。
+- blocked: 2026-02-15 12:45 JST #289 Chrome MCP の transport が close しており E2E が未実行。Playwright も `Cannot find module 'playwright'` で実行不可のため、MCP 再接続 or 実行手段の指示待ち。
 - done: 2026-02-15 10:05 JST #287 fetch enqueue 後に progress snapshot を emit するよう修正し、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0 を確認。
 - start: 2026-02-15 09:35 JST #287 enqueue 後の progress snapshot 通知修正に着手。
 - update: 2026-02-15 09:32 JST #284 Shape Step5 の状態遷移レビュー結果を反映し、Worker内部状態遷移/Worker↔UIシーケンス図と不一致点を追記。
