@@ -5,7 +5,7 @@
 import { BFFAuthService } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
@@ -51,10 +51,15 @@ export default function AuthCallbackRoute() {
     }
   }, [normalizeHashReturnPath]);
 
-  const consumeReturnUrl = useCallback(() => {
+  const returnUrlRef = useRef<string | null>(null);
+  const takeReturnUrl = useCallback(() => {
+    if (returnUrlRef.current) return returnUrlRef.current;
     const returnUrl = localStorage.getItem('auth_return_url') || '/';
-    localStorage.removeItem('auth_return_url');
+    returnUrlRef.current = returnUrl;
     return returnUrl;
+  }, []);
+  const clearReturnUrl = useCallback(() => {
+    localStorage.removeItem('auth_return_url');
   }, []);
 
   useEffect(() => {
@@ -65,8 +70,9 @@ export default function AuthCallbackRoute() {
 
         // If neither code nor error is present, assume a stray render and navigate away quietly.
         if (!code && !error) {
-          const returnUrl = consumeReturnUrl();
+          const returnUrl = takeReturnUrl();
           const resolved = resolveReturnUrl(returnUrl);
+          clearReturnUrl();
           if (resolved.isExternal) {
             window.location.assign(resolved.url);
             return;
@@ -81,8 +87,9 @@ export default function AuthCallbackRoute() {
 
         if (!code) {
           // Nothing to process; go home without throwing.
-          const returnUrl = consumeReturnUrl();
+          const returnUrl = takeReturnUrl();
           const resolved = resolveReturnUrl(returnUrl);
+          clearReturnUrl();
           if (resolved.isExternal) {
             window.location.assign(resolved.url);
             return;
@@ -94,8 +101,9 @@ export default function AuthCallbackRoute() {
         const authService = BFFAuthService.getInstance();
         await authService.handleCallback(searchParams);
 
-        const returnUrl = consumeReturnUrl();
+        const returnUrl = takeReturnUrl();
         const resolved = resolveReturnUrl(returnUrl);
+        clearReturnUrl();
         if (resolved.isExternal) {
           window.location.assign(resolved.url);
           return;
@@ -108,7 +116,7 @@ export default function AuthCallbackRoute() {
     }
 
     processCallback();
-  }, [searchParams, navigate, resolveReturnUrl, consumeReturnUrl]);
+  }, [searchParams, navigate, resolveReturnUrl, takeReturnUrl, clearReturnUrl]);
 
   useEffect(() => {
     if (window.opener) {
