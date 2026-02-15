@@ -1440,6 +1440,9 @@ importers:
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../shape-api
+      '@hierarchidb/tabular-store':
+        specifier: workspace:*
+        version: link:../tabular-store
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../util

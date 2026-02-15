@@ -13,8 +13,8 @@ vi.mock('@hierarchidb/gis-sdk', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hierarchidb/gis-sdk')>();
   return {
     ...actual,
-    ephemeralShapeDB: {
-      ...actual.ephemeralShapeDB,
+    ephemeralDB: {
+      ...actual.ephemeralDB,
       open: sessionsOpenMock,
       sessions: {
         bulkGet: sessionsBulkGetMock,

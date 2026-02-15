@@ -10,7 +10,7 @@ import {
   putTasks,
   runStageTasks,
 } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import {
   pickAdminCode,
@@ -410,7 +410,7 @@ const decodeFetchCacheData = async (params: {
 };
 
 const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
-  await ephemeralShapeDB.fetchCache
+  await ephemeralDB.fetchCache
     .where('[nodeId+sourceKey]')
     .equals([nodeId, sourceKey])
     .first()
@@ -435,8 +435,8 @@ const putFetchCache = async (params: {
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashFetchArtifact(params.data);
-  await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
-    await ephemeralShapeDB.fetchCache.put({
+  await ephemeralDB.transaction('rw', [ephemeralDB.fetchCache, ephemeralDB.fetchCacheMeta], async () => {
+    await ephemeralDB.fetchCache.put({
       id: recordId,
       nodeId: params.nodeId,
       domainType: 'shape',
@@ -792,7 +792,7 @@ const createFetchHandler = (params: {
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
       const createdAt = Date.now();
-      let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralShapeDB.fetchCache, existing);
+      let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralDB.fetchCache, existing);
       const cachedCollection = await decodeFetchCacheData({
         data: existing.data,
         format: existing.format,
@@ -829,8 +829,8 @@ const createFetchHandler = (params: {
           }
           if (data) {
             fetchArtifactHash = hashFetchArtifact(data);
-            await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
-              await ephemeralShapeDB.fetchCache.update(existing.id, {
+            await ephemeralDB.transaction('rw', ephemeralDB.fetchCache, async () => {
+              await ephemeralDB.fetchCache.update(existing.id, {
                 data,
                 size: data.byteLength,
                 contentHash: fetchArtifactHash,

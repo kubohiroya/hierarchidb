@@ -62,7 +62,7 @@ import {
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
-import { ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 import { isTaskSkipped } from '../common/utils/taskMessages.ts';
@@ -263,11 +263,11 @@ const applySelectionDiffCleanup = async (
     [nodeId, normalizeSelectionKey(entry.countryCode), entry.adminLevel] as const
   ));
   const [fetchCacheIdsRaw, transformCacheIdsRaw, vtTasks] = await Promise.all([
-    ephemeralShapeDB.fetchCacheMeta
+    ephemeralDB.fetchCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
       .primaryKeys(),
-    ephemeralShapeDB.transformCacheMeta
+    ephemeralDB.transformCacheMeta
       .where('[nodeId+countryCode+adminLevel]')
       .anyOf(removedKeyTuples)
       .primaryKeys(),
@@ -276,11 +276,11 @@ const applySelectionDiffCleanup = async (
   const fetchCacheIds = fetchCacheIdsRaw.map((id: unknown) => String(id));
   if (fetchCacheIds.length > 0) {
     await Promise.all([
-      ephemeralShapeDB.fetchCache
+      ephemeralDB.fetchCache
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
-      ephemeralShapeDB.fetchCacheMeta
+      ephemeralDB.fetchCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
@@ -292,21 +292,21 @@ const applySelectionDiffCleanup = async (
   const removedBufferSet = new Set(transformCacheIds);
   if (transformCacheIds.length > 0) {
     await Promise.all([
-      ephemeralShapeDB.transformCache
+      ephemeralDB.transformCache
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
-      ephemeralShapeDB.transformCacheMeta
+      ephemeralDB.transformCacheMeta
         .where('[nodeId+countryCode+adminLevel]')
         .anyOf(removedKeyTuples)
         .delete(),
     ]);
-    const relations = await ephemeralShapeDB.tileIdToBufferRelations
+    const relations = await ephemeralDB.tileIdToBufferRelations
       .where('bufferId')
       .anyOf(transformCacheIds)
       .toArray();
     const affectedTileIds = new Set(relations.map((row) => row.tileId));
-    await ephemeralShapeDB.tileIdToBufferRelations
+    await ephemeralDB.tileIdToBufferRelations
       .where('bufferId')
       .anyOf(transformCacheIds)
       .delete();
@@ -587,8 +587,6 @@ const isValidTaskStatus = (value: unknown): value is TaskQueueRecord['status'] =
   typeof value === 'string' && validTaskStatuses.includes(value as TaskQueueRecord['status'])
 );
 
-const normalizeTaskStatus = (status: TaskQueueRecord['status']): BuildTask['status'] => status;
-
 const normalizeTaskPhase = (status: TaskQueueRecord['status']): ProgressPhase => status;
 
 
@@ -649,7 +647,7 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     writeChain = writeChain.then(() => putTasks(taskQueue, nextBatch));
   };
 
-  await ephemeralShapeDB.buildTasks
+  await ephemeralDB.buildTasks
     .where('[nodeId+index]')
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
     .each((task) => {
@@ -677,13 +675,13 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
 
 const purgeLegacyBuildTasks = async (nodeId: NodeId): Promise<number> => {
   const invalidTaskIds: string[] = [];
-  await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).each((task) => {
+  await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).each((task) => {
     if (!isValidTaskStatus(task.status) || !isValidTaskStage(task.taskType)) {
       invalidTaskIds.push(task.taskId);
     }
   });
   if (invalidTaskIds.length === 0) return 0;
-  await ephemeralShapeDB.buildTasks.bulkDelete(invalidTaskIds);
+  await ephemeralDB.buildTasks.bulkDelete(invalidTaskIds);
   console.warn('[shapeBatchAPI] purged legacy build tasks', JSON.stringify({
     nodeId,
     removedCount: invalidTaskIds.length,
@@ -720,7 +718,7 @@ const ensureTaskQueueSeeded = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): 
   await purgeLegacyBuildTasks(nodeId);
   const existingCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
   if (existingCount > 0) return;
-  const buildTaskCount = await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count();
+  const buildTaskCount = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).count();
   if (buildTaskCount === 0) return;
   await seedTaskQueueFromBuildTasks(nodeId);
 };
@@ -747,26 +745,6 @@ const buildTaskSummaryFields = (
   stagePriority: task.stagePriority,
   metadata: task.metadata,
 });
-
-const mapTaskQueueRecordToBatchTask = (
-  task: TaskQueueRecord,
-): BuildTask & { title?: string; message?: string } => {
-  const base = buildTaskSummaryFields(task);
-  return {
-    taskId: task.taskId,
-    nodeId: task.nodeId,
-    stage: undefined,
-    status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
-    type: task.stage,
-    index: task.index,
-    progress: resolveTaskProgress(task),
-    display: task.display,
-    retryCount: task.retryCount,
-    error: base.error,
-    message: base.message,
-    title: base.title,
-  };
-};
 
 const mapTaskQueueRecordToTaskSummary = (
   task: TaskQueueRecord,
@@ -2350,12 +2328,12 @@ export const shapeBatchAPI = {
     getBatchSessionInternal(nodeId)
   ),
 
-  getBatchTasks: async (nodeId: NodeId): Promise<BuildTask[]> => {
+  getBatchTasks: async (nodeId: NodeId): Promise<BatchTaskSummary[]> => {
     const taskQueue = new VtTaskQueueDb();
     await ensureTaskQueueSeeded(nodeId, taskQueue);
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task));
+      return vtTasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
     }
     return [];
   },

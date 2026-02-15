@@ -15,7 +15,7 @@ const APP_PREFIX = `hidb-test-shape-full-flow-${Math.random().toString(36).slice
 
 let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
 let listTasksByStageAndStatus: typeof import('@hierarchidb/vt-orchestrator').listTasksByStageAndStatus;
-let ephemeralShapeDB: typeof import('@hierarchidb/gis-sdk').ephemeralShapeDB;
+let ephemeralDB: typeof import('@hierarchidb/gis-sdk').ephemeralDB;
 let shapeDB: typeof import('@hierarchidb/shape-store').shapeDB;
 let runShapePipeline: typeof import('../../services/vt/shapePipeline.js').runShapePipeline;
 let metadataLoader: typeof import('../../services/metadata/MetadataLoader.js').metadataLoader;
@@ -79,7 +79,7 @@ describeNetwork('Shape full-flow pipeline', () => {
     (globalThis as { APP_PREFIX?: string }).APP_PREFIX = APP_PREFIX;
     if (!VtTaskQueueDb) {
       ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
-      ({ ephemeralShapeDB: ephemeralShapeDB } = await import('@hierarchidb/gis-sdk'));
+      ({ ephemeralDB: ephemeralDB } = await import('@hierarchidb/gis-sdk'));
       ({ shapeDB } = await import('@hierarchidb/shape-store'));
       ({ runShapePipeline } = await import('../../services/vt/shapePipeline.js'));
       ({ metadataLoader } = await import('../../services/metadata/MetadataLoader.js'));
@@ -123,8 +123,8 @@ describeNetwork('Shape full-flow pipeline', () => {
       );
     }
 
-    const fetchCount = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count();
-    const transformCount = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).count();
+    const fetchCount = await ephemeralDB.fetchCache.where('nodeId').equals(nodeId).count();
+    const transformCount = await ephemeralDB.transformCache.where('nodeId').equals(nodeId).count();
     const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
     const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
     const dataSourceMetaCount = await shapeDB.dataSourceMetadata.where('nodeId').equals(nodeId).count();

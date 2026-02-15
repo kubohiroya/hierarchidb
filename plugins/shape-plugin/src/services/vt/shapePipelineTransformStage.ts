@@ -23,7 +23,7 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import { clearStagePlan, setTransformPlannedTotal } from './shapeProgressPlan.ts';
-import type { EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import { buildTransformTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import { resolveFetchArtifactHashById } from './shapeFetchArtifactHash.ts';
 
@@ -39,7 +39,7 @@ export type ShapeTransformStageParams = {
   failureHandling: 'continue' | 'stop';
   buildContinuationPolicy: BuildContinuationPolicy;
   pipelineRunId?: string;
-  ephemeralStore: EphemeralShapeDB;
+  ephemeralStore: EphemeralDB;
   diffBuildEnabled: boolean;
   recyclingAllowlist: Set<string>;
 };

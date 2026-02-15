@@ -21,6 +21,7 @@
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",

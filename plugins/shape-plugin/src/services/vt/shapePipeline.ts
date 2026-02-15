@@ -4,7 +4,7 @@ import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { shapeDB } from '@hierarchidb/shape-store';
-import { ephemeralShapeDB, type EphemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import {
@@ -41,7 +41,7 @@ export type ShapePipelineParams = {
 type ShapePipelineContext = {
   params: ShapePipelineParams;
   taskQueue: VtTaskQueueDb;
-  ephemeralStore: EphemeralShapeDB;
+  ephemeralStore: EphemeralDB;
   resumeExistingTasks: boolean;
   buildContinuationPolicy: BuildContinuationPolicy;
   failureHandling: ReturnType<typeof resolveFailureHandling>;
@@ -84,7 +84,7 @@ const collectRecyclingAllowlist = async (nodeId: NodeId) => {
 
 const createShapePipelineContext = async (params: ShapePipelineParams): Promise<ShapePipelineContext> => {
   const taskQueue = new VtTaskQueueDb();
-  const ephemeralStore = ephemeralShapeDB;
+  const ephemeralStore = ephemeralDB;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
   const failureHandling = resolveFailureHandling(buildContinuationPolicy);
