@@ -372,9 +372,8 @@ export class BFFAuthService {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      // Clean up (keep return URL until caller consumes it)
-      this.clearAuthData({ preserveReturnUrl: true });
-      localStorage.removeItem('oauth_state');
+      // Clean up OAuth flow state (keep return URL until caller consumes it)
+      this.clearAuthFlowState({ preserveReturnUrl: true });
 
       // Parse user from token response
       const user = this.parseTokenResponse(data);
@@ -459,7 +458,7 @@ export class BFFAuthService {
         if (warning?.operation === 'refresh') {
           return null;
         }
-        // Clear tokens on refresh failure
+        // Clear auth data on refresh failure
         this.clearAuthData();
         return null;
       }
@@ -600,10 +599,6 @@ export class BFFAuthService {
 
     // Clear OAuth atoms
     localStorage.removeItem('oauth_state');
-
-    // Clear tokens (keep these for getCurrentUser)
-    // localStorage.removeItem('access_token');
-    // localStorage.removeItem('refresh_token_id');
 
     // Clear provider and return URL
     localStorage.removeItem('auth_provider');
