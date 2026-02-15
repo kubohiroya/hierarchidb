@@ -369,9 +369,8 @@ export class BFFAuthService {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      // Clean up (keep return URL until caller consumes it)
-      this.clearAuthData({ preserveReturnUrl: true });
-      localStorage.removeItem('oauth_state');
+      // Clean up OAuth flow state (keep return URL until caller consumes it)
+      this.clearAuthFlowState({ preserveReturnUrl: true });
 
       // Parse user from token response
       const user = this.parseTokenResponse(data);
@@ -414,7 +413,6 @@ export class BFFAuthService {
 
     // Clear local storage
     this.clearAuthData();
-    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
   }
 
   /**
@@ -443,7 +441,7 @@ export class BFFAuthService {
       });
 
       if (!response.ok) {
-        // Clear tokens on refresh failure
+        // Clear auth data on refresh failure
         this.clearAuthData();
         return null;
       }
@@ -577,23 +575,32 @@ export class BFFAuthService {
   }
 
   /**
-   * Clear authentication data from storage
+   * Clear OAuth flow state without touching tokens.
    */
-  private clearAuthData(options: { preserveReturnUrl?: boolean } = {}): void {
+  private clearAuthFlowState(options: { preserveReturnUrl?: boolean } = {}): void {
     // Clear PKCE data
     localStorage.removeItem('pkce_code_verifier');
 
     // Clear OAuth atoms
     localStorage.removeItem('oauth_state');
 
-    // Clear tokens (keep these for getCurrentUser)
-    // localStorage.removeItem('access_token');
-    // localStorage.removeItem('refresh_token_id');
-
     // Clear provider and return URL
     localStorage.removeItem('auth_provider');
     if (!options.preserveReturnUrl) {
       localStorage.removeItem('auth_return_url');
     }
+  }
+
+  /**
+   * Clear authentication data from storage (tokens + flow state).
+   */
+  private clearAuthData(options: { preserveReturnUrl?: boolean } = {}): void {
+    this.clearAuthFlowState(options);
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token_id');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('id_token');
+    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
   }
 }

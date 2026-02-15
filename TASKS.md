@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #294 / `codex/fix/ui-auth/clear-auth-data` / start: 2026-02-15 15:43 JST
 - #284 / `codex/chore/shape/step5-state-diagram-review-docs` / start: 2026-02-15 09:12 JST
 - #283 / `codex/feat/app/page-title-utility` / start: 2026-02-15 07:32 JST
 - #279 / `codex/refactor/ui/shape-task-item-card-list` / start: 2026-02-15 06:43 JST
