@@ -95,6 +95,7 @@
 
 ## 今日の運用ログ
 
+- update: 2026-02-15 16:45 JST #298 指定コミット（81f63ed9/9f413bd9）を merge commit として ERIA-Cartograph に合流し、origin へ push まで完了。
 - update: 2026-02-15 16:16 JST #296 `pnpm e2e` を実行し exit 0 を確認。
 - update: 2026-02-15 14:48 JST #291 デフォルト認証シードを `e2e/.auth/auth.json` に変更し、テンプレートを改名、`run-shape-startup-e2e.mjs` の参照先を更新。検証は有効トークン待ち。
 - start: 2026-02-15 14:36 JST Issue #291 を Project `hierarchidb` に追加し、Status を `In Progress` に設定。ブランチ `codex/chore/e2e/auth-seed-default` を作成して着手。
