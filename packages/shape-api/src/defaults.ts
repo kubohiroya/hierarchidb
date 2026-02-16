@@ -90,6 +90,12 @@ export const DEFAULT_BUILD_CONFIG = {
       maxZoom: 22,
       actionOnAnomaly: 'mark_warning',
       enablePreviewOverlay: false,
+      scoreThreshold: 2.5,
+      minTriangleAngleDeg: 12,
+      minEdgeToBaseRatio: 2.8,
+      maxAreaToBBoxRatio: 0.18,
+      minSpanRatio: 0.03,
+      minBoundaryVertexCount: 1,
     },
   },
   cleanupConfig: {

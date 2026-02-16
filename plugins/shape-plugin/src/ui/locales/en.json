@@ -165,7 +165,16 @@
           "fallback": "Fallback to less simplified",
           "dropTile": "Drop tile"
         },
-        "enablePreviewOverlay": "Show warning overlay in preview"
+        "enablePreviewOverlay": "Show warning overlay in preview",
+        "thresholds": {
+          "title": "Anomaly thresholds",
+          "scoreThreshold": "Score threshold",
+          "minTriangleAngleDeg": "Max acute angle (deg)",
+          "minEdgeToBaseRatio": "Min edge/base ratio",
+          "maxAreaToBBoxRatio": "Max area/BBox ratio",
+          "minSpanRatio": "Min span ratio",
+          "minBoundaryVertexCount": "Min boundary vertices"
+        }
       }
     },
     "download": {
