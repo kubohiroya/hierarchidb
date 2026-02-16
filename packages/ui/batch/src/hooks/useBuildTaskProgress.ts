@@ -6,7 +6,7 @@ import { buildTaskCountSummary } from '../utils/taskProgressSummary.js';
 type TaskStageCarrier = BuildTaskSummary & { taskType?: string; type?: string; stage?: string };
 
 const resolveTaskStage = (task: TaskStageCarrier): string | undefined => (
-  task.taskType ?? task.type ?? task.stage
+  task.stage ?? task.taskType ?? task.type
 );
 
 const toStageKey = (task: TaskStageCarrier): string => {

@@ -6,6 +6,8 @@ import type { TaskStage } from '@hierarchidb/batch-api';
 
 export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
   stage: TaskStage;
+  taskType?: TaskStage;
+  type?: TaskStage;
   index?: number;
   stagePriority?: number;
   metadata?: Record<string, unknown>;

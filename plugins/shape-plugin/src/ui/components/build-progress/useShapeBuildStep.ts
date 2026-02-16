@@ -47,6 +47,7 @@ import {
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
+import { resolveMostAdvancedStageId } from './stagePriority.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const PAUSE_COMMAND_TIMEOUT_MS = 60_000;
@@ -94,6 +95,10 @@ type StageLikeTask = {
   taskType?: TaskStage;
   type?: TaskStage;
   stage: TaskStage;
+};
+
+type StageLikeRunningTask = StageLikeTask & {
+  status?: string;
 };
 
 const runWithTimeout = async <T>(
@@ -160,7 +165,96 @@ export const shouldResetElapsedState = (params: {
   return true;
 };
 
-const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
+export const resolveDisplayBuildStatus = (params: {
+  baseBuildStatus: BuildStatus;
+  tasksCompletionStatus: BuildStatus | null;
+  hasInFlightTasks: boolean;
+}): BuildStatus => {
+  if (params.tasksCompletionStatus === 'failed') {
+    return 'failed';
+  }
+  if (params.baseBuildStatus === 'running') {
+    return 'running';
+  }
+  if (params.tasksCompletionStatus === 'completed') {
+    return params.baseBuildStatus === 'paused' ? 'paused' : 'completed';
+  }
+  if (params.baseBuildStatus === 'paused') {
+    return 'paused';
+  }
+  if (params.hasInFlightTasks) {
+    return 'running';
+  }
+  return params.baseBuildStatus;
+};
+
+export const shouldRefreshTasksSnapshot = (params: {
+  displayTaskCount: number;
+  hasInFlightTasks: boolean;
+  hasProgressTaskSignal: boolean;
+  buildStatus: BuildStatus;
+  runtimeStatus: string | null;
+  processingStatus: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
+  buildSessionTransitionActive: boolean;
+}): boolean => {
+  const hasProcessingSignal = (
+    params.buildStatus === 'running'
+    || params.runtimeStatus === 'processing'
+    || params.processingStatus === 'processing'
+    || params.buildSessionTransitionActive
+  );
+  if (params.displayTaskCount === 0) {
+    return (
+      params.hasProgressTaskSignal
+      || params.buildStatus === 'running'
+      || params.buildStatus === 'completed'
+      || params.runtimeStatus === 'processing'
+      || params.processingStatus === 'processing'
+      || params.buildSessionTransitionActive
+    );
+  }
+  if (params.hasInFlightTasks) {
+    return false;
+  }
+  return hasProcessingSignal;
+};
+
+const normalizeStageKey = (task: StageLikeTask): TaskStage => task.stage ?? task.taskType ?? task.type;
+
+const resolveMostAdvancedStageIdByStatus = (params: {
+  stages: Array<{ id: string }>;
+  tasks: StageLikeRunningTask[];
+  statuses: Set<string>;
+}): string | null => {
+  const stageIds = new Set<string>();
+  params.tasks.forEach((task) => {
+    if (!task.status || !params.statuses.has(task.status)) return;
+    stageIds.add(normalizeStageKey(task));
+  });
+  return resolveMostAdvancedStageId(stageIds, params.stages);
+};
+
+export const resolveMostAdvancedRunningStageId = (params: {
+  stages: Array<{ id: string }>;
+  tasks: StageLikeRunningTask[];
+}): string | null => {
+  return resolveMostAdvancedStageIdByStatus({
+    stages: params.stages,
+    tasks: params.tasks,
+    statuses: new Set(['running']),
+  });
+};
+
+export const resolveMostAdvancedInFlightStageId = (params: {
+  stages: Array<{ id: string }>;
+  tasks: StageLikeRunningTask[];
+}): string | null => {
+  return resolveMostAdvancedStageIdByStatus({
+    stages: params.stages,
+    tasks: params.tasks,
+    statuses: new Set(['running', 'queued']),
+  });
+};
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
   switch (status) {
@@ -733,33 +827,23 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     const hasFailed = displayTasks.some((task) => task.status === 'failed');
     return hasFailed ? 'failed' : 'completed';
   }, [displayTasks, hasInFlightTasks]);
-  const buildStatus = useMemo<BuildStatus>(() => {
-    if (tasksCompletionStatus === 'failed') {
-      return 'failed';
-    }
-    if (tasksCompletionStatus === 'completed') {
-      return baseBuildStatus === 'paused' ? 'paused' : 'completed';
-    }
-    if (baseBuildStatus === 'paused') {
-      return 'paused';
-    }
-    if (hasInFlightTasks) {
-      return 'running';
-    }
-    return baseBuildStatus;
-  }, [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
+  const buildStatus = useMemo<BuildStatus>(() => resolveDisplayBuildStatus({
+    baseBuildStatus,
+    tasksCompletionStatus,
+    hasInFlightTasks,
+  }), [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
   const lastTaskRefreshRef = useRef<{ nodeId: string; at: number } | null>(null);
   useEffect(() => {
     if (!activeNodeId) return;
-    if (displayTasks.length > 0) return;
-    const shouldRefresh = (
-      hasProgressTaskSignal
-      || buildStatus === 'running'
-      || buildStatus === 'completed'
-      || runtimeStatus === 'processing'
-      || processingStatus === 'processing'
-      || buildSessionTransition.active
-    );
+    const shouldRefresh = shouldRefreshTasksSnapshot({
+      displayTaskCount: displayTasks.length,
+      hasInFlightTasks,
+      hasProgressTaskSignal,
+      buildStatus,
+      runtimeStatus,
+      processingStatus,
+      buildSessionTransitionActive: buildSessionTransition.active,
+    });
     if (!shouldRefresh) return;
     const now = Date.now();
     const last = lastTaskRefreshRef.current;
@@ -773,6 +857,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildStatus,
     buildSessionTransition.active,
     displayTasks.length,
+    hasInFlightTasks,
     hasProgressTaskSignal,
     processingStatus,
     refreshTasks,
@@ -804,6 +889,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
 
   const taskType = effectiveProgress?.taskType;
   const liveTaskType = taskType ?? effectiveStatus?.stage;
+  const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
+    stages,
+    tasks: displayTasks,
+  }), [displayTasks, stages]);
+  const inFlightStageIdFromTasks = useMemo(() => resolveMostAdvancedInFlightStageId({
+    stages,
+    tasks: displayTasks,
+  }), [displayTasks, stages]);
   const resolvedTaskType = liveTaskType ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const isElapsedResetState = useMemo(() => shouldResetElapsedState({
@@ -825,7 +918,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       return;
     }
     const fallbackStageId = buildStatus === 'running' ? resolvedTaskType : null;
-    const nextStageId = liveTaskType ?? timingStageId ?? persistedStageElapsedStageId ?? fallbackStageId ?? null;
+    const nextStageId = runningStageIdFromTasks
+      ?? inFlightStageIdFromTasks
+      ?? liveTaskType
+      ?? timingStageId
+      ?? persistedStageElapsedStageId
+      ?? fallbackStageId
+      ?? null;
     if (nextStageId && nextStageId !== timingStageId) {
       setTimingStageId(nextStageId);
     }
@@ -835,6 +934,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     liveTaskType,
     persistedStageElapsedStageId,
     resolvedTaskType,
+    inFlightStageIdFromTasks,
+    runningStageIdFromTasks,
     timingStageId,
   ]);
 
@@ -963,7 +1064,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     effectiveStatus: effectiveStatus ?? null,
     effectiveProgress: effectiveProgress ?? null,
     stages,
-    resolvedTaskType,
+    resolvedTaskType: timingStageId ?? resolvedTaskType,
     displayStageId: progressSummary.displayStageId,
     rawDisplayCounts: progressSummary.rawDisplayCounts,
   });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { flushSync } from 'react-dom';
 import { useTranslation } from '../../i18n.js';
 import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
@@ -29,6 +30,7 @@ import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../common/utils/taskMessages.ts';
+import { resolveMostAdvancedStageId } from './stagePriority.ts';
 
 const isDev = import.meta.env.DEV;
 const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
@@ -90,6 +92,26 @@ export const shouldUpdateElapsedSnapshot = (params: {
   // Reset Session may zero elapsed before build status settles to idle/paused.
   if (totalElapsedMs === 0) return true;
   return totalElapsedMs > snapshot.elapsedMs;
+};
+
+export const resolveCompletionFailedStageLabel = (params: {
+  stages: BuildStage[];
+  failedStageId?: string;
+  fallbackStageLabel: string;
+}): string => {
+  if (!params.failedStageId) return params.fallbackStageLabel;
+  const failedStage = params.stages.find((stage) => stage.id === params.failedStageId);
+  return failedStage?.title ?? params.failedStageId;
+};
+
+export const resolveActiveRunningStageId = (params: {
+  stages: BuildStage[];
+  stageTaskScan: Record<string, { hasRunning: boolean }>;
+}): string | null => {
+  const runningStageIds = params.stages
+    .filter((stage) => params.stageTaskScan[stage.id]?.hasRunning)
+    .map((stage) => stage.id);
+  return resolveMostAdvancedStageId(runningStageIds, params.stages);
 };
 
 export const useBuildProgressPanelState = (params: {
@@ -170,12 +192,7 @@ export const useBuildProgressPanelState = (params: {
   }, [stages, tasksByStage]);
   const activeStageId = useMemo(() => {
     if (summary.buildStatus !== 'running') return null;
-    for (const stage of stages) {
-      if (stageTaskScan[stage.id]?.hasRunning) {
-        return stage.id;
-      }
-    }
-    return null;
+    return resolveActiveRunningStageId({ stages, stageTaskScan });
   }, [stageTaskScan, stages, summary.buildStatus]);
   const {
     startWarning,
@@ -222,6 +239,7 @@ export const useBuildProgressPanelState = (params: {
       const failureMessage = resolveFailureMessage(failedTask);
       if (!failureMessage) continue;
       return {
+        stageId: stage.id,
         title: resolveTaskTitle(failedTask as TaskItemWithMetadata),
         message: failureMessage,
       };
@@ -241,6 +259,11 @@ export const useBuildProgressPanelState = (params: {
     ?? t('stage.tasks.unknown', '(Task unavailable)');
   const completionTaskMessage = failedTaskInfo?.message
     ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+  const completionFailedStageLabel = resolveCompletionFailedStageLabel({
+    stages,
+    failedStageId: failedTaskInfo?.stageId,
+    fallbackStageLabel: completionStageLabel,
+  });
   const completionReason = (() => {
     if (summary.buildStatus === 'failed') {
       const candidate = summary.taskLabel?.trim();
@@ -271,12 +294,12 @@ export const useBuildProgressPanelState = (params: {
       if (!failedTaskInfo?.message) {
         return;
       }
-      const key = `${summary.buildStatus}:${completionStageLabel}:${completionTaskTitle ?? ''}:${completionTaskMessage ?? ''}`;
+      const key = `${summary.buildStatus}:${completionFailedStageLabel}:${completionTaskTitle ?? ''}:${completionTaskMessage ?? ''}`;
       if (completionKeyRef.current === key) return;
       completionKeyRef.current = key;
       setCompletionSnapshot({
         status: summary.buildStatus,
-        stageLabel: completionStageLabel,
+        stageLabel: completionFailedStageLabel,
         taskTitle: completionTaskTitle,
         taskMessage: completionTaskMessage,
       });
@@ -287,6 +310,7 @@ export const useBuildProgressPanelState = (params: {
   }, [
     completionReason,
     completionStageLabel,
+    completionFailedStageLabel,
     completionTaskMessage,
     completionTaskTitle,
     failedTaskInfo?.message,

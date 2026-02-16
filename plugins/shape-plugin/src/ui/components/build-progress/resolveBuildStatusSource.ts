@@ -5,6 +5,10 @@ export const resolveBuildStatusSource = (
   runtimeStatus: BuildStatusSource | null,
 ): BuildStatusSource => {
   if (!runtimeStatus) return persistedStatus;
+  const hasPersistedProcessing = persistedStatus === 'processing';
+  if (hasPersistedProcessing && (runtimeStatus === 'completed' || runtimeStatus === 'idle')) {
+    return persistedStatus;
+  }
   const hasPersistedTerminalOrPaused = (
     persistedStatus === 'completed'
     || persistedStatus === 'failed'

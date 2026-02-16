@@ -6,6 +6,7 @@ type Props = {
   leadingIcon?: React.ReactNode;
   statusLabel: string;
   statusColor: 'default' | 'success' | 'error' | 'warning' | 'info';
+  isRunning?: boolean;
   message?: string;
   detailLines?: string[];
   progress?: number;
@@ -19,12 +20,15 @@ export const TaskItem: React.FC<Props> = ({
   leadingIcon,
   statusLabel,
   statusColor,
+  isRunning = false,
   message,
   detailLines,
   progress,
   fallbackProgress,
 }) => {
   const displayMessage = message ?? detailLines?.[0] ?? '';
+  const progressValue = Math.min(100, Math.max(0, progress ?? fallbackProgress));
+  const showRunningOverlay = isRunning && progressValue < 100;
 
   return (
     <Box
@@ -49,11 +53,24 @@ export const TaskItem: React.FC<Props> = ({
           <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
         </Stack>
       </Box>
-      <LinearProgress
-        variant="determinate"
-        value={Math.min(100, Math.max(0, progress ?? fallbackProgress))}
-        color={statusColor === 'default' ? 'primary' : statusColor}
-      />
+      <Box sx={{ position: 'relative' }}>
+        <LinearProgress
+          variant="determinate"
+          value={progressValue}
+          color={statusColor === 'default' ? 'primary' : statusColor}
+        />
+        {showRunningOverlay ? (
+          <LinearProgress
+            variant="indeterminate"
+            color="info"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              opacity: 0.35,
+            }}
+          />
+        ) : null}
+      </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <Tooltip
           title={displayMessage}

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { resolveBuildStatusSource } from '../../../components/build-progress/resolveBuildStatusSource.ts';
 
 describe('resolveBuildStatusSource', () => {
+  it('keeps persisted processing when runtime reports stale completed', () => {
+    expect(resolveBuildStatusSource('processing', 'completed')).toBe('processing');
+  });
+
+  it('keeps persisted processing when runtime reports stale idle', () => {
+    expect(resolveBuildStatusSource('processing', 'idle')).toBe('processing');
+  });
+
   it('uses persisted completed when runtime status is stale processing', () => {
     expect(resolveBuildStatusSource('completed', 'processing')).toBe('completed');
   });
