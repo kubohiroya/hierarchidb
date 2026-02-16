@@ -3,7 +3,6 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import { flushSync } from 'react-dom';
 import { useTranslation } from '../../i18n.js';
 import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
@@ -137,6 +136,7 @@ export const useBuildProgressPanelState = (params: {
   const suspendSuspectControls = useAtomValue(suspendSuspectControlsAtom);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [localStartPending, setLocalStartPending] = useState(false);
+  const localStartPendingRef = useRef(false);
   const [elapsedTickMs, setElapsedTickMs] = useState(() => Date.now());
   const [completionSnapshot, setCompletionSnapshot] = useState<{
     status: BuildStatus;
@@ -549,10 +549,9 @@ export const useBuildProgressPanelState = (params: {
     };
   }, []);
 
-  const setLocalStartPendingImmediate = useCallback((next: boolean) => {
-    flushSync(() => {
-      setLocalStartPending(next);
-    });
+  const updateLocalStartPending = useCallback((next: boolean) => {
+    localStartPendingRef.current = next;
+    setLocalStartPending(next);
   }, []);
 
   const runStartOrResume = useCallback(async () => {
@@ -560,12 +559,12 @@ export const useBuildProgressPanelState = (params: {
     const startHandler = controls.handleStartOrResume;
     logStartResumeTrace('runStartOrResume invoked', {
       nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
-      localStartPending,
+      localStartPending: localStartPendingRef.current,
       controlStartPending: Boolean(controls.startPending),
       hasStartHandler: Boolean(startHandler),
       buildStatus: summary.buildStatus,
     });
-    if (localStartPending) {
+    if (localStartPendingRef.current) {
       logStartResumeTrace('runStartOrResume skipped (already pending)', {
         nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
       });
@@ -577,7 +576,7 @@ export const useBuildProgressPanelState = (params: {
       });
       return;
     }
-    setLocalStartPendingImmediate(true);
+    updateLocalStartPending(true);
     logStartResumeTrace('runStartOrResume pending enabled', {
       nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
     });
@@ -605,7 +604,7 @@ export const useBuildProgressPanelState = (params: {
       throw error;
     } finally {
       clearInterval(waitTimer);
-      setLocalStartPending(false);
+      updateLocalStartPending(false);
       logStartResumeTrace('runStartOrResume pending cleared', {
         nodeId: resolvedNodeId ? String(resolvedNodeId) : null,
         elapsedMs: Math.max(0, Date.now() - requestStartedAt),
@@ -614,9 +613,8 @@ export const useBuildProgressPanelState = (params: {
   }, [
     controls.handleStartOrResume,
     controls.startPending,
-    localStartPending,
     resolvedNodeId,
-    setLocalStartPendingImmediate,
+    updateLocalStartPending,
     summary.buildStatus,
   ]);
 

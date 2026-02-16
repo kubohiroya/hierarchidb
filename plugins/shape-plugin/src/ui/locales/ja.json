@@ -497,6 +497,7 @@
       "prepareCountsStart": "入力集計開始",
       "prepareCountsDone": "入力集計完了",
       "simplifyAttempt": "簡略化 試行{{attempt}} (tolerance={{tolerance}})",
+      "retrySimplifyFeature": "再簡略化 フィーチャー {{featureIndex}} / {{featureTotal}}: 試行 {{attempt}} / {{attemptTotal}} (tolerance={{tolerance}})",
       "simplifyStart": "簡略化開始",
       "simplifyDone": "簡略化完了",
       "simplifyPreprocessStart": "前処理開始",
@@ -510,8 +511,13 @@
       "outputCountsStart": "出力集計開始",
       "encodeStart": "エンコード開始",
       "encodeDone": "エンコード完了",
+      "transformCacheEncodeStart": "Transform キャッシュの FlatGeobuf エンコード開始",
+      "transformCacheEncodeDone": "Transform キャッシュの FlatGeobuf エンコード完了",
       "cachePutStart": "キャッシュ保存開始",
       "cachePutDone": "キャッシュ保存完了"
+    },
+    "taskWarning": {
+      "cachePutSlow": "キャッシュ書き込みが遅延しています（{{elapsedSeconds}}秒）。ビルドは継続します。"
     }
   },
   "build": {

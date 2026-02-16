@@ -1416,16 +1416,19 @@ export const ShapeBuildProgressPanel = ({
               {crashHint}
             </Alert>
           </Snackbar>
-          <Snackbar
-            open={sizeWarningOpen}
-            autoHideDuration={8000}
-            onClose={() => setSizeWarningOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
-              {warningMessage}
-            </Alert>
-          </Snackbar>
+          <Dialog open={sizeWarningOpen} onClose={() => setSizeWarningOpen(false)}>
+            <DialogTitle>{t('stage.warning.title', 'Build warning')}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" color="text.secondary">
+                {warningMessage}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setSizeWarningOpen(false)}>
+                {t('stage.warning.confirm', 'OK')}
+              </Button>
+            </DialogActions>
+          </Dialog>
           {startWarning ? (
             <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
               <DialogTitle>{startWarning.title}</DialogTitle>

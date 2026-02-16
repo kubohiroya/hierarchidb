@@ -497,6 +497,7 @@
       "prepareCountsStart": "Prepare counts start",
       "prepareCountsDone": "Prepare counts done",
       "simplifyAttempt": "Simplify attempt {{attempt}} (tolerance={{tolerance}})",
+      "retrySimplifyFeature": "Retry simplify feature {{featureIndex}}/{{featureTotal}}: attempt {{attempt}} of {{attemptTotal}} (tolerance={{tolerance}})",
       "simplifyStart": "Simplify start",
       "simplifyDone": "Simplify done",
       "simplifyPreprocessStart": "Preprocess start",
@@ -510,8 +511,13 @@
       "outputCountsStart": "Output counts start",
       "encodeStart": "Encode start",
       "encodeDone": "Encode done",
+      "transformCacheEncodeStart": "Transform cache FlatGeobuf encode start",
+      "transformCacheEncodeDone": "Transform cache FlatGeobuf encode done",
       "cachePutStart": "Cache write start",
       "cachePutDone": "Cache write done"
+    },
+    "taskWarning": {
+      "cachePutSlow": "Cache write is slow ({{elapsedSeconds}}s). Build will continue."
     }
   },
   "build": {

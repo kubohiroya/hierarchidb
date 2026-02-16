@@ -1297,9 +1297,7 @@ const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
     });
   }, 5000);
   try {
-    await taskQueue.transaction('rw', taskQueue.tasks, async () => {
-      await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
-    });
+    await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
     console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields done', {
       tag: debugTag,
       nodeId,

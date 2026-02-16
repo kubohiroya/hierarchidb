@@ -55,10 +55,28 @@ const hasStore = (transaction: HookTransaction, storeName: string): boolean => {
   return false;
 };
 
+const reportMetaSyncError = (label: string, error: unknown): void => {
+  console.warn(`[EphemeralDB] failed to sync ${label}`, error);
+};
+
 const fireAndForgetMetaOperation = (operation: () => Promise<unknown>, label: string): void => {
-  void Dexie.ignoreTransaction(operation).catch((error: unknown) => {
-    console.warn(`[EphemeralDB] failed to sync ${label}`, error);
-  });
+  try {
+    void Dexie.ignoreTransaction(operation).catch((error: unknown) => {
+      reportMetaSyncError(label, error);
+    });
+  } catch (error) {
+    reportMetaSyncError(`${label} (ignoreTransaction:sync-throw)`, error);
+    const fallback = () => {
+      void operation().catch((fallbackError: unknown) => {
+        reportMetaSyncError(`${label} (fallback)`, fallbackError);
+      });
+    };
+    if (typeof globalThis.queueMicrotask === 'function') {
+      globalThis.queueMicrotask(fallback);
+    } else {
+      setTimeout(fallback, 0);
+    }
+  }
 };
 
 export class EphemeralDB extends Dexie {

@@ -436,29 +436,27 @@ const putFetchCache = async (params: {
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashFetchArtifact(params.data);
-  await ephemeralDB.transaction('rw', [ephemeralDB.fetchCache, ephemeralDB.fetchCacheMeta], async () => {
-    await ephemeralDB.fetchCache.put({
-      id: recordId,
-      nodeId: params.nodeId,
-      domainType: 'shape',
-      sourceKey: params.sourceKey,
-      countryCode: params.countryCode,
-      adminLevel: params.adminLevel,
-      data: params.data,
-      format: params.format,
-      compression: params.compression,
-      featureCount: params.featureCount,
-      inputFeatureCount: params.inputFeatureCount,
-      bbox: params.bbox,
-      downloadTime: params.downloadTime,
-      size: params.data.byteLength,
-      vertexCount: params.vertexCount,
-      polygonCount: params.polygonCount,
-      inputVertexCount: params.inputVertexCount,
-      inputPolygonCount: params.inputPolygonCount,
-      contentHash,
-      timestamp: Date.now(),
-    });
+  await ephemeralDB.fetchCache.put({
+    id: recordId,
+    nodeId: params.nodeId,
+    domainType: 'shape',
+    sourceKey: params.sourceKey,
+    countryCode: params.countryCode,
+    adminLevel: params.adminLevel,
+    data: params.data,
+    format: params.format,
+    compression: params.compression,
+    featureCount: params.featureCount,
+    inputFeatureCount: params.inputFeatureCount,
+    bbox: params.bbox,
+    downloadTime: params.downloadTime,
+    size: params.data.byteLength,
+    vertexCount: params.vertexCount,
+    polygonCount: params.polygonCount,
+    inputVertexCount: params.inputVertexCount,
+    inputPolygonCount: params.inputPolygonCount,
+    contentHash,
+    timestamp: Date.now(),
   });
   return { id: recordId, contentHash };
 };
@@ -888,13 +886,11 @@ const createFetchHandler = (params: {
           }
           if (data) {
             fetchArtifactHash = hashFetchArtifact(data);
-            await ephemeralDB.transaction('rw', ephemeralDB.fetchCache, async () => {
-              await ephemeralDB.fetchCache.update(existing.id, {
-                data,
-                size: data.byteLength,
-                contentHash: fetchArtifactHash,
-                timestamp: Date.now(),
-              });
+            await ephemeralDB.fetchCache.update(existing.id, {
+              data,
+              size: data.byteLength,
+              contentHash: fetchArtifactHash,
+              timestamp: Date.now(),
             });
           }
         }

@@ -115,37 +115,31 @@ export async function updateTask(
   options?: { allowTerminalStatusTransition?: boolean }
 ): Promise<void> {
   const now = Date.now();
-  try {
-    await db.transaction('rw', db.tasks, async () => {
-      const current = await db.tasks.get(taskId);
-      const currentSequence = typeof current?.sequence === 'number' ? current.sequence : 0;
-      const nextSequence = currentSequence + 1;
-      const currentStatus = current?.status;
-      const nextStatusCandidate = updates.status;
-      const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
-        && !options?.allowTerminalStatusTransition;
-      const blocksStatusRegression = lockedStatus
-        && nextStatusCandidate !== undefined
-        && nextStatusCandidate !== currentStatus;
-      const payload: Partial<StoredTaskRecord> = blocksStatusRegression
-        ? {
-          status: currentStatus,
-          updatedAt: now,
-          sequence: nextSequence,
-        }
-        : {
-          ...updates,
-          status: nextStatusCandidate ?? currentStatus,
-          updatedAt: now,
-          sequence: nextSequence,
-        };
-      await db.tasks.update(taskId, payload);
-      const task = await db.tasks.get(taskId);
-      if (task) emitTaskEvent(task.nodeId, toTaskQueueRecord(task));
-    });
-  } catch (error) {
-    throw error;
-  }
+  const current = await db.tasks.get(taskId);
+  const currentSequence = typeof current?.sequence === 'number' ? current.sequence : 0;
+  const nextSequence = currentSequence + 1;
+  const currentStatus = current?.status;
+  const nextStatusCandidate = updates.status;
+  const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
+    && !options?.allowTerminalStatusTransition;
+  const blocksStatusRegression = lockedStatus
+    && nextStatusCandidate !== undefined
+    && nextStatusCandidate !== currentStatus;
+  const payload: Partial<StoredTaskRecord> = blocksStatusRegression
+    ? {
+      status: currentStatus,
+      updatedAt: now,
+      sequence: nextSequence,
+    }
+    : {
+      ...updates,
+      status: nextStatusCandidate ?? currentStatus,
+      updatedAt: now,
+      sequence: nextSequence,
+    };
+  await db.tasks.update(taskId, payload);
+  const task = await db.tasks.get(taskId);
+  if (task) emitTaskEvent(task.nodeId, toTaskQueueRecord(task));
 }
 
 export async function listTasks(
