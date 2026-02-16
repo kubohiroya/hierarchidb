@@ -33,6 +33,8 @@ export type ShapeTransformByBandTaskInput = {
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
+  inputVertexCount?: number;
+  inputPolygonCount?: number;
   domainType: 'shape';
   sourceKey: string;
   stagePriority?: number;
@@ -497,6 +499,8 @@ export const buildTransformByBandTasks = async (
             bandIndex: band.bandIndex,
             bandMinZoom: band.zMin,
             bandMaxZoom: band.zMax,
+            inputVertexCount: buffer.vertexCount ?? buffer.inputVertexCount,
+            inputPolygonCount: buffer.polygonCount ?? buffer.inputPolygonCount,
             domainType: 'shape',
             sourceKey: buffer.sourceKey,
             stagePriority,

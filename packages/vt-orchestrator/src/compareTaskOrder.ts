@@ -74,6 +74,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       status: 'failed',
       errorMessage,
       message: errorMessage,
+      display: undefined,
       completedAt: Date.now(),
     });
   };

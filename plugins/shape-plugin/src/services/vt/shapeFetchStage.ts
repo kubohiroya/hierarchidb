@@ -4,11 +4,12 @@ import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngin
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import {
-  type VtTaskQueueDb,
+  VtTaskQueueDb,
   deleteTasksByIds,
   listTasksByStage,
   putTasks,
   runStageTasks,
+  updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
@@ -777,7 +778,41 @@ const createFetchHandler = (params: {
     throw new Error(`[shape-fetch] Unsupported data source: ${params.dataSource}`);
   }
   const strategy = factory.create(strategyId);
+  const taskQueue = new VtTaskQueueDb();
   const retryConfig = buildRetryConfig(params.buildConfig);
+  const invalidGeometryFilter = params.buildConfig.fetchConfig.invalidGeometryFilter;
+  const hasInvalidGeometryFilter = Boolean(
+    invalidGeometryFilter
+    && (
+      invalidGeometryFilter.area
+      || invalidGeometryFilter.lineLength
+      || invalidGeometryFilter.maxEdgeLength
+      || invalidGeometryFilter.selfIntersection
+      || invalidGeometryFilter.triangleRingRatio
+    ),
+  );
+  const buildCountPolygonsVerticesMessage = (featureIndex: number, featureTotal: number): string => (
+    `Count polygons/vertices of feature ${featureIndex} of ${featureTotal}`
+  );
+  const buildInvalidGeometryCheckMessage = (check: string, polygonIndex: number, polygonTotal: number): string => (
+    `Check ${check} of polygon ${polygonIndex} of ${polygonTotal}`
+  );
+  const createTaskMessageReporter = (taskId: string) => {
+    let lastUpdatedAt = 0;
+    let lastMessage = '';
+    return async (message: string, force = false): Promise<void> => {
+      if (!force && message === lastMessage) return;
+      const now = Date.now();
+      if (!force && now - lastUpdatedAt < 120) return;
+      lastUpdatedAt = now;
+      lastMessage = message;
+      try {
+        await updateTask(taskQueue, taskId, { message });
+      } catch (error) {
+        console.warn('[ShapeFetch] failed to update task message', { taskId, message, error });
+      }
+    };
+  };
   let metadataLookupPromise: Promise<Map<string, CountryMetadata>> | null = null;
   const getMetadataLookup = async (): Promise<Map<string, CountryMetadata>> => {
     if (!metadataLookupPromise) {
@@ -793,6 +828,24 @@ const createFetchHandler = (params: {
     if (!input) {
       return { status: 'failed', errorMessage: 'fetch task input is missing' };
     }
+
+    const reportTaskMessage = createTaskMessageReporter(task.taskId);
+    const onFeatureCountProgress = async (featureIndex: number, featureTotal: number): Promise<void> => {
+      await reportTaskMessage(
+        buildCountPolygonsVerticesMessage(featureIndex, featureTotal),
+        featureTotal > 0 && featureIndex >= featureTotal,
+      );
+    };
+    const onInvalidGeometryCheck = async (progress: {
+      check: string;
+      polygonIndex: number;
+      polygonTotal: number;
+    }): Promise<void> => {
+      await reportTaskMessage(
+        buildInvalidGeometryCheckMessage(progress.check, progress.polygonIndex, progress.polygonTotal),
+        progress.polygonTotal > 0 && progress.polygonIndex >= progress.polygonTotal,
+      );
+    };
 
     assertNotAborted(params.abortSignal);
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
@@ -906,7 +959,9 @@ const createFetchHandler = (params: {
         }
       }
       baseCollection = normalizeGeojsonCollection(baseCollection);
-      const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine);
+      const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine, {
+        onFeatureCountProgress,
+      });
       const filteredCollection = Number.isFinite(filterZoom)
         ? await filterFetchCollectionByZoom(baseCollection, {
           zTarget: filterZoom!,
@@ -914,6 +969,8 @@ const createFetchHandler = (params: {
           excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
           minRingVertices: params.buildConfig.transformConfig.minRingVertices,
           geometryEngine,
+          invalidGeometryFilter,
+          onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
         })
         : baseCollection;
 
@@ -952,7 +1009,9 @@ const createFetchHandler = (params: {
       }
 
       assertNotAborted(params.abortSignal);
-      const outputSummary = await summarizeFeatureCollection(collectionWithOrigin, geometryEngine);
+      const outputSummary = await summarizeFeatureCollection(collectionWithOrigin, geometryEngine, {
+        onFeatureCountProgress,
+      });
       const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
@@ -1020,7 +1079,9 @@ const createFetchHandler = (params: {
       collection = mergeGeojsonCollection(collection);
     }
     collection = normalizeGeojsonCollection(collection);
-    const inputSummary = await summarizeFeatureCollection(collection, geometryEngine);
+    const inputSummary = await summarizeFeatureCollection(collection, geometryEngine, {
+      onFeatureCountProgress,
+    });
     const filteredCollection = Number.isFinite(filterZoom)
       ? await filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
@@ -1028,6 +1089,8 @@ const createFetchHandler = (params: {
         excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
         minRingVertices: params.buildConfig.transformConfig.minRingVertices,
         geometryEngine,
+        invalidGeometryFilter,
+        onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
       })
       : collection;
     if (filteredCollection.features.length === 0) {
@@ -1064,7 +1127,9 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine);
+    const { featureCount, vertexCount, polygonCount, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
+      onFeatureCountProgress,
+    });
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const fetchCacheRecord = await putFetchCache({

@@ -178,6 +178,8 @@ const MVT_EXTENT = 4096;
 const MAX_VERTICES_PER_FEATURE = 65535;
 const TRANSFORM_CACHE_WRITE_SLOW_LOG_MS = 20_000;
 const DEFAULT_SIMPLIFY_ALGORITHM: TransformSimplifyAlgorithm = 'topojson';
+const TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS = 2_000;
+const BASELINE_METRICS_PROGRESS_CHUNK_SIZE = 200;
 
 const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): TransformSimplifyAlgorithm => (
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
@@ -776,6 +778,82 @@ const collectCollectionAnomalyMetrics = (
       maxTriangleEdgeToBBoxRatio = triangleMetrics.maxTriangleEdgeToBBoxRatio;
     }
   }
+  const triangleRingSharePercent = polygonCount > 0
+    ? triangleRingCount / polygonCount * 100
+    : 0;
+  return {
+    featureCount: collection.features.length,
+    vertexCount,
+    polygonCount,
+    lineCount,
+    totalArea,
+    totalLength,
+    maxEdgeLength,
+    selfIntersectionCount,
+    triangleRingCount,
+    triangleRingSharePercent,
+    maxTriangleEdgeToBBoxRatio,
+  };
+};
+
+const yieldToEventLoop = async (): Promise<void> => {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
+};
+
+const collectCollectionAnomalyMetricsWithProgress = async (params: {
+  collection: FeatureCollection;
+  geometryOps: GeometryOps;
+  chunkSize?: number;
+  onProgress?: (progress: { processed: number; total: number }) => Promise<void> | void;
+}): Promise<CollectionAnomalyMetrics> => {
+  const { collection, geometryOps } = params;
+  const chunkSize = Math.max(1, Math.floor(params.chunkSize ?? BASELINE_METRICS_PROGRESS_CHUNK_SIZE));
+  let vertexCount = 0;
+  let polygonCount = 0;
+  let lineCount = 0;
+  let totalArea = 0;
+  let totalLength = 0;
+  let maxEdgeLength = 0;
+  let selfIntersectionCount = 0;
+  let triangleRingCount = 0;
+  let maxTriangleEdgeToBBoxRatio = 0;
+  const total = collection.features.length;
+  let processed = 0;
+
+  for (const feature of collection.features) {
+    processed += 1;
+    if (feature?.geometry) {
+      const geometry = feature.geometry;
+      vertexCount += countVerticesFromGeometry(geometry);
+      polygonCount += countPolygonsFromGeometry(geometry);
+      lineCount += countLinesFromGeometry(geometry);
+      if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+        totalArea += Math.abs(geometryOps.area(feature as Feature<Geometry>));
+        selfIntersectionCount += geometryOps.countSelfIntersections(geometry);
+      }
+      const lineMetrics = collectGeometryLengthMetrics(geometry);
+      totalLength += lineMetrics.total;
+      if (lineMetrics.max > maxEdgeLength) {
+        maxEdgeLength = lineMetrics.max;
+      }
+      const triangleMetrics = collectTriangleRingMetricsFromGeometry(geometry);
+      triangleRingCount += triangleMetrics.triangleRingCount;
+      if (triangleMetrics.maxTriangleEdgeToBBoxRatio > maxTriangleEdgeToBBoxRatio) {
+        maxTriangleEdgeToBBoxRatio = triangleMetrics.maxTriangleEdgeToBBoxRatio;
+      }
+    }
+    if (params.onProgress && (processed === total || processed % chunkSize === 0)) {
+      await params.onProgress({ processed, total });
+      await yieldToEventLoop();
+    }
+  }
+
+  if (params.onProgress && total === 0) {
+    await params.onProgress({ processed: 0, total: 0 });
+  }
+
   const triangleRingSharePercent = polygonCount > 0
     ? triangleRingCount / polygonCount * 100
     : 0;
@@ -2276,10 +2354,25 @@ export const createTransformByBandHandler = (
       console.warn('[transform] failed to report polygon progress', error);
     }
   };
-  const updateTaskPhase = async (taskId: string, phase: string, progress?: number): Promise<void> => {
+  const updateTaskPhase = async (
+    taskId: string,
+    phase: string,
+    progress?: number,
+    options?: {
+      key?: string;
+      params?: TaskDisplayPayload['params'];
+    },
+  ): Promise<void> => {
     try {
+      const display = resolvePhaseDisplay(phase);
+      if (options?.key) {
+        display.key = options.key;
+      }
+      if (options?.params) {
+        display.params = options.params;
+      }
       await updateTask(taskQueue, taskId, {
-        display: resolvePhaseDisplay(phase),
+        display,
         ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
       });
     } catch (error) {
@@ -2748,15 +2841,34 @@ export const createTransformByBandHandler = (
       });
       await updateTaskPhase(taskId, 'decode:start', taskProgressRange.decodeStart);
       assertNotAborted(abortSignal);
-      let collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
-        buffer: fetchCache.data,
-        format: fetchCache.format,
-        compression: fetchCache.compression,
-        zTarget: band.zMax,
-        toleranceK: baseTolerance,
-        quantize: transformConfig.quantize,
-        simplifyAlgorithm,
-      }));
+      const decodeStartedAt = Date.now();
+      let decodeProgressActive = true;
+      const publishDecodeProgress = async (): Promise<void> => {
+        if (!decodeProgressActive) return;
+        const elapsedSeconds = Math.max(1, Math.floor((Date.now() - decodeStartedAt) / 1000));
+        await updateTaskPhase(taskId, 'decode:progress', taskProgressRange.decodeStart, {
+          key: 'stage.taskPhase.decodeProgress',
+          params: { elapsedSeconds },
+        });
+      };
+      const decodeProgressTimer = setInterval(() => {
+        void publishDecodeProgress();
+      }, TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS);
+      let collection: FeatureCollection | null = null;
+      try {
+        collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
+          buffer: fetchCache.data,
+          format: fetchCache.format,
+          compression: fetchCache.compression,
+          zTarget: band.zMax,
+          toleranceK: baseTolerance,
+          quantize: transformConfig.quantize,
+          simplifyAlgorithm,
+        }));
+      } finally {
+        decodeProgressActive = false;
+        clearInterval(decodeProgressTimer);
+      }
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
@@ -2774,6 +2886,8 @@ export const createTransformByBandHandler = (
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
 
       if (featureIdAllowlist && featureIdAllowlist.size > 0) {
+        stageLabel = 'recycling-filter';
+        await updateTaskPhase(taskId, 'recycling-filter:start', taskProgressRange.prepareStart);
         const hasFeatureIds = collection.features.some((feature) => {
           const props = feature?.properties as Record<string, unknown> | undefined;
           return typeof props?.__hdbFeatureId === 'string' && props.__hdbFeatureId.length > 0;
@@ -2791,6 +2905,7 @@ export const createTransformByBandHandler = (
             return featureId ? featureIdAllowlist.has(featureId) : false;
           });
           if (filteredFeatures.length === 0) {
+            await updateTaskPhase(taskId, 'recycling-filter:done', taskProgressRange.prepareStart);
             await reportPolygonProgress(taskId, 0, 0);
             return {
               status: 'completed',
@@ -2808,6 +2923,7 @@ export const createTransformByBandHandler = (
           }
           collection = { ...collection, features: filteredFeatures };
         }
+        await updateTaskPhase(taskId, 'recycling-filter:done', taskProgressRange.prepareStart);
       }
       workingCollection = collection;
       if (intakeGuardConfig.validationLevel !== 'off') {
@@ -2888,36 +3004,80 @@ export const createTransformByBandHandler = (
       }
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
-      stageLabel = 'counts:input';
-      await updateTaskPhase(taskId, 'prepare:counts:start', taskProgressRange.prepareStart);
-      const inputStats = await runStageWithLabel('counts:input', () => {
-        const polygonCounts = inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry));
-        const vertexCount = inputCollection.features.reduce(
-          (sum, feature) => sum + countVerticesFromGeometry(feature?.geometry ?? null),
+      const readNonNegativeCount = (value: unknown): number | null => {
+        if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+        if (value < 0) return null;
+        return Math.round(value);
+      };
+      const readFeaturePrecomputedCount = (
+        feature: Feature | null | undefined,
+        key: '__hdbFetchPolygonCount' | '__hdbFetchVertexCount',
+      ): number => {
+        const properties = feature?.properties as Record<string, unknown> | undefined;
+        const raw = properties?.[key];
+        return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : 0;
+      };
+      inputPolygonCount = readNonNegativeCount(input.inputPolygonCount)
+        ?? readNonNegativeCount(fetchCache.polygonCount)
+        ?? 0;
+      inputVertexCount = readNonNegativeCount(input.inputVertexCount)
+        ?? readNonNegativeCount(fetchCache.vertexCount)
+        ?? 0;
+      if (featureIdAllowlist && featureIdAllowlist.size > 0) {
+        const allowlistPolygonCount = inputCollection.features.reduce(
+          (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchPolygonCount'),
           0,
         );
-        return { polygonCounts, vertexCount };
-      });
-      const inputPolygonCounts = inputStats.polygonCounts;
-      inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
-      inputVertexCount = inputStats.vertexCount;
-      baselineMetrics = collectCollectionAnomalyMetrics(inputCollection, geometryOps);
-      if (input.domainType === 'route') {
-        anomalyProfile = 'line';
-      } else if (baselineMetrics.lineCount > 0 && baselineMetrics.polygonCount === 0) {
-        anomalyProfile = 'line';
-      } else {
-        anomalyProfile = 'polygon';
+        const allowlistVertexCount = inputCollection.features.reduce(
+          (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchVertexCount'),
+          0,
+        );
+        inputPolygonCount = allowlistPolygonCount > 0 ? allowlistPolygonCount : inputPolygonCount;
+        inputVertexCount = allowlistVertexCount > 0 ? allowlistVertexCount : inputVertexCount;
       }
-      emitTransformTrace(traceLogLevel, 'verbose', 'baseline-metrics', {
-        sessionId: String(task.nodeId),
-        taskId,
-        stage: 'prepare',
-        profile: anomalyProfile,
-        metrics: baselineMetrics,
-      });
-      await updateTaskPhase(taskId, 'prepare:counts:done', taskProgressRange.prepareEnd);
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
+      const shouldCollectBaselineMetrics = anomalyDetectionConfig.enabled || Boolean(vtOutputQualityGuard?.enabled);
+      if (shouldCollectBaselineMetrics) {
+        stageLabel = 'baseline-metrics';
+        await updateTaskPhase(taskId, 'baseline-metrics:start', taskProgressRange.prepareStart);
+        const baselineMetricsStartedAt = Date.now();
+        let lastBaselineProgressAt = 0;
+        baselineMetrics = await collectCollectionAnomalyMetricsWithProgress({
+          collection: inputCollection,
+          geometryOps,
+          onProgress: async ({ processed, total }) => {
+            const now = Date.now();
+            if (processed < total && now - lastBaselineProgressAt < TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS) {
+              return;
+            }
+            lastBaselineProgressAt = now;
+            const elapsedSeconds = Math.max(1, Math.floor((now - baselineMetricsStartedAt) / 1000));
+            await updateTaskPhase(taskId, 'baseline-metrics:progress', taskProgressRange.prepareStart, {
+              key: 'stage.taskPhase.baselineMetricsProgress',
+              params: {
+                elapsedSeconds,
+                processed,
+                total,
+              },
+            });
+          },
+        });
+        if (input.domainType === 'route') {
+          anomalyProfile = 'line';
+        } else if (baselineMetrics.lineCount > 0 && baselineMetrics.polygonCount === 0) {
+          anomalyProfile = 'line';
+        } else {
+          anomalyProfile = 'polygon';
+        }
+        emitTransformTrace(traceLogLevel, 'verbose', 'baseline-metrics', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'prepare',
+          profile: anomalyProfile,
+          metrics: baselineMetrics,
+        });
+        await updateTaskPhase(taskId, 'baseline-metrics:done', taskProgressRange.prepareEnd);
+      }
       if (input.adminLevel === 0 && band.zMax >= 6) {
         const samples = inputCollection.features.slice(0, 5).map((feature, index) => {
           const props = feature?.properties as Record<string, unknown> | undefined;

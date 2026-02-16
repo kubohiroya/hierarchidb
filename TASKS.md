@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #335 / `codex/fix/shape/move-transform-prepare-counts-to-fetch` / start: 2026-02-16 19:54 JST
 - #332 / `codex/feat/shape/fetch-invalid-geometry-filters` / start: 2026-02-16 16:12 JST
 - #330 / `codex/feat/ui/maximized-window-resize` / start: 2026-02-16 15:19 JST
 - #325 / `codex/fix/shape/tile-boundary-anomaly-325` / start: 2026-02-16 12:50 JST

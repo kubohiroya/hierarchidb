@@ -62,7 +62,7 @@ export const DEFAULT_BUILD_CONFIG = {
     },
     deleteOnComplete: false,
     tolerance: 0.2,
-    retryToleranceStep: 0.01,
+    retryToleranceStep: 0.5,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {
