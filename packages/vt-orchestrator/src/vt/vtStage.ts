@@ -1108,7 +1108,7 @@ const buildLayerIndexes = async (
       buffer: context.vtConfig.bufferSize,
       tolerance: context.vtConfig.tolerance,
       promoteId: context.vtConfig.promoteId,
-      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+      indexMaxPoints: 65536,
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
     if (debugContext && layerStats) {
@@ -1527,7 +1527,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                     buffer: context.vtConfig.bufferSize,
                     tolerance: context.vtConfig.tolerance,
                     promoteId: context.vtConfig.promoteId,
-                    indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                    indexMaxPoints: 65536,
                   }) as GeojsonVtIndex;
                   const tile = collectLayerForTile(index, layerName, z, x, y);
                   if (!tile) {
@@ -1682,7 +1682,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       buffer: context.vtConfig.bufferSize,
                       tolerance: context.vtConfig.tolerance,
                       promoteId: context.vtConfig.promoteId,
-                      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                      indexMaxPoints: 65536,
                     }) as GeojsonVtIndex;
                     const tile = collectLayerForTile(index, layerName, z, x, y);
                     if (!tile) continue;

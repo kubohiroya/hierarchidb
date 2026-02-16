@@ -7,6 +7,7 @@ import {
   Radio,
   RadioGroup,
   Stack,
+  TextField,
   Typography,
   Tooltip,
 } from '@mui/material';
@@ -29,6 +30,9 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
+  const simplifyTolerance = Number.isFinite(baseTransformConfig.tolerance)
+    ? baseTransformConfig.tolerance
+    : 0.2;
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
@@ -93,6 +97,29 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
               />
             </RadioGroup>
           </FormControl>
+          <TextField
+            fullWidth
+            size="small"
+            type="number"
+            label={t('processing.transform.tolerance.label', 'Simplify tolerance')}
+            value={simplifyTolerance}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (!Number.isFinite(value)) return;
+              update({
+                transformConfig: {
+                  ...baseTransformConfig,
+                  tolerance: Math.max(0, value),
+                },
+              });
+            }}
+            helperText={t(
+              'processing.transform.tolerance.help',
+              'Lower values reduce shape collapse and self-intersection risk; higher values simplify more aggressively.',
+            )}
+            inputProps={{ min: 0, step: 0.01 }}
+            disabled={disabled}
+          />
         </Stack>
       </AccordionDetails>
     </Accordion>
