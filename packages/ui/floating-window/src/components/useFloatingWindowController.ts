@@ -219,9 +219,35 @@ export function useFloatingWindowController(
     onRequestFocus?.();
   }, [onRequestFocus]);
 
+  const exitFullscreenForInteraction = useCallback((): WindowState => {
+    const current = stateRef.current;
+    if (!current.isFullscreen) {
+      return current;
+    }
+
+    const restored = normalStateRef.current ?? { position: current.position, size: current.size };
+    const bounds = resolveBounds();
+    const next: WindowState = {
+      ...current,
+      isFullscreen: false,
+      isMinimized: false,
+      position: {
+        x: clamp(restored.position.x, bounds.minX, bounds.maxX),
+        y: clamp(restored.position.y, bounds.minY, bounds.maxY),
+      },
+      size: {
+        width: Math.max(minWidth, Math.min(restored.size.width, effectiveMaxWidth)),
+        height: Math.max(minHeight, Math.min(restored.size.height, effectiveMaxHeight)),
+      },
+    };
+
+    stateRef.current = next;
+    setState(next);
+    return next;
+  }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds]);
+
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (!draggable || event.button !== 0) return;
-    if (state.isFullscreen) return;
 
     const target = event.target as HTMLElement;
     if (!target.closest('.title-bar')) return;
@@ -231,38 +257,40 @@ export function useFloatingWindowController(
       return;
     }
 
+    const interactionState = exitFullscreenForInteraction();
     isDragging.current = true;
     setInteractionActive(true);
     setOverlayActive(true);
     bringToFront();
     dragStart.current = {
-      x: event.clientX - stateRef.current.position.x,
-      y: event.clientY - stateRef.current.position.y,
+      x: event.clientX - interactionState.position.x,
+      y: event.clientY - interactionState.position.y,
     };
     event.preventDefault();
-  }, [bringToFront, draggable, setInteractionActive, state.isFullscreen]);
+  }, [bringToFront, draggable, exitFullscreenForInteraction, setInteractionActive]);
 
   const handleResizeMouseDown = useCallback((direction: string) => (event: React.MouseEvent) => {
     if (!resizable || event.button !== 0) return;
-    if (state.isMinimized || state.isFullscreen) return;
+    if (stateRef.current.isMinimized) return;
 
+    const interactionState = exitFullscreenForInteraction();
     isResizing.current = true;
     setInteractionActive(true);
     setOverlayActive(true);
     bringToFront();
     resizeDirection.current = direction;
     resizeStart.current = {
-      width: stateRef.current.size.width,
-      height: stateRef.current.size.height,
+      width: interactionState.size.width,
+      height: interactionState.size.height,
       x: event.clientX,
       y: event.clientY,
-      positionX: stateRef.current.position.x,
-      positionY: stateRef.current.position.y,
+      positionX: interactionState.position.x,
+      positionY: interactionState.position.y,
     };
 
     event.preventDefault();
     event.stopPropagation();
-  }, [bringToFront, resizable, setInteractionActive, state.isFullscreen, state.isMinimized]);
+  }, [bringToFront, exitFullscreenForInteraction, resizable, setInteractionActive]);
 
   const interactionEnabled = state.isVisible;
   useEffect(() => {
