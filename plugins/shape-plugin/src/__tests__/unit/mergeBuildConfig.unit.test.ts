@@ -97,10 +97,19 @@ describe('mergeBuildConfig', () => {
         executionLogLevel: 'verbose',
         anomalyDetection: {
           enabled: true,
+          scoreThreshold: 1.8,
           maxEdgeLengthRatio: 6,
           maxAreaDriftPercent: 15,
           maxSelfIntersectionCount: 0,
           maxLineLengthDriftPercent: 20,
+          maxVertexDriftPercent: 18,
+          geojson: {
+            maxTriangleShareDriftPercent: 4,
+            maxTriangleEdgeToBBoxRatio: 1.2,
+          },
+          topojson: {
+            minSharedArcRatioPercent: 14,
+          },
         },
         anomalyRetry: {
           enabled: true,
@@ -122,6 +131,9 @@ describe('mergeBuildConfig', () => {
 
     expect(merged.fetchConfig.geometryIntakeGuard?.validationLevel).toBe('strict');
     expect(merged.transformConfig.executionLogLevel).toBe('verbose');
+    expect(merged.transformConfig.anomalyDetection?.scoreThreshold).toBe(1.8);
+    expect(merged.transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent).toBe(4);
+    expect(merged.transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent).toBe(14);
     expect(merged.transformConfig.anomalyRetry?.fallbackMode).toBe('switch_algorithm');
     expect(merged.vtConfig.outputQualityGuard?.enablePreviewOverlay).toBe(true);
   });

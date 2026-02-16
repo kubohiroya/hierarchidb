@@ -90,12 +90,25 @@ export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
 export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
 export type TransformFallbackMode = 'switch_algorithm' | 'disable_simplify' | 'best_score';
 
+export type TransformAnomalyGeojsonConfig = {
+  maxTriangleShareDriftPercent: number;
+  maxTriangleEdgeToBBoxRatio: number;
+};
+
+export type TransformAnomalyTopojsonConfig = {
+  minSharedArcRatioPercent: number;
+};
+
 export type TransformAnomalyDetectionConfig = {
   enabled: boolean;
+  scoreThreshold: number;
   maxEdgeLengthRatio: number;
   maxAreaDriftPercent: number;
   maxSelfIntersectionCount: number;
   maxLineLengthDriftPercent: number;
+  maxVertexDriftPercent: number;
+  geojson?: TransformAnomalyGeojsonConfig;
+  topojson?: TransformAnomalyTopojsonConfig;
 };
 
 export type TransformAnomalyRetryConfig = {

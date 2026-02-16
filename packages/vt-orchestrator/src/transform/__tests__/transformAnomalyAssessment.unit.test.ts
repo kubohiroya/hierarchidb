@@ -39,6 +39,9 @@ describe('assessAnomalyRisk', () => {
       totalLength: 500,
       maxEdgeLength: 10,
       selfIntersectionCount: 0,
+      triangleRingCount: 0,
+      triangleRingSharePercent: 0,
+      maxTriangleEdgeToBBoxRatio: 0,
     };
     const candidate = {
       ...baseline,
@@ -56,6 +59,14 @@ describe('assessAnomalyRisk', () => {
         maxAreaDriftPercent: 20,
         maxSelfIntersectionCount: 0,
         maxLineLengthDriftPercent: 50,
+        maxVertexDriftPercent: 30,
+        geojson: {
+          maxTriangleShareDriftPercent: 2,
+          maxTriangleEdgeToBBoxRatio: 1.15,
+        },
+        topojson: {
+          minSharedArcRatioPercent: 10,
+        },
       },
     });
 
@@ -75,6 +86,9 @@ describe('assessAnomalyRisk', () => {
       totalLength: 100,
       maxEdgeLength: 5,
       selfIntersectionCount: 0,
+      triangleRingCount: 0,
+      triangleRingSharePercent: 0,
+      maxTriangleEdgeToBBoxRatio: 0,
     };
     const candidate = {
       ...baseline,
@@ -93,6 +107,14 @@ describe('assessAnomalyRisk', () => {
         maxAreaDriftPercent: 1,
         maxSelfIntersectionCount: 0,
         maxLineLengthDriftPercent: 30,
+        maxVertexDriftPercent: 35,
+        geojson: {
+          maxTriangleShareDriftPercent: 2,
+          maxTriangleEdgeToBBoxRatio: 1.15,
+        },
+        topojson: {
+          minSharedArcRatioPercent: 10,
+        },
       },
     });
 
@@ -100,6 +122,94 @@ describe('assessAnomalyRisk', () => {
     expect(assessed.reasons).toContain('lineLengthDriftPercent>30');
     expect(assessed.reasons.some((reason) => reason.startsWith('areaDriftPercent'))).toBe(false);
     expect(assessed.reasons.some((reason) => reason.startsWith('selfIntersectionCount'))).toBe(false);
+  });
+
+  it('detects geojson triangle drift anomaly using bbox-relative edge ratio', () => {
+    const baseline = {
+      featureCount: 8,
+      vertexCount: 1000,
+      polygonCount: 8,
+      lineCount: 0,
+      totalArea: 120,
+      totalLength: 480,
+      maxEdgeLength: 12,
+      selfIntersectionCount: 0,
+      triangleRingCount: 0,
+      triangleRingSharePercent: 0,
+      maxTriangleEdgeToBBoxRatio: 0.9,
+    };
+    const candidate = {
+      ...baseline,
+      triangleRingCount: 2,
+      triangleRingSharePercent: 25,
+      maxTriangleEdgeToBBoxRatio: 1.4,
+    };
+    const assessed = assessAnomalyRisk({
+      profile: 'polygon',
+      baseline,
+      candidate,
+      thresholds: {
+        scoreThreshold: 0.75,
+        maxEdgeLengthRatio: 100,
+        maxAreaDriftPercent: 100,
+        maxSelfIntersectionCount: 100,
+        maxLineLengthDriftPercent: 100,
+        maxVertexDriftPercent: 100,
+        geojson: {
+          maxTriangleShareDriftPercent: 5,
+          maxTriangleEdgeToBBoxRatio: 1.1,
+        },
+        topojson: {
+          minSharedArcRatioPercent: 5,
+        },
+      },
+    });
+    expect(assessed.isAnomalous).toBe(true);
+    expect(assessed.reasons.some((reason) => reason.includes('triangleShareDriftPercent'))).toBe(true);
+  });
+
+  it('detects topojson shared-arc continuity anomaly', () => {
+    const baseline = {
+      featureCount: 8,
+      vertexCount: 1000,
+      polygonCount: 8,
+      lineCount: 0,
+      totalArea: 120,
+      totalLength: 480,
+      maxEdgeLength: 12,
+      selfIntersectionCount: 0,
+      triangleRingCount: 0,
+      triangleRingSharePercent: 0,
+      maxTriangleEdgeToBBoxRatio: 0.9,
+    };
+    const candidate = {
+      ...baseline,
+    };
+    const assessed = assessAnomalyRisk({
+      profile: 'polygon',
+      baseline,
+      candidate,
+      thresholds: {
+        scoreThreshold: 0.75,
+        maxEdgeLengthRatio: 100,
+        maxAreaDriftPercent: 100,
+        maxSelfIntersectionCount: 100,
+        maxLineLengthDriftPercent: 100,
+        maxVertexDriftPercent: 100,
+        geojson: {
+          maxTriangleShareDriftPercent: 10,
+          maxTriangleEdgeToBBoxRatio: 2,
+        },
+        topojson: {
+          minSharedArcRatioPercent: 25,
+        },
+      },
+      diagnostics: {
+        topoSharedArcRatioPercent: 5,
+      },
+    });
+    expect(assessed.isAnomalous).toBe(true);
+    expect(assessed.reasons).toContain('topoSharedArcRatioPercent<25');
   });
 });
 
