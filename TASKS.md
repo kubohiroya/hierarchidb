@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #330 / `codex/feat/ui/maximized-window-resize` / start: 2026-02-16 15:19 JST
 - #323 / `codex/feat/shape/vt-anomaly-detection-params-323` / start: 2026-02-16 10:40 JST
 - #320 / `codex/fix/shape/intake-guard-stall-preview-errors` / start: 2026-02-16 09:18 JST
 - #318 / `codex/feat/shape/step4-anomaly-guard-controls` / start: 2026-02-16 08:40 JST
@@ -106,6 +107,10 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-16 15:23 JST #330 `packages/ui/dialog/src/headless/usePluginDialogFrame.ts` で `allowResizeHandles` 判定を `displayMode !== 'full-screen'` に変更し、`maximize` 中でも端ドラッグによるリサイズ開始を可能化。`packages/ui/floating-window/src/components/useFloatingWindowController.ts` で `exitFullscreenForInteraction` を追加し、`isFullscreen` 状態でタイトルバー/リサイズハンドル操作を開始した際に通常モードへ戻して、そのままドラッグ/リサイズ継続できるよう修正。
+- blocked: 2026-02-16 15:23 JST #330 `pnpm -w turbo run test --filter @hierarchidb/ui-dialog` は差分外既知失敗（`node_modules/@hierarchidb/tree-api/node_modules/comlink/tests/*.test.js` が `/base/dist/esm/comlink.mjs` を解決できず `vite:import-analysis` で失敗）により exit 1。
+- update: 2026-02-16 15:23 JST #330 検証結果: `pnpm -w turbo run build --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-floating-window` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-floating-window` exit 0、`pnpm -w turbo run test --filter @hierarchidb/ui-dialog -- --run src/components/__tests__/CommonDialogTitle.test.tsx src/utils/__tests__/dialogSurfaceColor.test.ts` exit 0。
+- start: 2026-02-16 15:19 JST #330 を起票し（https://github.com/kubohiroya/hierarchidb/issues/330）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/ui/maximized-window-resize` を作成して着手。
 - update: 2026-02-16 10:56 JST #323 作業を専用worktree `/Users/hiroya/WebstormProjects/hierarchidb-issue-323-shape-anomaly-params` へ再配置し、差分を再生。`packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の型安全化（triangle ring座標のタプル化と index guard）と関連テスト調整を実施。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/ui-map` exit 0、`pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/ui-map` exit 0、`pnpm exec vitest run packages/vt-orchestrator/src/transform/__tests__/transformAnomalyAssessment.unit.test.ts plugins/shape-plugin/src/__tests__/unit/mergeBuildConfig.unit.test.ts packages/vt-orchestrator/src/vt/__tests__/vtStage.unit.test.ts` exit 0。
 - start: 2026-02-16 10:40 JST #323 を起票し（https://github.com/kubohiroya/hierarchidb/issues/323）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/shape/vt-anomaly-detection-params-323` を作成して着手。
 - update: 2026-02-16 09:44 JST #320 ズーム帯サマリーアイコン変更を shape 専用化するため、`@hierarchidb/ui-accordion-config` の `ZoomBandConfigSection` に `summaryIcon` prop を追加し、`plugins/shape-plugin/src/ui/components/build-config/ZoomBandConfigSection.tsx` から `Search` アイコンを注入する構成へ調整（route 側は既定 `Settings` を維持）。検証: `pnpm -w turbo run build --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0。
