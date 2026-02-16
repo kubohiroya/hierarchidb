@@ -1,20 +1,20 @@
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   FormControl,
   FormControlLabel,
   MenuItem,
+  Paper,
   Select,
+  Slider,
   Stack,
   Switch,
-  TextField,
   Typography,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   Layers as LayersIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
+import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../common/types/index.js';
@@ -28,6 +28,7 @@ type Props = {
 export const VtOutputQualityGuardCard: React.FC<Props> = ({ config, onChange, disabled }) => {
   const { t } = useTranslation();
   const guard = config.vtConfig.outputQualityGuard;
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
   const resolvedGuard = {
     enabled: guard?.enabled ?? false,
     minZoom: guard?.minZoom ?? 0,
@@ -47,99 +48,108 @@ export const VtOutputQualityGuardCard: React.FC<Props> = ({ config, onChange, di
       },
     }));
   };
+  const zoomRange: [number, number] = [
+    Math.max(0, Math.min(resolvedGuard.minZoom, resolvedGuard.maxZoom)),
+    Math.min(22, Math.max(resolvedGuard.minZoom, resolvedGuard.maxZoom)),
+  ];
 
   return (
-    <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <LayersIcon color="primary" />
-          <Typography variant="subtitle1">
-            {t('processing.vt.outputQualityGuard.title', 'Tile Output Quality Guard')}
-          </Typography>
-        </Stack>
-      </AccordionSummary>
-      <AccordionDetails sx={{ p: 3 }}>
-        <Stack spacing={2} sx={{ opacity: disabled ? 0.6 : 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t(
-              'processing.vt.outputQualityGuard.description',
-              'Flag potentially unstable tile output ranges and choose anomaly handling behavior in VT stage.',
-            )}
-          </Typography>
-          <FormControlLabel
-            control={(
-              <Switch
-                checked={resolvedGuard.enabled}
-                onChange={(event) => updateGuard({ enabled: event.target.checked })}
-              />
-            )}
-            disabled={disabled}
-            label={t('processing.vt.outputQualityGuard.enabled', 'Enable tile quality guard')}
-          />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              size="small"
-              type="number"
-              label={t('processing.vt.outputQualityGuard.minZoom', 'Min zoom')}
-              value={resolvedGuard.minZoom}
-              disabled={disabled || !resolvedGuard.enabled}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                if (!Number.isFinite(value)) return;
-                updateGuard({ minZoom: Math.max(0, Math.floor(value)) });
-              }}
+    <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+      <Stack spacing={2} sx={{ opacity: disabled ? 0.6 : 1 }}>
+        <BuildConfigSectionTitle
+          icon={<LayersIcon fontSize="small" color="primary" />}
+          title={t('processing.vt.outputQualityGuard.title', 'Tile Output Quality Guard')}
+        />
+        <Typography variant="body2" color="text.secondary">
+          {t(
+            'processing.vt.outputQualityGuard.description',
+            'Flag potentially unstable tile output ranges and choose anomaly handling behavior in VT stage.',
+          )}
+        </Typography>
+        <FormControlLabel
+          control={(
+            <Switch
+              checked={resolvedGuard.enabled}
+              onChange={(event) => updateGuard({ enabled: event.target.checked })}
             />
-            <TextField
-              size="small"
-              type="number"
-              label={t('processing.vt.outputQualityGuard.maxZoom', 'Max zoom')}
-              value={resolvedGuard.maxZoom}
-              disabled={disabled || !resolvedGuard.enabled}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                if (!Number.isFinite(value)) return;
-                updateGuard({ maxZoom: Math.max(0, Math.floor(value)) });
+          )}
+          disabled={disabled}
+          label={t('processing.vt.outputQualityGuard.enabled', 'Enable tile quality guard')}
+        />
+        <Stack spacing={1}>
+          <Typography variant="body2" fontWeight={600}>
+            {t('processing.vt.outputQualityGuard.zoomRange', 'Zoom range')}
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <ZoomOutIcon fontSize="small" color="action" />
+            <Slider
+              sx={{ flex: 1 }}
+              value={zoomRange}
+              min={0}
+              max={22}
+              step={1}
+              marks
+              disableSwap
+              valueLabelDisplay="auto"
+              onChange={(_, value) => {
+                if (!Array.isArray(value) || value.length < 2) return;
+                const [rawMin, rawMax] = value;
+                if (typeof rawMin !== 'number' || typeof rawMax !== 'number') return;
+                if (!Number.isFinite(rawMin) || !Number.isFinite(rawMax)) return;
+                const minZoom = Math.max(0, Math.min(22, Math.floor(Math.min(rawMin, rawMax))));
+                const maxZoom = Math.max(0, Math.min(22, Math.floor(Math.max(rawMin, rawMax))));
+                updateGuard({ minZoom, maxZoom });
               }}
+              disabled={disabled || !resolvedGuard.enabled}
+              getAriaLabel={() => t('processing.vt.outputQualityGuard.zoomRange', 'Zoom range')}
             />
+            <ZoomInIcon fontSize="small" color="action" />
           </Stack>
-          <FormControl fullWidth disabled={disabled || !resolvedGuard.enabled}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('processing.vt.outputQualityGuard.actionOnAnomaly', 'When anomaly is detected')}
-            </Typography>
-            <Select
-              size="small"
-              value={resolvedGuard.actionOnAnomaly}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value !== 'mark_warning' && value !== 'fallback_less_simplified' && value !== 'drop_tile') {
-                  return;
-                }
-                updateGuard({ actionOnAnomaly: value });
-              }}
-            >
-              <MenuItem value="mark_warning">
-                {t('processing.vt.outputQualityGuard.action.markWarning', 'Mark warning')}
-              </MenuItem>
-              <MenuItem value="fallback_less_simplified">
-                {t('processing.vt.outputQualityGuard.action.fallback', 'Fallback to less simplified')}
-              </MenuItem>
-              <MenuItem value="drop_tile">
-                {t('processing.vt.outputQualityGuard.action.dropTile', 'Drop tile')}
-              </MenuItem>
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={(
-              <Switch
-                checked={resolvedGuard.enablePreviewOverlay}
-                onChange={(event) => updateGuard({ enablePreviewOverlay: event.target.checked })}
-              />
+          <Typography variant="caption" color="text.secondary">
+            {t(
+              'processing.vt.outputQualityGuard.zoomRangeValue',
+              'z{{min}} - z{{max}}',
+              { min: zoomRange[0], max: zoomRange[1] },
             )}
-            disabled={disabled || !resolvedGuard.enabled}
-            label={t('processing.vt.outputQualityGuard.enablePreviewOverlay', 'Show warning overlay in preview')}
-          />
+          </Typography>
         </Stack>
-      </AccordionDetails>
-    </Accordion>
+        <FormControl fullWidth disabled={disabled || !resolvedGuard.enabled}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('processing.vt.outputQualityGuard.actionOnAnomaly', 'When anomaly is detected')}
+          </Typography>
+          <Select
+            size="small"
+            value={resolvedGuard.actionOnAnomaly}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value !== 'mark_warning' && value !== 'fallback_less_simplified' && value !== 'drop_tile') {
+                return;
+              }
+              updateGuard({ actionOnAnomaly: value });
+            }}
+          >
+            <MenuItem value="mark_warning">
+              {t('processing.vt.outputQualityGuard.action.markWarning', 'Mark warning')}
+            </MenuItem>
+            <MenuItem value="fallback_less_simplified">
+              {t('processing.vt.outputQualityGuard.action.fallback', 'Fallback to less simplified')}
+            </MenuItem>
+            <MenuItem value="drop_tile">
+              {t('processing.vt.outputQualityGuard.action.dropTile', 'Drop tile')}
+            </MenuItem>
+          </Select>
+        </FormControl>
+        <FormControlLabel
+          control={(
+            <Switch
+              checked={resolvedGuard.enablePreviewOverlay}
+              onChange={(event) => updateGuard({ enablePreviewOverlay: event.target.checked })}
+            />
+          )}
+          disabled={disabled || !resolvedGuard.enabled}
+          label={t('processing.vt.outputQualityGuard.enablePreviewOverlay', 'Show warning overlay in preview')}
+        />
+      </Stack>
+    </Paper>
   );
 };

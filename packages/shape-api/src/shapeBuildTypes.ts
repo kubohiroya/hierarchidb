@@ -225,6 +225,8 @@ export interface ShapeFeatureMetadata {
   fetchPolygonCount?: number;
   transformVertexCount?: number;
   transformPolygonCount?: number;
+  errorCount?: number;
+  repairCount?: number;
   geojsonByteSize?: number;
   bbox?: [number, number, number, number];
   area: number;

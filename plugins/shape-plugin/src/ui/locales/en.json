@@ -70,11 +70,62 @@
     "fetch": {
       "title": "Fetch",
       "filteringTitle": "Fetch-stage filtering",
-      "filteringHelp": "Applies to filtering at the end of the fetch stage before transform begins."
+      "filteringHelp": "Applies to filtering at the end of the fetch stage before transform begins.",
+      "geometryIntakeGuard": {
+        "title": "Fetch Geometry Intake Guard",
+        "description": "Normalize and validate fetched geometry before transform to reduce unstable simplification artifacts.",
+        "validationLevel": "Validation level",
+        "level": {
+          "off": "off",
+          "basic": "basic",
+          "strict": "strict"
+        },
+        "dedupeEpsilon": "Duplicate vertex epsilon",
+        "minRingAreaThreshold": "Minimum ring area threshold",
+        "normalizeRingOrientation": "Normalize ring orientation",
+        "keepBaselineSnapshot": "Keep baseline snapshot for anomaly scoring"
+      }
     },
     "transform": {
       "title": "Transform",
-      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance."
+      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance.",
+      "summaryHelpTopojson": "Transform uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.",
+      "summaryHelpGeojson": "Transform decodes geometry first, then runs geojson simplify with the configured tolerance.",
+      "concurrencyMovedToBuildStep": "Transform concurrency has moved to the Build step. Click the stage spinner in progress summary to edit it.",
+      "algorithm": {
+        "label": "Simplify algorithm",
+        "topojson": "topojson (topology-preserving)",
+        "geojson": "geojson (turf simplify)"
+      },
+      "preserveTopology": {
+        "label": "Preserve topology",
+        "topojsonHint": "topojson mode always preserves topology in decode simplify path."
+      },
+      "executionLogLevel": {
+        "label": "Execution log level",
+        "off": "off",
+        "summary": "summary",
+        "verbose": "verbose"
+      },
+      "anomaly": {
+        "title": "Anomaly detection & auto retry",
+        "enabled": "Enable anomaly detection",
+        "maxEdgeLengthRatio": "Max edge length ratio",
+        "maxAreaDriftPercent": "Max area drift (%)",
+        "maxSelfIntersectionCount": "Max self intersections",
+        "maxLineLengthDriftPercent": "Max line length drift (%)",
+        "retry": {
+          "enabled": "Enable automatic retry",
+          "maxRetries": "Max retries",
+          "toleranceScale": "Retry tolerance scale",
+          "fallbackMode": "Fallback mode",
+          "fallback": {
+            "bestScore": "Use best anomaly score",
+            "switchAlgorithm": "Try switching algorithm",
+            "disableSimplify": "Disable simplify for this task"
+          }
+        }
+      }
     },
     "transformByZoom": {
       "title": "Transform by zoom"
@@ -84,8 +135,27 @@
       "body": "A build session is currently running. Open the Build step to view progress.",
       "action": "Open Build Step"
     },
+    "heap": {
+      "warning": "High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency."
+    },
     "vt": {
-      "title": "VT Generation"
+      "title": "VT Generation",
+      "outputQualityGuard": {
+        "title": "Tile Output Quality Guard",
+        "description": "Flag potentially unstable tile output ranges and choose anomaly handling behavior in VT stage.",
+        "enabled": "Enable tile quality guard",
+        "zoomRange": "Zoom range",
+        "zoomRangeValue": "z{{min}} - z{{max}}",
+        "minZoom": "Min zoom",
+        "maxZoom": "Max zoom",
+        "actionOnAnomaly": "When anomaly is detected",
+        "action": {
+          "markWarning": "Mark warning",
+          "fallback": "Fallback to less simplified",
+          "dropTile": "Drop tile"
+        },
+        "enablePreviewOverlay": "Show warning overlay in preview"
+      }
     },
     "download": {
       "title": "Fetch stage settings",
@@ -327,6 +397,7 @@
         "polygonCount": "Polygons",
         "status": "Status",
         "errorCount": "Errors",
+        "repairCount": "Repairs",
         "errorMessage": "Error Message",
         "bbox": "Bounding Box",
         "area": "Area",

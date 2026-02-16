@@ -30,7 +30,7 @@ export const FetchGeometryIntakeGuardCard: React.FC<Props> = ({ config, onChange
   const guard = config.fetchConfig.geometryIntakeGuard;
 
   const resolvedGuard = {
-    validationLevel: guard?.validationLevel ?? 'basic',
+    validationLevel: guard?.validationLevel ?? 'off',
     dedupeEpsilon: guard?.dedupeEpsilon ?? 0.000001,
     minRingAreaThreshold: guard?.minRingAreaThreshold ?? 0,
     normalizeRingOrientation: guard?.normalizeRingOrientation ?? true,

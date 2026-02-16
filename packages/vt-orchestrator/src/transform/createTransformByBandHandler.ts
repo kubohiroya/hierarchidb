@@ -761,41 +761,70 @@ const repairCollectionSelfIntersections = (
   collection: FeatureCollection,
   geometryOps: GeometryOps,
   engine: GeometryEngine,
-): { collection: FeatureCollection; repairedFeatureCount: number } => {
+  options?: { sourceKey?: string; maxIssueRecords?: number },
+): { collection: FeatureCollection; repairedFeatureCount: number; repairedIssues: TransformIssueEntry[] } => {
   let repairedFeatureCount = 0;
-  const repairedFeatures = collection.features.map((feature) => {
+  const repairedFeatures: Feature[] = [];
+  const repairedIssues: TransformIssueEntry[] = [];
+  const maxIssueRecords = Math.max(0, options?.maxIssueRecords ?? 120);
+  for (const [featureIndex, feature] of collection.features.entries()) {
     const geometry = feature?.geometry;
-    if (!geometry) return feature;
-    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') {
-      return feature;
+    if (!geometry) {
+      repairedFeatures.push(feature);
+      continue;
     }
-    if (geometryOps.isValid(geometry)) return feature;
+    if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') {
+      repairedFeatures.push(feature);
+      continue;
+    }
+    if (geometryOps.isValid(geometry)) {
+      repairedFeatures.push(feature);
+      continue;
+    }
     try {
       const polygons = geometryUnkinkPolygons(feature as Feature<Polygon | MultiPolygon>, engine);
       if (!Array.isArray(polygons) || polygons.length === 0) {
-        return feature;
+        repairedFeatures.push(feature);
+        continue;
       }
       const singlePolygon = polygons.length === 1 ? polygons[0] : null;
       if (polygons.length === 1 && !singlePolygon) {
-        return feature;
+        repairedFeatures.push(feature);
+        continue;
       }
       const repairedGeometry: Polygon | MultiPolygon = singlePolygon
         ? singlePolygon
         : { type: 'MultiPolygon', coordinates: polygons.map((polygon) => polygon.coordinates) };
       if (!geometryOps.isValid(repairedGeometry)) {
-        return feature;
+        repairedFeatures.push(feature);
+        continue;
       }
       repairedFeatureCount += 1;
-      return {
+      if (repairedIssues.length < maxIssueRecords) {
+        const featureId = resolveFeatureIdentifier(feature, featureIndex, options?.sourceKey);
+        const lineFeaturesCandidate = buildErrorLineFeatures(repairedGeometry, featureId);
+        repairedIssues.push({
+          featureIndex,
+          featureId,
+          issueStage: 'simplify-only',
+          issueKind: 'self-intersection-repaired',
+          message: 'self-intersection repaired after simplify',
+          geometryType: lineFeaturesCandidate?.geometryType ?? repairedGeometry.type,
+          polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(repairedGeometry),
+          ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+          lineFeatures: toLineFeatureCollection(lineFeaturesCandidate),
+        });
+      }
+      repairedFeatures.push({
         ...feature,
         geometry: repairedGeometry,
-      };
+      });
     } catch {
-      return feature;
+      repairedFeatures.push(feature);
     }
-  });
+  }
   if (repairedFeatureCount === 0) {
-    return { collection, repairedFeatureCount };
+    return { collection, repairedFeatureCount, repairedIssues };
   }
   return {
     collection: {
@@ -803,6 +832,7 @@ const repairCollectionSelfIntersections = (
       features: repairedFeatures,
     },
     repairedFeatureCount,
+    repairedIssues,
   };
 };
 
@@ -1002,6 +1032,23 @@ type ErrorLineProperties = {
   featureId?: string;
 };
 
+type TransformIssueLineFeatures = {
+  type: 'FeatureCollection';
+  features: Array<Feature<LineString, ErrorLineProperties>>;
+};
+
+type TransformIssueEntry = {
+  featureIndex: number;
+  featureId: string;
+  issueStage: string;
+  issueKind: string;
+  message: string;
+  geometryType?: string;
+  polygonCount: number;
+  ringCount: number;
+  lineFeatures: TransformIssueLineFeatures;
+};
+
 const buildErrorLineFeatures = (
   geometry: Geometry,
   featureId?: string,
@@ -1038,6 +1085,26 @@ const buildErrorLineFeatures = (
     return null;
   }
   return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
+};
+
+const toLineFeatureCollection = (
+  lineFeaturesCandidate: ReturnType<typeof buildErrorLineFeatures> | null,
+): TransformIssueLineFeatures => ({
+  type: 'FeatureCollection',
+  features: lineFeaturesCandidate?.features ?? [],
+});
+
+const resolveFeatureIdentifier = (
+  feature: Feature | null | undefined,
+  featureIndex: number,
+  sourceKey?: string,
+): string => {
+  const rawFeatureId = feature?.id
+    ?? (feature?.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
+  if (rawFeatureId != null) {
+    return String(rawFeatureId);
+  }
+  return `${sourceKey ?? 'feature'}:${featureIndex}`;
 };
 
 type GeometryIssueSummary = {
@@ -1127,6 +1194,40 @@ const dedupeConsecutiveCoords = (coords: number[][], epsilon: number): number[][
   return deduped;
 };
 
+const isNestedCoordinateEqual = (left: unknown, right: unknown): boolean => {
+  if (left === right) return true;
+  if (Array.isArray(left) && Array.isArray(right)) {
+    if (left.length !== right.length) return false;
+    for (let index = 0; index < left.length; index += 1) {
+      if (!isNestedCoordinateEqual(left[index], right[index])) return false;
+    }
+    return true;
+  }
+  if (typeof left === 'number' && typeof right === 'number') {
+    return left === right;
+  }
+  return false;
+};
+
+const isGeometryEquivalent = (left: Geometry, right: Geometry): boolean => {
+  if (left.type !== right.type) return false;
+  if (left.type === 'GeometryCollection' && right.type === 'GeometryCollection') {
+    const leftChildren = left.geometries ?? [];
+    const rightChildren = right.geometries ?? [];
+    if (leftChildren.length !== rightChildren.length) return false;
+    for (let index = 0; index < leftChildren.length; index += 1) {
+      const leftChild = leftChildren[index];
+      const rightChild = rightChildren[index];
+      if (!leftChild || !rightChild) return false;
+      if (!isGeometryEquivalent(leftChild, rightChild)) return false;
+    }
+    return true;
+  }
+  const leftCoordinates = left as { coordinates?: unknown };
+  const rightCoordinates = right as { coordinates?: unknown };
+  return isNestedCoordinateEqual(leftCoordinates.coordinates, rightCoordinates.coordinates);
+};
+
 const ensureClosedRingCoords = (ring: number[][]): number[][] => {
   if (ring.length === 0) return ring;
   const first = ring[0];
@@ -1180,6 +1281,9 @@ const sanitizeGeometryForIntakeGuard = (params: {
   if (geometry.type === 'LineString') {
     const deduped = dedupeConsecutiveCoords(geometry.coordinates as number[][], params.epsilon);
     if (deduped.length < 2) return null;
+    if (isNestedCoordinateEqual(deduped, geometry.coordinates)) {
+      return geometry;
+    }
     return { ...geometry, coordinates: deduped };
   }
   if (geometry.type === 'MultiLineString') {
@@ -1187,6 +1291,9 @@ const sanitizeGeometryForIntakeGuard = (params: {
       .map((line) => dedupeConsecutiveCoords(line as number[][], params.epsilon))
       .filter((line) => line.length >= 2);
     if (lines.length === 0) return null;
+    if (isNestedCoordinateEqual(lines, geometry.coordinates)) {
+      return geometry;
+    }
     return { ...geometry, coordinates: lines };
   }
   if (geometry.type === 'Polygon') {
@@ -1197,6 +1304,9 @@ const sanitizeGeometryForIntakeGuard = (params: {
       normalizeOrientation: params.normalizeRingOrientation,
     });
     if (rings.length === 0) return null;
+    if (isNestedCoordinateEqual(rings, geometry.coordinates)) {
+      return geometry;
+    }
     return { ...geometry, coordinates: rings };
   }
   if (geometry.type === 'MultiPolygon') {
@@ -1209,9 +1319,14 @@ const sanitizeGeometryForIntakeGuard = (params: {
       }))
       .filter((polygon) => polygon.length > 0);
     if (polygons.length === 0) return null;
+    if (isNestedCoordinateEqual(polygons, geometry.coordinates)) {
+      return geometry;
+    }
     return { ...geometry, coordinates: polygons };
   }
   if (geometry.type === 'GeometryCollection') {
+    const originalChildren = geometry.geometries ?? [];
+    let changed = false;
     const geometries = (geometry.geometries ?? [])
       .map((child) => sanitizeGeometryForIntakeGuard({
         geometry: child,
@@ -1219,8 +1334,24 @@ const sanitizeGeometryForIntakeGuard = (params: {
         minRingAreaThreshold: params.minRingAreaThreshold,
         normalizeRingOrientation: params.normalizeRingOrientation,
       }))
-      .filter((child): child is Geometry => Boolean(child));
+      .filter((child): child is Geometry => {
+        if (!child) {
+          changed = true;
+          return false;
+        }
+        return true;
+      });
     if (geometries.length === 0) return null;
+    if (!changed && geometries.length === originalChildren.length) {
+      changed = geometries.some((child, index) => {
+        const originalChild = originalChildren[index];
+        if (!originalChild) return true;
+        return !isGeometryEquivalent(child, originalChild);
+      });
+    }
+    if (!changed) {
+      return geometry;
+    }
     return { ...geometry, geometries };
   }
   return geometry;
@@ -1233,25 +1364,55 @@ const applyGeometryIntakeGuard = (params: {
   minRingAreaThreshold: number;
   normalizeRingOrientation: boolean;
   geometryOps: GeometryOps;
+  sourceKey?: string;
+  maxIssueRecords?: number;
 }): {
   collection: FeatureCollection;
   modifiedFeatureCount: number;
   droppedFeatureCount: number;
+  validCheckCount: number;
+  issueCount: number;
+  issues: TransformIssueEntry[];
 } => {
   if (params.validationLevel === 'off') {
     return {
       collection: params.collection,
       modifiedFeatureCount: 0,
       droppedFeatureCount: 0,
+      validCheckCount: 0,
+      issueCount: 0,
+      issues: [],
     };
   }
   let modifiedFeatureCount = 0;
   let droppedFeatureCount = 0;
+  let validCheckCount = 0;
+  let issueCount = 0;
+  const maxIssueRecords = Math.max(0, params.maxIssueRecords ?? 120);
+  const issues: TransformIssueEntry[] = [];
+  const pushIssue = (entry: TransformIssueEntry) => {
+    issueCount += 1;
+    if (issues.length < maxIssueRecords) {
+      issues.push(entry);
+    }
+  };
   const features: Feature[] = [];
-  for (const feature of params.collection.features) {
+  for (const [featureIndex, feature] of params.collection.features.entries()) {
+    const featureId = resolveFeatureIdentifier(feature, featureIndex, params.sourceKey);
     if (!feature?.geometry) {
       if (params.validationLevel === 'strict') {
         droppedFeatureCount += 1;
+        pushIssue({
+          featureIndex,
+          featureId,
+          issueStage: 'intake-guard',
+          issueKind: 'strict-missing-geometry',
+          message: 'intake guard dropped feature without geometry',
+          geometryType: 'unknown',
+          polygonCount: 0,
+          ringCount: 0,
+          lineFeatures: { type: 'FeatureCollection', features: [] },
+        });
         continue;
       }
       features.push(feature);
@@ -1265,15 +1426,54 @@ const applyGeometryIntakeGuard = (params: {
     });
     if (!normalizedGeometry) {
       droppedFeatureCount += 1;
+      const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
+      pushIssue({
+        featureIndex,
+        featureId,
+        issueStage: 'intake-guard',
+        issueKind: 'dropped-degenerate',
+        message: 'intake guard dropped degenerate geometry',
+        geometryType: lineFeaturesCandidate?.geometryType ?? feature.geometry.type,
+        polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(feature.geometry),
+        ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+        lineFeatures: toLineFeatureCollection(lineFeaturesCandidate),
+      });
       continue;
     }
-    const valid = params.geometryOps.isValid(normalizedGeometry);
-    if (params.validationLevel === 'strict' && !valid) {
-      droppedFeatureCount += 1;
-      continue;
+    if (params.validationLevel === 'strict') {
+      validCheckCount += 1;
+      const valid = params.geometryOps.isValid(normalizedGeometry);
+      if (!valid) {
+        droppedFeatureCount += 1;
+        const lineFeaturesCandidate = buildErrorLineFeatures(normalizedGeometry, featureId);
+        pushIssue({
+          featureIndex,
+          featureId,
+          issueStage: 'intake-guard',
+          issueKind: 'strict-invalid',
+          message: 'intake guard strict validation dropped invalid geometry',
+          geometryType: lineFeaturesCandidate?.geometryType ?? normalizedGeometry.type,
+          polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(normalizedGeometry),
+          ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+          lineFeatures: toLineFeatureCollection(lineFeaturesCandidate),
+        });
+        continue;
+      }
     }
     if (normalizedGeometry !== feature.geometry) {
       modifiedFeatureCount += 1;
+      const lineFeaturesCandidate = buildErrorLineFeatures(normalizedGeometry, featureId);
+      pushIssue({
+        featureIndex,
+        featureId,
+        issueStage: 'intake-guard',
+        issueKind: 'normalized',
+        message: 'intake guard normalized geometry',
+        geometryType: lineFeaturesCandidate?.geometryType ?? normalizedGeometry.type,
+        polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(normalizedGeometry),
+        ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+        lineFeatures: toLineFeatureCollection(lineFeaturesCandidate),
+      });
     }
     features.push({
       ...feature,
@@ -1287,8 +1487,13 @@ const applyGeometryIntakeGuard = (params: {
     },
     modifiedFeatureCount,
     droppedFeatureCount,
+    validCheckCount,
+    issueCount,
+    issues,
   };
 };
+
+export const __test_applyGeometryIntakeGuard = applyGeometryIntakeGuard;
 
 const countSelfIntersections = (geometry: Geometry, geometryOps: GeometryOps): number => (
   geometryOps.countSelfIntersections(geometry)
@@ -1815,6 +2020,51 @@ export const createTransformByBandHandler = (
       console.warn('[transform] failed to update task phase', { phase, error });
     }
   };
+  const persistTransformIssues = async (
+    issues: TransformIssueEntry[],
+    params: {
+      idPrefix: string;
+      taskId: string;
+      nodeId: NodeId;
+      bandIndex?: number;
+      sourceKey?: string;
+      countryCode?: string;
+      adminLevel?: number;
+    },
+  ): Promise<void> => {
+    if (issues.length === 0) return;
+    const createdAt = Date.now();
+    const records: ShapeTransformErrorRecord[] = issues.map((issue) => ({
+      id: `${params.idPrefix}:${issue.featureIndex}:${issue.issueKind}`,
+      nodeId: params.nodeId,
+      taskId: params.taskId,
+      stage: 'transform',
+      issueStage: issue.issueStage,
+      issueKind: issue.issueKind,
+      bandIndex: params.bandIndex,
+      sourceKey: params.sourceKey,
+      countryCode: params.countryCode,
+      adminLevel: params.adminLevel,
+      featureId: issue.featureId,
+      featureIndex: issue.featureIndex,
+      geometryType: issue.geometryType,
+      polygonCount: issue.polygonCount,
+      ringCount: issue.ringCount,
+      polygonErrorCount: issue.polygonCount,
+      ringErrorCount: issue.ringCount,
+      message: issue.message,
+      createdAt,
+      lineFeatures: issue.lineFeatures,
+    }));
+    try {
+      await ephemeralDB.transformErrors.bulkPut(records);
+    } catch (error) {
+      console.warn('[ShapeTransform] failed to persist transform issue records', {
+        idPrefix: params.idPrefix,
+        error,
+      });
+    }
+  };
   const finalizeTaskWithCache = async (params: {
     taskId: string;
     cacheRecord: {
@@ -2234,6 +2484,7 @@ export const createTransformByBandHandler = (
       if (intakeGuardConfig.validationLevel !== 'off') {
         stageLabel = 'intake-guard';
         await updateTaskPhase(taskId, 'intake-guard:start', taskProgressRange.prepareStart);
+        const intakeGuardStartedAt = Date.now();
         const guarded = applyGeometryIntakeGuard({
           collection: workingCollection,
           validationLevel: intakeGuardConfig.validationLevel,
@@ -2241,8 +2492,19 @@ export const createTransformByBandHandler = (
           minRingAreaThreshold: intakeGuardConfig.minRingAreaThreshold,
           normalizeRingOrientation: intakeGuardConfig.normalizeRingOrientation,
           geometryOps,
+          sourceKey: input.sourceKey,
+          maxIssueRecords: 200,
         });
         workingCollection = guarded.collection;
+        await persistTransformIssues(guarded.issues, {
+          idPrefix: `${task.taskId}:intake-guard`,
+          taskId: task.taskId,
+          nodeId: task.nodeId,
+          bandIndex: input.bandIndex,
+          sourceKey: input.sourceKey,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+        });
         emitTransformTrace(traceLogLevel, 'summary', 'intake-guard', {
           sessionId: String(task.nodeId),
           taskId,
@@ -2250,6 +2512,10 @@ export const createTransformByBandHandler = (
           validationLevel: intakeGuardConfig.validationLevel,
           modifiedFeatureCount: guarded.modifiedFeatureCount,
           droppedFeatureCount: guarded.droppedFeatureCount,
+          validCheckCount: guarded.validCheckCount,
+          issueCount: guarded.issueCount,
+          persistedIssueCount: guarded.issues.length,
+          elapsedMs: Date.now() - intakeGuardStartedAt,
           outputFeatureCount: guarded.collection.features.length,
         });
         await updateTaskPhase(taskId, 'intake-guard:done', taskProgressRange.prepareEnd);
@@ -2966,6 +3232,10 @@ export const createTransformByBandHandler = (
           adjustedSimplified,
           geometryOps,
           geometryEngine,
+          {
+            sourceKey: input.sourceKey,
+            maxIssueRecords: 200,
+          },
         );
         if (repairedSimplified.repairedFeatureCount > 0) {
           console.info('[ShapeTransform][SimplifyOnlyMetrics] repaired self-intersections after simplify', {
@@ -2974,6 +3244,23 @@ export const createTransformByBandHandler = (
             bandIndex: input.bandIndex,
             zTarget: band.zMax,
             repairedFeatures: repairedSimplified.repairedFeatureCount,
+            repairIssueRows: repairedSimplified.repairedIssues.length,
+          });
+          await persistTransformIssues(repairedSimplified.repairedIssues, {
+            idPrefix: `${task.taskId}:repair`,
+            taskId: task.taskId,
+            nodeId: task.nodeId,
+            bandIndex: input.bandIndex,
+            sourceKey: input.sourceKey,
+            countryCode: input.countryCode,
+            adminLevel: input.adminLevel,
+          });
+          emitTransformTrace(traceLogLevel, 'summary', 'polygon-repair-applied', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'simplify',
+            repairedFeatureCount: repairedSimplified.repairedFeatureCount,
+            persistedIssueCount: repairedSimplified.repairedIssues.length,
           });
         }
         simplified = repairedSimplified.collection;

@@ -32,7 +32,9 @@ import {
 } from '@hierarchidb/ui-grid';
 
 export type MapPreviewErrorSummary = {
-  count: number;
+  errorCount: number;
+  repairCount: number;
+  count?: number;
   messages: string[];
 };
 
@@ -41,6 +43,7 @@ export type MapPreviewErrorSummaryById = Map<string, MapPreviewErrorSummary>;
 export type MapPreviewErrorColumnLabels = {
   status: string;
   errorCount: string;
+  repairCount?: string;
   errorMessage: string;
 };
 
@@ -77,6 +80,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   errorColumnLabels?: MapPreviewErrorColumnLabels;
   statusLabels?: MapPreviewStatusLabels;
   formatErrorMessage?: (summary: MapPreviewErrorSummary) => string;
+  showRepairCountColumn?: boolean;
   statusAdornment?: (row: Row) => React.ReactNode;
   toolbarActions?: React.ReactNode;
   onCellClick?: (params: { row: Row; columnId: string }) => void;
@@ -100,6 +104,7 @@ export const buildErrorSummaryById = <TError,>(
   options: {
     getId: (row: TError) => string | undefined | null;
     getMessage?: (row: TError) => string | undefined | null;
+    getKind?: (row: TError) => 'error' | 'repair' | undefined | null;
   },
 ): MapPreviewErrorSummaryById => {
   const summary = new Map<string, MapPreviewErrorSummary>();
@@ -107,8 +112,14 @@ export const buildErrorSummaryById = <TError,>(
     const id = options.getId(row);
     if (!id) return;
     const key = String(id);
-    const entry = summary.get(key) ?? { count: 0, messages: [] };
-    entry.count += 1;
+    const entry = summary.get(key) ?? { errorCount: 0, repairCount: 0, count: 0, messages: [] };
+    const kind = options.getKind?.(row) ?? 'error';
+    if (kind === 'repair') {
+      entry.repairCount += 1;
+    } else {
+      entry.errorCount += 1;
+    }
+    entry.count = entry.errorCount;
     const message = options.getMessage?.(row);
     if (message) {
       entry.messages.push(message);
@@ -147,6 +158,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     errorColumnLabels,
     statusLabels,
     formatErrorMessage,
+    showRepairCountColumn = false,
     statusAdornment,
     toolbarActions,
     onCellClick,
@@ -196,7 +208,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       sortable: true,
       format: (_value, row) => {
         const summary = errorSummaryById.get(String(row.id));
-        const hasErrors = Boolean(summary && summary.count > 0);
+        const errorCount = summary ? (summary.errorCount ?? summary.count ?? 0) : 0;
+        const hasErrors = errorCount > 0;
         const adornment = statusAdornment?.(row);
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -216,7 +229,19 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       width: 120,
       align: 'right',
       sortable: true,
-      format: (_value, row) => errorSummaryById.get(String(row.id))?.count ?? 0,
+      format: (_value, row) => {
+        const summary = errorSummaryById.get(String(row.id));
+        if (!summary) return 0;
+        return summary.errorCount ?? summary.count ?? 0;
+      },
+    };
+    const repairCountColumn: GridColumn<Row> = {
+      id: 'repairCount',
+      label: resolvedErrorLabels.repairCount ?? 'Repair Count',
+      width: 120,
+      align: 'right',
+      sortable: true,
+      format: (_value, row) => errorSummaryById.get(String(row.id))?.repairCount ?? 0,
     };
     const errorMessageColumn: GridColumn<Row> = {
       id: 'errorMessage',
@@ -229,11 +254,24 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         return resolvedFormatMessage(summary);
       },
     };
-    return [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
-  }, [columns, errorSummaryById, resolvedErrorLabels, resolvedFormatMessage, resolvedStatusLabels.completed, resolvedStatusLabels.failed, statusAdornment]);
+    const tailColumns = showRepairCountColumn
+      ? [errorCountColumn, repairCountColumn, errorMessageColumn]
+      : [errorCountColumn, errorMessageColumn];
+    return [statusColumn, ...columns, ...tailColumns];
+  }, [columns, errorSummaryById, resolvedErrorLabels, resolvedFormatMessage, resolvedStatusLabels.completed, resolvedStatusLabels.failed, showRepairCountColumn, statusAdornment]);
   const resolvedColumnIds = useMemo(
     () => resolvedColumns.map((column) => String(column.id)),
     [resolvedColumns],
+  );
+  const forcedVisibleColumnIds = useMemo(
+    () => {
+      if (!resolvedErrorLabels) return [];
+      if (showRepairCountColumn) {
+        return ['status', 'errorCount', 'repairCount', 'errorMessage'];
+      }
+      return ['status', 'errorCount', 'errorMessage'];
+    },
+    [resolvedErrorLabels, showRepairCountColumn],
   );
   const prevColumnIdsRef = useRef<string[]>([]);
   useEffect(() => {
@@ -253,6 +291,12 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           changed = true;
         }
       });
+      forcedVisibleColumnIds.forEach((id) => {
+        if (id in next && next[id] !== true) {
+          next[id] = true;
+          changed = true;
+        }
+      });
       Object.keys(next).forEach((id) => {
         if (!resolvedSet.has(id)) {
           delete next[id];
@@ -261,7 +305,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       });
       return changed ? next : prev;
     });
-  }, [resolvedColumnIds]);
+  }, [forcedVisibleColumnIds, resolvedColumnIds]);
 
   useEffect(() => {
     if (!visibilityKey) return;

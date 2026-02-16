@@ -161,11 +161,13 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         update={updateRuntimeBuildConfig}
         showConcurrencyCard={false}
         disabled={disabled}
-      />
-      <VtOutputQualityGuardCard
-        config={config}
-        onChange={handleChange}
-        disabled={disabled}
+        additionalCards={(
+          <VtOutputQualityGuardCard
+            config={config}
+            onChange={handleChange}
+            disabled={disabled}
+          />
+        )}
       />
       <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
     </BuildConfigShell>
