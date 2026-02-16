@@ -9,6 +9,7 @@ import type {
   Point,
   Polygon,
 } from 'geojson';
+import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
@@ -562,6 +563,171 @@ const countTileLineStrings = (geometry: unknown): number => {
   return geometry.length;
 };
 
+const VT_TRIANGLE_MIN_ANGLE_DEGREES = 8;
+const VT_TRIANGLE_MIN_SPAN_RATIO = 0.04;
+const VT_TRIANGLE_ISSUE_RECORD_LIMIT = 240;
+const VT_ORIGIN_BOUNDARY_VERTEX_THRESHOLD = 2;
+
+type VtTriangleOriginStage = 'vt' | 'transform-or-earlier';
+
+type VtTriangleIssue = {
+  featureId: string;
+  layerName: string;
+  ringIndex: number;
+  minAngleDeg: number;
+  maxSpan: number;
+  boundaryVertexCount: number;
+  originStage: VtTriangleOriginStage;
+};
+
+type TileVertex = [number, number];
+
+const normalizeTileCoord = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return value;
+};
+
+const normalizeRingVertices = (ring: number[][]): TileVertex[] => {
+  if (!Array.isArray(ring) || ring.length < 3) return [];
+  const normalized: TileVertex[] = [];
+  ring.forEach((coord) => {
+    const x = normalizeTileCoord(coord?.[0]);
+    const y = normalizeTileCoord(coord?.[1]);
+    if (x === null || y === null) return;
+    normalized.push([x, y]);
+  });
+  if (normalized.length < 3) return [];
+  const deduped: TileVertex[] = [];
+  normalized.forEach((coord) => {
+    const last = deduped[deduped.length - 1];
+    if (!last) {
+      deduped.push(coord);
+      return;
+    }
+    if (last[0] === coord[0] && last[1] === coord[1]) return;
+    deduped.push(coord);
+  });
+  if (deduped.length >= 3) {
+    const first = deduped[0];
+    const last = deduped[deduped.length - 1];
+    if (first && last && first[0] === last[0] && first[1] === last[1]) {
+      deduped.pop();
+    }
+  }
+  return deduped;
+};
+
+const resolveTriangleAngle = (a: TileVertex, b: TileVertex, c: TileVertex): number | null => {
+  const bax = a[0] - b[0];
+  const bay = a[1] - b[1];
+  const bcx = c[0] - b[0];
+  const bcy = c[1] - b[1];
+  const leftNorm = Math.hypot(bax, bay);
+  const rightNorm = Math.hypot(bcx, bcy);
+  if (!Number.isFinite(leftNorm) || !Number.isFinite(rightNorm)) return null;
+  if (leftNorm === 0 || rightNorm === 0) return null;
+  const dot = bax * bcx + bay * bcy;
+  const cos = Math.max(-1, Math.min(1, dot / (leftNorm * rightNorm)));
+  const radians = Math.acos(cos);
+  if (!Number.isFinite(radians)) return null;
+  return radians * 180 / Math.PI;
+};
+
+const resolveTriangleDiagnostics = (
+  vertices: TileVertex[],
+  extent: number,
+): {
+  minAngleDeg: number;
+  maxSpan: number;
+  boundaryVertexCount: number;
+  originStage: VtTriangleOriginStage;
+} | null => {
+  if (vertices.length !== 3) return null;
+  const [a, b, c] = vertices;
+  if (!a || !b || !c) return null;
+  const angleA = resolveTriangleAngle(b, a, c);
+  const angleB = resolveTriangleAngle(a, b, c);
+  const angleC = resolveTriangleAngle(a, c, b);
+  if (angleA == null || angleB == null || angleC == null) return null;
+  const minAngleDeg = Math.min(angleA, angleB, angleC);
+  const xs = [a[0], b[0], c[0]];
+  const ys = [a[1], b[1], c[1]];
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const maxSpan = Math.max(maxX - minX, maxY - minY);
+  const boundaryVertexCount = [a, b, c].reduce((count, vertex) => {
+    const x = vertex[0];
+    const y = vertex[1];
+    const isBoundary = x <= 0 || x >= extent || y <= 0 || y >= extent;
+    return isBoundary ? count + 1 : count;
+  }, 0);
+  return {
+    minAngleDeg,
+    maxSpan,
+    boundaryVertexCount,
+    originStage: boundaryVertexCount >= VT_ORIGIN_BOUNDARY_VERTEX_THRESHOLD ? 'vt' : 'transform-or-earlier',
+  };
+};
+
+const resolveTileFeatureIdFromVt = (feature: Tile['features'][number], fallback: string): string => {
+  const featureRecord = feature as { id?: unknown; tags?: Record<string, unknown> };
+  const tags = featureRecord.tags;
+  const candidates = [
+    tags?.__hdbFeatureId,
+    tags?.featureId,
+    tags?.id,
+    featureRecord.id,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) return candidate.trim();
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(candidate);
+  }
+  return fallback;
+};
+
+const collectTileTriangleIssues = (params: {
+  layers: Record<string, Tile>;
+  z: number;
+  x: number;
+  y: number;
+  extent: number;
+}): VtTriangleIssue[] => {
+  const issues: VtTriangleIssue[] = [];
+  const minSpan = Math.max(1, params.extent * VT_TRIANGLE_MIN_SPAN_RATIO);
+  Object.entries(params.layers).forEach(([layerName, layerTile]) => {
+    const features = Array.isArray(layerTile.features) ? layerTile.features : [];
+    features.forEach((feature, featureIndex) => {
+      if (feature.type !== 3) return;
+      const rings = normalizeTileRings(feature.geometry);
+      if (rings.length === 0) return;
+      const featureId = resolveTileFeatureIdFromVt(
+        feature,
+        `tile:${params.z}/${params.x}/${params.y}:${layerName}:${featureIndex}`,
+      );
+      rings.forEach((ring, ringIndex) => {
+        const vertices = normalizeRingVertices(ring);
+        if (vertices.length !== 3) return;
+        const diagnostics = resolveTriangleDiagnostics(vertices, params.extent);
+        if (!diagnostics) return;
+        if (diagnostics.maxSpan < minSpan) return;
+        if (diagnostics.minAngleDeg > VT_TRIANGLE_MIN_ANGLE_DEGREES) return;
+        issues.push({
+          featureId,
+          layerName,
+          ringIndex,
+          minAngleDeg: diagnostics.minAngleDeg,
+          maxSpan: diagnostics.maxSpan,
+          boundaryVertexCount: diagnostics.boundaryVertexCount,
+          originStage: diagnostics.originStage,
+        });
+      });
+    });
+  });
+  return issues;
+};
+
 const buildBufferSetHash = (bufferIds: string[]): string => {
   const sorted = [...bufferIds].sort();
   const json = JSON.stringify(sorted);
@@ -1019,6 +1185,7 @@ export const vtStageTestUtils = {
   buildGeojsonVtEmptyTileSummaryReason,
   resolveVtDebugFocusConfig,
   resolveVtDebugFocusMatch,
+  collectTileTriangleIssues,
   computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
@@ -1832,6 +1999,46 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       };
       await reportTileProgress(true, `tiles 0/${totalTiles}`);
 
+      const vtTriangleIssueRecords: ShapeTransformErrorRecord[] = [];
+      const vtTriangleIssueKeys = new Set<string>();
+      let triangleIssueTotalCount = 0;
+      let vtOriginIssueCount = 0;
+      let preVtOriginIssueCount = 0;
+      const normalizeIssueToken = (value: string): string => value.replace(/[^A-Za-z0-9:_-]/g, '_');
+      const appendVtTriangleIssueRecord = (issue: VtTriangleIssue, z: number, x: number, y: number) => {
+        const issueKey = `${z}/${x}/${y}:${issue.layerName}:${issue.featureId}:${issue.ringIndex}`;
+        if (vtTriangleIssueKeys.has(issueKey)) return;
+        vtTriangleIssueKeys.add(issueKey);
+        triangleIssueTotalCount += 1;
+        if (issue.originStage === 'vt') {
+          vtOriginIssueCount += 1;
+        } else {
+          preVtOriginIssueCount += 1;
+        }
+        if (vtTriangleIssueRecords.length >= VT_TRIANGLE_ISSUE_RECORD_LIMIT) return;
+        const featureToken = normalizeIssueToken(issue.featureId).slice(0, 72);
+        vtTriangleIssueRecords.push({
+          id: `${task.taskId}:vt-diagnostic:${z}:${x}:${y}:${issue.ringIndex}:${featureToken}`,
+          nodeId: task.nodeId,
+          taskId: task.taskId,
+          stage: 'vt',
+          issueStage: 'tile-diagnostic',
+          issueKind: issue.originStage === 'vt' ? 'vt-boundary-triangle-suspect' : 'pre-vt-triangle-suspect',
+          bandIndex: input.bandIndex,
+          sourceKey: input.sourceKey,
+          featureId: issue.featureId,
+          featureIndex: issue.ringIndex,
+          geometryType: 'Polygon',
+          polygonCount: 1,
+          ringCount: 1,
+          polygonErrorCount: 1,
+          ringErrorCount: 1,
+          message: `[vt-diagnostic] originStage=${issue.originStage} tile=${z}/${x}/${y} layer=${issue.layerName} ring=${issue.ringIndex} minAngleDeg=${issue.minAngleDeg.toFixed(3)} boundaryVertices=${issue.boundaryVertexCount}/3 maxSpan=${issue.maxSpan.toFixed(1)}`,
+          createdAt: Date.now(),
+          lineFeatures: { type: 'FeatureCollection', features: [] },
+        });
+      };
+
       const computeInputTileStats = (bbox: TileBBox) => {
         let featureCount = 0;
         let vertexCount = 0;
@@ -1921,6 +2128,16 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             if (!layers) {
               await reportTileProgress(false);
               continue;
+            }
+            const triangleIssues = collectTileTriangleIssues({
+              layers,
+              z,
+              x,
+              y,
+              extent: context.vtConfig.extent,
+            });
+            if (triangleIssues.length > 0) {
+              triangleIssues.forEach((issue) => appendVtTriangleIssueRecord(issue, z, x, y));
             }
             const tileBBox = tileToBBox(z, x, y);
             const inputStats = computeInputTileStats(
@@ -2049,6 +2266,28 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         generatedTiles,
         outputTotals: totalOutputStats,
       }));
+      if (triangleIssueTotalCount > 0) {
+        if (vtTriangleIssueRecords.length > 0) {
+          try {
+            await context.ephemeralDB.transformErrors.bulkPut(vtTriangleIssueRecords);
+          } catch (error) {
+            console.warn('[vt][diagnostic] failed to persist triangle issue records', JSON.stringify({
+              ...taskContext,
+              triangleIssueCount: triangleIssueTotalCount,
+              persistedCount: vtTriangleIssueRecords.length,
+              error: error instanceof Error ? error.message : String(error),
+            }));
+          }
+        }
+        console.warn('[vt][diagnostic] triangle issue summary', JSON.stringify({
+          ...taskContext,
+          triangleIssueCount: triangleIssueTotalCount,
+          vtOriginIssueCount,
+          preVtOriginIssueCount,
+          persistedCount: vtTriangleIssueRecords.length,
+          droppedCount: Math.max(0, triangleIssueTotalCount - vtTriangleIssueRecords.length),
+        }));
+      }
       console.info('[vt] task completed', JSON.stringify({
         ...taskContext,
         processedTiles,

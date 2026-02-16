@@ -157,4 +157,66 @@ describe('vtStage summary helpers', () => {
     expect(totals.polygonCount).toBeGreaterThan(0);
     expect(totals.vertexCount).toBeGreaterThan(0);
   });
+
+  it('detects boundary-attached triangle issues as vt-origin', () => {
+    const issues = vtStageTestUtils.collectTileTriangleIssues({
+      layers: {
+        admin1: {
+          features: [
+            {
+              type: 3,
+              geometry: [
+                [
+                  [0, 100],
+                  [4096, 101],
+                  [0, 102],
+                  [0, 100],
+                ],
+              ],
+              tags: { __hdbFeatureId: 'JP:1:osaka' },
+            },
+          ],
+        } as unknown as import('geojson-vt').Tile,
+      },
+      z: 5,
+      x: 28,
+      y: 12,
+      extent: 4096,
+    });
+
+    expect(issues.length).toBe(1);
+    expect(issues[0]?.originStage).toBe('vt');
+    expect(issues[0]?.featureId).toBe('JP:1:osaka');
+  });
+
+  it('detects interior triangle issues as transform-or-earlier', () => {
+    const issues = vtStageTestUtils.collectTileTriangleIssues({
+      layers: {
+        admin1: {
+          features: [
+            {
+              type: 3,
+              geometry: [
+                [
+                  [120, 160],
+                  [3900, 162],
+                  [180, 220],
+                  [120, 160],
+                ],
+              ],
+              tags: { __hdbFeatureId: 'JP:1:hiroshima' },
+            },
+          ],
+        } as unknown as import('geojson-vt').Tile,
+      },
+      z: 6,
+      x: 56,
+      y: 25,
+      extent: 4096,
+    });
+
+    expect(issues.length).toBe(1);
+    expect(issues[0]?.originStage).toBe('transform-or-earlier');
+    expect(issues[0]?.featureId).toBe('JP:1:hiroshima');
+  });
 });

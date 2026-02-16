@@ -370,6 +370,18 @@ export function mergeBuildConfig(
         ? {
           ...(base.transformConfig.anomalyDetection ?? {}),
           ...bandOverrides.anomalyDetection,
+          geojson: bandOverrides.anomalyDetection.geojson
+            ? {
+              ...(base.transformConfig.anomalyDetection?.geojson ?? {}),
+              ...bandOverrides.anomalyDetection.geojson,
+            }
+            : base.transformConfig.anomalyDetection?.geojson,
+          topojson: bandOverrides.anomalyDetection.topojson
+            ? {
+              ...(base.transformConfig.anomalyDetection?.topojson ?? {}),
+              ...bandOverrides.anomalyDetection.topojson,
+            }
+            : base.transformConfig.anomalyDetection?.topojson,
         }
         : base.transformConfig.anomalyDetection,
       anomalyRetry: bandOverrides.anomalyRetry

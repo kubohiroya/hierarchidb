@@ -38,10 +38,22 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
   const anomalyDetection = {
     enabled: baseTransformConfig.anomalyDetection?.enabled ?? true,
+    scoreThreshold: baseTransformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
     maxEdgeLengthRatio: baseTransformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
     maxAreaDriftPercent: baseTransformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
     maxSelfIntersectionCount: baseTransformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
     maxLineLengthDriftPercent: baseTransformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
+    maxVertexDriftPercent: baseTransformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
+    geojson: {
+      maxTriangleShareDriftPercent:
+        baseTransformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
+      maxTriangleEdgeToBBoxRatio:
+        baseTransformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
+    },
+    topojson: {
+      minSharedArcRatioPercent:
+        baseTransformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
+    },
   };
   const anomalyRetry = {
     enabled: baseTransformConfig.anomalyRetry?.enabled ?? true,
@@ -180,6 +192,23 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
             <TextField
               size="small"
               type="number"
+              label={t('processing.transform.anomaly.scoreThreshold', 'Anomaly score threshold')}
+              value={anomalyDetection.scoreThreshold}
+              disabled={disabled || !anomalyDetection.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateTransformConfig({
+                  anomalyDetection: {
+                    ...anomalyDetection,
+                    scoreThreshold: Math.max(0.1, value),
+                  },
+                });
+              }}
+            />
+            <TextField
+              size="small"
+              type="number"
               label={t('processing.transform.anomaly.maxEdgeLengthRatio', 'Max edge length ratio')}
               value={anomalyDetection.maxEdgeLengthRatio}
               disabled={disabled || !anomalyDetection.enabled}
@@ -247,7 +276,117 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                 });
               }}
             />
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.transform.anomaly.maxVertexDriftPercent', 'Max vertex drift (%)')}
+              value={anomalyDetection.maxVertexDriftPercent}
+              disabled={disabled || !anomalyDetection.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateTransformConfig({
+                  anomalyDetection: {
+                    ...anomalyDetection,
+                    maxVertexDriftPercent: Math.max(0, value),
+                  },
+                });
+              }}
+            />
           </Stack>
+
+          {simplifyAlgorithm === 'geojson' ? (
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                {t(
+                  'processing.transform.anomaly.geojson.caption',
+                  'GeoJSON path checks triangle-shape drift using edge length against polygon BBox span.',
+                )}
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t(
+                    'processing.transform.anomaly.geojson.maxTriangleShareDriftPercent',
+                    'Max triangle share drift (%)',
+                  )}
+                  value={anomalyDetection.geojson.maxTriangleShareDriftPercent}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        geojson: {
+                          ...anomalyDetection.geojson,
+                          maxTriangleShareDriftPercent: Math.max(0, value),
+                        },
+                      },
+                    });
+                  }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t(
+                    'processing.transform.anomaly.geojson.maxTriangleEdgeToBBoxRatio',
+                    'Max triangle edge/BBox ratio',
+                  )}
+                  value={anomalyDetection.geojson.maxTriangleEdgeToBBoxRatio}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        geojson: {
+                          ...anomalyDetection.geojson,
+                          maxTriangleEdgeToBBoxRatio: Math.max(0.1, value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </Stack>
+            </Stack>
+          ) : null}
+
+          {simplifyAlgorithm === 'topojson' ? (
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                {t(
+                  'processing.transform.anomaly.topojson.caption',
+                  'TopoJSON path uses shared-arc continuity diagnostics from topology references.',
+                )}
+              </Typography>
+              <TextField
+                size="small"
+                type="number"
+                label={t(
+                  'processing.transform.anomaly.topojson.minSharedArcRatioPercent',
+                  'Min shared arc ratio (%)',
+                )}
+                value={anomalyDetection.topojson.minSharedArcRatioPercent}
+                disabled={disabled || !anomalyDetection.enabled}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  if (!Number.isFinite(value)) return;
+                  updateTransformConfig({
+                    anomalyDetection: {
+                      ...anomalyDetection,
+                      topojson: {
+                        ...anomalyDetection.topojson,
+                        minSharedArcRatioPercent: Math.min(100, Math.max(0, value)),
+                      },
+                    },
+                  });
+                }}
+              />
+            </Stack>
+          ) : null}
 
           <FormControlLabel
             control={(

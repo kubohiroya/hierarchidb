@@ -21,10 +21,19 @@ export const DEFAULT_BUILD_CONFIG = {
     executionLogLevel: 'summary',
     anomalyDetection: {
       enabled: true,
+      scoreThreshold: 2.2,
       maxEdgeLengthRatio: 12,
       maxAreaDriftPercent: 35,
       maxSelfIntersectionCount: 0,
       maxLineLengthDriftPercent: 45,
+      maxVertexDriftPercent: 40,
+      geojson: {
+        maxTriangleShareDriftPercent: 2,
+        maxTriangleEdgeToBBoxRatio: 1.15,
+      },
+      topojson: {
+        minSharedArcRatioPercent: 12,
+      },
     },
     anomalyRetry: {
       enabled: true,

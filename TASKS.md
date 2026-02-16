@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #323 / `codex/feat/shape/vt-anomaly-detection-params-323` / start: 2026-02-16 10:40 JST
 - #320 / `codex/fix/shape/intake-guard-stall-preview-errors` / start: 2026-02-16 09:18 JST
 - #318 / `codex/feat/shape/step4-anomaly-guard-controls` / start: 2026-02-16 08:40 JST
 - #315 / `codex/fix/shape-build-duration-summary-stable` / start: 2026-02-16 02:57 JST
@@ -105,6 +106,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-16 10:56 JST #323 作業を専用worktree `/Users/hiroya/WebstormProjects/hierarchidb-issue-323-shape-anomaly-params` へ再配置し、差分を再生。`packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` の型安全化（triangle ring座標のタプル化と index guard）と関連テスト調整を実施。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/ui-map` exit 0、`pnpm -w turbo run build --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --filter @hierarchidb/shape-api --filter @hierarchidb/ui-map` exit 0、`pnpm exec vitest run packages/vt-orchestrator/src/transform/__tests__/transformAnomalyAssessment.unit.test.ts plugins/shape-plugin/src/__tests__/unit/mergeBuildConfig.unit.test.ts packages/vt-orchestrator/src/vt/__tests__/vtStage.unit.test.ts` exit 0。
+- start: 2026-02-16 10:40 JST #323 を起票し（https://github.com/kubohiroya/hierarchidb/issues/323）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/shape/vt-anomaly-detection-params-323` を作成して着手。
 - update: 2026-02-16 09:44 JST #320 ズーム帯サマリーアイコン変更を shape 専用化するため、`@hierarchidb/ui-accordion-config` の `ZoomBandConfigSection` に `summaryIcon` prop を追加し、`plugins/shape-plugin/src/ui/components/build-config/ZoomBandConfigSection.tsx` から `Search` アイコンを注入する構成へ調整（route 側は既定 `Settings` を維持）。検証: `pnpm -w turbo run build --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0。
 - update: 2026-02-16 09:41 JST #320 Step4設定UIをi18n化（`processing.fetch.geometryIntakeGuard.*` / `processing.transform.*` / `processing.vt.outputQualityGuard.*` ほか `ja/en` 追加）し、アコーディオンサマリーアイコンをズーム帯=`Search`・Transform=`Tune`へ変更。`Tile Output Quality Guard` を独立アコーディオンから VT ステージ内カードへ移設し、`Min/Max zoom` をレンジスライダーUIに置換。検証: `pnpm -w turbo run build --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-accordion-config --filter @hierarchidb/shape-plugin` exit 0。
 - blocked: 2026-02-16 09:32 JST #320 `pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin` は差分外既知失敗 `plugins/shape-plugin/src/__tests__/unit/shapeFetchStage.unit.test.ts` ほかで `TypeError: db.delete is not a function` により exit 1（今回差分由来ではない）。

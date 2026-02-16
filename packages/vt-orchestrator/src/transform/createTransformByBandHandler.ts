@@ -633,6 +633,113 @@ type CollectionAnomalyMetrics = {
   totalLength: number;
   maxEdgeLength: number;
   selfIntersectionCount: number;
+  triangleRingCount: number;
+  triangleRingSharePercent: number;
+  maxTriangleEdgeToBBoxRatio: number;
+};
+
+type TriangleRingMetrics = {
+  triangleRingCount: number;
+  maxTriangleEdgeToBBoxRatio: number;
+};
+
+type CoordinatePair = [number, number];
+
+const normalizeRingVertices = (ring: number[][]): CoordinatePair[] => {
+  if (!Array.isArray(ring) || ring.length < 4) return [];
+  const normalized: CoordinatePair[] = [];
+  ring.forEach((coord) => {
+    if (!Array.isArray(coord)) return;
+    const x = coord[0];
+    const y = coord[1];
+    if (typeof x !== 'number' || !Number.isFinite(x)) return;
+    if (typeof y !== 'number' || !Number.isFinite(y)) return;
+    normalized.push([x, y]);
+  });
+  if (normalized.length < 4) return [];
+  const deduped: CoordinatePair[] = [];
+  normalized.forEach((coord) => {
+    const prev = deduped[deduped.length - 1];
+    if (!prev) {
+      deduped.push(coord);
+      return;
+    }
+    if (prev[0] === coord[0] && prev[1] === coord[1]) return;
+    deduped.push(coord);
+  });
+  const first = deduped[0];
+  const last = deduped[deduped.length - 1];
+  if (!first || !last) return [];
+  if (first[0] !== last[0] || first[1] !== last[1]) return [];
+  const openRing = deduped.slice(0, deduped.length - 1);
+  if (openRing.length < 3) return [];
+  return openRing;
+};
+
+const collectTriangleRingMetricsFromPolygonCoordinates = (coordinates: number[][][]): TriangleRingMetrics => {
+  let triangleRingCount = 0;
+  let maxTriangleEdgeToBBoxRatio = 0;
+  for (const ring of coordinates) {
+    const vertices = normalizeRingVertices(ring);
+    if (vertices.length !== 3) continue;
+    triangleRingCount += 1;
+    const xs = vertices.map((vertex) => vertex[0]);
+    const ys = vertices.map((vertex) => vertex[1]);
+    const spanX = Math.max(...xs) - Math.min(...xs);
+    const spanY = Math.max(...ys) - Math.min(...ys);
+    const bboxSpan = Math.max(spanX, spanY);
+    if (!Number.isFinite(bboxSpan) || bboxSpan <= 0) continue;
+    const [vertexA, vertexB, vertexC] = vertices;
+    if (!vertexA || !vertexB || !vertexC) continue;
+    const edges = [
+      segmentLength(vertexA, vertexB),
+      segmentLength(vertexB, vertexC),
+      segmentLength(vertexC, vertexA),
+    ];
+    const longestEdge = Math.max(...edges);
+    if (!Number.isFinite(longestEdge) || longestEdge <= 0) continue;
+    const ratio = longestEdge / bboxSpan;
+    if (ratio > maxTriangleEdgeToBBoxRatio) {
+      maxTriangleEdgeToBBoxRatio = ratio;
+    }
+  }
+  return { triangleRingCount, maxTriangleEdgeToBBoxRatio };
+};
+
+const collectTriangleRingMetricsFromGeometry = (geometry?: Geometry | null): TriangleRingMetrics => {
+  if (!geometry) return { triangleRingCount: 0, maxTriangleEdgeToBBoxRatio: 0 };
+  if (geometry.type === 'Polygon') {
+    return collectTriangleRingMetricsFromPolygonCoordinates(
+      Array.isArray(geometry.coordinates) ? geometry.coordinates : [],
+    );
+  }
+  if (geometry.type === 'MultiPolygon') {
+    let triangleRingCount = 0;
+    let maxTriangleEdgeToBBoxRatio = 0;
+    const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    for (const polygon of polygons) {
+      const metrics = collectTriangleRingMetricsFromPolygonCoordinates(Array.isArray(polygon) ? polygon : []);
+      triangleRingCount += metrics.triangleRingCount;
+      if (metrics.maxTriangleEdgeToBBoxRatio > maxTriangleEdgeToBBoxRatio) {
+        maxTriangleEdgeToBBoxRatio = metrics.maxTriangleEdgeToBBoxRatio;
+      }
+    }
+    return { triangleRingCount, maxTriangleEdgeToBBoxRatio };
+  }
+  if (geometry.type === 'GeometryCollection') {
+    let triangleRingCount = 0;
+    let maxTriangleEdgeToBBoxRatio = 0;
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    for (const child of geometries) {
+      const metrics = collectTriangleRingMetricsFromGeometry(child);
+      triangleRingCount += metrics.triangleRingCount;
+      if (metrics.maxTriangleEdgeToBBoxRatio > maxTriangleEdgeToBBoxRatio) {
+        maxTriangleEdgeToBBoxRatio = metrics.maxTriangleEdgeToBBoxRatio;
+      }
+    }
+    return { triangleRingCount, maxTriangleEdgeToBBoxRatio };
+  }
+  return { triangleRingCount: 0, maxTriangleEdgeToBBoxRatio: 0 };
 };
 
 const collectCollectionAnomalyMetrics = (
@@ -646,6 +753,8 @@ const collectCollectionAnomalyMetrics = (
   let totalLength = 0;
   let maxEdgeLength = 0;
   let selfIntersectionCount = 0;
+  let triangleRingCount = 0;
+  let maxTriangleEdgeToBBoxRatio = 0;
   for (const feature of collection.features) {
     if (!feature?.geometry) continue;
     const geometry = feature.geometry;
@@ -661,7 +770,15 @@ const collectCollectionAnomalyMetrics = (
     if (lineMetrics.max > maxEdgeLength) {
       maxEdgeLength = lineMetrics.max;
     }
+    const triangleMetrics = collectTriangleRingMetricsFromGeometry(geometry);
+    triangleRingCount += triangleMetrics.triangleRingCount;
+    if (triangleMetrics.maxTriangleEdgeToBBoxRatio > maxTriangleEdgeToBBoxRatio) {
+      maxTriangleEdgeToBBoxRatio = triangleMetrics.maxTriangleEdgeToBBoxRatio;
+    }
   }
+  const triangleRingSharePercent = polygonCount > 0
+    ? triangleRingCount / polygonCount * 100
+    : 0;
   return {
     featureCount: collection.features.length,
     vertexCount,
@@ -671,17 +788,88 @@ const collectCollectionAnomalyMetrics = (
     totalLength,
     maxEdgeLength,
     selfIntersectionCount,
+    triangleRingCount,
+    triangleRingSharePercent,
+    maxTriangleEdgeToBBoxRatio,
   };
 };
 
 type AnomalyProfile = 'polygon' | 'line';
 
+type TopojsonSharedArcDiagnostics = {
+  totalArcRefs: number;
+  sharedArcRefs: number;
+  uniqueArcCount: number;
+  sharedUniqueArcCount: number;
+  sharedArcRatioPercent: number;
+};
+
+const normalizeTopojsonArcIndex = (value: number): number | null => {
+  if (!Number.isInteger(value)) return null;
+  return value < 0 ? ~value : value;
+};
+
+const collectTopojsonSharedArcDiagnostics = (topology: Topology): TopojsonSharedArcDiagnostics | null => {
+  const arcUsage = new Map<number, number>();
+  let totalArcRefs = 0;
+  const visitArcNode = (node: unknown): void => {
+    if (typeof node === 'number') {
+      const arcIndex = normalizeTopojsonArcIndex(node);
+      if (arcIndex === null) return;
+      totalArcRefs += 1;
+      arcUsage.set(arcIndex, (arcUsage.get(arcIndex) ?? 0) + 1);
+      return;
+    }
+    if (!Array.isArray(node)) return;
+    node.forEach((child) => visitArcNode(child));
+  };
+  const visitGeometryObject = (geometryObject: unknown): void => {
+    if (!geometryObject || typeof geometryObject !== 'object') return;
+    const record = geometryObject as {
+      type?: string;
+      arcs?: unknown;
+      geometries?: unknown[];
+    };
+    if (record.type === 'GeometryCollection') {
+      const geometries = Array.isArray(record.geometries) ? record.geometries : [];
+      geometries.forEach((child) => visitGeometryObject(child));
+      return;
+    }
+    if ('arcs' in record) {
+      visitArcNode(record.arcs);
+    }
+  };
+  Object.values(topology.objects ?? {}).forEach((objectValue) => visitGeometryObject(objectValue));
+  if (totalArcRefs <= 0) return null;
+  let sharedArcRefs = 0;
+  let sharedUniqueArcCount = 0;
+  arcUsage.forEach((count) => {
+    if (count < 2) return;
+    sharedArcRefs += count;
+    sharedUniqueArcCount += 1;
+  });
+  const uniqueArcCount = arcUsage.size;
+  const sharedArcRatioPercent = sharedArcRefs / totalArcRefs * 100;
+  return {
+    totalArcRefs,
+    sharedArcRefs,
+    uniqueArcCount,
+    sharedUniqueArcCount,
+    sharedArcRatioPercent,
+  };
+};
+
 type AnomalyAssessment = {
   isAnomalous: boolean;
   score: number;
+  scoreThreshold: number;
   edgeLengthRatio: number;
   areaDriftPercent: number;
   lineLengthDriftPercent: number;
+  vertexDriftPercent: number;
+  triangleShareDriftPercent: number;
+  triangleEdgeToBBoxRatio: number;
+  topoSharedArcRatioPercent: number | null;
   selfIntersectionCount: number;
   reasons: string[];
 };
@@ -698,16 +886,36 @@ export const assessAnomalyRisk = (params: {
   baseline: CollectionAnomalyMetrics;
   candidate: CollectionAnomalyMetrics;
   thresholds?: {
+    scoreThreshold?: number;
     maxEdgeLengthRatio?: number;
     maxAreaDriftPercent?: number;
     maxSelfIntersectionCount?: number;
     maxLineLengthDriftPercent?: number;
+    maxVertexDriftPercent?: number;
+    geojson?: {
+      maxTriangleShareDriftPercent?: number;
+      maxTriangleEdgeToBBoxRatio?: number;
+    };
+    topojson?: {
+      minSharedArcRatioPercent?: number;
+    };
+  };
+  diagnostics?: {
+    topoSharedArcRatioPercent?: number | null;
   };
 }): AnomalyAssessment => {
+  const scoreThreshold = params.thresholds?.scoreThreshold ?? 2.2;
   const maxEdgeLengthRatio = params.thresholds?.maxEdgeLengthRatio ?? Number.POSITIVE_INFINITY;
   const maxAreaDriftPercent = params.thresholds?.maxAreaDriftPercent ?? Number.POSITIVE_INFINITY;
   const maxSelfIntersectionCount = params.thresholds?.maxSelfIntersectionCount ?? Number.POSITIVE_INFINITY;
   const maxLineLengthDriftPercent = params.thresholds?.maxLineLengthDriftPercent ?? Number.POSITIVE_INFINITY;
+  const maxVertexDriftPercent = params.thresholds?.maxVertexDriftPercent ?? Number.POSITIVE_INFINITY;
+  const maxTriangleShareDriftPercent = params.thresholds?.geojson?.maxTriangleShareDriftPercent
+    ?? Number.POSITIVE_INFINITY;
+  const maxTriangleEdgeToBBoxRatio = params.thresholds?.geojson?.maxTriangleEdgeToBBoxRatio
+    ?? Number.POSITIVE_INFINITY;
+  const minSharedArcRatioPercent = params.thresholds?.topojson?.minSharedArcRatioPercent
+    ?? Number.NEGATIVE_INFINITY;
 
   const edgeLengthRatio = safeRatio(params.candidate.maxEdgeLength, params.baseline.maxEdgeLength);
   const areaDriftPercent = params.profile === 'polygon' && params.baseline.totalArea > 0
@@ -716,6 +924,22 @@ export const assessAnomalyRisk = (params: {
   const lineLengthDriftPercent = params.baseline.totalLength > 0
     ? Math.abs(params.candidate.totalLength - params.baseline.totalLength) / params.baseline.totalLength * 100
     : 0;
+  const vertexDriftPercent = params.baseline.vertexCount > 0
+    ? Math.abs(params.candidate.vertexCount - params.baseline.vertexCount) / params.baseline.vertexCount * 100
+    : 0;
+  const triangleShareDriftPercent = params.profile === 'polygon'
+    ? Math.max(0, params.candidate.triangleRingSharePercent - params.baseline.triangleRingSharePercent)
+    : 0;
+  const triangleEdgeToBBoxRatio = params.profile === 'polygon'
+    ? params.candidate.maxTriangleEdgeToBBoxRatio
+    : 0;
+  const topoSharedArcRatioPercent = typeof params.diagnostics?.topoSharedArcRatioPercent === 'number'
+    && Number.isFinite(params.diagnostics.topoSharedArcRatioPercent)
+    ? params.diagnostics.topoSharedArcRatioPercent
+    : null;
+  const topoSharedArcDeficitPercent = topoSharedArcRatioPercent === null
+    ? 0
+    : Math.max(0, minSharedArcRatioPercent - topoSharedArcRatioPercent);
   const selfIntersectionCount = params.candidate.selfIntersectionCount;
 
   const reasons: string[] = [];
@@ -731,27 +955,62 @@ export const assessAnomalyRisk = (params: {
   if (params.profile === 'line' && lineLengthDriftPercent > maxLineLengthDriftPercent) {
     reasons.push(`lineLengthDriftPercent>${maxLineLengthDriftPercent}`);
   }
+  if (vertexDriftPercent > maxVertexDriftPercent) {
+    reasons.push(`vertexDriftPercent>${maxVertexDriftPercent}`);
+  }
+  if (
+    params.profile === 'polygon'
+    && triangleShareDriftPercent > maxTriangleShareDriftPercent
+    && triangleEdgeToBBoxRatio > maxTriangleEdgeToBBoxRatio
+  ) {
+    reasons.push(
+      `triangleShareDriftPercent>${maxTriangleShareDriftPercent}&triangleEdgeToBBoxRatio>${maxTriangleEdgeToBBoxRatio}`,
+    );
+  }
+  if (params.profile === 'polygon' && topoSharedArcRatioPercent !== null && topoSharedArcRatioPercent < minSharedArcRatioPercent) {
+    reasons.push(`topoSharedArcRatioPercent<${minSharedArcRatioPercent}`);
+  }
 
-  const edgeScore = Number.isFinite(maxEdgeLengthRatio) && maxEdgeLengthRatio > 0
-    ? edgeLengthRatio / maxEdgeLengthRatio
+  const normalized = (value: number, threshold: number): number => {
+    if (!Number.isFinite(value) || !Number.isFinite(threshold) || threshold <= 0) return 0;
+    return Math.min(3, value / threshold);
+  };
+  const edgeScore = normalized(edgeLengthRatio, maxEdgeLengthRatio);
+  const areaScore = params.profile === 'polygon'
+    ? normalized(areaDriftPercent, maxAreaDriftPercent)
     : 0;
-  const areaScore = params.profile === 'polygon' && Number.isFinite(maxAreaDriftPercent) && maxAreaDriftPercent > 0
-    ? areaDriftPercent / maxAreaDriftPercent
+  const lineScore = params.profile === 'line'
+    ? normalized(lineLengthDriftPercent, maxLineLengthDriftPercent)
     : 0;
+  const vertexScore = normalized(vertexDriftPercent, maxVertexDriftPercent);
   const selfIntersectionScore = params.profile === 'polygon' && Number.isFinite(maxSelfIntersectionCount)
-    ? Math.max(0, selfIntersectionCount - maxSelfIntersectionCount)
+    ? Math.min(3, Math.max(0, selfIntersectionCount - maxSelfIntersectionCount))
     : 0;
-  const lineScore = params.profile === 'line' && Number.isFinite(maxLineLengthDriftPercent) && maxLineLengthDriftPercent > 0
-    ? lineLengthDriftPercent / maxLineLengthDriftPercent
+  const triangleShareScore = params.profile === 'polygon'
+    ? normalized(triangleShareDriftPercent, maxTriangleShareDriftPercent)
     : 0;
-  const score = edgeScore + areaScore + selfIntersectionScore + lineScore;
+  const triangleEdgeScore = params.profile === 'polygon'
+    ? normalized(triangleEdgeToBBoxRatio, maxTriangleEdgeToBBoxRatio)
+    : 0;
+  const topoSharedArcScore = params.profile === 'polygon'
+    ? normalized(topoSharedArcDeficitPercent, Math.max(1, minSharedArcRatioPercent))
+    : 0;
+  const triangleCompositeScore = triangleShareScore > 0
+    ? (triangleShareScore + triangleEdgeScore) / 2
+    : 0;
+  const score = edgeScore + areaScore + lineScore + vertexScore + selfIntersectionScore + triangleCompositeScore + topoSharedArcScore;
 
   return {
-    isAnomalous: reasons.length > 0,
+    isAnomalous: score >= scoreThreshold,
     score,
+    scoreThreshold,
     edgeLengthRatio,
     areaDriftPercent,
     lineLengthDriftPercent,
+    vertexDriftPercent,
+    triangleShareDriftPercent,
+    triangleEdgeToBBoxRatio,
+    topoSharedArcRatioPercent,
     selfIntersectionCount,
     reasons,
   };
@@ -2208,10 +2467,22 @@ export const createTransformByBandHandler = (
   const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
   const anomalyDetectionConfig = {
     enabled: transformConfig.anomalyDetection?.enabled ?? false,
+    scoreThreshold: transformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
     maxEdgeLengthRatio: transformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
     maxAreaDriftPercent: transformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
     maxSelfIntersectionCount: transformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
     maxLineLengthDriftPercent: transformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
+    maxVertexDriftPercent: transformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
+    geojson: {
+      maxTriangleShareDriftPercent:
+        transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
+      maxTriangleEdgeToBBoxRatio:
+        transformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
+    },
+    topojson: {
+      minSharedArcRatioPercent:
+        transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
+    },
   };
   const anomalyRetryConfig = {
     enabled: transformConfig.anomalyRetry?.enabled ?? false,
@@ -2305,6 +2576,7 @@ export const createTransformByBandHandler = (
     let simplified: FeatureCollection | null = null;
     let outputCollection: FeatureCollection | null = null;
     let baselineMetrics: CollectionAnomalyMetrics | null = null;
+    let topoSharedArcDiagnostics: TopojsonSharedArcDiagnostics | null = null;
     let anomalyProfile: AnomalyProfile = input.domainType === 'route' ? 'line' : 'polygon';
     let stageLabel = 'start';
     let inputPolygonCount = 0;
@@ -2396,6 +2668,28 @@ export const createTransformByBandHandler = (
         byteLength: fetchCache.data.byteLength,
         elapsedMs: fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null,
       });
+      if (fetchCache.format === 'topojson' && anomalyDetectionConfig.enabled) {
+        try {
+          const decodedBuffer = fetchCache.compression === 'gzip'
+            ? await decompressGzip(fetchCache.data)
+            : fetchCache.data;
+          const topology = decodeTopoJson(decodedBuffer);
+          topoSharedArcDiagnostics = collectTopojsonSharedArcDiagnostics(topology);
+          emitTransformTrace(traceLogLevel, 'summary', 'topology-arc-diagnostics', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'decode',
+            diagnostics: topoSharedArcDiagnostics,
+          });
+        } catch (topologyError) {
+          console.warn('[ShapeTransform] failed to collect topojson shared-arc diagnostics', {
+            nodeId: task.nodeId,
+            taskId,
+            sourceKey: input.sourceKey,
+            error: topologyError instanceof Error ? topologyError.message : String(topologyError),
+          });
+        }
+      }
       const executionPath = resolveSimplifyExecutionPath({
         fetchFormat: fetchCache.format,
         simplifyAlgorithm,
@@ -2719,6 +3013,11 @@ export const createTransformByBandHandler = (
               baseline: baselineMetrics as CollectionAnomalyMetrics,
               candidate: metrics,
               thresholds: anomalyDetectionConfig,
+              diagnostics: {
+                topoSharedArcRatioPercent: candidateAlgorithm === 'topojson'
+                  ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
+                  : null,
+              },
             });
             return {
               label,
@@ -2758,6 +3057,7 @@ export const createTransformByBandHandler = (
                 profile: anomalyProfile,
                 tolerance: retryTolerance,
                 score: retryCandidate.assessment.score,
+                scoreThreshold: retryCandidate.assessment.scoreThreshold,
                 reasons: retryCandidate.assessment.reasons,
                 accepted: !retryCandidate.assessment.isAnomalous,
               });
@@ -2835,6 +3135,7 @@ export const createTransformByBandHandler = (
               algorithm: selectedCandidate.algorithm,
               tolerance: selectedCandidate.tolerance,
               score: selectedCandidate.assessment.score,
+              scoreThreshold: selectedCandidate.assessment.scoreThreshold,
               reasons: selectedCandidate.assessment.reasons,
             },
             totalCandidates: candidates.length,
