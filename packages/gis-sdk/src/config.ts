@@ -17,6 +17,7 @@ export interface FetchConfig {
   retryLimit: number;
   retryBackoff: 'linear' | 'exponential';
   geometryIntakeGuard?: FetchGeometryIntakeGuardConfig;
+  invalidGeometryFilter?: FetchInvalidGeometryFilterConfig;
 }
 
 export type GeometryIntakeValidationLevel = 'off' | 'basic' | 'strict';
@@ -27,6 +28,14 @@ export type FetchGeometryIntakeGuardConfig = {
   minRingAreaThreshold: number;
   normalizeRingOrientation: boolean;
   keepBaselineSnapshot: boolean;
+};
+
+export type FetchInvalidGeometryFilterConfig = {
+  area: boolean;
+  lineLength: boolean;
+  maxEdgeLength: boolean;
+  selfIntersection: boolean;
+  triangleRingRatio: boolean;
 };
 
 export interface CleanupConfig {
@@ -141,6 +150,7 @@ export interface TransformConfig {
   omitDetailsConfig: OmitDetailsConfig;
   minRingVertices: number;
   boundaryDisableAtZoomOrAbove?: number;
+  retryToleranceStep?: number;
 }
 
 export type DynamicConcurrencyConfig = {

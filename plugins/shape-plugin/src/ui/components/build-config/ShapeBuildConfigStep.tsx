@@ -6,7 +6,7 @@ import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarch
 import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
-import { FetchGeometryIntakeGuardCard } from './FetchGeometryIntakeGuardCard.tsx';
+import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
 import { VtOutputQualityGuardCard } from './VtOutputQualityGuardCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
@@ -144,11 +144,13 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         showRetryCard={false}
         disabled={disabled}
-      />
-      <FetchGeometryIntakeGuardCard
-        config={config}
-        onChange={handleChange}
-        disabled={disabled}
+        additionalCards={(
+          <FetchInvalidGeometryFilterCard
+            config={config}
+            onChange={handleChange}
+            disabled={disabled}
+          />
+        )}
       />
       <TransformConfigSection
         config={config}

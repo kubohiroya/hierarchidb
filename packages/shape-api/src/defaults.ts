@@ -12,6 +12,13 @@ export const DEFAULT_BUILD_CONFIG = {
       normalizeRingOrientation: true,
       keepBaselineSnapshot: true,
     },
+    invalidGeometryFilter: {
+      area: false,
+      lineLength: false,
+      maxEdgeLength: false,
+      selfIntersection: false,
+      triangleRingRatio: false,
+    },
   },
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
@@ -54,7 +61,8 @@ export const DEFAULT_BUILD_CONFIG = {
       elongatedShapeCorrectionFactor: 1.3,
     },
     deleteOnComplete: false,
-    tolerance: 0.5,
+    tolerance: 0.1,
+    retryToleranceStep: 0.01,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {

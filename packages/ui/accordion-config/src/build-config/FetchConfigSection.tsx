@@ -14,6 +14,7 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import type { BaseBuildConfig, OmitDetailsLevel } from '@hierarchidb/gis-sdk';
+import type { ReactNode } from 'react';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { DownloadRetryControls, type DownloadRetryConfig } from './DownloadRetryControls.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
@@ -39,6 +40,7 @@ type Props<TDataSourceName = unknown> = {
   detailPresets?: Partial<Record<OmitDetailsLevel, DetailPreset>>;
   fetchRetryConfig?: DownloadRetryConfig;
   onFetchRetryConfigChange?: (next: DownloadRetryConfig) => void;
+  additionalCards?: ReactNode;
 };
 
 const DEFAULT_DETAIL_PRESETS: Record<OmitDetailsLevel, DetailPreset> = {
@@ -60,6 +62,7 @@ export const FetchConfigSection = <TDataSourceName,>({
   detailPresets,
   fetchRetryConfig,
   onFetchRetryConfigChange,
+  additionalCards,
 }: Props<TDataSourceName>) => {
   const baseFetchConfig = buildConfig.fetchConfig;
   const baseTransformConfig = buildConfig.transformConfig;
@@ -104,12 +107,15 @@ export const FetchConfigSection = <TDataSourceName,>({
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
           <CloudDownloadIcon color="primary" />
-          <Typography variant="subtitle1">
+          <Typography
+            variant="subtitle1"
+            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
+          >
             {t('processing.fetch.title', 'Fetch')}
           </Typography>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ p: 3 }}>
+      <AccordionDetails sx={{ p: 1 }}>
         <Grid container rowSpacing={2} columnSpacing={2}>
           {showConcurrencyCard ? (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
@@ -155,50 +161,12 @@ export const FetchConfigSection = <TDataSourceName,>({
             />
           ) : null}
           <Grid size={{ xs: 12 }}>
-            <Stack spacing={1}>
-              <Typography variant="subtitle2">
-                {t('processing.fetch.filteringTitle', 'Fetch-stage filtering')}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {t(
-                  'processing.fetch.filteringHelp',
-                  'Applies to filtering at the end of the fetch stage before transform begins.',
-                )}
-              </Typography>
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12 }}>
             <Paper sx={{ p: 2, ...hoverCardSx }}>
               <Stack spacing={2}>
                 <BuildConfigSectionTitle
                   icon={<VisibilityOffIcon fontSize="small" color="primary" />}
                   title={t('processing.filter.omitDetailsTitle', 'Filtering small shapes (islands and enclaves)')}
                 />
-                <Typography variant="body2" color="text.secondary">
-                  {t(
-                    'processing.filter.omitDetailsHelp',
-                    'Filters out small shapes at each zoom using bbox and area thresholds.',
-                  )}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {t(
-                    'processing.filter.omitDetailsClarityNote',
-                    'Low keeps more detail; High filters more aggressively.',
-                  )}
-                </Typography>
-                {showPreview ? (
-                  <>
-                    <Typography variant="subtitle2">
-                      {t('processing.filter.omitDetailsPreviewTitle', 'Filtering preview')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'processing.filter.omitDetailsPreviewHelp',
-                        'Pick a level to see how smaller islands drop out as filtering strengthens.',
-                      )}
-                    </Typography>
-                  </>
-                ) : null}
                 {showPreview ? (
                   <Grid container spacing={2}>
                     {previewItems.map((item) => (
@@ -252,6 +220,11 @@ export const FetchConfigSection = <TDataSourceName,>({
               </Stack>
             </Paper>
           </Grid>
+          {additionalCards ? (
+            <Grid size={{ xs: 12 }}>
+              {additionalCards}
+            </Grid>
+          ) : null}
         </Grid>
       </AccordionDetails>
     </Accordion>

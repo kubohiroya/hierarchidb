@@ -69,8 +69,6 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
-      "filteringTitle": "Fetchステージのフィルタリング",
-      "filteringHelp": "Fetchステージ終盤のフィルタリングに適用されます。",
       "geometryIntakeGuard": {
         "title": "Fetch Geometry Intake Guard",
         "description": "Transform 前に取得済みジオメトリを正規化・検証し、不安定な簡略化アーティファクトを抑制します。",
@@ -84,6 +82,15 @@
         "minRingAreaThreshold": "最小リング面積しきい値",
         "normalizeRingOrientation": "リング向きを正規化",
         "keepBaselineSnapshot": "異常スコア計算用のベースラインを保持"
+      },
+      "invalidGeometryFilter": {
+        "title": "不正な形状のフィルタリング",
+        "description": "小さな形状のフィルタリング後に、追加の不正形状チェックを実行します。",
+        "area": "面積",
+        "lineLength": "線長",
+        "maxEdgeLength": "最大辺長",
+        "selfIntersection": "自己交差",
+        "triangleRingRatio": "三角形リング比率"
       }
     },
     "transform": {
@@ -91,7 +98,12 @@
       "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。",
       "summaryHelpTopojson": "Transform はデコード時に topology-preserving な topojson 簡略化を適用し、simplify ステージで geojson 簡略化をスキップします。",
       "summaryHelpGeojson": "Transform は先にジオメトリをデコードし、その後に設定した tolerance で geojson 簡略化を実行します。",
-      "concurrencyMovedToBuildStep": "Transform の同時実行数は Build ステップへ移動しました。進捗サマリー内のステージスピナーから編集してください。",
+      "simplifyTolerance": {
+        "label": "簡略化 tolerance"
+      },
+      "retryToleranceStep": {
+        "label": "リトライ時 tolerance 増分"
+      },
       "algorithm": {
         "label": "簡略化アルゴリズム",
         "topojson": "topojson（トポロジー保持）",
@@ -108,7 +120,7 @@
         "verbose": "verbose"
       },
       "anomaly": {
-      "title": "異常検出と自動リトライ",
+      "title": "異常検出",
       "enabled": "異常検出を有効化",
       "scoreThreshold": "異常スコア閾値",
       "maxEdgeLengthRatio": "最大辺長比",
@@ -257,10 +269,6 @@
       "excludePolygonAreaCoefficient": "除外ポリゴン面積係数",
       "excludePolygonAreaCoefficientHelp": "Fetch フィルタで、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
       "omitDetailsTitle": "小さな形状のフィルタリング（島・飛地）",
-      "omitDetailsHelp": "ズームごとのBBox/面積しきい値で小さな形状を除外します。",
-      "omitDetailsClarityNote": "低は詳細を保持、高は強めに除外します。",
-      "omitDetailsPreviewTitle": "フィルタリングのプレビュー",
-      "omitDetailsPreviewHelp": "レベルを選ぶと小島の消え方が変わります。",
       "omitDetailsLevelWeak": "低（高精度）",
       "omitDetailsLevelMedium": "中（バランス）",
       "omitDetailsLevelStrong": "高（低精度）",
@@ -482,6 +490,7 @@
       "filteringDone": "フィルタ完了",
       "prepareCountsStart": "入力集計開始",
       "prepareCountsDone": "入力集計完了",
+      "simplifyAttempt": "簡略化 試行{{attempt}} (tolerance={{tolerance}})",
       "simplifyStart": "簡略化開始",
       "simplifyDone": "簡略化完了",
       "simplifyPreprocessStart": "前処理開始",

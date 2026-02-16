@@ -2049,6 +2049,10 @@ const formatAverage = (value: number | null): string => (
   value === null || !Number.isFinite(value) ? '-' : value.toFixed(2)
 );
 
+const formatToleranceForDisplay = (value: number): number => (
+  Number.isFinite(value) ? Number(value.toFixed(4)) : value
+);
+
 const runStageWithLabel = async <T>(label: string, fn: () => T | Promise<T>): Promise<T> => {
   try {
     return await fn();
@@ -2279,6 +2283,37 @@ export const createTransformByBandHandler = (
       console.warn('[transform] failed to update task phase', { phase, error });
     }
   };
+  const updateSimplifyAttemptPhase = async (
+    taskId: string,
+    params: {
+      attempt: number;
+      tolerance: number;
+      progress?: number;
+      phaseState?: 'start' | 'progress' | 'done';
+    },
+  ): Promise<void> => {
+    try {
+      await updateTask(taskQueue, taskId, {
+        display: {
+          kind: 'phase',
+          key: 'stage.taskPhase.simplifyAttempt',
+          phaseCode: 'simplify-attempt',
+          phaseState: params.phaseState ?? 'progress',
+          params: {
+            attempt: params.attempt,
+            tolerance: formatToleranceForDisplay(params.tolerance),
+          },
+        },
+        ...(params.progress !== undefined ? { progress: normalizePhaseProgress(params.progress) } : {}),
+      });
+    } catch (error) {
+      console.warn('[transform] failed to update simplify attempt phase', {
+        attempt: params.attempt,
+        tolerance: params.tolerance,
+        error,
+      });
+    }
+  };
   const persistTransformIssues = async (
     issues: TransformIssueEntry[],
     params: {
@@ -2461,6 +2496,10 @@ export const createTransformByBandHandler = (
   if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
+  const configuredRetryToleranceStep = typeof transformConfig.retryToleranceStep === 'number'
+    && Number.isFinite(transformConfig.retryToleranceStep)
+    ? Math.min(2, Math.max(0, transformConfig.retryToleranceStep))
+    : 0.01;
   const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   const preserveTopology = transformConfig.preserveTopology ?? true;
@@ -2484,12 +2523,6 @@ export const createTransformByBandHandler = (
         transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
     },
   };
-  const anomalyRetryConfig = {
-    enabled: transformConfig.anomalyRetry?.enabled ?? false,
-    maxRetries: Math.max(0, transformConfig.anomalyRetry?.maxRetries ?? 0),
-    toleranceScale: Math.min(1, Math.max(0.1, transformConfig.anomalyRetry?.toleranceScale ?? 0.7)),
-    fallbackMode: transformConfig.anomalyRetry?.fallbackMode ?? 'best_score',
-  } as const;
   const intakeGuardConfig = {
     validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
     dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
@@ -2568,7 +2601,6 @@ export const createTransformByBandHandler = (
       tolerance,
       fetchIntakeGuard: intakeGuardConfig,
       anomalyDetection: anomalyDetectionConfig,
-      anomalyRetry: anomalyRetryConfig,
       vtOutputQualityGuard: vtOutputQualityGuard ?? null,
     });
 
@@ -2952,13 +2984,19 @@ export const createTransformByBandHandler = (
         });
         let processedPolygonCount = 0;
         let lastReportAt = 0;
+        let simplifyAttempt = 1;
         const reportProgressMaybe = async (force: boolean) => {
           const now = Date.now();
           if (!force && now - lastReportAt < 2000) return;
           lastReportAt = now;
           await reportPolygonProgress(taskId, processedPolygonCount, inputPolygonCount);
         };
-        await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
+        await updateSimplifyAttemptPhase(taskId, {
+          attempt: simplifyAttempt,
+          tolerance,
+          phaseState: 'start',
+          progress: taskProgressRange.simplifyStart,
+        });
         emitTransformTrace(traceLogLevel, 'summary', 'simplify-start', {
           sessionId: String(task.nodeId),
           taskId,
@@ -2994,151 +3032,28 @@ export const createTransformByBandHandler = (
           processedPolygonCount = inputPolygonCount;
         }
         if (simplified && baselineMetrics && anomalyDetectionConfig.enabled && intakeGuardConfig.keepBaselineSnapshot) {
-          type Candidate = {
-            label: string;
-            collection: FeatureCollection;
-            tolerance: number;
-            algorithm: TransformSimplifyAlgorithm;
-            assessment: AnomalyAssessment;
-          };
-          const evaluateCandidate = (
-            label: string,
-            collection: FeatureCollection,
-            candidateTolerance: number,
-            candidateAlgorithm: TransformSimplifyAlgorithm,
-          ): Candidate => {
-            const metrics = collectCollectionAnomalyMetrics(collection, geometryOps);
-            const assessment = assessAnomalyRisk({
-              profile: anomalyProfile,
-              baseline: baselineMetrics as CollectionAnomalyMetrics,
-              candidate: metrics,
-              thresholds: anomalyDetectionConfig,
-              diagnostics: {
-                topoSharedArcRatioPercent: candidateAlgorithm === 'topojson'
-                  ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
-                  : null,
-              },
-            });
-            return {
-              label,
-              collection,
-              tolerance: candidateTolerance,
-              algorithm: candidateAlgorithm,
-              assessment,
-            };
-          };
-
-          const candidates: Candidate[] = [evaluateCandidate('initial', simplified, tolerance, simplifyAlgorithm)];
-          if (anomalyRetryConfig.enabled && candidates[0]?.assessment.isAnomalous) {
-            for (let retryIndex = 0; retryIndex < anomalyRetryConfig.maxRetries; retryIndex += 1) {
-              const retryTolerance = tolerance * Math.pow(anomalyRetryConfig.toleranceScale, retryIndex + 1);
-              const retryCollection = await runWithStallTimeout({
-                promise: runStageWithLabel('simplify-only:retry-anomaly', () => (
-                  simplifyOnlyCollection(inputCollection, band.zMax, retryTolerance, geometryOps)
-                )),
-                stage: 'simplify-only:retry-anomaly',
-                nodeId: String(task.nodeId),
-                taskId,
-                timeoutMs: 300000,
-                getLastProgressAt: () => Date.now(),
-              });
-              const retryCandidate = evaluateCandidate(
-                `retry-${retryIndex + 1}`,
-                retryCollection,
-                retryTolerance,
-                simplifyAlgorithm,
-              );
-              candidates.push(retryCandidate);
-              emitTransformTrace(traceLogLevel, 'summary', 'anomaly-retry', {
-                sessionId: String(task.nodeId),
-                taskId,
-                stage: 'simplify',
-                retryIndex: retryIndex + 1,
-                profile: anomalyProfile,
-                tolerance: retryTolerance,
-                score: retryCandidate.assessment.score,
-                scoreThreshold: retryCandidate.assessment.scoreThreshold,
-                reasons: retryCandidate.assessment.reasons,
-                accepted: !retryCandidate.assessment.isAnomalous,
-              });
-              if (!retryCandidate.assessment.isAnomalous) {
-                break;
-              }
-            }
-          }
-
-          const initialCandidate = candidates[0];
-          if (!initialCandidate) {
-            throw new Error('transform failed: anomaly candidate initialization failed');
-          }
-          const pickBestCandidate = (list: Candidate[], fallback: Candidate): Candidate => {
-            const sorted = [...list].sort((a, b) => a.assessment.score - b.assessment.score);
-            return sorted[0] ?? fallback;
-          };
-          let selectedCandidate: Candidate = pickBestCandidate(candidates, initialCandidate);
-          const allAnomalous = candidates.every((candidate) => candidate.assessment.isAnomalous);
-          if (allAnomalous) {
-            if (anomalyRetryConfig.fallbackMode === 'disable_simplify') {
-              const fallbackCandidate = evaluateCandidate(
-                'fallback-disable-simplify',
-                inputCollection,
-                0,
-                simplifyAlgorithm,
-              );
-              candidates.push(fallbackCandidate);
-              selectedCandidate = fallbackCandidate;
-            } else if (anomalyRetryConfig.fallbackMode === 'switch_algorithm') {
-              const switchedAlgorithm: TransformSimplifyAlgorithm = simplifyAlgorithm === 'topojson'
-                ? 'geojson'
-                : 'topojson';
-              if (switchedAlgorithm === 'geojson') {
-                const switchedTolerance = tolerance * anomalyRetryConfig.toleranceScale;
-                const switchedCollection = await runWithStallTimeout({
-                  promise: runStageWithLabel('simplify-only:fallback-switch-geojson', () => (
-                    simplifyOnlyCollection(inputCollection, band.zMax, switchedTolerance, geometryOps)
-                  )),
-                  stage: 'simplify-only:fallback-switch-geojson',
-                  nodeId: String(task.nodeId),
-                  taskId,
-                  timeoutMs: 300000,
-                  getLastProgressAt: () => Date.now(),
-                });
-                const switchedCandidate = evaluateCandidate(
-                  'fallback-switch-algorithm',
-                  switchedCollection,
-                  switchedTolerance,
-                  switchedAlgorithm,
-                );
-                candidates.push(switchedCandidate);
-                selectedCandidate = pickBestCandidate([selectedCandidate, switchedCandidate], selectedCandidate);
-              } else {
-                const fallbackCandidate = evaluateCandidate(
-                  'fallback-switch-unavailable-use-input',
-                  inputCollection,
-                  0,
-                  switchedAlgorithm,
-                );
-                candidates.push(fallbackCandidate);
-                selectedCandidate = pickBestCandidate([selectedCandidate, fallbackCandidate], selectedCandidate);
-              }
-            }
-          }
-
-          simplified = selectedCandidate.collection;
-          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-selection', {
+          const outputMetrics = collectCollectionAnomalyMetrics(simplified, geometryOps);
+          const outputAssessment = assessAnomalyRisk({
+            profile: anomalyProfile,
+            baseline: baselineMetrics as CollectionAnomalyMetrics,
+            candidate: outputMetrics,
+            thresholds: anomalyDetectionConfig,
+            diagnostics: {
+              topoSharedArcRatioPercent: simplifyAlgorithm === 'topojson'
+                ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
+                : null,
+            },
+          });
+          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-assessment', {
             sessionId: String(task.nodeId),
             taskId,
             stage: 'simplify',
             profile: anomalyProfile,
-            selected: {
-              label: selectedCandidate.label,
-              algorithm: selectedCandidate.algorithm,
-              tolerance: selectedCandidate.tolerance,
-              score: selectedCandidate.assessment.score,
-              scoreThreshold: selectedCandidate.assessment.scoreThreshold,
-              reasons: selectedCandidate.assessment.reasons,
-            },
-            totalCandidates: candidates.length,
+            tolerance,
+            score: outputAssessment.score,
+            scoreThreshold: outputAssessment.scoreThreshold,
+            reasons: outputAssessment.reasons,
+            isAnomalous: outputAssessment.isAnomalous,
           });
         } else if (anomalyDetectionConfig.enabled && !intakeGuardConfig.keepBaselineSnapshot) {
           emitTransformTrace(traceLogLevel, 'summary', 'anomaly-skipped', {
@@ -3398,12 +3313,7 @@ export const createTransformByBandHandler = (
       }
       const retryVertexLimit = 6553;
       const maxRetrySteps = 8;
-      const resolveRetryToleranceStep = (baseVertexCount: number, baseToleranceK: number): number => {
-        const ratio = baseVertexCount / retryVertexLimit;
-        if (!Number.isFinite(ratio) || ratio <= 1) return Math.max(5, baseToleranceK);
-        const scaled = baseToleranceK * Math.min(10, ratio);
-        return Math.max(5, scaled);
-      };
+      const resolveRetryToleranceStep = (): number => configuredRetryToleranceStep;
       const countVertexLimitOverages = (collection: FeatureCollection) => {
         let maxVertexCount = 0;
         let overLimitFeatureCount = 0;
@@ -3457,7 +3367,14 @@ export const createTransformByBandHandler = (
         let lastAttemptFeature: Feature = feature;
         let lastAttemptVertexCount = baseVertexCount;
 
-        const retryStep = resolveRetryToleranceStep(baseVertexCount, tolerance);
+        const retryStep = resolveRetryToleranceStep();
+        if (retryStep <= 0) {
+          return {
+            feature,
+            vertexCount: baseVertexCount,
+            overLimit: true,
+          };
+        }
         for (let i = 0; i < maxRetrySteps; i += 1) {
           const nextToleranceValue = tolerance + retryStep * (i + 1);
           const retryFeature = await runRetrySimplifyFeature(feature, nextToleranceValue);
