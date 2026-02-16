@@ -27,7 +27,6 @@ import type {
 } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
-  buildErrorSummaryById,
   buildHighlightKey,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
@@ -256,6 +255,12 @@ const resolveAdminCodeFromMetadata = (
 const isNumericId = (value?: string): boolean => {
   if (!value) return false;
   return /^[0-9]+$/.test(value);
+};
+
+const isRepairIssueKind = (issueKind?: string): boolean => {
+  const normalized = normalizeText(issueKind)?.toLowerCase();
+  if (!normalized) return false;
+  return normalized.endsWith('-repaired');
 };
 
 const parseVectorTileLayerNames = (data: ArrayBuffer): string[] => {
@@ -850,6 +855,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       return {
         id: row.id,
         featureId: row.featureId,
+        errorCount: row.errorCount,
+        repairCount: row.repairCount,
         countryName: context.countryName ?? row.countryName,
         countryCode: context.countryCode ?? row.countryCode,
         adminName,
@@ -998,12 +1005,37 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return featureListRows.filter((row) => viewportFeatureIdSet.has(String(row.featureId ?? row.id)));
   }, [featureListRows, featureRowFilterMode, viewportFeatureIdSet]);
 
-  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
-    buildErrorSummaryById(normalizedTransformErrorRows, {
-      getId: (row) => row.featureId ?? undefined,
-      getMessage: (row) => row.message ?? undefined,
-    })
-  ), [normalizedTransformErrorRows]);
+  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
+    const summary = new Map<string, {
+      errorCount: number;
+      repairCount: number;
+      count: number;
+      messages: string[];
+    }>();
+    normalizedTransformErrorRows.forEach((row) => {
+      const id = row.featureId;
+      if (!id) return;
+      const key = String(id);
+      const entry = summary.get(key) ?? {
+        errorCount: 0,
+        repairCount: 0,
+        count: 0,
+        messages: [],
+      };
+      if (isRepairIssueKind(row.issueKind)) {
+        entry.repairCount += 1;
+      } else {
+        entry.errorCount += 1;
+      }
+      entry.count = entry.errorCount;
+      const message = normalizeText(row.message);
+      if (message) {
+        entry.messages.push(message);
+      }
+      summary.set(key, entry);
+    });
+    return summary;
+  }, [normalizedTransformErrorRows]);
 
   const toggleRecyclingForSelection = useCallback(async () => {
     if (selectedFeatureIds.length === 0) return;
@@ -1043,18 +1075,20 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (!row.memberFeatureIds || row.memberFeatureIds.length === 0) return;
       const groupId = String(row.featureId ?? row.id ?? '');
       if (!groupId) return;
-      let count = 0;
+      let errorCount = 0;
+      let repairCount = 0;
       const messages: string[] = [];
       row.memberFeatureIds.forEach((memberId) => {
         const summary = baseErrorSummaryById.get(String(memberId));
         if (!summary) return;
-        count += summary.count;
+        errorCount += summary.errorCount ?? summary.count ?? 0;
+        repairCount += summary.repairCount ?? 0;
         if (summary.messages.length > 0) {
           messages.push(...summary.messages);
         }
       });
-      if (count > 0) {
-        aggregated.set(groupId, { count, messages });
+      if (errorCount > 0 || repairCount > 0) {
+        aggregated.set(groupId, { errorCount, repairCount, count: errorCount, messages });
       }
     });
     return aggregated;

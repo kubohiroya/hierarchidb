@@ -1,4 +1,5 @@
 import type React from 'react';
+import type { ReactNode } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -30,6 +31,7 @@ export type ZoomBandConfigSectionProps = {
   onBoundariesChange: (boundaries: number[]) => void;
   disabled?: boolean;
   t: (key: string, fallback?: string, options?: Record<string, unknown>) => string;
+  summaryIcon?: ReactNode;
 };
 
 export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
@@ -37,6 +39,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
   onBoundariesChange,
   disabled,
   t,
+  summaryIcon,
 }) => {
   const settings = loadTreeConsoleSettings();
   const { boundaries: commonZoomBandBoundaries } = resolveZoomBandSettings({
@@ -53,7 +56,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <SettingsIcon color="primary" />
+          {summaryIcon ?? <SettingsIcon color="primary" />}
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="subtitle1">
               {t('processing.zoomBandSettings.title', 'Zoom band settings')}

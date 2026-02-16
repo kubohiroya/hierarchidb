@@ -15,9 +15,9 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  FilterAlt as FilterAltIcon,
-  InfoOutlined as InfoOutlinedIcon,
   ExpandMore as ExpandMoreIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Tune as TuneIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -73,7 +73,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <FilterAltIcon color="primary" />
+          <TuneIcon color="primary" />
           <Typography variant="subtitle1">
             {t('processing.transform.title', 'Transform')}
           </Typography>
@@ -96,7 +96,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
 
           <FormControl disabled={disabled}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('processing.transform.algorithm', 'Simplify Algorithm')}
+              {t('processing.transform.algorithm.label', 'Simplify Algorithm')}
             </Typography>
             <RadioGroup
               row
@@ -127,7 +127,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
               />
             )}
             disabled={disabled || simplifyAlgorithm === 'topojson'}
-            label={t('processing.transform.preserveTopology', 'Preserve topology')}
+            label={t('processing.transform.preserveTopology.label', 'Preserve topology')}
           />
           {simplifyAlgorithm === 'topojson' ? (
             <Typography variant="caption" color="text.secondary">
@@ -140,7 +140,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
 
           <FormControl fullWidth disabled={disabled}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('processing.transform.executionLogLevel', 'Execution Log Level')}
+              {t('processing.transform.executionLogLevel.label', 'Execution Log Level')}
             </Typography>
             <Select
               size="small"

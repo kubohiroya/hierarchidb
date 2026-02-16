@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { assessAnomalyRisk, resolveSimplifyExecutionPath } from '../createTransformByBandHandler.js';
+import {
+  __test_applyGeometryIntakeGuard,
+  assessAnomalyRisk,
+  resolveSimplifyExecutionPath,
+} from '../createTransformByBandHandler.js';
 
 describe('resolveSimplifyExecutionPath', () => {
   it('returns topojson decode simplify path for topojson algorithm', () => {
@@ -96,5 +100,73 @@ describe('assessAnomalyRisk', () => {
     expect(assessed.reasons).toContain('lineLengthDriftPercent>30');
     expect(assessed.reasons.some((reason) => reason.startsWith('areaDriftPercent'))).toBe(false);
     expect(assessed.reasons.some((reason) => reason.startsWith('selfIntersectionCount'))).toBe(false);
+  });
+});
+
+describe('applyGeometryIntakeGuard', () => {
+  const collection = {
+    type: 'FeatureCollection' as const,
+    features: [
+      {
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [[[0, 0], [0, 1], [1, 1], [0, 0]]],
+        },
+        properties: { id: 'feature-1' },
+      },
+    ],
+  };
+
+  it('skips expensive validity checks in basic mode', () => {
+    let isValidCalls = 0;
+    const result = __test_applyGeometryIntakeGuard({
+      collection,
+      validationLevel: 'basic',
+      dedupeEpsilon: 0,
+      minRingAreaThreshold: 0,
+      normalizeRingOrientation: false,
+      sourceKey: 'JP:1',
+      geometryOps: {
+        simplifyCollection: (input) => input,
+        simplifyFeature: (input) => input,
+        bbox: () => null,
+        area: () => 0,
+        isValid: () => {
+          isValidCalls += 1;
+          return true;
+        },
+        countSelfIntersections: () => 0,
+        intersectsBBox: () => false,
+      },
+    });
+    expect(result.validCheckCount).toBe(0);
+    expect(isValidCalls).toBe(0);
+  });
+
+  it('runs validity checks in strict mode', () => {
+    let isValidCalls = 0;
+    const result = __test_applyGeometryIntakeGuard({
+      collection,
+      validationLevel: 'strict',
+      dedupeEpsilon: 0,
+      minRingAreaThreshold: 0,
+      normalizeRingOrientation: false,
+      sourceKey: 'JP:1',
+      geometryOps: {
+        simplifyCollection: (input) => input,
+        simplifyFeature: (input) => input,
+        bbox: () => null,
+        area: () => 0,
+        isValid: () => {
+          isValidCalls += 1;
+          return true;
+        },
+        countSelfIntersections: () => 0,
+        intersectsBBox: () => false,
+      },
+    });
+    expect(result.validCheckCount).toBe(1);
+    expect(isValidCalls).toBe(1);
   });
 });

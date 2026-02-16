@@ -6,7 +6,7 @@ export const DEFAULT_BUILD_CONFIG = {
     deleteOnComplete: false,
     timeoutMs: 300000,
     geometryIntakeGuard: {
-      validationLevel: 'basic',
+      validationLevel: 'off',
       dedupeEpsilon: 0.000001,
       minRingAreaThreshold: 0.0,
       normalizeRingOrientation: true,

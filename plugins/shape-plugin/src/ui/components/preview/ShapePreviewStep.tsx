@@ -324,6 +324,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         errorColumnLabels={{
           status: t('preview.metadata.columns.status', 'Status'),
           errorCount: t('preview.metadata.columns.errorCount', 'Errors'),
+          repairCount: t('preview.metadata.columns.repairCount', 'Repairs'),
           errorMessage: t('preview.metadata.columns.errorMessage', 'Error Message'),
         }}
         statusLabels={{

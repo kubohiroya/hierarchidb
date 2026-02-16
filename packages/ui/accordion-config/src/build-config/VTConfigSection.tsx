@@ -26,7 +26,7 @@ import {
   SquareFoot as SquareFootIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import type { BaseBuildConfig, DynamicConcurrencyConfig } from '@hierarchidb/gis-sdk';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
@@ -40,6 +40,7 @@ type Props<TDataSourceName = unknown> = {
   disabled?: boolean;
   update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
   showConcurrencyCard?: boolean;
+  additionalCards?: ReactNode;
 };
 
 const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
@@ -58,6 +59,7 @@ export const VTConfigSection = <TDataSourceName,>({
   disabled,
   update,
   showConcurrencyCard = true,
+  additionalCards,
 }: Props<TDataSourceName>) => {
   const resolvedMaxConcurrent = Number.isFinite(buildConfig.vtConfig.maxConcurrent)
     ? buildConfig.vtConfig.maxConcurrent
@@ -418,6 +420,7 @@ export const VTConfigSection = <TDataSourceName,>({
               />
             </Stack>
           </Paper>
+          {additionalCards}
         </Stack>
       </AccordionDetails>
     </Accordion>
