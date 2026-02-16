@@ -12,6 +12,7 @@ import {
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 import type { BuildTaskSummary } from '@hierarchidb/batch-api';
+import { resolveMostAdvancedStageId } from './stagePriority.ts';
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
@@ -224,7 +225,17 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
     return candidate;
   }, [buildStatus, stageCountsWithPlan, stages]);
 
-  const displayStageId = lastUnfinishedStageId ?? resolvedTaskType;
+  const inFlightStageId = useMemo(() => {
+    if (buildStatus !== 'running') return undefined;
+    const stageIds = stages
+      .filter((stage) => (
+        (tasksByStage[stage.id] ?? []).some((task) => task.status === 'running' || task.status === 'queued')
+      ))
+      .map((stage) => stage.id);
+    return resolveMostAdvancedStageId(stageIds, stages) ?? undefined;
+  }, [buildStatus, stages, tasksByStage]);
+
+  const displayStageId = inFlightStageId ?? lastUnfinishedStageId ?? resolvedTaskType;
 
   const derivedCounts = useMemo(() => {
     if (!lastUnfinishedStageId) return null;

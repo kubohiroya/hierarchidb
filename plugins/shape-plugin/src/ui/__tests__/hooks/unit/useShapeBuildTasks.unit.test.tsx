@@ -159,6 +159,38 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('prioritizes canonical stage over legacy taskType when they differ', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-stage-priority'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-priority',
+        tasks: [
+          {
+            taskId: 'task-stage-priority',
+            stage: 'vt',
+            taskType: 'fetch',
+            status: 'queued',
+            progress: 0,
+            index: 1,
+            sequence: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.stage).toBe('vt');
+      expect(result.current.tasks[0]?.taskType).toBe('vt');
+      expect(result.current.tasks[0]?.type).toBe('vt');
+    });
+  });
+
   it('keeps completed 100% when a running 100% update arrives later', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-2'));
 

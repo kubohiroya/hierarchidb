@@ -39,11 +39,13 @@ const isTaskStage = (value: unknown): value is TaskStage => (
 );
 
 const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  const candidate = task.taskType ?? task.type ?? task.stage;
-  if (isTaskStage(candidate)) {
-    return candidate;
+  const candidates: Array<unknown> = [task.stage, task.taskType, task.type];
+  for (const candidate of candidates) {
+    if (isTaskStage(candidate)) {
+      return candidate;
+    }
   }
-  throw new Error(`[ShapeBuildStep] Invalid task stage: ${String(candidate ?? 'undefined')}`);
+  throw new Error(`[ShapeBuildStep] Invalid task stage: ${String(task.stage ?? task.taskType ?? task.type ?? 'undefined')}`);
 };
 
 const resolveProgressValue = (value: number | undefined): number => (
@@ -745,9 +747,14 @@ export const useShapeBuildTaskSync = ({
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => {
     const progress = resolveProgressValue(task.progress);
+    const stage = resolveTaskStage(task);
     const normalized: ShapeBuildTaskSummary = {
       ...task,
-      stage: resolveTaskStage(task),
+      // Keep legacy fields aligned with canonical stage so downstream grouping
+      // does not regress to stale taskType/type values during stage transitions.
+      stage,
+      taskType: stage,
+      type: stage,
       status: normalizeTaskStatus(task.status, progress),
       progress: progress >= 100 ? 100 : task.progress,
     };

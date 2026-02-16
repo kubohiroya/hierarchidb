@@ -79,6 +79,7 @@ export const TaskItemCard = ({
       leadingIcon={leadingIcon}
       statusLabel={statusLabelValue}
       statusColor={statusColor}
+      isRunning={task.status === 'running'}
       message={taskMessage}
       detailLines={detailLines}
       progress={displayProgress}
