@@ -48,7 +48,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
     : 0.1;
   const simplifyRetryStep = typeof baseTransformConfig.retryToleranceStep === 'number'
     ? clampSliderValue(baseTransformConfig.retryToleranceStep)
-    : 0.01;
+    : 0.5;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
   const anomalyDetection = {
