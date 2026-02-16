@@ -436,9 +436,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     const transformByBandHandler = await runTransformStep(params, 'create-transform-handler', async () => (
       createTransformByBandHandler({
         ephemeralDB: params.ephemeralStore,
-        fetchConfig: params.buildConfig.fetchConfig,
         transformConfig,
-        vtConfig: params.buildConfig.vtConfig,
         bands: params.bands,
         featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
         abortSignal: transformByBandAbortController.signal,

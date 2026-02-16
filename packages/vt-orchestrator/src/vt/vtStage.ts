@@ -9,11 +9,10 @@ import type {
   Point,
   Polygon,
 } from 'geojson';
-import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import { geometryBboxClip, type VTOutputQualityGuardConfig } from '@hierarchidb/gis-sdk';
+import { geometryBboxClip } from '@hierarchidb/gis-sdk';
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
@@ -563,449 +562,6 @@ const countTileLineStrings = (geometry: unknown): number => {
   return geometry.length;
 };
 
-const VT_TRIANGLE_MIN_ANGLE_DEGREES = 12;
-const VT_TRIANGLE_MIN_EDGE_TO_BASE_RATIO = 2.8;
-const VT_TRIANGLE_MAX_AREA_TO_BBOX_RATIO = 0.18;
-const VT_TRIANGLE_MIN_SPAN_RATIO = 0.03;
-const VT_TRIANGLE_SCORE_THRESHOLD = 2.5;
-const VT_TRIANGLE_MIN_BOUNDARY_VERTEX_COUNT = 1;
-const VT_TRIANGLE_ISSUE_RECORD_LIMIT = 240;
-const VT_ORIGIN_BOUNDARY_VERTEX_THRESHOLD = 2;
-
-type VtTriangleOriginStage = 'vt' | 'transform-or-earlier';
-
-type VtTriangleIssue = {
-  key: string;
-  featureId: string;
-  featureIndex: number;
-  layerName: string;
-  ringIndex: number;
-  ringVertexCount: number;
-  suspectVertexIndex: number;
-  score: number;
-  minAngleDeg: number;
-  edgeToBaseRatio: number;
-  areaToBBoxRatio: number;
-  maxSpan: number;
-  boundaryVertexCount: number;
-  originStage: VtTriangleOriginStage;
-};
-
-type VtTriangleIssueThresholds = {
-  scoreThreshold: number;
-  minTriangleAngleDeg: number;
-  minEdgeToBaseRatio: number;
-  maxAreaToBBoxRatio: number;
-  minSpanRatio: number;
-  minBoundaryVertexCount: number;
-};
-
-type TileVertex = [number, number];
-
-const normalizeTileCoord = (value: unknown): number | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return value;
-};
-
-const normalizeRingVertices = (ring: number[][]): TileVertex[] => {
-  if (!Array.isArray(ring) || ring.length < 3) return [];
-  const normalized: TileVertex[] = [];
-  ring.forEach((coord) => {
-    const x = normalizeTileCoord(coord?.[0]);
-    const y = normalizeTileCoord(coord?.[1]);
-    if (x === null || y === null) return;
-    normalized.push([x, y]);
-  });
-  if (normalized.length < 3) return [];
-  const deduped: TileVertex[] = [];
-  normalized.forEach((coord) => {
-    const last = deduped[deduped.length - 1];
-    if (!last) {
-      deduped.push(coord);
-      return;
-    }
-    if (last[0] === coord[0] && last[1] === coord[1]) return;
-    deduped.push(coord);
-  });
-  if (deduped.length >= 3) {
-    const first = deduped[0];
-    const last = deduped[deduped.length - 1];
-    if (first && last && first[0] === last[0] && first[1] === last[1]) {
-      deduped.pop();
-    }
-  }
-  return deduped;
-};
-
-const resolveVtTriangleIssueThresholds = (
-  guard?: VTOutputQualityGuardConfig,
-): VtTriangleIssueThresholds => ({
-  scoreThreshold: guard?.scoreThreshold ?? VT_TRIANGLE_SCORE_THRESHOLD,
-  minTriangleAngleDeg: guard?.minTriangleAngleDeg ?? VT_TRIANGLE_MIN_ANGLE_DEGREES,
-  minEdgeToBaseRatio: guard?.minEdgeToBaseRatio ?? VT_TRIANGLE_MIN_EDGE_TO_BASE_RATIO,
-  maxAreaToBBoxRatio: guard?.maxAreaToBBoxRatio ?? VT_TRIANGLE_MAX_AREA_TO_BBOX_RATIO,
-  minSpanRatio: guard?.minSpanRatio ?? VT_TRIANGLE_MIN_SPAN_RATIO,
-  minBoundaryVertexCount: guard?.minBoundaryVertexCount ?? VT_TRIANGLE_MIN_BOUNDARY_VERTEX_COUNT,
-});
-
-const resolveTriangleAngle = (a: TileVertex, b: TileVertex, c: TileVertex): number | null => {
-  const bax = a[0] - b[0];
-  const bay = a[1] - b[1];
-  const bcx = c[0] - b[0];
-  const bcy = c[1] - b[1];
-  const leftNorm = Math.hypot(bax, bay);
-  const rightNorm = Math.hypot(bcx, bcy);
-  if (!Number.isFinite(leftNorm) || !Number.isFinite(rightNorm)) return null;
-  if (leftNorm === 0 || rightNorm === 0) return null;
-  const dot = bax * bcx + bay * bcy;
-  const cos = Math.max(-1, Math.min(1, dot / (leftNorm * rightNorm)));
-  const radians = Math.acos(cos);
-  if (!Number.isFinite(radians)) return null;
-  return radians * 180 / Math.PI;
-};
-
-const resolveDistance = (pointA: TileVertex, pointB: TileVertex): number => {
-  const dx = pointA[0] - pointB[0];
-  const dy = pointA[1] - pointB[1];
-  return Math.hypot(dx, dy);
-};
-
-const resolveTriangleArea = (a: TileVertex, b: TileVertex, c: TileVertex): number => (
-  Math.abs(((a[0] * (b[1] - c[1])) + (b[0] * (c[1] - a[1])) + (c[0] * (a[1] - b[1]))) / 2)
-);
-
-const resolveTriangleDiagnostics = (
-  vertices: TileVertex[],
-  extent: number,
-): {
-  minAngleDeg: number;
-  edgeToBaseRatio: number;
-  areaToBBoxRatio: number;
-  maxSpan: number;
-  boundaryVertexCount: number;
-  originStage: VtTriangleOriginStage;
-} | null => {
-  if (vertices.length !== 3) return null;
-  const [a, b, c] = vertices;
-  if (!a || !b || !c) return null;
-  const angleA = resolveTriangleAngle(b, a, c);
-  const angleB = resolveTriangleAngle(a, b, c);
-  const angleC = resolveTriangleAngle(a, c, b);
-  if (angleA == null || angleB == null || angleC == null) return null;
-  const minAngleDeg = Math.min(angleA, angleB, angleC);
-  const xs = [a[0], b[0], c[0]];
-  const ys = [a[1], b[1], c[1]];
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const maxSpan = Math.max(maxX - minX, maxY - minY);
-  const baseLength = resolveDistance(a, c);
-  const edgeLengthAB = resolveDistance(a, b);
-  const edgeLengthBC = resolveDistance(b, c);
-  const longestEdge = Math.max(edgeLengthAB, edgeLengthBC);
-  const edgeToBaseRatio = longestEdge > 0 && baseLength > 0 ? longestEdge / baseLength : Number.POSITIVE_INFINITY;
-  const bboxArea = Math.max(0, (maxX - minX) * (maxY - minY));
-  const triangleArea = resolveTriangleArea(a, b, c);
-  const areaToBBoxRatio = bboxArea > 0 ? triangleArea / bboxArea : 0;
-  const boundaryVertexCount = [a, b, c].reduce((count, vertex) => {
-    const x = vertex[0];
-    const y = vertex[1];
-    const isBoundary = x <= 0 || x >= extent || y <= 0 || y >= extent;
-    return isBoundary ? count + 1 : count;
-  }, 0);
-  return {
-    minAngleDeg,
-    edgeToBaseRatio,
-    areaToBBoxRatio,
-    maxSpan,
-    boundaryVertexCount,
-    originStage: boundaryVertexCount >= VT_ORIGIN_BOUNDARY_VERTEX_THRESHOLD ? 'vt' : 'transform-or-earlier',
-  };
-};
-
-const resolveTriangleIssueScore = (
-  diagnostics: {
-    minAngleDeg: number;
-    edgeToBaseRatio: number;
-    areaToBBoxRatio: number;
-    boundaryVertexCount: number;
-  },
-  thresholds: VtTriangleIssueThresholds,
-): number => {
-  let score = 0;
-  if (diagnostics.minAngleDeg <= thresholds.minTriangleAngleDeg) score += 1;
-  if (diagnostics.edgeToBaseRatio >= thresholds.minEdgeToBaseRatio) score += 1;
-  if (diagnostics.areaToBBoxRatio <= thresholds.maxAreaToBBoxRatio) score += 1;
-  if (diagnostics.boundaryVertexCount >= thresholds.minBoundaryVertexCount) score += 0.5;
-  return score;
-};
-
-const resolveTileFeatureIdFromVt = (feature: Tile['features'][number], fallback: string): string => {
-  const featureRecord = feature as { id?: unknown; tags?: Record<string, unknown> };
-  const tags = featureRecord.tags;
-  const candidates = [
-    tags?.__hdbFeatureId,
-    tags?.featureId,
-    tags?.id,
-    featureRecord.id,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.trim().length > 0) return candidate.trim();
-    if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(candidate);
-  }
-  return fallback;
-};
-
-const collectTileTriangleIssues = (params: {
-  layers: Record<string, Tile>;
-  z: number;
-  x: number;
-  y: number;
-  extent: number;
-  thresholds?: VtTriangleIssueThresholds;
-}): VtTriangleIssue[] => {
-  const issues: VtTriangleIssue[] = [];
-  const thresholds = params.thresholds ?? resolveVtTriangleIssueThresholds(undefined);
-  const minSpan = Math.max(1, params.extent * thresholds.minSpanRatio);
-  Object.entries(params.layers).forEach(([layerName, layerTile]) => {
-    const features = Array.isArray(layerTile.features) ? layerTile.features : [];
-    features.forEach((feature, featureIndex) => {
-      if (feature.type !== 3) return;
-      const rings = normalizeTileRings(feature.geometry);
-      if (rings.length === 0) return;
-      const featureId = resolveTileFeatureIdFromVt(
-        feature,
-        `tile:${params.z}/${params.x}/${params.y}:${layerName}:${featureIndex}`,
-      );
-      rings.forEach((ring, ringIndex) => {
-        const vertices = normalizeRingVertices(ring);
-        if (vertices.length < 3) return;
-        const ringVertexCount = vertices.length;
-        let bestIssue: VtTriangleIssue | null = null;
-        for (let vertexIndex = 0; vertexIndex < ringVertexCount; vertexIndex += 1) {
-          const prev = vertices[(vertexIndex + ringVertexCount - 1) % ringVertexCount];
-          const current = vertices[vertexIndex];
-          const next = vertices[(vertexIndex + 1) % ringVertexCount];
-          if (!prev || !current || !next) continue;
-          const diagnostics = resolveTriangleDiagnostics([prev, current, next], params.extent);
-          if (!diagnostics) continue;
-          if (diagnostics.maxSpan < minSpan) continue;
-          const score = resolveTriangleIssueScore(diagnostics, thresholds);
-          if (score < thresholds.scoreThreshold) continue;
-          const issue: VtTriangleIssue = {
-            key: `${layerName}:${featureIndex}:${ringIndex}:${vertexIndex}`,
-            featureId,
-            featureIndex,
-            layerName,
-            ringIndex,
-            ringVertexCount,
-            suspectVertexIndex: vertexIndex,
-            score,
-            minAngleDeg: diagnostics.minAngleDeg,
-            edgeToBaseRatio: diagnostics.edgeToBaseRatio,
-            areaToBBoxRatio: diagnostics.areaToBBoxRatio,
-            maxSpan: diagnostics.maxSpan,
-            boundaryVertexCount: diagnostics.boundaryVertexCount,
-            originStage: diagnostics.originStage,
-          };
-          if (
-            !bestIssue
-            || issue.score > bestIssue.score
-            || (issue.score === bestIssue.score && issue.minAngleDeg < bestIssue.minAngleDeg)
-          ) {
-            bestIssue = issue;
-          }
-        }
-        if (bestIssue) issues.push(bestIssue);
-      });
-    });
-  });
-  return issues;
-};
-
-type TileRingReference = {
-  flatRingIndex: number;
-  ring: number[][];
-  remove: () => void;
-  replace: (next: number[][]) => void;
-};
-
-const isTilePoint = (value: unknown): value is number[] => (
-  Array.isArray(value)
-  && value.length >= 2
-  && typeof value[0] === 'number'
-  && typeof value[1] === 'number'
-);
-
-const isTileRing = (value: unknown): value is number[][] => (
-  Array.isArray(value)
-  && value.length > 0
-  && isTilePoint(value[0])
-);
-
-const isTilePolygon = (value: unknown): value is number[][][] => (
-  Array.isArray(value)
-  && value.length > 0
-  && isTileRing(value[0])
-);
-
-const isTileMultiPolygon = (value: unknown): value is number[][][][] => (
-  Array.isArray(value)
-  && value.length > 0
-  && isTilePolygon(value[0])
-);
-
-const cloneTileGeometry = (geometry: unknown): unknown => (
-  Array.isArray(geometry)
-    ? geometry.map((child) => cloneTileGeometry(child))
-    : geometry
-);
-
-const collectTileRingReferences = (geometry: unknown): TileRingReference[] => {
-  const refs: TileRingReference[] = [];
-  let flatRingIndex = 0;
-  if (isTilePolygon(geometry)) {
-    const polygon = geometry;
-    polygon.forEach((ring, ringIndex) => {
-      if (!isTileRing(ring)) return;
-      const currentIndex = flatRingIndex;
-      flatRingIndex += 1;
-      refs.push({
-        flatRingIndex: currentIndex,
-        ring,
-        remove: () => {
-          polygon.splice(ringIndex, 1);
-        },
-        replace: (next) => {
-          polygon[ringIndex] = next;
-        },
-      });
-    });
-    return refs;
-  }
-  if (isTileMultiPolygon(geometry)) {
-    const multiPolygon = geometry;
-    multiPolygon.forEach((polygon, polygonIndex) => {
-      polygon.forEach((ring, ringIndex) => {
-        if (!isTileRing(ring)) return;
-        const currentIndex = flatRingIndex;
-        flatRingIndex += 1;
-        refs.push({
-          flatRingIndex: currentIndex,
-          ring,
-          remove: () => {
-            const polygonRef = multiPolygon[polygonIndex];
-            if (!polygonRef) return;
-            polygonRef.splice(ringIndex, 1);
-            if (polygonRef.length === 0) {
-              multiPolygon.splice(polygonIndex, 1);
-            }
-          },
-          replace: (next) => {
-            const polygonRef = multiPolygon[polygonIndex];
-            if (!polygonRef) return;
-            polygonRef[ringIndex] = next;
-          },
-        });
-      });
-    });
-  }
-  return refs;
-};
-
-const cleanupTilePolygonGeometry = (geometry: unknown): unknown | null => {
-  if (isTilePolygon(geometry)) {
-    const cleanedRings = geometry.filter((ring) => normalizeRingVertices(ring).length >= 3);
-    return cleanedRings.length > 0 ? cleanedRings : null;
-  }
-  if (isTileMultiPolygon(geometry)) {
-    const cleanedPolygons = geometry
-      .map((polygon) => polygon.filter((ring) => normalizeRingVertices(ring).length >= 3))
-      .filter((polygon) => polygon.length > 0);
-    return cleanedPolygons.length > 0 ? cleanedPolygons : null;
-  }
-  return null;
-};
-
-const rebuildRingWithoutVertex = (ring: number[][], suspectVertexIndex: number): number[][] | null => {
-  const vertices = normalizeRingVertices(ring);
-  if (vertices.length <= 3) return null;
-  if (!Number.isInteger(suspectVertexIndex) || suspectVertexIndex < 0 || suspectVertexIndex >= vertices.length) {
-    return null;
-  }
-  const nextVertices = vertices.filter((_, index) => index !== suspectVertexIndex);
-  if (nextVertices.length < 3) return null;
-  const first = nextVertices[0];
-  if (!first) return null;
-  return [...nextVertices, [...first]];
-};
-
-const repairTileLayersForTriangleIssues = (params: {
-  layers: Record<string, Tile>;
-  issues: VtTriangleIssue[];
-}): {
-  layers: Record<string, Tile>;
-  repairedIssueKeys: Set<string>;
-} => {
-  const issuesByLayerAndFeature = new Map<string, VtTriangleIssue[]>();
-  params.issues.forEach((issue) => {
-    const key = `${issue.layerName}:${issue.featureIndex}`;
-    const bucket = issuesByLayerAndFeature.get(key);
-    if (bucket) {
-      bucket.push(issue);
-    } else {
-      issuesByLayerAndFeature.set(key, [issue]);
-    }
-  });
-  const repairedIssueKeys = new Set<string>();
-  const repairedLayers: Record<string, Tile> = {};
-  Object.entries(params.layers).forEach(([layerName, layerTile]) => {
-    const features = Array.isArray(layerTile.features) ? layerTile.features : [];
-    const nextFeatures: Tile['features'] = [];
-    features.forEach((feature, featureIndex) => {
-      const featureIssues = issuesByLayerAndFeature.get(`${layerName}:${featureIndex}`);
-      if (!featureIssues || featureIssues.length === 0 || feature.type !== 3) {
-        nextFeatures.push(feature);
-        return;
-      }
-      const geometryClone = cloneTileGeometry(feature.geometry);
-      const ringRefs = collectTileRingReferences(geometryClone);
-      if (ringRefs.length === 0) {
-        nextFeatures.push(feature);
-        return;
-      }
-      const sortedIssues = [...featureIssues].sort((a, b) => b.ringIndex - a.ringIndex);
-      sortedIssues.forEach((issue) => {
-        const ringRef = ringRefs.find((candidate) => candidate.flatRingIndex === issue.ringIndex);
-        if (!ringRef) return;
-        if (issue.ringVertexCount <= 3) {
-          ringRef.remove();
-          repairedIssueKeys.add(issue.key);
-          return;
-        }
-        const rebuiltRing = rebuildRingWithoutVertex(ringRef.ring, issue.suspectVertexIndex);
-        if (!rebuiltRing) return;
-        ringRef.replace(rebuiltRing);
-        repairedIssueKeys.add(issue.key);
-      });
-      const cleanedGeometry = cleanupTilePolygonGeometry(geometryClone);
-      if (!cleanedGeometry) {
-        return;
-      }
-      nextFeatures.push({
-        ...feature,
-        geometry: cleanedGeometry as Tile['features'][number]['geometry'],
-      });
-    });
-    repairedLayers[layerName] = {
-      ...layerTile,
-      features: nextFeatures,
-    };
-  });
-  return { layers: repairedLayers, repairedIssueKeys };
-};
-
 const buildBufferSetHash = (bufferIds: string[]): string => {
   const sorted = [...bufferIds].sort();
   const json = JSON.stringify(sorted);
@@ -1463,9 +1019,6 @@ export const vtStageTestUtils = {
   buildGeojsonVtEmptyTileSummaryReason,
   resolveVtDebugFocusConfig,
   resolveVtDebugFocusMatch,
-  resolveVtTriangleIssueThresholds,
-  collectTileTriangleIssues,
-  repairTileLayersForTriangleIssues,
   computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
@@ -1582,15 +1135,6 @@ const buildLayerIndexes = async (
 export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
   const { bands, vtConfig, tileWriter, abortSignal } = context;
   const layerSetName = vtConfig.layerSetName;
-  const outputQualityGuard = vtConfig.outputQualityGuard;
-  const outputQualityThresholds = resolveVtTriangleIssueThresholds(outputQualityGuard);
-  const isOutputQualityGuardEnabledAtZoom = (z: number): boolean => {
-    if (!outputQualityGuard?.enabled) return false;
-    if (!Number.isFinite(outputQualityGuard.minZoom) || !Number.isFinite(outputQualityGuard.maxZoom)) return false;
-    const minZoom = Math.min(outputQualityGuard.minZoom, outputQualityGuard.maxZoom);
-    const maxZoom = Math.max(outputQualityGuard.minZoom, outputQualityGuard.maxZoom);
-    return z >= minZoom && z <= maxZoom;
-  };
   if (!layerSetName) {
     throw new Error('vt stage requires layerSetName');
   }
@@ -1642,15 +1186,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         zRange: [band.zMin, band.zMax],
         layerSetName,
         bufferIdSample,
-        outputQualityGuard: outputQualityGuard
-          ? {
-            enabled: outputQualityGuard.enabled,
-            minZoom: outputQualityGuard.minZoom,
-            maxZoom: outputQualityGuard.maxZoom,
-            actionOnAnomaly: outputQualityGuard.actionOnAnomaly,
-            thresholds: outputQualityThresholds,
-          }
-          : null,
       }));
       if (debugFocusConfig.enabled) {
         console.info('[vt][focus] enabled', JSON.stringify({
@@ -2297,61 +1832,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       };
       await reportTileProgress(true, `tiles 0/${totalTiles}`);
 
-      const vtTriangleIssueRecords: ShapeTransformErrorRecord[] = [];
-      const vtTriangleIssueKeys = new Set<string>();
-      let triangleIssueTotalCount = 0;
-      let triangleRepairedTotalCount = 0;
-      let vtOriginIssueCount = 0;
-      let preVtOriginIssueCount = 0;
-      const normalizeIssueToken = (value: string): string => value.replace(/[^A-Za-z0-9:_-]/g, '_');
-      const appendVtTriangleIssueRecord = (
-        issue: VtTriangleIssue,
-        z: number,
-        x: number,
-        y: number,
-        status: 'suspect' | 'repaired',
-      ) => {
-        const issueKey = `${status}:${z}/${x}/${y}:${issue.layerName}:${issue.featureId}:${issue.ringIndex}:${issue.suspectVertexIndex}`;
-        if (vtTriangleIssueKeys.has(issueKey)) return;
-        vtTriangleIssueKeys.add(issueKey);
-        if (status === 'repaired') {
-          triangleRepairedTotalCount += 1;
-        } else {
-          triangleIssueTotalCount += 1;
-          if (issue.originStage === 'vt') {
-            vtOriginIssueCount += 1;
-          } else {
-            preVtOriginIssueCount += 1;
-          }
-        }
-        if (vtTriangleIssueRecords.length >= VT_TRIANGLE_ISSUE_RECORD_LIMIT) return;
-        const featureToken = normalizeIssueToken(issue.featureId).slice(0, 72);
-        const kindPrefix = issue.originStage === 'vt' ? 'vt-boundary-spike' : 'pre-vt-spike';
-        const issueKind = status === 'repaired' ? `${kindPrefix}-repaired` : `${kindPrefix}-suspect`;
-        const issueStage = status === 'repaired' ? 'tile-repair' : 'tile-diagnostic';
-        const messagePrefix = status === 'repaired' ? '[vt-repair]' : '[vt-diagnostic]';
-        vtTriangleIssueRecords.push({
-          id: `${task.taskId}:vt-${status}:${z}:${x}:${y}:${issue.ringIndex}:${issue.suspectVertexIndex}:${featureToken}`,
-          nodeId: task.nodeId,
-          taskId: task.taskId,
-          stage: 'vt',
-          issueStage,
-          issueKind,
-          bandIndex: input.bandIndex,
-          sourceKey: input.sourceKey,
-          featureId: issue.featureId,
-          featureIndex: issue.featureIndex,
-          geometryType: 'Polygon',
-          polygonCount: 1,
-          ringCount: 1,
-          polygonErrorCount: 1,
-          ringErrorCount: 1,
-          message: `${messagePrefix} originStage=${issue.originStage} tile=${z}/${x}/${y} layer=${issue.layerName} ring=${issue.ringIndex} vertex=${issue.suspectVertexIndex} score=${issue.score.toFixed(2)} minAngleDeg=${issue.minAngleDeg.toFixed(3)} edgeToBaseRatio=${issue.edgeToBaseRatio.toFixed(3)} areaToBBoxRatio=${issue.areaToBBoxRatio.toFixed(3)} boundaryVertices=${issue.boundaryVertexCount}/3 maxSpan=${issue.maxSpan.toFixed(1)}`,
-          createdAt: Date.now(),
-          lineFeatures: { type: 'FeatureCollection', features: [] },
-        });
-      };
-
       const computeInputTileStats = (bbox: TileBBox) => {
         let featureCount = 0;
         let vertexCount = 0;
@@ -2434,56 +1914,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           for (let y = yStart; y <= yEnd; y++) {
             assertNotAborted(abortSignal);
             const tileId = packTileId(x, y, z);
-            const baseLayers = aggregatedLayersByTileId
+            const layers = aggregatedLayersByTileId
               ? (aggregatedLayersByTileId.get(tileId) ?? null)
               : (indexes ? collectLayersForTileFromIndexes(indexes, z, x, y) : null);
             processedTiles += 1;
-            if (!baseLayers) {
+            if (!layers) {
               await reportTileProgress(false);
               continue;
-            }
-            let layers = baseLayers;
-            const qualityGuardActive = isOutputQualityGuardEnabledAtZoom(z);
-            if (qualityGuardActive) {
-              const initialIssues = collectTileTriangleIssues({
-                layers,
-                z,
-                x,
-                y,
-                extent: context.vtConfig.extent,
-                thresholds: outputQualityThresholds,
-              });
-              if (initialIssues.length > 0) {
-                const guardAction = outputQualityGuard?.actionOnAnomaly ?? 'mark_warning';
-                if (guardAction === 'fallback_less_simplified') {
-                  const repairResult = repairTileLayersForTriangleIssues({
-                    layers,
-                    issues: initialIssues,
-                  });
-                  layers = repairResult.layers;
-                  const remainingIssues = collectTileTriangleIssues({
-                    layers,
-                    z,
-                    x,
-                    y,
-                    extent: context.vtConfig.extent,
-                    thresholds: outputQualityThresholds,
-                  });
-                  const remainingIssueKeys = new Set(remainingIssues.map((issue) => issue.key));
-                  initialIssues.forEach((issue) => {
-                    if (!repairResult.repairedIssueKeys.has(issue.key)) return;
-                    if (remainingIssueKeys.has(issue.key)) return;
-                    appendVtTriangleIssueRecord(issue, z, x, y, 'repaired');
-                  });
-                  remainingIssues.forEach((issue) => appendVtTriangleIssueRecord(issue, z, x, y, 'suspect'));
-                } else {
-                  initialIssues.forEach((issue) => appendVtTriangleIssueRecord(issue, z, x, y, 'suspect'));
-                  if (guardAction === 'drop_tile') {
-                    await reportTileProgress(false, `tiles ${processedTiles}/${totalTiles} | dropped tile z=${z} x=${x} y=${y} due to anomalies=${initialIssues.length}`);
-                    continue;
-                  }
-                }
-              }
             }
             const tileBBox = tileToBBox(z, x, y);
             const inputStats = computeInputTileStats(
@@ -2612,30 +2049,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         generatedTiles,
         outputTotals: totalOutputStats,
       }));
-      if (triangleIssueTotalCount > 0 || triangleRepairedTotalCount > 0) {
-        if (vtTriangleIssueRecords.length > 0) {
-          try {
-            await context.ephemeralDB.transformErrors.bulkPut(vtTriangleIssueRecords);
-          } catch (error) {
-            console.warn('[vt][diagnostic] failed to persist triangle issue records', JSON.stringify({
-              ...taskContext,
-              triangleIssueCount: triangleIssueTotalCount,
-              triangleRepairedCount: triangleRepairedTotalCount,
-              persistedCount: vtTriangleIssueRecords.length,
-              error: error instanceof Error ? error.message : String(error),
-            }));
-          }
-        }
-        console.warn('[vt][diagnostic] triangle issue summary', JSON.stringify({
-          ...taskContext,
-          triangleIssueCount: triangleIssueTotalCount,
-          triangleRepairedCount: triangleRepairedTotalCount,
-          vtOriginIssueCount,
-          preVtOriginIssueCount,
-          persistedCount: vtTriangleIssueRecords.length,
-          droppedCount: Math.max(0, triangleIssueTotalCount + triangleRepairedTotalCount - vtTriangleIssueRecords.length),
-        }));
-      }
       console.info('[vt] task completed', JSON.stringify({
         ...taskContext,
         processedTiles,
