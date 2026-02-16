@@ -58,7 +58,10 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
         <Stack direction="row" spacing={2} alignItems="center">
           {summaryIcon ?? <SettingsIcon color="primary" />}
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="subtitle1">
+            <Typography
+              variant="subtitle1"
+              sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
+            >
               {t('processing.zoomBandSettings.title', 'Zoom band settings')}
             </Typography>
             <Tooltip
@@ -73,7 +76,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
           </Stack>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ p: 3 }}>
+      <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={2}>
           <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
             <ZoomBandRangeCard

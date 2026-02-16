@@ -341,6 +341,12 @@ export function mergeBuildConfig(
           ...overrides.fetchConfig.geometryIntakeGuard,
         }
         : base.fetchConfig.geometryIntakeGuard,
+      invalidGeometryFilter: overrides.fetchConfig.invalidGeometryFilter
+        ? {
+          ...(base.fetchConfig.invalidGeometryFilter ?? {}),
+          ...overrides.fetchConfig.invalidGeometryFilter,
+        }
+        : base.fetchConfig.invalidGeometryFilter,
     }
     : base.fetchConfig;
 

@@ -678,19 +678,25 @@ const applyOriginPropertiesToCollection = (collection: FeatureCollection, origin
   return { ...collection, features };
 };
 
-const summarizeFeatureCollection = (
+const summarizeFeatureCollection = async (
   collection: FeatureCollection,
   geometryEngine: GeometryEngine,
-): {
+  options?: {
+    onFeatureCountProgress?: (featureIndex: number, featureTotal: number) => Promise<void> | void;
+  },
+): Promise<{
   featureCount: number;
   vertexCount: number;
   polygonCount: number;
   bbox: [number, number, number, number];
-} => {
+}> => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
   let polygonCount = 0;
-  for (const feature of collection.features) {
+  for (let featureIndex = 0; featureIndex < collection.features.length; featureIndex += 1) {
+    await options?.onFeatureCountProgress?.(featureIndex + 1, featureCount);
+    const feature = collection.features[featureIndex];
+    if (!feature) continue;
     vertexCount += countVerticesFromGeometry(feature.geometry);
     polygonCount += countPolygonsFromGeometry(feature.geometry);
   }
@@ -900,9 +906,9 @@ const createFetchHandler = (params: {
         }
       }
       baseCollection = normalizeGeojsonCollection(baseCollection);
-      const inputSummary = summarizeFeatureCollection(baseCollection, geometryEngine);
+      const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine);
       const filteredCollection = Number.isFinite(filterZoom)
-        ? filterFetchCollectionByZoom(baseCollection, {
+        ? await filterFetchCollectionByZoom(baseCollection, {
           zTarget: filterZoom!,
           omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
           excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
@@ -946,7 +952,7 @@ const createFetchHandler = (params: {
       }
 
       assertNotAborted(params.abortSignal);
-      const outputSummary = summarizeFeatureCollection(collectionWithOrigin, geometryEngine);
+      const outputSummary = await summarizeFeatureCollection(collectionWithOrigin, geometryEngine);
       const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
@@ -1014,9 +1020,9 @@ const createFetchHandler = (params: {
       collection = mergeGeojsonCollection(collection);
     }
     collection = normalizeGeojsonCollection(collection);
-    const inputSummary = summarizeFeatureCollection(collection, geometryEngine);
+    const inputSummary = await summarizeFeatureCollection(collection, geometryEngine);
     const filteredCollection = Number.isFinite(filterZoom)
-      ? filterFetchCollectionByZoom(collection, {
+      ? await filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
         omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
         excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
@@ -1058,7 +1064,7 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection, geometryEngine);
+    const { featureCount, vertexCount, polygonCount, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine);
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const fetchCacheRecord = await putFetchCache({

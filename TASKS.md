@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #332 / `codex/feat/shape/fetch-invalid-geometry-filters` / start: 2026-02-16 16:12 JST
 - #330 / `codex/feat/ui/maximized-window-resize` / start: 2026-02-16 15:19 JST
 - #325 / `codex/fix/shape/tile-boundary-anomaly-325` / start: 2026-02-16 12:50 JST
 - #323 / `codex/feat/shape/vt-anomaly-detection-params-323` / start: 2026-02-16 10:40 JST
@@ -108,6 +109,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-16 16:12 JST #332 を起票し（https://github.com/kubohiroya/hierarchidb/issues/332）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/shape/fetch-invalid-geometry-filters` を作成して着手。
 - update: 2026-02-16 15:23 JST #330 `packages/ui/dialog/src/headless/usePluginDialogFrame.ts` で `allowResizeHandles` 判定を `displayMode !== 'full-screen'` に変更し、`maximize` 中でも端ドラッグによるリサイズ開始を可能化。`packages/ui/floating-window/src/components/useFloatingWindowController.ts` で `exitFullscreenForInteraction` を追加し、`isFullscreen` 状態でタイトルバー/リサイズハンドル操作を開始した際に通常モードへ戻して、そのままドラッグ/リサイズ継続できるよう修正。
 - blocked: 2026-02-16 15:23 JST #330 `pnpm -w turbo run test --filter @hierarchidb/ui-dialog` は差分外既知失敗（`node_modules/@hierarchidb/tree-api/node_modules/comlink/tests/*.test.js` が `/base/dist/esm/comlink.mjs` を解決できず `vite:import-analysis` で失敗）により exit 1。
 - update: 2026-02-16 15:23 JST #330 検証結果: `pnpm -w turbo run build --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-floating-window` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-floating-window` exit 0、`pnpm -w turbo run test --filter @hierarchidb/ui-dialog -- --run src/components/__tests__/CommonDialogTitle.test.tsx src/utils/__tests__/dialogSurfaceColor.test.ts` exit 0。

@@ -92,6 +92,13 @@ describe('mergeBuildConfig', () => {
           normalizeRingOrientation: true,
           keepBaselineSnapshot: true,
         },
+        invalidGeometryFilter: {
+          area: true,
+          lineLength: false,
+          maxEdgeLength: true,
+          selfIntersection: false,
+          triangleRingRatio: true,
+        },
       },
       transformConfig: {
         executionLogLevel: 'verbose',
@@ -136,6 +143,8 @@ describe('mergeBuildConfig', () => {
     });
 
     expect(merged.fetchConfig.geometryIntakeGuard?.validationLevel).toBe('strict');
+    expect(merged.fetchConfig.invalidGeometryFilter?.area).toBe(true);
+    expect(merged.fetchConfig.invalidGeometryFilter?.triangleRingRatio).toBe(true);
     expect(merged.transformConfig.executionLogLevel).toBe('verbose');
     expect(merged.transformConfig.anomalyDetection?.scoreThreshold).toBe(1.8);
     expect(merged.transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent).toBe(4);

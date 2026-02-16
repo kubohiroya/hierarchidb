@@ -69,8 +69,6 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
-      "filteringTitle": "Fetch-stage filtering",
-      "filteringHelp": "Applies to filtering at the end of the fetch stage before transform begins.",
       "geometryIntakeGuard": {
         "title": "Fetch Geometry Intake Guard",
         "description": "Normalize and validate fetched geometry before transform to reduce unstable simplification artifacts.",
@@ -84,6 +82,15 @@
         "minRingAreaThreshold": "Minimum ring area threshold",
         "normalizeRingOrientation": "Normalize ring orientation",
         "keepBaselineSnapshot": "Keep baseline snapshot for anomaly scoring"
+      },
+      "invalidGeometryFilter": {
+        "title": "Invalid geometry filtering",
+        "description": "Run additional invalid-shape checks after small-shape filtering.",
+        "area": "Area",
+        "lineLength": "Line length",
+        "maxEdgeLength": "Max edge length",
+        "selfIntersection": "Self intersection",
+        "triangleRingRatio": "Triangle ring ratio"
       }
     },
     "transform": {
@@ -91,7 +98,12 @@
       "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance.",
       "summaryHelpTopojson": "Transform uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.",
       "summaryHelpGeojson": "Transform decodes geometry first, then runs geojson simplify with the configured tolerance.",
-      "concurrencyMovedToBuildStep": "Transform concurrency has moved to the Build step. Click the stage spinner in progress summary to edit it.",
+      "simplifyTolerance": {
+        "label": "Simplify tolerance"
+      },
+      "retryToleranceStep": {
+        "label": "Retry tolerance step"
+      },
       "algorithm": {
         "label": "Simplify algorithm",
         "topojson": "topojson (topology-preserving)",
@@ -108,7 +120,7 @@
         "verbose": "verbose"
       },
       "anomaly": {
-      "title": "Anomaly detection & auto retry",
+      "title": "Anomaly detection",
       "enabled": "Enable anomaly detection",
       "scoreThreshold": "Anomaly score threshold",
       "maxEdgeLengthRatio": "Max edge length ratio",
@@ -257,10 +269,6 @@
       "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
       "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 in fetch filtering.",
       "omitDetailsTitle": "Filtering small shapes (islands and enclaves)",
-      "omitDetailsHelp": "Filters out small shapes at each zoom using bbox and area thresholds.",
-      "omitDetailsClarityNote": "Low keeps more detail; High filters more aggressively.",
-      "omitDetailsPreviewTitle": "Filtering preview",
-      "omitDetailsPreviewHelp": "Pick a level to see how smaller islands drop out as filtering strengthens.",
       "omitDetailsLevelWeak": "High detail",
       "omitDetailsLevelMedium": "Medium detail",
       "omitDetailsLevelStrong": "Low detail",
@@ -482,6 +490,7 @@
       "filteringDone": "Filtering done",
       "prepareCountsStart": "Prepare counts start",
       "prepareCountsDone": "Prepare counts done",
+      "simplifyAttempt": "Simplify attempt {{attempt}} (tolerance={{tolerance}})",
       "simplifyStart": "Simplify start",
       "simplifyDone": "Simplify done",
       "simplifyPreprocessStart": "Preprocess start",
