@@ -125,6 +125,12 @@ describe('mergeBuildConfig', () => {
           maxZoom: 8,
           actionOnAnomaly: 'mark_warning',
           enablePreviewOverlay: true,
+          scoreThreshold: 2.8,
+          minTriangleAngleDeg: 15,
+          minEdgeToBaseRatio: 3.1,
+          maxAreaToBBoxRatio: 0.12,
+          minSpanRatio: 0.04,
+          minBoundaryVertexCount: 2,
         },
       },
     });
@@ -136,5 +142,11 @@ describe('mergeBuildConfig', () => {
     expect(merged.transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent).toBe(14);
     expect(merged.transformConfig.anomalyRetry?.fallbackMode).toBe('switch_algorithm');
     expect(merged.vtConfig.outputQualityGuard?.enablePreviewOverlay).toBe(true);
+    expect(merged.vtConfig.outputQualityGuard?.scoreThreshold).toBe(2.8);
+    expect(merged.vtConfig.outputQualityGuard?.minTriangleAngleDeg).toBe(15);
+    expect(merged.vtConfig.outputQualityGuard?.minEdgeToBaseRatio).toBe(3.1);
+    expect(merged.vtConfig.outputQualityGuard?.maxAreaToBBoxRatio).toBe(0.12);
+    expect(merged.vtConfig.outputQualityGuard?.minSpanRatio).toBe(0.04);
+    expect(merged.vtConfig.outputQualityGuard?.minBoundaryVertexCount).toBe(2);
   });
 });

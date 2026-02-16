@@ -165,7 +165,16 @@
           "fallback": "簡略化を弱めて再試行",
           "dropTile": "タイルを破棄"
         },
-        "enablePreviewOverlay": "プレビューで警告オーバーレイを表示"
+        "enablePreviewOverlay": "プレビューで警告オーバーレイを表示",
+        "thresholds": {
+          "title": "異常判定の閾値",
+          "scoreThreshold": "スコア閾値",
+          "minTriangleAngleDeg": "鋭角上限 (度)",
+          "minEdgeToBaseRatio": "辺/底辺 比の下限",
+          "maxAreaToBBoxRatio": "面積/BBox比の上限",
+          "minSpanRatio": "最小スパン比",
+          "minBoundaryVertexCount": "境界頂点数の下限"
+        }
       }
     },
     "download": {

@@ -7,6 +7,7 @@ import {
   Slider,
   Stack,
   Switch,
+  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -35,6 +36,12 @@ export const VtOutputQualityGuardCard: React.FC<Props> = ({ config, onChange, di
     maxZoom: guard?.maxZoom ?? 22,
     actionOnAnomaly: guard?.actionOnAnomaly ?? 'mark_warning',
     enablePreviewOverlay: guard?.enablePreviewOverlay ?? false,
+    scoreThreshold: guard?.scoreThreshold ?? 2.5,
+    minTriangleAngleDeg: guard?.minTriangleAngleDeg ?? 12,
+    minEdgeToBaseRatio: guard?.minEdgeToBaseRatio ?? 2.8,
+    maxAreaToBBoxRatio: guard?.maxAreaToBBoxRatio ?? 0.18,
+    minSpanRatio: guard?.minSpanRatio ?? 0.03,
+    minBoundaryVertexCount: guard?.minBoundaryVertexCount ?? 1,
   } as const;
 
   const updateGuard = (partial: Partial<typeof resolvedGuard>) => {
@@ -139,6 +146,87 @@ export const VtOutputQualityGuardCard: React.FC<Props> = ({ config, onChange, di
             </MenuItem>
           </Select>
         </FormControl>
+        <Stack spacing={1}>
+          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+            {t('processing.vt.outputQualityGuard.thresholds.title', 'Anomaly thresholds')}
+          </Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.scoreThreshold', 'Score threshold')}
+              value={resolvedGuard.scoreThreshold}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ scoreThreshold: Math.max(0.1, value) });
+              }}
+            />
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.minTriangleAngleDeg', 'Max acute angle (deg)')}
+              value={resolvedGuard.minTriangleAngleDeg}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ minTriangleAngleDeg: Math.max(0.1, Math.min(89, value)) });
+              }}
+            />
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.minBoundaryVertexCount', 'Min boundary vertices')}
+              value={resolvedGuard.minBoundaryVertexCount}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ minBoundaryVertexCount: Math.max(0, Math.min(3, Math.floor(value))) });
+              }}
+            />
+          </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.minEdgeToBaseRatio', 'Min edge/base ratio')}
+              value={resolvedGuard.minEdgeToBaseRatio}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ minEdgeToBaseRatio: Math.max(1, value) });
+              }}
+            />
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.maxAreaToBBoxRatio', 'Max area/BBox ratio')}
+              value={resolvedGuard.maxAreaToBBoxRatio}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ maxAreaToBBoxRatio: Math.max(0.0001, Math.min(1, value)) });
+              }}
+            />
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.vt.outputQualityGuard.thresholds.minSpanRatio', 'Min span ratio')}
+              value={resolvedGuard.minSpanRatio}
+              disabled={disabled || !resolvedGuard.enabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ minSpanRatio: Math.max(0.0001, Math.min(1, value)) });
+              }}
+            />
+          </Stack>
+        </Stack>
         <FormControlLabel
           control={(
             <Switch
