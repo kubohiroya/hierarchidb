@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #337 / `codex/docs/shape/build-start-pause-transitions-337` / start: 2026-02-17 07:33 JST
 - #335 / `codex/fix/shape/move-transform-prepare-counts-to-fetch` / start: 2026-02-16 19:54 JST
 - #332 / `codex/feat/shape/fetch-invalid-geometry-filters` / start: 2026-02-16 16:12 JST
 - #330 / `codex/feat/ui/maximized-window-resize` / start: 2026-02-16 15:19 JST
@@ -110,6 +111,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-17 07:33 JST #337 を起票し（https://github.com/kubohiroya/hierarchidb/issues/337）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/docs/shape/build-start-pause-transitions-337` を作成して着手。
+- update: 2026-02-17 07:41 JST #337 `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` を現行実装ベースで全面更新。開始受付/実開始、停止受付/停止完了の分離、`awaiting-first-task` 監視（10s/20s/45s）、pause 後の drain 待ちと表示不整合の発生条件を整理。
+- blocked: 2026-02-17 07:43 JST #337 検証 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は差分外既知ブロッカー `@hierarchidb/batch-runtime-services` の `@types/react` 重複読込（TS2300: `ElementType` / `LibraryManagedAttributes`）で exit 2。
 - start: 2026-02-16 16:12 JST #332 を起票し（https://github.com/kubohiroya/hierarchidb/issues/332）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/feat/shape/fetch-invalid-geometry-filters` を作成して着手。
 - update: 2026-02-16 15:23 JST #330 `packages/ui/dialog/src/headless/usePluginDialogFrame.ts` で `allowResizeHandles` 判定を `displayMode !== 'full-screen'` に変更し、`maximize` 中でも端ドラッグによるリサイズ開始を可能化。`packages/ui/floating-window/src/components/useFloatingWindowController.ts` で `exitFullscreenForInteraction` を追加し、`isFullscreen` 状態でタイトルバー/リサイズハンドル操作を開始した際に通常モードへ戻して、そのままドラッグ/リサイズ継続できるよう修正。
 - blocked: 2026-02-16 15:23 JST #330 `pnpm -w turbo run test --filter @hierarchidb/ui-dialog` は差分外既知失敗（`node_modules/@hierarchidb/tree-api/node_modules/comlink/tests/*.test.js` が `/base/dist/esm/comlink.mjs` を解決できず `vite:import-analysis` で失敗）により exit 1。
