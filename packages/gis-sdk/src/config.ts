@@ -187,6 +187,12 @@ export type VTOutputQualityGuardConfig = {
   maxZoom: number;
   actionOnAnomaly: VTGuardAction;
   enablePreviewOverlay: boolean;
+  scoreThreshold?: number;
+  minTriangleAngleDeg?: number;
+  minEdgeToBaseRatio?: number;
+  maxAreaToBBoxRatio?: number;
+  minSpanRatio?: number;
+  minBoundaryVertexCount?: number;
 };
 
 export interface RouteTransformConfig {

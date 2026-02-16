@@ -198,10 +198,10 @@ describe('vtStage summary helpers', () => {
               type: 3,
               geometry: [
                 [
-                  [120, 160],
-                  [3900, 162],
                   [180, 220],
-                  [120, 160],
+                  [3900, 3900],
+                  [260, 300],
+                  [180, 220],
                 ],
               ],
               tags: { __hdbFeatureId: 'JP:1:hiroshima' },
@@ -218,5 +218,81 @@ describe('vtStage summary helpers', () => {
     expect(issues.length).toBe(1);
     expect(issues[0]?.originStage).toBe('transform-or-earlier');
     expect(issues[0]?.featureId).toBe('JP:1:hiroshima');
+  });
+
+  it('detects spike anomalies from non-triangle polygon rings', () => {
+    const issues = vtStageTestUtils.collectTileTriangleIssues({
+      layers: {
+        admin1: {
+          features: [
+            {
+              type: 3,
+              geometry: [
+                [
+                  [120, 220],
+                  [180, 260],
+                  [3900, 3900],
+                  [260, 300],
+                  [120, 232],
+                  [120, 220],
+                ],
+              ],
+              tags: { __hdbFeatureId: 'JP:1:spike' },
+            },
+          ],
+        } as unknown as import('geojson-vt').Tile,
+      },
+      z: 6,
+      x: 56,
+      y: 25,
+      extent: 4096,
+    });
+
+    expect(issues.length).toBe(1);
+    expect(issues[0]?.featureId).toBe('JP:1:spike');
+    expect((issues[0]?.ringVertexCount ?? 0) > 3).toBe(true);
+  });
+
+  it('repairs detected spike anomalies by removing suspect ring vertices', () => {
+    const layers = {
+      admin1: {
+        features: [
+          {
+            type: 3,
+            geometry: [
+              [
+                [120, 220],
+                [180, 260],
+                [3900, 3900],
+                [260, 300],
+                [120, 232],
+                [120, 220],
+              ],
+            ],
+            tags: { __hdbFeatureId: 'JP:1:spike-repair' },
+          },
+        ],
+      } as unknown as import('geojson-vt').Tile,
+    };
+    const issues = vtStageTestUtils.collectTileTriangleIssues({
+      layers,
+      z: 6,
+      x: 56,
+      y: 25,
+      extent: 4096,
+    });
+    expect(issues.length).toBeGreaterThan(0);
+
+    const repaired = vtStageTestUtils.repairTileLayersForTriangleIssues({ layers, issues });
+    expect(repaired.repairedIssueKeys.size).toBeGreaterThan(0);
+
+    const remaining = vtStageTestUtils.collectTileTriangleIssues({
+      layers: repaired.layers,
+      z: 6,
+      x: 56,
+      y: 25,
+      extent: 4096,
+    });
+    expect(remaining.length).toBe(0);
   });
 });
