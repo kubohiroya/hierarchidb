@@ -1,5 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
+import type {
+  BuildProgressCallback,
+  BuildProgressEvent,
+  BuildSessionStatus,
+  IBuildSessionManager,
+} from '@hierarchidb/batch-api';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/batch-api';
 import type { AbstractBatchSession } from '../session/AbstractBatchSession.js';
 
@@ -7,19 +12,26 @@ import type { AbstractBatchSession } from '../session/AbstractBatchSession.js';
  * Base implementation for plugin batch session managers.
  * It tracks in-memory sessions and forwards progress callbacks.
  */
-export abstract class BaseBatchSessionManager implements IBatchSessionManager {
+export abstract class BaseBatchSessionManager implements IBuildSessionManager {
   protected sessions = new Map<NodeId, AbstractBatchSession>();
-  protected progressCallbacks = new Map<NodeId, Set<BatchProgressCallback>>();
+  protected progressCallbacks = new Map<NodeId, Set<BuildProgressCallback>>();
   private sessionProgressTeardown = new Map<NodeId, () => void>();
-  private lastPhaseBySession = new Map<NodeId, BatchProgressEvent['phase']>();
+  private lastPhaseBySession = new Map<NodeId, BuildProgressEvent['phase']>();
 
-  abstract startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus>;
+  abstract startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus>;
+  async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.startBatchSession(nodeId);
+  }
 
   protected async onSessionRegistered(_session: AbstractBatchSession): Promise<void> {}
-  protected async onSessionProgress(_session: AbstractBatchSession, _event: BatchProgressEvent): Promise<void> {}
+  protected async onSessionProgress(_session: AbstractBatchSession, _event: BuildProgressEvent): Promise<void> {}
   protected async onSessionStatusChange(_session: AbstractBatchSession): Promise<void> {}
   protected cleanupSessionTracking(nodeId: NodeId): void {
     this.lastPhaseBySession.delete(nodeId);
+  }
+
+  async pauseBuildSession(nodeId: NodeId): Promise<void> {
+    await this.pauseBatchSession(nodeId);
   }
 
   async pauseBatchSession(nodeId: NodeId): Promise<void> {
@@ -31,6 +43,10 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     await this.onSessionStatusChange(session);
   }
 
+  async resumeBuildSession(nodeId: NodeId): Promise<void> {
+    await this.resumeBatchSession(nodeId);
+  }
+
   async resumeBatchSession(nodeId: NodeId): Promise<void> {
     const session = this.sessions.get(nodeId);
     if (!session) {
@@ -40,7 +56,11 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     await this.onSessionStatusChange(session);
   }
 
-  async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+  async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.getBatchSessionStatus(nodeId);
+  }
+
+  async getBatchSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const session = this.sessions.get(nodeId);
     if (!session) {
       throw new Error(`Session ${nodeId} not found`);
@@ -60,7 +80,11 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     };
   }
 
-  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
+  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+    return this.onBatchProgress(nodeId, callback);
+  }
+
+  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     let callbacks = this.progressCallbacks.get(nodeId);
     if (!callbacks) {
       callbacks = new Set();
@@ -78,7 +102,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     };
   }
 
-  protected emitProgress(nodeId: NodeId, event: BatchProgressEvent): void {
+  protected emitProgress(nodeId: NodeId, event: BuildProgressEvent): void {
     const callbacks = this.progressCallbacks.get(nodeId);
     if (!callbacks) return;
     for (const callback of callbacks) {
@@ -102,7 +126,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     }
 
     const shouldEmit = isBatchControlAPIV2Enabled();
-    const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => {
+    const unsubscribe = session.addBatchProgressListener((event: BuildProgressEvent) => {
       if (shouldEmit) {
         this.emitProgress(nodeId, event);
       }

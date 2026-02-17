@@ -19,7 +19,7 @@ export class RouteBatchOrchestrationService {
     const routes = mapRecomputeTasks(odPairs, spec.defaults, { methodOptions: spec.defaults });
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    await effectiveMgr.startBatchSession(nodeId);
+    await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
 
@@ -39,7 +39,7 @@ export class RouteBatchOrchestrationService {
     const routes = mapMatrixTasks(O, D, origins.defaults ?? destinations.defaults, methodOptions);
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    await effectiveMgr.startBatchSession(nodeId);
+    await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
 
@@ -57,7 +57,7 @@ export class RouteBatchOrchestrationService {
     const routes = mapEnrichTasks(odPairs, options, spec.defaults);
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    await effectiveMgr.startBatchSession(nodeId);
+    await effectiveMgr.startBuildSession(nodeId);
     return { nodeId, count: routes.length };
   }
 }

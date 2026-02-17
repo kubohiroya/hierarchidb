@@ -46,7 +46,7 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
     }
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
+  async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
     const payload = this.persistence
       ? await this.persistence.takePending(nodeId)
       : this.pending.get(nodeId);
@@ -65,9 +65,21 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
     return status;
   }
 
+  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.startBuildSession(nodeId);
+  }
+
+  async pauseBuildSession(nodeId: NodeId): Promise<void> {
+    await this.pauseBatchSession(nodeId);
+  }
+
   async pauseBatchSession(nodeId: NodeId): Promise<void> {
     await this.performPause(nodeId);
     await this.notifyStatus(nodeId);
+  }
+
+  async resumeBuildSession(nodeId: NodeId): Promise<void> {
+    await this.resumeBatchSession(nodeId);
   }
 
   async resumeBatchSession(nodeId: NodeId): Promise<void> {
@@ -86,6 +98,10 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
       await this.persistence.onSessionStatusChange(nodeId, status);
     }
     return status;
+  }
+
+  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+    return this.onBatchProgress(nodeId, callback);
   }
 
   onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {

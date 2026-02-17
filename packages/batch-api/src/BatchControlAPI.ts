@@ -145,18 +145,27 @@ export interface UseBatchProgressOptions {
   autoSubscribe?: boolean;
 }
 
-/** @deprecated Use IBuildSessionManager. */
-export interface IBatchSessionManager<TConfig = unknown, TData = unknown> {
+export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
+  startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
+  pauseBuildSession(nodeId: NodeId): Promise<void>;
+  resumeBuildSession(nodeId: NodeId): Promise<void>;
+  getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
+  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void;
+  /** @deprecated Use startBuildSession. */
   startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus>;
+  /** @deprecated Use pauseBuildSession. */
   pauseBatchSession(nodeId: NodeId): Promise<void>;
+  /** @deprecated Use resumeBuildSession. */
   resumeBatchSession(nodeId: NodeId): Promise<void>;
+  /** @deprecated Use getBuildSessionStatus. */
   getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
+  /** @deprecated Use onBuildProgress. */
   onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void;
 }
 
 /** @deprecated Use BuildManagerFactory. */
-export type BatchManagerFactory<TManager extends IBatchSessionManager = IBatchSessionManager> = () => TManager;
+export type BatchManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> = () => TManager;
 
 /** @deprecated Use BuildProgressEvent. */
 export type StandardProgressEvent = BatchProgressEvent;
@@ -188,8 +197,8 @@ export type BuildUnifiedProgressInfo<P = BuildProgressPayload> = UnifiedProgress
 export type BuildProgressAdapter = BatchProgressAdapter;
 /** Preferred alias for UseBatchProgressOptions. */
 export type UseBuildProgressOptions = UseBatchProgressOptions;
-/** Preferred alias for IBatchSessionManager. */
-export type IBuildSessionManager<TConfig = unknown, TData = unknown> = IBatchSessionManager<
+/** @deprecated Use IBuildSessionManager. */
+export type IBatchSessionManager<TConfig = unknown, TData = unknown> = IBuildSessionManager<
   TConfig,
   TData
 >;
