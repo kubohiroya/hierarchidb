@@ -733,11 +733,13 @@ const resolveTriangleIssueScore = (
   },
   thresholds: VtTriangleIssueThresholds,
 ): number => {
+  const SCORE_WEIGHT_DEFAULT = 1;
+  const SCORE_WEIGHT_BOUNDARY = 0.5;
   let score = 0;
-  if (diagnostics.minAngleDeg <= thresholds.minTriangleAngleDeg) score += 1;
-  if (diagnostics.edgeToBaseRatio >= thresholds.minEdgeToBaseRatio) score += 1;
-  if (diagnostics.areaToBBoxRatio <= thresholds.maxAreaToBBoxRatio) score += 1;
-  if (diagnostics.boundaryVertexCount >= thresholds.minBoundaryVertexCount) score += 0.5;
+  if (diagnostics.minAngleDeg <= thresholds.minTriangleAngleDeg) score += SCORE_WEIGHT_DEFAULT;
+  if (diagnostics.edgeToBaseRatio >= thresholds.minEdgeToBaseRatio) score += SCORE_WEIGHT_DEFAULT;
+  if (diagnostics.areaToBBoxRatio <= thresholds.maxAreaToBBoxRatio) score += SCORE_WEIGHT_DEFAULT;
+  if (diagnostics.boundaryVertexCount >= thresholds.minBoundaryVertexCount) score += SCORE_WEIGHT_BOUNDARY;
   return score;
 };
 
