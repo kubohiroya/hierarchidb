@@ -21,7 +21,7 @@ eria-cartographプロジェクトの実装を参考に、hierarchidbアーキテ
 
 ## 📦 実装対象ファイル
 
-### 1. BatchSessionManager.ts
+### 1. BuildSessionOrchestrator.ts
 **現状**: simulateProcessing()でダミー遅延のみ
 **実装内容**:
 ```typescript
@@ -355,9 +355,9 @@ class TileCache {
 
 ### 単体テスト
 ```typescript
-describe('BatchSessionManager', () => {
+describe('BuildSessionOrchestrator', () => {
   it('should download actual data', async () => {
-    const manager = new BatchSessionManager();
+    const orchestrator = new BuildSessionOrchestrator();
     const sessionId = await manager.createSession({
       nodeId: 'test-node' as NodeId,
       dataSource: 'gadm',
@@ -420,7 +420,7 @@ describe('Shape Plugin E2E', () => {
 ## 🚀 実装優先順位
 
 1. **優先度高**
-   - BatchSessionManager.executeDownloadStage()
+   - BuildSessionOrchestrator.executeDownloadStage()
    - DownloadWorker実装
    - EphemeralDB接続
 

@@ -9,11 +9,10 @@ import type {
   Point,
   Polygon,
 } from 'geojson';
-import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import { geometryBboxClip, type VTOutputQualityGuardConfig } from '@hierarchidb/gis-sdk';
+import { geometryBboxClip } from '@hierarchidb/gis-sdk';
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
@@ -563,6 +562,7 @@ const countTileLineStrings = (geometry: unknown): number => {
   return geometry.length;
 };
 
+<<<<<<< HEAD
 const VT_TRIANGLE_MIN_ANGLE_DEGREES = 12;
 const VT_TRIANGLE_MIN_EDGE_TO_BASE_RATIO = 2.8;
 const VT_TRIANGLE_MAX_AREA_TO_BBOX_RATIO = 0.18;
@@ -1008,6 +1008,8 @@ const repairTileLayersForTriangleIssues = (params: {
   return { layers: repairedLayers, repairedIssueKeys };
 };
 
+=======
+>>>>>>> origin/codex/refactor/shape/remove-anomaly-guard-328
 const buildBufferSetHash = (bufferIds: string[]): string => {
   const sorted = [...bufferIds].sort();
   const json = JSON.stringify(sorted);
@@ -1465,9 +1467,6 @@ export const vtStageTestUtils = {
   buildGeojsonVtEmptyTileSummaryReason,
   resolveVtDebugFocusConfig,
   resolveVtDebugFocusMatch,
-  resolveVtTriangleIssueThresholds,
-  collectTileTriangleIssues,
-  repairTileLayersForTriangleIssues,
   computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
@@ -1557,7 +1556,7 @@ const buildLayerIndexes = async (
       buffer: context.vtConfig.bufferSize,
       tolerance: context.vtConfig.tolerance,
       promoteId: context.vtConfig.promoteId,
-      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+      indexMaxPoints: 65536,
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
     if (debugContext && layerStats) {
@@ -1584,15 +1583,6 @@ const buildLayerIndexes = async (
 export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
   const { bands, vtConfig, tileWriter, abortSignal } = context;
   const layerSetName = vtConfig.layerSetName;
-  const outputQualityGuard = vtConfig.outputQualityGuard;
-  const outputQualityThresholds = resolveVtTriangleIssueThresholds(outputQualityGuard);
-  const isOutputQualityGuardEnabledAtZoom = (z: number): boolean => {
-    if (!outputQualityGuard?.enabled) return false;
-    if (!Number.isFinite(outputQualityGuard.minZoom) || !Number.isFinite(outputQualityGuard.maxZoom)) return false;
-    const minZoom = Math.min(outputQualityGuard.minZoom, outputQualityGuard.maxZoom);
-    const maxZoom = Math.max(outputQualityGuard.minZoom, outputQualityGuard.maxZoom);
-    return z >= minZoom && z <= maxZoom;
-  };
   if (!layerSetName) {
     throw new Error('vt stage requires layerSetName');
   }
@@ -1644,15 +1634,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         zRange: [band.zMin, band.zMax],
         layerSetName,
         bufferIdSample,
-        outputQualityGuard: outputQualityGuard
-          ? {
-            enabled: outputQualityGuard.enabled,
-            minZoom: outputQualityGuard.minZoom,
-            maxZoom: outputQualityGuard.maxZoom,
-            actionOnAnomaly: outputQualityGuard.actionOnAnomaly,
-            thresholds: outputQualityThresholds,
-          }
-          : null,
       }));
       if (debugFocusConfig.enabled) {
         console.info('[vt][focus] enabled', JSON.stringify({
@@ -1994,7 +1975,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                     buffer: context.vtConfig.bufferSize,
                     tolerance: context.vtConfig.tolerance,
                     promoteId: context.vtConfig.promoteId,
-                    indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                    indexMaxPoints: 65536,
                   }) as GeojsonVtIndex;
                   const tile = collectLayerForTile(index, layerName, z, x, y);
                   if (!tile) {
@@ -2149,7 +2130,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       buffer: context.vtConfig.bufferSize,
                       tolerance: context.vtConfig.tolerance,
                       promoteId: context.vtConfig.promoteId,
-                      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                      indexMaxPoints: 65536,
                     }) as GeojsonVtIndex;
                     const tile = collectLayerForTile(index, layerName, z, x, y);
                     if (!tile) continue;
@@ -2299,61 +2280,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       };
       await reportTileProgress(true, `tiles 0/${totalTiles}`);
 
-      const vtTriangleIssueRecords: ShapeTransformErrorRecord[] = [];
-      const vtTriangleIssueKeys = new Set<string>();
-      let triangleIssueTotalCount = 0;
-      let triangleRepairedTotalCount = 0;
-      let vtOriginIssueCount = 0;
-      let preVtOriginIssueCount = 0;
-      const normalizeIssueToken = (value: string): string => value.replace(/[^A-Za-z0-9:_-]/g, '_');
-      const appendVtTriangleIssueRecord = (
-        issue: VtTriangleIssue,
-        z: number,
-        x: number,
-        y: number,
-        status: 'suspect' | 'repaired',
-      ) => {
-        const issueKey = `${status}:${z}/${x}/${y}:${issue.layerName}:${issue.featureId}:${issue.ringIndex}:${issue.suspectVertexIndex}`;
-        if (vtTriangleIssueKeys.has(issueKey)) return;
-        vtTriangleIssueKeys.add(issueKey);
-        if (status === 'repaired') {
-          triangleRepairedTotalCount += 1;
-        } else {
-          triangleIssueTotalCount += 1;
-          if (issue.originStage === 'vt') {
-            vtOriginIssueCount += 1;
-          } else {
-            preVtOriginIssueCount += 1;
-          }
-        }
-        if (vtTriangleIssueRecords.length >= VT_TRIANGLE_ISSUE_RECORD_LIMIT) return;
-        const featureToken = normalizeIssueToken(issue.featureId).slice(0, 72);
-        const kindPrefix = issue.originStage === 'vt' ? 'vt-boundary-spike' : 'pre-vt-spike';
-        const issueKind = status === 'repaired' ? `${kindPrefix}-repaired` : `${kindPrefix}-suspect`;
-        const issueStage = status === 'repaired' ? 'tile-repair' : 'tile-diagnostic';
-        const messagePrefix = status === 'repaired' ? '[vt-repair]' : '[vt-diagnostic]';
-        vtTriangleIssueRecords.push({
-          id: `${task.taskId}:vt-${status}:${z}:${x}:${y}:${issue.ringIndex}:${issue.suspectVertexIndex}:${featureToken}`,
-          nodeId: task.nodeId,
-          taskId: task.taskId,
-          stage: 'vt',
-          issueStage,
-          issueKind,
-          bandIndex: input.bandIndex,
-          sourceKey: input.sourceKey,
-          featureId: issue.featureId,
-          featureIndex: issue.featureIndex,
-          geometryType: 'Polygon',
-          polygonCount: 1,
-          ringCount: 1,
-          polygonErrorCount: 1,
-          ringErrorCount: 1,
-          message: `${messagePrefix} originStage=${issue.originStage} tile=${z}/${x}/${y} layer=${issue.layerName} ring=${issue.ringIndex} vertex=${issue.suspectVertexIndex} score=${issue.score.toFixed(2)} minAngleDeg=${issue.minAngleDeg.toFixed(3)} edgeToBaseRatio=${issue.edgeToBaseRatio.toFixed(3)} areaToBBoxRatio=${issue.areaToBBoxRatio.toFixed(3)} boundaryVertices=${issue.boundaryVertexCount}/3 maxSpan=${issue.maxSpan.toFixed(1)}`,
-          createdAt: Date.now(),
-          lineFeatures: { type: 'FeatureCollection', features: [] },
-        });
-      };
-
       const computeInputTileStats = (bbox: TileBBox) => {
         let featureCount = 0;
         let vertexCount = 0;
@@ -2436,56 +2362,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           for (let y = yStart; y <= yEnd; y++) {
             assertNotAborted(abortSignal);
             const tileId = packTileId(x, y, z);
-            const baseLayers = aggregatedLayersByTileId
+            const layers = aggregatedLayersByTileId
               ? (aggregatedLayersByTileId.get(tileId) ?? null)
               : (indexes ? collectLayersForTileFromIndexes(indexes, z, x, y) : null);
             processedTiles += 1;
-            if (!baseLayers) {
+            if (!layers) {
               await reportTileProgress(false);
               continue;
-            }
-            let layers = baseLayers;
-            const qualityGuardActive = isOutputQualityGuardEnabledAtZoom(z);
-            if (qualityGuardActive) {
-              const initialIssues = collectTileTriangleIssues({
-                layers,
-                z,
-                x,
-                y,
-                extent: context.vtConfig.extent,
-                thresholds: outputQualityThresholds,
-              });
-              if (initialIssues.length > 0) {
-                const guardAction = outputQualityGuard?.actionOnAnomaly ?? 'mark_warning';
-                if (guardAction === 'fallback_less_simplified') {
-                  const repairResult = repairTileLayersForTriangleIssues({
-                    layers,
-                    issues: initialIssues,
-                  });
-                  layers = repairResult.layers;
-                  const remainingIssues = collectTileTriangleIssues({
-                    layers,
-                    z,
-                    x,
-                    y,
-                    extent: context.vtConfig.extent,
-                    thresholds: outputQualityThresholds,
-                  });
-                  const remainingIssueKeys = new Set(remainingIssues.map((issue) => issue.key));
-                  initialIssues.forEach((issue) => {
-                    if (!repairResult.repairedIssueKeys.has(issue.key)) return;
-                    if (remainingIssueKeys.has(issue.key)) return;
-                    appendVtTriangleIssueRecord(issue, z, x, y, 'repaired');
-                  });
-                  remainingIssues.forEach((issue) => appendVtTriangleIssueRecord(issue, z, x, y, 'suspect'));
-                } else {
-                  initialIssues.forEach((issue) => appendVtTriangleIssueRecord(issue, z, x, y, 'suspect'));
-                  if (guardAction === 'drop_tile') {
-                    await reportTileProgress(false, `tiles ${processedTiles}/${totalTiles} | dropped tile z=${z} x=${x} y=${y} due to anomalies=${initialIssues.length}`);
-                    continue;
-                  }
-                }
-              }
             }
             const tileBBox = tileToBBox(z, x, y);
             const inputStats = computeInputTileStats(
@@ -2614,30 +2497,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         generatedTiles,
         outputTotals: totalOutputStats,
       }));
-      if (triangleIssueTotalCount > 0 || triangleRepairedTotalCount > 0) {
-        if (vtTriangleIssueRecords.length > 0) {
-          try {
-            await context.ephemeralDB.transformErrors.bulkPut(vtTriangleIssueRecords);
-          } catch (error) {
-            console.warn('[vt][diagnostic] failed to persist triangle issue records', JSON.stringify({
-              ...taskContext,
-              triangleIssueCount: triangleIssueTotalCount,
-              triangleRepairedCount: triangleRepairedTotalCount,
-              persistedCount: vtTriangleIssueRecords.length,
-              error: error instanceof Error ? error.message : String(error),
-            }));
-          }
-        }
-        console.warn('[vt][diagnostic] triangle issue summary', JSON.stringify({
-          ...taskContext,
-          triangleIssueCount: triangleIssueTotalCount,
-          triangleRepairedCount: triangleRepairedTotalCount,
-          vtOriginIssueCount,
-          preVtOriginIssueCount,
-          persistedCount: vtTriangleIssueRecords.length,
-          droppedCount: Math.max(0, triangleIssueTotalCount + triangleRepairedTotalCount - vtTriangleIssueRecords.length),
-        }));
-      }
       console.info('[vt] task completed', JSON.stringify({
         ...taskContext,
         processedTiles,
