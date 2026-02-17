@@ -1,1 +1,0 @@
-import{getColumnWidths as e,saveColumnWidths as t}from"./properties-db-CMmmZIhD.js";export{e as getColumnWidths,t as saveColumnWidths};
