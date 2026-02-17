@@ -6,7 +6,7 @@ shape-pluginのダミー実装から実際の処理への移行が完了しま�
 
 ## ✅ 完了した実装内容
 
-### 1. **BatchSessionManager** 
+### 1. **BuildSessionManager** 
 - ✅ 実際のHTTPダウンロード処理
 - ✅ GeoJSONデータの取得と検証
 - ✅ 管理レベル別の簡略化設定

@@ -3,9 +3,9 @@
 実装サマリ（2025-09-09）
 - nodeType: `location`
 - 定義: `LocationPluginDefinition`（Shape 連携メタ含む）
-- DB: Dexie — `locations`, `locationWorkingCopies`, `locationBatchSessions`, `locationBatchTasks`
-- UI: `LocationDialog` / `LocationPanel` / `SelectionMatrix` / バッチ進捗/プレビュー
-- バッチ: `UnifiedLocationBatchManager` / `LocationBatchSessionManager`
+- DB: Dexie — `locations`, `locationWorkingCopies`, `locationBuildSessions`, `locationBuildTasks`
+- UI: `LocationDialog` / `LocationPanel` / `SelectionMatrix` / ビルド進捗/プレビュー
+- ビルド: `UnifiedLocationBuildManager` / `LocationBuildSessionManager`
 - 機能: 検索・高度フィルタ・近接検索・ジオコーディング・クラスタ/ヒートマップ表示
 - ランタイムワーカー: `registerLocationRuntimeWorkerAdapters()`（フラグ `LOCATION_RUNTIME_WORKER=1` で有効）
 
@@ -17,19 +17,19 @@
 - import は公開API、型は `import type`、重い処理は dynamic import。
 - tsup external は共通設定で外部化済み。
 地点情報（POI: Points of Interest）の収集、管理、可視化を行うHierarchiDBプラグインです。
-OpenStreetMapやGeoNames等のオープンデータソースから、空港、駅、港、行政センター等の地点データをバッチダウンロードし、地図上で可視化・分析できます。
+OpenStreetMapやGeoNames等のオープンデータソースから、空港、駅、港、行政センター等の地点データをビルドダウンロードし、地図上で可視化・分析できます。
 
 ## 主要機能
 
 - 🌍 **マルチソース対応**: 複数のオープンデータソースから地点情報を収集
 - 📍 **多様な地点タイプ**: 空港、鉄道駅、港湾、行政センター、高速道路IC等
 - 🗺️ **インタラクティブ地図表示**: クラスタリング、ヒートマップ、フィルタリング機能
-- 📊 **バッチ処理**: 大量データの並列ダウンロード・処理
+- 📊 **ビルド処理**: 大量データの並列ダウンロード・処理
 - 🔄 **リアルタイム進捗確認**: ダウンロード状況の可視化
 - 💾 **効率的なデータ管理**: IndexedDBによる永続化とキャッシング
 
 ### Tabular Preview（データテーブル）
-- バッチ実行後に BatchProgressDialog の「データテーブル」タブで表データを閲覧できます。
+- ビルド実行後に BuildProgressDialog の「データテーブル」タブで表データを閲覧できます。
 - 機能: 複数条件フィルタ（AND）、表示列の切替、`eq` 条件の索引（初回は遅延作成）。
 - 目的: 取り込みデータの確認・軽量検索。ノード群の一括保存/復元は従来の Import/Export を使用してください。
 
@@ -289,7 +289,7 @@ interface ReviewSummary {
 - WarningList: 注意事項リスト
 - ActionButtons: 実行/キャンセル/設定保存
 
-## バッチ処理進捗確認ダイアログ
+## ビルド処理進捗確認ダイアログ
 
 ### タブ構成
 
@@ -640,7 +640,7 @@ interface LocationEntity {
   licenseAgreement: boolean;
   selectedArrayByCountries: Record<ISO2, boolean[]>;
   concurrentDownloads: number;
-  batchSessionId?: string;
+  buildSessionId?: string;
   lastProcessedAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -746,7 +746,7 @@ const selection = {
 };
 
 // Step 4: 処理実行
-const session = await locationPlugin.createBatchSession(
+const session = await locationPlugin.createBuildSession(
   nodeId,
   basicInfo,
   dataSource,
@@ -764,14 +764,14 @@ locationPlugin.onProgress(session.id, (progress) => {
 ## パフォーマンス最適化
 
 - **並列ダウンロード**: 最大10並列接続
-- **チャンク処理**: 1000件単位でのバッチ処理
+- **チャンク処理**: 1000件単位でのビルド処理
 - **インクリメンタル更新**: 差分のみダウンロード
 - **空間インデックス**: Geohash/H3による高速空間検索
 - **キャッシング**: IndexedDBによるローカルキャッシュ
 
 ## 制限事項
 
-- 一度のバッチで処理可能な最大地点数: 100,000
+- 一度のビルドで処理可能な最大地点数: 100,000
 - 地図表示時の最大同時表示数: 10,000（それ以上はクラスタリング必須）
 - APIレート制限: 各データソースの制限に準拠
 - ストレージ容量: ブラウザのIndexedDB制限に依存
