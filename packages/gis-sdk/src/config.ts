@@ -97,6 +97,25 @@ export type SelfIntersectionTuningConfig = {
 export type GeometryEngine = 'turf';
 export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
 export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
+export type VTOutputQualityGuardAction =
+  | 'mark_warning'
+  | 'fallback_less_simplified'
+  | 'drop_tile'
+  | 'skip_task';
+
+export type VTOutputQualityGuardConfig = {
+  enabled: boolean;
+  minZoom: number;
+  maxZoom: number;
+  actionOnAnomaly: VTOutputQualityGuardAction;
+  enablePreviewOverlay?: boolean;
+  scoreThreshold: number;
+  minTriangleAngleDeg: number;
+  minEdgeToBaseRatio: number;
+  maxAreaToBBoxRatio: number;
+  minSpanRatio: number;
+  minBoundaryVertexCount: number;
+};
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];
@@ -150,6 +169,7 @@ export interface VTConfig {
   tileExpandMargin: number;
   format: 'mvt' | 'pbf';
   compression: 'gzip' | 'bz';
+  outputQualityGuard?: VTOutputQualityGuardConfig;
   debug?: {
     enabled?: boolean;
     tiles?: readonly string[];
