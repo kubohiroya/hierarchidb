@@ -10,7 +10,7 @@
     "dev": "vite dev",
     "test": "vitest run",
     "typecheck": "pnpm --filter @hierarchidb/plugin-base build && NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",
-    "build": "pnpm run generate:favicon && pnpm run generate:nojekyll && pnpm --filter @hierarchidb/plugin-base build && pnpm --workspace-root run tools:gen-plugin-registry && pnpm --filter @hierarchidb/plugin-registry build && pnpm --filter @hierarchidb/batch-runtime-services build && pnpm --filter @hierarchidb/runtime-worker build && vite build --config vite.config.ts",
+    "build": "pnpm run generate:favicon && pnpm run generate:nojekyll && pnpm --filter @hierarchidb/plugin-base build && pnpm --workspace-root run tools:gen-plugin-registry && pnpm --filter @hierarchidb/plugin-registry build && pnpm --filter @hierarchidb/runtime-worker build && vite build --config vite.config.ts",
     "preview": "vite preview",
     "format": "biome check --write src",
     "format:check": "biome check src --reporter summary",
