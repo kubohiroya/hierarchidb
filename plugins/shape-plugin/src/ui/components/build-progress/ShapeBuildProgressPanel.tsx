@@ -860,10 +860,10 @@ export const ShapeBuildProgressPanel = ({
   const taskSearchQuery = taskSearchText.trim().toLowerCase();
   const matchesSearchQuery = useCallback((task: TaskItemWithMetadata) => {
     if (taskSearchQuery.length === 0) return true;
-    const title = typeof task.title === 'string' ? task.title.toLowerCase() : '';
+    const title = resolveTaskTitle(task).toLowerCase();
     const message = typeof task.message === 'string' ? task.message.toLowerCase() : '';
     return title.includes(taskSearchQuery) || message.includes(taskSearchQuery);
-  }, [taskSearchQuery]);
+  }, [taskSearchQuery, resolveTaskTitle]);
 
   const processingConfigForEdit = useMemo<ShapeProcessingConfig>(() => {
     const draftConfig = data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
