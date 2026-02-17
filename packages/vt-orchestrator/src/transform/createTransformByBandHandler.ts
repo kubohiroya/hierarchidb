@@ -1972,8 +1972,8 @@ export const createTransformByBandHandler = (
           (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchVertexCount'),
           0,
         );
-        inputPolygonCount = allowlistPolygonCount > 0 ? allowlistPolygonCount : inputPolygonCount;
-        inputVertexCount = allowlistVertexCount > 0 ? allowlistVertexCount : inputVertexCount;
+        inputPolygonCount = allowlistPolygonCount;
+        inputVertexCount = allowlistVertexCount;
       }
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       const shouldCollectBaselineMetrics = false;
