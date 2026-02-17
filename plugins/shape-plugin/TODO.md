@@ -1,7 +1,7 @@
 # Shape Plugin UI Refactor Plan
 
 ## Phase 0: Requirements Recon / Gap Analysis
-- [ ] Re-read existing docs (`docs/WORKING_COPY_PATTERN.md`, `docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md`) and prior implementation to extract the expected behavior of Shape dialog + batch monitoring.
+- [ ] Re-read existing docs (`docs/WORKING_COPY_PATTERN.md`, `../../packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`) and prior implementation to extract the expected behavior of Shape dialog + batch monitoring.
 - [ ] Inspect latest `route-plugin` / `location-plugin` implementations to understand how multi-step dialog and batch UI should behave.
 - [ ] Confirm worker/API contracts (shape worker public API, unified batch manager) and note discrepancies.
 

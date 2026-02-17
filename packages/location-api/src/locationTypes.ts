@@ -106,14 +106,14 @@ export type LocationSearchConfig = {
   options?: LocationSearchOptions;
 };
 
-export type LocationBatchProcessingOptions = {
+export type LocationBuildProcessingOptions = {
   concurrent?: number;
   geocodeMissing?: boolean;
   validateResults?: boolean;
   [key: string]: unknown;
 };
 
-export type LocationBatchFilterCriteria = {
+export type LocationBuildFilterCriteria = {
   countryCodes?: string[];
   countryNames?: string[];
   allowedTypes?: LocationType[];

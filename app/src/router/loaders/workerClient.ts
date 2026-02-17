@@ -10,7 +10,7 @@
  * - Integration with TanStack Router beforeLoad hooks
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import {
   ensureWorkerInitialized,
@@ -90,7 +90,7 @@ function sleep(ms: number): Promise<void> {
  */
 export async function ensureWorkerStarted(
   options: WorkerStartOptions = {}
-): Promise<Remote<WorkerAPI>> {
+): Promise<Remote<BuildWorkerAPI>> {
   const config = {
     ...DEFAULT_OPTIONS,
     ...options,
@@ -204,7 +204,7 @@ export async function ensureWorkerStarted(
  * }
  * ```
  */
-export function getWorkerClient(): Remote<WorkerAPI> | null {
+export function getWorkerClient(): Remote<BuildWorkerAPI> | null {
   const snapshot = getWorkerSnapshot();
   return snapshot.client;
 }

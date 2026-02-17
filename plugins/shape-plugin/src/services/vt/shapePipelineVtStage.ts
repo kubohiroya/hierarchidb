@@ -243,9 +243,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     counts: await summarizeStageCounts(params.taskQueue, params.nodeId, 'vt'),
   }));
   if (params.buildConfig.transformConfig.deleteOnComplete) {
-    await params.ephemeralStore.transaction('rw', [params.ephemeralStore.transformCache, params.ephemeralStore.transformCacheMeta], async () => {
-      await params.ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
-      await params.ephemeralStore.transformCacheMeta.where('nodeId').equals(params.nodeId).delete();
-    });
+    await params.ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+    await params.ephemeralStore.transformCacheMeta.where('nodeId').equals(params.nodeId).delete();
   }
 };

@@ -128,10 +128,6 @@ export default defineConfig({
         workspaceRoot,
         'packages/vt-orchestrator/src/index.ts',
       ),
-      '@hierarchidb/session-coordinator': path.resolve(
-        workspaceRoot,
-        'packages/session-coordinator/src/index.ts',
-      ),
     },
   },
   plugins: [tsconfigPaths()],

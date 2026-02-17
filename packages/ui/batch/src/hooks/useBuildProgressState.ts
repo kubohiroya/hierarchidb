@@ -1,27 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { toNodeId, type NodeType } from '@hierarchidb/core-types';
 import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 
-export type UseBatchProgressStateOptions = {
+import { useBuildProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
+import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+
+export type UseBuildProgressStateOptions = {
   autoSubscribe?: boolean;
 };
 
-export interface BatchProgressState {
+export interface BuildProgressState {
   progress: BuildUnifiedProgressInfo | null;
   error: Error | null;
   subscribe: () => void;
   unsubscribe: () => void;
 }
 
-export const useBatchProgressState = (
+export const useBuildProgressState = (
   nodeType: NodeType,
   nodeId: string | null,
-  options: UseBatchProgressStateOptions,
-): BatchProgressState => {
+  options: UseBuildProgressStateOptions,
+): BuildProgressState => {
   const { autoSubscribe = true } = options;
-  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
+  const bridgeRef = useRef<BuildWorkerBridge>(getBuildWorkerBridge());
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -41,13 +43,13 @@ export const useBatchProgressState = (
     const resolvedNodeId = toNodeId(nodeId);
     return createAdapterFromProgressSubscribe((eventCallback) =>
       bridgeRef.current
-        .subscribeBatchProgress(nodeType, resolvedNodeId, eventCallback)
+        .subscribeBuildProgress(nodeType, resolvedNodeId, eventCallback)
         .then((unsubscribe: () => void) => {
           setError(null);
           return unsubscribe;
         })
         .catch((err: unknown) => {
-          const errObj = err instanceof Error ? err : new Error('Failed to subscribe to batch progress');
+          const errObj = err instanceof Error ? err : new Error('Failed to subscribe to build progress');
           setError(errObj);
           return () => {};
         }),
@@ -58,7 +60,7 @@ export const useBatchProgressState = (
     progress: unifiedProgress,
     subscribe: sharedSubscribe,
     unsubscribe: sharedUnsubscribe,
-  } = useBatchProgress(adapter, { autoSubscribe });
+  } = useBuildProgress(adapter, { autoSubscribe });
 
   const subscribe = useCallback(() => {
     void bridgeRef.current.initialize().catch((err: unknown) => {

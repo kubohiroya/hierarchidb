@@ -6,7 +6,13 @@ import { notify } from '@hierarchidb/components';
 import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
 import type { LocationType } from '../../../common/types/index.js';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
-import { useIsoCountries, type Country, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
+import {
+  useIsoCountries,
+  type Country,
+  type MatrixConfig,
+  type MatrixColumn,
+  type MatrixSelection,
+} from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 import { createLocationTabularApi } from '../../../common/tabular/createLocationTabularApi.js';
 
@@ -39,7 +45,7 @@ export const useLocationSelectionStep = ({ draft, onUpdate, buildSelectionRecord
         description,
         type: 'custom',
         width: 140,
-        icon: type.icon,
+        icon: type.icon as MatrixColumn['icon'],
       };
     }),
     virtualization: {

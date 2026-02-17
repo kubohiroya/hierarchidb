@@ -5,7 +5,7 @@
  * exposed by the Worker command processor.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { TreeSubscriptionAPI } from '@hierarchidb/tree-api';
 import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';
@@ -15,7 +15,7 @@ import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleState } from './types.js';
 
 interface Params {
-  client: Remote<WorkerAPI> | undefined;
+  client: Remote<BuildWorkerAPI> | undefined;
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
 }

@@ -69,6 +69,8 @@ export type TransformByBandTaskInput = {
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
+  inputVertexCount?: number;
+  inputPolygonCount?: number;
   domainType: 'shape' | 'route';
   sourceKey: string;
   stagePriority?: number;

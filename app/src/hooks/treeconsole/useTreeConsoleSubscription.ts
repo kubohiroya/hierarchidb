@@ -5,7 +5,7 @@
  * when change events stream in from the runtime-worker.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -18,7 +18,7 @@ import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.
 import type { LoadChildrenOf } from './types.js';
 
 interface Params {
-  client: Remote<WorkerAPI> | undefined;
+  client: Remote<BuildWorkerAPI> | undefined;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;
   expandedIds: NodeId[];

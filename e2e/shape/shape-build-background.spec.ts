@@ -172,8 +172,8 @@ test.describe('Shape build background (real pipeline)', () => {
         dataSourceName,
         selectedArrayByCountries,
       );
-      const result = await api.startBatchSession('shape', nodeId, payloads, 'finish_all_stages');
-      const tasks = await api.getBatchTasks('shape', nodeId).catch(() => []);
+      const result = await api.startBuildSession('shape', nodeId, payloads, 'finish_all_stages');
+      const tasks = await api.getBuildTasks('shape', nodeId).catch(() => []);
       return {
         status: result?.status ?? null,
         taskCount: Array.isArray(tasks) ? tasks.length : 0,
@@ -185,7 +185,7 @@ test.describe('Shape build background (real pipeline)', () => {
     });
 
     if (!startResult) {
-      throw new Error('startBatchSession returned null');
+      throw new Error('startBuildSession returned null');
     }
 
     await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
@@ -213,7 +213,7 @@ test.describe('Shape build background (real pipeline)', () => {
           const data = (node?.draftData ?? node?.data) as { processingStatus?: string } | null;
           const queryAPI = await api.getShapeQueryAPI();
           const summary = await queryAPI.getVectorTileSummary(nodeId);
-          const tasks = await api.getBatchTasks('shape', nodeId).catch(() => []);
+          const tasks = await api.getBuildTasks('shape', nodeId).catch(() => []);
           const summaryCounts = Array.isArray(tasks)
             ? tasks.reduce((acc: Record<string, number>, task: { status?: string }) => {
                 const key = task.status ?? 'unknown';

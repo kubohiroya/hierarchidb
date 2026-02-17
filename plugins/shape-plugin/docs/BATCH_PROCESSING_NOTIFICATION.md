@@ -22,12 +22,12 @@ Shape Pluginのバッチ処理システムは、Worker層からUI層へリアル
 
 ```typescript
 // UI層でのコールバック登録
-const sessionId = await manager.startBatchSession(
+const sessionId = await manager.startBuildSession(
   nodeId,
   config,
   countries,
   adminLevels,
-  (event: BatchProgressEvent) => {
+  (event: BuildProgressEvent) => {
     // 進捗イベントを受信
     console.log(`Progress: ${event.stage} - ${event.progress}%`);
     updateUIProgress(event);
@@ -38,7 +38,7 @@ const sessionId = await manager.startBatchSession(
 ### 2. 進捗イベントの構造
 
 ```typescript
-interface BatchProgressEvent {
+interface BuildProgressEvent {
   sessionId: string;
   treeNodeId: NodeId;
   stage: 'download' | 'extract1' | 'extract2' | 'vectorTiles';
@@ -63,14 +63,14 @@ interface BatchProgressEvent {
 
 ```typescript
 export class BatchSessionManager {
-  private progressCallbacks: Map<string, (event: BatchProgressEvent) => void> = new Map();
+  private progressCallbacks: Map<string, (event: BuildProgressEvent) => void> = new Map();
 
-  async startBatchSession(
+  async startBuildSession(
     treeNodeId: NodeId,
     config: ObsolateBuildConfig,
     countries: string[],
     adminLevels: number[],
-    progressCallback?: (event: BatchProgressEvent) => void
+    progressCallback?: (event: BuildProgressEvent) => void
   ): Promise<string> {
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
@@ -87,7 +87,7 @@ export class BatchSessionManager {
 #### 2. 進捗イベントの発行
 
 ```typescript
-private emitProgressEvent(sessionId: string, event: BatchProgressEvent): void {
+private emitProgressEvent(sessionId: string, event: BuildProgressEvent): void {
   const callback = this.progressCallbacks.get(sessionId);
   if (callback) {
     callback(event);
@@ -236,10 +236,10 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
   const [currentTask, setCurrentTask] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   
-  const startBatchProcess = async () => {
+  const startBuildSession = async () => {
     const manager = new BatchSessionManager();
     
-    const sessionId = await manager.startBatchProcess(
+    const sessionId = await manager.startBuildSession(
       nodeId,
       config,
       downloadTaskPayloads,
@@ -261,7 +261,7 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
       }
     );
     
-    // バッチ処理を実行
+    // ビルド処理を実行
     await manager.executeFullPipeline(sessionId);
   };
   
@@ -287,14 +287,14 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
 
 ### Material-UIを使用した進捗表示
 
-Note: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead. The snippet below reflects legacy usage.
+Note: `useShapeAPI` has been removed. Use `getBuildWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and build-control APIs instead. The snippet below reflects legacy usage.
 
 ```typescript
 import { Box, LinearProgress, Typography, Alert } from '@mui/material';
 import { useShapeAPI } from '../hooks/useShapeAPI';
 
 export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
-  const { startBatchProcess, progress, stage, errors } = useShapeAPI(nodeId);
+  const { startBuildSession, progress, stage, errors } = useShapeAPI(nodeId);
   
   const getStageLabel = (stage: string) => {
     const labels = {
@@ -387,7 +387,7 @@ if (processedTasks % 10 === 0 || processedTasks === totalTasks) {
 複数の小さな更新をバッチ処理：
 
 ```typescript
-const pendingEvents: BatchProgressEvent[] = [];
+const pendingEvents: BuildProgressEvent[] = [];
 const flushInterval = setInterval(() => {
   if (pendingEvents.length > 0) {
     callback(pendingEvents[pendingEvents.length - 1]);

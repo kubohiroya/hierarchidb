@@ -3,7 +3,7 @@
  * Testing the loader functions that will be used by TanStack Router
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -33,8 +33,8 @@ vi.mock('~/loader.js', () => ({
   loadNodeAction: vi.fn(),
 }));
 
-function createMockClient(): Remote<WorkerAPI> {
-  return {} as unknown as Remote<WorkerAPI>;
+function createMockClient(): Remote<BuildWorkerAPI> {
+  return {} as unknown as Remote<BuildWorkerAPI>;
 }
 
 function createTree(overrides: Partial<Tree> = {}): Tree {

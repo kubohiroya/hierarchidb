@@ -4,18 +4,26 @@ import {
   AccordionSummary,
   FormControl,
   FormControlLabel,
+  MenuItem,
+  Paper,
   Radio,
   RadioGroup,
+  Select,
+  Slider,
   Stack,
   TextField,
   Typography,
   Tooltip,
 } from '@mui/material';
 import {
-  FilterAlt as FilterAltIcon,
-  InfoOutlined as InfoOutlinedIcon,
+  DensityLarge as DensityLargeIcon,
+  DensitySmall as DensitySmallIcon,
   ExpandMore as ExpandMoreIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  ReportProblemOutlined as ReportProblemOutlinedIcon,
+  Tune as TuneIcon,
 } from '@mui/icons-material';
+import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
@@ -29,10 +37,38 @@ type Props = {
 export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disabled }) => {
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const clampSliderValue = (value: number) => Math.min(2, Math.max(0, value));
+  const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
+
   const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
-  const simplifyTolerance = Number.isFinite(baseTransformConfig.tolerance)
-    ? baseTransformConfig.tolerance
-    : 0.2;
+  const simplifyTolerance = typeof baseTransformConfig.tolerance === 'number'
+    ? clampSliderValue(baseTransformConfig.tolerance)
+    : 0.1;
+  const simplifyRetryStep = typeof baseTransformConfig.retryToleranceStep === 'number'
+    ? clampSliderValue(baseTransformConfig.retryToleranceStep)
+    : 0.5;
+  const preserveTopology = baseTransformConfig.preserveTopology ?? true;
+  const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
+  const anomalyDetection = {
+    enabled: baseTransformConfig.anomalyDetection?.enabled ?? true,
+    scoreThreshold: baseTransformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
+    maxEdgeLengthRatio: baseTransformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
+    maxAreaDriftPercent: baseTransformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
+    maxSelfIntersectionCount: baseTransformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
+    maxLineLengthDriftPercent: baseTransformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
+    maxVertexDriftPercent: baseTransformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
+    geojson: {
+      maxTriangleShareDriftPercent:
+        baseTransformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
+      maxTriangleEdgeToBBoxRatio:
+        baseTransformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
+    },
+    topojson: {
+      minSharedArcRatioPercent:
+        baseTransformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
+    },
+  };
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
@@ -48,8 +84,11 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <FilterAltIcon color="primary" />
-          <Typography variant="subtitle1">
+          <TuneIcon color="primary" />
+          <Typography
+            variant="subtitle1"
+            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
+          >
             {t('processing.transform.title', 'Transform')}
           </Typography>
           <Tooltip
@@ -60,66 +99,356 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
           </Tooltip>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ p: 3 }}>
-        <Stack spacing={1} sx={{ opacity: disabled ? 0.6 : 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t(
-              'processing.transform.concurrencyMovedToBuildStep',
-              'Transform concurrency has moved to the Build step. Click the stage spinner in progress summary to edit it.',
-            )}
-          </Typography>
-          <FormControl disabled={disabled}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('processing.transform.algorithm', 'Simplify Algorithm')}
-            </Typography>
-            <RadioGroup
-              row
-              value={simplifyAlgorithm}
-              onChange={(_event, value) => {
-                if (value !== 'geojson' && value !== 'topojson') return;
-                update({
-                  transformConfig: {
-                    ...baseTransformConfig,
-                    simplifyAlgorithm: value,
-                  },
-                });
-              }}
-            >
+      <AccordionDetails sx={{ p: 1 }}>
+        <Stack spacing={2} sx={{ opacity: disabled ? 0.6 : 1 }}>
+          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+            <Stack spacing={2}>
+              <BuildConfigSectionTitle
+                icon={<TuneIcon fontSize="small" color="primary" />}
+                title={t('processing.transform.simplifySettings.title', 'Simplify settings')}
+              />
+              <FormControl disabled={disabled}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('processing.transform.algorithm.label', 'Simplify Algorithm')}
+                </Typography>
+                <RadioGroup
+                  row
+                  value={simplifyAlgorithm}
+                  onChange={(_event, value) => {
+                    if (value !== 'geojson' && value !== 'topojson') return;
+                    updateTransformConfig({ simplifyAlgorithm: value });
+                  }}
+                >
+                  <FormControlLabel
+                    value="topojson"
+                    control={<Radio size="small" />}
+                    label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
+                  />
+                  <FormControlLabel
+                    value="geojson"
+                    control={<Radio size="small" />}
+                    label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
+                  />
+                </RadioGroup>
+              </FormControl>
+
               <FormControlLabel
-                value="topojson"
-                control={<Radio size="small" />}
-                label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
+                control={(
+                  <Switch
+                    checked={preserveTopology}
+                    onChange={(event) => updateTransformConfig({ preserveTopology: event.target.checked })}
+                  />
+                )}
+                disabled={disabled || simplifyAlgorithm === 'topojson'}
+                label={t('processing.transform.preserveTopology.label', 'Preserve topology')}
+              />
+              {simplifyAlgorithm === 'topojson' ? (
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.transform.preserveTopology.topojsonHint',
+                    'topojson mode always preserves topology in decode simplify path.',
+                  )}
+                </Typography>
+              ) : null}
+
+              <Stack spacing={0.5}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('processing.transform.simplifyTolerance.label', 'Simplify tolerance')}
+                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <DensitySmallIcon fontSize="small" color="action" />
+                  <Slider
+                    sx={{ flex: 1 }}
+                    value={simplifyTolerance}
+                    min={0}
+                    max={2}
+                    step={0.01}
+                    disabled={disabled}
+                    valueLabelDisplay="auto"
+                    onChange={(_event, value) => {
+                      const next = clampSliderValue(resolveSliderNumber(value));
+                      updateTransformConfig({ tolerance: next });
+                    }}
+                  />
+                  <DensityLargeIcon fontSize="small" color="action" />
+                </Stack>
+              </Stack>
+
+              <Stack spacing={0.5}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('processing.transform.retryToleranceStep.label', 'Retry tolerance step')}
+                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <DensitySmallIcon fontSize="small" color="action" />
+                  <Slider
+                    sx={{ flex: 1 }}
+                    value={simplifyRetryStep}
+                    min={0}
+                    max={2}
+                    step={0.01}
+                    disabled={disabled}
+                    valueLabelDisplay="auto"
+                    onChange={(_event, value) => {
+                      const next = clampSliderValue(resolveSliderNumber(value));
+                      updateTransformConfig({ retryToleranceStep: next });
+                    }}
+                  />
+                  <DensityLargeIcon fontSize="small" color="action" />
+                </Stack>
+              </Stack>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+            <Stack spacing={2}>
+              <BuildConfigSectionTitle
+                icon={<InfoOutlinedIcon fontSize="small" color="primary" />}
+                title={t('processing.transform.logging.title', 'Execution logging')}
+              />
+              <FormControl fullWidth disabled={disabled}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('processing.transform.executionLogLevel.label', 'Execution Log Level')}
+                </Typography>
+                <Select
+                  size="small"
+                  value={executionLogLevel}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value !== 'off' && value !== 'summary' && value !== 'verbose') return;
+                    updateTransformConfig({ executionLogLevel: value });
+                  }}
+                >
+                  <MenuItem value="off">{t('processing.transform.executionLogLevel.off', 'off')}</MenuItem>
+                  <MenuItem value="summary">{t('processing.transform.executionLogLevel.summary', 'summary')}</MenuItem>
+                  <MenuItem value="verbose">{t('processing.transform.executionLogLevel.verbose', 'verbose')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
+            <Stack spacing={2}>
+              <BuildConfigSectionTitle
+                icon={<ReportProblemOutlinedIcon fontSize="small" color="primary" />}
+                title={t('processing.transform.anomaly.title', 'Anomaly Detection')}
               />
               <FormControlLabel
-                value="geojson"
-                control={<Radio size="small" />}
-                label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
+                control={(
+                  <Switch
+                    checked={anomalyDetection.enabled}
+                    onChange={(event) => updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        enabled: event.target.checked,
+                      },
+                    })}
+                  />
+                )}
+                disabled={disabled}
+                label={t('processing.transform.anomaly.enabled', 'Enable anomaly detection')}
               />
-            </RadioGroup>
-          </FormControl>
-          <TextField
-            fullWidth
-            size="small"
-            type="number"
-            label={t('processing.transform.tolerance.label', 'Simplify tolerance')}
-            value={simplifyTolerance}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              if (!Number.isFinite(value)) return;
-              update({
-                transformConfig: {
-                  ...baseTransformConfig,
-                  tolerance: Math.max(0, value),
-                },
-              });
-            }}
-            helperText={t(
-              'processing.transform.tolerance.help',
-              'Lower values reduce shape collapse and self-intersection risk; higher values simplify more aggressively.',
-            )}
-            inputProps={{ min: 0, step: 0.01 }}
-            disabled={disabled}
-          />
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.scoreThreshold', 'Anomaly score threshold')}
+                  value={anomalyDetection.scoreThreshold}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        scoreThreshold: Math.max(0.1, value),
+                      },
+                    });
+                  }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.maxEdgeLengthRatio', 'Max edge length ratio')}
+                  value={anomalyDetection.maxEdgeLengthRatio}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        maxEdgeLengthRatio: Math.max(1, value),
+                      },
+                    });
+                  }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.maxAreaDriftPercent', 'Max area drift (%)')}
+                  value={anomalyDetection.maxAreaDriftPercent}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        maxAreaDriftPercent: Math.max(0, value),
+                      },
+                    });
+                  }}
+                />
+              </Stack>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.maxSelfIntersectionCount', 'Max self intersections')}
+                  value={anomalyDetection.maxSelfIntersectionCount}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        maxSelfIntersectionCount: Math.max(0, Math.floor(value)),
+                      },
+                    });
+                  }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.maxLineLengthDriftPercent', 'Max line length drift (%)')}
+                  value={anomalyDetection.maxLineLengthDriftPercent}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        maxLineLengthDriftPercent: Math.max(0, value),
+                      },
+                    });
+                  }}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label={t('processing.transform.anomaly.maxVertexDriftPercent', 'Max vertex drift (%)')}
+                  value={anomalyDetection.maxVertexDriftPercent}
+                  disabled={disabled || !anomalyDetection.enabled}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (!Number.isFinite(value)) return;
+                    updateTransformConfig({
+                      anomalyDetection: {
+                        ...anomalyDetection,
+                        maxVertexDriftPercent: Math.max(0, value),
+                      },
+                    });
+                  }}
+                />
+              </Stack>
+
+              {simplifyAlgorithm === 'geojson' ? (
+                <Stack spacing={1.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(
+                      'processing.transform.anomaly.geojson.caption',
+                      'GeoJSON path checks triangle-shape drift using edge length against polygon BBox span.',
+                    )}
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <TextField
+                      size="small"
+                      type="number"
+                      label={t(
+                        'processing.transform.anomaly.geojson.maxTriangleShareDriftPercent',
+                        'Max triangle share drift (%)',
+                      )}
+                      value={anomalyDetection.geojson.maxTriangleShareDriftPercent}
+                      disabled={disabled || !anomalyDetection.enabled}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        if (!Number.isFinite(value)) return;
+                        updateTransformConfig({
+                          anomalyDetection: {
+                            ...anomalyDetection,
+                            geojson: {
+                              ...anomalyDetection.geojson,
+                              maxTriangleShareDriftPercent: Math.max(0, value),
+                            },
+                          },
+                        });
+                      }}
+                    />
+                    <TextField
+                      size="small"
+                      type="number"
+                      label={t(
+                        'processing.transform.anomaly.geojson.maxTriangleEdgeToBBoxRatio',
+                        'Max triangle edge/BBox ratio',
+                      )}
+                      value={anomalyDetection.geojson.maxTriangleEdgeToBBoxRatio}
+                      disabled={disabled || !anomalyDetection.enabled}
+                      onChange={(event) => {
+                        const value = Number(event.target.value);
+                        if (!Number.isFinite(value)) return;
+                        updateTransformConfig({
+                          anomalyDetection: {
+                            ...anomalyDetection,
+                            geojson: {
+                              ...anomalyDetection.geojson,
+                              maxTriangleEdgeToBBoxRatio: Math.max(0.1, value),
+                            },
+                          },
+                        });
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+              ) : null}
+
+              {simplifyAlgorithm === 'topojson' ? (
+                <Stack spacing={1.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(
+                      'processing.transform.anomaly.topojson.caption',
+                      'TopoJSON path uses shared-arc continuity diagnostics from topology references.',
+                    )}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label={t(
+                      'processing.transform.anomaly.topojson.minSharedArcRatioPercent',
+                      'Min shared arc ratio (%)',
+                    )}
+                    value={anomalyDetection.topojson.minSharedArcRatioPercent}
+                    disabled={disabled || !anomalyDetection.enabled}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      if (!Number.isFinite(value)) return;
+                      updateTransformConfig({
+                        anomalyDetection: {
+                          ...anomalyDetection,
+                          topojson: {
+                            ...anomalyDetection.topojson,
+                            minSharedArcRatioPercent: Math.min(100, Math.max(0, value)),
+                          },
+                        },
+                      });
+                    }}
+                  />
+                </Stack>
+              ) : null}
+            </Stack>
+          </Paper>
         </Stack>
       </AccordionDetails>
     </Accordion>

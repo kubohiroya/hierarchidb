@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { RouteBatchLiveProgress } from '../RouteBatchLiveProgress.js';
-import { RouteBatchSummary } from '../RouteBatchSummary.js';
+import { RouteBuildLiveProgress } from '../RouteBuildLiveProgress.js';
+import { RouteBuildSummary } from '../RouteBuildSummary.js';
 
-const mockUseRouteBatchProgress = vi.fn();
-
-vi.mock('../../hooks/useRouteBatchProgress.js', () => ({
-  useRouteBatchProgress: mockUseRouteBatchProgress,
-}));
+const mockUseRouteBuildProgress = vi.fn();
 
 beforeEach(() => {
-  mockUseRouteBatchProgress.mockReset();
+  mockUseRouteBuildProgress.mockReset();
 });
 
-describe('RouteBatchLiveProgress', () => {
+vi.mock('../../hooks/useRouteBuildProgress.js', () => ({
+  useRouteBuildProgress: mockUseRouteBuildProgress,
+}));
+
+describe('RouteBuildLiveProgress', () => {
   it('exposes progress indicators via data-testid attributes', () => {
-    mockUseRouteBatchProgress.mockReturnValue({
+    mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
       progress: { percentage: 42, stage: 'routing' },
@@ -28,7 +28,7 @@ describe('RouteBatchLiveProgress', () => {
       resume: vi.fn(),
     });
 
-    render(<RouteBatchLiveProgress jobId="job-1" enableControls={true} />);
+    render(<RouteBuildLiveProgress jobId="job-1" />);
 
     const root = screen.getByTestId('route-live-progress');
     expect(root).toHaveAttribute('data-progress-atoms', 'running');
@@ -38,7 +38,7 @@ describe('RouteBatchLiveProgress', () => {
   });
 
   it('marks paused atoms and surfaces mutation errors', () => {
-    mockUseRouteBatchProgress.mockReturnValue({
+    mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
       progress: { percentage: 55, stage: 'routing' },
@@ -51,7 +51,7 @@ describe('RouteBatchLiveProgress', () => {
       resume: vi.fn(),
     });
 
-    render(<RouteBatchLiveProgress jobId="job-2" enableControls={true} />);
+    render(<RouteBuildLiveProgress jobId="job-2" />);
 
     expect(screen.getByTestId('route-live-progress')).toHaveAttribute('data-progress-atoms', 'paused');
     expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'true');
@@ -59,9 +59,9 @@ describe('RouteBatchLiveProgress', () => {
   });
 });
 
-describe('RouteBatchSummary', () => {
+describe('RouteBuildSummary', () => {
   it('renders summary metrics with stable data-testid selectors', async () => {
-    mockUseRouteBatchProgress.mockReturnValue({
+    mockUseRouteBuildProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
       progress: { completed: 4, total: 10, failed: 2, percentage: 40 },
@@ -74,7 +74,7 @@ describe('RouteBatchSummary', () => {
       resume: vi.fn(),
     });
 
-    render(<RouteBatchSummary nodeId="job-3" />);
+    render(<RouteBuildSummary nodeId="job-3" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('route-summary-completed').textContent).toContain('完了: 4');

@@ -2,8 +2,8 @@ import type { ISO2, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type { NodePayload } from '@hierarchidb/tree-api';
 import type {
   IdeGsmSourceEntry,
-  LocationBatchFilterCriteria,
-  LocationBatchProcessingOptions,
+  LocationBuildFilterCriteria,
+  LocationBuildProcessingOptions,
   LocationDataSource,
   LocationIconConfig,
   LocationLabelConfig,
@@ -16,8 +16,8 @@ export type {
   LocationType,
   LocationDataSource,
   LocationProcessingStatus,
-  LocationBatchFilterCriteria,
-  LocationBatchProcessingOptions,
+  LocationBuildFilterCriteria,
+  LocationBuildProcessingOptions,
   LocationSearchOptions,
   LocationSearchConfig,
   LocationRepresentationByZoomLevelConfig,
@@ -52,9 +52,9 @@ export interface LocationEntityPayload extends NodePayload {
 
 export type LocationEntity = PeerEntity<LocationEntityPayload>;
 
-export interface LocationBatchConfig {
+export interface LocationBuildConfig {
   searchConfigs: LocationSearchConfig[];
   concurrentDownloads?: number;
-  processingOptions: LocationBatchProcessingOptions;
-  filterCriteria?: LocationBatchFilterCriteria;
+  processingOptions: LocationBuildProcessingOptions;
+  filterCriteria?: LocationBuildFilterCriteria;
 }

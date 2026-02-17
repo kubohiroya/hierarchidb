@@ -176,7 +176,7 @@ export interface ProgressInfo {
 }
 
 
-export interface BatchSession {
+export interface BuildSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: BuildTaskStatus;

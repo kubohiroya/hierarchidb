@@ -1,16 +1,17 @@
 @hierarchidb/batch
 ===================
 
-Lightweight batch orchestration with a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
+Lightweight build orchestration with a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
+
+Build* names are canonical.
 
 ## Directory layout
 ```
-BatchService.ts   Facade
 index.ts          Public exports
 ```
 
 ## Key exports
-- `BatchService`
+- `BuildService`
   - `mapChunks(source, fn, { concurrency, progress })` — parallel map with progress + abort support.
 
 ## Consumers / usage

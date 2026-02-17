@@ -7,7 +7,7 @@
 
 export type RuntimeFactories = {
   createEntityHandler?: () => Promise<unknown> | unknown;
-  createBatchManager?: () => Promise<unknown> | unknown;
+  createBuildManager?: () => Promise<unknown> | unknown;
 };
 
 export type RuntimeExports = RuntimeFactories & {

@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode, cloneElement, isValidElement } from 
 import { Box } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import { isTaskPhaseMessage, isTaskSkipped } from '../../../common/utils/taskMessages.ts';
+import { isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 import { formatTaskDisplayMessage } from './taskDisplayText.ts';
 import { TaskItem } from './TaskItem.tsx';
@@ -48,17 +48,22 @@ export const TaskItemCard = ({
   const failedMessage = errorMessage || fallbackError;
   const geometryDetails = parseGeometrySimplifyError(task.message);
   const baseMessage = task.message?.split(' (')[0];
-  const failedTaskMessage = task.status === 'failed'
-    && failedMessage
-    && (!task.message || isTaskPhaseMessage(task.message))
-    ? failedMessage
-    : null;
-  const taskMessage = displayMessage
-    ?? failedTaskMessage
-    ?? (task.message && task.message !== taskTitle
-      ? (geometryDetails ? baseMessage : task.message)
-      : undefined);
-  const detailLines = displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined);
+  const taskMessage = task.status === 'failed'
+    ? (
+      failedMessage
+      || (task.message && task.message !== taskTitle
+        ? (geometryDetails ? baseMessage : task.message)
+        : undefined)
+    )
+    : (
+      displayMessage
+      ?? (task.message && task.message !== taskTitle
+        ? (geometryDetails ? baseMessage : task.message)
+        : undefined)
+    );
+  const detailLines = task.status === 'failed'
+    ? (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined)
+    : (displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined));
   let leadingIcon: ReactNode = null;
   if (task.status === 'recycled') {
     leadingIcon = (

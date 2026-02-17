@@ -332,7 +332,22 @@ export function mergeBuildConfig(
   if (!overrides) return base;
 
   const fetchConfig = overrides.fetchConfig
-    ? { ...base.fetchConfig, ...overrides.fetchConfig }
+    ? {
+      ...base.fetchConfig,
+      ...overrides.fetchConfig,
+      geometryIntakeGuard: overrides.fetchConfig.geometryIntakeGuard
+        ? {
+          ...(base.fetchConfig.geometryIntakeGuard ?? {}),
+          ...overrides.fetchConfig.geometryIntakeGuard,
+        }
+        : base.fetchConfig.geometryIntakeGuard,
+      invalidGeometryFilter: overrides.fetchConfig.invalidGeometryFilter
+        ? {
+          ...(base.fetchConfig.invalidGeometryFilter ?? {}),
+          ...overrides.fetchConfig.invalidGeometryFilter,
+        }
+        : base.fetchConfig.invalidGeometryFilter,
+    }
     : base.fetchConfig;
 
   const bandOverrides = overrides.transformConfig;

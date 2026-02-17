@@ -13,7 +13,7 @@
       "label": "License Agreement"
     },
     "processing": {
-      "label": "Build Configuration"
+      "label": "Config"
     },
     "countrySelection": {
       "label": "Country Selection"
@@ -69,12 +69,86 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
-      "filteringTitle": "Fetch-stage filtering",
-      "filteringHelp": "Applies to filtering at the end of the fetch stage before transform begins."
+      "geometryIntakeGuard": {
+        "title": "Fetch Geometry Intake Guard",
+        "description": "Normalize and validate fetched geometry before transform to reduce unstable simplification artifacts.",
+        "validationLevel": "Validation level",
+        "level": {
+          "off": "off",
+          "basic": "basic",
+          "strict": "strict"
+        },
+        "dedupeEpsilon": "Duplicate vertex epsilon",
+        "minRingAreaThreshold": "Minimum ring area threshold",
+        "normalizeRingOrientation": "Normalize ring orientation",
+        "keepBaselineSnapshot": "Keep baseline snapshot for anomaly scoring"
+      },
+      "invalidGeometryFilter": {
+        "title": "Invalid geometry filtering",
+        "description": "Run additional invalid-shape checks after small-shape filtering.",
+        "area": "Area",
+        "lineLength": "Line length",
+        "maxEdgeLength": "Max edge length",
+        "selfIntersection": "Self intersection",
+        "triangleRingRatio": "Triangle ring ratio"
+      }
     },
     "transform": {
       "title": "Transform",
-      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance."
+      "summaryHelpTurf": "Transform runs turf.simplify with the configured tolerance.",
+      "summaryHelpTopojson": "Transform uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.",
+      "summaryHelpGeojson": "Transform decodes geometry first, then runs geojson simplify with the configured tolerance.",
+      "simplifyTolerance": {
+        "label": "Simplify tolerance"
+      },
+      "retryToleranceStep": {
+        "label": "Retry tolerance step"
+      },
+      "algorithm": {
+        "label": "Simplify algorithm",
+        "topojson": "topojson (topology-preserving)",
+        "geojson": "geojson (turf simplify)"
+      },
+      "preserveTopology": {
+        "label": "Preserve topology",
+        "topojsonHint": "topojson mode always preserves topology in decode simplify path."
+      },
+      "executionLogLevel": {
+        "label": "Execution log level",
+        "off": "off",
+        "summary": "summary",
+        "verbose": "verbose"
+      },
+      "anomaly": {
+        "title": "Anomaly detection",
+        "enabled": "Enable anomaly detection",
+        "scoreThreshold": "Anomaly score threshold",
+        "maxEdgeLengthRatio": "Max edge length ratio",
+        "maxAreaDriftPercent": "Max area drift (%)",
+        "maxSelfIntersectionCount": "Max self intersections",
+        "maxLineLengthDriftPercent": "Max line length drift (%)",
+        "maxVertexDriftPercent": "Max vertex drift (%)",
+        "geojson": {
+          "caption": "GeoJSON path checks triangle-shape drift using edge length against polygon BBox span.",
+          "maxTriangleShareDriftPercent": "Max triangle share drift (%)",
+          "maxTriangleEdgeToBBoxRatio": "Max triangle edge/BBox ratio"
+        },
+        "topojson": {
+          "caption": "TopoJSON path uses shared-arc continuity diagnostics from topology references.",
+          "minSharedArcRatioPercent": "Min shared arc ratio (%)"
+        },
+        "retry": {
+          "enabled": "Enable automatic retry",
+          "maxRetries": "Max retries",
+          "toleranceScale": "Retry tolerance scale",
+          "fallbackMode": "Fallback mode",
+          "fallback": {
+            "bestScore": "Use best anomaly score",
+            "switchAlgorithm": "Try switching algorithm",
+            "disableSimplify": "Disable simplify for this task"
+          }
+        }
+      }
     },
     "transformByZoom": {
       "title": "Transform by zoom"
@@ -167,10 +241,6 @@
       "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
       "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 in fetch filtering.",
       "omitDetailsTitle": "Filtering small shapes (islands and enclaves)",
-      "omitDetailsHelp": "Filters out small shapes at each zoom using bbox and area thresholds.",
-      "omitDetailsClarityNote": "Low keeps more detail; High filters more aggressively.",
-      "omitDetailsPreviewTitle": "Filtering preview",
-      "omitDetailsPreviewHelp": "Pick a level to see how smaller islands drop out as filtering strengthens.",
       "omitDetailsLevelWeak": "High detail",
       "omitDetailsLevelMedium": "Medium detail",
       "omitDetailsLevelStrong": "Low detail",
@@ -386,11 +456,19 @@
       "fetchCacheStart": "Fetch cache start",
       "fetchCacheDone": "Fetch cache done",
       "decodeStart": "Decode start",
-      "decodeDone": "Decode done",
+      "decodeProgress": "Decoding... {{elapsedSeconds}}s",
+      "decodeDone": "Decode complete",
+      "recyclingFilterStart": "Recycling feature filtering start",
+      "recyclingFilterDone": "Recycling feature filtering done",
       "filteringStart": "Filtering start",
       "filteringDone": "Filtering done",
+      "baselineMetricsStart": "Baseline metrics start",
+      "baselineMetricsProgress": "Baseline metrics... {{processed}}/{{total}} features ({{elapsedSeconds}}s)",
+      "baselineMetricsDone": "Baseline metrics done",
       "prepareCountsStart": "Prepare counts start",
       "prepareCountsDone": "Prepare counts done",
+      "simplifyAttempt": "Simplify attempt {{attempt}} (tolerance={{tolerance}})",
+      "retrySimplifyFeature": "Retry simplify feature {{featureIndex}}/{{featureTotal}}: attempt {{attempt}} of {{attemptTotal}} (tolerance={{tolerance}})",
       "simplifyStart": "Simplify start",
       "simplifyDone": "Simplify done",
       "simplifyPreprocessStart": "Preprocess start",
@@ -404,8 +482,13 @@
       "outputCountsStart": "Output counts start",
       "encodeStart": "Encode start",
       "encodeDone": "Encode done",
+      "transformCacheEncodeStart": "Transform cache FlatGeobuf encode start",
+      "transformCacheEncodeDone": "Transform cache FlatGeobuf encode done",
       "cachePutStart": "Cache write start",
       "cachePutDone": "Cache write done"
+    },
+    "taskWarning": {
+      "cachePutSlow": "Cache write is slow ({{elapsedSeconds}}s). Build will continue."
     }
   },
   "build": {

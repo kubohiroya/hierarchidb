@@ -1,7 +1,6 @@
-export * from './BatchControlAPI.js';
+export * from './BuildControlAPI.js';
 export * from './taskStatus.js';
 export type {
-  BatchStage,
   BuildStage,
   BuildContinuationPolicy,
 } from './progress-types.js';

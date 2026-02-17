@@ -26,6 +26,7 @@ import { type NodeId, toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { DownloadRetryControls, type DownloadRetryConfig, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
+import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskItemWithMetadata } from './TaskItemCardListCard.tsx';
 import { TaskItemCardListCard, sortTransformTasks, sortVectorTileTasks } from './TaskItemCardListCard.tsx';
@@ -425,6 +426,7 @@ const BuildProgressStageContent = ({
   resolveStatusColor,
   resolveTaskTitle,
   t,
+  matchesSearchQuery,
 }: {
   showHeader?: boolean;
   stage: BuildStage;
@@ -437,6 +439,7 @@ const BuildProgressStageContent = ({
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
+  matchesSearchQuery: (task: TaskItemWithMetadata) => boolean;
 }) => {
   const filter = useBuildStageFilter();
   const stageTasks = tasksByStage[stage.id] ?? [];
@@ -450,6 +453,7 @@ const BuildProgressStageContent = ({
   const disableVirtualization = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('noTaskVirtual');
   const filteredTasks = stageTasks.filter((task) => {
+    if (!matchesSearchQuery(task)) return false;
     if (isTaskSkipped(task.display, task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed' || task.status === 'recycled') return filter.completedMode;
@@ -759,6 +763,7 @@ export const ShapeBuildProgressPanel = ({
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const [startPendingHold, setStartPendingHold] = useState(false);
+  const [taskSearchText, setTaskSearchText] = useState('');
   const isResetSessionLoading = isResetSessionPending || deleteLoading.resetSession;
   const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
   const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'fetch' | 'transform' | 'vt' | null>(null);
@@ -848,6 +853,17 @@ export const ShapeBuildProgressPanel = ({
     || startPendingHold;
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
+  const pauseActsAsCancel = isBuildStartupPending;
+  const pauseButtonLabel = pauseActsAsCancel
+    ? t('stage.controls.cancelBuild', 'Cancel Build')
+    : t('stage.controls.pause', 'Pause');
+  const taskSearchQuery = taskSearchText.trim().toLowerCase();
+  const matchesSearchQuery = useCallback((task: TaskItemWithMetadata) => {
+    if (taskSearchQuery.length === 0) return true;
+    const title = typeof task.title === 'string' ? task.title.toLowerCase() : '';
+    const message = typeof task.message === 'string' ? task.message.toLowerCase() : '';
+    return title.includes(taskSearchQuery) || message.includes(taskSearchQuery);
+  }, [taskSearchQuery]);
 
   const processingConfigForEdit = useMemo<ShapeProcessingConfig>(() => {
     const draftConfig = data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
@@ -1262,6 +1278,7 @@ export const ShapeBuildProgressPanel = ({
           resolveStatusColor={resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
           t={t}
+          matchesSearchQuery={matchesSearchQuery}
           showHeader={false}
         />
       );
@@ -1273,6 +1290,7 @@ export const ShapeBuildProgressPanel = ({
     paneProgressForDisplay,
     resolveStatusColor,
     resolveStatusLabel,
+    matchesSearchQuery,
     resolveTaskTitle,
     stageProgressForDisplay,
     stages,
@@ -1315,9 +1333,10 @@ export const ShapeBuildProgressPanel = ({
       onResume={controls.canStartOrResume ? handleStartClickWithHold : undefined}
       onPause={controls.pausePending ? undefined : controls.handlePause}
       controlLabel={t('stage.controls.title', 'Build controls')}
-      pauseLabel={t('stage.controls.pause', 'Pause')}
+      pauseLabel={pauseButtonLabel}
       pauseLoading={false}
       pausePending={controls.pausePending}
+      pauseActsAsCancel={pauseActsAsCancel}
       startPending={controls.startPending}
       showResumeLabel={controls.showResumeLabel}
       startLabel={t('stage.controls.start', 'Start Build')}
@@ -1325,7 +1344,21 @@ export const ShapeBuildProgressPanel = ({
       statusLabel={controls.statusLabel}
       controlDetails={controlDetails}
       controlRightContent={(
-        <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+          <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
+          <TreeTableSearchInput
+            fullWidth
+            value={taskSearchText}
+            onChange={setTaskSearchText}
+            onClear={() => setTaskSearchText('')}
+            placeholder={t('stage.tasks.search', 'Search tasks')}
+            sx={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              maxWidth: 250,
+            }}
+          />
+        </Box>
       )}
       suspendDialog={{
         open: suspendSuspectOpen,
@@ -1416,16 +1449,19 @@ export const ShapeBuildProgressPanel = ({
               {crashHint}
             </Alert>
           </Snackbar>
-          <Snackbar
-            open={sizeWarningOpen}
-            autoHideDuration={8000}
-            onClose={() => setSizeWarningOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
-              {warningMessage}
-            </Alert>
-          </Snackbar>
+          <Dialog open={sizeWarningOpen} onClose={() => setSizeWarningOpen(false)}>
+            <DialogTitle>{t('stage.warning.title', 'Build warning')}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" color="text.secondary">
+                {warningMessage}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setSizeWarningOpen(false)}>
+                {t('stage.warning.confirm', 'OK')}
+              </Button>
+            </DialogActions>
+          </Dialog>
           {startWarning ? (
             <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
               <DialogTitle>{startWarning.title}</DialogTitle>

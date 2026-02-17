@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtom } from 'jotai';
 import {
   type ShapeBuildTaskSummary,
@@ -84,7 +84,7 @@ export function useShapeBuildTasks(
   options: UseShapeBuildTasksOptions = {},
 ): UseShapeBuildTasksState {
   const { autoSubscribe = true, reportFailures = true } = options;
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef(getBuildWorkerBridge());
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);

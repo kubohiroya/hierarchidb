@@ -1,4 +1,4 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from '../types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from '../types.js';
 import { normalizeEngine, normalizeMode, toFiniteNumber } from './strategy-utils.js';
 
 export class TabularStrategy implements DataSourceStrategy {
@@ -16,7 +16,7 @@ export class TabularStrategy implements DataSourceStrategy {
     };
   }
 
-  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]> {
+  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBuildSpec['defaults']): Promise<OdPair[]> {
     const blob = blobs.get(task.payloadRef);
     if (!blob) throw new Error(`Missing payload for ${task.payloadRef}`);
     const text = await blob.text();
@@ -24,7 +24,7 @@ export class TabularStrategy implements DataSourceStrategy {
   }
 }
 
-function parseTabularToOds(csv: string, defaults?: RouteBatchSpec['defaults']): OdPair[] {
+function parseTabularToOds(csv: string, defaults?: RouteBuildSpec['defaults']): OdPair[] {
   const lines = csv.split(/\r?\n/).filter(Boolean);
   if (lines.length === 0) return [];
   const header = lines[0]!.split(',').map((h) => h.trim().toLowerCase());

@@ -32,12 +32,16 @@ vi.mock('@hierarchidb/components', () => ({
   },
 }));
 
-vi.mock('@hierarchidb/ui-worker-client', () => ({
-  getWorkerBridge: () => ({
-    initialize: mocks.initializeBridge,
-    getBuildSessionStatus: mocks.getBuildSessionStatus,
-  }),
-}));
+vi.mock('@hierarchidb/ui-worker-client', () => {
+  const getBridge = () => ({
+    initialize: (...args: Parameters<typeof mocks.initializeBridge>) => mocks.initializeBridge(...args),
+    getBuildSessionStatus: (...args: Parameters<typeof mocks.getBuildSessionStatus>) =>
+      mocks.getBuildSessionStatus(...args),
+  });
+  return {
+    getBuildWorkerBridge: () => getBridge(),
+  };
+});
 
 vi.mock('../../../../services/utils/chunkStore.js', () => ({
   countRawDataDataSourceBuffersForNode: mocks.countRawDataDataSourceBuffersForNode,

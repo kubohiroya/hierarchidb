@@ -6,13 +6,13 @@ import { useLocationProgress } from '../../useLocationProgress.js';
 
 const bridgeMock = {
   initialize: vi.fn().mockResolvedValue(undefined),
-  subscribeBatchProgress: vi.fn().mockResolvedValue(() => {
+  subscribeBuildProgress: vi.fn().mockResolvedValue(() => {
   }),
-  getBatchSessionStatus: vi.fn(),
+  getBuildSessionStatus: vi.fn(),
 };
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
-  getWorkerBridge: () => bridgeMock,
+  getBuildWorkerBridge: () => bridgeMock,
 }));
 
 describe('useLocationProgress - auth notifications', () => {

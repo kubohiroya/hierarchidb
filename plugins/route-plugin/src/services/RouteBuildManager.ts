@@ -1,28 +1,28 @@
 /**
- * @file RouteBatchManager.ts
- * @description Route batch processing manager extending Shape's batch infrastructure
+ * @file RouteBuildManager.ts
+ * @description Route build processing manager extending Shape's build infrastructure
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
 
-// No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
-import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
-import type { BatchProgressEvent } from '@hierarchidb/batch-api';
+import type { RouteBuildConfig } from '@hierarchidb/route-store';
+import { RouteBuildSession, type RouteBuildTask } from './RouteBuildSession.js';
+import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
 export type ProgressStore = { upsert?: (nodeId: string, record: ProgressUpdate) => void };
-export type RouteBatchManagerDeps = {
+
+export type RouteBuildManagerDeps = {
   engines?: unknown;
   emitter?: ProgressEmitter;
   store?: ProgressStore;
 };
 
-export type RouteBatchRouteInput = {
+export type RouteBuildRouteInput = {
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   startCoordinates?: [number, number];
@@ -31,20 +31,20 @@ export type RouteBatchRouteInput = {
   methodOptions?: RouteGenerationConfig['options'];
 };
 
-const logRouteBatchWarning = (message: string, error: unknown): void => {
+const logRouteBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
-  console.warn('[RouteBatchManager]', message, error);
+  console.warn('[RouteBuildManager]', message, error);
 };
 
 /**
- * Route-specific batch configuration
+ * Route-specific build configuration
  */
 
-export class RouteBatchManager {
-  constructor(protected readonly deps?: RouteBatchManagerDeps) {}
+export class RouteBuildManager {
+  constructor(protected readonly deps?: RouteBuildManagerDeps) {}
 
-  private routeSpecificTasks = new Map<NodeId, RouteBatchTask[]>();
-  private activeSessions = new Map<NodeId, RouteBatchSession>();
+  private routeSpecificTasks = new Map<NodeId, RouteBuildTask[]>();
+  private activeSessions = new Map<NodeId, RouteBuildSession>();
   // Idempotency (jobKey -> session)
   private static jobKeyToSession = new Map<string, NodeId>();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
@@ -58,21 +58,21 @@ export class RouteBatchManager {
   // };
 
   /**
-   * Start route batch generation session
+   * Start route build generation session
    */
-  async startRouteBatchSession(
+  async startRouteBuildSession(
     nodeId: NodeId,
-    config: RouteBatchConfig,
-    routes: RouteBatchRouteInput[],
+    config: RouteBuildConfig,
+    routes: RouteBuildRouteInput[],
   ): Promise<NodeId> {
     // Idempotency: reuse an existing session if the same payload arrives
     const jobKey = this.computeJobKey(nodeId, config, routes);
-    const existing = RouteBatchManager.jobKeyToSession.get(jobKey);
+    const existing = RouteBuildManager.jobKeyToSession.get(jobKey);
     if (existing) return existing;
-    RouteBatchManager.jobKeyToSession.set(jobKey, nodeId);
+    RouteBuildManager.jobKeyToSession.set(jobKey, nodeId);
 
     // Create route-specific tasks
-    const routeTasks: RouteBatchTask[] = [];
+    const routeTasks: RouteBuildTask[] = [];
 
     // Phase 1: Location resolution tasks
     if (config.validation?.checkLocationExists) {
@@ -152,13 +152,13 @@ export class RouteBatchManager {
     await putTasks(taskQueue, routeTasks.map((task) => toTaskQueueRecord(task)));
 
     // Start processing using Shape's infrastructure
-    const session = new RouteBatchSession(nodeId, config, routeTasks, { taskQueue });
+    const session = new RouteBuildSession(nodeId, config, routeTasks, { taskQueue });
     this.activeSessions.set(nodeId, session);
-    const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
+    const unsubscribe = session.addBuildProgressListener((event: BuildProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
     const runPromise = session.start();
     void runPromise.catch((error: unknown) => {
-      logRouteBatchWarning('Route batch session failed', error);
+      logRouteBuildWarning('Route build session failed', error);
     });
     void runPromise.finally(() => {
       unsubscribe();
@@ -167,16 +167,15 @@ export class RouteBatchManager {
 
     return nodeId;
   }
-
-  getSession(nodeId: NodeId): RouteBatchSession | undefined {
+  getSession(nodeId: NodeId): RouteBuildSession | undefined {
     return this.activeSessions.get(nodeId);
   }
 
-  // Process route tasks using RouteBatchSession (handled within session)
+  // Process route tasks using RouteBuildSession (handled within session)
 
   // Grouping helper kept for reference (not used in current flow)
 
-  // private async processTaskGroup(...): Promise<void> { /* consolidated into RouteBatchSession */ }
+  // private async processTaskGroup(...): Promise<void> { /* consolidated into RouteBuildSession */ }
 
   // private getLaneSemaphore(method: string): Semaphore {
   //   let sem = this.laneSemaphores.get(method);
@@ -191,7 +190,7 @@ export class RouteBatchManager {
   /**
    * Process individual route task
    */
-  // private async processIndividualTask(...): Promise<void> { /* handled by RouteBatchSession */ }
+  // private async processIndividualTask(...): Promise<void> { /* handled by RouteBuildSession */ }
 
   /**
    * Resolve location references
@@ -220,9 +219,9 @@ export class RouteBatchManager {
   // private async retryTask(...): Promise<void> {}
 
   /**
-   * Get route batch progress
+   * Get route build progress
    */
-  async getRouteBatchProgress(nodeId: NodeId): Promise<{
+  async getRouteBuildProgress(nodeId: NodeId): Promise<{
     phase: string;
     progress: number;
     completedRoutes: number;
@@ -261,7 +260,7 @@ export class RouteBatchManager {
     };
   }
 
-  private emitProgressEvent(event: BatchProgressEvent): void {
+  private emitProgressEvent(event: BuildProgressEvent): void {
     const payload = event.payload ?? {};
     const total = coerceNumber(payload.total);
     const completed = coerceNumber(payload.completed);
@@ -276,16 +275,16 @@ export class RouteBatchManager {
     try {
       this.deps?.emitter?.emit?.(update);
     } catch (error) {
-      logRouteBatchWarning('Progress emitter raised an error', error);
+      logRouteBuildWarning('Progress emitter raised an error', error);
     }
     try {
       this.deps?.store?.upsert?.(event.nodeId, update);
     } catch (error) {
-      logRouteBatchWarning('Progress store upsert failed', error);
+      logRouteBuildWarning('Progress store upsert failed', error);
     }
   }
 
-  private computeJobKey(nodeId: NodeId, config: RouteBatchConfig, routes: RouteBatchRouteInput[]): string {
+  private computeJobKey(nodeId: NodeId, config: RouteBuildConfig, routes: RouteBuildRouteInput[]): string {
     const payload = {
       nodeId,
       method: config.routeGeneration.method,
@@ -296,7 +295,7 @@ export class RouteBatchManager {
   }
 }
 
-function toTaskQueueRecord(task: RouteBatchTask): TaskQueueRecord {
+function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
@@ -374,4 +373,4 @@ function hashCyrb53(str: string, seed = 0): string {
   return h.toString(36);
 }
 
-// (removed) Semaphore helper; concurrency control is handled in RouteBatchSession
+// (removed) Semaphore helper; concurrency control is handled in RouteBuildSession

@@ -998,12 +998,51 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return featureListRows.filter((row) => viewportFeatureIdSet.has(String(row.featureId ?? row.id)));
   }, [featureListRows, featureRowFilterMode, viewportFeatureIdSet]);
 
-  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
-    buildErrorSummaryById(normalizedTransformErrorRows, {
-      getId: (row) => row.featureId ?? undefined,
-      getMessage: (row) => row.message ?? undefined,
-    })
-  ), [normalizedTransformErrorRows]);
+  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
+    const summary = new Map<string, {
+      errorCount: number;
+      repairCount: number;
+      count: number;
+      messages: string[];
+    }>();
+    featureListRows.forEach((row) => {
+      const id = row.featureId ?? row.id;
+      if (!id) return;
+      const key = String(id);
+      const metadataErrorCount = typeof row.errorCount === 'number' ? Math.max(0, row.errorCount) : 0;
+      const metadataRepairCount = typeof row.repairCount === 'number' ? Math.max(0, row.repairCount) : 0;
+      if (metadataErrorCount === 0 && metadataRepairCount === 0) return;
+      summary.set(key, {
+        errorCount: metadataErrorCount,
+        repairCount: metadataRepairCount,
+        count: metadataErrorCount,
+        messages: [],
+      });
+    });
+    normalizedTransformErrorRows.forEach((row) => {
+      const id = row.featureId;
+      if (!id) return;
+      const key = String(id);
+      const entry = summary.get(key) ?? {
+        errorCount: 0,
+        repairCount: 0,
+        count: 0,
+        messages: [],
+      };
+      if (isRepairIssueKind(row.issueKind)) {
+        entry.repairCount += 1;
+      } else {
+        entry.errorCount += 1;
+      }
+      entry.count = entry.errorCount;
+      const message = normalizeText(row.message);
+      if (message && !entry.messages.includes(message)) {
+        entry.messages.push(message);
+      }
+      summary.set(key, entry);
+    });
+    return summary;
+  }, [featureListRows, normalizedTransformErrorRows]);
 
   const toggleRecyclingForSelection = useCallback(async () => {
     if (selectedFeatureIds.length === 0) return;
@@ -1050,7 +1089,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         if (!summary) return;
         count += summary.count;
         if (summary.messages.length > 0) {
-          messages.push(...summary.messages);
+          summary.messages.forEach((message) => {
+            if (!messages.includes(message)) {
+              messages.push(message);
+            }
+          });
         }
       });
       if (count > 0) {

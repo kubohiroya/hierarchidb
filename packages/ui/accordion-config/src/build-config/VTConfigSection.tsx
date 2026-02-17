@@ -90,7 +90,10 @@ export const VTConfigSection = <TDataSourceName,>({
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
           <LayersIcon color="primary" />
-          <Typography variant="subtitle1">
+          <Typography
+            variant="subtitle1"
+            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
+          >
             {t('processing.vt.title', 'VT')}
           </Typography>
           <Tooltip
@@ -104,7 +107,7 @@ export const VTConfigSection = <TDataSourceName,>({
           </Tooltip>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ p: 3 }}>
+      <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={3}>
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>

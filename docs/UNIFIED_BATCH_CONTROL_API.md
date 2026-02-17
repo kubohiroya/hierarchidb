@@ -1,78 +1,77 @@
-# Unified Build Control API — Runtime Worker / UI 連携仕様（2025-09 再整理）
+# Unified Build Control API (Runtime Worker / UI)
 
-本ドキュメントは Shape / Location / Route を中心に構築中の共通ビルド基盤について、Runtime Worker と UI の結線仕様をまとめたものです。以下の方針は旧 API からの移行前提となります。
+This document defines the canonical Build-session API used across Runtime Worker and UI.
+Runtime-level `Batch*` compatibility aliases are removed; only canonical `Build*` names are part of the active contract.
 
-注記: API 名は互換性のため `Batch*` を維持していますが、用語としては Build/Session/Fetch に統一して記述します。
+## 1. Scope
 
-## 1. ローディング戦略
+- Node types: shape, location, route (and future plugins)
+- Execution host: SharedWorker runtime
+- Session semantics: start/resume share one incremental execution path
 
-| レイヤ | ロード方法 | 備考 |
-| --- | --- | --- |
-| UI (親ウィンドウ) | `@hierarchidb/plugin-registry` の派生マップ (`app/src/plugin-registry/preconnect.ts`) | 起動時にすべての UI プラグインを読み込み、旧 `autoLoadPlugins()` は開発補助用途のみ。 |
-| Runtime Worker | 動的 import (`app/src/worker.ts`) | `@hierarchidb/runtime-worker` の Inversify コンテナ経由で `pluginWorkerModuleMap` を解決し、nodeType ごとの遅延ロード（deny-list 対応）。 |
-| Stage Worker (孫 Worker) | プラグイン実装依存 | Runtime Worker 内で必要に応じて生成。 |
-
-## 2. Runtime Worker 公開 API（予定）
+## 2. Canonical API Names
 
 ```ts
-export type BatchSessionId = string;
-export type StageKey = string;              // download / extract1 / vectortile などに正規化
-export type ProgressPhase = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'warning';
-
-interface BatchProgressEvent<P = BatchProgressPayload> {
-  sessionId: BatchSessionId;
-  nodeId: NodeId;
-  stage: StageKey;
-  phase: ProgressPhase;
-  timestamp: number;
-  payload?: P;              // プラグイン固有の進捗データ
-  message?: string;
-  error?: { code?: string; detail?: unknown };
-}
-
-interface BatchProgressPayload {
-  total?: number;
-  completed?: number;
-  failed?: number;
-  skipped?: number;
-  currentTask?: string;
-  estimatedTimeRemaining?: number;
-  meta?: Record<string, unknown>;
-}
-
-// WorkerBridge -> WorkerService で公開する API
-startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
-getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
-pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-subscribeBatchProgress(
+startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
+getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
+pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
+resumeBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>
+cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
+getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>
+subscribeBuildTasks(
   nodeType: NodeType,
-  sessionId: BatchSessionId,
-  cb: (event: BatchProgressEvent) => void,
-): Promise<() => void>;
+  nodeId: NodeId,
+  callback: (event: BuildTaskUpdateEvent) => void,
+): Promise<() => void>
+subscribeBuildProgress(
+  nodeType: NodeType,
+  nodeId: NodeId,
+  callback: (event: BuildProgressEvent) => void,
+): Promise<() => void>
 ```
 
-- `startBatchSession` は UI から nodeType / nodeId だけを受け取り、Runtime Worker が PeerEntity / Draft から設定値を読み出す。
-- `getBatchSessionStatus` はタブ再オープン時のリカバリ用途。存在しない場合はエラーを返す。
-- `subscribeBatchProgress` は解除ハンドラを返す。UI ではダイアログ終了時に明示的に解除。
+## 3. Compatibility Policy
 
-## 3. 旧イベントとの関係
+- `Batch*` API names are retained only as historical references in migration material.
+- New code must call `Build*` APIs.
+- Compatibility at runtime should not introduce new `Batch*` usage.
 
-- 旧来の UI イベント（Shape などで利用していた `BatchProgressEvent`）は **`LegacyBatchProgressEvent`** として残し、Runtime Worker から受けた `BatchProgressEvent` を変換する互換レイヤで対応する。
-- UI 側では `payload` から進捗バーに必要な値（件数・割合など）を再計算する。冗長な `percentage` などを通知側に持たせない方針。
+## 4. Event Vocabulary
 
-## 4. TODO（2025-09-29 着手）
+- `stage`: `fetch | transform | vt` (plus diagnostic values where required)
+- `phase`: queued/running/paused/completed/failed progression
+- `payload`: stage/task totals and contextual metadata
 
-- [ ] WorkerBridge / WorkerService に上記 API を実装する。
-  - [ ] runtime-shared に `BatchSessionId` / `BatchProgressEvent` / `BatchProgressPayload` を導入し、`IBatchSessionManager` と `AbstractBatchSession` を更新。
-  - [ ] `subscribeBatchProgress` で Comlink 解除ハンドラを返却する実装を追加。
-- [ ] Shape / Location / Route の Runtime Worker アダプタを新 API へ対応させる。
-  - [ ] `startBatchSession(nodeId)` へ統一し、PeerEntity / Draft から設定値を解決する。
-  - [ ] 各プラグインで `payload` 生成ロジックと `StageKey` / `ProgressPhase` のマッピングを用意する。
-  - [ ] 旧 `LegacyBatchProgressEvent` へ変換する互換レイヤ（必要なら一時的）を整備する。
-- [ ] UI フック / ダイアログを `BatchProgressEvent` ベースへ差し替える。
-  - [ ] `useBatchProgress` アダプタを WorkerBridge 購読へ接続。
-  - [ ] Shape / Location / Route ダイアログを新アダプタ出力で更新し、Legacy イベント依存を解消する。
-- [ ] 変更後に `pnpm -w typecheck` / `pnpm -C app build` 等で検証し、必要なテストを追加する。
+## 5. Runtime Rules
 
-以上の TODO を小さな差分で進め、最終的には各プラグインのバッチ UI が同一のイベント仕様で動作することをゴールとします。
+- `start` and `resume` are the same incremental pipeline path.
+- `cancelQueuedBuildSession`:
+  - If target is queued: remove from queue.
+  - If target is already running: treat as stop/pause semantics.
+- Session queue policy is global FIFO across node/plugin boundaries.
+
+## 6. Migration Status
+
+- Worker API and UI bridge expose canonical `Build*` methods.
+- Core abstractions use `Build*` as canonical names:
+  - `AbstractBuildSession`
+  - `BaseBuildSessionManager`
+  - `UnifiedBuildManagerBase`
+- Route/Location service-layer managers now expose `Build*` as primary exports.
+- Runtime-level `Batch*` aliases are removed from build control contracts.
+
+## 7. WorkerAPI / WorkerBridge Naming Contract
+
+- Canonical methods:
+  - `startBuildSession`
+  - `getBuildSessionStatus`
+  - `pauseBuildSession`
+  - `resumeBuildSession`
+  - `cancelQueuedBuildSession`
+  - `getBuildTasks`
+  - `subscribeBuildTasks`
+  - `subscribeBuildProgress`
+- Canonical type/view:
+  - `BuildWorkerAPI<T>`
+  - `BuildWorkerBridge`
+  - `getBuildWorkerBridge()` (returns canonical bridge view)

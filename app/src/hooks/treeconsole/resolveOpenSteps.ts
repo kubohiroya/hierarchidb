@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import {
   isFolderNodeType,
@@ -48,19 +48,20 @@ const resolveDraftPayload = (node?: TreeNode | null): Record<string, unknown> =>
 
 const resolveBasicInfoLabel = (): string => {
   try {
-    const lang = String(i18n.resolvedLanguage ?? i18n.language ?? '').toLowerCase();
-    if (lang.startsWith('ja')) {
-      return '基本情報';
-    }
     const label = i18n.t('basicInfo.title', {
       ns: 'common',
-      defaultValue: 'Basic Information',
+      defaultValue: 'Info',
     });
-    return typeof label === 'string' ? label : 'Basic Information';
+    return typeof label === 'string' ? label : 'Info';
   } catch {
-    return 'Basic Information';
+    return 'Info';
   }
 };
+
+const stripStepNumberPrefix = (label: string): string => label.replace(/^\s*\d+\.\s*/, '').trim();
+
+const formatIndexedStepLabel = (label: string, index: number): string =>
+  `${index + 1}. ${stripStepNumberPrefix(label)}`;
 
 const resolveActiveStepIndex = (node?: TreeNode | null): number => {
   const persisted = node?.dialogUIState?.dialogProgress?.activeStepIndex;
@@ -83,7 +84,7 @@ export async function resolveOpenStepsForNode(params: {
   nodeId?: NodeId | null;
   nodeType?: string;
   node?: TreeNode | null;
-  client?: Remote<WorkerAPI> | null;
+  client?: Remote<BuildWorkerAPI> | null;
 }): Promise<OpenStepOption[]> {
   let resolvedNode = params.node ?? null;
   if (!resolvedNode && params.client && params.nodeId) {
@@ -144,7 +145,7 @@ export async function resolveOpenStepsForNode(params: {
   );
 
   if (steps.length === 0) {
-    return [{ step: 1, label: 'Step 1', disabled: false }];
+    return [{ step: 1, label: formatIndexedStepLabel('Step 1', 0), disabled: false }];
   }
 
   const filled = await Promise.all(
@@ -181,7 +182,7 @@ export async function resolveOpenStepsForNode(params: {
 
   return steps.map((step, index) => ({
     step: index + 1,
-    label: step.label,
+    label: formatIndexedStepLabel(step.label ?? step.id, index),
     disabled: !enabledFlags[index],
   }));
 }

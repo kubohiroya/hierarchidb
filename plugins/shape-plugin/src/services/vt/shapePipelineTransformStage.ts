@@ -51,6 +51,8 @@ type TransformBufferMeta = {
   adminLevel?: number;
   countryCode?: string;
   featureCount: number;
+  inputPolygonCount?: number;
+  polygonCount?: number;
   inputVertexCount?: number;
   vertexCount?: number;
 };
@@ -214,6 +216,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         adminLevel: readNumber(input?.adminLevel) ?? undefined,
         countryCode: readString(input?.countryCode) ?? undefined,
         featureCount: readNumber(output?.featureCount) ?? 0,
+        inputPolygonCount: readNumber(output?.polygonCount) ?? undefined,
+        polygonCount: readNumber(output?.polygonCount) ?? undefined,
         inputVertexCount: readNumber(output?.vertexCount) ?? undefined,
         vertexCount: readNumber(output?.vertexCount) ?? undefined,
       });
@@ -308,6 +312,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
           bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
+          inputPolygonCount: buffer.inputPolygonCount ?? buffer.polygonCount,
+          inputVertexCount: buffer.inputVertexCount ?? buffer.vertexCount,
           domainType: 'shape',
           sourceKey: buffer.sourceKey,
           stagePriority: countryIndex,
@@ -492,10 +498,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     );
     if (params.buildConfig.fetchConfig.deleteOnComplete) {
       await runTransformStep(params, 'cleanup-fetch-cache-after-transform', async () => {
-        await params.ephemeralStore.transaction('rw', [params.ephemeralStore.fetchCache, params.ephemeralStore.fetchCacheMeta], async () => {
-          await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
-          await params.ephemeralStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).delete();
-        });
+        await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+        await params.ephemeralStore.fetchCacheMeta.where('nodeId').equals(params.nodeId).delete();
       });
     }
     return shouldStop;

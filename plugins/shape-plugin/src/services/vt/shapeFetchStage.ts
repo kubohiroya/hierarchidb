@@ -4,11 +4,12 @@ import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngin
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
 import {
-  type VtTaskQueueDb,
+  VtTaskQueueDb,
   deleteTasksByIds,
   listTasksByStage,
   putTasks,
   runStageTasks,
+  updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
@@ -435,29 +436,27 @@ const putFetchCache = async (params: {
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashFetchArtifact(params.data);
-  await ephemeralDB.transaction('rw', [ephemeralDB.fetchCache, ephemeralDB.fetchCacheMeta], async () => {
-    await ephemeralDB.fetchCache.put({
-      id: recordId,
-      nodeId: params.nodeId,
-      domainType: 'shape',
-      sourceKey: params.sourceKey,
-      countryCode: params.countryCode,
-      adminLevel: params.adminLevel,
-      data: params.data,
-      format: params.format,
-      compression: params.compression,
-      featureCount: params.featureCount,
-      inputFeatureCount: params.inputFeatureCount,
-      bbox: params.bbox,
-      downloadTime: params.downloadTime,
-      size: params.data.byteLength,
-      vertexCount: params.vertexCount,
-      polygonCount: params.polygonCount,
-      inputVertexCount: params.inputVertexCount,
-      inputPolygonCount: params.inputPolygonCount,
-      contentHash,
-      timestamp: Date.now(),
-    });
+  await ephemeralDB.fetchCache.put({
+    id: recordId,
+    nodeId: params.nodeId,
+    domainType: 'shape',
+    sourceKey: params.sourceKey,
+    countryCode: params.countryCode,
+    adminLevel: params.adminLevel,
+    data: params.data,
+    format: params.format,
+    compression: params.compression,
+    featureCount: params.featureCount,
+    inputFeatureCount: params.inputFeatureCount,
+    bbox: params.bbox,
+    downloadTime: params.downloadTime,
+    size: params.data.byteLength,
+    vertexCount: params.vertexCount,
+    polygonCount: params.polygonCount,
+    inputVertexCount: params.inputVertexCount,
+    inputPolygonCount: params.inputPolygonCount,
+    contentHash,
+    timestamp: Date.now(),
   });
   return { id: recordId, contentHash };
 };
@@ -678,19 +677,25 @@ const applyOriginPropertiesToCollection = (collection: FeatureCollection, origin
   return { ...collection, features };
 };
 
-const summarizeFeatureCollection = (
+const summarizeFeatureCollection = async (
   collection: FeatureCollection,
   geometryEngine: GeometryEngine,
-): {
+  options?: {
+    onFeatureCountProgress?: (featureIndex: number, featureTotal: number) => Promise<void> | void;
+  },
+): Promise<{
   featureCount: number;
   vertexCount: number;
   polygonCount: number;
   bbox: [number, number, number, number];
-} => {
+}> => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
   let polygonCount = 0;
-  for (const feature of collection.features) {
+  for (let featureIndex = 0; featureIndex < collection.features.length; featureIndex += 1) {
+    await options?.onFeatureCountProgress?.(featureIndex + 1, featureCount);
+    const feature = collection.features[featureIndex];
+    if (!feature) continue;
     vertexCount += countVerticesFromGeometry(feature.geometry);
     polygonCount += countPolygonsFromGeometry(feature.geometry);
   }
@@ -771,7 +776,41 @@ const createFetchHandler = (params: {
     throw new Error(`[shape-fetch] Unsupported data source: ${params.dataSource}`);
   }
   const strategy = factory.create(strategyId);
+  const taskQueue = new VtTaskQueueDb();
   const retryConfig = buildRetryConfig(params.buildConfig);
+  const invalidGeometryFilter = params.buildConfig.fetchConfig.invalidGeometryFilter;
+  const hasInvalidGeometryFilter = Boolean(
+    invalidGeometryFilter
+    && (
+      invalidGeometryFilter.area
+      || invalidGeometryFilter.lineLength
+      || invalidGeometryFilter.maxEdgeLength
+      || invalidGeometryFilter.selfIntersection
+      || invalidGeometryFilter.triangleRingRatio
+    ),
+  );
+  const buildCountPolygonsVerticesMessage = (featureIndex: number, featureTotal: number): string => (
+    `Count polygons/vertices of feature ${featureIndex} of ${featureTotal}`
+  );
+  const buildInvalidGeometryCheckMessage = (check: string, polygonIndex: number, polygonTotal: number): string => (
+    `Check ${check} of polygon ${polygonIndex} of ${polygonTotal}`
+  );
+  const createTaskMessageReporter = (taskId: string) => {
+    let lastUpdatedAt = 0;
+    let lastMessage = '';
+    return async (message: string, force = false): Promise<void> => {
+      if (!force && message === lastMessage) return;
+      const now = Date.now();
+      if (!force && now - lastUpdatedAt < 120) return;
+      lastUpdatedAt = now;
+      lastMessage = message;
+      try {
+        await updateTask(taskQueue, taskId, { message });
+      } catch (error) {
+        console.warn('[ShapeFetch] failed to update task message', { taskId, message, error });
+      }
+    };
+  };
   let metadataLookupPromise: Promise<Map<string, CountryMetadata>> | null = null;
   const getMetadataLookup = async (): Promise<Map<string, CountryMetadata>> => {
     if (!metadataLookupPromise) {
@@ -787,6 +826,24 @@ const createFetchHandler = (params: {
     if (!input) {
       return { status: 'failed', errorMessage: 'fetch task input is missing' };
     }
+
+    const reportTaskMessage = createTaskMessageReporter(task.taskId);
+    const onFeatureCountProgress = async (featureIndex: number, featureTotal: number): Promise<void> => {
+      await reportTaskMessage(
+        buildCountPolygonsVerticesMessage(featureIndex, featureTotal),
+        featureTotal > 0 && featureIndex >= featureTotal,
+      );
+    };
+    const onInvalidGeometryCheck = async (progress: {
+      check: string;
+      polygonIndex: number;
+      polygonTotal: number;
+    }): Promise<void> => {
+      await reportTaskMessage(
+        buildInvalidGeometryCheckMessage(progress.check, progress.polygonIndex, progress.polygonTotal),
+        progress.polygonTotal > 0 && progress.polygonIndex >= progress.polygonTotal,
+      );
+    };
 
     assertNotAborted(params.abortSignal);
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
@@ -829,13 +886,11 @@ const createFetchHandler = (params: {
           }
           if (data) {
             fetchArtifactHash = hashFetchArtifact(data);
-            await ephemeralDB.transaction('rw', ephemeralDB.fetchCache, async () => {
-              await ephemeralDB.fetchCache.update(existing.id, {
-                data,
-                size: data.byteLength,
-                contentHash: fetchArtifactHash,
-                timestamp: Date.now(),
-              });
+            await ephemeralDB.fetchCache.update(existing.id, {
+              data,
+              size: data.byteLength,
+              contentHash: fetchArtifactHash,
+              timestamp: Date.now(),
             });
           }
         }
@@ -900,14 +955,18 @@ const createFetchHandler = (params: {
         }
       }
       baseCollection = normalizeGeojsonCollection(baseCollection);
-      const inputSummary = summarizeFeatureCollection(baseCollection, geometryEngine);
+      const inputSummary = await summarizeFeatureCollection(baseCollection, geometryEngine, {
+        onFeatureCountProgress,
+      });
       const filteredCollection = Number.isFinite(filterZoom)
-        ? filterFetchCollectionByZoom(baseCollection, {
+        ? await filterFetchCollectionByZoom(baseCollection, {
           zTarget: filterZoom!,
           omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
           excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
           minRingVertices: params.buildConfig.transformConfig.minRingVertices,
           geometryEngine,
+          invalidGeometryFilter,
+          onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
         })
         : baseCollection;
 
@@ -946,7 +1005,9 @@ const createFetchHandler = (params: {
       }
 
       assertNotAborted(params.abortSignal);
-      const outputSummary = summarizeFeatureCollection(collectionWithOrigin, geometryEngine);
+      const outputSummary = await summarizeFeatureCollection(collectionWithOrigin, geometryEngine, {
+        onFeatureCountProgress,
+      });
       const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
       const encodedTopology = encodeTopoJson(cachedTopology);
       const compressedTopology = await compressGzip(encodedTopology);
@@ -1014,14 +1075,18 @@ const createFetchHandler = (params: {
       collection = mergeGeojsonCollection(collection);
     }
     collection = normalizeGeojsonCollection(collection);
-    const inputSummary = summarizeFeatureCollection(collection, geometryEngine);
+    const inputSummary = await summarizeFeatureCollection(collection, geometryEngine, {
+      onFeatureCountProgress,
+    });
     const filteredCollection = Number.isFinite(filterZoom)
-      ? filterFetchCollectionByZoom(collection, {
+      ? await filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
         omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
         excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
         minRingVertices: params.buildConfig.transformConfig.minRingVertices,
         geometryEngine,
+        invalidGeometryFilter,
+        onInvalidGeometryCheck: hasInvalidGeometryFilter ? onInvalidGeometryCheck : undefined,
       })
       : collection;
     if (filteredCollection.features.length === 0) {
@@ -1058,7 +1123,9 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection, geometryEngine);
+    const { featureCount, vertexCount, polygonCount, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
+      onFeatureCountProgress,
+    });
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const fetchCacheRecord = await putFetchCache({

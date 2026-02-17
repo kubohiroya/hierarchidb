@@ -2,7 +2,7 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
@@ -165,9 +165,9 @@ describe('PluginDialogHeader', () => {
 
     expect(screen.queryByText('Current step')).toBeNull();
 
-    const activeLabel = screen.getByText('Step Two');
+    const activeLabel = screen.getByText('2. Step Two');
     expect(activeLabel.getAttribute('data-active-label')).toBe('true');
-    const inactiveLabel = screen.getByText('Step One');
+    const inactiveLabel = screen.getByText('1. Step One');
     expect(inactiveLabel.getAttribute('data-active-label')).toBe('false');
 
     const activeStepButton = screen.getByRole('button', { name: /Step Two/i });
@@ -212,5 +212,84 @@ describe('PluginDialogHeader', () => {
 
     const disabledStep = screen.getByRole('button', { name: /Step Two/i });
     expect(disabledStep).toBeDisabled();
+  });
+
+  it('resolves mapped icons by step id regardless of localized labels', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'data-source', label: 'データソース', component: () => null },
+        { id: 'map-style', label: '地図スタイル', component: () => null },
+        { id: 'country-selection', label: '国選択', component: () => null },
+        { id: 'build', label: 'ビルド', component: () => null },
+        { id: 'preview', label: 'プレビュー', component: () => null },
+        { id: 'unmapped-step', label: '未定義', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0, 1, 2, 3, 4, 5],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: false,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Edit Item" />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-1')).getByTestId('CloudDownloadIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PaletteIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('PublicIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('ConstructionIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-5')).getByTestId('VisibilityIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('plugin-dialog-step-icon-6')).toHaveTextContent('6');
+  });
+
+  it('keeps Construction icon visible for build step while in progress', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'data-source', label: 'Data Source', component: () => null },
+        { id: 'build', label: 'Build', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 1,
+      enabledStepIndices: [0, 1],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: false,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Edit Item" buildStepRunning />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    const buildIconContainer = screen.getByTestId('plugin-dialog-step-icon-2');
+    expect(buildIconContainer.getAttribute('data-in-progress')).toBe('true');
+    expect(within(buildIconContainer).getByTestId('ConstructionIcon')).toBeInTheDocument();
   });
 });

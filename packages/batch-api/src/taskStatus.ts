@@ -1,4 +1,4 @@
-import type { BatchSessionStatus, ProgressPhase } from './BatchControlAPI.js';
+import type { BuildSessionStatus, ProgressPhase } from './BuildControlAPI.js';
 
 const phaseValues: Set<ProgressPhase> = new Set([
   'idle',
@@ -20,6 +20,6 @@ export const normalizeProgressPhase = (status?: string | null): ProgressPhase =>
   return 'idle';
 };
 
-export const mapProgressPhaseToBatchStatus = (
+export const mapProgressPhaseToBuildStatus = (
   phase?: ProgressPhase | string | null
-): BatchSessionStatus['status'] => normalizeProgressPhase(phase ?? null);
+): BuildSessionStatus['status'] => normalizeProgressPhase(phase ?? null);

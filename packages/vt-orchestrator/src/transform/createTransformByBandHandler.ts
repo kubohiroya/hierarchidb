@@ -22,13 +22,43 @@ import { buildBoundaryFeature } from './geometry.js';
 import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
-import { VtTaskQueueDb, emitTaskUpdate, toTaskQueueRecord, updateTask, type StoredTaskRecord } from '../task/taskQueue.js';
+import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
 import { logDebug } from '../debug/persistentDebugLog.js';
 import { packTileId } from '../tiles/tileId.js';
 import { getTopojsonRuntime } from './topojsonRuntimeAdapter.js';
 
 const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';
 let structuredCloneLogged = false;
+const isTaskDebugLoggingEnabled = (): boolean => (
+  (globalThis as { __HDB_VT_TASK_DEBUG?: boolean }).__HDB_VT_TASK_DEBUG === true
+);
+const TRANSFORM_DB_WRITE_TIMEOUT_MS = 30000;
+const TRANSFORM_TASK_UPDATE_TIMEOUT_MS = 15000;
+
+const withTimeout = async <T>(params: {
+  taskId: string;
+  operation: string;
+  timeoutMs: number;
+  promise: Promise<T>;
+}): Promise<T> => {
+  const startedAt = Date.now();
+  const { taskId, operation, timeoutMs, promise } = params;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timerId = setTimeout(() => {
+      reject(new Error(
+        `db timeout (operation=${operation}, taskId=${taskId}, timeoutMs=${timeoutMs}, elapsedMs=${Date.now() - startedAt})`
+      ));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+  }
+};
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -176,8 +206,19 @@ const decodeTopoJsonFetchCache = async (params: {
 const EARTH_RADIUS_METERS = 6378137;
 const MVT_EXTENT = 4096;
 const MAX_VERTICES_PER_FEATURE = 65535;
+const DEFAULT_RETRY_VERTEX_LIMIT = 6553;
+const LARGE_COUNTRY_RETRY_VERTEX_LIMIT = 32768;
+const LARGE_COUNTRY_CODES = new Set(['RU', 'CA', 'AU']);
 const TRANSFORM_CACHE_WRITE_SLOW_LOG_MS = 20_000;
 const DEFAULT_SIMPLIFY_ALGORITHM: TransformSimplifyAlgorithm = 'topojson';
+const TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS = 2_000;
+
+const resolveRetryVertexLimit = (countryCode?: string): number => {
+  const normalized = typeof countryCode === 'string' ? countryCode.trim().toUpperCase() : '';
+  return LARGE_COUNTRY_CODES.has(normalized)
+    ? LARGE_COUNTRY_RETRY_VERTEX_LIMIT
+    : DEFAULT_RETRY_VERTEX_LIMIT;
+};
 
 const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): TransformSimplifyAlgorithm => (
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
@@ -741,6 +782,29 @@ const buildErrorLineFeatures = (
   return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
 };
 
+const toLineFeatureCollection = (
+  lineFeaturesCandidate: ReturnType<typeof buildErrorLineFeatures> | null,
+): TransformIssueLineFeatures => ({
+  type: 'FeatureCollection',
+  features: lineFeaturesCandidate?.features ?? [],
+});
+
+const resolveFeatureIdentifier = (
+  feature: Feature | null | undefined,
+  featureIndex: number,
+  sourceKey?: string,
+): string => {
+  const properties = (feature?.properties ?? null) as Record<string, unknown> | null;
+  const metadataFeatureId = properties?.__hdbFeatureId;
+  const rawFeatureId = (typeof metadataFeatureId === 'string' && metadataFeatureId.trim().length > 0)
+    ? metadataFeatureId
+    : (feature?.id ?? (properties && 'id' in properties ? String(properties.id) : undefined));
+  if (rawFeatureId != null) {
+    return String(rawFeatureId);
+  }
+  return `${sourceKey ?? 'feature'}:${featureIndex}`;
+};
+
 type GeometryIssueSummary = {
   geometryType: string;
   polygonCount: number;
@@ -1107,6 +1171,10 @@ const formatAverage = (value: number | null): string => (
   value === null || !Number.isFinite(value) ? '-' : value.toFixed(2)
 );
 
+const formatToleranceForDisplay = (value: number): number => (
+  Number.isFinite(value) ? Number(value.toFixed(4)) : value
+);
+
 const runStageWithLabel = async <T>(label: string, fn: () => T | Promise<T>): Promise<T> => {
   try {
     return await fn();
@@ -1247,12 +1315,22 @@ const buildCollectionDiagnostics = (
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
 ): StageHandler<TransformByBandTaskInput> => {
-  console.warn('[ShapeTransform][TaskDebug] handler created', {
-    tag: TASKDEBUG_BUILD_TAG,
-    bandCount: context.bands.length,
-    geometryEngine: context.transformConfig.geometryEngine ?? 'turf',
-  });
-  const { ephemeralDB, transformConfig, bands, abortSignal, featureIdAllowlist } = context;
+  if (isTaskDebugLoggingEnabled()) {
+    console.debug('[ShapeTransform][TaskDebug] handler created', {
+      tag: TASKDEBUG_BUILD_TAG,
+      bandCount: context.bands.length,
+      geometryEngine: context.transformConfig.geometryEngine ?? 'turf',
+    });
+  }
+  const {
+    ephemeralDB,
+    fetchConfig,
+    transformConfig,
+    vtConfig,
+    bands,
+    abortSignal,
+    featureIdAllowlist,
+  } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
     transformStart: 0,
@@ -1299,6 +1377,23 @@ export const createTransformByBandHandler = (
     // Keep phase updates below 100 so completion message is finalized only by completed status updates.
     return Math.min(99, Math.max(0, Math.round(value)));
   };
+  const updateTaskStrict = async (
+    taskId: string,
+    updates: Parameters<typeof updateTask>[2],
+    operation: string,
+  ): Promise<void> => {
+    try {
+      await withTimeout({
+        taskId,
+        operation,
+        timeoutMs: TRANSFORM_TASK_UPDATE_TIMEOUT_MS,
+        promise: updateTask(taskQueue, taskId, updates),
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(`task update failed: ${reason}`);
+    }
+  };
   const reportPolygonProgress = async (
     taskId: string,
     processedPolygons: number,
@@ -1307,27 +1402,83 @@ export const createTransformByBandHandler = (
   ): Promise<void> => {
     const total = Math.max(0, Math.round(totalPolygons));
     const processed = Math.max(0, Math.round(processedPolygons));
-    try {
-      await updateTask(taskQueue, taskId, {
-        ...(message ? { message } : {}),
-        outputData: {
-          processedPolygons: processed,
-          totalPolygons: total,
-        },
-      });
-    } catch (error) {
-      console.warn('[transform] failed to report polygon progress', error);
-    }
+    await updateTaskStrict(taskId, {
+      ...(message ? { message } : {}),
+      outputData: {
+        processedPolygons: processed,
+        totalPolygons: total,
+      },
+    }, 'progress:update');
   };
-  const updateTaskPhase = async (taskId: string, phase: string, progress?: number): Promise<void> => {
-    try {
-      await updateTask(taskQueue, taskId, {
-        display: resolvePhaseDisplay(phase),
-        ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
-      });
-    } catch (error) {
-      console.warn('[transform] failed to update task phase', { phase, error });
+  const updateTaskPhase = async (
+    taskId: string,
+    phase: string,
+    progress?: number,
+    options?: {
+      key?: string;
+      params?: TaskDisplayPayload['params'];
+    },
+  ): Promise<void> => {
+    const display = resolvePhaseDisplay(phase);
+    if (options?.key) {
+      display.key = options.key;
     }
+    if (options?.params) {
+      display.params = options.params;
+    }
+    await updateTaskStrict(taskId, {
+      display,
+      ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
+    }, `phase:update:${phase}`);
+  };
+  const updateSimplifyAttemptPhase = async (
+    taskId: string,
+    params: {
+      attempt: number;
+      tolerance: number;
+      progress?: number;
+      phaseState?: 'start' | 'progress' | 'done';
+    },
+  ): Promise<void> => {
+    await updateTaskStrict(taskId, {
+      display: {
+        kind: 'phase',
+        key: 'stage.taskPhase.simplifyAttempt',
+        phaseCode: 'simplify-attempt',
+        phaseState: params.phaseState ?? 'progress',
+        params: {
+          attempt: params.attempt,
+          tolerance: formatToleranceForDisplay(params.tolerance),
+        },
+      },
+      ...(params.progress !== undefined ? { progress: normalizePhaseProgress(params.progress) } : {}),
+    }, 'phase:update:simplify-attempt');
+  };
+  const updateRetrySimplifyAttemptPhase = async (
+    taskId: string,
+    params: {
+      featureIndex: number;
+      featureTotal: number;
+      attempt: number;
+      attemptTotal: number;
+      tolerance: number;
+    },
+  ): Promise<void> => {
+    await updateTaskStrict(taskId, {
+      display: {
+        kind: 'phase',
+        key: 'stage.taskPhase.retrySimplifyFeature',
+        phaseCode: 'retry-simplify-feature',
+        phaseState: 'progress',
+        params: {
+          featureIndex: params.featureIndex,
+          featureTotal: params.featureTotal,
+          attempt: params.attempt,
+          attemptTotal: params.attemptTotal,
+          tolerance: formatToleranceForDisplay(params.tolerance),
+        },
+      },
+    }, 'phase:update:retry-simplify-feature');
   };
   const finalizeTaskWithCache = async (params: {
     taskId: string;
@@ -1357,7 +1508,6 @@ export const createTransformByBandHandler = (
     };
   }): Promise<void> => {
     const completedAt = Date.now();
-    let updatedTask: StoredTaskRecord | null = null;
     if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true && !structuredCloneLogged) {
       structuredCloneLogged = true;
       const cloneFn = globalThis.structuredClone;
@@ -1374,31 +1524,48 @@ export const createTransformByBandHandler = (
     let cacheWaitLogged = false;
     const cacheWaitTimer = setTimeout(() => {
       cacheWaitLogged = true;
-      logDebug('warn', 'ShapeTransform', 'transform cache write waiting', {
+      logDebug('log', 'ShapeTransform', 'transform cache write waiting', {
         tag: TASKDEBUG_BUILD_TAG,
         taskId: params.taskId,
         elapsedMs: Date.now() - cacheStartedAt,
       });
+      void updateTaskStrict(params.taskId, {
+        display: {
+          kind: 'info',
+          key: 'stage.taskWarning.cachePutSlow',
+          params: {
+            elapsedSeconds: Math.max(1, Math.floor((Date.now() - cacheStartedAt) / 1000)),
+          },
+        },
+      }, 'cache-put:slow-warning').catch((error) => {
+        console.error('[ShapeTransform] failed to publish cache write warning', {
+          taskId: params.taskId,
+          error,
+        });
+      });
     }, 5000);
     try {
-      await ephemeralDB.transaction('rw', [ephemeralDB.transformCache, ephemeralDB.transformCacheMeta], async () => {
-        const slowWriteLogId = setTimeout(() => {
-          logDebug('warn', 'ShapeTransform', 'transform cache write is still in progress', {
-            tag: TASKDEBUG_BUILD_TAG,
-            taskId: params.taskId,
-            elapsedMs: Date.now() - cacheStartedAt,
-            thresholdMs: TRANSFORM_CACHE_WRITE_SLOW_LOG_MS,
-          });
-        }, TRANSFORM_CACHE_WRITE_SLOW_LOG_MS);
-        try {
-          await ephemeralDB.transformCache.put({
+      const slowWriteLogId = setTimeout(() => {
+        logDebug('log', 'ShapeTransform', 'transform cache write is still in progress', {
+          tag: TASKDEBUG_BUILD_TAG,
+          taskId: params.taskId,
+          elapsedMs: Date.now() - cacheStartedAt,
+          thresholdMs: TRANSFORM_CACHE_WRITE_SLOW_LOG_MS,
+        });
+      }, TRANSFORM_CACHE_WRITE_SLOW_LOG_MS);
+      try {
+        await withTimeout({
+          taskId: params.taskId,
+          operation: 'cache-write:transformCache.put',
+          timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
+          promise: ephemeralDB.transformCache.put({
             ...params.cacheRecord,
             timestamp: completedAt,
-          });
-        } finally {
-          clearTimeout(slowWriteLogId);
-        }
-      });
+          }),
+        });
+      } finally {
+        clearTimeout(slowWriteLogId);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
@@ -1407,7 +1574,7 @@ export const createTransformByBandHandler = (
     }
     clearTimeout(cacheWaitTimer);
     if (cacheWaitLogged) {
-      logDebug('warn', 'ShapeTransform', 'transform cache write done', {
+      logDebug('log', 'ShapeTransform', 'transform cache write done', {
         tag: TASKDEBUG_BUILD_TAG,
         taskId: params.taskId,
         elapsedMs: Date.now() - cacheStartedAt,
@@ -1418,46 +1585,30 @@ export const createTransformByBandHandler = (
     let taskWaitLogged = false;
     const taskWaitTimer = setTimeout(() => {
       taskWaitLogged = true;
-      logDebug('warn', 'ShapeTransform', 'transform task update waiting', {
+      logDebug('log', 'ShapeTransform', 'transform task update waiting', {
         tag: TASKDEBUG_BUILD_TAG,
         taskId: params.taskId,
         elapsedMs: Date.now() - taskStartedAt,
       });
     }, 5000);
-    await taskQueue.transaction('rw', [taskQueue.tasks], async () => {
-      const current = await taskQueue.tasks.get(params.taskId);
-      if (!current) {
-        throw new Error('transform failed: task record missing');
-      }
-      const currentSequence = typeof current.sequence === 'number' ? current.sequence : 0;
-      const nextSequence = currentSequence + 1;
-      const lockedStatus = current.status === 'completed' || current.status === 'failed';
-      const effectiveStatus = lockedStatus ? current.status : 'completed';
-      await taskQueue.tasks.update(params.taskId, {
-        status: effectiveStatus,
-        progress: 100,
-        display: {
-          kind: 'summary',
-          key: 'stage.taskSummary.metrics',
-          metrics: params.metrics,
-        },
-        outputData: params.outputData,
-        completedAt,
-        updatedAt: completedAt,
-        sequence: nextSequence,
-      });
-      updatedTask = (await taskQueue.tasks.get(params.taskId)) ?? null;
-    });
+    await updateTaskStrict(params.taskId, {
+      status: 'completed',
+      progress: 100,
+      display: {
+        kind: 'summary',
+        key: 'stage.taskSummary.metrics',
+        metrics: params.metrics,
+      },
+      outputData: params.outputData,
+      completedAt,
+    }, 'task:complete');
     clearTimeout(taskWaitTimer);
     if (taskWaitLogged) {
-      logDebug('warn', 'ShapeTransform', 'transform task update done', {
+      logDebug('log', 'ShapeTransform', 'transform task update done', {
         tag: TASKDEBUG_BUILD_TAG,
         taskId: params.taskId,
         elapsedMs: Date.now() - taskStartedAt,
       });
-    }
-    if (updatedTask) {
-      emitTaskUpdate(toTaskQueueRecord(updatedTask));
     }
   };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
@@ -1466,8 +1617,41 @@ export const createTransformByBandHandler = (
   if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
+  const configuredRetryToleranceStep = typeof transformConfig.retryToleranceStep === 'number'
+    && Number.isFinite(transformConfig.retryToleranceStep)
+    ? Math.min(2, Math.max(0, transformConfig.retryToleranceStep))
+    : 0.01;
   const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
+  const preserveTopology = transformConfig.preserveTopology ?? true;
+  const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
+  const anomalyDetectionConfig = {
+    enabled: transformConfig.anomalyDetection?.enabled ?? false,
+    scoreThreshold: transformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
+    maxEdgeLengthRatio: transformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
+    maxAreaDriftPercent: transformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
+    maxSelfIntersectionCount: transformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
+    maxLineLengthDriftPercent: transformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
+    maxVertexDriftPercent: transformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
+    geojson: {
+      maxTriangleShareDriftPercent:
+        transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
+      maxTriangleEdgeToBBoxRatio:
+        transformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
+    },
+    topojson: {
+      minSharedArcRatioPercent:
+        transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
+    },
+  };
+  const intakeGuardConfig = {
+    validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
+    dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
+    minRingAreaThreshold: fetchConfig.geometryIntakeGuard?.minRingAreaThreshold ?? 0,
+    normalizeRingOrientation: fetchConfig.geometryIntakeGuard?.normalizeRingOrientation ?? false,
+    keepBaselineSnapshot: fetchConfig.geometryIntakeGuard?.keepBaselineSnapshot ?? false,
+  } as const;
+  const vtOutputQualityGuard = vtConfig.outputQualityGuard;
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
   }
@@ -1498,9 +1682,9 @@ export const createTransformByBandHandler = (
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
-    if (!firstTaskLogged) {
+    if (!firstTaskLogged && isTaskDebugLoggingEnabled()) {
       firstTaskLogged = true;
-      console.warn('[ShapeTransform][TaskDebug] handler first task', {
+      console.debug('[ShapeTransform][TaskDebug] handler first task', {
         tag: TASKDEBUG_BUILD_TAG,
         nodeId: task.nodeId,
         taskId,
@@ -1529,6 +1713,17 @@ export const createTransformByBandHandler = (
         appliedTolerance: tolerance,
       }));
     }
+    emitTransformTrace(traceLogLevel, 'summary', 'task-config', {
+      sessionId: String(task.nodeId),
+      taskId,
+      stage: 'transform',
+      simplifyAlgorithm,
+      preserveTopology,
+      tolerance,
+      fetchIntakeGuard: intakeGuardConfig,
+      anomalyDetection: anomalyDetectionConfig,
+      vtOutputQualityGuard: vtOutputQualityGuard ?? null,
+    });
 
     let workingCollection: FeatureCollection | null = null;
     let simplified: FeatureCollection | null = null;
@@ -1537,17 +1732,21 @@ export const createTransformByBandHandler = (
     let inputPolygonCount = 0;
     let inputVertexCount = 0;
     const now = Date.now();
-    if (!debugTaskId || !debugTaskStartedAt || now - debugTaskStartedAt > debugResetAfterMs || debugNodeId !== task.nodeId) {
+    const debugTaskLoggingEnabled = isTaskDebugLoggingEnabled();
+    if (
+      debugTaskLoggingEnabled
+      && (!debugTaskId || !debugTaskStartedAt || now - debugTaskStartedAt > debugResetAfterMs || debugNodeId !== task.nodeId)
+    ) {
       debugTaskId = taskId;
       debugTaskStartedAt = now;
       debugNodeId = task.nodeId;
       debugSelectionLogged = false;
     }
-    const isDebugTask = debugTaskId === taskId;
+    const isDebugTask = debugTaskLoggingEnabled && debugTaskId === taskId;
     const getElapsedMs = () => (debugTaskStartedAt ? Date.now() - debugTaskStartedAt : null);
     const logDebugPhase = (phase: string, details?: Record<string, unknown>) => {
       if (!isDebugTask) return;
-      console.warn('[ShapeTransform][TaskDebug]', {
+      console.debug('[ShapeTransform][TaskDebug]', {
         nodeId: task.nodeId,
         taskId,
         phase,
@@ -1561,7 +1760,7 @@ export const createTransformByBandHandler = (
     if (isDebugTask) {
       if (!debugSelectionLogged) {
         debugSelectionLogged = true;
-        console.warn('[ShapeTransform][TaskDebug] selection', {
+        console.debug('[ShapeTransform][TaskDebug] selection', {
           nodeId: task.nodeId,
           taskId,
           bandIndex: input.bandIndex,
@@ -1596,7 +1795,7 @@ export const createTransformByBandHandler = (
         fetchWaitStartedAt = Date.now();
         fetchWaitTimer = setInterval(() => {
           const elapsedMs = fetchWaitStartedAt ? Date.now() - fetchWaitStartedAt : null;
-          console.warn('[ShapeTransform][TaskDebug] fetch-cache:waiting', {
+          console.debug('[ShapeTransform][TaskDebug] fetch-cache:waiting', {
             nodeId: task.nodeId,
             taskId,
             fetchCacheId: input.fetchCacheId,
@@ -1632,15 +1831,34 @@ export const createTransformByBandHandler = (
       });
       await updateTaskPhase(taskId, 'decode:start', taskProgressRange.decodeStart);
       assertNotAborted(abortSignal);
-      let collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
-        buffer: fetchCache.data,
-        format: fetchCache.format,
-        compression: fetchCache.compression,
-        zTarget: band.zMax,
-        toleranceK: baseTolerance,
-        quantize: transformConfig.quantize,
-        simplifyAlgorithm,
-      }));
+      const decodeStartedAt = Date.now();
+      let decodeProgressActive = true;
+      const publishDecodeProgress = async (): Promise<void> => {
+        if (!decodeProgressActive) return;
+        const elapsedSeconds = Math.max(1, Math.floor((Date.now() - decodeStartedAt) / 1000));
+        await updateTaskPhase(taskId, 'decode:progress', taskProgressRange.decodeStart, {
+          key: 'stage.taskPhase.decodeProgress',
+          params: { elapsedSeconds },
+        });
+      };
+      const decodeProgressTimer = setInterval(() => {
+        void publishDecodeProgress();
+      }, TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS);
+      let collection: FeatureCollection | null = null;
+      try {
+        collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
+          buffer: fetchCache.data,
+          format: fetchCache.format,
+          compression: fetchCache.compression,
+          zTarget: band.zMax,
+          toleranceK: baseTolerance,
+          quantize: transformConfig.quantize,
+          simplifyAlgorithm,
+        }));
+      } finally {
+        decodeProgressActive = false;
+        clearInterval(decodeProgressTimer);
+      }
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
@@ -1648,6 +1866,8 @@ export const createTransformByBandHandler = (
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
 
       if (featureIdAllowlist && featureIdAllowlist.size > 0) {
+        stageLabel = 'recycling-filter';
+        await updateTaskPhase(taskId, 'recycling-filter:start', taskProgressRange.prepareStart);
         const hasFeatureIds = collection.features.some((feature) => {
           const props = feature?.properties as Record<string, unknown> | undefined;
           return typeof props?.__hdbFeatureId === 'string' && props.__hdbFeatureId.length > 0;
@@ -1665,6 +1885,7 @@ export const createTransformByBandHandler = (
             return featureId ? featureIdAllowlist.has(featureId) : false;
           });
           if (filteredFeatures.length === 0) {
+            await updateTaskPhase(taskId, 'recycling-filter:done', taskProgressRange.prepareStart);
             await reportPolygonProgress(taskId, 0, 0);
             return {
               status: 'completed',
@@ -1682,6 +1903,7 @@ export const createTransformByBandHandler = (
           }
           collection = { ...collection, features: filteredFeatures };
         }
+        await updateTaskPhase(taskId, 'recycling-filter:done', taskProgressRange.prepareStart);
       }
       workingCollection = collection;
       if (enableFeatureFiltering && transformConfig.enableFeatureFiltering) {
@@ -1723,21 +1945,52 @@ export const createTransformByBandHandler = (
       }
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
-      stageLabel = 'counts:input';
-      await updateTaskPhase(taskId, 'prepare:counts:start', taskProgressRange.prepareStart);
-      const inputStats = await runStageWithLabel('counts:input', () => {
-        const polygonCounts = inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry));
-        const vertexCount = inputCollection.features.reduce(
-          (sum, feature) => sum + countVerticesFromGeometry(feature?.geometry ?? null),
+      const readNonNegativeCount = (value: unknown): number | null => {
+        if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+        if (value < 0) return null;
+        return Math.round(value);
+      };
+      const readFeaturePrecomputedCount = (
+        feature: Feature | null | undefined,
+        key: '__hdbFetchPolygonCount' | '__hdbFetchVertexCount',
+      ): number => {
+        const properties = feature?.properties as Record<string, unknown> | undefined;
+        const raw = properties?.[key];
+        return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : 0;
+      };
+      inputPolygonCount = readNonNegativeCount(input.inputPolygonCount)
+        ?? readNonNegativeCount(fetchCache.polygonCount)
+        ?? 0;
+      inputVertexCount = readNonNegativeCount(input.inputVertexCount)
+        ?? readNonNegativeCount(fetchCache.vertexCount)
+        ?? 0;
+      if (featureIdAllowlist && featureIdAllowlist.size > 0) {
+        const allowlistPolygonCount = inputCollection.features.reduce(
+          (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchPolygonCount'),
           0,
         );
-        return { polygonCounts, vertexCount };
-      });
-      const inputPolygonCounts = inputStats.polygonCounts;
-      inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
-      inputVertexCount = inputStats.vertexCount;
-      await updateTaskPhase(taskId, 'prepare:counts:done', taskProgressRange.prepareEnd);
+        const allowlistVertexCount = inputCollection.features.reduce(
+          (sum, feature) => sum + readFeaturePrecomputedCount(feature, '__hdbFetchVertexCount'),
+          0,
+        );
+        inputPolygonCount = allowlistPolygonCount > 0 ? allowlistPolygonCount : inputPolygonCount;
+        inputVertexCount = allowlistVertexCount > 0 ? allowlistVertexCount : inputVertexCount;
+      }
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
+      const shouldCollectBaselineMetrics = false;
+      if (anomalyDetectionConfig.enabled || Boolean(vtOutputQualityGuard?.enabled)) {
+        emitTransformTrace(traceLogLevel, 'summary', 'baseline-metrics-skipped', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'prepare',
+          reason: 'moved-to-fetch-stage',
+          anomalyDetectionEnabled: anomalyDetectionConfig.enabled,
+          vtOutputQualityGuardEnabled: Boolean(vtOutputQualityGuard?.enabled),
+        });
+      }
+      if (shouldCollectBaselineMetrics) {
+        // Reserved for future: consume fetch-stage precomputed baseline metrics only.
+      }
       if (input.adminLevel === 0 && band.zMax >= 6) {
         const samples = inputCollection.features.slice(0, 5).map((feature, index) => {
           const props = feature?.properties as Record<string, unknown> | undefined;
@@ -1785,6 +2038,31 @@ export const createTransformByBandHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
+      const retryVertexLimit = resolveRetryVertexLimit(input.countryCode);
+      const formatTolerance = (value: number): string => Number.isFinite(value) ? value.toFixed(6) : '-';
+      const summarizeVertexLimit = (collection: FeatureCollection | null): {
+        featureCount: number;
+        overLimitFeatureCount: number;
+        maxVertexCount: number;
+      } | null => {
+        if (!collection) return null;
+        let maxVertexCount = 0;
+        let overLimitFeatureCount = 0;
+        for (const feature of collection.features) {
+          if (!feature?.geometry) continue;
+          const vertexCount = countVerticesFromGeometry(feature.geometry);
+          maxVertexCount = Math.max(maxVertexCount, vertexCount);
+          if (vertexCount >= retryVertexLimit) {
+            overLimitFeatureCount += 1;
+          }
+        }
+        return {
+          featureCount: collection.features.length,
+          overLimitFeatureCount,
+          maxVertexCount,
+        };
+      };
+      let simplifyAttempt = 1;
       try {
         assertNotAborted(abortSignal);
         const simplifyStartAt = Date.now();
@@ -1813,7 +2091,23 @@ export const createTransformByBandHandler = (
           lastReportAt = now;
           await reportPolygonProgress(taskId, processedPolygonCount, inputPolygonCount);
         };
-        await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
+        await updateSimplifyAttemptPhase(taskId, {
+          attempt: simplifyAttempt,
+          tolerance,
+          phaseState: 'start',
+          progress: taskProgressRange.simplifyStart,
+        });
+        emitTransformTrace(traceLogLevel, 'summary', 'simplify-start', {
+          sessionId: String(task.nodeId),
+          taskId,
+          stage: 'simplify',
+          algorithm: simplifyAlgorithm,
+          tolerance,
+          preserveTopology,
+          inputFeatureCount,
+          inputPolygonCount,
+          inputVertexCount,
+        });
         const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
         if (skipGeojsonSimplify) {
           simplified = inputCollection;
@@ -1836,6 +2130,38 @@ export const createTransformByBandHandler = (
             getLastProgressAt: () => Date.now(),
           });
           processedPolygonCount = inputPolygonCount;
+        }
+        if (simplified && baselineMetrics && anomalyDetectionConfig.enabled && intakeGuardConfig.keepBaselineSnapshot) {
+          const outputMetrics = collectCollectionAnomalyMetrics(simplified, geometryOps);
+          const outputAssessment = assessAnomalyRisk({
+            profile: anomalyProfile,
+            baseline: baselineMetrics as CollectionAnomalyMetrics,
+            candidate: outputMetrics,
+            thresholds: anomalyDetectionConfig,
+            diagnostics: {
+              topoSharedArcRatioPercent: simplifyAlgorithm === 'topojson'
+                ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
+                : null,
+            },
+          });
+          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-assessment', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'simplify',
+            profile: anomalyProfile,
+            tolerance,
+            score: outputAssessment.score,
+            scoreThreshold: outputAssessment.scoreThreshold,
+            reasons: outputAssessment.reasons,
+            isAnomalous: outputAssessment.isAnomalous,
+          });
+        } else if (anomalyDetectionConfig.enabled && !intakeGuardConfig.keepBaselineSnapshot) {
+          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-skipped', {
+            sessionId: String(task.nodeId),
+            taskId,
+            stage: 'simplify',
+            reason: 'baseline snapshot disabled',
+          });
         }
         logDebugPhase('simplify:done', {
           featureCount: simplified?.features.length ?? 0,
@@ -2068,20 +2394,20 @@ export const createTransformByBandHandler = (
         }
         const avgRingVertices = ringCount > 0 ? ringVertexTotal / ringCount : null;
         const analysisNote = analysisErrors.length ? ` (analysisErrors=${analysisErrors.join(' | ')})` : '';
+        const vertexLimitSnapshot = summarizeVertexLimit(simplified);
+        const simplifySummary = vertexLimitSnapshot
+          ? ` (finalVertexCount=${vertexLimitSnapshot.maxVertexCount}, overLimit=${vertexLimitSnapshot.overLimitFeatureCount}/${vertexLimitSnapshot.featureCount}, finalRetryAttempts=0, finalTolerance=${formatTolerance(tolerance)})`
+          : ` (finalVertexCount=-, overLimit=-, finalRetryAttempts=0, finalTolerance=${formatTolerance(tolerance)})`;
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
         return {
           status: 'failed',
-          errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)})${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
+          errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)}) (simplifyAttempt=${simplifyAttempt})${simplifySummary}${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
-      const retryVertexLimit = 6553;
+      await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
       const maxRetrySteps = 8;
-      const resolveRetryToleranceStep = (baseVertexCount: number, baseToleranceK: number): number => {
-        const ratio = baseVertexCount / retryVertexLimit;
-        if (!Number.isFinite(ratio) || ratio <= 1) return Math.max(5, baseToleranceK);
-        const scaled = baseToleranceK * Math.min(10, ratio);
-        return Math.max(5, scaled);
-      };
+      const resolveRetryToleranceStep = (): number => configuredRetryToleranceStep;
+      const retryToleranceStep = resolveRetryToleranceStep();
       const countVertexLimitOverages = (collection: FeatureCollection) => {
         let maxVertexCount = 0;
         let overLimitFeatureCount = 0;
@@ -2116,29 +2442,65 @@ export const createTransformByBandHandler = (
         });
       };
 
-      const retrySimplifyFeatureIfNeeded = async (feature: Feature): Promise<{
+      const retrySimplifyFeatureIfNeeded = async (
+        feature: Feature,
+        params: {
+          featureIndex: number;
+          featureTotal: number;
+        },
+      ): Promise<{
         feature: Feature;
         vertexCount: number;
         overLimit: boolean;
+        retryAttempts: number;
+        finalTolerance: number;
       }> => {
-        if (!feature.geometry) return { feature, vertexCount: 0, overLimit: false };
+        if (!feature.geometry) {
+          return { feature, vertexCount: 0, overLimit: false, retryAttempts: 0, finalTolerance: tolerance };
+        }
         const baseVertexCount = countVerticesFromGeometry(feature.geometry);
         if (baseVertexCount < retryVertexLimit) {
-          return { feature, vertexCount: baseVertexCount, overLimit: false };
+          return {
+            feature,
+            vertexCount: baseVertexCount,
+            overLimit: false,
+            retryAttempts: 0,
+            finalTolerance: tolerance,
+          };
         }
 
         let lastFailTolerance = tolerance;
         let successTolerance: number | null = null;
         let successIndex: number | null = null;
         let bestFeature: Feature | null = null;
+        let bestTolerance = tolerance;
         let bestVertexCount = baseVertexCount;
         let lastAttemptFeature: Feature = feature;
         let lastAttemptVertexCount = baseVertexCount;
+        let lastAttemptTolerance = tolerance;
+        let retryAttempts = 0;
 
-        const retryStep = resolveRetryToleranceStep(baseVertexCount, tolerance);
+        if (retryToleranceStep <= 0) {
+          return {
+            feature,
+            vertexCount: baseVertexCount,
+            overLimit: true,
+            retryAttempts: 0,
+            finalTolerance: tolerance,
+          };
+        }
         for (let i = 0; i < maxRetrySteps; i += 1) {
-          const nextToleranceValue = tolerance + retryStep * (i + 1);
+          const nextToleranceValue = tolerance + retryToleranceStep * (i + 1);
+          await updateRetrySimplifyAttemptPhase(taskId, {
+            featureIndex: params.featureIndex,
+            featureTotal: params.featureTotal,
+            attempt: retryAttempts + 1,
+            attemptTotal: maxRetrySteps,
+            tolerance: nextToleranceValue,
+          });
           const retryFeature = await runRetrySimplifyFeature(feature, nextToleranceValue);
+          retryAttempts += 1;
+          lastAttemptTolerance = nextToleranceValue;
           if (!retryFeature?.geometry) break;
           const retryVertexCount = countVerticesFromGeometry(retryFeature.geometry);
           lastAttemptFeature = retryFeature;
@@ -2147,6 +2509,7 @@ export const createTransformByBandHandler = (
             successTolerance = nextToleranceValue;
             successIndex = i;
             bestFeature = retryFeature;
+            bestTolerance = nextToleranceValue;
             bestVertexCount = retryVertexCount;
             break;
           }
@@ -2155,23 +2518,40 @@ export const createTransformByBandHandler = (
 
         if (bestFeature && successTolerance !== null && successIndex !== null) {
           const bisectionSteps = 5 - Math.ceil(successIndex / 2);
+          const bisectionAttemptTotal = maxRetrySteps + bisectionSteps;
           let low = lastFailTolerance;
           let high = successTolerance;
           for (let stepIndex = 0; stepIndex < bisectionSteps; stepIndex += 1) {
             const mid = (low + high) / 2;
+            await updateRetrySimplifyAttemptPhase(taskId, {
+              featureIndex: params.featureIndex,
+              featureTotal: params.featureTotal,
+              attempt: retryAttempts + 1,
+              attemptTotal: bisectionAttemptTotal,
+              tolerance: mid,
+            });
             const midFeature = await runRetrySimplifyFeature(feature, mid);
+            retryAttempts += 1;
+            lastAttemptTolerance = mid;
             if (!midFeature?.geometry) break;
             const midVertexCount = countVerticesFromGeometry(midFeature.geometry);
             if (midVertexCount < retryVertexLimit) {
               high = mid;
               bestFeature = midFeature;
+              bestTolerance = mid;
               bestVertexCount = midVertexCount;
             } else {
               low = mid;
             }
           }
           if (bestFeature) {
-            return { feature: bestFeature, vertexCount: bestVertexCount, overLimit: false };
+            return {
+              feature: bestFeature,
+              vertexCount: bestVertexCount,
+              overLimit: false,
+              retryAttempts,
+              finalTolerance: bestTolerance,
+            };
           }
         }
 
@@ -2179,25 +2559,54 @@ export const createTransformByBandHandler = (
           feature: lastAttemptFeature,
           vertexCount: lastAttemptVertexCount,
           overLimit: lastAttemptVertexCount >= retryVertexLimit,
+          retryAttempts,
+          finalTolerance: lastAttemptTolerance,
         };
       };
 
       let adjustedSimplified = simplified;
       let vertexLimitStats = countVertexLimitOverages(adjustedSimplified);
+      const retryDiagnosticsByFeatureIndex = new Map<number, {
+        retryAttempts: number;
+        finalTolerance: number;
+        finalVertexCount: number;
+      }>();
+      let retryAttemptsTotal = 0;
+      let retryAttemptedFeatureCount = 0;
+      let maxRetryAttemptsPerFeature = 0;
+      let minFinalTolerance = Number.POSITIVE_INFINITY;
+      let maxFinalTolerance = Number.NEGATIVE_INFINITY;
       if (vertexLimitStats.overLimitFeatureCount > 0) {
         const nextFeatures: Feature[] = [];
         let maxVertexCount = 0;
         let overLimitFeatureCount = 0;
-        for (const feature of adjustedSimplified.features) {
+        for (const [featureIndex, feature] of adjustedSimplified.features.entries()) {
           if (!feature?.geometry) {
             nextFeatures.push(feature);
             continue;
           }
-          const result = await retrySimplifyFeatureIfNeeded(feature);
+          const result = await retrySimplifyFeatureIfNeeded(feature, {
+            featureIndex: featureIndex + 1,
+            featureTotal: adjustedSimplified.features.length,
+          });
+          retryDiagnosticsByFeatureIndex.set(featureIndex, {
+            retryAttempts: result.retryAttempts,
+            finalTolerance: result.finalTolerance,
+            finalVertexCount: result.vertexCount,
+          });
           nextFeatures.push(result.feature);
           maxVertexCount = Math.max(maxVertexCount, result.vertexCount);
           if (result.overLimit) {
             overLimitFeatureCount += 1;
+          }
+          retryAttemptsTotal += result.retryAttempts;
+          if (result.retryAttempts > 0) {
+            retryAttemptedFeatureCount += 1;
+          }
+          maxRetryAttemptsPerFeature = Math.max(maxRetryAttemptsPerFeature, result.retryAttempts);
+          if (Number.isFinite(result.finalTolerance)) {
+            minFinalTolerance = Math.min(minFinalTolerance, result.finalTolerance);
+            maxFinalTolerance = Math.max(maxFinalTolerance, result.finalTolerance);
           }
         }
         adjustedSimplified = {
@@ -2222,10 +2631,14 @@ export const createTransformByBandHandler = (
       }
       simplified = repairedSimplified.collection;
 
+      await updateTaskPhase(taskId, 'vertex-limit-validate:start', taskProgressRange.simplifyEnd);
       const simplifiedFeatureCount = simplified.features.length;
       stageLabel = 'validate:vertex-limit';
       let maxVertexCount = 0;
       let overLimitFeatureCount = 0;
+      let finalVertexCountSummary = 0;
+      let finalRetryAttemptsSummary = 0;
+      let finalToleranceSummary = tolerance;
       const vertexLimitRecords: ShapeTransformErrorRecord[] = [];
       const vertexRecordLimit = 200;
       for (const [featureIndex, feature] of simplified.features.entries()) {
@@ -2235,9 +2648,16 @@ export const createTransformByBandHandler = (
         overLimitFeatureCount += 1;
         maxVertexCount = Math.max(maxVertexCount, vertexCount);
         if (vertexLimitRecords.length >= vertexRecordLimit) continue;
-        const rawFeatureId = feature.id
-          ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
-        const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
+        const featureId = resolveFeatureIdentifier(feature, featureIndex, input.sourceKey);
+        const retryDiagnostics = retryDiagnosticsByFeatureIndex.get(featureIndex);
+        const retryAttempts = retryDiagnostics?.retryAttempts ?? 0;
+        const finalTolerance = retryDiagnostics?.finalTolerance ?? tolerance;
+        const finalVertexCount = retryDiagnostics?.finalVertexCount ?? vertexCount;
+        if (finalVertexCount > finalVertexCountSummary) {
+          finalVertexCountSummary = finalVertexCount;
+          finalRetryAttemptsSummary = retryAttempts;
+          finalToleranceSummary = finalTolerance;
+        }
         const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
         const summary = analyzeGeometryIssues(feature.geometry, geometryOps);
         vertexLimitRecords.push({
@@ -2258,7 +2678,7 @@ export const createTransformByBandHandler = (
           ringCount: summary.ringCount,
           polygonErrorCount: summary.polygonCount,
           ringErrorCount: summary.ringCount,
-          message: `max vertices per feature exceeded (vertexCount=${vertexCount} limit=${retryVertexLimit})`,
+          message: `max vertices per feature exceeded (vertexCount=${vertexCount} finalVertexCount=${finalVertexCount} limit=${retryVertexLimit} retryAttempts=${retryAttempts} finalTolerance=${formatTolerance(finalTolerance)})`,
           createdAt: Date.now(),
           lineFeatures: {
             type: 'FeatureCollection',
@@ -2267,6 +2687,18 @@ export const createTransformByBandHandler = (
         });
       }
       if (overLimitFeatureCount > 0) {
+        const finalToleranceMinValue = Number.isFinite(minFinalTolerance) ? minFinalTolerance : tolerance;
+        const finalToleranceMaxValue = Number.isFinite(maxFinalTolerance) ? maxFinalTolerance : tolerance;
+        const finalVertexCount = finalVertexCountSummary > 0 ? finalVertexCountSummary : maxVertexCount;
+        const finalRetryAttempts = finalVertexCountSummary > 0 ? finalRetryAttemptsSummary : maxRetryAttemptsPerFeature;
+        const finalTolerance = Number.isFinite(finalToleranceSummary) ? finalToleranceSummary : tolerance;
+        const retrySummary = [
+          `retryAttemptsTotal=${retryAttemptsTotal}`,
+          `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCount}`,
+          `maxRetriesPerFeature=${maxRetryAttemptsPerFeature}`,
+          `retryStep=${formatTolerance(retryToleranceStep)}`,
+          `finalToleranceRange=${formatTolerance(finalToleranceMinValue)}..${formatTolerance(finalToleranceMaxValue)}`,
+        ].join(', ');
         if (vertexLimitRecords.length > 0) {
           try {
             await ephemeralDB.transformErrors.bulkPut(vertexLimitRecords);
@@ -2285,10 +2717,11 @@ export const createTransformByBandHandler = (
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
         return {
           status: 'failed',
-          errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCount}, maxVertices=${maxVertexCount})`,
+          errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCount}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatTolerance(finalTolerance)}, ${retrySummary})`,
         };
       }
 
+      await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
       const adminLevel = input.adminLevel;
       const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
       const boundaryLayerName = typeof adminLevel === 'number'
@@ -2314,6 +2747,8 @@ export const createTransformByBandHandler = (
         polygonCount: simplifiedPolygonCount,
       });
       const features: Feature[] = [];
+      let outputVertexCount = 0;
+      let outputPolygonCount = 0;
       for (let index = 0; index < simplified.features.length; index++) {
         assertNotAborted(abortSignal);
         const feature = simplified.features[index];
@@ -2327,9 +2762,17 @@ export const createTransformByBandHandler = (
         properties.id = id;
         const featureWithId = { ...feature, id, properties };
         features.push(featureWithId);
+        outputVertexCount += countVerticesFromGeometry(featureWithId.geometry);
+        outputPolygonCount += countPolygonsFromGeometry(featureWithId.geometry);
         if (shouldBuildBoundary) {
           stageLabel = 'boundary';
-          features.push(await runStageWithLabel('boundary', () => buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel)));
+          const boundaryFeature = await runStageWithLabel(
+            'boundary',
+            () => buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel),
+          );
+          features.push(boundaryFeature);
+          outputVertexCount += countVerticesFromGeometry(boundaryFeature.geometry);
+          outputPolygonCount += countPolygonsFromGeometry(boundaryFeature.geometry);
         }
       }
 
@@ -2358,8 +2801,8 @@ export const createTransformByBandHandler = (
       }
 
       const boundaryDiagnostics = buildBoundaryDiagnostics(outputCollectionValue);
-      if (boundaryDiagnostics) {
-        console.warn('[ShapeTransform][BoundaryDiagnostics]', JSON.stringify({
+      if (boundaryDiagnostics && isTaskDebugLoggingEnabled()) {
+        console.debug('[ShapeTransform][BoundaryDiagnostics]', JSON.stringify({
           nodeId: task.nodeId,
           taskId,
           sourceKey: input.sourceKey,
@@ -2388,16 +2831,14 @@ export const createTransformByBandHandler = (
       }
 
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
-      stageLabel = 'counts:output-vertices';
-      await updateTaskPhase(taskId, 'output:counts:start', taskProgressRange.outputCountsStart);
-      const vertexCount = await runStageWithLabel('counts:output-vertices', () => features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0));
-      stageLabel = 'counts:output-polygons';
-      const polygonCount = await runStageWithLabel('counts:output-polygons', () => features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0));
+      const vertexCount = outputVertexCount;
+      const polygonCount = outputPolygonCount;
       assertNotAborted(abortSignal);
       stageLabel = 'encode';
       await updateTaskPhase(taskId, 'output:build:done', taskProgressRange.outputBuildEnd);
-      await updateTaskPhase(taskId, 'output:counts:done', taskProgressRange.outputCountsEnd);
-      await updateTaskPhase(taskId, 'encode:start', taskProgressRange.encodeStart);
+      await updateTaskPhase(taskId, 'encode:start', taskProgressRange.encodeStart, {
+        key: 'stage.taskPhase.transformCacheEncodeStart',
+      });
       logDebugPhase('encode:start', { featureCount: outputCollectionValue.features.length });
       outputCollection = outputCollectionValue;
       const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
@@ -2439,7 +2880,9 @@ export const createTransformByBandHandler = (
       stageLabel = 'encode:validate';
       await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
       logDebugPhase('encode:done', { byteLength: encoded.byteLength });
-      await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd);
+      await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd, {
+        key: 'stage.taskPhase.transformCacheEncodeDone',
+      });
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
@@ -2536,10 +2979,21 @@ export const createTransformByBandHandler = (
           createdAt,
         }));
         try {
-          await ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete();
-          await ephemeralDB.tileIdToBufferRelations.bulkPut(relations);
+          await withTimeout({
+            taskId,
+            operation: 'tile-index:delete-old-relations',
+            timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
+            promise: ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete(),
+          });
+          await withTimeout({
+            taskId,
+            operation: 'tile-index:bulkPut-relations',
+            timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
+            promise: ephemeralDB.tileIdToBufferRelations.bulkPut(relations),
+          });
         } catch (storageError) {
-          console.warn('[ShapeTransform] failed to persist tile index relations', storageError);
+          const reason = storageError instanceof Error ? storageError.message : String(storageError);
+          throw new Error(`transform failed: tile index relation write failed (taskId=${taskId}, reason=${reason})`);
         }
       }
 
@@ -2573,10 +3027,19 @@ export const createTransformByBandHandler = (
         buildCollectionDiagnostics(simplified, 'simplified', geometryOps),
         buildCollectionDiagnostics(outputCollection, 'output', geometryOps),
       ].filter((value): value is string => Boolean(value)).join(' ');
-      await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+      let progressUpdateError: string | null = null;
+      try {
+        await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+      } catch (progressError) {
+        progressUpdateError = progressError instanceof Error ? progressError.message : String(progressError);
+        console.error('[ShapeTransform] failed to update progress during error handling', {
+          taskId: task.taskId,
+          progressUpdateError,
+        });
+      }
       return {
         status: 'failed',
-        errorMessage: `transform failed: ${stagedError}${diagnostics ? ` | diagnostics: ${diagnostics}` : ''}`,
+        errorMessage: `transform failed: ${stagedError}${diagnostics ? ` | diagnostics: ${diagnostics}` : ''}${progressUpdateError ? ` | progressUpdateError: ${progressUpdateError}` : ''}`,
       };
     } finally {
       if (debugHeartbeat) {

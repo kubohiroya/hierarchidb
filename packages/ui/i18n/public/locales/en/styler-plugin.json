@@ -82,14 +82,30 @@
     }
   },
   "steps": {
-    "dataSource": { "label": "Data Source" },
-    "filtering": { "label": "Filtering" },
-    "mappingKeys": { "label": "Mapping Keys" },
-    "targetBehavior": { "label": "Apply Target" },
-    "styleSettings": { "label": "Style Mapping" },
-    "target": { "label": "Apply Target" },
-    "styleAlgorithm": { "label": "Algorithm" },
-    "preview": { "label": "Preview" }
+    "dataSource": {
+      "label": "Data Source"
+    },
+    "filtering": {
+      "label": "Filtering"
+    },
+    "mappingKeys": {
+      "label": "Mapping Keys"
+    },
+    "targetBehavior": {
+      "label": "Apply Target"
+    },
+    "styleSettings": {
+      "label": "Style Mapping"
+    },
+    "target": {
+      "label": "Apply Target"
+    },
+    "styleAlgorithm": {
+      "label": "Palette"
+    },
+    "preview": {
+      "label": "Preview"
+    }
   },
   "step5": {
     "target": {
@@ -119,6 +135,11 @@
       "validation": {
         "required": "Select a target to continue."
       }
+    },
+    "title": "Style Algorithm",
+    "errors": {
+      "range": "Maximum value must be greater than minimum value",
+      "configure": "Configure styling targets before continuing."
     }
   },
   "step6": {
@@ -133,7 +154,20 @@
     "numericRange": {
       "min": "Minimum",
       "max": "Maximum"
-    }
+    },
+    "title": "Preview with Style Mapping",
+    "required": {
+      "title": "Configuration Required",
+      "body": "Please complete Step 5 configuration before viewing the preview.",
+      "property": "Select a MapLibre style property",
+      "valueColumn": "Select a value column for mapping"
+    },
+    "noData": {
+      "title": "No Data Available",
+      "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."
+    },
+    "truncate": "Showing preview of first 1,000 rows. Full dataset contains",
+    "rows": "rows."
   },
   "step3": {
     "description": "Choose the table columns and tile feature ID to link styling values.",
@@ -184,28 +218,6 @@
       "styleType": "Select a style type",
       "mappingMode": "Select a mapping mode"
     }
-  },
-  "step5": {
-    "title": "Style Algorithm",
-    "errors": {
-      "range": "Maximum value must be greater than minimum value",
-      "configure": "Configure styling targets before continuing."
-    }
-  },
-  "step6": {
-    "title": "Preview with Style Mapping",
-    "required": {
-      "title": "Configuration Required",
-      "body": "Please complete Step 5 configuration before viewing the preview.",
-      "property": "Select a MapLibre style property",
-      "valueColumn": "Select a value column for mapping"
-    },
-    "noData": {
-      "title": "No Data Available",
-      "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."
-    },
-    "truncate": "Showing preview of first 1,000 rows. Full dataset contains",
-    "rows": "rows."
   },
   "extension": {
     "description": "Configure Styler visualization settings for this folder",

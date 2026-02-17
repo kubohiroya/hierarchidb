@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  BaseBatchConfig,
+  BaseBuildConfig,
   BuildProgress,
   BuildProgressEvent,
   BuildProgressPayload,
@@ -10,9 +10,9 @@ import type {
 } from '@hierarchidb/batch-api';
 
 /**
- * Shared lifecycle base for batch-oriented workflows.
+ * Shared lifecycle base for build-oriented workflows.
  */
-export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = BaseBatchConfig> {
+export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = BaseBuildConfig> {
   protected readonly config: TConfig;
   protected readonly nodeId: NodeId;
 
@@ -136,7 +136,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.emitProgress({ phase: 'running', stage: this.progress.taskType ?? 'running', payload: this.toProgressPayload() });
   }
 
-  addBatchProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
+  addBuildProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
     this.progressListeners.add(listener);
     return () => {
       this.progressListeners.delete(listener);
@@ -188,7 +188,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     for (const listener of this.progressListeners) {
       listener(full);
     }
-    this.onBatchProgressEvent(full);
+    this.onBuildProgressEvent(full);
   }
 
   protected setResourceUsage(usage: ResourceUsage | undefined): void {
@@ -210,7 +210,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
-  protected onBatchProgressEvent(_event: BuildProgressEvent): void {}
+  protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
 }
 
 function abortError(message: string): Error {

@@ -3,7 +3,12 @@
  * Aggregates service-layer utilities for consumption by the app.
  */
 
-export { LocationBatchManager, type LocationBatchProgressEvent } from './LocationBatchManager.js';
+export {
+  LocationBuildManager,
+  type LocationBuildProgressEvent,
+  type LocationBuildSession,
+  type LocationBuildTask,
+} from './LocationBuildManager.js';
 export {
   appendLocationPoints,
   replaceLocationPoints,

@@ -157,7 +157,7 @@ export function usePluginDialogFrame<TData>(
 
   const displayMode = headlessProps.displayMode ?? 'normal';
   const fullScreen = displayMode === 'full-screen';
-  const allowResizeHandles = displayMode === 'normal';
+  const allowResizeHandles = displayMode !== 'full-screen';
   const position = headlessProps.position ?? { x: 0, y: 0 };
   const size = headlessProps.size ?? DEFAULT_DIALOG_SIZE;
 

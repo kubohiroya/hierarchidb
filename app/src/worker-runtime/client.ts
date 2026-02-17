@@ -1,13 +1,12 @@
 /**
- * UI-side worker bootstrap: create and wrap Dedicated/Shared worker via Comlink.
+ * UI-side worker bootstrap: create and wrap SharedWorker via Comlink.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { bootLog } from '~/utils/bootLog.ts';
 import { APP_VERSION } from '~/version.ts';
 import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock.js';
-import workerScriptUrl from './worker.ts?worker&url';
 import sharedWorkerScriptUrl from './shared-worker.ts?sharedworker&url';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/ui-worker-client to avoid `any` fallbacks
@@ -41,8 +40,7 @@ type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
 
-let workerInstance: Remote<WorkerAPI> | null = null;
-let rawWorkerInstance: Worker | null = null;
+let workerInstance: Remote<BuildWorkerAPI> | null = null;
 let rawSharedWorkerPort: MessagePort | null = null;
 let workerInitCompleted = false;
 
@@ -60,29 +58,6 @@ const COMLINK_NOISE_TYPES = new Set([
   'RELEASE',
   'HANDLER',
 ]);
-
-const ENABLE_SHARED_WORKER = import.meta.env.VITE_HDB_ENABLE_SHARED_WORKER === '1';
-
-function resolveWorkerUrl(): URL {
-  if (typeof workerScriptUrl === 'string') {
-    if (typeof window !== 'undefined') {
-      const url = new URL(workerScriptUrl, window.location.origin);
-      url.searchParams.set('appVersion', APP_VERSION);
-      return url;
-    }
-    const globalScope = globalThis as { location?: Location };
-    if (globalScope.location?.origin) {
-      const url = new URL(workerScriptUrl, globalScope.location.origin);
-      url.searchParams.set('appVersion', APP_VERSION);
-      return url;
-    }
-  }
-  // Final fallback: always reference the transpiled worker bundle (.js)
-  // so that environments without Vite query handling still load a valid script.
-  const fallbackUrl = new URL(/* @vite-ignore */ './worker.js', import.meta.url);
-  fallbackUrl.searchParams.set('appVersion', APP_VERSION);
-  return fallbackUrl;
-}
 
 function resolveSharedWorkerUrl(): URL {
   if (typeof sharedWorkerScriptUrl === 'string') {
@@ -103,7 +78,11 @@ function resolveSharedWorkerUrl(): URL {
   return fallbackUrl;
 }
 
-const isSharedWorkerSupported = () => ENABLE_SHARED_WORKER && typeof SharedWorker === 'function';
+const ensureSharedWorkerReady = (): void => {
+  if (typeof SharedWorker !== 'function') {
+    throw new Error('[client:initWorker] SharedWorker is not available in this browser/runtime.');
+  }
+};
 
 const MAINTENANCE_LOCK_POLL_MS = 1_000;
 const MAINTENANCE_LOCK_MAX_WAIT_MS = 30_000;
@@ -135,7 +114,7 @@ function isWorkerServicesReadyMessage(value: unknown): value is WorkerServicesRe
   );
 }
 
-const attachMessageHandlers = (target: Worker | MessagePort) => {
+const attachMessageHandlers = (target: MessagePort) => {
   const addListener = target.addEventListener.bind(target);
   const onMessage: EventListener = (event) => {
     const { data } = event as MessageEvent<unknown>;
@@ -199,17 +178,9 @@ const attachMessageHandlers = (target: Worker | MessagePort) => {
     console.error('[client:initWorker] messageerror', event);
   };
   addListener('messageerror', onMessageError);
-
-  if (target instanceof Worker) {
-    target.addEventListener('error', (e: ErrorEvent) => {
-      console.error('[client:initWorker] worker error', e);
-    });
-  }
 };
 
 const cleanupWorkerHandles = () => {
-  rawWorkerInstance?.terminate();
-  rawWorkerInstance = null;
   rawSharedWorkerPort?.close();
   rawSharedWorkerPort = null;
   // SharedWorker instances are scoped by MessagePort; closing the port is sufficient.
@@ -238,7 +209,8 @@ const waitForMaintenanceUnlock = async (deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_M
   }
 };
 
-export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
+export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
+  ensureSharedWorkerReady();
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     await waitForMaintenanceUnlock();
@@ -249,29 +221,15 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         cleanupWorkerHandles();
       }
 
-      if (isSharedWorkerSupported()) {
-        const workerUrl = resolveSharedWorkerUrl();
-        workerUrl.searchParams.set('retry', String(attempt));
-        const sharedWorker = new SharedWorker(workerUrl, { type: 'module' });
-        rawSharedWorkerPort = sharedWorker.port;
-        rawSharedWorkerPort.start();
-        attachMessageHandlers(rawSharedWorkerPort);
-
-        const Comlink = await import('comlink');
-        const worker = Comlink.wrap<WorkerAPI>(rawSharedWorkerPort);
-        workerInstance = worker;
-        if (attempt > 0) console.log('👍 [client:initWorker] reconnected');
-        return workerInstance;
-      }
-
-      const workerUrl = resolveWorkerUrl();
+      const workerUrl = resolveSharedWorkerUrl();
       workerUrl.searchParams.set('retry', String(attempt));
-      rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
+      const sharedWorker = new SharedWorker(workerUrl, { type: 'module' });
+      rawSharedWorkerPort = sharedWorker.port;
+      rawSharedWorkerPort.start();
+      attachMessageHandlers(rawSharedWorkerPort);
 
       const Comlink = await import('comlink');
-      attachMessageHandlers(rawWorkerInstance);
-
-      const worker = Comlink.wrap<WorkerAPI>(rawWorkerInstance);
+      const worker = Comlink.wrap<BuildWorkerAPI>(rawSharedWorkerPort);
       workerInstance = worker;
       if (attempt > 0) console.log('👍 [client:initWorker] reconnected');
       return workerInstance;
@@ -289,14 +247,14 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   throw new Error('[client:initWorker] max retries exceeded');
 }
 
-export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
+export async function getWorkerClient(): Promise<Remote<BuildWorkerAPI>> {
   await waitForMaintenanceUnlock();
   if (!workerInstance) return await initializeWorker();
   return workerInstance;
 }
 
 export function getRawWorkerInstance(): Worker | MessagePort | null {
-  return rawSharedWorkerPort ?? rawWorkerInstance;
+  return rawSharedWorkerPort;
 }
 export function isWorkerInitCompleted(): boolean {
   return workerInitCompleted;

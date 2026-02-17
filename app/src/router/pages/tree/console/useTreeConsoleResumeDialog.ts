@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
@@ -20,7 +20,7 @@ export function useTreeConsoleResumeDialog({
   client,
   actions,
 }: {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   actions: IntegrationActions;
 }): {
   requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void>;

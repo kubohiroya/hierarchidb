@@ -63,8 +63,8 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
@@ -89,7 +89,6 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
-    "@hierarchidb/session-coordinator": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
@@ -104,6 +103,7 @@
   "devDependencies": {
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
@@ -121,7 +121,6 @@
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
-    "@hierarchidb/session-coordinator": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@types/geojson": "^7946.0.14",
     "@types/node": "^20.10.5",

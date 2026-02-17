@@ -2,11 +2,11 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 
 // Create a type that matches the shared contract
-type WorkerInterface = Remote<WorkerAPI>;
+type WorkerInterface = Remote<BuildWorkerAPI>;
 
 let workerInstance: WorkerInterface | null = null;
 let state: 'uninitialized' | 'initializing' | 'initialized' | 'error' = 'uninitialized';

@@ -6,35 +6,35 @@ import type {
   IBuildSessionManager,
 } from '@hierarchidb/batch-api';
 
-export interface UnifiedBatchSession<TConfig, TData> {
+export interface UnifiedBuildSession<TConfig, TData> {
   config: TConfig;
   data: TData;
   storedAt: Timestamp;
 }
 
-export interface BatchPersistence<TConfig, TData> {
-  savePending(nodeId: NodeId, payload: UnifiedBatchSession<TConfig, TData>): Promise<void> | void;
+export interface BuildPersistence<TConfig, TData> {
+  savePending(nodeId: NodeId, payload: UnifiedBuildSession<TConfig, TData>): Promise<void> | void;
   takePending(nodeId: NodeId):
-    | Promise<UnifiedBatchSession<TConfig, TData> | undefined>
-    | UnifiedBatchSession<TConfig, TData>
+    | Promise<UnifiedBuildSession<TConfig, TData> | undefined>
+    | UnifiedBuildSession<TConfig, TData>
     | undefined;
-  onSessionStarted?(nodeId: NodeId, payload: UnifiedBatchSession<TConfig, TData>): Promise<void> | void;
+  onSessionStarted?(nodeId: NodeId, payload: UnifiedBuildSession<TConfig, TData>): Promise<void> | void;
   onSessionProgress?(nodeId: NodeId, event: BuildProgressEvent): Promise<void> | void;
   onSessionStatusChange?(nodeId: NodeId, status: BuildSessionStatus): Promise<void> | void;
   onSessionCompleted?(nodeId: NodeId): Promise<void> | void;
 }
 
-export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildSessionManager<TConfig, TData> {
-  private readonly pending = new Map<NodeId, UnifiedBatchSession<TConfig, TData>>();
+export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildSessionManager<TConfig, TData> {
+  private readonly pending = new Map<NodeId, UnifiedBuildSession<TConfig, TData>>();
 
-  protected constructor(protected readonly persistence?: BatchPersistence<TConfig, TData>) {}
+  protected constructor(protected readonly persistence?: BuildPersistence<TConfig, TData>) {}
 
   async prepareSession<TConfigParam extends TConfig = TConfig, TDataParam extends TData = TData>(
     nodeId: NodeId,
     config: TConfigParam,
     data: TDataParam
   ): Promise<void> {
-    const payload: UnifiedBatchSession<TConfig, TData> = {
+    const payload: UnifiedBuildSession<TConfig, TData> = {
       config,
       data,
       storedAt: Date.now() as Timestamp,
@@ -46,12 +46,12 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
     }
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
+  async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
     const payload = this.persistence
       ? await this.persistence.takePending(nodeId)
       : this.pending.get(nodeId);
     if (!payload) {
-      throw new Error(`No pending batch session for node ${nodeId}`);
+      throw new Error(`No pending build session for node ${nodeId}`);
     }
     if (!this.persistence) {
       this.pending.delete(nodeId);
@@ -65,18 +65,14 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
     return status;
   }
 
-  async pauseBatchSession(nodeId: NodeId): Promise<void> {
+  async pauseBuildSession(nodeId: NodeId): Promise<void> {
     await this.performPause(nodeId);
     await this.notifyStatus(nodeId);
   }
 
-  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+  async resumeBuildSession(nodeId: NodeId): Promise<void> {
     await this.performResume(nodeId);
     await this.notifyStatus(nodeId);
-  }
-
-  async getBatchSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
-    return this.getBuildSessionStatus(nodeId);
   }
 
   async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -88,7 +84,7 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
     return status;
   }
 
-  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     return this.performSubscribe(nodeId, (event: BuildProgressEvent) => {
       let nextEvent = event;
       if (!nextEvent.nodeId) {
@@ -105,7 +101,6 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBuildS
       }
     });
   }
-
   protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BuildSessionStatus>;
   protected abstract performPause(nodeId: NodeId): Promise<void>;
   protected abstract performResume(nodeId: NodeId): Promise<void>;

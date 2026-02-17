@@ -1,1 +1,4 @@
-export { SessionCoordinatorProvider, useSessionCoordinator } from './SessionCoordinatorProvider.js';
+export {
+  TabSessionCoordinatorProvider,
+  useTabSessionCoordinator,
+} from './SessionCoordinatorProvider.js';

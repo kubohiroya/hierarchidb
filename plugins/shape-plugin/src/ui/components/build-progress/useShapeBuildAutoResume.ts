@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
@@ -33,14 +32,8 @@ export const useShapeBuildAutoResume = ({
 }: Args) => {
   const [isStartPending, setIsStartPending] = useState(false);
   const isStartPendingRef = useRef(false);
-  const setStartPending = useCallback((next: boolean, immediate = false) => {
+  const setStartPending = useCallback((next: boolean) => {
     isStartPendingRef.current = next;
-    if (immediate) {
-      flushSync(() => {
-        setIsStartPending(next);
-      });
-      return;
-    }
     setIsStartPending(next);
   }, []);
   const canStartOrResume = useMemo(() => (
@@ -105,7 +98,7 @@ export const useShapeBuildAutoResume = ({
   const startOrResume = useCallback(async (options?: { autoResume?: boolean }) => {
     if (isStartPendingRef.current) return;
     if (!isLockSupported) return;
-    setStartPending(true, true);
+    setStartPending(true);
     const ok = await handleStartOrResume({
       forceRestart: hasFailedFetchTasks,
       autoResume: options?.autoResume,

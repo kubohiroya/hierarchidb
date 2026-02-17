@@ -90,7 +90,7 @@ describe('Multi-Step Dialog Integration', () => {
       let capabilities = await dialogAPI.evaluateCapabilities(draftId, 0);
 
       expect(capabilities.canNavigateTo).toBe(true);
-      expect(capabilities.canStartBatch).toBe(false);
+      expect(capabilities.canStartBuild).toBe(false);
       expect(capabilities.canSave).toBe(false);
       expect(capabilities.canProceedToNext).toBe(false);
       expect(capabilities.canBackToPrevious).toBe(false);
@@ -113,7 +113,7 @@ describe('Multi-Step Dialog Integration', () => {
 
       capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canNavigateTo).toBe(true);
-      expect(capabilities.canStartBatch).toBe(true);
+      expect(capabilities.canStartBuild).toBe(true);
       expect(capabilities.canSave).toBe(true);
       expect(capabilities.canProceedToNext).toBe(true);
       expect(capabilities.canBackToPrevious).toBe(true);
@@ -126,7 +126,7 @@ describe('Multi-Step Dialog Integration', () => {
 
       const capabilities = await dialogAPI.evaluateCapabilities(draftId, 2);
       expect(capabilities.canNavigateTo).toBe(true);
-      expect(capabilities.canStartBatch).toBe(true);
+      expect(capabilities.canStartBuild).toBe(true);
       expect(capabilities.canSave).toBe(true);
       expect(capabilities.canProceedToNext).toBe(false);
       expect(capabilities.canBackToPrevious).toBe(true);
@@ -179,7 +179,7 @@ describe('Multi-Step Dialog Integration', () => {
       capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canProceedToNext).toBe(true);
       expect(capabilities.canSave).toBe(true);
-      expect(capabilities.canStartBatch).toBe(true);
+      expect(capabilities.canStartBuild).toBe(true);
     });
   });
 
@@ -197,7 +197,7 @@ describe('Multi-Step Dialog Integration', () => {
         data: { name: '', locationType: 'restaurant' },
       });
 
-      const results = await dialogAPI.batchValidate([folderDraftId, locationDraftId]);
+      const results = await dialogAPI.buildValidate([folderDraftId, locationDraftId]);
 
       expect(results[folderDraftId].valid).toBe(true);
       expect(results[locationDraftId].valid).toBe(false);
@@ -220,15 +220,15 @@ describe('Multi-Step Dialog Integration', () => {
         },
       });
 
-      const results = await dialogAPI.batchEvaluateCapabilities([
+      const results = await dialogAPI.buildEvaluateCapabilities([
         { draftId: draftId1, step: 1 },
         { draftId: draftId2, step: 2 },
       ]);
 
       expect(results[draftId1].canNavigateTo).toBe(true);
-      expect(results[draftId1].canStartBatch).toBe(true);
+      expect(results[draftId1].canStartBuild).toBe(true);
       expect(results[draftId2].canNavigateTo).toBe(true);
-      expect(results[draftId2].canStartBatch).toBe(true);
+      expect(results[draftId2].canStartBuild).toBe(true);
     });
   });
 
@@ -243,7 +243,7 @@ describe('Multi-Step Dialog Integration', () => {
         },
       });
 
-      const results = await dialogAPI.batchValidate([draftId]);
+      const results = await dialogAPI.buildValidate([draftId]);
       const validation = results[draftId];
 
       expect(validation.valid).toBe(false);
@@ -266,7 +266,7 @@ describe('Multi-Step Dialog Integration', () => {
         },
       });
 
-      const results = await dialogAPI.batchValidate([draftId]);
+      const results = await dialogAPI.buildValidate([draftId]);
       const validation = results[draftId];
 
       expect(validation.valid).toBe(false);

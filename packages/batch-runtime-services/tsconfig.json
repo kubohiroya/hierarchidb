@@ -2,15 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": [
-      "node",
-      "react-transition-group"
+      "node"
     ],
     "skipLibCheck": false,
     "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*",
-    "../../types/react-transition-group/**/*.d.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

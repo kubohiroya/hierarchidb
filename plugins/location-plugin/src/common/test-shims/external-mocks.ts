@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BatchProgressEvent, UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import type { BatchProgressAdapter, UseBatchProgressOptions } from '@hierarchidb/batch-api';
+import type {
+  BuildProgressAdapter,
+  BuildProgressEvent,
+  BuildUnifiedProgressInfo,
+  UseBuildProgressOptions,
+} from '@hierarchidb/batch-api';
 
-export class BatchService {
+export class BuildService {
   async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {
     const results: R[] = [];
     for (const item of items) {
@@ -45,7 +49,7 @@ export const getRowStoreDB = () => ({
   },
 });
 
-export abstract class AbstractBatchSession<TConfig> {
+export abstract class AbstractBuildSession<TConfig> {
   protected progress: Record<string, unknown> = {};
 
   constructor(public readonly nodeId: string, protected readonly config: TConfig) {}
@@ -54,8 +58,7 @@ export abstract class AbstractBatchSession<TConfig> {
     this.progress = { ...this.progress, ...update };
   }
 }
-
-export abstract class UnifiedBatchManagerBase<TConfig, TData> {
+export abstract class UnifiedBuildManagerBase<TConfig, TData> {
   private readonly pending = new Map<string, { config: TConfig; data: TData }>();
 
   protected constructor(protected readonly persistence?: unknown) {}
@@ -64,26 +67,24 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
     this.pending.set(nodeId, { config, data });
   }
 
-  async startBatchSession(nodeId: string): Promise<string> {
+  async startBuildSession(nodeId: string): Promise<string> {
     const payload = this.pending.get(nodeId);
-    if (!payload) throw new Error(`No pending batch session for node ${nodeId}`);
+    if (!payload) throw new Error(`No pending build session for node ${nodeId}`);
     this.pending.delete(nodeId);
     return this.performStart(nodeId, payload.config, payload.data);
   }
-
-  async pauseBatchSession(nodeId: string): Promise<void> {
+  async pauseBuildSession(nodeId: string): Promise<void> {
     await this.performPause(nodeId);
   }
 
-  async resumeBatchSession(nodeId: string): Promise<void> {
+  async resumeBuildSession(nodeId: string): Promise<void> {
     await this.performResume(nodeId);
   }
 
-  async getBatchSessionStatus(nodeId: string): Promise<unknown> {
+  async getBuildSessionStatus(nodeId: string): Promise<unknown> {
     return this.performStatus(nodeId);
   }
-
-  onBatchProgress(nodeId: string, callback: (even: unknown) => void): () => void {
+  onBuildProgress(nodeId: string, callback: (event: unknown) => void): () => void {
     return this.performSubscribe(nodeId, callback);
   }
 
@@ -123,7 +124,7 @@ export function createLaneSemaphoreRegistry(options: { defaults: Record<string, 
   };
 }
 
-export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgressInfo {
+export function progressEventToUnified(event: BuildProgressEvent): BuildUnifiedProgressInfo {
   const payload = event.payload ?? {};
   const total = typeof payload.total === 'number' && payload.total > 0 ? payload.total : 0;
   const completed = typeof payload.completed === 'number' ? payload.completed : 0;
@@ -142,37 +143,37 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
     payload,
     message: event.message,
     nodeId: event.nodeId,
-  } as UnifiedProgressInfo;
+  } as BuildUnifiedProgressInfo;
 }
 
 export function createAdapterFromProgressSubscribe(
-  subscribeToProgress: (cb: (event: BatchProgressEvent) => void) => (() => void) | Promise<() => void>,
-): BatchProgressAdapter {
+  subscribeToProgress: (cb: (event: BuildProgressEvent) => void) => (() => void) | Promise<() => void>,
+): BuildProgressAdapter {
   return {
-    subscribe: (consumer: (info: UnifiedProgressInfo) => void) => {
-      const wrapped = (event: BatchProgressEvent) => {
+    subscribe: (consumer: (info: BuildUnifiedProgressInfo) => void) => {
+      const wrapped = (event: BuildProgressEvent) => {
         consumer(progressEventToUnified(event));
       };
       return subscribeToProgress(wrapped);
     },
-  } satisfies BatchProgressAdapter;
+  } satisfies BuildProgressAdapter;
 }
 
 type Unsubscribe = () => void;
 
 type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
-export function useBatchProgress(
-  adapter: BatchProgressAdapter | null,
-  { autoSubscribe = true }: UseBatchProgressOptions = {},
+export function useBuildProgress(
+  adapter: BuildProgressAdapter | null,
+  { autoSubscribe = true }: UseBuildProgressOptions = {},
 ) {
-  const [progress, setProgress] = useState<UnifiedProgressInfo | null>(null);
+  const [progress, setProgress] = useState<BuildUnifiedProgressInfo | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const unsubRef = useRef<Unsubscribe | null>(null);
 
   const subscribe = useCallback(() => {
     if (!adapter || subscribed) return;
-    const result: SubscribeResult = adapter.subscribe((info: UnifiedProgressInfo) => {
+    const result: SubscribeResult = adapter.subscribe((info: BuildUnifiedProgressInfo) => {
       setProgress(info);
     });
     if (typeof result === 'function') {
@@ -203,7 +204,7 @@ export function useBatchProgress(
   return { progress, subscribed, subscribe, unsubscribe } as const;
 }
 
-export function usePluginBatchProgress<TProgress>(
+export function usePluginBuildProgress<TProgress>(
   _nodeType: string,
   _nodeId?: string | null,
   _options?: Record<string, unknown>,

@@ -1,2 +1,5 @@
-export { AbstractBatchSession, BatchService } from '@hierarchidb/batch';
-export { BaseBatchSessionManager } from './BaseBatchSessionManager.js';
+export {
+  AbstractBuildSession,
+  BaseBuildSessionManager,
+  BuildService,
+} from '@hierarchidb/batch';

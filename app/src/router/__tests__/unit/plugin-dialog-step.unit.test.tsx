@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { treeRouteIds } from '../../routes/tree/shared.ts';
 import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';
@@ -74,7 +74,7 @@ describe('usePluginDialogRoute step params', () => {
     const pageNodeId = 'r:root' as NodeId;
     const targetNodeId = 'node-1' as NodeId;
     const data = {
-      client: {} as Remote<WorkerAPI>,
+      client: {} as Remote<BuildWorkerAPI>,
       tree: { id: treeId } as Tree,
       pageNodeId,
       pageNode: undefined,
@@ -126,7 +126,7 @@ describe('usePluginDialogRoute step params', () => {
     const pageNodeId = 'r:root' as NodeId;
     const targetNodeId = 'node-1' as NodeId;
     const data = {
-      client: {} as Remote<WorkerAPI>,
+      client: {} as Remote<BuildWorkerAPI>,
       tree: { id: treeId } as Tree,
       pageNodeId,
       pageNode: undefined,

@@ -1,4 +1,4 @@
 import type { TreeNodeData } from '@hierarchidb/tree-api';
-import type { WorkerAPI as WorkerAPIBase } from '@hierarchidb/worker-api';
+import type { BuildWorkerAPI as BuildWorkerAPIBase } from '@hierarchidb/worker-api';
 
-export type WorkerAPI = WorkerAPIBase<TreeNodeData>;
+export type BuildWorkerAPI = BuildWorkerAPIBase<TreeNodeData>;

@@ -46,12 +46,20 @@ export const useShapeBuildLabels = ({
   }, [buildStatus, t]);
 
   const warningMessage = useMemo(() => {
+    const progressDisplay = effectiveProgress?.progressTaskDisplay;
+    if (buildStatus === 'running' && progressDisplay?.kind === 'info') {
+      const key = typeof progressDisplay.key === 'string' ? progressDisplay.key : '';
+      if (key.startsWith('stage.taskWarning.')) {
+        const warning = formatTaskDisplayMessage(progressDisplay, t);
+        if (warning) return warning;
+      }
+    }
     if (buildStatus !== 'paused') return null;
     const message = effectiveStatus?.error;
     if (typeof message !== 'string') return null;
     const trimmed = message.trim();
     return trimmed.length > 0 ? trimmed : null;
-  }, [buildStatus, effectiveStatus?.error]);
+  }, [buildStatus, effectiveProgress?.progressTaskDisplay, effectiveStatus?.error, t]);
 
   const stageLabel = useMemo(() => {
     if (displayStageId) {

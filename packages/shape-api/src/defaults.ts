@@ -5,6 +5,20 @@ export const DEFAULT_BUILD_CONFIG = {
   fetchConfig: {
     deleteOnComplete: false,
     timeoutMs: 300000,
+    geometryIntakeGuard: {
+      validationLevel: 'off',
+      dedupeEpsilon: 0.000001,
+      minRingAreaThreshold: 0.0,
+      normalizeRingOrientation: true,
+      keepBaselineSnapshot: true,
+    },
+    invalidGeometryFilter: {
+      area: false,
+      lineLength: false,
+      maxEdgeLength: false,
+      selfIntersection: false,
+      triangleRingRatio: false,
+    },
   },
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
@@ -24,6 +38,7 @@ export const DEFAULT_BUILD_CONFIG = {
     },
     deleteOnComplete: false,
     tolerance: 0.2,
+    retryToleranceStep: 0.5,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {

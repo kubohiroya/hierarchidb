@@ -1,4 +1,4 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from './types.js';
 import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired } from '@hierarchidb/download';
 import { TabularStrategy } from './strategies/TabularStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
@@ -9,7 +9,7 @@ export class RouteSourceOrchestrator {
 
   constructor() {}
 
-  async plan(spec: RouteBatchSpec): Promise<TaskPlan> {
+  async plan(spec: RouteBuildSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
     const ctx: StrategyContext = { planId };
     const aggregate: TaskPlan = { fetch: [], parse: [] };
@@ -22,7 +22,7 @@ export class RouteSourceOrchestrator {
     return aggregate;
   }
 
-  async preview(spec: RouteBatchSpec): Promise<{ odPairs: OdPair[]; plan: TaskPlan }> {
+  async preview(spec: RouteBuildSpec): Promise<{ odPairs: OdPair[]; plan: TaskPlan }> {
     const plan = await this.plan(spec);
     const blobs = new Map<string, Blob>();
     const net = this.getNetworkPort();

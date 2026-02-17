@@ -6,6 +6,7 @@ import {
   type ResourceVectorLayer,
   useVectorTilePreviewSearch,
   type MapAttributionItem,
+  type MapPreviewErrorSummaryById,
   type MapLibreMapInstance,
   type MapToggleSelection,
   type MapViewState,
@@ -19,7 +20,7 @@ import {
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import type {
   RouteBuildError,
@@ -141,7 +142,7 @@ export const useRoutePreviewStep = ({
 }) => {
   const { t, locale } = useTranslation();
   const previewNodeId = nodeId;
-  const workerBridgeRef = useRef(getWorkerBridge());
+  const workerBridgeRef = useRef(getBuildWorkerBridge());
   const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);
   const [lineStringsLoading, setLineStringsLoading] = useState(false);
   const [lineStringsError, setLineStringsError] = useState<string | null>(null);
@@ -502,12 +503,14 @@ export const useRoutePreviewStep = ({
     setMatchedIds,
   );
   const matchedIdSet = useMemo(() => new Set(matchedIds), [matchedIds]);
-  const staleSummaryById = useMemo(() => {
-    const map = new Map<string, { count: number; messages: string[] }>();
+  const staleSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
+    const map: MapPreviewErrorSummaryById = new Map();
     if (!metadataSyncSummary) return map;
     metadataSyncSummary.rows.forEach((row) => {
       if (row.status !== 'stale') return;
       map.set(row.lineId, {
+        errorCount: 1,
+        repairCount: 0,
         count: 1,
         messages: row.reason ? [row.reason] : ['metadata mismatch'],
       });

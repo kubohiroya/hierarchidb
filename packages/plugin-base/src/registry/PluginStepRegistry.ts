@@ -24,8 +24,8 @@ type OptionalDataCallback<TData extends StepData, TResult> = BivariantCallback<
   TResult
 >;
 
-type StartBatchCallback<TData extends StepData, TUiState> = BivariantCallback<
-  [data: TData, context: StartBatchContext<TData, TUiState>],
+type StartBuildCallback<TData extends StepData, TUiState> = BivariantCallback<
+  [data: TData, context: StartBuildContext<TData, TUiState>],
   void | Promise<void>
 >;
 
@@ -65,7 +65,7 @@ export interface PluginStepConfigProvider<TData extends StepData = StepData, TUi
 /**
  * Plugin step configuration
  */
-export interface StartBatchContext<TData extends StepData = StepData, TUiState = unknown> {
+export interface StartBuildContext<TData extends StepData = StepData, TUiState = unknown> {
   /**
    * Canonical node id if already persisted. Use this to start worker-side batch jobs.
    */
@@ -114,11 +114,11 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
       [fromStep: number, data: TData, uiState?: TUiState],
       boolean | Promise<boolean>
     >;
-    canStartBatch?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    canStartBuild?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
     canSave?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
     canProceedToNext?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
     canBackToPrevious?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
-    startBatch?: StartBatchCallback<TData, TUiState>;
+    startBuild?: StartBuildCallback<TData, TUiState>;
   };
 
   /** Whether step is optional */

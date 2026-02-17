@@ -77,7 +77,7 @@
     "warning": "Warning",
     "themeChangeRequested": "Theme change requested: {{theme}}",
     "basicInfo": {
-      "title": "Basic Information",
+      "title": "Info",
       "subtitle": "Enter a name and optional description.",
       "name": {
         "label": "Name",

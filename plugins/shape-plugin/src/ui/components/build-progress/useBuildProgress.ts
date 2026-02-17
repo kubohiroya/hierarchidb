@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { NodeType } from '@hierarchidb/core-types';
 import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
+import { usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
 import {
   toShapeProgress,
   toShapeStatus,
@@ -78,7 +78,7 @@ export function useBuildProgress(
     error,
     subscribe,
     unsubscribe,
-  } = usePluginBatchProgress<BuildProgress, BuildProgressStatus>(
+  } = usePluginBuildProgress<BuildProgress, BuildProgressStatus>(
     SHAPE_NODE_TYPE,
     nodeId,
     {

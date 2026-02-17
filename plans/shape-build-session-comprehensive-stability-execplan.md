@@ -17,13 +17,13 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 - [x] (2026-02-13 09:20 JST) Implemented broader first-task signal handling in `useShapeBuildStep.ts`.
 - [x] (2026-02-13 09:23 JST) Added/updated unit tests for first-task signal and flush fallback.
 - [x] (2026-02-13 11:20 JST) Added decision-function unit tests and stale-subscriber race tests; ran target shape-plugin tests (24 passed).
-- [ ] Run target package typecheck/build and collect evidence.
+- [x] (2026-02-17 16:22 JST) Ran target package typecheck/build and collected evidence in #340 logs.
 - [x] (2026-02-13 11:20 JST) Added integration harness around build start transition and first-task observation.
 - [x] (2026-02-13 12:00 JST) Validated Create Shape Step5 startup path with Chrome DevTools MCP (`localhost:4200`) and captured payload evidence.
 - [x] (2026-02-13 12:14 JST) Ran Playwright E2E with explicit auth seed (`E2E_AUTH_ACCESS_TOKEN`) and `/auth/verify` precheck; scenario passed without startup timeout.
 - [x] (2026-02-13 12:50 JST) Added `pnpm e2e:shape-startup` wrapper and local auth-seed file support (`e2e/.auth/auth.json`), including fail-fast checks for missing seed.
 - [x] (2026-02-13 15:20 JST) Added `task stream ready` gating so `awaiting-first-task` does not finalize on uninitialized `taskCount` (undefined), and updated unit/integration coverage.
-- [ ] Update this plan with final outcomes and retrospective.
+- [x] (2026-02-17 16:37 JST) Updated outcomes/retrospective and linked current runtime-worker state-transition docs.
 
 ## Surprises & Discoveries
 
@@ -56,6 +56,7 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 
 - Startup decision logic for `awaiting-first-task` is now testable as a pure function and covered by unit tests.
 - Subscription race cases (node mismatch and stale subscriber after node switch) are now covered by unit tests.
+- Build-session state transition contract is now maintained at `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md` with terminology SSOT in `packages/runtime-worker/docs/build-session-terminology-ssot.md`.
 - MCP real-browser verification on `localhost:4200` confirmed one run with no `awaiting-first-task` timeout:
   - `start session response` reported `running`.
   - `awaiting-first-task` finished with `success` (`completed-without-generating-tasks`, 48ms).
@@ -129,7 +130,7 @@ Current implementation files changed in this milestone:
 - `plugins/shape-plugin/src/ui/components/build-progress/awaitingFirstTaskSignal.ts`
 - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
 - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`
-- `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md`
+- `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
 
 ## Interfaces and Dependencies
 
@@ -137,7 +138,12 @@ Current implementation files changed in this milestone:
 
 Task flush scheduling in `useShapeBuildTaskSync.ts` now uses both frame and timer channels. Frame path remains primary for smooth batching; timer path guarantees forward progress when frame callbacks are unavailable.
 
+ Runtime/UI integration now follows build-first naming (`getBuildWorkerBridge`, `BuildWorkerAPI`) and uses canonical `Build*` APIs without runtime-level `Batch*` aliases.
+
 No external API contract changes are introduced in worker bridge or worker API.
 
 ---
 Revision note (2026-02-13, Codex): Created initial ExecPlan and synchronized it with the first implementation milestone (startup-signal broadening and flush fallback).
+Revision note (2026-02-17, Codex): Updated completion markers and aligned references with runtime-worker build-session docs and terminology SSOT.
+Revision note (2026-02-17, Codex): Removed shape build-step dependency on `session-coordinator` lock/broadcast heuristics for normal start/stop/progress flow.
+Revision note (2026-02-17, Codex): Synced state-transition and terminology documents to enforce canonical `Build*` naming; legacy runtime alias compatibility is no longer maintained.

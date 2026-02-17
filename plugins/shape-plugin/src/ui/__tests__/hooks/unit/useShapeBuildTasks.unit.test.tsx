@@ -3,13 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks.ts';
 
-const initializeMock = vi.fn<[], Promise<void>>();
-const subscribeMock = vi.fn<[
-  string,
-  string,
-  (event: BuildTaskUpdateEvent) => void
-], Promise<() => void>>();
-const getBuildTasksMock = vi.fn();
+const hoistedMocks = vi.hoisted(() => ({
+  initializeMock: vi.fn<[], Promise<void>>(),
+  subscribeMock: vi.fn<[
+    string,
+    string,
+    (event: BuildTaskUpdateEvent) => void
+  ], Promise<() => void>>(),
+  getBuildTasksMock: vi.fn(),
+}));
+
+const initializeMock = hoistedMocks.initializeMock;
+const subscribeMock = hoistedMocks.subscribeMock;
+const getBuildTasksMock = hoistedMocks.getBuildTasksMock;
 let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
 let consoleLogSpy: ReturnType<typeof vi.spyOn> | null = null;
 let consoleDebugSpy: ReturnType<typeof vi.spyOn> | null = null;
@@ -27,24 +33,34 @@ const setTaskSyncDebugConfig = (
   scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__ = config;
 };
 
-vi.mock('@hierarchidb/ui-worker-client', () => ({
-  getWorkerBridge: () => ({
-    initialize: initializeMock,
-    subscribeBuildTasks: subscribeMock.mockImplementation(async (_nodeType, _nodeId, cb) => {
-      subscriber = cb;
-      return () => {
+vi.mock('@hierarchidb/ui-worker-client', () => {
+  const getBridge = () => ({
+    initialize: (...args: Parameters<typeof hoistedMocks.initializeMock>) =>
+      hoistedMocks.initializeMock(...args),
+    subscribeBuildTasks: (...args: Parameters<typeof hoistedMocks.subscribeMock>) =>
+      hoistedMocks.subscribeMock(...args),
+    getBuildTasks: (...args: Parameters<typeof hoistedMocks.getBuildTasksMock>) =>
+      hoistedMocks.getBuildTasksMock(...args),
+  });
+  hoistedMocks.subscribeMock.mockImplementation(async (_nodeType, _nodeId, cb) => {
+    subscriber = cb;
+    return () => {
+      if (subscriber === cb) {
         subscriber = null;
-      };
-    }),
-    getBuildTasks: getBuildTasksMock,
-  }),
-}));
+      }
+    };
+  });
+  return {
+    getBuildWorkerBridge: () => getBridge(),
+  };
+});
 
 describe('useShapeBuildTasks', () => {
   beforeEach(() => {
     initializeMock.mockReset();
     subscribeMock.mockClear();
     getBuildTasksMock.mockReset();
+    getBuildTasksMock.mockResolvedValue([]);
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
     setTaskSyncDebugConfig(undefined);

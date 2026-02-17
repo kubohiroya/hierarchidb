@@ -59,7 +59,7 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
             prevGuardsRef.canSave === guards.canSave &&
             prevGuardsRef.canProceedNext === guards.canProceedNext &&
             prevGuardsRef.canGoBack === guards.canGoBack &&
-            prevGuardsRef.canStartBatch === guards.canStartBatch &&
+            prevGuardsRef.canStartBuild === guards.canStartBuild &&
             arraysEqual(prevGuardsRef.enabledSteps, guards.enabledSteps);
           if (sameFilled && sameGuards) return;
           prevFilledRef.length = filled.length;
@@ -70,7 +70,7 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
           prevGuardsRef.canSave = guards.canSave;
           prevGuardsRef.canProceedNext = guards.canProceedNext;
           prevGuardsRef.canGoBack = guards.canGoBack;
-          prevGuardsRef.canStartBatch = guards.canStartBatch;
+          prevGuardsRef.canStartBuild = guards.canStartBuild;
           setEvaluatedState({ filled, guards });
         }
       } catch (error) {

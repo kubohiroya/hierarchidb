@@ -15,7 +15,7 @@ import type {
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
-import { LocationBatchParametersStep } from '../../ui/components/steps/LocationBatchParametersStep.js';
+import { LocationBuildParametersStep } from '../../ui/components/steps/LocationBuildParametersStep.js';
 import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { runLocationTabularBuild } from '../../worker/tabular/task.js';
@@ -181,7 +181,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const dialogSizeRef = useRef<PluginDialogSize>(dialogViewState.size);
   const dialogPositionRef = useRef<PluginDialogPosition>(dialogViewState.position);
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
-  const [isBatchStarting, setIsBatchStarting] = useState(false);
+  const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
   const dialogData = useMemo<LocationDraft>(
@@ -225,14 +225,14 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     );
   }, [dialogData, updateMetadata, updatePayload]);
 
-  const handleStartBatch = useCallback(async () => {
-    if (isBatchStarting) return;
+  const handleStartBuild = useCallback(async () => {
+    if (isStartingBuild) return;
     const nodeId = dialogData.treeNodeId;
     if (!nodeId) {
-      notify.error('Save changes before starting a batch session.');
+      notify.error('Save changes before starting a build session.');
       return;
     }
-    setIsBatchStarting(true);
+    setIsStartingBuild(true);
     try {
       const pointsRaw = await listLocationPoints(nodeId);
       if (!pointsRaw.length) {
@@ -243,11 +243,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       notify.success('Build completed.');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      notify.error(`Failed to start batch session: ${message}`);
+      notify.error(`Failed to start build session: ${message}`);
     } finally {
-      setIsBatchStarting(false);
+      setIsStartingBuild(false);
     }
-  }, [dialogData, isBatchStarting]);
+  }, [dialogData, isStartingBuild]);
 
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(() => ([
     {
@@ -308,7 +308,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       id: 'batch-parameters',
       label: translations.panel.processingSettings,
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <LocationBatchParametersStep draft={data} onUpdate={onChange} />
+        <LocationBuildParametersStep draft={data} onUpdate={onChange} />
       ),
     },
     {
@@ -359,7 +359,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                   notify.error('No tabular source to build. Download/Upload first.');
                   return;
                 }
-                setIsBatchStarting(true);
+                setIsStartingBuild(true);
                 setBuildStatus('extracting');
                 try {
                   const filters = data.extractConfig?.filterRules ?? [];
@@ -380,7 +380,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                   notify.error(`Build failed: ${(err as Error).message}`);
                   setBuildStatus(null);
                 } finally {
-                  setIsBatchStarting(false);
+                  setIsStartingBuild(false);
                   setBuildStatus(null);
                 }
               }}
@@ -410,7 +410,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
 
-  const canStartBatch = Boolean(dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource);
+  const canStartBuild = Boolean(dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource);
 
   const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
     const viewport = getViewportSize();
@@ -527,7 +527,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const renderFooter: HeadlessDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
-    const startBatchLabel = 'Start Batch';
+    const startBuildLabel = 'Start Build';
 
     return (
       <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
@@ -549,12 +549,12 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
           <Button
             variant="outlined"
             color="secondary"
-            disabled={!canStartBatch || isBatchStarting}
+            disabled={!canStartBuild || isStartingBuild}
             onClick={() => {
-              void handleStartBatch();
+              void handleStartBuild();
             }}
           >
-            {isBatchStarting ? 'Starting…' : startBatchLabel}
+            {isStartingBuild ? 'Starting…' : startBuildLabel}
           </Button>
           <Button
             variant="contained"
@@ -567,10 +567,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       </Box>
     );
   }, [
-    canStartBatch,
+    canStartBuild,
     displayMode,
-    handleStartBatch,
-    isBatchStarting,
+    handleStartBuild,
+    isStartingBuild,
     transitionDisplayMode,
     translations.dialog.cancel,
     translations.dialog.displayFullscreen,

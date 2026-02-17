@@ -1,22 +1,22 @@
-import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
-import type { BatchProgressEvent } from '@hierarchidb/batch-api';
+import { AbstractBuildSession } from '@hierarchidb/batch';
+import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
+import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
 import { updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
-export type RouteBatchTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type RouteBatchTaskType = 'location_resolution' | 'route_generation' | 'validation' | 'optimization';
+export type RouteBuildTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type RouteBuildTaskType = 'location_resolution' | 'route_generation' | 'validation' | 'optimization';
 
-export type RouteBatchTask = {
+export type RouteBuildTask = {
   taskId: string;
   treeNodeId: NodeId;
   nodeId: NodeId;
-  taskType: RouteBatchTaskType;
+  taskType: RouteBuildTaskType;
   stage: string;
-  status: RouteBatchTaskStatus;
+  status: RouteBuildTaskStatus;
   index: number;
   routeData?: {
     startLocationId?: NodeId;
@@ -29,7 +29,7 @@ export type RouteBatchTask = {
   error?: string;
 };
 
-export type RouteBatchSessionDeps = {
+export type RouteBuildSessionDeps = {
   generator?: { generate: (points: [number, number][], config: RouteGenerationConfig) => Promise<unknown> };
   taskQueue?: VtTaskQueueDb;
 };
@@ -48,12 +48,12 @@ const DEFAULT_LANE_CAPS: Record<string, number> = {
   custom: 8,
 };
 
-export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
-  private readonly tasks: RouteBatchTask[];
-  private readonly generator: RouteBatchSessionDeps['generator'];
+export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
+  private readonly tasks: RouteBuildTask[];
+  private readonly generator: RouteBuildSessionDeps['generator'];
   private readonly taskQueue?: VtTaskQueueDb;
 
-  constructor(nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], deps?: RouteBatchSessionDeps) {
+  constructor(nodeId: NodeId, config: RouteBuildConfig, tasks: RouteBuildTask[], deps?: RouteBuildSessionDeps) {
     super(nodeId, config);
     this.tasks = tasks;
     this.generator = deps?.generator ?? new RouteGenerator();
@@ -61,7 +61,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   }
 
   protected async processBatch(signal: AbortSignal): Promise<void> {
-    if (signal.aborted) throw abortError('Route batch aborted');
+    if (signal.aborted) throw abortError('Route build aborted');
 
     const total = this.tasks.length;
     let completed = 0;
@@ -106,15 +106,15 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     }
 
     if (failed > 0) {
-      throw new Error('Route batch completed with failures');
+      throw new Error('Route build completed with failures');
     }
   }
 
-  protected onBatchProgressEvent(_event: BatchProgressEvent): void {
+  protected onBuildProgressEvent(_event: BuildProgressEvent): void {
   }
 
   private async runWithGates(
-    task: RouteBatchTask,
+    task: RouteBuildTask,
     signal: AbortSignal,
     globalGate: LaneGate,
     laneGates: Map<string, LaneGate>,
@@ -132,8 +132,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     }
   }
 
-  private async runTask(task: RouteBatchTask, signal: AbortSignal, work: () => Promise<void>): Promise<void> {
-    if (signal.aborted) throw abortError('Route batch aborted');
+  private async runTask(task: RouteBuildTask, signal: AbortSignal, work: () => Promise<void>): Promise<void> {
+    if (signal.aborted) throw abortError('Route build aborted');
     task.status = 'processing';
     await this.updateTaskQueue(task, { status: 'running', startedAt: Date.now(), progress: 0 });
     this.updateProgress({ total: this.tasks.length }, task.stage);
@@ -149,12 +149,12 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     }
   }
 
-  private async runRouteTask(task: RouteBatchTask, method: RouteGenerationMethod, signal: AbortSignal): Promise<void> {
-    if (signal.aborted) throw abortError('Route batch aborted');
+  private async runRouteTask(task: RouteBuildTask, method: RouteGenerationMethod, signal: AbortSignal): Promise<void> {
+    if (signal.aborted) throw abortError('Route build aborted');
     const start = task.routeData?.startCoordinates;
     const end = task.routeData?.endCoordinates;
     if (!start || !end) {
-      throw new Error('Route batch task missing coordinates');
+      throw new Error('Route build task missing coordinates');
     }
     const config: RouteGenerationConfig = {
       method,
@@ -163,12 +163,12 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     await this.generator?.generate([start, end], config);
   }
 
-  private async updateTaskQueue(task: RouteBatchTask, updates: Partial<TaskQueueRecord>): Promise<void> {
+  private async updateTaskQueue(task: RouteBuildTask, updates: Partial<TaskQueueRecord>): Promise<void> {
     if (!this.taskQueue) return;
     await updateTask(this.taskQueue, task.taskId, updates);
   }
 
-  private bumpCounts(task: RouteBatchTask, completed: number, failed: number): { completed: number; failed: number } {
+  private bumpCounts(task: RouteBuildTask, completed: number, failed: number): { completed: number; failed: number } {
     if (task.status === 'completed') {
       return { completed: completed + 1, failed };
     }
@@ -207,7 +207,7 @@ function release(gate: LaneGate): void {
 function getLaneGate(
   lanes: Map<string, LaneGate>,
   method: RouteGenerationMethod,
-  overrides: RouteBatchConfig['laneCaps'] | undefined,
+  overrides: RouteBuildConfig['laneCaps'] | undefined,
 ): LaneGate {
   const key = method ?? 'direct';
   const existing = lanes.get(key);

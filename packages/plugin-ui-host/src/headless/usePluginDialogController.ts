@@ -537,7 +537,7 @@ export function usePluginDialogController(
     setDraftData: (next) => setLocalDraftData('stepAdapter', next),
     handleBasicInfoBridge,
     dialogRef,
-    basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
+    basicInfoLabel: t('common.basicInfo.title', 'Info'),
     onTagClick: handleTagNavigate,
   });
 
@@ -720,13 +720,13 @@ export function usePluginDialogController(
   ]);
 
   const canSaveCurrent = evaluatedState.guards.canSave || dialogDirty;
-  const canStartBatch = evaluatedState.guards.canStartBatch;
-  const activeStartBatch = activeStepConfig?.capabilities?.startBatch;
+  const canStartBuild = evaluatedState.guards.canStartBuild;
+  const activeStartBuild = activeStepConfig?.capabilities?.startBuild;
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder';
   const { pendingAction, pendingActionRef, runWithPending } = usePendingAction(open);
-  const [isStartingBatch, setIsStartingBatch] = useState(false);
+  const [isStartingBuild, setIsStartingBuild] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const dialogDirtyRef = useRef(dialogDirty);
   useEffect(() => {
@@ -745,7 +745,7 @@ export function usePluginDialogController(
     runWithPendingRef.current = runWithPending;
   }, [runWithPending]);
   const saveDraftHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const startBatchHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const startBuildHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
 
 
@@ -978,13 +978,13 @@ export function usePluginDialogController(
     saveDraftHandlerRef.current = handleSaveDraft;
   }, [handleSaveDraft]);
 
-  const handleStartBatch = useCallback(async () => {
-    if (!activeStartBatch) return;
+  const handleStartBuild = useCallback(async () => {
+    if (!activeStartBuild) return;
     if (pendingActionRef.current) return;
-    setIsStartingBatch(true);
+      setIsStartingBuild(true);
     try {
       await Promise.resolve(
-        activeStartBatch(dialogData, {
+        activeStartBuild(dialogData, {
           nodeId: nodeId as string | undefined,
           parentId: pageNodeId as string | undefined,
           treeId,
@@ -993,14 +993,14 @@ export function usePluginDialogController(
         })
       );
     } catch (err) {
-      console.error('[PluginDialogShell] start batch failed', err);
+      console.error('[PluginDialogShell] start build failed', err);
     } finally {
-      setIsStartingBatch(false);
+      setIsStartingBuild(false);
     }
-  }, [activeStartBatch, dialogData, nodeId, pageNodeId, pendingActionRef, stepMode, treeId]);
+  }, [activeStartBuild, dialogData, nodeId, pageNodeId, pendingActionRef, stepMode, treeId]);
   useEffect(() => {
-    startBatchHandlerRef.current = handleStartBatch;
-  }, [handleStartBatch]);
+    startBuildHandlerRef.current = handleStartBuild;
+  }, [handleStartBuild]);
 
   const autoBuildStartedRef = useRef(false);
   const autoBuildCompleteRef = useRef(false);
@@ -1010,11 +1010,11 @@ export function usePluginDialogController(
   }, []);
   useEffect(() => {
     if (!autoBuildEnabled || !open) return;
-    if (!activeStartBatch || !canStartBatch) return;
+    if (!activeStartBuild || !canStartBuild) return;
     if (autoBuildStartedRef.current) return;
     autoBuildStartedRef.current = true;
-    handleStartBatch().catch(() => void 0);
-  }, [autoBuildEnabled, open, activeStartBatch, canStartBatch, handleStartBatch]);
+    handleStartBuild().catch(() => void 0);
+  }, [autoBuildEnabled, open, activeStartBuild, canStartBuild, handleStartBuild]);
 
   const HeaderComponent = useMemo<
     HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']
@@ -1057,9 +1057,9 @@ export function usePluginDialogController(
     canCommit: canSaveCurrent,
     onSaveDraft: undefined,
     disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
-    onStartBatch: undefined,
-    canStartBatch: canStartBatch && !isStartingBatch,
-    isStartingBatch,
+    onStartBuild: undefined,
+    canStartBuild: canStartBuild && !isStartingBuild,
+    isStartingBuild,
     primaryButtonOptions: footerPrimaryButtons,
     saveDraftLabel: footerSaveDraftLabel,
     pendingAction,
@@ -1070,8 +1070,8 @@ export function usePluginDialogController(
       fn().catch(() => void 0);
     }
   }, []);
-  const stableOnStartBatch = useCallback(() => {
-    const fn = startBatchHandlerRef.current;
+  const stableOnStartBuild = useCallback(() => {
+    const fn = startBuildHandlerRef.current;
     if (fn) {
       fn().catch(() => void 0);
     }
@@ -1081,9 +1081,9 @@ export function usePluginDialogController(
     canCommit: canSaveCurrent,
     onSaveDraft: disableDraftButton || autosaveEnabled ? undefined : stableOnSaveDraft,
     disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
-    onStartBatch: activeStartBatch ? stableOnStartBatch : undefined,
-    canStartBatch: canStartBatch && !isStartingBatch,
-    isStartingBatch,
+    onStartBuild: activeStartBuild ? stableOnStartBuild : undefined,
+    canStartBuild: canStartBuild && !isStartingBuild,
+    isStartingBuild,
     primaryButtonOptions: footerPrimaryButtons,
     saveDraftLabel: footerSaveDraftLabel,
     pendingAction,
@@ -1095,12 +1095,12 @@ export function usePluginDialogController(
   useEffect(() => {
     if (!autoBuildEnabled || !open) return;
     if (autoBuildCompleteRef.current) return;
-    const requiresStartBatch = Boolean(activeStartBatch);
-    if (requiresStartBatch && !autoBuildStartedRef.current) return;
+    const requiresStartBuild = Boolean(activeStartBuild);
+    if (requiresStartBuild && !autoBuildStartedRef.current) return;
     if (!isAutoBuildComplete(dialogData)) return;
     autoBuildCompleteRef.current = true;
     autoBuild?.onComplete?.();
-  }, [activeStartBatch, autoBuild, autoBuildEnabled, dialogData, isAutoBuildComplete, open]);
+  }, [activeStartBuild, autoBuild, autoBuildEnabled, dialogData, isAutoBuildComplete, open]);
 
   const persistDialogUIState = useCallback(async () => {
     if (typeof window !== 'undefined' && dialogWindowPersistTimerRef.current !== null) {

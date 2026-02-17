@@ -60,7 +60,7 @@ type LocationPoint = GroupEntity<string> & {
 - 生成されたタイルは将来導入予定の `vectorTiles` テーブルやオブジェクトストレージに保存する。
 
 ### 5. 進捗監視と通知
-- `UnifiedLocationBatchManager` + `WorkerBridge` を用い、`prepareSession → startBatchSession → onBatchProgress` の流れを確立する。
+- `UnifiedLocationBatchManager` + `WorkerBridge` を用い、`prepareSession → startBuildSession → onBuildProgress` の流れを確立する。
 - `useLocationProgress` フックで進捗イベント（download / parse / persist / tiles / completed）を購読し、ダイアログや通知センターへ表示する。
 - 認証失敗や通信エラーが発生した場合は、Shape Plugin の通知設計を踏襲し、中断・再試行・キャンセルを制御する。
 
@@ -82,12 +82,12 @@ UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせ�
    - 一時ストア（EphemeralLocationDB など）へ `points`・`settings`・`config` を保存する。
    - TTL によるクリーンアップを実装し、テストでは `storedAt` を偽装して削除されることを確認する。
 
-2. **startBatchSession（将来案）**
+2. **startBuildSession（将来案）**
    - 一時ストアからデータを取り出し、`sessions` に `status=running`・`totalPoints`・`zoomMin/zoomMax` を記録する。
    - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationDB.features` に書き込まれるレコード数をアサートする。
 
 3. **progress / completion**
-   - `onBatchProgress` で `sessions.progress` と `status` が更新され、完了時は `completed`、失敗時は `failed` となる。
+   - `onBuildProgress` で `sessions.progress` と `status` が更新され、完了時は `completed`、失敗時は `failed` となる。
    - Dexie の値を読み出して検証するユニットテストを用意する。
 
 4. **resume / pause / cancel**

@@ -13,7 +13,7 @@
       "label": "ライセンス同意"
     },
     "processing": {
-      "label": "ビルド設定"
+      "label": "Config"
     },
     "countrySelection": {
       "label": "国選択"
@@ -69,12 +69,86 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
-      "filteringTitle": "Fetchステージのフィルタリング",
-      "filteringHelp": "Fetchステージ終盤のフィルタリングに適用されます。"
+      "geometryIntakeGuard": {
+        "title": "Fetch Geometry Intake Guard",
+        "description": "Transform 前に取得済みジオメトリを正規化・検証し、不安定な簡略化アーティファクトを抑制します。",
+        "validationLevel": "検証レベル",
+        "level": {
+          "off": "off",
+          "basic": "basic",
+          "strict": "strict"
+        },
+        "dedupeEpsilon": "重複頂点の許容誤差",
+        "minRingAreaThreshold": "最小リング面積しきい値",
+        "normalizeRingOrientation": "リング向きを正規化",
+        "keepBaselineSnapshot": "異常スコア計算用のベースラインを保持"
+      },
+      "invalidGeometryFilter": {
+        "title": "不正な形状のフィルタリング",
+        "description": "小さな形状のフィルタリング後に、追加の不正形状チェックを実行します。",
+        "area": "面積",
+        "lineLength": "線長",
+        "maxEdgeLength": "最大辺長",
+        "selfIntersection": "自己交差",
+        "triangleRingRatio": "三角形リング比率"
+      }
     },
     "transform": {
       "title": "Transform",
-      "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。"
+      "summaryHelpTurf": "Transform は設定した tolerance を使って turf.simplify を実行します。",
+      "summaryHelpTopojson": "Transform はデコード時に topology-preserving な topojson 簡略化を適用し、simplify ステージで geojson 簡略化をスキップします。",
+      "summaryHelpGeojson": "Transform は先にジオメトリをデコードし、その後に設定した tolerance で geojson 簡略化を実行します。",
+      "simplifyTolerance": {
+        "label": "簡略化 tolerance"
+      },
+      "retryToleranceStep": {
+        "label": "リトライ時 tolerance 増分"
+      },
+      "algorithm": {
+        "label": "簡略化アルゴリズム",
+        "topojson": "topojson（トポロジー保持）",
+        "geojson": "geojson（turf simplify）"
+      },
+      "preserveTopology": {
+        "label": "トポロジーを保持",
+        "topojsonHint": "topojson モードではデコード簡略化経路で常にトポロジーが保持されます。"
+      },
+      "executionLogLevel": {
+        "label": "実行ログレベル",
+        "off": "off",
+        "summary": "summary",
+        "verbose": "verbose"
+      },
+      "anomaly": {
+        "title": "異常検出",
+        "enabled": "異常検出を有効化",
+        "scoreThreshold": "異常スコア閾値",
+        "maxEdgeLengthRatio": "最大辺長比",
+        "maxAreaDriftPercent": "最大面積差分 (%)",
+        "maxSelfIntersectionCount": "自己交差の許容数",
+        "maxLineLengthDriftPercent": "最大線長差分 (%)",
+        "maxVertexDriftPercent": "最大頂点数差分 (%)",
+        "geojson": {
+          "caption": "GeoJSON 経路では、ポリゴンBBoxに対する三角形辺長の変動を監視します。",
+          "maxTriangleShareDriftPercent": "最大三角形シェア差分 (%)",
+          "maxTriangleEdgeToBBoxRatio": "最大三角形辺長/BBox比"
+        },
+        "topojson": {
+          "caption": "TopoJSON 経路では、トポロジー参照の共有弧連続性を診断します。",
+          "minSharedArcRatioPercent": "最小共有弧比率 (%)"
+        },
+        "retry": {
+          "enabled": "自動リトライを有効化",
+          "maxRetries": "最大リトライ回数",
+          "toleranceScale": "リトライ時の tolerance 係数",
+          "fallbackMode": "フォールバックモード",
+          "fallback": {
+            "bestScore": "最良の異常スコアを採用",
+            "switchAlgorithm": "アルゴリズム切り替えを試行",
+            "disableSimplify": "当該タスクの簡略化を無効化"
+          }
+        }
+      }
     },
     "transformByZoom": {
       "title": "Transform by zoom"
@@ -167,10 +241,6 @@
       "excludePolygonAreaCoefficient": "除外ポリゴン面積係数",
       "excludePolygonAreaCoefficientHelp": "Fetch フィルタで、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
       "omitDetailsTitle": "小さな形状のフィルタリング（島・飛地）",
-      "omitDetailsHelp": "ズームごとのBBox/面積しきい値で小さな形状を除外します。",
-      "omitDetailsClarityNote": "低は詳細を保持、高は強めに除外します。",
-      "omitDetailsPreviewTitle": "フィルタリングのプレビュー",
-      "omitDetailsPreviewHelp": "レベルを選ぶと小島の消え方が変わります。",
       "omitDetailsLevelWeak": "低（高精度）",
       "omitDetailsLevelMedium": "中（バランス）",
       "omitDetailsLevelStrong": "高（低精度）",
@@ -386,11 +456,19 @@
       "fetchCacheStart": "キャッシュ取得を開始",
       "fetchCacheDone": "キャッシュ取得完了",
       "decodeStart": "デコード開始",
-      "decodeDone": "デコード完了",
+      "decodeProgress": "デコード中... {{elapsedSeconds}}秒",
+      "decodeDone": "デコード完了（次処理へ）",
+      "recyclingFilterStart": "リサイクル対象フィルタ開始",
+      "recyclingFilterDone": "リサイクル対象フィルタ完了",
       "filteringStart": "フィルタ開始",
       "filteringDone": "フィルタ完了",
+      "baselineMetricsStart": "ベースライン指標集計開始",
+      "baselineMetricsProgress": "ベースライン指標集計中... {{processed}}/{{total}} フィーチャー ({{elapsedSeconds}}秒)",
+      "baselineMetricsDone": "ベースライン指標集計完了",
       "prepareCountsStart": "入力集計開始",
       "prepareCountsDone": "入力集計完了",
+      "simplifyAttempt": "簡略化 試行{{attempt}} (tolerance={{tolerance}})",
+      "retrySimplifyFeature": "再簡略化 フィーチャー {{featureIndex}} / {{featureTotal}}: 試行 {{attempt}} / {{attemptTotal}} (tolerance={{tolerance}})",
       "simplifyStart": "簡略化開始",
       "simplifyDone": "簡略化完了",
       "simplifyPreprocessStart": "前処理開始",
@@ -404,8 +482,13 @@
       "outputCountsStart": "出力集計開始",
       "encodeStart": "エンコード開始",
       "encodeDone": "エンコード完了",
+      "transformCacheEncodeStart": "Transform キャッシュの FlatGeobuf エンコード開始",
+      "transformCacheEncodeDone": "Transform キャッシュの FlatGeobuf エンコード完了",
       "cachePutStart": "キャッシュ保存開始",
       "cachePutDone": "キャッシュ保存完了"
+    },
+    "taskWarning": {
+      "cachePutSlow": "キャッシュ書き込みが遅延しています（{{elapsedSeconds}}秒）。ビルドは継続します。"
     }
   },
   "build": {

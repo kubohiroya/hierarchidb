@@ -82,7 +82,7 @@ describe('runShapeFetchStage message', () => {
 
   afterEach(async () => {
     if (!db) return;
-    await db.delete();
+    await db.tasks.clear();
     db = null;
   });
 

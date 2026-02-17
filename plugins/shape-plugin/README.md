@@ -91,8 +91,8 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 
 ## Batch execution design (2025-12 WIP)
-- Entry (UI Build Progress): call worker API `startBatchSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
-- Worker API: expose `startBatchSession`, `pauseSession`, `resumeSession`, `cancelSession`, `subscribe(sessionId, cb)`; bridge ProgressInfo to UI.
+- Entry (UI Build Progress): call worker API `startBuildSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
+- Worker API: expose `startBuildSession`, `pauseBuildSession`, `resumeBuildSession`, `cancelQueuedBuildSession`, `subscribeBuildProgress`; bridge ProgressInfo to UI.
 - Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
 - Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):
   - `sessions` (state/config), `rawBuffers` (downloaded), `extractedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
@@ -101,4 +101,4 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
   - Extract workers: read `rawBuffers`, write `extractedBuffers` (stage1/2) via runtime worker client `extractStage1/2`.
   - Tile worker: read `extractedBuffers`, generate MVT -> write `vectorTiles`.
 - Progress: aggregated in UnifiedShapeBatchManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
-- UI controls: Start -> `startBatchSession`, Pause/Resume -> `pauseSession`/`resumeSession`, Cancel -> `cancelSession`; BuildStep reflects progress stream.
+- UI controls: Start -> `startBuildSession`, Pause/Resume -> `pauseBuildSession`/`resumeBuildSession`, Cancel -> `cancelQueuedBuildSession`; BuildStep reflects progress stream.

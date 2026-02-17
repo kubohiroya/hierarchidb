@@ -1,10 +1,7 @@
-/**
- * Unified progress event types for batch processing.
+/** 
+ * Unified progress event types for build processing.
  */
-/** @deprecated Use BuildStage. */
-export type BatchStage = 'fetch' | 'transform' | 'vt' | 'completed' | string;
-/** Preferred alias for BatchStage. */
-export type BuildStage = BatchStage;
+export type BuildStage = 'fetch' | 'transform' | 'vt' | 'completed' | string;
 
 export type BuildContinuationPolicy =
   | 'finish_all_stages'

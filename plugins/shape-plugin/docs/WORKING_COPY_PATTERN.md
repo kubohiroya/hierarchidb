@@ -55,7 +55,7 @@ interface ShapeEntity {
 }
 ```
 
-※ DownloadTaskPayload は UI 側で生成し、`startBatchProcess` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
+※ DownloadTaskPayload は UI 側で生成し、`startBuildSession` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
 
 #### 2. ShapeDraft (EphemeralDB)
 編集中の一時データ：
@@ -299,7 +299,7 @@ export class ShapeEntityHandler {
 ```typescript
 // packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeDraft.ts
 
-// NOTE: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead.
+// NOTE: `useShapeAPI` has been removed. Use `getBuildWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and build-control APIs instead.
 
 export function useShapeDraft(
   nodeId: NodeId | null,
@@ -548,7 +548,7 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 function ShapeBuildStep({ data, onChange }: Props) {
   const api = useShapeAPI();
 
-  const startBatchProcess = async () => {
+  const startBuildSession = async () => {
     try {
       const nodeId = data?.nodeId;
       if (!nodeId) return;
@@ -557,16 +557,16 @@ function ShapeBuildStep({ data, onChange }: Props) {
         data?.batchConfig?.dataSource ?? data?.dataSourceName ?? 'gadm',
         data?.selectedArrayByCountries,
       );
-      const session = await api.startBatchProcess(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
+      const session = await api.startBuildSession(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
 
       onChange({ batchSessionId: session.sessionId });
     } catch (error) {
-      console.error('Failed to start batch processing:', error);
+      console.error('Failed to start build processing:', error);
     }
   };
 
   return (
-    <BuildStep onResume={startBatchProcess} />
+    <BuildStep onResume={startBuildSession} />
   );
 }
 ```
@@ -808,4 +808,4 @@ Working Copy Patternは、Shape Pluginにおいて以下の利点を提供しま
 - [HierarchiDB Architecture](../../../docs/ARCHITECTURE.md)
 - [Entity Handler Pattern](../../../docs/ENTITY_HANDLER.md)
 - [Batch Processing](./BATCH_PROCESSING_NOTIFICATION.md)
-- [Dialog Flow](./DIALOG_FLOW_AND_STATE_TRANSITIONS.md)
+- [Dialog Flow](../../../packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md)

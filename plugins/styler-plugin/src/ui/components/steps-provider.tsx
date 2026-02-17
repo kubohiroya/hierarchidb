@@ -128,7 +128,7 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-scaling',
-        label: t('steps.styleAlgorithm.label', 'Algorithm'),
+        label: t('steps.styleAlgorithm.label', 'Palette'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerAlgorithmStep2 {...p} />,
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
