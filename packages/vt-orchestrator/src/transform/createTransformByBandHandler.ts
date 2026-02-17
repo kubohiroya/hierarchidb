@@ -1326,7 +1326,6 @@ export const createTransformByBandHandler = (
     ephemeralDB,
     fetchConfig,
     transformConfig,
-    vtConfig,
     bands,
     abortSignal,
     featureIdAllowlist,
@@ -1625,25 +1624,6 @@ export const createTransformByBandHandler = (
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   const preserveTopology = transformConfig.preserveTopology ?? true;
   const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
-  const anomalyDetectionConfig = {
-    enabled: transformConfig.anomalyDetection?.enabled ?? false,
-    scoreThreshold: transformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
-    maxEdgeLengthRatio: transformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
-    maxAreaDriftPercent: transformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
-    maxSelfIntersectionCount: transformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
-    maxLineLengthDriftPercent: transformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
-    maxVertexDriftPercent: transformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
-    geojson: {
-      maxTriangleShareDriftPercent:
-        transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
-      maxTriangleEdgeToBBoxRatio:
-        transformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
-    },
-    topojson: {
-      minSharedArcRatioPercent:
-        transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
-    },
-  };
   const intakeGuardConfig = {
     validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
     dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
@@ -1651,7 +1631,6 @@ export const createTransformByBandHandler = (
     normalizeRingOrientation: fetchConfig.geometryIntakeGuard?.normalizeRingOrientation ?? false,
     keepBaselineSnapshot: fetchConfig.geometryIntakeGuard?.keepBaselineSnapshot ?? false,
   } as const;
-  const vtOutputQualityGuard = vtConfig.outputQualityGuard;
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
   }
@@ -1721,8 +1700,6 @@ export const createTransformByBandHandler = (
       preserveTopology,
       tolerance,
       fetchIntakeGuard: intakeGuardConfig,
-      anomalyDetection: anomalyDetectionConfig,
-      vtOutputQualityGuard: vtOutputQualityGuard ?? null,
     });
 
     let workingCollection: FeatureCollection | null = null;
@@ -1978,16 +1955,6 @@ export const createTransformByBandHandler = (
       }
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       const shouldCollectBaselineMetrics = false;
-      if (anomalyDetectionConfig.enabled || Boolean(vtOutputQualityGuard?.enabled)) {
-        emitTransformTrace(traceLogLevel, 'summary', 'baseline-metrics-skipped', {
-          sessionId: String(task.nodeId),
-          taskId,
-          stage: 'prepare',
-          reason: 'moved-to-fetch-stage',
-          anomalyDetectionEnabled: anomalyDetectionConfig.enabled,
-          vtOutputQualityGuardEnabled: Boolean(vtOutputQualityGuard?.enabled),
-        });
-      }
       if (shouldCollectBaselineMetrics) {
         // Reserved for future: consume fetch-stage precomputed baseline metrics only.
       }
@@ -2130,38 +2097,6 @@ export const createTransformByBandHandler = (
             getLastProgressAt: () => Date.now(),
           });
           processedPolygonCount = inputPolygonCount;
-        }
-        if (simplified && baselineMetrics && anomalyDetectionConfig.enabled && intakeGuardConfig.keepBaselineSnapshot) {
-          const outputMetrics = collectCollectionAnomalyMetrics(simplified, geometryOps);
-          const outputAssessment = assessAnomalyRisk({
-            profile: anomalyProfile,
-            baseline: baselineMetrics as CollectionAnomalyMetrics,
-            candidate: outputMetrics,
-            thresholds: anomalyDetectionConfig,
-            diagnostics: {
-              topoSharedArcRatioPercent: simplifyAlgorithm === 'topojson'
-                ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
-                : null,
-            },
-          });
-          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-assessment', {
-            sessionId: String(task.nodeId),
-            taskId,
-            stage: 'simplify',
-            profile: anomalyProfile,
-            tolerance,
-            score: outputAssessment.score,
-            scoreThreshold: outputAssessment.scoreThreshold,
-            reasons: outputAssessment.reasons,
-            isAnomalous: outputAssessment.isAnomalous,
-          });
-        } else if (anomalyDetectionConfig.enabled && !intakeGuardConfig.keepBaselineSnapshot) {
-          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-skipped', {
-            sessionId: String(task.nodeId),
-            taskId,
-            stage: 'simplify',
-            reason: 'baseline snapshot disabled',
-          });
         }
         logDebugPhase('simplify:done', {
           featureCount: simplified?.features.length ?? 0,
