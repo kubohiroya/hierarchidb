@@ -96,15 +96,12 @@ export type SelfIntersectionTuningConfig = {
 
 export type GeometryEngine = 'turf';
 export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
-export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
   geometryEngine?: GeometryEngine;
   simplifyAlgorithm?: TransformSimplifyAlgorithm;
-  preserveTopology?: boolean;
-  executionLogLevel?: TransformExecutionLogLevel;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
   minVertexCountForAreaFilter: number;

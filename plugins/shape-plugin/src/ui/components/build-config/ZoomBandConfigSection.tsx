@@ -1,5 +1,4 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
-import { Search as SearchIcon } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -22,7 +21,6 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
     <SharedZoomBandConfigSection
       t={t}
       boundaries={baseTransformConfig.zoomBandBoundaries}
-      summaryIcon={<SearchIcon color="primary" />}
       onBoundariesChange={(zoomBandBoundaries: number[]) =>
         update({
           transformConfig: {

@@ -372,30 +372,6 @@ export function mergeBuildConfig(
     ? {
       ...base.transformConfig,
       ...bandOverrides,
-      anomalyDetection: bandOverrides.anomalyDetection
-        ? {
-          ...(base.transformConfig.anomalyDetection ?? {}),
-          ...bandOverrides.anomalyDetection,
-          geojson: bandOverrides.anomalyDetection.geojson
-            ? {
-              ...(base.transformConfig.anomalyDetection?.geojson ?? {}),
-              ...bandOverrides.anomalyDetection.geojson,
-            }
-            : base.transformConfig.anomalyDetection?.geojson,
-          topojson: bandOverrides.anomalyDetection.topojson
-            ? {
-              ...(base.transformConfig.anomalyDetection?.topojson ?? {}),
-              ...bandOverrides.anomalyDetection.topojson,
-            }
-            : base.transformConfig.anomalyDetection?.topojson,
-        }
-        : base.transformConfig.anomalyDetection,
-      anomalyRetry: bandOverrides.anomalyRetry
-        ? {
-          ...(base.transformConfig.anomalyRetry ?? {}),
-          ...bandOverrides.anomalyRetry,
-        }
-        : base.transformConfig.anomalyRetry,
       hybridFilterConfig: bandOverrides.hybridFilterConfig
         ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
         : base.transformConfig.hybridFilterConfig,
@@ -410,16 +386,7 @@ export function mergeBuildConfig(
     : base.transformConfig;
 
   const vtConfig = overrides.vtConfig
-    ? {
-      ...base.vtConfig,
-      ...overrides.vtConfig,
-      outputQualityGuard: overrides.vtConfig.outputQualityGuard
-        ? {
-          ...(base.vtConfig.outputQualityGuard ?? {}),
-          ...overrides.vtConfig.outputQualityGuard,
-        }
-        : base.vtConfig.outputQualityGuard,
-    }
+    ? { ...base.vtConfig, ...overrides.vtConfig }
     : base.vtConfig;
 
   const cleanupConfig = overrides.cleanupConfig

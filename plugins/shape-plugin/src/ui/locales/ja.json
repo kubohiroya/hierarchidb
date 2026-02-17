@@ -158,36 +158,8 @@
       "body": "現在ビルドセッションが実行中です。進捗を確認するにはビルド画面を開いてください。",
       "action": "ビルド画面を開く"
     },
-    "heap": {
-      "warning": "JSヒープ使用率が高くなっています（{{ratio}}% / {{used}}MB / {{limit}}MB）。同時実行数を下げることを検討してください。"
-    },
     "vt": {
-      "title": "VT 生成",
-      "outputQualityGuard": {
-        "title": "Tile Output Quality Guard",
-        "description": "VT ステージで不安定なタイル出力範囲を検知し、異常時の処理を選択します。",
-        "enabled": "タイル品質ガードを有効化",
-        "zoomRange": "ズーム範囲",
-        "zoomRangeValue": "z{{min}} - z{{max}}",
-        "minZoom": "最小ズーム",
-        "maxZoom": "最大ズーム",
-        "actionOnAnomaly": "異常検知時の挙動",
-        "action": {
-          "markWarning": "警告として記録",
-          "fallback": "簡略化を弱めて再試行",
-          "dropTile": "タイルを破棄"
-        },
-        "enablePreviewOverlay": "プレビューで警告オーバーレイを表示",
-        "thresholds": {
-          "title": "異常判定の閾値",
-          "scoreThreshold": "スコア閾値",
-          "minTriangleAngleDeg": "鋭角上限 (度)",
-          "minEdgeToBaseRatio": "辺/底辺 比の下限",
-          "maxAreaToBBoxRatio": "面積/BBox比の上限",
-          "minSpanRatio": "最小スパン比",
-          "minBoundaryVertexCount": "境界頂点数の下限"
-        }
-      }
+      "title": "VT 生成"
     },
     "download": {
       "title": "Fetchステージ設定",
@@ -425,7 +397,6 @@
         "polygonCount": "ポリゴン数",
         "status": "状態",
         "errorCount": "エラー数",
-        "repairCount": "修復数",
         "errorMessage": "エラーメッセージ",
         "bbox": "バウンディングボックス",
         "area": "面積",

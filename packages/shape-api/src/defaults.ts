@@ -24,8 +24,6 @@ export const DEFAULT_BUILD_CONFIG = {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     geometryEngine: 'turf',
     simplifyAlgorithm: 'topojson',
-    preserveTopology: true,
-    executionLogLevel: 'summary',
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,

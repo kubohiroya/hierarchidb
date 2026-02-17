@@ -11,7 +11,6 @@ import {
   Select,
   Slider,
   Stack,
-  Switch,
   TextField,
   Typography,
   Tooltip,
@@ -54,21 +53,12 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
       'processing.transform.summaryHelpTopojson',
-      'Transform uses topology-preserving topojson simplify during decode and skips geojson simplify in the simplify stage.',
+      'Transform uses topojson simplify first, then runs topology repair checks.',
     )
     : t(
       'processing.transform.summaryHelpGeojson',
-      'Transform decodes geometry first, then runs geojson simplify with the configured tolerance.',
+      'Transform runs turf.simplify with the configured tolerance.',
     );
-
-  const updateTransformConfig = (partial: Partial<typeof baseTransformConfig>) => {
-    update({
-      transformConfig: {
-        ...baseTransformConfig,
-        ...partial,
-      },
-    });
-  };
 
   return (
     <Accordion defaultExpanded>

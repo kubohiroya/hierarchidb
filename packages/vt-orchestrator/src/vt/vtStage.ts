@@ -9,7 +9,6 @@ import type {
   Point,
   Polygon,
 } from 'geojson';
-import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
@@ -563,8 +562,6 @@ const countTileLineStrings = (geometry: unknown): number => {
   return geometry.length;
 };
 
-
-
 const buildBufferSetHash = (bufferIds: string[]): string => {
   const sorted = [...bufferIds].sort();
   const json = JSON.stringify(sorted);
@@ -1111,7 +1108,7 @@ const buildLayerIndexes = async (
       buffer: context.vtConfig.bufferSize,
       tolerance: context.vtConfig.tolerance,
       promoteId: context.vtConfig.promoteId,
-      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+      indexMaxPoints: 65536,
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
     if (debugContext && layerStats) {
@@ -1530,7 +1527,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                     buffer: context.vtConfig.bufferSize,
                     tolerance: context.vtConfig.tolerance,
                     promoteId: context.vtConfig.promoteId,
-                    indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                    indexMaxPoints: 65536,
                   }) as GeojsonVtIndex;
                   const tile = collectLayerForTile(index, layerName, z, x, y);
                   if (!tile) {
@@ -1685,7 +1682,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       buffer: context.vtConfig.bufferSize,
                       tolerance: context.vtConfig.tolerance,
                       promoteId: context.vtConfig.promoteId,
-                      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                      indexMaxPoints: 65536,
                     }) as GeojsonVtIndex;
                     const tile = collectLayerForTile(index, layerName, z, x, y);
                     if (!tile) continue;
@@ -1917,15 +1914,14 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           for (let y = yStart; y <= yEnd; y++) {
             assertNotAborted(abortSignal);
             const tileId = packTileId(x, y, z);
-            const baseLayers = aggregatedLayersByTileId
+            const layers = aggregatedLayersByTileId
               ? (aggregatedLayersByTileId.get(tileId) ?? null)
               : (indexes ? collectLayersForTileFromIndexes(indexes, z, x, y) : null);
             processedTiles += 1;
-            if (!baseLayers) {
+            if (!layers) {
               await reportTileProgress(false);
               continue;
             }
-            let layers = baseLayers;
             const tileBBox = tileToBBox(z, x, y);
             const inputStats = computeInputTileStats(
               expandTileBBox(tileBBox, vtConfig.bufferSize, vtConfig.extent),
