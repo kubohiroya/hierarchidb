@@ -42,7 +42,6 @@
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/session-coordinator": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",
