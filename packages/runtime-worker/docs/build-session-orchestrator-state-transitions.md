@@ -92,6 +92,7 @@ Notes:
 - UI `idle` means subscribe negotiation is completed for that UI instance.
 - It does not imply other tabs are subscribed.
 - `StartRequested` and `StopRequested` exist only for immediate button UX feedback (`disabled/loading`).
+- While `StartAccepted` is shown, start control remains disabled/loading and pause control switches to "Cancel build".
 
 ### 5.2 Persisted Session State (`sessions`)
 

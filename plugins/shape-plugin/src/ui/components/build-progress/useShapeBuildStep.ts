@@ -475,6 +475,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     if (!lockKey || !activeNodeId) return false;
     const pollInterval = coordinator.pollIntervalTimeout;
     while (true) {
+      if (cancelStartRequestRef.current) {
+        return false;
+      }
       const lock = await coordinator.tryAcquireSessionLock(lockKey);
       if (lock) {
         lockRef.current = lock;
@@ -496,6 +499,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const buildSessionTransitionWarnStepRef = useRef<BuildStartupTransitionWarnStep>(0);
   const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
   const buildSessionTransitionWaitLogStepRef = useRef(-1);
+  const cancelStartRequestRef = useRef(false);
   const awaitingFirstTaskExpectationRef = useRef(false);
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
   const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
@@ -1706,6 +1710,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
 
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
     const requestStartedAt = Date.now();
+    cancelStartRequestRef.current = false;
     const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
       console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
         nodeId: activeNodeId ? String(activeNodeId) : null,
@@ -1827,6 +1832,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         queued,
       });
     }
+    if (cancelStartRequestRef.current) {
+      releaseBuildLock();
+      coordinator.clearActiveSessionId(String(activeNodeId));
+      finishBuildSessionTransition({
+        level: 'warning',
+        message: 'Build start was cancelled.',
+      });
+      return false;
+    }
     coordinator.writeActiveSessionId(String(activeNodeId));
     advanceBuildSessionTransitionPhase('saving-draft');
     beginBuildStartupStep('draft-save', {
@@ -1846,6 +1860,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       return false;
     }
     finishBuildStartupStep('draft-save', 'success');
+    if (cancelStartRequestRef.current) {
+      releaseBuildLock();
+      coordinator.clearActiveSessionId(String(activeNodeId));
+      finishBuildSessionTransition({
+        level: 'warning',
+        message: 'Build start was cancelled.',
+      });
+      return false;
+    }
     try {
       advanceBuildSessionTransitionPhase('initializing-worker');
       beginBuildStartupStep('worker-initialize', {
@@ -1854,6 +1877,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       try {
         await runTimedStep('worker-initialize', () => bridgeRef.current.initialize());
         finishBuildStartupStep('worker-initialize', 'success');
+        if (cancelStartRequestRef.current) {
+          releaseBuildLock();
+          coordinator.clearActiveSessionId(String(activeNodeId));
+          finishBuildSessionTransition({
+            level: 'warning',
+            message: 'Build start was cancelled.',
+          });
+          return false;
+        }
       } catch (error) {
         finishBuildStartupStep('worker-initialize', 'error', {
           errorMessage: getErrorMessage(error),
@@ -2043,12 +2075,56 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     waitForBuildLock,
   ]);
 
+  const handleCancelQueued = useCallback(async (
+    reason: 'route-leave' | 'user-pause' = 'user-pause',
+  ): Promise<void> => {
+    if (!activeNodeId || isPausePending) return;
+    cancelStartRequestRef.current = true;
+    clearStartPendingRef.current?.();
+    setIsPausePending(true);
+    try {
+      await bridgeRef.current.initialize();
+      await runWithTimeout(
+        bridgeRef.current.cancelQueuedBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason),
+        PAUSE_COMMAND_TIMEOUT_MS,
+        `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
+      );
+      releaseBuildLock();
+      coordinator.clearActiveSessionId(String(activeNodeId));
+      if (buildSessionTransition.active) {
+        finishBuildSessionTransition({
+          level: 'warning',
+          message: 'Build start was cancelled.',
+        });
+      }
+    } catch (error) {
+      notify.error('Failed to cancel queued build.');
+      console.error('[ShapeBuildProgressStep] cancel queued failed', error);
+    } finally {
+      setIsPausePending(false);
+    }
+  }, [
+    activeNodeId,
+    buildSessionTransition.active,
+    coordinator,
+    finishBuildSessionTransition,
+    isPausePending,
+    releaseBuildLock,
+  ]);
+
   const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
       return;
     }
     if (isPausePending) return;
+    const shouldCancelQueued = buildSessionTransition.active
+      && buildStatus !== 'running'
+      && runtimeStatus !== 'processing';
+    if (shouldCancelQueued) {
+      await handleCancelQueued(reason);
+      return;
+    }
     const pauseRequestedAt = Date.now();
     const logPauseTrace = (event: string, payload?: Record<string, unknown>): void => {
       console.log('[ShapeBuildPauseTrace] handlePause', {
@@ -2097,7 +2173,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       },
     });
     logPauseTrace('request-finished');
-  }, [activeNodeId, buildStatus, isPausePending, runtimeStatus, updateSessionRecord]);
+  }, [
+    activeNodeId,
+    buildSessionTransition.active,
+    buildStatus,
+    handleCancelQueued,
+    isPausePending,
+    runtimeStatus,
+    updateSessionRecord,
+  ]);
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
