@@ -63,8 +63,8 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
@@ -104,6 +104,7 @@
   "devDependencies": {
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",

@@ -3,7 +3,7 @@ import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDep
 import type { RouteBatchSession } from './RouteBatchSession.js';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, StageKey } from '@hierarchidb/batch-api';
-import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
+import { BaseBatchSessionManager } from '@hierarchidb/batch';
 
 export interface RouteBatchSessionConfig {
   routeGeneration?: Partial<RouteBatchConfig['routeGeneration']>;

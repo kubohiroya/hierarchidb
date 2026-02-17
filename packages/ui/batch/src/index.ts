@@ -10,6 +10,7 @@ export { useBatchProgressState as useBuildProgressState } from './hooks/useBatch
 export * from './hooks/useBuildSessionSnapshots.js';
 export * from './hooks/useWorkerQueryAPI.js';
 export * from './hooks/useBuildTaskProgress.js';
+export * from './hooks/useBatchSessionMutation.js';
 export type {
   PluginBatchProgressState as PluginBuildProgressState,
   UsePluginBatchProgressOptions as UsePluginBuildProgressOptions,

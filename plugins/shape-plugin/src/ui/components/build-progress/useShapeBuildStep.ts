@@ -2084,8 +2084,18 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setIsPausePending(true);
     try {
       await bridgeRef.current.initialize();
+      const bridge = bridgeRef.current as {
+        cancelQueuedBuildSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
+        cancelQueuedBatchSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
+      };
+      const cancelQueued = typeof bridge.cancelQueuedBuildSession === 'function'
+        ? bridge.cancelQueuedBuildSession.bind(bridge)
+        : bridge.cancelQueuedBatchSession?.bind(bridge);
+      if (!cancelQueued) {
+        throw new Error('cancelQueued session API is not available');
+      }
       await runWithTimeout(
-        bridgeRef.current.cancelQueuedBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason),
+        cancelQueued(SHAPE_NODE_TYPE, activeNodeId, reason),
         PAUSE_COMMAND_TIMEOUT_MS,
         `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
       );

@@ -1,21 +1,11 @@
-/**
- * Base Batch Manager Implementation
- * Provides _obsolate_common implementation for batch session managers
- */
-
 import type { NodeId } from '@hierarchidb/core-types';
-import type { AbstractBatchSession } from '@hierarchidb/batch';
-import {
-  type BatchProgressCallback,
-  type BatchProgressEvent,
-  type BatchSessionStatus,
-  type IBatchSessionManager,
-  isBatchControlAPIV2Enabled,
-} from '@hierarchidb/batch-api';
+import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
+import { isBatchControlAPIV2Enabled } from '@hierarchidb/batch-api';
+import type { AbstractBatchSession } from '../session/AbstractBatchSession.js';
 
 /**
- * Base implementation for batch session managers
- * Provides _obsolate_common functionality that can be extended by plugin-specific managers
+ * Base implementation for plugin batch session managers.
+ * It tracks in-memory sessions and forwards progress callbacks.
  */
 export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   protected sessions = new Map<NodeId, AbstractBatchSession>();
@@ -78,37 +68,28 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     }
     callbacks.add(callback);
 
-    // Return unsubscribe function
     return () => {
       const cbs = this.progressCallbacks.get(nodeId);
-      if (cbs) {
-        cbs.delete(callback);
-        if (cbs.size === 0) {
-          this.progressCallbacks.delete(nodeId);
-        }
+      if (!cbs) return;
+      cbs.delete(callback);
+      if (cbs.size === 0) {
+        this.progressCallbacks.delete(nodeId);
       }
     };
   }
 
-  /**
-   * Emit progress to all registered callbacks for a session
-   */
   protected emitProgress(nodeId: NodeId, event: BatchProgressEvent): void {
     const callbacks = this.progressCallbacks.get(nodeId);
-    if (callbacks) {
-      for (const callback of callbacks) {
-        try {
-          callback(event);
-        } catch (error) {
-          console.error('Error in progress callback:', error);
-        }
+    if (!callbacks) return;
+    for (const callback of callbacks) {
+      try {
+        callback(event);
+      } catch (error) {
+        console.error('Error in progress callback:', error);
       }
     }
   }
 
-  /**
-   * Register a session and set up progress forwarding
-   */
   protected registerSession(session: AbstractBatchSession): void {
     const nodeId = session.getState().nodeId as NodeId;
     this.sessions.set(nodeId, session);
