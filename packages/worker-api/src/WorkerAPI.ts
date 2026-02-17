@@ -112,6 +112,13 @@ export interface WorkerAPI<T> {
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /** Preferred alias for pauseBatchSession. */
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /**
+   * Cancel a queued build session. If the target session is already running,
+   * runtime should treat this request as stop/pause semantics.
+   */
+  cancelQueuedBatchSession?(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /** Preferred alias for cancelQueuedBatchSession. */
+  cancelQueuedBuildSession?(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /** @deprecated Use resumeBuildSession. */
   resumeBatchSession(
     nodeType: NodeType,

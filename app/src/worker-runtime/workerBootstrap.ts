@@ -638,6 +638,32 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
         };
 
+        const runCancelQueuedBatchSession = async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          reason?: string
+        ): Promise<void> => {
+          const batchApi = resolveShapeBatchApiOrThrow(nodeType);
+          if (batchApi.invokeBatchCommand) {
+            try {
+              await batchApi.invokeBatchCommand('session/cancel-queued', {
+                nodeId,
+                stopReason: reason,
+              });
+              clearRuntimeTransientStatus(nodeType, nodeId, false);
+              return;
+            } catch (error) {
+              console.warn('[worker bootstrap] session/cancel-queued fallback to pause', {
+                nodeType,
+                nodeId,
+                reason: reason ?? null,
+                errorMessage: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
+          await runPauseBatchSession(nodeType, nodeId, reason);
+        };
+
         const runResumeBatchSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -895,6 +921,16 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           pauseBuildSession: async (nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> => (
             api.pauseBatchSession(nodeType, nodeId, reason)
           ),
+          cancelQueuedBatchSession: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            reason?: string
+          ): Promise<void> => runCancelQueuedBatchSession(nodeType, nodeId, reason),
+          cancelQueuedBuildSession: async (
+            nodeType: NodeType,
+            nodeId: NodeId,
+            reason?: string
+          ): Promise<void> => api.cancelQueuedBatchSession?.(nodeType, nodeId, reason),
           resumeBatchSession: async (
             nodeType: NodeType,
             nodeId: NodeId,

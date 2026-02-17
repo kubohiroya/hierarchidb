@@ -1985,6 +1985,29 @@ export const shapeBatchAPI = {
       })();
       return;
     }
+    if (command === 'session/cancel-queued') {
+      const nodeId = payload.nodeId as NodeId;
+      if (!nodeId) throw new Error('[shapeBatchAPI] session/cancel-queued requires nodeId');
+      const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
+      const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : 'user-pause';
+      const pipelineKey = String(nodeId);
+      if (activePipelines.has(pipelineKey)) {
+        await shapeBatchAPI.invokeBatchCommand('session/pause', { nodeId, stopReason });
+        return;
+      }
+      setPaused(nodeId, false);
+      setFetchPlannedTotal(nodeId, 0);
+      const taskQueue = new VtTaskQueueDb();
+      await deleteTasksByNode(taskQueue, nodeId);
+      await upsertBuildSessionSnapshot({
+        nodeId,
+        status: 'idle',
+        stopReason,
+        canResume: false,
+      });
+      await emitProgressSnapshot(nodeId, 'Queued build canceled.');
+      return;
+    }
     if (command === 'session/resume') {
       const nodeId = payload.nodeId as NodeId;
       if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');

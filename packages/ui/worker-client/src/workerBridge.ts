@@ -39,6 +39,8 @@ export interface WorkerBridge {
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -193,6 +195,26 @@ class WorkerBridgeImpl implements WorkerBridge {
   async pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.pauseBuildSession(nodeType, nodeId, reason);
+  }
+
+  async cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
+    const api = await ensureWorkerAPI();
+    const cancelQueuedBatchSession = (api as { cancelQueuedBatchSession?: unknown }).cancelQueuedBatchSession;
+    if (typeof cancelQueuedBatchSession === 'function') {
+      await cancelQueuedBatchSession(nodeType, nodeId, reason);
+      return;
+    }
+    await api.pauseBatchSession(nodeType, nodeId, reason);
+  }
+
+  async cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
+    const api = await ensureWorkerAPI();
+    const cancelQueuedBuildSession = (api as { cancelQueuedBuildSession?: unknown }).cancelQueuedBuildSession;
+    if (typeof cancelQueuedBuildSession === 'function') {
+      await cancelQueuedBuildSession(nodeType, nodeId, reason);
+      return;
+    }
+    await this.cancelQueuedBatchSession(nodeType, nodeId, reason);
   }
 
   async resumeBatchSession(
