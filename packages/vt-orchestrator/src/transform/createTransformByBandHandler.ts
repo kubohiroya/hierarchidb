@@ -224,6 +224,36 @@ const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): Trans
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
 );
 
+type TransformTraceLogLevel = 'off' | 'summary' | 'verbose';
+
+const TRACE_LOG_PRIORITY: Record<TransformTraceLogLevel, number> = {
+  off: 0,
+  summary: 1,
+  verbose: 2,
+};
+
+const normalizeTraceLogLevel = (level?: string): TransformTraceLogLevel => {
+  if (level === 'off' || level === 'summary' || level === 'verbose') {
+    return level;
+  }
+  return 'summary';
+};
+
+const shouldLogTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel
+): boolean => TRACE_LOG_PRIORITY[configuredLevel] >= TRACE_LOG_PRIORITY[requestedLevel];
+
+const emitTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel,
+  message: string,
+  payload: Record<string, unknown>
+): void => {
+  if (!shouldLogTransformTrace(configuredLevel, requestedLevel)) return;
+  console.info('[ShapeTransform][ExecutionTrace]', message, payload);
+};
+
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
 };
@@ -782,13 +812,6 @@ const buildErrorLineFeatures = (
   return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
 };
 
-const toLineFeatureCollection = (
-  lineFeaturesCandidate: ReturnType<typeof buildErrorLineFeatures> | null,
-): TransformIssueLineFeatures => ({
-  type: 'FeatureCollection',
-  features: lineFeaturesCandidate?.features ?? [],
-});
-
 const resolveFeatureIdentifier = (
   feature: Feature | null | undefined,
   featureIndex: number,
@@ -1324,7 +1347,6 @@ export const createTransformByBandHandler = (
   }
   const {
     ephemeralDB,
-    fetchConfig,
     transformConfig,
     bands,
     abortSignal,
@@ -1625,11 +1647,11 @@ export const createTransformByBandHandler = (
   const preserveTopology = transformConfig.preserveTopology ?? true;
   const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
   const intakeGuardConfig = {
-    validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
-    dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
-    minRingAreaThreshold: fetchConfig.geometryIntakeGuard?.minRingAreaThreshold ?? 0,
-    normalizeRingOrientation: fetchConfig.geometryIntakeGuard?.normalizeRingOrientation ?? false,
-    keepBaselineSnapshot: fetchConfig.geometryIntakeGuard?.keepBaselineSnapshot ?? false,
+    validationLevel: 'off' as const,
+    dedupeEpsilon: 0,
+    minRingAreaThreshold: 0,
+    normalizeRingOrientation: false,
+    keepBaselineSnapshot: false,
   } as const;
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
