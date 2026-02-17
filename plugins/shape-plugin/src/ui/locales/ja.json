@@ -13,7 +13,7 @@
       "label": "ライセンス同意"
     },
     "processing": {
-      "label": "ビルド設定"
+      "label": "Config"
     },
     "countrySelection": {
       "label": "国選択"
@@ -120,26 +120,26 @@
         "verbose": "verbose"
       },
       "anomaly": {
-      "title": "異常検出",
-      "enabled": "異常検出を有効化",
-      "scoreThreshold": "異常スコア閾値",
-      "maxEdgeLengthRatio": "最大辺長比",
-      "maxAreaDriftPercent": "最大面積差分 (%)",
-      "maxSelfIntersectionCount": "自己交差の許容数",
-      "maxLineLengthDriftPercent": "最大線長差分 (%)",
-      "maxVertexDriftPercent": "最大頂点数差分 (%)",
-      "geojson": {
-        "caption": "GeoJSON 経路では、ポリゴンBBoxに対する三角形辺長の変動を監視します。",
-        "maxTriangleShareDriftPercent": "最大三角形シェア差分 (%)",
-        "maxTriangleEdgeToBBoxRatio": "最大三角形辺長/BBox比"
-      },
-      "topojson": {
-        "caption": "TopoJSON 経路では、トポロジー参照の共有弧連続性を診断します。",
-        "minSharedArcRatioPercent": "最小共有弧比率 (%)"
-      },
-      "retry": {
-        "enabled": "自動リトライを有効化",
-        "maxRetries": "最大リトライ回数",
+        "title": "異常検出",
+        "enabled": "異常検出を有効化",
+        "scoreThreshold": "異常スコア閾値",
+        "maxEdgeLengthRatio": "最大辺長比",
+        "maxAreaDriftPercent": "最大面積差分 (%)",
+        "maxSelfIntersectionCount": "自己交差の許容数",
+        "maxLineLengthDriftPercent": "最大線長差分 (%)",
+        "maxVertexDriftPercent": "最大頂点数差分 (%)",
+        "geojson": {
+          "caption": "GeoJSON 経路では、ポリゴンBBoxに対する三角形辺長の変動を監視します。",
+          "maxTriangleShareDriftPercent": "最大三角形シェア差分 (%)",
+          "maxTriangleEdgeToBBoxRatio": "最大三角形辺長/BBox比"
+        },
+        "topojson": {
+          "caption": "TopoJSON 経路では、トポロジー参照の共有弧連続性を診断します。",
+          "minSharedArcRatioPercent": "最小共有弧比率 (%)"
+        },
+        "retry": {
+          "enabled": "自動リトライを有効化",
+          "maxRetries": "最大リトライ回数",
           "toleranceScale": "リトライ時の tolerance 係数",
           "fallbackMode": "フォールバックモード",
           "fallback": {

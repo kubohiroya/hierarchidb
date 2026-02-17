@@ -77,7 +77,7 @@
     "warning": "警告",
     "themeChangeRequested": "テーマ変更がリクエストされました: {{theme}}",
     "basicInfo": {
-      "title": "基本情報",
+      "title": "Info",
       "subtitle": "名前と説明（任意）を入力してください。",
       "name": {
         "label": "名前",

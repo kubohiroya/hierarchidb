@@ -165,9 +165,9 @@ describe('PluginDialogHeader', () => {
 
     expect(screen.queryByText('Current step')).toBeNull();
 
-    const activeLabel = screen.getByText('Step Two');
+    const activeLabel = screen.getByText('2. Step Two');
     expect(activeLabel.getAttribute('data-active-label')).toBe('true');
-    const inactiveLabel = screen.getByText('Step One');
+    const inactiveLabel = screen.getByText('1. Step One');
     expect(inactiveLabel.getAttribute('data-active-label')).toBe('false');
 
     const activeStepButton = screen.getByRole('button', { name: /Step Two/i });

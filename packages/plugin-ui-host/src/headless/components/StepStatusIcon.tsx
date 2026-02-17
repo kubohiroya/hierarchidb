@@ -1,12 +1,48 @@
+import ApprovalIcon from '@mui/icons-material/Approval';
+import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import CheckIcon from '@mui/icons-material/Check';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import InfoIcon from '@mui/icons-material/Info';
+import PaletteIcon from '@mui/icons-material/Palette';
+import PublicIcon from '@mui/icons-material/Public';
+import SettingsIcon from '@mui/icons-material/Settings';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import type { SvgIconComponent } from '@mui/icons-material';
 import { Box, CircularProgress, type Theme } from '@mui/material';
 import type { StepIconProps } from '@mui/material/StepIcon';
 import { alpha } from '@mui/material/styles';
+
+const stripStepNumberPrefix = (label: string): string => label.replace(/^\s*\d+\.\s*/, '').trim();
+
+const normalizeStepLabel = (label: string): string =>
+  stripStepNumberPrefix(label).toLowerCase().replace(/\s+/g, ' ');
+
+const STEP_ICON_BY_LABEL: Record<string, SvgIconComponent> = {
+  info: InfoIcon,
+  'data source': CloudDownloadIcon,
+  preview: VisibilityIcon,
+  'country selection': PublicIcon,
+  'location selection': PublicIcon,
+  'route selection': PublicIcon,
+  config: SettingsIcon,
+  filtering: FilterAltIcon,
+  'mapping keys': BookmarksIcon,
+  'apply target': ApprovalIcon,
+  palette: PaletteIcon,
+};
+
+const resolveStepIcon = (stepLabel?: string): SvgIconComponent | null => {
+  if (!stepLabel) return null;
+  const normalized = normalizeStepLabel(stepLabel);
+  return STEP_ICON_BY_LABEL[normalized] ?? null;
+};
 
 export const StepStatusIcon = (
   props: StepIconProps & {
     variant?: 'validated-disabled';
     stepIndex?: number;
+    stepLabel?: string;
     canNavigate?: boolean;
     inProgress?: boolean;
     theme: Theme;
@@ -19,9 +55,11 @@ export const StepStatusIcon = (
     icon: iconProp,
     variant,
     stepIndex,
+    stepLabel,
     canNavigate = true,
     inProgress = false,
   } = props;
+  const MappedStepIcon = resolveStepIcon(stepLabel);
   const isValidatedDisabled = variant === 'validated-disabled';
   const isDisabled = !canNavigate;
   const disabledBg =
@@ -74,6 +112,8 @@ export const StepStatusIcon = (
     >
       {inProgress ? (
         <CircularProgress size={16} thickness={5} color="inherit" />
+      ) : MappedStepIcon ? (
+        <MappedStepIcon sx={{ fontSize: 16 }} />
       ) : typeof stepIndex === 'number' ? (
         stepIndex + 1
       ) : (
