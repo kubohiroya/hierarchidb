@@ -1,12 +1,26 @@
 {
   "steps": {
-    "dataSource": { "label": "Data Source" },
-    "routeConfig": { "label": "Route Selection" },
-    "processing": { "label": "Settings" },
-    "tileSettings": { "label": "Vector Tile Settings" },
-    "build": { "label": "Build" },
-    "stage": { "label": "Build" },
-    "preview": { "label": "Preview" }
+    "dataSource": {
+      "label": "Data Source"
+    },
+    "routeConfig": {
+      "label": "Route Selection"
+    },
+    "processing": {
+      "label": "Config"
+    },
+    "tileSettings": {
+      "label": "Vector Tile Settings"
+    },
+    "build": {
+      "label": "Build"
+    },
+    "stage": {
+      "label": "Build"
+    },
+    "preview": {
+      "label": "Preview"
+    }
   },
   "auth": {
     "loading": "Checking authentication..."
@@ -78,8 +92,7 @@
     "locationEmpty": "No sibling locations are available yet.",
     "startLocationLabel": "Start location",
     "endLocationLabel": "End location",
-    "locationPlaceholder": "Select a location"
-    ,
+    "locationPlaceholder": "Select a location",
     "style": {
       "title": "Route style",
       "description": "Configure colors and line styles per transport mode.",

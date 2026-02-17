@@ -537,7 +537,7 @@ export function usePluginDialogController(
     setDraftData: (next) => setLocalDraftData('stepAdapter', next),
     handleBasicInfoBridge,
     dialogRef,
-    basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
+    basicInfoLabel: t('common.basicInfo.title', 'Info'),
     onTagClick: handleTagNavigate,
   });
 

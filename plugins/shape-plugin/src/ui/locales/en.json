@@ -13,7 +13,7 @@
       "label": "License Agreement"
     },
     "processing": {
-      "label": "Build Configuration"
+      "label": "Config"
     },
     "countrySelection": {
       "label": "Country Selection"
@@ -120,26 +120,26 @@
         "verbose": "verbose"
       },
       "anomaly": {
-      "title": "Anomaly detection",
-      "enabled": "Enable anomaly detection",
-      "scoreThreshold": "Anomaly score threshold",
-      "maxEdgeLengthRatio": "Max edge length ratio",
-      "maxAreaDriftPercent": "Max area drift (%)",
-      "maxSelfIntersectionCount": "Max self intersections",
-      "maxLineLengthDriftPercent": "Max line length drift (%)",
-      "maxVertexDriftPercent": "Max vertex drift (%)",
-      "geojson": {
-        "caption": "GeoJSON path checks triangle-shape drift using edge length against polygon BBox span.",
-        "maxTriangleShareDriftPercent": "Max triangle share drift (%)",
-        "maxTriangleEdgeToBBoxRatio": "Max triangle edge/BBox ratio"
-      },
-      "topojson": {
-        "caption": "TopoJSON path uses shared-arc continuity diagnostics from topology references.",
-        "minSharedArcRatioPercent": "Min shared arc ratio (%)"
-      },
-      "retry": {
-        "enabled": "Enable automatic retry",
-        "maxRetries": "Max retries",
+        "title": "Anomaly detection",
+        "enabled": "Enable anomaly detection",
+        "scoreThreshold": "Anomaly score threshold",
+        "maxEdgeLengthRatio": "Max edge length ratio",
+        "maxAreaDriftPercent": "Max area drift (%)",
+        "maxSelfIntersectionCount": "Max self intersections",
+        "maxLineLengthDriftPercent": "Max line length drift (%)",
+        "maxVertexDriftPercent": "Max vertex drift (%)",
+        "geojson": {
+          "caption": "GeoJSON path checks triangle-shape drift using edge length against polygon BBox span.",
+          "maxTriangleShareDriftPercent": "Max triangle share drift (%)",
+          "maxTriangleEdgeToBBoxRatio": "Max triangle edge/BBox ratio"
+        },
+        "topojson": {
+          "caption": "TopoJSON path uses shared-arc continuity diagnostics from topology references.",
+          "minSharedArcRatioPercent": "Min shared arc ratio (%)"
+        },
+        "retry": {
+          "enabled": "Enable automatic retry",
+          "maxRetries": "Max retries",
           "toleranceScale": "Retry tolerance scale",
           "fallbackMode": "Fallback mode",
           "fallback": {

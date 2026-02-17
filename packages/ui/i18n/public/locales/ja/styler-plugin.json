@@ -82,14 +82,30 @@
     }
   },
   "steps": {
-    "dataSource": { "label": "データソース" },
-    "filtering": { "label": "フィルタリング" },
-    "mappingKeys": { "label": "キーのマッピング" },
-    "targetBehavior": { "label": "適用対象" },
-    "styleSettings": { "label": "スタイル設定" },
-    "target": { "label": "適用対象" },
-    "styleAlgorithm": { "label": "アルゴリズム" },
-    "preview": { "label": "プレビュー" }
+    "dataSource": {
+      "label": "データソース"
+    },
+    "filtering": {
+      "label": "フィルタリング"
+    },
+    "mappingKeys": {
+      "label": "キーのマッピング"
+    },
+    "targetBehavior": {
+      "label": "適用対象"
+    },
+    "styleSettings": {
+      "label": "スタイル設定"
+    },
+    "target": {
+      "label": "適用対象"
+    },
+    "styleAlgorithm": {
+      "label": "Palette"
+    },
+    "preview": {
+      "label": "プレビュー"
+    }
   },
   "step5": {
     "target": {
@@ -119,6 +135,11 @@
       "validation": {
         "required": "対象を選択してください。"
       }
+    },
+    "title": "スタイルアルゴリズム",
+    "errors": {
+      "range": "最大値は最小値より大きくする必要があります",
+      "configure": "スタイルターゲットを設定してから次へ進んでください。"
     }
   },
   "step6": {
@@ -133,7 +154,20 @@
     "numericRange": {
       "min": "最小値",
       "max": "最大値"
-    }
+    },
+    "title": "スタイル適用プレビュー",
+    "required": {
+      "title": "設定が必要です",
+      "body": "プレビューの前にステップ5の設定を完了してください。",
+      "property": "MapLibreのスタイルプロパティを選択してください",
+      "valueColumn": "マッピングに使用する値の列を選択してください"
+    },
+    "noData": {
+      "title": "データがありません",
+      "body": "プレビュー用の表データがありません。前のステップでデータが読み込まれているか確認してください。"
+    },
+    "truncate": "先頭1,000行のみプレビュー表示しています。全データ件数:",
+    "rows": "行"
   },
   "step3": {
     "description": "表の列とタイル側の feature ID を指定して、スタイル値を紐づけます。",
@@ -184,28 +218,6 @@
       "styleType": "スタイル種別を選択してください",
       "mappingMode": "マッピング方式を選択してください"
     }
-  },
-  "step5": {
-    "title": "スタイルアルゴリズム",
-    "errors": {
-      "range": "最大値は最小値より大きくする必要があります",
-      "configure": "スタイルターゲットを設定してから次へ進んでください。"
-    }
-  },
-  "step6": {
-    "title": "スタイル適用プレビュー",
-    "required": {
-      "title": "設定が必要です",
-      "body": "プレビューの前にステップ5の設定を完了してください。",
-      "property": "MapLibreのスタイルプロパティを選択してください",
-      "valueColumn": "マッピングに使用する値の列を選択してください"
-    },
-    "noData": {
-      "title": "データがありません",
-      "body": "プレビュー用の表データがありません。前のステップでデータが読み込まれているか確認してください。"
-    },
-    "truncate": "先頭1,000行のみプレビュー表示しています。全データ件数:",
-    "rows": "行"
   },
   "extension": {
     "description": "このフォルダ用の Styler 可視化設定を行います。",

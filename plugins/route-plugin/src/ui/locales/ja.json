@@ -1,12 +1,26 @@
 {
   "steps": {
-    "dataSource": { "label": "データソース" },
-    "routeConfig": { "label": "交通経路の種類" },
-    "processing": { "label": "処理設定" },
-    "tileSettings": { "label": "ベクタタイル設定" },
-    "build": { "label": "ビルド" },
-    "stage": { "label": "ビルド" },
-    "preview": { "label": "プレビュー" }
+    "dataSource": {
+      "label": "データソース"
+    },
+    "routeConfig": {
+      "label": "交通経路の種類"
+    },
+    "processing": {
+      "label": "Config"
+    },
+    "tileSettings": {
+      "label": "ベクタタイル設定"
+    },
+    "build": {
+      "label": "ビルド"
+    },
+    "stage": {
+      "label": "ビルド"
+    },
+    "preview": {
+      "label": "プレビュー"
+    }
   },
   "auth": {
     "loading": "認証状態を確認中..."
