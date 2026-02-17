@@ -20,6 +20,7 @@ const STEP_ICON_BY_ID: Record<string, SvgIconComponent> = {
   'basic-info': InfoIcon,
   info: InfoIcon,
   'data-source': CloudDownloadIcon,
+  'map-style': PaletteIcon,
   preview: VisibilityIcon,
   'style-preview': VisibilityIcon,
   'map-preview': VisibilityIcon,
@@ -114,10 +115,10 @@ export const StepStatusIcon = (
         position: 'relative',
       }}
     >
-      {inProgress ? (
-        <CircularProgress size={16} thickness={5} color="inherit" />
-      ) : MappedStepIcon ? (
+      {MappedStepIcon ? (
         <MappedStepIcon sx={{ fontSize: 16 }} />
+      ) : inProgress ? (
+        <CircularProgress size={16} thickness={5} color="inherit" />
       ) : typeof stepIndex === 'number' ? (
         stepIndex + 1
       ) : (
