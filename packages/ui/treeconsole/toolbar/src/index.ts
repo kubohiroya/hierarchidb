@@ -6,7 +6,7 @@
 
 // Main component
 export { TreeConsoleToolbar } from './components/TreeConsoleToolbar.js';
-export { SearchField } from './components/toolbar/SearchField.js';
+
 
 // Types
 export type {

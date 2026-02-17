@@ -5,7 +5,7 @@ import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 import { useCallback, useState } from 'react';
 import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams, TreeConsoleSearchMode } from '../../types.js';
 import { ActionButtons } from './ActionButtons.js';
-import { SearchField } from './SearchField.js';
+import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
 import { SettingsMenu } from './SettingsMenu.js';
 import { ArchiveMenu } from './ArchiveMenu.js';
@@ -171,7 +171,7 @@ export function TreeConsoleToolbarContent({
 
   return (
     <TreeConsoleToolbarContainer>
-      <SearchField
+      <TreeTableSearchInput
         searchText={controller?.searchText || ''}
         handleSearchTextChange={handleSearch}
         handleSearchCommit={controller?.handleSearchCommit}

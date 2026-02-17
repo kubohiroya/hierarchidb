@@ -331,9 +331,6 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime-worker
-      '@hierarchidb/session-coordinator':
-        specifier: workspace:*
-        version: link:../packages/session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../packages/shape-api
@@ -379,12 +376,15 @@ importers:
       '@hierarchidb/ui-plugin-shell':
         specifier: workspace:*
         version: link:../packages/ui/plugin-shell
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../packages/ui/search-field
+        version: link:../packages/ui/search-input
       '@hierarchidb/ui-speeddial-submenu':
         specifier: workspace:*
         version: link:../packages/ui/speeddial-submenu
+      '@hierarchidb/ui-treeconsole-base':
+        specifier: workspace:*
+        version: link:../packages/ui/treeconsole/base
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../packages/ui/worker-client
@@ -639,12 +639,6 @@ importers:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
-      '@types/react-transition-group':
-        specifier: ^4.4.12
-        version: 4.4.12(@types/react@18.3.28)
-      react-transition-group:
-        specifier: ^4.4.5
-        version: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1290,9 +1284,6 @@ importers:
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../route-store
-      '@hierarchidb/session-coordinator':
-        specifier: workspace:*
-        version: link:../session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../shape-api
@@ -1764,9 +1755,6 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
-      '@hierarchidb/session-coordinator':
-        specifier: workspace:*
-        version: link:../../session-coordinator
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../../tree-api
@@ -1806,9 +1794,9 @@ importers:
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
         version: link:../../tools/gen-iso3166-2
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../search-field
+        version: link:../search-input
       react-virtuoso:
         specifier: ^4.14.0
         version: 4.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2373,6 +2361,30 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/ui/search-input:
+    devDependencies:
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@18.3.28)(react@18.3.1)
+      '@emotion/styled':
+        specifier: 11.14.0
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
+      '@mui/icons-material':
+        specifier: ^7.3.6
+        version: 7.3.8(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.8(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: '>=18.0.0'
+        version: 18.3.1
+      react-dom:
+        specifier: '>=18.0.0'
+        version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/ui/search-result-window:
     dependencies:
       '@emotion/react':
@@ -2482,9 +2494,9 @@ importers:
       '@hierarchidb/ui-modal-select':
         specifier: workspace:*
         version: link:../modal-select
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../search-field
+        version: link:../search-input
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
@@ -2540,6 +2552,9 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../../core-types
+      '@hierarchidb/ui-search-input':
+        specifier: workspace:*
+        version: link:../../search-input
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../../util
@@ -2580,9 +2595,6 @@ importers:
       '@hierarchidb/ui-treeconsole-footer':
         specifier: workspace:*
         version: link:../footer
-      '@hierarchidb/ui-treeconsole-toolbar':
-        specifier: workspace:*
-        version: link:../toolbar
       '@hierarchidb/ui-treeconsole-treetable':
         specifier: workspace:*
         version: link:../treetable
@@ -2751,9 +2763,12 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../../search-field
+        version: link:../../search-input
+      '@hierarchidb/ui-treeconsole-base':
+        specifier: workspace:*
+        version: link:../base
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../../util
@@ -3464,9 +3479,6 @@ importers:
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
-      '@hierarchidb/batch-runtime-services':
-        specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3509,9 +3521,9 @@ importers:
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../../packages/ui/search-field
+        version: link:../../packages/ui/search-input
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../../packages/ui/worker-client
@@ -3618,9 +3630,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
-      '@hierarchidb/batch-runtime-services':
-        specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3685,6 +3694,9 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@hierarchidb/batch':
+        specifier: workspace:*
+        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
@@ -3703,9 +3715,6 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
-      '@hierarchidb/session-coordinator':
-        specifier: workspace:*
-        version: link:../../packages/session-coordinator
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/tabular-store
@@ -3824,9 +3833,6 @@ importers:
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
-      '@hierarchidb/batch-runtime-services':
-        specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/chunk-store
@@ -3857,9 +3863,6 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
-      '@hierarchidb/session-coordinator':
-        specifier: workspace:*
-        version: link:../../packages/session-coordinator
       '@hierarchidb/shape-api':
         specifier: workspace:*
         version: link:../../packages/shape-api
@@ -3914,9 +3917,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
-      '@hierarchidb/ui-search-field':
+      '@hierarchidb/ui-search-input':
         specifier: workspace:*
-        version: link:../../packages/ui/search-field
+        version: link:../../packages/ui/search-input
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
@@ -16451,7 +16454,7 @@ snapshots:
 
   '@mui/private-theming@7.3.6(@types/react@18.3.27)(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       '@mui/utils': 7.3.6(@types/react@18.3.27)(react@18.3.1)
       prop-types: 15.8.1
       react: 18.3.1
@@ -16460,7 +16463,7 @@ snapshots:
 
   '@mui/private-theming@7.3.6(@types/react@18.3.28)(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       '@mui/utils': 7.3.6(@types/react@18.3.28)(react@18.3.1)
       prop-types: 15.8.1
       react: 18.3.1
@@ -16478,7 +16481,7 @@ snapshots:
 
   '@mui/styled-engine@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       '@emotion/cache': 11.14.0
       '@emotion/serialize': 1.3.3
       '@emotion/sheet': 1.4.0
@@ -16491,7 +16494,7 @@ snapshots:
 
   '@mui/styled-engine@7.3.6(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       '@emotion/cache': 11.14.0
       '@emotion/serialize': 1.3.3
       '@emotion/sheet': 1.4.0
@@ -19334,7 +19337,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@16.8.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -19353,6 +19356,14 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  '@vitest/mocker@3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@vitest/spy': 3.2.4
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -19383,7 +19394,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.18.20)(happy-dom@16.8.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -19948,7 +19959,7 @@ snapshots:
 
   canvg@3.0.11:
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       '@types/raf': 3.4.3
       core-js: 3.47.0
       raf: 3.4.1
@@ -20570,7 +20581,7 @@ snapshots:
 
   dom-helpers@5.2.1:
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
       csstype: 3.2.3
 
   dom-serializer@2.0.0:
@@ -25525,7 +25536,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.18.20)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/mocker': 3.2.4(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

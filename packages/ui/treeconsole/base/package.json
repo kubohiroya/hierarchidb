@@ -24,6 +24,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
+    "@hierarchidb/ui-search-input": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
@@ -62,7 +63,6 @@
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-treeconsole-footer": "workspace:*",
-    "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
     "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "rxjs": "^7.8.2",

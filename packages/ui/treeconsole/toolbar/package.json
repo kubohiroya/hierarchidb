@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "comlink": "^4.4.2",
-    "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/ui-search-input": "workspace:*",
+    "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
@@ -30,7 +31,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@hierarchidb/ui-treeconsole-base": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
@@ -40,7 +41,7 @@
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@hierarchidb/ui-treeconsole-base": "workspace:*"
   },
   "files": [
     "dist",

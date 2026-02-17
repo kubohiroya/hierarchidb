@@ -1,5 +1,5 @@
 import type { TreeConsoleToolbarController } from '../../types.js';
-import { SearchField } from './SearchField.js';
+import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 
 export interface SearchStrings {
   placeholder: string;
@@ -16,7 +16,7 @@ export function SearchOnlyToolbar({
   searchStrings,
 }: SearchOnlyToolbarProps) {
   return (
-    <SearchField
+    <TreeTableSearchInput
       fullWidth
       searchText={controller?.searchText || ''}
       handleSearchTextChange={controller?.handleSearchTextChange || (() => {})}
