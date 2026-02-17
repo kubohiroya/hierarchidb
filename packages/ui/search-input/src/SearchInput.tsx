@@ -17,7 +17,7 @@ const SEARCH_INPUT_DEFAULT_AUTOCOMPLETE_PROPS = {
   'data-form-type': 'other',
   inputMode: 'search',
   spellCheck: false,
-  type: 'search',
+  type: 'text',
 } as const satisfies Record<string, string | boolean>;
 
 type SearchFieldCommitMode = 'change' | 'blur' | 'enter' | 'blur-and-enter';
@@ -120,6 +120,12 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
       width: resolvedFullWidth ? '100%' : `${SEARCH_FIELD_WIDTH_PX}px`,
       '& .MuiInputBase-root': {
         borderRadius: '30px',
+      },
+      '& input::-webkit-search-cancel-button': {
+        display: 'none',
+      },
+      '& input::-webkit-search-decoration': {
+        display: 'none',
       },
     },
     sx,
