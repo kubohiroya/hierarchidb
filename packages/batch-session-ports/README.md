@@ -7,13 +7,13 @@ such as Dexie access, Comlink transport, worker startup logic, or UI behavior.
 
 ## Why this package exists
 
-Shape/Route/Location batch flows share the same orchestration concepts:
+Shape/Route/Location build flows share the same orchestration concepts:
 
-- stage controls (`pause`, `abort`, concurrency)
+- stage controls (`start`, `pause`, `resume`, `cancel` queued)
 - task registry abstraction
 - artifact storage abstraction
 - minimal progress shape
-- build-session control contract (subscribe/start/stop/cancel queued/next stage)
+- build-session control contract (subscribe/build/next stage controls)
 
 Keeping these contracts in one package prevents each plugin from redefining similar types.
 

@@ -6,7 +6,7 @@
 import { ShapeMetadata } from '../common/types/metadata.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '../common/types/index.js';
-import { shapeBatchAPI } from './api.js';
+import { shapeBuildAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 /**
@@ -18,9 +18,8 @@ const shapeEntityHandlerInstance = new ShapeEntityHandler();
 export const ShapeWorkerPlugin = {
   metadata: ShapeMetadata,
 
-  // Build API for runtime worker adapters. `batch` kept for backward compatibility.
-  build: shapeBatchAPI,
-  batch: shapeBatchAPI,
+  // Build API for runtime worker adapters.
+  build: shapeBuildAPI,
 
   // Entity handler for database operations
   entityHandler: shapeEntityHandlerInstance,
@@ -69,7 +68,7 @@ export const ShapeWorkerPlugin = {
 
     beforeDelete: async (nodeId: NodeId, _entity: ShapeEntity) => {
       // Cleanup processing data
-      await shapeBatchAPI.cleanupProcessingData(nodeId);
+      await shapeBuildAPI.cleanupProcessingData(nodeId);
     },
 
     afterUpdate: async (_nodeId: NodeId, _entity: ShapeEntity, _changes: Partial<ShapeEntity>) => {

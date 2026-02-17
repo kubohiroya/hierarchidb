@@ -3,16 +3,15 @@
 
 Lightweight build orchestration with a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
 
-Build* names are canonical. Batch* names are deprecated compatibility aliases.
+Build* names are canonical.
 
 ## Directory layout
 ```
-BatchService.ts   Facade (BuildService is canonical)
 index.ts          Public exports
 ```
 
 ## Key exports
-- `BuildService` (`BatchService` is deprecated alias)
+- `BuildService`
   - `mapChunks(source, fn, { concurrency, progress })` — parallel map with progress + abort support.
 
 ## Consumers / usage

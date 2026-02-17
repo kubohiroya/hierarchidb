@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -32,7 +32,7 @@ export {
  * Context type for TanStack Router console routes
  */
 export interface TreeRouteContext {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   tree?: Tree;
   pageNodeId?: NodeId;
   pageNode?: TreeNode;

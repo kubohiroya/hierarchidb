@@ -45,7 +45,7 @@ export const PLUGIN_MANIFEST = {
     canBeRenamed: true,
     canBeMoved: true,
     canBeCopied: false,
-    supportsBatchProcessing: true,
+    supportsBuildProcessing: true,
   },
   schema: {
     inherits: 'folder',

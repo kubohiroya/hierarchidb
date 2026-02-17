@@ -1,7 +1,7 @@
 # Unified Build Control API (Runtime Worker / UI)
 
 This document defines the canonical Build-session API used across Runtime Worker and UI.
-Legacy `Batch*` names remain as compatibility aliases.
+Runtime-level `Batch*` compatibility aliases are removed; only canonical `Build*` names are part of the active contract.
 
 ## 1. Scope
 
@@ -15,7 +15,7 @@ Legacy `Batch*` names remain as compatibility aliases.
 startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
 getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
 pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
-resumeBuildSession(nodeType: NodeType, nodeId: NodeId, policy?: BuildContinuationPolicy): Promise<void>
+resumeBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>
 cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
 getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>
 subscribeBuildTasks(
@@ -32,9 +32,9 @@ subscribeBuildProgress(
 
 ## 3. Compatibility Policy
 
-- `Batch*` APIs are deprecated aliases only.
+- `Batch*` API names are retained only as historical references in migration material.
 - New code must call `Build*` APIs.
-- Compatibility aliases must delegate to canonical `Build*` methods.
+- Compatibility at runtime should not introduce new `Batch*` usage.
 
 ## 4. Event Vocabulary
 
@@ -54,11 +54,11 @@ subscribeBuildProgress(
 
 - Worker API and UI bridge expose canonical `Build*` methods.
 - Core abstractions use `Build*` as canonical names:
-  - `AbstractBuildSession` (`AbstractBatchSession` is deprecated alias)
-  - `BaseBuildSessionManager` (`BaseBatchSessionManager` is deprecated alias)
-  - `UnifiedBuildManagerBase` (`UnifiedBatchManagerBase` is deprecated alias)
-- Route/Location service-layer managers now expose `Build*` as primary exports and keep `Batch*` aliases.
-- Remaining work is to remove old `Batch*` call sites from tests/docs and then retire aliases.
+  - `AbstractBuildSession`
+  - `BaseBuildSessionManager`
+  - `UnifiedBuildManagerBase`
+- Route/Location service-layer managers now expose `Build*` as primary exports.
+- Runtime-level `Batch*` aliases are removed from build control contracts.
 
 ## 7. WorkerAPI / WorkerBridge Naming Contract
 
@@ -72,15 +72,6 @@ subscribeBuildProgress(
   - `subscribeBuildTasks`
   - `subscribeBuildProgress`
 - Canonical type/view:
-  - `BuildWorkerAPI<T>` (omits deprecated `Batch*` methods)
-  - `BuildWorkerBridge` (omits deprecated `Batch*` methods)
+  - `BuildWorkerAPI<T>`
+  - `BuildWorkerBridge`
   - `getBuildWorkerBridge()` (returns canonical bridge view)
-- Deprecated aliases (delegate to canonical methods):
-  - `startBatchSession`
-  - `getBatchSessionStatus`
-  - `pauseBatchSession`
-  - `resumeBatchSession`
-  - `cancelQueuedBatchSession`
-  - `getBatchTasks`
-  - `subscribeBatchTasks`
-  - `subscribeBatchProgress`

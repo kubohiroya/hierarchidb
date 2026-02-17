@@ -205,9 +205,6 @@ export interface BuildSession {
   resourceUsage?: ResourceUsage;
 }
 
-/** @deprecated Use BuildSession. */
-export type BatchSession = BuildSession;
-
 export type ShapeBuildCommandMap = {
   'session/pause': { nodeId: NodeId };
   'session/resume': { nodeId: NodeId };

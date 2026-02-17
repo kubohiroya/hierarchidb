@@ -93,7 +93,7 @@ describe('PluginDialogFooter icons', () => {
 describe('PluginDialogFooter layout', () => {
   it('reserves the center slot for the Build button', () => {
     renderWithContext(
-      <PluginDialogFooter mode="edit" canCommit={true} onStartBatch={() => void 0} />,
+      <PluginDialogFooter mode="edit" canCommit={true} onStartBuild={() => void 0} />,
       {
         activeStepIndex: 0,
         validatedStepIndices: [0, 1],

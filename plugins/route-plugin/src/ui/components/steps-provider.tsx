@@ -2,7 +2,7 @@ import {
   PluginStepRegistry,
   type PluginStepProps,
   type PluginStepConfig,
-  type StartBatchContext,
+  type StartBuildContext,
 } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
@@ -94,7 +94,7 @@ const hasRouteConfig = (data?: RouteStepData): boolean => {
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
   data?.processingStatus === 'completed';
 
-const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
+const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext) => {
   const { t } = getTranslation();
   const hasEssentials = Boolean(
     hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries),
@@ -184,12 +184,12 @@ registry.registerConfigProvider<RouteStepData>({
           );
         },
         capabilities: {
-          canStartBatch: (data: RouteStepData) => {
+          canStartBuild: (data: RouteStepData) => {
             return Boolean(
               hasRouteDataSourceReady(data) && hasAnyRouteSelection(data?.selectedArrayByCountries),
             );
           },
-          startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),
+          startBuild: (data, context) => startRouteBuild(data as RouteStepData, context),
         },
         validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },

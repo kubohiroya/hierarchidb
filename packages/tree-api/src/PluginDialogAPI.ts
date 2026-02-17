@@ -11,7 +11,7 @@ import type { ProxyMarked } from 'comlink';
  */
 export interface StepCapabilities {
   canNavigateTo: boolean;
-  canStartBatch: boolean;
+  canStartBuild: boolean;
   canSave: boolean;
   canProceedToNext: boolean;
   canBackToPrevious: boolean;
@@ -63,7 +63,7 @@ export interface PluginDialogAPI<T> {
    * @param draftIds - Array of draft IDs to validate
    * @returns Map of draft IDs to validation results
    */
-  batchValidate(draftIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
+  buildValidate(draftIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
 
   /**
    * Evaluate step capabilities for a draft
@@ -80,7 +80,7 @@ export interface PluginDialogAPI<T> {
    * @param requests - Array of draft ID and step pairs
    * @returns Map of draft IDs to step capabilities
    */
-  batchEvaluateCapabilities(
+  buildEvaluateCapabilities(
     requests: Array<{ draftId: NodeId; step: number }>
   ): Promise<Record<NodeId, StepCapabilities>>;
 

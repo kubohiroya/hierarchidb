@@ -1,11 +1,11 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const workerClientMock = vi.hoisted(() => ({
-  getOrInit: vi.fn<() => Promise<Remote<WorkerAPI>>>(),
+  getOrInit: vi.fn<() => Promise<Remote<BuildWorkerAPI>>>(),
   isReady: vi.fn<() => boolean>(),
-  getSingleton: vi.fn<() => Remote<WorkerAPI>>(),
+  getSingleton: vi.fn<() => Remote<BuildWorkerAPI>>(),
 }));
 
 vi.mock('../../WorkerAPIClient.ts', () => ({
@@ -60,7 +60,7 @@ vi.mock('@hierarchidb/runtime-worker', () => ({
 }));
 
 describe('WorkerModuleLoader', () => {
-  const fakeClient = {} as Remote<WorkerAPI>;
+  const fakeClient = {} as Remote<BuildWorkerAPI>;
 
   beforeEach(() => {
     vi.resetModules();

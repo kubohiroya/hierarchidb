@@ -131,7 +131,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         componentFactory: (props: ShapeStepProps) => <ShapeBuildProgress {...props} />,
         validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {
-          canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBuild(data),
+          canStartBuild: (data?: Partial<ShapeEntity>) => canStartShapeBuild(data),
           canProceedToNext: (data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
           canSave: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         },

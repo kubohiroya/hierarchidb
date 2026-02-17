@@ -1,4 +1,4 @@
 export { registerShapeWorkerStores } from './factory/registerShapeWorkerStores.js';
 export type { RegisterShapeWorkerStoresOptions } from './factory/registerShapeWorkerStores.js';
-export { shapeBatchAPI, shapeBuildAPI } from './api.js';
+export { shapeBuildAPI } from './api.js';
 export { ShapeWorkerPlugin } from './plugin.js';

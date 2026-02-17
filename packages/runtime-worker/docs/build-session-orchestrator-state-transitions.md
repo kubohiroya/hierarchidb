@@ -70,7 +70,7 @@ On SharedWorker/Session initialization:
 
 ### 4.3 Single Entry Semantics (No Resume Mode)
 
-- Runtime accepts one semantic entry: `startSessionRequest(nodeId)`.
+- Runtime accepts one semantic entry: `startBuildSession(nodeId)`.
 - `Resume` is a UI label only; it maps to the same request path.
 - Regardless of current condition (initial / cache deleted / session reset), execution route is identical:
   1. Re-evaluate persisted session/task/cache/artifact state
@@ -124,7 +124,7 @@ sequenceDiagram
 
   U->>UI: Open build step
   UI->>UI: sessionCopy = undefined
-  UI->>BO: subscribeSessionRequest(nodeId, callback)
+  UI->>BO: subscribeBuildSession(nodeId, callback)
   UI->>UI: sessionCopy = SubscriptionRequested
   UI->>UI: Show skeleton
   BO->>DB: Lookup session
@@ -154,7 +154,7 @@ sequenceDiagram
   U->>UI: Press Start/Resume
   UI->>UI: sessionCopy idle -> StartRequested
   UI->>UI: disable/loading button
-  UI->>BO: startSessionRequest(nodeId)
+  UI->>BO: startBuildSession(nodeId)
   BO->>DB: session.status = startAccepted
   BO->>DB: resolve runnable delta tasks from persisted state
   BO-->>UI: StartAccepted
@@ -178,7 +178,7 @@ sequenceDiagram
   U->>UI: Click "Cancel build" (while StartAccepted)
   UI->>UI: sessionCopy -> StopRequested (local only)
   UI->>UI: disable/loading button
-  UI->>BO: cancelQueuedSessionRequest(nodeId)
+  UI->>BO: cancelQueuedBuildSession(nodeId)
   BO->>DB: remove nodeId from waiting queue
   BO->>DB: session.status = idle
   BO-->>UI: idle snapshot
@@ -188,7 +188,7 @@ sequenceDiagram
 Notes:
 
 - This API is for queued sessions (`startAccepted`) waiting in FIFO.
-- If the session has already become active (`running`), treat `cancelQueuedSessionRequest(nodeId)` as `stopSessionRequest(nodeId)`.
+- If the session has already become active (`running`), treat `cancelQueuedBuildSession(nodeId)` as `pauseBuildSession(nodeId)`.
 
 ## 9. Multi-Node Concurrent Start
 
@@ -206,21 +206,21 @@ Notes:
 - Select active session (FIFO).
 - Start/stop appropriate StageTaskWorkers by stage.
 - Normalize abnormal residue during bootstrap.
-- Advance stage/session via `nextStageRequest`.
+- Advance stage/session via `nextBuildStageRequest`.
 - Publish runtime updates to subscribers.
-- On `startSessionRequest`, clear existing `buildTasks` for the node and rebuild initial fetch tasks.
+- On `startBuildSession`, clear existing `buildTasks` for the node and rebuild initial fetch tasks.
 
 ### 10.1 Public API (Logical Names)
 
-- `subscribeSessionRequest`
-- `startSessionRequest`
-- `stopSessionRequest`
-- `cancelQueuedSessionRequest`
-- `nextStageRequest`
+- `subscribeBuildSession`
+- `startBuildSession`
+- `pauseBuildSession`
+- `cancelQueuedBuildSession`
+- `nextBuildStageRequest`
 
 Notes:
 
-- `stopSessionRequest` corresponds to UI-local `StopRequested` handling and completion back to `idle`.
+- `pauseBuildSession` corresponds to UI-local `StopRequested` handling and completion back to `idle`.
 
 ## 11. BuildSessionOrchestrator Runtime State
 
@@ -228,21 +228,21 @@ Notes:
 stateDiagram-v2
   [*] --> Boot
   Boot --> Idle: normalize sessions only
-  Idle --> ActiveFetch: startSessionRequest + queue not empty
-  ActiveFetch --> ActiveTransform: nextStageRequest(fetch done)
-  ActiveTransform --> ActiveVt: nextStageRequest(transform done)
-  ActiveVt --> Idle: nextStageRequest(vt done and queue empty)
-  ActiveVt --> ActiveFetch: nextStageRequest(vt done and queue not empty)
+  Idle --> ActiveFetch: startBuildSession + queue not empty
+  ActiveFetch --> ActiveTransform: nextBuildStageRequest(fetch done)
+  ActiveTransform --> ActiveVt: nextBuildStageRequest(transform done)
+  ActiveVt --> Idle: nextBuildStageRequest(vt done and queue empty)
+  ActiveVt --> ActiveFetch: nextBuildStageRequest(vt done and queue not empty)
 
-  ActiveFetch --> Idle: stopSessionRequest and queue empty
-  ActiveTransform --> Idle: stopSessionRequest and queue empty
-  ActiveVt --> Idle: stopSessionRequest and queue empty
+  ActiveFetch --> Idle: pauseBuildSession and queue empty
+  ActiveTransform --> Idle: pauseBuildSession and queue empty
+  ActiveVt --> Idle: pauseBuildSession and queue empty
 ```
 
 ## 12. StageTaskWorker Model
 
 - Each StageTaskWorker dequeues one task from the stage queue and processes it.
-- When the final task in the stage queue completes, it calls `nextStageRequest`.
+- When the final task in the stage queue completes, it calls `nextBuildStageRequest`.
 - BuildSessionOrchestrator decides:
   - advance same session to next stage,
   - switch to next queued session,
@@ -292,9 +292,9 @@ Keep naming aligned with section 3 terminology when updating code or docs.
 
 - Completed:
   - SharedWorker runtime and worker bridge expose canonical `Build*` control APIs.
-  - `Batch*` names are retained as deprecated compatibility aliases.
+  - `Batch*` compatibility aliases were removed from SharedWorker runtime and worker bridge control APIs.
   - Build-session state/terminology docs moved to `packages/runtime-worker/docs`.
   - Shape build-step normal control path (start/stop/progress) no longer depends on `session-coordinator` lock/broadcast heuristics.
 - Deployed with known technical debt:
-  - Compatibility aliases are still present in some plugin-private implementations and historical docs for compatibility.
-  - `Build*` naming is required for new work; remove aliases only via a dedicated cleanup pass.
+  - Remaining `Batch*` mentions may still exist in historical docs, comments, or plugin-local compatibility helpers outside runtime-worker.
+  - `Build*` naming is required for all new work.

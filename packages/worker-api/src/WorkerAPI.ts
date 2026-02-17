@@ -17,7 +17,6 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-  BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
@@ -89,61 +88,26 @@ export interface WorkerAPI<T> {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus>;
-  /** @deprecated Use startBuildSession. */
-  startBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus>;
-  startOrResumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BuildSessionStatus>;
   /** Canonical build API. */
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
-  /** @deprecated Use getBuildSessionStatus. */
-  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   /** Canonical build API. */
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  /** @deprecated Use pauseBuildSession. */
-  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /**
    * Cancel a queued build session. If the target session is already running,
    * runtime should treat this request as stop/pause semantics.
    */
   /** Canonical build API. */
-  cancelQueuedBuildSession?(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  /** @deprecated Use cancelQueuedBuildSession. */
-  cancelQueuedBatchSession?(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /** Canonical build API. */
   resumeBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<void>;
-  /** @deprecated Use resumeBuildSession. */
-  resumeBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
   /** Canonical build API. */
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
-  /** @deprecated Use getBuildTasks. */
-  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
   /** Canonical build API. */
   subscribeBuildTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    callback: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void>;
-  /** @deprecated Use subscribeBuildTasks. */
-  subscribeBatchTasks(
     nodeType: NodeType,
     nodeId: NodeId,
     callback: (event: BuildTaskUpdateEvent) => void
@@ -182,27 +146,9 @@ export interface WorkerAPI<T> {
     nodeId: NodeId,
     callback: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
-  /** @deprecated Use subscribeBuildProgress. */
-  subscribeBatchProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    callback: (event: BuildProgressEvent) => void
-  ): Promise<() => void>;
   subscribeHeapPressure(callback: (event: HeapPressureEvent) => void): Promise<() => void>;
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;
 }
-
-type DeprecatedBatchWorkerAPIMethods =
-  | 'startBatchSession'
-  | 'getBatchSessionStatus'
-  | 'pauseBatchSession'
-  | 'cancelQueuedBatchSession'
-  | 'resumeBatchSession'
-  | 'getBatchTasks'
-  | 'subscribeBatchTasks'
-  | 'subscribeBatchProgress';
-
-/** Canonical Worker API surface (deprecated Batch aliases excluded). */
-export type BuildWorkerAPI<T> = Omit<WorkerAPI<T>, DeprecatedBatchWorkerAPIMethods>;
+export type BuildWorkerAPI<T> = WorkerAPI<T>;

@@ -225,7 +225,7 @@
         "canBeRenamed": true,
         "canBeMoved": true,
         "canBeCopied": false,
-        "supportsBatchProcessing": true
+        "supportsBuildProcessing": true
       },
       "schema": {
         "inherits": "folder",

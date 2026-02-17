@@ -4,10 +4,10 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { toNodeId } from '@hierarchidb/core-types';
-import { useRouteBuildProgress } from '../hooks/useRouteBatchProgress.js';
+import { useRouteBuildProgress } from '../hooks/useRouteBuildProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
-export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
+export function RouteBuildLiveProgress({ jobId }: { jobId: string }) {
   const {
     progress,
     status,

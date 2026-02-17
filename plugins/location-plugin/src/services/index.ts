@@ -5,18 +5,10 @@
 
 export {
   LocationBuildManager,
-  /** @deprecated Use LocationBuildManager. */
-  LocationBatchManager,
   type LocationBuildProgressEvent,
-  /** @deprecated Use LocationBuildProgressEvent. */
-  type LocationBatchProgressEvent,
   type LocationBuildSession,
-  /** @deprecated Use LocationBuildSession. */
-  type LocationBatchSession,
   type LocationBuildTask,
-  /** @deprecated Use LocationBuildTask. */
-  type LocationBatchTask,
-} from './LocationBatchManager.js';
+} from './LocationBuildManager.js';
 export {
   appendLocationPoints,
   replaceLocationPoints,

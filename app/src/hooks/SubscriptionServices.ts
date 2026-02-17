@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { SubscriptionId } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -36,7 +36,7 @@ function resolvePrefetchOptions(kind: SubscriptionKind) {
 
 async function subscribeImpl(
   kind: SubscriptionKind,
-  client: Remote<WorkerAPI>,
+  client: Remote<BuildWorkerAPI>,
   nodeId: NodeId,
   callback: SubscriptionCallback
 ): Promise<{ subId: SubscriptionId; created: boolean }> {
@@ -98,7 +98,7 @@ async function subscribeImpl(
 
 async function releaseImpl(
   kind: SubscriptionKind,
-  client: Remote<WorkerAPI>,
+  client: Remote<BuildWorkerAPI>,
   nodeId: NodeId
 ): Promise<void> {
   const key = subscriptionKey(kind, nodeId);

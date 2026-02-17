@@ -1,16 +1,16 @@
 import type { JSX } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useRouteBatchLaunchForm, type JobKind } from './useRouteBatchLaunchForm.ts';
+import { useRouteBuildLaunchForm, type JobKind } from './useRouteBuildLaunchForm.ts';
 
-export interface RouteBatchLaunchFormProps {
+export interface RouteBuildLaunchFormProps {
   nodeId: NodeId;
   onLaunched?: (res: { nodeId: NodeId; count: number }) => void;
 }
 
-export function RouteBatchLaunchForm({
+export function RouteBuildLaunchForm({
   nodeId,
   onLaunched,
-}: RouteBatchLaunchFormProps): JSX.Element {
+}: RouteBuildLaunchFormProps): JSX.Element {
   const {
     kind,
     setKind,
@@ -28,7 +28,7 @@ export function RouteBatchLaunchForm({
     setConcurrency,
     status,
     launch,
-  } = useRouteBatchLaunchForm(nodeId, onLaunched);
+  } = useRouteBuildLaunchForm(nodeId, onLaunched);
 
   return (
     <div style={{ display: 'grid', gap: 8, maxWidth: 680 }}>

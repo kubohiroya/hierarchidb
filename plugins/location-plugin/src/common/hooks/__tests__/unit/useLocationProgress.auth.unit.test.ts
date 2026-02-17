@@ -8,15 +8,11 @@ const bridgeMock = {
   initialize: vi.fn().mockResolvedValue(undefined),
   subscribeBuildProgress: vi.fn().mockResolvedValue(() => {
   }),
-  subscribeBatchProgress: vi.fn().mockResolvedValue(() => {
-  }),
   getBuildSessionStatus: vi.fn(),
-  getBatchSessionStatus: vi.fn(),
 };
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
   getBuildWorkerBridge: () => bridgeMock,
-  getWorkerBridge: () => bridgeMock,
 }));
 
 describe('useLocationProgress - auth notifications', () => {

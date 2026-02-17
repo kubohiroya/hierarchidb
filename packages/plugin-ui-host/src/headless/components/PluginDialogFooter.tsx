@@ -33,9 +33,9 @@ export interface PluginDialogFooterProps {
   onSaveDraft?: () => void;
   saveDraftLabel?: string;
   disableDraft?: boolean;
-  onStartBatch?: () => void;
-  canStartBatch?: boolean;
-  isStartingBatch?: boolean;
+  onStartBuild?: () => void;
+  canStartBuild?: boolean;
+  isStartingBuild?: boolean;
   primaryButtonOptions?: PluginDialogFooterPrimaryButtonOptions;
   pendingAction?: DialogActionInFlight | null;
 }
@@ -74,9 +74,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   onSaveDraft,
   saveDraftLabel,
   disableDraft,
-  onStartBatch,
-  canStartBatch = true,
-  isStartingBatch = false,
+  onStartBuild,
+  canStartBuild = true,
+  isStartingBuild = false,
   primaryButtonOptions,
   pendingAction,
 }) => {
@@ -195,7 +195,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   const disableLeftPrimary = hasPendingAction;
   const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
   const showSaveDraft = typeof onSaveDraft === 'function';
-  const showStartBatch = typeof onStartBatch === 'function';
+  const showStartBuild = typeof onStartBuild === 'function';
   const disableDraftButton = (disableDraft ?? !isDirty) || hasPendingAction;
   const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
@@ -286,18 +286,18 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
               minHeight: 40,
             }}
           >
-            {showStartBatch && (
+            {showStartBuild && (
               <LoadingButton
                 variant="outlined"
                 size="large"
                 color="secondary"
-                onClick={onStartBatch}
+                onClick={onStartBuild}
                 onPointerDown={stopPointerPropagation}
-                disabled={!canStartBatch || isStartingBatch || hasPendingAction}
-                loading={isStartingBatch}
+                disabled={!canStartBuild || isStartingBuild || hasPendingAction}
+                loading={isStartingBuild}
                 endIcon={<ConstructionIcon fontSize="small" />}
               >
-                {isStartingBatch ? 'Building…' : 'Build'}
+                {isStartingBuild ? 'Building…' : 'Build'}
               </LoadingButton>
             )}
           </Box>
@@ -368,9 +368,9 @@ export const PluginDialogFooter = React.memo(
     prev.onSaveDraft === next.onSaveDraft &&
     prev.saveDraftLabel === next.saveDraftLabel &&
     prev.disableDraft === next.disableDraft &&
-    prev.onStartBatch === next.onStartBatch &&
-    prev.canStartBatch === next.canStartBatch &&
-    prev.isStartingBatch === next.isStartingBatch &&
+    prev.onStartBuild === next.onStartBuild &&
+    prev.canStartBuild === next.canStartBuild &&
+    prev.isStartingBuild === next.isStartingBuild &&
     prev.primaryButtonOptions === next.primaryButtonOptions &&
     prev.pendingAction === next.pendingAction
 );

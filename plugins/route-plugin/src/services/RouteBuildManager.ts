@@ -1,13 +1,12 @@
 /**
- * @file RouteBatchManager.ts
+ * @file RouteBuildManager.ts
  * @description Route build processing manager extending Shape's build infrastructure
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
 
-// No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
+import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteBuildSession, type RouteBuildTask } from './RouteBuildSession.js';
 import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
@@ -16,15 +15,12 @@ import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
 export type ProgressStore = { upsert?: (nodeId: string, record: ProgressUpdate) => void };
-type RouteBuildConfig = RouteBatchConfig;
 
 export type RouteBuildManagerDeps = {
   engines?: unknown;
   emitter?: ProgressEmitter;
   store?: ProgressStore;
 };
-/** @deprecated Use RouteBuildManagerDeps. */
-export type RouteBatchManagerDeps = RouteBuildManagerDeps;
 
 export type RouteBuildRouteInput = {
   startLocationId?: NodeId;
@@ -34,8 +30,6 @@ export type RouteBuildRouteInput = {
   method?: RouteGenerationConfig['method'];
   methodOptions?: RouteGenerationConfig['options'];
 };
-/** @deprecated Use RouteBuildRouteInput. */
-export type RouteBatchRouteInput = RouteBuildRouteInput;
 
 const logRouteBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -173,24 +167,15 @@ export class RouteBuildManager {
 
     return nodeId;
   }
-  /** @deprecated Use startRouteBuildSession. */
-  async startRouteBatchSession(
-    nodeId: NodeId,
-    config: RouteBuildConfig,
-    routes: RouteBuildRouteInput[],
-  ): Promise<NodeId> {
-    return this.startRouteBuildSession(nodeId, config, routes);
-  }
-
   getSession(nodeId: NodeId): RouteBuildSession | undefined {
     return this.activeSessions.get(nodeId);
   }
 
-  // Process route tasks using RouteBatchSession (handled within session)
+  // Process route tasks using RouteBuildSession (handled within session)
 
   // Grouping helper kept for reference (not used in current flow)
 
-  // private async processTaskGroup(...): Promise<void> { /* consolidated into RouteBatchSession */ }
+  // private async processTaskGroup(...): Promise<void> { /* consolidated into RouteBuildSession */ }
 
   // private getLaneSemaphore(method: string): Semaphore {
   //   let sem = this.laneSemaphores.get(method);
@@ -205,7 +190,7 @@ export class RouteBuildManager {
   /**
    * Process individual route task
    */
-  // private async processIndividualTask(...): Promise<void> { /* handled by RouteBatchSession */ }
+  // private async processIndividualTask(...): Promise<void> { /* handled by RouteBuildSession */ }
 
   /**
    * Resolve location references
@@ -273,16 +258,6 @@ export class RouteBuildManager {
       totalRoutes: routeGenerationTasks.length,
       errors: failedTasks.map(t => t.error || 'Unknown error'),
     };
-  }
-  /** @deprecated Use getRouteBuildProgress. */
-  async getRouteBatchProgress(nodeId: NodeId): Promise<{
-    phase: string;
-    progress: number;
-    completedRoutes: number;
-    totalRoutes: number;
-    errors: string[];
-  }> {
-    return this.getRouteBuildProgress(nodeId);
   }
 
   private emitProgressEvent(event: BuildProgressEvent): void {
@@ -398,7 +373,4 @@ function hashCyrb53(str: string, seed = 0): string {
   return h.toString(36);
 }
 
-// (removed) Semaphore helper; concurrency control is handled in RouteBatchSession
-
-/** @deprecated Use RouteBuildManager. */
-export { RouteBuildManager as RouteBatchManager };
+// (removed) Semaphore helper; concurrency control is handled in RouteBuildSession

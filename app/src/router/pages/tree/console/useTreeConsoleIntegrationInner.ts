@@ -12,7 +12,7 @@ import { createElement, useCallback, useMemo, useState } from 'react';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
 import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
@@ -28,7 +28,7 @@ type TreeNodeInfoPanelProps = React.ComponentProps<
 >;
 
 export type UseTreeConsoleIntegrationInnerArgs = {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;

@@ -23,7 +23,6 @@ import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { loadTreeConsoleSettings } from '@hierarchidb/util';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import { useShapeBuildStages } from './useShapeBuildStages.ts';
 import { useShapeBuildProgressSummary } from './useShapeBuildProgressSummary.ts';
@@ -1596,14 +1595,12 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       }
       if (shouldResumeSession) {
         advanceBuildSessionTransitionPhase('starting-session');
-        const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
         beginBuildStartupStep('session-resume-request', {
           source: startupSource,
-          policy,
         });
         try {
           await runTimedStep('session-resume-request', () => (
-            bridgeRef.current.startOrResumeBuildSession(SHAPE_NODE_TYPE, activeNodeId, undefined, policy)
+            bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId)
           ));
           finishBuildStartupStep('session-resume-request', 'success');
         } catch (error) {
@@ -1669,21 +1666,18 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
       advanceBuildSessionTransitionPhase('starting-session');
-      const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       beginBuildStartupStep('session-start-request', {
         source: startupSource,
-        policy,
         payloadMode: 'worker-side',
         selectedCountryCount: selectionSummary.selectedCountryCount,
         selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
       });
-      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startOrResumeBuildSession>>;
+      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
       try {
-        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startOrResumeBuildSession(
+        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startBuildSession(
           SHAPE_NODE_TYPE,
           activeNodeId,
           undefined,
-          policy,
         ));
         finishBuildStartupStep('session-start-request', 'success', {
           status: statusResult.status,

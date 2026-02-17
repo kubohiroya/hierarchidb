@@ -9,7 +9,7 @@ export const emptyGuards: StepGuardState = {
   canSave: false,
   canProceedNext: false,
   canGoBack: false,
-  canStartBatch: false,
+  canStartBuild: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -203,7 +203,7 @@ export async function evaluateStepGuards({
     defaultCanBack
   );
 
-  const canStartBatch = await callBoolean(activeConfig?.capabilities?.canStartBatch, false);
+  const canStartBuild = await callBoolean(activeConfig?.capabilities?.canStartBuild, false);
 
   for (let idx = 0; idx < enabledSteps.length; idx++) {
     let allowed = await checkNavigate(idx);
@@ -223,7 +223,7 @@ export async function evaluateStepGuards({
     canSave,
     canProceedNext,
     canGoBack,
-    canStartBatch,
+    canStartBuild,
   };
 }
 

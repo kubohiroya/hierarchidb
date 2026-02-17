@@ -1,11 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDeps } from './RouteBuildManager.js';
 import type { RouteBuildSession } from './RouteBuildSession.js';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../common/config/buildConfig.js';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildProgressCallback, BuildProgressEvent, BuildSessionStatus, StageKey } from '@hierarchidb/batch-api';
 import { BaseBuildSessionManager } from '@hierarchidb/batch';
-
-type RouteBuildConfig = RouteBatchConfig;
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;
@@ -13,14 +12,10 @@ export interface RouteBuildSessionConfig {
   validation?: RouteBuildConfig['validation'];
   laneCaps?: RouteBuildConfig['laneCaps'];
 }
-/** @deprecated Use RouteBuildSessionConfig. */
-export type RouteBatchSessionConfig = RouteBuildSessionConfig;
 
 export interface RouteBuildInput {
   routes: RouteBuildRouteInput[];
 }
-/** @deprecated Use RouteBuildInput. */
-export type RouteBatchInput = RouteBuildInput;
 
 export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
   private readonly manager: RouteBuildManager;
@@ -74,19 +69,11 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
     }
     return this.getBuildSessionStatus(sessionNodeId);
   }
-  /** @deprecated Use startBuildSession. */
-  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
-    return this.startBuildSession(nodeId);
-  }
 
   async pauseBuildSession(nodeId: NodeId): Promise<void> {
     if (this.sessions.has(nodeId)) {
       await super.pauseBuildSession(nodeId);
     }
-  }
-  /** @deprecated Use pauseBuildSession. */
-  async pauseBatchSession(nodeId: NodeId): Promise<void> {
-    await this.pauseBuildSession(nodeId);
   }
 
   async resumeBuildSession(nodeId: NodeId): Promise<void> {
@@ -94,17 +81,9 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
       await super.resumeBuildSession(nodeId);
     }
   }
-  /** @deprecated Use resumeBuildSession. */
-  async resumeBatchSession(nodeId: NodeId): Promise<void> {
-    await this.resumeBuildSession(nodeId);
-  }
 
   onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     return super.onBuildProgress(nodeId, callback);
-  }
-  /** @deprecated Use onBuildProgress. */
-  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    return this.onBuildProgress(nodeId, callback);
   }
 
   protected async onSessionStatusChange(_session: RouteBuildSession): Promise<void> {
@@ -117,23 +96,21 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
 }
 
 function resolveRouteConfig(config?: RouteBuildSessionConfig | RouteBuildConfig): RouteBuildConfig {
-  const defaults: RouteBuildConfig['routeGeneration'] = {
-    method: 'direct',
-    parallel: true,
-    maxConcurrent: 4,
-    retryOnFailure: false,
-    maxRetries: 0,
+  const defaults = DEFAULT_ROUTE_BUILD_CONFIG;
+  const routeGenerationDefaults = DEFAULT_ROUTE_BUILD_CONFIG.routeGeneration;
+  const routeGeneration: RouteBuildConfig['routeGeneration'] = {
+    ...routeGenerationDefaults,
+    ...config?.routeGeneration,
   };
+
+  const routeConfig: RouteBuildConfig = {
+    ...defaults,
+    ...config,
+    routeGeneration,
+  };
+
   return {
-    routeGeneration: {
-      ...defaults,
-      ...config?.routeGeneration,
-    },
-    locationResolution: config?.locationResolution,
-    validation: config?.validation,
-    laneCaps: config?.laneCaps,
+    ...routeConfig,
+    routeGeneration,
   };
 }
-
-/** @deprecated Use RouteBuildSessionOrchestrator. */
-export { RouteBuildSessionOrchestrator as RouteBatchSessionOrchestrator };

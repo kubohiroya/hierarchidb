@@ -1,12 +1,12 @@
 /**
- * @file LocationBatchManager.ts
- * @description Location batch processing manager extending Shape's batch infrastructure
+ * @file LocationBuildManager.ts
+ * @description Location build processing manager extending shared build infrastructure.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  LocationBatchConfig,
-  LocationBatchFilterCriteria,
+  LocationBuildConfig,
+  LocationBuildFilterCriteria,
   LocationSearchConfig,
   LocationType,
 } from '../common/entities/LocationEntity.js';
@@ -23,7 +23,7 @@ import { getLocationDataSource } from '../common/datasources/LocationDataSourceD
 import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
 import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 
-const logLocationBatchWarning = (message: string, error: unknown): void => {
+const logLocationBuildWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[LocationBuildManager]', message, error);
 };
@@ -62,15 +62,13 @@ export interface LocationBuildTask {
     totalSaved?: number;
   };
 }
-/** @deprecated Use LocationBuildTask. */
-export type LocationBatchTask = LocationBuildTask;
 
 /**
  * Location build session status
  */
 export interface LocationBuildSession {
   nodeId: NodeId;
-  config: LocationBatchConfig;
+  config: LocationBuildConfig;
   totalTasks: number;
   completedTasks: number;
   failedTasks: number;
@@ -79,8 +77,6 @@ export interface LocationBuildSession {
   endTime?: number;
   status: 'running' | 'paused' | 'completed' | 'failed';
 }
-/** @deprecated Use LocationBuildSession. */
-export type LocationBatchSession = LocationBuildSession;
 
 /**
  * Location build progress event
@@ -98,8 +94,6 @@ export interface LocationBuildProgressEvent {
     locationsSaved?: number;
   };
 }
-/** @deprecated Use LocationBuildProgressEvent. */
-export type LocationBatchProgressEvent = LocationBuildProgressEvent;
 
 type RawNominatimLike = RawNominatimResult;
 
@@ -128,7 +122,7 @@ export class LocationBuildManager {
 
   async collectLocationPoints(
     nodeId: NodeId,
-    config: LocationBatchConfig,
+    config: LocationBuildConfig,
     progressCallback?: (event: LocationBuildProgressEvent) => void,
   ): Promise<LocationPointProperties[]> {
     const tasks = config.searchConfigs.map((searchConfig, index) => ({
@@ -176,7 +170,7 @@ export class LocationBuildManager {
    */
   async startLocationBuildSession(
     nodeId: NodeId,
-    config: LocationBatchConfig,
+    config: LocationBuildConfig,
     progressCallback?: (event: LocationBuildProgressEvent) => void,
   ): Promise<NodeId> {
     const totalTasks = config.searchConfigs.length;
@@ -216,17 +210,6 @@ export class LocationBuildManager {
     });
 
     return nodeId;
-  }
-
-  /**
-   * @deprecated Use startLocationBuildSession.
-   */
-  async startLocationBatchSession(
-    nodeId: NodeId,
-    config: LocationBatchConfig,
-    progressCallback?: (event: LocationBuildProgressEvent) => void,
-  ): Promise<NodeId> {
-    return this.startLocationBuildSession(nodeId, config, progressCallback);
   }
 
   /**
@@ -382,7 +365,7 @@ export class LocationBuildManager {
         return filtered;
       }
     } catch (error) {
-      logLocationBatchWarning('Failed to execute registered location strategy', error);
+      logLocationBuildWarning('Failed to execute registered location strategy', error);
     }
 
     const locations: LocationPointProperties[] = [];
@@ -453,7 +436,7 @@ export class LocationBuildManager {
     try {
       const data = await this.getJson(`${endpoint}?${params}`);
       if (!isRawNominatimArray(data)) {
-        logLocationBatchWarning('Unexpected Nominatim response shape', data);
+        logLocationBuildWarning('Unexpected Nominatim response shape', data);
         return [];
       }
       return await this.convertOSMToLocations(data);
@@ -784,7 +767,7 @@ export class LocationBuildManager {
    */
   private async validateAndFilterLocations(
     locations: LocationPointProperties[],
-    criteria?: LocationBatchFilterCriteria,
+    criteria?: LocationBuildFilterCriteria,
   ): Promise<LocationPointProperties[]> {
     if (!criteria) return locations;
 
@@ -902,7 +885,7 @@ export class LocationBuildManager {
       this.countryNameMap = map;
       return map;
     } catch (error) {
-      logLocationBatchWarning('Failed to normalize country names using ISO3166 data', error);
+      logLocationBuildWarning('Failed to normalize country names using ISO3166 data', error);
       this.countryNameMap = new Map();
       return this.countryNameMap;
     }
@@ -954,12 +937,6 @@ export class LocationBuildManager {
     return this.locationSessions.get(nodeId);
   }
 
-  /**
-   * @deprecated Use getLocationBuildSessionStatus.
-   */
-  getLocationSessionStatus(nodeId: NodeId): LocationBuildSession | undefined {
-    return this.getLocationBuildSessionStatus(nodeId);
-  }
 
   /**
    * Abort location build session.
@@ -977,13 +954,4 @@ export class LocationBuildManager {
     this.progressCallbacks.delete(nodeId);
   }
 
-  /**
-   * @deprecated Use abortLocationBuildSession.
-   */
-  async abortLocationSession(nodeId: NodeId): Promise<void> {
-    await this.abortLocationBuildSession(nodeId);
-  }
 }
-
-/** @deprecated Use LocationBuildManager. */
-export { LocationBuildManager as LocationBatchManager };

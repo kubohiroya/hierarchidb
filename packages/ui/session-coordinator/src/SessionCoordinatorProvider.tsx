@@ -36,8 +36,3 @@ export const useTabSessionCoordinator = (): TabSessionCoordinator => {
   }
   return value;
 };
-
-/** @deprecated Use TabSessionCoordinatorProvider. */
-export const SessionCoordinatorProvider = TabSessionCoordinatorProvider;
-/** @deprecated Use useTabSessionCoordinator. */
-export const useSessionCoordinator = useTabSessionCoordinator;

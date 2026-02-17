@@ -1,12 +1,19 @@
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
 
-type RouteBuildConfig = BaseBuildConfig<string>;
+type RouteBuildConfigLocal = RouteBuildConfig;
 
-type PartialRouteBuildConfig = Partial<RouteBuildConfig>;
+type PartialRouteBuildConfig = Partial<RouteBuildConfigLocal>;
 
 export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
   dataSourceName: 'ide-gsm',
+  routeGeneration: {
+    method: 'direct',
+    parallel: true,
+    maxConcurrent: 4,
+    retryOnFailure: false,
+    maxRetries: 0,
+  },
   fetchConfig: {
     maxConcurrent: 2,
     deleteOnComplete: false,
@@ -115,12 +122,17 @@ export const mergeRouteBuildConfig = (
     }
     : base.routeTransformConfig;
 
+  const routeGeneration = overrides.routeGeneration
+    ? { ...base.routeGeneration, ...overrides.routeGeneration }
+    : base.routeGeneration;
+
   return {
     ...base,
     ...overrides,
     fetchConfig,
     transformConfig,
     vtConfig,
+    routeGeneration,
     cleanupConfig,
     routeTransformConfig,
   };

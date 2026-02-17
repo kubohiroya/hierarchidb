@@ -1,10 +1,7 @@
-/**
+/** 
  * Unified progress event types for build processing.
  */
 export type BuildStage = 'fetch' | 'transform' | 'vt' | 'completed' | string;
-
-/** @deprecated Use BuildStage. */
-export type BatchStage = BuildStage;
 
 export type BuildContinuationPolicy =
   | 'finish_all_stages'

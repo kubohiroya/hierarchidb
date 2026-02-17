@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import type { WorkerInitializationProgress, WorkerRuntimeState } from './WorkerStateStore.js';
 
@@ -12,8 +12,8 @@ import {
 } from './WorkerStateStore.js';
 
 export interface WorkerClientProxy {
-  ensureInitialized(options?: { signal?: AbortSignal }): Promise<Remote<WorkerAPI>>;
-  getCachedClient(): Remote<WorkerAPI> | null;
+  ensureInitialized(options?: { signal?: AbortSignal }): Promise<Remote<BuildWorkerAPI>>;
+  getCachedClient(): Remote<BuildWorkerAPI> | null;
   getState(): WorkerRuntimeState;
   getLastError(): Error | null;
   getProgress(): WorkerInitializationProgress;

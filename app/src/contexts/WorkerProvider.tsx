@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -86,7 +86,7 @@ const resetWorkerClient = () => {
 };
 
 type WorkerStatusState = {
-  client: Remote<WorkerAPI> | null;
+  client: Remote<BuildWorkerAPI> | null;
   isInitialized: boolean;
   initProgress: number;
   initMessage: string;
@@ -108,7 +108,7 @@ const noopAsync = async () => undefined;
 const noopSync = () => undefined;
 const DEFAULT_WORKER_INIT_TIMEOUT_MS = 30_000;
 
-const createFallbackWorkerClient = (): Remote<WorkerAPI> => {
+const createFallbackWorkerClient = (): Remote<BuildWorkerAPI> => {
   const services = {
     modals: {
       open: noopAsync,
@@ -129,7 +129,7 @@ const createFallbackWorkerClient = (): Remote<WorkerAPI> => {
   return {
     services,
     getTagAPI: async () => tagApi,
-  } as unknown as Remote<WorkerAPI>;
+  } as unknown as Remote<BuildWorkerAPI>;
 };
 
 const noopWorkerClient = createFallbackWorkerClient();
@@ -420,7 +420,7 @@ export const WorkerProvider = ({
     }
   }, [status.client, status.isInitialized]);
 
-  const storageBridgeClientRef = useRef<Remote<WorkerAPI> | null>(null);
+  const storageBridgeClientRef = useRef<Remote<BuildWorkerAPI> | null>(null);
 
   useEffect(() => {
     if (!status.client || !status.isInitialized) return;
@@ -525,7 +525,7 @@ export const WorkerProvider = ({
 
       try {
         const abortController = new AbortController();
-        const client = await new Promise<Remote<WorkerAPI>>((resolve, reject) => {
+        const client = await new Promise<Remote<BuildWorkerAPI>>((resolve, reject) => {
           let settled = false;
           const timeoutId = window.setTimeout(() => {
             if (settled) return;
@@ -606,7 +606,7 @@ export const WorkerProvider = ({
     void runInitialization();
   }, [bootProgress, resetState, runInitialization, t]);
 
-  const getAPI = useCallback((): Remote<WorkerAPI> => {
+  const getAPI = useCallback((): Remote<BuildWorkerAPI> => {
     if (!status.client) {
       throw new Error('Worker client not initialized');
     }

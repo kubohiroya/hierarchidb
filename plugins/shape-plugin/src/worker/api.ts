@@ -149,7 +149,7 @@ const resolveFetchTaskPayloadsForPlan = async (input: {
   if (payloadsFromCache.length > 0 || selectedAdminPairCount === 0) {
     return payloadsFromCache;
   }
-  console.warn('[shapeBatchAPI] no fetch payloads from cached metadata; retrying with force refresh', {
+  console.warn('[shapeBuildAPI] no fetch payloads from cached metadata; retrying with force refresh', {
     nodeId: input.nodeId,
     dataSource: input.dataSource,
     selectedAdminPairCount,
@@ -161,7 +161,7 @@ const resolveFetchTaskPayloadsForPlan = async (input: {
     return payloadsFromRefreshedMetadata;
   }
   throw new Error(
-    `[shapeBatchAPI] No fetch task payloads generated for ${selectedAdminPairCount}`
+    `[shapeBuildAPI] No fetch task payloads generated for ${selectedAdminPairCount}`
     + ' selected entries. Metadata may be stale or incompatible with the current selection.',
   );
 };
@@ -411,7 +411,7 @@ const applyConfigInvalidation = async (
   await clearBuildTasksByStage(nodeId, stagesToClear);
   await clearTaskQueueStages(nodeId, stagesToClear);
 
-  console.warn('[shapeBatchAPI] config invalidation applied', {
+  console.warn('[shapeBuildAPI] config invalidation applied', {
     nodeId,
     fetch: plan.fetch,
     transform: plan.transform,
@@ -671,7 +671,7 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
   flushBatch();
   await writeChain;
 
-  console.warn('[shapeBatchAPI] seed task queue from build tasks', JSON.stringify({
+  console.warn('[shapeBuildAPI] seed task queue from build tasks', JSON.stringify({
     nodeId,
     scannedCount,
     queuedCount,
@@ -688,7 +688,7 @@ const purgeLegacyBuildTasks = async (nodeId: NodeId): Promise<number> => {
   });
   if (invalidTaskIds.length === 0) return 0;
   await ephemeralDB.buildTasks.bulkDelete(invalidTaskIds);
-  console.warn('[shapeBatchAPI] purged legacy build tasks', JSON.stringify({
+  console.warn('[shapeBuildAPI] purged legacy build tasks', JSON.stringify({
     nodeId,
     removedCount: invalidTaskIds.length,
   }));
@@ -712,7 +712,7 @@ const purgeLegacyTaskQueue = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): P
   });
   if (removedTaskIds.length === 0) return 0;
   await deleteTasksByIds(taskQueue, removedTaskIds);
-  console.warn('[shapeBatchAPI] purged legacy task queue records', JSON.stringify({
+  console.warn('[shapeBuildAPI] purged legacy task queue records', JSON.stringify({
     nodeId,
     removedCount: removedTaskIds.length,
   }));
@@ -1079,7 +1079,7 @@ const updateBuildSessionFromTasks = async (
       completedAt: overrides?.completedAt,
     });
   } catch (error) {
-    console.warn('[shapeBatchAPI] build session update failed', error);
+    console.warn('[shapeBuildAPI] build session update failed', error);
   }
 };
 
@@ -1234,7 +1234,7 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId): void => {
 const clearStalePipelineStateIfInactive = async (
   nodeId: NodeId,
   sessionRecord: ShapeBuildSessionRecord | null,
-  source: 'startBuildSession' | 'startBatchProcess' | 'resumeBuildSession',
+  source: 'startBuildSession' | 'resumeBuildSession',
 ): Promise<boolean> => {
   const pipelineKey = String(nodeId);
   if (!activePipelines.has(pipelineKey)) return false;
@@ -1254,7 +1254,7 @@ const clearStalePipelineStateIfInactive = async (
   ]);
   if (runningTasks.length > 0 || queuedTasks.length > 0) return false;
   clearActivePipelineRuntimeState(nodeId);
-  console.warn('[shapeBatchAPI] stale pipeline state cleared', {
+  console.warn('[shapeBuildAPI] stale pipeline state cleared', {
     nodeId,
     source,
     sessionStatus: sessionRecord?.status ?? null,
@@ -1264,7 +1264,7 @@ const clearStalePipelineStateIfInactive = async (
   return true;
 };
 
-type StartBuildSessionScope = 'startBuildSession' | 'startBatchProcess';
+type StartBuildSessionScope = 'startBuildSession';
 
 const startBuildSessionInternal = async (
   scope: StartBuildSessionScope,
@@ -1300,7 +1300,7 @@ const startBuildSessionInternal = async (
       nodeId: startupNodeId,
       ...extra,
     };
-    console.warn('[shapeBatchAPI] startup', JSON.stringify(payload));
+    console.warn('[shapeBuildAPI] startup', JSON.stringify(payload));
   };
   const executeStartupStep = async <T>(
     step: string,
@@ -1419,7 +1419,7 @@ const startBuildSessionInternal = async (
   );
   if ((downloadTaskPayloads.length > 0 || selectedAdminPairCount > 0) && fetchPlan.plannedFetchTotal === 0) {
     throw new Error(
-      '[shapeBatchAPI] Build has selected inputs but generated 0 fetch tasks.'
+      '[shapeBuildAPI] Build has selected inputs but generated 0 fetch tasks.'
       + ' Please reload country metadata and retry.',
     );
   }
@@ -1523,7 +1523,7 @@ const startBuildSessionInternal = async (
       startupScope,
     );
     startSessionTracking(nodeForSession);
-    console.warn(`[shapeBatchAPI] ${startupScope} pipeline start`, {
+    console.warn(`[shapeBuildAPI] ${startupScope} pipeline start`, {
       nodeId: nodeForSession,
       runId: pipelineRunId,
       payloadCount: downloadTaskPayloads.length,
@@ -1569,8 +1569,8 @@ const startBuildSessionInternal = async (
     }).catch(async (error) => {
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
-      console.error('[shapeBatchAPI] vt pipeline failed', error);
-      console.error('[shapeBatchAPI] startup', JSON.stringify({
+      console.error('[shapeBuildAPI] vt pipeline failed', error);
+      console.error('[shapeBuildAPI] startup', JSON.stringify({
         scope: startupScope,
         phase: 'finish',
         step: 'pipeline-run',
@@ -1631,7 +1631,7 @@ const startBuildSessionInternal = async (
             }),
           });
         } catch (error) {
-          console.error('[shapeBatchAPI] progress payload build failed', error);
+          console.error('[shapeBuildAPI] progress payload build failed', error);
         }
       })();
     });
@@ -1666,14 +1666,14 @@ const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
   if (patches.length === 0) return;
   const debugTag = 'normalize-task-queue-2026-02-09-0334';
   const startedAt = Date.now();
-  console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields start', {
+  console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields start', {
     tag: debugTag,
     nodeId,
     patchCount: patches.length,
   });
   let waitTimer: ReturnType<typeof setInterval> | null = null;
   waitTimer = setInterval(() => {
-    console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields waiting', {
+    console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields waiting', {
       tag: debugTag,
       nodeId,
       elapsedMs: Date.now() - startedAt,
@@ -1681,7 +1681,7 @@ const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
   }, 5000);
   try {
     await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
-    console.warn('[shapeBatchAPI][TaskDebug] normalizeTaskQueueStageFields done', {
+    console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields done', {
       tag: debugTag,
       nodeId,
       elapsedMs: Date.now() - startedAt,
@@ -1704,14 +1704,14 @@ const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
   const state = getPauseState(nodeId);
   if (!state.paused) return;
   const startedAt = Date.now();
-  console.warn('[shapeBatchAPI][PauseTrace] wait-enter', {
+  console.warn('[shapeBuildAPI][PauseTrace] wait-enter', {
     nodeId,
     waitersBefore: state.waiters.length,
   });
   await new Promise<void>((resolve) => {
     state.waiters.push(resolve);
   });
-  console.warn('[shapeBatchAPI][PauseTrace] wait-exit', {
+  console.warn('[shapeBuildAPI][PauseTrace] wait-exit', {
     nodeId,
     elapsedMs: Date.now() - startedAt,
     waitersRemaining: state.waiters.length,
@@ -1721,7 +1721,7 @@ const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
 const setPaused = (nodeId: NodeId, paused: boolean): void => {
   const state = getPauseState(nodeId);
   state.paused = paused;
-  console.warn('[shapeBatchAPI][PauseTrace] state-update', {
+  console.warn('[shapeBuildAPI][PauseTrace] state-update', {
     nodeId,
     paused,
     waiters: state.waiters.length,
@@ -1827,7 +1827,7 @@ const emitProgressSnapshot = async (
   const sub = progressCallbacks.get(String(nodeId));
   if (!sub?.callback) {
     if (typeof message === 'string' && message.length > 0) {
-      console.warn('[shapeBatchAPI] progress snapshot skipped (no subscriber)', JSON.stringify({
+      console.warn('[shapeBuildAPI] progress snapshot skipped (no subscriber)', JSON.stringify({
         nodeId,
         message,
       }));
@@ -1849,8 +1849,404 @@ const emitProgressSnapshot = async (
       payload,
     });
   } catch (error) {
-    console.error('[shapeBatchAPI] progress snapshot build failed', error);
+    console.error('[shapeBuildAPI] progress snapshot build failed', error);
   }
+};
+
+const invokeShapeBuildCommand = async (
+  command: string,
+  payload: Record<string, unknown>,
+): Promise<void> => {
+  if (command === 'session/pause') {
+    const nodeId = payload.nodeId as NodeId;
+    if (!nodeId) throw new Error('[shapeBuildAPI] session/pause requires nodeId');
+    const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
+    const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : undefined;
+    console.warn('[shapeBuildAPI][PauseTrace] pause-requested', {
+      nodeId,
+      stopReason: stopReason ?? null,
+    });
+    setPaused(nodeId, true);
+    void (async () => {
+      try {
+        await upsertBuildSessionSnapshot({
+          nodeId,
+          status: 'paused',
+          stopReason,
+          canResume: true,
+        });
+        await emitProgressSnapshot(nodeId, 'Pause requested.');
+        const drain = await waitForRunningTasksToDrain(nodeId);
+        console.warn('[shapeBuildAPI][PauseTrace] pause-settled', {
+          nodeId,
+          ...drain,
+        });
+        if (!drain.drained) {
+          await emitProgressSnapshot(
+            nodeId,
+            `Pause requested; waiting for ${drain.running} running task(s) to reach a pause point.`
+          );
+        }
+      } catch (error) {
+        console.warn('[shapeBuildAPI][PauseTrace] pause-settle-monitor-failed', {
+          nodeId,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
+    return;
+  }
+
+  if (command === 'session/cancel-queued') {
+    const nodeId = payload.nodeId as NodeId;
+    if (!nodeId) throw new Error('[shapeBuildAPI] session/cancel-queued requires nodeId');
+    const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
+    const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : 'user-pause';
+    const pipelineKey = String(nodeId);
+    if (activePipelines.has(pipelineKey)) {
+      await invokeShapeBuildCommand('session/pause', { nodeId, stopReason });
+      return;
+    }
+    setPaused(nodeId, false);
+    setFetchPlannedTotal(nodeId, 0);
+    const taskQueue = new VtTaskQueueDb();
+    await deleteTasksByNode(taskQueue, nodeId);
+    await upsertBuildSessionSnapshot({
+      nodeId,
+      status: 'idle',
+      stopReason,
+      canResume: false,
+    });
+    await emitProgressSnapshot(nodeId, 'Queued build canceled.');
+    return;
+  }
+
+  if (command === 'session/resume') {
+    const nodeId = payload.nodeId as NodeId;
+    if (!nodeId) throw new Error('[shapeBuildAPI] session/resume requires nodeId');
+    const buildContinuationPolicy = payload.buildContinuationPolicy as BuildContinuationPolicy | undefined;
+    const payloadBuildConfig = asRecordOrNull(payload.buildConfig) as Partial<ShapeBuildConfig> | null;
+    const payloadProcessingConfig = asRecordOrNull(payload.processingConfig) as Partial<ShapeProcessingConfig> | null;
+    const pipelineKey = String(nodeId);
+    let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    const resumeScope = 'resumeBuildSession';
+    const getResumeErrorMessage = (error: unknown): string => (
+      error instanceof Error ? error.message : String(error)
+    );
+    const emitResumeStepLog = (
+      phase: 'start' | 'finish',
+      step: string,
+      extra?: Record<string, unknown>,
+    ): void => {
+      void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        stageId: `startup:${step}:${phase}`,
+        stageHeartbeatAt: Date.now(),
+      }).catch(() => {});
+      console.warn('[shapeBuildAPI] startup', JSON.stringify({
+        scope: resumeScope,
+        phase,
+        step,
+        nodeId,
+        ...extra,
+      }));
+    };
+    const executeResumeStep = async <T>(
+      step: string,
+      runner: () => Promise<T>,
+      extra?: Record<string, unknown>,
+    ): Promise<T> => {
+      const startedAt = Date.now();
+      emitResumeStepLog('start', step, extra);
+      try {
+        const result = await runner();
+        emitResumeStepLog('finish', step, {
+          ...(extra ?? {}),
+          outcome: 'success',
+          elapsedMs: Date.now() - startedAt,
+        });
+        return result;
+      } catch (error) {
+        emitResumeStepLog('finish', step, {
+          ...(extra ?? {}),
+          outcome: 'error',
+          elapsedMs: Date.now() - startedAt,
+          errorMessage: getResumeErrorMessage(error),
+        });
+        throw error;
+      }
+    };
+
+    if (activePipelines.has(pipelineKey)) {
+      await clearStalePipelineStateIfInactive(
+        nodeId,
+        sessionRecord,
+        'resumeBuildSession',
+      );
+    }
+    setPaused(nodeId, false);
+    await executeResumeStep('emit-progress-snapshot', async () => emitProgressSnapshot(nodeId));
+    const taskQueue = new VtTaskQueueDb();
+    const runningTaskCount = await executeResumeStep(
+      'count-running-tasks',
+      async () => taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
+    );
+    if (runningTaskCount > 0) {
+      await executeResumeStep(
+        'reset-running-tasks',
+        async () => resetRunningTasks(nodeId),
+        { runningTaskCount },
+      );
+      if (activePipelines.has(pipelineKey)) {
+        clearActivePipelineRuntimeState(nodeId);
+      }
+    }
+    await executeResumeStep('reset-failed-tasks', async () => resetFailedTasks(nodeId));
+    let existingTaskCount = await executeResumeStep(
+      'count-existing-tasks',
+      async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
+    );
+    if (existingTaskCount === 0) {
+      await executeResumeStep(
+        'seed-task-queue',
+        async () => {
+          await seedTaskQueueFromBuildTasks(nodeId);
+          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+        },
+      );
+    }
+    if (existingTaskCount > 0) {
+      await executeResumeStep(
+        'normalize-existing-tasks',
+        async () => normalizeTaskQueueStageFields(nodeId),
+        { existingTaskCount },
+      );
+    }
+    if (activePipelines.has(pipelineKey)) {
+      await emitProgressSnapshot(nodeId, 'resumeBuildSession ignored: pipeline already active');
+      return;
+    }
+
+    const handler = getShapeEntityHandler();
+    const draftEntity = await executeResumeStep('load-draft', async () => handler.getEntity(nodeId));
+    if (!draftEntity) return;
+    if (!sessionRecord) {
+      sessionRecord = await executeResumeStep(
+        'load-session-record',
+        async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null),
+      );
+    }
+    const draftBuildConfig = draftEntity.buildConfig;
+    const draftProcessingConfig = draftEntity.processingConfig;
+    const normalizedDraftConfig = draftBuildConfig
+      ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
+      : null;
+    const normalizedPayloadConfig = payloadBuildConfig
+      ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, payloadBuildConfig)
+      : null;
+    const mergedBuildConfig = normalizedDraftConfig
+      ? (normalizedPayloadConfig
+        ? mergeBuildConfig(normalizedDraftConfig, normalizedPayloadConfig)
+        : normalizedDraftConfig)
+      : normalizedPayloadConfig;
+    if (!mergedBuildConfig) {
+      throw new Error('[shapeBuildAPI] buildConfig is required to resume build session');
+    }
+    const normalizedDraftProcessingConfig = draftProcessingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftProcessingConfig)
+      : null;
+    const normalizedPayloadProcessingConfig = payloadProcessingConfig
+      ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, payloadProcessingConfig)
+      : null;
+    const normalizedProcessingConfig = normalizedDraftProcessingConfig
+      ? (normalizedPayloadProcessingConfig
+        ? mergeProcessingConfig(normalizedDraftProcessingConfig, normalizedPayloadProcessingConfig)
+        : normalizedDraftProcessingConfig)
+      : (normalizedPayloadProcessingConfig ?? DEFAULT_PROCESSING_CONFIG);
+    const mergedRuntimeConfig = composeRuntimeBuildConfig(mergedBuildConfig, normalizedProcessingConfig);
+    emitResumeStepLog('finish', 'resolve-runtime-config', {
+      outcome: 'success',
+      transformMaxConcurrent: mergedRuntimeConfig.transformConfig.maxConcurrent,
+      fetchMaxConcurrent: mergedRuntimeConfig.fetchConfig.maxConcurrent,
+      vtMaxConcurrent: mergedRuntimeConfig.vtConfig.maxConcurrent,
+      source: {
+        draftBuildConfig: Boolean(draftBuildConfig),
+        payloadBuildConfig: Boolean(payloadBuildConfig),
+        draftProcessingConfig: Boolean(draftProcessingConfig),
+        payloadProcessingConfig: Boolean(payloadProcessingConfig),
+      },
+    });
+    const selectionSummary = await executeResumeStep(
+      'summarize-selection',
+      async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
+      { existingTaskCount },
+    );
+    const fetchPlan = await executeResumeStep(
+      'plan-fetch-total',
+      async () => estimatePlannedFetchTotal({
+        nodeId,
+        buildConfig: mergedRuntimeConfig,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+      }),
+      {
+        existingTaskCount,
+        selectedCountryCount: selectionSummary.selectedCountryCount,
+        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
+      },
+    );
+    const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
+    if (existingTaskCount === 0 && selectedAdminPairCount === 0) {
+      throw new Error('[shapeBuildAPI] Resume requires selected countries/admin levels or existing queued tasks.');
+    }
+    if (existingTaskCount === 0 && selectedAdminPairCount > 0 && fetchPlan.plannedFetchTotal === 0) {
+      throw new Error(
+        '[shapeBuildAPI] Resume has selected inputs but generated 0 fetch tasks.'
+        + ' Please reload country metadata and retry.',
+      );
+    }
+    setFetchPlannedTotal(nodeId, fetchPlan.plannedFetchTotal);
+    await executeResumeStep(
+      'selection-diff-cleanup',
+      async () => applySelectionDiffCleanup(
+        nodeId,
+        sessionRecord?.selectedArrayByCountries,
+        draftEntity.selectedArrayByCountries,
+      ),
+    );
+    await executeResumeStep(
+      'config-invalidation',
+      async () => applyConfigInvalidation(nodeId, null, mergedRuntimeConfig),
+    );
+    existingTaskCount = await executeResumeStep(
+      'count-existing-tasks-after-invalidation',
+      async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
+    );
+    if (existingTaskCount === 0) {
+      await executeResumeStep(
+        'seed-task-queue-after-invalidation',
+        async () => {
+          await seedTaskQueueFromBuildTasks(nodeId);
+          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+        },
+      );
+    }
+    const existingFetchTaskCount = await executeResumeStep(
+      'count-existing-fetch-tasks-after-invalidation',
+      async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'fetch']).count(),
+      { existingTaskCount },
+    );
+    const plannedFetchTotal = Math.max(fetchPlan.plannedFetchTotal, existingFetchTaskCount);
+    setFetchPlannedTotal(nodeId, plannedFetchTotal);
+    const resolvedDataSource = requireDataSourceName(
+      mergedRuntimeConfig.dataSourceName,
+      'resumeBuildSession',
+    );
+    const pipelineRunId = `${nodeId}:${Date.now()}`;
+    await executeResumeStep(
+      'upsert-session-snapshot',
+      async () => upsertBuildSessionSnapshot({
+        nodeId,
+        selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+        tasks: existingTaskCount === 0 ? [] : undefined,
+        status: 'running',
+        startedAt: Date.now(),
+        canResume: false,
+      }),
+      { existingTaskCount, plannedFetchTotal },
+    );
+    const emitQueuedProgressSnapshot = async (snapshot: {
+      nodeId: NodeId;
+      stage: 'fetch';
+      taskCount: number;
+      source: 'created' | 'reused';
+    }): Promise<void> => {
+      if (snapshot.stage !== 'fetch') return;
+      await emitProgressSnapshot(snapshot.nodeId, 'Fetch task plan prepared.');
+    };
+    emitResumeStepLog('start', 'pipeline-dispatch', {
+      runId: pipelineRunId,
+      existingTaskCount,
+    });
+    startSessionTracking(nodeId);
+    activePipelines.add(pipelineKey);
+    activePipelineRuns.set(pipelineKey, pipelineRunId);
+    console.warn('[shapeBuildAPI] resumeBuildSession pipeline start', {
+      nodeId,
+      runId: pipelineRunId,
+    });
+    void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+      stageId: 'startup:pipeline-dispatch:start',
+      stageHeartbeatAt: Date.now(),
+    }).catch(() => {});
+    let terminalProgressMessage: string | undefined;
+    void runShapePipeline({
+      nodeId,
+      dataSource: resolvedDataSource,
+      buildConfig: mergedRuntimeConfig,
+      selectedArrayByCountries: draftEntity.selectedArrayByCountries,
+      waitIfPaused: () => waitIfPaused(nodeId),
+      resumeExistingTasks: true,
+      buildContinuationPolicy,
+      pipelineRunId,
+      onTasksEnqueued: emitQueuedProgressSnapshot,
+    }).then(async () => {
+      const completedAt = Date.now();
+      terminalProgressMessage = undefined;
+      const tasks = await listTasks(taskQueue, nodeId);
+      const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
+      const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
+      void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        stageId: pipelineFinishedWithFailure
+          ? 'startup:pipeline-dispatch:error'
+          : 'startup:pipeline-dispatch:success',
+        stageHeartbeatAt: completedAt,
+      }).catch(() => {});
+      await updateBuildSessionFromTasks(nodeId, {
+        status: pipelineFinishedWithFailure ? 'failed' : 'completed',
+        stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
+        completedAt,
+        canResume: false,
+      });
+      if (pipelineFinishedWithFailure) {
+        terminalProgressMessage = 'Pipeline finished with failed tasks.';
+      }
+    }).catch(async (error) => {
+      const failedAt = Date.now();
+      const diagnostics = toErrorDiagnostics(error);
+      console.error('[shapeBuildAPI] vt pipeline failed', error);
+      console.error('[shapeBuildAPI] startup', JSON.stringify({
+        scope: resumeScope,
+        phase: 'finish',
+        step: 'pipeline-run',
+        nodeId,
+        runId: pipelineRunId,
+        outcome: 'error',
+        failedAt,
+        ...diagnostics,
+      }));
+      terminalProgressMessage = `Pipeline failed (${diagnostics.errorName ?? 'Error'}): ${diagnostics.errorMessage}`;
+      void shapeMutationAPIImpl.updateBuildSession(nodeId, {
+        stageId: 'startup:pipeline-dispatch:error',
+        stageHeartbeatAt: failedAt,
+      }).catch(() => {});
+      await updateBuildSessionFromTasks(nodeId, {
+        status: 'failed',
+        stopReason: 'failed',
+        completedAt: failedAt,
+        canResume: false,
+      });
+    }).finally(() => {
+      clearActivePipelineRuntimeState(nodeId);
+      void emitProgressSnapshot(nodeId, terminalProgressMessage);
+    });
+    emitResumeStepLog('finish', 'pipeline-dispatch', {
+      runId: pipelineRunId,
+      existingTaskCount,
+      outcome: 'success',
+    });
+    return;
+  }
+
+  throw new Error(`[shapeBuildAPI] Unknown build command: ${command}`);
 };
 
 const toErrorDiagnostics = (error: unknown): {
@@ -1871,7 +2267,7 @@ const toErrorDiagnostics = (error: unknown): {
 };
 
 
-export const shapeBatchAPI = {
+export const shapeBuildAPI = {
 
   // ===================================
   // Data Source Operations
@@ -1899,7 +2295,7 @@ export const shapeBatchAPI = {
     const normalizedCountries = await Promise.all(
       countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
     );
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
     return generateDownloadTaskPayloads(resolvedDataSource, normalizedCountries, adminLevels, countryMetadata);
   },
 
@@ -1909,7 +2305,7 @@ export const shapeBatchAPI = {
     selectedArrayByCountries: SelectedArrayByCountries,
   ): Promise<FetchTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
     const strategy = resolveFetchStageStrategy(resolvedDataSource);
     return strategy.buildFetchTaskPayloads({
       selectedArrayByCountries,
@@ -1971,464 +2367,36 @@ export const shapeBatchAPI = {
     progressCallback,
   ),
   pauseBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
-    await shapeBatchAPI.invokeBatchCommand('session/pause', {
+    await shapeBuildAPI.invokeBuildCommand('session/pause', {
       nodeId: draftId,
       stopReason: reason,
     });
   },
-  /** @deprecated Use pauseBuildSession. */
-  pauseBatchProcessing: async (draftId: NodeId, reason?: string): Promise<void> => (
-    shapeBatchAPI.pauseBuildSession(draftId, reason)
-  ),
   resumeBuildSession: async (
     draftId: NodeId,
     buildContinuationPolicy?: BuildContinuationPolicy,
     buildConfig?: ShapeBuildConfig,
     processingConfig?: ShapeProcessingConfig,
   ): Promise<void> => {
-    await shapeBatchAPI.invokeBatchCommand('session/resume', {
+    await shapeBuildAPI.invokeBuildCommand('session/resume', {
       nodeId: draftId,
       buildContinuationPolicy,
       buildConfig,
       processingConfig,
     });
   },
-  /** @deprecated Use resumeBuildSession. */
-  resumeBatchProcessing: async (
-    draftId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy,
-  ): Promise<void> => (
-    shapeBatchAPI.resumeBuildSession(draftId, buildContinuationPolicy)
-  ),
-  cancelQueuedSession: async (draftId: NodeId, reason?: string): Promise<void> => {
-    await shapeBatchAPI.invokeBatchCommand('session/cancel-queued', {
+  cancelQueuedBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
+    await shapeBuildAPI.invokeBuildCommand('session/cancel-queued', {
       nodeId: draftId,
       stopReason: reason,
     });
   },
-  /** @deprecated Use cancelQueuedSession. */
-  cancelQueuedBatchSession: async (draftId: NodeId, reason?: string): Promise<void> => (
-    shapeBatchAPI.cancelQueuedSession(draftId, reason)
-  ),
-  /** @deprecated Use startBuildSession. */
-  startBatchProcess: async (
-    draftId: NodeId,
-    buildConfig: ShapeBuildConfig,
-    processingConfig: ShapeProcessingConfig | undefined,
-    downloadTaskPayloads: FetchTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy,
-    progressCallback?: (event: BuildProgressEvent) => void,
-  ): Promise<NodeId> => startBuildSessionInternal(
-    'startBatchProcess',
-    draftId,
-    buildConfig,
-    processingConfig,
-    downloadTaskPayloads,
-    buildContinuationPolicy,
-    progressCallback,
-  ),
 
-  invokeBatchCommand: async (command: string, payload: Record<string, unknown>): Promise<void> => {
-    if (command === 'session/pause') {
-      const nodeId = payload.nodeId as NodeId;
-      if (!nodeId) throw new Error('[shapeBatchAPI] session/pause requires nodeId');
-      const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
-      const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : undefined;
-      console.warn('[shapeBatchAPI][PauseTrace] pause-requested', {
-        nodeId,
-        stopReason: stopReason ?? null,
-      });
-      setPaused(nodeId, true);
-      void (async () => {
-        try {
-          await upsertBuildSessionSnapshot({
-            nodeId,
-            status: 'paused',
-            stopReason,
-            canResume: true,
-          });
-          await emitProgressSnapshot(nodeId, 'Pause requested.');
-          const drain = await waitForRunningTasksToDrain(nodeId);
-          console.warn('[shapeBatchAPI][PauseTrace] pause-settled', {
-            nodeId,
-            ...drain,
-          });
-          if (!drain.drained) {
-            await emitProgressSnapshot(
-              nodeId,
-              `Pause requested; waiting for ${drain.running} running task(s) to reach a pause point.`
-            );
-          }
-        } catch (error) {
-          console.warn('[shapeBatchAPI][PauseTrace] pause-settle-monitor-failed', {
-            nodeId,
-            errorMessage: error instanceof Error ? error.message : String(error),
-          });
-        }
-      })();
-      return;
-    }
-    if (command === 'session/cancel-queued') {
-      const nodeId = payload.nodeId as NodeId;
-      if (!nodeId) throw new Error('[shapeBatchAPI] session/cancel-queued requires nodeId');
-      const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
-      const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : 'user-pause';
-      const pipelineKey = String(nodeId);
-      if (activePipelines.has(pipelineKey)) {
-        await shapeBatchAPI.invokeBatchCommand('session/pause', { nodeId, stopReason });
-        return;
-      }
-      setPaused(nodeId, false);
-      setFetchPlannedTotal(nodeId, 0);
-      const taskQueue = new VtTaskQueueDb();
-      await deleteTasksByNode(taskQueue, nodeId);
-      await upsertBuildSessionSnapshot({
-        nodeId,
-        status: 'idle',
-        stopReason,
-        canResume: false,
-      });
-      await emitProgressSnapshot(nodeId, 'Queued build canceled.');
-      return;
-    }
-    if (command === 'session/resume') {
-      const nodeId = payload.nodeId as NodeId;
-      if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');
-      const buildContinuationPolicy = payload.buildContinuationPolicy as BuildContinuationPolicy | undefined;
-      const payloadBuildConfig = asRecordOrNull(payload.buildConfig) as Partial<ShapeBuildConfig> | null;
-      const payloadProcessingConfig = asRecordOrNull(payload.processingConfig) as Partial<ShapeProcessingConfig> | null;
-      const pipelineKey = String(nodeId);
-      let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
-      const resumeScope = 'resumeBuildSession';
-      const getResumeErrorMessage = (error: unknown): string => (
-        error instanceof Error ? error.message : String(error)
-      );
-      const emitResumeStepLog = (
-        phase: 'start' | 'finish',
-        step: string,
-        extra?: Record<string, unknown>,
-      ): void => {
-        void shapeMutationAPIImpl.updateBuildSession(nodeId, {
-          stageId: `startup:${step}:${phase}`,
-          stageHeartbeatAt: Date.now(),
-        }).catch(() => {});
-        console.warn('[shapeBatchAPI] startup', JSON.stringify({
-          scope: resumeScope,
-          phase,
-          step,
-          nodeId,
-          ...extra,
-        }));
-      };
-      const executeResumeStep = async <T>(
-        step: string,
-        runner: () => Promise<T>,
-        extra?: Record<string, unknown>,
-      ): Promise<T> => {
-        const startedAt = Date.now();
-        emitResumeStepLog('start', step, extra);
-        try {
-          const result = await runner();
-          emitResumeStepLog('finish', step, {
-            ...(extra ?? {}),
-            outcome: 'success',
-            elapsedMs: Date.now() - startedAt,
-          });
-          return result;
-        } catch (error) {
-          emitResumeStepLog('finish', step, {
-            ...(extra ?? {}),
-            outcome: 'error',
-            elapsedMs: Date.now() - startedAt,
-            errorMessage: getResumeErrorMessage(error),
-          });
-          throw error;
-        }
-      };
-      if (activePipelines.has(pipelineKey)) {
-        await clearStalePipelineStateIfInactive(
-          nodeId,
-          sessionRecord,
-          'resumeBuildSession',
-        );
-      }
-      setPaused(nodeId, false);
-      await executeResumeStep('emit-progress-snapshot', async () => emitProgressSnapshot(nodeId));
-      const taskQueue = new VtTaskQueueDb();
-      const runningTaskCount = await executeResumeStep(
-        'count-running-tasks',
-        async () => taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
-      );
-      if (runningTaskCount > 0) {
-        await executeResumeStep(
-          'reset-running-tasks',
-          async () => resetRunningTasks(nodeId),
-          { runningTaskCount },
-        );
-        if (activePipelines.has(pipelineKey)) {
-          clearActivePipelineRuntimeState(nodeId);
-        }
-      }
-      await executeResumeStep('reset-failed-tasks', async () => resetFailedTasks(nodeId));
-      let existingTaskCount = await executeResumeStep(
-        'count-existing-tasks',
-        async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
-      );
-      if (existingTaskCount === 0) {
-        await executeResumeStep(
-          'seed-task-queue',
-          async () => {
-            await seedTaskQueueFromBuildTasks(nodeId);
-            existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
-          },
-        );
-      }
-      if (existingTaskCount > 0) {
-        await executeResumeStep(
-          'normalize-existing-tasks',
-          async () => normalizeTaskQueueStageFields(nodeId),
-          { existingTaskCount },
-        );
-      }
-      if (activePipelines.has(pipelineKey)) {
-        await emitProgressSnapshot(nodeId, 'resumeBuildSession ignored: pipeline already active');
-        return;
-      }
-      if (!activePipelines.has(pipelineKey)) {
-        const handler = getShapeEntityHandler();
-        const draftEntity = await executeResumeStep(
-          'load-draft',
-          async () => handler.getEntity(nodeId),
-        );
-        if (!draftEntity) return;
-        if (!sessionRecord) {
-          sessionRecord = await executeResumeStep(
-            'load-session-record',
-            async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null),
-          );
-        }
-        const draftBuildConfig = draftEntity.buildConfig;
-        const draftProcessingConfig = draftEntity.processingConfig;
-        const normalizedDraftConfig = draftBuildConfig
-          ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
-          : null;
-        const normalizedPayloadConfig = payloadBuildConfig
-          ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, payloadBuildConfig)
-          : null;
-        const mergedBuildConfig = normalizedDraftConfig
-          ? (normalizedPayloadConfig
-            ? mergeBuildConfig(normalizedDraftConfig, normalizedPayloadConfig)
-            : normalizedDraftConfig)
-          : normalizedPayloadConfig;
-        if (!mergedBuildConfig) {
-          throw new Error('[shapeBatchAPI] buildConfig is required to resume build session');
-        }
-        const normalizedDraftProcessingConfig = draftProcessingConfig
-          ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftProcessingConfig)
-          : null;
-        const normalizedPayloadProcessingConfig = payloadProcessingConfig
-          ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, payloadProcessingConfig)
-          : null;
-        const normalizedProcessingConfig = normalizedDraftProcessingConfig
-          ? (normalizedPayloadProcessingConfig
-            ? mergeProcessingConfig(normalizedDraftProcessingConfig, normalizedPayloadProcessingConfig)
-            : normalizedDraftProcessingConfig)
-          : (normalizedPayloadProcessingConfig ?? DEFAULT_PROCESSING_CONFIG);
-        const mergedRuntimeConfig = composeRuntimeBuildConfig(
-          mergedBuildConfig,
-          normalizedProcessingConfig,
-        );
-        emitResumeStepLog('finish', 'resolve-runtime-config', {
-          outcome: 'success',
-          transformMaxConcurrent: mergedRuntimeConfig.transformConfig.maxConcurrent,
-          fetchMaxConcurrent: mergedRuntimeConfig.fetchConfig.maxConcurrent,
-          vtMaxConcurrent: mergedRuntimeConfig.vtConfig.maxConcurrent,
-          source: {
-            draftBuildConfig: Boolean(draftBuildConfig),
-            payloadBuildConfig: Boolean(payloadBuildConfig),
-            draftProcessingConfig: Boolean(draftProcessingConfig),
-            payloadProcessingConfig: Boolean(payloadProcessingConfig),
-          },
-        });
-        const selectionSummary = await executeResumeStep(
-          'summarize-selection',
-          async () => summarizeSelectedArrayByCountries(draftEntity.selectedArrayByCountries),
-          { existingTaskCount },
-        );
-        const fetchPlan = await executeResumeStep(
-          'plan-fetch-total',
-          async () => estimatePlannedFetchTotal({
-            nodeId,
-            buildConfig: mergedRuntimeConfig,
-            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          }),
-          {
-            existingTaskCount,
-            selectedCountryCount: selectionSummary.selectedCountryCount,
-            selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-          },
-        );
-        const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
-        if (existingTaskCount === 0 && selectedAdminPairCount === 0) {
-          throw new Error('[shapeBatchAPI] Resume requires selected countries/admin levels or existing queued tasks.');
-        }
-        if (existingTaskCount === 0 && selectedAdminPairCount > 0 && fetchPlan.plannedFetchTotal === 0) {
-          throw new Error(
-            '[shapeBatchAPI] Resume has selected inputs but generated 0 fetch tasks.'
-            + ' Please reload country metadata and retry.',
-          );
-        }
-        setFetchPlannedTotal(nodeId, fetchPlan.plannedFetchTotal);
-        await executeResumeStep(
-          'selection-diff-cleanup',
-          async () => applySelectionDiffCleanup(
-            nodeId,
-            sessionRecord?.selectedArrayByCountries,
-            draftEntity.selectedArrayByCountries,
-          ),
-        );
-        await executeResumeStep(
-          'config-invalidation',
-          async () => applyConfigInvalidation(nodeId, null, mergedRuntimeConfig),
-        );
-        existingTaskCount = await executeResumeStep(
-          'count-existing-tasks-after-invalidation',
-          async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
-        );
-        if (existingTaskCount === 0) {
-          await executeResumeStep(
-            'seed-task-queue-after-invalidation',
-            async () => {
-              await seedTaskQueueFromBuildTasks(nodeId);
-              existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
-            },
-          );
-        }
-        const existingFetchTaskCount = await executeResumeStep(
-          'count-existing-fetch-tasks-after-invalidation',
-          async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'fetch']).count(),
-          { existingTaskCount },
-        );
-        const plannedFetchTotal = Math.max(fetchPlan.plannedFetchTotal, existingFetchTaskCount);
-        setFetchPlannedTotal(nodeId, plannedFetchTotal);
-        const resolvedDataSource = requireDataSourceName(
-          mergedRuntimeConfig.dataSourceName,
-          'resumeBuildSession',
-        );
-        const pipelineRunId = `${nodeId}:${Date.now()}`;
-        await executeResumeStep(
-          'upsert-session-snapshot',
-          async () => upsertBuildSessionSnapshot({
-            nodeId,
-            selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-            tasks: existingTaskCount === 0 ? [] : undefined,
-            status: 'running',
-            startedAt: Date.now(),
-            canResume: false,
-          }),
-          { existingTaskCount, plannedFetchTotal },
-        );
-        const emitQueuedProgressSnapshot = async (payload: {
-          nodeId: NodeId;
-          stage: 'fetch';
-          taskCount: number;
-          source: 'created' | 'reused';
-        }): Promise<void> => {
-          if (payload.stage !== 'fetch') return;
-          await emitProgressSnapshot(payload.nodeId, 'Fetch task plan prepared.');
-        };
-        emitResumeStepLog('start', 'pipeline-dispatch', {
-          runId: pipelineRunId,
-          existingTaskCount,
-        });
-        startSessionTracking(nodeId);
-        activePipelines.add(pipelineKey);
-        activePipelineRuns.set(pipelineKey, pipelineRunId);
-        console.warn('[shapeBatchAPI] resumeBuildSession pipeline start', {
-          nodeId,
-          runId: pipelineRunId,
-        });
-        void shapeMutationAPIImpl.updateBuildSession(nodeId, {
-          stageId: 'startup:pipeline-dispatch:start',
-          stageHeartbeatAt: Date.now(),
-        }).catch(() => {});
-        let terminalProgressMessage: string | undefined;
-        void runShapePipeline({
-          nodeId,
-          dataSource: resolvedDataSource,
-          buildConfig: mergedRuntimeConfig,
-          selectedArrayByCountries: draftEntity.selectedArrayByCountries,
-          waitIfPaused: () => waitIfPaused(nodeId),
-          resumeExistingTasks: true,
-          buildContinuationPolicy,
-          pipelineRunId,
-          onTasksEnqueued: emitQueuedProgressSnapshot,
-        }).then(async () => {
-          const completedAt = Date.now();
-          terminalProgressMessage = undefined;
-          const taskQueue = new VtTaskQueueDb();
-          const tasks = await listTasks(taskQueue, nodeId);
-          const terminalTaskStatus = summarizeTaskQueueStatus(tasks).status;
-          const pipelineFinishedWithFailure = terminalTaskStatus === 'failed';
-          void shapeMutationAPIImpl.updateBuildSession(nodeId, {
-            stageId: pipelineFinishedWithFailure
-              ? 'startup:pipeline-dispatch:error'
-              : 'startup:pipeline-dispatch:success',
-            stageHeartbeatAt: completedAt,
-          }).catch(() => {});
-          await updateBuildSessionFromTasks(nodeId, {
-            status: pipelineFinishedWithFailure ? 'failed' : 'completed',
-            stopReason: pipelineFinishedWithFailure ? 'failed' : 'completed',
-            completedAt,
-            canResume: false,
-          });
-          if (pipelineFinishedWithFailure) {
-            terminalProgressMessage = 'Pipeline finished with failed tasks.';
-          }
-        }).catch(async (error) => {
-          const failedAt = Date.now();
-          const diagnostics = toErrorDiagnostics(error);
-          console.error('[shapeBatchAPI] vt pipeline failed', error);
-          console.error('[shapeBatchAPI] startup', JSON.stringify({
-            scope: resumeScope,
-            phase: 'finish',
-            step: 'pipeline-run',
-            nodeId,
-            runId: pipelineRunId,
-            outcome: 'error',
-            failedAt,
-            ...diagnostics,
-          }));
-          terminalProgressMessage = `Pipeline failed (${diagnostics.errorName ?? 'Error'}): ${diagnostics.errorMessage}`;
-          void shapeMutationAPIImpl.updateBuildSession(nodeId, {
-            stageId: 'startup:pipeline-dispatch:error',
-            stageHeartbeatAt: failedAt,
-          }).catch(() => {});
-          await updateBuildSessionFromTasks(nodeId, {
-            status: 'failed',
-            stopReason: 'failed',
-            completedAt: failedAt,
-            canResume: false,
-          });
-        }).finally(() => {
-          clearActivePipelineRuntimeState(nodeId);
-          void emitProgressSnapshot(nodeId, terminalProgressMessage);
-        });
-        emitResumeStepLog('finish', 'pipeline-dispatch', {
-          runId: pipelineRunId,
-          existingTaskCount,
-          outcome: 'success',
-        });
-      }
-      return;
-    }
-    throw new Error(`[shapeBatchAPI] Unknown build command: ${command}`);
+  invokeBuildCommand: async (command: string, payload: Record<string, unknown>): Promise<void> => {
+    return invokeShapeBuildCommand(command, payload);
   },
 
   getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
-    getBuildSessionInternal(nodeId)
-  ),
-  getBatchSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
     getBuildSessionInternal(nodeId)
   ),
 
@@ -2441,10 +2409,6 @@ export const shapeBatchAPI = {
     }
     return [];
   },
-  /** @deprecated Use getBuildTasks. */
-  getBatchTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => (
-    shapeBatchAPI.getBuildTasks(nodeId)
-  ),
 
   getBuildProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
@@ -2474,10 +2438,6 @@ export const shapeBatchAPI = {
       percentage: 0,
     };
   },
-  /** @deprecated Use getBuildProgress. */
-  getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => (
-    shapeBatchAPI.getBuildProgress(draftId)
-  ),
 
   getBuildStatus: async (
     nodeId: NodeId,
@@ -2508,19 +2468,6 @@ export const shapeBatchAPI = {
       status: 'idle',
     };
   },
-  /** @deprecated Use getBuildStatus. */
-  getBatchStatus: async (
-    nodeId: NodeId,
-  ): Promise<{
-    nodeId: NodeId;
-    draftId?: NodeId;
-    status: string;
-    progress?: number;
-    completedTasks?: number;
-    totalTasks?: number;
-  }> => (
-    shapeBatchAPI.getBuildStatus(nodeId)
-  ),
 
   // ===================================
   // Build Session Recovery
@@ -2530,10 +2477,6 @@ export const shapeBatchAPI = {
     console.log(`Finding pending build sessions for node: ${nodeId}`);
     return [];
   },
-  /** @deprecated Use findPendingBuildSessions. */
-  findPendingBatchSessions: async (nodeId: NodeId): Promise<BuildSession[]> => (
-    shapeBatchAPI.findPendingBuildSessions(nodeId)
-  ),
 
   getBuildSessionStatus: async (
     nodeId: NodeId,
@@ -2662,7 +2605,7 @@ export const shapeBatchAPI = {
             }),
           });
         } catch (error) {
-          console.error('[shapeBatchAPI] progress payload build failed', error);
+          console.error('[shapeBuildAPI] progress payload build failed', error);
         }
       })();
     });
@@ -2686,7 +2629,7 @@ export const shapeBatchAPI = {
     const sequenceByTaskId = new Map<string, number>();
     const readSequence = (taskId: string, sequence: unknown): number => {
       if (typeof sequence === 'number' && Number.isFinite(sequence)) return sequence;
-      throw new Error(`[shapeBatchAPI] missing task sequence (taskId=${taskId})`);
+      throw new Error(`[shapeBuildAPI] missing task sequence (taskId=${taskId})`);
     };
     const shouldEmitTask = (taskId: string, sequence: number): boolean => {
       const current = sequenceByTaskId.get(taskId);
@@ -2707,7 +2650,7 @@ export const shapeBatchAPI = {
         });
         callback({ type: 'snapshot', nodeId, tasks });
       } catch (error) {
-        console.error('[shapeBatchAPI] task snapshot failed', error);
+        console.error('[shapeBuildAPI] task snapshot failed', error);
       } finally {
         snapshotInFlight = false;
       }
@@ -2725,7 +2668,7 @@ export const shapeBatchAPI = {
           const sequence = readSequence(summary.taskId, summary.sequence);
           const current = sequenceByTaskId.get(summary.taskId);
           if (current !== undefined && sequence > current + 1) {
-            console.warn('[shapeBatchAPI] task sequence gap detected; triggering snapshot resync', {
+            console.warn('[shapeBuildAPI] task sequence gap detected; triggering snapshot resync', {
               nodeId: event.nodeId,
               taskId: summary.taskId,
               currentSequence: current,
@@ -2739,7 +2682,7 @@ export const shapeBatchAPI = {
           }
           callback({ type: 'update', nodeId: event.nodeId, task: summary });
         } catch (error) {
-          console.error('[shapeBatchAPI] task update failed', error);
+          console.error('[shapeBuildAPI] task update failed', error);
         }
       })();
     });
@@ -2863,10 +2806,9 @@ export const shapeBatchAPI = {
     try {
       await deleteRawDataDataSourceBuffersForNode(nodeId);
     } catch (error) {
-      console.warn('[shapeBatchAPI] failed to clean chunk-store relations', error);
+      console.warn('[shapeBuildAPI] failed to clean chunk-store relations', error);
     }
   },
 };
 
-/** Preferred alias for shapeBatchAPI. */
-export const shapeBuildAPI = shapeBatchAPI;
+/** Canonical Shape build API object. */

@@ -8,7 +8,7 @@ export type StepGuardState = {
   canSave: boolean;
   canProceedNext: boolean;
   canGoBack: boolean;
-  canStartBatch: boolean;
+  canStartBuild: boolean;
 };
 
 export type StepGuardDeps = {

@@ -138,7 +138,7 @@ Current implementation files changed in this milestone:
 
 Task flush scheduling in `useShapeBuildTaskSync.ts` now uses both frame and timer channels. Frame path remains primary for smooth batching; timer path guarantees forward progress when frame callbacks are unavailable.
 
-Runtime/UI integration now follows build-first naming (`getBuildWorkerBridge`, `BuildWorkerAPI`) while `Batch*` names remain deprecated compatibility aliases.
+ Runtime/UI integration now follows build-first naming (`getBuildWorkerBridge`, `BuildWorkerAPI`) and uses canonical `Build*` APIs without runtime-level `Batch*` aliases.
 
 No external API contract changes are introduced in worker bridge or worker API.
 
@@ -146,4 +146,4 @@ No external API contract changes are introduced in worker bridge or worker API.
 Revision note (2026-02-13, Codex): Created initial ExecPlan and synchronized it with the first implementation milestone (startup-signal broadening and flush fallback).
 Revision note (2026-02-17, Codex): Updated completion markers and aligned references with runtime-worker build-session docs and terminology SSOT.
 Revision note (2026-02-17, Codex): Removed shape build-step dependency on `session-coordinator` lock/broadcast heuristics for normal start/stop/progress flow.
-Revision note (2026-02-17, Codex): Synced state-transition and terminology documents to enforce canonical `Build*` naming; compatibility aliases remain temporarily for legacy call sites.
+Revision note (2026-02-17, Codex): Synced state-transition and terminology documents to enforce canonical `Build*` naming; legacy runtime alias compatibility is no longer maintained.

@@ -22,13 +22,13 @@ export interface BuildSessionSnapshot {
 export type BuildSessionSubscriptionCallback = (snapshot: BuildSessionSnapshot) => void;
 
 export interface BuildSessionControlPort {
-  subscribeSessionRequest(
+  subscribeBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     callback: BuildSessionSubscriptionCallback,
   ): Promise<() => void>;
-  startSessionRequest(nodeType: NodeType, nodeId: NodeId): Promise<void>;
-  stopSessionRequest(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  cancelQueuedSessionRequest(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  nextStageRequest(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  nextBuildStageRequest(nodeType: NodeType, nodeId: NodeId): Promise<void>;
 }

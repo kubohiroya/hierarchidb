@@ -153,7 +153,7 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
           return <ResolverBuildStep draft={currentData} />;
         },
         capabilities: {
-          canStartBatch: (data: ResolverUpdaterPayload) =>
+          canStartBuild: (data: ResolverUpdaterPayload) =>
             Boolean(data?.draftMetadata?.name?.trim() && data?.draftData?.sourceSchema && data?.draftData?.targetSchema),
         },
         validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),

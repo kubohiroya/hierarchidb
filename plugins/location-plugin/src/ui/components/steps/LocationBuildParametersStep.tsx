@@ -1,5 +1,6 @@
 /**
- * Batch parameter configuration step for Location dialog.
+ * @file LocationBuildParametersStep.tsx
+ * @description Build parameter configuration step for Location dialog.
  */
 
 import type React from 'react';
@@ -8,14 +9,14 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 
-interface LocationBatchParametersStepProps {
+interface LocationBuildParametersStepProps {
   draft: Partial<LocationEntity>;
   onUpdate: (updates: Partial<LocationEntity>) => void;
   disabled?: boolean;
   nodeId?: NodeId;
 }
 
-export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepProps> = ({
+export const LocationBuildParametersStep: React.FC<LocationBuildParametersStepProps> = ({
   draft,
   onUpdate,
   disabled,
