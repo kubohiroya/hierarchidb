@@ -8,6 +8,11 @@ This document defines build-session state transitions as a cross-plugin runtime 
 - Persisted session state in EphemeralDB (`sessions` table)
 - SharedWorker singleton runtime state (`BuildSessionOrchestrator`)
 
+Terminology authority:
+
+- See `build-session-terminology-ssot.md` for canonical vocabulary and naming policy.
+- If this document conflicts with the SSOT glossary, the glossary takes precedence.
+
 This specification is shared by shape/route and future build-session plugins.
 
 ## 2. Scope and Assumptions
