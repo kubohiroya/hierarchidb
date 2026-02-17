@@ -7,7 +7,6 @@ import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
-import { VtOutputQualityGuardCard } from './VtOutputQualityGuardCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';

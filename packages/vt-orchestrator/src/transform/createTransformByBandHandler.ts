@@ -224,6 +224,36 @@ const resolveSimplifyAlgorithm = (algorithm?: TransformSimplifyAlgorithm): Trans
   algorithm === 'geojson' ? 'geojson' : DEFAULT_SIMPLIFY_ALGORITHM
 );
 
+type TransformTraceLogLevel = 'off' | 'summary' | 'verbose';
+
+const TRACE_LOG_PRIORITY: Record<TransformTraceLogLevel, number> = {
+  off: 0,
+  summary: 1,
+  verbose: 2,
+};
+
+const normalizeTraceLogLevel = (level?: string): TransformTraceLogLevel => {
+  if (level === 'off' || level === 'summary' || level === 'verbose') {
+    return level;
+  }
+  return 'summary';
+};
+
+const shouldLogTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel
+): boolean => TRACE_LOG_PRIORITY[configuredLevel] >= TRACE_LOG_PRIORITY[requestedLevel];
+
+const emitTransformTrace = (
+  configuredLevel: TransformTraceLogLevel,
+  requestedLevel: TransformTraceLogLevel,
+  message: string,
+  payload: Record<string, unknown>
+): void => {
+  if (!shouldLogTransformTrace(configuredLevel, requestedLevel)) return;
+  console.info('[ShapeTransform][ExecutionTrace]', message, payload);
+};
+
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
 };
@@ -782,13 +812,6 @@ const buildErrorLineFeatures = (
   return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
 };
 
-const toLineFeatureCollection = (
-  lineFeaturesCandidate: ReturnType<typeof buildErrorLineFeatures> | null,
-): TransformIssueLineFeatures => ({
-  type: 'FeatureCollection',
-  features: lineFeaturesCandidate?.features ?? [],
-});
-
 const resolveFeatureIdentifier = (
   feature: Feature | null | undefined,
   featureIndex: number,
@@ -1324,9 +1347,7 @@ export const createTransformByBandHandler = (
   }
   const {
     ephemeralDB,
-    fetchConfig,
     transformConfig,
-    vtConfig,
     bands,
     abortSignal,
     featureIdAllowlist,
@@ -1625,33 +1646,13 @@ export const createTransformByBandHandler = (
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   const preserveTopology = transformConfig.preserveTopology ?? true;
   const traceLogLevel = normalizeTraceLogLevel(transformConfig.executionLogLevel);
-  const anomalyDetectionConfig = {
-    enabled: transformConfig.anomalyDetection?.enabled ?? false,
-    scoreThreshold: transformConfig.anomalyDetection?.scoreThreshold ?? 2.2,
-    maxEdgeLengthRatio: transformConfig.anomalyDetection?.maxEdgeLengthRatio ?? 12,
-    maxAreaDriftPercent: transformConfig.anomalyDetection?.maxAreaDriftPercent ?? 35,
-    maxSelfIntersectionCount: transformConfig.anomalyDetection?.maxSelfIntersectionCount ?? 0,
-    maxLineLengthDriftPercent: transformConfig.anomalyDetection?.maxLineLengthDriftPercent ?? 45,
-    maxVertexDriftPercent: transformConfig.anomalyDetection?.maxVertexDriftPercent ?? 40,
-    geojson: {
-      maxTriangleShareDriftPercent:
-        transformConfig.anomalyDetection?.geojson?.maxTriangleShareDriftPercent ?? 2,
-      maxTriangleEdgeToBBoxRatio:
-        transformConfig.anomalyDetection?.geojson?.maxTriangleEdgeToBBoxRatio ?? 1.15,
-    },
-    topojson: {
-      minSharedArcRatioPercent:
-        transformConfig.anomalyDetection?.topojson?.minSharedArcRatioPercent ?? 12,
-    },
-  };
   const intakeGuardConfig = {
-    validationLevel: fetchConfig.geometryIntakeGuard?.validationLevel ?? 'off',
-    dedupeEpsilon: fetchConfig.geometryIntakeGuard?.dedupeEpsilon ?? 0,
-    minRingAreaThreshold: fetchConfig.geometryIntakeGuard?.minRingAreaThreshold ?? 0,
-    normalizeRingOrientation: fetchConfig.geometryIntakeGuard?.normalizeRingOrientation ?? false,
-    keepBaselineSnapshot: fetchConfig.geometryIntakeGuard?.keepBaselineSnapshot ?? false,
+    validationLevel: 'off' as const,
+    dedupeEpsilon: 0,
+    minRingAreaThreshold: 0,
+    normalizeRingOrientation: false,
+    keepBaselineSnapshot: false,
   } as const;
-  const vtOutputQualityGuard = vtConfig.outputQualityGuard;
   if (geometryEngine !== 'turf') {
     throw new Error(`transform failed: unknown geometryEngine (${String(geometryEngine)})`);
   }
@@ -1721,8 +1722,6 @@ export const createTransformByBandHandler = (
       preserveTopology,
       tolerance,
       fetchIntakeGuard: intakeGuardConfig,
-      anomalyDetection: anomalyDetectionConfig,
-      vtOutputQualityGuard: vtOutputQualityGuard ?? null,
     });
 
     let workingCollection: FeatureCollection | null = null;
@@ -1978,16 +1977,6 @@ export const createTransformByBandHandler = (
       }
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       const shouldCollectBaselineMetrics = false;
-      if (anomalyDetectionConfig.enabled || Boolean(vtOutputQualityGuard?.enabled)) {
-        emitTransformTrace(traceLogLevel, 'summary', 'baseline-metrics-skipped', {
-          sessionId: String(task.nodeId),
-          taskId,
-          stage: 'prepare',
-          reason: 'moved-to-fetch-stage',
-          anomalyDetectionEnabled: anomalyDetectionConfig.enabled,
-          vtOutputQualityGuardEnabled: Boolean(vtOutputQualityGuard?.enabled),
-        });
-      }
       if (shouldCollectBaselineMetrics) {
         // Reserved for future: consume fetch-stage precomputed baseline metrics only.
       }
@@ -2130,38 +2119,6 @@ export const createTransformByBandHandler = (
             getLastProgressAt: () => Date.now(),
           });
           processedPolygonCount = inputPolygonCount;
-        }
-        if (simplified && baselineMetrics && anomalyDetectionConfig.enabled && intakeGuardConfig.keepBaselineSnapshot) {
-          const outputMetrics = collectCollectionAnomalyMetrics(simplified, geometryOps);
-          const outputAssessment = assessAnomalyRisk({
-            profile: anomalyProfile,
-            baseline: baselineMetrics as CollectionAnomalyMetrics,
-            candidate: outputMetrics,
-            thresholds: anomalyDetectionConfig,
-            diagnostics: {
-              topoSharedArcRatioPercent: simplifyAlgorithm === 'topojson'
-                ? (topoSharedArcDiagnostics?.sharedArcRatioPercent ?? null)
-                : null,
-            },
-          });
-          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-assessment', {
-            sessionId: String(task.nodeId),
-            taskId,
-            stage: 'simplify',
-            profile: anomalyProfile,
-            tolerance,
-            score: outputAssessment.score,
-            scoreThreshold: outputAssessment.scoreThreshold,
-            reasons: outputAssessment.reasons,
-            isAnomalous: outputAssessment.isAnomalous,
-          });
-        } else if (anomalyDetectionConfig.enabled && !intakeGuardConfig.keepBaselineSnapshot) {
-          emitTransformTrace(traceLogLevel, 'summary', 'anomaly-skipped', {
-            sessionId: String(task.nodeId),
-            taskId,
-            stage: 'simplify',
-            reason: 'baseline snapshot disabled',
-          });
         }
         logDebugPhase('simplify:done', {
           featureCount: simplified?.features.length ?? 0,
