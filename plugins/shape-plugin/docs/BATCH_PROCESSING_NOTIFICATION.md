@@ -236,10 +236,10 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
   const [currentTask, setCurrentTask] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   
-  const startBatchProcess = async () => {
+  const startBuildSession = async () => {
     const manager = new BatchSessionManager();
     
-    const sessionId = await manager.startBatchProcess(
+    const sessionId = await manager.startBuildSession(
       nodeId,
       config,
       downloadTaskPayloads,
@@ -261,7 +261,7 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
       }
     );
     
-    // バッチ処理を実行
+    // ビルド処理を実行
     await manager.executeFullPipeline(sessionId);
   };
   
@@ -294,7 +294,7 @@ import { Box, LinearProgress, Typography, Alert } from '@mui/material';
 import { useShapeAPI } from '../hooks/useShapeAPI';
 
 export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
-  const { startBatchProcess, progress, stage, errors } = useShapeAPI(nodeId);
+  const { startBuildSession, progress, stage, errors } = useShapeAPI(nodeId);
   
   const getStageLabel = (stage: string) => {
     const labels = {

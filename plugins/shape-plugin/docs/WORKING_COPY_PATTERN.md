@@ -55,7 +55,7 @@ interface ShapeEntity {
 }
 ```
 
-※ DownloadTaskPayload は UI 側で生成し、`startBatchProcess` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
+※ DownloadTaskPayload は UI 側で生成し、`startBuildSession` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
 
 #### 2. ShapeDraft (EphemeralDB)
 編集中の一時データ：
@@ -548,7 +548,7 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 function ShapeBuildStep({ data, onChange }: Props) {
   const api = useShapeAPI();
 
-  const startBatchProcess = async () => {
+  const startBuildSession = async () => {
     try {
       const nodeId = data?.nodeId;
       if (!nodeId) return;
@@ -557,16 +557,16 @@ function ShapeBuildStep({ data, onChange }: Props) {
         data?.batchConfig?.dataSource ?? data?.dataSourceName ?? 'gadm',
         data?.selectedArrayByCountries,
       );
-      const session = await api.startBatchProcess(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
+      const session = await api.startBuildSession(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
 
       onChange({ batchSessionId: session.sessionId });
     } catch (error) {
-      console.error('Failed to start batch processing:', error);
+      console.error('Failed to start build processing:', error);
     }
   };
 
   return (
-    <BuildStep onResume={startBatchProcess} />
+    <BuildStep onResume={startBuildSession} />
   );
 }
 ```

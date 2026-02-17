@@ -387,12 +387,12 @@ describe('Shape Plugin E2E', () => {
       country: 'JP'
     });
     
-    // Start batch processing
+    // Start build processing
     const downloadTaskPayloads = await api.generateDownloadTaskPayloadsFromSelection(
       'gadm',
       [[true, true, true]],
     );
-    const sessionId = await api.startBatchProcess(
+    const sessionId = await api.startBuildSession(
       nodeId,
       { adminLevels: [0, 1, 2], extraction: 'auto' },
       downloadTaskPayloads,

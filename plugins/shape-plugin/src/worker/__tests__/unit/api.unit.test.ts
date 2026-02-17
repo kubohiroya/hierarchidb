@@ -103,7 +103,7 @@ describe('Shape Plugin API', () => {
     });
   });
 
-  describe('Batch Processing', () => {
+  describe('Build Processing', () => {
     it('should reject invalid processing config', async () => {
       const draftId = 'node-123' as NodeId;
       const buildConfig = createBuildConfig();
@@ -115,7 +115,7 @@ describe('Shape Plugin API', () => {
       });
 
       await expect(
-        shapeBatchAPI.startBatchProcess(draftId, buildConfig, processingConfig, []),
+        shapeBatchAPI.startBuildSession(draftId, buildConfig, processingConfig, []),
       ).rejects.toThrow('Invalid processing config');
     });
   });
