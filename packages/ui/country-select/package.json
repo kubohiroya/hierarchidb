@@ -25,7 +25,7 @@
     "react-virtuoso": "^4.14.0",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@hierarchidb/ui-search-input": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.3.1",

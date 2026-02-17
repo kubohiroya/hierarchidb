@@ -610,6 +610,12 @@
       "@hierarchidb/ui-search-field/*": [
         "packages/ui/search-field/dist/*"
       ],
+      "@hierarchidb/ui-search-input": [
+        "packages/ui/search-input/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-search-input/*": [
+        "packages/ui/search-input/dist/*"
+      ],
       "@hierarchidb/ui-speeddial-submenu": [
         "packages/ui/speeddial-submenu/dist/index.d.ts"
       ],

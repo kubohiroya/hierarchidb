@@ -33,7 +33,7 @@ Pending.
 
 ## Context and Orientation
 
-The location map preview lives in `plugins/location-plugin/src/ui/components/batch/LocationMapPreview.tsx`. The preview currently renders markers and summary UI but does not respond to hover. Vector tiles for location data are stored in `plugins/location-plugin/src/database/LocationDB.ts` under the `vectorTiles` table with tile IDs formatted as `loc-mvt-<sessionId>-<z>-<x>-<y>`. The worker exposes `LocationQueryAPI` (defined in `packages/plugin-service-api/src/types/LocationQueryAPI.ts`) and the runtime-worker implementation is `packages/runtime-worker/src/services/LocationQueryService.ts`. The UI can reach the worker via `getWorkerBridge()` and `getLocationQueryAPI()` from `packages/ui/worker-client/src/workerBridge.ts`.
+The location map preview lives in `plugins/location-plugin/src/ui/components/batch/LocationMapPreview.tsx`. The preview currently renders markers and summary UI but does not respond to hover. Vector tiles for location data are stored in `plugins/location-plugin/src/database/LocationDB.ts` under the `vectorTiles` table with tile IDs formatted as `loc-mvt-<sessionId>-<z>-<x>-<y>`. The worker exposes `LocationQueryAPI` (defined in `packages/plugin-service-api/src/types/LocationQueryAPI.ts`) and the runtime-worker implementation is `packages/runtime-worker/src/services/LocationQueryService.ts`. The UI can reach the worker via `getBuildWorkerBridge()` and `getLocationQueryAPI()` from `packages/ui/worker-client/src/workerBridge.ts`.
 
 Key terms:
 
@@ -60,7 +60,7 @@ From repository root:
 
 3) Edit `plugins/location-plugin/src/ui/components/batch/LocationMapPreview.tsx`:
    - Add hover state, debounced pointer move handling, and a Snackbar.
-   - Use `getWorkerBridge().getLocationQueryAPI()` to call the new worker method.
+   - Use `getBuildWorkerBridge().getLocationQueryAPI()` to call the new worker method.
 
 4) Run targeted verification (if possible):
    - `pnpm --filter @hierarchidb/location-plugin typecheck`

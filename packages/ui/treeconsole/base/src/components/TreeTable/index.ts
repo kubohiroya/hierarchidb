@@ -7,10 +7,8 @@ export { RowContextMenu } from './context-menu/RowContextMenu.js';
 export type { RowContextMenuProps } from './context-menu/RowContextMenu.js';
 
 // Toolbar
-// export { TreeTableToolbar } from './toolbar/TreeTableToolbar.js';
+export { TreeTableToolbar } from './toolbar/TreeTableToolbar.js';
 export type { TreeTableToolbarProps } from './toolbar/TreeTableToolbar.js';
-export { TreeTableSearchInput } from './toolbar/SearchInput.js';
-export type { TreeTableSearchInputProps } from './toolbar/SearchInput.js';
 
 // Footer
 export { TreeTableFooter } from './footer/TreeTableFooter.js';

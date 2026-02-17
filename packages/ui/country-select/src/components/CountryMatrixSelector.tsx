@@ -7,7 +7,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Chip, Stack, Typography, Alert } from '@mui/material';
 import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
-import { SearchField } from '@hierarchidb/ui-search-field';
+import { TreeTableSearchInput as SearchField } from '@hierarchidb/ui-search-input';
 import type { PrimitiveAtom } from 'jotai';
 import { Provider, atom, useAtomValue } from 'jotai';
 import { createStore } from 'jotai/vanilla';

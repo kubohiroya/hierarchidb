@@ -287,3 +287,14 @@ stateDiagram-v2
 
 Logical API names in this spec map to concrete runtime-worker and plugin bridge APIs.
 Keep naming aligned with section 3 terminology when updating code or docs.
+
+## 18. Migration Status (2026-02-17)
+
+- Completed:
+  - SharedWorker runtime and worker bridge expose canonical `Build*` control APIs.
+  - `Batch*` names are retained as deprecated compatibility aliases.
+  - Build-session state/terminology docs moved to `packages/runtime-worker/docs`.
+  - Shape build-step normal control path (start/stop/progress) no longer depends on `session-coordinator` lock/broadcast heuristics.
+- Deployed with known technical debt:
+  - Compatibility aliases are still present in some plugin-private implementations and historical docs for compatibility.
+  - `Build*` naming is required for new work; remove aliases only via a dedicated cleanup pass.

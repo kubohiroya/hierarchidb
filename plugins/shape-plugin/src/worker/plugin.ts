@@ -18,7 +18,8 @@ const shapeEntityHandlerInstance = new ShapeEntityHandler();
 export const ShapeWorkerPlugin = {
   metadata: ShapeMetadata,
 
-  // Batch API for runtime worker adapters (non-public)
+  // Build API for runtime worker adapters. `batch` kept for backward compatibility.
+  build: shapeBatchAPI,
   batch: shapeBatchAPI,
 
   // Entity handler for database operations

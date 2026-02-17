@@ -68,7 +68,15 @@ type BuildTaskSubscriber = (
 ) => () => void;
 
 type ShapeBuildAPI = {
-  startBatchProcess: (
+  startBuildSession?: (
+    draftId: NodeId,
+    buildConfig: unknown,
+    processingConfig: unknown,
+    downloadTaskPayloads: unknown[],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ) => Promise<NodeId>;
+  /** @deprecated Use startBuildSession. */
+  startBatchProcess?: (
     draftId: NodeId,
     batchConfig: unknown,
     processingConfig: unknown,
@@ -84,7 +92,11 @@ type ShapeBuildAPI = {
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
   /** @deprecated Use getBuildSession. */
   getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
+  pauseBuildSession?: (draftId: NodeId) => Promise<void>;
+  /** @deprecated Use pauseBuildSession. */
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
+  resumeBuildSession?: (draftId: NodeId) => Promise<void>;
+  /** @deprecated Use resumeBuildSession. */
   resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BuildProgressSubscriber;
@@ -122,9 +134,9 @@ const resolveBuildTaskProvider = (mod: unknown): BuildTaskProvider | null => {
     return direct as BuildTaskProvider;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: Record<string, unknown>; batch?: Record<string, unknown> }
+    | { api?: Record<string, unknown>; build?: Record<string, unknown>; batch?: Record<string, unknown> }
     | undefined;
-  const api = shapePlugin?.batch ?? shapePlugin?.api;
+  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
   const apiFn = api?.getBuildTasks ?? api?.getBatchTasks;
   if (typeof apiFn === 'function') {
     return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BuildTaskSummary[]>)(nodeId);
@@ -140,14 +152,14 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
     ?? record.shapeBatchAPI
     ?? record.shapePluginAPI
   ) as ShapeBuildAPI | undefined;
-  if (direct?.startBatchProcess) {
+  if (direct?.startBuildSession || direct?.startBatchProcess) {
     return direct;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: ShapeBuildAPI; batch?: ShapeBuildAPI }
+    | { api?: ShapeBuildAPI; build?: ShapeBuildAPI; batch?: ShapeBuildAPI }
     | undefined;
-  const api = shapePlugin?.batch ?? shapePlugin?.api;
-  if (api?.startBatchProcess) {
+  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
+  if (api?.startBuildSession || api?.startBatchProcess) {
     return api;
   }
   return null;
@@ -423,6 +435,34 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
           return undefined;
         };
+        const invokeStartBuildSession = async (
+          buildApi: ShapeBuildAPI,
+          nodeId: NodeId,
+          buildConfig: unknown,
+          processingConfig: unknown,
+          downloadTaskPayloads: unknown[],
+          buildContinuationPolicy?: BuildContinuationPolicy,
+        ): Promise<NodeId> => {
+          if (typeof buildApi.startBuildSession === 'function') {
+            return buildApi.startBuildSession(
+              nodeId,
+              buildConfig,
+              processingConfig,
+              downloadTaskPayloads,
+              buildContinuationPolicy,
+            );
+          }
+          if (typeof buildApi.startBatchProcess === 'function') {
+            return buildApi.startBatchProcess(
+              nodeId,
+              buildConfig,
+              processingConfig,
+              downloadTaskPayloads,
+              buildContinuationPolicy,
+            );
+          }
+          throw new Error('[worker bootstrap] Build API missing start method');
+        };
         const SHAPE_NODE_TYPE = 'shape' as NodeType;
         const normalizeSessionStatuses = (
           statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
@@ -584,7 +624,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
             const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
             const payloads = downloadTaskPayloads ?? [];
-            await buildApi.startBatchProcess(
+            await invokeStartBuildSession(
+              buildApi,
               nodeId,
               batchConfig,
               processingConfig,
@@ -635,7 +676,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
               (session as { draftId?: NodeId } | undefined)?.draftId ??
               nodeId;
-            if (buildApi.pauseBatchProcessing) {
+            if (buildApi.pauseBuildSession) {
+              await buildApi.pauseBuildSession(draftId);
+            } else if (buildApi.pauseBatchProcessing) {
               await buildApi.pauseBatchProcessing(draftId);
             }
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
@@ -728,7 +771,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
               (session as { draftId?: NodeId } | undefined)?.draftId ??
               nodeId;
-            if (buildApi.resumeBatchProcessing) {
+            if (buildApi.resumeBuildSession) {
+              await buildApi.resumeBuildSession(draftId);
+            } else if (buildApi.resumeBatchProcessing) {
               await buildApi.resumeBatchProcessing(draftId);
             }
             setHeapContext({ nodeType, nodeId });

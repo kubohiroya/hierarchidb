@@ -46,7 +46,7 @@ Second, update the worker entry at `app/src/worker-runtime/worker.ts` so the API
 
 Third, implement task retrieval in `plugins/shape-plugin/src/worker/api.ts` so `getBatchTasks(sessionId)` returns actual task data from `ShapeDB`. Add a small mapping helper to convert `BatchTaskRecord` to the shape `BatchTask` type and to the new `BatchTaskSummary`. Export a provider function from `plugins/shape-plugin/src/worker/index.ts` (for example `getBatchTasks`) so the worker entry can register it. Keep the export thin and type-only, and avoid pulling UI dependencies into worker code.
 
-Fourth, add a new UI hook in `plugins/shape-plugin/src/ui/hooks/useShapeBuildTasks.ts` that uses `getWorkerBridge().getBatchTasks('shape', sessionId)` to fetch tasks. Expose a `refresh` function and a `tasks` array. Trigger refresh when progress updates (use the existing `useShapeProgress` timestamp or stage changes) and also on a modest polling interval (e.g. 2000ms) while a session is active.
+Fourth, add a new UI hook in `plugins/shape-plugin/src/ui/hooks/useShapeBuildTasks.ts` that uses `getBuildWorkerBridge().getBuildTasks('shape', sessionId)` to fetch tasks. Expose a `refresh` function and a `tasks` array. Trigger refresh when progress updates (use the existing `useShapeProgress` timestamp or stage changes) and also on a modest polling interval (e.g. 2000ms) while a session is active.
 
 Fifth, update `packages/components/src/BuildStep.tsx` to accept an optional `renderStageContent` callback and optional `paneProgress` overrides. If `renderStageContent` is provided, use it instead of the default stage description + progress bar in the pane body. If `paneProgress` is provided, pass it through to `LRUSplitView`; otherwise keep the existing computed values.
 

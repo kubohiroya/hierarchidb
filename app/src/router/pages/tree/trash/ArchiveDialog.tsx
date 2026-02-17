@@ -19,8 +19,11 @@ import {
   type TreeConsoleBreadcrumbRendererProps,
   type TreeConsolePanelProps,
   type TreeTableColumn,
-  TreeTableSearchInput,
 } from '@hierarchidb/ui-treeconsole-base';
+  type TreeConsolePanelProps,
+  type TreeTableColumn,
+} from '@hierarchidb/ui-treeconsole-base';
+import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 import type { DualKeyMap } from '@hierarchidb/util';
 import {
   ArrowBack as ArrowBackIcon,
