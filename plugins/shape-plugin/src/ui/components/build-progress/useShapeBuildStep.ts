@@ -200,11 +200,8 @@ export const shouldRefreshTasksSnapshot = (params: {
   if (params.displayTaskCount === 0) {
     return (
       params.hasProgressTaskSignal
-      || params.buildStatus === 'running'
+      || hasProcessingSignal
       || params.buildStatus === 'completed'
-      || params.runtimeStatus === 'processing'
-      || params.processingStatus === 'processing'
-      || params.buildSessionTransitionActive
     );
   }
   if (params.hasInFlightTasks) {
