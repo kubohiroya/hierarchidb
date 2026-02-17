@@ -1577,6 +1577,24 @@ export const shapeBatchAPI = {
   // DraftTypes-based Build Processing
   // ===================================
 
+  startBuildSession: async (
+    draftId: NodeId,
+    buildConfig: ShapeBuildConfig,
+    processingConfig: ShapeProcessingConfig | undefined,
+    downloadTaskPayloads: FetchTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
+    progressCallback?: (event: BuildProgressEvent) => void,
+  ): Promise<NodeId> => (
+    shapeBatchAPI.startBatchProcess(
+      draftId,
+      buildConfig,
+      processingConfig,
+      downloadTaskPayloads,
+      buildContinuationPolicy,
+      progressCallback,
+    )
+  ),
+  /** @deprecated Use startBuildSession. */
   startBatchProcess: async (
     draftId: NodeId,
     buildConfig: ShapeBuildConfig,

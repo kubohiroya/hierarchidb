@@ -68,7 +68,15 @@ type BuildTaskSubscriber = (
 ) => () => void;
 
 type ShapeBuildAPI = {
-  startBatchProcess: (
+  startBuildSession?: (
+    draftId: NodeId,
+    buildConfig: unknown,
+    processingConfig: unknown,
+    downloadTaskPayloads: unknown[],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ) => Promise<NodeId>;
+  /** @deprecated Use startBuildSession. */
+  startBatchProcess?: (
     draftId: NodeId,
     batchConfig: unknown,
     processingConfig: unknown,
@@ -140,14 +148,14 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
     ?? record.shapeBatchAPI
     ?? record.shapePluginAPI
   ) as ShapeBuildAPI | undefined;
-  if (direct?.startBatchProcess) {
+  if (direct?.startBuildSession || direct?.startBatchProcess) {
     return direct;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
     | { api?: ShapeBuildAPI; batch?: ShapeBuildAPI }
     | undefined;
   const api = shapePlugin?.batch ?? shapePlugin?.api;
-  if (api?.startBatchProcess) {
+  if (api?.startBuildSession || api?.startBatchProcess) {
     return api;
   }
   return null;
@@ -423,6 +431,34 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
           return undefined;
         };
+        const invokeStartBuildSession = async (
+          buildApi: ShapeBuildAPI,
+          nodeId: NodeId,
+          buildConfig: unknown,
+          processingConfig: unknown,
+          downloadTaskPayloads: unknown[],
+          buildContinuationPolicy?: BuildContinuationPolicy,
+        ): Promise<NodeId> => {
+          if (typeof buildApi.startBuildSession === 'function') {
+            return buildApi.startBuildSession(
+              nodeId,
+              buildConfig,
+              processingConfig,
+              downloadTaskPayloads,
+              buildContinuationPolicy,
+            );
+          }
+          if (typeof buildApi.startBatchProcess === 'function') {
+            return buildApi.startBatchProcess(
+              nodeId,
+              buildConfig,
+              processingConfig,
+              downloadTaskPayloads,
+              buildContinuationPolicy,
+            );
+          }
+          throw new Error('[worker bootstrap] Build API missing start method');
+        };
         const SHAPE_NODE_TYPE = 'shape' as NodeType;
         const normalizeSessionStatuses = (
           statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
@@ -584,7 +620,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
             const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
             const payloads = downloadTaskPayloads ?? [];
-            await buildApi.startBatchProcess(
+            await invokeStartBuildSession(
+              buildApi,
               nodeId,
               batchConfig,
               processingConfig,

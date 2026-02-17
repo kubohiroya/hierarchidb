@@ -76,7 +76,7 @@ used across runtime, worker API, UI, and plugin implementations.
 - `SessionManager` (doc term) -> `BuildSessionOrchestrator`: **adopted in build-session docs**.
 - `SessionCoordinator` role -> `TabSessionCoordinator`: **export aliases adopted (`createTabSessionCoordinator`, `TabSessionCoordinator*`)**.
 - `Batch*` -> `Build*`: **in progress** (canonical aliases exist; many legacy names remain).
-- UI lock/runner arbitration by `session-coordinator`: **being reduced; remaining usages are phased out incrementally**.
+- UI lock/runner arbitration by `session-coordinator`: **removed from shape build-step normal start/stop/progress path**.
 
 ## 6. Rules for New Changes
 
