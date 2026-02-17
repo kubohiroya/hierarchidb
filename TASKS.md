@@ -38,6 +38,8 @@
 ## Kanban
 
 ### Doing
+- #340 / `codex/refactor/runtime/sharedworker-only-build-session-340` / start: 2026-02-17 10:56 JST
+- #339 / `codex/docs/shape/session-manager-state-transition-339` / start: 2026-02-17 10:04 JST
 - #337 / `codex/docs/shape/build-start-pause-transitions-337` / start: 2026-02-17 07:33 JST
 - #335 / `codex/fix/shape/move-transform-prepare-counts-to-fetch` / start: 2026-02-16 19:54 JST
 - #332 / `codex/feat/shape/fetch-invalid-geometry-filters` / start: 2026-02-16 16:12 JST
@@ -111,6 +113,11 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-17 10:56 JST #340 を起票し（https://github.com/kubohiroya/hierarchidb/issues/340）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/refactor/runtime/sharedworker-only-build-session-340` を作成して着手。
+- update: 2026-02-17 11:38 JST #340 `app/src/worker-runtime/client.ts` を SharedWorker 専用へ整理し、`app/src/worker-runtime/workerBootstrap.ts` から `@hierarchidb/session-coordinator` 依存を除去。状態遷移ドキュメントを `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md` へ移設し、Start/Resume の単一路線（常に差分再開）・`cancelQueuedSessionRequest` 追加・全ノード/全プラグイン単一FIFO・UIローカル要求状態（StartRequested/StopRequested）を明記。
+- start: 2026-02-17 10:04 JST #339 を起票し（https://github.com/kubohiroya/hierarchidb/issues/339）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/docs/shape/session-manager-state-transition-339` を作成して着手。
+- update: 2026-02-17 10:16 JST #339 `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` を `plugins/shape-plugin/docs/DIALOG_FLOW_AND_SESSION_MANAGER_STATE_TRANSITION.md` へ改名し、UIセッションコピー状態・初期化/Startシーケンス・SessionManager状態遷移・StageTaskWorker実行モデル・タブ閉じ/ダイアログ閉じ/ステップ遷移/全タブ閉じ時の扱いを追記。参照リンクを `plugins/shape-plugin/docs/WORKING_COPY_PATTERN.md`, `plugins/shape-plugin/TODO.md`, `plans/shape-build-session-comprehensive-stability-execplan.md` で更新。
+- update: 2026-02-17 10:45 JST #339 自動再開を廃止する方針に合わせて `plugins/shape-plugin/docs/DIALOG_FLOW_AND_SESSION_MANAGER_STATE_TRANSITION.md` を更新。`status=startAccepted|running` セッションの初期化時 `stage=undefined` 正規化、`Start/Resume` 差分再開（未完了タスク維持）、通信断時の致命ダイアログ方針、全タブ閉じ/クラッシュ時の挙動表を追記。
 - start: 2026-02-17 07:33 JST #337 を起票し（https://github.com/kubohiroya/hierarchidb/issues/337）、Project `hierarchidb` の Status を `In Progress` に設定。ブランチ `codex/docs/shape/build-start-pause-transitions-337` を作成して着手。
 - update: 2026-02-17 07:41 JST #337 `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md` を現行実装ベースで全面更新。開始受付/実開始、停止受付/停止完了の分離、`awaiting-first-task` 監視（10s/20s/45s）、pause 後の drain 待ちと表示不整合の発生条件を整理。
 - blocked: 2026-02-17 07:43 JST #337 検証 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は差分外既知ブロッカー `@hierarchidb/batch-runtime-services` の `@types/react` 重複読込（TS2300: `ElementType` / `LibraryManagedAttributes`）で exit 2。

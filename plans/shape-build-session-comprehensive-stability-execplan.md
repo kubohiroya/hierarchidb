@@ -129,7 +129,7 @@ Current implementation files changed in this milestone:
 - `plugins/shape-plugin/src/ui/components/build-progress/awaitingFirstTaskSignal.ts`
 - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
 - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`
-- `plugins/shape-plugin/docs/DIALOG_FLOW_AND_STATE_TRANSITIONS.md`
+- `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
 
 ## Interfaces and Dependencies
 

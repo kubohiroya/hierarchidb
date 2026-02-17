@@ -808,4 +808,4 @@ Working Copy Patternは、Shape Pluginにおいて以下の利点を提供しま
 - [HierarchiDB Architecture](../../../docs/ARCHITECTURE.md)
 - [Entity Handler Pattern](../../../docs/ENTITY_HANDLER.md)
 - [Batch Processing](./BATCH_PROCESSING_NOTIFICATION.md)
-- [Dialog Flow](./DIALOG_FLOW_AND_STATE_TRANSITIONS.md)
+- [Dialog Flow](../../../packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md)

@@ -23,7 +23,6 @@ import {
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import type { ShapeBuildSessionRecord, ShapeDataSourceName } from '@hierarchidb/shape-api';
-import { createSessionCoordinator } from '@hierarchidb/session-coordinator';
 import {
   configureWorkerContainer,
   getWorkerContainer,
@@ -412,11 +411,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             ? statuses
             : (['running'] as Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>)
         );
-        const runtimeCoordinator = createSessionCoordinator({
-          channelName: 'sessions',
-          pollIntervalTimeout: 3000,
-          quietThresholdTimeout: 5000,
-        });
         const runtimeStatusOverrides = new Map<string, BuildSessionRuntimeStatus>();
         const runtimeActiveHints = new Map<string, boolean>();
         const runtimeRevisions = new Map<string, number>();
@@ -461,31 +455,27 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           publishBuildSessionUpdate({ nodeId });
         };
 
-        const probeRuntimeActive = async (
+        const probeRuntimeActive = (
           nodeType: NodeType,
           nodeId: NodeId,
           status: BuildSessionRuntimeStatus
-        ): Promise<boolean> => {
+        ): boolean => {
           if (!runtimeStatusesWithActiveLock.has(status)) {
             return false;
           }
-          const lockState = await runtimeCoordinator.probeSessionLock(`${String(nodeType)}:${String(nodeId)}`);
-          if (lockState === 'held') return true;
-          if (lockState === 'unsupported') {
-            return runtimeActiveHints.get(toRuntimeKey(nodeType, nodeId)) === true;
-          }
-          return false;
+          const activeHint = runtimeActiveHints.get(toRuntimeKey(nodeType, nodeId));
+          return activeHint ?? true;
         };
 
-        const toRuntimeRecord = async (
+        const toRuntimeRecord = (
           nodeType: NodeType,
           session: ShapeBuildSessionRecord
-        ): Promise<BuildSessionRuntimeRecord> => {
+        ): BuildSessionRuntimeRecord => {
           const key = toRuntimeKey(nodeType, session.nodeId);
           runtimeNodeIndex.set(key, { nodeType, nodeId: session.nodeId });
           const persistedStatus = resolveRuntimeStatusFromShapeRecord(session.status);
           const runtimeStatus = runtimeStatusOverrides.get(key) ?? persistedStatus;
-          const isActive = await probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
+          const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
           const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
           return {
             nodeId: session.nodeId,
@@ -500,14 +490,14 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           };
         };
 
-        const toSyntheticRuntimeRecord = async (
+        const toSyntheticRuntimeRecord = (
           nodeType: NodeType,
           nodeId: NodeId
-        ): Promise<BuildSessionRuntimeRecord | null> => {
+        ): BuildSessionRuntimeRecord | null => {
           const key = toRuntimeKey(nodeType, nodeId);
           const transient = runtimeStatusOverrides.get(key);
           if (!transient) return null;
-          const isActive = await probeRuntimeActive(nodeType, nodeId, transient);
+          const isActive = probeRuntimeActive(nodeType, nodeId, transient);
           return {
             nodeId,
             status: transient,
@@ -531,7 +521,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
           const persisted = await sessionRecords;
           const records = (Array.isArray(persisted) ? persisted : (persisted ? [persisted] : []));
-          const runtimeRecords = await Promise.all(records.map((session) => toRuntimeRecord(SHAPE_NODE_TYPE, session)));
+          const runtimeRecords = records.map((session) => toRuntimeRecord(SHAPE_NODE_TYPE, session));
           const existing = new Set(runtimeRecords.map((record) => toRuntimeKey(SHAPE_NODE_TYPE, record.nodeId)));
 
           const syntheticCandidates = filter?.nodeId
@@ -541,7 +531,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           for (const candidate of syntheticCandidates) {
             const key = toRuntimeKey(candidate.nodeType, candidate.nodeId);
             if (existing.has(key)) continue;
-            const synthetic = await toSyntheticRuntimeRecord(candidate.nodeType, candidate.nodeId);
+            const synthetic = toSyntheticRuntimeRecord(candidate.nodeType, candidate.nodeId);
             if (!synthetic) continue;
             runtimeRecords.push(synthetic);
           }
