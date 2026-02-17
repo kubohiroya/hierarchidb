@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { proxy } from 'comlink';
 import {
@@ -9,10 +9,6 @@ import {
   type RouteEntity,
   type RouteMode,
 } from '@hierarchidb/route-api';
-import {
-  createSessionCoordinator,
-  type SessionLockHandle,
-} from '@hierarchidb/session-coordinator';
 import {
   executePauseBuildFlow,
   notify,
@@ -138,6 +134,8 @@ const getCountryDisplayName = (countryCode: string): string => {
   }
 };
 
+const SESSION_QUIET_THRESHOLD_MS = 5_000;
+
 export const useRouteBuildSessionLifecycle = ({
   api,
   initialize,
@@ -154,13 +152,6 @@ export const useRouteBuildSessionLifecycle = ({
   vtStageMax,
   t,
 }: UseRouteBuildSessionLifecycleArgs) => {
-  const coordinator = useMemo(() => (
-    createSessionCoordinator({
-      channelName: 'sessions',
-      pollIntervalTimeout: 3000,
-      quietThresholdTimeout: 5000,
-    })
-  ), []);
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
   const [isPausePending, setIsPausePending] = useState(false);
@@ -172,15 +163,9 @@ export const useRouteBuildSessionLifecycle = ({
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
   const sessionId = routeNodeId ? String(routeNodeId) : null;
-  const lockKey = useMemo(() => (
-    sessionId ? `route:${sessionId}` : null
-  ), [sessionId]);
-  const isWebLockSupported = coordinator.isWebLockSupported();
+  const isWebLockSupported = true;
   const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
-  const lockRef = useRef<SessionLockHandle | null>(null);
-  const lockKeyRef = useRef<string | null>(null);
-  const [isLockOwner, setIsLockOwner] = useState(false);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
   const shouldAutoResume = Boolean(
     routeData.processingStatus === 'processing' && !routeData.buildFinishedAt,
@@ -224,49 +209,6 @@ export const useRouteBuildSessionLifecycle = ({
     },
   });
 
-  const releaseBuildLock = useCallback(() => {
-    const lock = lockRef.current;
-    if (!lock) return;
-    lock.release();
-    lockRef.current = null;
-    lockKeyRef.current = null;
-    setIsLockOwner(false);
-  }, []);
-
-  const tryAcquireBuildLock = useCallback(async (options?: { notifyOnFailure?: boolean }): Promise<boolean> => {
-    if (!lockKey) return false;
-    if (lockRef.current) return true;
-    if (!isWebLockSupported) {
-      if (options?.notifyOnFailure) {
-        notify.error('Web Locks API is unavailable.');
-      }
-      return false;
-    }
-    const lock = await coordinator.tryAcquireSessionLock(lockKey);
-    if (!lock) {
-      if (options?.notifyOnFailure) {
-        notify.info('Another tab is already running this build.');
-      }
-      return false;
-    }
-    lockRef.current = lock;
-    lockKeyRef.current = lockKey;
-    setIsLockOwner(true);
-    return true;
-  }, [coordinator, isWebLockSupported, lockKey]);
-
-  useEffect(() => {
-    if (!lockKeyRef.current) return;
-    if (lockKeyRef.current === lockKey) return;
-    releaseBuildLock();
-  }, [lockKey, releaseBuildLock]);
-
-  useEffect(() => {
-    return () => {
-      releaseBuildLock();
-    };
-  }, [releaseBuildLock]);
-
   useEffect(() => {
     if (!isPausePending) return;
     if (status !== 'running') {
@@ -279,12 +221,6 @@ export const useRouteBuildSessionLifecycle = ({
       setIsPausePending(false);
     }
   }, [status]);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    if (status !== 'running') return;
-    if (!isLockOwner) return;
-  }, [isLockOwner, sessionId, status]);
 
   useEffect(() => {
     completionStatusRef.current = status;
@@ -318,31 +254,6 @@ export const useRouteBuildSessionLifecycle = ({
         : 'Starting build session...',
       level: 'info',
     });
-
-    const now = Date.now();
-    const hasRunner = coordinator.isRunnerTab(now);
-    const activeSessionId = coordinator.readActiveSessionId();
-    if (hasRunner && activeSessionId && activeSessionId !== sessionId) {
-      notify.info('Another build session is active in this tab.');
-      finishBuildSessionTransition({
-        level: 'warning',
-        message: 'Another build session is already active in this tab.',
-      });
-      return;
-    }
-    const acquired = await tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume });
-    if (!acquired) {
-      finishBuildSessionTransition({
-        level: 'warning',
-        message: 'Failed to acquire build lock.',
-      });
-      return;
-    }
-    if (!options?.autoResume) {
-      coordinator.writeActiveSessionId(sessionId);
-    } else if (!activeSessionId) {
-      coordinator.writeActiveSessionId(sessionId);
-    }
     buildInFlightRef.current = true;
     setStatus('running');
     setOverallProgress(0);
@@ -426,21 +337,17 @@ export const useRouteBuildSessionLifecycle = ({
       });
     } finally {
       buildInFlightRef.current = false;
-      releaseBuildLock();
-      coordinator.clearActiveSessionId(sessionId);
     }
   }, [
     api,
     advanceBuildSessionTransitionPhase,
     beginBuildSessionTransition,
-    coordinator,
     draft,
     fetchStageMax,
     finishBuildSessionTransition,
     initialize,
     mapIdeGsmProgress,
     onUpdate,
-    releaseBuildLock,
     resolveRouteTransformConfig,
     resolveVectorTileConfig,
     resolveZoomRange,
@@ -448,7 +355,6 @@ export const useRouteBuildSessionLifecycle = ({
     sessionId,
     t,
     transformStageMax,
-    tryAcquireBuildLock,
     vtStageMax,
   ]);
 
@@ -475,58 +381,25 @@ export const useRouteBuildSessionLifecycle = ({
     }
     const now = Date.now();
     const elapsedSinceStart = now - crashCheckStartedAtRef.current;
-    if (elapsedSinceStart < coordinator.quietThresholdTimeout) return;
-    let cancelled = false;
-    const check = async () => {
-      if (!lockKey) return;
-      const lockState = await coordinator.probeSessionLock(lockKey);
-      if (cancelled) return;
-      if (lockState === 'held') {
-        if (crashSuspectOpen) {
-          closeCrashSuspect();
-        }
-        if (suspendSuspectOpen) {
-          closeSuspendSuspect();
-        }
-        return;
-      }
-      if (lockState === 'unsupported') {
-        if (!crashSuspectOpen) {
-          setCrashSuspectMessage(
-            t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-          );
-          setCrashSuspectOpen(true);
-        }
-        return;
-      }
-      if (suspendSuspectOpen) {
-        closeSuspendSuspect();
-      }
-      if (!crashSuspectOpen) {
-        setCrashSuspectMessage(
-          t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-        );
-        setCrashSuspectOpen(true);
-      }
-      setStatus('paused');
-      if (sessionId) {
-        onUpdate({ processingStatus: 'pending', buildFinishedAt: undefined });
-        coordinator.clearActiveSessionId(sessionId);
-      }
-      releaseBuildLock();
-    };
-    void check();
-    return () => {
-      cancelled = true;
-    };
+    if (elapsedSinceStart < SESSION_QUIET_THRESHOLD_MS) return;
+    if (suspendSuspectOpen) {
+      closeSuspendSuspect();
+    }
+    if (!crashSuspectOpen) {
+      setCrashSuspectMessage(
+        t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+      );
+      setCrashSuspectOpen(true);
+    }
+    setStatus('paused');
+    if (sessionId) {
+      onUpdate({ processingStatus: 'pending', buildFinishedAt: undefined });
+    }
   }, [
     closeCrashSuspect,
     closeSuspendSuspect,
-    coordinator,
     crashSuspectOpen,
-    lockKey,
     onUpdate,
-    releaseBuildLock,
     sessionId,
     shouldAutoResume,
     status,
@@ -545,16 +418,14 @@ export const useRouteBuildSessionLifecycle = ({
       persistPausedStatus: async () => {
         if (sessionId) {
           onUpdate({ processingStatus: 'pending', buildFinishedAt: undefined });
-          coordinator.clearActiveSessionId(sessionId);
         }
-        releaseBuildLock();
       },
       onError: (error) => {
         notify.error(t('stage.progress.pauseFailed', 'Failed to pause build.'));
         console.error('[RouteBuildStep] pause failed', error);
       },
     });
-  }, [coordinator, isPausePending, onUpdate, releaseBuildLock, sessionId, t]);
+  }, [isPausePending, onUpdate, sessionId, t]);
 
   return {
     status,
