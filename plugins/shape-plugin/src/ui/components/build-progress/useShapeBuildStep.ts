@@ -926,7 +926,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setCompletedStageElapsedMs((current) => (
       shallowEqualNumberRecord(current, {}) ? current : {}
     ));
-  }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
+  }, [buildStatus]);
 
   const hasFailedFetchTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
