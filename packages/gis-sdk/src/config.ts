@@ -97,35 +97,6 @@ export type SelfIntersectionTuningConfig = {
 export type GeometryEngine = 'turf';
 export type TransformSimplifyAlgorithm = 'geojson' | 'topojson';
 export type TransformExecutionLogLevel = 'off' | 'summary' | 'verbose';
-export type TransformFallbackMode = 'switch_algorithm' | 'disable_simplify' | 'best_score';
-
-export type TransformAnomalyGeojsonConfig = {
-  maxTriangleShareDriftPercent: number;
-  maxTriangleEdgeToBBoxRatio: number;
-};
-
-export type TransformAnomalyTopojsonConfig = {
-  minSharedArcRatioPercent: number;
-};
-
-export type TransformAnomalyDetectionConfig = {
-  enabled: boolean;
-  scoreThreshold: number;
-  maxEdgeLengthRatio: number;
-  maxAreaDriftPercent: number;
-  maxSelfIntersectionCount: number;
-  maxLineLengthDriftPercent: number;
-  maxVertexDriftPercent: number;
-  geojson?: TransformAnomalyGeojsonConfig;
-  topojson?: TransformAnomalyTopojsonConfig;
-};
-
-export type TransformAnomalyRetryConfig = {
-  enabled: boolean;
-  maxRetries: number;
-  toleranceScale: number;
-  fallbackMode: TransformFallbackMode;
-};
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];
@@ -134,8 +105,6 @@ export interface TransformConfig {
   simplifyAlgorithm?: TransformSimplifyAlgorithm;
   preserveTopology?: boolean;
   executionLogLevel?: TransformExecutionLogLevel;
-  anomalyDetection?: TransformAnomalyDetectionConfig;
-  anomalyRetry?: TransformAnomalyRetryConfig;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
   minVertexCountForAreaFilter: number;
@@ -150,7 +119,6 @@ export interface TransformConfig {
   omitDetailsConfig: OmitDetailsConfig;
   minRingVertices: number;
   boundaryDisableAtZoomOrAbove?: number;
-  retryToleranceStep?: number;
 }
 
 export type DynamicConcurrencyConfig = {
@@ -186,24 +154,7 @@ export interface VTConfig {
     tiles?: readonly string[];
     features?: readonly string[];
   };
-  outputQualityGuard?: VTOutputQualityGuardConfig;
 }
-
-export type VTGuardAction = 'mark_warning' | 'fallback_less_simplified' | 'drop_tile';
-
-export type VTOutputQualityGuardConfig = {
-  enabled: boolean;
-  minZoom: number;
-  maxZoom: number;
-  actionOnAnomaly: VTGuardAction;
-  enablePreviewOverlay: boolean;
-  scoreThreshold?: number;
-  minTriangleAngleDeg?: number;
-  minEdgeToBaseRatio?: number;
-  maxAreaToBBoxRatio?: number;
-  minSpanRatio?: number;
-  minBoundaryVertexCount?: number;
-};
 
 export interface RouteTransformConfig {
   minDistanceMetersByBand?: number[];
