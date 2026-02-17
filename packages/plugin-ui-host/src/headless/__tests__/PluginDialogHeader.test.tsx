@@ -214,11 +214,12 @@ describe('PluginDialogHeader', () => {
     expect(disabledStep).toBeDisabled();
   });
 
-  it('resolves mapped icons by step id regardless of localized labels, including build icon', () => {
+  it('resolves mapped icons by step id regardless of localized labels', () => {
     const contextValue = {
       open: true,
       stepComponents: [
         { id: 'data-source', label: 'データソース', component: () => null },
+        { id: 'map-style', label: '地図スタイル', component: () => null },
         { id: 'country-selection', label: '国選択', component: () => null },
         { id: 'build', label: 'ビルド', component: () => null },
         { id: 'preview', label: 'プレビュー', component: () => null },
@@ -227,7 +228,7 @@ describe('PluginDialogHeader', () => {
       stepData: {},
       onStepDataChange: vi.fn(),
       activeStepIndex: 0,
-      enabledStepIndices: [0, 1, 2, 3, 4],
+      enabledStepIndices: [0, 1, 2, 3, 4, 5],
       validatedStepIndices: [],
       committableStepIndices: [],
       invalidMessageMap: {},
@@ -249,9 +250,46 @@ describe('PluginDialogHeader', () => {
     );
 
     expect(within(screen.getByTestId('plugin-dialog-step-icon-1')).getByTestId('CloudDownloadIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PublicIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('ConstructionIcon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('VisibilityIcon')).toBeInTheDocument();
-    expect(screen.getByTestId('plugin-dialog-step-icon-5')).toHaveTextContent('5');
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PaletteIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('PublicIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('ConstructionIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-5')).getByTestId('VisibilityIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('plugin-dialog-step-icon-6')).toHaveTextContent('6');
+  });
+
+  it('keeps Construction icon visible for build step while in progress', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'data-source', label: 'Data Source', component: () => null },
+        { id: 'build', label: 'Build', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 1,
+      enabledStepIndices: [0, 1],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: false,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Edit Item" buildStepRunning />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    const buildIconContainer = screen.getByTestId('plugin-dialog-step-icon-2');
+    expect(buildIconContainer.getAttribute('data-in-progress')).toBe('true');
+    expect(within(buildIconContainer).getByTestId('ConstructionIcon')).toBeInTheDocument();
   });
 });
