@@ -4,7 +4,7 @@
 
 ### ✅ 完了した実装
 
-#### 1. **BatchSessionManager** (packages/plugins/shape-plugin/src/services/BatchSessionManager.ts)
+#### 1. **BuildSessionManager** (packages/plugins/shape-plugin/src/services/BuildSessionManager.ts)
 - ✅ `executeDownloadStage()` - 実際のHTTPダウンロード処理を実装
   - GADMデータソースURLの構築
   - fetch APIを使用した実データ取得
@@ -171,7 +171,7 @@ MVT（Mapbox Vector Tiles）エンコーディングの実装：
 
 - [実装計画書](./IMPLEMENTATION_PLAN.md)
 - [アーキテクチャ](./ARCHITECTURE.md)
-- [バッチ処理ガイド](./BATCH_PROCESSING.md)
+- [ビルド処理ガイド](./BATCH_PROCESSING_NOTIFICATION.md)
 - [テスト戦略](./TESTING_STRATEGY.md)
 
 ## 🔗 次のステップ

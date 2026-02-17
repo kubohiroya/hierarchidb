@@ -3,7 +3,7 @@
 実装サマリ（2025-09-09）
 - nodeType: `route`
 - DB: Dexie(`route`) / `RouteDB` — ルートエンティティ（`features`）とベクタータイル（`vectorTiles`）
-- バッチ: 統一バッチ API 準拠（生成・検証・ベクトル化）
+- ビルド: 統一ビルド API 準拠（生成・検証・ベクトル化）
 - UI: 設定ウィザード、データテーブル、マッププレビュー
 - 機能: 多様なルートソース、距離/接続性分析、スタイル連携
 - ランタイムワーカー: `registerRouteRuntimeWorkerAdapters()`（フラグ `ROUTE_RUNTIME_WORKER=1` で有効）
@@ -16,7 +16,7 @@
 - import は公開API、型は `import type`、重い処理は dynamic import。
 - tsup external は共通設定で外部化済み。
 交通路・輸送ルート情報の収集、管理、可視化を行うHierarchiDBプラグインです。
-OpenStreetMapやNatural Earth等のオープンデータソースから、航路、海路、道路、鉄道等のルートデータをバッチダウンロードし、地図上で可視化・分析できます。
+OpenStreetMapやNatural Earth等のオープンデータソースから、航路、海路、道路、鉄道等のルートデータをビルドダウンロードし、地図上で可視化・分析できます。
 
 ## 2026-02-14 確定仕様（優先）
 
@@ -45,7 +45,7 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 - 🌐 **国際ルート対応**: 国境を越えるルートの適切な処理
 - 📈 **ルート分析**: 距離計算、接続性分析、ネットワーク構造
 - 🎨 **高度な可視化**: 速度・容量による色分け、方向表示
-- 🔄 **バッチ処理**: 大規模ルートデータの効率的処理
+- 🔄 **ビルド処理**: 大規模ルートデータの効率的処理
 - 💾 **ベクタータイル生成**: 高速地図表示のためのタイル生成
 
 ### Tabular Preview（データテーブル）
@@ -296,7 +296,7 @@ interface ReviewSummary {
 - TimelineChart: 処理フロー図
 - ConfirmDialog: 最終確認ダイアログ
 
-## バッチ処理進捗確認ダイアログ
+## ビルド処理進捗確認ダイアログ
 
 ### タブ構成
 
@@ -530,8 +530,8 @@ interface RouteEntity {
   selectedRegions: string[];
   routeTypes: RouteType[];
   
-  // バッチ処理
-  batchSessionId?: string;
+  // ビルド処理
+  buildSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
   
   // メタデータ
@@ -676,7 +676,7 @@ const selection = {
 };
 
 // Step 3: 処理実行
-const session = await routePlugin.createBatchSession(
+const session = await routePlugin.createBuildSession(
   nodeId,
   config,
   selection,
@@ -707,7 +707,7 @@ const internationalRoutes = {
 };
 
 // 重複なく国際ルートを一括取得
-const session = await routePlugin.createBatchSession(
+const session = await routePlugin.createBuildSession(
   nodeId,
   { name: "International Routes" },
   internationalRoutes

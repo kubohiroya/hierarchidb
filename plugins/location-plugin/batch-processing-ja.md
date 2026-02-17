@@ -1,10 +1,10 @@
-## バッチ処理概要
+## ビルド処理概要
 
-LocationDialog における Start Batch は以下の段階で構成する。
+LocationDialog における Start Build は以下の段階で構成する。
 
 ### 1. データ取得フェーズ
 - ユーザーが指定したデータソース設定（CSV / GeoJSON / 外部 API など）をもとに、ダウンロードまたは API アクセスを実行し raw データを取得する。
-- 取得したデータはバッチセッション開始前に検証（ファイル形式・エンコーディング・ヘッダー構造など）し、問題があれば即座にフィードバックする。
+- 取得したデータはビルドセッション開始前に検証（ファイル形式・エンコーディング・ヘッダー構造など）し、問題があれば即座にフィードバックする。
 
 ### 2. パース & LocationPoint 化
 - raw データを行単位またはレコード単位で解析し、アプリで永続的に利用する `LocationPoint` 型へ整形する。
@@ -53,30 +53,30 @@ type LocationPoint = GroupEntity<string> & {
 
 ### 3. 永続化フェーズ（Persistent DB）
 - 完成した `LocationPoint` を永続ストア（`LocationDB.features`）へ保存する。既存エンティティと重複する場合はアップサートポリシーを定義する。
-- バッチセッションのメタデータ（設定値・取得元・処理数・最終更新時刻など）の永続化は将来のセッション管理テーブル導入時に対応する。
+- ビルドセッションのメタデータ（設定値・取得元・処理数・最終更新時刻など）の永続化は将来のセッション管理テーブル導入時に対応する。
 
 ### 4. ベクトルタイル生成フェーズ（将来案）
 - 永続化した `LocationPoint` 群をもとに、ズーム範囲ごとのベクトルタイルを生成する。
 - 生成されたタイルは将来導入予定の `vectorTiles` テーブルやオブジェクトストレージに保存する。
 
 ### 5. 進捗監視と通知
-- `UnifiedLocationBatchManager` + `WorkerBridge` を用い、`prepareSession → startBuildSession → onBuildProgress` の流れを確立する。
+- `UnifiedLocationBuildManager` + `WorkerBridge` を用い、`prepareSession → startBuildSession → onBuildProgress` の流れを確立する。
 - `useLocationProgress` フックで進捗イベント（download / parse / persist / tiles / completed）を購読し、ダイアログや通知センターへ表示する。
 - 認証失敗や通信エラーが発生した場合は、Shape Plugin の通知設計を踏襲し、中断・再試行・キャンセルを制御する。
 
 ### 6. UI 方針
-- LocationDialog のフッターに Start Batch ボタンを追加し、`canStartBatch` 条件を「名称入力済み」「利用規約チェック済み」「データソース選択済み」などに設定する。
-- Start Batch 押下時には、ダイアログのワーキングコピーから最新設定を収集して `prepareSession` を呼び出し、そのまま Worker へセッション開始を指示する。
-- バッチ専用の進捗ダイアログ（または Drawer）を導入し、処理状況・エラー・完了通知をリアルタイムに提示する。
+- LocationDialog のフッターに Start Build ボタンを追加し、`canStartBuild` 条件を「名称入力済み」「利用規約チェック済み」「データソース選択済み」などに設定する。
+- Start Build 押下時には、ダイアログのワーキングコピーから最新設定を収集して `prepareSession` を呼び出し、そのまま Worker へセッション開始を指示する。
+- ビルド専用の進捗ダイアログ（または Drawer）を導入し、処理状況・エラー・完了通知をリアルタイムに提示する。
 
 ### 7. 保守・拡張ポイント
 - データソース別のパーサ／バリデータを `services/datasources` で拡張可能にする。
-- 既存の `LocationVectorTileService` を活用しつつ、`prepareSession` 時の設定（タイル解像度、並列数など）を `LocationBatchConfig` で指定できるようにする。
+- 既存の `LocationVectorTileService` を活用しつつ、`prepareSession` 時の設定（タイル解像度、並列数など）を `LocationBuildConfig` で指定できるようにする。
 - セッション再開／クリーンアップ／ログ蓄積などの運用周りは Shape Plugin と同様に Dexie のセッションテーブルを活用し、未完了セッション検知や LRU クリーニングを実装する。
 
 ### 8. セッション管理の DoD とテスト方針（将来案）
 
-UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせで、将来次の条件を満たすことを完了条件（Definition of Done）とする。
+UnifiedLocationBuildManager と LocationBuildSessionManager の組み合わせで、将来次の条件を満たすことを完了条件（Definition of Done）とする。
 
 1. **prepareSession（将来案）**
    - 一時ストア（EphemeralLocationDB など）へ `points`・`settings`・`config` を保存する。
@@ -92,16 +92,16 @@ UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせ�
 
 4. **resume / pause / cancel**
    - `resume(sessionId)` 呼び出し時に `sessions` の状態が `running` に戻ること。
-   - Pause / Cancel は `LocationBatchSession` への委譲を spy で確認する。`UnifiedLocationBatchManager.test.ts` に pause / resume / cancel の委譲テストを追加済み。
+   - Pause / Cancel は `LocationBuildSession` への委譲を spy で確認する。`UnifiedLocationBuildManager.test.ts` に pause / resume / cancel の委譲テストを追加済み。
 
 5. **ベクトルタイル生成（将来案）**
    - `LocationVectorTileService` を介して生成したタイルが `vectorTiles` に保存され、`hash` と `featureCount` を保持する。
    - 再生成時は `clearSession` → `bulkPut` の流れで上書きされる。
 
 #### 推奨テスト追加
-- `services/batch/__tests__/UnifiedLocationBatchManager.test.ts`
+- `services/build/__tests__/UnifiedLocationBuildManager.test.ts`
   - pending → start → progress → completion の一連フローをモック化し、Dexie のレコードをアサート（実装済み）。
-  - Pause/Resume/Cancel が `LocationBatchSessionManager` を呼ぶか spy で確認（実装済み）。
+  - Pause/Resume/Cancel が `LocationBuildSessionManager` を呼ぶか spy で確認（実装済み）。
 - `services/pointRepository.test.ts`（新規）
   - `appendLocationPoints` / `replaceLocationPoints` / `clearLocationPoints` が Dexie 永続テーブルへ反映されること。
 - `services/tiles/LocationVectorTileService.test.ts`

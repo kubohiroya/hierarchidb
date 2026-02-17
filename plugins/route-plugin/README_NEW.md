@@ -311,7 +311,7 @@ interface MapPreviewStep {
     opacity: number;
   };
   
-  // バッチ処理完了後の結果サマリー
+  // ビルド処理完了後の結果サマリー
   results?: {
     totalRoutes: number;
     totalLength: number;
@@ -324,12 +324,12 @@ interface MapPreviewStep {
 }
 ```
 
-## バッチ処理フロー
+## ビルド処理フロー
 
 ### ⭐️ 処理の流れ
 ```typescript
-interface BatchProcessFlow {
-  // Step4-8で「バッチ処理開始」ボタン表示
+interface BuildProcessFlow {
+  // Step4-8で「ビルド処理開始」ボタン表示
   // Step7完了でボタンがenabled
   
   phases: [
@@ -438,7 +438,7 @@ interface RouteEntity extends ShapeEntity {
 2. 🔺 **中優先度（類推部分）**
    - 各データソースのデフォルト設定詳細
    - エラーハンドリング戦略
-   - バッチ処理の並列化最適化
+   - ビルド処理の並列化最適化
 
 3. ❓ **要確認事項**
 - Searoute APIの具体的な実装方法（動的 import で統合済み。`pnpm add searoute` または `searoute-js` を追加するだけで利用可能）

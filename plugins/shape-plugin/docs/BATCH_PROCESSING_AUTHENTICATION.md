@@ -1,8 +1,8 @@
-# バッチ処理における認証問題と解決策
+# ビルド処理における認証問題と解決策
 
 ## 問題の概要
 
-Shape、Spreadsheet、Stylerプラグインのバッチ処理において、外部APIアクセス時にCORS-ProxyやBFFでの認証が必要になった場合の処理フローが未実装です。
+Shape、Spreadsheet、Stylerプラグインのビルド処理において、外部APIアクセス時にCORS-ProxyやBFFでの認証が必要になった場合の処理フローが未実装です。
 
 ### 現在の構成
 
@@ -107,7 +107,7 @@ packages/backend/cors-proxy/
 - UIで新しくログインしても、Workerが古いトークンを使用続行
 - 認証状態の同期メカニズムなし
 
-### 3. **バッチ処理の中断・再開機能なし**
+### 3. **ビルド処理の中断・再開機能なし**
 - 認証エラー発生時に処理を一時停止する機能なし
 - 認証完了後の処理再開機能なし
 
@@ -125,7 +125,7 @@ export interface AuthRequiredNotification {
     url: string;
     errorCode: number;
     errorMessage: string;
-    sessionId?: string;  // バッチ処理セッション
+    sessionId?: string;  // ビルド処理セッション
     pluginType: 'shape' | 'spreadsheet' | 'styler';
   };
   timestamp: number;
@@ -262,7 +262,7 @@ export class AuthPromptService {
     // 認証ダイアログを表示
     const authResult = await this.showAuthDialog({
       title: 'Authentication Required',
-      message: `${context.pluginType} plugin requires authentication to continue batch processing.`,
+      message: `${context.pluginType} plugin requires authentication to continue build processing.`,
       details: {
         url: context.url,
         error: context.errorMessage,
@@ -285,9 +285,9 @@ export class AuthPromptService {
       
       await this.notifyWorkerAuthSuccess(successNotification);
     } else {
-      // 認証キャンセル時はバッチ処理を一時停止
+      // 認証キャンセル時はビルド処理を一時停止
       if (context.sessionId) {
-        await this.pauseBatchProcessing(context.sessionId);
+        await this.pauseBuildProcessing(context.sessionId);
       }
     }
     
@@ -318,11 +318,11 @@ export class AuthPromptService {
 }
 ```
 
-### 4. バッチ処理の一時停止・再開機能
+### 4. ビルド処理の一時停止・再開機能
 
 ```typescript
-// packages/plugin-loader/shape-plugin/src/services/BatchSessionManager.ts (拡張)
-export class BatchSessionManager {
+// packages/plugin-loader/shape-plugin/src/services/BuildSessionManager.ts (拡張)
+export class BuildSessionManager {
   private authHandler = new WorkerAuthHandler();
   
   /**
@@ -437,9 +437,9 @@ export function AuthRequiredDialog({
   };
   
   const handleCancel = () => {
-    // バッチ処理キャンセルの確認
+    // ビルド処理キャンセルの確認
     const confirmed = window.confirm(
-      'Canceling authentication will stop the batch processing. Are you sure?'
+      'Canceling authentication will stop the build processing. Are you sure?'
     );
     
     if (confirmed) {
@@ -463,7 +463,7 @@ export function AuthRequiredDialog({
         
         {sessionId && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Batch processing session: {sessionId.slice(-8)}
+            Build processing session: {sessionId.slice(-8)}
           </Alert>
         )}
         
@@ -547,7 +547,7 @@ export function AuthRequiredDialog({
 
 ### Phase 3: UI/UX 改善
 1. `AuthRequiredDialog` コンポーネント実装
-2. バッチ処理ダイアログでの認証状態表示
+2. ビルド処理ダイアログでの認証状態表示
 3. 認証エラーリカバリーのUXフロー
 
 ### Phase 4: テスト・最適化
@@ -558,7 +558,7 @@ export function AuthRequiredDialog({
 ## 期待される効果
 
 ### 1. **シームレスな認証体験**
-- バッチ処理中の認証エラーを適切にハンドリング
+- ビルド処理中の認証エラーを適切にハンドリング
 - ユーザーは処理を中断せずに認証可能
 
 ### 2. **共通化による保守性向上**
@@ -571,4 +571,4 @@ export function AuthRequiredDialog({
 
 ### 4. **ユーザビリティの改善**  
 - 認証エラーの詳細情報表示
-- バッチ処理の状態可視化
+- ビルド処理の状態可視化

@@ -388,7 +388,7 @@ interface MapPreviewStep {
     };
   };
   
-  // バッチ処理完了後の結果サマリー
+  // ビルド処理完了後の結果サマリー
   results?: {
     totalLocations: number;
     byType: Record<LocationType, number>;
@@ -403,12 +403,12 @@ interface MapPreviewStep {
 }
 ```
 
-## バッチ処理フロー
+## ビルド処理フロー
 
 ### ⭐️ 処理の流れ
 ```typescript
-interface BatchProcessFlow {
-  // Step4-8で「バッチ処理開始」ボタン表示
+interface BuildProcessFlow {
+  // Step4-8で「ビルド処理開始」ボタン表示
   // Step7完了でボタンがenabled
   
   phases: [
@@ -550,8 +550,8 @@ const tileConfig = {
   }
 };
 
-// バッチ処理実行
-const session = await locationPlugin.createBatchSession(
+// ビルド処理実行
+const session = await locationPlugin.createBuildSession(
   nodeId,
   config,
   selection,

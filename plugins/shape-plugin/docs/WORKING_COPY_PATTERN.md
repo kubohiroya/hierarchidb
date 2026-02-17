@@ -51,7 +51,7 @@ interface ShapeEntity {
   dataSourceName: DataSourceName;  // データソース識別子
   selectedArrayByCountries?: Record<ISO2, boolean[]>; // 国×管理レベルの選択状態
   licenseAgreement?: boolean;      // ライセンス同意状態
-  batchConfig?: ObsolateBuildConfig;       // バッチ処理設定
+  buildConfig?: ObsolateBuildConfig;       // ビルド処理設定
 }
 ```
 
@@ -540,7 +540,7 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 }
 ```
 
-### シナリオ 3: バッチ処理との統合
+### シナリオ 3: ビルド処理との統合
 
 ```typescript
 // ShapeBuildStep.tsx
@@ -554,12 +554,12 @@ function ShapeBuildStep({ data, onChange }: Props) {
       if (!nodeId) return;
 
       const payloads = await api.generateDownloadTaskPayloadsFromSelection(
-        data?.batchConfig?.dataSource ?? data?.dataSourceName ?? 'gadm',
+        data?.buildConfig?.dataSource ?? data?.dataSourceName ?? 'gadm',
         data?.selectedArrayByCountries,
       );
-      const session = await api.startBuildSession(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
+      const session = await api.startBuildSession(nodeId, data?.buildConfig ?? DEFAULT_CONFIG, payloads);
 
-      onChange({ batchSessionId: session.sessionId });
+      onChange({ buildSessionId: session.sessionId });
     } catch (error) {
       console.error('Failed to start build processing:', error);
     }
@@ -751,11 +751,11 @@ const updateOnlyChangedFields = async (newData: Partial<ShapeEntity>) => {
 };
 ```
 
-### 2. バッチ更新
+### 2. ビルド更新
 
 ```typescript
 // 複数の変更をまとめて送信
-const batchUpdates = useMemo(() => {
+const buildUpdates = useMemo(() => {
   const pending: Partial<ShapeEntity>[] = [];
   
   return {
@@ -807,5 +807,5 @@ Working Copy Patternは、Shape Pluginにおいて以下の利点を提供しま
 
 - [HierarchiDB Architecture](../../../docs/ARCHITECTURE.md)
 - [Entity Handler Pattern](../../../docs/ENTITY_HANDLER.md)
-- [Batch Processing](./BATCH_PROCESSING_NOTIFICATION.md)
+- [Build Processing](./BATCH_PROCESSING_NOTIFICATION.md)
 - [Dialog Flow](../../../packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md)
