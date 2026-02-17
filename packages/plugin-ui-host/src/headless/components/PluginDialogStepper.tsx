@@ -31,6 +31,11 @@ export interface PluginDialogStepperProps {
   theme: Theme;
 }
 
+const stripStepNumberPrefix = (label: string): string => label.replace(/^\s*\d+\.\s*/, '').trim();
+
+const formatIndexedStepLabel = (label: string, stepIndex: number): string =>
+  `${stepIndex + 1}. ${stripStepNumberPrefix(label)}`;
+
 export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   steps,
   activeStepIndex,
@@ -50,7 +55,8 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
         const fallbackCanNavigate = enabledStepIndices.includes(index) || index === activeStepIndex;
         const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
         const completed = workerStep?.completed ?? validatedStepIndices.includes(index);
-        const label = workerStep?.id ?? step.label ?? step.id;
+        const baseLabel = step.label ?? step.id;
+        const label = formatIndexedStepLabel(baseLabel, index);
         const isActive = index === activeStepIndex;
         const previousWorkerStep =
           index > 0
@@ -82,6 +88,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
                         {...props}
                         theme={theme}
                         stepIndex={iconIndex}
+                        stepLabel={baseLabel}
                         canNavigate={canNavigate}
                         variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
                         inProgress={showBuildProgress}

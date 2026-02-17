@@ -151,7 +151,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'processing',
-        label: t('steps.processing.label', 'Settings'),
+        label: t('steps.processing.label', 'Config'),
         componentFactory: (p: StepProps) => {
           const draft = { ...(p.data ?? {}) };
           const handleUpdate = createDraftUpdater(draft, p.onChange);

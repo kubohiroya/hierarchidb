@@ -117,7 +117,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
       },
       {
         id: 'processing-configuration',
-        label: t('steps.processing.label', 'Processing Configuration'),
+        label: t('steps.processing.label', 'Config'),
         componentFactory: (props: ShapeStepProps) => <ShapeProcessing {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           validateBatchConfig(
