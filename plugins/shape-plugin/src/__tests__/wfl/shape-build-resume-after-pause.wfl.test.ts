@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { BatchProgressEvent, BatchProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
@@ -248,7 +248,7 @@ type ShapeBatchTestAPI = {
   }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
-    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): Promise<() => void> | (() => void);
 };
 
@@ -472,10 +472,10 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         selectedArrayByCountries,
       });
 
-      const progressEvents: Array<BatchProgressEvent<BatchProgressPayload>> = [];
+      const progressEvents: Array<BuildProgressEvent<BuildProgressPayload>> = [];
       const unsubscribe = await batch.subscribeToProgress(
         nodeId,
-        Comlink.proxy((event: BatchProgressEvent<BatchProgressPayload>) => {
+        Comlink.proxy((event: BuildProgressEvent<BuildProgressPayload>) => {
           progressEvents.push(event);
         }),
       );

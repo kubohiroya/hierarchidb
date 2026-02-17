@@ -1,7 +1,13 @@
 // Test-only worker entry that exposes Shape APIs over a MessagePort/Comlink endpoint.
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
-import type { BatchProgressEvent, BatchProgressPayload, BatchTaskUpdateEvent, BuildTaskSummary, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type {
+  BuildProgressEvent,
+  BuildProgressPayload,
+  BuildTaskSummary,
+  BuildTaskUpdateEvent,
+  BuildContinuationPolicy,
+} from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index.js';
@@ -83,11 +89,11 @@ type ShapeBatchTestAPI = {
   }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
-    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): () => void;
   subscribeToTasks(
     nodeId: NodeId,
-    callback: (event: BatchTaskUpdateEvent<BuildTaskSummary>) => void
+    callback: (event: BuildTaskUpdateEvent<BuildTaskSummary>) => void
   ): () => void;
   getBatchTasks(nodeId: NodeId): Promise<BuildTaskSummary[]>;
 };

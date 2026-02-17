@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import type { RouteBatchSession } from './RouteBatchSession.js';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';
-import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, StageKey } from '@hierarchidb/batch-api';
+import type { BuildProgressCallback, BuildProgressEvent, BuildSessionStatus, StageKey } from '@hierarchidb/batch-api';
 import { BaseBatchSessionManager } from '@hierarchidb/batch';
 
 export interface RouteBatchSessionConfig {
@@ -24,7 +24,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     super();
     const emitter = {
       emit: (update: { jobId: string; progress: number; phase: string; ts: number }) => {
-        const event: BatchProgressEvent = {
+        const event: BuildProgressEvent = {
           nodeId: update.jobId as NodeId,
           stage: update.phase as StageKey,
           phase: update.progress >= 100 ? 'completed' : 'running',
@@ -49,7 +49,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     });
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus> {
+  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
     const pending = this.pendingSessions.get(nodeId);
     this.pendingSessions.delete(nodeId);
     if (!pending) {
@@ -81,7 +81,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     }
   }
 
-  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
+  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     return super.onBatchProgress(nodeId, callback);
   }
 

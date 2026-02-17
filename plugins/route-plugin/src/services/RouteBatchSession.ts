@@ -1,5 +1,5 @@
 import { AbstractBatchSession } from '@hierarchidb/batch';
-import type { BatchProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';
@@ -110,7 +110,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     }
   }
 
-  protected onBatchProgressEvent(_event: BatchProgressEvent): void {
+  protected onBatchProgressEvent(_event: BuildProgressEvent): void {
   }
 
   private async runWithGates(

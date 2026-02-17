@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { type BatchSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import { type BuildSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { useBatchSessionMutation, usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
@@ -9,7 +9,7 @@ export interface RouteBatchProgressResult {
   snapshot: UnifiedProgressInfo | null;
   ready: boolean;
   progress: UnifiedProgressInfo | null;
-  status: BatchSessionStatus | null;
+  status: BuildSessionStatus | null;
   isPaused: boolean;
   isMutating: boolean;
   mutationError: string | null;
@@ -19,7 +19,7 @@ export interface RouteBatchProgressResult {
 }
 
 export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): RouteBatchProgressResult {
-  const [status, setStatus] = useState<BatchSessionStatus | null>(null);
+  const [status, setStatus] = useState<BuildSessionStatus | null>(null);
   const {
     isMutating,
     mutationError,
@@ -31,13 +31,13 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
   const {
     progress,
     status: derivedStatus,
-  } = usePluginBatchProgress<UnifiedProgressInfo, BatchSessionStatus>(
+  } = usePluginBatchProgress<UnifiedProgressInfo, BuildSessionStatus>(
     ROUTE_NODE_TYPE,
     nodeId,
     {
       autoSubscribe: true,
       mapUnifiedToProgress: (info) => info ?? null,
-      mapUnifiedToStatus: (info) => (nodeId && info ? toBatchSessionStatus(nodeId, info) : null),
+      mapUnifiedToStatus: (info) => (nodeId && info ? toBuildSessionStatus(nodeId, info) : null),
     },
   );
 
@@ -63,7 +63,7 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
     if (!nodeId) return;
     const succeeded = await pauseSession();
     if (succeeded) {
-      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
+      setStatus((prev: BuildSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
     }
   }, [nodeId, pauseSession]);
 
@@ -71,7 +71,7 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
     if (!nodeId) return;
     const succeeded = await resumeSession();
     if (succeeded) {
-      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
+      setStatus((prev: BuildSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
     }
   }, [nodeId, resumeSession]);
 
@@ -97,7 +97,7 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
   };
 }
 
-function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchSessionStatus {
+function toBuildSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BuildSessionStatus {
   const phase = info.phase as ProgressPhase | undefined;
   return {
     nodeId,

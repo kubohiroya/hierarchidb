@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
-import type { BatchProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 
@@ -154,7 +154,7 @@ export class RouteBatchManager {
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(nodeId, config, routeTasks, { taskQueue });
     this.activeSessions.set(nodeId, session);
-    const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
+    const unsubscribe = session.addBatchProgressListener((event: BuildProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
     const runPromise = session.start();
     void runPromise.catch((error: unknown) => {
@@ -261,7 +261,7 @@ export class RouteBatchManager {
     };
   }
 
-  private emitProgressEvent(event: BatchProgressEvent): void {
+  private emitProgressEvent(event: BuildProgressEvent): void {
     const payload = event.payload ?? {};
     const total = coerceNumber(payload.total);
     const completed = coerceNumber(payload.completed);
