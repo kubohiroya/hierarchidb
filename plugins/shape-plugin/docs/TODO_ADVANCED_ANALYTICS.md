@@ -226,7 +226,7 @@ interface OptimizableParameters {
   concurrency: {
     maxWorkers: number;
     queueSize: number;
-    batchSize: number;
+    buildSize: number;
   };
   
   // タイムアウト設定
@@ -316,7 +316,7 @@ class ConfigOptimizer {
 
 ### パフォーマンス要件
 - **リアルタイム分析**: レスポンス時間 < 100ms
-- **バッチ処理**: 10,000タスクを5分以内に処理
+- **ビルド処理**: 10,000タスクを5分以内に処理
 - **メモリ使用量**: < 100MB（通常時）、< 500MB（ピーク時）
 - **CPU使用率**: < 30%（通常時）、< 80%（ピーク時）
 

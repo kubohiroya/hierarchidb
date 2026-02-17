@@ -24,14 +24,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies (workspace)
         run: pnpm install --no-frozen-lockfile
 
       - name: Run stage
-        run: pnpm run stage:turbo
+        run: pnpm run build
 
       - name: Run guards (pre-commit equivalent)
         run: pnpm run guards:pre-commit

@@ -7,7 +7,7 @@ eria-cartographプロジェクトの実装を参考に、hierarchidbアーキテ
 
 ## 🎯 実装目標
 
-1. **バッチ処理の実装**
+1. **ビルド処理の実装**
    - simulateProcessing()を実際のデータ処理に置き換え
    - 各ステージ（Download, Extract1, Extract2, VectorTiles）の実装
 
@@ -21,7 +21,7 @@ eria-cartographプロジェクトの実装を参考に、hierarchidbアーキテ
 
 ## 📦 実装対象ファイル
 
-### 1. BatchSessionManager.ts
+### 1. BuildSessionOrchestrator.ts
 **現状**: simulateProcessing()でダミー遅延のみ
 **実装内容**:
 ```typescript
@@ -77,7 +77,7 @@ class DownloadWorker {
 **実装内容**:
 ```typescript
 class EphemeralDataCleanupService {
-  async cleanupBatchData(sessionId: string): Promise<void> {
+  async cleanupBuildData(sessionId: string): Promise<void> {
     await this.ephemeralDB.transaction('rw', 
       this.ephemeralDB.rawFeatures,
       this.ephemeralDB.processedFeatures,
@@ -355,17 +355,17 @@ class TileCache {
 
 ### 単体テスト
 ```typescript
-describe('BatchSessionManager', () => {
+describe('BuildSessionOrchestrator', () => {
   it('should download actual data', async () => {
-    const manager = new BatchSessionManager();
-    const sessionId = await manager.createSession({
+    const orchestrator = new BuildSessionOrchestrator();
+    const sessionId = await orchestrator.createSession({
       nodeId: 'test-node' as NodeId,
       dataSource: 'gadm',
       country: 'JP',
       adminLevel: 1
     });
     
-    const result = await manager.executeDownloadStage(sessionId);
+    const result = await orchestrator.executeDownloadStage(sessionId);
     
     expect(result.success).toBe(true);
     expect(result.processedTasks).toBeGreaterThan(0);
@@ -420,7 +420,7 @@ describe('Shape Plugin E2E', () => {
 ## 🚀 実装優先順位
 
 1. **優先度高**
-   - BatchSessionManager.executeDownloadStage()
+   - BuildSessionOrchestrator.executeDownloadStage()
    - DownloadWorker実装
    - EphemeralDB接続
 
@@ -455,6 +455,6 @@ describe('Shape Plugin E2E', () => {
 ## 🔗 関連ドキュメント
 
 - [Shape Plugin Architecture](./ARCHITECTURE.md)
-- [Batch Processing Guide](./BATCH_PROCESSING.md)
+- [Build Processing Guide](./BATCH_PROCESSING_NOTIFICATION.md)
 - [Worker Communication](./WORKER_COMMUNICATION.md)
 - [Testing Strategy](./TESTING_STRATEGY.md)

@@ -1,5 +1,9 @@
 # shape-plugin src cleanup inventory (2025-12-21)
 
+> This file is a cleanup inventory only and intentionally keeps historical symbols
+> from the previous refactoring phase (including `Batch*` names). Runtime-facing
+> user-facing specifications use the Build vocabulary in dedicated documents.
+
 This document summarizes candidates for removal in `plugins/shape-plugin/src`.
 Candidates are based on repository-wide `rg` searches. If a symbol is exported
 from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.

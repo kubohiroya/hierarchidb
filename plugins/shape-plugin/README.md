@@ -4,11 +4,11 @@
 実装サマリ（2025-09-09）
 - nodeType: `shape`
 - 定義/ハンドラ: `ShapePluginDefinition` / `ShapeEntityHandler`
-- バッチ: download → extract1 → extract2 → vectorTiles（統一バッチ API）
+- ビルド: download → extract1 → extract2 → vectorTiles（統一 Build API）
 - DB: `shape`（entities）+ エフェメラル `rawBuffers`/`extractedBuffers`/`vectorTiles`/`sessions`/`cache`
 - UI: Build Progress 進捗ビュー、タブラー（`SHAPE_TABULAR=1`）、マップ統合
 
-Shape バッチ機能の新アーキテクチャ概要と利用メモ。
+Shape ビルド機能の新アーキテクチャ概要と利用メモ。
 
 オープンデータ提供元まとめ（概要）
 ----------------------------------
@@ -27,7 +27,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
   - download: `@hierarchidb/download`（DownloadService, FetchNetworkPort）
   - chunk-store: `@hierarchidb/chunk-store`（DexieChunkStore）
   - auth: `@hierarchidb/auth`（401復帰, fetchWithAuth, setToken）
-  - batch: `@hierarchidb/batch`（段階並列・進捗）
+- build: `@hierarchidb/batch`（段階並列・進捗）
   - source/view: `@hierarchidb/map-source`, `@hierarchidb/map-adapter`（任意）
 
 ダウンロード
@@ -48,7 +48,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 進捗/通知
 ---------
-- 各段階は `BatchSessionManager` から進捗イベントを発行（25/50/75/100%）。
+- 各段階は `BuildSessionManager` から進捗イベントを発行（25/50/75/100%）。
 - 401 発生時は `AuthRequired` 通知を UI に送出し、`AuthSuccess`/`AuthCancelled` で処理再開/中断。
 
 今後の改善余地
@@ -90,15 +90,15 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 - 目的: プロパティ水準での確認・検索。正式なシリアライズ/デシリアライズは Import/Export を利用してください。
 
 
-## Batch execution design (2025-12 WIP)
+## Build execution design (2025-12 WIP)
 - Entry (UI Build Progress): call worker API `startBuildSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
 - Worker API: expose `startBuildSession`, `pauseBuildSession`, `resumeBuildSession`, `cancelQueuedBuildSession`, `subscribeBuildProgress`; bridge ProgressInfo to UI.
-- Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
+- Build manager: `UnifiedShapeBuildManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
 - Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):
   - `sessions` (state/config), `rawBuffers` (downloaded), `extractedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
 - Child workers:
   - Downloader worker: parallel download -> write `rawBuffers`.
   - Extract workers: read `rawBuffers`, write `extractedBuffers` (stage1/2) via runtime worker client `extractStage1/2`.
   - Tile worker: read `extractedBuffers`, generate MVT -> write `vectorTiles`.
-- Progress: aggregated in UnifiedShapeBatchManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
+- Progress: aggregated in UnifiedShapeBuildManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
 - UI controls: Start -> `startBuildSession`, Pause/Resume -> `pauseBuildSession`/`resumeBuildSession`, Cancel -> `cancelQueuedBuildSession`; BuildStep reflects progress stream.

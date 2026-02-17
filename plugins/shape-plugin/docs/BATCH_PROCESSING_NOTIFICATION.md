@@ -1,8 +1,8 @@
-# バッチ処理通知システム
+# ビルド処理通知システム
 
 ## 概要
 
-Shape Pluginのバッチ処理システムは、Worker層からUI層へリアルタイムで進捗状況、エラー、完了通知を送信する仕組みを提供します。このドキュメントでは、通知システムの詳細な動作を説明します。
+Shape Pluginのビルド処理では、Worker層からUI層へリアルタイムで進捗状況、エラー、完了通知を送信する仕組みを提供します。このドキュメントでは、通知システムの詳細な動作を説明します。
 
 ## アーキテクチャ
 
@@ -22,7 +22,8 @@ Shape Pluginのバッチ処理システムは、Worker層からUI層へリアル
 
 ```typescript
 // UI層でのコールバック登録
-const sessionId = await manager.startBuildSession(
+const orchestrator = new BuildSessionOrchestrator();
+const sessionId = await orchestrator.startBuildSession(
   nodeId,
   config,
   countries,
@@ -57,12 +58,12 @@ interface BuildProgressEvent {
 
 ## 実装詳細
 
-### Worker層（BatchSessionManager）
+### Worker層（BuildSessionOrchestrator）
 
 #### 1. コールバック管理
 
 ```typescript
-export class BatchSessionManager {
+export class BuildSessionOrchestrator {
   private progressCallbacks: Map<string, (event: BuildProgressEvent) => void> = new Map();
 
   async startBuildSession(
@@ -99,7 +100,7 @@ private emitProgressEvent(sessionId: string, event: BuildProgressEvent): void {
 
 **Download Stage (0-25%)**
 ```typescript
-async executeDownloadStage(sessionId: string): Promise<BatchStageResult> {
+async executeDownloadStage(sessionId: string): Promise<BuildStageResult> {
   // 各タスク完了時
   for (const task of downloadTasks) {
     // ... ダウンロード処理 ...
@@ -134,7 +135,7 @@ async executeDownloadStage(sessionId: string): Promise<BatchStageResult> {
 
 **Extract1 Stage (25-50%)**
 ```typescript
-async executeExtract1Stage(sessionId: string): Promise<BatchStageResult> {
+async executeExtract1Stage(sessionId: string): Promise<BuildStageResult> {
   const progressOffset = 25;
   const progressRange = 25;
   
@@ -160,7 +161,7 @@ async executeExtract1Stage(sessionId: string): Promise<BatchStageResult> {
 
 **Extract2 Stage (50-75%)**
 ```typescript
-async executeExtract2Stage(sessionId: string): Promise<BatchStageResult> {
+async executeExtract2Stage(sessionId: string): Promise<BuildStageResult> {
   const progressOffset = 50;
   const progressRange = 25;
   
@@ -170,7 +171,7 @@ async executeExtract2Stage(sessionId: string): Promise<BatchStageResult> {
 
 **VectorTiles Stage (75-100%)**
 ```typescript
-async executeVectorTilesStage(sessionId: string): Promise<BatchStageResult> {
+async executeVectorTilesStage(sessionId: string): Promise<BuildStageResult> {
   const progressOffset = 75;
   const progressRange = 25;
   
@@ -228,18 +229,18 @@ catch (error) {
 
 ```typescript
 import { useState, useEffect } from 'react';
-import { BatchSessionManager } from '@hierarchidb/plugin-loader-shape-plugin';
+import { BuildSessionOrchestrator } from '@hierarchidb/plugin-loader-shape-plugin';
 
-export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
+export function BuildProcessingPanel({ nodeId }: { nodeId: NodeId }) {
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<string>('');
   const [currentTask, setCurrentTask] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   
   const startBuildSession = async () => {
-    const manager = new BatchSessionManager();
+    const orchestrator = new BuildSessionOrchestrator();
     
-    const sessionId = await manager.startBuildSession(
+    const sessionId = await orchestrator.startBuildSession(
       nodeId,
       config,
       downloadTaskPayloads,
@@ -262,12 +263,12 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
     );
     
     // ビルド処理を実行
-    await manager.executeFullPipeline(sessionId);
+    await orchestrator.executeFullPipeline(sessionId);
   };
   
   return (
     <div>
-      <h3>バッチ処理進捗</h3>
+      <h3>ビルド処理進捗</h3>
       <div>ステージ: {stage}</div>
       <div>進捗: {progress}%</div>
       <ProgressBar value={progress} max={100} />
@@ -352,7 +353,7 @@ export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
 ```typescript
 // UI層での一時停止処理
 const handlePause = async () => {
-  await manager.pauseSession(sessionId);
+  await orchestrator.pauseSession(sessionId);
   
   // 一時停止通知が自動的に発行される
   // コールバックで status === 'paused' をチェック
@@ -363,7 +364,7 @@ const handlePause = async () => {
 
 ```typescript
 // 現在の状態を同期的に取得
-const status = manager.getSessionStatus(sessionId);
+const status = orchestrator.getSessionStatus(sessionId);
 console.log(`Progress: ${status.progress}%`);
 console.log(`Stage: ${status.stage}`);
 console.log(`Completed: ${status.isCompleted}`);
@@ -382,9 +383,9 @@ if (processedTasks % 10 === 0 || processedTasks === totalTasks) {
 }
 ```
 
-### 2. バッチング
+### 2. ビルド
 
-複数の小さな更新をバッチ処理：
+複数の小さな更新をビルド処理：
 
 ```typescript
 const pendingEvents: BuildProgressEvent[] = [];
@@ -414,7 +415,7 @@ if (process.env.NODE_ENV === 'development') {
 
 ## まとめ
 
-Shape Pluginのバッチ処理通知システムは以下の特徴を持ちます：
+Shape Pluginのビルド処理通知システムは以下の特徴を持ちます：
 
 1. **リアルタイム通知**: Worker層からUI層へ即座に進捗を通知
 2. **4段階の進捗管理**: Download → Extract1 → Extract2 → VectorTiles
@@ -422,4 +423,4 @@ Shape Pluginのバッチ処理通知システムは以下の特徴を持ちま�
 4. **柔軟なコールバック**: UI層で自由にカスタマイズ可能
 5. **セッション管理**: 複数の処理を並行して管理可能
 
-この通知システムにより、ユーザーは長時間かかるバッチ処理の進捗を視覚的に確認でき、エラー発生時も適切に対処できます。
+この通知システムにより、ユーザーは長時間かかるビルド処理の進捗を視覚的に確認でき、エラー発生時も適切に対処できます。
