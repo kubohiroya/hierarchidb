@@ -34,6 +34,8 @@ import {
 export type MapPreviewErrorSummary = {
   count: number;
   messages: string[];
+  errorCount?: number;
+  repairCount?: number;
 };
 
 export type MapPreviewErrorSummaryById = Map<string, MapPreviewErrorSummary>;
@@ -100,6 +102,7 @@ export const buildErrorSummaryById = <TError,>(
   options: {
     getId: (row: TError) => string | undefined | null;
     getMessage?: (row: TError) => string | undefined | null;
+    getKind?: (row: TError) => 'error' | 'repair';
   },
 ): MapPreviewErrorSummaryById => {
   const summary = new Map<string, MapPreviewErrorSummary>();
@@ -107,10 +110,21 @@ export const buildErrorSummaryById = <TError,>(
     const id = options.getId(row);
     if (!id) return;
     const key = String(id);
-    const entry = summary.get(key) ?? { count: 0, messages: [] };
-    entry.count += 1;
+    const entry = summary.get(key) ?? { 
+      count: 0, 
+      messages: [],
+      errorCount: 0,
+      repairCount: 0,
+    };
+    const kind = options.getKind?.(row) ?? 'error';
+    if (kind === 'repair') {
+      entry.repairCount = (entry.repairCount ?? 0) + 1;
+    } else {
+      entry.errorCount = (entry.errorCount ?? 0) + 1;
+    }
+    entry.count = entry.errorCount ?? 0;
     const message = options.getMessage?.(row);
-    if (message) {
+    if (message && !entry.messages.includes(message)) {
       entry.messages.push(message);
     }
     summary.set(key, entry);
