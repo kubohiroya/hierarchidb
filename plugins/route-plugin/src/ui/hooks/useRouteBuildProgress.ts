@@ -5,7 +5,7 @@ import { useBuildSessionMutation, usePluginBuildProgress } from '@hierarchidb/ui
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
-export interface RouteBatchProgressResult {
+export interface RouteBuildProgressResult {
   snapshot: BuildUnifiedProgressInfo | null;
   ready: boolean;
   progress: BuildUnifiedProgressInfo | null;
@@ -17,9 +17,6 @@ export interface RouteBatchProgressResult {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
 }
-/** Preferred alias for RouteBatchProgressResult. */
-export type RouteBuildProgressResult = RouteBatchProgressResult;
-
 export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): RouteBuildProgressResult {
   const [status, setStatus] = useState<BuildSessionStatus | null>(null);
   const {
@@ -98,9 +95,6 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
     resume,
   };
 }
-
-/** @deprecated Use useRouteBuildProgress. */
-export const useRouteBatchProgress = useRouteBuildProgress;
 
 function toBuildSessionStatus(nodeId: NodeId, info: BuildUnifiedProgressInfo): BuildSessionStatus {
   const phase = info.phase as ProgressPhase | undefined;

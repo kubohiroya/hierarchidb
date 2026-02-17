@@ -87,14 +87,6 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: FetchTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  /** @deprecated Use startBuildSession. */
-  startBatchProcess(payload: {
-    nodeId: NodeId;
-    buildConfig: ShapeBuildConfig;
-    processingConfig: ShapeProcessingConfig;
-    downloadTaskPayloads: FetchTaskPayload[];
-    buildContinuationPolicy?: BuildContinuationPolicy;
-  }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
     callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
@@ -117,8 +109,6 @@ type ShapeWorkerTestAPI = {
   getShapeEphemeralAdminAPI(): ShapeEphemeralAdminAPI;
   getShapePipelineTestAPI(): ShapePipelineTestAPI;
   getShapeBuildTestAPI(): ShapeBuildTestAPI;
-  /** @deprecated Use getShapeBuildTestAPI. */
-  getShapeBatchTestAPI(): ShapeBuildTestAPI;
 };
 
 
@@ -473,17 +463,6 @@ async function main(endpoint?: Endpoint): Promise<void> {
     payload.downloadTaskPayloads,
     payload.buildContinuationPolicy,
   ),
-  /** @deprecated Use startBuildSession. */
-  startBatchProcess: async (payload) => {
-    const startBuildSession = shapeBuildAPI.startBuildSession ?? shapeBuildAPI.startBatchProcess;
-    return startBuildSession(
-      payload.nodeId,
-      payload.buildConfig,
-      payload.processingConfig,
-      payload.downloadTaskPayloads,
-      payload.buildContinuationPolicy,
-    );
-  },
     subscribeToProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToProgress(nodeId, callback)),
     subscribeToTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
@@ -497,7 +476,6 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeEphemeralAdminAPI: () => proxy(adminApi),
     getShapePipelineTestAPI: () => proxy(pipelineApi),
     getShapeBuildTestAPI: () => proxy(buildApi),
-    getShapeBatchTestAPI: () => proxy(buildApi),
   };
 
   if (endpoint) {

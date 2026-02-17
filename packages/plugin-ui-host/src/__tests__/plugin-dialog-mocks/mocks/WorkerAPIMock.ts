@@ -132,7 +132,7 @@ export class WorkerAPIMock {
         if (nodeType === 'project') {
           return {
             canNavigateTo: true,
-            canStartBatch: true,
+            canStartBuild: true,
             canSave: true,
             canProceedToNext: true,
             canBackToPrevious: step > 0,
@@ -141,7 +141,7 @@ export class WorkerAPIMock {
 
         const result: StepCapabilities = {
           canNavigateTo: false,
-          canStartBatch: false,
+          canStartBuild: false,
           canSave: false,
           canProceedToNext: false,
           canBackToPrevious: step > 0,
@@ -155,7 +155,7 @@ export class WorkerAPIMock {
             result.canProceedToNext = namePresent;
           } else {
             result.canNavigateTo = namePresent;
-            result.canStartBatch = namePresent;
+            result.canStartBuild = namePresent;
             result.canSave = namePresent;
             result.canProceedToNext = step === 1 ? namePresent : false;
             result.canBackToPrevious = true;
@@ -180,11 +180,11 @@ export class WorkerAPIMock {
               longitude <= 180;
             result.canProceedToNext = coordsOk;
             result.canSave = coordsOk;
-            result.canStartBatch = coordsOk;
+            result.canStartBuild = coordsOk;
           } else {
             result.canNavigateTo = true;
             result.canSave = true;
-            result.canStartBatch = true;
+            result.canStartBuild = true;
           }
           return result;
         }
@@ -240,7 +240,7 @@ export class WorkerAPIMock {
         return result;
       },
 
-      async batchValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
+      async buildValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
         const out = Object.create(null) as Record<NodeId, ValidationResult>;
         for (const id of ids) {
           const validation: ValidationResultDetail = { valid: true } as ValidationResultDetail;
@@ -294,7 +294,7 @@ export class WorkerAPIMock {
         return out;
       },
 
-      async batchEvaluateCapabilities(requests: Array<{ draftId: NodeId; step: number }>) {
+      async buildEvaluateCapabilities(requests: Array<{ draftId: NodeId; step: number }>) {
         const out = Object.create(null) as Record<NodeId, StepCapabilities>;
         for (const { draftId, step } of requests) {
           out[draftId] = await this.evaluateCapabilities(draftId, step);

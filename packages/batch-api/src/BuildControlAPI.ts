@@ -2,8 +2,8 @@
  * Unified Build Control API interface.
  *
  * NOTE:
- * Build* type names are canonical. Batch* type names are deprecated aliases kept
- * only for compatibility.
+ * This file is the canonical API surface for build orchestration types.
+ * Use this name in new code.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
@@ -141,57 +141,12 @@ export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   resumeBuildSession(nodeId: NodeId): Promise<void>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
   onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void;
-  /** @deprecated Use startBuildSession. */
-  startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus>;
-  /** @deprecated Use pauseBuildSession. */
-  pauseBatchSession(nodeId: NodeId): Promise<void>;
-  /** @deprecated Use resumeBuildSession. */
-  resumeBatchSession(nodeId: NodeId): Promise<void>;
-  /** @deprecated Use getBuildSessionStatus. */
-  getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
-  /** @deprecated Use onBuildProgress. */
-  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void;
 }
 
 export type BuildManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> = () => TManager;
 
 export type StandardProgressEvent = BuildProgressEvent;
 export type StandardProgressPayload = BuildProgressPayload;
-
-/** @deprecated Use BuildStatus. */
-export type BatchStatus = BuildStatus;
-/** @deprecated Use BaseBuildConfig. */
-export type BaseBatchConfig = BaseBuildConfig;
-/** @deprecated Use BuildProgressPayload. */
-export type BatchProgressPayload = BuildProgressPayload;
-/** @deprecated Use BuildSessionStatus. */
-export type BatchSessionStatus = BuildSessionStatus;
-/** @deprecated Use BuildSessionState. */
-export type BatchSessionState = BuildSessionState;
-/** @deprecated Use BuildProgressCallback. */
-export type BatchProgressCallback = BuildProgressCallback;
-/** @deprecated Use BuildProgressEvent. */
-export type BatchProgressEvent<P = BuildProgressPayload> = BuildProgressEvent<P>;
-/** @deprecated Use BuildTaskSummary. */
-export type BatchTaskSummary = BuildTaskSummary;
-/** @deprecated Use BuildTaskUpdateEvent. */
-export type BatchTaskUpdateEvent<T extends BatchTaskSummary = BatchTaskSummary> = BuildTaskUpdateEvent<T>;
-/** @deprecated Use BuildProgress. */
-export type BatchProgress = BuildProgress;
-/** @deprecated Use BuildUnifiedProgressInfo. */
-export type UnifiedProgressInfo<P = BuildProgressPayload> = BuildUnifiedProgressInfo<P>;
-/** @deprecated Use BuildProgressAdapter. */
-export type BatchProgressAdapter = BuildProgressAdapter;
-/** @deprecated Use UseBuildProgressOptions. */
-export type UseBatchProgressOptions = UseBuildProgressOptions;
-/** @deprecated Use IBuildSessionManager. */
-export type IBatchSessionManager<TConfig = unknown, TData = unknown> = IBuildSessionManager<
-  TConfig,
-  TData
->;
-/** @deprecated Use BuildManagerFactory. */
-export type BatchManagerFactory<TManager extends IBuildSessionManager = IBuildSessionManager> =
-  BuildManagerFactory<TManager>;
 
 export type BuildSessionRuntimeStatus =
   | 'idle'
@@ -223,7 +178,4 @@ export interface BuildSessionRuntimeFilter {
   activeOnly?: boolean;
 }
 
-/** @deprecated Use isBuildControlAPIV2Enabled. */
-export const isBatchControlAPIV2Enabled = (): boolean => true;
-
-export const isBuildControlAPIV2Enabled = (): boolean => isBatchControlAPIV2Enabled();
+export const isBuildControlAPIV2Enabled = (): boolean => true;

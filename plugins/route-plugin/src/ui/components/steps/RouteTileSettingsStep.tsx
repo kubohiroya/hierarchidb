@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useEffect, useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
@@ -28,7 +28,8 @@ const clamp = (value: number, min: number, max: number): number => {
 export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ draft, onUpdate, disabled }) => {
   const fieldId = useId();
   const { t } = useTranslation();
-  const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as BaseBuildConfig<string>;
+  const rawConfig = draft.draftData?.buildConfig as Partial<RouteBuildConfig> | undefined;
+  const buildConfig = mergeRouteBuildConfig(DEFAULT_ROUTE_BUILD_CONFIG, rawConfig);
   const zoomBandBoundaries = buildConfig.transformConfig.zoomBandBoundaries;
   const minZoom = clamp(zoomBandBoundaries[0] ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
   const maxZoom = clamp(zoomBandBoundaries[zoomBandBoundaries.length - 1] ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);

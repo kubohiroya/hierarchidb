@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { RouteBuildManager, type RouteBuildRouteInput } from '../../src/services/RouteBuildManager.js';
-import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
+import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
 describe('RouteBuildManager idempotency', () => {
   it('returns the same nodeId for identical input payload', async () => {
     const mgr = new RouteBuildManager();
-    const cfg: RouteBatchConfig = {
+    const cfg: RouteBuildConfig = {
       routeGeneration: {
         method: 'direct',
         parallel: true,

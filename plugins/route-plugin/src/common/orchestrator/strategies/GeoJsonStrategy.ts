@@ -1,4 +1,4 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from '../types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from '../types.js';
 import { normalizeEngine, normalizeMode, toCoordinatePair } from './strategy-utils.js';
 
 export class GeoJsonStrategy implements DataSourceStrategy {
@@ -16,7 +16,7 @@ export class GeoJsonStrategy implements DataSourceStrategy {
     };
   }
 
-  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]> {
+  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBuildSpec['defaults']): Promise<OdPair[]> {
     const blob = blobs.get(task.payloadRef);
     if (!blob) throw new Error('Missing payload');
     const text = await blob.text();
@@ -30,7 +30,7 @@ interface GeoJsonFeature {
   properties?: Record<string, unknown> | null;
 }
 
-function parseGeoJson(source: unknown, defaults?: RouteBatchSpec['defaults']): OdPair[] {
+function parseGeoJson(source: unknown, defaults?: RouteBuildSpec['defaults']): OdPair[] {
   const features = toFeatureList(source);
   const out: OdPair[] = [];
   for (const feature of features) {

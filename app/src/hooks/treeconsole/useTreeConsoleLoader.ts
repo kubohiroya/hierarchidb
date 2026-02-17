@@ -4,7 +4,7 @@
  * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -16,7 +16,7 @@ import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive.js';
 import type { TreeConsoleState } from './types.js';
 
 interface Params {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
   state: TreeConsoleState;

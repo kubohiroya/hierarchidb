@@ -61,9 +61,9 @@ used across runtime, worker API, UI, and plugin implementations.
 
 ### 3.2 Legacy Batch Aliases
 
-- `*Batch*` method names are compatibility aliases.
+- Legacy `*Batch*` identifiers are removed from the SharedWorker/build control surface.
 - New code must call canonical `*Build*` names.
-- Aliases can stay temporarily but should be marked deprecated in API definitions.
+- Historical plugin-local type aliases may remain temporarily for migration, but they are outside the runtime contract.
 
 ## 4. Execution Semantics
 
@@ -75,7 +75,7 @@ used across runtime, worker API, UI, and plugin implementations.
 
 - `SessionManager` (doc term) -> `BuildSessionOrchestrator`: **adopted in build-session docs**.
 - `SessionCoordinator` role -> `TabSessionCoordinator`: **export aliases adopted (`createTabSessionCoordinator`, `TabSessionCoordinator*`)**.
-- `Batch*` -> `Build*`: **adopted for new references**. Canonical API/type names in new code; `*Batch*` kept as deprecated aliases.
+- `Batch*` -> `Build*`: **adopted for canonical references**. Shared runtime API exposes `*Build*` names only; remaining `*Batch*` aliases are migration leftovers only where plugin-local compatibility is explicitly documented.
 - UI lock/runner arbitration by `session-coordinator`: **removed from shape build-step normal start/stop/progress path**.
 
 ## 6. Rules for New Changes

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LocationGroupItem, LocationIconConfig, LocationLabelConfig, LocationRepresentationByZoomLevelConfig, LocationType } from '@hierarchidb/location-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNodeData } from '@hierarchidb/tree-api';
@@ -16,7 +16,6 @@ import {
 import type { NodeId } from '@hierarchidb/core-types';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { createElement } from 'react';
 import type { LocationMapPreviewIconProps, LocationPreviewHoverMatch, LocationPreviewHoverSnackbarProps } from './LocationMapPreviewMapElements.js';
 import { LocationMapPreviewIcon } from './LocationMapPreviewMapElements.js';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
@@ -399,7 +398,12 @@ export const useLocationMapPreviewMap = (
       Icon: asset.Icon,
       color: asset.color,
     };
-    const svg = renderToStaticMarkup(createElement(LocationMapPreviewIcon, iconProps));
+    const svg = renderToStaticMarkup(
+      createElement(
+        LocationMapPreviewIcon as unknown as ((props: LocationMapPreviewIconProps) => ReactElement),
+        iconProps as LocationMapPreviewIconProps,
+      ),
+    );
     const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     const image = new Image();
     image.onload = () => {

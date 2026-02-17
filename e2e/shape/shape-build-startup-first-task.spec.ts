@@ -425,7 +425,7 @@ test.describe('Shape build startup first-task UX', () => {
         ) {
           pushStartupTrace(text);
         }
-        if (text.includes('[shapeBatchAPI] startup')) {
+        if (text.includes('[shapeBuildAPI] startup')) {
           workerStartupLogs.push(text);
           if (workerStartupLogs.length > 120) {
             workerStartupLogs.splice(0, workerStartupLogs.length - 120);
@@ -485,8 +485,8 @@ test.describe('Shape build startup first-task UX', () => {
       const handler = (msg: ConsoleMessage) => {
         const text = msg.text();
         if (
-          text.includes('[shapeBatchAPI] startup')
-          || text.includes('[shapeBatchAPI] progress snapshot')
+          text.includes('[shapeBuildAPI] startup')
+          || text.includes('[shapeBuildAPI] progress snapshot')
           || text.includes('[ShapePipeline]')
         ) {
           appendWorkerTraceLog(workerStartupLogs, `worker:${worker.url()}`, text);

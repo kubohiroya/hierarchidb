@@ -2,7 +2,7 @@
  * Shared helpers for TreeConsole action factory.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
@@ -125,7 +125,7 @@ export function normalizeNodeId(value: unknown): NodeId | null {
 }
 
 async function buildAncestryChain(params: {
-  client: Remote<WorkerAPI> | undefined;
+  client: Remote<BuildWorkerAPI> | undefined;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
 }): Promise<Array<{ id: NodeId; parentId: NodeId | null }>> {
@@ -165,7 +165,7 @@ async function buildAncestryChain(params: {
 }
 
 export async function resolveArchiveNavigationTarget(params: {
-  client: Remote<WorkerAPI> | undefined;
+  client: Remote<BuildWorkerAPI> | undefined;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
   selectedIds: readonly NodeId[];

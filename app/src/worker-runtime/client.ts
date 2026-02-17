@@ -2,7 +2,7 @@
  * UI-side worker bootstrap: create and wrap SharedWorker via Comlink.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import { bootLog } from '~/utils/bootLog.ts';
 import { APP_VERSION } from '~/version.ts';
@@ -40,7 +40,7 @@ type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
 
-let workerInstance: Remote<WorkerAPI> | null = null;
+let workerInstance: Remote<BuildWorkerAPI> | null = null;
 let rawSharedWorkerPort: MessagePort | null = null;
 let workerInitCompleted = false;
 
@@ -209,7 +209,7 @@ const waitForMaintenanceUnlock = async (deadlineMs = MAINTENANCE_LOCK_MAX_WAIT_M
   }
 };
 
-export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
+export async function initializeWorker(): Promise<Remote<BuildWorkerAPI>> {
   ensureSharedWorkerReady();
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
@@ -229,7 +229,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       attachMessageHandlers(rawSharedWorkerPort);
 
       const Comlink = await import('comlink');
-      const worker = Comlink.wrap<WorkerAPI>(rawSharedWorkerPort);
+      const worker = Comlink.wrap<BuildWorkerAPI>(rawSharedWorkerPort);
       workerInstance = worker;
       if (attempt > 0) console.log('👍 [client:initWorker] reconnected');
       return workerInstance;
@@ -247,7 +247,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   throw new Error('[client:initWorker] max retries exceeded');
 }
 
-export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
+export async function getWorkerClient(): Promise<Remote<BuildWorkerAPI>> {
   await waitForMaintenanceUnlock();
   if (!workerInstance) return await initializeWorker();
   return workerInstance;

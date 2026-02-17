@@ -41,8 +41,7 @@ interface SearchInputControlledProps extends SearchInputBaseProps {
   onClear: () => void;
 }
 
-interface SearchFieldCompatibilityProps
-  extends Omit<SearchInputBaseProps, 'label' | 'onBlur' | 'onCommit' | 'commitMode'> {
+interface SearchFieldCompatibilityProps extends SearchInputBaseProps {
   searchText: string;
   handleSearchTextChange: (value: string) => void;
   handleSearchCommit?: () => void;
@@ -52,7 +51,18 @@ interface SearchFieldCompatibilityProps
   fullWidth?: boolean;
 }
 
-export type TreeTableSearchInputProps = SearchInputControlledProps | SearchFieldCompatibilityProps;
+type LegacyProps = SearchFieldCompatibilityProps & {
+  value?: never;
+  onChange?: never;
+  onClear?: never;
+};
+type NewProps = SearchInputControlledProps & {
+  searchText?: never;
+  handleSearchTextChange?: never;
+  handleSearchCommit?: never;
+  ariaLabel?: never;
+};
+export type TreeTableSearchInputProps = LegacyProps | NewProps;
 export type SearchFieldProps = TreeTableSearchInputProps;
 export type { SearchFieldCommitMode };
 
@@ -123,7 +133,7 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
       },
     },
     sx,
-  ];
+  ] as SxProps<Theme>;
 
   const runCommit = useCallback(
     (nextValue: string) => {

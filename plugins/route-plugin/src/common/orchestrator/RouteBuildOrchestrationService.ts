@@ -1,21 +1,17 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
-import type { RouteBatchSpec } from './types.js';
+import type { RouteBuildConfig } from '@hierarchidb/route-store';
+import type { RouteBuildSpec } from './types.js';
 import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
 import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks, type RouteTaskInput } from './TaskMapper.js';
 import { RouteBuildSessionOrchestrator, type RouteBuildSessionConfig } from '../../services/RouteBuildSessionOrchestrator.js';
 import type { RouteBuildManagerDeps } from '../../services/RouteBuildManager.js';
 
-type RouteBuildConfig = RouteBatchConfig;
-
 export type RouteBuildManagerLike = RouteBuildSessionOrchestrator;
-/** @deprecated Use RouteBuildManagerLike. */
-export type RouteBatchManagerLike = RouteBuildManagerLike;
 
 export class RouteBuildOrchestrationService {
   constructor(private readonly source: RouteSourceOrchestrator, private readonly deps?: RouteBuildManagerDeps) {}
 
-  async startFromSources(nodeId: NodeId, spec: RouteBatchSpec, mgr: RouteBuildManagerLike | undefined, config: RouteBuildConfig): Promise<{
+  async startFromSources(nodeId: NodeId, spec: RouteBuildSpec, mgr: RouteBuildManagerLike | undefined, config: RouteBuildConfig): Promise<{
     nodeId: NodeId;
     count: number
   }> {
@@ -29,8 +25,8 @@ export class RouteBuildOrchestrationService {
 
   async startMatrix(
     nodeId: NodeId,
-    origins: RouteBatchSpec,
-    destinations: RouteBatchSpec,
+    origins: RouteBuildSpec,
+    destinations: RouteBuildSpec,
     mgr: RouteBuildManagerLike | undefined,
     config: RouteBuildConfig,
     methodOptions?: RouteTaskInput['methodOptions'],
@@ -49,7 +45,7 @@ export class RouteBuildOrchestrationService {
 
   async startEnrich(
     nodeId: NodeId,
-    spec: RouteBatchSpec,
+    spec: RouteBuildSpec,
     mgr: RouteBuildManagerLike | undefined,
     config: RouteBuildConfig,
     options: RouteTaskInput['methodOptions'],
@@ -80,6 +76,3 @@ function toSessionConfig(config: RouteBuildConfig): RouteBuildSessionConfig {
     laneCaps: config.laneCaps,
   };
 }
-
-/** @deprecated Use RouteBuildOrchestrationService. */
-export { RouteBuildOrchestrationService as RouteBatchOrchestrationService };

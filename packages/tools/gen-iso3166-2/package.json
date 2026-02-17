@@ -33,10 +33,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/gen-iso3166-2.ts src/index.ts src/browser.ts src/node.ts src/plugin.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
+    "build": "tsdown src/gen-iso3166-2.ts src/index.ts src/browser.ts src/node.ts src/plugin.ts src/gen-shape-presets.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "start": "node dist/gen-iso3166-2.js"
+    "start": "node dist/gen-iso3166-2.js",
+    "generate-shape-presets": "node dist/gen-shape-presets.js"
   },
   "dependencies": {
     "@hierarchidb/download": "workspace:*",

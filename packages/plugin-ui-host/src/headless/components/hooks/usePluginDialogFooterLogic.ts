@@ -45,7 +45,7 @@ export function usePluginDialogFooterLogic() {
   const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
   const showRightPrimary = true;
   const showLeftPrimary = true;
-  const showStartBatch = false;
+  const showStartBuild = false;
 
   return {
     ctx,
@@ -60,6 +60,6 @@ export function usePluginDialogFooterLogic() {
     disableRightPrimary,
     showRightPrimary,
     showLeftPrimary,
-    showStartBatch,
+    showStartBuild,
   };
 }

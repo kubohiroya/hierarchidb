@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import {
   isFolderNodeType,
@@ -84,7 +84,7 @@ export async function resolveOpenStepsForNode(params: {
   nodeId?: NodeId | null;
   nodeType?: string;
   node?: TreeNode | null;
-  client?: Remote<WorkerAPI> | null;
+  client?: Remote<BuildWorkerAPI> | null;
 }): Promise<OpenStepOption[]> {
   let resolvedNode = params.node ?? null;
   if (!resolvedNode && params.client && params.nodeId) {

@@ -11,7 +11,6 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-  BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
 import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
@@ -38,7 +37,7 @@ import {
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index.ts';
 import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
 
@@ -73,15 +72,6 @@ type ShapeBuildAPI = {
     buildConfig: unknown,
     processingConfig: unknown,
     downloadTaskPayloads: unknown[],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ) => Promise<NodeId>;
-  /** @deprecated Use startBuildSession. */
-  startBatchProcess?: (
-    draftId: NodeId,
-    batchConfig: unknown,
-    processingConfig: unknown,
-    downloadTaskPayloads: unknown[],
-    buildContinuationPolicy?: BuildContinuationPolicy
   ) => Promise<NodeId>;
   generateDownloadTaskPayloadsFromSelection?: (
     nodeId: NodeId,
@@ -90,25 +80,19 @@ type ShapeBuildAPI = {
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
-  /** @deprecated Use getBuildSession. */
-  getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBuildSession?: (draftId: NodeId) => Promise<void>;
-  /** @deprecated Use pauseBuildSession. */
-  pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
   resumeBuildSession?: (draftId: NodeId) => Promise<void>;
-  /** @deprecated Use resumeBuildSession. */
-  resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
-  invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
+  invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BuildProgressSubscriber;
   subscribeToTasks?: BuildTaskSubscriber;
 };
 
 type RuntimeWorkerBootstrap = {
-  api: WorkerAPI;
+  api: BuildWorkerAPI;
   servicesReadyAt: number;
 };
 
-type ShapeDownloadTaskPayloads = NonNullable<Parameters<WorkerAPI['startBuildSession']>[2]>;
+type ShapeDownloadTaskPayloads = NonNullable<Parameters<BuildWorkerAPI['startBuildSession']>[2]>;
 
 const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
 const heapListeners = new Set<(event: HeapPressureEvent) => void>();
@@ -129,15 +113,15 @@ const toComlinkProxy = <T extends object>(Comlink: typeof import('comlink'), val
 const resolveBuildTaskProvider = (mod: unknown): BuildTaskProvider | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
   const record = mod as Record<string, unknown>;
-  const direct = record.getBuildTasks ?? record.getBatchTasks;
+  const direct = record.getBuildTasks;
   if (typeof direct === 'function') {
     return direct as BuildTaskProvider;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: Record<string, unknown>; build?: Record<string, unknown>; batch?: Record<string, unknown> }
+    | { api?: Record<string, unknown>; build?: Record<string, unknown> }
     | undefined;
-  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
-  const apiFn = api?.getBuildTasks ?? api?.getBatchTasks;
+  const api = shapePlugin?.build ?? shapePlugin?.api;
+  const apiFn = api?.getBuildTasks;
   if (typeof apiFn === 'function') {
     return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BuildTaskSummary[]>)(nodeId);
   }
@@ -149,17 +133,16 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
   const record = mod as Record<string, unknown>;
   const direct = (
     record.shapeBuildAPI
-    ?? record.shapeBatchAPI
     ?? record.shapePluginAPI
   ) as ShapeBuildAPI | undefined;
-  if (direct?.startBuildSession || direct?.startBatchProcess) {
+  if (direct?.startBuildSession) {
     return direct;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: ShapeBuildAPI; build?: ShapeBuildAPI; batch?: ShapeBuildAPI }
+    | { api?: ShapeBuildAPI; build?: ShapeBuildAPI }
     | undefined;
-  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
-  if (api?.startBuildSession || api?.startBatchProcess) {
+  const api = shapePlugin?.build ?? shapePlugin?.api;
+  if (api?.startBuildSession) {
     return api;
   }
   return null;
@@ -429,10 +412,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           if (typeof getBuildSession === 'function') {
             return getBuildSession(nodeId);
           }
-          const getBatchSession = buildApi.getBatchSession;
-          if (typeof getBatchSession === 'function') {
-            return getBatchSession(nodeId);
-          }
           return undefined;
         };
         const invokeStartBuildSession = async (
@@ -440,25 +419,14 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           buildConfig: unknown,
           processingConfig: unknown,
-          downloadTaskPayloads: unknown[],
-          buildContinuationPolicy?: BuildContinuationPolicy,
+          downloadTaskPayloads: unknown[]
         ): Promise<NodeId> => {
           if (typeof buildApi.startBuildSession === 'function') {
             return buildApi.startBuildSession(
               nodeId,
               buildConfig,
               processingConfig,
-              downloadTaskPayloads,
-              buildContinuationPolicy,
-            );
-          }
-          if (typeof buildApi.startBatchProcess === 'function') {
-            return buildApi.startBatchProcess(
-              nodeId,
-              buildConfig,
-              processingConfig,
-              downloadTaskPayloads,
-              buildContinuationPolicy,
+              downloadTaskPayloads
             );
           }
           throw new Error('[worker bootstrap] Build API missing start method');
@@ -610,7 +578,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeType: NodeType,
           nodeId: NodeId,
           downloadTaskPayloads?: ShapeDownloadTaskPayloads,
-          buildContinuationPolicy?: BuildContinuationPolicy
         ): Promise<BuildSessionStatus> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'starting', true);
@@ -621,16 +588,15 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (draft as { draftData?: unknown } | undefined)?.draftData ??
                 (fallbackNode as { draftData?: unknown } | undefined)?.draftData
             );
-            const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
+            const buildConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
             const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
             const payloads = downloadTaskPayloads ?? [];
             await invokeStartBuildSession(
               buildApi,
               nodeId,
-              batchConfig,
+              buildConfig,
               processingConfig,
-              payloads,
-              buildContinuationPolicy,
+              payloads
             );
             const session = await getSessionSnapshot(buildApi, nodeId);
             const status = toBuildSessionStatus(
@@ -660,26 +626,17 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           });
           setRuntimeTransientStatus(nodeType, nodeId, 'pausing', true);
           try {
-            if (buildApi.invokeBatchCommand) {
-              await buildApi.invokeBatchCommand('session/pause', { nodeId, stopReason: reason });
-              console.warn('[worker bootstrap][PauseTrace] pause-finished', {
-                nodeType,
-                nodeId,
-                reason: reason ?? null,
-                observedStatus: 'paused',
-              });
-              clearRuntimeTransientStatus(nodeType, nodeId, false);
-              return;
-            }
-            const session = await getSessionSnapshot(buildApi, nodeId);
-            const draftId =
-              (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
-              (session as { draftId?: NodeId } | undefined)?.draftId ??
-              nodeId;
-            if (buildApi.pauseBuildSession) {
-              await buildApi.pauseBuildSession(draftId);
-            } else if (buildApi.pauseBatchProcessing) {
-              await buildApi.pauseBatchProcessing(draftId);
+            if (buildApi.invokeBuildCommand) {
+              await buildApi.invokeBuildCommand('session/pause', { nodeId, stopReason: reason });
+            } else {
+              const session = await getSessionSnapshot(buildApi, nodeId);
+              const draftId =
+                (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
+                (session as { draftId?: NodeId } | undefined)?.draftId ??
+                nodeId;
+              if (buildApi.pauseBuildSession) {
+                await buildApi.pauseBuildSession(draftId);
+              }
             }
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
               nodeType,
@@ -688,6 +645,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               observedStatus: 'paused',
             });
             clearRuntimeTransientStatus(nodeType, nodeId, false);
+            return;
           } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
             console.warn('[worker bootstrap][PauseTrace] pause-failed', {
@@ -707,42 +665,32 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           reason?: string
         ): Promise<void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          if (buildApi.invokeBatchCommand) {
-            try {
-              await buildApi.invokeBatchCommand('session/cancel-queued', {
-                nodeId,
-                stopReason: reason,
-              });
-              clearRuntimeTransientStatus(nodeType, nodeId, false);
-              return;
-            } catch (error) {
-              console.warn('[worker bootstrap] session/cancel-queued fallback to pause', {
-                nodeType,
-                nodeId,
-                reason: reason ?? null,
-                errorMessage: error instanceof Error ? error.message : String(error),
-              });
-            }
+          if (buildApi.invokeBuildCommand) {
+            await buildApi.invokeBuildCommand('session/cancel-queued', {
+              nodeId,
+              stopReason: reason,
+            });
+            clearRuntimeTransientStatus(nodeType, nodeId, false);
+            return;
           }
           await runPauseBuildSession(nodeType, nodeId, reason);
         };
 
         const runResumeBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId,
-          buildContinuationPolicy?: BuildContinuationPolicy
+          nodeId: NodeId
         ): Promise<void> => {
           const buildApi = resolveShapeBuildApiOrThrow(nodeType);
           setRuntimeTransientStatus(nodeType, nodeId, 'resuming', true);
           try {
-            if (buildApi.invokeBatchCommand) {
+            if (buildApi.invokeBuildCommand) {
               const draft = buildApi.getDraft ? await buildApi.getDraft(nodeId) : undefined;
               const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
               const draftData = coerceRecord(
                 (draft as { draftData?: unknown } | undefined)?.draftData ??
                   (fallbackNode as { draftData?: unknown } | undefined)?.draftData
               );
-              const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
+              const buildConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
               const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
               const processingConfigRecord = coerceRecord(processingConfig);
               const transformConfigRecord = coerceRecord(
@@ -756,10 +704,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
                   ? transformMaxConcurrent
                   : transformMaxConcurrent ?? null,
               });
-              await buildApi.invokeBatchCommand('session/resume', {
+              await buildApi.invokeBuildCommand('session/resume', {
                 nodeId,
-                buildContinuationPolicy,
-                buildConfig: batchConfig,
+                buildConfig: buildConfig,
                 processingConfig,
               });
               setHeapContext({ nodeType, nodeId });
@@ -773,8 +720,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               nodeId;
             if (buildApi.resumeBuildSession) {
               await buildApi.resumeBuildSession(draftId);
-            } else if (buildApi.resumeBatchProcessing) {
-              await buildApi.resumeBatchProcessing(draftId);
             }
             setHeapContext({ nodeType, nodeId });
             clearRuntimeTransientStatus(nodeType, nodeId, true);
@@ -784,117 +729,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
         };
 
-        const runStartOrResumeBuildSession = async (
-          nodeType: NodeType,
-          nodeId: NodeId,
-          downloadTaskPayloads?: ShapeDownloadTaskPayloads,
-          buildContinuationPolicy?: BuildContinuationPolicy
-        ): Promise<BuildSessionStatus> => {
-          const RUNNING_SESSION_STALE_GRACE_MS = 20_000;
-          const inspectTasks = async (): Promise<{
-            total: number;
-            hasInFlight: boolean;
-            hasVtStageTasks: boolean;
-          }> => {
-            const provider = buildTaskProviders.get(nodeType);
-            if (!provider) {
-              return {
-                total: 0,
-                hasInFlight: false,
-                hasVtStageTasks: false,
-              };
-            }
-            try {
-              const tasks = await provider(nodeId);
-              return {
-                total: tasks.length,
-                hasInFlight: tasks.some((task) => task.status === 'running' || task.status === 'queued'),
-                hasVtStageTasks: tasks.some((task) => task.stage === 'vt'),
-              };
-            } catch (error) {
-              const msg = error instanceof Error ? error.message : String(error);
-              console.warn('[worker bootstrap] failed to inspect build tasks:', msg);
-              return {
-                total: 0,
-                hasInFlight: false,
-                hasVtStageTasks: false,
-              };
-            }
-          };
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          const session = await getSessionSnapshot(buildApi, nodeId);
-          const current = toBuildSessionStatus(
-            session as Record<string, unknown> | undefined,
-            nodeId
-          );
-          const currentRuntimeStatus = resolveRuntimeStatusFromBuildSession(current.status);
-          if (currentRuntimeStatus === 'running' || currentRuntimeStatus === 'starting') {
-            const now = Date.now();
-            const hasRecentActivity = typeof current.lastActivity === 'number'
-              && now - current.lastActivity < RUNNING_SESSION_STALE_GRACE_MS;
-            const currentTaskState = await inspectTasks();
-            const currentHasInFlightTasks = currentTaskState.hasInFlight;
-            if (hasRecentActivity || currentHasInFlightTasks) {
-              return current;
-            }
-            await runResumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
-            const resumed = await getSessionSnapshot(buildApi, nodeId);
-            const resumedStatus = toBuildSessionStatus(
-              resumed as Record<string, unknown> | undefined,
-              nodeId
-            );
-            const resumedRuntimeStatus = resolveRuntimeStatusFromBuildSession(resumedStatus.status);
-            if (resumedRuntimeStatus === 'running' || resumedRuntimeStatus === 'starting') {
-              const resumedHasRecentActivity = typeof resumedStatus.lastActivity === 'number'
-                && Date.now() - resumedStatus.lastActivity < RUNNING_SESSION_STALE_GRACE_MS;
-              const resumedTaskState = await inspectTasks();
-              const resumedHasInFlightTasks = resumedTaskState.hasInFlight;
-              if (!resumedHasRecentActivity && !resumedHasInFlightTasks) {
-                return runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-              }
-            }
-            return resumedStatus;
-          }
-          if (currentRuntimeStatus === 'paused' || currentRuntimeStatus === 'failed') {
-            await runResumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
-            const resumed = await getSessionSnapshot(buildApi, nodeId);
-            return toBuildSessionStatus(
-              resumed as Record<string, unknown> | undefined,
-              nodeId
-            );
-          }
-          if (currentRuntimeStatus === 'completed') {
-            const taskState = await inspectTasks();
-            if (taskState.total === 0) {
-              return runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-            }
-            if (nodeType === SHAPE_NODE_TYPE && !taskState.hasVtStageTasks) {
-              // Stage-level cache reset can leave only upstream completed tasks (e.g. fetch) in queue.
-              // Treat this as resumable work and start a new run.
-              return runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-            }
-            if (nodeType === SHAPE_NODE_TYPE) {
-              // When session metadata is cleared but completed fetch tasks remain in the queue,
-              // getBuildSession/getBatchSession may synthesize a completed status.
-              // In that case, start a new run.
-              const queryAPI = services.getShapeQueryAPI();
-              const persisted = await queryAPI.getBuildSessionRecord(nodeId).catch(() => null);
-              if (!persisted) {
-                return runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-              }
-            }
-            return current;
-          }
-          return runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-        };
-
         const startBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
-          downloadTaskPayloads?: ShapeDownloadTaskPayloads,
-          buildContinuationPolicy?: BuildContinuationPolicy
+          downloadTaskPayloads?: ShapeDownloadTaskPayloads
         ): Promise<BuildSessionStatus> => (
-          runStartBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy)
+          runStartBuildSession(nodeType, nodeId, downloadTaskPayloads)
         );
 
         const getBuildSessionStatus = async (
@@ -922,9 +762,8 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
         const resumeBuildSession = async (
           nodeType: NodeType,
-          nodeId: NodeId,
-          buildContinuationPolicy?: BuildContinuationPolicy
-        ): Promise<void> => runResumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
+          nodeId: NodeId
+        ): Promise<void> => runResumeBuildSession(nodeType, nodeId);
 
         const subscribeBuildProgress = async (
           nodeType: NodeType,
@@ -967,7 +806,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
         };
 
-        const api: WorkerAPI = {
+        const api: BuildWorkerAPI = {
           ping: async () => services.ping(),
           initialize: () => services.initialize(),
           shutdown: () => services.shutdown(),
@@ -999,30 +838,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           getTagAPI: async () => toComlinkProxy(Comlink, services.getTagAPI()),
           getCommandProcessor: async () =>
             (toComlinkProxy(Comlink, services.getCommandProcessor()) as unknown as Awaited<
-              ReturnType<WorkerAPI['getCommandProcessor']>
+              ReturnType<BuildWorkerAPI['getCommandProcessor']>
             >),
           startBuildSession,
-          startBatchSession: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            downloadTaskPayloads?: ShapeDownloadTaskPayloads,
-            buildContinuationPolicy?: BuildContinuationPolicy
-          ): Promise<BuildSessionStatus> => (
-            startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy)
-          ),
-          startOrResumeBuildSession: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            downloadTaskPayloads?: ShapeDownloadTaskPayloads,
-            buildContinuationPolicy?: BuildContinuationPolicy
-          ): Promise<BuildSessionStatus> => (
-            runStartOrResumeBuildSession(
-              nodeType,
-              nodeId,
-              downloadTaskPayloads,
-              buildContinuationPolicy
-            )
-          ),
           generateShapeDownloadTaskPayloadsFromSelection: async (
             nodeId: NodeId,
             dataSource: ShapeDataSourceName,
@@ -1040,40 +858,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               selectedArrayByCountries
             );
             return payloads as ShapeDownloadTaskPayloads;
-          },
+          }, 
           getBuildSessionStatus,
-          getBatchSessionStatus: async (
-            nodeType: NodeType,
-            nodeId: NodeId
-          ): Promise<BuildSessionStatus> => getBuildSessionStatus(nodeType, nodeId),
           pauseBuildSession,
-          pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> => (
-            pauseBuildSession(nodeType, nodeId, reason)
-          ),
           cancelQueuedBuildSession,
-          cancelQueuedBatchSession: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            reason?: string
-          ): Promise<void> => cancelQueuedBuildSession(nodeType, nodeId, reason),
           resumeBuildSession,
-          resumeBatchSession: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            buildContinuationPolicy?: BuildContinuationPolicy
-          ): Promise<void> => resumeBuildSession(nodeType, nodeId, buildContinuationPolicy),
           subscribeBuildProgress,
-          subscribeBatchProgress: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            callback: (event: BuildProgressEvent) => void
-          ): Promise<() => void> => subscribeBuildProgress(nodeType, nodeId, callback),
           subscribeBuildTasks,
-          subscribeBatchTasks: async (
-            nodeType: NodeType,
-            nodeId: NodeId,
-            callback: (event: BuildTaskUpdateEvent) => void
-          ): Promise<() => void> => subscribeBuildTasks(nodeType, nodeId, callback),
           subscribeHeapPressure: async (
             callback: (event: HeapPressureEvent) => void
           ): Promise<() => void> => {
@@ -1083,9 +874,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             });
           },
           getBuildTasks,
-          getBatchTasks: async (nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> => (
-            getBuildTasks(nodeType, nodeId)
-          ),
           listBuildSessionRecordsByStatus: async (
             nodeType: NodeType,
             statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>

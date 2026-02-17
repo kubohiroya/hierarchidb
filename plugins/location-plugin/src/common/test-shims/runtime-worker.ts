@@ -11,24 +11,13 @@ export const workerAPI = {
     nodeId: 'stub-node',
     status: 'running' as const,
   }),
-  startBatchSession: async () => ({
-    nodeId: 'stub-node',
-    status: 'running' as const,
-  }),
   getBuildSessionStatus: async () => ({
     nodeId: 'stub-node',
     status: 'running' as const,
   }),
-  getBatchSessionStatus: async () => ({
-    nodeId: 'stub-node',
-    status: 'running' as const,
-  }),
   pauseBuildSession: async () => undefined,
-  pauseBatchSession: async () => undefined,
   resumeBuildSession: async () => undefined,
-  resumeBatchSession: async () => undefined,
   subscribeBuildProgress: async () => () => undefined,
-  subscribeBatchProgress: async () => () => undefined,
 };
 
 export default {

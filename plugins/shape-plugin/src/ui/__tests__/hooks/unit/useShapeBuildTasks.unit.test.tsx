@@ -52,7 +52,6 @@ vi.mock('@hierarchidb/ui-worker-client', () => {
   });
   return {
     getBuildWorkerBridge: () => getBridge(),
-    getWorkerBridge: () => getBridge(),
   };
 });
 

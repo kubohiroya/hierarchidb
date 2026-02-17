@@ -1,6 +1,6 @@
 import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 
-export function RouteBatchProgressBar({ snapshot }: { snapshot?: BuildUnifiedProgressInfo | null }) {
+export function RouteBuildProgressBar({ snapshot }: { snapshot?: BuildUnifiedProgressInfo | null }) {
   const percentage = Math.round(snapshot?.percentage ?? 0);
   const phase = snapshot?.phase ?? 'idle';
   return (

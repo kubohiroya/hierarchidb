@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { NodeAction, type Tree, type TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -22,7 +22,7 @@ function getBootWindow(): BootWindow | null {
 }
 
 export type LoadWorkerAPIClientReturn = {
-  client: Remote<WorkerAPI>; // Worker API instance via Comlink
+  client: Remote<BuildWorkerAPI>; // Worker API instance via Comlink
 };
 
 export type LoadTreeArgs = {
@@ -224,7 +224,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     await ensureInitComplete();
 
     // Obtain the instance
-    const client: Remote<WorkerAPI> = WorkerAPIClient.getSingleton();
+    const client: Remote<BuildWorkerAPI> = WorkerAPIClient.getSingleton();
 
     return {
       ...appConfig,

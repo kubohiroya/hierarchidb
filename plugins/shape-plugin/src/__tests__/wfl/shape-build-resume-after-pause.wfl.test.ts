@@ -246,14 +246,6 @@ type ShapeBuildTestAPI = {
     downloadTaskPayloads: FetchTaskPayload[];
     buildContinuationPolicy?: BuildContinuationPolicy;
   }): Promise<NodeId>;
-  /** @deprecated Use startBuildSession. */
-  startBatchProcess(payload: {
-    nodeId: NodeId;
-    buildConfig: ShapeBuildConfig;
-    processingConfig: ShapeProcessingConfig;
-    downloadTaskPayloads: FetchTaskPayload[];
-    buildContinuationPolicy?: BuildContinuationPolicy;
-  }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
     callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
@@ -266,7 +258,6 @@ type WorkerTestAPI = {
   getShapeEphemeralAdminAPI(): Promise<ShapeEphemeralAdminAPI>;
   getShapePipelineTestAPI(): Promise<ShapePipelineTestAPI>;
   getShapeBuildTestAPI(): Promise<ShapeBuildTestAPI>;
-  getShapeBatchTestAPI(): Promise<ShapeBuildTestAPI>;
 };
 
 type WorkerSetup = {

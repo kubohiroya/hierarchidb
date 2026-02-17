@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -30,12 +30,12 @@ function createTreeNode(options: {
   };
 }
 
-function createClient(ancestors: TreeNode[]): Remote<WorkerAPI> {
+function createClient(ancestors: TreeNode[]): Remote<BuildWorkerAPI> {
   return {
     getQueryAPI: vi.fn(async () => ({
       listAncestors: vi.fn(async () => ancestors),
     })),
-  } as unknown as Remote<WorkerAPI>;
+  } as unknown as Remote<BuildWorkerAPI>;
 }
 
 describe('useTreeConsoleBreadcrumbs', () => {

@@ -1,6 +1,5 @@
 import type { GroupEntity, ISO2, NodeId, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
-import type { BaseBatchConfig } from '@hierarchidb/batch-api';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
 
@@ -123,12 +122,8 @@ export interface RouteEntityPayload {
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];
-  /** @deprecated Use buildConfig instead. */
-  config?: RouteProcessingConfig;
   buildConfig?: BaseBuildConfig<string>;
   routeStyleConfig?: RouteStyleConfig;
-  /** @deprecated Use buildConfig instead. */
-  processing?: RouteProcessingConfig;
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   rebuildRequired?: boolean;
@@ -142,7 +137,7 @@ export type RouteEntity = PeerEntity<RouteEntityPayload>;
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 
-export interface RouteBatchConfig extends BaseBatchConfig {
+export interface RouteBuildConfig extends BaseBuildConfig<string> {
   routeGeneration: {
     method: RouteGenerationMethod;
     parallel: boolean;
@@ -159,32 +154,6 @@ export interface RouteBatchConfig extends BaseBatchConfig {
   };
   laneCaps?: Partial<Record<RouteGenerationMethod, number>>;
 }
-
-export interface RouteBuildConfig {
-  maxRetries?: number;
-  retryDelay?: number;
-  workerTimeout?: number;
-  maxMemoryPerWorker?: number;
-  enableProgressTracking?: boolean;
-  enableResourceMonitoring?: boolean;
-  routeGeneration: {
-    method: RouteGenerationMethod;
-    parallel: boolean;
-    maxConcurrent: number;
-    retryOnFailure: boolean;
-    maxRetries: number;
-  };
-  locationResolution?: { batchSize: number; cacheResults: boolean; fallbackToCoordinates: boolean };
-  validation?: {
-    checkLocationExists: boolean;
-    checkDuplicateRoutes: boolean;
-    validateDistance: boolean;
-    maxDistanceKm?: number;
-  };
-  laneCaps?: Partial<Record<RouteGenerationMethod, number>>;
-}
-
-export type BuildConfig = RouteBuildConfig;
 
 export interface RouteNearestLineQuery {
   nodeId: NodeId;

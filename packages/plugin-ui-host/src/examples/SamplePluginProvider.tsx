@@ -14,8 +14,8 @@ import { Box, TextField, Typography } from '@mui/material';
 type SampleStepData = {
   setting1?: string;
   setting2?: string;
-  batchSize?: number;
-  batchRunning?: boolean;
+  buildSize?: number;
+  buildRunning?: boolean;
   saving?: boolean;
   targetNodes?: unknown[];
 };
@@ -131,14 +131,14 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can save if all required fields are filled
             return Boolean(data?.setting1?.trim?.());
           },
-          canStartBatch: (_data) => {
+          canStartBuild: (_data) => {
             // Batch is not available from configuration step
             return false;
           },
         },
       },
       {
-        id: 'batch-config',
+        id: 'build-config',
         label: 'Batch Configuration',
         component: (
           <ConfigurationStep
@@ -158,19 +158,19 @@ export class SamplePluginProvider implements PluginStepProvider {
           },
           canProceedToNext: (data) => {
             // Can proceed if batch settings are valid
-            return !!(data?.batchSize && data?.batchSize > 0);
+            return !!(data?.buildSize && data?.buildSize > 0);
           },
           canBackToPrevious: (data) => {
             // Can go back unless batch is currently running
-            return !data?.batchRunning;
+            return !data?.buildRunning;
           },
           canSave: (_data) => {
             // Can save from batch step
             return true;
           },
-          canStartBatch: (data) => {
+          canStartBuild: (data) => {
             // Can start batch if batch configuration is valid
-            return !!(data?.batchSize && data?.batchSize > 0 && data?.batchSize <= 1000);
+            return !!(data?.buildSize && data?.buildSize > 0 && data?.buildSize <= 1000);
           },
         },
       },
@@ -202,9 +202,9 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can always save from review
             return true;
           },
-          canStartBatch: (data) => {
+          canStartBuild: (data) => {
             // Can start batch from review if batch is configured
-            return !!(data?.batchSize && data?.batchSize > 0 && data?.batchSize <= 1000);
+            return !!(data?.buildSize && data?.buildSize > 0 && data?.buildSize <= 1000);
           },
         },
       },
@@ -238,11 +238,11 @@ export class SamplePluginProvider implements PluginStepProvider {
           canSave: (data) => {
             return Boolean(data?.setting1?.trim?.());
           },
-          canStartBatch: () => false,
+          canStartBuild: () => false,
         },
       },
       {
-        id: 'batch-config',
+        id: 'build-config',
         label: 'Batch Update',
         component: (
           <ConfigurationStep
@@ -261,16 +261,16 @@ export class SamplePluginProvider implements PluginStepProvider {
             return Boolean(data?.setting1?.trim?.());
           },
           canProceedToNext: (data) => {
-            return !!(data?.batchSize && data?.batchSize > 0);
+            return !!(data?.buildSize && data?.buildSize > 0);
           },
           canBackToPrevious: () => true,
           canSave: () => true,
-          canStartBatch: (data) => {
+          canStartBuild: (data) => {
             // Batch update is available when batch is properly configured
             return !!(
-              data?.batchSize &&
-              data?.batchSize > 0 &&
-              data?.batchSize <= 1000 &&
+              data?.buildSize &&
+              data?.buildSize > 0 &&
+              data?.buildSize <= 1000 &&
               data?.targetNodes?.length > 0
             );
           },
@@ -298,11 +298,11 @@ export class SamplePluginProvider implements PluginStepProvider {
           canProceedToNext: () => false,
           canBackToPrevious: () => true,
           canSave: () => true,
-          canStartBatch: (data) => {
+          canStartBuild: (data) => {
             return !!(
-              data?.batchSize &&
-              data?.batchSize > 0 &&
-              data?.batchSize <= 1000 &&
+              data?.buildSize &&
+              data?.buildSize > 0 &&
+              data?.buildSize <= 1000 &&
               data?.targetNodes?.length > 0
             );
           },

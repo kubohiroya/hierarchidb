@@ -1,7 +1,7 @@
 import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import {
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,
@@ -254,10 +254,11 @@ export function resolveNodeCreateDefaults(
 ): ResolvedNodeCreateDefaults {
   if (execution.kind === 'shapePreset') {
     const defaults = resolveShapePresetNodeDefaults(execution.presetId, translateWithFallback);
+    const draftPatch = buildShapePresetDraftDataPatch(execution.presetId);
     return {
       name: defaults.name,
       description: defaults.description,
-      draftPatch: buildShapePresetDraftDataPatch(execution.presetId),
+      draftPatch,
     };
   }
 
@@ -315,7 +316,7 @@ export function getFolderImportTemplateOptions(
 }
 
 export async function importNodeTemplateById(params: {
-  client: Remote<WorkerAPI>;
+  client: Remote<BuildWorkerAPI>;
   treeId: TreeId;
   targetParentId: NodeId;
   templateId: string;

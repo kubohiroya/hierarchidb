@@ -6,7 +6,7 @@ import type {
   UseBuildProgressOptions,
 } from '@hierarchidb/batch-api';
 
-export class BatchService {
+export class BuildService {
   async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {
     const results: R[] = [];
     for (const item of items) {
@@ -15,8 +15,6 @@ export class BatchService {
     return results;
   }
 }
-/** Preferred alias for BatchService. */
-export { BatchService as BuildService };
 
 export class TabularWriter {
   async begin(_config: { filename: string; columns: string[] }) {
@@ -60,9 +58,6 @@ export abstract class AbstractBuildSession<TConfig> {
     this.progress = { ...this.progress, ...update };
   }
 }
-/** @deprecated Use AbstractBuildSession. */
-export { AbstractBuildSession as AbstractBatchSession };
-
 export abstract class UnifiedBuildManagerBase<TConfig, TData> {
   private readonly pending = new Map<string, { config: TConfig; data: TData }>();
 
@@ -78,41 +73,19 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
     this.pending.delete(nodeId);
     return this.performStart(nodeId, payload.config, payload.data);
   }
-  /** @deprecated Use startBuildSession. */
-  async startBatchSession(nodeId: string): Promise<string> {
-    return this.startBuildSession(nodeId);
-  }
-
   async pauseBuildSession(nodeId: string): Promise<void> {
     await this.performPause(nodeId);
-  }
-  /** @deprecated Use pauseBuildSession. */
-  async pauseBatchSession(nodeId: string): Promise<void> {
-    await this.pauseBuildSession(nodeId);
   }
 
   async resumeBuildSession(nodeId: string): Promise<void> {
     await this.performResume(nodeId);
   }
-  /** @deprecated Use resumeBuildSession. */
-  async resumeBatchSession(nodeId: string): Promise<void> {
-    await this.resumeBuildSession(nodeId);
-  }
 
   async getBuildSessionStatus(nodeId: string): Promise<unknown> {
     return this.performStatus(nodeId);
   }
-  /** @deprecated Use getBuildSessionStatus. */
-  async getBatchSessionStatus(nodeId: string): Promise<unknown> {
-    return this.getBuildSessionStatus(nodeId);
-  }
-
   onBuildProgress(nodeId: string, callback: (event: unknown) => void): () => void {
     return this.performSubscribe(nodeId, callback);
-  }
-  /** @deprecated Use onBuildProgress. */
-  onBatchProgress(nodeId: string, callback: (event: unknown) => void): () => void {
-    return this.onBuildProgress(nodeId, callback);
   }
 
   protected abstract performStart(nodeId: string, config: TConfig, data: TData): Promise<string>;
@@ -121,8 +94,6 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
   protected abstract performStatus(nodeId: string): Promise<unknown>;
   protected abstract performSubscribe(nodeId: string, callback: (event: unknown) => void): () => void;
 }
-/** @deprecated Use UnifiedBuildManagerBase. */
-export { UnifiedBuildManagerBase as UnifiedBatchManagerBase };
 
 export function createLaneSemaphoreRegistry(options: { defaults: Record<string, number>; fallback?: number }) {
   const defaults = options.defaults ?? {};
@@ -233,9 +204,6 @@ export function useBuildProgress(
   return { progress, subscribed, subscribe, unsubscribe } as const;
 }
 
-/** @deprecated Use useBuildProgress. */
-export const useBatchProgress = useBuildProgress;
-
 export function usePluginBuildProgress<TProgress>(
   _nodeType: string,
   _nodeId?: string | null,
@@ -249,9 +217,6 @@ export function usePluginBuildProgress<TProgress>(
     unsubscribe: () => undefined,
   };
 }
-
-/** @deprecated Use usePluginBuildProgress. */
-export const usePluginBatchProgress = usePluginBuildProgress;
 
 // default exports expected by SessionController
 export const vtpbf = {

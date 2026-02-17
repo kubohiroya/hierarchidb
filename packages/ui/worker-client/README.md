@@ -18,7 +18,6 @@ utils.ts, batch-types.ts             Shared helpers and message types
   - `WorkerInitializationReporter` — post init steps/errors from the worker thread.
 - Runtime bridge:
   - `getBuildWorkerBridge` (canonical), `ensureWorkerAPI`, `__getWorkerBridgeClientRef`, `__setWorkerBridgeClientRef`, `BuildWorkerBridge` type.
-  - `getWorkerBridge` and `WorkerBridge` are deprecated compatibility aliases.
   - `getRuntimeExports`, `registerRuntimeExports`, `getAllRuntimeExports` for runtime export discovery.
   - `wirePluginsFromModules` — wire plugin UI/worker exports into the runtime registry.
 - Comlink helpers:

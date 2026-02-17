@@ -47,7 +47,7 @@ export interface StepCapabilities {
   canProceedToNext: boolean;
   canBackToPrevious: boolean;
   canSave: boolean;
-  canStartBatch: boolean;
+  canStartBuild: boolean;
 }
 
 /**
@@ -138,7 +138,7 @@ export const currentStepCapabilitiesAtom = atom((get) => {
       canProceedToNext: false,
       canBackToPrevious: false,
       canSave: false,
-      canStartBatch: false,
+      canStartBuild: false,
     }
   );
 });
@@ -173,11 +173,11 @@ export const canSaveAtom = atom((get) => {
 /**
  * Check if can start batch
  */
-export const canStartBatchAtom = atom((get) => {
+export const canStartBuildAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const stepState = get(stepStateAtom);
 
-  return capabilities.canStartBatch && !stepState.isSubmitting;
+  return capabilities.canStartBuild && !stepState.isSubmitting;
 });
 
 /**

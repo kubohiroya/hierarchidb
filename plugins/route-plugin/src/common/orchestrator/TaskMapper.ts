@@ -1,4 +1,4 @@
-import type { OdPair, RouteBatchSpec } from './types.js';
+import type { OdPair, RouteBuildSpec } from './types.js';
 import type { RouteBuildRouteInput } from '../../services/RouteBuildManager.js';
 
 export type RouteTaskInput = RouteBuildRouteInput;
@@ -10,7 +10,7 @@ export interface MapRecomputeOptions {
 
 export function mapRecomputeTasks(
   odPairs: OdPair[],
-  defaults?: RouteBatchSpec['defaults'],
+  defaults?: RouteBuildSpec['defaults'],
   opts?: MapRecomputeOptions,
 ): RouteBuildRouteInput[] {
   return odPairs.map((o) => ({
@@ -24,7 +24,7 @@ export function mapRecomputeTasks(
 export function mapMatrixTasks(
   origins: OdPair[],
   destinations: OdPair[],
-  defaults?: RouteBatchSpec['defaults'],
+  defaults?: RouteBuildSpec['defaults'],
   methodOptions?: RouteBuildRouteInput['methodOptions'],
 ): RouteBuildRouteInput[] {
   const out: RouteBuildRouteInput[] = [];
@@ -44,7 +44,7 @@ export function mapMatrixTasks(
 export function mapEnrichTasks(
   odPairs: OdPair[],
   options?: RouteBuildRouteInput['methodOptions'],
-  defaults?: RouteBatchSpec['defaults'],
+  defaults?: RouteBuildSpec['defaults'],
 ): RouteBuildRouteInput[] {
   return odPairs.map((o) => ({
     startCoordinates: [o.start.lon, o.start.lat],

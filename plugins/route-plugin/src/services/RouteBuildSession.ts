@@ -2,19 +2,13 @@ import { AbstractBuildSession } from '@hierarchidb/batch';
 import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
-import type { RouteBatchConfig } from '@hierarchidb/route-store';
+import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
 import { updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
-type RouteBuildConfig = RouteBatchConfig;
-
 export type RouteBuildTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type RouteBuildTaskType = 'location_resolution' | 'route_generation' | 'validation' | 'optimization';
-/** @deprecated Use RouteBuildTaskStatus. */
-export type RouteBatchTaskStatus = RouteBuildTaskStatus;
-/** @deprecated Use RouteBuildTaskType. */
-export type RouteBatchTaskType = RouteBuildTaskType;
 
 export type RouteBuildTask = {
   taskId: string;
@@ -34,15 +28,11 @@ export type RouteBuildTask = {
   };
   error?: string;
 };
-/** @deprecated Use RouteBuildTask. */
-export type RouteBatchTask = RouteBuildTask;
 
 export type RouteBuildSessionDeps = {
   generator?: { generate: (points: [number, number][], config: RouteGenerationConfig) => Promise<unknown> };
   taskQueue?: VtTaskQueueDb;
 };
-/** @deprecated Use RouteBuildSessionDeps. */
-export type RouteBatchSessionDeps = RouteBuildSessionDeps;
 
 type LaneGate = {
   limit: number;
@@ -120,7 +110,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     }
   }
 
-  protected onBatchProgressEvent(_event: BuildProgressEvent): void {
+  protected onBuildProgressEvent(_event: BuildProgressEvent): void {
   }
 
   private async runWithGates(
@@ -236,6 +226,3 @@ function abortError(message: string): Error {
   (error as Error & { name: string }).name = 'AbortError';
   return error;
 }
-
-/** @deprecated Use RouteBuildSession. */
-export { RouteBuildSession as RouteBatchSession };

@@ -1,4 +1,5 @@
 import type { TreeNodeData } from '@hierarchidb/tree-api';
+import { GEOBOUNDARIES_COUNTRIES_BY_LEVEL } from './generated/geoboundaries-shape-presets.generated.ts';
 
 export const SHAPE_CREATE_PRESET_IDS = [
   'japan-level0-1',
@@ -39,7 +40,9 @@ const CREATE_ACTION_PREFIX = 'create:';
 const SHAPE_PRESET_MARKER = '::preset:';
 const SHAPE_DEFAULT_PRESET_ID = 'default';
 
-const WORLD_ISO2_CODES = [
+type GeoboundariesLevel = 0 | 1;
+
+const FALLBACK_WORLD_ISO2_CODES = [
   'AD',
   'AE',
   'AF',
@@ -234,6 +237,39 @@ const WORLD_ISO2_CODES = [
   'ZW',
 ] as const;
 
+const normalizeIso2 = (value: string): string | null => {
+  const trimmed = value.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(trimmed) ? trimmed : null;
+};
+
+const getPresetCountries = (level: GeoboundariesLevel): Set<string> => {
+  const generated =
+    level === 0 ? GEOBOUNDARIES_COUNTRIES_BY_LEVEL.level0 : GEOBOUNDARIES_COUNTRIES_BY_LEVEL.level1;
+  const source = generated.length > 0 ? generated : FALLBACK_WORLD_ISO2_CODES;
+  const normalized = new Set<string>();
+  for (const country of source) {
+    const iso2 = normalizeIso2(country);
+    if (iso2) normalized.add(iso2);
+  }
+  if (normalized.size > 0) {
+    return normalized;
+  }
+  return new Set(FALLBACK_WORLD_ISO2_CODES);
+};
+
+const createWorldSelection = (
+  countries: Set<string>,
+  rowTemplate: readonly [boolean, boolean, boolean]
+): Record<string, boolean[]> => {
+  const selection: Record<string, boolean[]> = {};
+  for (const country of countries) {
+    const normalized = country.trim().toUpperCase();
+    if (normalized.length !== 2) continue;
+    selection[normalized] = Array.from(rowTemplate);
+  }
+  return selection;
+};
+
 const createSelectionRow = (
   level0: boolean,
   level1: boolean,
@@ -245,18 +281,11 @@ const buildJapanLevel01Selection = (): Record<string, boolean[]> => ({
 });
 
 const buildWorldLevel0Selection = (): Record<string, boolean[]> => {
-  const selection: Record<string, boolean[]> = {};
-  for (const code of WORLD_ISO2_CODES) {
-    selection[code] = createSelectionRow(true, false, false);
-  }
-  return selection;
+  return createWorldSelection(getPresetCountries(0), [true, false, false]);
 };
 
 const buildWorldLevel1CnInLevel12Selection = (): Record<string, boolean[]> => {
-  const selection: Record<string, boolean[]> = {};
-  for (const code of WORLD_ISO2_CODES) {
-    selection[code] = createSelectionRow(false, true, false);
-  }
+  const selection = createWorldSelection(getPresetCountries(1), [false, true, false]);
   selection.CN = createSelectionRow(false, true, true);
   selection.IN = createSelectionRow(false, true, true);
   return selection;
@@ -434,10 +463,12 @@ export function buildShapePresetDraftDataPatch(
   if (!preset) {
     return {};
   }
+
+  const selectedArrayByCountries = preset.buildSelection();
   return {
     buildConfig: preset.buildConfigPatch,
     processingConfig: preset.processingConfigPatch,
-    selectedArrayByCountries: preset.buildSelection(),
+    selectedArrayByCountries,
   };
 }
 

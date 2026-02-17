@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { Remote } from 'comlink';
 import {
   getWorkerInitCompleteMessage,
@@ -16,7 +16,7 @@ export interface WorkerInitializationProgress {
 
 export interface WorkerStateSnapshot {
   state: WorkerRuntimeState;
-  client: Remote<WorkerAPI> | null;
+  client: Remote<BuildWorkerAPI> | null;
   error: Error | null;
   progress: WorkerInitializationProgress;
 }
@@ -25,8 +25,8 @@ export type WorkerStateListener = (snapshot: WorkerStateSnapshot) => void;
 export type WorkerProgressListener = (progress: WorkerInitializationProgress) => void;
 
 export interface WorkerClientHandle {
-  getClient(): Remote<WorkerAPI>;
-  ensureLatest(options?: { signal?: AbortSignal }): Promise<Remote<WorkerAPI>>;
+  getClient(): Remote<BuildWorkerAPI>;
+  ensureLatest(options?: { signal?: AbortSignal }): Promise<Remote<BuildWorkerAPI>>;
 }
 
 const getWorkerClientModule = () => getWorkerAPIClientModule();
@@ -40,7 +40,7 @@ const isNotInitializedError = (error: unknown): boolean => {
   return Boolean(NotInitialized && error instanceof NotInitialized);
 };
 
-const getSingletonIfAvailable = (): Remote<WorkerAPI> | null => {
+const getSingletonIfAvailable = (): Remote<BuildWorkerAPI> | null => {
   const Client = getWorkerClientClass();
   if (!Client) return null;
   try {
@@ -85,7 +85,7 @@ let snapshot: WorkerStateSnapshot = {
 const listeners = new Set<WorkerStateListener>();
 const progressListeners = new Set<WorkerProgressListener>();
 
-let initializationPromise: Promise<Remote<WorkerAPI>> | null = null;
+let initializationPromise: Promise<Remote<BuildWorkerAPI>> | null = null;
 
 export function getWorkerSnapshot(): WorkerStateSnapshot {
   return snapshot;
@@ -153,13 +153,13 @@ export function subscribeWorkerProgress(listener: WorkerProgressListener): () =>
   return () => progressListeners.delete(listener);
 }
 
-function getCachedClient(): Remote<WorkerAPI> | null {
+function getCachedClient(): Remote<BuildWorkerAPI> | null {
   return getSingletonIfAvailable();
 }
 
 export async function ensureWorkerInitialized(options?: {
   signal?: AbortSignal;
-}): Promise<Remote<WorkerAPI>> {
+}): Promise<Remote<BuildWorkerAPI>> {
   if (snapshot.state === 'ready' && snapshot.client) {
     return snapshot.client;
   }

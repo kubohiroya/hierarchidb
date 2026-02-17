@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
 import { RouteBuildOrchestrationService } from '../../common/orchestrator/RouteBuildOrchestrationService.js';
-import type { RouteBatchSpec } from '../../common/orchestrator/types.js';
+import type { RouteBuildSpec } from '../../common/orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
 import { RouteBuildSessionOrchestrator } from '../../services/RouteBuildSessionOrchestrator.js';
@@ -10,11 +10,15 @@ import { OsrmEngine } from '../../services/engines/OsrmEngine.js';
 import { SearouteEngine } from '@hierarchidb/route-engine';
 import { ThrottledPort } from '../../services/net/ThrottledPort.js';
 import { RouteBuildConfig, RouteGenerationOptions } from '@hierarchidb/route-api';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../common/config/buildConfig.js';
 
-export type JobKind = 'recompute' | 'matrix' | 'enrich';
+export type RouteBuildJobKind = 'recompute' | 'matrix' | 'enrich';
 
-export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nodeId: NodeId; count: number }) => void) => {
-  const [kind, setKind] = useState<JobKind>('recompute');
+export const useRouteBuildLaunchForm = (
+  nodeId: NodeId,
+  onLaunched?: (res: { nodeId: NodeId; count: number }) => void,
+) => {
+  const [kind, setKind] = useState<RouteBuildJobKind>('recompute');
   const [tabularUrl, setTabularUrl] = useState('');
   const [tabularUrl2, setTabularUrl2] = useState('');
   const defaults = useMemo(() => getOsrmEngineDefaults(), []);
@@ -44,6 +48,7 @@ export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nod
         osmProfile: profile,
       };
       const config: RouteBuildConfig = {
+        ...DEFAULT_ROUTE_BUILD_CONFIG,
         routeGeneration: {
           method: 'osm_route',
           parallel: true,
@@ -54,25 +59,24 @@ export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nod
         locationResolution: { batchSize: 0, cacheResults: false, fallbackToCoordinates: true },
         validation: { checkLocationExists: false, checkDuplicateRoutes: false, validateDistance: false },
       };
-      const targetNodeId = nodeId;
-      const defaults = { engine: 'osm_route' as const } satisfies RouteBatchSpec['defaults'];
+      const defaults2 = { engine: 'osm_route' as const } satisfies RouteBuildSpec['defaults'];
       if (kind === 'recompute') {
-        const spec: RouteBatchSpec = {
+        const spec: RouteBuildSpec = {
           sources: [{ type: 'csv', url: tabularUrl }],
           defaults: { engine: 'osm_route', mode: 'road_general' },
         };
-        const res = await orchestrator.startFromSources(targetNodeId, spec, mgr, config);
+        const res = await orchestrator.startFromSources(nodeId, spec, mgr, config);
         setStatus(`launched ${String(res.nodeId)} (${res.count})`);
         onLaunched?.(res);
       } else if (kind === 'matrix') {
-        const origins: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
-        const dests: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl2 }], defaults };
-        const res = await orchestrator.startMatrix(targetNodeId, origins, dests, mgr, config, methodOptions);
+        const origins: RouteBuildSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults: defaults2 };
+        const dests: RouteBuildSpec = { sources: [{ type: 'csv', url: tabularUrl2 }], defaults: defaults2 };
+        const res = await orchestrator.startMatrix(nodeId, origins, dests, mgr, config, methodOptions);
         setStatus(`launched ${String(res.nodeId)} (${res.count})`);
         onLaunched?.(res);
       } else {
-        const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
-        const res = await orchestrator.startEnrich(targetNodeId, spec, mgr, config, {
+        const spec: RouteBuildSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults: defaults2 };
+        const res = await orchestrator.startEnrich(nodeId, spec, mgr, config, {
           smoothing: 0.5,
           elevation: true,
           ...methodOptions,
@@ -105,4 +109,4 @@ export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nod
   };
 };
 
-export const useRouteBuildLaunchForm = useRouteBatchLaunchForm;
+export type JobKind = RouteBuildJobKind;

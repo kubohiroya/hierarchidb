@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import { configureWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
@@ -30,7 +30,7 @@ const hasWorkerExport = (nodeType: string): boolean => {
   return Boolean(entry?.modules?.worker);
 };
 
-let runtimePromise: Promise<Remote<WorkerAPI>> | null = null;
+let runtimePromise: Promise<Remote<BuildWorkerAPI>> | null = null;
 let pluginLoadPromise: Promise<void> | null = null;
 
 const isBrowserEnvironment = typeof window !== 'undefined';
@@ -119,7 +119,7 @@ export async function preloadPluginWorkerStores(): Promise<void> {
   }
 }
 
-export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
+export async function ensureWorkerRuntime(): Promise<Remote<BuildWorkerAPI>> {
   if (!runtimePromise) {
     runtimePromise = (async () => {
       ensureRuntimeWorkerContainerConfigured();

@@ -50,7 +50,7 @@ export interface StepCapabilities {
   canNavigateTo: (fromStep: number, data: any) => boolean | Promise<boolean>;
 
   /** Whether batch processing can start from this step */
-  canStartBatch: (data: any) => boolean | Promise<boolean>;
+  canStartBuild: (data: any) => boolean | Promise<boolean>;
 
   /** Whether the dialog can be saved and closed from this step */
   canSave: (data: any) => boolean | Promise<boolean>;

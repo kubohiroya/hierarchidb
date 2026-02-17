@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
-import type { LocationBatchConfig } from '../../../common/entities/LocationEntity.js';
+import type { LocationBuildConfig } from '../../../common/entities/LocationEntity.js';
 
 const { strategySearch } = vi.hoisted(() => ({
   strategySearch: vi.fn(),
@@ -33,7 +33,7 @@ describe('LocationBuildManager country normalization', () => {
   });
 
   it('normalizes country codes using ISO3166 mapping', async () => {
-    const { LocationBuildManager } = await import('../../LocationBatchManager.js');
+    const { LocationBuildManager } = await import('../../LocationBuildManager.js');
     const manager = new LocationBuildManager();
     const nodeId = 'node-1' as NodeId;
     (manager as { countryNameMap: Map<string, string> }).countryNameMap = new Map([
@@ -88,7 +88,7 @@ describe('LocationBuildManager country normalization', () => {
       },
     ]);
 
-    const config: LocationBatchConfig = {
+    const config: LocationBuildConfig = {
       searchConfigs: [
         {
           dataSource: 'ourairports',

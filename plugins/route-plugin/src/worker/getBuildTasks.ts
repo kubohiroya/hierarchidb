@@ -16,8 +16,3 @@ export async function getBuildTasks(nodeId: NodeId): Promise<BuildTaskSummary[]>
   const tasks = await listTasks(taskQueue, nodeId);
   return tasks.map(mapTaskQueueRecord);
 }
-
-/** @deprecated Use getBuildTasks. */
-export async function getBatchTasks(nodeId: NodeId): Promise<BuildTaskSummary[]> {
-  return getBuildTasks(nodeId);
-}

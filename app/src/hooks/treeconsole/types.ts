@@ -5,7 +5,7 @@
  * useTreeConsoleIntegration hook modules.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
@@ -38,7 +38,7 @@ export type ContextAction =
   | `create:${string}`;
 
 export interface UseTreeConsoleIntegrationParams {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -121,7 +121,7 @@ export type LoadChildrenOf = (
 ) => Promise<unknown>;
 
 export interface TreeConsoleActionDeps {
-  client?: Remote<WorkerAPI>;
+  client?: Remote<BuildWorkerAPI>;
   treeId?: TreeId;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;

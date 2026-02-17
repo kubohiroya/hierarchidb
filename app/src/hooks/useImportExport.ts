@@ -3,7 +3,7 @@ import type {
   ImportData,
   ImportValidationResult,
 } from '~/types/import-export.js';
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -67,7 +67,7 @@ type ImportNodesPayload = ImportData;
  * @param client - Worker API client instance
  * @param ready - Whether the worker is ready
  */
-export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
+export function useImportExport(client?: Remote<BuildWorkerAPI>, ready?: boolean) {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [importError, setImportError] = useState<Error | null>(null);
@@ -352,7 +352,7 @@ function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
 }
 
 async function processImport(
-  client: Remote<WorkerAPI>,
+  client: Remote<BuildWorkerAPI>,
   data: ImportNodesPayload,
   targetNodeId: NodeId,
   onProgress?: (progress: ImportProgress) => void
@@ -389,7 +389,7 @@ async function processImport(
 }
 
 async function collectNodesForExport(
-  client: Remote<WorkerAPI>,
+  client: Remote<BuildWorkerAPI>,
   nodeIds: NodeId[],
   includeChildren: boolean
 ): Promise<TreeNode[]> {

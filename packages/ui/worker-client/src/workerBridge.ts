@@ -5,7 +5,6 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-  BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
@@ -15,57 +14,22 @@ import { proxy, type Remote } from 'comlink';
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
-export interface WorkerBridge {
+export interface BuildWorkerBridge {
   initialize(): Promise<void>;
   startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus>;
-  /** @deprecated Use startBuildSession. */
-  startBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus>;
-  startOrResumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
-  /** @deprecated Use getBuildSessionStatus. */
-  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  /** @deprecated Use pauseBuildSession. */
-  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  /** @deprecated Use cancelQueuedBuildSession. */
-  cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   resumeBuildSession(
     nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<void>;
-  /** @deprecated Use resumeBuildSession. */
-  resumeBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
+    nodeId: NodeId
   ): Promise<void>;
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
-  /** @deprecated Use getBuildTasks. */
-  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
   subscribeBuildTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void>;
-  /** @deprecated Use subscribeBuildTasks. */
-  subscribeBatchTasks(
     nodeType: NodeType,
     nodeId: NodeId,
     cb: (event: BuildTaskUpdateEvent) => void
@@ -98,26 +62,8 @@ export interface WorkerBridge {
     nodeId: NodeId,
     cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
-  /** @deprecated Use subscribeBuildProgress. */
-  subscribeBatchProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildProgressEvent) => void
-  ): Promise<() => void>;
   subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
 }
-type DeprecatedBatchWorkerBridgeMethods =
-  | 'startBatchSession'
-  | 'getBatchSessionStatus'
-  | 'pauseBatchSession'
-  | 'cancelQueuedBatchSession'
-  | 'resumeBatchSession'
-  | 'getBatchTasks'
-  | 'subscribeBatchTasks'
-  | 'subscribeBatchProgress';
-
-/** Canonical WorkerBridge surface (deprecated Batch aliases excluded). */
-export type BuildWorkerBridge = Omit<WorkerBridge, DeprecatedBatchWorkerBridgeMethods>;
 
 type WorkerClientRefLike = {
   client: Remote<WorkerApi> | null;
@@ -138,7 +84,7 @@ function resolveWorkerClientRef(): WorkerClientRefLike {
     if (ref) return ref as WorkerClientRefLike;
   }
   throw new Error(
-    '[WorkerBridge] Worker client reference is unavailable. Ensure WorkerProvider is mounted before invoking worker operations.'
+    '[BuildWorkerBridge] Worker client reference is unavailable. Ensure WorkerProvider is mounted before invoking worker operations.'
   );
 }
 
@@ -150,11 +96,11 @@ export async function ensureWorkerAPI(): Promise<Remote<WorkerApi>> {
   try {
     return ref.client ?? ref.getAPI();
   } catch {
-    throw new Error('[WorkerBridge] Worker API is not initialized.');
+    throw new Error('[BuildWorkerBridge] Worker API is not initialized.');
   }
 }
 
-class WorkerBridgeImpl implements WorkerBridge {
+class WorkerBridgeImpl implements BuildWorkerBridge {
   async initialize(): Promise<void> {
     const ref = resolveWorkerClientRef();
     if (!ref.isInitialized) {
@@ -165,39 +111,10 @@ class WorkerBridgeImpl implements WorkerBridge {
   async startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
+    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2]
   ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-  }
-
-  async startBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus> {
-    return this.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-  }
-
-  async startOrResumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus> {
-    const api = await ensureWorkerAPI();
-    return api.startOrResumeBuildSession(
-      nodeType,
-      nodeId,
-      downloadTaskPayloads,
-      buildContinuationPolicy
-    );
-  }
-
-  async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
-    return this.getBuildSessionStatus(nodeType, nodeId);
+    return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads);
   }
 
   async getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
@@ -205,66 +122,27 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.getBuildSessionStatus(nodeType, nodeId);
   }
 
-  async pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
-    await this.pauseBuildSession(nodeType, nodeId, reason);
-  }
-
   async pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.pauseBuildSession(nodeType, nodeId, reason);
   }
 
-  async cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
-    await this.cancelQueuedBuildSession(nodeType, nodeId, reason);
-  }
-
   async cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
     const api = await ensureWorkerAPI();
-    const cancelQueuedBuildSession = (api as { cancelQueuedBuildSession?: unknown }).cancelQueuedBuildSession;
-    if (typeof cancelQueuedBuildSession === 'function') {
-      await cancelQueuedBuildSession(nodeType, nodeId, reason);
-      return;
-    }
-    const cancelQueuedBatchSession = (api as { cancelQueuedBatchSession?: unknown }).cancelQueuedBatchSession;
-    if (typeof cancelQueuedBatchSession === 'function') {
-      await cancelQueuedBatchSession(nodeType, nodeId, reason);
-      return;
-    }
-    await this.pauseBuildSession(nodeType, nodeId, reason);
-  }
-
-  async resumeBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<void> {
-    await this.resumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
+    await api.cancelQueuedBuildSession(nodeType, nodeId, reason);
   }
 
   async resumeBuildSession(
     nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
+    nodeId: NodeId
   ): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.resumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
-  }
-
-  async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {
-    return this.getBuildTasks(nodeType, nodeId);
+    await api.resumeBuildSession(nodeType, nodeId);
   }
 
   async getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {
     const api = await ensureWorkerAPI();
     return api.getBuildTasks(nodeType, nodeId);
-  }
-
-  async subscribeBatchTasks(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildTaskUpdateEvent) => void
-  ): Promise<() => void> {
-    return this.subscribeBuildTasks(nodeType, nodeId, cb);
   }
 
   async subscribeBuildTasks(
@@ -278,7 +156,7 @@ class WorkerBridgeImpl implements WorkerBridge {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
+        console.warn('[BuildWorkerBridge] unsubscribe failed', error);
       }
     };
   }
@@ -310,7 +188,7 @@ class WorkerBridgeImpl implements WorkerBridge {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
+        console.warn('[BuildWorkerBridge] unsubscribe failed', error);
       }
     };
   }
@@ -369,14 +247,6 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.getTreeNodeUpdaterAPI();
   }
 
-  async subscribeBatchProgress(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    cb: (event: BuildProgressEvent) => void
-  ): Promise<() => void> {
-    return this.subscribeBuildProgress(nodeType, nodeId, cb);
-  }
-
   async subscribeBuildProgress(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -388,7 +258,7 @@ class WorkerBridgeImpl implements WorkerBridge {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
+        console.warn('[BuildWorkerBridge] unsubscribe failed', error);
       }
     };
   }
@@ -400,24 +270,19 @@ class WorkerBridgeImpl implements WorkerBridge {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
+        console.warn('[BuildWorkerBridge] unsubscribe failed', error);
       }
     };
   }
 }
 
-let bridgeInstance: WorkerBridge | null = null;
+let bridgeInstance: BuildWorkerBridge | null = null;
 
-/** @deprecated Use getBuildWorkerBridge. */
-export function getWorkerBridge(): WorkerBridge {
+export function getBuildWorkerBridge(): BuildWorkerBridge {
   if (!bridgeInstance) {
     bridgeInstance = new WorkerBridgeImpl();
   }
   return bridgeInstance;
-}
-
-export function getBuildWorkerBridge(): BuildWorkerBridge {
-  return getWorkerBridge();
 }
 
 /**

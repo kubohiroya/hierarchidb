@@ -4,7 +4,7 @@ export type {
   PluginStepConfig,
   PluginStepProps,
   PluginStepProvider,
-  StartBatchContext,
+  StartBuildContext,
   StepData,
 } from './registry/PluginStepRegistry.js';
 export { PluginStepRegistry } from './registry/PluginStepRegistry.js';

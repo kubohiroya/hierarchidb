@@ -5,7 +5,7 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { WorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
@@ -14,7 +14,7 @@ import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Params {
-  client: Remote<WorkerAPI> | undefined;
+  client: Remote<BuildWorkerAPI> | undefined;
   pageTreeNode?: TreeNode;
   /**
    * Optional override used mainly for tests to force breadcrumb truncation.

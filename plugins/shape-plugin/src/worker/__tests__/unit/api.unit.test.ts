@@ -11,7 +11,7 @@ import {
   mergeBuildConfig,
   mergeProcessingConfig,
 } from '../../../common/types/index.js';
-import { shapeBatchAPI } from '../../api.js';
+import { shapeBuildAPI } from '../../api.js';
 
 const createBuildConfig = (
   overrides: Partial<ShapeBuildConfig> = {},
@@ -22,31 +22,31 @@ const createProcessingConfig = (
 ): ShapeProcessingConfig => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, overrides);
 
 describe('Shape Plugin API', () => {
-  describe('Batch Session Recovery for Direct Link Access', () => {
-    it('should find pending batch sessions for node', async () => {
+  describe('Build Session Recovery for Direct Link Access', () => {
+    it('should find pending build sessions for node', async () => {
       const nodeId = 'node-123' as NodeId;
 
-      const sessions = await shapeBatchAPI.findPendingBatchSessions(nodeId);
+      const sessions = await shapeBuildAPI.findPendingBuildSessions(nodeId);
       expect(Array.isArray(sessions)).toBe(true);
     });
 
     it('should return empty array for node without pending sessions', async () => {
       const nodeId = 'node-no-sessions' as NodeId;
 
-      const sessions = await shapeBatchAPI.findPendingBatchSessions(nodeId);
+      const sessions = await shapeBuildAPI.findPendingBuildSessions(nodeId);
       expect(Array.isArray(sessions)).toBe(true);
       expect(sessions).toHaveLength(0);
     });
 
     it('should return missing session status for unknown session', async () => {
-      const status = await shapeBatchAPI.getBuildSessionStatus('session-unknown');
+      const status = await shapeBuildAPI.getBuildSessionStatus('session-unknown');
       expect(status.exists).toBe(false);
     });
   });
 
   describe('Data Source and Validation APIs', () => {
     it('should return default data source configurations', async () => {
-      const configs = await shapeBatchAPI.getDataSourceConfigs();
+      const configs = await shapeBuildAPI.getDataSourceConfigs();
 
       expect(Array.isArray(configs)).toBe(true);
       expect(configs.length).toBeGreaterThan(0);
@@ -56,7 +56,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should return mock country metadata', async () => {
-      const metadata = await shapeBatchAPI.getCountryMetadata('node-1', 'naturalearth');
+      const metadata = await shapeBuildAPI.getCountryMetadata('node-1', 'naturalearth');
 
       expect(Array.isArray(metadata)).toBe(true);
       expect(metadata.length).toBeGreaterThan(0);
@@ -66,28 +66,28 @@ describe('Shape Plugin API', () => {
     });
 
     it('should validate correct selection', async () => {
-      const result = await shapeBatchAPI.validateSelection(['US', 'JP'], [0, 1], 'naturalearth');
+      const result = await shapeBuildAPI.validateSelection(['US', 'JP'], [0, 1], 'naturalearth');
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toBeUndefined();
     });
 
     it('should reject empty country selection', async () => {
-      const result = await shapeBatchAPI.validateSelection([], [0, 1], 'naturalearth');
+      const result = await shapeBuildAPI.validateSelection([], [0, 1], 'naturalearth');
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('At least one country must be selected');
     });
 
     it('should reject empty admin level selection', async () => {
-      const result = await shapeBatchAPI.validateSelection(['US'], [], 'naturalearth');
+      const result = await shapeBuildAPI.validateSelection(['US'], [], 'naturalearth');
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('At least one administrative level must be selected');
     });
 
     it('should reject invalid data source', async () => {
-      const result = await shapeBatchAPI.validateSelection(['US'], [0], 'invalid-source');
+      const result = await shapeBuildAPI.validateSelection(['US'], [0], 'invalid-source');
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Invalid data source selected');
@@ -95,7 +95,7 @@ describe('Shape Plugin API', () => {
 
     it('should warn about large selections', async () => {
       const manyCountries = Array.from({ length: 15 }, (_, i) => `C${i}`);
-      const result = await shapeBatchAPI.validateSelection(manyCountries, [0], 'naturalearth');
+      const result = await shapeBuildAPI.validateSelection(manyCountries, [0], 'naturalearth');
 
       expect(result.warnings).toContain(
         'Large country selection may require significant processing time',
@@ -115,14 +115,14 @@ describe('Shape Plugin API', () => {
       });
 
       await expect(
-        shapeBatchAPI.startBuildSession(draftId, buildConfig, processingConfig, []),
+        shapeBuildAPI.startBuildSession(draftId, buildConfig, processingConfig, []),
       ).rejects.toThrow('Invalid processing config');
     });
   });
 
   describe('EphemeralDB Cleanup', () => {
     it('should perform cleanup of expired data', async () => {
-      const result = await shapeBatchAPI.performCleanup();
+      const result = await shapeBuildAPI.performCleanup();
 
       expect(result).toBeDefined();
       expect(result.workingCopiesRemoved).toBeDefined();
@@ -131,7 +131,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should get cleanup statistics', async () => {
-      const stats = await shapeBatchAPI.getCleanupStats();
+      const stats = await shapeBuildAPI.getCleanupStats();
 
       expect(stats).toBeDefined();
       expect(stats.totalDrafts).toBeDefined();
@@ -141,7 +141,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should force cleanup all data', async () => {
-      const result = await shapeBatchAPI.forceCleanup();
+      const result = await shapeBuildAPI.forceCleanup();
 
       expect(result).toBeDefined();
       expect(result.workingCopiesRemoved).toBeDefined();

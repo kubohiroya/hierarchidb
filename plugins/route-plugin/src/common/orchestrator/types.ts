@@ -22,7 +22,7 @@ export interface DataSourceSpec {
   options?: Record<string, unknown>;
 }
 
-export interface RouteBatchSpec {
+export interface RouteBuildSpec {
   sources: DataSourceSpec[];
   defaults?: { engine?: EngineMethod; mode?: TransportMode };
 }
@@ -53,5 +53,5 @@ export interface DataSourceStrategy {
 
   plan(spec: DataSourceSpec, ctx: StrategyContext): Promise<TaskPlan>;
 
-  executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]>;
+  executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBuildSpec['defaults']): Promise<OdPair[]>;
 }

@@ -39,9 +39,9 @@ export interface PluginCapabilities {
   canBeRenamed?: boolean;
   canBeMoved?: boolean;
   canBeCopied?: boolean;
-  supportsBatchProcessing?: boolean;
+  supportsBuildProcessing?: boolean;
+  build?: boolean;
   draft?: boolean;
-  batch?: boolean;
   visualization?: boolean;
   [key: string]: boolean | undefined;
 }
