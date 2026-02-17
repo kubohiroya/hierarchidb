@@ -1594,6 +1594,46 @@ export const shapeBatchAPI = {
       progressCallback,
     )
   ),
+  pauseBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
+    await shapeBatchAPI.invokeBatchCommand('session/pause', {
+      nodeId: draftId,
+      stopReason: reason,
+    });
+  },
+  /** @deprecated Use pauseBuildSession. */
+  pauseBatchProcessing: async (draftId: NodeId, reason?: string): Promise<void> => (
+    shapeBatchAPI.pauseBuildSession(draftId, reason)
+  ),
+  resumeBuildSession: async (
+    draftId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildConfig?: ShapeBuildConfig,
+    processingConfig?: ShapeProcessingConfig,
+  ): Promise<void> => {
+    await shapeBatchAPI.invokeBatchCommand('session/resume', {
+      nodeId: draftId,
+      buildContinuationPolicy,
+      buildConfig,
+      processingConfig,
+    });
+  },
+  /** @deprecated Use resumeBuildSession. */
+  resumeBatchProcessing: async (
+    draftId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+  ): Promise<void> => (
+    shapeBatchAPI.resumeBuildSession(draftId, buildContinuationPolicy)
+  ),
+  cancelQueuedSession: async (draftId: NodeId, reason?: string): Promise<void> => {
+    await shapeBatchAPI.invokeBatchCommand('session/cancel-queued', {
+      nodeId: draftId,
+      stopReason: reason,
+    });
+  },
+  /** @deprecated Use cancelQueuedSession. */
+  cancelQueuedBatchSession: async (draftId: NodeId, reason?: string): Promise<void> => (
+    shapeBatchAPI.cancelQueuedSession(draftId, reason)
+  ),
   /** @deprecated Use startBuildSession. */
   startBatchProcess: async (
     draftId: NodeId,

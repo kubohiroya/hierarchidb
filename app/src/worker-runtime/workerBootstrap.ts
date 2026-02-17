@@ -92,7 +92,11 @@ type ShapeBuildAPI = {
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
   /** @deprecated Use getBuildSession. */
   getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
+  pauseBuildSession?: (draftId: NodeId) => Promise<void>;
+  /** @deprecated Use pauseBuildSession. */
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
+  resumeBuildSession?: (draftId: NodeId) => Promise<void>;
+  /** @deprecated Use resumeBuildSession. */
   resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BuildProgressSubscriber;
@@ -130,9 +134,9 @@ const resolveBuildTaskProvider = (mod: unknown): BuildTaskProvider | null => {
     return direct as BuildTaskProvider;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: Record<string, unknown>; batch?: Record<string, unknown> }
+    | { api?: Record<string, unknown>; build?: Record<string, unknown>; batch?: Record<string, unknown> }
     | undefined;
-  const api = shapePlugin?.batch ?? shapePlugin?.api;
+  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
   const apiFn = api?.getBuildTasks ?? api?.getBatchTasks;
   if (typeof apiFn === 'function') {
     return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BuildTaskSummary[]>)(nodeId);
@@ -152,9 +156,9 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
     return direct;
   }
   const shapePlugin = record.ShapeWorkerPlugin as
-    | { api?: ShapeBuildAPI; batch?: ShapeBuildAPI }
+    | { api?: ShapeBuildAPI; build?: ShapeBuildAPI; batch?: ShapeBuildAPI }
     | undefined;
-  const api = shapePlugin?.batch ?? shapePlugin?.api;
+  const api = shapePlugin?.build ?? shapePlugin?.batch ?? shapePlugin?.api;
   if (api?.startBuildSession || api?.startBatchProcess) {
     return api;
   }
@@ -672,7 +676,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
               (session as { draftId?: NodeId } | undefined)?.draftId ??
               nodeId;
-            if (buildApi.pauseBatchProcessing) {
+            if (buildApi.pauseBuildSession) {
+              await buildApi.pauseBuildSession(draftId);
+            } else if (buildApi.pauseBatchProcessing) {
               await buildApi.pauseBatchProcessing(draftId);
             }
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
@@ -765,7 +771,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
               (session as { draftId?: NodeId } | undefined)?.draftId ??
               nodeId;
-            if (buildApi.resumeBatchProcessing) {
+            if (buildApi.resumeBuildSession) {
+              await buildApi.resumeBuildSession(draftId);
+            } else if (buildApi.resumeBatchProcessing) {
               await buildApi.resumeBatchProcessing(draftId);
             }
             setHeapContext({ nodeType, nodeId });

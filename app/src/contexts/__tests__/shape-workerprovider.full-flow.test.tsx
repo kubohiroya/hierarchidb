@@ -41,6 +41,14 @@ vi.mock('~/worker-runtime/client.ts', async () => {
   const { WorkerService } = await import('@hierarchidb/runtime-worker');
   type ShapeDownloadPayloads = Awaited<ReturnType<WorkerAPI['generateShapeDownloadTaskPayloadsFromSelection']>>;
   type ShapeBuildAPI = {
+    startBuildSession: (
+      nodeId: NodeId,
+      buildConfig: Record<string, unknown>,
+      processingConfig: Record<string, unknown>,
+      downloadTaskPayloads: unknown[],
+      buildContinuationPolicy?: string
+    ) => Promise<void>;
+    /** @deprecated Use startBuildSession. */
     startBatchProcess: (
       nodeId: NodeId,
       buildConfig: Record<string, unknown>,
@@ -52,6 +60,12 @@ vi.mock('~/worker-runtime/client.ts', async () => {
     /** @deprecated Use getBuildStatus. */
     getBatchStatus: (nodeId: NodeId) => Promise<{ status: string; progress?: number }>;
     invokeBatchCommand: (command: string, payload: Record<string, unknown>) => Promise<void>;
+    pauseBuildSession?: (nodeId: NodeId, reason?: string) => Promise<void>;
+    /** @deprecated Use pauseBuildSession. */
+    pauseBatchProcessing?: (nodeId: NodeId, reason?: string) => Promise<void>;
+    resumeBuildSession?: (nodeId: NodeId, buildContinuationPolicy?: string) => Promise<void>;
+    /** @deprecated Use resumeBuildSession. */
+    resumeBatchProcessing?: (nodeId: NodeId) => Promise<void>;
     getBuildTasks: (nodeId: NodeId) => Promise<Array<{
       taskId: string;
       type?: string;
@@ -164,7 +178,8 @@ vi.mock('~/worker-runtime/client.ts', async () => {
         throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
       }
       const draftConfig = await resolveShapeDraftData(nodeId);
-      await shapeBuildAPI.startBatchProcess(
+      const runStart = shapeBuildAPI.startBuildSession ?? shapeBuildAPI.startBatchProcess;
+      await runStart(
         nodeId,
         draftConfig.buildConfig,
         draftConfig.processingConfig,
@@ -186,6 +201,14 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       return toBuildSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
     };
     const pauseBuildSessionImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
+      if (shapeBuildAPI.pauseBuildSession) {
+        await shapeBuildAPI.pauseBuildSession(nodeId);
+        return;
+      }
+      if (shapeBuildAPI.pauseBatchProcessing) {
+        await shapeBuildAPI.pauseBatchProcessing(nodeId);
+        return;
+      }
       await shapeBuildAPI.invokeBatchCommand('session/pause', { nodeId });
     };
     const resumeBuildSessionImpl = async (
@@ -193,6 +216,14 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       nodeId: NodeId,
       buildContinuationPolicy?: string
     ) => {
+      if (shapeBuildAPI.resumeBuildSession) {
+        await shapeBuildAPI.resumeBuildSession(nodeId, buildContinuationPolicy);
+        return;
+      }
+      if (shapeBuildAPI.resumeBatchProcessing) {
+        await shapeBuildAPI.resumeBatchProcessing(nodeId);
+        return;
+      }
       await shapeBuildAPI.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
     };
     const getBuildTasksImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
