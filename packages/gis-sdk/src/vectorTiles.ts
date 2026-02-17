@@ -430,6 +430,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     buffer: bufferValue,
     indexMaxZoom,
     promoteId: 'id',
+    indexMaxPoints: 65536,
   });
   throwIfAborted(config.signal);
   console.debug('[VectorTiles] index built', { ms: Date.now() - indexStart });

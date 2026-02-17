@@ -27,6 +27,7 @@ import type {
 } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
+  buildErrorSummaryById,
   buildHighlightKey,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
@@ -255,12 +256,6 @@ const resolveAdminCodeFromMetadata = (
 const isNumericId = (value?: string): boolean => {
   if (!value) return false;
   return /^[0-9]+$/.test(value);
-};
-
-const isRepairIssueKind = (issueKind?: string): boolean => {
-  const normalized = normalizeText(issueKind)?.toLowerCase();
-  if (!normalized) return false;
-  return normalized.endsWith('-repaired');
 };
 
 const parseVectorTileLayerNames = (data: ArrayBuffer): string[] => {
@@ -855,8 +850,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       return {
         id: row.id,
         featureId: row.featureId,
-        errorCount: row.errorCount,
-        repairCount: row.repairCount,
         countryName: context.countryName ?? row.countryName,
         countryCode: context.countryCode ?? row.countryCode,
         adminName,
@@ -1089,14 +1082,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (!row.memberFeatureIds || row.memberFeatureIds.length === 0) return;
       const groupId = String(row.featureId ?? row.id ?? '');
       if (!groupId) return;
-      let errorCount = 0;
-      let repairCount = 0;
+      let count = 0;
       const messages: string[] = [];
       row.memberFeatureIds.forEach((memberId) => {
         const summary = baseErrorSummaryById.get(String(memberId));
         if (!summary) return;
-        errorCount += summary.errorCount ?? summary.count ?? 0;
-        repairCount += summary.repairCount ?? 0;
+        count += summary.count;
         if (summary.messages.length > 0) {
           summary.messages.forEach((message) => {
             if (!messages.includes(message)) {
@@ -1105,8 +1096,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
           });
         }
       });
-      if (errorCount > 0 || repairCount > 0) {
-        aggregated.set(groupId, { errorCount, repairCount, count: errorCount, messages });
+      if (count > 0) {
+        aggregated.set(groupId, { count, messages });
       }
     });
     return aggregated;

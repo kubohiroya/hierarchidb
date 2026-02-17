@@ -158,36 +158,8 @@
       "body": "A build session is currently running. Open the Build step to view progress.",
       "action": "Open Build Step"
     },
-    "heap": {
-      "warning": "High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency."
-    },
     "vt": {
-      "title": "VT Generation",
-      "outputQualityGuard": {
-        "title": "Tile Output Quality Guard",
-        "description": "Flag potentially unstable tile output ranges and choose anomaly handling behavior in VT stage.",
-        "enabled": "Enable tile quality guard",
-        "zoomRange": "Zoom range",
-        "zoomRangeValue": "z{{min}} - z{{max}}",
-        "minZoom": "Min zoom",
-        "maxZoom": "Max zoom",
-        "actionOnAnomaly": "When anomaly is detected",
-        "action": {
-          "markWarning": "Mark warning",
-          "fallback": "Fallback to less simplified",
-          "dropTile": "Drop tile"
-        },
-        "enablePreviewOverlay": "Show warning overlay in preview",
-        "thresholds": {
-          "title": "Anomaly thresholds",
-          "scoreThreshold": "Score threshold",
-          "minTriangleAngleDeg": "Max acute angle (deg)",
-          "minEdgeToBaseRatio": "Min edge/base ratio",
-          "maxAreaToBBoxRatio": "Max area/BBox ratio",
-          "minSpanRatio": "Min span ratio",
-          "minBoundaryVertexCount": "Min boundary vertices"
-        }
-      }
+      "title": "VT Generation"
     },
     "download": {
       "title": "Fetch stage settings",
@@ -425,7 +397,6 @@
         "polygonCount": "Polygons",
         "status": "Status",
         "errorCount": "Errors",
-        "repairCount": "Repairs",
         "errorMessage": "Error Message",
         "bbox": "Bounding Box",
         "area": "Area",

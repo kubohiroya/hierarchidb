@@ -17,8 +17,6 @@ type ShapePreviewRowBase = {
   recycling?: boolean;
   id: string;
   featureId?: string;
-  errorCount?: number;
-  repairCount?: number;
   memberFeatureIds?: string[];
   aggregationLevel?: 'feature' | 'admin' | 'country';
   countryName?: string;
@@ -191,8 +189,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       id: row.featureId ?? row.id,
       status: (() => {
         const summary = errorSummaryById?.get(String(row.featureId ?? row.id));
-        const errorCount = summary ? (summary.errorCount ?? summary.count ?? 0) : 0;
-        const hasErrors = errorCount > 0;
+        const hasErrors = Boolean(summary && summary.count > 0);
         return hasErrors ? resolvedStatusLabels.failed : resolvedStatusLabels.completed;
       })(),
       rawId: row.id,
@@ -330,7 +327,6 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         errorSummaryById={errorSummaryById}
         errorColumnLabels={errorColumnLabels}
         statusLabels={statusLabels}
-        showRepairCountColumn
         statusAdornment={(row) => (row.recycling ? <RecyclingIcon fontSize="small" color="success" /> : null)}
         toolbarActions={onToggleRecycling ? (
           <IconButton
