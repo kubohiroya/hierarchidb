@@ -2,6 +2,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Switch,
   FormControl,
   FormControlLabel,
   MenuItem,
@@ -11,7 +12,6 @@ import {
   Select,
   Slider,
   Stack,
-  TextField,
   Typography,
   Tooltip,
 } from '@mui/material';
@@ -26,6 +26,7 @@ import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
+import type { ChangeEvent } from 'react';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -49,6 +50,15 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
     : 0.5;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
+
+  const updateTransformConfig = (partial: Partial<ShapeBuildConfig['transformConfig']>) => (
+    update({
+      transformConfig: {
+        ...baseTransformConfig,
+        ...partial,
+      },
+    })
+  );
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
@@ -116,7 +126,9 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                 control={(
                   <Switch
                     checked={preserveTopology}
-                    onChange={(event) => updateTransformConfig({ preserveTopology: event.target.checked })}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      updateTransformConfig({ preserveTopology: event.target.checked });
+                    }}
                   />
                 )}
                 disabled={disabled || simplifyAlgorithm === 'topojson'}

@@ -17,7 +17,7 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { MapToggleCard } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
-  AltRoute as AltRouteIcon,
+  Route as RouteIcon,
   Brush as BrushIcon,
   InfoOutlined as InfoOutlinedIcon,
   Layers as LayersIcon,
@@ -388,7 +388,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       {
         id: 'map-route-list',
         title: 'Route一覧',
-        icon: <AltRouteIcon fontSize="small" />,
+        icon: <RouteIcon fontSize="small" />,
         defaultSize: { width: 720, height: 520 },
         contentPadding: 0,
         content: <MapRouteListContent nodeId={nodeId as NodeId} />,
@@ -413,7 +413,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       {
         id: 'map-route-modes',
         title: 'Route Selection',
-        icon: <AltRouteIcon fontSize="small" />,
+        icon: <RouteIcon fontSize="small" />,
         defaultSize: { width: 360, height: 220 },
         contentPadding: 0,
         frameless: true,

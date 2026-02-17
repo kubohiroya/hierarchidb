@@ -13,7 +13,7 @@ import {
   Public as PublicIcon,
   Hexagon as HexagonIcon,
   Place as PlaceIcon,
-  AltRoute as AltRouteIcon,
+  Route as RouteIcon,
   Assessment as AssessmentIcon,
   Palette as PaletteIcon,
   Extension as ExtensionIcon,
@@ -50,7 +50,7 @@ function getIconByType(nodeType: string) {
     case 'location':
       return PlaceIcon;
     case 'route':
-      return AltRouteIcon;
+      return RouteIcon;
     case 'spreadsheet':
       return AssessmentIcon;
     case 'styler':
