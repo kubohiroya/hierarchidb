@@ -239,6 +239,14 @@ type ShapeBuildTestAPI = {
     processingConfig: ShapeProcessingConfig;
     selectedArrayByCountries: SelectedArrayByCountries;
   }): Promise<void>;
+  startBuildSession(payload: {
+    nodeId: NodeId;
+    buildConfig: ShapeBuildConfig;
+    processingConfig: ShapeProcessingConfig;
+    downloadTaskPayloads: FetchTaskPayload[];
+    buildContinuationPolicy?: BuildContinuationPolicy;
+  }): Promise<NodeId>;
+  /** @deprecated Use startBuildSession. */
   startBatchProcess(payload: {
     nodeId: NodeId;
     buildConfig: ShapeBuildConfig;
@@ -481,7 +489,7 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         }),
       );
 
-      await batch.startBatchProcess({
+      await batch.startBuildSession({
         nodeId,
         buildConfig: buildConfigForBatch,
         processingConfig,

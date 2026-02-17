@@ -80,6 +80,14 @@ type ShapeDraftSeedPayload = {
 
 type ShapeBuildTestAPI = {
   seedDraftNode(payload: ShapeDraftSeedPayload): Promise<void>;
+  startBuildSession(payload: {
+    nodeId: NodeId;
+    buildConfig: ShapeBuildConfig;
+    processingConfig: ShapeProcessingConfig;
+    downloadTaskPayloads: FetchTaskPayload[];
+    buildContinuationPolicy?: BuildContinuationPolicy;
+  }): Promise<NodeId>;
+  /** @deprecated Use startBuildSession. */
   startBatchProcess(payload: {
     nodeId: NodeId;
     buildConfig: ShapeBuildConfig;
@@ -433,7 +441,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
   };
 
   const buildApi: ShapeBuildTestAPI = {
-    seedDraftNode: async (payload) => {
+  seedDraftNode: async (payload) => {
       const coreDB = await CoreDB.getSingleton();
       const rootId = await ensureRootNode(coreDB);
       const now = Date.now();
@@ -457,15 +465,25 @@ async function main(endpoint?: Endpoint): Promise<void> {
         version: (existing?.version ?? 0) + 1,
         lastTouchedAt: now,
       });
-    },
-    startBatchProcess: async (payload) =>
-      shapeBuildAPI.startBatchProcess(
-        payload.nodeId,
-        payload.buildConfig,
-        payload.processingConfig,
-        payload.downloadTaskPayloads,
-        payload.buildContinuationPolicy,
-      ),
+  },
+  startBuildSession: async (payload) => shapeBuildAPI.startBuildSession(
+    payload.nodeId,
+    payload.buildConfig,
+    payload.processingConfig,
+    payload.downloadTaskPayloads,
+    payload.buildContinuationPolicy,
+  ),
+  /** @deprecated Use startBuildSession. */
+  startBatchProcess: async (payload) => {
+    const startBuildSession = shapeBuildAPI.startBuildSession ?? shapeBuildAPI.startBatchProcess;
+    return startBuildSession(
+      payload.nodeId,
+      payload.buildConfig,
+      payload.processingConfig,
+      payload.downloadTaskPayloads,
+      payload.buildContinuationPolicy,
+    );
+  },
     subscribeToProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToProgress(nodeId, callback)),
     subscribeToTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToTasks(nodeId, callback)),
     getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
