@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { type BuildSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { useBatchSessionMutation, usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
+import { type BuildSessionStatus, type ProgressPhase, type BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import { useBuildSessionMutation, usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
 export interface RouteBatchProgressResult {
-  snapshot: UnifiedProgressInfo | null;
+  snapshot: BuildUnifiedProgressInfo | null;
   ready: boolean;
-  progress: UnifiedProgressInfo | null;
+  progress: BuildUnifiedProgressInfo | null;
   status: BuildSessionStatus | null;
   isPaused: boolean;
   isMutating: boolean;
@@ -17,8 +17,10 @@ export interface RouteBatchProgressResult {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
 }
+/** Preferred alias for RouteBatchProgressResult. */
+export type RouteBuildProgressResult = RouteBatchProgressResult;
 
-export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): RouteBatchProgressResult {
+export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): RouteBuildProgressResult {
   const [status, setStatus] = useState<BuildSessionStatus | null>(null);
   const {
     isMutating,
@@ -26,12 +28,12 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
     pauseSession,
     resumeSession,
     clearMutationError,
-  } = useBatchSessionMutation(ROUTE_NODE_TYPE, nodeId);
+  } = useBuildSessionMutation(ROUTE_NODE_TYPE, nodeId);
 
   const {
     progress,
     status: derivedStatus,
-  } = usePluginBatchProgress<UnifiedProgressInfo, BuildSessionStatus>(
+  } = usePluginBuildProgress<BuildUnifiedProgressInfo, BuildSessionStatus>(
     ROUTE_NODE_TYPE,
     nodeId,
     {
@@ -46,7 +48,7 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
     setStatus(derivedStatus);
   }, [derivedStatus]);
 
-  const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
+  const [snapshot, setSnapshot] = useState<BuildUnifiedProgressInfo | null>(null);
   useEffect(() => {
     if (!nodeId) {
       setSnapshot(null);
@@ -97,7 +99,10 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
   };
 }
 
-function toBuildSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BuildSessionStatus {
+/** @deprecated Use useRouteBuildProgress. */
+export const useRouteBatchProgress = useRouteBuildProgress;
+
+function toBuildSessionStatus(nodeId: NodeId, info: BuildUnifiedProgressInfo): BuildSessionStatus {
   const phase = info.phase as ProgressPhase | undefined;
   return {
     nodeId,

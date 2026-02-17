@@ -20,7 +20,7 @@ import {
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import type {
   RouteBuildError,
@@ -142,7 +142,7 @@ export const useRoutePreviewStep = ({
 }) => {
   const { t, locale } = useTranslation();
   const previewNodeId = nodeId;
-  const workerBridgeRef = useRef(getWorkerBridge());
+  const workerBridgeRef = useRef(getBuildWorkerBridge());
   const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);
   const [lineStringsLoading, setLineStringsLoading] = useState(false);
   const [lineStringsError, setLineStringsError] = useState<string | null>(null);

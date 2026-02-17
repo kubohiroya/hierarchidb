@@ -59,8 +59,6 @@ const COMLINK_NOISE_TYPES = new Set([
   'HANDLER',
 ]);
 
-const ENABLE_SHARED_WORKER = import.meta.env.VITE_HDB_ENABLE_SHARED_WORKER === '1';
-
 function resolveSharedWorkerUrl(): URL {
   if (typeof sharedWorkerScriptUrl === 'string') {
     if (typeof window !== 'undefined') {
@@ -81,9 +79,6 @@ function resolveSharedWorkerUrl(): URL {
 }
 
 const ensureSharedWorkerReady = (): void => {
-  if (!ENABLE_SHARED_WORKER) {
-    throw new Error('[client:initWorker] SharedWorker mode is disabled by VITE_HDB_ENABLE_SHARED_WORKER.');
-  }
   if (typeof SharedWorker !== 'function') {
     throw new Error('[client:initWorker] SharedWorker is not available in this browser/runtime.');
   }
@@ -259,7 +254,7 @@ export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
 }
 
 export function getRawWorkerInstance(): Worker | MessagePort | null {
-  return rawSharedWorkerPort ?? rawWorkerInstance;
+  return rawSharedWorkerPort;
 }
 export function isWorkerInitCompleted(): boolean {
   return workerInitCompleted;

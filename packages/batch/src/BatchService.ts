@@ -7,9 +7,9 @@ export interface MapChunksOptions {
 type Awaitable<T> = T | Promise<T>;
 
 /**
- * BatchService offers lightweight parallel map semantics with backpressure.
+ * BuildService offers lightweight parallel map semantics with backpressure.
  */
-export class BatchService {
+export class BuildService {
   async mapChunks<I, O>(
     source: Iterable<I> | AsyncIterable<I>,
     fn: (item: I, index: number, signal: AbortSignal) => Awaitable<O>,
@@ -50,6 +50,9 @@ export class BatchService {
     return results;
   }
 }
+
+/** @deprecated Use BuildService. */
+export { BuildService as BatchService };
 
 function toAsyncIterator<T>(input: Iterable<T> | AsyncIterable<T>): AsyncIterator<T> {
   if (isAsyncIterable<T>(input)) {
@@ -96,9 +99,9 @@ function inferTotalLength(input: Iterable<unknown> | AsyncIterable<unknown>): nu
 
 function abortError(): Error {
   if (typeof DOMException === 'function') {
-    return new DOMException('Batch execution aborted', 'AbortError');
+    return new DOMException('Build execution aborted', 'AbortError');
   }
-  const error = new Error('Batch execution aborted');
+  const error = new Error('Build execution aborted');
   (error as Error & { name: string }).name = 'AbortError';
   return error;
 }

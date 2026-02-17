@@ -280,14 +280,14 @@ class ChainCompiler {
       execute: async (data) => {
         const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
         await modulePaths.importPluginWorker('resolver');
-        const { getWorkerBridge } = await import('@hierarchidb/plugin-base');
-        const bridge = getWorkerBridge();
+        const { getBuildWorkerBridge } = await import('@hierarchidb/ui-worker-client');
+        const bridge = getBuildWorkerBridge();
         await bridge.initialize();
 
         const results = await Promise.all(
           chain.resolvers.map((resolver) =>
-            bridge.startBatchSession('resolver', resolver.resolverId).then(() =>
-              bridge.getBatchSessionStatus('resolver', resolver.resolverId)
+            bridge.startBuildSession('resolver', resolver.resolverId).then(() =>
+              bridge.getBuildSessionStatus('resolver', resolver.resolverId)
             )
           )
         );

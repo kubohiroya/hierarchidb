@@ -1,11 +1,11 @@
 import type { HeapPressureEvent } from '@hierarchidb/memory';
-import type { WorkerBridge } from '@hierarchidb/ui-worker-client';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useEffect, useState } from 'react';
 
 export type UseWorkerHeapPressureOptions = {
   enabled?: boolean;
-  workerBridge?: WorkerBridge | null;
+  workerBridge?: BuildWorkerBridge | null;
 };
 
 export const useWorkerHeapPressure = (
@@ -16,7 +16,7 @@ export const useWorkerHeapPressure = (
 
   useEffect(() => {
     if (!enabled) return;
-    const bridge = workerBridge ?? getWorkerBridge();
+    const bridge = workerBridge ?? getBuildWorkerBridge();
     let unsubscribe: (() => void) | null = null;
     let isActive = true;
 

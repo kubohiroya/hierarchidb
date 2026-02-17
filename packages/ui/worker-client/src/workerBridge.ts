@@ -17,13 +17,14 @@ type WorkerApi = WorkerAPI<TreeNodeData>;
 
 export interface WorkerBridge {
   initialize(): Promise<void>;
-  startBatchSession(
+  startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BuildSessionStatus>;
-  startBuildSession(
+  /** @deprecated Use startBuildSession. */
+  startBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
@@ -35,30 +36,36 @@ export interface WorkerBridge {
     downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BuildSessionStatus>;
-  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
-  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /** @deprecated Use getBuildSessionStatus. */
+  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
+  /** @deprecated Use pauseBuildSession. */
+  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  resumeBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<void>;
+  /** @deprecated Use cancelQueuedBuildSession. */
+  cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   resumeBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
-  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
+  /** @deprecated Use resumeBuildSession. */
+  resumeBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<void>;
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
-  subscribeBatchTasks(
+  /** @deprecated Use getBuildTasks. */
+  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
+  subscribeBuildTasks(
     nodeType: NodeType,
     nodeId: NodeId,
     cb: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void>;
-  subscribeBuildTasks(
+  /** @deprecated Use subscribeBuildTasks. */
+  subscribeBatchTasks(
     nodeType: NodeType,
     nodeId: NodeId,
     cb: (event: BuildTaskUpdateEvent) => void
@@ -86,18 +93,31 @@ export interface WorkerBridge {
   getRouteQueryAPI(): ReturnType<WorkerApi['getRouteQueryAPI']>;
   getRouteMutationAPI(): ReturnType<WorkerApi['getRouteMutationAPI']>;
   getTreeNodeUpdaterAPI(): ReturnType<WorkerApi['getTreeNodeUpdaterAPI']>;
-  subscribeBatchProgress(
+  subscribeBuildProgress(
     nodeType: NodeType,
     nodeId: NodeId,
     cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
-  subscribeBuildProgress(
+  /** @deprecated Use subscribeBuildProgress. */
+  subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
     cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
 }
+type DeprecatedBatchWorkerBridgeMethods =
+  | 'startBatchSession'
+  | 'getBatchSessionStatus'
+  | 'pauseBatchSession'
+  | 'cancelQueuedBatchSession'
+  | 'resumeBatchSession'
+  | 'getBatchTasks'
+  | 'subscribeBatchTasks'
+  | 'subscribeBatchProgress';
+
+/** Canonical WorkerBridge surface (deprecated Batch aliases excluded). */
+export type BuildWorkerBridge = Omit<WorkerBridge, DeprecatedBatchWorkerBridgeMethods>;
 
 type WorkerClientRefLike = {
   client: Remote<WorkerApi> | null;
@@ -142,15 +162,6 @@ class WorkerBridgeImpl implements WorkerBridge {
     }
   }
 
-  async startBatchSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BuildSessionStatus> {
-    return this.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
-  }
-
   async startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -159,6 +170,15 @@ class WorkerBridgeImpl implements WorkerBridge {
   ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+  }
+
+  async startBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
+    buildContinuationPolicy?: BuildContinuationPolicy
+  ): Promise<BuildSessionStatus> {
+    return this.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
   }
 
   async startOrResumeBuildSession(
@@ -388,11 +408,16 @@ class WorkerBridgeImpl implements WorkerBridge {
 
 let bridgeInstance: WorkerBridge | null = null;
 
+/** @deprecated Use getBuildWorkerBridge. */
 export function getWorkerBridge(): WorkerBridge {
   if (!bridgeInstance) {
     bridgeInstance = new WorkerBridgeImpl();
   }
   return bridgeInstance;
+}
+
+export function getBuildWorkerBridge(): BuildWorkerBridge {
+  return getWorkerBridge();
 }
 
 /**

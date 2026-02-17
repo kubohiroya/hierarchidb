@@ -232,7 +232,7 @@ type ShapePipelineTestAPI = {
   getPipelineState(nodeId: NodeId): Promise<PipelineState>;
 };
 
-type ShapeBatchTestAPI = {
+type ShapeBuildTestAPI = {
   seedDraftNode(payload: {
     nodeId: NodeId;
     buildConfig: ShapeBuildConfig;
@@ -257,7 +257,8 @@ type WorkerTestAPI = {
   getShapeMutationAPI(): Promise<ShapeMutationAPI>;
   getShapeEphemeralAdminAPI(): Promise<ShapeEphemeralAdminAPI>;
   getShapePipelineTestAPI(): Promise<ShapePipelineTestAPI>;
-  getShapeBatchTestAPI(): Promise<ShapeBatchTestAPI>;
+  getShapeBuildTestAPI(): Promise<ShapeBuildTestAPI>;
+  getShapeBatchTestAPI(): Promise<ShapeBuildTestAPI>;
 };
 
 type WorkerSetup = {
@@ -445,7 +446,7 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
     try {
       const mutation = await setup.client.getShapeMutationAPI();
       const admin = await setup.client.getShapeEphemeralAdminAPI();
-      const batch = await setup.client.getShapeBatchTestAPI();
+      const batch = await setup.client.getShapeBuildTestAPI();
 
       await mutation.deleteBuildSession(nodeId);
       await mutation.deleteBuildTasks(nodeId);

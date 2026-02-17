@@ -30,15 +30,19 @@ vi.mock('@hierarchidb/ui-dialog', () => ({
   }),
 }));
 
-vi.mock('@hierarchidb/ui-worker-client', () => ({
-  getWorkerBridge: () => ({
+vi.mock('@hierarchidb/ui-worker-client', () => {
+  const getBridge = () => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     getTreeNodeUpdaterAPI: vi.fn().mockResolvedValue({
       getTreeNode: vi.fn().mockResolvedValue({ draftData: {} }),
       updateTreeNode: vi.fn().mockResolvedValue(undefined),
     }),
-  }),
-}));
+  });
+  return {
+    getBuildWorkerBridge: () => getBridge(),
+    getWorkerBridge: () => getBridge(),
+  };
+});
 
 vi.mock('comlink', () => ({
   wrap: vi.fn(() => mockWorkerApi),

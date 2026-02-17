@@ -5,36 +5,33 @@ import type {
   BuildSessionStatus,
   IBuildSessionManager,
 } from '@hierarchidb/batch-api';
-import { isBatchControlAPIV2Enabled } from '@hierarchidb/batch-api';
-import type { AbstractBatchSession } from '../session/AbstractBatchSession.js';
+import { isBuildControlAPIV2Enabled } from '@hierarchidb/batch-api';
+import type { AbstractBuildSession } from '../session/AbstractBuildSession.js';
 
 /**
- * Base implementation for plugin batch session managers.
+ * Base implementation for plugin build session managers.
  * It tracks in-memory sessions and forwards progress callbacks.
  */
-export abstract class BaseBatchSessionManager implements IBuildSessionManager {
-  protected sessions = new Map<NodeId, AbstractBatchSession>();
+export abstract class BaseBuildSessionManager implements IBuildSessionManager {
+  protected sessions = new Map<NodeId, AbstractBuildSession>();
   protected progressCallbacks = new Map<NodeId, Set<BuildProgressCallback>>();
   private sessionProgressTeardown = new Map<NodeId, () => void>();
   private lastPhaseBySession = new Map<NodeId, BuildProgressEvent['phase']>();
 
-  abstract startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus>;
-  async startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus> {
-    return this.startBatchSession(nodeId);
+  abstract startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
+  /** @deprecated Use startBuildSession. */
+  async startBatchSession(nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.startBuildSession(nodeId);
   }
 
-  protected async onSessionRegistered(_session: AbstractBatchSession): Promise<void> {}
-  protected async onSessionProgress(_session: AbstractBatchSession, _event: BuildProgressEvent): Promise<void> {}
-  protected async onSessionStatusChange(_session: AbstractBatchSession): Promise<void> {}
+  protected async onSessionRegistered(_session: AbstractBuildSession): Promise<void> {}
+  protected async onSessionProgress(_session: AbstractBuildSession, _event: BuildProgressEvent): Promise<void> {}
+  protected async onSessionStatusChange(_session: AbstractBuildSession): Promise<void> {}
   protected cleanupSessionTracking(nodeId: NodeId): void {
     this.lastPhaseBySession.delete(nodeId);
   }
 
   async pauseBuildSession(nodeId: NodeId): Promise<void> {
-    await this.pauseBatchSession(nodeId);
-  }
-
-  async pauseBatchSession(nodeId: NodeId): Promise<void> {
     const session = this.sessions.get(nodeId);
     if (!session) {
       throw new Error(`Session ${nodeId} not found`);
@@ -42,12 +39,12 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
     await session.pause();
     await this.onSessionStatusChange(session);
   }
-
-  async resumeBuildSession(nodeId: NodeId): Promise<void> {
-    await this.resumeBatchSession(nodeId);
+  /** @deprecated Use pauseBuildSession. */
+  async pauseBatchSession(nodeId: NodeId): Promise<void> {
+    await this.pauseBuildSession(nodeId);
   }
 
-  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+  async resumeBuildSession(nodeId: NodeId): Promise<void> {
     const session = this.sessions.get(nodeId);
     if (!session) {
       throw new Error(`Session ${nodeId} not found`);
@@ -55,12 +52,12 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
     await session.resume();
     await this.onSessionStatusChange(session);
   }
-
-  async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
-    return this.getBatchSessionStatus(nodeId);
+  /** @deprecated Use resumeBuildSession. */
+  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+    await this.resumeBuildSession(nodeId);
   }
 
-  async getBatchSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
+  async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const session = this.sessions.get(nodeId);
     if (!session) {
       throw new Error(`Session ${nodeId} not found`);
@@ -79,12 +76,12 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
       error: state.error,
     };
   }
-
-  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
-    return this.onBatchProgress(nodeId, callback);
+  /** @deprecated Use getBuildSessionStatus. */
+  async getBatchSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.getBuildSessionStatus(nodeId);
   }
 
-  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+  onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     let callbacks = this.progressCallbacks.get(nodeId);
     if (!callbacks) {
       callbacks = new Set();
@@ -101,6 +98,10 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
       }
     };
   }
+  /** @deprecated Use onBuildProgress. */
+  onBatchProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
+    return this.onBuildProgress(nodeId, callback);
+  }
 
   protected emitProgress(nodeId: NodeId, event: BuildProgressEvent): void {
     const callbacks = this.progressCallbacks.get(nodeId);
@@ -114,7 +115,7 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
     }
   }
 
-  protected registerSession(session: AbstractBatchSession): void {
+  protected registerSession(session: AbstractBuildSession): void {
     const nodeId = session.getState().nodeId as NodeId;
     this.sessions.set(nodeId, session);
     void this.onSessionRegistered(session);
@@ -125,8 +126,8 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
       this.sessionProgressTeardown.delete(nodeId);
     }
 
-    const shouldEmit = isBatchControlAPIV2Enabled();
-    const unsubscribe = session.addBatchProgressListener((event: BuildProgressEvent) => {
+    const shouldEmit = isBuildControlAPIV2Enabled();
+    const unsubscribe = session.addBuildProgressListener((event: BuildProgressEvent) => {
       if (shouldEmit) {
         this.emitProgress(nodeId, event);
       }
@@ -140,3 +141,6 @@ export abstract class BaseBatchSessionManager implements IBuildSessionManager {
     this.sessionProgressTeardown.set(nodeId, unsubscribe);
   }
 }
+
+/** @deprecated Use BaseBuildSessionManager. */
+export { BaseBuildSessionManager as BaseBatchSessionManager };

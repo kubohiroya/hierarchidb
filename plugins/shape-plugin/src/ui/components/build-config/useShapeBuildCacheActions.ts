@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BuildSessionStatus, TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
@@ -115,7 +115,7 @@ type Args = {
 };
 
 export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: Args) => {
-  const bridgeRef = useMemo(() => getWorkerBridge(), []);
+  const bridgeRef = useMemo(() => getBuildWorkerBridge(), []);
   const [countsLoading, setCountsLoading] = useState(false);
   const [counts, setCounts] = useState<CacheCounts>({
     fetchApi: 0,

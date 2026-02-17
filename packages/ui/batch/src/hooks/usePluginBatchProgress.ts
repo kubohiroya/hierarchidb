@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
 import type { NodeType } from '@hierarchidb/core-types';
 import type { BuildSessionStatus, BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { useBatchProgressState, type UseBatchProgressStateOptions } from './useBatchProgressState.js';
+import { useBuildProgressState, type UseBuildProgressStateOptions } from './useBatchProgressState.js';
 
-export type UsePluginBatchProgressOptions<TProgress, TStatus> = UseBatchProgressStateOptions & {
+export type UsePluginBuildProgressOptions<TProgress, TStatus> = UseBuildProgressStateOptions & {
   mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null, nodeId?: string) => TProgress | null;
   mapUnifiedToStatus?: (info: BuildUnifiedProgressInfo | null) => TStatus | null;
 };
+/** @deprecated Use UsePluginBuildProgressOptions. */
+export type UsePluginBatchProgressOptions<TProgress, TStatus> = UsePluginBuildProgressOptions<TProgress, TStatus>;
 
-export interface PluginBatchProgressState<TProgress, TStatus> {
+export interface PluginBuildProgressState<TProgress, TStatus> {
   progress: TProgress | null;
   status: TStatus | null;
   unifiedProgress: BuildUnifiedProgressInfo | null;
@@ -16,19 +18,21 @@ export interface PluginBatchProgressState<TProgress, TStatus> {
   subscribe: () => void;
   unsubscribe: () => void;
 }
+/** @deprecated Use PluginBuildProgressState. */
+export type PluginBatchProgressState<TProgress, TStatus> = PluginBuildProgressState<TProgress, TStatus>;
 
-export const usePluginBatchProgress = <TProgress, TStatus = BuildSessionStatus>(
+export const usePluginBuildProgress = <TProgress, TStatus = BuildSessionStatus>(
   nodeType: NodeType,
   nodeId: string | null,
-  options: UsePluginBatchProgressOptions<TProgress, TStatus>,
-): PluginBatchProgressState<TProgress, TStatus> => {
+  options: UsePluginBuildProgressOptions<TProgress, TStatus>,
+): PluginBuildProgressState<TProgress, TStatus> => {
   const { mapUnifiedToProgress, mapUnifiedToStatus, ...stateOptions } = options;
   const {
     progress: unifiedProgress,
     error,
     subscribe,
     unsubscribe,
-  } = useBatchProgressState(nodeType, nodeId, stateOptions);
+  } = useBuildProgressState(nodeType, nodeId, stateOptions);
 
   const progress = useMemo(
     () => mapUnifiedToProgress(unifiedProgress, nodeId ?? undefined),
@@ -49,3 +53,6 @@ export const usePluginBatchProgress = <TProgress, TStatus = BuildSessionStatus>(
     unsubscribe,
   };
 };
+
+/** @deprecated Use usePluginBuildProgress. */
+export const usePluginBatchProgress = usePluginBuildProgress;

@@ -27,7 +27,7 @@ import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { isTaskPhaseDisplay, isTaskSkipped } from '../../../common/utils/taskMessages.ts';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { loadTreeConsoleSettings } from '@hierarchidb/util';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
@@ -1086,7 +1086,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   ), [buildStatus, displayTasks.length, buildSessionTransition.active]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef(getBuildWorkerBridge());
   const workerClientHook = useMemo(() => {
     try {
       return getWorkerClientHook<WorkerClientRef | null>();
@@ -2084,18 +2084,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setIsPausePending(true);
     try {
       await bridgeRef.current.initialize();
-      const bridge = bridgeRef.current as {
-        cancelQueuedBuildSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
-        cancelQueuedBatchSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
-      };
-      const cancelQueued = typeof bridge.cancelQueuedBuildSession === 'function'
-        ? bridge.cancelQueuedBuildSession.bind(bridge)
-        : bridge.cancelQueuedBatchSession?.bind(bridge);
-      if (!cancelQueued) {
-        throw new Error('cancelQueued session API is not available');
-      }
       await runWithTimeout(
-        cancelQueued(SHAPE_NODE_TYPE, activeNodeId, reason),
+        bridgeRef.current.cancelQueuedBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason),
         PAUSE_COMMAND_TIMEOUT_MS,
         `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
       );

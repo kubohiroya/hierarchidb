@@ -299,7 +299,7 @@ export class ShapeEntityHandler {
 ```typescript
 // packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeDraft.ts
 
-// NOTE: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead.
+// NOTE: `useShapeAPI` has been removed. Use `getBuildWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and build-control APIs instead.
 
 export function useShapeDraft(
   nodeId: NodeId | null,

@@ -147,7 +147,7 @@
     "notConfigured": "Not configured",
     "missing": "Select Route by country before building.",
     "crashHint": "Previous build did not finish. Consider cleaning data before restarting.",
-    "start": "When ready, click the Build button below to start the batch session.",
+    "start": "When ready, click the Build button below to start the build session.",
     "title": "Build routes",
     "panelDescription": "Monitor and control route build progress.",
     "started": "Route vector tile build started (session {{sessionId}})",

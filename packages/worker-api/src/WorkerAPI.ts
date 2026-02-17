@@ -194,5 +194,15 @@ export interface WorkerAPI<T> {
   setCorsProxyBaseURL(url: string): Promise<void>;
 }
 
-/** Preferred alias for WorkerAPI. */
-export type BuildWorkerAPI<T> = WorkerAPI<T>;
+type DeprecatedBatchWorkerAPIMethods =
+  | 'startBatchSession'
+  | 'getBatchSessionStatus'
+  | 'pauseBatchSession'
+  | 'cancelQueuedBatchSession'
+  | 'resumeBatchSession'
+  | 'getBatchTasks'
+  | 'subscribeBatchTasks'
+  | 'subscribeBatchProgress';
+
+/** Canonical Worker API surface (deprecated Batch aliases excluded). */
+export type BuildWorkerAPI<T> = Omit<WorkerAPI<T>, DeprecatedBatchWorkerAPIMethods>;

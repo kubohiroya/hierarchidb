@@ -20,7 +20,7 @@ import {
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '../../../state/mapSearch.atoms.js';
@@ -139,7 +139,7 @@ export const useShapeTableData = (
     loading: false,
   });
 
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef(getBuildWorkerBridge());
 
   useEffect(() => {
     if (!nodeId) return;
@@ -581,7 +581,7 @@ export const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef(getBuildWorkerBridge());
   const shapeNodeIds = useMemo(
     () => Array.from(new Set(
       mapLayerInfo

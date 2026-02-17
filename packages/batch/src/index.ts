@@ -1,10 +1,9 @@
-export * from './BatchService.js';
+export * from './BuildService.js';
 export * from './lane/LaneSemaphoreRegistry.js';
-export * from './manager/BaseBatchSessionManager.js';
-export * from './session/AbstractBatchSession.js';
-export * from './manager/UnifiedBatchManagerBase.js';
-export * from './progress/useBatchProgress.js';
-export { useBatchProgress as useBuildProgress } from './progress/useBatchProgress.js';
+export * from './manager/BaseBuildSessionManager.js';
+export * from './session/AbstractBuildSession.js';
+export * from './manager/UnifiedBuildManagerBase.js';
+export * from './progress/useBuildProgress.js';
 export { useBuildSessionTiming } from './progress/useBuildSessionTiming.js';
 export type {
   BuildSessionTimingRecord,

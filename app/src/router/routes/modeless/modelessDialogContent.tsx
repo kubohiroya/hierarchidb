@@ -21,7 +21,6 @@ import {
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import {
   Alert,

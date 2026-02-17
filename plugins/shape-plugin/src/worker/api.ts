@@ -1,6 +1,6 @@
 /**
  * Worker API implementation for Shape plugin
- * Exposes batch-oriented operations for runtime worker adapters
+ * Exposes build-oriented operations for runtime worker adapters
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
@@ -13,7 +13,7 @@ import type {
   ShapeRuntimeBuildConfig,
 } from '../common/types/index.js';
 import {
-  type BatchSession,
+  type BuildSession,
   type BuildTask,
   type CountryMetadata,
   type DataSourceConfig,
@@ -37,7 +37,13 @@ import {
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { type BatchProgressEvent, type BatchProgressPayload, type BatchTaskSummary, type BatchTaskUpdateEvent, type ProgressPhase } from '@hierarchidb/batch-api';
+import {
+  type BuildProgressEvent,
+  type BuildProgressPayload,
+  type BuildTaskSummary,
+  type BuildTaskUpdateEvent,
+  type ProgressPhase,
+} from '@hierarchidb/batch-api';
 import {
   countSelectedAdminPairs,
   generateDownloadTaskPayloads,
@@ -413,10 +419,10 @@ const applyConfigInvalidation = async (
   });
 };
 
-const mapBuildSessionRecordToBatchSession = (
+const mapBuildSessionRecordToBuildSession = (
   record: BuildSessionRecord,
   config: BuildSessionConfig,
-): BatchSession => ({
+): BuildSession => ({
   nodeId: record.nodeId,
   draftId: record.draftId,
   status: record.status,
@@ -432,7 +438,7 @@ const mapBuildSessionRecordToBatchSession = (
   resourceUsage: record.resourceUsage,
 });
 
-const resolveBatchSessionConfig = async (nodeId: NodeId): Promise<BuildSessionConfig> => {
+const resolveBuildSessionConfig = async (nodeId: NodeId): Promise<BuildSessionConfig> => {
   const handler = getShapeEntityHandler();
   const entity = await handler.getEntity(nodeId);
   const mergedBuildConfig = mergeBuildConfig(
@@ -468,10 +474,10 @@ const countTaskQueueStatuses = async (
   return { total, running, completed, failed, recycled };
 };
 
-const resolveBatchSessionStatusFromCounts = (
+const resolveBuildSessionStatusFromCounts = (
   nodeId: NodeId,
   counts: TaskQueueStatusCounts,
-): BatchSession['status'] => {
+): BuildSession['status'] => {
   const effectiveTotal = Math.max(0, counts.total - counts.recycled);
   if (getPauseState(nodeId).paused) return 'paused';
   if (counts.running > 0) return 'running';
@@ -482,7 +488,7 @@ const resolveBatchSessionStatusFromCounts = (
   return 'idle';
 };
 
-const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BatchSession['progress'] => {
+const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BuildSession['progress'] => {
   const effectiveTotal = Math.max(0, counts.total - counts.recycled);
   const doneCount = Math.min(effectiveTotal, counts.completed + counts.failed);
   return {
@@ -494,12 +500,12 @@ const buildProgressFromCounts = (counts: TaskQueueStatusCounts): BatchSession['p
   };
 };
 
-const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | undefined> => {
-  const config = await resolveBatchSessionConfig(nodeId);
+const getBuildSessionInternal = async (nodeId: NodeId): Promise<BuildSession | undefined> => {
+  const config = await resolveBuildSessionConfig(nodeId);
   const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
   const buildSession = sessionRecord ? toBuildSessionRecord(sessionRecord) : null;
   if (buildSession) {
-    return mapBuildSessionRecordToBatchSession(buildSession, config);
+    return mapBuildSessionRecordToBuildSession(buildSession, config);
   }
 
   const taskQueue = new VtTaskQueueDb();
@@ -511,7 +517,7 @@ const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | u
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
     .first();
   const now = Date.now();
-  const status = resolveBatchSessionStatusFromCounts(nodeId, counts);
+  const status = resolveBuildSessionStatusFromCounts(nodeId, counts);
   const progress = buildProgressFromCounts(counts);
   const startedAt = typeof firstTask?.createdAt === 'number' ? firstTask.createdAt : now;
 
@@ -534,12 +540,12 @@ const getBatchSessionInternal = async (nodeId: NodeId): Promise<BatchSession | u
 
 interface ProgressSubscription {
   unsubscribe?: () => void;
-  callback?: (event: BatchProgressEvent) => void;
+  callback?: (event: BuildProgressEvent) => void;
 }
 
 interface TaskSubscription {
   unsubscribe?: () => void;
-  callback?: (event: BatchTaskUpdateEvent) => void;
+  callback?: (event: BuildTaskUpdateEvent) => void;
 }
 
 type PauseState = {
@@ -748,7 +754,7 @@ const buildTaskSummaryFields = (
 
 const mapTaskQueueRecordToTaskSummary = (
   task: TaskQueueRecord,
-): ShapeBatchTaskSummary => {
+): ShapeBuildTaskSummary => {
   const base = buildTaskSummaryFields(task);
   return {
     taskId: task.taskId,
@@ -767,7 +773,7 @@ const mapTaskQueueRecordToTaskSummary = (
   };
 };
 
-type ShapeBatchTaskSummary = BatchTaskSummary & {
+type ShapeBuildTaskSummary = BuildTaskSummary & {
   title?: string;
   error?: string;
   errorMessage?: string;
@@ -905,7 +911,7 @@ const buildTaskQueueSummary = async (nodeId: NodeId, tasks: TaskQueueRecord[]) =
 const buildTaskSummarySnapshot = async (
   nodeId: NodeId,
   taskQueue: VtTaskQueueDb,
-): Promise<ShapeBatchTaskSummary[]> => {
+): Promise<ShapeBuildTaskSummary[]> => {
   const tasks = await listTasks(taskQueue, nodeId);
   return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
 };
@@ -914,7 +920,7 @@ const buildProgressPayloadFromTasks = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
   options?: { eventTask?: TaskQueueRecord; source?: 'event' | 'snapshot' },
-): Promise<BatchProgressPayload> => {
+): Promise<BuildProgressPayload> => {
   const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
   const stageStatusMap = buildStageStatusMap(nodeId, tasks);
   const progressTask = options?.eventTask ?? selectLatestTaskBySequence(tasks) ?? undefined;
@@ -1228,7 +1234,7 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId): void => {
 const clearStalePipelineStateIfInactive = async (
   nodeId: NodeId,
   sessionRecord: ShapeBuildSessionRecord | null,
-  source: 'startBatchProcess' | 'resumeBatchSession',
+  source: 'startBatchProcess' | 'resumeBuildSession',
 ): Promise<boolean> => {
   const pipelineKey = String(nodeId);
   if (!activePipelines.has(pipelineKey)) return false;
@@ -1419,7 +1425,7 @@ const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
   )));
 };
 
-const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
+const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BuildProgressEvent['phase'] => {
   if (getPauseState(nodeId).paused) return 'paused';
   const status = summarizeTaskQueueStatus(tasks).status;
   if (status === 'completed' && activePipelines.has(String(nodeId))) {
@@ -1568,7 +1574,7 @@ export const shapeBatchAPI = {
   },
 
   // ===================================
-  // DraftTypes-based Batch Processing
+  // DraftTypes-based Build Processing
   // ===================================
 
   startBatchProcess: async (
@@ -1577,10 +1583,10 @@ export const shapeBatchAPI = {
     processingConfig: ShapeProcessingConfig | undefined,
     downloadTaskPayloads: FetchTaskPayload[],
     buildContinuationPolicy?: BuildContinuationPolicy,
-    progressCallback?: (event: BatchProgressEvent) => void,
+    progressCallback?: (event: BuildProgressEvent) => void,
   ): Promise<NodeId> => {
     if (!buildConfig.dataSourceName) {
-      throw new Error('Data source is required to start batch processing');
+      throw new Error('Data source is required to start build processing');
     }
     let startupNodeId: NodeId = draftId;
     const startupScope = 'startBatchProcess';
@@ -1686,7 +1692,7 @@ export const shapeBatchAPI = {
     );
     const selectedAdminPairCount = selectionSummary.selectedAdminPairCount;
     if (!downloadTaskPayloads.length && selectedAdminPairCount === 0) {
-      throw new Error('Shape batch session requires download task payloads or selection');
+      throw new Error('Shape build session requires download task payloads or selection');
     }
 
     const nodeForSession = draftId;
@@ -2016,7 +2022,7 @@ export const shapeBatchAPI = {
       const payloadProcessingConfig = asRecordOrNull(payload.processingConfig) as Partial<ShapeProcessingConfig> | null;
       const pipelineKey = String(nodeId);
       let sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
-      const resumeScope = 'resumeBatchSession';
+      const resumeScope = 'resumeBuildSession';
       const getResumeErrorMessage = (error: unknown): string => (
         error instanceof Error ? error.message : String(error)
       );
@@ -2066,7 +2072,7 @@ export const shapeBatchAPI = {
         await clearStalePipelineStateIfInactive(
           nodeId,
           sessionRecord,
-          'resumeBatchSession',
+          'resumeBuildSession',
         );
       }
       setPaused(nodeId, false);
@@ -2108,7 +2114,7 @@ export const shapeBatchAPI = {
         );
       }
       if (activePipelines.has(pipelineKey)) {
-        await emitProgressSnapshot(nodeId, 'resumeBatchSession ignored: pipeline already active');
+        await emitProgressSnapshot(nodeId, 'resumeBuildSession ignored: pipeline already active');
         return;
       }
       if (!activePipelines.has(pipelineKey)) {
@@ -2138,7 +2144,7 @@ export const shapeBatchAPI = {
             : normalizedDraftConfig)
           : normalizedPayloadConfig;
         if (!mergedBuildConfig) {
-          throw new Error('[shapeBatchAPI] buildConfig is required to resume batch session');
+          throw new Error('[shapeBatchAPI] buildConfig is required to resume build session');
         }
         const normalizedDraftProcessingConfig = draftProcessingConfig
           ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftProcessingConfig)
@@ -2230,7 +2236,7 @@ export const shapeBatchAPI = {
         setFetchPlannedTotal(nodeId, plannedFetchTotal);
         const resolvedDataSource = requireDataSourceName(
           mergedRuntimeConfig.dataSourceName,
-          'resumeBatchSession',
+          'resumeBuildSession',
         );
         const pipelineRunId = `${nodeId}:${Date.now()}`;
         await executeResumeStep(
@@ -2261,7 +2267,7 @@ export const shapeBatchAPI = {
         startSessionTracking(nodeId);
         activePipelines.add(pipelineKey);
         activePipelineRuns.set(pipelineKey, pipelineRunId);
-        console.warn('[shapeBatchAPI] resumeBatchSession pipeline start', {
+        console.warn('[shapeBatchAPI] resumeBuildSession pipeline start', {
           nodeId,
           runId: pipelineRunId,
         });
@@ -2339,17 +2345,17 @@ export const shapeBatchAPI = {
       }
       return;
     }
-    throw new Error(`[shapeBatchAPI] Unknown batch command: ${command}`);
+    throw new Error(`[shapeBatchAPI] Unknown build command: ${command}`);
   },
 
-  getBuildSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => (
-    getBatchSessionInternal(nodeId)
+  getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
+    getBuildSessionInternal(nodeId)
   ),
-  getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => (
-    getBatchSessionInternal(nodeId)
+  getBatchSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
+    getBuildSessionInternal(nodeId)
   ),
 
-  getBatchTasks: async (nodeId: NodeId): Promise<BatchTaskSummary[]> => {
+  getBuildTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => {
     const taskQueue = new VtTaskQueueDb();
     await ensureTaskQueueSeeded(nodeId, taskQueue);
     const vtTasks = await listTasks(taskQueue, nodeId);
@@ -2358,8 +2364,12 @@ export const shapeBatchAPI = {
     }
     return [];
   },
+  /** @deprecated Use getBuildTasks. */
+  getBatchTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => (
+    shapeBatchAPI.getBuildTasks(nodeId)
+  ),
 
-  getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
+  getBuildProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
     const nodeId = draftId;
@@ -2387,8 +2397,12 @@ export const shapeBatchAPI = {
       percentage: 0,
     };
   },
+  /** @deprecated Use getBuildProgress. */
+  getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => (
+    shapeBatchAPI.getBuildProgress(draftId)
+  ),
 
-  getBatchStatus: async (
+  getBuildStatus: async (
     nodeId: NodeId,
   ): Promise<{
     nodeId: NodeId;
@@ -2417,15 +2431,32 @@ export const shapeBatchAPI = {
       status: 'idle',
     };
   },
+  /** @deprecated Use getBuildStatus. */
+  getBatchStatus: async (
+    nodeId: NodeId,
+  ): Promise<{
+    nodeId: NodeId;
+    draftId?: NodeId;
+    status: string;
+    progress?: number;
+    completedTasks?: number;
+    totalTasks?: number;
+  }> => (
+    shapeBatchAPI.getBuildStatus(nodeId)
+  ),
 
   // ===================================
-  // Batch Session Recovery
+  // Build Session Recovery
   // ===================================
 
-  findPendingBatchSessions: async (nodeId: NodeId): Promise<BatchSession[]> => {
-    console.log(`Finding pending batch sessions for node: ${nodeId}`);
+  findPendingBuildSessions: async (nodeId: NodeId): Promise<BuildSession[]> => {
+    console.log(`Finding pending build sessions for node: ${nodeId}`);
     return [];
   },
+  /** @deprecated Use findPendingBuildSessions. */
+  findPendingBatchSessions: async (nodeId: NodeId): Promise<BuildSession[]> => (
+    shapeBatchAPI.findPendingBuildSessions(nodeId)
+  ),
 
   getBuildSessionStatus: async (
     nodeId: NodeId,
@@ -2514,7 +2545,7 @@ export const shapeBatchAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (nodeId: NodeId, callback: (event: BatchProgressEvent) => void): (() => void) => {
+  subscribeToProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
     const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
@@ -2570,7 +2601,7 @@ export const shapeBatchAPI = {
     };
   },
 
-  subscribeToTasks: (nodeId: NodeId, callback: (event: BatchTaskUpdateEvent) => void): (() => void) => {
+  subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = taskCallbacks.get(key);
     existing?.unsubscribe?.();
@@ -2716,7 +2747,7 @@ export const shapeBatchAPI = {
               : 'idle',
         lastProcessed: lastProcessed || undefined,
         hasErrors: summary.status === 'failed',
-        errorMessages: summary.status === 'failed' ? ['Batch processing failed'] : [],
+        errorMessages: summary.status === 'failed' ? ['Build processing failed'] : [],
         totalFeatures: undefined,
         totalVectorTiles: undefined,
         storageUsed: undefined,
@@ -2735,7 +2766,7 @@ export const shapeBatchAPI = {
         totalVectorTiles: undefined,
         storageUsed: undefined,
         hasErrors: status === 'failed',
-        errorMessages: status === 'failed' ? ['Batch processing failed'] : [],
+        errorMessages: status === 'failed' ? ['Build processing failed'] : [],
       };
     }
 
@@ -2759,3 +2790,6 @@ export const shapeBatchAPI = {
     }
   },
 };
+
+/** Preferred alias for shapeBatchAPI. */
+export const shapeBuildAPI = shapeBatchAPI;

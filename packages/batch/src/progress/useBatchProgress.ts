@@ -34,7 +34,7 @@ const isProgressDebugEnabled = (channel: 'event' | 'skip'): boolean => {
 
 const logProgressEvent = (event: string, payload: Record<string, unknown>): void => {
   if (!isDev) return;
-  console.debug('[BatchProgressTrace]', event, payload);
+  console.debug('[BuildProgressTrace]', event, payload);
 };
 
 const resolveSkippedCount = (info: BuildUnifiedProgressInfo): number => {
@@ -282,3 +282,6 @@ export function useBatchProgress(
 
   return { progress, subscribed, subscribe, unsubscribe } as const;
 }
+
+/** Preferred alias for useBatchProgress. */
+export const useBuildProgress = useBatchProgress;

@@ -27,14 +27,14 @@ vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
   resolveIso3166CsvUrl: vi.fn(() => 'https://example.com/iso.csv'),
 }));
 
-describe('LocationBatchManager country normalization', () => {
+describe('LocationBuildManager country normalization', () => {
   beforeEach(() => {
     strategySearch.mockReset();
   });
 
   it('normalizes country codes using ISO3166 mapping', async () => {
-    const { LocationBatchManager } = await import('../../LocationBatchManager.js');
-    const manager = new LocationBatchManager();
+    const { LocationBuildManager } = await import('../../LocationBatchManager.js');
+    const manager = new LocationBuildManager();
     const nodeId = 'node-1' as NodeId;
     (manager as { countryNameMap: Map<string, string> }).countryNameMap = new Map([
       ['us', 'US'],

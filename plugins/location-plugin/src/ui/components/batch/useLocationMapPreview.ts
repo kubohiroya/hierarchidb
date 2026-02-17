@@ -1,5 +1,5 @@
 import type { LocationNearestPointResponse } from '@hierarchidb/location-api';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { Place } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -167,7 +167,7 @@ export const useLocationMapPreview = (
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
   const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
-  const workerBridgeRef = useRef(getWorkerBridge());
+  const workerBridgeRef = useRef(getBuildWorkerBridge());
 
   const [heatmapIntensity, setHeatmapIntensity] = useState(1.0);
   const [heatmapRadius, setHeatmapRadius] = useState(20);

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
-import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
+import { usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -24,13 +24,13 @@ export interface LocationProgressEvent extends ProgressEvent {
 
 export interface UseLocationProgressState {
   progress: LocationProgressEvent | null;
-  unifiedProgress: UnifiedProgressInfo | null;
+  unifiedProgress: BuildUnifiedProgressInfo | null;
   error: Error | null;
 }
 
 const LOCATION_NODE_TYPE = 'location' as NodeType;
 
-type ExtendedProgressInfo = UnifiedProgressInfo & {
+type ExtendedProgressInfo = BuildUnifiedProgressInfo & {
   phase?: string;
   timestamp?: number;
   message?: string;
@@ -58,7 +58,7 @@ function toProgressEvent(
 }
 
 /**
- * useLocationProgress - Subscribe to Location batch progress events via WorkerBridge.
+ * useLocationProgress - Subscribe to Location build progress events via WorkerBridge.
  */
 export function useLocationProgress(
   nodeId: NodeId,
@@ -72,12 +72,12 @@ export function useLocationProgress(
     error,
     subscribe,
     unsubscribe,
-  } = usePluginBatchProgress<LocationProgressEvent>(
+  } = usePluginBuildProgress<LocationProgressEvent>(
     LOCATION_NODE_TYPE,
     nodeId,
     {
       autoSubscribe,
-      mapUnifiedToProgress: (info: UnifiedProgressInfo | null) =>
+      mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) =>
         toProgressEvent(info as ExtendedProgressInfo | null, nodeId),
     },
   );

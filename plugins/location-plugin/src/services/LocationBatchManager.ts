@@ -25,7 +25,7 @@ import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
-  console.warn('[LocationBatchManager]', message, error);
+  console.warn('[LocationBuildManager]', message, error);
 };
 
 const isRawNominatimLike = (value: unknown): value is RawNominatimLike => {
@@ -44,9 +44,9 @@ const isRawNominatimArray = (value: unknown): value is RawNominatimLike[] => (
 const ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
 /**
- * Location batch task interface
+ * Location build task interface
  */
-interface LocationBatchTask {
+export interface LocationBuildTask {
   taskId: string;
   nodeId: NodeId;
   searchConfig: LocationSearchConfig;
@@ -62,11 +62,13 @@ interface LocationBatchTask {
     totalSaved?: number;
   };
 }
+/** @deprecated Use LocationBuildTask. */
+export type LocationBatchTask = LocationBuildTask;
 
 /**
- * Location batch session status
+ * Location build session status
  */
-interface LocationBatchSession {
+export interface LocationBuildSession {
   nodeId: NodeId;
   config: LocationBatchConfig;
   totalTasks: number;
@@ -77,11 +79,13 @@ interface LocationBatchSession {
   endTime?: number;
   status: 'running' | 'paused' | 'completed' | 'failed';
 }
+/** @deprecated Use LocationBuildSession. */
+export type LocationBatchSession = LocationBuildSession;
 
 /**
- * Location batch progress event
+ * Location build progress event
  */
-export interface LocationBatchProgressEvent {
+export interface LocationBuildProgressEvent {
   nodeId: NodeId;
   taskId?: string;
   stage: 'searching' | 'geocoding' | 'validating' | 'saving' | 'completed';
@@ -94,16 +98,18 @@ export interface LocationBatchProgressEvent {
     locationsSaved?: number;
   };
 }
+/** @deprecated Use LocationBuildProgressEvent. */
+export type LocationBatchProgressEvent = LocationBuildProgressEvent;
 
 type RawNominatimLike = RawNominatimResult;
 
 /**
- * Location batch manager extending Shape's batch session manager
+ * Location build manager extending Shape's build session manager
  */
-export class LocationBatchManager {
-  private locationSessions: Map<NodeId, LocationBatchSession> = new Map();
-  private locationTasks: Map<NodeId, LocationBatchTask[]> = new Map();
-  private progressCallbacks: Map<NodeId, (event: LocationBatchProgressEvent) => void> = new Map();
+export class LocationBuildManager {
+  private locationSessions: Map<NodeId, LocationBuildSession> = new Map();
+  private locationTasks: Map<NodeId, LocationBuildTask[]> = new Map();
+  private progressCallbacks: Map<NodeId, (event: LocationBuildProgressEvent) => void> = new Map();
   private net: FetchNetworkPort | null = null;
   countryNameMap: Map<string, string> | null = null;
 
@@ -123,7 +129,7 @@ export class LocationBatchManager {
   async collectLocationPoints(
     nodeId: NodeId,
     config: LocationBatchConfig,
-    progressCallback?: (event: LocationBatchProgressEvent) => void,
+    progressCallback?: (event: LocationBuildProgressEvent) => void,
   ): Promise<LocationPointProperties[]> {
     const tasks = config.searchConfigs.map((searchConfig, index) => ({
       taskId: `collect-${nodeId}-task-${index}`,
@@ -166,17 +172,17 @@ export class LocationBatchManager {
   }
 
   /**
-   * Start location batch session
+   * Start location build session.
    */
-  async startLocationBatchSession(
+  async startLocationBuildSession(
     nodeId: NodeId,
     config: LocationBatchConfig,
-    progressCallback?: (event: LocationBatchProgressEvent) => void,
+    progressCallback?: (event: LocationBuildProgressEvent) => void,
   ): Promise<NodeId> {
     const totalTasks = config.searchConfigs.length;
 
     // Create batch tasks
-    const tasks: LocationBatchTask[] = config.searchConfigs.map((searchConfig, index) => ({
+    const tasks: LocationBuildTask[] = config.searchConfigs.map((searchConfig, index) => ({
       taskId: `${nodeId}-task-${index}`,
       nodeId,
       searchConfig,
@@ -185,7 +191,7 @@ export class LocationBatchManager {
     }));
 
     // Initialize session
-    const session: LocationBatchSession = {
+    const session: LocationBuildSession = {
       nodeId,
       config,
       totalTasks,
@@ -205,11 +211,22 @@ export class LocationBatchManager {
 
     // Start processing
     this.processLocationBatch(nodeId).catch(error => {
-      console.error('Location batch processing failed:', error);
+      console.error('Location build processing failed:', error);
       this.handleBatchError(nodeId, error);
     });
 
     return nodeId;
+  }
+
+  /**
+   * @deprecated Use startLocationBuildSession.
+   */
+  async startLocationBatchSession(
+    nodeId: NodeId,
+    config: LocationBatchConfig,
+    progressCallback?: (event: LocationBuildProgressEvent) => void,
+  ): Promise<NodeId> {
+    return this.startLocationBuildSession(nodeId, config, progressCallback);
   }
 
   /**
@@ -255,8 +272,8 @@ export class LocationBatchManager {
    * Process individual location task
    */
   private async processLocationTask(
-    task: LocationBatchTask,
-    session: LocationBatchSession,
+    task: LocationBuildTask,
+    session: LocationBuildSession,
   ): Promise<void> {
     try {
       task.status = 'searching';
@@ -905,7 +922,7 @@ export class LocationBatchManager {
   /**
    * Emit location progress event
    */
-  private emitLocationProgress(nodeId: NodeId, event: LocationBatchProgressEvent): void {
+  private emitLocationProgress(nodeId: NodeId, event: LocationBuildProgressEvent): void {
     const callback = this.progressCallbacks.get(nodeId);
     if (callback) {
       callback(event);
@@ -931,16 +948,23 @@ export class LocationBatchManager {
   }
 
   /**
-   * Get session status
+   * Get location build session status.
    */
-  getLocationSessionStatus(nodeId: NodeId): LocationBatchSession | undefined {
+  getLocationBuildSessionStatus(nodeId: NodeId): LocationBuildSession | undefined {
     return this.locationSessions.get(nodeId);
   }
 
   /**
-   * Abort location batch session
+   * @deprecated Use getLocationBuildSessionStatus.
    */
-  async abortLocationSession(nodeId: NodeId): Promise<void> {
+  getLocationSessionStatus(nodeId: NodeId): LocationBuildSession | undefined {
+    return this.getLocationBuildSessionStatus(nodeId);
+  }
+
+  /**
+   * Abort location build session.
+   */
+  async abortLocationBuildSession(nodeId: NodeId): Promise<void> {
     const session = this.locationSessions.get(nodeId);
     if (session) {
       session.status = 'failed';
@@ -952,4 +976,14 @@ export class LocationBatchManager {
     this.locationTasks.delete(nodeId);
     this.progressCallbacks.delete(nodeId);
   }
+
+  /**
+   * @deprecated Use abortLocationBuildSession.
+   */
+  async abortLocationSession(nodeId: NodeId): Promise<void> {
+    await this.abortLocationBuildSession(nodeId);
+  }
 }
+
+/** @deprecated Use LocationBuildManager. */
+export { LocationBuildManager as LocationBatchManager };

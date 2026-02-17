@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 
-export interface BatchSessionMutationState {
+export interface BuildSessionMutationState {
   isMutating: boolean;
   mutationError: string | null;
   pauseSession: () => Promise<boolean>;
@@ -10,19 +10,21 @@ export interface BatchSessionMutationState {
   cancelQueuedSession: (reason?: string) => Promise<boolean>;
   clearMutationError: () => void;
 }
+/** @deprecated Use BuildSessionMutationState. */
+export type BatchSessionMutationState = BuildSessionMutationState;
 
-export const useBatchSessionMutation = (
+export const useBuildSessionMutation = (
   nodeType: NodeType,
   nodeId: NodeId | null,
-): BatchSessionMutationState => {
-  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
+): BuildSessionMutationState => {
+  const bridgeRef = useRef<BuildWorkerBridge>(getBuildWorkerBridge());
   const [isMutating, setIsMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!nodeId) return;
     void bridgeRef.current.initialize().catch((error: unknown) => {
-      console.error('[useBatchSessionMutation] failed to initialize worker bridge', error);
+      console.error('[useBuildSessionMutation] failed to initialize worker bridge', error);
       setMutationError(toErrorMessage(error));
     });
   }, [nodeId]);
@@ -37,7 +39,7 @@ export const useBatchSessionMutation = (
       await operation();
       return true;
     } catch (error: unknown) {
-      console.error('[useBatchSessionMutation] mutation failed', error);
+      console.error('[useBuildSessionMutation] mutation failed', error);
       setMutationError(toErrorMessage(error));
       return false;
     } finally {
@@ -62,17 +64,7 @@ export const useBatchSessionMutation = (
   const cancelQueuedSession = useCallback(async (reason?: string): Promise<boolean> => {
     return runMutation(async () => {
       if (!nodeId) return;
-      const bridge = bridgeRef.current as WorkerBridge & {
-        cancelQueuedBuildSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
-        cancelQueuedBatchSession?: (nodeType: NodeType, nodeId: NodeId, reason?: string) => Promise<void>;
-      };
-      if (typeof bridge.cancelQueuedBuildSession === 'function') {
-        await bridge.cancelQueuedBuildSession(nodeType, nodeId, reason);
-        return;
-      }
-      if (typeof bridge.cancelQueuedBatchSession === 'function') {
-        await bridge.cancelQueuedBatchSession(nodeType, nodeId, reason);
-      }
+      await bridgeRef.current.cancelQueuedBuildSession(nodeType, nodeId, reason);
     });
   }, [nodeId, nodeType, runMutation]);
 
@@ -89,6 +81,9 @@ export const useBatchSessionMutation = (
     clearMutationError,
   };
 };
+
+/** @deprecated Use useBuildSessionMutation. */
+export const useBatchSessionMutation = useBuildSessionMutation;
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
