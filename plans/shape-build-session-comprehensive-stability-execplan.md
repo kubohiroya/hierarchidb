@@ -146,3 +146,4 @@ No external API contract changes are introduced in worker bridge or worker API.
 Revision note (2026-02-13, Codex): Created initial ExecPlan and synchronized it with the first implementation milestone (startup-signal broadening and flush fallback).
 Revision note (2026-02-17, Codex): Updated completion markers and aligned references with runtime-worker build-session docs and terminology SSOT.
 Revision note (2026-02-17, Codex): Removed shape build-step dependency on `session-coordinator` lock/broadcast heuristics for normal start/stop/progress flow.
+Revision note (2026-02-17, Codex): Synced state-transition and terminology documents to enforce canonical `Build*` naming; compatibility aliases remain temporarily for legacy call sites.

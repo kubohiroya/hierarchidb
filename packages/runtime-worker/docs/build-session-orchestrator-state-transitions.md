@@ -295,5 +295,6 @@ Keep naming aligned with section 3 terminology when updating code or docs.
   - `Batch*` names are retained as deprecated compatibility aliases.
   - Build-session state/terminology docs moved to `packages/runtime-worker/docs`.
   - Shape build-step normal control path (start/stop/progress) no longer depends on `session-coordinator` lock/broadcast heuristics.
-- In progress:
-  - Additional internal `Batch*` symbols remain in plugin-private implementations and historical docs.
+- Deployed with known technical debt:
+  - Compatibility aliases are still present in some plugin-private implementations and historical docs for compatibility.
+  - `Build*` naming is required for new work; remove aliases only via a dedicated cleanup pass.
