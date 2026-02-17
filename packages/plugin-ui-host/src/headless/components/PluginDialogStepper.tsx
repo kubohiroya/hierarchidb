@@ -88,7 +88,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
                         {...props}
                         theme={theme}
                         stepIndex={iconIndex}
-                        stepLabel={baseLabel}
+                        stepId={step.id}
                         canNavigate={canNavigate}
                         variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
                         inProgress={showBuildProgress}

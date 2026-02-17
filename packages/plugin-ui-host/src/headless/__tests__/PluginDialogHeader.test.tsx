@@ -2,7 +2,7 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
@@ -212,5 +212,46 @@ describe('PluginDialogHeader', () => {
 
     const disabledStep = screen.getByRole('button', { name: /Step Two/i });
     expect(disabledStep).toBeDisabled();
+  });
+
+  it('resolves mapped icons by step id regardless of localized labels, including build icon', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'data-source', label: 'データソース', component: () => null },
+        { id: 'country-selection', label: '国選択', component: () => null },
+        { id: 'build', label: 'ビルド', component: () => null },
+        { id: 'preview', label: 'プレビュー', component: () => null },
+        { id: 'unmapped-step', label: '未定義', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0, 1, 2, 3, 4],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: false,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Edit Item" />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-1')).getByTestId('CloudDownloadIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-2')).getByTestId('PublicIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-3')).getByTestId('ConstructionIcon')).toBeInTheDocument();
+    expect(within(screen.getByTestId('plugin-dialog-step-icon-4')).getByTestId('VisibilityIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('plugin-dialog-step-icon-5')).toHaveTextContent('5');
   });
 });

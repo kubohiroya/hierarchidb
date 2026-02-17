@@ -2,6 +2,7 @@ import ApprovalIcon from '@mui/icons-material/Approval';
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import CheckIcon from '@mui/icons-material/Check';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import ConstructionIcon from '@mui/icons-material/Construction';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import InfoIcon from '@mui/icons-material/Info';
 import PaletteIcon from '@mui/icons-material/Palette';
@@ -13,36 +14,39 @@ import { Box, CircularProgress, type Theme } from '@mui/material';
 import type { StepIconProps } from '@mui/material/StepIcon';
 import { alpha } from '@mui/material/styles';
 
-const stripStepNumberPrefix = (label: string): string => label.replace(/^\s*\d+\.\s*/, '').trim();
+const normalizeStepId = (stepId: string): string => stepId.trim().toLowerCase();
 
-const normalizeStepLabel = (label: string): string =>
-  stripStepNumberPrefix(label).toLowerCase().replace(/\s+/g, ' ');
-
-const STEP_ICON_BY_LABEL: Record<string, SvgIconComponent> = {
+const STEP_ICON_BY_ID: Record<string, SvgIconComponent> = {
+  'basic-info': InfoIcon,
   info: InfoIcon,
-  'data source': CloudDownloadIcon,
+  'data-source': CloudDownloadIcon,
   preview: VisibilityIcon,
-  'country selection': PublicIcon,
-  'location selection': PublicIcon,
-  'route selection': PublicIcon,
-  config: SettingsIcon,
-  filtering: FilterAltIcon,
-  'mapping keys': BookmarksIcon,
-  'apply target': ApprovalIcon,
-  palette: PaletteIcon,
+  'style-preview': VisibilityIcon,
+  'map-preview': VisibilityIcon,
+  'country-selection': PublicIcon,
+  selection: PublicIcon,
+  'route-config': PublicIcon,
+  processing: SettingsIcon,
+  'processing-configuration': SettingsIcon,
+  'style-filter': FilterAltIcon,
+  'mapping-keys': BookmarksIcon,
+  'target-behavior': ApprovalIcon,
+  'style-scaling': PaletteIcon,
+  build: ConstructionIcon,
+  stage: ConstructionIcon,
 };
 
-const resolveStepIcon = (stepLabel?: string): SvgIconComponent | null => {
-  if (!stepLabel) return null;
-  const normalized = normalizeStepLabel(stepLabel);
-  return STEP_ICON_BY_LABEL[normalized] ?? null;
+const resolveStepIcon = (stepId?: string): SvgIconComponent | null => {
+  if (!stepId) return null;
+  const normalized = normalizeStepId(stepId);
+  return STEP_ICON_BY_ID[normalized] ?? null;
 };
 
 export const StepStatusIcon = (
   props: StepIconProps & {
     variant?: 'validated-disabled';
     stepIndex?: number;
-    stepLabel?: string;
+    stepId?: string;
     canNavigate?: boolean;
     inProgress?: boolean;
     theme: Theme;
@@ -55,11 +59,11 @@ export const StepStatusIcon = (
     icon: iconProp,
     variant,
     stepIndex,
-    stepLabel,
+    stepId,
     canNavigate = true,
     inProgress = false,
   } = props;
-  const MappedStepIcon = resolveStepIcon(stepLabel);
+  const MappedStepIcon = resolveStepIcon(stepId);
   const isValidatedDisabled = variant === 'validated-disabled';
   const isDisabled = !canNavigate;
   const disabledBg =
