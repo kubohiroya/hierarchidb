@@ -122,9 +122,7 @@ export const buildErrorSummaryById = <TError,>(
     } else {
       entry.errorCount = (entry.errorCount ?? 0) + 1;
     }
-    entry.count = entry.errorCount ?? 0;
-    const entry = summary.get(key) ?? { count: 0, messages: [] };
-    entry.count += 1;
+    entry.count = (entry.errorCount ?? 0) + (entry.repairCount ?? 0);
     const message = options.getMessage?.(row);
     if (message && !entry.messages.includes(message)) {
       entry.messages.push(message);
