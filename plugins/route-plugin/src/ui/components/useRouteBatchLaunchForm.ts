@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
-import { RouteBatchOrchestrationService } from '../../common/orchestrator/RouteBatchOrchestrationService.js';
+import { RouteBuildOrchestrationService } from '../../common/orchestrator/RouteBuildOrchestrationService.js';
 import type { RouteBatchSpec } from '../../common/orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
-import { RouteBatchSessionOrchestrator } from '../../services/RouteBatchSessionOrchestrator.js';
+import { RouteBuildSessionOrchestrator } from '../../services/RouteBuildSessionOrchestrator.js';
 import { OsrmEngine } from '../../services/engines/OsrmEngine.js';
 import { SearouteEngine } from '@hierarchidb/route-engine';
 import { ThrottledPort } from '../../services/net/ThrottledPort.js';
@@ -30,9 +30,9 @@ export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nod
     setStatus('starting...');
     try {
       const net = getNetPort();
-      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator());
+      const orchestrator = new RouteBuildOrchestrationService(new RouteSourceOrchestrator());
       const osrmPort = new ThrottledPort(net, { rps, concurrency });
-      const mgr = new RouteBatchSessionOrchestrator({
+      const mgr = new RouteBuildSessionOrchestrator({
         engines: {
           osrm: new OsrmEngine(osrmPort),
           searoute: new SearouteEngine(),
@@ -104,3 +104,5 @@ export const useRouteBatchLaunchForm = (nodeId: NodeId, onLaunched?: (res: { nod
     launch,
   };
 };
+
+export const useRouteBuildLaunchForm = useRouteBatchLaunchForm;

@@ -1,7 +1,13 @@
 // Test-only worker entry that exposes Shape APIs over a MessagePort/Comlink endpoint.
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
-import type { BatchProgressEvent, BatchProgressPayload, BatchTaskUpdateEvent, BuildTaskSummary, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type {
+  BuildProgressEvent,
+  BuildProgressPayload,
+  BuildTaskSummary,
+  BuildTaskUpdateEvent,
+  BuildContinuationPolicy,
+} from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index.js';
@@ -11,7 +17,7 @@ import { shapeDB } from '@hierarchidb/shape-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { shapeBatchAPI } from '../worker/api.js';
+import { shapeBuildAPI } from '../worker/api.js';
 import { shapeMutationAPIImpl } from '../services/batch/ShapeBuildAPIClient.js';
 import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared.js';
 import { runShapeFetchStageSection } from '../services/vt/shapePipelineFetchStage.js';
@@ -72,7 +78,7 @@ type ShapeDraftSeedPayload = {
   selectedArrayByCountries: SelectedArrayByCountries;
 };
 
-type ShapeBatchTestAPI = {
+type ShapeBuildTestAPI = {
   seedDraftNode(payload: ShapeDraftSeedPayload): Promise<void>;
   startBatchProcess(payload: {
     nodeId: NodeId;
@@ -83,13 +89,13 @@ type ShapeBatchTestAPI = {
   }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
-    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): () => void;
   subscribeToTasks(
     nodeId: NodeId,
-    callback: (event: BatchTaskUpdateEvent<BuildTaskSummary>) => void
+    callback: (event: BuildTaskUpdateEvent<BuildTaskSummary>) => void
   ): () => void;
-  getBatchTasks(nodeId: NodeId): Promise<BuildTaskSummary[]>;
+  getBuildTasks(nodeId: NodeId): Promise<BuildTaskSummary[]>;
 };
 
 type PipelinePauseState = {
@@ -102,7 +108,9 @@ type ShapeWorkerTestAPI = {
   getShapeMutationAPI(): ShapeMutationAPI;
   getShapeEphemeralAdminAPI(): ShapeEphemeralAdminAPI;
   getShapePipelineTestAPI(): ShapePipelineTestAPI;
-  getShapeBatchTestAPI(): ShapeBatchTestAPI;
+  getShapeBuildTestAPI(): ShapeBuildTestAPI;
+  /** @deprecated Use getShapeBuildTestAPI. */
+  getShapeBatchTestAPI(): ShapeBuildTestAPI;
 };
 
 
@@ -424,7 +432,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     return rootId;
   };
 
-  const batchApi: ShapeBatchTestAPI = {
+  const buildApi: ShapeBuildTestAPI = {
     seedDraftNode: async (payload) => {
       const coreDB = await CoreDB.getSingleton();
       const rootId = await ensureRootNode(coreDB);
@@ -451,16 +459,16 @@ async function main(endpoint?: Endpoint): Promise<void> {
       });
     },
     startBatchProcess: async (payload) =>
-      shapeBatchAPI.startBatchProcess(
+      shapeBuildAPI.startBatchProcess(
         payload.nodeId,
         payload.buildConfig,
         payload.processingConfig,
         payload.downloadTaskPayloads,
         payload.buildContinuationPolicy,
       ),
-    subscribeToProgress: (nodeId, callback) => proxy(shapeBatchAPI.subscribeToProgress(nodeId, callback)),
-    subscribeToTasks: (nodeId, callback) => proxy(shapeBatchAPI.subscribeToTasks(nodeId, callback)),
-    getBatchTasks: async (nodeId) => shapeBatchAPI.getBatchTasks(nodeId),
+    subscribeToProgress: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToProgress(nodeId, callback)),
+    subscribeToTasks: (nodeId, callback) => proxy(shapeBuildAPI.subscribeToTasks(nodeId, callback)),
+    getBuildTasks: async (nodeId) => shapeBuildAPI.getBuildTasks(nodeId),
   };
 
   const queryService = await ShapeQueryService.getSingleton(shapeDB);
@@ -470,7 +478,8 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeMutationAPI: () => proxy(mutationService),
     getShapeEphemeralAdminAPI: () => proxy(adminApi),
     getShapePipelineTestAPI: () => proxy(pipelineApi),
-    getShapeBatchTestAPI: () => proxy(batchApi),
+    getShapeBuildTestAPI: () => proxy(buildApi),
+    getShapeBatchTestAPI: () => proxy(buildApi),
   };
 
   if (endpoint) {

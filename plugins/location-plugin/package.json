@@ -63,7 +63,6 @@
     "@hierarchidb/auth": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",

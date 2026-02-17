@@ -1,19 +1,37 @@
 # @hierarchidb/batch-session-ports
 
-Layer 0 の共通パッケージです。
+Layer-0 contract package for cross-plugin batch/session orchestration.
 
-目的: batch/session 系の実装を **型/ポート（interface）** に分離し、
-plugin（shape/location/route）や orchestrator（共通）から、
-永続化実装（TaskRegistry/ArtifactStore/metadata）を差し替え可能にします。
+This package contains only types and interfaces. It does not contain runtime implementations
+such as Dexie access, Comlink transport, worker startup logic, or UI behavior.
 
-- ここには「実装」は置きません（Dexie/Comlink/API 呼び出し等は持ち込まない）。
-- 依存は `@hierarchidb/core-types` 程度に留めます。
+## Why this package exists
 
-## 提供するもの（方針）
+Shape/Route/Location batch flows share the same orchestration concepts:
 
-- `StageControls` / `StageControlsFactory` 相当の最小型（必要なら）
-- `TaskRegistryPort`（register/resolve/load inputs）
-- `ArtifactStorePort`（put/get/list buffers）
-- `ProgressInfoBase`（最小進捗 shape）
+- stage controls (`pause`, `abort`, concurrency)
+- task registry abstraction
+- artifact storage abstraction
+- minimal progress shape
+- build-session control contract (subscribe/start/stop/cancel queued/next stage)
 
-詳細な共通化計画は `docs/refactoring-plan-shape-to-location-route.md` を参照。
+Keeping these contracts in one package prevents each plugin from redefining similar types.
+
+## Exported contracts
+
+- `StageControls`
+- `TaskRegistryPort`
+- `ArtifactStorePort`
+- `ProgressInfoBase`
+- `BuildSessionControlPort` and related session-state types
+
+## Boundaries
+
+- Allowed dependencies: foundational types only (for example `@hierarchidb/core-types`)
+- Forbidden in this package:
+  - database implementations
+  - worker lifecycle orchestration implementations
+  - plugin-specific business rules
+
+For runtime behavior and state-transition specification, refer to:
+`packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`

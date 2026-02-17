@@ -1,19 +1,19 @@
 import { createContext, useContext, useMemo, type PropsWithChildren } from 'react';
 import {
-  createSessionCoordinator,
-  type SessionCoordinator,
-  type SessionCoordinatorOptions,
+  createTabSessionCoordinator,
+  type TabSessionCoordinator,
+  type TabSessionCoordinatorOptions,
 } from '@hierarchidb/session-coordinator';
 
-type SessionCoordinatorProviderProps = PropsWithChildren<{
-  options?: SessionCoordinatorOptions;
+type TabSessionCoordinatorProviderProps = PropsWithChildren<{
+  options?: TabSessionCoordinatorOptions;
 }>;
 
-const SessionCoordinatorContext = createContext<SessionCoordinator | null>(null);
+const TabSessionCoordinatorContext = createContext<TabSessionCoordinator | null>(null);
 
-export const SessionCoordinatorProvider = ({ children, options }: SessionCoordinatorProviderProps) => {
+export const TabSessionCoordinatorProvider = ({ children, options }: TabSessionCoordinatorProviderProps) => {
   const coordinator = useMemo(() => (
-    createSessionCoordinator(options)
+    createTabSessionCoordinator(options)
   ), [
     options?.channelName,
     options?.pollIntervalTimeout,
@@ -23,16 +23,21 @@ export const SessionCoordinatorProvider = ({ children, options }: SessionCoordin
     options?.now,
   ]);
   return (
-    <SessionCoordinatorContext.Provider value={coordinator}>
+    <TabSessionCoordinatorContext.Provider value={coordinator}>
       {children}
-    </SessionCoordinatorContext.Provider>
+    </TabSessionCoordinatorContext.Provider>
   );
 };
 
-export const useSessionCoordinator = (): SessionCoordinator => {
-  const value = useContext(SessionCoordinatorContext);
+export const useTabSessionCoordinator = (): TabSessionCoordinator => {
+  const value = useContext(TabSessionCoordinatorContext);
   if (!value) {
-    throw new Error('useSessionCoordinator must be used within SessionCoordinatorProvider');
+    throw new Error('useTabSessionCoordinator must be used within TabSessionCoordinatorProvider');
   }
   return value;
 };
+
+/** @deprecated Use TabSessionCoordinatorProvider. */
+export const SessionCoordinatorProvider = TabSessionCoordinatorProvider;
+/** @deprecated Use useTabSessionCoordinator. */
+export const useSessionCoordinator = useTabSessionCoordinator;

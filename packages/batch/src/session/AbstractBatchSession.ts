@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  BaseBatchConfig,
+  BaseBuildConfig,
   BuildProgress,
   BuildProgressEvent,
   BuildProgressPayload,
@@ -10,9 +10,9 @@ import type {
 } from '@hierarchidb/batch-api';
 
 /**
- * Shared lifecycle base for batch-oriented workflows.
+ * Shared lifecycle base for build-oriented workflows.
  */
-export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = BaseBatchConfig> {
+export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = BaseBuildConfig> {
   protected readonly config: TConfig;
   protected readonly nodeId: NodeId;
 
@@ -136,11 +136,15 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.emitProgress({ phase: 'running', stage: this.progress.taskType ?? 'running', payload: this.toProgressPayload() });
   }
 
-  addBatchProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
+  addBuildProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
     this.progressListeners.add(listener);
     return () => {
       this.progressListeners.delete(listener);
     };
+  }
+  /** @deprecated Use addBuildProgressListener. */
+  addBatchProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
+    return this.addBuildProgressListener(listener);
   }
 
   protected updateProgress(partial: Partial<BuildProgress>, stage?: string): void {
@@ -210,8 +214,15 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
-  protected onBatchProgressEvent(_event: BuildProgressEvent): void {}
+  protected onBuildProgressEvent(_event: BuildProgressEvent): void {}
+  /** @deprecated Use onBuildProgressEvent. */
+  protected onBatchProgressEvent(event: BuildProgressEvent): void {
+    this.onBuildProgressEvent(event);
+  }
 }
+
+/** @deprecated Use AbstractBuildSession. */
+export { AbstractBuildSession as AbstractBatchSession };
 
 function abortError(message: string): Error {
   if (typeof DOMException === 'function') {

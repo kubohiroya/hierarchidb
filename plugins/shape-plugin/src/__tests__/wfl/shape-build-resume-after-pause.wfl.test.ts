@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { BatchProgressEvent, BatchProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
@@ -232,7 +232,7 @@ type ShapePipelineTestAPI = {
   getPipelineState(nodeId: NodeId): Promise<PipelineState>;
 };
 
-type ShapeBatchTestAPI = {
+type ShapeBuildTestAPI = {
   seedDraftNode(payload: {
     nodeId: NodeId;
     buildConfig: ShapeBuildConfig;
@@ -248,7 +248,7 @@ type ShapeBatchTestAPI = {
   }): Promise<NodeId>;
   subscribeToProgress(
     nodeId: NodeId,
-    callback: (event: BatchProgressEvent<BatchProgressPayload>) => void
+    callback: (event: BuildProgressEvent<BuildProgressPayload>) => void
   ): Promise<() => void> | (() => void);
 };
 
@@ -257,7 +257,8 @@ type WorkerTestAPI = {
   getShapeMutationAPI(): Promise<ShapeMutationAPI>;
   getShapeEphemeralAdminAPI(): Promise<ShapeEphemeralAdminAPI>;
   getShapePipelineTestAPI(): Promise<ShapePipelineTestAPI>;
-  getShapeBatchTestAPI(): Promise<ShapeBatchTestAPI>;
+  getShapeBuildTestAPI(): Promise<ShapeBuildTestAPI>;
+  getShapeBatchTestAPI(): Promise<ShapeBuildTestAPI>;
 };
 
 type WorkerSetup = {
@@ -445,7 +446,7 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
     try {
       const mutation = await setup.client.getShapeMutationAPI();
       const admin = await setup.client.getShapeEphemeralAdminAPI();
-      const batch = await setup.client.getShapeBatchTestAPI();
+      const batch = await setup.client.getShapeBuildTestAPI();
 
       await mutation.deleteBuildSession(nodeId);
       await mutation.deleteBuildTasks(nodeId);
@@ -472,10 +473,10 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
         selectedArrayByCountries,
       });
 
-      const progressEvents: Array<BatchProgressEvent<BatchProgressPayload>> = [];
+      const progressEvents: Array<BuildProgressEvent<BuildProgressPayload>> = [];
       const unsubscribe = await batch.subscribeToProgress(
         nodeId,
-        Comlink.proxy((event: BatchProgressEvent<BatchProgressPayload>) => {
+        Comlink.proxy((event: BuildProgressEvent<BuildProgressPayload>) => {
           progressEvents.push(event);
         }),
       );

@@ -1,5 +1,5 @@
 import type { HeapPressureEvent } from '@hierarchidb/memory';
-import type { WorkerBridge } from '@hierarchidb/ui-worker-client';
+import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useCallback, useMemo, useState } from 'react';
 import { useHeapPressureMonitor } from './useHeapPressureMonitor.js';
 import { useWorkerHeapPressure } from './useWorkerHeapPressure.js';
@@ -8,7 +8,7 @@ export type UseHeapPressureGuardOptions = {
   enabled?: boolean;
   uiEnabled?: boolean;
   workerEnabled?: boolean;
-  workerBridge?: WorkerBridge | null;
+  workerBridge?: BuildWorkerBridge | null;
 };
 
 export type UseHeapPressureGuardResult = {

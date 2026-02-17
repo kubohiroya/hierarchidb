@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
-import type { RouteBatchTask } from '../../src/services/RouteBatchSession.js';
-import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
+import type { RouteBuildTask } from '../../src/services/RouteBuildSession.js';
+import { RouteBuildSession } from '../../src/services/RouteBuildSession.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteGenerationMethod } from '../entities/RouteEntity.js';
 
@@ -22,7 +22,7 @@ class TestGenerator {
   }
 }
 
-function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): RouteBatchTask[] {
+function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): RouteBuildTask[] {
   return Array.from({ length: n }, (_, i) => ({
     taskId: `${method}-${i}`,
     treeNodeId: nodeId,
@@ -35,7 +35,7 @@ function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): Ro
   }));
 }
 
-describe('RouteBatchSession lane gating', () => {
+describe('RouteBuildSession lane gating', () => {
   it('keeps osm_route concurrency at 1 even when maxConcurrent is high', async () => {
     const cfg = {
       routeGeneration: {
@@ -47,12 +47,12 @@ describe('RouteBatchSession lane gating', () => {
       },
     } as RouteBatchConfig;
     const nodeId = 'n1' as NodeId;
-    const tasks: RouteBatchTask[] = [
+    const tasks: RouteBuildTask[] = [
       ...makeTasks(nodeId, 5, 'osm_route'),
       ...makeTasks(nodeId, 5, 'direct'),
     ];
     const gen = new TestGenerator();
-    const s = new RouteBatchSession(nodeId, cfg, tasks, { generator: gen as any });
+    const s = new RouteBuildSession(nodeId, cfg, tasks, { generator: gen as any });
     await s.initialize();
     await s.start();
     expect(gen.maxOsm).toBe(1);

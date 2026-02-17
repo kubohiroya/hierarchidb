@@ -848,6 +848,10 @@ export const ShapeBuildProgressPanel = ({
     || startPendingHold;
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');
+  const pauseActsAsCancel = isBuildStartupPending;
+  const pauseButtonLabel = pauseActsAsCancel
+    ? t('stage.controls.cancelBuild', 'Cancel Build')
+    : t('stage.controls.pause', 'Pause');
 
   const processingConfigForEdit = useMemo<ShapeProcessingConfig>(() => {
     const draftConfig = data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
@@ -1315,9 +1319,10 @@ export const ShapeBuildProgressPanel = ({
       onResume={controls.canStartOrResume ? handleStartClickWithHold : undefined}
       onPause={controls.pausePending ? undefined : controls.handlePause}
       controlLabel={t('stage.controls.title', 'Build controls')}
-      pauseLabel={t('stage.controls.pause', 'Pause')}
+      pauseLabel={pauseButtonLabel}
       pauseLoading={false}
       pausePending={controls.pausePending}
+      pauseActsAsCancel={pauseActsAsCancel}
       startPending={controls.startPending}
       showResumeLabel={controls.showResumeLabel}
       startLabel={t('stage.controls.start', 'Start Build')}

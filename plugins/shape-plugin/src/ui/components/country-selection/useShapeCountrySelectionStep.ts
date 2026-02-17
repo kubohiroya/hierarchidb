@@ -13,7 +13,7 @@ import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from
 import { wrap, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
@@ -149,7 +149,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   const { enqueueSnackbar } = useSnackbar();
   const nodeId = _nodeId;
   const { onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
-  const bridgeRef = useMemo(() => getWorkerBridge(), []);
+  const bridgeRef = useMemo(() => getBuildWorkerBridge(), []);
   const prevSelectionRef = useRef<Record<string, boolean[]> | null>(null);
 
   // Current selection value must be available before any derived useMemo.

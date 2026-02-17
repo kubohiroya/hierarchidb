@@ -176,7 +176,7 @@ export interface ProgressInfo {
 }
 
 
-export interface BatchSession {
+export interface BuildSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: BuildTaskStatus;
@@ -204,6 +204,9 @@ export interface BatchSession {
   stages?: Partial<Record<BuildTaskType, StageStatus>>;
   resourceUsage?: ResourceUsage;
 }
+
+/** @deprecated Use BuildSession. */
+export type BatchSession = BuildSession;
 
 export type ShapeBuildCommandMap = {
   'session/pause': { nodeId: NodeId };

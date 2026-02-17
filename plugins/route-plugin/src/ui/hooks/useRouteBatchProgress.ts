@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
-import { type BatchSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
+import { type BuildSessionStatus, type ProgressPhase, type BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import { useBuildSessionMutation, usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
 export interface RouteBatchProgressResult {
-  snapshot: UnifiedProgressInfo | null;
+  snapshot: BuildUnifiedProgressInfo | null;
   ready: boolean;
-  progress: UnifiedProgressInfo | null;
-  status: BatchSessionStatus | null;
+  progress: BuildUnifiedProgressInfo | null;
+  status: BuildSessionStatus | null;
   isPaused: boolean;
   isMutating: boolean;
   mutationError: string | null;
@@ -18,30 +17,29 @@ export interface RouteBatchProgressResult {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
 }
+/** Preferred alias for RouteBatchProgressResult. */
+export type RouteBuildProgressResult = RouteBatchProgressResult;
 
-export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): RouteBatchProgressResult {
-  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
-  const [status, setStatus] = useState<BatchSessionStatus | null>(null);
-  const [isMutating, setIsMutating] = useState(false);
-  const [mutationError, setMutationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!nodeId) return;
-    void bridgeRef.current.initialize().catch((error: unknown) => {
-      console.error('[useRouteBatchProgress] failed to initialize worker bridge', error);
-    });
-  }, [nodeId]);
+export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): RouteBuildProgressResult {
+  const [status, setStatus] = useState<BuildSessionStatus | null>(null);
+  const {
+    isMutating,
+    mutationError,
+    pauseSession,
+    resumeSession,
+    clearMutationError,
+  } = useBuildSessionMutation(ROUTE_NODE_TYPE, nodeId);
 
   const {
     progress,
     status: derivedStatus,
-  } = usePluginBatchProgress<UnifiedProgressInfo, BatchSessionStatus>(
+  } = usePluginBuildProgress<BuildUnifiedProgressInfo, BuildSessionStatus>(
     ROUTE_NODE_TYPE,
     nodeId,
     {
       autoSubscribe: true,
       mapUnifiedToProgress: (info) => info ?? null,
-      mapUnifiedToStatus: (info) => (nodeId && info ? toBatchSessionStatus(nodeId, info) : null),
+      mapUnifiedToStatus: (info) => (nodeId && info ? toBuildSessionStatus(nodeId, info) : null),
     },
   );
 
@@ -50,50 +48,34 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
     setStatus(derivedStatus);
   }, [derivedStatus]);
 
-  const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
+  const [snapshot, setSnapshot] = useState<BuildUnifiedProgressInfo | null>(null);
   useEffect(() => {
     if (!nodeId) {
       setSnapshot(null);
       setStatus(null);
-      setMutationError(null);
+      clearMutationError();
     }
-  }, [nodeId]);
+  }, [clearMutationError, nodeId]);
   useEffect(() => {
     if (!progress || !nodeId) return;
     setSnapshot({ ...progress, nodeId });
   }, [nodeId, progress]);
 
   const pause = useCallback(async () => {
-    if (!nodeId || isMutating) return;
-    setIsMutating(true);
-    setMutationError(null);
-    try {
-      await bridgeRef.current.pauseBatchSession(ROUTE_NODE_TYPE, nodeId);
-      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
-    } catch (error: unknown) {
-      const message = toErrorMessage(error);
-      console.error('[useRouteBatchProgress] pause failed', error);
-      setMutationError(message);
-    } finally {
-      setIsMutating(false);
+    if (!nodeId) return;
+    const succeeded = await pauseSession();
+    if (succeeded) {
+      setStatus((prev: BuildSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
     }
-  }, [isMutating, nodeId]);
+  }, [nodeId, pauseSession]);
 
   const resume = useCallback(async () => {
-    if (!nodeId || isMutating) return;
-    setIsMutating(true);
-    setMutationError(null);
-    try {
-      await bridgeRef.current.resumeBatchSession(ROUTE_NODE_TYPE, nodeId);
-      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
-    } catch (error: unknown) {
-      const message = toErrorMessage(error);
-      console.error('[useRouteBatchProgress] resume failed', error);
-      setMutationError(message);
-    } finally {
-      setIsMutating(false);
+    if (!nodeId) return;
+    const succeeded = await resumeSession();
+    if (succeeded) {
+      setStatus((prev: BuildSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
     }
-  }, [isMutating, nodeId]);
+  }, [nodeId, resumeSession]);
 
   const lastError = useMemo(() => {
     if (status?.error) return status.error;
@@ -117,7 +99,10 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
   };
 }
 
-function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchSessionStatus {
+/** @deprecated Use useRouteBuildProgress. */
+export const useRouteBatchProgress = useRouteBuildProgress;
+
+function toBuildSessionStatus(nodeId: NodeId, info: BuildUnifiedProgressInfo): BuildSessionStatus {
   const phase = info.phase as ProgressPhase | undefined;
   return {
     nodeId,
@@ -133,16 +118,6 @@ function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchS
     lastActivity: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     error: typeof info.message === 'string' ? info.message : undefined,
   };
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return 'Unknown error';
-  }
 }
 
 function extractErrors(meta: unknown): string[] {

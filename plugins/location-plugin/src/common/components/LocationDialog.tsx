@@ -229,7 +229,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     if (isBatchStarting) return;
     const nodeId = dialogData.treeNodeId;
     if (!nodeId) {
-      notify.error('Save changes before starting a batch session.');
+      notify.error('Save changes before starting a build session.');
       return;
     }
     setIsBatchStarting(true);
@@ -243,7 +243,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       notify.success('Build completed.');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      notify.error(`Failed to start batch session: ${message}`);
+      notify.error(`Failed to start build session: ${message}`);
     } finally {
       setIsBatchStarting(false);
     }

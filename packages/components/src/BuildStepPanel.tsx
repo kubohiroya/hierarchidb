@@ -46,6 +46,7 @@ export interface BuildStepPanelProps {
   pauseLabel?: string;
   pauseLoading?: boolean;
   pausePending?: boolean;
+  pauseActsAsCancel?: boolean;
   startPending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
@@ -85,6 +86,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   pauseLabel,
   pauseLoading,
   pausePending,
+  pauseActsAsCancel,
   startPending,
   startLabel,
   resumeLabel,
@@ -256,6 +258,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           pauseLabel={pauseLabel}
           pauseLoading={pauseLoading}
           pausePending={pausePending}
+          pauseActsAsCancel={pauseActsAsCancel}
           startPending={startPending}
           startLabel={startLabel}
           resumeLabel={resumeLabel}

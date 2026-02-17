@@ -6,6 +6,7 @@ import { RouteBatchSummary } from '../RouteBatchSummary.js';
 const mockUseRouteBatchProgress = vi.fn();
 
 vi.mock('../../hooks/useRouteBatchProgress.js', () => ({
+  useRouteBuildProgress: mockUseRouteBatchProgress,
   useRouteBatchProgress: mockUseRouteBatchProgress,
 }));
 

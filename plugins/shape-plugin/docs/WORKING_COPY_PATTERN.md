@@ -299,7 +299,7 @@ export class ShapeEntityHandler {
 ```typescript
 // packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeDraft.ts
 
-// NOTE: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead.
+// NOTE: `useShapeAPI` has been removed. Use `getBuildWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and build-control APIs instead.
 
 export function useShapeDraft(
   nodeId: NodeId | null,
@@ -808,4 +808,4 @@ Working Copy Patternは、Shape Pluginにおいて以下の利点を提供しま
 - [HierarchiDB Architecture](../../../docs/ARCHITECTURE.md)
 - [Entity Handler Pattern](../../../docs/ENTITY_HANDLER.md)
 - [Batch Processing](./BATCH_PROCESSING_NOTIFICATION.md)
-- [Dialog Flow](./DIALOG_FLOW_AND_STATE_TRANSITIONS.md)
+- [Dialog Flow](../../../packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md)

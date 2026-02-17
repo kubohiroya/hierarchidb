@@ -28,6 +28,8 @@ export type SessionCoordinatorOptions = {
   storageKeys?: Partial<SessionStorageKeys>;
   now?: () => number;
 };
+/** Preferred role-oriented alias for SessionCoordinatorOptions. */
+export type TabSessionCoordinatorOptions = SessionCoordinatorOptions;
 
 export type SessionPollingTracker = {
   record: (tabId: string, timestamp?: number) => void;
@@ -71,6 +73,8 @@ export type SessionCoordinator = {
   isWebLockSupported: () => boolean;
   probeSessionLock: (key: string) => Promise<'held' | 'free' | 'unsupported'>;
 };
+/** Preferred role-oriented alias for SessionCoordinator. */
+export type TabSessionCoordinator = SessionCoordinator;
 
 const DEFAULT_KEYS: SessionStorageKeys = {
   tabIdKey: 'hdb:session-tab-id',
@@ -392,3 +396,8 @@ export const createSessionCoordinator = (options: SessionCoordinatorOptions = {}
     probeSessionLock,
   };
 };
+
+/** Preferred role-oriented alias for createSessionCoordinator. */
+export const createTabSessionCoordinator = (
+  options: TabSessionCoordinatorOptions = {},
+): TabSessionCoordinator => createSessionCoordinator(options);

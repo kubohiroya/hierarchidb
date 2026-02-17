@@ -221,7 +221,7 @@ const baseTranslations: LocationTranslations = {
     settingsDescription: 'Refine location filters for each type.',
   },
   processing: {
-    description: 'Configure download and tiling parameters for batch processing.',
+    description: 'Configure download and tiling parameters for build processing.',
     concurrentDownloadsLabel: 'Concurrent Downloads',
     tilingZoomLabel: 'Tile Zoom Range',
     minZoom: 'Min zoom',

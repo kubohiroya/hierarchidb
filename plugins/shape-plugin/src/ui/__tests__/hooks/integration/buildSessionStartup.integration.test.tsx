@@ -4,25 +4,41 @@ import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks.ts';
 import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal.ts';
 
-const initializeMock = vi.fn<[], Promise<void>>();
-const subscribeMock = vi.fn<
-  [string, string, (event: BuildTaskUpdateEvent) => void],
-  Promise<() => void>
->();
+const hoistedMocks = vi.hoisted(() => ({
+  initializeMock: vi.fn<[], Promise<void>>(),
+  subscribeMock: vi.fn<
+    [string, string, (event: BuildTaskUpdateEvent) => void],
+    Promise<() => void>
+  >(),
+  getBuildTasksMock: vi.fn().mockResolvedValue([]),
+}));
+const initializeMock = hoistedMocks.initializeMock;
+const subscribeMock = hoistedMocks.subscribeMock;
+const getBuildTasksMock = hoistedMocks.getBuildTasksMock;
 let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
 
-vi.mock('@hierarchidb/ui-worker-client', () => ({
-  getWorkerBridge: () => ({
-    initialize: initializeMock,
-    subscribeBuildTasks: subscribeMock.mockImplementation(async (_nodeType, _nodeId, cb) => {
-      subscriber = cb;
-      return () => {
+vi.mock('@hierarchidb/ui-worker-client', () => {
+  const getBridge = () => ({
+    initialize: (...args: Parameters<typeof hoistedMocks.initializeMock>) =>
+      hoistedMocks.initializeMock(...args),
+    subscribeBuildTasks: (...args: Parameters<typeof hoistedMocks.subscribeMock>) =>
+      hoistedMocks.subscribeMock(...args),
+    getBuildTasks: (...args: Parameters<typeof hoistedMocks.getBuildTasksMock>) =>
+      hoistedMocks.getBuildTasksMock(...args),
+  });
+  hoistedMocks.subscribeMock.mockImplementation(async (_nodeType, _nodeId, cb) => {
+    subscriber = cb;
+    return () => {
+      if (subscriber === cb) {
         subscriber = null;
-      };
-    }),
-    getBuildTasks: vi.fn().mockResolvedValue([]),
-  }),
-}));
+      }
+    };
+  });
+  return {
+    getBuildWorkerBridge: () => getBridge(),
+    getWorkerBridge: () => getBridge(),
+  };
+});
 
 describe('buildSessionStartup integration baseline', () => {
   beforeEach(() => {

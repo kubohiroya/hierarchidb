@@ -89,7 +89,11 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
       if (workerSource && typeof workerSource.createEntityHandler === 'function') {
         exp.createEntityHandler = workerSource.createEntityHandler;
       }
+      if (workerSource && typeof workerSource.createBuildManager === 'function') {
+        exp.createBuildManager = workerSource.createBuildManager;
+      }
       if (workerSource && typeof workerSource.createBatchManager === 'function') {
+        exp.createBuildManager = workerSource.createBatchManager;
         exp.createBatchManager = workerSource.createBatchManager;
       }
 
