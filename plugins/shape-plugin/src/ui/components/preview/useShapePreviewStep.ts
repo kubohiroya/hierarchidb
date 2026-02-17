@@ -206,6 +206,17 @@ const buildCountryGroupKey = (countryCode?: string): string | null => {
   return `country:${normalized}`;
 };
 
+/**
+ * Determines if an issue kind represents a repair (successfully fixed) vs an error (needs attention).
+ * Issues without a specific kind are typically self-intersection repairs that were automatically fixed.
+ * Issues with specific kinds like 'max-vertices' are hard errors that couldn't be automatically resolved.
+ */
+const isRepairIssueKind = (issueKind?: string): boolean => {
+  // Issues without a kind are typically repairs (e.g., self-intersection fixes)
+  // Specific kinds like 'max-vertices' are hard errors
+  return issueKind === undefined || issueKind === null;
+};
+
 const resolveAdminNameFromMetadata = (
   row: ShapeFeatureMetadata,
   adminLevel: number | undefined,
@@ -1009,8 +1020,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       const id = row.featureId ?? row.id;
       if (!id) return;
       const key = String(id);
-      const metadataErrorCount = typeof row.errorCount === 'number' ? Math.max(0, row.errorCount) : 0;
-      const metadataRepairCount = typeof row.repairCount === 'number' ? Math.max(0, row.repairCount) : 0;
+      // Note: errorCount and repairCount don't exist on ShapePreviewFeatureRow,
+      // so these will always be 0 and this entry won't be added to the summary
+      const metadataErrorCount = typeof (row as any).errorCount === 'number' ? Math.max(0, (row as any).errorCount) : 0;
+      const metadataRepairCount = typeof (row as any).repairCount === 'number' ? Math.max(0, (row as any).repairCount) : 0;
       if (metadataErrorCount === 0 && metadataRepairCount === 0) return;
       summary.set(key, {
         errorCount: metadataErrorCount,
@@ -1019,28 +1032,29 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         messages: [],
       });
     });
-    normalizedTransformErrorRows.forEach((row) => {
-      const id = row.featureId;
-      if (!id) return;
-      const key = String(id);
+    
+    // Build error summary from transform errors using the utility function
+    const transformErrorSummary = buildErrorSummaryById(normalizedTransformErrorRows, {
+      getId: (row) => row.featureId ?? undefined,
+      getMessage: (row) => normalizeText(row.message),
+      getKind: (row) => (isRepairIssueKind(row.issueKind) ? 'repair' : 'error'),
+    });
+    
+    // Merge transform error summary into the main summary
+    transformErrorSummary.forEach((transformEntry, key) => {
       const entry = summary.get(key) ?? {
         errorCount: 0,
         repairCount: 0,
         count: 0,
         messages: [],
       };
-      if (isRepairIssueKind(row.issueKind)) {
-        entry.repairCount += 1;
-      } else {
-        entry.errorCount += 1;
-      }
+      entry.errorCount += transformEntry.errorCount ?? 0;
+      entry.repairCount += transformEntry.repairCount ?? 0;
       entry.count = entry.errorCount;
-      const message = normalizeText(row.message);
-      if (message && !entry.messages.includes(message)) {
-        entry.messages.push(message);
-      }
+      entry.messages.push(...transformEntry.messages);
       summary.set(key, entry);
     });
+    
     return summary;
   }, [featureListRows, normalizedTransformErrorRows]);
 
