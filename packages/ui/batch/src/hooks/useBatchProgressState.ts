@@ -41,7 +41,7 @@ export const useBatchProgressState = (
     const resolvedNodeId = toNodeId(nodeId);
     return createAdapterFromProgressSubscribe((eventCallback) =>
       bridgeRef.current
-        .subscribeBatchProgress(nodeType, resolvedNodeId, eventCallback)
+        .subscribeBuildProgress(nodeType, resolvedNodeId, eventCallback)
         .then((unsubscribe: () => void) => {
           setError(null);
           return unsubscribe;

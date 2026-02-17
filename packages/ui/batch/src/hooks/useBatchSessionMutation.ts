@@ -48,14 +48,14 @@ export const useBatchSessionMutation = (
   const pauseSession = useCallback(async (): Promise<boolean> => {
     return runMutation(async () => {
       if (!nodeId) return;
-      await bridgeRef.current.pauseBatchSession(nodeType, nodeId);
+      await bridgeRef.current.pauseBuildSession(nodeType, nodeId);
     });
   }, [nodeId, nodeType, runMutation]);
 
   const resumeSession = useCallback(async (): Promise<boolean> => {
     return runMutation(async () => {
       if (!nodeId) return;
-      await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
+      await bridgeRef.current.resumeBuildSession(nodeType, nodeId);
     });
   }, [nodeId, nodeType, runMutation]);
 

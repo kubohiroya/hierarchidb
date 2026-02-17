@@ -4,7 +4,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   createPollingTracker,
-  createSessionCoordinator,
+  createTabSessionCoordinator,
   type SessionChannelMessage,
   type SessionLockHandle,
 } from '@hierarchidb/session-coordinator';
@@ -420,7 +420,7 @@ type Args = {
 export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { t } = useTranslation();
   const coordinator = useMemo(() => (
-    createSessionCoordinator({
+    createTabSessionCoordinator({
       channelName: 'sessions',
       pollIntervalTimeout: 3000,
       quietThresholdTimeout: 5000,

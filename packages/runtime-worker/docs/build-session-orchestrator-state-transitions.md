@@ -27,7 +27,7 @@ This specification is shared by shape/route and future build-session plugins.
 
 - `BuildSessionOrchestrator`:
   - SharedWorker in-memory singleton that selects active session, advances stage, and controls StageTaskWorkers.
-- `SessionCoordinator`:
+- `TabSessionCoordinator`:
   - Tab/session coordination term. Not used as the execution orchestrator name.
 - `persistedStatus`:
   - Durable status in `sessions.status`.

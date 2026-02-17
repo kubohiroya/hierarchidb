@@ -1,10 +1,10 @@
 import type {
-  BatchProgressEvent,
+  BuildProgressEvent,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
-  BatchSessionStatus,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
+  BuildSessionStatus,
+  BuildTaskSummary,
+  BuildTaskUpdateEvent,
   BuildContinuationPolicy,
 } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
@@ -20,23 +20,23 @@ export interface WorkerBridge {
   startBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBatchSession']>[2],
+    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus>;
+  ): Promise<BuildSessionStatus>;
   startBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus>;
+  ): Promise<BuildSessionStatus>;
   startOrResumeBuildSession(
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus>;
-  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
-  getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  ): Promise<BuildSessionStatus>;
+  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
+  getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
@@ -51,17 +51,17 @@ export interface WorkerBridge {
     nodeId: NodeId,
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
-  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
-  getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
+  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
+  getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
   subscribeBatchTasks(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchTaskUpdateEvent) => void
+    cb: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void>;
   subscribeBuildTasks(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchTaskUpdateEvent) => void
+    cb: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void>;
   getBuildSessionRuntime(
     nodeType: NodeType,
@@ -89,12 +89,12 @@ export interface WorkerBridge {
   subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void
+    cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
   subscribeBuildProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void
+    cb: (event: BuildProgressEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
 }
@@ -145,11 +145,10 @@ class WorkerBridgeImpl implements WorkerBridge {
   async startBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerApi['startBatchSession']>[2],
+    downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus> {
-    const api = await ensureWorkerAPI();
-    return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
+  ): Promise<BuildSessionStatus> {
+    return this.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
   }
 
   async startBuildSession(
@@ -157,7 +156,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus> {
+  ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.startBuildSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
   }
@@ -167,7 +166,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerApi['startOrResumeBuildSession']>[2],
     buildContinuationPolicy?: BuildContinuationPolicy
-  ): Promise<BatchSessionStatus> {
+  ): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.startOrResumeBuildSession(
       nodeType,
@@ -177,19 +176,17 @@ class WorkerBridgeImpl implements WorkerBridge {
     );
   }
 
-  async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
-    const api = await ensureWorkerAPI();
-    return api.getBatchSessionStatus(nodeType, nodeId);
+  async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
+    return this.getBuildSessionStatus(nodeType, nodeId);
   }
 
-  async getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
+  async getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.getBuildSessionStatus(nodeType, nodeId);
   }
 
   async pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
-    const api = await ensureWorkerAPI();
-    await api.pauseBatchSession(nodeType, nodeId, reason);
+    await this.pauseBuildSession(nodeType, nodeId, reason);
   }
 
   async pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
@@ -198,13 +195,7 @@ class WorkerBridgeImpl implements WorkerBridge {
   }
 
   async cancelQueuedBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
-    const api = await ensureWorkerAPI();
-    const cancelQueuedBatchSession = (api as { cancelQueuedBatchSession?: unknown }).cancelQueuedBatchSession;
-    if (typeof cancelQueuedBatchSession === 'function') {
-      await cancelQueuedBatchSession(nodeType, nodeId, reason);
-      return;
-    }
-    await api.pauseBatchSession(nodeType, nodeId, reason);
+    await this.cancelQueuedBuildSession(nodeType, nodeId, reason);
   }
 
   async cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
@@ -214,7 +205,12 @@ class WorkerBridgeImpl implements WorkerBridge {
       await cancelQueuedBuildSession(nodeType, nodeId, reason);
       return;
     }
-    await this.cancelQueuedBatchSession(nodeType, nodeId, reason);
+    const cancelQueuedBatchSession = (api as { cancelQueuedBatchSession?: unknown }).cancelQueuedBatchSession;
+    if (typeof cancelQueuedBatchSession === 'function') {
+      await cancelQueuedBatchSession(nodeType, nodeId, reason);
+      return;
+    }
+    await this.pauseBuildSession(nodeType, nodeId, reason);
   }
 
   async resumeBatchSession(
@@ -222,8 +218,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     nodeId: NodeId,
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void> {
-    const api = await ensureWorkerAPI();
-    await api.resumeBatchSession(nodeType, nodeId, buildContinuationPolicy);
+    await this.resumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
   }
 
   async resumeBuildSession(
@@ -235,12 +230,11 @@ class WorkerBridgeImpl implements WorkerBridge {
     await api.resumeBuildSession(nodeType, nodeId, buildContinuationPolicy);
   }
 
-  async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {
-    const api = await ensureWorkerAPI();
-    return api.getBatchTasks(nodeType, nodeId);
+  async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {
+    return this.getBuildTasks(nodeType, nodeId);
   }
 
-  async getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {
+  async getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {
     const api = await ensureWorkerAPI();
     return api.getBuildTasks(nodeType, nodeId);
   }
@@ -248,23 +242,15 @@ class WorkerBridgeImpl implements WorkerBridge {
   async subscribeBatchTasks(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchTaskUpdateEvent) => void
+    cb: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void> {
-    const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBatchTasks(nodeType, nodeId, proxy(cb));
-    return () => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
-      }
-    };
+    return this.subscribeBuildTasks(nodeType, nodeId, cb);
   }
 
   async subscribeBuildTasks(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchTaskUpdateEvent) => void
+    cb: (event: BuildTaskUpdateEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeBuildTasks(nodeType, nodeId, proxy(cb));
@@ -366,23 +352,15 @@ class WorkerBridgeImpl implements WorkerBridge {
   async subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void
+    cb: (event: BuildProgressEvent) => void
   ): Promise<() => void> {
-    const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBatchProgress(nodeType, nodeId, proxy(cb));
-    return () => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.warn('[WorkerBridge] unsubscribe failed', error);
-      }
-    };
+    return this.subscribeBuildProgress(nodeType, nodeId, cb);
   }
 
   async subscribeBuildProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void
+    cb: (event: BuildProgressEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeBuildProgress(nodeType, nodeId, proxy(cb));
