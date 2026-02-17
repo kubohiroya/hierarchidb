@@ -3,6 +3,20 @@
     "selectLanguage": "言語を選択",
     "language": "言語"
   },
+  "auth": {
+    "kvFallback": {
+      "title": "認証状態の警告",
+      "summary": "サーバ側のセッションストレージが一時的に利用できないため、認証の一部が制限されています。",
+      "detail": {
+        "login": "ログインは完了していますが、サーバ側でのセッション管理は行われません。",
+        "refresh": "トークン更新は利用できません。期限切れ後は再ログインしてください。",
+        "revoke": "ログアウト／失効は端末内のみで行われ、サーバ側では無効化されません。",
+        "logout": "ログアウト／失効は端末内のみで行われ、サーバ側では無効化されません。"
+      },
+      "resetNotice": "この制限は日次で自動復旧します（JST 09:00 目安）。",
+      "action": "閉じる"
+    }
+  },
   "servicesReady": {
     "default": "サービスの準備が完了しました。{{time}}",
     "worker": "Worker サービスの準備が完了しました。{{time}}",
@@ -59,6 +73,9 @@
       "confirm": "全データを削除",
       "cancel": "キャンセル",
       "error": "キャッシュの削除に失敗しました。もう一度お試しください。"
+    },
+    "maintenance": {
+      "label": "IndexedDB メンテナンス"
     }
   },
   "dialogs": {
@@ -74,31 +91,31 @@
         "exitFullscreen": "全画面を終了"
       },
       "title": {
-        "empty": "ゴミ箱を空にする",
-        "restore": "ゴミ箱から復元"
+        "empty": "アーカイブから削除する",
+        "restore": "アーカイブから戻す"
       },
       "confirm": {
-        "title": "ゴミ箱を空にしますか?",
+        "title": "アーカイブを空にしますか?",
         "description": "{{unit}}を{{count}}件、完全に削除しますか?",
-        "empty": "ゴミ箱内の項目をすべて完全に削除します。",
+        "empty": "アーカイブ内の項目をすべて完全に削除します。",
         "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。"
       },
       "buttons": {
         "cancel": "キャンセル",
-        "confirmDelete": "ゴミ箱を空にする",
+        "confirmDelete": "アーカイブから削除する",
         "restore": "復元",
         "restoreWithCount": "復元 ({{count}})",
         "empty": "削除",
         "emptyWithCount": "削除 ({{count}})"
       },
-      "searchPlaceholder": "ゴミ箱を検索…",
-      "panelTitle": "ゴミ箱",
-      "stepLabel": "ゴミ箱",
+      "searchPlaceholder": "アーカイブを検索…",
+      "panelTitle": "アーカイブ",
+      "stepLabel": "アーカイブ",
       "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。",
       "aria": {
         "restore": "選択した項目を復元",
         "restoreWithCount": "{{unit}}を{{count}}件復元",
-        "empty": "ゴミ箱を空にする",
+        "empty": "アーカイブから削除する",
         "emptyWithCount": "{{unit}}を{{count}}件削除"
       },
       "units": {
@@ -235,7 +252,7 @@
       },
       "aria": {
         "toolbarLabel": "ツリーコンソールツールバー",
-        "trashMenuButton": "ゴミ箱メニューを開く",
+        "trashMenuButton": "アーカイブメニューを開く",
         "importExportButton": "インポート／エクスポートメニューを開く",
         "settingsButton": "ツールバー設定を開く"
       },
@@ -246,11 +263,12 @@
         "copy": "コピー ({{shortcut}})",
         "paste": "貼り付け ({{shortcut}})",
         "duplicate": "複製 ({{shortcut}})",
-        "moveToTrash": "ゴミ箱に移動 ({{shortcut}})"
+        "moveToTrash": "アーカイブに移動する ({{shortcut}})",
+        "moveToArchive": "アーカイブに移動する ({{shortcut}})"
       },
       "trashMenu": {
-        "restore": "ゴミ箱から復元",
-        "empty": "ゴミ箱を空にする"
+        "restore": "アーカイブから戻す",
+        "empty": "アーカイブから削除する"
       },
       "importExportMenu": {
         "import": "JSONファイルからインポート",
@@ -313,12 +331,57 @@
       "copy": "コピー",
       "cut": "切り取り",
       "duplicate": "複製",
-      "moveToTrash": "ゴミ箱に移動",
+      "import": "インポート",
+      "export": "エクスポート",
+      "moveToTrash": "アーカイブに移動する",
+      "moveToArchive": "アーカイブに移動する",
       "visible": "表示",
       "hidden": "非表示",
       "checkReference": "参照を確認",
       "preview": "プレビュー",
       "build": "ビルド"
+    },
+    "shapePresets": {
+      "default": {
+        "name": "デフォルト",
+        "description": "国が選択されていない状態の shape を作成します。"
+      },
+      "japanLevel01": {
+        "name": "日本レベル0+1(都道府県)",
+        "description": "日本のみを対象に、行政レベル0とレベル1(都道府県)を選択します。",
+        "nodeNameTemplate": "日本 L0+1 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。簡略化設定を日本向けに調整しています。"
+      },
+      "worldLevel0": {
+        "name": "世界各国レベル0",
+        "description": "全世界の国境(行政レベル0)を選択し、軽量なグローバル表示に最適化します。",
+        "nodeNameTemplate": "世界 L0 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。軽量化を優先した簡略化設定です。"
+      },
+      "worldLevel1CnInLevel12": {
+        "name": "世界各国レベル1、中国とインドはレベル1+2",
+        "description": "全世界は行政レベル1を選択し、中国とインドのみレベル2まで拡張します。",
+        "nodeNameTemplate": "世界 L1 + 中国/インド L1+2 {{date}}",
+        "nodeDescriptionTemplate": "プリセット: {{preset}}。詳細度とサイズのバランスを取った設定です。"
+      }
+    },
+    "nodeTemplates": {
+      "folder": {
+        "default": {
+          "name": "デフォルト",
+          "description": "子ノードがない空のフォルダーを作成します。"
+        },
+        "populationByCountries": {
+          "name": "各国人口（Population by Countries）",
+          "description": "国別人口の集計ノードを含むフォルダーテンプレートを作成します。"
+        }
+      }
+    },
+    "errors": {
+      "trashFailed": "アーカイブへの移動に失敗しました。",
+      "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはアーカイブに移動できません。",
+      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはアーカイブに移動できません。",
+      "trashBuildSessionRunning": "ビルドセッション実行中のため、アーカイブに移動できません。"
     },
     "infoPanel": {
       "noTimestamp": "—",
@@ -337,10 +400,14 @@
       "noNode": "このページではノード情報を表示できません。",
       "createdLabel": "作成",
       "updatedLabel": "更新",
-      "confirmTrashTitle": "ゴミ箱に移動",
-      "confirmTrashDescription": "この項目と子要素をゴミ箱に移動しますか？",
+      "confirmTrashTitle": "アーカイブに移動する",
+      "confirmTrashDescription": "この項目と子要素をアーカイブに移動しますか？",
       "confirmTrashCancel": "キャンセル",
-      "confirmTrashConfirm": "ゴミ箱に移動"
+      "confirmTrashConfirm": "アーカイブに移動する",
+      "confirmArchiveTitle": "アーカイブに移動する",
+      "confirmArchiveDescription": "この項目と子要素をアーカイブに移動しますか？",
+      "confirmArchiveCancel": "キャンセル",
+      "confirmArchiveConfirm": "アーカイブに移動する"
     }
   },
   "tags": {
