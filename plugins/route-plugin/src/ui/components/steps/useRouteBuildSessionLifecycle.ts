@@ -158,7 +158,6 @@ export const useRouteBuildSessionLifecycle = ({
   const [overallProgress, setOverallProgress] = useState(0);
   const [isStopRequested, setIsStopRequested] = useState(false);
   const [isStopAccepted, setIsStopAccepted] = useState(false);
-  const isStopInFlight = isStopRequested || isStopAccepted;
   const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
   const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
@@ -214,12 +213,12 @@ export const useRouteBuildSessionLifecycle = ({
   });
 
   useEffect(() => {
-    if (!isStopInFlight) return;
+    if (!(isStopRequested || isStopAccepted)) return;
     if (status === 'idle') {
       setIsStopRequested(false);
       setIsStopAccepted(false);
     }
-  }, [isStopInFlight, status]);
+  }, [isStopAccepted, isStopRequested, status]);
 
   useEffect(() => {
     completionStatusRef.current = status;
@@ -407,7 +406,7 @@ export const useRouteBuildSessionLifecycle = ({
   ]);
 
   const handlePause = useCallback(async (reason: PauseBuildReason = 'user-pause'): Promise<void> => {
-    if (isStopInFlight) return;
+    if (isStopRequested || isStopAccepted) return;
     await executePauseBuildFlow({
       reason,
       onPendingChange: setIsStopRequested,
@@ -437,14 +436,14 @@ export const useRouteBuildSessionLifecycle = ({
         console.error('[RouteBuildStep] pause failed', error);
       },
     });
-  }, [api, initialize, isStopInFlight, onUpdate, sessionId, t]);
+  }, [api, initialize, isStopAccepted, isStopRequested, onUpdate, sessionId, t]);
 
   return {
     status,
     setStatus,
     overallProgress,
     setOverallProgress,
-    isStopRequested: isStopInFlight,
+    isStopRequested: isStopRequested || isStopAccepted,
     ideGsmPhase,
     errorRows,
     errorDialogOpen,
