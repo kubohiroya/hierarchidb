@@ -1400,6 +1400,13 @@ const startBuildSessionInternal = async (
     );
   }
   if (activePipelines.has(pipelineKey)) {
+    setPaused(nodeForSession, false);
+    await upsertBuildSessionSnapshot({
+      nodeId: nodeForSession,
+      status: 'running',
+      canResume: false,
+      stopReason: undefined,
+    });
     await emitProgressSnapshot(nodeForSession, `${startupScope} ignored: pipeline already active`);
     return nodeForSession;
   }

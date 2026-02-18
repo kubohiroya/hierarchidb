@@ -1370,6 +1370,28 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       if (!band) {
         return { status: 'failed', errorMessage: `Unknown bandIndex: ${input.bandIndex}` };
       }
+      const noOpBand0Topojson = input.bandIndex === 0
+        && band.zMin <= 2
+        && context.topojsonSource === true;
+      if (noOpBand0Topojson) {
+        return {
+          status: 'completed',
+          progress: 100,
+          message: `skipped: topojson band0 no-op (zMin=${band.zMin})`,
+          display: {
+            kind: 'skip',
+            key: 'stage.taskSkip.noOp',
+            params: {
+              bandIndex: input.bandIndex,
+              bandMinZoom: band.zMin,
+            },
+          },
+          outputData: {
+            processedPolygons: 0,
+            totalPolygons: 0,
+          },
+        };
+      }
       const parent = unpackTileId(input.tileId, band.zBase);
       const groupByContinent = Boolean(
         context.continentByCountry

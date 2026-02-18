@@ -173,6 +173,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
   const featureGeojsonByteSizeById = await loadFeatureGeojsonByteSizeById(params.nodeId);
   const transformTolerance = params.buildConfig.transformConfig.tolerance;
   const transformRetryToleranceStep = params.buildConfig.transformConfig.retryToleranceStep;
+  const isTopojsonSource = params.buildConfig.dataSourceName === 'geoboundaries-topojson';
   const topojsonSimplify = vtConfig.enableTopojsonSimplify
     ? {
       enabled: true,
@@ -191,6 +192,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     geometryEngine,
     abortSignal: vtAbortController.signal,
     continentByCountry,
+    topojsonSource: isTopojsonSource,
     topojsonSimplify,
     featureGeojsonByteSizeById,
     tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
