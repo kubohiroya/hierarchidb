@@ -267,16 +267,17 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
 
               const linkContent = (
                 <>
-                  <IconComponent
-                    nodeType={nodeType}
-                    size="small"
-                    color="inherit"
-                    htmlColor={iconColor}
-                    clickable={iconInteractive}
-                    onClick={
-                      iconInteractive
-                        ? (event: MouseEvent<HTMLElement>) => {
-                            event.preventDefault();
+              <IconComponent
+                nodeType={nodeType}
+                size="small"
+                color="inherit"
+                htmlColor={iconColor}
+                clickable={iconInteractive}
+                isDraft={node.holderType === 'draft'}
+                onClick={
+                  iconInteractive
+                    ? (event: MouseEvent<HTMLElement>) => {
+                        event.preventDefault();
                             event.stopPropagation();
                             openContextMenu(node, event.currentTarget as HTMLElement);
                           }

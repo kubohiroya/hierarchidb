@@ -26,6 +26,7 @@ type NodeTypeIconLikeProps = {
   clickable?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
   htmlColor?: string;
+  isDraft?: boolean;
 };
 
 export interface ColumnBuilderParams {
@@ -405,6 +406,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 clickable={iconInteractive}
                 color="inherit"
                 htmlColor={iconColor}
+                isDraft={hasSelfDraft}
               />
             </IconButton>
           </Box>

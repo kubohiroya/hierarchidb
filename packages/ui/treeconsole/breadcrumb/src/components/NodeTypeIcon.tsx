@@ -3,7 +3,7 @@
      */
 
 import type { MouseEvent, ReactElement } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Badge, Box, IconButton } from '@mui/material';
 import {
   Delete as ArchiveIcon,
   Description as FileIcon,
@@ -27,6 +27,7 @@ interface NodeTypeIconProps {
   clickable?: boolean;
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
+  isDraft?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
   /**
    * Optional explicit color (hex or css color). When provided,
@@ -93,6 +94,7 @@ export function NodeTypeIcon({
                                disabled = false,
                                color = 'inherit',
                                htmlColor,
+                               isDraft = false,
                              }: NodeTypeIconProps): ReactElement {
   // Handle both standard sizes and string size
   const standardSizes = ['small', 'medium', 'large'];
@@ -102,23 +104,47 @@ export function NodeTypeIcon({
   const Icon = getIconByType(nodeType);
   const fontSize = iconSize === 'small' ? 'small' : iconSize === 'large' ? 'large' : 'medium';
 
+  const icon = (
+    <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+  );
+
+  const badgeProps = isDraft
+    ? {
+        color: 'error' as const,
+        variant: 'dot' as const,
+        overlap: 'circular' as const,
+        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+        invisible: false,
+        sx: {
+          '& .MuiBadge-badge': {
+            width: 8,
+            height: 8,
+            minWidth: 8,
+            transform: 'scale(1) translate(20%, -20%)',
+          },
+        },
+      }
+    : { invisible: true as const };
+
   if (clickable && onClick) {
     return (
-      <IconButton
-        size={iconSize}
-        onClick={onClick}
-        disabled={disabled}
-        sx={{
-          padding: iconSize === 'small' ? 0.5 : 1,
-          cursor: disabled ? 'not-allowed' : 'context-menu',
-          '&:hover': {
-            backgroundColor: 'action.hover',
-          },
-        }}
-      >
-        {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
-        <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
-      </IconButton>
+      <Badge {...badgeProps}>
+        <IconButton
+          size={iconSize}
+          onClick={onClick}
+          disabled={disabled}
+          sx={{
+            padding: iconSize === 'small' ? 0.5 : 1,
+            cursor: disabled ? 'not-allowed' : 'context-menu',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+          {icon}
+        </IconButton>
+      </Badge>
     );
   }
 
@@ -134,7 +160,10 @@ export function NodeTypeIcon({
       }}
     >
       {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
-      <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+      <Badge {...badgeProps}>
+        {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+        <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
+      </Badge>
     </Box>
   );
 }

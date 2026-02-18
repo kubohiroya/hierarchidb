@@ -222,7 +222,7 @@
       "usageAndCreated": "Usage: {{count}}",
       "loading": "Loading...",
       "notFound": "Tag not found.",
-      "empty": "No nodes are tagged with this tag."
+      "empty": "No nodes are tagged with this tag label."
     }
   },
   "plugins": {

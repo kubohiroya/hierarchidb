@@ -131,7 +131,11 @@ export interface TreeTableCoreProps {
   /**
    * Custom containers
    */
-  NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
+  NodeTypeIcon?: React.ComponentType<{
+    nodeType: string;
+    size?: string;
+    isDraft?: boolean;
+  }>;
   NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
 
   /**

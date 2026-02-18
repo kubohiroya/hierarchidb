@@ -190,6 +190,7 @@ export function TreeNodeInfoPanel({
               onClick={handleIconClick}
               color="inherit"
               htmlColor={nodeIconColor}
+              isDraft={isDraft}
             />
           </span>
         </Tooltip>

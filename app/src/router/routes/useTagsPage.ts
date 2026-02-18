@@ -41,8 +41,8 @@ function buildBreadcrumbNodes(nodes: TreeNode[]): BreadcrumbNode[] {
 }
 
 function isDraftNode(node?: TreeNode): boolean {
-  return typeof (node as { draftMetadata?: unknown })?.draftMetadata !== 'undefined' &&
-    (node as { draftMetadata?: unknown }).draftMetadata !== null;
+  if (!node) return false;
+  return node.version === 0;
 }
 
 function isInArchive(ancestors: TreeNode[], node?: TreeNode): boolean {
@@ -83,8 +83,16 @@ export function useTagsPage(tagName?: string) {
   const cachedTaggedNodesEntry = normalizedTagName
     ? taggedNodesCache.get(normalizedTagName)
     : undefined;
-  const cachedTaggedNodes =
+  const hasFreshTaggedNodesCache = Boolean(
     cachedTaggedNodesEntry && isFresh(cachedTaggedNodesEntry.ts)
+  );
+  const hasUsableTaggedNodesCache = Boolean(
+    hasFreshTaggedNodesCache &&
+      cachedTaggedNodesEntry &&
+      cachedTaggedNodesEntry.data.length > 0
+  );
+  const cachedTaggedNodes =
+    hasUsableTaggedNodesCache
       ? cachedTaggedNodesEntry.data
       : null;
 
@@ -288,7 +296,7 @@ export function useTagsPage(tagName?: string) {
   const { data: taggedNodes = [], isLoading: isLoadingNodes } = useQuery<TaggedNode[]>({
     queryKey: ['tag', normalizedTagName, 'nodes'],
     queryFn: fetchTaggedNodes,
-    enabled: !!specificTag && isConnected && !cachedTaggedNodes,
+    enabled: !!specificTag && isConnected && !hasUsableTaggedNodesCache,
     initialData: cachedTaggedNodes ?? [],
   });
 

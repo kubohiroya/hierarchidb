@@ -142,7 +142,11 @@ export interface TreeConsoleContentProps {
   hideDragHandler?: boolean;
   rowClickAction?: 'Select/Navigate' | 'Edit';
   selectionMode?: 'none' | 'single' | 'multiple';
-  NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
+  NodeTypeIcon?: React.ComponentType<{
+    nodeType: string;
+    size?: string;
+    isDraft?: boolean;
+  }>;
   NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
   onRowClick?: (node: TreeNode, event: React.MouseEvent) => void;
   onRowDoubleClick?: (node: TreeNode, event: React.MouseEvent) => void;

@@ -59,7 +59,11 @@ export interface TreeConsoleBreadcrumbProps {
   /**
    * Custom icon component
    */
-  NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
+  NodeTypeIcon?: React.ComponentType<{
+    nodeType: string;
+    size?: string;
+    isDraft?: boolean;
+  }>;
 
   /**
    * Custom context menu component
