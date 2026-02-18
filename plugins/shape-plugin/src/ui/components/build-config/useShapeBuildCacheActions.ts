@@ -1,103 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { BuildSessionStatus, TaskStage } from '@hierarchidb/batch-api';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { BuildSessionStatus } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
-import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import {
-  countRawDataDataSourceBuffersForNode,
-  deleteRawDataDataSourceBuffersForNode,
-} from '../../../services/utils/chunkStore.js';
-
-type StageLikeTask = {
-  stage: TaskStage;
-  type?: TaskStage;
-  taskType?: TaskStage;
-};
-
-type TaskQueueRecordLike = Partial<StageLikeTask> & {
-  taskId?: string;
-};
-
-const SHAPE_NODE_TYPE = 'shape' as NodeType;
-const KNOWN_TASK_STAGES: TaskStage[] = ['fetch', 'transform', 'vt'];
-
-const resolveTaskStage = (task: StageLikeTask): TaskStage =>
-  task.stage ?? task.type ?? task.taskType;
-
-const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
-  stages.includes(resolveTaskStage(task));
-
-const resolveKnownTaskStage = (task: TaskQueueRecordLike): TaskStage | null => {
-  const candidate = task.stage ?? task.taskType ?? task.type;
-  if (!candidate) return null;
-  return KNOWN_TASK_STAGES.includes(candidate) ? candidate : null;
-};
-
-const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
-  const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
-  const patches: Array<{ taskId: string; updates: { stage?: TaskStage; taskType?: TaskStage } }> = [];
-  records.forEach((record) => {
-    if (!record || typeof record !== 'object') return;
-    const taskId = (record as TaskQueueRecordLike).taskId;
-    if (typeof taskId !== 'string' || taskId.length === 0) return;
-    const resolvedStage = resolveKnownTaskStage(record as TaskQueueRecordLike);
-    if (!resolvedStage) return;
-    const currentStage = (record as TaskQueueRecordLike).stage;
-    const currentTaskType = (record as TaskQueueRecordLike).taskType;
-    const updates: { stage?: TaskStage; taskType?: TaskStage } = {};
-    if (currentStage !== resolvedStage) updates.stage = resolvedStage;
-    if (currentTaskType !== resolvedStage) updates.taskType = resolvedStage;
-    if (Object.keys(updates).length > 0) {
-      patches.push({ taskId, updates });
-    }
-  });
-  if (patches.length === 0) return;
-  const debugTag = 'normalize-task-queue-ui-2026-02-09-0334';
-  const startedAt = Date.now();
-  console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages start', {
-    tag: debugTag,
-    nodeId,
-    patchCount: patches.length,
-  });
-  let waitTimer: ReturnType<typeof setInterval> | null = null;
-  waitTimer = setInterval(() => {
-    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages waiting', {
-      tag: debugTag,
-      nodeId,
-      elapsedMs: Date.now() - startedAt,
-    });
-  }, 5000);
-  try {
-    await taskQueue.transaction('rw', taskQueue.tasks, async () => {
-      await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
-    });
-    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages done', {
-      tag: debugTag,
-      nodeId,
-      elapsedMs: Date.now() - startedAt,
-    });
-  } finally {
-    if (waitTimer) clearInterval(waitTimer);
-  }
-};
-
-export type CacheCounts = {
-  fetchApi: number;
-  fetchFiltered: number;
-  transform: number;
-  vt: number;
-};
-
-export type ResultCounts = {
-  tiles: number;
-  featureMetadata: number;
-  transformErrors: number;
-};
+  clearBuildTasksForStages,
+  deleteFetchRawCache,
+  isTaskInStages,
+  loadCacheCounts,
+  SHAPE_NODE_TYPE,
+  type CacheCounts,
+  type ResultCounts,
+} from './useShapeBuildCacheActions.helpers.js';
+ 
 
 export type DeleteLoadingState = {
   fetchApi: boolean;
@@ -152,49 +72,13 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     setCountsLoading(true);
 
     try {
-      const taskQueue = new VtTaskQueueDb();
-      const [
-        fetchCacheCount,
-        rawCacheCount,
-        transformTaskCount,
-        vtTaskCount,
-        transformCacheCount,
-        vectorTileSummary,
-        featureMetadata,
-        transformErrors,
-      ] = await Promise.all([
-        ephemeralShapeAPIImpl.countFetchCaches(nodeId),
-        countRawDataDataSourceBuffersForNode(nodeId),
-        taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
-        taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
-        ephemeralShapeAPIImpl.countTransformCaches(nodeId),
-        shapeQueryAPIImpl.getVectorTileSummary(nodeId),
-        shapeQueryAPIImpl.listFeatureMetadata(nodeId),
-        shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
-      ]);
-      const featureMetadataCount = featureMetadata.length;
-      const transformErrorCount = transformErrors.length;
-      const transformCount = transformTaskCount + transformCacheCount + transformErrorCount;
-      const tileCount = vtTaskCount + vectorTileSummary.tiles;
-
-      const sessionStatus = await bridgeRef
-        .initialize()
-        .then(() => bridgeRef.getBuildSessionStatus(SHAPE_NODE_TYPE, nodeId))
-        .catch(() => null);
-
-      setSessionStatus(sessionStatus?.status ?? null);
-
-      setCounts({
-        fetchApi: rawCacheCount,
-        fetchFiltered: fetchCacheCount,
-        transform: transformCount,
-        vt: tileCount,
+      const result = await loadCacheCounts({
+        nodeId,
+        sessionBridge: bridgeRef,
       });
-      setResultCounts({
-        tiles: vectorTileSummary.tiles,
-        featureMetadata: featureMetadataCount,
-        transformErrors: transformErrorCount,
-      });
+      setSessionStatus(result.sessionStatus);
+      setCounts(result.counts);
+      setResultCounts(result.resultCounts);
     } finally {
       setCountsLoading(false);
     }
@@ -229,40 +113,10 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     }
   }, [loadCounts]);
 
-  const clearBuildTasksForStages = useCallback(async (taskTypes: BuildTaskType[]) => {
+  const runClearTaskQueueStages = useCallback(async (taskTypes: BuildTaskType[]) => {
     if (!nodeId) return;
-    const uniqueTypes = Array.from(new Set(taskTypes));
-    if (uniqueTypes.length === 0) return;
-    const taskRows = await Promise.all(
-      uniqueTypes.map((taskType) => ephemeralShapeAPIImpl.listBuildTasksByType(nodeId, taskType))
-    );
-    const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
-    if (taskIds.length > 0) {
-      await ephemeralShapeAPIImpl.deleteBuildTasksByIds(taskIds);
-    }
     const taskQueue = new VtTaskQueueDb();
-    if (uniqueTypes.includes('transform')) {
-      await normalizeTaskQueueStages(taskQueue, nodeId);
-    }
-    await Promise.all(
-      uniqueTypes.map((stage) => (
-        taskQueue.tasks
-          .where('[nodeId+stage]')
-          .equals([nodeId, stage])
-          .delete()
-      )),
-    );
-    if (uniqueTypes.includes('transform')) {
-      await taskQueue.tasks
-        .where('nodeId')
-        .equals(nodeId)
-        .and((task) => {
-          const stage = resolveKnownTaskStage(task as TaskQueueRecordLike);
-          if (!stage) return false;
-          return !KNOWN_TASK_STAGES.includes(stage);
-        })
-        .delete();
-    }
+    await clearBuildTasksForStages(taskQueue, nodeId, taskTypes);
   }, [nodeId]);
 
   const clearTileData = useCallback(async () => {
@@ -321,16 +175,16 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     await runDelete('fetchApi', async () => {
       let deletedApiCache = false;
       try {
-        await deleteRawDataDataSourceBuffersForNode(nodeId);
+        await deleteFetchRawCache(nodeId);
         deletedApiCache = true;
-        setCounts((prev) => ({ ...prev, fetchApi: 0 }));
+        setCounts((prev: CacheCounts) => ({ ...prev, fetchApi: 0 }));
       } catch (error) {
         console.warn('[shapeBuildCache] failed to delete fetch API cache', error);
         notify.error('Failed to delete API cache.');
       }
 
       try {
-        await clearBuildTasksForStages(stagesToClear);
+        await runClearTaskQueueStages(stagesToClear);
         setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
         setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
         await resetStaleProcessingSessionIfNeeded();
@@ -345,7 +199,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       }
     });
   }, [
-    clearBuildTasksForStages,
+    runClearTaskQueueStages,
     loadCountsSafely,
     nodeId,
     runDelete,
@@ -360,7 +214,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     const stagesToClear: BuildTaskType[] = ['fetch', 'transform', 'vt'];
     await runDelete('fetchFiltered', async () => {
       await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
-      await clearBuildTasksForStages(stagesToClear);
+      await runClearTaskQueueStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       const resetByStaleProcessing = await resetStaleProcessingSessionIfNeeded();
@@ -373,7 +227,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       notify.success('Deleted filtered cache');
     });
   }, [
-    clearBuildTasksForStages,
+    runClearTaskQueueStages,
     hasPersistedOutputs,
     loadCountsSafely,
     nodeId,
@@ -391,7 +245,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     const stagesToClear: BuildTaskType[] = ['transform', 'vt'];
     await runDelete('transform', async () => {
       await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
-      await clearBuildTasksForStages(stagesToClear);
+      await runClearTaskQueueStages(stagesToClear);
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       const resetByStaleProcessing = await resetStaleProcessingSessionIfNeeded();
@@ -403,7 +257,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       notify.success('Deleted transform cache');
     });
   }, [
-    clearBuildTasksForStages,
+    runClearTaskQueueStages,
     loadCountsSafely,
     nodeId,
     onResetSession,
@@ -419,7 +273,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     const stagesToClear: BuildTaskType[] = ['vt'];
     await runDelete('vt', async () => {
       await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
-      await clearBuildTasksForStages(stagesToClear);
+      await runClearTaskQueueStages(stagesToClear);
       await clearTileData();
       setBuildTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
       setPersistedTasks((prev) => prev.filter((task) => !isTaskInStages(task, stagesToClear)));
@@ -433,7 +287,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
       notify.success('Deleted tile data');
     });
   }, [
-    clearBuildTasksForStages,
+    runClearTaskQueueStages,
     clearTileData,
     hasPersistedOutputs,
     loadCountsSafely,
@@ -461,7 +315,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     await runDelete('resetSession', async () => {
       const taskQueue = new VtTaskQueueDb();
       await deleteTasksByNode(taskQueue, nodeId);
-      await deleteRawDataDataSourceBuffersForNode(nodeId);
+      await deleteFetchRawCache(nodeId);
       await shapeMutationAPIImpl.clearShapeArtifacts(nodeId);
       await Promise.all([
         shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId),
