@@ -295,15 +295,15 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
   {
     id: 'japan-level0-1',
     labelKey: 'treeConsole.shapePresets.japanLevel01.name',
-    labelFallback: 'Japan level0+1 (prefectures)',
+    labelFallback: 'Japan ADM0+1',
     descriptionKey: 'treeConsole.shapePresets.japanLevel01.description',
     descriptionFallback:
-      'Select Japan only. Include admin level 0 and level 1 boundaries.',
+      'Select Japan admin level 0+1 boundaries.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.japanLevel01.nodeNameTemplate',
-    nodeNameTemplateFallback: 'Japan L0+1 {{date}}',
+    nodeNameTemplateFallback: 'Japan ADM0+1',
     nodeDescriptionKey: 'treeConsole.shapePresets.japanLevel01.nodeDescriptionTemplate',
     nodeDescriptionFallback:
-      'Preset: Japan level 0+1 (prefectures). Includes tuned simplify settings.',
+      'Preset: Japan admin level 0+1 boundaries. Includes tuned simplify settings.',
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
       transformConfig: {
@@ -325,15 +325,15 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
   {
     id: 'world-level0',
     labelKey: 'treeConsole.shapePresets.worldLevel0.name',
-    labelFallback: 'World countries level0',
+    labelFallback: 'World countries ADM0',
     descriptionKey: 'treeConsole.shapePresets.worldLevel0.description',
     descriptionFallback:
       'Select all countries at admin level 0 for compact global coverage.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.worldLevel0.nodeNameTemplate',
-    nodeNameTemplateFallback: 'World L0 {{date}}',
+    nodeNameTemplateFallback: 'World ADM0',
     nodeDescriptionKey: 'treeConsole.shapePresets.worldLevel0.nodeDescriptionTemplate',
     nodeDescriptionFallback:
-      'Preset: world countries level 0. Prioritizes compact simplification.',
+      'Preset: world countries admin level 0. Prioritizes compact simplification.',
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
       transformConfig: {
@@ -355,12 +355,12 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
   {
     id: 'world-level1-cn-in-level12',
     labelKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.name',
-    labelFallback: 'World level1, China/India level1+2',
+    labelFallback: 'World countries ADM1, China/India ADM1+2',
     descriptionKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.description',
     descriptionFallback:
-      'Select level 1 globally; extend China and India to level 2.',
+      'Select ADM1 globally; extend China and India to ADM2.',
     nodeNameTemplateKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.nodeNameTemplate',
-    nodeNameTemplateFallback: 'World L1 + CN/IN L1+2 {{date}}',
+    nodeNameTemplateFallback: 'World countries ADM1, CN/IN ADM1+2',
     nodeDescriptionKey: 'treeConsole.shapePresets.worldLevel1CnInLevel12.nodeDescriptionTemplate',
     nodeDescriptionFallback:
       'Preset: world level 1, plus China/India level 2 with balanced simplify settings.',
