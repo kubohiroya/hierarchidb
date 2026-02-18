@@ -19,6 +19,9 @@ import type { VTStageContext } from '../contexts.js';
 import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
 import { updateTask, VtTaskQueueDb } from '../task/taskQueue.js';
 import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import type { Topology } from 'topojson-specification';
+import { quantizeTopoJsonToGrid } from '../transform/topojsonGrid.js';
+import { getTopojsonRuntime } from '../transform/topojsonRuntimeAdapter.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -586,6 +589,82 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
   return map;
 };
 
+const resolveMaxVerticesPerTile = (indexMaxPoints: number): number => (
+  Number.isFinite(indexMaxPoints) && indexMaxPoints > 0 ? indexMaxPoints : 65536
+);
+
+const buildTileLayerIndexFromFeatures = async (params: {
+  layerName: string;
+  features: Feature<Geometry>[];
+  z: number;
+  x: number;
+  y: number;
+  context: VTStageContext;
+  geojsonVt: (collection: FeatureCollection, options: {
+    maxZoom: number;
+    indexMaxZoom: number;
+    extent: number;
+    buffer: number;
+    tolerance: number;
+    promoteId: string;
+    indexMaxPoints: number;
+  }) => GeojsonVtIndex;
+  topojsonSimplify?: {
+    enabled: boolean;
+    toleranceK: number;
+    retryToleranceStep: number;
+    quantize?: number;
+  };
+  debugCollect?: boolean;
+}): Promise<Tile | null> => {
+  if (params.features.length === 0) return null;
+  const maxVerticesPerTile = resolveMaxVerticesPerTile(params.context.vtConfig.indexMaxPoints);
+  let collection: FeatureCollection = { type: 'FeatureCollection', features: params.features };
+  if (params.topojsonSimplify?.enabled) {
+    const simplifyResult = await simplifyTileFeatureCollectionWithTopojson({
+      collection,
+      zTarget: params.z,
+      toleranceK: params.topojsonSimplify.toleranceK,
+      retryToleranceStep: params.topojsonSimplify.retryToleranceStep,
+      maxVerticesPerTile,
+      quantize: params.topojsonSimplify.quantize,
+      extent: params.context.vtConfig.extent,
+      onAttempt: (attempt, toleranceK, maxVertices) => {
+        if (params.debugCollect) {
+          const details = {
+            tile: `${params.z}/${params.x}/${params.y}`,
+            layerName: params.layerName,
+            attempt,
+            attemptToleranceK: toleranceK,
+            attemptMaxVertices: maxVertices,
+            targetMaxVertices: maxVerticesPerTile,
+          };
+          console.info('[vt][debug] topojson simplify attempt', JSON.stringify(details));
+        }
+      },
+    });
+    collection = simplifyResult.collection;
+  }
+
+  const index = params.geojsonVt(collection, {
+    maxZoom: params.z,
+    indexMaxZoom: params.z,
+    extent: params.context.vtConfig.extent,
+    buffer: params.context.vtConfig.bufferSize,
+    tolerance: params.topojsonSimplify?.enabled ? 0 : params.context.vtConfig.tolerance,
+    promoteId: params.context.vtConfig.promoteId,
+    indexMaxPoints: maxVerticesPerTile,
+  }) as GeojsonVtIndex;
+
+  const indexedTile = index.getTile(params.z, params.x, params.y);
+  if (!indexedTile || !Array.isArray(indexedTile.features) || indexedTile.features.length === 0) return null;
+  let tile = { ...indexedTile, features: indexedTile.features } as Tile;
+  if (params.context.vtConfig.boundaryDedupe && params.layerName.endsWith('-boundary')) {
+    return dedupeTileLines(tile);
+  }
+  return tile;
+};
+
 const getHeapSnapshot = (): {
   usedJSHeapSize: number;
   totalJSHeapSize: number;
@@ -937,6 +1016,130 @@ const buildTileSummary = (tilesByZoom: Map<number, { total: number; generated: n
   return `tiles -> ${parts.join(', ')}`;
 };
 
+const EARTH_RADIUS_METERS = 6_378_137;
+const DEFAULT_MVT_EXTENT = 4096;
+
+const resolveTopojsonToleranceDegrees = (
+  zTarget: number,
+  toleranceK: number,
+  extent: number,
+): number => {
+  const resolvedExtent = Number.isFinite(extent) && extent > 0 ? extent : DEFAULT_MVT_EXTENT;
+  if (!Number.isFinite(zTarget) || !Number.isFinite(toleranceK) || zTarget < 0) return 0;
+  return toleranceK * (2 * Math.PI * EARTH_RADIUS_METERS) / (resolvedExtent * 2 ** zTarget);
+};
+
+const maxVerticesInCollection = (collection: FeatureCollection): number => {
+  let maxVertices = 0;
+  collection.features.forEach((feature) => {
+    const vertices = countVerticesFromGeometry(feature.geometry);
+    if (vertices > maxVertices) {
+      maxVertices = vertices;
+    }
+  });
+  return maxVertices;
+};
+
+type TopologySimplifyResult = {
+  collection: FeatureCollection;
+  finalToleranceK: number;
+  attempts: number;
+};
+
+const simplifyTileFeatureCollectionWithTopojson = async (params: {
+  collection: FeatureCollection;
+  zTarget: number;
+  toleranceK: number;
+  retryToleranceStep: number;
+  maxVerticesPerTile: number;
+  extent: number;
+  quantize?: number;
+  maxAttempts?: number;
+  onAttempt?: (attempt: number, toleranceK: number, maxVertices: number) => void;
+}): Promise<TopologySimplifyResult> => {
+  if (params.collection.features.length === 0) {
+    return {
+      collection: params.collection,
+      finalToleranceK: params.toleranceK,
+      attempts: 0,
+    };
+  }
+
+  const featureCount = params.collection.features.length;
+  if (!Number.isFinite(params.toleranceK) || params.toleranceK <= 0 || featureCount === 0 || params.maxVerticesPerTile <= 0) {
+    return {
+      collection: params.collection,
+      finalToleranceK: params.toleranceK,
+      attempts: 1,
+    };
+  }
+
+  const configuredMaxAttempts = params.maxAttempts ?? 12;
+  const maxAttempts = Number.isFinite(configuredMaxAttempts) && configuredMaxAttempts > 0
+    ? Math.min(32, Math.round(configuredMaxAttempts))
+    : 12;
+
+  const retryStep = Number.isFinite(params.retryToleranceStep) && params.retryToleranceStep > 0
+    ? params.retryToleranceStep
+    : 0;
+
+  const runtime = await getTopojsonRuntime();
+  let topology = runtime.topology({ collection: params.collection as unknown as Record<string, unknown> });
+
+  const configuredQuantize = params.quantize ?? 0;
+  if (Number.isFinite(configuredQuantize) && configuredQuantize > 0) {
+    topology = await quantizeTopoJsonToGrid(topology, {
+      zTarget: params.zTarget,
+      quantize: configuredQuantize,
+    });
+  }
+
+  const presimplified = runtime.presimplify(topology);
+  const objectEntry = Object
+    .entries(topology.objects ?? {})
+    .find(([key]) => Boolean(key));
+  const objectKey = objectEntry?.[0];
+  const objectGeometry = objectEntry?.[1];
+  if (!objectKey || !objectGeometry) {
+    return {
+      collection: params.collection,
+      finalToleranceK: params.toleranceK,
+      attempts: 1,
+    };
+  }
+
+  let bestCollection = params.collection;
+  let currentToleranceK = params.toleranceK;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const tolerance = resolveTopojsonToleranceDegrees(params.zTarget, currentToleranceK, params.extent);
+    const simplifiedTopology = tolerance > 0
+      ? runtime.simplify(presimplified, tolerance)
+      : topology;
+    const geojson = runtime.feature(simplifiedTopology, objectGeometry as Topology['objects'][string]) as FeatureCollection | Feature;
+    const nextCollection = geojson.type === 'FeatureCollection'
+      ? { ...geojson, features: Array.isArray(geojson.features) ? geojson.features : [] }
+      : { type: 'FeatureCollection' as const, features: [geojson] };
+    const maxVertices = maxVerticesInCollection(nextCollection);
+    params.onAttempt?.(attempt, currentToleranceK, maxVertices);
+    bestCollection = nextCollection;
+    if (maxVertices <= params.maxVerticesPerTile || retryStep <= 0) {
+      return {
+        collection: nextCollection,
+        finalToleranceK: currentToleranceK,
+        attempts: attempt,
+      };
+    }
+    currentToleranceK += retryStep;
+  }
+
+  return {
+    collection: bestCollection,
+    finalToleranceK: currentToleranceK,
+    attempts: maxAttempts,
+  };
+};
+
 const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason: string): string => (
   `${featureSummary}, ${tileSummary} (skipped: ${reason})`
 );
@@ -1108,7 +1311,7 @@ const buildLayerIndexes = async (
       buffer: context.vtConfig.bufferSize,
       tolerance: context.vtConfig.tolerance,
       promoteId: context.vtConfig.promoteId,
-      indexMaxPoints: 65536,
+      indexMaxPoints: resolveMaxVerticesPerTile(context.vtConfig.indexMaxPoints),
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
     if (debugContext && layerStats) {
@@ -1174,6 +1377,8 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         && parent.x === 0
         && parent.y === 0
       );
+      const useTopojsonTileSimplify = Boolean(context.topojsonSimplify?.enabled);
+      const topojsonSimplify = useTopojsonTileSimplify ? context.topojsonSimplify : null;
       if (groupByContinent) {
         console.info('[vt] continent grouping enabled', JSON.stringify({
           ...taskContext,
@@ -1342,6 +1547,45 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         });
       };
 
+      const geojsonvt = await loadGeojsonVt();
+      const buildLayerIndexForTile = async (
+        layerName: string,
+        features: Feature<Geometry>[],
+        z: number,
+        x: number,
+        y: number,
+      ): Promise<Tile | null> => (
+        buildTileLayerIndexFromFeatures({
+          layerName,
+          features,
+          z,
+          x,
+          y,
+          context,
+          geojsonVt: geojsonvt as (
+            collection: FeatureCollection,
+            options: {
+              maxZoom: number;
+              indexMaxZoom: number;
+              extent: number;
+              buffer: number;
+              tolerance: number;
+              promoteId: string;
+              indexMaxPoints: number;
+            },
+          ) => GeojsonVtIndex,
+          topojsonSimplify: useTopojsonTileSimplify && topojsonSimplify
+            ? {
+              enabled: true,
+              toleranceK: topojsonSimplify.toleranceK,
+              retryToleranceStep: topojsonSimplify.retryToleranceStep,
+              quantize: topojsonSimplify.quantize,
+            }
+            : undefined,
+          debugCollect,
+        })
+      );
+
       assertNotAborted(abortSignal);
       const vtpbfStartedAt = Date.now();
       console.info('[vt] vtpbf load start', JSON.stringify({
@@ -1367,7 +1611,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       const bufferSetHash = buildBufferSetHash(input.bufferIds);
       let indexes: Map<string, GeojsonVtIndex> | null = null;
       let aggregatedLayersByTileId: Map<number, Record<string, Tile>> | null = null;
-      if (groupByContinent && featuresByContinent && featuresByContinent.size > 1) {
+      if (!useTopojsonTileSimplify && groupByContinent && featuresByContinent && featuresByContinent.size > 1) {
         aggregatedLayersByTileId = new Map();
         for (const [continent, features] of featuresByContinent.entries()) {
           if (features.length === 0) continue;
@@ -1426,7 +1670,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         }
       } else {
         const layerMap = buildLayerMap(collection);
-        const forcePerTileIndex = band.zMin >= 3;
+        const forcePerTileIndex = useTopojsonTileSimplify || band.zMin >= 3;
         console.info('[vt] layer map ready', JSON.stringify({
           ...taskContext,
           layerCount: layerMap.size,
@@ -1464,7 +1708,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           }));
           aggregatedLayersByTileId = new Map();
           const emptyTilesWithFeatures: GeojsonVtEmptyTileDetail[] = [];
-          const geojsonvt = await loadGeojsonVt();
           const featuresWithBBoxByLayer = new Map<string, FeatureWithBBox[]>();
           layerMap.forEach((features, layerName) => {
             const featuresWithBBox = buildFeaturesWithBBox(features);
@@ -1519,17 +1762,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       matchedFeatureIds: debugFocusMatch.matchedFeatureIds,
                     }));
                   }
-                  const collection: FeatureCollection = { type: 'FeatureCollection', features: clippedFeatures };
-                  const index = geojsonvt(collection, {
-                    maxZoom: z,
-                    indexMaxZoom: z,
-                    extent: context.vtConfig.extent,
-                    buffer: context.vtConfig.bufferSize,
-                    tolerance: context.vtConfig.tolerance,
-                    promoteId: context.vtConfig.promoteId,
-                    indexMaxPoints: 65536,
-                  }) as GeojsonVtIndex;
-                  const tile = collectLayerForTile(index, layerName, z, x, y);
+                  const tile = await buildLayerIndexForTile(layerName, clippedFeatures, z, x, y);
                   if (!tile) {
                     const detail: GeojsonVtEmptyTileDetail = {
                       z,
@@ -1642,7 +1875,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               perFeatureMaxVertices,
             }));
             aggregatedLayersByTileId = new Map();
-            const geojsonvt = await loadGeojsonVt();
             for (const feature of features) {
               assertNotAborted(abortSignal);
               const featureBox = featureBBox(feature);
@@ -1674,17 +1906,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                       }
                     }
                     if (!clipped || isEmptyGeometry(clipped.geometry)) continue;
-                    const collection: FeatureCollection = { type: 'FeatureCollection', features: [clipped] };
-                    const index = geojsonvt(collection, {
-                      maxZoom: z,
-                      indexMaxZoom: z,
-                      extent: context.vtConfig.extent,
-                      buffer: context.vtConfig.bufferSize,
-                      tolerance: context.vtConfig.tolerance,
-                      promoteId: context.vtConfig.promoteId,
-                      indexMaxPoints: 65536,
-                    }) as GeojsonVtIndex;
-                    const tile = collectLayerForTile(index, layerName, z, x, y);
+                    const tile = await buildLayerIndexForTile(layerName, [clipped], z, x, y);
                     if (!tile) continue;
                     const tileId = packTileId(x, y, z);
                     const existing = aggregatedLayersByTileId.get(tileId);
