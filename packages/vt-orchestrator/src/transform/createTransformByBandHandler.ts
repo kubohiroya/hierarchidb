@@ -1674,6 +1674,8 @@ export const createTransformByBandHandler = (
   let debugNodeId: NodeId | null = null;
   let debugSelectionLogged = false;
   let firstTaskLogged = false;
+  const RETRY_TOLERANCE_STEP_MULTIPLIER = 4;
+  const MAX_RETRY_STEPS = 12;
   const debugResetAfterMs = 30000;
   const readHeapUsageRatio = (): number | null => {
     const performance = (globalThis as {
@@ -2064,7 +2066,7 @@ export const createTransformByBandHandler = (
           maxVertexCount,
         };
       };
-      const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
+      const shouldDeferSimplifyToVt = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
       let simplifyAttempt = 1;
       try {
         assertNotAborted(abortSignal);
@@ -2111,13 +2113,20 @@ export const createTransformByBandHandler = (
           inputPolygonCount,
           inputVertexCount,
         });
-        if (skipGeojsonSimplify) {
+        if (shouldDeferSimplifyToVt) {
           simplified = inputCollection;
           processedPolygonCount = inputPolygonCount;
           logDebugPhase('simplify:skipped', {
+            mode: 'topojson',
             algorithm: simplifyAlgorithm,
             fetchFormat: fetchCache.format,
             featureCount: simplified.features.length,
+          });
+          await updateSimplifyAttemptPhase(taskId, {
+            attempt: simplifyAttempt,
+            tolerance,
+            phaseState: 'done',
+            progress: taskProgressRange.simplifyEnd,
           });
         } else {
           const simplifyPromise = runStageWithLabel('simplify-only', () => (
@@ -2137,7 +2146,7 @@ export const createTransformByBandHandler = (
           featureCount: simplified?.features.length ?? 0,
           polygonCount: inputPolygonCount,
           algorithm: simplifyAlgorithm,
-          skipped: skipGeojsonSimplify,
+          skipped: shouldDeferSimplifyToVt,
         });
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
@@ -2148,7 +2157,7 @@ export const createTransformByBandHandler = (
           processedPolygons: processedPolygonCount,
           totalPolygons: inputPolygonCount,
           algorithm: simplifyAlgorithm,
-          skipped: skipGeojsonSimplify,
+          skipped: shouldDeferSimplifyToVt,
           heap: readHeapSnapshot(),
         });
         await reportProgressMaybe(true);
@@ -2374,10 +2383,11 @@ export const createTransformByBandHandler = (
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)}) (simplifyAttempt=${simplifyAttempt})${simplifySummary}${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
-      await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
-      const maxRetrySteps = 8;
+      if (!shouldDeferSimplifyToVt) {
+        await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
+      const maxRetrySteps = MAX_RETRY_STEPS;
       const resolveRetryToleranceStep = (): number => configuredRetryToleranceStep;
-      const retryToleranceStep = resolveRetryToleranceStep();
+      const retryToleranceStep = resolveRetryToleranceStep() * RETRY_TOLERANCE_STEP_MULTIPLIER;
       const countVertexLimitOverages = (collection: FeatureCollection) => {
         let maxVertexCount = 0;
         let overLimitFeatureCount = 0;
@@ -2487,7 +2497,7 @@ export const createTransformByBandHandler = (
         }
 
         if (bestFeature && successTolerance !== null && successIndex !== null) {
-          const bisectionSteps = 5 - Math.ceil(successIndex / 2);
+          const bisectionSteps = Math.max(0, 8 - Math.ceil(successIndex / 2));
           const bisectionAttemptTotal = maxRetrySteps + bisectionSteps;
           let low = lastFailTolerance;
           let high = successTolerance;
@@ -2691,7 +2701,8 @@ export const createTransformByBandHandler = (
         };
       }
 
-      await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
+        await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
+      }
       const simplifiedFeatureCount = simplified.features.length;
       const simplifiedVertexCount = simplified.features.reduce(
         (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
