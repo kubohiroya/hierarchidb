@@ -4,6 +4,6 @@ export interface Tree {
   id: TreeId;
   name: string;
   rootId: NodeId;
-  trashRootId: NodeId;
+  archiveRootId: NodeId;
   superRootId: NodeId;
 }

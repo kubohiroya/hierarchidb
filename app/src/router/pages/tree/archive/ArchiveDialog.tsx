@@ -48,11 +48,11 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
-import { getArchiveDisplayName } from '../trash/getArchiveDisplayName.js';
-import { ArchiveBreadcrumb } from '../trash/ArchiveBreadcrumb.js';
+import { getArchiveDisplayName } from './getArchiveDisplayName.js';
+import { ArchiveBreadcrumb } from './ArchiveBreadcrumb.js';
 import { useArchiveDialog } from './useArchiveDialog.js';
 
-const TRASH_DIALOG_FOOTER_HEIGHT = 72;
+const ARCHIVE_DIALOG_FOOTER_HEIGHT = 72;
 
 // ----------------------------------------
 // Loader & data types
@@ -89,33 +89,33 @@ export async function clientLoader({
 
   const client = treeData.client;
   const queryAPI = await client.getQueryAPI();
-  const fallbackArchiveId = treeData.tree.trashRootId as NodeId | undefined;
+  const fallbackArchiveId = treeData.tree.archiveRootId as NodeId | undefined;
   const activeArchiveNodeId = (targetNodeId as NodeId | undefined) ?? fallbackArchiveId;
   if (!activeArchiveNodeId) {
     throw new Response('Archive root not found.', { status: 404 });
   }
 
-  const trashRootNode = fallbackArchiveId ? await queryAPI.getNode(fallbackArchiveId) : undefined;
+  const archiveRootNode = fallbackArchiveId ? await queryAPI.getNode(fallbackArchiveId) : undefined;
   const activeArchiveNode = await queryAPI.getNode(activeArchiveNodeId);
   const targetDepth = activeArchiveNodeId === fallbackArchiveId ? 2 : 1;
-  const trashItems = (await queryAPI.listChildren(activeArchiveNodeId, {
+  const archiveItems = (await queryAPI.listChildren(activeArchiveNodeId, {
     prefetch: { depth: targetDepth },
   })) as TreeNode[];
 
   return {
     ...treeData,
     activeArchiveNode,
-    trashRootNode,
-    trashItems,
+    archiveRootNode,
+    archiveItems,
     activeArchiveNodeId,
     params,
   } satisfies ArchiveDialogData;
 }
 
 export type ArchiveDialogData = LoadTreeReturn & {
-  trashRootNode?: TreeNode;
+  archiveRootNode?: TreeNode;
   activeArchiveNode?: TreeNode;
-  trashItems?: TreeNode[];
+  archiveItems?: TreeNode[];
   activeArchiveNodeId: NodeId | null;
   params: ArchiveDialogRouteParams;
 };
@@ -309,7 +309,7 @@ function ArchiveDialogFooter({
           borderTop: '1px solid',
           borderColor: 'divider',
           gap: 1.5,
-          minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
+          minHeight: ARCHIVE_DIALOG_FOOTER_HEIGHT,
         }}
       >
         <Button variant="contained" color="inherit" onClick={() => onRequestClose('close')}>
@@ -368,7 +368,7 @@ function ArchiveDialogFooter({
           {hasDraftsInView ? (
             <DialogContentText sx={{ mt: 1 }} color="warning.main">
               {t('dialogs.archive.confirm.draftWarning') ??
-                'Drafts are present. Emptying the trash will force-delete in-progress edits.'}
+                'Drafts are present. Emptying the archive will force-delete in-progress edits.'}
             </DialogContentText>
           ) : null}
         </DialogContent>
@@ -399,7 +399,7 @@ interface ArchiveDialogContentProps {
   setSelectedIds: (updater: (prev: NodeId[]) => NodeId[]) => void;
   treeId?: string;
   pageNodeId?: NodeId | null;
-  trashViewRootId?: NodeId | null;
+  archiveViewRootId?: NodeId | null;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   mode: 'restore' | 'empty';
@@ -419,7 +419,7 @@ function ArchiveDialogContent({
   setSelectedIds,
   treeId,
   pageNodeId,
-  trashViewRootId,
+  archiveViewRootId,
   searchTerm,
   onSearchTermChange,
   mode,
@@ -455,7 +455,7 @@ function ArchiveDialogContent({
         flexDirection: 'column',
         minHeight: 0,
         marginTop: '8px',
-        marginBottom: `${TRASH_DIALOG_FOOTER_HEIGHT}px`,
+        marginBottom: `${ARCHIVE_DIALOG_FOOTER_HEIGHT}px`,
       }}
     >
       {hasDraftsInView ? (
@@ -488,7 +488,7 @@ function ArchiveDialogContent({
           title={t('dialogs.archive.panelTitle') ?? ''}
           treeId={treeId}
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
-          subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
+          subtreeRootId={archiveViewRootId ? String(archiveViewRootId) : undefined}
           data={filteredTreeData}
           nodeIndex={nodeIndex}
           columnsDeprecated={columns}
@@ -501,9 +501,9 @@ function ArchiveDialogContent({
           canEdit={false}
           canArchive={mode === 'empty'}
           useArchiveColumns
-          selectAllIdPrefix="trash-row-selection"
+          selectAllIdPrefix="archive-row-selection"
           selectAllPersistence="session"
-          trashAction={mode}
+          archiveAction={mode}
           hideDragHandler
           breadcrumbRenderer={({
             defaultRendererProps,
@@ -572,7 +572,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
     t,
     treeId,
     pageNodeId,
-    trashViewRootId,
+    archiveViewRootId,
     selectedIds,
     setSelectedIds,
     searchTerm,
@@ -601,7 +601,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
     () =>
       [
         {
-          id: 'trash-root',
+          id: 'archive-root',
           label: t('dialogs.archive.stepLabel'),
           component: () => (
             <ArchiveDialogContent
@@ -613,7 +613,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
               setSelectedIds={(updater) => setSelectedIds(updater)}
               treeId={treeId}
               pageNodeId={pageNodeId}
-              trashViewRootId={trashViewRootId}
+              archiveViewRootId={archiveViewRootId}
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
               mode={mode}
@@ -642,7 +642,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
       setSearchTerm,
       setSelectedIds,
       t,
-      trashViewRootId,
+      archiveViewRootId,
       treeData,
       treeId,
     ]

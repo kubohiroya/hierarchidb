@@ -95,7 +95,7 @@ sequenceDiagram
 | `/t/r` | `t._index.tsx` → `t.($treeId).tsx` | TreeID "r" のルート表示 |
 | `/t/r/node123` | `t._index.tsx` → `t.($treeId).tsx` → `t.($treeId).($pageNodeId).tsx` | 特定ノード表示 |
 | `/t/r/node123/node456` | `t._index.tsx` → `t.($treeId).tsx` → `t.($treeId).($pageNodeId).tsx` → `t.($treeId).($pageNodeId).($targetNodeId).tsx` | ターゲットノード表示 |
-| `/t/r/trash` | `t._index.tsx` → `t.($treeId).tsx` → `t.($treeId).trash.tsx` | ゴミ箱表示 |
+| `/t/r/archive` | `t._index.tsx` → `t.($treeId).tsx` → `t.($treeId).archive.tsx` | ゴミ箱表示 |
 
 ### 6. ルーティング設定
 
@@ -112,7 +112,7 @@ app/src/routes/
 ├── t.($treeId).tsx                  // /t/:treeId のレイアウト
 ├── t.($treeId).($pageNodeId).tsx    // /t/:treeId/:pageNodeId
 ├── t.($treeId).($pageNodeId).($targetNodeId).tsx
-└── t.($treeId).trash.tsx            // /t/:treeId/trash
+└── t.($treeId).archive.tsx            // /t/:treeId/archive
 ```
 
 ### 7. 重要なポイント

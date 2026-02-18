@@ -592,7 +592,7 @@ export interface TreeConsoleProps {
   /**
    * Console mode configuration
    */
-  mode: 'projects' | 'resources' | 'trash';
+  mode: 'projects' | 'resources' | 'archive';
   
   /**
    * Optional custom header content
@@ -1130,7 +1130,7 @@ Main console component that provides a complete tree management interface.
 
 **Props:**
 - `rootNodeIds: string[]` - Root node IDs to display
-- `mode: 'projects' | 'resources' | 'trash'` - Console mode
+- `mode: 'projects' | 'resources' | 'archive'` - Console mode
 - `onNodeSelect?: (nodeIds: string[]) => void` - Selection handler
 
 ### TreeTableCore

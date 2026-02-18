@@ -130,3 +130,12 @@ export async function resolveCountryContinentCode(
 export const getContinentNameFromCode = (code: ContinentCode): string => (
   CONTINENT_NAMES[code] ?? CONTINENT_NAMES.XX
 );
+
+export async function normalizeCountryCodeForDataSource(
+  code: string,
+  target: IsoCodeFormat,
+  options?: EnsureIsoOptions,
+): Promise<string> {
+  const normalized = await normalizeCountryCodeFormat(code, target, options);
+  return normalized;
+}

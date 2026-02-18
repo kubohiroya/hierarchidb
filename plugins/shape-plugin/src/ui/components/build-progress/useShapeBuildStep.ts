@@ -38,7 +38,7 @@ import {
 } from './resolveStartupTransitionWatchdogEvent.ts';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
-import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
+import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { resolveMostAdvancedStageId } from './stagePriority.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -86,9 +86,9 @@ const emitShapeProgressStepTrace = (payload: ShapeProgressStepTracePayload): voi
 };
 
 type StageLikeTask = {
-  taskType?: TaskStage;
-  type?: TaskStage;
-  stage: TaskStage;
+  taskType?: string;
+  type?: string;
+  stage?: string;
 };
 
 type StageLikeRunningTask = StageLikeTask & {
@@ -210,7 +210,9 @@ export const shouldRefreshTasksSnapshot = (params: {
   return hasProcessingSignal;
 };
 
-const normalizeStageKey = (task: StageLikeTask): TaskStage => task.stage ?? task.taskType ?? task.type;
+const normalizeStageKey = (task: StageLikeTask): TaskStage => (
+  (task.stage ?? task.taskType ?? task.type ?? 'fetch') as TaskStage
+);
 
 const resolveMostAdvancedStageIdByStatus = (params: {
   stages: Array<{ id: string }>;
@@ -433,7 +435,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   }, [activeNodeId]);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
 
-  const [isPausePending, setIsPausePending] = useState(false);
+  const [isStopRequested, setIsStopRequested] = useState(false);
+  const [isStopAccepted, setIsStopAccepted] = useState(false);
   const clearStartPendingRef = useRef<(() => void) | null>(null);
   const buildSessionTransitionWarnStepRef = useRef<BuildStartupTransitionWarnStep>(0);
   const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
@@ -674,10 +677,18 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
-  const reportTaskFailures = statusSource === 'processing';
+  const isStopInFlight = isStopRequested || isStopAccepted;
+  const hasStopIdlePersisted = sessionRecord?.status === 'idle' && isStopInFlight;
+  const isSessionStopping = isStopInFlight || statusSource === 'paused';
+  const effectiveStatusSource = useMemo(() => {
+    if (hasStopIdlePersisted) return 'idle';
+    if (isSessionStopping) return 'paused';
+    return statusSource;
+  }, [hasStopIdlePersisted, isSessionStopping, statusSource]);
+  const reportTaskFailures = effectiveStatusSource === 'processing';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
-    toBuildStatus(statusSource)
-  ), [statusSource]);
+    toBuildStatus(effectiveStatusSource)
+  ), [effectiveStatusSource]);
   const { tasks, isLoading: isTasksLoading, isTaskStreamReady, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
     reportFailures: reportTaskFailures,
   });
@@ -696,7 +707,16 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setPersistedTasks(tasks);
   }, [setPersistedTasks, tasks]);
   const isTaskSummaryLoading = false;
-  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
+  const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
+  const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (
+    isSessionStopping
+      ? rawDisplayTasks.map((task) => (
+        task.status === 'running'
+          ? { ...task, status: 'queued' }
+          : task
+      ))
+      : rawDisplayTasks
+  ), [isSessionStopping, rawDisplayTasks]);
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
@@ -1254,14 +1274,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   useEffect(() => {
     if (!buildSessionTransition.active) return;
     if (buildSessionTransition.phase !== 'awaiting-first-task') return;
-    const decisionInput = {
+  const decisionInput = {
       hasFirstTaskSignal,
       hasStartedTasks,
       hasProgressTaskSignal,
+      isStopInFlight,
       buildStatus,
       taskCount: isTaskStreamReady ? displayTasks.length : undefined,
       isTaskStreamReady,
-      isPausePending,
       expectTaskGeneration: awaitingFirstTaskExpectationRef.current,
       sessionProgressTotal: sessionRecord?.progress?.total,
       sessionStageId: sessionRecord?.stageId ?? null,
@@ -1275,7 +1295,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         hasProgressTaskSignal: decisionInput.hasProgressTaskSignal,
         taskCount: decisionInput.taskCount,
         isTaskStreamReady: decisionInput.isTaskStreamReady,
-        isPausePending: decisionInput.isPausePending,
+        isStopInFlight: decisionInput.isStopInFlight,
         expectTaskGeneration: decisionInput.expectTaskGeneration,
         sessionProgressTotal: decisionInput.sessionProgressTotal ?? null,
         sessionStageId: decisionInput.sessionStageId ?? null,
@@ -1346,7 +1366,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasFirstTaskSignal,
     hasProgressTaskSignal,
     hasStartedTasks,
-    isPausePending,
+    isStopInFlight,
     isTaskStreamReady,
     pushBuildSessionTransitionNotification,
     sessionRecord?.progress?.total,
@@ -1766,10 +1786,10 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const handleCancelQueued = useCallback(async (
     reason: 'route-leave' | 'user-pause' = 'user-pause',
   ): Promise<void> => {
-    if (!activeNodeId || isPausePending) return;
+    if (!activeNodeId || isStopInFlight) return;
     cancelStartRequestRef.current = true;
     clearStartPendingRef.current?.();
-    setIsPausePending(true);
+    setIsStopRequested(true);
     try {
       await bridgeRef.current.initialize();
       await runWithTimeout(
@@ -1777,6 +1797,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         PAUSE_COMMAND_TIMEOUT_MS,
         `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
       );
+      setIsStopAccepted(true);
       releaseBuildLock();
       if (buildSessionTransition.active) {
         finishBuildSessionTransition({
@@ -1787,14 +1808,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     } catch (error) {
       notify.error('Failed to cancel queued build.');
       console.error('[ShapeBuildProgressStep] cancel queued failed', error);
-    } finally {
-      setIsPausePending(false);
+      setIsStopRequested(false);
+      setIsStopAccepted(false);
     }
   }, [
     activeNodeId,
     buildSessionTransition.active,
     finishBuildSessionTransition,
-    isPausePending,
+    isStopInFlight,
     releaseBuildLock,
   ]);
 
@@ -1803,7 +1824,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return;
     }
-    if (isPausePending) return;
+    if (isStopInFlight) return;
     const shouldCancelQueued = buildSessionTransition.active
       && buildStatus !== 'running'
       && runtimeStatus !== 'processing';
@@ -1824,9 +1845,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       });
     };
     logPauseTrace('request-received');
+    clearStartPendingRef.current?.();
     await executePauseBuildFlow({
       reason,
-      onPendingChange: setIsPausePending,
+      onPendingChange: setIsStopRequested,
+      onAccepted: () => {
+        setIsStopAccepted(true);
+      },
       pauseSession: async (pauseReason) => {
         logPauseTrace('worker-initialize:start');
         await bridgeRef.current.initialize();
@@ -1841,7 +1866,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       },
       persistPausedStatus: async (pauseReason) => {
         const persisted = await updateSessionRecord({
-          status: 'paused',
+          status: 'idle',
           stopReason: pauseReason,
           canResume: true,
         });
@@ -1851,6 +1876,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         logPauseTrace('session-persisted', { pauseReason });
       },
       onError: (error) => {
+        setIsStopRequested(false);
+        setIsStopAccepted(false);
         notify.error('Failed to pause build.');
         console.error('[ShapeBuildProgressStep] pause failed', error);
         logPauseTrace('request-failed', {
@@ -1864,10 +1891,18 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransition.active,
     buildStatus,
     handleCancelQueued,
-    isPausePending,
+    isStopInFlight,
     runtimeStatus,
     updateSessionRecord,
   ]);
+
+  useEffect(() => {
+    if (!isStopInFlight) return;
+    if (sessionRecord?.status === 'idle') {
+      setIsStopRequested(false);
+      setIsStopAccepted(false);
+    }
+  }, [isStopInFlight, sessionRecord?.status]);
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
@@ -1919,7 +1954,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     handleStartOrResume: startOrResume,
     handlePause,
     isStartPending,
-    isPausePending,
+    stopRequested: isStopInFlight,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,

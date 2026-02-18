@@ -89,7 +89,7 @@ export const createContextMenuAction = (
       }
     ): void => {
       void (async () => {
-        const normalizedAction = (action === 'remove' ? 'trash' : action) as ContextAction;
+        const normalizedAction = (action === 'remove' ? 'archive' : action) as ContextAction;
 
         const targetNodeId = node.id as NodeId;
         const parentId =
@@ -508,7 +508,7 @@ export const createContextMenuAction = (
           return;
         }
 
-        if (normalizedAction === 'trash') {
+        if (normalizedAction === 'archive') {
           if (!client) return;
           try {
             const scopeParent = parentId ?? pageNodeId;

@@ -9,7 +9,7 @@
 ### 主な提供機能
 - ベース URL の組み立て（ブラウザルーター/ハッシュルーター両対応） `buildAppUrl`
 - ガイドツアー解消・TreeTable/Working Copy 待機・Undo/Redo 操作などの UI 操作ヘルパー
-- SpeedDial を介したフォルダ CRUD、ドラッグ＆ドロップ、Trash 復旧といった主要動線の共通化
+- SpeedDial を介したフォルダ CRUD、ドラッグ＆ドロップ、Archive 復旧といった主要動線の共通化
 - シナリオ別データ初期化 `setupTestData`、アニメーション待機、スクリーンショット・コンソール追跡
 
 ### 実動での検証

@@ -116,7 +116,7 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     expect(processor.processCommand).not.toHaveBeenCalled();
   });
 
-  it('keeps existing trash flow when running build session does not exist', async () => {
+  it('keeps existing archive flow when running build session does not exist', async () => {
     const nodes = new Map<NodeId, TreeNode>([
       [asNodeId('r:root'), createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 })],
       [asNodeId('shape-1'), createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 })],

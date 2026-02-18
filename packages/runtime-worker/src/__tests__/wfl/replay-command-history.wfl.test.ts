@@ -186,7 +186,7 @@ describe('WFL command processor undo/redo flow', () => {
     expect(childrenAfterRemoveSubtree.length).toBe(0);
   }, 40_000);
 
-  it('create -> rename -> trash -> restore sequence can be undone and redone step-by-step', async () => {
+  it('create -> rename -> archive -> restore sequence can be undone and redone step-by-step', async () => {
     const treeId = 'r' as TreeId;
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
@@ -198,7 +198,7 @@ describe('WFL command processor undo/redo flow', () => {
     const tree = await queryAPI.getTree(treeId);
     if (!tree) throw new Error('Expected default console to exist');
     const rootId = tree.rootId as NodeId;
-    const trashRootId = tree.trashRootId as NodeId;
+    const archiveRootId = tree.archiveRootId as NodeId;
 
     const createResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('createNode', {
@@ -237,8 +237,8 @@ describe('WFL command processor undo/redo flow', () => {
     expect(typeof restoredNode?.metadata.name).toBe('string');
     expect(restoredNode?.removedAt).toBeUndefined();
 
-    const trashAfterRestore = await queryAPI.listChildren(trashRootId);
-    expect(trashAfterRestore.some((node) => node.id === nodeId)).toBe(false);
+    const archiveAfterRestore = await queryAPI.listChildren(archiveRootId);
+    expect(archiveAfterRestore.some((node) => node.id === nodeId)).toBe(false);
 
     // Undo: restore -> moveToArchive -> rename -> create
     const undoRestore = await commandProcessor.undo();
@@ -249,7 +249,7 @@ describe('WFL command processor undo/redo flow', () => {
     expect(typeof nodeAfterUndoRestore?.metadata.name).toBe('string');
     expect(nodeAfterUndoRestore?.metadata.name).not.toBe(nodeAfterUndoRestore?.originalName);
     expect(nodeAfterUndoRestore?.originalParentId).toBe(rootId);
-    expect(nodeAfterUndoRestore?.parentId).toBe(trashRootId);
+    expect(nodeAfterUndoRestore?.parentId).toBe(archiveRootId);
 
     const undoMoveToArchive = await commandProcessor.undo();
     expect(undoMoveToArchive.success).toBe(true);
@@ -286,7 +286,7 @@ describe('WFL command processor undo/redo flow', () => {
     expect(nodeAfterRedoArchive?.originalName).toBe('UndoRedo Headless Renamed');
     expect(typeof nodeAfterRedoArchive?.metadata.name).toBe('string');
     expect(nodeAfterRedoArchive?.originalParentId).toBe(rootId);
-    expect(nodeAfterRedoArchive?.parentId).toBe(trashRootId);
+    expect(nodeAfterRedoArchive?.parentId).toBe(archiveRootId);
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);
@@ -295,7 +295,7 @@ describe('WFL command processor undo/redo flow', () => {
     expect(nodeAfterRedoRestore?.parentId).toBe(rootId);
     expect(typeof nodeAfterRedoRestore?.metadata.name).toBe('string');
 
-    const finalArchiveState = await queryAPI.listChildren(trashRootId);
+    const finalArchiveState = await queryAPI.listChildren(archiveRootId);
     expect(finalArchiveState.some((node) => node.id === nodeId)).toBe(false);
 
     port1.close();

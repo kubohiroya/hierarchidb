@@ -85,7 +85,7 @@ export class WorkerAPIAdapter<T> {
     return this.mutationAdapter.moveNodes(nodeIds, targetParentId, options);
   }
 
-  async trashNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
+  async archiveNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.deleteNodes(nodeIds, options);
   }

@@ -34,7 +34,7 @@ packages/
 │   │   │   ├── toolbar/
 │   │   │   ├── footer/
 │   │   │   ├── speeddial/
-│   │   │   ├── trashbin/
+│   │   │   ├── archivebin/
 │   │   │   └── treetable/
 │   │   └── 02-panel/
 │   ├── import-export/
@@ -89,7 +89,7 @@ packages/
 | @hierarchidb/ui-treeconsole-speeddial | @hierarchidb/ui-features-treeconsole-parts-speeddial | packages/12-ui-features/treeconsole/01-parts/speeddial |
 | @hierarchidb/ui-treeconsole-treetable | @hierarchidb/ui-features-treeconsole-parts-treetable | packages/12-ui-features/treeconsole/01-parts/treetable |
 | @hierarchidb/ui-treeconsole-footer | @hierarchidb/ui-features-treeconsole-parts-footer | packages/12-ui-features/treeconsole/01-parts/footer |
-| @hierarchidb/ui-treeconsole-trashbin | @hierarchidb/ui-features-treeconsole-parts-trashbin | packages/12-ui-features/treeconsole/01-parts/trashbin |
+| @hierarchidb/ui-treeconsole-archivebin | @hierarchidb/ui-features-treeconsole-parts-archivebin | packages/12-ui-features/treeconsole/01-parts/archivebin |
 | @hierarchidb/ui-import-export | @hierarchidb/ui-features-import-export | packages/12-ui-features/import-export |
 | @hierarchidb/ui-file | @hierarchidb/ui-features-file | packages/12-ui-features/file |
 | @hierarchidb/ui-guide | @hierarchidb/ui-features-guide | packages/12-ui-features/guide |

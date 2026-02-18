@@ -73,11 +73,11 @@ const runFolderUndoRedoFlow = async () => {
 
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
-    if (!tree?.rootId || !tree.trashRootId) {
-      throw new Error('expected default console with root and trash');
+    if (!tree?.rootId || !tree.archiveRootId) {
+      throw new Error('expected default console with root and archive');
     }
     const rootId = tree.rootId as NodeId;
-    const trashRootId = tree.trashRootId as NodeId;
+    const archiveRootId = tree.archiveRootId as NodeId;
 
     const createResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('createNode', {
@@ -104,17 +104,17 @@ const runFolderUndoRedoFlow = async () => {
       async () => (await queryAPI.getNode(resolvedNodeId))?.metadata.name === 'UndoRedo WFL Renamed'
     );
 
-    const trashResult = await commandProcessor.processCommand(
+    const archiveResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('moveToArchive', { nodeIds: [resolvedNodeId] })
     );
-    expect(trashResult.success).toBe(true);
+    expect(archiveResult.success).toBe(true);
     await waitFor(async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
       return Boolean(node?.removedAt);
     });
     await waitFor(async () => {
-      const trashChildren = await queryAPI.listChildren(trashRootId);
-      return trashChildren.some((child) => child.id === resolvedNodeId);
+      const archiveChildren = await queryAPI.listChildren(archiveRootId);
+      return archiveChildren.some((child) => child.id === resolvedNodeId);
     });
 
     const restoreResult = await commandProcessor.processCommand(
@@ -135,8 +135,8 @@ const runFolderUndoRedoFlow = async () => {
     const expectInArchive = async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
       expect(node?.removedAt).toBeTruthy();
-      const trashChildren = await queryAPI.listChildren(trashRootId);
-      expect(trashChildren.some((child) => child.id === resolvedNodeId)).toBe(true);
+      const archiveChildren = await queryAPI.listChildren(archiveRootId);
+      expect(archiveChildren.some((child) => child.id === resolvedNodeId)).toBe(true);
     };
 
     const expectInTreeWithRenamed = async () => {
@@ -155,8 +155,8 @@ const runFolderUndoRedoFlow = async () => {
 
     const expectRemoved = async () => {
       await waitFor(async () => (await queryAPI.getNode(resolvedNodeId)) === undefined);
-      const trashChildren = await queryAPI.listChildren(trashRootId);
-      expect(trashChildren.some((child) => child.id === resolvedNodeId)).toBe(false);
+      const archiveChildren = await queryAPI.listChildren(archiveRootId);
+      expect(archiveChildren.some((child) => child.id === resolvedNodeId)).toBe(false);
     };
 
     const undoRestore = await commandProcessor.undo();
@@ -203,7 +203,7 @@ const runFolderUndoRedoFlow = async () => {
 };
 
 describe('Comlink + fake-indexeddb integration: folder undo/redo flow (CommandProcessor mutations)', () => {
-  it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
+  it('create → rename → archive → restore sequence round-trips via undo/redo', async () => {
     await runFolderUndoRedoFlow();
   }, 35_000);
 });

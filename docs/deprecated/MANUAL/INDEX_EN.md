@@ -13,7 +13,7 @@
 - **[02-architecture-data-model.md](./02-architecture-data-model.md)** - Data Model and Entity System
 
 ### Core Features & Operations
-- **[03-core-operations.md](./03-core-operations.md)** - Basic Operations (CRUD, Undo/Redo, Copy/Paste, Trash)
+- **[03-core-operations.md](./03-core-operations.md)** - Basic Operations (CRUD, Undo/Redo, Copy/Paste, Archive)
 - **[03-core-dialog.md](./03-core-dialog.md)** - Dialog System Usage
 - **[03-api-reference.md](./03-api-reference.md)** - API Reference
 

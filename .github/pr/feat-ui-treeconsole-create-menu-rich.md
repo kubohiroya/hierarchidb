@@ -3,7 +3,7 @@ Title: TreeConsole UX: Rich Create Menu, Toolbar Actions, DnD, Column Resize; mr
 Summary
 - UI/UX
   - Create menu shows plugin icon/group color/name/tooltip; actions call `create:<nodeType>`.
-  - Toolbar wires Undo/Redo/Cut/Copy/Paste/Duplicate/MoveToTrash/Import/Export to real handlers.
+  - Toolbar wires Undo/Redo/Cut/Copy/Paste/Duplicate/MoveToArchive/Import/Export to real handlers.
   - Theme/Language submenus; bridged to app via custom events.
   - Breadcrumb drop-to-parent; row DnD move; hover highlight; prevent invalid drops at worker level.
   - Column resize localized to adjacent columns only; widths persisted to localStorage.

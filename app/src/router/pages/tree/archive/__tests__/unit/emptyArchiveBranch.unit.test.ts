@@ -2,8 +2,8 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyArchiveBranch } from '../../emptyArchiveBranch.js';
 
-const nodeA = 'trash-node-a' as NodeId;
-const nodeB = 'trash-node-b' as NodeId;
+const nodeA = 'archive-node-a' as NodeId;
+const nodeB = 'archive-node-b' as NodeId;
 
 describe('emptyArchiveBranch', () => {
   it('removes the provided node ids', async () => {

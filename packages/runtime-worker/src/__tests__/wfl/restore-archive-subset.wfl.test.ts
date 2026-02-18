@@ -31,8 +31,8 @@ async function waitFor<T>(
   }
 }
 
-describe('Comlink + fake-indexeddb integration: partial trash restore flow', () => {
-  it('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
+describe('Comlink + fake-indexeddb integration: partial archive restore flow', () => {
+  it('restores a subset of archiveed nodes while keeping the remaining nodes under archive holders', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -44,13 +44,13 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
-    expect(tree?.trashRootId).toBeDefined();
-    if (!tree?.rootId || !tree.trashRootId) {
+    expect(tree?.archiveRootId).toBeDefined();
+    if (!tree?.rootId || !tree.archiveRootId) {
       throw new Error('Expected console roots to be defined');
     }
 
     const rootId = tree.rootId as NodeId;
-    const trashRootId = tree.trashRootId as NodeId;
+    const archiveRootId = tree.archiveRootId as NodeId;
 
     const createAndCommit = async (name: string, parentId: NodeId): Promise<NodeId> => {
       const createResult = await mutationAPI.createNode({
@@ -95,31 +95,31 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       return children.every((node) => node.id !== childOneId && node.id !== childTwoId);
     });
 
-    const trashedLookup = await waitFor(async () => {
-      const trashChildren = await queryAPI.listChildren(trashRootId);
+    const archiveedLookup = await waitFor(async () => {
+      const archiveChildren = await queryAPI.listChildren(archiveRootId);
       const ids = new Map<NodeId, TreeNode>();
-      for (const node of trashChildren) {
+      for (const node of archiveChildren) {
         const nodeId = node.id as NodeId;
         ids.set(nodeId, node);
       }
       return ids.has(childOneId) && ids.has(childTwoId) ? ids : undefined;
     });
 
-    const trashedChildOne = trashedLookup.get(childOneId);
-    const trashedChildTwo = trashedLookup.get(childTwoId);
-    if (!trashedChildOne || !trashedChildTwo) {
-      throw new Error('expected trashed children to be present');
+    const archiveedChildOne = archiveedLookup.get(childOneId);
+    const archiveedChildTwo = archiveedLookup.get(childTwoId);
+    if (!archiveedChildOne || !archiveedChildTwo) {
+      throw new Error('expected archiveed children to be present');
     }
-    expect(trashedChildOne.parentId).toBe(trashRootId);
-    expect(trashedChildTwo.parentId).toBe(trashRootId);
-    expect(trashedChildOne.removedAt).toBeTruthy();
-    expect(trashedChildTwo.removedAt).toBeTruthy();
-    expect(trashedChildOne.metadata.name).not.toBe('Integration Archive Child C');
-    expect(trashedChildTwo.metadata.name).not.toBe('Integration Archive Child D');
-    expect(trashedChildOne.originalName).toBe('Integration Archive Child C');
-    expect(trashedChildTwo.originalName).toBe('Integration Archive Child D');
-    expect(trashedChildOne.originalParentId).toBe(parentId);
-    expect(trashedChildTwo.originalParentId).toBe(parentId);
+    expect(archiveedChildOne.parentId).toBe(archiveRootId);
+    expect(archiveedChildTwo.parentId).toBe(archiveRootId);
+    expect(archiveedChildOne.removedAt).toBeTruthy();
+    expect(archiveedChildTwo.removedAt).toBeTruthy();
+    expect(archiveedChildOne.metadata.name).not.toBe('Integration Archive Child C');
+    expect(archiveedChildTwo.metadata.name).not.toBe('Integration Archive Child D');
+    expect(archiveedChildOne.originalName).toBe('Integration Archive Child C');
+    expect(archiveedChildTwo.originalName).toBe('Integration Archive Child D');
+    expect(archiveedChildOne.originalParentId).toBe(parentId);
+    expect(archiveedChildTwo.originalParentId).toBe(parentId);
 
     const restoreResult = await mutationAPI.restoreNodesFromArchive({
       nodeIds: [childOneId],
@@ -136,21 +136,21 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(childOneAfterRestore?.parentId).toBe(parentId);
 
     const childTwoAfterRestore = await queryAPI.getNode(childTwoId);
-    expect(childTwoAfterRestore?.parentId).toBe(trashRootId);
+    expect(childTwoAfterRestore?.parentId).toBe(archiveRootId);
     expect(childTwoAfterRestore?.removedAt).toBeTruthy();
     expect(childTwoAfterRestore?.originalParentId).toBe(parentId);
     expect(childTwoAfterRestore?.originalName).toBe('Integration Archive Child D');
 
-    const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
-    expect(trashChildrenAfterRestore.some((node) => node.id === childTwoId)).toBe(true);
-    expect(trashChildrenAfterRestore.some((node) => node.id === childOneId)).toBe(false);
+    const archiveChildrenAfterRestore = await queryAPI.listChildren(archiveRootId);
+    expect(archiveChildrenAfterRestore.some((node) => node.id === childTwoId)).toBe(true);
+    expect(archiveChildrenAfterRestore.some((node) => node.id === childOneId)).toBe(false);
 
     const secondMoveResult = await mutationAPI.moveNodesToArchive([childOneId]);
     expect(secondMoveResult.success).toBe(true);
 
     await waitFor(async () => {
-      const trashChildren = await queryAPI.listChildren(trashRootId);
-      return trashChildren.some((node) => node.id === childOneId);
+      const archiveChildren = await queryAPI.listChildren(archiveRootId);
+      return archiveChildren.some((node) => node.id === childOneId);
     });
 
     await client[Comlink.releaseProxy]?.();

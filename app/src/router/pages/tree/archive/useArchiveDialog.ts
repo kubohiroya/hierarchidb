@@ -188,9 +188,9 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
   const pageNodeId = (pageNodeIdParam ??
     (data.tree?.rootId as NodeId | undefined) ??
     null) as NodeId | null;
-  const trashViewRootId = (data.activeArchiveNodeId ??
+  const archiveViewRootId = (data.activeArchiveNodeId ??
     targetNodeId ??
-    data.trashRootNode?.id ??
+    data.archiveRootNode?.id ??
     null) as NodeId | null;
 
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
@@ -200,23 +200,23 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
   const [hasDraftsInView, setHasDraftsInView] = useState(false);
 
   const nodeMap = useMemo(() => {
-    const map = createTreeNodeMap(data.trashItems);
-    if (data.trashRootNode?.id) {
-      map.set(String(data.trashRootNode.id), data.trashRootNode);
+    const map = createTreeNodeMap(data.archiveItems);
+    if (data.archiveRootNode?.id) {
+      map.set(String(data.archiveRootNode.id), data.archiveRootNode);
     }
     if (data.activeArchiveNode?.id) {
       map.set(String(data.activeArchiveNode.id), data.activeArchiveNode);
     }
     return map;
-  }, [data.activeArchiveNode, data.trashItems, data.trashRootNode]);
+  }, [data.activeArchiveNode, data.archiveItems, data.archiveRootNode]);
 
   const treeData = useMemo(() => {
-    const viewRoot = data.activeArchiveNode ?? data.trashRootNode;
+    const viewRoot = data.activeArchiveNode ?? data.archiveRootNode;
     if (!viewRoot) return [] as HierarchicalTreeNode[];
 
     const { nodes } = buildArchiveTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
     return nodes;
-  }, [data.activeArchiveNode, data.trashRootNode, nodeMap, treeId]);
+  }, [data.activeArchiveNode, data.archiveRootNode, nodeMap, treeId]);
 
   useEffect(() => {
     const hasDrafts = treeData.some((node) => (node as TreeNode).draftData);
@@ -240,9 +240,9 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
 
   const nodeIndex = useMemo(() => {
     const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
-    const fallbackParent = (trashViewRootId ??
-      (data.trashRootNode?.id as NodeId | undefined) ??
-      'trash-root') as NodeId;
+    const fallbackParent = (archiveViewRootId ??
+      (data.archiveRootNode?.id as NodeId | undefined) ??
+      'archive-root') as NodeId;
     const decorateForIndex = (node: HierarchicalTreeNode): TreeNode => {
       const source = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
       const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
@@ -274,11 +274,11 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       return decorated;
     };
 
-    if (trashViewRootId) {
-      const branchNode = nodeMap.get(String(trashViewRootId)) ?? data.trashRootNode;
+    if (archiveViewRootId) {
+      const branchNode = nodeMap.get(String(archiveViewRootId)) ?? data.archiveRootNode;
       if (branchNode) {
-        const parentForRoot = (branchNode.parentId ?? trashViewRootId) as NodeId;
-        index.set(trashViewRootId, branchNode, parentForRoot);
+        const parentForRoot = (branchNode.parentId ?? archiveViewRootId) as NodeId;
+        index.set(archiveViewRootId, branchNode, parentForRoot);
       }
     }
 
@@ -289,18 +289,18 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       index.set(primary, decoratedNode, parent);
     });
     return index;
-  }, [data.trashRootNode, nodeMap, trashViewRootId, treeData]);
+  }, [data.archiveRootNode, nodeMap, archiveViewRootId, treeData]);
 
   const breadcrumbItems = useMemo(() => {
-    const breadcrumbRoot = data.trashRootNode ?? data.activeArchiveNode;
+    const breadcrumbRoot = data.archiveRootNode ?? data.activeArchiveNode;
     if (!breadcrumbRoot || !treeId) return [];
     return buildArchiveBreadcrumbs({
       treeId,
       rootNode: breadcrumbRoot,
-      targetNodeId: trashViewRootId,
+      targetNodeId: archiveViewRootId,
       nodeMap,
     });
-  }, [data.activeArchiveNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
+  }, [data.activeArchiveNode, data.archiveRootNode, nodeMap, archiveViewRootId, treeId]);
 
   const locale = useMemo(
     () => i18n.resolvedLanguage ?? i18n.language ?? 'en',
@@ -423,7 +423,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       }
       closeDialog();
     } catch (error) {
-      console.error('Error restoring trash nodes:', error);
+      console.error('Error restoring archive nodes:', error);
     } finally {
       setLoading(false);
     }
@@ -455,7 +455,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
           const expandedApi = await client.getTreeTableExpandedAPI?.();
           await expandedApi?.clearExpandedForSubtree(removalNodeIds);
         } catch (error) {
-          console.warn('Failed to clear expanded atoms after empty trash', error);
+          console.warn('Failed to clear expanded atoms after empty archive', error);
         }
         closeDialog();
       }
@@ -493,7 +493,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
     t,
     treeId,
     pageNodeId,
-    trashViewRootId,
+    archiveViewRootId,
     selectedIds,
     setSelectedIds,
     searchTerm,

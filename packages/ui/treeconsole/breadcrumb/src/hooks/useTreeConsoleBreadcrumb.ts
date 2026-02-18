@@ -41,7 +41,7 @@ interface UseTreeConsoleBreadcrumbResult {
   hoverBlocked: boolean;
   setHoverBlocked: Dispatch<SetStateAction<boolean>>;
   useArchiveColumnsFlag: boolean;
-  trashActionValue: 'restore' | 'empty' | undefined;
+  archiveActionValue: 'restore' | 'empty' | undefined;
 }
 
 export const useTreeConsoleBreadcrumb = (
@@ -58,7 +58,7 @@ export const useTreeConsoleBreadcrumb = (
 
   const { isProjectsPage } = context;
   const useArchiveColumnsFlag: boolean = Boolean(props.useArchiveColumns);
-  const trashActionValue: 'restore' | 'empty' | undefined = props.trashAction;
+  const archiveActionValue: 'restore' | 'empty' | undefined = props.archiveAction;
   const iconInteractive = props.iconInteractive ?? true;
 
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
@@ -122,7 +122,7 @@ export const useTreeConsoleBreadcrumb = (
 
   const handleConfirmArchive = useCallback(() => {
     if (pendingDeleteNodeId && pendingDeleteNode && onContextAction) {
-      onContextAction('trash', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
+      onContextAction('archive', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
     }
     setConfirmDialogOpen(false);
     setPendingDeleteNodeId(null);
@@ -281,6 +281,6 @@ export const useTreeConsoleBreadcrumb = (
     hoverBlocked,
     setHoverBlocked,
     useArchiveColumnsFlag,
-    trashActionValue,
+    archiveActionValue,
   };
 };

@@ -14,7 +14,7 @@ AssertionError: expected undefined to be false
 ```
 
 ### 症状
-1. `api.moveToTrashFolder()` API呼び出しは成功を返す（`success: true`）
+1. `api.moveToArchiveFolder()` API呼び出しは成功を返す（`success: true`）
 2. しかし実際のノードには `isRemoved` プロパティが設定されない（`undefined`）
 3. ゴミ箱操作後もノードの状態が変更されていない
 
@@ -28,15 +28,15 @@ AssertionError: expected undefined to be false
 ### 2. Orchestrated API実装確認
 実装されたOrchestrated API:
 ```typescript
-async moveToTrashFolder(params: {
+async moveToArchiveFolder(params: {
   nodeIds: TreeNodeId[];
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await this.moveToTrash({
+    const result = await this.moveToArchive({
       payload: { nodeIds: params.nodeIds },
-      commandId: `trash-${Date.now()}`,
+      commandId: `archive-${Date.now()}`,
       groupId: `group-${Date.now()}`,
-      kind: 'moveToTrash',
+      kind: 'moveToArchive',
       issuedAt: Date.now(),
     });
     
@@ -50,7 +50,7 @@ async moveToTrashFolder(params: {
 ## 根本原因分析
 
 ### 1. Command Envelopeの実装不完全
-現在のOrchestrated APIは `this.moveToTrash()` を呼び出すが、これは古いCommand Envelopeパターンを使用している。しかし、実際の `TreeMutationServiceImpl.moveToTrash()` 実装が不完全または未実装の可能性がある。
+現在のOrchestrated APIは `this.moveToArchive()` を呼び出すが、これは古いCommand Envelopeパターンを使用している。しかし、実際の `TreeMutationServiceImpl.moveToArchive()` 実装が不完全または未実装の可能性がある。
 
 ### 2. TreeNodeスキーマの不整合
 - テストは `isRemoved` プロパティを期待
@@ -81,7 +81,7 @@ interface TreeNode {
 }
 ```
 
-### TreeMutationServiceImpl.moveToTrash実装確認必要
+### TreeMutationServiceImpl.moveToArchive実装確認必要
 現在の実装が以下を行っているか確認：
 1. ノードの `isRemoved: true` 設定
 2. `removedAt` タイムスタンプ設定  
@@ -102,10 +102,10 @@ interface TreeNode {
 }
 ```
 
-#### 1.2 TreeMutationServiceImpl.moveToTrash完全実装
+#### 1.2 TreeMutationServiceImpl.moveToArchive完全実装
 ```typescript
-async moveToTrash(
-  cmd: CommandEnvelope<'moveToTrash', MoveToTrashPayload>
+async moveToArchive(
+  cmd: CommandEnvelope<'moveToArchive', MoveToArchivePayload>
 ): Promise<CoreCommandResult> {
   const { nodeIds } = cmd.payload;
   
@@ -120,8 +120,8 @@ async moveToTrash(
         isRemoved: true,
         removedAt: Date.now(),
         originalParentId: node.parentTreeNodeId,
-        // 必要に応じてtrashRootに移動
-        // parentTreeNodeId: this.getTrashRootId(),
+        // 必要に応じてarchiveRootに移動
+        // parentTreeNodeId: this.getArchiveRootId(),
         updatedAt: Date.now(),
         version: node.version + 1,
       };
@@ -142,8 +142,8 @@ async moveToTrash(
 
 #### 1.3 復元機能の実装
 ```typescript
-async recoverFromTrash(
-  cmd: CommandEnvelope<'recoverFromTrash', RecoverFromTrashPayload>  
+async recoverFromArchive(
+  cmd: CommandEnvelope<'recoverFromArchive', RecoverFromArchivePayload>  
 ): Promise<CoreCommandResult> {
   const { nodeIds, toParentId } = cmd.payload;
   
@@ -194,7 +194,7 @@ async recoverFromTrash(
 
 ### 高優先度（統合テスト修正のため）
 1. TreeNodeスキーマの `isRemoved` プロパティ確認・追加
-2. TreeMutationServiceImpl.moveToTrash の基本実装
+2. TreeMutationServiceImpl.moveToArchive の基本実装
 3. CoreDB.updateNode による状態更新の確認
 
 ### 中優先度（機能完成のため）
@@ -211,10 +211,10 @@ async recoverFromTrash(
 
 ### 単体テスト
 ```typescript
-it('moveToTrashは isRemoved フラグを設定する', async () => {
+it('moveToArchiveは isRemoved フラグを設定する', async () => {
   const node = await createTestNode();
   
-  await mutationService.moveToTrash({
+  await mutationService.moveToArchive({
     payload: { nodeIds: [node.treeNodeId] },
     // ... command envelope
   });

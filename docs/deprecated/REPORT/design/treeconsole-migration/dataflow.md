@@ -103,7 +103,7 @@ flowchart LR
     
     C1 --> D[WorkerAPI.observeSubtree]
     C2 --> E[WorkerAPI.moveNodes]
-    C3 --> F[WorkerAPI.moveToTrash]
+    C3 --> F[WorkerAPI.moveToArchive]
     C4 --> G[WorkerAPI.createDraft]
     C5 --> H[WorkerAPI.commitDraft]
 ```

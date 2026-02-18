@@ -87,7 +87,7 @@ async function migrateDatabase() {
 ```typescript
 enum TreeRootNodeTypes {
   Root = 'Root',
-  Trash = 'Trash'
+  Archive = 'Archive'
 }
 
 const nodeType = TreeRootNodeTypes.Root;
@@ -96,11 +96,11 @@ const nodeType = TreeRootNodeTypes.Root;
 **After (v2.0):**
 ```typescript
 // Use string literals instead of enums
-const nodeType: 'Root' | 'Trash' = 'Root';
+const nodeType: 'Root' | 'Archive' = 'Root';
 
 // Or use constants
 const ROOT_NODE_TYPE = 'Root' as const;
-const TRASH_NODE_TYPE = 'Trash' as const;
+const TRASH_NODE_TYPE = 'Archive' as const;
 ```
 
 #### 3. API Changes

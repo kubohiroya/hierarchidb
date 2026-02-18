@@ -6,18 +6,18 @@ This document defines the standardized terminology for node operations in Hierar
 
 ## Core Terminology Rules
 
-### 1. `moveToTrash`
-**Purpose**: Moving nodes to the trash (soft delete)  
+### 1. `moveToArchive`
+**Purpose**: Moving nodes to the archive (soft delete)  
 **Usage Context**: 
 - When users want to remove nodes but keep them recoverable
 - Default deletion action in the UI
-- API methods for trash operations
+- API methods for archive operations
 
 **Examples**:
 ```typescript
 // Correct
-await api.moveToTrash({ nodeIds: [...] });
-await api.moveToTrashFolder({ ... });
+await api.moveToArchive({ nodeIds: [...] });
+await api.moveToArchiveFolder({ ... });
 
 // Incorrect (don't use these)
 await api.delete({ nodeIds: [...] });  // Wrong: ambiguous
@@ -25,16 +25,16 @@ await api.remove({ nodeIds: [...] });  // Wrong: remove is for permanent deletio
 ```
 
 ### 2. `remove`
-**Purpose**: Permanently deleting nodes from trash  
+**Purpose**: Permanently deleting nodes from archive  
 **Usage Context**:
-- Emptying trash
-- Permanent deletion of already-trashed items
+- Emptying archive
+- Permanent deletion of already-archiveed items
 - Non-recoverable deletion operations
 
 **Examples**:
 ```typescript
 // Correct
-await api.remove({ nodeIds: [...] });  // Permanently delete from trash
+await api.remove({ nodeIds: [...] });  // Permanently delete from archive
 await api.removeFolder({ ... });
 
 // Incorrect (don't use these)
@@ -75,7 +75,7 @@ await coreDB.deleteNode(id);  // Internal database method
 indexedDB.deleteDatabase(name);  // IndexedDB operation
 
 // Incorrect (don't expose in public APIs)
-await api.deleteNode({ ... });  // Wrong: use moveToTrash or remove instead
+await api.deleteNode({ ... });  // Wrong: use moveToArchive or remove instead
 ```
 
 ## API Method Naming
@@ -84,8 +84,8 @@ await api.deleteNode({ ... });  // Wrong: use moveToTrash or remove instead
 ```typescript
 // Correct naming
 type CommandKind = 
-  | 'moveToTrash'      // Moving to trash
-  | 'recoverFromTrash'  // Restoring from trash
+  | 'moveToArchive'      // Moving to archive
+  | 'recoverFromArchive'  // Restoring from archive
   | 'remove'            // Permanent deletion
   | 'discardDraft' // Canceling edits
   | 'discardDraftForCreate' // Canceling creation
@@ -100,15 +100,15 @@ type CommandKind =
 ### Payload Types
 ```typescript
 // Correct naming
-interface MoveToTrashPayload { ... }
+interface MoveToArchivePayload { ... }
 interface RemovePayload { ... }       // Not PermanentDeletePayload
 interface DiscardDraftPayload { ... }
 
 // Service methods
 interface TreeMutationService {
-  moveToTrash(payload: MoveToTrashPayload): Promise<Result>;
+  moveToArchive(payload: MoveToArchivePayload): Promise<Result>;
   remove(payload: RemovePayload): Promise<Result>;  // Not permanentDelete
-  recoverFromTrash(payload: RecoverFromTrashPayload): Promise<Result>;
+  recoverFromArchive(payload: RecoverFromArchivePayload): Promise<Result>;
   discardDraft(payload: DiscardDraftPayload): Promise<Result>;
 }
 ```
@@ -116,16 +116,16 @@ interface TreeMutationService {
 ## UI Text Guidelines
 
 ### Button Labels
-- **"Move to Trash"** - For moving items to trash
-- **"Remove"** - For permanent deletion from trash
-- **"Empty Trash"** - For removing all trash items
-- **"Restore"** - For recovering from trash
+- **"Move to Archive"** - For moving items to archive
+- **"Remove"** - For permanent deletion from archive
+- **"Empty Archive"** - For removing all archive items
+- **"Restore"** - For recovering from archive
 - **"Discard Changes"** - For canceling edits
 
 ### Confirmation Messages
 ```typescript
 // Correct
-"Are you sure you want to move these items to trash?"
+"Are you sure you want to move these items to archive?"
 "Are you sure you want to remove these items? This action cannot be undone."
 "Discard unsaved changes?"
 
@@ -135,9 +135,9 @@ interface TreeMutationService {
 ```
 
 ### Icon Associations
-- 🗑️ `Delete` icon → "Move to Trash" action
+- 🗑️ `Delete` icon → "Move to Archive" action
 - ❌ `Clear` icon → "Remove" action (permanent)
-- ♻️ `Restore` icon → "Restore from Trash" action
+- ♻️ `Restore` icon → "Restore from Archive" action
 - 🚫 `Cancel` icon → "Discard" action
 
 ## Migration Guide
@@ -150,8 +150,8 @@ When updating existing code:
    - `deleteDraft` → `discardDraft` (except Dexie operations)
 
 2. **Review Context Menus**:
-   - Ensure "Remove" in regular context means "Move to Trash"
-   - Use "Remove" for permanent deletion only in trash context
+   - Ensure "Remove" in regular context means "Move to Archive"
+   - Use "Remove" for permanent deletion only in archive context
 
 3. **Update Tests**:
    - Test descriptions should use correct terminology
@@ -176,7 +176,7 @@ module.exports = {
       {
         object: 'api',
         property: 'delete',
-        message: 'Use api.moveToTrash() or api.remove() instead of api.delete()'
+        message: 'Use api.moveToArchive() or api.remove() instead of api.delete()'
       }
     ]
   }
@@ -184,7 +184,7 @@ module.exports = {
 ```
 
 ### Code Review Checklist
-- [ ] Uses `moveToTrash` for trash operations
+- [ ] Uses `moveToArchive` for archive operations
 - [ ] Uses `remove` for permanent deletion (not `permanentDelete`)
 - [ ] Uses `discard` for working copy cancellation
 - [ ] Uses `delete` only for internal database operations
@@ -196,7 +196,7 @@ module.exports = {
 These conventions were established to:
 
 1. **Avoid Ambiguity**: `delete` is too generic and doesn't indicate whether the action is reversible
-2. **Match User Expectations**: Users expect "Move to Trash" to be recoverable
+2. **Match User Expectations**: Users expect "Move to Archive" to be recoverable
 3. **Prevent Conflicts**: JavaScript's `delete` operator could cause confusion
 4. **Improve Code Clarity**: Explicit action names make code self-documenting
 5. **Ensure Consistency**: Uniform terminology across the entire codebase
@@ -208,18 +208,18 @@ These conventions were established to:
 // Correct implementation
 function DeleteButton({ nodeIds }: Props) {
   const handleClick = async () => {
-    if (isInTrash) {
-      // In trash context: permanent removal
+    if (isInArchive) {
+      // In archive context: permanent removal
       await api.remove({ nodeIds });
     } else {
-      // Regular context: move to trash
-      await api.moveToTrash({ nodeIds });
+      // Regular context: move to archive
+      await api.moveToArchive({ nodeIds });
     }
   };
   
   return (
     <Button onClick={handleClick}>
-      {isInTrash ? 'Remove' : 'Move to Trash'}
+      {isInArchive ? 'Remove' : 'Move to Archive'}
     </Button>
   );
 }

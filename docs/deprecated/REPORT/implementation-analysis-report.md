@@ -22,13 +22,13 @@
 
 **実装で使用されている用語:**
 - `NodeId`, `TreeId` (Branded types)
-- `TreeTypes.id`, `TreeTypes.rootNodeId`, `TreeTypes.trashRootNodeId`
+- `TreeTypes.id`, `TreeTypes.rootNodeId`, `TreeTypes.archiveRootNodeId`
 - `TreeNode.id`, `TreeNode.parentNodeId`, `TreeNode.nodeType`
-- `TREE_ROOT_NODE_TYPES = { SUPER_ROOT: 'SuperRoot', ROOT: 'Root', TRASH: 'Trash' }`
+- `TREE_ROOT_NODE_TYPES = { SUPER_ROOT: 'SuperRoot', ROOT: 'Root', TRASH: 'Archive' }`
 
 **仕様書で記載されている用語:**
 - `TreeNodeId`, `TreeId` (より詳細な命名)
-- `TreeTypes.treeId`, `TreeTypes.treeRootNodeId`, `TreeTypes.treeTrashRootNodeId`
+- `TreeTypes.treeId`, `TreeTypes.treeRootNodeId`, `TreeTypes.treeArchiveRootNodeId`
 - `TreeNode.treeNodeId`, `TreeNode.parentTreeNodeId`, `TreeNode.treeNodeType`
 
 ### 1.2 対応方針
@@ -77,7 +77,7 @@ export interface TableMetadataEntity extends RelationalEntity { /*...*/ }
 ```typescript
 // CoreDB
 this.version(1).stores({
-  trees: '&treeId, treeRootNodeId, treeTrashRootNodeId, superRootNodeId',
+  trees: '&treeId, treeRootNodeId, treeArchiveRootNodeId, superRootNodeId',
   nodes: '&treeNodeId, parentNodeId, ...',
   // プラグイン固有テーブルは各プラグインで定義
 });
@@ -160,7 +160,7 @@ packages/ui/
 │   ├── footer/             # フッター
 │   ├── speeddial/          # スピードダイアル
 │   ├── toolbar/            # ツールバー
-│   ├── trashbin/           # ゴミ箱
+│   ├── archivebin/           # ゴミ箱
 │   └── treetable/          # テーブル表示
 └── usermenu/               # ユーザーメニュー
 ```

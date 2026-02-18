@@ -96,7 +96,7 @@ export interface TreeTableCoreProps {
    * Table configuration
    */
   useArchiveColumns?: boolean;
-  trashAction?: 'restore' | 'empty';
+  archiveAction?: 'restore' | 'empty';
   depthOffset?: number;
 
   /**

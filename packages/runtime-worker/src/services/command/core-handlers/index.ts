@@ -296,12 +296,12 @@ async function handleMoveToArchive(
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      trashRootId: NodeId;
-      trashRemovedAt: Timestamp;
-      trashName: string;
+      archiveRootId: NodeId;
+      archiveRemovedAt: Timestamp;
+      archiveName: string;
     }> = [];
 
-    let trees: Array<{ rootId: NodeId; trashRootId: NodeId }> | undefined;
+    let trees: Array<{ rootId: NodeId; archiveRootId: NodeId }> | undefined;
     try {
       trees = await deps.coreDB.trees.toArray();
     } catch {
@@ -309,7 +309,7 @@ async function handleMoveToArchive(
     }
 
     const rootToArchive = new Map<NodeId, NodeId>(
-      Array.isArray(trees) ? trees.map((tree) => [tree.rootId, tree.trashRootId]) : []
+      Array.isArray(trees) ? trees.map((tree) => [tree.rootId, tree.archiveRootId]) : []
     );
 
     for (const id of payload.nodeIds) {
@@ -324,14 +324,14 @@ async function handleMoveToArchive(
       }
 
       let cursor: NodeId | undefined = originalParentId;
-      let trashRootId: NodeId | undefined;
+      let archiveRootId: NodeId | undefined;
       let lastVisited: NodeId | undefined;
 
       while (cursor) {
         if (rootToArchive.has(cursor)) {
           const mappedArchiveRootId = rootToArchive.get(cursor);
           if (mappedArchiveRootId) {
-            trashRootId = mappedArchiveRootId;
+            archiveRootId = mappedArchiveRootId;
             break;
           }
         }
@@ -343,28 +343,28 @@ async function handleMoveToArchive(
         cursor = parent.parentId;
       }
 
-      if (!trashRootId) {
+      if (!archiveRootId) {
         const candidates = [cursor, lastVisited, originalParentId];
         for (const candidate of candidates) {
           if (typeof candidate !== 'string') {
             continue;
           }
           if (candidate.endsWith(':root')) {
-            trashRootId = `${candidate.slice(0, -':root'.length)}:trash` as NodeId;
+            archiveRootId = `${candidate.slice(0, -':root'.length)}:archive` as NodeId;
             break;
           }
           if (candidate.endsWith(':superRoot')) {
-            trashRootId = `${candidate.slice(0, -':superRoot'.length)}:trash` as NodeId;
+            archiveRootId = `${candidate.slice(0, -':superRoot'.length)}:archive` as NodeId;
             break;
           }
         }
       }
 
-      if (!trashRootId) {
+      if (!archiveRootId) {
         continue;
       }
 
-      if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
+      if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === archiveRootId) {
         continue;
       }
 
@@ -373,15 +373,15 @@ async function handleMoveToArchive(
       const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
       const previousRemovedAt = (node as { removedAt?: Timestamp }).removedAt;
       const preservedOriginalName = previousOriginalName ?? node.metadata.name;
-      const trashName =
+      const archiveName =
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
           ? crypto.randomUUID()
           : `${node.id as string}-${now}`;
 
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,
-        parentId: trashRootId,
-        metadata: { ...node.metadata, name: trashName },
+        parentId: archiveRootId,
+        metadata: { ...node.metadata, name: archiveName },
         originalName: preservedOriginalName,
         originalParentId: previousOriginalParentId ?? originalParentId,
         removedAt: now,
@@ -398,9 +398,9 @@ async function handleMoveToArchive(
         previousOriginalName,
         previousOriginalParentId,
         previousRemovedAt,
-        trashRootId,
-        trashRemovedAt: now,
-        trashName,
+        archiveRootId,
+        archiveRemovedAt: now,
+        archiveName,
       });
     }
 
@@ -571,7 +571,7 @@ async function handleRestoreFromArchive(
         targetParentId = recordedOriginalParent;
       }
       if (!targetParentId) {
-        // As a last resort, keep under current parent (e.g., trash root) but typically should have originalParentId
+        // As a last resort, keep under current parent (e.g., archive root) but typically should have originalParentId
         targetParentId = node.parentId as NodeId | undefined;
       }
       if (!targetParentId) {

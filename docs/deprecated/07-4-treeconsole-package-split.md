@@ -72,13 +72,13 @@ export type { TreeTableViewProps } from './types';
 - `@tanstack/react-table` - テーブル機能
 - `@mui/material` - UIコンポーネント
 
-#### @hierarchidb/ui-treeconsole-trashbin
+#### @hierarchidb/ui-treeconsole-archivebin
 **責務**: ゴミ箱専用UIの提供
 ```typescript
 // 主要エクスポート
-export { TrashBinColumns } from './TrashBinColumns';
-export { TrashBinActions } from './TrashBinActions';
-export type { TrashBinColumnsProps } from './types';
+export { ArchiveBinColumns } from './ArchiveBinColumns';
+export { ArchiveBinActions } from './ArchiveBinActions';
+export type { ArchiveBinColumnsProps } from './types';
 ```
 
 **依存関係**:
@@ -157,10 +157,10 @@ packages/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── ui-treeconsole-trashbin/
+├── ui-treeconsole-archivebin/
 │   ├── src/
-│   │   ├── TrashBinColumns.tsx
-│   │   ├── TrashBinActions.tsx
+│   │   ├── ArchiveBinColumns.tsx
+│   │   ├── ArchiveBinActions.tsx
 │   │   ├── lifecycle-plugin-definition.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
@@ -209,7 +209,7 @@ packages/
 
 ### Phase 2: TreeTable関連（Week 2）
 1. `ui-treeconsole-treetable`パッケージ作成
-2. `ui-treeconsole-trashbin`パッケージ作成
+2. `ui-treeconsole-archivebin`パッケージ作成
 3. テーブル機能の統合テスト
 
 ### Phase 3: 特殊UI（Week 3）

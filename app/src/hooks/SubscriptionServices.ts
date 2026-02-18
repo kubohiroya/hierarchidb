@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { SubscriptionId } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 
-export type SubscriptionKind = 'trash' | 'page';
+export type SubscriptionKind = 'archive' | 'page';
 export type SubscriptionCallback = (event: unknown) => void;
 
 interface SubscriptionInfo {
@@ -30,7 +30,7 @@ function subscriptionKey(kind: SubscriptionKind, nodeId: NodeId): string {
 }
 
 function resolvePrefetchOptions(kind: SubscriptionKind) {
-  const prefetchDepth = kind === 'trash' ? 2 : 3;
+  const prefetchDepth = kind === 'archive' ? 2 : 3;
   return { prefetch: { depth: prefetchDepth } };
 }
 
@@ -61,7 +61,7 @@ async function subscribeImpl(
 
   const create = async () => {
     switch (kind) {
-      case 'trash':
+      case 'archive':
       case 'page':
         return subscriptionAPI.subscribeSubtree(nodeId, callback, options);
       default:

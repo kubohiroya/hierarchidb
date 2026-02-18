@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toNodeId, type NodeType } from '@hierarchidb/core-types';
 import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
 
-import { useBuildProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
+import { createAdapterFromProgressSubscribe, useBuildProgress } from '@hierarchidb/batch-runtime-services';
 import { getBuildWorkerBridge, type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export type UseBuildProgressStateOptions = {

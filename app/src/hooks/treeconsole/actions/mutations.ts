@@ -63,7 +63,7 @@ export const createMutationActions = (
 
   const moveSelectionToArchive = async () => {
     if (!client || selectedIds.length === 0) return;
-    const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
+    const ok = confirm(`Move ${selectedIds.length} item(s) to archive?`);
     if (!ok) return;
 
     let navigationParentId: NodeId | null | undefined;

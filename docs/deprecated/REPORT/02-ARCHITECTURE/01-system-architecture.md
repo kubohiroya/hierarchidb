@@ -156,7 +156,7 @@ class CoreDB extends Dexie {
   constructor() {
     super('HierarchiDB_Core');
     this.version(1).stores({
-      trees: '&id, rootNodeId, trashRootNodeId',
+      trees: '&id, rootNodeId, archiveRootNodeId',
       nodes: '&id, parentNodeId, &[parentNodeId+name], removedAt',
       rootStates: '&[id+treeRootNodeType]'
     });

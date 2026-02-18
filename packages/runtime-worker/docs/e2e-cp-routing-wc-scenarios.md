@@ -7,7 +7,7 @@ vk:doc kind=guide audience=dev scope=e2e
 
 前提
 - Node >= 20, pnpm >= 9
-- CommandProcessor ルーティング / Trash ホルダー / Policy C / WC commit V2 は常時有効
+- CommandProcessor ルーティング / Archive ホルダー / Policy C / WC commit V2 は常時有効
 
 ベースシナリオ
 - 手順:

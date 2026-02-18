@@ -61,7 +61,6 @@
   },
   "devDependencies": {
     "@hierarchidb/auth": "workspace:*",
-    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
@@ -93,7 +92,6 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/auth": "workspace:*",
-    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",

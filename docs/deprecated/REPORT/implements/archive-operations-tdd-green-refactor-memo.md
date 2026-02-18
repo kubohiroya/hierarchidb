@@ -2,7 +2,7 @@
 
 ## 確認すべきドキュメント
 
-- `docs/13-trash-operations-analysis.md` - 要件分析・実装方針
+- `docs/13-archive-operations-analysis.md` - 要件分析・実装方針
 - `packages/worker/src/services/TreeMutationServiceImpl.ts` - メイン実装
 - `packages/core/src/types/tree-lifecycle-plugin-definition.ts` - 型定義拡張
 - `packages/worker/src/__tests__/integration/folder-operations.test.ts` - 統合テスト
@@ -27,7 +27,7 @@
 - **TDDサイクル**: Red → Green → Refactor の確実な実行
 
 ### 品質保証
-- **要件駆動開発**: docs/13-trash-operations-analysis.mdの完全実装
+- **要件駆動開発**: docs/13-archive-operations-analysis.mdの完全実装
 - **コード品質**: 693行（適正サイズ）、`as any`使用0箇所
 - **セキュリティ強化**: DoS攻撃防止、エラー情報サニタイズ
 - **アーキテクチャ改善**: Command Pattern、Repository Pattern適用
@@ -35,8 +35,8 @@
 ## 📊 要件充実度達成詳細
 
 1. ✅ **TreeNodeスキーマ拡張**: `isRemoved`, `removedAt`, `originalParentTreeNodeId`プロパティ追加
-2. ✅ **moveToTrash完全実装**: 完全なゴミ箱状態設定とデータベース更新
-3. ✅ **recoverFromTrash実装**: 適切な復元処理と状態クリア  
+2. ✅ **moveToArchive完全実装**: 完全なゴミ箱状態設定とデータベース更新
+3. ✅ **recoverFromArchive実装**: 適切な復元処理と状態クリア  
 4. ✅ **CoreDB状態更新**: 確実なデータベース更新の実行
 5. ✅ **permanentDelete実装**: 再帰的完全削除処理
 6. ✅ **エラーハンドリング強化**: セキュリティ対策とログ管理

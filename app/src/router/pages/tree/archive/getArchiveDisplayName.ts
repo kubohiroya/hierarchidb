@@ -7,7 +7,7 @@ type ArchiveLikeNode = Pick<TreeNode, 'metadata' | 'originalName'> & {
 };
 
 /**
- * Resolve the user-facing label for a trashed node, preferring the
+ * Resolve the user-facing label for a archiveed node, preferring the
  * preserved original name when available.
  */
 export function getArchiveDisplayName(

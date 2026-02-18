@@ -9,7 +9,7 @@ import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService.js';
 import { TagDBPortCoreDBAdapter } from '../../adapters/TagDBPortCoreDBAdapter.js';
 import { EntityLifecycleManager } from '../../../entity/EntityLifecycleManager.js';
 
-describe('tag association lifecycle (draft/trash/remove)', () => {
+describe('tag association lifecycle (draft/archive/remove)', () => {
   const treeId = 'r' as TreeId;
   const rootId = `${treeId}:root` as NodeId;
   let core: CoreDB;
@@ -57,7 +57,7 @@ describe('tag association lifecycle (draft/trash/remove)', () => {
     expect(publishedAssocs[0]?.scope).toBe('published');
   });
 
-  it('keeps tag associations on trash and restore', async () => {
+  it('keeps tag associations on archive and restore', async () => {
     const draft = await drafts.initTreeNode('folder' as NodeType, rootId, {
       metadata: { name: 'Tagged', description: '', tags: [] },
     });
@@ -75,9 +75,9 @@ describe('tag association lifecycle (draft/trash/remove)', () => {
     expect(await core.tagAssociations.count()).toBe(1);
 
     const tree = await core.trees.get(treeId);
-    const trashRootId = tree?.trashRootId as NodeId;
+    const archiveRootId = tree?.archiveRootId as NodeId;
     await core.nodes.update(nodeId, {
-      parentId: trashRootId,
+      parentId: archiveRootId,
       removedAt: Date.now(),
     });
     expect(await core.tagAssociations.count()).toBe(1);

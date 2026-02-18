@@ -22,9 +22,9 @@ The TreeConsole package will import and use these existing services from `@hiera
 - `moveNodes()` - Move nodes to new parent
 - `duplicateNodes()` - Duplicate nodes
 - `pasteNodes()` - Paste copied nodes
-- `moveToTrash()` - Move to trash
+- `moveToArchive()` - Move to archive
 - `permanentDelete()` - Permanently delete
-- `recoverFromTrash()` - Recover from trash
+- `recoverFromArchive()` - Recover from archive
 - `undo()` - Undo last operation
 - `redo()` - Redo operation
 

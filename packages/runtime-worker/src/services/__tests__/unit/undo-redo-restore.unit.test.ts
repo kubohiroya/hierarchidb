@@ -47,8 +47,8 @@ describe('Undo/Redo for restoreFromArchive', () => {
 
   beforeEach(async () => {
     state = new Map<NodeId, ArchivedNode>();
-    state.set('t_trash' as NodeId, makeNode('t_trash', 'r_root', 'Archive'));
-    state.set('x' as NodeId, makeNode('x', 't_trash', 'X'));
+    state.set('t_archive' as NodeId, makeNode('t_archive', 'r_root', 'Archive'));
+    state.set('x' as NodeId, makeNode('x', 't_archive', 'X'));
 
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
@@ -97,10 +97,10 @@ describe('Undo/Redo for restoreFromArchive', () => {
     expect(restored?.parentId).toBe('r_root');
     expect(restored?.removedAt).toBeUndefined();
 
-    // undo -> back to trash atoms
+    // undo -> back to archive atoms
     const u = await cp.undo();
     expect(u.success).toBe(true);
-    expect(state.get('x' as NodeId)?.parentId).toBe('t_trash');
+    expect(state.get('x' as NodeId)?.parentId).toBe('t_archive');
 
     // redo -> restored again
     const re = await cp.redo();

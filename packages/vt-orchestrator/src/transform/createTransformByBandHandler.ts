@@ -171,11 +171,15 @@ const decodeTopoJsonFetchCache = async (params: {
   toleranceK: number;
   quantize?: number;
   simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
   const decompressed = params.compression === 'gzip'
     ? await decompressGzip(params.buffer)
     : params.buffer;
   const topology = decodeTopoJson(decompressed);
+  if (params.skipSimplification) {
+    return normalizeTopoJsonCollection(topology);
+  }
   if (params.simplifyAlgorithm === 'geojson') {
     return normalizeTopoJsonCollection(topology);
   }
@@ -385,6 +389,7 @@ export const decodeFetchCacheByFormat = async (params: {
   toleranceK: number;
   quantize?: number;
   simplifyAlgorithm?: TransformSimplifyAlgorithm;
+  skipSimplification?: boolean;
 }): Promise<FeatureCollection | null> => {
   if (params.format === 'topojson') {
     return decodeTopoJsonFetchCache({
@@ -394,6 +399,7 @@ export const decodeFetchCacheByFormat = async (params: {
       toleranceK: params.toleranceK,
       quantize: params.quantize,
       simplifyAlgorithm: resolveSimplifyAlgorithm(params.simplifyAlgorithm),
+      skipSimplification: params.skipSimplification,
     });
   }
   return decodeFetchCache(params.buffer);
@@ -1845,6 +1851,7 @@ export const createTransformByBandHandler = (
       }, TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS);
       let collection: FeatureCollection | null = null;
       try {
+        const skipDecodeTopojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
         collection = await runStageWithLabel('decode', () => decodeFetchCacheByFormat({
           buffer: fetchCache.data,
           format: fetchCache.format,
@@ -1853,6 +1860,7 @@ export const createTransformByBandHandler = (
           toleranceK: baseTolerance,
           quantize: transformConfig.quantize,
           simplifyAlgorithm,
+          skipSimplification: skipDecodeTopojsonSimplify,
         }));
       } finally {
         decodeProgressActive = false;
@@ -2051,6 +2059,7 @@ export const createTransformByBandHandler = (
           maxVertexCount,
         };
       };
+      const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
       let simplifyAttempt = 1;
       try {
         assertNotAborted(abortSignal);
@@ -2097,7 +2106,6 @@ export const createTransformByBandHandler = (
           inputPolygonCount,
           inputVertexCount,
         });
-        const skipGeojsonSimplify = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
         if (skipGeojsonSimplify) {
           simplified = inputCollection;
           processedPolygonCount = inputPolygonCount;
@@ -2589,7 +2597,7 @@ export const createTransformByBandHandler = (
       simplified = repairedSimplified.collection;
 
       await updateTaskPhase(taskId, 'vertex-limit-validate:start', taskProgressRange.simplifyEnd);
-      const simplifiedFeatureCount = simplified.features.length;
+      const simplifiedFeatureCountForLimit = simplified.features.length;
       stageLabel = 'validate:vertex-limit';
       let maxVertexCount = 0;
       let overLimitFeatureCount = 0;
@@ -2651,7 +2659,7 @@ export const createTransformByBandHandler = (
         const finalTolerance = Number.isFinite(finalToleranceSummary) ? finalToleranceSummary : tolerance;
         const retrySummary = [
           `retryAttemptsTotal=${retryAttemptsTotal}`,
-          `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCount}`,
+          `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCountForLimit}`,
           `maxRetriesPerFeature=${maxRetryAttemptsPerFeature}`,
           `retryStep=${formatTolerance(retryToleranceStep)}`,
           `finalToleranceRange=${formatTolerance(finalToleranceMinValue)}..${formatTolerance(finalToleranceMaxValue)}`,
@@ -2674,11 +2682,20 @@ export const createTransformByBandHandler = (
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
         return {
           status: 'failed',
-          errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCount}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatTolerance(finalTolerance)}, ${retrySummary})`,
+          errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCountForLimit}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatTolerance(finalTolerance)}, ${retrySummary})`,
         };
       }
 
       await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
+      const simplifiedFeatureCount = simplified.features.length;
+      const simplifiedVertexCount = simplified.features.reduce(
+        (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+        0,
+      );
+      const simplifiedPolygonCount = simplified.features.reduce(
+        (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+        0,
+      );
       const adminLevel = input.adminLevel;
       const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
       const boundaryLayerName = typeof adminLevel === 'number'
@@ -2688,15 +2705,6 @@ export const createTransformByBandHandler = (
       const shouldBuildBoundary = typeof boundaryDisableAtZoomOrAbove === 'number'
         ? band.zMax < boundaryDisableAtZoomOrAbove
         : true;
-
-      const simplifiedVertexCount = simplified.features.reduce(
-        (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
-        0,
-      );
-      const simplifiedPolygonCount = simplified.features.reduce(
-        (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
-        0,
-      );
 
       await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.outputBuildStart);
       logDebugPhase('output-build:start', {

@@ -19,7 +19,7 @@ export interface ActionButtonsProps {
   canPaste: boolean;
   canDuplicate: boolean;
   allowArchive: boolean;
-  trashButtonLabel: string;
+  archiveButtonLabel: string;
   hasArchiveItems: boolean;
   onAction: (action: string) => void;
   onArchiveClick: (event: MouseEvent<HTMLElement>) => void;
@@ -41,7 +41,7 @@ export function ActionButtons({
   canPaste,
   canDuplicate,
   allowArchive,
-  trashButtonLabel,
+  archiveButtonLabel,
   hasArchiveItems,
   onAction,
   onArchiveClick,
@@ -110,7 +110,7 @@ export function ActionButtons({
           title={tooltips.moveToArchive}
           aria-label={tooltips.moveToArchive}
           disabled={!allowArchive}
-          onClick={() => onAction('trash')}
+          onClick={() => onAction('archive')}
           color="error"
         >
           <ClearIcon fontSize="small" />
@@ -123,8 +123,8 @@ export function ActionButtons({
           endIcon={<KeyboardArrowDownIcon />}
           onClick={onArchiveClick}
           color="error"
-          title={trashButtonLabel}
-          aria-label={trashButtonLabel}
+          title={archiveButtonLabel}
+          aria-label={archiveButtonLabel}
         >
           <ArchiveIcon fontSize="small" />
         </Button>

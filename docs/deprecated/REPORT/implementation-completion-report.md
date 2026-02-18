@@ -30,7 +30,7 @@
 - `treeNodeType` → `nodeType` に統一
 - `treeId` → `id` に統一（Tree構造）
 - `treeRootNodeId` → `rootNodeId` に統一
-- `treeTrashRootNodeId` → `trashRootNodeId` に統一
+- `treeArchiveRootNodeId` → `archiveRootNodeId` に統一
 
 **効果**: 仕様書のサンプルコードが実際の実装で動作するようになった
 

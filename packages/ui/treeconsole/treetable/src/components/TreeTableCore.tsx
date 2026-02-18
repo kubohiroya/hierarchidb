@@ -35,7 +35,7 @@ export function TreeTableCore({
   viewHeight,
   viewWidth: _viewWidth,
   useArchiveColumns = false,
-  trashAction = 'restore',
+  archiveAction = 'restore',
   depthOffset = 0,
   disableDragAndDrop = false,
   hideDragHandler = false,
@@ -244,9 +244,9 @@ export function TreeTableCore({
       setContextMenuState,
       visualSelectionSet,
       useArchiveColumns,
-      trashAction,
+      archiveAction,
       formatTimestamp,
-      trashRemovedHeader: useArchiveColumns ? removedLabel : undefined,
+      archiveRemovedHeader: useArchiveColumns ? removedLabel : undefined,
       selectionIdPrefix,
       columnLabels: {
         name: nameLabel,
@@ -266,7 +266,7 @@ export function TreeTableCore({
       emptyValue: commonT('treeTable.emptyCell', '-'),
       buildSessionIndicator,
     });
-  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useArchiveColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix, buildSessionIndicator]);
+  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useArchiveColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, archiveAction, formatTimestamp, selectionIdPrefix, buildSessionIndicator]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};
@@ -393,7 +393,7 @@ export function TreeTableCore({
               disableDragAndDrop={disableDragAndDrop}
               visualSelectionSet={visualSelectionSet}
               useArchiveColumns={useArchiveColumns}
-              trashAction={trashAction}
+              archiveAction={archiveAction}
             />
           </>
         ) : (

@@ -35,7 +35,7 @@ export interface TreeConsolePanelLogicArgs {
   readonly pageTreeNode?: TreeNode;
   readonly infoPanel?: ReactElement;
   readonly useArchiveColumns?: boolean;
-  readonly trashAction?: 'restore' | 'empty';
+  readonly archiveAction?: 'restore' | 'empty';
   readonly onNodeClick?: (node: HierarchicalTreeNode) => void;
   readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
@@ -94,7 +94,7 @@ export function useTreeConsolePanel({
   pageTreeNode,
   infoPanel,
   useArchiveColumns,
-  trashAction,
+  archiveAction,
   onNodeClick,
   onNodeSelect,
   onNodeExpand,
@@ -244,7 +244,7 @@ export function useTreeConsolePanel({
 
   const footerTopLevel = Array.isArray(data) ? data.length : 0;
   const footerSelected = selectedIds.length;
-  const trashDisabledNodeIds = useMemo<ReadonlySet<string>>(() => {
+  const archiveDisabledNodeIds = useMemo<ReadonlySet<string>>(() => {
     if (!buildSessionIndicator?.runningNodeIds) {
       return new Set<string>();
     }
@@ -259,14 +259,14 @@ export function useTreeConsolePanel({
       variant: 'default',
       pageNodeId,
       useArchiveColumns: useArchiveColumns ?? false,
-      trashAction,
+      archiveAction,
       iconInteractive: !useArchiveColumns,
       onDropToNode: onMoveNodes
         ? (targetId: string, draggedId: string) => onMoveNodes?.([draggedId], targetId)
         : undefined,
       onContextAction: onBreadcrumbContextAction,
       resolveOpenSteps,
-      trashDisabledNodeIds,
+      archiveDisabledNodeIds,
       leftSlot,
     }),
     [
@@ -276,9 +276,9 @@ export function useTreeConsolePanel({
       onMoveNodes,
       pageNodeId,
       resolveOpenSteps,
-      trashDisabledNodeIds,
+      archiveDisabledNodeIds,
       treeId,
-      trashAction,
+      archiveAction,
       useArchiveColumns,
       leftSlot,
     ]

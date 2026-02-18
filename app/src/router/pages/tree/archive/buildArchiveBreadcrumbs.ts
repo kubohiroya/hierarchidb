@@ -14,21 +14,21 @@ export interface BuildArchiveBreadcrumbsParams {
 const DEFAULT_MAX_DEPTH = 32;
 
 /**
- * Generate breadcrumb entries for the trash dialog.
+ * Generate breadcrumb entries for the archive dialog.
  *
  * Archive data in the worker is organized by storing canonical nodes directly under
- * the trash root. Each node carries optional metadata (`originalName`,
+ * the archive root. Each node carries optional metadata (`originalName`,
  * `originalParentId`) describing its source location. The UI still needs to render
- * a logical breadcrumb path for the trashed node; this helper constructs the list
+ * a logical breadcrumb path for the archiveed node; this helper constructs the list
  * of breadcrumb entries the TreeConsole UI can consume, preferring the preserved
  * original name when available.
  *
- * Typical usage in the trash dialog:
+ * Typical usage in the archive dialog:
  *
  * ```ts
  * const breadcrumbs = buildArchiveBreadcrumbs({
  *   treeId,
- *   rootNode: trashRoot,
+ *   rootNode: archiveRoot,
  *   targetNodeId: selectedNodeId,
  *   nodeMap,
  * });
@@ -39,12 +39,12 @@ const DEFAULT_MAX_DEPTH = 32;
  *
  * @param params.treeId Current console identifier (e.g. "r" for resources console).
  * @param params.rootNode Archive root node supplied by the worker.
- * @param params.targetNodeId The trashed node we want to stage a path for.
+ * @param params.targetNodeId The archiveed node we want to stage a path for.
  * @param params.nodeMap Optional map of node id to worker-provided TreeNode instances.
  * @param params.maxDepth Safety cap to avoid infinite loops on malformed data (defaults to 32).
  *
  * @returns Breadcrumb nodes ordered from root to target. The first element always
- *          represents the trash root.
+ *          represents the archive root.
  */
 export function buildArchiveBreadcrumbs({
   treeId,
@@ -57,7 +57,7 @@ export function buildArchiveBreadcrumbs({
   const rootCrumb: BreadcrumbNode = {
     id: rootId,
     name: 'Archive',
-    nodeType: rootNode.nodeType ?? 'trash',
+    nodeType: rootNode.nodeType ?? 'archive',
     parentId: `${treeId}:root`,
     isClickable: true,
     depth: 0,
@@ -88,10 +88,10 @@ export function buildArchiveBreadcrumbs({
     chain.unshift({
       id: currentId,
       name: displayName,
-      nodeType: currentNode?.nodeType ?? 'trash-item',
+      nodeType: currentNode?.nodeType ?? 'archive-item',
       parentId,
       isClickable: true,
-      holderType: 'trash',
+      holderType: 'archive',
       holderTargetId: currentId,
     });
 

@@ -41,10 +41,10 @@ function createNode(
 }
 
 describe('buildArchiveTreeData', () => {
-  const root = createNode('trash-root', { parentId: 'console-root' as NodeId, depth: 0 });
+  const root = createNode('archive-root', { parentId: 'console-root' as NodeId, depth: 0 });
 
-  it('prefers original metadata and marks entries as trash', () => {
-    const trashedParent = createNode('leaf-1', {
+  it('prefers original metadata and marks entries as archive', () => {
+    const archiveedParent = createNode('leaf-1', {
       parentId: root.id as NodeId,
       depth: 1,
       hasChildren: true,
@@ -53,14 +53,14 @@ describe('buildArchiveTreeData', () => {
       removedAt: Date.now(),
     });
     const child = createNode('leaf-1-child', {
-      parentId: trashedParent.id as NodeId,
+      parentId: archiveedParent.id as NodeId,
       depth: 2,
       hasChildren: false,
     });
 
     const nodeMap = new Map<string, TreeNode>([
       [root.id, root],
-      [trashedParent.id, trashedParent],
+      [archiveedParent.id, archiveedParent],
       [child.id, child],
     ]);
 
@@ -73,7 +73,7 @@ describe('buildArchiveTreeData', () => {
     expect(rootId).toBe(String(root.id));
     expect(nodes).toHaveLength(2);
 
-    const parentEntry = nodes.find((node) => node.id === trashedParent.id);
+    const parentEntry = nodes.find((node) => node.id === archiveedParent.id);
     expect(parentEntry?.metadata?.name).toBe('Original Leaf 1');
   });
 

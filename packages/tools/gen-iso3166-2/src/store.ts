@@ -28,29 +28,39 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
-const rowToRecord = (row: SubdivisionRow): SubdivisionRecord => ({
-  code: row.subdivisionCode,
-  alpha2: row.alpha2,
-  alpha3: row.alpha3,
-  countryEn: row.countryEn,
-  location: row.location,
-  subdivisionEn: row.subdivisionEn,
-  subdivisionLocal: row.subdivisionLocal,
-});
+const rowToRecord = (row: SubdivisionRow): SubdivisionRecord | null => {
+  if (!row.subdivisionCode) return null;
+  return {
+    code: row.subdivisionCode,
+    alpha2: row.alpha2,
+    alpha3: row.alpha3,
+    countryEn: row.countryEn,
+    location: row.location,
+    subdivisionEn: row.subdivisionEn,
+    subdivisionLocal: row.subdivisionLocal,
+  };
+};
+
+const addCountryRecord = (countriesMap: Map<string, CountryRecord>, row: SubdivisionRow): void => {
+  const alpha2 = row.alpha2?.trim().toUpperCase();
+  if (!alpha2 || countriesMap.has(alpha2)) return;
+  countriesMap.set(alpha2, {
+    alpha2,
+    alpha3: row.alpha3?.trim().toUpperCase(),
+    countryEn: row.countryEn,
+    location: row.location,
+  });
+};
 
 export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] } {
   const countriesMap = new Map<string, CountryRecord>();
   const subdivisions: SubdivisionRecord[] = [];
   rows.forEach((r) => {
-    subdivisions.push(rowToRecord(r));
-    if (!countriesMap.has(r.alpha2)) {
-      countriesMap.set(r.alpha2, {
-        alpha2: r.alpha2,
-        alpha3: r.alpha3,
-        countryEn: r.countryEn,
-        location: r.location,
-      });
+    const subdivisionRecord = rowToRecord(r);
+    if (subdivisionRecord) {
+      subdivisions.push(subdivisionRecord);
     }
+    addCountryRecord(countriesMap, r);
   });
   return { countries: Array.from(countriesMap.values()), subdivisions };
 }

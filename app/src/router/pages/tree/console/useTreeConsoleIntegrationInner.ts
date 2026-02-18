@@ -145,7 +145,7 @@ export function useTreeConsoleIntegrationInner({
     [client]
   );
 
-  const { hasArchiveItems, trashRootIdRef } = useTreeConsoleArchiveWatcher({
+  const { hasArchiveItems, archiveRootIdRef } = useTreeConsoleArchiveWatcher({
     client,
     treeId,
   });
@@ -259,7 +259,7 @@ export function useTreeConsoleIntegrationInner({
     pageNodeId,
     pageTreeNode,
     hasArchiveItems,
-    trashRootIdRef,
+    archiveRootIdRef,
     navigate,
     actions: {
       handleUndo: actions.handleUndo,
@@ -291,13 +291,13 @@ export function useTreeConsoleIntegrationInner({
   const shouldRenderTreeTable =
     !pageTreeNode ||
     (pageTreeNode.nodeType ?? '').toLowerCase() === 'folder' ||
-    (pageTreeNode.nodeType ?? '').toLowerCase() === 'trash_highlight_placeholder';
+    (pageTreeNode.nodeType ?? '').toLowerCase() === 'archive_highlight_placeholder';
 
   const lowerPageNodeId = pageNodeId ? String(pageNodeId).toLowerCase() : '';
   const isArchivePage =
-    pageTreeNode?.nodeType === 'trash' ||
-    lowerPageNodeId.endsWith(':trash') ||
-    lowerPageNodeId === 'trash';
+    pageTreeNode?.nodeType === 'archive' ||
+    lowerPageNodeId.endsWith(':archive') ||
+    lowerPageNodeId === 'archive';
 
   const treeConsolePanelProps: TreeConsolePanelProps = {
     treeId: treeId as TreeId,

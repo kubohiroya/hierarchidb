@@ -11,10 +11,10 @@ export type EmptyArchiveBranchResult = {
 };
 
 /**
- * Permanently delete the provided trash nodes (and their descendants).
+ * Permanently delete the provided archive nodes (and their descendants).
  *
  * `nodeIds` should contain the branch root IDs that need to be removed.
- * For the trash container view, pass the visible row IDs. For branch views,
+ * For the archive container view, pass the visible row IDs. For branch views,
  * pass the branch root identifier.
  */
 export async function emptyArchiveBranch({
@@ -30,12 +30,12 @@ export async function emptyArchiveBranch({
     const mutationAPI = await getMutationAPI();
     const result = await mutationAPI.removeNodes(targets);
     if (!result.success) {
-      console.error('Empty trash failed:', result.error);
+      console.error('Empty archive failed:', result.error);
       return { success: false };
     }
     return { success: true };
   } catch (error) {
-    console.error('Error emptying trash:', error);
+    console.error('Error emptying archive:', error);
     return { success: false };
   }
 }

@@ -208,7 +208,7 @@ sequenceDiagram
     participant CDB as CoreDB
     participant PDB as Plugin Database
 
-    UI->>WA: moveToTrash(nodeId)
+    UI->>WA: moveToArchive(nodeId)
     WA->>CM: executeCommand(MOVE_TO_TRASH)
     
     %% 削除用ワーキングコピー作成
@@ -236,7 +236,7 @@ sequenceDiagram
     
     %% CoreDBでゴミ箱移動処理
     CM->>CDB: beginTransaction()
-    CM->>CDB: moveToTrash(nodeId)
+    CM->>CDB: moveToArchive(nodeId)
     Note over CDB: ノードをゴミ箱へ移動
     
     %% プラグインエンティティ削除

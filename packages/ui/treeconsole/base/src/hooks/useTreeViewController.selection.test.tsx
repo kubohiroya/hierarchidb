@@ -18,7 +18,7 @@ vi.mock('@hierarchidb/provider', () => ({
   useTreeOperations: vi.fn(() => ({
     updateNode: vi.fn(),
     moveNode: vi.fn(),
-    trashNode: vi.fn(),
+    archiveNode: vi.fn(),
     duplicateNode: vi.fn(),
   })),
   useTreeState: vi.fn(() => ({
@@ -43,7 +43,7 @@ describe('useTreeViewController', () => {
       getChildren: vi.fn(),
       updateNode: vi.fn(),
       moveNode: vi.fn(),
-      trashNode: vi.fn(),
+      archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
     } as any;
 

@@ -88,7 +88,7 @@ export const useTreeConsoleContent = (
     if (mode === 'restore') {
       return translateWithFallback(
         'treeConsole.content.empty.restore',
-        'No items can be restored from the trash.'
+        'No items can be restored from the archive.'
       );
     }
     if (mode === 'dispose') {

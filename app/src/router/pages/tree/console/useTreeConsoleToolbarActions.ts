@@ -71,7 +71,7 @@ export function useTreeConsoleToolbarActions({
   pageNodeId,
   pageTreeNode,
   hasArchiveItems,
-  trashRootIdRef,
+  archiveRootIdRef,
   navigate,
   actions,
   state,
@@ -85,7 +85,7 @@ export function useTreeConsoleToolbarActions({
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
   hasArchiveItems: boolean;
-  trashRootIdRef: React.MutableRefObject<NodeId | null>;
+  archiveRootIdRef: React.MutableRefObject<NodeId | null>;
   navigate: (args: { to: string; replace?: boolean }) => void;
   actions: IntegrationActions;
   state: IntegrationState;
@@ -175,7 +175,7 @@ export function useTreeConsoleToolbarActions({
     (action: string, params?: TreeConsoleToolbarActionParams) => {
       const currentPageNodeId = pageNodeId || 'root';
 
-      const normalizedAction = action === 'remove' ? 'trash' : action;
+      const normalizedAction = action === 'remove' ? 'archive' : action;
 
       switch (normalizedAction) {
         case 'setRowClickAction':
@@ -205,22 +205,22 @@ export function useTreeConsoleToolbarActions({
         case 'restore': {
           if (!treeId) break;
           const resolvedArchiveNodeId =
-            params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
-              ? params.trashNodeId
-              : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
+            params && typeof params === 'object' && 'archiveNodeId' in params && params.archiveNodeId
+              ? params.archiveNodeId
+              : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/trash/restore`,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/restore`,
           });
           break;
         }
         case 'empty': {
           if (!treeId) break;
           const resolvedArchiveNodeId =
-            params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
-              ? params.trashNodeId
-              : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
+            params && typeof params === 'object' && 'archiveNodeId' in params && params.archiveNodeId
+              ? params.archiveNodeId
+              : (archiveRootIdRef.current ?? (treeId ? `${treeId}:archive` : 'archive'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/trash/empty`,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedArchiveNodeId}/archive/empty`,
           });
           break;
         }
@@ -248,7 +248,7 @@ export function useTreeConsoleToolbarActions({
         case 'duplicate':
           actions.handleDuplicate?.();
           break;
-        case 'trash':
+        case 'archive':
           actions.handleArchive?.();
           break;
         case 'import':
@@ -277,7 +277,7 @@ export function useTreeConsoleToolbarActions({
       navigate,
       requestEdit,
       handleIndexedDbReset,
-      trashRootIdRef,
+      archiveRootIdRef,
       persistSettings,
     ]
   );

@@ -39,7 +39,7 @@
 | `/t/:treeId/:pageNodeId/:targetNodeId` NotFound ガード | `...($targetNodeId)._layout.tsx` | `loadTargetNode(...)` | ターゲット未取得時にダイアログで警告し `/t/:treeId/:pageNodeId` へ戻す | `<Outlet />` に通過時のみ下位を描画 | NotFound 用ダイアログ |
 | `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` レイアウト | `...($nodeType).tsx` | `loadTargetNode(...)` | 取得した `nodeType` を `Outlet` に渡す | `/t/.../:nodeType/:action` | Loader 戻り値に `nodeType` を含める |
 | `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` NotFound ガード | `...($nodeType)._layout.tsx` | `loadNodeType(...)` | ターゲットが存在しない場合にダイアログで戻す | `<Outlet />` | `nodeType` ごとの編集 UI の安全網 |
-| `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` | `...$nodeType.$action.tsx` | `loadNodeAction(...)` もしくは `TrashDialog.clientLoader` | `PluginDialogRoute` もしくは `TrashDialog` を表示。`nodeType === 'trash'` の場合に専用ダイアログを差し込む | なし | 末端ダイアログルート |
+| `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` | `...$nodeType.$action.tsx` | `loadNodeAction(...)` もしくは `ArchiveDialog.clientLoader` | `PluginDialogRoute` もしくは `ArchiveDialog` を表示。`nodeType === 'archive'` の場合に専用ダイアログを差し込む | なし | 末端ダイアログルート |
 
 ### 0.2 ルータ処理に関わる環境変数一覧
 
@@ -274,7 +274,7 @@ sequenceDiagram
 - [x] `tree/pageRoute.tsx` を実装し `/t/:treeId/:pageNodeId` ページを定義（既存コンポーネントを再利用）。
 - [x] `tree/targetRoute.tsx` を実装し `/t/:treeId/:pageNodeId/:targetNodeId` ターゲットを定義。
 - [x] `tree/nodeTypeRoute.tsx` を実装し `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` を定義（NotFoundダイアログを含む）。
-- [x] `tree/dialogRoute.tsx` を実装し `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` を定義（TrashDialog特殊処理を含む）。
+- [x] `tree/dialogRoute.tsx` を実装し `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` を定義（ArchiveDialog特殊処理を含む）。
 - [x] `treeLoaders.ts` で既存の `loadTree`, `loadPageNode`, `loadTargetNode`, `loadNodeType`, `loadNodeAction` を再エクスポートし、TanStack Router用のコンテキスト型を定義。
 - [x] `createHierarchiRouter` にツリー系ルートを統合し、ルート階層を正しく構築。
 - [x] ユニットテスト `treeLoaders.test.ts` を追加（基本的なローダー動作を検証）。

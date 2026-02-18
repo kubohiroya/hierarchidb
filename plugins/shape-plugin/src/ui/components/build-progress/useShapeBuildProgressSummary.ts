@@ -185,8 +185,10 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         ? 'failed'
         : total > 0 && success + skip >= total
           ? 'completed'
-          : total > 0
-            ? 'running'
+          : buildStatus === 'paused'
+            ? 'paused'
+            : total > 0
+              ? 'running'
             : (base?.status ?? buildStatus);
       return {
         paneId: stage.id,
@@ -212,7 +214,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [aggregatedCounts.total, buildStatus, paneProgressWithSummary, stageProgress, stages]);
 
   const lastUnfinishedStageId = useMemo(() => {
-    if (buildStatus !== 'running') return undefined;
+    if (buildStatus !== 'running' && buildStatus !== 'paused') return undefined;
     let candidate: string | undefined;
     stages.forEach((stage) => {
       const stageInfo = stageCountsWithPlan[stage.id];
@@ -226,7 +228,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [buildStatus, stageCountsWithPlan, stages]);
 
   const inFlightStageId = useMemo(() => {
-    if (buildStatus !== 'running') return undefined;
+    if (buildStatus !== 'running' && buildStatus !== 'paused') return undefined;
     const stageIds = stages
       .filter((stage) => (
         (tasksByStage[stage.id] ?? []).some((task) => task.status === 'running' || task.status === 'queued')
@@ -264,7 +266,7 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
         }),
       };
     }
-    if (buildStatus === 'running' && aggregatedCounts.total === 0 && derivedCounts?.total) {
+    if ((buildStatus === 'running' || buildStatus === 'paused') && aggregatedCounts.total === 0 && derivedCounts?.total) {
       return {
         ...derivedCounts,
         percentage: computePercentage(derivedCounts),
@@ -309,19 +311,21 @@ export const useShapeBuildProgressSummary = <T extends BuildTaskSummary & TaskSt
   }, [rawDisplayCounts.percentage, stageProgressWithSummary, stages]);
 
   const displayCountsWithStageProgress = useMemo(() => {
-    if (buildStatus !== 'running' || !hasProgressData || displayCounts.total <= 0) return displayCounts;
+    if ((buildStatus !== 'running' && buildStatus !== 'paused') || !hasProgressData || displayCounts.total <= 0) {
+      return displayCounts;
+    }
     return { ...displayCounts, percentage: combinedStagePercentage };
   }, [buildStatus, combinedStagePercentage, displayCounts, hasProgressData]);
 
   const lastDisplayedPercentageRef = useRef<number | null>(null);
   useEffect(() => {
-    if (buildStatus !== 'running' || !hasProgressData || displayCounts.total <= 0) {
+    if ((buildStatus !== 'running' && buildStatus !== 'paused') || !hasProgressData || displayCounts.total <= 0) {
       lastDisplayedPercentageRef.current = null;
     }
   }, [buildStatus, displayCounts.total, hasProgressData]);
 
   const displayCountsMonotonic = useMemo(() => {
-    if (buildStatus !== 'running' || !hasProgressData || displayCountsWithStageProgress.total <= 0) {
+    if ((buildStatus !== 'running' && buildStatus !== 'paused') || !hasProgressData || displayCountsWithStageProgress.total <= 0) {
       return displayCountsWithStageProgress;
     }
     const current = displayCountsWithStageProgress.percentage;

@@ -10,7 +10,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'running',
       taskCount: 3,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
@@ -34,7 +34,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'running',
       taskCount: 1,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
@@ -58,7 +58,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: false,
     });
     expect(decision).toEqual({
@@ -79,7 +79,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -93,7 +93,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({
@@ -114,7 +114,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionStageId: 'pipeline:fetch-stage:error',
     });
@@ -136,7 +136,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: undefined,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 2,
       sessionStageId: 'pipeline:fetch-stage:error',
@@ -152,7 +152,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: undefined,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -166,7 +166,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionStageId: 'startup:plan-fetch-total:start',
     });
@@ -181,7 +181,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 2,
     });
@@ -196,7 +196,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'failed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -210,7 +210,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'paused',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({
@@ -231,7 +231,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'paused',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: true,
+      isStopInFlight: true,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -245,7 +245,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -259,7 +259,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: undefined,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
@@ -274,7 +274,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: undefined,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
@@ -288,7 +288,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: undefined,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
@@ -303,7 +303,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 2,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({
@@ -321,7 +321,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: true,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
@@ -343,7 +343,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'completed',
       taskCount: 0,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
@@ -365,7 +365,7 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       buildStatus: 'running',
       taskCount: undefined,
       isTaskStreamReady: false,
-      isPausePending: false,
+      isStopInFlight: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });

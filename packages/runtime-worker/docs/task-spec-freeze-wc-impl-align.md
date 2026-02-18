@@ -20,7 +20,7 @@ vk:task id=spec-freeze-wc-impl-align status=todo priority=P0 labels=worker,draft
 ## 依存/関連
 - 依存: `wc-spec-sync`（並行可）
 - 関連: `wc-impl-align`（本サブタスク完了後に着手）
-- エピック: `epic-wc-trash-unification`
+- エピック: `epic-wc-archive-unification`
 
 ## 受け入れ基準
 - Holderエンコードv1と`commit`戻りの仕様が固定化され、影響範囲が明記されている。

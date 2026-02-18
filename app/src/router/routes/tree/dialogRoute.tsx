@@ -12,7 +12,7 @@ import { lazy, Suspense } from 'react';
 import type {
   ArchiveDialogData,
   ArchiveDialogRouteParams,
-} from '~/router/pages/tree/trash/ArchiveDialog.js';
+} from '~/router/pages/tree/archive/ArchiveDialog.js';
 import {
   type LoadNodeActionReturn,
   loadNodeAction,
@@ -23,7 +23,7 @@ import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRo
 
 export type TreeDialogLoaderResult =
   | {
-      kind: 'trash';
+      kind: 'archive';
       data: ArchiveDialogData;
       params: ArchiveDialogRouteParams;
     }
@@ -32,7 +32,7 @@ export type TreeDialogLoaderResult =
       data: PluginDialogLoaderData;
     };
 
-const ArchiveDialogLazy = lazy(() => import('~/router/pages/tree/trash/ArchiveDialog.js'));
+const ArchiveDialogLazy = lazy(() => import('~/router/pages/tree/archive/ArchiveDialog.js'));
 
 const loadTreeDialog = async ({
   params,
@@ -65,16 +65,16 @@ const loadTreeDialog = async ({
 
   const normalizedNodeType = nodeType.toLowerCase();
 
-  // Special handling for trash dialog
-  if (normalizedNodeType === 'trash') {
-    const trashDialogModule = await import('~/router/pages/tree/trash/ArchiveDialog.js');
-    if (trashDialogModule.clientLoader) {
-      const trashParams = toArchiveDialogParams(resolvedParams);
-      const data = await trashDialogModule.clientLoader({ params: trashParams });
+  // Special handling for archive dialog
+  if (normalizedNodeType === 'archive') {
+    const archiveDialogModule = await import('~/router/pages/tree/archive/ArchiveDialog.js');
+    if (archiveDialogModule.clientLoader) {
+      const archiveParams = toArchiveDialogParams(resolvedParams);
+      const data = await archiveDialogModule.clientLoader({ params: archiveParams });
       return {
-        kind: 'trash',
+        kind: 'archive',
         data,
-        params: trashParams,
+        params: archiveParams,
       } satisfies TreeDialogLoaderResult;
     }
   }
@@ -112,7 +112,7 @@ const loadTreeDialog = async ({
 };
 
 const renderTreeDialog = (loaderResult: TreeDialogLoaderResult) => {
-  if (loaderResult.kind === 'trash') {
+  if (loaderResult.kind === 'archive') {
     const { data, params } = loaderResult;
     return (
       <Suspense fallback={null}>

@@ -88,7 +88,7 @@ const PluginDialogRouteFromRouter: React.FC = () => {
     from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
   }) as
     | PluginDialogLoaderData
-    | { kind: 'trash'; data: unknown }
+    | { kind: 'archive'; data: unknown }
     | { kind: 'plugin'; data: PluginDialogLoaderData };
   if (typeof candidate === 'object' && candidate !== null && 'kind' in candidate) {
     if (candidate.kind === 'plugin') {

@@ -1867,11 +1867,19 @@ const invokeShapeBuildCommand = async (
       stopReason: stopReason ?? null,
     });
     setPaused(nodeId, true);
+    await resetRunningTasks(nodeId);
     void (async () => {
       try {
+        const initialDrain = await waitForRunningTasksToDrain(nodeId, { timeoutMs: 3_000 });
+        if (initialDrain.running > 0) {
+          console.warn('[shapeBuildAPI][PauseTrace] pause-requeue-not-complete', {
+            nodeId,
+            ...initialDrain,
+          });
+        }
         await upsertBuildSessionSnapshot({
           nodeId,
-          status: 'paused',
+          status: 'idle',
           stopReason,
           canResume: true,
         });

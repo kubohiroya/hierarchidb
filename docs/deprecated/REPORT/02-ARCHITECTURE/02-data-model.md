@@ -21,7 +21,7 @@ HierarchiDB Data Model
 interface TreeTypes {
   id: TreeId;                    // ブランデッド型
   rootNodeId: RootNodeId;         // ルートノード
-  trashRootNodeId: TrashRootNodeId; // ゴミ箱ルート
+  archiveRootNodeId: ArchiveRootNodeId; // ゴミ箱ルート
   superRootNodeId: SuperRootNodeId; // スーパールート
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -62,7 +62,7 @@ interface TreeNode {
 ```typescript
 interface TreeRootState {
   id: TreeId;
-  treeRootNodeType: TreeRootNodeType; // 'SuperRoot' | 'Root' | 'TrashRoot'
+  treeRootNodeType: TreeRootNodeType; // 'SuperRoot' | 'Root' | 'ArchiveRoot'
   expanded: true | Record<NodeId, boolean>; // 展開状態
   version: number;
 }
@@ -81,7 +81,7 @@ type EntityId = string & { readonly __brand: 'EntityId' };
 // 特殊ノードID
 type SuperRootNodeId = NodeId & { readonly __type: 'SuperRoot' };
 type RootNodeId = NodeId & { readonly __type: 'Root' };
-type TrashRootNodeId = NodeId & { readonly __type: 'TrashRoot' };
+type ArchiveRootNodeId = NodeId & { readonly __type: 'ArchiveRoot' };
 ```
 
 ### 型の利点
@@ -214,7 +214,7 @@ Draft作成（EphemeralDB）
 ```typescript
 // Dexieスキーマ定義
 const coreDBSchema = {
-  trees: '&id, rootNodeId, trashRootNodeId, superRootNodeId',
+  trees: '&id, rootNodeId, archiveRootNodeId, superRootNodeId',
   nodes: [
     '&id',                      // Primary key
     'parentNodeId',             // 親ノードインデックス

@@ -1,5 +1,5 @@
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
-import { reconcileByMetadata, type MetadataDescriptor } from '@hierarchidb/batch';
+import { reconcileByMetadata, type MetadataDescriptor } from '@hierarchidb/batch-runtime-services';
 import { resolveTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 
 type TaskLike = TaskQueueRecord<unknown, unknown>;

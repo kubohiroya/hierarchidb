@@ -112,6 +112,8 @@ const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, ind
   if (iso2) return iso2.toUpperCase();
   const countryCode = country.countryCode?.trim();
   if (countryCode) return countryCode.toUpperCase();
+  const iso3 = country.iso3?.trim();
+  if (iso3) return iso3.toUpperCase();
   return `COUNTRY-${index}`;
 };
 
@@ -218,6 +220,30 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   const metadataRequestIdRef = useRef(0);
 
   const error = dataSourceError ?? metadataError;
+  const isoCodeNormalizationWarnings = useMemo(() => {
+    const unsupported = countries
+      .filter((country) => {
+        const iso2 = country.iso2?.trim();
+        return !iso2 || iso2.length !== 2;
+      })
+      .map((country, index) => ({
+        raw: country.countryCode,
+        fallback: country.iso3,
+        name: country.countryName,
+        index,
+      }))
+      .slice(0, 5);
+    if (unsupported.length === 0) return [];
+    return unsupported.map((entry) => `${entry.name ?? entry.raw ?? entry.fallback ?? `#${entry.index}`}`);
+  }, [countries]);
+
+  useEffect(() => {
+    if (isoCodeNormalizationWarnings.length === 0) return;
+    console.warn('[shape-plugin][country-selection] Some countries could not be normalized to ISO2 and were kept as-is', {
+      warnings: isoCodeNormalizationWarnings,
+    });
+    enqueueSnackbar('Some countries could not be normalized to ISO2 code and were kept as original code.', { variant: 'warning' });
+  }, [enqueueSnackbar, isoCodeNormalizationWarnings]);
 
   const [availability, setAvailability] = useState<SerializedCountryAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<Error | null>(null);
@@ -381,7 +407,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
           if (!iso3 || !iso2 || iso2.length !== 2) return null;
           return [iso3, iso2] as const;
         })
-        .filter((entry): entry is [string, string] => Boolean(entry)),
+      .filter((entry): entry is [string, string] => Boolean(entry)),
     );
   }, [countries]);
 
@@ -439,17 +465,16 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     if (Array.isArray(selectedArrayByCountries)) return {};
     const resolveSelectionKey = (code: string) => {
       const normalized = code.trim().toUpperCase();
-      if (normalized.length === 2) return normalized;
-      return iso3ToIso2.get(normalized) ?? normalized;
+      return normalized.length === 2 ? normalized : iso3ToIso2.get(normalized) ?? normalized;
     };
-    return Object.fromEntries(
-      Object.entries(selectedArrayByCountries).map(([code, row]) => [
-        resolveSelectionKey(code),
-        Array.isArray(row)
-          ? Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]))
-          : Array.from({ length: resolvedMaxAdminLevel + 1 }, () => false),
-      ]),
-    );
+    return Object.entries(selectedArrayByCountries).reduce<Record<string, boolean[]>>((acc, [code, row]) => {
+      const selectionKey = resolveSelectionKey(code);
+      if (!selectionKey) return acc;
+      acc[selectionKey] = Array.isArray(row)
+        ? Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]))
+        : Array.from({ length: resolvedMaxAdminLevel + 1 }, () => false);
+      return acc;
+    }, {});
   }, [baseCountries, iso3ToIso2, resolvedMaxAdminLevel, selectedArrayByCountries]);
 
   const buildSelectionSet = useCallback((selection: Record<string, boolean[]>): Set<string> => {

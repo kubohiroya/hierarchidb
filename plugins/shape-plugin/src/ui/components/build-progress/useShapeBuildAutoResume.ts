@@ -47,7 +47,12 @@ export const useShapeBuildAutoResume = ({
 
   useEffect(() => {
     if (!isStartPending) return;
-    if (buildStatus === 'running' || buildStatus === 'completed' || buildStatus === 'failed') {
+    if (
+      buildStatus === 'running'
+      || buildStatus === 'completed'
+      || buildStatus === 'failed'
+      || buildStatus === 'paused'
+    ) {
       setStartPending(false);
     }
   }, [buildStatus, isStartPending, setStartPending]);

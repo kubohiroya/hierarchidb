@@ -86,7 +86,7 @@ export const ProjectsGuidedTour: React.FC<ProjectsGuidedTourProps> = ({ run, onF
           <p>
             The toolbar above the tree view provides tools to edit and manage your projects. You can
             create folders to organize your projects effectively. Features to undo/redo, copy/paste,
-            duplicate/remove, and manage trash-bin are available.
+            duplicate/remove, and manage archive-bin are available.
           </p>
         </div>
       ),

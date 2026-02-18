@@ -263,7 +263,7 @@ export class TreeMutationCommandsAdapter<T> {
       });
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
-          `Failed to restore nodes from trash: ${result?.error || 'Unknown error'}`,
+          `Failed to restore nodes from archive: ${result?.error || 'Unknown error'}`,
           'RESTORE_FROM_TRASH_FAILED',
         );
       }

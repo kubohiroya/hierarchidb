@@ -17,7 +17,7 @@ import {
 /**
  * Folder Undo/Redo E2E Test
  *
- * Validates that the undo/redo stack captures create, rename, trash, and restore
+ * Validates that the undo/redo stack captures create, rename, archive, and restore
  * operations in the expected order and that UI atoms reflects each transition.
  */
 
@@ -49,32 +49,32 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
 
     const treeNode = (name: string) =>
       page.locator('[data-testid="console-node"]').filter({ hasText: name }).first();
-    const trashItem = (name: string) =>
-      page.locator('[data-testid="trash-item"]').filter({ hasText: name }).first();
+    const archiveItem = (name: string) =>
+      page.locator('[data-testid="archive-item"]').filter({ hasText: name }).first();
 
     const expectInArchive = async (name: string) => {
-      await page.locator('[data-testid="trash-button"]').click();
-      const trashPanel = page.locator('[data-testid="trash-panel"]');
-      await expect(trashPanel).toBeVisible({ timeout: 5000 });
-      await expect(trashItem(name)).toBeVisible({ timeout: 5000 });
-      await page.locator('[data-testid="close-trash-panel"]').click();
-      await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
+      await page.locator('[data-testid="archive-button"]').click();
+      const archivePanel = page.locator('[data-testid="archive-panel"]');
+      await expect(archivePanel).toBeVisible({ timeout: 5000 });
+      await expect(archiveItem(name)).toBeVisible({ timeout: 5000 });
+      await page.locator('[data-testid="close-archive-panel"]').click();
+      await expect(archivePanel).not.toBeVisible({ timeout: 5000 });
     };
 
     const expectNotInArchive = async (name: string) => {
-      await page.locator('[data-testid="trash-button"]').click();
-      const trashPanel = page.locator('[data-testid="trash-panel"]');
-      await expect(trashPanel).toBeVisible({ timeout: 5000 });
-      await expect(trashItem(name)).toHaveCount(0);
-      await page.locator('[data-testid="close-trash-panel"]').click();
-      await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
+      await page.locator('[data-testid="archive-button"]').click();
+      const archivePanel = page.locator('[data-testid="archive-panel"]');
+      await expect(archivePanel).toBeVisible({ timeout: 5000 });
+      await expect(archiveItem(name)).toHaveCount(0);
+      await page.locator('[data-testid="close-archive-panel"]').click();
+      await expect(archivePanel).not.toBeVisible({ timeout: 5000 });
     };
 
-    // Baseline: node restored to main console and absent from trash
+    // Baseline: node restored to main console and absent from archive
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInArchive(renamedName);
 
-    // Undo restore → node back into trash
+    // Undo restore → node back into archive
     await clickUndo(page);
     await expect(treeNode(renamedName)).toHaveCount(0);
     await expectInArchive(renamedName);
@@ -104,18 +104,18 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expect(treeNode(originalName)).toHaveCount(0);
 
-    // Redo remove → node moves to trash
+    // Redo remove → node moves to archive
     await clickRedo(page);
     await expect(treeNode(renamedName)).toHaveCount(0);
     await expectInArchive(renamedName);
 
-    // Redo restore → node back to console, trash cleared
+    // Redo restore → node back to console, archive cleared
     await clickRedo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInArchive(renamedName);
   }
 
-  test('create → rename → trash → restore supports undo/redo cycle with CommandProcessor routing', async ({ page }) => {
+  test('create → rename → archive → restore supports undo/redo cycle with CommandProcessor routing', async ({ page }) => {
     await runUndoRedoCycle(page);
   });
 });

@@ -11,7 +11,7 @@ import type { CountryMetadata } from '../../common/types/index.js';
 import {
   DEFAULT_ISO3166_CSV_URL,
   type ContinentCode,
-  normalizeCountryCodeFormat,
+  normalizeCountryCodeForDataSource,
   resolveCountryContinentCode,
   resolveCountryContinentName,
 } from '../utils/iso3166.js';
@@ -220,12 +220,18 @@ export async function fetchGeoBoundariesMetadata(
 
   const results: CountryMetadata[] = [];
   // let missingContinentCount = 0;
-  const missingSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
+  const fallbackSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
+  const unresolvedSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
   for (const entry of entries.values()) {
-    const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+    const iso2 = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
       csvUrl: DEFAULT_ISO3166_CSV_URL,
     });
     const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+    if (!normalizedIso2) {
+      if (unresolvedSamples.length < 5) {
+        unresolvedSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: null });
+      }
+    }
     const levels = Array.from(entry.levels).sort((a, b) => a - b);
     const fallbackContinent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
       csvUrl: DEFAULT_ISO3166_CSV_URL,
@@ -237,8 +243,8 @@ export async function fetchGeoBoundariesMetadata(
     const resolvedContinent = resolveGeoBoundariesContinent(rawContinent, resolvedContinentCode, fallbackContinent);
     if (!rawContinent && resolvedContinentCode === 'XX') {
       // missingContinentCount += 1;
-      if (missingSamples.length < 5) {
-        missingSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
+      if (fallbackSamples.length < 5) {
+        fallbackSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
       }
     }
     results.push({
@@ -249,6 +255,13 @@ export async function fetchGeoBoundariesMetadata(
       iso2: normalizedIso2,
       iso3: entry.iso3,
       dataQuality: determineDataQuality(levels),
+    });
+  }
+    if (unresolvedSamples.length > 0) {
+    console.warn('[shape-plugin][geoboundaries] metadata entries unresolved to ISO2', {
+      unresolvedCount: unresolvedSamples.length,
+      fallbackSamples,
+      unresolvedSamples,
     });
   }
   return results;
@@ -337,7 +350,7 @@ export async function fetchGadmMetadata(
 
   let gadmMissingCount = 0;
   const gadmMissingSamples: Array<{ iso3: string; metadata: string | null }> = [];
-  const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
+  const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata>(entries, 6, async (entry) => {
     try {
       const countryEntry = await getCachedOrFetchForNode({
         store,
@@ -349,24 +362,17 @@ export async function fetchGadmMetadata(
       });
       const countryHtml = countryEntry.value;
       const levels = parseGadmLevelsFromHtml(countryHtml);
-      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+      const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
         csvUrl: DEFAULT_ISO3166_CSV_URL,
       });
-      const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      const normalizedIso2 = normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
       const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
         csvUrl: DEFAULT_ISO3166_CSV_URL,
       });
-
-      // CountryMetadata.countryCode は ISO2 必須。
-      if (!normalizedIso2) return undefined;
-
-      gadmMissingCount += 1;
-      if (gadmMissingSamples.length < 5) {
-        gadmMissingSamples.push({ iso3: entry.iso3, metadata: null });
-      }
+      const countryCode = normalizedIso2 ?? entry.iso3;
 
       return {
-        countryCode: normalizedIso2,
+        countryCode,
         countryName: entry.name,
         continent,
         availableAdminLevels: levels,
@@ -375,20 +381,20 @@ export async function fetchGadmMetadata(
         dataQuality: determineDataQuality(levels),
       } satisfies CountryMetadata;
     } catch (error) {
+      const levels: number[] = [];
       console.warn('[MetadataLoader] failed to parse GADM levels', {
         iso3: entry.iso3,
         url: entry.url,
         error,
       });
-      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+      const normalizedCountryCode = await normalizeCountryCodeForDataSource(entry.iso3, 'iso2', {
         csvUrl: DEFAULT_ISO3166_CSV_URL,
       });
-      const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      const normalizedIso2 = normalizedCountryCode.length === 2 ? normalizedCountryCode : undefined;
       const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
         csvUrl: DEFAULT_ISO3166_CSV_URL,
       });
-
-      if (!normalizedIso2) return undefined;
+      const countryCode = normalizedIso2 ?? entry.iso3;
 
       gadmMissingCount += 1;
       if (gadmMissingSamples.length < 5) {
@@ -396,26 +402,24 @@ export async function fetchGadmMetadata(
       }
 
       return {
-        countryCode: normalizedIso2,
+        countryCode,
         countryName: entry.name,
         continent,
-        availableAdminLevels: [],
+        availableAdminLevels: levels,
         iso2: normalizedIso2,
         iso3: entry.iso3,
-        dataQuality: 'low',
+        dataQuality: determineDataQuality(levels),
       } satisfies CountryMetadata;
     }
   });
 
-  // 変換できなかった行は除外（型も揃える）
-  const filtered = results.filter((v): v is CountryMetadata => v != null);
   if (gadmMissingCount > 0) {
     console.warn('[shape-plugin][gadm] continent metadata missing (fallback to ISO3166)', {
       missing: gadmMissingCount,
       missingSamples: gadmMissingSamples,
     });
   }
-  return filtered;
+  return results;
 }
 
 export async function fetchNaturalEarthMetadata(_nodeId: NodeId): Promise<CountryMetadata[]> {

@@ -4,9 +4,9 @@
 - コマンド名の意味範囲を明確化し、実装・UI・テスト間の用語不一致を防止する。
 
 基本方針
-- trash 運用を明示化する。
-  - moveToTrash: ノードをゴミ箱へ移動（復元可能）。
-  - recoverFromTrash: ゴミ箱から復元。
+- archive 運用を明示化する。
+  - moveToArchive: ノードをゴミ箱へ移動（復元可能）。
+  - recoverFromArchive: ゴミ箱から復元。
   - remove: 物理削除（恒久的）。UI からの直呼びは原則禁止（保守用）。
 - Draft ライフサイクルを v1 として固定。
   - createDraftForCreate → commitDraftForCreate
@@ -18,8 +18,8 @@ Envelope v1 マッピング（抜粋）
 - moveNodes: { nodeIds, toParentId, onNameConflict? }
 - duplicateNodes: { nodeIds, toParentId, onNameConflict? }
 - pasteNodes: { nodes, nodeIds, toParentId, onNameConflict? }
-- moveToTrash: { nodeIds }
-- recoverFromTrash: { nodeIds, toParentId?, onNameConflict? }
+- moveToArchive: { nodeIds }
+- recoverFromArchive: { nodeIds, toParentId?, onNameConflict? }
 - importNodes / copyNodes / exportNodes: 既存の型を踏襲
 - Draft 系: create*/commit*/discard* の各 payload は common-type 定義を使用
 

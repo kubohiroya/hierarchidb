@@ -13,7 +13,7 @@
 - **[02-architecture-data-model.md](./02-architecture-data-model.md)** - データモデルとエンティティシステム
 
 ### コア機能・操作
-- **[03-core-operations.md](./03-core-operations.md)** - 基本操作（CRUD、Undo/Redo、Copy/Paste、Trash）
+- **[03-core-operations.md](./03-core-operations.md)** - 基本操作（CRUD、Undo/Redo、Copy/Paste、Archive）
 - **[03-core-dialog.md](./03-core-dialog.md)** - ダイアログシステムの利用方法
 - **[03-api-reference.md](./03-api-reference.md)** - APIリファレンス
 

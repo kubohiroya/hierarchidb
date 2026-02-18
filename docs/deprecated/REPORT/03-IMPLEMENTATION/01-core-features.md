@@ -193,7 +193,7 @@ class RingBufferHistory {
 
 ### ソフト削除
 ```typescript
-class MoveToTrashCommand extends Command {
+class MoveToArchiveCommand extends Command {
   async execute(): Promise<void> {
     const node = await this.db.nodes.get(this.nodeId);
     if (!node) throw new Error('Node not found');
@@ -202,7 +202,7 @@ class MoveToTrashCommand extends Command {
     await this.db.nodes.update(this.nodeId, {
       originalParentNodeId: node.parentNodeId,
       originalName: node.name,
-      parentNodeId: this.trashRootNodeId,
+      parentNodeId: this.archiveRootNodeId,
       name: `${node.name}_${Date.now()}`, // 重複回避
       removedAt: Date.now()
     });
@@ -212,7 +212,7 @@ class MoveToTrashCommand extends Command {
 
 ### 復元機能
 ```typescript
-class RestoreFromTrashCommand extends Command {
+class RestoreFromArchiveCommand extends Command {
   async execute(): Promise<void> {
     const node = await this.db.nodes.get(this.nodeId);
     if (!node || !node.originalParentNodeId) {
@@ -233,7 +233,7 @@ class RestoreFromTrashCommand extends Command {
 
 ### 自動クリーンアップ
 ```typescript
-class TrashCleanupService {
+class ArchiveCleanupService {
   private readonly RETENTION_DAYS = 30;
   
   async cleanupOldItems(): Promise<void> {

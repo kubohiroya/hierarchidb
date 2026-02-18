@@ -77,14 +77,14 @@ export interface TreeMutationAPI {
   removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * Move nodes into the trash container.
+   * Move nodes into the archive container.
    * @param nodeIds - Node identifiers targeted for soft deletion.
    * @returns A promise resolving to the success flag and optional error message.
    */
   moveNodesToArchive(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * Restore previously trashed nodes.
+   * Restore previously archiveed nodes.
    * @param params - Restore configuration.
    * @returns A promise resolving to the success flag and optional error message.
    * @remarks
@@ -98,7 +98,7 @@ export interface TreeMutationAPI {
   }): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * Permanently remove all descendants under the given root (e.g., empty trash).
+   * Permanently remove all descendants under the given root (e.g., empty archive).
    * @param rootId - Node identifier whose subtree should be removed.
    * @returns A promise resolving to the success flag and optional error message.
    */

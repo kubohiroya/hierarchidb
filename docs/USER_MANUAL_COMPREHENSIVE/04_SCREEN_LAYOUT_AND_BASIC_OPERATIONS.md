@@ -75,7 +75,7 @@ graph TB
         
         ResourcesTree["📁 Resources"]
         ProjectsTree["📊 Projects"]
-        TrashBin["🗑️ ゴミ箱"]
+        ArchiveBin["🗑️ ゴミ箱"]
         
         QuickActions["クイックアクション"]
         CreateNew["➕ 新規作成"]
@@ -87,7 +87,7 @@ graph TB
         
         TreeSelector --> ResourcesTree
         TreeSelector --> ProjectsTree
-        TreeSelector --> TrashBin
+        TreeSelector --> ArchiveBin
         
         QuickActions --> CreateNew
         QuickActions --> ImportData
@@ -99,7 +99,7 @@ graph TB
     classDef action fill:#fff3e0
     
     class TreeSelector,QuickActions,RecentItems,Favorites navigation
-    class ResourcesTree,ProjectsTree,TrashBin tree
+    class ResourcesTree,ProjectsTree,ArchiveBin tree
     class CreateNew,ImportData,ExportData action
 ```
 
@@ -109,7 +109,7 @@ graph TB
 |--------|----------|------|----------|
 | **Resources** | 📁 | リソース管理ツリー | 文書、ファイル、データの整理 |
 | **Projects** | 📊 | プロジェクト管理ツリー | タスク、進捗、成果物の管理 |
-| **Trash** | 🗑️ | ゴミ箱 | 削除されたアイテムの管理 |
+| **Archive** | 🗑️ | ゴミ箱 | 削除されたアイテムの管理 |
 
 #### 4.1.3 メインコンテンツ部 ⭐️⭐️⭐️⭐️⭐️
 
@@ -657,7 +657,7 @@ sequenceDiagram
     participant User as ユーザー
     participant UI as インターフェース
     participant System as システム
-    participant Trash as ゴミ箱
+    participant Archive as ゴミ箱
     participant DB as データベース
     
     Note over User,DB: 論理削除（ゴミ箱移動）
@@ -665,15 +665,15 @@ sequenceDiagram
     UI->>User: 確認ダイアログ
     User->>UI: 削除確認
     UI->>System: 削除処理実行
-    System->>Trash: ゴミ箱に移動
+    System->>Archive: ゴミ箱に移動
     System->>UI: 処理完了通知
     UI->>User: 削除完了表示
     
     Note over User,DB: 物理削除（完全削除）
-    User->>Trash: ゴミ箱から削除
-    Trash->>User: 最終確認ダイアログ
-    User->>Trash: 完全削除確認
-    Trash->>DB: データベースから削除
+    User->>Archive: ゴミ箱から削除
+    Archive->>User: 最終確認ダイアログ
+    User->>Archive: 完全削除確認
+    Archive->>DB: データベースから削除
     DB->>UI: 削除完了
     UI->>User: 完全削除完了
 ```

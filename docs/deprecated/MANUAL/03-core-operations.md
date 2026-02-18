@@ -212,10 +212,10 @@ TreeNodeとエンティティの削除。
 const mutationAPI = await workerAPI.getMutationAPI();
 
 // ゴミ箱へ移動（ソフト削除）
-await mutationAPI.moveNodesToTrash([nodeId1, nodeId2]);
+await mutationAPI.moveNodesToArchive([nodeId1, nodeId2]);
 
 // ゴミ箱から復元
-await mutationAPI.recoverNodesFromTrash({
+await mutationAPI.recoverNodesFromArchive({
   nodeIds: [nodeId1],
   toParentId: originalParentId // 省略時は元の親へ復元
 });
@@ -378,7 +378,7 @@ class CompositeCommand implements Command {
 ### ソフト削除
 **実装方法:**
 ```typescript
-interface TrashableNode extends TreeNode {
+interface ArchiveableNode extends TreeNode {
   deletedAt?: number;
   deletedBy?: string;
   originalParentId?: string;

@@ -25,7 +25,7 @@ vk:task id=wc-entity-spec status=todo priority=P1 labels=worker,entity,draft,doc
 - Tree WC 仕様（3根/holder+child）
 - CommandProcessor リファクタ計画
 - Comlink 型強化（構造化クローン制約）
- - エピック: `epic-wc-trash-unification`
+ - エピック: `epic-wc-archive-unification`
 
 ## 受け入れ基準
 - 仕様のレビュー合意（このタスクは実装なし）

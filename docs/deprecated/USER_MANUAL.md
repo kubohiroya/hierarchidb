@@ -62,7 +62,7 @@ HierarchiDB uses a structured URL system:
 - **Root Node**: The top-level node of each tree
 - **Parent Nodes**: Nodes that contain child nodes
 - **Leaf Nodes**: Nodes without children
-- **Trash**: Special container for deleted items
+- **Archive**: Special container for deleted items
 
 ### TreeTypes Views
 
@@ -107,7 +107,7 @@ HierarchiDB supports different types of nodes through its plugin system:
 1. Select the node(s) to delete
 2. Use the delete action from the toolbar or context menu
 3. Confirm the deletion
-4. Deleted items move to the Trash
+4. Deleted items move to the Archive
 
 #### Moving Nodes
 - **Drag and Drop**: Drag nodes to new locations
@@ -145,7 +145,7 @@ HierarchiDB supports different types of nodes through its plugin system:
 3. **TreeTypes Table**: Main data display with virtual scrolling
 4. **Speed Dial**: Quick access to create actions
 5. **Footer**: Status information and additional controls
-6. **Trash Bin**: Access deleted items
+6. **Archive Bin**: Access deleted items
 
 ### Keyboard Shortcuts
 
@@ -180,7 +180,7 @@ Right-click on nodes or tree areas to access:
 
 1. **Use Hierarchical Organization**: Keep tree depth reasonable for better performance
 2. **Batch Operations**: Perform multiple operations together when possible
-3. **Regular Cleanup**: Use the Trash to remove unnecessary items
+3. **Regular Cleanup**: Use the Archive to remove unnecessary items
 4. **Monitor Memory**: Check the memory usage indicator in the footer
 
 ### Data Organization

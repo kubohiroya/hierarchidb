@@ -739,7 +739,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * :
    * : isRemovedremovedAt
    * : folder-plugin-operations.test.ts isRemoved
-   * : docs/13-trash-operations-analysis.md
+   * : docs/13-archive-operations-analysis.md
    */
   async moveNodesToArchive(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
@@ -747,13 +747,13 @@ export class TreeMutationService implements TreeMutationAPI {
       if (runningBuildGuard.blocked) {
         return {
           success: false,
-          error: runningBuildGuard.message ?? 'Cannot move to trash while build session is running.',
+          error: runningBuildGuard.message ?? 'Cannot move to archive while build session is running.',
         };
       }
 
       const guard = await this.checkArchiveReferenceGuard(nodeIds);
       if (guard.blocked) {
-        return { success: false, error: guard.message ?? 'Cannot move to trash.' };
+        return { success: false, error: guard.message ?? 'Cannot move to archive.' };
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to validate references.';
@@ -773,7 +773,7 @@ export class TreeMutationService implements TreeMutationAPI {
         await this.recomputeAncestorsHasChildrenFromParent(pid);
       return { success: true };
     }
-    // Fallback: derive trash root from ancestor pattern (e.g., r:root -> r:trash) and move nodes directly under trash root
+    // Fallback: derive archive root from ancestor pattern (e.g., r:root -> r:archive) and move nodes directly under archive root
     try {
       for (const nodeId of nodeIds) {
         const node = await this.coreDB.getNode?.(nodeId);
@@ -782,34 +782,34 @@ export class TreeMutationService implements TreeMutationAPI {
         if (!originalParentId) continue;
 
         let cursor: NodeId | undefined = originalParentId;
-        let trashRootId: NodeId | undefined;
+        let archiveRootId: NodeId | undefined;
         while (cursor) {
           if (typeof cursor === 'string' && cursor.endsWith(':root')) {
             const prefix = cursor.slice(0, -':root'.length);
-            trashRootId = `${prefix}:trash` as NodeId;
+            archiveRootId = `${prefix}:archive` as NodeId;
             break;
           }
           const parent = await this.coreDB.getNode?.(cursor);
           if (!parent || parent.parentId === cursor) break;
           cursor = parent.parentId;
         }
-        if (!trashRootId) continue;
+        if (!archiveRootId) continue;
         const now = Date.now() as Timestamp;
-        if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
+        if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === archiveRootId) {
           continue;
         }
 
         const preservedOriginalName =
           (node as { originalName?: string }).originalName ?? node.metadata.name;
-        const trashName =
+        const archiveName =
           typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
             ? crypto.randomUUID()
             : `${node.id as string}-${now}`;
 
         await this.coreDB.updateNode?.({
           id: node.id,
-          parentId: trashRootId,
-          metadata: { ...node.metadata, name: trashName },
+          parentId: archiveRootId,
+          metadata: { ...node.metadata, name: archiveName },
           originalName: preservedOriginalName,
           originalParentId: originalParentId,
           removedAt: now,
@@ -831,7 +831,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * :
    * : isRemovedfalse
    * : folder-plugin-operations.test.tsisRemovedfalse
-   * : docs/13-trash-operations-analysis.md
+   * : docs/13-archive-operations-analysis.md
    */
   // restoreFromArchive legacy removed: handled by CommandProcessor
 

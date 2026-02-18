@@ -234,7 +234,7 @@ export interface PluginDatabaseSchema {
 
 ```typescript
 // 現在：TypeとIdの両方を使用
-TREE_ROOT_NODE_TYPES = { ROOT: 'Root', TRASH: 'Trash', SUPER_ROOT: 'SuperRoot' }
+TREE_ROOT_NODE_TYPES = { ROOT: 'Root', TRASH: 'Archive', SUPER_ROOT: 'SuperRoot' }
 
 // NodeIdGenerator での使用
 rootNode: (treeId: string) => `${treeId}Root` as NodeId

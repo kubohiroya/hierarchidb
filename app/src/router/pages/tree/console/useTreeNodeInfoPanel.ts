@@ -260,12 +260,12 @@ export function useTreeNodeInfoPanel({
   const handleContextMenuTrigger = useCallback(
     (action: string, options?: Parameters<ContextMenuHandler>[2]) => {
       if (!nodeData) return;
-      if (action === 'trash') {
+      if (action === 'archive') {
         setPendingArchiveNode(nodeData);
         setConfirmArchiveOpen(true);
         return;
       }
-      const navigateToParent = options?.navigateToParent ?? action === 'trash';
+      const navigateToParent = options?.navigateToParent ?? action === 'archive';
       if (action === 'toggle-visibility') {
         const nextVisible =
           typeof options?.nextVisible === 'boolean'
@@ -317,7 +317,7 @@ export function useTreeNodeInfoPanel({
 
   const handleArchiveConfirm = useCallback(() => {
     if (pendingArchiveNode) {
-      onContextMenuAction('trash', pendingArchiveNode, { navigateToParent: true });
+      onContextMenuAction('archive', pendingArchiveNode, { navigateToParent: true });
     }
     setConfirmArchiveOpen(false);
     setPendingArchiveNode(null);
@@ -347,7 +347,7 @@ export function useTreeNodeInfoPanel({
     !nodeData ||
     nodeData.depth === 0 ||
     /root/i.test(currentNode?.nodeType ?? '') ||
-    /trash/i.test(currentNode?.nodeType ?? '');
+    /archive/i.test(currentNode?.nodeType ?? '');
   const canMutate = !isRootLike;
   const isDraft = currentNode?.version === 0;
 
@@ -361,7 +361,7 @@ export function useTreeNodeInfoPanel({
     confirmArchiveTitle: getString('treeConsole.infoPanel.confirmArchiveTitle', 'Move to Archive'),
     confirmArchiveDescription: getString(
       'treeConsole.infoPanel.confirmArchiveDescription',
-      'Move this item and all its children to trash?'
+      'Move this item and all its children to archive?'
     ),
     confirmArchiveCancel: getString('treeConsole.infoPanel.confirmArchiveCancel', 'Cancel'),
     confirmArchiveConfirm: getString('treeConsole.infoPanel.confirmArchiveConfirm', 'Move to Archive'),

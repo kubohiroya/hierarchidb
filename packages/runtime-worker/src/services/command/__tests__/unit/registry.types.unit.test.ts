@@ -42,7 +42,7 @@ describe('CommandRegistry types: envelope inference', () => {
     expectTypeOf(env.payload).toEqualTypeOf<PayloadOf<'pasteNodes'>>();
   });
 
-  it('includes draft lifecycle and trash ops in CommandMap', () => {
+  it('includes draft lifecycle and archive ops in CommandMap', () => {
     // Draft lifecycle
     const c1 = createEnvelope('createDraftForCreate', {
       draftOf: 'n1' as NodeId,

@@ -90,7 +90,7 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
     setContextMenuState: () => {},
     visualSelectionSet: new Set(),
     useArchiveColumns: false,
-    trashAction: 'restore',
+    archiveAction: 'restore',
     formatTimestamp: () => '-',
     columnLabels: {
       name: 'Name',

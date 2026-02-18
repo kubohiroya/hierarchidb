@@ -26,7 +26,7 @@ const mockController: TreeViewController = {
   },
   moveNodes: async () => {
   },
-  trashNodes: async () => {
+  archiveNodes: async () => {
   },
   duplicateNodes: async () => {
   },
@@ -81,10 +81,10 @@ describe('TreeConsoleHeader', () => {
     expect(screen.getByText(/projects/i)).toBeDefined();
   });
 
-  it('should show trash indicator when isArchivePage is true', () => {
+  it('should show archive indicator when isArchivePage is true', () => {
     render(<TreeConsoleHeader {...defaultProps} isArchivePage={true} />);
 
-    const items = screen.getAllByText(/trash/i);
+    const items = screen.getAllByText(/archive/i);
     expect(items.length).toBeGreaterThan(0);
   });
 

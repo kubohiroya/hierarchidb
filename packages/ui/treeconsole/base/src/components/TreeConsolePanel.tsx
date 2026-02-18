@@ -29,7 +29,7 @@ export interface TreeConsolePanelProps {
   /** Optional page node for split view decisions. */
   readonly pageTreeNode?: TreeNode;
   /**
-   * Optional subtree root used for hierarchical rendering (e.g. trash dialog branch view).
+   * Optional subtree root used for hierarchical rendering (e.g. archive dialog branch view).
    * Defaults to `pageNodeId` when omitted.
    */
   readonly subtreeRootId?: string;
@@ -114,9 +114,9 @@ export interface TreeConsolePanelProps {
   readonly selectAllIdPrefix?: string;
   /** Optional build session indicator state for row-level status */
   readonly buildSessionIndicator?: BuildSessionIndicator;
-  /** Enable trash-specific columns and behaviours */
+  /** Enable archive-specific columns and behaviours */
   readonly useArchiveColumns?: boolean;
-  readonly trashAction?: 'restore' | 'empty';
+  readonly archiveAction?: 'restore' | 'empty';
   /**
    * Whether to render the built-in static SpeedDial.
    * Set to false when an external DynamicSpeedDial is provided by the host app.
@@ -163,7 +163,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     pageTreeNode: props.pageTreeNode,
     infoPanel: props.infoPanel,
     useArchiveColumns: props.useArchiveColumns,
-    trashAction: props.trashAction,
+    archiveAction: props.archiveAction,
     onNodeClick: props.onNodeClick,
     onNodeSelect: props.onNodeSelect,
     onNodeExpand: props.onNodeExpand,
@@ -228,7 +228,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
               selectionIdPrefix={props.selectAllIdPrefix}
               buildSessionIndicator={props.buildSessionIndicator}
               useArchiveColumns={props.useArchiveColumns ?? false}
-              trashAction={props.trashAction}
+              archiveAction={props.archiveAction}
               depthOffset={controller.depthOffset ?? 0}
               disableDragAndDrop={false}
               hideDragHandler={props.hideDragHandler ?? false}
@@ -259,7 +259,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             selectionIdPrefix={props.selectAllIdPrefix}
             buildSessionIndicator={props.buildSessionIndicator}
             useArchiveColumns={props.useArchiveColumns ?? false}
-            trashAction={props.trashAction}
+            archiveAction={props.archiveAction}
             depthOffset={controller.depthOffset ?? 0}
             disableDragAndDrop={false}
             hideDragHandler={props.hideDragHandler ?? false}

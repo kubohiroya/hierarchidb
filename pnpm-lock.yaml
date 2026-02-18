@@ -1638,6 +1638,9 @@ importers:
       domhandler:
         specifier: ^5.0.3
         version: 5.0.3
+      i18n-iso-countries:
+        specifier: ^7.14.0
+        version: 7.14.0
       p-limit:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1743,12 +1746,12 @@ importers:
 
   packages/ui/batch:
     devDependencies:
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../../batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../batch-api
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../batch-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../components
@@ -3473,9 +3476,6 @@ importers:
       '@hierarchidb/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
@@ -3630,6 +3630,9 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../packages/batch-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3694,9 +3697,6 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
     devDependencies:
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
@@ -3827,12 +3827,12 @@ importers:
       '@hierarchidb/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../../packages/batch
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../packages/batch-runtime-services
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/chunk-store
@@ -9628,6 +9628,9 @@ packages:
   dezalgo@1.0.4:
     resolution: {integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==}
 
+  diacritics@1.3.0:
+    resolution: {integrity: sha512-wlwEkqcsaxvPJML+rDh/2iS824jbREk6DUMUKkEaSlxdYHeS43cClJtsWglvw2RfeXGm6ohKDqsXteJ5sP5enA==}
+
   diff@4.0.4:
     resolution: {integrity: sha512-X07nttJQkwkfKfvTPG/KSnE2OMdcUCao6+eXF3wmnIQRn2aPAHH3VxDbDOdegkd6JbPsXqShpvEOHfAT+nCNwQ==}
     engines: {node: '>=0.3.1'}
@@ -10564,6 +10567,10 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
+
+  i18n-iso-countries@7.14.0:
+    resolution: {integrity: sha512-nXHJZYtNrfsi1UQbyRqm3Gou431elgLjKl//CYlnBGt5aTWdRPH1PiS2T/p/n8Q8LnqYqzQJik3Q7mkwvLokeg==}
+    engines: {node: '>= 12'}
 
   i18next-browser-languagedetector@8.2.0:
     resolution: {integrity: sha512-P+3zEKLnOF0qmiesW383vsLdtQVyKtCNA9cjSoKCppTKPQVfKd2W8hbVo5ZhNJKDqeM7BOcvNoKJOjpHh4Js9g==}
@@ -20417,6 +20424,8 @@ snapshots:
       asap: 2.0.6
       wrappy: 1.0.2
 
+  diacritics@1.3.0: {}
+
   diff@4.0.4: {}
 
   diff@8.0.3: {}
@@ -21667,6 +21676,10 @@ snapshots:
       - supports-color
 
   human-signals@2.1.0: {}
+
+  i18n-iso-countries@7.14.0:
+    dependencies:
+      diacritics: 1.3.0
 
   i18next-browser-languagedetector@8.2.0:
     dependencies:

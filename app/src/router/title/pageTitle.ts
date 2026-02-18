@@ -21,7 +21,7 @@ type RouterMatchLike = {
 };
 
 type TreeDialogMatchData = {
-  kind?: 'trash' | 'plugin';
+  kind?: 'archive' | 'plugin';
   data?: unknown;
   params?: { action?: string; nodeType?: string; step?: string };
 };

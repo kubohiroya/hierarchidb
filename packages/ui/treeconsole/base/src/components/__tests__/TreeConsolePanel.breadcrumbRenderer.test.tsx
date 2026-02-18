@@ -103,7 +103,7 @@ describe('TreeConsolePanel breadcrumbRenderer', () => {
   });
 
   it('invokes the custom renderer with default props and allows fallback rendering', () => {
-    const items = [{ id: 'trash', name: 'Archive' }];
+    const items = [{ id: 'archive', name: 'Archive' }];
     let capturedDefaultProps: TreeConsoleBreadcrumbRendererProps['defaultRendererProps'] | undefined;
     const renderer = vi.fn((params: TreeConsoleBreadcrumbRendererProps) => {
       capturedDefaultProps = params.defaultRendererProps;

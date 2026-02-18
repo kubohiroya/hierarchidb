@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-type HolderType = 'draft' | 'trash';
+type HolderType = 'draft' | 'archive';
 
 export interface BuildTreeConsoleLinkOptions {
   treeId?: string | null;
@@ -10,7 +10,7 @@ export interface BuildTreeConsoleLinkOptions {
   holderTargetId?: NodeId | string | null;
   holderMetaParentId?: NodeId | string | null;
   useArchiveColumns?: boolean;
-  trashAction?: 'restore' | 'empty';
+  archiveAction?: 'restore' | 'empty';
   isRootLike?: boolean;
 }
 
@@ -22,7 +22,7 @@ export function buildTreeConsoleLinkHref({
   holderTargetId: _holderTargetId,
   holderMetaParentId,
   useArchiveColumns,
-  trashAction,
+  archiveAction,
   isRootLike,
 }: BuildTreeConsoleLinkOptions): string {
   const normalizedNodeId = nodeId == null ? '' : String(nodeId);
@@ -51,7 +51,7 @@ export function buildTreeConsoleLinkHref({
   const fallbackPageNodeId = pageNodeId == null ? rootNodeId : String(pageNodeId);
   const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
   const targetSegment = normalizedNodeId;
-  const actionValue = trashAction === 'empty' ? 'empty' : 'restore';
+  const actionValue = archiveAction === 'empty' ? 'empty' : 'restore';
 
-  return `/t/${[normalizedTreeId, pageSegment, targetSegment, 'trash', actionValue].join('/')}`;
+  return `/t/${[normalizedTreeId, pageSegment, targetSegment, 'archive', actionValue].join('/')}`;
 }

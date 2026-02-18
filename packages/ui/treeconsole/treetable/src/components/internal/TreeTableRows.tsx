@@ -36,7 +36,7 @@ export interface TreeTableRowsProps {
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
   useArchiveColumns: boolean;
-  trashAction?: 'restore' | 'empty';
+  archiveAction?: 'restore' | 'empty';
 }
 
 export function getArchiveRowSx(theme: Theme): Record<string, unknown> {

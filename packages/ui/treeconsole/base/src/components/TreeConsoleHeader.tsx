@@ -24,7 +24,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
   } = props;
 
   const pageType = isArchivePage
-    ? 'trash'
+    ? 'archive'
     : isProjectsPage
       ? 'projects'
       : isResourcesPage

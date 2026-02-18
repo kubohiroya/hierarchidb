@@ -30,7 +30,7 @@ export interface TreeTableConsolePanelProps<T> {
   hideConsole?: boolean;
   showSearchOnly?: boolean;
   useArchiveColumns?: boolean;
-  trashAction?: 'restore' | 'empty';
+  archiveAction?: 'restore' | 'empty';
   containerWidth?: number;
   containerHeight?: number;
   handleStartTour: () => void;
@@ -245,7 +245,7 @@ export interface TreeViewController {
   //  CRUD - WorkerAPI
   moveNode: (nodeId: NodeId, targetParentId: NodeId) => Promise<CRUDResult>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
-  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
+  archiveNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 
   //  Working Copy
@@ -279,7 +279,7 @@ export interface HierarchicalTreeNode extends TreeNode {
   children?: NodeId[];
   hasChildren?: boolean;
   deletedAt?: string | number;
-  trashedAt?: string | number;
+  archiveedAt?: string | number;
 }
 
 export interface SelectionState {

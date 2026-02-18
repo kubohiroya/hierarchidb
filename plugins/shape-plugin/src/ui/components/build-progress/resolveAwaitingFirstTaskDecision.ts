@@ -48,7 +48,7 @@ export type AwaitingFirstTaskDecisionInput = {
   buildStatus: BuildStatus;
   taskCount: number | undefined;
   isTaskStreamReady: boolean;
-  isPausePending: boolean;
+  isStopInFlight: boolean;
   expectTaskGeneration: boolean;
   sessionProgressTotal?: number;
   sessionStageId?: string | null;
@@ -167,7 +167,7 @@ export const resolveAwaitingFirstTaskDecision = (
       },
     };
   }
-  if (input.buildStatus === 'paused' && !input.isPausePending) {
+  if (input.buildStatus === 'paused' && !input.isStopInFlight) {
     return {
       kind: 'cancelled',
       reason: 'paused-before-task-start',

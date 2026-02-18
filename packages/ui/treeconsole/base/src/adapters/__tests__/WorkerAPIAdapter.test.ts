@@ -195,7 +195,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveToArchive.mockResolvedValue(successResult);
 
-      await adapter.trashNodes(['node1', 'node2'] as any);
+      await adapter.archiveNodes(['node1', 'node2'] as any);
 
       expect(mockWorkerAPI.moveToArchive).toHaveBeenCalledWith(['node1', 'node2']);
     });

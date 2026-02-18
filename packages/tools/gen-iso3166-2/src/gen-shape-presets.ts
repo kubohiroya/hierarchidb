@@ -2,10 +2,12 @@ import * as fs from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCsv } from "./csv.js";
+import i18nCountries from "i18n-iso-countries";
 
 type GeoboundariesRecord = Record<string, unknown>;
 type GeoboundariesLevel = 0 | 1 | 2;
 type GeoboundariesPayload = GeoboundariesRecord | GeoboundariesRecord[];
+type Iso3ToIso2Map = Map<string, string>;
 
 const GEOBOUNDARIES_API_BY_LEVEL: Record<GeoboundariesLevel, string> = {
   0: "https://www.geoboundaries.org/api/current/gbOpen/ALL/ADM0/",
@@ -28,6 +30,10 @@ const LOCAL_ISO3166_CSV_CANDIDATES = [
   resolve(process.cwd(), "app/public/iso3166-2-level1.csv"),
   resolve(REPO_ROOT, "app/public/iso3166-2-level1.csv"),
 ];
+const USER_ASSIGNED_MAP_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../user-assigned-iso3166.json",
+);
 
 const isFile = async (path: string): Promise<boolean> => {
   try {
@@ -47,21 +53,108 @@ const resolveIso3166CsvPath = async (): Promise<string | null> => {
   return null;
 };
 
-const loadIso3166Map = async (): Promise<Map<string, string>> => {
+const isCode = (value: string, length: number): boolean => new RegExp(`^[A-Z]{${length}}$`).test(value);
+
+const toMap = (value: string): string => value.trim().toUpperCase();
+
+const mergeEntries = (
+  target: Iso3ToIso2Map,
+  source: Iso3ToIso2Map,
+  options: { overwrite?: boolean } = {},
+): void => {
+  const { overwrite = false } = options;
+  source.forEach((iso2, iso3) => {
+    if (overwrite || !target.has(iso3)) {
+      target.set(iso3, iso2);
+    }
+  });
+};
+
+const parseIso3166MapText = (text: string): Iso3ToIso2Map => {
+  const rows = parseCsv(text);
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    const alpha3 = toMap(row.alpha3);
+    const alpha2 = toMap(row.alpha2);
+    if (isCode(alpha3, 3) && isCode(alpha2, 2)) {
+      map.set(alpha3, alpha2);
+    }
+  }
+  return map;
+};
+
+const loadIso3166CsvMap = async (): Promise<Iso3ToIso2Map> => {
   const csvPath = await resolveIso3166CsvPath();
   if (!csvPath) {
     return new Map<string, string>();
   }
   const csvText = await fs.readFile(csvPath, "utf8");
-  const rows = parseCsv(csvText);
+  return parseIso3166MapText(csvText);
+};
+
+type CountryApiLike = { getAlpha3Codes: () => Record<string, string> };
+type CountryModuleLike = { default?: unknown };
+
+const hasGetAlpha3Codes = (value: unknown): value is CountryApiLike => {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { getAlpha3Codes?: unknown }).getAlpha3Codes === "function"
+  );
+};
+
+const loadIso3166LibraryMap = (): Iso3ToIso2Map => {
+  const countriesApiModule = i18nCountries as unknown as CountryModuleLike;
+
+  const countriesApi = (() => {
+    if (hasGetAlpha3Codes(countriesApiModule)) {
+      return countriesApiModule;
+    }
+    const defaultApi = (countriesApiModule as CountryModuleLike).default;
+    if (hasGetAlpha3Codes(defaultApi)) {
+      return defaultApi;
+    }
+    return null;
+  })();
+  if (!countriesApi) return new Map<string, string>();
+
   const map = new Map<string, string>();
-  for (const row of rows) {
-    const alpha3 = row.alpha3.trim().toUpperCase();
-    const alpha2 = row.alpha2.trim().toUpperCase();
-    if (alpha3.length === 3 && alpha2.length === 2) {
-      map.set(alpha3, alpha2);
+  const pairs = countriesApi.getAlpha3Codes();
+  for (const [alpha3, alpha2] of Object.entries(pairs)) {
+    const upperAlpha3 = toMap(alpha3);
+    const upperAlpha2 = toMap(alpha2);
+    if (isCode(upperAlpha3, 3) && isCode(upperAlpha2, 2)) {
+      map.set(upperAlpha3, upperAlpha2);
     }
   }
+  return map;
+};
+
+const loadUserAssignedMap = async (): Promise<Iso3ToIso2Map> => {
+  try {
+    const text = await fs.readFile(USER_ASSIGNED_MAP_PATH, "utf8");
+    const raw = JSON.parse(text);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return new Map<string, string>();
+
+    const map = new Map<string, string>();
+    for (const [alpha3, value] of Object.entries(raw)) {
+      if (typeof value !== "string") continue;
+      const upperAlpha3 = toMap(alpha3);
+      const upperAlpha2 = toMap(value);
+      if (isCode(upperAlpha3, 3) && isCode(upperAlpha2, 2)) {
+        map.set(upperAlpha3, upperAlpha2);
+      }
+    }
+    return map;
+  } catch {
+    return new Map<string, string>();
+  }
+};
+
+const loadIso3166Map = async (): Promise<Iso3ToIso2Map> => {
+  const map = await loadIso3166CsvMap();
+  mergeEntries(map, loadIso3166LibraryMap());
+  mergeEntries(map, await loadUserAssignedMap(), { overwrite: true });
   return map;
 };
 

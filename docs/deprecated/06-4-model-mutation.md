@@ -253,12 +253,12 @@ interface PasteNodesPayload {
 
 **Returns**: `{ seq: number; newNodeIds: TreeNodeId[] }`
 
-### 4.4 Trash Operations
+### 4.4 Archive Operations
 
-#### 4.4.1 Move to Trash
+#### 4.4.1 Move to Archive
 
 ```typescript
-interface MoveToTrashPayload {
+interface MoveToArchivePayload {
   nodeIds: TreeNodeId[];
   preserveReferences?: boolean;  // Default: false
 }
@@ -270,8 +270,8 @@ interface MoveToTrashPayload {
 - Stores original parent for recovery
 
 **Processing**:
-- Moves to special TrashRoot parent
-- Sets `trashedAt` timestamp
+- Moves to special ArchiveRoot parent
+- Sets `archiveedAt` timestamp
 - Preserves `originalParentId`
 
 #### 4.4.2 Permanent Delete
@@ -284,7 +284,7 @@ interface PermanentDeletePayload {
 ```
 
 **Validation**:
-- Only works on nodes already in trash: `E_NOT_IN_TRASH` error
+- Only works on nodes already in archive: `E_NOT_IN_TRASH` error
 - Cannot be undone warning
 
 **Processing**:
@@ -292,10 +292,10 @@ interface PermanentDeletePayload {
 - Cascades to all descendants
 - **NOT undoable** (data loss)
 
-#### 4.4.3 Recover from Trash
+#### 4.4.3 Recover from Archive
 
 ```typescript
-interface RecoverFromTrashPayload {
+interface RecoverFromArchivePayload {
   nodeIds: TreeNodeId[];
   toParentId?: TreeNodeId;      // Override original parent
   onNameConflict?: 'error' | 'auto-rename';
@@ -305,7 +305,7 @@ interface RecoverFromTrashPayload {
 **Processing**:
 - Restores to original or specified parent
 - Handles name conflicts
-- Clears trash metadata
+- Clears archive metadata
 
 ### 4.5 Import Operations
 
@@ -373,8 +373,8 @@ interface RedoPayload {
 - `moveNodes` - Can move back
 - `duplicateNodes` - Can delete copies
 - `pasteNodes` - Can delete pasted
-- `moveToTrash` - Can recover
-- `recoverFromTrash` - Can re-trash
+- `moveToArchive` - Can recover
+- `recoverFromArchive` - Can re-archive
 - `importNodes` - Can delete imported
 
 **Non-Undoable Operations**:
@@ -403,7 +403,7 @@ enum MutationErrorCode {
   
   // Reference Errors
   E_REFERENCE_EXISTS = 'E_REFERENCE_EXISTS',        // Cannot delete, has references
-  E_NOT_IN_TRASH = 'E_NOT_IN_TRASH',               // Operation requires trash node
+  E_NOT_IN_TRASH = 'E_NOT_IN_TRASH',               // Operation requires archive node
   
   // System Errors
   E_PERMISSION_DENIED = 'E_PERMISSION_DENIED',      // Insufficient permissions

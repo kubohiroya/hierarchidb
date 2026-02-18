@@ -86,7 +86,7 @@ interface DescendantProperties {
 type TreeNode = TreeNodeBase &
   Partial<DraftProperties> &
   Partial<DraftProperties> &
-  Partial<TrashItemProperties> &
+  Partial<ArchiveItemProperties> &
   Partial<DescendantProperties>;
 ```
 

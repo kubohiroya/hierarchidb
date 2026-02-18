@@ -151,7 +151,7 @@ async function buildAncestryChain(params: {
     });
     return chain;
   } catch (error) {
-    console.warn('[TreeConsoleActions] failed to resolve ancestry for trash navigation', error);
+    console.warn('[TreeConsoleActions] failed to resolve ancestry for archive navigation', error);
     if (pageNodeId) {
       return [
         {

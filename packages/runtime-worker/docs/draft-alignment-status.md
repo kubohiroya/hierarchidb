@@ -103,7 +103,7 @@ vk:doc kind=analysis audience=dev scope=worker
 - `docs/zod-envelope-introduction-plan.md`
  - `docs/draft-holder-encoding.md`
  - `docs/draft-ops-pseudocode.md`
- - `docs/adr/adr-draft-trash-unification.md`
+ - `docs/adr/adr-draft-archive-unification.md`
 
 ---
 

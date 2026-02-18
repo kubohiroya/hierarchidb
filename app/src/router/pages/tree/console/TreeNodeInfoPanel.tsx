@@ -368,8 +368,8 @@ export function TreeNodeInfoPanel({
         onCut={() => handleContextMenuTrigger('cut')}
         onImport={() => handleContextMenuTrigger('import')}
         onExport={() => handleContextMenuTrigger('export')}
-        onArchive={() => handleContextMenuTrigger('trash')}
-        onRemove={() => handleContextMenuTrigger('trash')}
+        onArchive={() => handleContextMenuTrigger('archive')}
+        onRemove={() => handleContextMenuTrigger('archive')}
         onToggleVisible={(nextVisible) =>
           handleContextMenuTrigger('toggle-visibility', { nextVisible })
         }
