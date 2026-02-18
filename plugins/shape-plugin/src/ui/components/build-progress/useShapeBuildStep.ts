@@ -115,10 +115,6 @@ const runWithTimeout = async <T>(
   }
 };
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
-  window.setTimeout(resolve, ms);
-});
-
 const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
   if (left === right) return true;
   const leftKeys = Object.keys(left);
@@ -620,33 +616,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
   }, [activeNodeId]);
 
-  const waitForSessionStatus = useCallback(async (targetStatus: ShapeBuildSessionRecord['status']): Promise<ShapeBuildSessionRecord> => {
-    const timeoutAt = Date.now() + PAUSE_COMMAND_TIMEOUT_MS;
-    const waitLoop = async (): Promise<ShapeBuildSessionRecord> => {
-      let lastRecord: ShapeBuildSessionRecord | null = null;
-      while (Date.now() <= timeoutAt) {
-        const latest = activeNodeId ? await shapeQueryAPIImpl.getBuildSessionRecord(activeNodeId).catch(() => null) : null;
-        if (latest !== null) {
-          lastRecord = latest;
-          setSessionRecord(latest);
-        }
-        if (latest?.status === targetStatus) {
-          return latest;
-        }
-        await sleep(UI_POLL_INTERVAL_MS);
-      }
-      if (lastRecord) {
-        throw new Error(`Timed out waiting for build session status to become "${targetStatus}".`);
-      }
-      throw new Error(`Build session status is not available while waiting for "${targetStatus}".`);
-    };
-    return runWithTimeout(
-      waitLoop(),
-      PAUSE_COMMAND_TIMEOUT_MS,
-      `Timed out waiting for build session status to become "${targetStatus}".`,
-    );
-  };
-
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -709,7 +678,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
   const isStopRequestedInFlight = isStopRequested || isStopAccepted;
-  const effectiveStatusSource = statusSource;
+  const isSessionStopping = isStopRequestedInFlight;
+  const effectiveStatusSource = useMemo(() => {
+    if (isSessionStopping) return 'paused';
+    return statusSource;
+  }, [isSessionStopping, statusSource]);
   const reportTaskFailures = effectiveStatusSource === 'processing';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(effectiveStatusSource)
@@ -733,7 +706,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   }, [setPersistedTasks, tasks]);
   const isTaskSummaryLoading = false;
   const rawDisplayTasks = tasks.length > 0 ? tasks : persistedTasks;
-  const displayTasks = rawDisplayTasks;
+  const displayTasks = useMemo<ShapeBuildTaskSummary[]>(() => (
+    isSessionStopping
+      ? rawDisplayTasks.map((task) => (
+        task.status === 'running'
+          ? { ...task, status: 'queued' }
+          : task
+      ))
+      : rawDisplayTasks
+  ), [isSessionStopping, rawDisplayTasks]);
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
