@@ -678,13 +678,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
   const isStopRequestedInFlight = isStopRequested || isStopAccepted;
-  const hasStopIdlePersisted = sessionRecord?.status === 'idle' && isStopRequestedInFlight;
   const isSessionStopping = isStopRequestedInFlight;
   const effectiveStatusSource = useMemo(() => {
-    if (hasStopIdlePersisted) return 'idle';
     if (isSessionStopping) return 'paused';
     return statusSource;
-  }, [hasStopIdlePersisted, isSessionStopping, statusSource]);
+  }, [isSessionStopping, statusSource]);
   const reportTaskFailures = effectiveStatusSource === 'processing';
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(effectiveStatusSource)
