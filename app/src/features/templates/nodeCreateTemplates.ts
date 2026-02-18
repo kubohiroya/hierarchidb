@@ -73,6 +73,7 @@ const isPeerEntityPayload = (value: Record<string, unknown>): value is PeerEntit
   typeof value.version === 'number';
 
 type TemplateNodeInput = {
+  version?: unknown;
   metadata?: unknown;
   nodeType?: unknown;
   treeNodeType?: unknown;
@@ -147,6 +148,7 @@ function toImportNode(node: TemplateNodeInput): {
   nodeType: string;
   description?: string;
   metadata: Record<string, unknown>;
+  version?: number;
   draftMetadata?: Record<string, unknown> | null;
   draftData?: Record<string, unknown>;
   data?: PeerEntity<NodePayload>;
@@ -171,6 +173,7 @@ function toImportNode(node: TemplateNodeInput): {
   const children = Array.isArray(node.children)
     ? node.children.map((child) => toImportNode(child as TemplateNodeInput))
     : undefined;
+  const version = typeof node.version === 'number' ? node.version : 1;
 
   const resolvedNodeType =
     typeof node.nodeType === 'string'
@@ -185,6 +188,7 @@ function toImportNode(node: TemplateNodeInput): {
 
   return {
     name,
+    version,
     nodeType: resolvedNodeType,
     description,
     metadata: rawMetadata,

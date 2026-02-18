@@ -349,8 +349,7 @@ export function useTreeNodeInfoPanel({
     /root/i.test(currentNode?.nodeType ?? '') ||
     /trash/i.test(currentNode?.nodeType ?? '');
   const canMutate = !isRootLike;
-  const draftMetadata = (currentNode as { draftMetadata?: unknown } | undefined)?.draftMetadata;
-  const isDraft = Boolean(currentNode?.draftData) || (draftMetadata !== null && draftMetadata !== undefined);
+  const isDraft = currentNode?.version === 0;
 
   const labels = {
     createdLabel: getString('treeConsole.infoPanel.createdLabel', 'Created'),

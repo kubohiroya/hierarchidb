@@ -149,7 +149,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
             depth: Math.max(0, parentDepth + 1),
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            version: 1,
+            version: (nodeData as { version?: number }).version ?? 1,
             metadata,
             draftMetadata:
               ((nodeData as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata as TreeNodeMetadata | null | undefined) ??

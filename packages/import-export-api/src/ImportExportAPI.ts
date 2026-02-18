@@ -87,6 +87,8 @@ export interface ImportData<T> {
   nodes: Array<{
     name: string;
     nodeType?: string;
+    /** Optional source version for imported nodes (defaults to 1 if omitted). */
+    version?: number;
     description?: string;
     /** Tree-level metadata (name/description/tags 等)。name/description は上位フィールドが優先される。 */
     metadata?: Record<string, unknown>;

@@ -282,12 +282,10 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
       const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
-      const draftData = (node as { draftData?: unknown }).draftData;
-      const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
+      const version = (node as { version?: number }).version;
       const hasSelfDraft =
         params.draftFlags.hasDraft.has(node.id as NodeId) ||
-        draftData !== undefined ||
-        draftMetadata !== null && draftMetadata !== undefined;
+        version === 0;
       const descendantDraftCount = collectDescendantIds(node.id as NodeId).reduce(
         (count, id) => (params.draftFlags.hasDraft.has(id as NodeId) ? count + 1 : count),
         0,

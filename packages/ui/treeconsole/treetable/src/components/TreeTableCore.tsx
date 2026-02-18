@@ -181,15 +181,7 @@ export function TreeTableCore({
   const columns = useMemo(() => {
     const draftIds = new Set(
       structure.rawData
-        .filter((n) => {
-          const draftData = (n as { draftData?: unknown }).draftData;
-          const draftMetadata = (n as { draftMetadata?: unknown }).draftMetadata;
-          return (
-            draftData !== undefined
-          ) || (
-            draftMetadata !== null && draftMetadata !== undefined
-          );
-        })
+        .filter((n) => (n as { version?: number }).version === 0)
         .map((n) => n.id as string as NodeId)
     );
 

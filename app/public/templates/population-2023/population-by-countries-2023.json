@@ -2,6 +2,7 @@
   "nodes": [
     {
       "nodeType": "folder",
+      "version": 1,
       "metadata": {
         "name": "Total Population by Country",
         "description": "World population statistics for 2023"
@@ -9,6 +10,7 @@
       "children": [
         {
           "nodeType": "shape",
+          "version": 0,
           "metadata": {
             "name": "Country Boundaries",
             "description": "Geographic boundaries for all countries"
@@ -1494,6 +1496,7 @@
         },
         {
           "nodeType": "styler",
+          "version": 0,
           "metadata": {
             "name": "Population Color Map",
             "description": "Color mapping for population density visualization"
