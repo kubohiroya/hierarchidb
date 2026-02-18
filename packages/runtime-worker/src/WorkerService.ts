@@ -160,7 +160,7 @@ export class WorkerService {
         locationMutation: locationMutationService,
         routeMutation: routeMutationService,
       });
-      await WorkerService.recoverAbnormalBuildSessions();
+      await WorkerService.resetBuildSessionsOnWorkerWarmStart();
 
       return new WorkerService(
         coreDB,
@@ -187,24 +187,26 @@ export class WorkerService {
     });
   }
 
-  private static async recoverAbnormalBuildSessions(): Promise<void> {
+  private static async resetBuildSessionsOnWorkerWarmStart(): Promise<void> {
     try {
       await ephemeralDB.open?.();
       const sessions = await ephemeralDB.sessions.toArray();
-      const abnormalSessions = sessions.filter(
-        (session) => session?.stage !== undefined && session.nodeId !== undefined
+      const inProgressSessions = sessions.filter(
+        (session) =>
+          session?.nodeId !== undefined && (session.status === 'running' || session.status === 'paused')
       );
-      if (abnormalSessions.length === 0) return;
+      if (inProgressSessions.length === 0) return;
 
       const now = Date.now();
       await ephemeralDB.transaction('rw', ephemeralDB.sessions, async () => {
         await Promise.all(
-          abnormalSessions.map((session) =>
+          inProgressSessions.map((session) =>
             ephemeralDB.sessions.update(session.nodeId, {
               status: 'idle',
               stage: undefined,
-              updatedAt: now,
               stopReason: 'unknown',
+              lastHeartbeatAt: undefined,
+              updatedAt: now,
               stageHeartbeatAt: undefined,
               stageStartedAt: undefined,
               stageInactiveMs: undefined,

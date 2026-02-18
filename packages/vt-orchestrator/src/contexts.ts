@@ -25,6 +25,7 @@ export type VTStageContext = {
   vtConfig: VTConfig;
   bands: BandConfig[];
   geometryEngine: GeometryEngine;
+  topojsonSource?: boolean;
   topojsonSimplify?: {
     enabled: boolean;
     sourceKeys: Set<string>;
