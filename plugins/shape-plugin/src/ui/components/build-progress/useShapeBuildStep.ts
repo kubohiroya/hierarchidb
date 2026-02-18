@@ -677,9 +677,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const statusSource = useMemo(() => {
     return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
   }, [effectiveStatus?.status, processingStatus]);
-  const isStopInFlight = isStopRequested || isStopAccepted;
-  const hasStopIdlePersisted = sessionRecord?.status === 'idle' && isStopInFlight;
-  const isSessionStopping = isStopInFlight;
+  const isStopRequestedInFlight = isStopRequested || isStopAccepted;
+  const hasStopIdlePersisted = sessionRecord?.status === 'idle' && isStopRequestedInFlight;
+  const isSessionStopping = isStopRequestedInFlight;
   const effectiveStatusSource = useMemo(() => {
     if (hasStopIdlePersisted) return 'idle';
     if (isSessionStopping) return 'paused';
@@ -1364,7 +1364,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasFirstTaskSignal,
     hasProgressTaskSignal,
     hasStartedTasks,
-    isStopInFlight,
+    isStopRequestedInFlight,
     isTaskStreamReady,
     pushBuildSessionTransitionNotification,
     sessionRecord?.progress?.total,
@@ -1784,7 +1784,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const handleCancelQueued = useCallback(async (
     reason: 'route-leave' | 'user-pause' = 'user-pause',
   ): Promise<void> => {
-    if (!activeNodeId || isStopInFlight) return;
+    if (!activeNodeId || isStopRequestedInFlight) return;
     cancelStartRequestRef.current = true;
     clearStartPendingRef.current?.();
     setIsStopRequested(true);
@@ -1813,7 +1813,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     activeNodeId,
     buildSessionTransition.active,
     finishBuildSessionTransition,
-    isStopInFlight,
+    isStopRequestedInFlight,
     releaseBuildLock,
   ]);
 
@@ -1822,7 +1822,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return;
     }
-    if (isStopInFlight) return;
+    if (isStopRequestedInFlight) return;
     const shouldCancelQueued = buildSessionTransition.active
       && buildStatus !== 'running'
       && runtimeStatus !== 'processing';
@@ -1889,18 +1889,18 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransition.active,
     buildStatus,
     handleCancelQueued,
-    isStopInFlight,
+    isStopRequestedInFlight,
     runtimeStatus,
     updateSessionRecord,
   ]);
 
   useEffect(() => {
-    if (!isStopInFlight) return;
+    if (!isStopRequestedInFlight) return;
     if (sessionRecord?.status === 'idle') {
       setIsStopRequested(false);
       setIsStopAccepted(false);
     }
-  }, [isStopInFlight, sessionRecord?.status]);
+  }, [isStopRequestedInFlight, sessionRecord?.status]);
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
@@ -1952,7 +1952,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     handleStartOrResume: startOrResume,
     handlePause,
     isStartPending,
-    stopRequested: isStopInFlight,
+    stopRequested: isStopRequestedInFlight,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
