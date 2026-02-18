@@ -120,7 +120,7 @@ export function NodeTypeIcon({
             width: 8,
             height: 8,
             minWidth: 8,
-            transform: 'scale(1) translate(20%, -20%)',
+            transform: 'scale(1) translate(20%, -20%) translateX(3px)',
           },
         },
       }
