@@ -1828,6 +1828,37 @@ export const createTransformByBandHandler = (
       if (!fetchCache) {
         return { status: 'failed', errorMessage: 'transform failed: fetch cache not found' };
       }
+      const noOpBand0Topojson = input.bandIndex === 0 && band.zMin <= 2
+        && fetchCache.format === 'topojson'
+        && simplifyAlgorithm === 'topojson';
+      if (noOpBand0Topojson) {
+        const fallbackPolygonCount = (() => {
+          if (typeof input.inputPolygonCount === 'number' && Number.isFinite(input.inputPolygonCount)) {
+            return input.inputPolygonCount > 0 ? Math.round(input.inputPolygonCount) : 0;
+          }
+          const fetchCachePolygonCount = typeof fetchCache.polygonCount === 'number' && Number.isFinite(fetchCache.polygonCount)
+            ? Math.round(fetchCache.polygonCount)
+            : 0;
+          return fetchCachePolygonCount > 0 ? fetchCachePolygonCount : 0;
+        })();
+        return {
+          status: 'completed',
+          progress: 100,
+          message: `skipped: topojson band0 no-op (zMin=${band.zMin})`,
+          display: {
+            kind: 'skip',
+            key: 'stage.taskSkip.noOp',
+            params: {
+              bandIndex: input.bandIndex,
+              bandMinZoom: band.zMin,
+            },
+          },
+          outputData: {
+            processedPolygons: fallbackPolygonCount,
+            totalPolygons: fallbackPolygonCount,
+          },
+        };
+      }
       logDebugPhase('fetch-cache:done', {
         format: fetchCache.format,
         compression: fetchCache.compression ?? null,
