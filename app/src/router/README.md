@@ -123,7 +123,7 @@ Tree-related routes have been migrated to TanStack Router:
 - `/t/:treeId/:pageNodeId` - Page with TreeConsoleIntegration and AppBar
 - `/t/:treeId/:pageNodeId/:targetNodeId` - Target node selection
 - `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` - Node type with NotFound handling
-- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` - Dialog route (including TrashDialog)
+- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` - Dialog route (including ArchiveDialog)
 
 ### Root Route Features
 
@@ -195,7 +195,7 @@ Test Results:
 - treeLoaders.ts created for tree data loading
 - Existing React Router components reused for TreeConsoleIntegration
 - NotFound dialog handling integrated
-- TrashDialog special case handled
+- ArchiveDialog special case handled
 - Unit tests added (treeLoaders.test.ts)
 
 **Phase 4**: ✅ Complete

@@ -362,7 +362,7 @@ graph LR
   - ui-treeconsole-breadcrumb: パンくずリスト
   - ui-treeconsole-footer: フッター
   - ui-treeconsole-speeddial: スピードダイアル
-  - ui-treeconsole-trashbin: ゴミ箱
+  - ui-treeconsole-archivebin: ゴミ箱
 
 ### プラグイン層
 - **@hierarchidb/plugin-folder**: フォルダノード

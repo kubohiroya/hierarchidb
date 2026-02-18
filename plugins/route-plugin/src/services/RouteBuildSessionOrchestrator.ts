@@ -4,7 +4,7 @@ import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '../common/config/buildConfig.js';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildProgressCallback, BuildProgressEvent, BuildSessionStatus, StageKey } from '@hierarchidb/batch-api';
-import { BaseBuildSessionManager } from '@hierarchidb/batch';
+import { BaseBuildSessionManager } from '@hierarchidb/batch-runtime-services';
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;

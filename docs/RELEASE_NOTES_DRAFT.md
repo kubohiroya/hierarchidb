@@ -4,13 +4,13 @@ This draft summarizes changes for the upcoming runtime-worker release and relate
 
 Highlights
 - CommandProcessor routing: create/update/move/remove/recover are now always routed via CP (flags deprecated)
-- Trash holder flow: safer trash behavior (recover by holder decode), legacy-compatible fallback
+- Archive holder flow: safer archive behavior (recover by holder decode), legacy-compatible fallback
 - Undo/Redo expanded: update/move/remove/recover
 - Error model unified: Core `CommandResult` / `ErrorCode` across worker
 - Working Copy commit V2: integrated via CP (legacy Ephemeral path removed)
 - Policy C: block move/remove when WC exists in subtree (with indexed search optimization)
 - Headless tests: Node + fake-indexeddb integration scenarios for CP / WC / Policy C
-- Trash migration tool: legacy <-> holder with metrics and rollback
+- Archive migration tool: legacy <-> holder with metrics and rollback
 - Lightweight command metrics: per-command counts/errors/latency
 
 Feature Flags
@@ -23,12 +23,12 @@ Compatibility & Rollback
 - Error codes now align with Core; UI mapping can be updated incrementally
 - DraftService.commit delegates to CP when V2 enabled; legacy path still works
 
-Migration (Trash)
-- Use `packages/runtime/worker/src/tools/trash-migrate.ts`
+Migration (Archive)
+- Use `packages/runtime/worker/src/tools/archive-migrate.ts`
   - Dry-run: `--dry-run --limit=100`
   - Commit: `--limit=1000 [--verbose] [--retries=2]`
   - Rollback: `--rollback --limit=1000`
-- See `packages/runtime/worker/docs/trash-migration-runbook.md` for details
+- See `packages/runtime/worker/docs/archive-migration-runbook.md` for details
 
 Testing (Headless)
 - Policy C and CP routing verified under Node + fake-indexeddb

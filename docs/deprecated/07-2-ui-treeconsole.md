@@ -17,9 +17,9 @@
 | references/eria-cartograph/app0/src/shared/components/dialogs/FullScreenDialog.tsx | 全画面Dialogコンテナ。ドラッグイベントもハンドルし、Paperへリスナを付与。 |
 | references/eria-cartograph/app0/src/features/tree-console/components/TreeTableConsolePanel.tsx | コンソール画面の中核。ヘッダ/ツールバー/コンテンツ/フッタ/アクションを束ね、useTreeViewController等でツリー状態とCRUD・D&Dを管理。 |
 | references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleHeader.tsx | パンくずや右上のアクション群（プレビュー切替等）を持つヘッダ。ページ種別に応じて背景色を切替。 |
-| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleBreadcrumb.tsx | パンくずナビ。Trash/Projects/Resourcesの文脈に応じた遷移と各種操作のハブ。 |
-| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleToolbar_Deprecated.tsx | 画面上部のツールバー選択。メイン/検索専用のどちらを出すか、Trash操作のナビゲーションも担当。 |
-| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleToolbarContent.tsx | 検索、Undo/Redo、Copy/Paste、Duplicate/Remove、Import/Export、Trash管理、クリック動作切替などツールバー本体。 |
+| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleBreadcrumb.tsx | パンくずナビ。Archive/Projects/Resourcesの文脈に応じた遷移と各種操作のハブ。 |
+| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleToolbar_Deprecated.tsx | 画面上部のツールバー選択。メイン/検索専用のどちらを出すか、Archive操作のナビゲーションも担当。 |
+| references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleToolbarContent.tsx | 検索、Undo/Redo、Copy/Paste、Duplicate/Remove、Import/Export、Archive管理、クリック動作切替などツールバー本体。 |
 | references/eria-cartograph/app0/src/features/tree-console/components/SearchOnlyToolbar.tsx | 検索専用トバー。DebouncedInputで検索文字列を制御。 |
 | references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleContent.tsx | メインコンテンツ切替。空表示/ボタン表示/ツリー表の3状態管理、NodeInfoDisplay・TreeTableCoreのレイアウト制御、D&D設定提供。 |
 | references/eria-cartograph/app0/src/features/tree-console/components/TreeConsoleContentErrorBoundary.tsx | コンテンツ描画のエラーバウンダリ。再試行・Rootへ戻る・リロードなどのフォールバックを提供。 |

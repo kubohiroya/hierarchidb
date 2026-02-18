@@ -118,12 +118,12 @@ if (notFound) {
 }
 ```
 
-#### TrashDialog特別処理 (dialogRoute.tsx)
+#### ArchiveDialog特別処理 (dialogRoute.tsx)
 
 ```typescript
-if (nodeType === 'trash') {
-  const trashDialogModule = await import('~/components/console/TrashDialog.js');
-  return await trashDialogModule.clientLoader({ params });
+if (nodeType === 'archive') {
+  const archiveDialogModule = await import('~/components/console/ArchiveDialog.js');
+  return await archiveDialogModule.clientLoader({ params });
 }
 ```
 
@@ -282,7 +282,7 @@ Phase 3の実装により：
 - Worker初期化バリアの追加
 - ローダー関数の整理
 - NotFoundダイアログ処理
-- TrashDialog特別処理
+- ArchiveDialog特別処理
 - ユニットテスト追加
 - 包括的ドキュメント更新
 

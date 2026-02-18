@@ -20,9 +20,9 @@
 | コピー | Context Menu → Copy (⌘+C) | 高 | `folder-clipboard-operations.e2e.ts` | ✅ 基本 |
 | ペースト | Context Menu → Paste (⌘+V) | 高 | `folder-clipboard-operations.e2e.ts` | ✅ 基本 |
 | 移動（ドラッグ&ドロップ） | Mouse操作 | 高 | `folder-drag-drop.e2e.ts` | ✅ 完全 |
-| ゴミ箱へ移動 | Context Menu → Remove (⌘+X) | 高 | `folder-trash-operations.e2e.ts` | ✅ 完全 |
-| ゴミ箱から戻す | Trash → Restore | 高 | `folder-trash-operations.e2e.ts` | ✅ 完全 |
-| ゴミ箱から削除 | Trash → Delete Permanently | 高 | `folder-trash-operations.e2e.ts` | ✅ 完全 |
+| ゴミ箱へ移動 | Context Menu → Remove (⌘+X) | 高 | `folder-archive-operations.e2e.ts` | ✅ 完全 |
+| ゴミ箱から戻す | Archive → Restore | 高 | `folder-archive-operations.e2e.ts` | ✅ 完全 |
+| ゴミ箱から削除 | Archive → Delete Permanently | 高 | `folder-archive-operations.e2e.ts` | ✅ 完全 |
 | インポート | Import Menu → JSON File | 中 | `folder-import-export.e2e.ts` | ✅ 完全 |
 | テンプレートインポート | Import Menu → Templates | 中 | `folder-template-operations.e2e.ts` | ✅ 完全 |
 | エクスポート | Export Menu → JSON File | 中 | `folder-import-export.e2e.ts` | ✅ 完全 |
@@ -220,8 +220,8 @@ describe('Folder CRUD Operations', () => {
         .not.toBeVisible({ timeout: 5000 });
 
       // ゴミ箱に移動したことを確認
-      await page.locator('[data-testid="trash-navigation"]').click();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`))
+      await page.locator('[data-testid="archive-navigation"]').click();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`))
         .toBeVisible();
     });
 
@@ -639,13 +639,13 @@ async function createChildFolder(page: Page, parentNode: Locator, name: string):
 }
 ```
 
-### folder-trash-operations.e2e.ts
+### folder-archive-operations.e2e.ts
 
 **目的**: ゴミ箱機能の包括的テスト（移動、復元、完全削除）
 
 **テストケース**:
 ```typescript
-describe('Folder Trash Operations', () => {
+describe('Folder Archive Operations', () => {
   beforeEach(async ({ page }) => {
     await page.goto('/treeconsole');
     await dismissGuidedTour(page);
@@ -654,7 +654,7 @@ describe('Folder Trash Operations', () => {
 
   describe('ゴミ箱への移動', () => {
     test('単一フォルダのゴミ箱移動', async ({ page }) => {
-      const folderName = await createTestFolder(page, 'Folder to Trash');
+      const folderName = await createTestFolder(page, 'Folder to Archive');
       
       // フォルダを右クリックして削除
       const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
@@ -662,25 +662,25 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-remove"]').click();
 
       // 削除確認ダイアログ
-      await expect(page.locator('[data-testid="trash-confirmation-base-dialog"]')).toBeVisible();
-      await expect(page.locator('[data-testid="trash-message"]'))
+      await expect(page.locator('[data-testid="archive-confirmation-base-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="archive-message"]'))
         .toContainText(`"${folderName}" をゴミ箱に移動しますか？`);
 
-      await page.locator('[data-testid="confirm-trash"]').click();
+      await page.locator('[data-testid="confirm-archive"]').click();
 
       // メインビューから削除されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`))
         .not.toBeVisible({ timeout: 5000 });
 
       // ゴミ箱ビューで確認
-      await page.locator('[data-testid="navigation-trash"]').click();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`))
+      await page.locator('[data-testid="navigation-archive"]').click();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`))
         .toBeVisible();
 
       // ゴミ箱アイテムの詳細確認
-      const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-      await expect(trashItem.locator('[data-testid="trash-date"]')).toBeVisible();
-      await expect(trashItem.locator('[data-testid="original-path"]')).toBeVisible();
+      const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+      await expect(archiveItem.locator('[data-testid="archive-date"]')).toBeVisible();
+      await expect(archiveItem.locator('[data-testid="original-path"]')).toBeVisible();
     });
 
     test('複数フォルダの一括ゴミ箱移動', async ({ page }) => {
@@ -700,9 +700,9 @@ describe('Folder Trash Operations', () => {
       await page.keyboard.press('Delete');
 
       // 一括削除確認ダイアログ
-      await expect(page.locator('[data-testid="bulk-trash-base-dialog"]')).toBeVisible();
-      await expect(page.locator('[data-testid="trash-count"]')).toHaveText('3');
-      await page.locator('[data-testid="confirm-bulk-trash"]').click();
+      await expect(page.locator('[data-testid="bulk-archive-base-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="archive-count"]')).toHaveText('3');
+      await page.locator('[data-testid="confirm-bulk-archive"]').click();
 
       // すべてのフォルダが削除されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${folder1}")`)).not.toBeVisible();
@@ -710,10 +710,10 @@ describe('Folder Trash Operations', () => {
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${folder3}")`)).not.toBeVisible();
 
       // ゴミ箱での確認
-      await page.locator('[data-testid="navigation-trash"]').click();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folder1}")`)).toBeVisible();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folder2}")`)).toBeVisible();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folder3}")`)).toBeVisible();
+      await page.locator('[data-testid="navigation-archive"]').click();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folder1}")`)).toBeVisible();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folder2}")`)).toBeVisible();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folder3}")`)).toBeVisible();
     });
 
     test('ネストされたフォルダ構造のゴミ箱移動', async ({ page }) => {
@@ -729,19 +729,19 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-remove"]').click();
 
       // 子フォルダも含む削除の確認
-      await expect(page.locator('[data-testid="nested-trash-base-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="nested-archive-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="nested-count"]')).toHaveText('2'); // 親+子
       await expect(page.locator('[data-testid="nested-warning"]'))
         .toHaveText('このフォルダには子フォルダが含まれています。すべて一緒にゴミ箱に移動されます。');
 
-      await page.locator('[data-testid="confirm-nested-trash"]').click();
+      await page.locator('[data-testid="confirm-nested-archive"]').click();
 
       // ゴミ箱での確認
-      await page.locator('[data-testid="navigation-trash"]').click();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${parentFolder}")`)).toBeVisible();
+      await page.locator('[data-testid="navigation-archive"]').click();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${parentFolder}")`)).toBeVisible();
       
       // 子フォルダも個別にゴミ箱にあることを確認
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${childFolder}")`)).toBeVisible();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${childFolder}")`)).toBeVisible();
     });
   });
 
@@ -749,14 +749,14 @@ describe('Folder Trash Operations', () => {
     test('単一フォルダの復元', async ({ page }) => {
       // フォルダを作成してゴミ箱に移動
       const folderName = await createTestFolder(page, 'Folder to Restore');
-      await moveToTrash(page, folderName);
+      await moveToArchive(page, folderName);
 
       // ゴミ箱ビューに移動
-      await page.locator('[data-testid="navigation-trash"]').click();
+      await page.locator('[data-testid="navigation-archive"]').click();
       
       // フォルダを復元
-      const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-      await trashItem.click({ button: 'right' });
+      const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+      await archiveItem.click({ button: 'right' });
       await page.locator('[data-testid="context-menu-restore"]').click();
 
       // 復元確認ダイアログ
@@ -772,8 +772,8 @@ describe('Folder Trash Operations', () => {
         .toBeVisible({ timeout: 5000 });
 
       // ゴミ箱から削除されることを確認
-      await page.locator('[data-testid="navigation-trash"]').click();
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`))
+      await page.locator('[data-testid="navigation-archive"]').click();
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`))
         .not.toBeVisible();
     });
 
@@ -782,16 +782,16 @@ describe('Folder Trash Operations', () => {
       const folders = ['Restore 1', 'Restore 2', 'Restore 3'];
       for (const name of folders) {
         const folderName = await createTestFolder(page, name);
-        await moveToTrash(page, folderName);
+        await moveToArchive(page, folderName);
       }
 
       // ゴミ箱ビューで一括復元
-      await page.locator('[data-testid="navigation-trash"]').click();
+      await page.locator('[data-testid="navigation-archive"]').click();
 
       // 複数選択
       await page.keyboard.down('Control');
       for (const name of folders) {
-        await page.locator(`[data-testid="trash-item"]:has-text("${name}")`).click();
+        await page.locator(`[data-testid="archive-item"]:has-text("${name}")`).click();
       }
       await page.keyboard.up('Control');
 
@@ -816,15 +816,15 @@ describe('Folder Trash Operations', () => {
       
       // 同名フォルダを作成
       const original = await createTestFolder(page, folderName);
-      await moveToTrash(page, original);
+      await moveToArchive(page, original);
       
       // 新しく同名フォルダを作成
       const newFolder = await createTestFolder(page, folderName);
 
       // 復元を試行
-      await page.locator('[data-testid="navigation-trash"]').click();
-      const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-      await trashItem.click({ button: 'right' });
+      await page.locator('[data-testid="navigation-archive"]').click();
+      const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+      await archiveItem.click({ button: 'right' });
       await page.locator('[data-testid="context-menu-restore"]').click();
 
       // 競合解決ダイアログ
@@ -849,12 +849,12 @@ describe('Folder Trash Operations', () => {
   describe('ゴミ箱からの完全削除', () => {
     test('単一フォルダの完全削除', async ({ page }) => {
       const folderName = await createTestFolder(page, 'Folder to Delete');
-      await moveToTrash(page, folderName);
+      await moveToArchive(page, folderName);
 
       // ゴミ箱から完全削除
-      await page.locator('[data-testid="navigation-trash"]').click();
-      const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-      await trashItem.click({ button: 'right' });
+      await page.locator('[data-testid="navigation-archive"]').click();
+      const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+      await archiveItem.click({ button: 'right' });
       await page.locator('[data-testid="context-menu-delete-permanently"]').click();
 
       // 完全削除確認ダイアログ
@@ -865,7 +865,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="confirm-permanent-delete"]').click();
 
       // ゴミ箱からも削除されることを確認
-      await expect(page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`))
+      await expect(page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`))
         .not.toBeVisible({ timeout: 5000 });
     });
 
@@ -874,26 +874,26 @@ describe('Folder Trash Operations', () => {
       const folders = ['Delete 1', 'Delete 2', 'Delete 3'];
       for (const name of folders) {
         const folderName = await createTestFolder(page, name);
-        await moveToTrash(page, folderName);
+        await moveToArchive(page, folderName);
       }
 
       // ゴミ箱を空にする
-      await page.locator('[data-testid="navigation-trash"]').click();
-      await page.locator('[data-testid="empty-trash-button"]').click();
+      await page.locator('[data-testid="navigation-archive"]').click();
+      await page.locator('[data-testid="empty-archive-button"]').click();
 
       // 警告ダイアログ
-      await expect(page.locator('[data-testid="empty-trash-base-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="empty-archive-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="empty-warning"]'))
         .toHaveText('ゴミ箱内のすべてのアイテムが完全に削除されます。この操作は取り消せません。');
 
-      await page.locator('[data-testid="confirm-empty-trash"]').click();
+      await page.locator('[data-testid="confirm-empty-archive"]').click();
 
       // すべてのアイテムが削除されることを確認
-      await expect(page.locator('[data-testid="trash-empty-message"]'))
+      await expect(page.locator('[data-testid="archive-empty-message"]'))
         .toHaveText('ゴミ箱は空です');
       
       for (const name of folders) {
-        await expect(page.locator(`[data-testid="trash-item"]:has-text("${name}")`))
+        await expect(page.locator(`[data-testid="archive-item"]:has-text("${name}")`))
           .not.toBeVisible();
       }
     });
@@ -901,11 +901,11 @@ describe('Folder Trash Operations', () => {
 });
 
 // ヘルパー関数
-async function moveToTrash(page: Page, folderName: string): Promise<void> {
+async function moveToArchive(page: Page, folderName: string): Promise<void> {
   const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
   await folderNode.click({ button: 'right' });
   await page.locator('[data-testid="context-menu-remove"]').click();
-  await page.locator('[data-testid="confirm-trash"]').click();
+  await page.locator('[data-testid="confirm-archive"]').click();
   
   await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`))
     .not.toBeVisible({ timeout: 5000 });
@@ -942,7 +942,7 @@ async function moveToTrash(page: Page, folderName: string): Promise<void> {
 
 ### Phase 2: 高度な操作（Week 4-6）
 - `folder-drag-drop.e2e.ts`
-- `folder-trash-operations.e2e.ts`
+- `folder-archive-operations.e2e.ts`
 
 ### Phase 3: 統合機能（Week 7-9）
 - `folder-undo-redo.e2e.ts`

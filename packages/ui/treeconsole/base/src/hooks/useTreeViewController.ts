@@ -63,8 +63,8 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId) => Promise<CRUDResult>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
-  trashNode: (nodeId: NodeId) => Promise<void>;
-  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
+  archiveNode: (nodeId: NodeId) => Promise<void>;
+  archiveNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 

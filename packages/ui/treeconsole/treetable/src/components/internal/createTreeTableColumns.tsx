@@ -73,9 +73,9 @@ export interface ColumnBuilderParams {
   }>>;
   visualSelectionSet: Set<NodeId>;
   useArchiveColumns: boolean;
-  trashAction: 'restore' | 'empty';
+  archiveAction: 'restore' | 'empty';
   formatTimestamp: (value?: number) => string;
-  trashRemovedHeader?: string;
+  archiveRemovedHeader?: string;
   columnLabels: {
     name: string;
     description: string;
@@ -181,9 +181,9 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     setContextMenuState,
     visualSelectionSet,
     useArchiveColumns,
-    trashAction,
+    archiveAction,
     formatTimestamp,
-    trashRemovedHeader,
+    archiveRemovedHeader,
     columnLabels,
     validationMessages,
     placeholders,
@@ -476,11 +476,11 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               treeId,
               nodeId: node.id,
               pageNodeId,
-              holderType: (node as { holderType?: 'draft' | 'trash' }).holderType,
+              holderType: (node as { holderType?: 'draft' | 'archive' }).holderType,
               holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
               holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
               useArchiveColumns,
-              trashAction,
+              archiveAction,
             });
 
             return (
@@ -702,7 +702,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     const removedColumn: ColumnDef<TreeNode> = {
       id: 'removedAt',
       accessorFn: (row) => (row as { removedAt?: number; deletedAt?: number }).removedAt ?? (row as { deletedAt?: number }).deletedAt,
-      header: trashRemovedHeader || columnLabels.removed,
+      header: archiveRemovedHeader || columnLabels.removed,
       size: columnWidths.removedAt ?? 150,
       enableSorting: true,
       cell: ({ row }) => {

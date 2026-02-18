@@ -21,7 +21,7 @@ const TreeConsoleToolbarContainer = styled(Box)(() => ({
 interface TreeConsoleToolbarContentProps {
   controller?: TreeConsoleToolbarProps['controller'];
   hasArchiveItems: boolean;
-  trashNodeId?: string;
+  archiveNodeId?: string;
   onAction?: TreeConsoleToolbarProps['onAction'];
   rowClickAction?: TreeConsoleToolbarProps['rowClickAction'];
   onRowClickActionChange?: TreeConsoleToolbarProps['onRowClickActionChange'];
@@ -47,7 +47,7 @@ interface TreeConsoleToolbarContentProps {
 export function TreeConsoleToolbarContent({
   controller,
   hasArchiveItems,
-  trashNodeId,
+  archiveNodeId,
   onAction,
   rowClickAction = 'Select/Navigate',
   onRowClickActionChange,
@@ -69,7 +69,7 @@ export function TreeConsoleToolbarContent({
   searchStrings,
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
-  const [trashAnchorEl, setArchiveAnchorEl] = useState<HTMLElement | null>(null);
+  const [archiveAnchorEl, setArchiveAnchorEl] = useState<HTMLElement | null>(null);
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
 
   const handleAction = useCallback(
@@ -98,9 +98,9 @@ export function TreeConsoleToolbarContent({
 
   const allowArchive = (typeof canArchive === 'boolean' ? canArchive : undefined) ?? canRemove ?? true;
 
-  const trashMenuHandlers = {
-    onRestore: () => handleAction('restore', trashNodeId ? { trashNodeId } : undefined),
-    onEmpty: () => handleAction('empty', trashNodeId ? { trashNodeId } : undefined),
+  const archiveMenuHandlers = {
+    onRestore: () => handleAction('restore', archiveNodeId ? { archiveNodeId } : undefined),
+    onEmpty: () => handleAction('empty', archiveNodeId ? { archiveNodeId } : undefined),
   };
 
   const tooltips = {
@@ -113,12 +113,12 @@ export function TreeConsoleToolbarContent({
     moveToArchive: t('tooltips.moveToArchive', { shortcut: '⌘+X' }),
   } as const;
 
-  const trashButtonLabel = t('aria.trashMenuButton');
+  const archiveButtonLabel = t('aria.archiveMenuButton');
   const settingsButtonLabel = t('aria.settingsButton');
 
   const labels = {
-    trashRestore: t('trashMenu.restore'),
-    trashEmpty: t('trashMenu.empty'),
+    restoreLabel: t('archiveMenu.restore'),
+    emptyLabel: t('archiveMenu.empty'),
     rowClickTitle: t('rowClick.title'),
     rowClickSelectNavigate: t('rowClick.options.selectNavigate'),
     rowClickEdit: t('rowClick.options.edit'),
@@ -187,7 +187,7 @@ export function TreeConsoleToolbarContent({
         canPaste={canPaste}
         canDuplicate={canDuplicate}
         allowArchive={allowArchive}
-        trashButtonLabel={trashButtonLabel}
+        archiveButtonLabel={archiveButtonLabel}
         hasArchiveItems={hasArchiveItems}
         onAction={handleAction}
         onArchiveClick={(event) => setArchiveAnchorEl(event.currentTarget)}
@@ -195,13 +195,13 @@ export function TreeConsoleToolbarContent({
       />
 
       <ArchiveMenu
-        anchorEl={trashAnchorEl}
-        open={Boolean(trashAnchorEl)}
+        anchorEl={archiveAnchorEl}
+        open={Boolean(archiveAnchorEl)}
         onClose={() => setArchiveAnchorEl(null)}
-        onRestore={trashMenuHandlers.onRestore}
-        onEmpty={trashMenuHandlers.onEmpty}
-        restoreLabel={labels.trashRestore}
-        emptyLabel={labels.trashEmpty}
+        onRestore={archiveMenuHandlers.onRestore}
+        onEmpty={archiveMenuHandlers.onEmpty}
+            restoreLabel={labels.restoreLabel}
+            emptyLabel={labels.emptyLabel}
       />
 
       <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>

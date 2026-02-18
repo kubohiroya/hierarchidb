@@ -7,18 +7,18 @@ const pageNodeId = 'r:root' as NodeId;
 const grandchildId = 'grandchild-1' as NodeId;
 
 describe('ArchiveDialog link wiring', () => {
-  it('generates trash-specific URLs with page node id segment', () => {
+  it('generates archive-specific URLs with page node id segment', () => {
     const href = buildTreeConsoleLinkHref({
       treeId,
       nodeId: grandchildId,
       pageNodeId,
-      holderType: 'trash',
+      holderType: 'archive',
       holderTargetId: grandchildId,
       holderMetaParentId: pageNodeId,
       useArchiveColumns: true,
-      trashAction: 'restore',
+      archiveAction: 'restore',
     });
 
-    expect(href).toBe(`/t/${treeId}/${pageNodeId}/${grandchildId}/trash/restore`);
+    expect(href).toBe(`/t/${treeId}/${pageNodeId}/${grandchildId}/archive/restore`);
   });
 });

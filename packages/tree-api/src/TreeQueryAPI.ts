@@ -83,8 +83,8 @@ export interface TreeQueryAPI {
    * ```
    *
    * @remarks
-   * This method checks both active nodes and trash.
-   * Use `node.isRemoved` to determine if node is in trash.
+   * This method checks both active nodes and archive.
+   * Use `node.isRemoved` to determine if node is in archive.
    */
   getNode(nodeId: NodeId): Promise<TreeNode | undefined>;
 
@@ -107,7 +107,7 @@ export interface TreeQueryAPI {
    *
    * @remarks
    * Only returns direct children (depth=1). For all descendants, use `listDescendants`.
-   * Results exclude nodes in trash unless parent is trash root.
+   * Results exclude nodes in archive unless parent is archive root.
    */
   listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]>;
 

@@ -48,8 +48,8 @@ async function createCommittedNode(
   return commitRes.nodeId;
 }
 
-describe('trash duplicate names handling', () => {
-  it('allows moving multiple nodes with the same name into trash', async () => {
+describe('archive duplicate names handling', () => {
+  it('allows moving multiple nodes with the same name into archive', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -57,11 +57,11 @@ describe('trash duplicate names handling', () => {
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
     const tree = await queryAPI.getTree('r' as TreeId);
-    if (!tree?.rootId || !tree.trashRootId) {
+    if (!tree?.rootId || !tree.archiveRootId) {
       throw new Error('console roots not available');
     }
     const rootId = tree.rootId as NodeId;
-    const trashRootId = tree.trashRootId as NodeId;
+    const archiveRootId = tree.archiveRootId as NodeId;
 
     const first = await createCommittedNode(client, rootId, 'duplicate');
     const second = await createCommittedNode(client, rootId, 'duplicate');
@@ -72,8 +72,8 @@ describe('trash duplicate names handling', () => {
     const moveSecond = await mutationAPI.moveNodesToArchive([second]);
     expect(moveSecond?.success).toBe(true);
 
-    const trashChildren = await queryAPI.listChildren(trashRootId);
-    const names = trashChildren
+    const archiveChildren = await queryAPI.listChildren(archiveRootId);
+    const names = archiveChildren
       .filter((node) => node.id === first || node.id === second)
       .map((node) => node.metadata.name);
     expect(new Set(names).size).toBe(names.length);

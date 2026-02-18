@@ -28,7 +28,7 @@ const createNode = (id: string): TreeNode => {
   } satisfies TreeNode;
 };
 
-describe('TreeTableContextMenu trash disable for running build session', () => {
+describe('TreeTableContextMenu archive disable for running build session', () => {
   it('passes canArchive=false when node is running', () => {
     let latestProps: NodeContextMenuProps | null = null;
     const ContextMenuComponent = (props: NodeContextMenuProps) => {

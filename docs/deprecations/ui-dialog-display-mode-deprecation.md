@@ -65,8 +65,8 @@
   - 表示モード切替（標準/最大化/全画面）と Fullscreen API 同期。
   - 対象ダイアログで永続化の往復が行えること。
 - 回帰
-  - moveToTrash / recoverFromTrash では PeerEntity を削除しない。
-  - empty trash / discardDraft では PeerEntity を削除する。
+  - moveToArchive / recoverFromArchive では PeerEntity を削除しない。
+  - empty archive / discardDraft では PeerEntity を削除する。
 
 **ロールバック計画**
 - Phase 2 で問題発生時はフラグを true に戻して一時退避。

@@ -4,6 +4,7 @@ import { executePauseBuildFlow } from '@hierarchidb/components/build-session';
 describe('executePauseBuildFlow', () => {
   it('keeps pending true until pause and persist both complete', async () => {
     const events: string[] = [];
+    let acceptCalled = false;
     let resolvePause: (() => void) | null = null;
     let resolvePersist: (() => void) | null = null;
     const pausePromise = new Promise<void>((resolve) => {
@@ -17,6 +18,10 @@ describe('executePauseBuildFlow', () => {
       reason: 'user-pause',
       onPendingChange: (pending) => {
         events.push(`pending:${String(pending)}`);
+      },
+      onAccepted: () => {
+        acceptCalled = true;
+        events.push('accepted');
       },
       pauseSession: async (reason) => {
         events.push(`pause:${reason}`);
@@ -41,7 +46,13 @@ describe('executePauseBuildFlow', () => {
 
     resolvePersist?.();
     await run;
-    expect(events).toEqual(['pending:true', 'pause:user-pause', 'persist:user-pause', 'pending:false']);
+    expect(events).toEqual([
+      'pending:true',
+      'pause:user-pause',
+      'persist:user-pause',
+      'accepted',
+    ]);
+    expect(acceptCalled).toBe(true);
   });
 
   it('clears pending and reports error when pause fails', async () => {

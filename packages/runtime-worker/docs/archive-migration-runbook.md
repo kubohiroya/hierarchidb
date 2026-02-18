@@ -1,25 +1,25 @@
 vk:doc kind=runbook audience=ops scope=worker
 
-# Trash Migration Runbook (legacy → holder)
+# Archive Migration Runbook (legacy → holder)
 
 目的
-- 既存の Trash（removedAt/original* 方式）を holder 方式へ安全に移行する。
+- 既存の Archive（removedAt/original* 方式）を holder 方式へ安全に移行する。
 
 準備
 - Node >= 20, pnpm >= 9
-- Trash ホルダー方式は常時有効（旧 removedAt 方式は廃止済み）
+- Archive ホルダー方式は常時有効（旧 removedAt 方式は廃止済み）
 
 手順
 1) ドライラン
 ```
-node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --dry-run --limit=100
+node -r esbuild-register packages/runtime/worker/src/tools/archive-migrate.ts --dry-run --limit=100
 ```
 - 出力: JSON（scanned/migrated/errors/durationMs/errorsByReason/details）
 - 問題がなければ limit を段階的に上げる。
 
 2) 本番実行（段階）
 ```
-node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --limit=1000
+node -r esbuild-register packages/runtime/worker/src/tools/archive-migrate.ts --limit=1000
 ```
 - まずは小さな limit から。監視しながら増やす。
 
@@ -29,7 +29,7 @@ node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --li
 ロールバック
 - 再度スクリプトを `--rollback` で実行（`--dry-run` で計画確認→実行）
 ```
-node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --rollback --limit=1000
+node -r esbuild-register packages/runtime/worker/src/tools/archive-migrate.ts --rollback --limit=1000
 ```
 
 注意

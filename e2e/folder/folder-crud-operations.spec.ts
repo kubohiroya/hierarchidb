@@ -150,10 +150,10 @@ test.describe('Folder CRUD Operations', () => {
     ).not.toBeVisible();
 
     // アーカイブにフォルダが移動されることを確認
-    await page.locator('[data-testid="trash-button"]').click();
-    await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
+    await page.locator('[data-testid="archive-button"]').click();
+    await expect(page.locator('[data-testid="archive-panel"]')).toBeVisible();
     await expect(
-      page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`)
+      page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`)
     ).toBeVisible();
   });
 
@@ -163,23 +163,23 @@ test.describe('Folder CRUD Operations', () => {
     await moveToArchive(page, folderName);
 
     // アーカイブを開く
-    await page.locator('[data-testid="trash-button"]').click();
-    await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
+    await page.locator('[data-testid="archive-button"]').click();
+    await expect(page.locator('[data-testid="archive-panel"]')).toBeVisible();
 
     // フォルダを右クリック
-    const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-    await trashItem.click({ button: 'right' });
+    const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+    await archiveItem.click({ button: 'right' });
 
     // 復元を選択
-    await expect(page.locator('[data-testid="trash-context-menu"]')).toBeVisible();
-    await page.locator('[data-testid="trash-menu-restore"]').click();
+    await expect(page.locator('[data-testid="archive-context-menu"]')).toBeVisible();
+    await page.locator('[data-testid="archive-menu-restore"]').click();
 
     // 復元確認
     await expect(page.locator('[data-testid="restore-confirmation-base-dialog"]')).toBeVisible();
     await page.locator('[data-testid="confirm-restore"]').click();
 
     // アーカイブを閉じる
-    await page.locator('[data-testid="close-trash-panel"]').click();
+    await page.locator('[data-testid="close-archive-panel"]').click();
 
     // メインビューに復元されることを確認
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).toBeVisible({
@@ -193,16 +193,16 @@ test.describe('Folder CRUD Operations', () => {
     await moveToArchive(page, folderName);
 
     // アーカイブを開く
-    await page.locator('[data-testid="trash-button"]').click();
-    await expect(page.locator('[data-testid="trash-panel"]')).toBeVisible();
+    await page.locator('[data-testid="archive-button"]').click();
+    await expect(page.locator('[data-testid="archive-panel"]')).toBeVisible();
 
     // フォルダを右クリック
-    const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`);
-    await trashItem.click({ button: 'right' });
+    const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`);
+    await archiveItem.click({ button: 'right' });
 
     // 完全削除を選択
-    await expect(page.locator('[data-testid="trash-context-menu"]')).toBeVisible();
-    await page.locator('[data-testid="trash-menu-delete-permanent"]').click();
+    await expect(page.locator('[data-testid="archive-context-menu"]')).toBeVisible();
+    await page.locator('[data-testid="archive-menu-delete-permanent"]').click();
 
     // 削除確認
     await expect(
@@ -212,7 +212,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // アーカイブからも削除されることを確認
     await expect(
-      page.locator(`[data-testid="trash-item"]:has-text("${folderName}")`)
+      page.locator(`[data-testid="archive-item"]:has-text("${folderName}")`)
     ).not.toBeVisible({ timeout: 5000 });
   });
 
@@ -344,9 +344,9 @@ test.describe('Folder CRUD Operations', () => {
     // 一括削除を実行
     await page.locator('[data-testid="context-menu-remove"]').click();
     await expect(
-      page.locator('[data-testid="batch-trash-confirmation-base-dialog"]')
+      page.locator('[data-testid="batch-archive-confirmation-base-dialog"]')
     ).toBeVisible();
-    await page.locator('[data-testid="confirm-batch-trash"]').click();
+    await page.locator('[data-testid="confirm-batch-archive"]').click();
 
     // すべてのフォルダが削除されることを確認
     await expect(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { proxy } from 'comlink';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
@@ -16,6 +16,7 @@ import {
   type PauseBuildReason,
   useBuildSessionTransition,
 } from '@hierarchidb/components';
+import { PLUGIN_NODE_TYPE } from '../../../plugin-manifest.js';
 import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
 
 export type RouteBuildSessionTransitionPhase =
@@ -57,6 +58,7 @@ type RouteMutationApi = {
 
 type RouteWorkerApi = {
   getRouteMutationAPI: () => Promise<RouteMutationApi>;
+  pauseBuildSession?: (nodeType: NodeType, nodeId: NodeId, reason?: PauseBuildReason) => Promise<void>;
 };
 
 type UseRouteBuildSessionLifecycleArgs = {
@@ -154,7 +156,8 @@ export const useRouteBuildSessionLifecycle = ({
 }: UseRouteBuildSessionLifecycleArgs) => {
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
-  const [isPausePending, setIsPausePending] = useState(false);
+  const [isStopRequested, setIsStopRequested] = useState(false);
+  const [isStopAccepted, setIsStopAccepted] = useState(false);
   const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
   const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
@@ -162,7 +165,7 @@ export const useRouteBuildSessionLifecycle = ({
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
-  const sessionId = routeNodeId ? String(routeNodeId) : null;
+  const sessionId = routeNodeId ?? null;
   const isWebLockSupported = true;
   const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
@@ -210,17 +213,12 @@ export const useRouteBuildSessionLifecycle = ({
   });
 
   useEffect(() => {
-    if (!isPausePending) return;
-    if (status !== 'running') {
-      setIsPausePending(false);
+    if (!(isStopRequested || isStopAccepted)) return;
+    if (status === 'idle') {
+      setIsStopRequested(false);
+      setIsStopAccepted(false);
     }
-  }, [isPausePending, status]);
-
-  useEffect(() => {
-    if (status !== 'running') {
-      setIsPausePending(false);
-    }
-  }, [status]);
+  }, [isStopAccepted, isStopRequested, status]);
 
   useEffect(() => {
     completionStatusRef.current = status;
@@ -408,12 +406,23 @@ export const useRouteBuildSessionLifecycle = ({
   ]);
 
   const handlePause = useCallback(async (reason: PauseBuildReason = 'user-pause'): Promise<void> => {
-    if (isPausePending) return;
+    if (isStopRequested || isStopAccepted) return;
     await executePauseBuildFlow({
       reason,
-      onPendingChange: setIsPausePending,
+      onPendingChange: setIsStopRequested,
+      onAccepted: () => {
+        setIsStopAccepted(true);
+        setStatus('idle');
+      },
       pauseSession: async () => {
-        setStatus('paused');
+        if (!sessionId) {
+          throw new Error('Route session id is not available.');
+        }
+        await initialize();
+        if (!api?.pauseBuildSession) {
+          throw new Error('Pause API is not available.');
+        }
+        await api.pauseBuildSession(PLUGIN_NODE_TYPE, sessionId, reason);
       },
       persistPausedStatus: async () => {
         if (sessionId) {
@@ -421,18 +430,20 @@ export const useRouteBuildSessionLifecycle = ({
         }
       },
       onError: (error) => {
+        setIsStopRequested(false);
+        setIsStopAccepted(false);
         notify.error(t('stage.progress.pauseFailed', 'Failed to pause build.'));
         console.error('[RouteBuildStep] pause failed', error);
       },
     });
-  }, [isPausePending, onUpdate, sessionId, t]);
+  }, [api, initialize, isStopAccepted, isStopRequested, onUpdate, sessionId, t]);
 
   return {
     status,
     setStatus,
     overallProgress,
     setOverallProgress,
-    isPausePending,
+    isStopRequested: isStopRequested || isStopAccepted,
     ideGsmPhase,
     errorRows,
     errorDialogOpen,

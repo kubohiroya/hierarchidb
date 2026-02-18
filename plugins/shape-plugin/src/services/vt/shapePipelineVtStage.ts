@@ -171,6 +171,19 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     ? await params.loadContinentLookup()
     : undefined;
   const featureGeojsonByteSizeById = await loadFeatureGeojsonByteSizeById(params.nodeId);
+  const transformTolerance = params.buildConfig.transformConfig.tolerance;
+  const transformRetryToleranceStep = params.buildConfig.transformConfig.retryToleranceStep;
+  const topojsonSimplify = vtConfig.enableTopojsonSimplify
+    ? {
+      enabled: true,
+      sourceKeys: new Set<string>(),
+      toleranceK: transformTolerance,
+      retryToleranceStep: typeof transformRetryToleranceStep === 'number'
+        ? transformRetryToleranceStep
+        : 0.01,
+      quantize: params.buildConfig.transformConfig.quantize,
+    }
+    : undefined;
   const vtHandler = createVtHandler({
     ephemeralDB: params.ephemeralStore,
     vtConfig,
@@ -178,6 +191,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     geometryEngine,
     abortSignal: vtAbortController.signal,
     continentByCountry,
+    topojsonSimplify,
     featureGeojsonByteSizeById,
     tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
       await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({

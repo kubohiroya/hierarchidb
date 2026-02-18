@@ -36,7 +36,7 @@ export interface TreeNodeBase {
 export type TreeNode = TreeNodeBase & 
   Partial<DraftProperties> & 
   Partial<DraftProperties> &
-  Partial<TrashItemProperties>;
+  Partial<ArchiveItemProperties>;
 ```
 
 ### 2. Working Copy操作の拡張

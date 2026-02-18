@@ -96,7 +96,7 @@ export function useTreeConsoleLoader({
           });
         }
         const shouldFlattenArchive =
-          pageTreeNode?.nodeType === 'trash' && parentId === (pageNodeId as NodeId);
+          pageTreeNode?.nodeType === 'archive' && parentId === (pageNodeId as NodeId);
         let displayNodes: TreeNode[] = children;
 
         if (shouldFlattenArchive) {
@@ -105,7 +105,7 @@ export function useTreeConsoleLoader({
           );
           displayNodes = batches.flat();
           if (debugEnabled) {
-            console.log('[TreeConsoleLoader] flattened trash nodes', {
+            console.log('[TreeConsoleLoader] flattened archive nodes', {
               parentId: String(parentId),
               batches: batches.map((batch, index) => ({
                 parent: String(children[index]?.id ?? ''),

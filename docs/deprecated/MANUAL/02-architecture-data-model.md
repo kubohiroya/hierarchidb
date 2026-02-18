@@ -57,14 +57,14 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 export type Timestamp = number; // Date.now()形式
 
 // ルートノードタイプ
-export type TreeRootNodeType = 'SuperRoot' | 'Root' | 'TrashRoot';
+export type TreeRootNodeType = 'SuperRoot' | 'Root' | 'ArchiveRoot';
 export type TreeNodeType = TreeRootNodeType | 'folder' | 'file' | string; // プラグイン拡張可能
 
 // 特殊ID型
 export type SuperRootNodeId = NodeId & { readonly __type: 'SuperRoot' };
 export type RootNodeId = NodeId & { readonly __type: 'Root' };
-export type TrashRootNodeId = NodeId & { readonly __type: 'TrashRoot' };
-export type TreeRootNodeId = SuperRootNodeId | RootNodeId | TrashRootNodeId;
+export type ArchiveRootNodeId = NodeId & { readonly __type: 'ArchiveRoot' };
+export type TreeRootNodeId = SuperRootNodeId | RootNodeId | ArchiveRootNodeId;
 export type RegularNodeId = NodeId & { readonly __type: 'Regular' };
 ```
 
@@ -75,7 +75,7 @@ export type RegularNodeId = NodeId & { readonly __type: 'Regular' };
 export interface TreeTypes {
   id: TreeId;
   rootNodeId: RootNodeId;
-  trashRootNodeId: TrashRootNodeId;
+  archiveRootNodeId: ArchiveRootNodeId;
   superRootNodeId: SuperRootNodeId;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -102,7 +102,7 @@ export interface ReferenceProperties {
   references?: NodeId[];
 }
 
-export interface TrashItemProperties {
+export interface ArchiveItemProperties {
   originalName: string;
   originalParentNodeId: NodeId;
   removedAt: Timestamp;
@@ -112,7 +112,7 @@ export interface TrashItemProperties {
 export type TreeNode = TreeNodeBase & 
   DescendantProperties & 
   Partial<ReferenceProperties> & 
-  Partial<TrashItemProperties>;
+  Partial<ArchiveItemProperties>;
 
 // ワーキングコピー（一時編集用）
 export interface DraftProperties {
@@ -320,7 +320,7 @@ export class CoreDB extends Dexie {
   constructor(name: string) {
     super(`${name}-CoreDB`);
     this.version(1).stores({
-      trees: '&id, rootNodeId, trashRootNodeId, superRootNodeId',
+      trees: '&id, rootNodeId, archiveRootNodeId, superRootNodeId',
       nodes: [
         '&id',
         'parentNodeId',

@@ -271,7 +271,7 @@ export class SchemaTransformer {
       'folder': 'folder-plugin',
       'document': 'file',
       'root': 'Root',
-      'trash': 'Trash'
+      'archive': 'Archive'
     };
     
     return typeMap[v1Type] || v1Type;

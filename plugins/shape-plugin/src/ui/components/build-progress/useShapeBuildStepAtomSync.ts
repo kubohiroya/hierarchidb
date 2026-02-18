@@ -74,7 +74,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     handleStartOrResume,
     handlePause,
     isStartPending,
-    isPausePending,
+    stopRequested,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
@@ -296,7 +296,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
       startPending: Boolean(isStartPending),
       handleStartOrResume: stableHandleStartOrResume,
       handlePause: stableHandlePause,
-      pausePending: Boolean(isPausePending),
+      stopRequested: Boolean(stopRequested),
     };
     if (shallowEqualObject(controlsRef.current, nextControls)) return;
     controlsRef.current = nextControls;
@@ -304,7 +304,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   }, [
     canStartOrResume,
     isStartPending,
-    isPausePending,
+    stopRequested,
     setControls,
     statusLabel,
     stableHandlePause,

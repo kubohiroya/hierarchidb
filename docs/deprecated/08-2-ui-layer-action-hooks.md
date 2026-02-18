@@ -262,7 +262,7 @@ export interface UIDeleteHooks {
   }>;
 
   // ゴミ箱への移動
-  onMoveToTrash?: (params: {
+  onMoveToArchive?: (params: {
     nodeIds: TreeNodeId[];
     entities: any[];
   }) => Promise<boolean>;

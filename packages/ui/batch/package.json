@@ -24,9 +24,9 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
@@ -39,9 +39,9 @@
   },
   "devDependencies": {
     "react": ">=18.0.0",
-    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",

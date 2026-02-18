@@ -40,6 +40,7 @@ import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { UIStateDB } from './services/UIStateDB.js';
+import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
@@ -159,6 +160,7 @@ export class WorkerService {
         locationMutation: locationMutationService,
         routeMutation: routeMutationService,
       });
+      await WorkerService.recoverAbnormalBuildSessions();
 
       return new WorkerService(
         coreDB,
@@ -183,6 +185,37 @@ export class WorkerService {
         routeMutationService
       );
     });
+  }
+
+  private static async recoverAbnormalBuildSessions(): Promise<void> {
+    try {
+      await ephemeralDB.open?.();
+      const sessions = await ephemeralDB.sessions.toArray();
+      const abnormalSessions = sessions.filter(
+        (session) => session?.stage !== undefined && session.nodeId !== undefined
+      );
+      if (abnormalSessions.length === 0) return;
+
+      const now = Date.now();
+      await ephemeralDB.transaction('rw', ephemeralDB.sessions, async () => {
+        await Promise.all(
+          abnormalSessions.map((session) =>
+            ephemeralDB.sessions.update(session.nodeId, {
+              status: 'idle',
+              stage: undefined,
+              updatedAt: now,
+              stopReason: 'unknown',
+              stageHeartbeatAt: undefined,
+              stageStartedAt: undefined,
+              stageInactiveMs: undefined,
+              stageId: undefined,
+            })
+          )
+        );
+      });
+    } catch (error) {
+      console.error('[WorkerService] Failed to recover abnormal build sessions', error);
+    }
   }
 
   constructor(

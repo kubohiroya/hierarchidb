@@ -37,7 +37,7 @@ export type AwaitingFirstTaskDecision =
   }
   | {
     kind: 'cancelled';
-    reason: 'paused-before-task-start';
+    reason: 'stopped-before-task-start';
     transitionFinish: TransitionFinish;
   };
 
@@ -48,7 +48,6 @@ export type AwaitingFirstTaskDecisionInput = {
   buildStatus: BuildStatus;
   taskCount: number | undefined;
   isTaskStreamReady: boolean;
-  isPausePending: boolean;
   expectTaskGeneration: boolean;
   sessionProgressTotal?: number;
   sessionStageId?: string | null;
@@ -167,13 +166,13 @@ export const resolveAwaitingFirstTaskDecision = (
       },
     };
   }
-  if (input.buildStatus === 'paused' && !input.isPausePending) {
+  if (input.buildStatus === 'paused') {
     return {
       kind: 'cancelled',
-      reason: 'paused-before-task-start',
+      reason: 'stopped-before-task-start',
       transitionFinish: {
         level: 'warning',
-        message: 'Build paused before task execution started.',
+        message: 'Build stopped before task execution started.',
       },
     };
   }

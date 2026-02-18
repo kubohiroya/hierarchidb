@@ -18,7 +18,7 @@ vi.mock('@hierarchidb/provider', () => ({
   useTreeOperations: vi.fn(() => ({
     updateNode: vi.fn(),
     moveNode: vi.fn(),
-    trashNode: vi.fn(),
+    archiveNode: vi.fn(),
     duplicateNode: vi.fn(),
   })),
   useTreeState: vi.fn(() => ({
@@ -43,7 +43,7 @@ describe('useTreeViewController', () => {
       getChildren: vi.fn(),
       updateNode: vi.fn(),
       moveNode: vi.fn(),
-      trashNode: vi.fn(),
+      archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
     } as any;
 
@@ -287,7 +287,7 @@ describe('useTreeViewController', () => {
 
         mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
         await act(async () => {
-          await result.current.trashNode('$1' as NodeId);
+          await result.current.archiveNode('$1' as NodeId);
         });
 
         //  undo
@@ -312,7 +312,7 @@ describe('useTreeViewController', () => {
         expect(result.current.canUndo).toBe(false);
 
         await act(async () => {
-          await result.current.trashNode('$1' as NodeId);
+          await result.current.archiveNode('$1' as NodeId);
         });
 
         //  undo

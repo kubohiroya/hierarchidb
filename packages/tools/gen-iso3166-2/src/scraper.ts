@@ -67,7 +67,9 @@ const normalizeContinent = (value: string | undefined, lang: 'en' | 'ja' = 'en')
 };
 
 async function fetchHtml(url: string, retries = 3): Promise<string> {
-  const net = new FetchNetworkPort();
+  const net = new FetchNetworkPort({
+    auth: { enabled: false },
+  });
   for (let i = 0; i < retries; i++) {
     try {
       await sleep(REQUEST_DELAY_MS);
@@ -286,6 +288,15 @@ export async function generateIso3166Data(): Promise<GenerateResult> {
           const subs = await parseIso3166_2Page(c.alpha2);
           if (!subs.length) {
             failures.push({ alpha2: c.alpha2, reason: "no subdivision rows found" });
+            results.push({
+              countryEn: c.countryEn,
+              alpha3: c.alpha3,
+              alpha2: c.alpha2,
+              location: normalizeContinent(c.location, 'en'),
+              subdivisionEn: "",
+              subdivisionLocal: "",
+              subdivisionCode: "",
+            });
             return;
           }
 

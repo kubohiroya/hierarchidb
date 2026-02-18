@@ -114,7 +114,7 @@ graph LR
     N67["@hierarchidb/ui-treeconsole-footer"]
     N68["@hierarchidb/ui-treeconsole-speeddial"]
     N69["@hierarchidb/ui-treeconsole-toolbar"]
-    N70["@hierarchidb/ui-treeconsole-trashbin"]
+    N70["@hierarchidb/ui-treeconsole-archivebin"]
     N71["@hierarchidb/ui-treeconsole-treetable"]
   end
   subgraph G_packages_util["packages/util"]

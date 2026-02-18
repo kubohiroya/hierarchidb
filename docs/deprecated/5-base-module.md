@@ -274,12 +274,12 @@ Worker層、UI層、app で用いられるデータモデル定義
 用語と関係:
 - UUID: 体系内で用いる一意識別子（opaque）
 - TreeId: ツリー識別子（opaque）
-- TreeRootNodeType: 列挙型。値は SuperRoot / Root / TrashRoot（文字列リテラルの直書きは非推奨）
+- TreeRootNodeType: 列挙型。値は SuperRoot / Root / ArchiveRoot（文字列リテラルの直書きは非推奨）
 - TreeNodeType: 列挙型。TreeRootNodeType に folder/file を加えた上位集合
 - SuperRootNodeId: SuperRoot 用 ID（opaque）
 - RootNodeId: Root 用 ID（opaque）
-- TrashRootNodeId: TrashRoot 用 ID（opaque）
-- TreeRootNodeId: SuperRootNodeId | RootNodeId | TrashRootNodeId（共用体）
+- ArchiveRootNodeId: ArchiveRoot 用 ID（opaque）
+- TreeRootNodeId: SuperRootNodeId | RootNodeId | ArchiveRootNodeId（共用体）
 - RegularNodeId: 一般ノード（非ルート）用 ID（opaque）
 - TreeNodeId: TreeRootNodeId | RegularNodeId（共用体）
 - Timestamp: 数値時間（number）。IDとは異なり opaque ではない
@@ -290,10 +290,10 @@ Worker層、UI層、app で用いられるデータモデル定義
 type TreeTypes = {
   treeId: TreeId;
   treeRootNodeId: RootNodeId;           // Root 専用ID
-  treeTrashRootNodeId: TrashRootNodeId; // TrashRoot 専用ID
+  treeArchiveRootNodeId: ArchiveRootNodeId; // ArchiveRoot 専用ID
   superRootNodeId: SuperRootNodeId;     // e.g., `superroot:${treeId}`
 };
-// Root/TrashRoot の parentTreeNodeId は必ず superRootNodeId
+// Root/ArchiveRoot の parentTreeNodeId は必ず superRootNodeId
 // SuperRoot の TreeNode 実体は存在しない（内部専用・UI 非表示）
 
 type TreeNodeBase = {
@@ -315,7 +315,7 @@ type ReferenceProperties = {
   references?: TreeNodeId[];
 };
 
-type TrashItemProperties = {
+type ArchiveItemProperties = {
   originalName: string;
   originalParentTreeNodeId: TreeNodeId;
   removedAt: Timestamp;
@@ -324,7 +324,7 @@ type TrashItemProperties = {
 type TreeNode =
 & TreeNodeBase
 & ({} | ReferenceProperties)
-& ({} | TrashItemProperties);
+& ({} | ArchiveItemProperties);
 ```
 
 - **TreeNodeは兄弟名がユニーク**: 同一 parentTreeNodeId 配下で name はユニーク。
@@ -389,7 +389,7 @@ export class CoreDB extends Dexie {
   constructor(name: string) {
     super(`${name}-CoreDB`);
     this.version(1).stores({
-      trees: '&treeId, treeRootNodeId, treeTrashRootNodeId, superRootNodeId',
+      trees: '&treeId, treeRootNodeId, treeArchiveRootNodeId, superRootNodeId',
       nodes: [
         '&treeNodeId',
         'parentTreeNodeId',
@@ -457,7 +457,7 @@ nodes.where('[parentTreeNodeId+updatedAt]').between([pid, ts], [pid, Dexie.maxKe
 nodes.where('draftOf').equals(nodeId)
 → draftOf
 
-* Trash 一覧の時系列
+* Archive 一覧の時系列
 nodes.where('removedAt').above(0).reverse()
 → removedAt
 
@@ -466,7 +466,7 @@ nodes.where('referredBy').equals(targetId)（multiEntry）
 → *referredBy
 
 * ルート状態の取得
-rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.TrashRoot])
+rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.ArchiveRoot])
 → &[treeId+treeRootNodeType]
 
 ### 5.4.3 API層におけるPub-Subモデル
@@ -591,12 +591,12 @@ export interface TreeMutationService {
   複製（新規ID発行、referredBy 未定義、自己/子孫への複製禁止）
 * pasteNodes
   クリップボード貼り付け（新規ID発行、自己/子孫への貼り付け禁止）
-* moveToTrash
-  TrashRoot配下に移動（referredBy が空でない場合は失敗）
+* moveToArchive
+  ArchiveRoot配下に移動（referredBy が空でない場合は失敗）
 * permanentDelete
-  TrashRoot配下から完全削除
-* recoverFromTrash
-  TrashRoot配下から復元（parentTreeNodeId を元に戻す）
+  ArchiveRoot配下から完全削除
+* recoverFromArchive
+  ArchiveRoot配下から復元（parentTreeNodeId を元に戻す）
 * importNodes
   JSONインポート（新規ID発行）
 
@@ -621,15 +621,15 @@ export interface TreeMutationService {
     onNameConflict?: OnNameConflict;
   }>): Promise<{ seq: Seq; newNodeIds: TreeNodeId[] }>;
 
-  moveToTrash(cmd: CommandEnvelope<'moveToTrash', {
+  moveToArchive(cmd: CommandEnvelope<'moveToArchive', {
     nodeIds: TreeNodeId[];
   }>): Promise<{ seq: Seq }>;
 
   permanentDelete(cmd: CommandEnvelope<'permanentDelete', {
-    nodeIds: TreeNodeId[];             // TrashRoot 配下限定
+    nodeIds: TreeNodeId[];             // ArchiveRoot 配下限定
   }>): Promise<{ seq: Seq }>;
 
-  recoverFromTrash(cmd: CommandEnvelope<'recoverFromTrash', {
+  recoverFromArchive(cmd: CommandEnvelope<'recoverFromArchive', {
     nodeIds: TreeNodeId[];
     toParentId?: TreeNodeId;           // 未指定なら originalParentTreeNodeId
     onNameConflict?: OnNameConflict;
@@ -695,5 +695,5 @@ type TreeViewState = {
 - **衝突処理**:
     - UI文脈: エラー (`onNameConflict = 'error'`)
     - DB保存文脈: 自動リネーム許容 (`'auto-rename'`)
-- **参照整合性**: moveToTrash 対象に参照されているノードが含まれる場合は失敗。
+- **参照整合性**: moveToArchive 対象に参照されているノードが含まれる場合は失敗。
 - **クロスツリー禁止**: parentTreeNodeId の祖先は同一 SuperRoot 系である必要。

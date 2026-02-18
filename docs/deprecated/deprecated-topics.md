@@ -132,7 +132,7 @@ TreeConsoleの実装詳細が過度に記載され、全体のUIアーキテク�
 ### 8. 機能分析の独立ファイル
 
 **元のファイル群**:
-- 13-trash-operations-analysis.md
+- 13-archive-operations-analysis.md
 - 14-copy-paste-analysis.md
 - 15-undo-redo-analysis.md
 

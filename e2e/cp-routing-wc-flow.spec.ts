@@ -63,18 +63,18 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
     await waitForSubTreeUpdate(page);
     await expect(page.locator(nodeSelector(renamedName))).not.toBeVisible({ timeout: 7000 });
 
-    await page.locator('[data-testid="trash-button"]').click();
-    const trashItem = page.locator(`[data-testid="trash-item"]:has-text("${renamedName}")`).first();
-    await expect(trashItem).toBeVisible({ timeout: 7000 });
+    await page.locator('[data-testid="archive-button"]').click();
+    const archiveItem = page.locator(`[data-testid="archive-item"]:has-text("${renamedName}")`).first();
+    await expect(archiveItem).toBeVisible({ timeout: 7000 });
 
-    await trashItem.click({ button: 'right' });
-    await expect(page.locator('[data-testid="trash-context-menu"]')).toBeVisible();
-    await page.locator('[data-testid="trash-menu-restore"]').click();
+    await archiveItem.click({ button: 'right' });
+    await expect(page.locator('[data-testid="archive-context-menu"]')).toBeVisible();
+    await page.locator('[data-testid="archive-menu-restore"]').click();
     await expect(page.locator('[data-testid="restore-confirmation-base-dialog"]')).toBeVisible({ timeout: 5000 });
     await page.locator('[data-testid="confirm-restore"]').click();
     await waitForSubTreeUpdate(page);
-    await expect(trashItem).not.toBeVisible({ timeout: 7000 });
-    await page.locator('[data-testid="close-trash-panel"]').click();
+    await expect(archiveItem).not.toBeVisible({ timeout: 7000 });
+    await page.locator('[data-testid="close-archive-panel"]').click();
 
     const refreshedDestination = page.locator(nodeSelector(destinationName)).first();
     const refreshedExpand = refreshedDestination.locator('[data-testid="expand-button"]');

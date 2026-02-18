@@ -17,7 +17,7 @@
 
 ## 6.2.4 一貫性と制約
 - 保存時正規化: `normalize('NFC')(name).trim()`。
-- 参照整合性: inbound refs のあるノードは Trash へ移動不可（エラー）。
+- 参照整合性: inbound refs のあるノードは Archive へ移動不可（エラー）。
 - クロスツリー禁止: 親は同一 SuperRoot 系であること。
 
 - **TreeNodeは兄弟名がユニーク**: 同一 parentTreeNodeId 配下で name はユニーク。
@@ -46,7 +46,7 @@ export class CoreDB extends Dexie {
   constructor(name: string) {
     super(`${name}-CoreDB`);
     this.version(1).stores({
-      trees: '&treeId, treeRootNodeId, treeTrashRootNodeId, superRootNodeId',
+      trees: '&treeId, treeRootNodeId, treeArchiveRootNodeId, superRootNodeId',
       nodes: [
         '&treeNodeId',
         'parentTreeNodeId',
@@ -114,7 +114,7 @@ export class EphemeralDB extends Dexie {
   workingCopies.where('draftOf').equals(nodeId)
   → draftOf
 
-* Trash 一覧の時系列
+* Archive 一覧の時系列
   nodes.where('removedAt').above(0).reverse()
   → removedAt
 
@@ -123,5 +123,5 @@ export class EphemeralDB extends Dexie {
   → *references
 
 * ルート状態の取得
-  rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.TrashRoot])
+  rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.ArchiveRoot])
   → &[treeId+treeRootNodeType]

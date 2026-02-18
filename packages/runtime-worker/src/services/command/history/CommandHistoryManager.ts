@@ -48,9 +48,9 @@ export class CommandHistoryManager {
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      trashRootId: NodeId;
-      trashRemovedAt: Timestamp;
-      trashName: string;
+      archiveRootId: NodeId;
+      archiveRemovedAt: Timestamp;
+      archiveName: string;
     }>
   >();
   private readonly preCommitDraftState = new Map<
@@ -262,9 +262,9 @@ export class CommandHistoryManager {
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      trashRootId: NodeId;
-      trashRemovedAt: Timestamp;
-      trashName: string;
+      archiveRootId: NodeId;
+      archiveRemovedAt: Timestamp;
+      archiveName: string;
     }>
   ): void {
     if (this.preMoveToArchiveState.has(commandId)) {
@@ -573,11 +573,11 @@ export class CommandHistoryManager {
             continue;
           }
           const now = Date.now() as Timestamp;
-          const trashName = entry.trashName ?? node.metadata.name;
+          const archiveName = entry.archiveName ?? node.metadata.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
-            parentId: entry.trashRootId,
-            metadata: { ...node.metadata, name: trashName },
+            parentId: entry.archiveRootId,
+            metadata: { ...node.metadata, name: archiveName },
             originalName: entry.previousOriginalName ?? entry.previousName,
             originalParentId: entry.previousOriginalParentId ?? entry.previousParentId,
             removedAt: now,

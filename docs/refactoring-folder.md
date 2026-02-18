@@ -9,7 +9,7 @@ mindmap
         scripts: ビルド・自動生成系
         docs: アプリ運用メモ
       src
-        components: 共通 UI（dialogs, trash 等）
+        components: 共通 UI（dialogs, archive 等）
         contexts: WorkerProvider などアプリ用 Context
         hooks: 再利用 Hooks（treeconsole 系など）
         init / services / utils / shared: 初期化ロジック・サービス層・共通ユーティリティ

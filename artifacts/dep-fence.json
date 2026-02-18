@@ -1305,32 +1305,32 @@
       "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
     },
     {
-      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "packageName": "@hierarchidb/ui-treeconsole-archivebin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/archivebin",
       "rule": "ui-in-deps",
       "severity": "ERROR",
       "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
       "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
     },
     {
-      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "packageName": "@hierarchidb/ui-treeconsole-archivebin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/archivebin",
       "rule": "ui-missing-peer",
       "severity": "WARN",
       "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
       "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
     },
     {
-      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "packageName": "@hierarchidb/ui-treeconsole-archivebin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/archivebin",
       "rule": "peer-in-external",
       "severity": "WARN",
       "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
       "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
     },
     {
-      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "packageName": "@hierarchidb/ui-treeconsole-archivebin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/archivebin",
       "rule": "peer-in-external",
       "severity": "WARN",
       "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",

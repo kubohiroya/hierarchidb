@@ -25,6 +25,13 @@ export type VTStageContext = {
   vtConfig: VTConfig;
   bands: BandConfig[];
   geometryEngine: GeometryEngine;
+  topojsonSimplify?: {
+    enabled: boolean;
+    sourceKeys: Set<string>;
+    toleranceK: number;
+    retryToleranceStep: number;
+    quantize?: number;
+  };
   abortSignal?: AbortSignal;
   tileWriter: VtTileWriter;
   continentByCountry?: Map<string, string>;

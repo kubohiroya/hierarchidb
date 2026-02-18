@@ -60,7 +60,7 @@ app/src/routes/
   - Toolbar action handling
   - Guided tour integration
 - **Key Features**:
-  - Trash item detection
+  - Archive item detection
   - Undo/Redo support
   - Import/Export handling
   - Context menu action routing
@@ -99,7 +99,7 @@ graph TD
 - Undo/Redo buttons
 - Copy/Paste/Duplicate operations
 - Import/Export actions
-- Trash management (restore/empty)
+- Archive management (restore/empty)
 
 #### TreeConsolePanelWithDynamicSpeedDial (`~/components/TreeConsolePanelWithDynamicSpeedDial.tsx`)
 - Wrapper combining TreeConsolePanel with DynamicSpeedDial

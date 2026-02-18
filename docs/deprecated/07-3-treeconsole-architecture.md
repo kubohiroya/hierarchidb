@@ -638,7 +638,7 @@ const { selectedNodeIds, isLoading, error } = orchestrator;
 | `ui-treeconsole-toolbar` | ツールバー | TreeConsoleToolbar_Deprecated, TreeConsoleActions |
 | `ui-treeconsole-footer` | フッター | TreeConsoleFooter |
 | `ui-treeconsole-treetable` | メインテーブル | TreeTableView, TreeTableCore |
-| `ui-treeconsole-trashbin` | ゴミ箱UI | TrashBinColumns, TrashBinActions |
+| `ui-treeconsole-archivebin` | ゴミ箱UI | ArchiveBinColumns, ArchiveBinActions |
 | `ui-treeconsole-speeddial` | スピードダイアル | TreeConsoleSpeedDialDeprecated |
 | `ui-treeconsole` | 統合オーケストレーター | TreeTableConsolePanel, Orchestrators, Adapters |
 

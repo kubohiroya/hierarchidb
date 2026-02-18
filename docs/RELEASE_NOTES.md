@@ -5,12 +5,12 @@ This release focuses on making CommandProcessor the single execution path for co
 Highlights
 - CommandProcessor routing: create/update/move/remove/recover are now always routed via CP (legacy paths removed)
 - Reliable create Undo/Redo: preserves created node id across undo/redo cycles
-- Trash holder flow: safer trash behavior (recover by holder decode), legacy-compatible fallback
+- Archive holder flow: safer archive behavior (recover by holder decode), legacy-compatible fallback
 - Error model unified: Core `CommandResult` / `ErrorCode` across worker
 - Working Copy commit V2: integrated via CP behind flag, legacy path remains
 - Policy C: blocks move/remove when WC exists in subtree (indexed search optimization)
 - Headless tests: Node + fake-indexeddb scenarios for CP / WC / Policy C
-- Trash migration tool: legacy <-> holder with metrics and rollback
+- Archive migration tool: legacy <-> holder with metrics and rollback
 - Lightweight command metrics（常時有効）
 
 Flags

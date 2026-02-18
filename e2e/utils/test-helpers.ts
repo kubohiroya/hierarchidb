@@ -209,7 +209,7 @@ export async function createChildFolder(
 }
 
 /**
- * Moves a folder-plugin to trash
+ * Moves a folder-plugin to archive
  */
 export async function moveToArchive(page: Page, folderName: string): Promise<void> {
   const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
@@ -219,8 +219,8 @@ export async function moveToArchive(page: Page, folderName: string): Promise<voi
   await page.locator('[data-testid="context-menu-remove"]').click();
 
   // Confirm deletion
-  await expect(page.locator('[data-testid="trash-confirmation-base-dialog"]')).toBeVisible();
-  await page.locator('[data-testid="confirm-trash"]').click();
+  await expect(page.locator('[data-testid="archive-confirmation-base-dialog"]')).toBeVisible();
+  await page.locator('[data-testid="confirm-archive"]').click();
 
   // Wait for folder-plugin to disappear from main view
   await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).not.toBeVisible(
@@ -267,29 +267,29 @@ export async function renameFolder(
 }
 
 /**
- * Restores a folder from the trash panel back to the main console.
+ * Restores a folder from the archive panel back to the main console.
  */
 export async function restoreFromArchive(page: Page, folderName: string): Promise<void> {
-  const trashButton = page.locator('[data-testid="trash-button"]');
-  await trashButton.click();
+  const archiveButton = page.locator('[data-testid="archive-button"]');
+  await archiveButton.click();
 
-  const trashPanel = page.locator('[data-testid="trash-panel"]');
-  await expect(trashPanel).toBeVisible({ timeout: 5000 });
+  const archivePanel = page.locator('[data-testid="archive-panel"]');
+  await expect(archivePanel).toBeVisible({ timeout: 5000 });
 
-  const trashItem = trashPanel.locator('[data-testid="trash-item"]').filter({ hasText: folderName }).first();
-  await expect(trashItem).toBeVisible({ timeout: 5000 });
+  const archiveItem = archivePanel.locator('[data-testid="archive-item"]').filter({ hasText: folderName }).first();
+  await expect(archiveItem).toBeVisible({ timeout: 5000 });
 
-  await trashItem.click({ button: 'right' });
-  await expect(page.locator('[data-testid="trash-context-menu"]')).toBeVisible({ timeout: 5000 });
-  await page.locator('[data-testid="trash-menu-restore"]').click();
+  await archiveItem.click({ button: 'right' });
+  await expect(page.locator('[data-testid="archive-context-menu"]')).toBeVisible({ timeout: 5000 });
+  await page.locator('[data-testid="archive-menu-restore"]').click();
 
   const confirmationDialog = page.locator('[data-testid="restore-confirmation-base-dialog"]');
   await expect(confirmationDialog).toBeVisible({ timeout: 5000 });
   await page.locator('[data-testid="confirm-restore"]').click();
   await expect(confirmationDialog).not.toBeVisible({ timeout: 5000 });
 
-  await page.locator('[data-testid="close-trash-panel"]').click();
-  await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
+  await page.locator('[data-testid="close-archive-panel"]').click();
+  await expect(archivePanel).not.toBeVisible({ timeout: 5000 });
 
   await waitForDraftUpdate(page);
 }

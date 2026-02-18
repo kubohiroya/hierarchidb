@@ -72,9 +72,9 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
     });
     const time = timeFormatter.format(target);
 
-    if (diffDays === 0) return t('trash.timestamps.today', 'Today {{time}}', { time });
-    if (diffDays === 1) return t('trash.timestamps.yesterday', 'Yesterday {{time}}', { time });
-    if (diffDays === 2) return t('trash.timestamps.twoDaysAgo', 'Two days ago {{time}}', { time });
+    if (diffDays === 0) return t('archive.timestamps.today', 'Today {{time}}', { time });
+    if (diffDays === 1) return t('archive.timestamps.yesterday', 'Yesterday {{time}}', { time });
+    if (diffDays === 2) return t('archive.timestamps.twoDaysAgo', 'Two days ago {{time}}', { time });
 
     const dateFormatter = new Intl.DateTimeFormat(locale, {
       year: 'numeric',
@@ -82,27 +82,27 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       day: 'numeric',
     });
     const date = dateFormatter.format(target);
-    return t('trash.timestamps.dateTime', '{{date}} {{time}}', { date, time });
+    return t('archive.timestamps.dateTime', '{{date}} {{time}}', { date, time });
   };
 
   const columns: TreeTableColumn[] = [
     {
       id: 'name',
-      label: t('trash.columns.name', 'Name'),
+      label: t('archive.columns.name', 'Name'),
       sortable: true,
       width: 300,
       render: (_value: unknown, node: HierarchicalTreeNode) => getTreeNodeName(node),
     },
     {
       id: 'description',
-      label: t('trash.columns.description', 'Description'),
+      label: t('archive.columns.description', 'Description'),
       sortable: true,
       width: 300,
       render: (_value: unknown, node: HierarchicalTreeNode) => getTreeNodeDescription(node) || '-',
     },
     {
       id: 'createdAt',
-      label: t('trash.columns.createdAt', 'Created'),
+      label: t('archive.columns.createdAt', 'Created'),
       sortable: true,
       width: 180,
       render: (_value: unknown, node: HierarchicalTreeNode) =>
@@ -110,7 +110,7 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
     },
     {
       id: 'updatedAt',
-      label: t('trash.columns.updatedAt', 'Modified'),
+      label: t('archive.columns.updatedAt', 'Modified'),
       sortable: true,
       width: 180,
       render: (_value: unknown, node: HierarchicalTreeNode) =>
@@ -121,7 +121,7 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
   if (includeRemovedAt) {
     columns.push({
       id: 'removedAt',
-      label: t('trash.columns.removedAt', 'Removed'),
+      label: t('archive.columns.removedAt', 'Removed'),
       sortable: true,
       width: 200,
       render: (

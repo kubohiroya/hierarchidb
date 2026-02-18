@@ -282,10 +282,10 @@ interface DuplicateParams {
 #### `removeNodes(nodeIds: NodeId[]): Promise<RemoveResult>`
 ノードを完全削除します（ハード削除）。
 
-#### `moveNodesToTrash(nodeIds: NodeId[]): Promise<TrashResult>`
+#### `moveNodesToArchive(nodeIds: NodeId[]): Promise<ArchiveResult>`
 ノードをゴミ箱に移動します（ソフト削除）。
 
-#### `recoverNodesFromTrash(params: RecoverParams): Promise<RecoverResult>`
+#### `recoverNodesFromArchive(params: RecoverParams): Promise<RecoverResult>`
 ノードをゴミ箱から復元します。
 
 ```typescript

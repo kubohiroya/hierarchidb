@@ -15,7 +15,7 @@ export type TreeConsoleToolbarAction =
   | { action: 'copy' }
   | { action: 'paste' }
   | { action: 'duplicate' }
-  | { action: 'trash' }
+  | { action: 'archive' }
   | { action: 'restore' }
   | { action: 'empty' }
   | { action: 'import' }
@@ -34,7 +34,7 @@ export type TreeConsoleToolbarActionParams =
   | ('Select/Navigate' | 'Edit')
   | { treeId: string }
   | { templateId: string }
-  | { trashNodeId: string }
+  | { archiveNodeId: string }
   | boolean
   | number[]
   | BuildContinuationPolicy;
@@ -82,14 +82,14 @@ export interface TreeConsoleToolbarProps {
   controller?: TreeConsoleToolbarController | null;
 
   /**
-   * Whether there are items in trash
+   * Whether there are items in archive
    */
   hasArchiveItems?: boolean;
 
   /**
-   * Identifier for the trash root or folder used when opening the trash dialog.
+   * Identifier for the archive root or folder used when opening the archive dialog.
    */
-  trashNodeId?: string;
+  archiveNodeId?: string;
 
   /**
    * Whether current node has children

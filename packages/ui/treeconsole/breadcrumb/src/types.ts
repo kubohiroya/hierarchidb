@@ -14,7 +14,7 @@ export interface BreadcrumbNode {
   parentId?: string | null;
   isClickable?: boolean;
   depth?: number;
-  holderType?: 'draft' | 'trash';
+  holderType?: 'draft' | 'archive';
   holderTargetId?: string;
   holderMetaParentId?: string;
   visible?: boolean;
@@ -87,14 +87,14 @@ export interface TreeConsoleBreadcrumbProps {
   pageNodeId?: string;
 
   /**
-   * Enable trash-specific link generation for breadcrumb items.
+   * Enable archive-specific link generation for breadcrumb items.
    */
   useArchiveColumns?: boolean;
 
   /**
    * Archive action context when useArchiveColumns is true.
    */
-  trashAction?: 'restore' | 'empty';
+  archiveAction?: 'restore' | 'empty';
 
   /**
    * Whether node-type icons should respond to clicks (context menu).
@@ -133,9 +133,9 @@ export interface TreeConsoleBreadcrumbProps {
   renderer?: (props: TreeConsoleBreadcrumbRendererProps) => ReactElement;
 
   /**
-   * Optional node-id set where move-to-trash should be disabled.
+   * Optional node-id set where move-to-archive should be disabled.
    */
-  trashDisabledNodeIds?: ReadonlySet<string>;
+  archiveDisabledNodeIds?: ReadonlySet<string>;
 }
 
 export type TreeConsoleBreadcrumbRendererProps = {

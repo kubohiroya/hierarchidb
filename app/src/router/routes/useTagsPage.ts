@@ -46,8 +46,8 @@ function isDraftNode(node?: TreeNode): boolean {
 }
 
 function isInArchive(ancestors: TreeNode[], node?: TreeNode): boolean {
-  if (node?.nodeType === 'trash') return true;
-  return ancestors.some((ancestor) => ancestor.nodeType === 'trash');
+  if (node?.nodeType === 'archive') return true;
+  return ancestors.some((ancestor) => ancestor.nodeType === 'archive');
 }
 
 function selectEffectiveAssociations(
@@ -93,7 +93,7 @@ export function useTagsPage(tagName?: string) {
   );
   const cachedTaggedNodes =
     hasUsableTaggedNodesCache
-      ? cachedTaggedNodesEntry.data
+      ? cachedTaggedNodesEntry?.data
       : null;
 
   const fetchAllTags = useCallback(async () => {

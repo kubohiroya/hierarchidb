@@ -141,7 +141,7 @@ export class CoreDB extends Dexie {
   private constructor(name: string) {
     super(name);
     this.version(1).stores({
-      trees: '&id, rootId, trashRootId, superRootId',
+      trees: '&id, rootId, archiveRootId, superRootId',
       nodes: [
         '&id',
         'parentId',
@@ -190,7 +190,7 @@ export class CoreDB extends Dexie {
             name: treeId === 'r' ? 'Resources' : 'Projects',
             superRootId: getRootNodeId(treeId, 'superRoot'),
             rootId: getRootNodeId(treeId, 'root'),
-            trashRootId: getRootNodeId(treeId, 'trash'),
+            archiveRootId: getRootNodeId(treeId, 'archive'),
           }))
         );
       }
@@ -216,8 +216,8 @@ export class CoreDB extends Dexie {
             } as unknown as TreeNode,
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
-              id: getRootNodeId(treeId, 'trash'),
-              nodeType: 'trash' as NodeType,
+              id: getRootNodeId(treeId, 'archive'),
+              nodeType: 'archive' as NodeType,
               depth: 0, // Archive root also has depth 0
               createdAt: now,
               updatedAt: now,
@@ -237,7 +237,7 @@ export class CoreDB extends Dexie {
 
       if (rootStatesCount === 0) {
         const rootStateData = ['r', 'p'].flatMap((treeId) =>
-          ['root', 'trash', 'draft'].map((treeRootNodeType) => ({
+          ['root', 'archive', 'draft'].map((treeRootNodeType) => ({
             treeId: treeId as TreeId,
             rootNodeId: getRootNodeId(treeId, treeRootNodeType),
             expanded: {},
@@ -272,7 +272,7 @@ export class CoreDB extends Dexie {
       id: tree.id,
       name: tree.name,
       rootId: tree.rootId,
-      trashRootId: tree.trashRootId,
+      archiveRootId: tree.archiveRootId,
       superRootId: tree.superRootId,
     };
     return plainTree;
@@ -287,7 +287,7 @@ export class CoreDB extends Dexie {
         id: tree.id,
         name: tree.name,
         rootId: tree.rootId,
-        trashRootId: tree.trashRootId,
+        archiveRootId: tree.archiveRootId,
         superRootId: tree.superRootId,
       })
     );

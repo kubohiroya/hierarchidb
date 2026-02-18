@@ -1,5 +1,5 @@
 /**
- * Tests for trash breadcrumb normalisation utilities.
+ * Tests for archive breadcrumb normalisation utilities.
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
@@ -45,56 +45,56 @@ function createNode(
 }
 
 describe('buildArchiveBreadcrumbs', () => {
-  const trashRoot = createNode('r:trash', {
+  const archiveRoot = createNode('r:archive', {
     parentId: 'r:root' as NodeId,
-    nodeType: 'trash' as TreeNode['nodeType'],
+    nodeType: 'archive' as TreeNode['nodeType'],
     depth: 0,
     metadata: { name: 'Archive', description: '', tags: [] },
     draftMetadata: null,
   });
 
   it('prefers originalName metadata when available', () => {
-    const trashedNode = createNode('node-a', {
-      parentId: trashRoot.id,
+    const archiveedNode = createNode('node-a', {
+      parentId: archiveRoot.id,
       originalName: 'Original A',
       originalParentId: 'r:root' as NodeId,
     });
 
     const nodeMap = new Map<string, TreeNode>([
-      [String(trashRoot.id), trashRoot],
-      [String(trashedNode.id), trashedNode],
+      [String(archiveRoot.id), archiveRoot],
+      [String(archiveedNode.id), archiveedNode],
     ]);
 
     const breadcrumbs = buildArchiveBreadcrumbs({
       treeId: 'r',
-      rootNode: trashRoot,
-      targetNodeId: trashedNode.id,
+      rootNode: archiveRoot,
+      targetNodeId: archiveedNode.id,
       nodeMap,
     });
 
     expect(breadcrumbs).toHaveLength(2);
     const [, target] = breadcrumbs;
     expect(target?.name).toBe('Original A');
-    expect(target?.holderType).toBe('trash');
-    expect(target?.holderTargetId).toBe(String(trashedNode.id));
+    expect(target?.holderType).toBe('archive');
+    expect(target?.holderTargetId).toBe(String(archiveedNode.id));
   });
 
   it('falls back to current name when original metadata is missing', () => {
-    const trashedNode = createNode('node-b', {
-      parentId: trashRoot.id,
+    const archiveedNode = createNode('node-b', {
+      parentId: archiveRoot.id,
       originalName: undefined,
       metadata: { name: 'Live Name B', description: '', tags: [] },
     });
 
     const nodeMap = new Map<string, TreeNode>([
-      [String(trashRoot.id), trashRoot],
-      [String(trashedNode.id), trashedNode],
+      [String(archiveRoot.id), archiveRoot],
+      [String(archiveedNode.id), archiveedNode],
     ]);
 
     const breadcrumbs = buildArchiveBreadcrumbs({
       treeId: 'r',
-      rootNode: trashRoot,
-      targetNodeId: trashedNode.id,
+      rootNode: archiveRoot,
+      targetNodeId: archiveedNode.id,
       nodeMap,
     });
 

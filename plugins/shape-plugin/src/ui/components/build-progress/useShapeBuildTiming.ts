@@ -9,7 +9,7 @@ import {
   recordBuildFinish,
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
-import { useBuildSessionTiming } from '@hierarchidb/batch';
+import { useBuildSessionTiming } from '@hierarchidb/batch-runtime-services';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 const buildMonitorConfig = {

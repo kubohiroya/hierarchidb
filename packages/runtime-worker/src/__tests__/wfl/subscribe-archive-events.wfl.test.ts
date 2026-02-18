@@ -35,8 +35,8 @@ async function waitFor<T>(
   }
 }
 
-describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', () => {
-  it('subscribes subtree and trash, creates/moves/deletes with expected notifications', async () => {
+describe('Comlink + fake-indexeddb integration: subtree/archive subscriptions', () => {
+  it('subscribes subtree and archive, creates/moves/deletes with expected notifications', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -49,17 +49,17 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
-    expect(tree?.trashRootId).toBeDefined();
+    expect(tree?.archiveRootId).toBeDefined();
 
-    if (!tree?.rootId || !tree.trashRootId) {
+    if (!tree?.rootId || !tree.archiveRootId) {
       throw new Error('Expected console roots to be defined');
     }
     const rootId = tree.rootId as NodeId;
-    const trashRootId = tree.trashRootId as NodeId;
+    const archiveRootId = tree.archiveRootId as NodeId;
 
     const subtreeEvents: SubscriptionEvent[] = [];
-    const trashEvents: SubscriptionEvent[] = [];
-    const trashNodeEvents: SubscriptionEvent[] = [];
+    const archiveEvents: SubscriptionEvent[] = [];
+    const archiveNodeEvents: SubscriptionEvent[] = [];
 
     const subtreeSid = await subscriptionAPI.subscribeSubtree(
       rootId,
@@ -67,16 +67,16 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
         subtreeEvents.push(event);
       })
     );
-    const trashSid = await subscriptionAPI.subscribeSubtree(
-      trashRootId,
+    const archiveSid = await subscriptionAPI.subscribeSubtree(
+      archiveRootId,
       Comlink.proxy((event: SubscriptionEvent) => {
-        trashEvents.push(event);
+        archiveEvents.push(event);
       })
     );
-    const trashNodeSid = await subscriptionAPI.subscribeNode(
-      trashRootId,
+    const archiveNodeSid = await subscriptionAPI.subscribeNode(
+      archiveRootId,
       Comlink.proxy((event: SubscriptionEvent) => {
-        trashNodeEvents.push(event);
+        archiveNodeEvents.push(event);
       })
     );
 
@@ -111,20 +111,20 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
       throw new Error(`moveNodesToArchive failed: ${JSON.stringify(mvRes)}`);
     }
 
-    await waitFor(() => trashEvents.length > 0);
+    await waitFor(() => archiveEvents.length > 0);
 
     const afterRootChildren = await queryAPI.listChildren(rootId);
-    const afterArchiveChildren = await queryAPI.listChildren(trashRootId);
+    const afterArchiveChildren = await queryAPI.listChildren(archiveRootId);
     expect(afterRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
-    const trashedNode = afterArchiveChildren.find((node) => node.id === canonicalId);
-    expect(trashedNode).toBeTruthy();
-    if (!trashedNode) throw new Error('Archived node not found');
-    expect(trashedNode.parentId).toBe(trashRootId);
-    expect(trashedNode.removedAt).toBeTruthy();
-    expect(trashedNode.metadata.name).not.toBe('tmp');
-    expect(trashedNode.originalName).toBe('tmp');
-    expect(trashedNode.originalParentId).toBe(rootId);
+    const archiveedNode = afterArchiveChildren.find((node) => node.id === canonicalId);
+    expect(archiveedNode).toBeTruthy();
+    if (!archiveedNode) throw new Error('Archived node not found');
+    expect(archiveedNode.parentId).toBe(archiveRootId);
+    expect(archiveedNode.removedAt).toBeTruthy();
+    expect(archiveedNode.metadata.name).not.toBe('tmp');
+    expect(archiveedNode.originalName).toBe('tmp');
+    expect(archiveedNode.originalParentId).toBe(rootId);
 
     const subtreeEventsBeforeRestore = subtreeEvents.length;
     const restoreRes = await mutationAPI.restoreNodesFromArchive({
@@ -140,10 +140,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
 
     await waitFor(() => subtreeEvents.length > subtreeEventsBeforeRestore);
 
-    const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
-    expect(trashChildrenAfterRestore.some((node) => node.id === canonicalId)).toBe(false);
+    const archiveChildrenAfterRestore = await queryAPI.listChildren(archiveRootId);
+    expect(archiveChildrenAfterRestore.some((node) => node.id === canonicalId)).toBe(false);
 
-    const trashEventsBeforeSecondMove = trashEvents.length;
+    const archiveEventsBeforeSecondMove = archiveEvents.length;
     const subtreeEventsBeforeSecondMove = subtreeEvents.length;
     const moveAgainRes = await mutationAPI.moveNodesToArchive([canonicalId]);
     if (!moveAgainRes?.success) {
@@ -164,48 +164,48 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const afterSecondRootChildren = await queryAPI.listChildren(rootId);
     expect(afterSecondRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
-    const afterSecondArchiveChildren = await queryAPI.listChildren(trashRootId);
-    const trashedAgain = afterSecondArchiveChildren.find((node) => node.id === canonicalId);
-    expect(trashedAgain).toBeTruthy();
-    if (!trashedAgain) throw new Error('Archived node (second) not found');
-    expect(trashedAgain.parentId).toBe(trashRootId);
-    expect(trashedAgain.removedAt).toBeTruthy();
-    expect(trashedAgain.metadata.name).not.toBe('tmp');
-    expect(trashedAgain.originalName).toBe('tmp');
-    expect(trashedAgain.originalParentId).toBe(rootId);
+    const afterSecondArchiveChildren = await queryAPI.listChildren(archiveRootId);
+    const archiveedAgain = afterSecondArchiveChildren.find((node) => node.id === canonicalId);
+    expect(archiveedAgain).toBeTruthy();
+    if (!archiveedAgain) throw new Error('Archived node (second) not found');
+    expect(archiveedAgain.parentId).toBe(archiveRootId);
+    expect(archiveedAgain.removedAt).toBeTruthy();
+    expect(archiveedAgain.metadata.name).not.toBe('tmp');
+    expect(archiveedAgain.originalName).toBe('tmp');
+    expect(archiveedAgain.originalParentId).toBe(rootId);
 
-    await waitFor(() => trashEvents.length > trashEventsBeforeSecondMove);
+    await waitFor(() => archiveEvents.length > archiveEventsBeforeSecondMove);
     expect(
-      trashEvents
-        .slice(trashEventsBeforeSecondMove)
-        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId)
+      archiveEvents
+        .slice(archiveEventsBeforeSecondMove)
+        .some((event) => event.nodeId === canonicalId || event.nodeId === archiveRootId)
     ).toBe(true);
 
-    const trashEventsBeforeRemoval = trashEvents.length;
-    const trashNodeEventsBeforeRemoval = trashNodeEvents.length;
+    const archiveEventsBeforeRemoval = archiveEvents.length;
+    const archiveNodeEventsBeforeRemoval = archiveNodeEvents.length;
     const removeCanonical = await mutationAPI.removeNodes([canonicalId]);
     expect(removeCanonical?.success).toBe(true);
 
-    await waitFor(() => trashEvents.length > trashEventsBeforeRemoval);
+    await waitFor(() => archiveEvents.length > archiveEventsBeforeRemoval);
     expect(
-      trashEvents
-        .slice(trashEventsBeforeRemoval)
-        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId)
+      archiveEvents
+        .slice(archiveEventsBeforeRemoval)
+        .some((event) => event.nodeId === canonicalId || event.nodeId === archiveRootId)
     ).toBe(true);
 
     await waitFor(() =>
-      trashNodeEvents
-        .slice(trashNodeEventsBeforeRemoval)
-        .some((event) => event.nodeId === trashRootId && String(event.type).length > 0)
+      archiveNodeEvents
+        .slice(archiveNodeEventsBeforeRemoval)
+        .some((event) => event.nodeId === archiveRootId && String(event.type).length > 0)
     );
 
-    const finalDesc = await queryAPI.listDescendants(trashRootId);
+    const finalDesc = await queryAPI.listDescendants(archiveRootId);
     expect(finalDesc.length).toBe(0);
-    const finalChildren = await queryAPI.listChildren(trashRootId);
+    const finalChildren = await queryAPI.listChildren(archiveRootId);
     expect(finalChildren.length).toBe(0);
 
     await subscriptionAPI.unsubscribe(subtreeSid);
-    await subscriptionAPI.unsubscribe(trashSid);
-    await subscriptionAPI.unsubscribe(trashNodeSid);
+    await subscriptionAPI.unsubscribe(archiveSid);
+    await subscriptionAPI.unsubscribe(archiveNodeSid);
   }, 30_000);
 });

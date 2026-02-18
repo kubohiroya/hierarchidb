@@ -62,8 +62,8 @@
 - REQ-202: TreeRootStateのexpandedがRecordの場合、システムは 指定されたノードのみを展開状態として扱わなければならない
 
 🟡 **ゴミ箱管理**
-- REQ-203: ノードがTrashRoot配下にある場合、システムは originalParentTreeNodeIdを保持しなければならない
-- REQ-204: ノードがTrashRoot配下にある場合、システムは removedAtタイムスタンプを設定しなければならない
+- REQ-203: ノードがArchiveRoot配下にある場合、システムは originalParentTreeNodeIdを保持しなければならない
+- REQ-204: ノードがArchiveRoot配下にある場合、システムは removedAtタイムスタンプを設定しなければならない
 
 ### オプション要件
 

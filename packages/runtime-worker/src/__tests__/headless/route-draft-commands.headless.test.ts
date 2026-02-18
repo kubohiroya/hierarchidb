@@ -33,7 +33,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     ...node,
   });
 
-  it('create → update → move → trash → restore works via CommandProcessor default routing', async () => {
+  it('create → update → move → archive → restore works via CommandProcessor default routing', async () => {
     const core = await newCore('on');
     const cp = new CommandProcessor(core);
 

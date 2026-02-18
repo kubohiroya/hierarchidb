@@ -68,7 +68,7 @@
 | `packages/ui/treeconsole/footer` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/ui/treeconsole/speeddial` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/ui/treeconsole/toolbar` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/trashbin` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/archivebin` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/ui/treeconsole/treetable` | tsconfig.json, tsconfig.test.json, tsconfig.typecheck.json |
 | `packages/ui/usermenu` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/util` | tsconfig.json |

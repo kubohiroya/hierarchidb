@@ -24,7 +24,7 @@ Phase 3 successfully migrated all tree-related routes (`/t/*`) from React Router
                   ├── NotFound dialog handling
                   └── /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action (treeDialogRoute)
                       ├── PluginDialogRoute
-                      └── TrashDialog (special case)
+                      └── ArchiveDialog (special case)
 ```
 
 ### File Structure
@@ -129,13 +129,13 @@ const notFound = targetNode === undefined;
 // Show dialog and navigate back to page node
 ```
 
-### 2. TrashDialog Special Case
+### 2. ArchiveDialog Special Case
 
-The `dialogRoute.tsx` handles trash specially:
+The `dialogRoute.tsx` handles archive specially:
 ```typescript
-if (nodeType === 'trash') {
-  const trashDialogModule = await import('~/components/console/TrashDialog.js');
-  // Use trash-specific loader
+if (nodeType === 'archive') {
+  const archiveDialogModule = await import('~/components/console/ArchiveDialog.js');
+  // Use archive-specific loader
 }
 ```
 
@@ -208,7 +208,7 @@ These are configuration issues, not code issues, and will resolve with proper bu
 - [x] Worker initialization barrier added
 - [x] Loader functions organized
 - [x] NotFound handling implemented
-- [x] TrashDialog special case handled
+- [x] ArchiveDialog special case handled
 - [x] Unit tests added
 - [x] Documentation updated
 - [ ] Full build validation (requires time)

@@ -269,7 +269,7 @@ export const proxy = vi.fn((obj) => obj);
 export const createMockTree = (): TreeTypes => ({
   id: 'tree_test' as TreeId,
   rootNodeId: 'root_test' as NodeId,
-  trashRootNodeId: 'trash_test' as NodeId,
+  archiveRootNodeId: 'archive_test' as NodeId,
   superRootNodeId: 'super_test' as NodeId,
   createdAt: Date.now(),
   updatedAt: Date.now()

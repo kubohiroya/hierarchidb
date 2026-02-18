@@ -172,7 +172,7 @@ export function TreeTableContextMenu({
           handleClose();
           return;
         }
-        triggerContextAction('trash', { navigateToParent: false, source: 'treetable' });
+        triggerContextAction('archive', { navigateToParent: false, source: 'treetable' });
         handleClose();
       }}
       onRemove={() => {
@@ -180,7 +180,7 @@ export function TreeTableContextMenu({
           handleClose();
           return;
         }
-        triggerContextAction('trash', { navigateToParent: false, source: 'treetable' });
+        triggerContextAction('archive', { navigateToParent: false, source: 'treetable' });
         handleClose();
       }}
       onCopy={() => {

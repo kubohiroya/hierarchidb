@@ -15,19 +15,19 @@ export interface BuildArchiveTreeDataResult {
 }
 
 /**
- * Normalise trash nodes for the TreeConsole data model.
+ * Normalise archive nodes for the TreeConsole data model.
  *
- * Nodes are now stored directly under the trash root. Each trashed node keeps
+ * Nodes are now stored directly under the archive root. Each archiveed node keeps
  * track of its original identity (`originalName`, `originalParentId`) so that
  * the UI can render user-friendly labels and deep links. This helper turns the
  * worker-provided node map into a flat array that the TreeTable understands.
  *
- * Typical usage in the trash dialog:
+ * Typical usage in the archive dialog:
  *
  * ```ts
  * const { nodes, rootId } = buildArchiveTreeData({
  *   treeId,
- *   rootNode: trashRoot,
+ *   rootNode: archiveRoot,
  *   nodeMap,
  * });
  * ```
@@ -36,7 +36,7 @@ export interface BuildArchiveTreeDataResult {
  * @param params.rootNode Archive root node returned by the worker.
  * @param params.nodeMap Optional lookup of node id -> TreeNode from IndexedDB snapshots.
  *
- * @returns Flat TreeConsole rows for every known trash node (excluding the root).
+ * @returns Flat TreeConsole rows for every known archive node (excluding the root).
  */
 export function buildArchiveTreeData({
   treeId: _treeId,

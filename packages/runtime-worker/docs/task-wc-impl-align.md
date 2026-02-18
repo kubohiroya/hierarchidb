@@ -15,7 +15,7 @@ vk:task id=wc-impl-align status=todo priority=P1 labels=worker,draft,impl
 - `wc-util-baseline`
 - `spec-freeze-wc-impl-align`
 - 仕様: `docs/draft-ops-pseudocode.md`, `docs/draft-holder-encoding.md`
-- エピック: `epic-wc-trash-unification`
+- エピック: `epic-wc-archive-unification`
 
 ## 受け入れ基準
 - 既存テスト非回帰。新ロジックのユニット追加で戻り/冪等/競合/rename を確認。

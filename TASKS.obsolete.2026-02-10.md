@@ -288,7 +288,7 @@
 
 2669) fix/build/app-unloadable-ui-batch-progress-dependency (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
-- 依存: 2668) fix/ui/trash-dialog-titlebar-back-button-layout
+- 依存: 2668) fix/ui/archive-dialog-titlebar-back-button-layout
 - 受け入れ基準: `pnpm -w turbo run build --filter @hierarchidb/app` で `Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator` が発生しない／`@hierarchidb/app` から `@hierarchidb/ui-batch-progress` import が解決できる／影響範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `app/package.json`（必要に応じて `pnpm-lock.yaml`）
 - ロールバック手順: 追加した依存宣言と lockfile 差分を revert し、元の依存構成へ戻す
@@ -304,12 +304,12 @@
   - update: 2026-02-10 18:08 JST 原因は `app/package.json` に `@hierarchidb/ui-batch-progress` 依存が未宣言で、`BuildSessionLauncherButtons.tsx` の import 解決時に `app/node_modules/@hierarchidb/ui-batch-progress` が存在しなかったこと。`@hierarchidb/ui-session-coordinator` のエラーは同パッケージ経由の連鎖失敗として発生。`app/package.json` へ依存追加し `pnpm install` で lockfile と node_modules を同期。
   - done: 2026-02-10 18:10 JST `pnpm install` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて exit 0。`UNLOADABLE_DEPENDENCY` は再現せず解消を確認。
 
-2668) fix/ui/trash-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
+2668) fix/ui/archive-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2667) fix/ui/plugin-dialog-titlebar-back-button-layout
-- 受け入れ基準: Trash系ダイアログ2種（restore / empty）のタイトルバー右端にある `Close Dialog` アイコンボタンが左端へ移動する／アイコンが `←` 表示へ変更される／ボタンサイズが `large` になり押下領域が拡大される／既存のダイアログ close 動作が維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/router/pages/tree/trash/TrashDialog.tsx`
-- ロールバック手順: TrashDialog ヘッダーの close ボタン配置・アイコン・size に関する差分を revert し、従来の右端 Close アイコン配置へ戻す
+- 受け入れ基準: Archive系ダイアログ2種（restore / empty）のタイトルバー右端にある `Close Dialog` アイコンボタンが左端へ移動する／アイコンが `←` 表示へ変更される／ボタンサイズが `large` になり押下領域が拡大される／既存のダイアログ close 動作が維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/archive/ArchiveDialog.tsx`
+- ロールバック手順: ArchiveDialog ヘッダーの close ボタン配置・アイコン・size に関する差分を revert し、従来の右端 Close アイコン配置へ戻す
 - チェックリスト:
   - タイトルバーの close ボタンを右端から左端へ移動する
   - close ボタンのアイコンを `←` 表示へ変更する
@@ -318,10 +318,10 @@
   - 影響範囲の typecheck を実行する
   - 運用ログ start/update/done を追記する
 - 運用ログ:
-  - start: 2026-02-10 18:01 JST Trash系ダイアログ2種（restore / empty）のタイトルバー close ボタンを左端 `←` / `large` へ変更する修正に着手。
-  - update: 2026-02-10 18:03 JST 原因は `app/src/router/pages/tree/trash/TrashDialog.tsx` の `TrashDialogHeader` が右端 control 群に `Close` アイコン（small）を固定配置していたこと。ヘッダー左端に `IconButton(size='large') + ArrowBack` を移設し、右端は maximize/full-screen のみ残す構成へ変更。close の click 動作は `onRequestClose('close')` を維持。
+  - start: 2026-02-10 18:01 JST Archive系ダイアログ2種（restore / empty）のタイトルバー close ボタンを左端 `←` / `large` へ変更する修正に着手。
+  - update: 2026-02-10 18:03 JST 原因は `app/src/router/pages/tree/archive/ArchiveDialog.tsx` の `ArchiveDialogHeader` が右端 control 群に `Close` アイコン（small）を固定配置していたこと。ヘッダー左端に `IconButton(size='large') + ArrowBack` を移設し、右端は maximize/full-screen のみ残す構成へ変更。close の click 動作は `onRequestClose('close')` を維持。
   - blocked: 2026-02-10 18:05 JST `pnpm -w turbo run build --filter @hierarchidb/app` は既知の依存解決エラー（`Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator`）で exit 1。`pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/ui-session-coordinator` 実行後に再試行しても再現（今回差分外）。
-  - done: 2026-02-10 18:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` は exit 0。Trash ダイアログ（restore / empty 共通ヘッダー）の close ボタン左端 `←` / `large` 化を反映完了。
+  - done: 2026-02-10 18:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` は exit 0。Archive ダイアログ（restore / empty 共通ヘッダー）の close ボタン左端 `←` / `large` 化を反映完了。
 
 2667) fix/ui/plugin-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
@@ -1238,10 +1238,10 @@
   - update: 2026-02-09 17:11 JST `pnpm build` exit 0（eslint-plugin-storybook 不在警告、tsdown define 警告、vite chunk size 警告、plugin-ui-sdk tsconfig 警告、npm env 警告あり）。
   - done: 2026-02-09 17:12 JST `pnpm typecheck` exit 0。
 
-2621) fix/tags/draft-trash-association (P1) — 進行中 (2026-02-09)
-- ブランチ名: codex/fix/tags/draft-trash-association
+2621) fix/tags/draft-archive-association (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/fix/tags/draft-archive-association
 - 依存: なし
-- 受け入れ基準: TagEntity/RelationalEntity から nodeIds を撤去し DB 保存から除外される／TagEntity.usageCount を型・DBスキーマから撤去し都度集計へ移行する／tagAssociations が draft/published のスコープで別行として保存される／save-draft で draft 関連を作成し publish save で published を作成後 draft を削除する／draft と published が同時に存在する場合は draft を優先して /tags 一覧と利用数集計に反映する／ドラフト・ゴミ箱配下ノードは /tags 一覧と利用数集計から除外される（ゴミ箱判定は先祖が trash ルート）／ゴミ箱から削除で tagAssociations を削除する／テストで仕様を検証する／TASKS.md に原因・発生範囲・修正方法・適用範囲・検証ログを記載する
+- 受け入れ基準: TagEntity/RelationalEntity から nodeIds を撤去し DB 保存から除外される／TagEntity.usageCount を型・DBスキーマから撤去し都度集計へ移行する／tagAssociations が draft/published のスコープで別行として保存される／save-draft で draft 関連を作成し publish save で published を作成後 draft を削除する／draft と published が同時に存在する場合は draft を優先して /tags 一覧と利用数集計に反映する／ドラフト・ゴミ箱配下ノードは /tags 一覧と利用数集計から除外される（ゴミ箱判定は先祖が archive ルート）／ゴミ箱から削除で tagAssociations を削除する／テストで仕様を検証する／TASKS.md に原因・発生範囲・修正方法・適用範囲・検証ログを記載する
 - 影響範囲: `packages/core-types/src/entity-types.ts` / `packages/tag/src/TagService.ts` / `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts` / `packages/runtime-worker/src/services/TreeMutationService.ts` / `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` / `app/src/router/routes/useTagsPage.ts` / `packages/runtime-worker/src/services/__tests__/unit/tag-associations.unit.test.ts` / `plugins/folder-plugin/docs/tag-management-specification.md`
 - ロールバック手順: 変更差分を revert し、従来挙動へ戻す
 - チェックリスト:
@@ -1249,7 +1249,7 @@
   - TagEntity.usageCount を撤去し集計は都度計算へ変更する
   - tagAssociations を scope 付きで保存し、draft/published 共存時は draft を優先する
   - save-draft で draft 関連を作成し、publish save で published 作成後 draft を削除する
-  - ドラフト/ゴミ箱配下ノードを /tags 一覧と利用数集計から除外する（先祖が trash ルート）
+  - ドラフト/ゴミ箱配下ノードを /tags 一覧と利用数集計から除外する（先祖が archive ルート）
   - ゴミ箱から削除時に tagAssociations を削除する
   - 仕様に対応するテストを追加する
   - 影響範囲の typecheck を実行する
@@ -1258,10 +1258,10 @@
   - start: 2026-02-09 14:30 JST タグの draft/ゴミ箱時の関連・usageCount 仕様変更と nodeIds 撤去に着手。
   - update: 2026-02-09 15:05 JST RelationalEntity から nodeIds を撤去し、TagService の tag 生成から nodeIds を削除。
   - update: 2026-02-09 15:05 JST save-draft では tagAssociations を作成せず、本保存のみで同期するよう TreeNodeUpdaterService を修正。
-  - update: 2026-02-09 15:06 JST moveToTrash で tagAssociations を削除し usageCount を減算、restore で metadata.tags を同期するよう TreeMutationService を拡張。
+  - update: 2026-02-09 15:06 JST moveToArchive で tagAssociations を削除し usageCount を減算、restore で metadata.tags を同期するよう TreeMutationService を拡張。
   - update: 2026-02-09 15:06 JST ノード削除時に tagAssociations と usageCount を削減する処理を EntityLifecycleManager に実装。
-  - update: 2026-02-09 15:06 JST /tags の関連表示で trash 先祖を判定して除外するよう useTagsPage を補正。
-  - update: 2026-02-09 15:07 JST tag の draft/ trash / remove の単体テストを追加。
+  - update: 2026-02-09 15:06 JST /tags の関連表示で archive 先祖を判定して除外するよう useTagsPage を補正。
+  - update: 2026-02-09 15:07 JST tag の draft/ archive / remove の単体テストを追加。
   - blocked: 2026-02-09 15:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/core-types --filter @hierarchidb/tag-api --filter @hierarchidb/tag --filter @hierarchidb/runtime-worker --filter @hierarchidb/app` が `@hierarchidb/vt-orchestrator` の既存型エラーで失敗。
   - update: 2026-02-09 17:20 JST tagAssociations に scope を追加し、CoreDB の tagAssociations を `&id` 主キー＋`[nodeId+tagId+scope]` へ更新。TagService は draft 優先・重複保護を強化。/tags 集計で draft/ゴミ箱除外と draft 優先を適用。
   - update: 2026-02-09 17:30 JST runtime-worker の vitest alias を各パッケージパスへ補正し、タグ関連テストを安定化。
@@ -4395,10 +4395,10 @@
   - update: 2026-02-05 21:10 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（ログ抑止後の再確認）。
   - update: 2026-02-05 21:25 JST WorkerService/NodeLifecycleManager/StageProcessingService のログもテスト時抑止に揃えた。
   - update: 2026-02-05 21:30 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（追加ログ抑止の確認）。
-  - update: 2026-02-05 19:20 JST WFL の trash 通知/部分復元テストの skip を解除し、releaseProxy の unknown cast を撤去。
+  - update: 2026-02-05 19:20 JST WFL の archive 通知/部分復元テストの skip を解除し、releaseProxy の unknown cast を撤去。
   - update: 2026-02-05 19:30 JST commitDraft の返却 nodeId を使用するよう WFL テストを修正し、draft holder 名の仮デコードを撤去。
-  - update: 2026-02-05 19:35 JST trash 通知テストの誤った期待値（node そのものを "trash" と比較）を実際の trash 判定（parentId/removedAt）へ修正。
-  - update: 2026-02-05 19:40 JST trash 通知テストの2箇所目の期待値も parentId/removedAt 判定に揃えた。
+  - update: 2026-02-05 19:35 JST archive 通知テストの誤った期待値（node そのものを "archive" と比較）を実際の archive 判定（parentId/removedAt）へ修正。
+  - update: 2026-02-05 19:40 JST archive 通知テストの2箇所目の期待値も parentId/removedAt 判定に揃えた。
   - update: 2026-02-05 19:45 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（75 tests）。
   - update: 2026-02-05 19:10 JST vitest 設定で core-types/location-api/route-api/gis-sdk を src 参照にし、vitest.setup に fake-indexeddb/auto を追加。
   - update: 2026-02-05 19:12 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（2件はskip）。
@@ -5618,7 +5618,7 @@
   - nodes テーブル定義と references の現状を確認する
   - references の Dexie index を追加する
   - shape/route から参照先 nodeId を保存する箇所を特定し references 更新を追加する
-  - 参照されているノードの trash 操作を失敗させるガードを追加する
+  - 参照されているノードの archive 操作を失敗させるガードを追加する
   - pnpm typecheck/test を必要範囲で実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
@@ -7006,7 +7006,7 @@
 2378) fix/ui/context-menu-order (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/ui/context-menu-order
 - 依存: なし
-- 受け入れ基準: TreeTable/TreeNodeInfoPanel/BreadCrumbのコンテキストメニューが Create||Cut|Copy|Duplicate|Move to Trash||Visible||Create|Edit|Build|Preview の順になる／区切りと文言は既存のまま維持される／TASKS.mdに運用ログを記載する
+- 受け入れ基準: TreeTable/TreeNodeInfoPanel/BreadCrumbのコンテキストメニューが Create||Cut|Copy|Duplicate|Move to Archive||Visible||Create|Edit|Build|Preview の順になる／区切りと文言は既存のまま維持される／TASKS.mdに運用ログを記載する
 - 影響範囲: `app/src/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert する
 - チェックリスト:
@@ -11886,10 +11886,10 @@
   - update: 2026-01-17 01:30 JST ズーム帯スライダーの margin を 36px へ更新。
   - update: 2026-01-17 01:40 JST margin 36px を !important で適用。検証: pnpm typecheck（exit 0）。
 
-2208) fix/app/tree-trash-actions (P1) — 進行中 (2026-01-15)
-- ブランチ名: fix/app/tree-trash-actions
+2208) fix/app/tree-archive-actions (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/app/tree-archive-actions
 - 依存: なし
-- 受け入れ基準: パンクズの Move to Trash ダイアログで削除が成功し画面が更新される／TreeNodeInfoPanel のコンテキストメニュー「削除」で INVALID_OPERATION No items selected が発生しない／削除対象ノードが選択状態として渡される／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 受け入れ基準: パンクズの Move to Archive ダイアログで削除が成功し画面が更新される／TreeNodeInfoPanel のコンテキストメニュー「削除」で INVALID_OPERATION No items selected が発生しない／削除対象ノードが選択状態として渡される／pnpm typecheck が通る／TASKS.md に運用ログを記載する
 - 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `app/src/hooks/treeconsole/actions/contextMenu.ts`, `packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、削除操作の挙動を修正前に戻す
 - チェックリスト:
@@ -13810,47 +13810,47 @@
   - update: 2026-01-11 17:35 JST Build ボタンのアイコンを Construction に統一する指示を反映する作業に着手。検証: 未実施。
   - update: 2026-01-11 17:45 JST Build ボタンのアイコン更新、auto build/return と auto download を実装。検証: 未実施。
 
-2116) fix/app/trash-restore-refresh (P1) — 進行中 (2026-01-11)
-- ブランチ名: fix/app/trash-restore-refresh
+2116) fix/app/archive-restore-refresh (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/archive-restore-refresh
 - 依存: なし
 - 受け入れ基準: ゴミ箱復元時に強制リロード相当の初期化が走らず、TreeSubscriptionAPI の更新で画面が反映される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/router/pages/tree/trash/useTrashDialog.ts` と復元後の画面遷移処理（調査後に絞り込み）
+- 影響範囲: `app/src/router/pages/tree/archive/useArchiveDialog.ts` と復元後の画面遷移処理（調査後に絞り込み）
 - ロールバック手順: 該当差分を revert し、復元後の挙動を元に戻す
 - チェックリスト:
-  - Trash 復元後のリロード経路を特定する
+  - Archive 復元後のリロード経路を特定する
   - TreeSubscriptionAPI の更新だけで済むよう調整する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-11 16:20 JST Trash 復元時の強制リロード挙動の調査に着手。
+  - start: 2026-01-11 16:20 JST Archive 復元時の強制リロード挙動の調査に着手。
   - update: 2026-01-11 16:25 JST restore 後の closeDialog から reload 指定を外し、TreeSubscriptionAPI 更新に委ねるよう修正。検証: 未実施。
 
-2115) fix/app/trash-restore-originalname (P1) — 進行中 (2026-01-11)
-- ブランチ名: fix/app/trash-restore-originalname
+2115) fix/app/archive-restore-originalname (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/archive-restore-originalname
 - 依存: なし
 - 受け入れ基準: ゴミ箱から復元したノードの `originalName` が復旧される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/router/pages/tree/trash/**` と復元処理周辺（調査後に絞り込み）
+- 影響範囲: `app/src/router/pages/tree/archive/**` と復元処理周辺（調査後に絞り込み）
 - ロールバック手順: 該当差分を revert し、復元前の挙動へ戻す
 - チェックリスト:
   - originalName が復元されない経路を特定する
   - 復元処理で originalName を反映する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-11 16:00 JST Trash 復元時の originalName 未復旧の調査に着手。
-  - update: 2026-01-11 16:10 JST restoreFromTrash で metadata.name を originalName 由来の値に復旧するよう修正。検証: 未実施。
+  - start: 2026-01-11 16:00 JST Archive 復元時の originalName 未復旧の調査に着手。
+  - update: 2026-01-11 16:10 JST restoreFromArchive で metadata.name を originalName 由来の値に復旧するよう修正。検証: 未実施。
 
-2114) fix/app/trash-dialog-useeffect-loop (P1) — 進行中 (2026-01-11)
-- ブランチ名: fix/app/trash-dialog-useeffect-loop
+2114) fix/app/archive-dialog-useeffect-loop (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/archive-dialog-useeffect-loop
 - 依存: なし
-- 受け入れ基準: TrashDialog の useEffect が無限更新にならない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
-- 影響範囲: `app/src/router/pages/tree/trash/TrashDialog.tsx`（必要に応じて関連 hook）
-- ロールバック手順: `app/src/router/pages/tree/trash/TrashDialog.tsx` の差分を revert し、useEffect 修正前に戻す
+- 受け入れ基準: ArchiveDialog の useEffect が無限更新にならない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/archive/ArchiveDialog.tsx`（必要に応じて関連 hook）
+- ロールバック手順: `app/src/router/pages/tree/archive/ArchiveDialog.tsx` の差分を revert し、useEffect 修正前に戻す
 - チェックリスト:
-  - TrashDialog の useEffect を特定し依存と state 更新の関係を確認する
+  - ArchiveDialog の useEffect を特定し依存と state 更新の関係を確認する
   - 無限更新の原因を整理し修正する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-11 15:40 JST TrashDialog の useEffect 無限更新警告の調査に着手。
-  - update: 2026-01-06 07:03 JST useTrashFrameState の正規化処理で同値更新を抑止し、useEffect の再実行ループを回避。検証: 未実施。
+  - start: 2026-01-11 15:40 JST ArchiveDialog の useEffect 無限更新警告の調査に着手。
+  - update: 2026-01-06 07:03 JST useArchiveFrameState の正規化処理で同値更新を抑止し、useEffect の再実行ループを回避。検証: 未実施。
 
 2113) fix/runtime-worker/stageprocessing-typecheck (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/runtime-worker/stageprocessing-typecheck
@@ -16939,7 +16939,7 @@
 2435) feat/route/idegsm-location-feature-linking (P1) — 完了 (2026-01-31)
 - ブランチ名: feat/route/idegsm-location-feature-linking
 - 依存: 2426
-- 受け入れ基準: IDE-GSM の LocationFeature 参照が route 仕様に合致する／LocationFeatureId を参照子として保持し、LocationNodeId も併記される／location 検索マップが兄弟順の近さで合成され先勝ちルールが守られる／route/location/shape の参照に基づく trash 制約が維持される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: IDE-GSM の LocationFeature 参照が route 仕様に合致する／LocationFeatureId を参照子として保持し、LocationNodeId も併記される／location 検索マップが兄弟順の近さで合成され先勝ちルールが守られる／route/location/shape の参照に基づく archive 制約が維持される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/route-api/src/ideGsmRouteCsv.ts`, `packages/route-api/src/routeTypes.ts`, `packages/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の参照解決と import 処理を旧挙動に戻す
 - チェックリスト:
@@ -17139,46 +17139,46 @@
   - update: 2026-02-01 04:30 JST pnpm --filter @hierarchidb/ui-country-select build / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - done: 2026-02-01 04:30 JST 左上の全体一括選択が全有効セルに反映されるよう修正。
 
-2424) feat/route-location/trash-reference-guard (P1) — 完了 (2026-01-29)
-- ブランチ名: feat/route-location/trash-reference-guard
+2424) feat/route-location/archive-reference-guard (P1) — 完了 (2026-01-29)
+- ブランチ名: feat/route-location/archive-reference-guard
 - 依存: なし
-- 受け入れ基準: route→location、location→shape の参照を Dexie インデックスで判定するチェックが追加され、参照されているノードは trash 移動が失敗する／連鎖チェックは 1 段のみ（route→location、location→shape）／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: route→location、location→shape の参照を Dexie インデックスで判定するチェックが追加され、参照されているノードは archive 移動が失敗する／連鎖チェックは 1 段のみ（route→location、location→shape）／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/route-store/src/RouteDB.ts`, `packages/location-store/src/LocationDB.ts`（必要に応じて追加）
-- ロールバック手順: 変更差分を revert して trash 操作の参照ガードと新インデックスを取り消す
+- ロールバック手順: 変更差分を revert して archive 操作の参照ガードと新インデックスを取り消す
 - チェックリスト:
   - route-store で start/end location 参照チェックの関数を追加する
   - location-store で shape 参照チェックの関数と index を追加する
-  - TreeMutationService の moveNodesToTrash で参照チェックを行う
+  - TreeMutationService の moveNodesToArchive で参照チェックを行う
   - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
   - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-29 10:02 JST route/location 参照に基づく trash ブロック実装に着手。
+  - start: 2026-01-29 10:02 JST route/location 参照に基づく archive ブロック実装に着手。
   - update: 2026-01-29 10:07 JST route-store/location-store に参照チェック関数を追加し、LocationDB に centroidForShapeContainerNodeId の index を追加。
-  - update: 2026-01-29 10:09 JST TreeMutationService の moveNodesToTrash に参照ガードを追加。
+  - update: 2026-01-29 10:09 JST TreeMutationService の moveNodesToArchive に参照ガードを追加。
   - update: 2026-01-29 10:11 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - update: 2026-01-29 10:12 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 10:12 JST route/location 参照ガードの実装を完了。
 
-2425) feat/ui/treeconsole-trash-reference-i18n (P2) — 完了 (2026-01-29)
-- ブランチ名: feat/ui/treeconsole-trash-reference-i18n
+2425) feat/ui/treeconsole-archive-reference-i18n (P2) — 完了 (2026-01-29)
+- ブランチ名: feat/ui/treeconsole-archive-reference-i18n
 - 依存: なし
-- 受け入れ基準: trash 参照ブロックのエラーメッセージが i18n 化され、UI 側で翻訳表示される／ハードコード文言が残らない／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: archive 参照ブロックのエラーメッセージが i18n 化され、UI 側で翻訳表示される／ハードコード文言が残らない／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `app/src/hooks/treeconsole/actions/mutations.ts`, `app/src/hooks/treeconsole/types.ts`, `app/src/hooks/useTreeConsoleIntegration.ts`, `packages/ui/i18n/public/locales/*/common.json`（必要に応じて追加）
 - ロールバック手順: 変更差分を revert して従来のエラーメッセージ表示に戻す
 - チェックリスト:
-  - trash 参照エラーをコード化し UI で翻訳する
+  - archive 参照エラーをコード化し UI で翻訳する
   - i18n 辞書に文言を追加する
   - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
   - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-29 10:18 JST trash 参照ブロックの i18n 化に着手。
-  - update: 2026-01-29 10:24 JST trash 参照エラーをコード化し、TreeConsole の moveToTrash で翻訳表示するように変更。
+  - start: 2026-01-29 10:18 JST archive 参照ブロックの i18n 化に着手。
+  - update: 2026-01-29 10:24 JST archive 参照エラーをコード化し、TreeConsole の moveToArchive で翻訳表示するように変更。
   - update: 2026-01-29 10:25 JST i18n 辞書に treeConsole.errors を追加。
   - update: 2026-01-29 10:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - update: 2026-01-29 10:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
-  - done: 2026-01-29 10:27 JST trash 参照ブロックの i18n 化を完了。
+  - done: 2026-01-29 10:27 JST archive 参照ブロックの i18n 化を完了。
 
 
 2442) investigation/ui-commonality-shape-route-location (P2) — 進行中 (2026-01-31)

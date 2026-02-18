@@ -1299,9 +1299,9 @@ export const ShapeBuildProgressPanel = ({
   ]);
 
   return (
-    <BuildSessionProgressPanel
-      status={summary.buildStatus}
-      overallProgress={summary.overallProgress}
+        <BuildSessionProgressPanel
+          status={summary.buildStatus}
+          overallProgress={summary.overallProgress}
       stages={stages}
       stageProgress={stageProgressForDisplay}
       paneProgress={paneProgressForDisplay}
@@ -1329,14 +1329,13 @@ export const ShapeBuildProgressPanel = ({
       stageHeaderMeta={stageHeaderMeta}
       chipPlacement="belowProgress"
       suppressStatusFallback
-      startIcon={<ConstructionIcon fontSize="small" />}
-      onResume={controls.canStartOrResume ? handleStartClickWithHold : undefined}
-      onPause={controls.pausePending ? undefined : controls.handlePause}
-      controlLabel={t('stage.controls.title', 'Build controls')}
-      pauseLabel={pauseButtonLabel}
-      pauseLoading={false}
-      pausePending={controls.pausePending}
-      pauseActsAsCancel={pauseActsAsCancel}
+          startIcon={<ConstructionIcon fontSize="small" />}
+          onResume={controls.canStartOrResume ? handleStartClickWithHold : undefined}
+          onPause={controls.stopRequested ? undefined : controls.handlePause}
+          controlLabel={t('stage.controls.title', 'Build controls')}
+          pauseLabel={pauseButtonLabel}
+          stopRequested={controls.stopRequested}
+          pauseActsAsCancel={pauseActsAsCancel}
       startPending={controls.startPending}
       showResumeLabel={controls.showResumeLabel}
       startLabel={t('stage.controls.start', 'Start Build')}

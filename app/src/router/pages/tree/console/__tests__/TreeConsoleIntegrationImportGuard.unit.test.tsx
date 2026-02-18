@@ -98,7 +98,7 @@ vi.mock('~/hooks/useTreeConsoleIntegration.ts', () => ({
 
 const workerClientStub = {
   getQueryAPI: vi.fn(async () => ({
-    getTree: vi.fn(async () => ({ trashRootId: 'r:trash' })),
+    getTree: vi.fn(async () => ({ archiveRootId: 'r:archive' })),
     listChildren: vi.fn(async () => []),
   })),
   getSubscriptionAPI: vi.fn(async () => ({})),

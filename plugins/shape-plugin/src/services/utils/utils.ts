@@ -158,6 +158,8 @@ const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, ind
   if (iso2) return iso2.toUpperCase();
   const countryCode = country.countryCode?.trim();
   if (countryCode) return countryCode.toUpperCase();
+  const iso3 = country.iso3?.trim();
+  if (iso3) return iso3.toUpperCase();
   return `COUNTRY-${index}`;
 };
 
@@ -240,17 +242,23 @@ export function generateDownloadTaskPayloadsFromSelection(
   const selectionByIso2 = new Map<string, boolean[]>();
   Object.entries(selectedArrayByCountries).forEach(([key, row]) => {
     const normalizedKey = key.trim().toUpperCase();
-    const iso2Key = normalizedKey.length === 2
+    const resolvedKey = normalizedKey.length === 2
       ? normalizedKey
-      : iso3ToIso2.get(normalizedKey);
-    if (iso2Key) {
-      selectionByIso2.set(iso2Key, row);
-    }
+      : iso3ToIso2.get(normalizedKey) ?? normalizedKey;
+    if (!resolvedKey) return;
+    const nextRow = Array.isArray(row)
+      ? Array.from(row)
+      : [];
+    selectionByIso2.set(resolvedKey, nextRow);
   });
   return countryMetadata.flatMap((country, index) => {
     const normalizedCode = normalizeCountryCodeFromMetadata(country, index);
     const iso2Key = normalizedCode.trim().toUpperCase();
-    const selectedRow = selectionByIso2.get(iso2Key);
+    const selectedRow = selectionByIso2.get(
+      iso2Key.length === 2
+        ? iso2Key
+        : iso3ToIso2.get(iso2Key) ?? iso2Key,
+    );
     const selectedLevels = resolveSelectedLevels(selectedRow);
     if (selectedLevels.length === 0) return [];
     return selectedLevels.flatMap((level) => {

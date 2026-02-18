@@ -189,11 +189,11 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     hoverBlocked,
     setHoverBlocked,
     useArchiveColumnsFlag,
-    trashActionValue,
+    archiveActionValue,
   } = useTreeConsoleBreadcrumb(props);
   const contextMenuNodeId = contextMenuNode?.id ?? contextMenuNode?.treeNodeId;
   const isArchiveDisabledForContextNode = Boolean(
-    contextMenuNodeId && props.trashDisabledNodeIds?.has(String(contextMenuNodeId))
+    contextMenuNodeId && props.archiveDisabledNodeIds?.has(String(contextMenuNodeId))
   );
   const canArchiveFromContextMenu = !isRootContext && !isArchiveDisabledForContextNode;
 
@@ -249,9 +249,9 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                 treeId,
                 nodeId: nodeIdString,
                 pageNodeId,
-                holderType: node.holderType as 'draft' | 'trash' | undefined,
+                holderType: node.holderType as 'draft' | 'archive' | undefined,
                 useArchiveColumns: useArchiveColumnsFlag,
-                trashAction: trashActionValue,
+                archiveAction: archiveActionValue,
                 isRootLike,
               };
 

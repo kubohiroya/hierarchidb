@@ -18,7 +18,7 @@ vi.mock('@hierarchidb/provider', () => ({
   useTreeOperations: vi.fn(() => ({
     updateNode: vi.fn(),
     moveNode: vi.fn(),
-    trashNode: vi.fn(),
+    archiveNode: vi.fn(),
     duplicateNode: vi.fn(),
   })),
   useTreeState: vi.fn(() => ({
@@ -43,7 +43,7 @@ describe('useTreeViewController', () => {
       getChildren: vi.fn(),
       updateNode: vi.fn(),
       moveNode: vi.fn(),
-      trashNode: vi.fn(),
+      archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
     } as any;
 
@@ -129,7 +129,7 @@ describe('useTreeViewController', () => {
       });
 
       await act(async () => {
-        await result.current.trashNode('$1' as NodeId);
+        await result.current.archiveNode('$1' as NodeId);
       });
 
       expect(mockStateManager.deleteNode).toHaveBeenCalledWith('$1' as NodeId);
@@ -149,7 +149,7 @@ describe('useTreeViewController', () => {
       expect(result.current.selectedNodeIds).toEqual(['node-1', 'node-2'] as NodeId[]);
 
       await act(async () => {
-        await result.current.trashNode('$1' as NodeId);
+        await result.current.archiveNode('$1' as NodeId);
       });
 
       // Deleted node should be removed from selection
@@ -169,7 +169,7 @@ describe('useTreeViewController', () => {
       expect(result.current.expandedNodeIds).toContain('node-1');
 
       await act(async () => {
-        await result.current.trashNode('$1' as NodeId);
+        await result.current.archiveNode('$1' as NodeId);
       });
 
       // Deleted node should be removed from expanded nodes
@@ -197,7 +197,7 @@ describe('useTreeViewController', () => {
       expect(result.current.currentNode).toBeTruthy();
 
       await act(async () => {
-        await result.current.trashNode('$1' as NodeId);
+        await result.current.archiveNode('$1' as NodeId);
       });
 
       // Current node should be cleared

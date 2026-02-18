@@ -77,7 +77,7 @@ describe('useShapeBuildAutoResume', () => {
     expect(window.localStorage.getItem('autoResumeBuild')).toBeNull();
   });
 
-  it('keeps start pending while paused resume is still awaiting running state', async () => {
+  it('keeps start pending while waiting for runtime transition', async () => {
     const handleStartOrResume = vi.fn(async () => true);
     const baseArgs = createArgs({ handleStartOrResume });
     const { result, rerender } = renderHook(({ buildStatus }: { buildStatus: BuildStatus }) => (
@@ -86,7 +86,7 @@ describe('useShapeBuildAutoResume', () => {
         buildStatus,
       })
     ), {
-      initialProps: { buildStatus: 'paused' as BuildStatus },
+      initialProps: { buildStatus: 'idle' as BuildStatus },
     });
 
     await act(async () => {

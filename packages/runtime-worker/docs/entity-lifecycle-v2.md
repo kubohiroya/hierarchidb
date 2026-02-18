@@ -8,7 +8,7 @@ vk:doc kind=design audience=dev scope=worker
 
 基本方針
 - 1ノード=1エンティティ原則: 同じ NodeId に対し同一種別の Entity は常に1つ。
-- 単一ストア: Ephemeral ではなく CoreDB の永続テーブルに保存（WC/Trash/通常の区別は TreeNode の位置で解釈）。
+- 単一ストア: Ephemeral ではなく CoreDB の永続テーブルに保存（WC/Archive/通常の区別は TreeNode の位置で解釈）。
 - 責務分離: name/description 等の表示系は TreeNode。Peer/Group/Relational はドメインデータのみを保持。
 - 同一Tx: TreeNode 操作と Entity 操作は常に同一トランザクション内（`WORKER_TX_ENABLED` を有効化した環境では1Txで実行）。
 - バルク/チャンク: 大量操作は bulkCreate/bulkUpdate/bulkDelete をチャンク分割で実行。
@@ -18,15 +18,15 @@ vk:doc kind=design audience=dev scope=worker
 - GroupEntity(1:N): 主キー（id）＋ nodeId インデックス、または複合キー。[nodeId+id] の複合ユニーク推奨。
 - RelationalEntity(N:N): 主キー [&srcNodeId+type+dstNodeId]。src/dst のインデックス必須。
 
-状態表現（WC/Trash/通常）
-- TreeNode が `draftRoot`/`trashRoot`/通常ルート配下にあることで状態を決定。Entity 側に removed/draft フラグは持たない。
-- クエリ時に Node の位置から状態を解釈する（例: UI で WC/Trash を切替表示）。
+状態表現（WC/Archive/通常）
+- TreeNode が `draftRoot`/`archiveRoot`/通常ルート配下にあることで状態を決定。Entity 側に removed/draft フラグは持たない。
+- クエリ時に Node の位置から状態を解釈する（例: UI で WC/Archive を切替表示）。
 
 コマンドとの対応（抜粋）
 - createNode: 必要なら Peer/Group のデフォルトを生成。
 - updateNode: 通常 Entity 変更不要（必要時のみ rename 等）。
 - moveNodes: NodeId 不変 → Entity 操作不要。
-- moveToTrash/recoverFromTrash: Entity 操作不要（位置で状態解釈）。
+- moveToArchive/recoverFromArchive: Entity 操作不要（位置で状態解釈）。
 - duplicateNodes: NodeId マップを作成し、Peer/Group/Relational をバルク複製（サブツリー内参照のみ複製）。
 - pasteNodes: 新 NodeId に対する Entity をバルク作成（クリップボード構造に準拠）。
 - importNodes: 2パス（ID割当→実体/関係の適用）。チャンク＋Tx。

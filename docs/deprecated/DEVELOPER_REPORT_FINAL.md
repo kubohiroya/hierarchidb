@@ -105,7 +105,7 @@ The project uses a monorepo structure with 43 packages organized in dependency l
 ### Key Schema Properties
 ```typescript
 // Dexie schema with branded type integration
-trees: '&treeId, treeRootNodeId, treeTrashRootNodeId, superRootNodeId'
+trees: '&treeId, treeRootNodeId, treeArchiveRootNodeId, superRootNodeId'
 nodes: '&treeNodeId, parentNodeId, &[parentNodeId+name], [parentNodeId+updatedAt], removedAt, originalParentNodeId, *references'
 rootStates: '&[treeId+treeRootNodeType], treeId, treeRootNodeId'
 ```

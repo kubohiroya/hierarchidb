@@ -6,7 +6,7 @@ import type { CRUDResult } from '../types/index.js';
 
 type StateManagerLike = Partial<{
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<CRUDResult> | void;
-  trashNode: (nodeId: NodeId) => Promise<void> | void;
+  archiveNode: (nodeId: NodeId) => Promise<void> | void;
   deleteNode: (nodeId: NodeId) => Promise<void> | void;
   duplicateNode: (nodeId: NodeId) => Promise<CRUDResult> | void;
 }>;
@@ -29,8 +29,8 @@ export interface UseCRUDOperationsReturn {
   //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<CRUDResult>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
-  trashNode: (nodeId: NodeId) => Promise<void>;
-  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
+  archiveNode: (nodeId: NodeId) => Promise<void>;
+  archiveNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<CRUDResult>;
 
@@ -113,24 +113,24 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
     [workerAdapter, setIsLoading, onExpandedNodesChange],
   );
 
-  const trashNode = useCallback(
+  const archiveNode = useCallback(
     async (nodeId: NodeId) => {
       if (workerAdapter) {
         setIsLoading?.(true);
         try {
-          await workerAdapter.trashNodes([nodeId]);
+          await workerAdapter.archiveNodes([nodeId]);
           // Remove from selection
           onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           // Remove from expanded nodes
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
-          // Clear current node if it was trashed
+          // Clear current node if it was archiveed
           onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
         } finally {
           setIsLoading?.(false);
         }
       } else {
-        const deleteFn = stateManager?.deleteNode ?? stateManager?.trashNode;
-        if (typeof deleteFn !== 'function') throw new Error('No adapter available for trash operation');
+        const deleteFn = stateManager?.deleteNode ?? stateManager?.archiveNode;
+        if (typeof deleteFn !== 'function') throw new Error('No adapter available for archive operation');
         setIsLoading?.(true);
         try {
           await deleteFn(nodeId);
@@ -145,10 +145,10 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
     [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
   );
 
-  const trashNodes = useCallback(
+  const archiveNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        const deleteFn = stateManager?.deleteNode ?? stateManager?.trashNode;
+        const deleteFn = stateManager?.deleteNode ?? stateManager?.archiveNode;
         if (typeof deleteFn !== 'function') throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
@@ -164,12 +164,12 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
 
       setIsLoading?.(true);
       try {
-        await workerAdapter.trashNodes(nodeIds);
+        await workerAdapter.archiveNodes(nodeIds);
         // Remove from selection
         onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
         // Remove from expanded nodes
         onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
-        // Clear current node if it was trashed
+        // Clear current node if it was archiveed
         onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
       } finally {
         setIsLoading?.(false);
@@ -274,8 +274,8 @@ export function useCRUDOperations<T>(options: UseCRUDOperationsOptions<T> = {}):
     //  CRUD
     moveNode,
     moveNodes,
-    trashNode,
-    trashNodes,
+    archiveNode,
+    archiveNodes,
     duplicateNode,
     duplicateNodes,
 

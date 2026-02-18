@@ -280,7 +280,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     setStatus,
     overallProgress,
     setOverallProgress,
-    isPausePending,
+    isStopRequested,
     ideGsmPhase,
     errorRows,
     errorDialogOpen,
@@ -514,13 +514,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         onPause={() => {
           void handlePause('user-pause');
         }}
-        onResume={isWebLockSupported && !isPausePending ? runIdeGsmBuild : undefined}
+        onResume={isWebLockSupported && !isStopRequested ? runIdeGsmBuild : undefined}
         onComplete={() => {
           setStatus('completed');
           setOverallProgress(100);
         }}
-        pauseLoading={false}
-        pausePending={isPausePending}
+        stopRequested={isStopRequested}
         startPending={buildSessionTransition.active && status !== 'running'}
         statusLabel={buildSessionTransition.active
           ? getRouteBuildTransitionStatusLabel(t, buildSessionTransition.phase)

@@ -35,7 +35,7 @@ vk:task id=wc-spec-sync status=in_progress priority=P1 labels=worker,draft,docs
 ## 依存関係
 - `docs/command-processor-refactor-plan.md`
 - `docs/task-comlink-typing-hardening.md`
- - エピック: `epic-wc-trash-unification`
+ - エピック: `epic-wc-archive-unification`
 
 ## リスクと緩和策
 - リスク: 二系統の併存で混乱

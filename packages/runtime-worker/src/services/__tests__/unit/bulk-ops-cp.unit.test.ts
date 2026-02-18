@@ -7,14 +7,14 @@ import { createCommandTestHarness, seedNode } from '../../test-helpers/commandPr
 describe('CommandProcessor bulk operations', () => {
   let harness: CommandTestHarness;
   let rootId: NodeId;
-  let trashRootId: NodeId;
+  let archiveRootId: NodeId;
   let superRootId: NodeId;
 
   beforeEach(async () => {
     harness = await createCommandTestHarness('bulk-ops');
     const [tree] = await harness.core.trees.toArray();
     rootId = (tree?.rootId ?? 'r:root') as NodeId;
-    trashRootId = (tree?.trashRootId ?? 'r:trash') as NodeId;
+    archiveRootId = (tree?.archiveRootId ?? 'r:archive') as NodeId;
     superRootId = (tree?.superRootId ?? 'r:superRoot') as NodeId;
   });
 
@@ -95,17 +95,17 @@ describe('CommandProcessor bulk operations', () => {
       name: 'Folder Root',
     });
 
-    const trashed1 = await seedNode(core, {
+    const archiveed1 = await seedNode(core, {
       id: 't1' as NodeId,
-      parentId: trashRootId,
+      parentId: archiveRootId,
       name: 'Archive Node 1',
       originalName: 'n1',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
     });
-    const trashed2 = await seedNode(core, {
+    const archiveed2 = await seedNode(core, {
       id: 't2' as NodeId,
-      parentId: trashRootId,
+      parentId: archiveRootId,
       name: 'Archive Node 2',
       originalName: 'n2',
       originalParentId: parent.id as NodeId,
@@ -116,7 +116,7 @@ describe('CommandProcessor bulk operations', () => {
     const bulkDeleteSpy = vi.spyOn(core, 'bulkDeleteNodes');
 
     const env = cp.createEnvelope('restoreFromArchive', {
-      nodeIds: [trashed1.id as NodeId, trashed2.id as NodeId],
+      nodeIds: [archiveed1.id as NodeId, archiveed2.id as NodeId],
       toParentId: parent.id as NodeId,
     });
     const result = await cp.processCommand(env);
@@ -125,8 +125,8 @@ describe('CommandProcessor bulk operations', () => {
     expect(bulkUpdateSpy).toHaveBeenCalled();
     expect(bulkDeleteSpy).not.toHaveBeenCalled();
 
-    const restored1 = await core.getNode(trashed1.id as NodeId);
-    const restored2 = await core.getNode(trashed2.id as NodeId);
+    const restored1 = await core.getNode(archiveed1.id as NodeId);
+    const restored2 = await core.getNode(archiveed2.id as NodeId);
     expect(restored1?.parentId).toBe(parent.id);
     expect(restored2?.parentId).toBe(parent.id);
     expect(restored1?.removedAt).toBeUndefined();
@@ -146,17 +146,17 @@ describe('CommandProcessor bulk operations', () => {
       name: 'Folder',
     });
 
-    const trashed1 = await seedNode(core, {
+    const archiveed1 = await seedNode(core, {
       id: 't1' as NodeId,
-      parentId: trashRootId,
+      parentId: archiveRootId,
       name: 'Archive Node 1',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
     });
-    const trashed2 = await seedNode(core, {
+    const archiveed2 = await seedNode(core, {
       id: 't2' as NodeId,
-      parentId: trashRootId,
+      parentId: archiveRootId,
       name: 'Archive Node 2',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
@@ -166,7 +166,7 @@ describe('CommandProcessor bulk operations', () => {
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
 
     const env = cp.createEnvelope('restoreFromArchive', {
-      nodeIds: [trashed1.id as NodeId, trashed2.id as NodeId],
+      nodeIds: [archiveed1.id as NodeId, archiveed2.id as NodeId],
       toParentId: parent.id as NodeId,
       onNameConflict: 'auto-rename',
     });
@@ -176,8 +176,8 @@ describe('CommandProcessor bulk operations', () => {
     expect(bulkUpdateSpy).toHaveBeenCalled();
 
     const restoredNames = [
-      (await core.getNode(trashed1.id as NodeId))?.metadata.name,
-      (await core.getNode(trashed2.id as NodeId))?.metadata.name,
+      (await core.getNode(archiveed1.id as NodeId))?.metadata.name,
+      (await core.getNode(archiveed2.id as NodeId))?.metadata.name,
     ].filter((name): name is string => typeof name === 'string');
 
     expect(new Set(restoredNames).size).toBe(2);
@@ -197,9 +197,9 @@ describe('CommandProcessor bulk operations', () => {
       name: 'Folder',
     });
 
-    const trashed = await seedNode(core, {
+    const archiveed = await seedNode(core, {
       id: 't1' as NodeId,
-      parentId: trashRootId,
+      parentId: archiveRootId,
       name: 'Archive Node',
       originalName: 'Folder',
       originalParentId: parent.id as NodeId,
@@ -209,7 +209,7 @@ describe('CommandProcessor bulk operations', () => {
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
 
     const env = cp.createEnvelope('restoreFromArchive', {
-      nodeIds: [trashed.id as NodeId],
+      nodeIds: [archiveed.id as NodeId],
       toParentId: parent.id as NodeId,
       onNameConflict: 'error',
     });
@@ -219,6 +219,6 @@ describe('CommandProcessor bulk operations', () => {
     const failure = result as Extract<CommandResult, { success: false }>;
     expect(failure.code).toBe('NAME_NOT_UNIQUE');
     expect(bulkUpdateSpy).not.toHaveBeenCalled();
-    expect((await core.getNode(trashed.id as NodeId))?.parentId).toBe(trashRootId);
+    expect((await core.getNode(archiveed.id as NodeId))?.parentId).toBe(archiveRootId);
   });
 });

@@ -36,7 +36,7 @@ Total findings: 174
 - @hierarchidb/ui-treeconsole-breadcrumb: 4
 - @hierarchidb/ui-treeconsole-speeddial: 4
 - @hierarchidb/ui-treeconsole-toolbar: 4
-- @hierarchidb/ui-treeconsole-trashbin: 4
+- @hierarchidb/ui-treeconsole-archivebin: 4
 - @hierarchidb/ui-treeconsole-treetable: 4
 - @hierarchidb/shape-plugin: 3
 - @hierarchidb/runtime-ui-appbar: 3

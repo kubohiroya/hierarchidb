@@ -32,7 +32,7 @@ export type ContextAction =
   | 'navigate'
   | 'import'
   | 'export'
-  | 'trash'
+  | 'archive'
   | 'toggle-visibility'
   | `open-step:${number}`
   | `create:${string}`;

@@ -1584,7 +1584,7 @@ export const TREE_CONSTANTS = {
   MAX_DEPTH: 100,
   MAX_CHILDREN: 10000,
   MAX_NAME_LENGTH: 255,
-  RESERVED_NODE_NAMES: ['root', 'trash'] as const,
+  RESERVED_NODE_NAMES: ['root', 'archive'] as const,
 } as const;
 
 // ✅ 型定義は明確に分離
@@ -1788,7 +1788,7 @@ export class NodeValidator {
 
 // ✅ テストコード例
 describe('NodeValidator', () => {
-  const validator = new NodeValidator(new Set(['root', 'trash']));
+  const validator = new NodeValidator(new Set(['root', 'archive']));
 
   describe('validateNodeName', () => {
     it('should reject empty names', () => {

@@ -59,7 +59,7 @@ describe('TreeTable Draft chip', () => {
     setContextMenuState: () => {},
     visualSelectionSet: new Set(),
     useArchiveColumns: false,
-    trashAction: 'restore',
+    archiveAction: 'restore',
     formatTimestamp: () => '-',
     columnLabels: {
       name: 'Name',

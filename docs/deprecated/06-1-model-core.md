@@ -33,12 +33,12 @@
 - -用語と関係:
   - UUID: 体系内で用いる一意識別子（opaque）
   - TreeId: ツリー識別子（opaque）
-  - TreeRootNodeType: 列挙型。値は SuperRoot / Root / TrashRoot（文字列リテラルの直書きは非推奨）
+  - TreeRootNodeType: 列挙型。値は SuperRoot / Root / ArchiveRoot（文字列リテラルの直書きは非推奨）
   - TreeNodeType: 列挙型。TreeRootNodeType に folder/file を加えた上位集合
   - SuperRootNodeId: SuperRoot 用 ID（opaque）
   - RootNodeId: Root 用 ID（opaque）
-  - TrashRootNodeId: TrashRoot 用 ID（opaque）
-  - TreeRootNodeId: SuperRootNodeId | RootNodeId | TrashRootNodeId（共用体）
+  - ArchiveRootNodeId: ArchiveRoot 用 ID（opaque）
+  - TreeRootNodeId: SuperRootNodeId | RootNodeId | ArchiveRootNodeId（共用体）
   - RegularNodeId: 一般ノード（非ルート）用 ID（opaque）
   - TreeNodeId: TreeRootNodeId | RegularNodeId（共用体）
   - Timestamp: 数値時間（number）。IDとは異なり opaque ではない
@@ -46,9 +46,9 @@
 #### 6.1.1.2 ツリー構造関係データモデル
 
 - TreeTypes/TreeNode（要点）
-  - TreeTypes は treeId と各 Root 系 ID（Root/Trash/SuperRoot）を持つ。
+  - TreeTypes は treeId と各 Root 系 ID（Root/Archive/SuperRoot）を持つ。
   - TreeNode は以下を保持: treeNodeType, treeNodeId, parentTreeNodeId, name, createdAt, updatedAt, version。
-  - 拡張: hasChild, references, TrashItemProperties（originalParentTreeNodeId/removedAt 等）。
+  - 拡張: hasChild, references, ArchiveItemProperties（originalParentTreeNodeId/removedAt 等）。
   - 同一 parentTreeNodeId 配下で name はユニーク（兄弟名ユニーク制約）。
 
 
@@ -56,10 +56,10 @@
 type TreeTypes = {
   treeId: TreeId;
   treeRootNodeId: RootNodeId;           // Root 専用ID
-  treeTrashRootNodeId: TrashRootNodeId; // TrashRoot 専用ID
+  treeArchiveRootNodeId: ArchiveRootNodeId; // ArchiveRoot 専用ID
   superRootNodeId: SuperRootNodeId;     // e.g., `superroot:${treeId}`
 };
-// Root/TrashRoot の parentTreeNodeId は必ず superRootNodeId
+// Root/ArchiveRoot の parentTreeNodeId は必ず superRootNodeId
 // SuperRoot の TreeNode 実体は存在しない（内部専用・UI 非表示）
 
 type TreeNodeBase = {
@@ -81,7 +81,7 @@ type ReferenceProperties = {
   references?: TreeNodeId[];
 };
 
-type TrashItemProperties = {
+type ArchiveItemProperties = {
   originalName: string;
   originalParentTreeNodeId: TreeNodeId;
   removedAt: Timestamp;
@@ -90,7 +90,7 @@ type TrashItemProperties = {
 type TreeNode =
 & TreeNodeBase
 & ({} | ReferenceProperties)
-& ({} | TrashItemProperties);
+& ({} | ArchiveItemProperties);
 ```
 
 #### 6.1.1.3 ルートごとのツリー開閉状態

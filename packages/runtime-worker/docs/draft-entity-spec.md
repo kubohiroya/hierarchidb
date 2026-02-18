@@ -6,7 +6,7 @@ vk:doc kind=spec audience=dev scope=worker,node-type
 - TreeNode の Draft と連動する PeerEntity / GroupEntity の Draft を、同一テーブル内の別オブジェクトとして表現し、Core 単一 DB 内で整合的なトランザクションを可能にする。
 
 前提
-- 各 `treeId` ごとに `root/trash/draft` の3根構成（TreeNode 側の新仕様）。
+- 各 `treeId` ごとに `root/archive/draft` の3根構成（TreeNode 側の新仕様）。
 - TreeNode の Draft は holder+child のペアで表現され、child の NodeId（= WC ノードの ID）がユニークに存在する。
 
 基本方針
@@ -66,7 +66,7 @@ vk:doc kind=spec audience=dev scope=worker,node-type
 - ログはサニタイズされ、機密フィールドはマスクする。
 
 エッジケース
-- 原本が commit 前に移動/削除/Trash 移動された場合の扱い（要件に応じ選択）
+- 原本が commit 前に移動/削除/Archive 移動された場合の扱い（要件に応じ選択）
   - A: エラーにして WC を残し、ユーザに解決を促す
   - B: 現在の原本位置/状態に合わせて best-effort でマージ
 - 複数の WC が同一原本を指す同時編集は、`version` 競合で解決（後勝ち/マージ UI は将来拡張）。

@@ -42,7 +42,7 @@ function createTree(overrides: Partial<Tree> = {}): Tree {
     id: 'console-1' as TreeId,
     name: 'Mock console',
     rootId: 'console-1:root' as NodeId,
-    trashRootId: 'console-1:trash' as NodeId,
+    archiveRootId: 'console-1:archive' as NodeId,
     superRootId: 'console-1:super' as NodeId,
     ...overrides,
   };

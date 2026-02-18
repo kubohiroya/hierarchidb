@@ -21,7 +21,7 @@ export interface DraftProperties {
 // TreeNodeを拡張
 export type TreeNode = TreeNodeBase &
   Partial<ReferenceProperties> &
-  Partial<TrashItemProperties> &
+  Partial<ArchiveItemProperties> &
   Partial<DraftProperties> &
   Partial<DraftProperties>;
 ```
@@ -78,7 +78,7 @@ export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
 import type { Timestamped } from './timestamped';
 import type { DraftProperties } from './draft';
 import type { DraftProperties } from './draft';
-import type { TrashItemProperties } from './trash';
+import type { ArchiveItemProperties } from './archive';
 import type { DescendantProperties } from './descendant';
 
 // 基底型の定義
@@ -96,7 +96,7 @@ export interface TreeNodeEntity extends
   TreeNodeBase,
   Partial<DraftProperties>,
   Partial<DraftProperties>,
-  Partial<TrashItemProperties>,
+  Partial<ArchiveItemProperties>,
   Partial<DescendantProperties> {}
 ```
 

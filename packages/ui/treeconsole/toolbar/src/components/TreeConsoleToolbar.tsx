@@ -11,7 +11,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     showSearchOnly = false,
     controller,
     hasArchiveItems = false,
-    trashNodeId,
+    archiveNodeId,
     onAction,
     rowClickAction = 'Select/Navigate',
     onRowClickActionChange,
@@ -59,7 +59,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
       <TreeConsoleToolbarContent
         controller={controller}
         hasArchiveItems={hasArchiveItems}
-        trashNodeId={trashNodeId}
+        archiveNodeId={archiveNodeId}
         onAction={onAction}
         rowClickAction={rowClickAction}
         onRowClickActionChange={onRowClickActionChange}
