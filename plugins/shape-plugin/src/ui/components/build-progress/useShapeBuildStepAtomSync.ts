@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useSetAtom } from 'jotai';
+import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import {
   taskStatusAtom,
-  type TaskProgressControls,
-  type TaskProgressAuthState,
   taskPaneProgressAtom,
   taskProgressAuthAtom,
   taskProgressControlsAtom,
@@ -23,19 +22,8 @@ import {
 } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import { useShapeBuildStep } from './useShapeBuildStep.ts';
-import type { AuthProviderType } from '@hierarchidb/ui-auth';
-
-function shallowEqualObject<T extends Record<string, unknown> | null | undefined>(
-  a: T,
-  b: T,
-): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  return aKeys.every((key) => (a as Record<string, unknown>)[key] === (b as Record<string, unknown>)[key]);
-}
+import { useShapeBuildStepAtomSyncCallbacks } from './useShapeBuildStepAtomSyncCallbacks.ts';
+import { useShapeBuildStepAtomSyncAtomEffects } from './useShapeBuildStepAtomSyncEffects.ts';
 
 export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialogStepProps) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
@@ -103,21 +91,21 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const tasksByStageRef = useRef<typeof tasksByStage | null>(null);
   const buildStatusRef = useRef<typeof buildStatus | null>(null);
   const summaryRef = useRef<{
-    stageLabel: typeof stageLabel;
-    taskLabel: typeof taskLabel;
-    taskUnitLabel: typeof taskUnitLabel;
-    overallProgress: typeof overallProgress;
-    completed: typeof completed;
-    total: typeof total;
-    failed: typeof failed;
-    skipped: typeof skipped;
+    stageLabel: string;
+    taskLabel: string;
+    taskUnitLabel: string;
+    overallProgress: number;
+    completed: number;
+    total: number;
+    failed: number;
+    skipped: number;
     buildStatus: typeof buildStatus;
-    hasProgressData: typeof hasProgressData;
-    timingStageId: typeof timingStageId;
+    hasProgressData: boolean;
+    timingStageId: string | null;
     completedStageElapsedMs: typeof completedStageElapsedMs;
-    totalElapsedMs: typeof totalElapsedMs;
-    stageElapsedMs: typeof stageElapsedMs;
-    stageRemainingMs: typeof stageRemainingMs;
+    totalElapsedMs: number;
+    stageElapsedMs: number;
+    stageRemainingMs: number | null;
     stageTotals: typeof stageTotals;
   } | null>(null);
   const taskSummaryLoadingRef = useRef<boolean | null>(null);
@@ -128,39 +116,36 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const suspendSuspectMessageRef = useRef<string | null>(null);
   const suspendSuspectOpenRef = useRef<boolean | null>(null);
   const suspendSuspectControlsRef = useRef<{ close: () => void } | null>(null);
-  const controlsRef = useRef<TaskProgressControls | null>(null);
-  const authRef = useRef<TaskProgressAuthState | null>(null);
+  const controlsRef = useRef<{
+    canStartOrResume: boolean;
+    statusLabel: string;
+    showResumeLabel?: boolean;
+    startPending?: boolean;
+    handleStartOrResume?: () => Promise<void>;
+    handlePause?: () => void;
+    stopRequested?: boolean;
+  } | null>(null);
+  const authRef = useRef<{
+    authDialogOpen: boolean;
+    closeAuthDialog: () => void;
+    handleProviderSelect: (provider: AuthProviderType) => void;
+  } | null>(null);
 
-  const handleStartOrResumeRef = useRef<(() => Promise<void>) | null>(null);
-  const handlePauseRef = useRef<(() => void | Promise<void>) | null>(null);
-  const closeAuthDialogRef = useRef<(() => void) | null>(null);
-  const handleProviderSelectRef = useRef<((provider: AuthProviderType) => void) | null>(null);
-
-  const stableHandleStartOrResume = useCallback(() => {
-    return handleStartOrResumeRef.current ? handleStartOrResumeRef.current() : Promise.resolve();
-  }, []);
-  const stableHandlePause = useCallback(() => {
-    void handlePauseRef.current?.();
-  }, []);
-  const stableCloseAuthDialog = useCallback(() => {
-    closeAuthDialogRef.current?.();
-  }, []);
-  const stableHandleProviderSelect = useCallback((provider: AuthProviderType) => {
-    handleProviderSelectRef.current?.(provider);
-  }, []);
-  const stableCloseCrashSuspect = useCallback(() => {
-    setCrashSuspectOpenFromHook();
-  }, [setCrashSuspectOpenFromHook]);
-  const stableCloseSuspendSuspect = useCallback(() => {
-    setSuspendSuspectOpenFromHook();
-  }, [setSuspendSuspectOpenFromHook]);
-
-  useEffect(() => {
-    handleStartOrResumeRef.current = handleStartOrResume ?? null;
-    handlePauseRef.current = handlePause ?? null;
-    closeAuthDialogRef.current = closeAuthDialog ?? null;
-    handleProviderSelectRef.current = handleProviderSelect ?? null;
-  }, [handleStartOrResume, handlePause, closeAuthDialog, handleProviderSelect]);
+  const {
+    stableHandleStartOrResume,
+    stableHandlePause,
+    stableCloseAuthDialog,
+    stableHandleProviderSelect,
+    stableCloseCrashSuspect,
+    stableCloseSuspendSuspect,
+  } = useShapeBuildStepAtomSyncCallbacks({
+    handleStartOrResume,
+    handlePause,
+    closeAuthDialog,
+    handleProviderSelect,
+    setCrashSuspectOpenFromHook,
+    setSuspendSuspectOpenFromHook,
+  });
 
   useEffect(() => {
     if (stagesRef.current === stages) return;
@@ -193,29 +178,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     setBuildStatus(buildStatus);
   }, [buildStatus, setBuildStatus]);
 
-  useEffect(() => {
-    const nextSummary = {
-      stageLabel,
-      taskLabel,
-      taskUnitLabel,
-      overallProgress,
-      completed,
-      total,
-      failed,
-      skipped,
-      buildStatus,
-      hasProgressData,
-      stageTotals,
-      timingStageId,
-      completedStageElapsedMs,
-      totalElapsedMs,
-      stageElapsedMs,
-      stageRemainingMs,
-    };
-    if (shallowEqualObject(summaryRef.current, nextSummary)) return;
-    summaryRef.current = nextSummary;
-    setSummary(nextSummary);
-  }, [
+  useShapeBuildStepAtomSyncAtomEffects({
     buildStatus,
     completed,
     failed,
@@ -223,23 +186,35 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stageTotals,
     overallProgress,
     skipped,
-    stageLabel,
-    taskLabel,
+    stageLabel: stageLabel ?? '',
+    taskLabel: taskLabel ?? '',
     total,
-    setSummary,
-    taskUnitLabel,
-    totalElapsedMs,
-    timingStageId,
+    taskUnitLabel: taskUnitLabel ?? '',
+    totalElapsedMs: totalElapsedMs ?? 0,
+    timingStageId: timingStageId ?? null,
     completedStageElapsedMs,
-    stageElapsedMs,
+    stageElapsedMs: stageElapsedMs ?? 0,
     stageRemainingMs,
-  ]);
-
-  useEffect(() => {
-    if (taskSummaryLoadingRef.current === isTaskSummaryLoading) return;
-    taskSummaryLoadingRef.current = isTaskSummaryLoading;
-    setTaskSummaryLoading(isTaskSummaryLoading);
-  }, [isTaskSummaryLoading, setTaskSummaryLoading]);
+    setSummary,
+    setTaskSummaryLoading,
+    isTaskSummaryLoading,
+    setControls,
+    setAuth,
+    canStartOrResume,
+    statusLabel,
+    showResumeLabel,
+    isStartPending,
+    stopRequested,
+    stableHandleStartOrResume,
+    stableHandlePause,
+    authDialogOpen,
+    stableCloseAuthDialog,
+    stableHandleProviderSelect,
+    summaryRef,
+    taskSummaryLoadingRef,
+    controlsRef,
+    authRef,
+  });
 
   useEffect(() => {
     const nextWarning = warningMessage ?? null;
@@ -287,38 +262,4 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     suspendSuspectControlsRef.current = nextControls;
     setSuspendSuspectControls(nextControls);
   }, [setSuspendSuspectControls, stableCloseSuspendSuspect]);
-
-  useEffect(() => {
-    const nextControls = {
-      canStartOrResume,
-      statusLabel: statusLabel ?? '',
-      showResumeLabel: Boolean(showResumeLabel),
-      startPending: Boolean(isStartPending),
-      handleStartOrResume: stableHandleStartOrResume,
-      handlePause: stableHandlePause,
-      stopRequested: Boolean(stopRequested),
-    };
-    if (shallowEqualObject(controlsRef.current, nextControls)) return;
-    controlsRef.current = nextControls;
-    setControls(nextControls);
-  }, [
-    canStartOrResume,
-    isStartPending,
-    stopRequested,
-    setControls,
-    statusLabel,
-    stableHandlePause,
-    stableHandleStartOrResume,
-  ]);
-
-  useEffect(() => {
-    const nextAuth = {
-      authDialogOpen: Boolean(authDialogOpen),
-      closeAuthDialog: stableCloseAuthDialog,
-      handleProviderSelect: stableHandleProviderSelect,
-    };
-    if (shallowEqualObject(authRef.current, nextAuth)) return;
-    authRef.current = nextAuth;
-    setAuth(nextAuth);
-  }, [authDialogOpen, setAuth, stableCloseAuthDialog, stableHandleProviderSelect]);
 };
