@@ -117,9 +117,9 @@ describe('shape dialog initial draft data', () => {
     const validities = await resolveStepValidities(templateDraft);
     expect(validities['data-source']).toBe(true);
     expect(validities['country-selection']).toBe(true);
-    expect(processingValidation.isValid).toBe(false);
+    expect(processingValidation.isValid).toBe(true);
     expect(validities['processing-configuration']).toBe(processingValidation.isValid);
-    expect(validities['build']).toBe(false);
-    expect(validities['preview']).toBe(false);
+    expect(validities['build']).toBe(true);
+    expect(validities['preview']).toBe(true);
   });
 });
