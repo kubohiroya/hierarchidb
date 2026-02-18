@@ -679,7 +679,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   }, [effectiveStatus?.status, processingStatus]);
   const isStopInFlight = isStopRequested || isStopAccepted;
   const hasStopIdlePersisted = sessionRecord?.status === 'idle' && isStopInFlight;
-  const isSessionStopping = isStopInFlight || statusSource === 'paused';
+  const isSessionStopping = isStopInFlight;
   const effectiveStatusSource = useMemo(() => {
     if (hasStopIdlePersisted) return 'idle';
     if (isSessionStopping) return 'paused';
@@ -1274,11 +1274,10 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   useEffect(() => {
     if (!buildSessionTransition.active) return;
     if (buildSessionTransition.phase !== 'awaiting-first-task') return;
-  const decisionInput = {
+    const decisionInput = {
       hasFirstTaskSignal,
       hasStartedTasks,
       hasProgressTaskSignal,
-      isStopInFlight,
       buildStatus,
       taskCount: isTaskStreamReady ? displayTasks.length : undefined,
       isTaskStreamReady,
@@ -1295,7 +1294,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
         hasProgressTaskSignal: decisionInput.hasProgressTaskSignal,
         taskCount: decisionInput.taskCount,
         isTaskStreamReady: decisionInput.isTaskStreamReady,
-        isStopInFlight: decisionInput.isStopInFlight,
         expectTaskGeneration: decisionInput.expectTaskGeneration,
         sessionProgressTotal: decisionInput.sessionProgressTotal ?? null,
         sessionStageId: decisionInput.sessionStageId ?? null,
