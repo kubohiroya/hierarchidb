@@ -118,7 +118,7 @@
     "effect": "effect"
   },
   "dialogs": {
-    "trash": {
+    "archive": {
       "modeMenu": {
         "ariaLabel": "Display mode",
         "normal": "Normal (windowed)",
@@ -290,7 +290,7 @@
       },
       "aria": {
         "toolbarLabel": "Tree console toolbar",
-        "trashMenuButton": "Open archive actions",
+        "archiveMenuButton": "Open archive actions",
         "importExportButton": "Import and export options",
         "settingsButton": "Open toolbar settings"
       },
@@ -301,10 +301,9 @@
         "copy": "Copy ({{shortcut}})",
         "paste": "Paste ({{shortcut}})",
         "duplicate": "Duplicate ({{shortcut}})",
-        "moveToTrash": "Move to Archive ({{shortcut}})",
         "moveToArchive": "Move to Archive ({{shortcut}})"
       },
-      "trashMenu": {
+      "archiveMenu": {
         "restore": "Restore from Archive",
         "empty": "Delete Items"
       },
@@ -377,7 +376,6 @@
       "duplicate": "Duplicate",
       "import": "Import",
       "export": "Export",
-      "moveToTrash": "Move to Archive",
       "moveToArchive": "Move to Archive",
       "visible": "Visible",
       "hidden": "Hidden",
@@ -427,10 +425,10 @@
       "blockedDescendantMove": "Cannot move to a descendant."
     },
     "errors": {
-      "trashFailed": "Move to archive failed.",
-      "trashReferencedByRoutes": "Cannot move to archive because routes reference this location.",
-      "trashReferencedByLocations": "Cannot move to archive because locations reference this shape.",
-      "trashBuildSessionRunning": "Cannot move to archive while the build session is running."
+      "archiveFailed": "Move to archive failed.",
+      "archiveReferencedByRoutes": "Cannot move to archive because routes reference this location.",
+      "archiveReferencedByLocations": "Cannot move to archive because locations reference this shape.",
+      "archiveBuildSessionRunning": "Cannot move to archive while the build session is running."
     },
     "infoPanel": {
       "noTimestamp": "—",
@@ -449,10 +447,6 @@
       "noNode": "Node information is not available for this page.",
       "createdLabel": "Created",
       "updatedLabel": "Updated",
-      "confirmTrashTitle": "Move to Archive",
-      "confirmTrashDescription": "Move this item and all its children to archive?",
-      "confirmTrashCancel": "Cancel",
-      "confirmTrashConfirm": "Move to Archive",
       "confirmArchiveTitle": "Move to Archive",
       "confirmArchiveDescription": "Move this item and all its children to archive?",
       "confirmArchiveCancel": "Cancel",

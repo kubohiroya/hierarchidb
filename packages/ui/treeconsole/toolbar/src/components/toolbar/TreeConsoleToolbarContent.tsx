@@ -113,12 +113,12 @@ export function TreeConsoleToolbarContent({
     moveToArchive: t('tooltips.moveToArchive', { shortcut: '⌘+X' }),
   } as const;
 
-  const trashButtonLabel = t('aria.trashMenuButton');
+  const archiveButtonLabel = t('aria.archiveMenuButton');
   const settingsButtonLabel = t('aria.settingsButton');
 
   const labels = {
-    trashRestore: t('trashMenu.restore'),
-    trashEmpty: t('trashMenu.empty'),
+    restoreLabel: t('archiveMenu.restore'),
+    emptyLabel: t('archiveMenu.empty'),
     rowClickTitle: t('rowClick.title'),
     rowClickSelectNavigate: t('rowClick.options.selectNavigate'),
     rowClickEdit: t('rowClick.options.edit'),
@@ -187,7 +187,7 @@ export function TreeConsoleToolbarContent({
         canPaste={canPaste}
         canDuplicate={canDuplicate}
         allowArchive={allowArchive}
-        trashButtonLabel={trashButtonLabel}
+        trashButtonLabel={archiveButtonLabel}
         hasArchiveItems={hasArchiveItems}
         onAction={handleAction}
         onArchiveClick={(event) => setArchiveAnchorEl(event.currentTarget)}
@@ -200,8 +200,8 @@ export function TreeConsoleToolbarContent({
         onClose={() => setArchiveAnchorEl(null)}
         onRestore={trashMenuHandlers.onRestore}
         onEmpty={trashMenuHandlers.onEmpty}
-        restoreLabel={labels.trashRestore}
-        emptyLabel={labels.trashEmpty}
+            restoreLabel={labels.restoreLabel}
+            emptyLabel={labels.emptyLabel}
       />
 
       <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>

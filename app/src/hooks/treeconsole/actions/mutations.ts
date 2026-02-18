@@ -39,23 +39,23 @@ export const createMutationActions = (
     translateWithFallback ? translateWithFallback(key, fallback) : fallback
   );
   const resolveArchiveErrorMessage = (error?: string): string => {
-    if (!error) return translateError('treeConsole.errors.trashFailed', 'Move to trash failed.');
+    if (!error) return translateError('treeConsole.errors.archiveFailed', 'Move to archive failed.');
     if (error === 'TRASH_REF_ROUTE') {
       return translateError(
-        'treeConsole.errors.trashReferencedByRoutes',
-        'Cannot move to trash because routes reference this location.'
+        'treeConsole.errors.archiveReferencedByRoutes',
+        'Cannot move to archive because routes reference this location.'
       );
     }
     if (error === 'TRASH_REF_LOCATION') {
       return translateError(
-        'treeConsole.errors.trashReferencedByLocations',
-        'Cannot move to trash because locations reference this shape.'
+        'treeConsole.errors.archiveReferencedByLocations',
+        'Cannot move to archive because locations reference this shape.'
       );
     }
     if (error === 'TRASH_BUILD_SESSION_RUNNING') {
       return translateError(
-        'treeConsole.errors.trashBuildSessionRunning',
-        'Cannot move to trash while the build session is running.'
+        'treeConsole.errors.archiveBuildSessionRunning',
+        'Cannot move to archive while the build session is running.'
       );
     }
     return error;

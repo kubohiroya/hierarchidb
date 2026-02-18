@@ -335,13 +335,13 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       const time = timeFormatter.format(target);
 
       if (diffDays === 0) {
-        return t('trash.timestamps.today', { time });
+        return t('archive.timestamps.today', { time });
       }
       if (diffDays === 1) {
-        return t('trash.timestamps.yesterday', { time });
+        return t('archive.timestamps.yesterday', { time });
       }
       if (diffDays === 2) {
-        return t('trash.timestamps.twoDaysAgo', { time });
+        return t('archive.timestamps.twoDaysAgo', { time });
       }
 
       const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -350,7 +350,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
         day: 'numeric',
       });
       const date = dateFormatter.format(target);
-      return t('trash.timestamps.dateTime', { date, time });
+      return t('archive.timestamps.dateTime', { date, time });
     },
     [locale, t]
   );
@@ -359,21 +359,21 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
     () => [
       {
         id: 'name',
-        label: t('trash.columns.name'),
+        label: t('archive.columns.name'),
         sortable: true,
         width: 300,
         render: (_value: unknown, node: HierarchicalTreeNode) => getArchiveDisplayName(node),
       },
       {
         id: 'nodeType',
-        label: t('trash.columns.type'),
+        label: t('archive.columns.type'),
         sortable: true,
         width: 160,
         render: (_value: unknown, node: HierarchicalTreeNode) => node.nodeType,
       },
       {
         id: 'removedAt',
-        label: t('trash.columns.removedAt'),
+        label: t('archive.columns.removedAt'),
         sortable: true,
         width: 200,
         render: (_value: unknown, node: HierarchicalTreeNode) => {

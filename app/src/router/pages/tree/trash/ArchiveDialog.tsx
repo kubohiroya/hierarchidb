@@ -275,24 +275,24 @@ function ArchiveDialogFooter({
   const isRestoreMode = mode === 'restore';
   const restoreDisabled = loading || selectedCount === 0;
   const emptyDisabled = loading || totalCount === 0;
-  const restoreUnit = t('dialogs.trash.units.item', { count: selectedCount });
-  const emptyUnit = t('dialogs.trash.units.item', { count: totalCount });
+  const restoreUnit = t('dialogs.archive.units.item', { count: selectedCount });
+  const emptyUnit = t('dialogs.archive.units.item', { count: totalCount });
   const restoreLabel =
     selectedCount === 0
-      ? t('dialogs.trash.buttons.restore')
-      : t('dialogs.trash.buttons.restoreWithCount', { count: selectedCount });
+      ? t('dialogs.archive.buttons.restore')
+      : t('dialogs.archive.buttons.restoreWithCount', { count: selectedCount });
   const emptyLabel =
     totalCount === 0
-      ? t('dialogs.trash.buttons.empty')
-      : t('dialogs.trash.buttons.emptyWithCount', { count: totalCount });
+      ? t('dialogs.archive.buttons.empty')
+      : t('dialogs.archive.buttons.emptyWithCount', { count: totalCount });
   const restoreAria =
     selectedCount === 0
-      ? t('dialogs.trash.aria.restore')
-      : t('dialogs.trash.aria.restoreWithCount', { count: selectedCount, unit: restoreUnit });
+      ? t('dialogs.archive.aria.restore')
+      : t('dialogs.archive.aria.restoreWithCount', { count: selectedCount, unit: restoreUnit });
   const emptyAria =
     totalCount === 0
-      ? t('dialogs.trash.aria.empty')
-      : t('dialogs.trash.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
+      ? t('dialogs.archive.aria.empty')
+      : t('dialogs.archive.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
 
   const confirmTitleId = useId();
   const confirmContentId = useId();
@@ -313,7 +313,7 @@ function ArchiveDialogFooter({
         }}
       >
         <Button variant="contained" color="inherit" onClick={() => onRequestClose('close')}>
-          {t('dialogs.trash.buttons.cancel')}
+          {t('dialogs.archive.buttons.cancel')}
         </Button>
         {isRestoreMode ? (
           <Button
@@ -358,23 +358,23 @@ function ArchiveDialogFooter({
         aria-labelledby={confirmTitleId}
         aria-describedby={confirmContentId}
       >
-        <DialogTitle id={confirmTitleId}>{t('dialogs.trash.confirm.title')}</DialogTitle>
+        <DialogTitle id={confirmTitleId}>{t('dialogs.archive.confirm.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText id={confirmContentId}>
             {totalCount === 0
-              ? t('dialogs.trash.confirm.empty')
-              : t('dialogs.trash.confirm.description', { count: totalCount, unit: emptyUnit })}
+              ? t('dialogs.archive.confirm.empty')
+              : t('dialogs.archive.confirm.description', { count: totalCount, unit: emptyUnit })}
           </DialogContentText>
           {hasDraftsInView ? (
             <DialogContentText sx={{ mt: 1 }} color="warning.main">
-              {t('dialogs.trash.confirm.draftWarning') ??
+              {t('dialogs.archive.confirm.draftWarning') ??
                 'Drafts are present. Emptying the trash will force-delete in-progress edits.'}
             </DialogContentText>
           ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose} color="inherit">
-            {t('dialogs.trash.buttons.cancel')}
+            {t('dialogs.archive.buttons.cancel')}
           </Button>
           <Button
             onClick={handleConfirmDelete}
@@ -382,7 +382,7 @@ function ArchiveDialogFooter({
             variant="contained"
             disabled={emptyDisabled}
           >
-            {t('dialogs.trash.buttons.confirmDelete')}
+            {t('dialogs.archive.buttons.confirmDelete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -461,7 +461,7 @@ function ArchiveDialogContent({
       {hasDraftsInView ? (
         <Box sx={{ px: 2, pt: 1 }}>
           <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
-            {t('dialogs.trash.draftWarning') ??
+            {t('dialogs.archive.draftWarning') ??
               'Drafts are included in this view. Deleting will force-remove in-progress edits.'}
           </Alert>
         </Box>
@@ -471,7 +471,7 @@ function ArchiveDialogContent({
           value={searchTerm}
           onChange={onSearchTermChange}
           onClear={() => onSearchTermChange('')}
-          placeholder={t('dialogs.trash.searchPlaceholder') ?? ''}
+          placeholder={t('dialogs.archive.searchPlaceholder') ?? ''}
           sx={{ width: 260 }}
         />
       </Box>
@@ -485,7 +485,7 @@ function ArchiveDialogContent({
         }}
       >
         <TreeConsolePanel
-          title={t('dialogs.trash.panelTitle') ?? ''}
+          title={t('dialogs.archive.panelTitle') ?? ''}
           treeId={treeId}
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
@@ -602,7 +602,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
       [
         {
           id: 'trash-root',
-          label: t('dialogs.trash.stepLabel'),
+          label: t('dialogs.archive.stepLabel'),
           component: () => (
             <ArchiveDialogContent
               loading={loading}
@@ -668,7 +668,7 @@ export function ArchiveDialog({ data, params }: ArchiveDialogProps) {
         <ArchiveDialogHeader
           {...props}
           title={
-            mode === 'restore' ? t('dialogs.trash.title.restore') : t('dialogs.trash.title.empty')
+            mode === 'restore' ? t('dialogs.archive.title.restore') : t('dialogs.archive.title.empty')
           }
         />
       ),
