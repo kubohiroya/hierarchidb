@@ -1585,9 +1585,14 @@ export const createTransformByBandHandler = (
           taskId: params.taskId,
           operation: 'cache-write:transformCache.put',
           timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-          promise: ephemeralDB.transformCache.put({
-            ...params.cacheRecord,
-            timestamp: completedAt,
+          promise: ephemeralDB.transaction('rw', [
+            ephemeralDB.transformCache,
+            ephemeralDB.transformCacheMeta,
+          ], async () => {
+            await ephemeralDB.transformCache.put({
+              ...params.cacheRecord,
+              timestamp: completedAt,
+            });
           }),
         });
       } finally {
@@ -2946,15 +2951,14 @@ export const createTransformByBandHandler = (
         try {
           await withTimeout({
             taskId,
-            operation: 'tile-index:delete-old-relations',
+            operation: 'tile-index:rebuild-relations',
             timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-            promise: ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete(),
-          });
-          await withTimeout({
-            taskId,
-            operation: 'tile-index:bulkPut-relations',
-            timeoutMs: TRANSFORM_DB_WRITE_TIMEOUT_MS,
-            promise: ephemeralDB.tileIdToBufferRelations.bulkPut(relations),
+            promise: ephemeralDB.transaction('rw', [
+              ephemeralDB.tileIdToBufferRelations,
+            ], async () => {
+              await ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete();
+              await ephemeralDB.tileIdToBufferRelations.bulkPut(relations);
+            }),
           });
         } catch (storageError) {
           const reason = storageError instanceof Error ? storageError.message : String(storageError);
