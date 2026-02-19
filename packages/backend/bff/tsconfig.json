@@ -1,9 +1,15 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+  "baseUrl": ".",
     "noImplicitAny": false,
     "paths": {
       "~/*": [
+        "./src/*.ts",
+        "./src/*.tsx",
+        "./src/*.js",
+        "./src/*.jsx",
+        "./src/*.json",
         "./src/*"
       ]
     },
@@ -17,7 +23,7 @@
     ],
     "target": "es2022",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx"
   },
   "include": [
