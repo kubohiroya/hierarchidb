@@ -13,7 +13,9 @@ Input:
 
 Output:
 
-- `../` imports are rewritten to `~/<path from package root>`
+- `../` imports are rewritten to `~/<path from scope root>`
+  - In `packages/*`, `plugins/*`, scope root is the package root.
+  - In `app`, scope root is `app/src`.
 - `./` imports are kept as-is (local relative path exception)
 - File extensions such as `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` are stripped
 - Only imports that resolve inside the target package are rewritten
@@ -62,7 +64,9 @@ The tool rewrites module specifiers in:
   - `@scope/pkg`
 - Converts URL-constructor relative paths with `import.meta.url` base:
   - `new URL('../worker.ts', import.meta.url)`
-- `~/*` aliases are resolved from the nearest package root
+- `~/*` aliases are resolved from the nearest scope root:
+  - package scopes (`packages/*`, `plugins/*`) resolve from package root
+  - `app` resolves from `app/src`
 - You can also import package-root files directly, e.g. `~/package.json`
 - absolute path imports
 - Rewrites only files under the provided root directory
