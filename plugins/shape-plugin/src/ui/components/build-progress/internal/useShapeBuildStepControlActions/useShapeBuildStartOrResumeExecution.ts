@@ -1,6 +1,6 @@
 import { onTraceFailure, runResumeSessionRequest, runStartSessionRequest } from './useShapeBuildStartOrResumeExecutionHelpers.js';
 import { type StartOrResumeExecutionArgs } from './types.js';
-import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '../useShapeBuildStepHelpers/errors.js';
+import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/errors';
 
 export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs): Promise<boolean> => {
   const {

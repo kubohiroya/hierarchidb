@@ -5,7 +5,7 @@ import type { MapViewState } from '@hierarchidb/ui-map';
 import { MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
-import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
+import type { ShapeEntity, ShapePreviewMapView } from '~/common/types/index';
 
 export type ShapeDialogStepProps = {
   nodeId: string;

@@ -23,9 +23,9 @@ import {
   Tune as TuneIcon,
 } from '@mui/icons-material';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '../../i18n.js';
-import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { useTransformConfigSection } from '../../hooks/useTransformConfigSection.ts';
+import { useTranslation } from '~/ui/i18n';
+import type { ShapeBuildConfig } from '~/common/types/index';
+import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
 import type { ChangeEvent } from 'react';
 
 type Props = {

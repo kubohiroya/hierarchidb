@@ -1,14 +1,14 @@
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
-import type { ShapeEntity } from '../../../../../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { BuildStepStageMenu } from '@hierarchidb/components';
-import type { ShapeProcessingConfig } from '../../../../../../../common/types/build.js';
+import type { ShapeProcessingConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { mergeBuildConfig, mergeProcessingConfig } from '../../../../../../../services/utils/utils.js';
-import { useShapeBuildProgressPanel } from '../../../../useShapeBuildProgressPanel/useShapeBuildProgressPanel.js';
-import type { TaskItemWithMetadata } from '../../../../taskItemCardList/types.ts';
-import { useShapeBuildCacheActions } from '../../../../../../hooks/useShapeBuildCacheActions.js';
+import { mergeBuildConfig, mergeProcessingConfig } from '~/services/utils/utils';
+import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
 
 type StageMetadataMap<T> = Record<string, T>;
 

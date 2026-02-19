@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DexieChunkStore } from '@hierarchidb/chunk-store';
-import { buildShapeCacheKey, createShapeChunkStore, jsonDeserializer, jsonSerializer, textDeserializer, textSerializer } from '../../services/utils/chunkStore.js';
-import { GEOBOUNDARIES_ALL_METADATA_URL } from '../../services/utils/geoboundariesEndpoints.js';
+import { buildShapeCacheKey, createShapeChunkStore, jsonDeserializer, jsonSerializer, textDeserializer, textSerializer } from '~/services/utils/chunkStore';
+import { GEOBOUNDARIES_ALL_METADATA_URL } from '~/services/utils/geoboundariesEndpoints';
 
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
 

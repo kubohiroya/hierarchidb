@@ -1,4 +1,4 @@
-import type { CountryMetadata } from '../types/index.js';
+import type { CountryMetadata } from '~/common/types/index';
 
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';

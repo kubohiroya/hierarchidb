@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useId } from 'react';
-import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
-import { useTranslation } from '../i18n.js';
+import type { ShapeBuildConfig } from '~/common/types/index';
+import { useTranslation } from '~/ui/i18n';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
 type Args = {

@@ -1,6 +1,6 @@
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   createVtHandler,
   deleteTasksByIds,
@@ -11,7 +11,7 @@ import {
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeVtTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildVtTasks, resolveVtConfig } from './shapePipelineShared.ts';

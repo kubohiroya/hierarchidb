@@ -4,6 +4,9 @@
     "skipLibCheck": false,
     "baseUrl": "src",
     "paths": {
+      "react-transition-group/Transition": [
+        "../../../types/react-transition-group/Transition.d.ts"
+      ],
       "~/*": [
         "*.ts",
         "*"

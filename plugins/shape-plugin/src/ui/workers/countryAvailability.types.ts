@@ -27,4 +27,4 @@ export interface CountryAvailabilityWorkerAPI {
   ): Promise<CountryMetadata[]>;
   clearMetadataCache(dataSource?: DataSourceName): Promise<void>;
 }
-import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName } from '~/common/types/index';

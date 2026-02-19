@@ -40,7 +40,7 @@ const menuItemsModule = vi.hoisted(() => ({
   usePluginMenuItems: vi.fn<() => PluginMenuItem[]>(),
 }));
 
-vi.mock('~/hooks/usePluginMenuItems.js', () => menuItemsModule);
+vi.mock('~~/hooks/usePluginMenuItems.js', () => menuItemsModule);
 
 describe('DynamicSpeedDial', () => {
   beforeEach(() => {

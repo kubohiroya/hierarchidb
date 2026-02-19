@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ShapeEntity } from '../../../../common/types/index.ts';
+import type { ShapeEntity } from '~/common/types/index';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
   type BuildMonitorConfig,
@@ -8,7 +8,7 @@ import {
   getCrashInsight,
   type CrashInsight,
 } from '@hierarchidb/ui-monitoring';
-import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '../../../utils/buildWarnings.ts';
+import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
 
 type Args = {
   draft?: Partial<ShapeEntity> | null;

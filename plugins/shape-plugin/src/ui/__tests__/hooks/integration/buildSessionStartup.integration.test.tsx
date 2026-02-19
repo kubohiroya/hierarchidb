@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
-import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks.ts';
-import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal.ts';
+import { useShapeBuildTasks } from '~/ui/components/build-progress/useShapeBuildTasks';
+import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/awaitingFirstTaskSignal';
 
 const hoistedMocks = vi.hoisted(() => ({
   initializeMock: vi.fn<[], Promise<void>>(),

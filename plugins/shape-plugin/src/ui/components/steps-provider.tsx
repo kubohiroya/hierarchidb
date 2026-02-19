@@ -4,17 +4,17 @@ import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-ba
 import type {
   ShapeEntity,
   SelectedArrayByCountries,
-} from '../../common/types/ShapeEntity.ts';
+} from '~/common/types/ShapeEntity';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
   validateBatchConfig,
-} from '../../common/types/index.js';
+} from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
-import { useTranslation as getTranslation } from '../../ui/i18n.js';
+import { useTranslation as getTranslation } from '~/ui/i18n';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';

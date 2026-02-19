@@ -1,3 +1,3 @@
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type TaskItemWithMetadata = ShapeBuildTaskSummary & { title?: string };

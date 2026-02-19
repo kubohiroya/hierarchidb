@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
-import type { ShapeEntity } from '../../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
-import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '../../../utils/buildWarnings.js';
-import {getStageConcurrencyWarning} from '../../../utils/buildWarnings.js';
+import type { ShapeEntity } from '~/common/types/index';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
+import type { ShapeBuildConfigSnapshot, ShapeBuildStage } from '~/ui/utils/buildWarnings';
+import {getStageConcurrencyWarning} from '~/ui/utils/buildWarnings';
 export type StartWarning = {
   title: string;
   message: string;

@@ -2,17 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProcessConfig } from '../../services/batch/types.js';
-import type { FetchTaskPayload } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/index.js';
+import type { BuildProcessConfig } from '~/services/batch/types';
+import type { FetchTaskPayload } from '~/common/types/index';
+import { DEFAULT_BUILD_CONFIG } from '~/common/types/index';
 //import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
-import { encodeFlatGeoJson } from '../../services/batch/strategies/flatgeobuf.js';
-import { GadmFetchStageStrategy } from '../../services/batch/strategies/GadmFetchStageStrategy.js';
-import { GeoBoundariesFetchStageStrategy } from '../../services/batch/strategies/GeoBoundariesFetchStageStrategy.js';
-import { NaturalEarthDownloadStrategy } from '../../services/batch/strategies/NaturalEarthDownloadStrategy.js';
+import { encodeFlatGeoJson } from '~/services/batch/strategies/flatgeobuf';
+import { GadmFetchStageStrategy } from '~/services/batch/strategies/GadmFetchStageStrategy';
+import { GeoBoundariesFetchStageStrategy } from '~/services/batch/strategies/GeoBoundariesFetchStageStrategy';
+import { NaturalEarthDownloadStrategy } from '~/services/batch/strategies/NaturalEarthDownloadStrategy';
 import type { Feature, FeatureCollection } from 'geojson';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { buildRawDataDataSourceCacheKey } from '../../services/utils/chunkStore.js';
+import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],

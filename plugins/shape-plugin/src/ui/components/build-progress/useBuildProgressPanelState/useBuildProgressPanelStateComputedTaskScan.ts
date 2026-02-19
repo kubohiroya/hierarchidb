@@ -1,5 +1,5 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type StageTaskScan = Record<string, {
   hasRunning: boolean;

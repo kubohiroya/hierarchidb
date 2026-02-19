@@ -4,7 +4,7 @@ import {
   readTaskSequence,
   shouldApplyTaskUpdate,
 } from '@hierarchidb/ui-batch-progress';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 
 export const resolveProgressValue = (value: unknown): number => (

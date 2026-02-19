@@ -5,9 +5,9 @@ import type {
   FetchStageStrategy,
   FetchPayloadBuildContext,
 } from './FetchStageStrategy.ts';
-import type { FetchTask, FetchTaskPayload } from '../../../common/types/index.js';
-import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
-import { buildRawDataDataSourceCacheKey } from '../../utils/chunkStore.js';
+import type { FetchTask, FetchTaskPayload } from '~/common/types/index';
+import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
 
 export class GadmFetchStageStrategy implements FetchStageStrategy {
   buildFetchTaskPayloads(context: FetchPayloadBuildContext) {

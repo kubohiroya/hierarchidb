@@ -1,7 +1,7 @@
 import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
+import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import {

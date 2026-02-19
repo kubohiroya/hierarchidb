@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeFeaturePayload } from '../../common/types/index.js';
+import type { ShapeFeaturePayload } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import type JSZip from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
@@ -15,7 +15,7 @@ import {
   createShapeChunkStore,
   getOrFetchWithRetry,
   type RetryConfig,
-} from '../utils/chunkStore.js';
+} from '../utils/chunkStore';
 import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 //  Natural Earth

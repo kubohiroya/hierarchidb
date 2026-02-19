@@ -1,5 +1,5 @@
 import { Alert } from '@mui/material';
-import { useErrorDisplay } from '../hooks/useErrorDisplay.js';
+import { useErrorDisplay } from '~/ui/hooks/useErrorDisplay';
 
 export interface ErrorDisplayProps {
   error?: Error | null;

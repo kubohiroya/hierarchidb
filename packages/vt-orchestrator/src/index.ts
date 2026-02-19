@@ -16,5 +16,6 @@ export {
 export { createTransformByBandHandler } from './transform/createTransformByBandHandler.js';
 export { quantizeTopoJsonToGrid } from './transform/topojsonGrid.js';
 export { createVtHandler } from './vt/vtStage.js';
+export {unpackTileId} from './tiles/tileId.js';
 
 export { DEFAULT_TASK_SPLIT } from './types/types.js';

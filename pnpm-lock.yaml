@@ -1782,6 +1782,9 @@ importers:
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../worker-provider
+      '@hierarchidb/worker-api':
+        specifier: workspace:*
+        version: link:../../worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
@@ -2791,6 +2794,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.2
     devDependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../../batch-api
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
@@ -2934,6 +2940,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime-worker
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../../tree-api
       '@hierarchidb/worker-api':
         specifier: workspace:*
         version: link:../../worker-api
@@ -3367,6 +3376,9 @@ importers:
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../../packages/tree-api
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../../packages/ui/i18n
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -3591,6 +3603,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../../packages/ui/i18n
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
@@ -3669,12 +3684,24 @@ importers:
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../../packages/route-store
+      '@hierarchidb/spreadsheet-plugin':
+        specifier: workspace:*
+        version: link:../spreadsheet-plugin
+      '@hierarchidb/tabular-source-xlsx':
+        specifier: workspace:*
+        version: link:../../packages/tabular-source-xlsx
+      '@hierarchidb/ui-batch-progress':
+        specifier: workspace:*
+        version: link:../../packages/ui/batch
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../../packages/ui/i18n
       '@hierarchidb/ui-memory':
         specifier: workspace:*
         version: link:../../packages/ui/memory
@@ -4116,6 +4143,9 @@ importers:
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
+      '@hierarchidb/ui-icon':
+        specifier: workspace:*
+        version: link:../../packages/ui/icon
       '@hierarchidb/ui-modal-select':
         specifier: workspace:*
         version: link:../../packages/ui/modal-select

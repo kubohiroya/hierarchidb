@@ -2,7 +2,7 @@ import { toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import { Box } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
-import type { ShapeEntity } from '../../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 
 type UseShapeBuildProgressPanelViewModelArgs = {

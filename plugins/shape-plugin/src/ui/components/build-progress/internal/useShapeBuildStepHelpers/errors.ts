@@ -1,5 +1,5 @@
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import type { ShapeEntity } from '../../../../../common/types/index.js';
+import type { ShapeEntity } from '~/common/types/index';
 import { toProcessingStatus } from './status.js';
 
 export const getErrorMessage = (error: unknown): string => (

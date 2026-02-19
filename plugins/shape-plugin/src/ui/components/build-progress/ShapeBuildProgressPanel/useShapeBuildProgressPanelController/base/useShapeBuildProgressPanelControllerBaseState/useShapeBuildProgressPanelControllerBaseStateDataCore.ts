@@ -1,12 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
-import type { ShapeProcessingConfig } from '../../../../../../../common/types/build.js';
+import type { ShapeProcessingConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { mergeBuildConfig, mergeProcessingConfig } from '../../../../../../../services/utils/utils.js';
-import { useShapeBuildProgressPanel } from '../../../../useShapeBuildProgressPanel/useShapeBuildProgressPanel.js';
-import { useShapeBuildCacheActions } from '../../../../../../hooks/useShapeBuildCacheActions.js';
-import type { TaskItemWithMetadata } from '../../../../taskItemCardList/types.ts';
-import type { ShapeEntity } from '../../../../../../../common/types/ShapeEntity.js';
+import { mergeBuildConfig, mergeProcessingConfig } from '~/services/utils/utils';
+import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
+import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStepStageMenu } from '@hierarchidb/components';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';

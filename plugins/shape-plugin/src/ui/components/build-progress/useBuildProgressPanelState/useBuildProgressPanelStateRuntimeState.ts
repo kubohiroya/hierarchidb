@@ -2,11 +2,11 @@ import { useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { useBuildCrashInsight } from '../useBuildCrashInsight/useBuildCrashInsight.js';
+import { useBuildCrashInsight } from '~/ui/components/build-progress/useBuildCrashInsight/useBuildCrashInsight';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import type { ShapeEntity } from '../../../../common/types/ShapeEntity.ts';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import {
   taskProgressControlsAtom,
   buildStageProgressAtom,
@@ -23,12 +23,12 @@ import {
   taskSummaryLoadingAtom,
   tasksByStageAtom,
   taskProgressSummaryAtom,
-} from '../../../atoms/shapeBuildProgressAtoms.js';
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import type {
   ShapeBuildTaskSummary,
   TaskProgressControls,
   TaskProgressSummary,
-} from '../../../atoms/shapeBuildProgressAtoms.js';
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useBuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
 import type { BuildProgressPanelStateComputed } from './useBuildProgressPanelStateComputed.js';
 import { resolveCompletionFailedStageLabel, resolveActiveRunningStageId } from './useBuildProgressPanelState.utils.js';

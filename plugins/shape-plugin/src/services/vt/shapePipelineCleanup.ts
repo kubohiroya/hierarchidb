@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
-import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
-import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeCleanupStageParams = {

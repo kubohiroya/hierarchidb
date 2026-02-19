@@ -5,10 +5,10 @@ import type {
   FetchTaskPayload,
   ShapeEntity,
   ShapePreviewMapView,
-} from '../../../../common/types/index.js';
-import { isShapePreviewMetadataEnabled } from '../../../../common/config/previewFlags.js';
+} from '~/common/types/index';
+import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import { useTranslation } from '../../../i18n.js';
+import { useTranslation } from '~/ui/i18n';
 import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
@@ -17,7 +17,7 @@ import {
   shapePreviewSelectedIdsAtom,
   shapePreviewHoveredIdAtom,
   shapePreviewSelectionContextAtom,
-} from '../../../atoms/shapePreviewAtoms.ts';
+} from '~/ui/atoms/shapePreviewAtoms';
 import type {
   MapHighlightEntry,
   MapPreviewErrorSummaryById,
@@ -45,7 +45,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;

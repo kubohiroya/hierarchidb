@@ -35,8 +35,8 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
     nodeId,
     {
       autoSubscribe: true,
-      mapUnifiedToProgress: (info) => info ?? null,
-      mapUnifiedToStatus: (info) => (nodeId && info ? toBuildSessionStatus(nodeId, info) : null),
+      mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) => info ?? null,
+      mapUnifiedToStatus: (info: BuildUnifiedProgressInfo | null) => (nodeId && info ? toBuildSessionStatus(nodeId, info) : null),
     },
   );
 

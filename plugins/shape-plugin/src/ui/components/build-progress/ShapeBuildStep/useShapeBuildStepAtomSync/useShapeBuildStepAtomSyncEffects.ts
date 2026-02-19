@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { TaskProgressAuthState, TaskProgressControls, TaskProgressSummary } from '../../../../atoms/shapeBuildProgressAtoms.js';
-import { shallowEqualRecord } from '../../shapeBuildStepAtomSyncEquality.js';
+import type { TaskProgressAuthState, TaskProgressControls, TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { shallowEqualRecord } from '~/ui/components/build-progress/shapeBuildStepAtomSyncEquality';
 
 type StageTotalMap = Record<
   string,

@@ -17,9 +17,9 @@ import {
   ensureIso3166Data,
   getCountry,
 } from '@hierarchidb/gen-iso3166-2/browser';
-import { getDataSourceConfig } from '../../../../services/utils/utils.js';
-import type { ShapeEntity } from '../../../../common/types/index.js';
-import { useShapePreviewStep } from '../useShapePreviewStep.js';
+import { getDataSourceConfig } from '~/services/utils/utils';
+import type { ShapeEntity } from '~/common/types/index';
+import { useShapePreviewStep } from '~/ui/components/preview/useShapePreviewStep';
 
 const resolveCommonZoomBounds = () => {
   const settings = loadTreeConsoleSettings();

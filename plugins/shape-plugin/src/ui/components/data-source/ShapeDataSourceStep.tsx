@@ -4,10 +4,10 @@ import { Box, Button } from '@mui/material';
 import { notify } from '@hierarchidb/components';
 import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
 import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
-import { useTranslation } from '../../i18n.js';
-import { clearShapeDataSourceCache } from '../../utils/clearDataSourceCache.js';
+import { useTranslation } from '~/ui/i18n';
+import { clearShapeDataSourceCache } from '~/ui/utils/clearDataSourceCache';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.js';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 
 /**
  * Data Source Selection step for Shape plugin

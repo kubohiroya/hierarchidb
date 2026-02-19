@@ -2,7 +2,7 @@ import { type NodeId } from '@hierarchidb/core-types';
 import { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.tsx';
 import { ShapeBuildProgressPanelView } from './ShapeBuildProgressPanelView.tsx';
-import type { ShapeEntity } from '../../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 
 type ShapeBuildProgressPanelProps = {
   data?: Partial<ShapeEntity>;

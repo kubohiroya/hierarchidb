@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   VtTaskQueueDb,
   deleteTasksByIds,
@@ -26,16 +26,16 @@ import type {
   FetchTaskPayload,
   SelectedArrayByCountries,
   ShapeFeaturePayload,
-} from '../../common/types/index.js';
-import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
-import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
-import { resolveStrategyIdFromDataSource } from '../datasources/strategyIds.js';
-import type { RetryConfig } from '../datasources/DataSourceStrategy.js';
+} from '~/common/types/index';
+import { countSelectedAdminPairs, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { DataSourceStrategyFactory } from '~/services/datasources/DataSourceStrategyFactory';
+import { resolveStrategyIdFromDataSource } from '~/services/datasources/strategyIds';
+import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
 import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
-import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import {
   buildFeatureId,
   extractGeometryStats,
@@ -53,10 +53,10 @@ import {
   getOrFetchWithRetry,
   jsonDeserializer,
   jsonSerializer,
-} from '../utils/chunkStore.js';
-import { fetchRawDataWithPipeline } from '../utils/rawDataPipeline.js';
-import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.js';
-import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
+} from '~/services/utils/chunkStore';
+import { fetchRawDataWithPipeline } from '~/services/utils/rawDataPipeline';
+import { buildGeoBoundariesMetadataUrl } from '~/services/utils/geoboundariesEndpoints';
+import type { GeoBoundariesApiResponse } from '~/services/datasources/GeoBoundariesStrategy';
 import { setFetchPlannedTotal } from './shapeProgressPlan.ts';
 import { buildFetchTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 import { hashFetchArtifact, resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts';

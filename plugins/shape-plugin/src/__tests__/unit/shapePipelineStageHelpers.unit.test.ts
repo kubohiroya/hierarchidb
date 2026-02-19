@@ -6,7 +6,7 @@ import {
   updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
-import { finalizePendingStageTasks } from '../../services/vt/shapePipelineStageHelpers.ts';
+import { finalizePendingStageTasks } from '~/services/vt/shapePipelineStageHelpers';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 

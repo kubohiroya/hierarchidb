@@ -1,12 +1,12 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProcessConfig } from '../types.js';
+import type { BuildProcessConfig } from '~/services/batch/types';
 import type {
   CountryMetadata,
   DataSourceName,
   FetchTask,
   FetchTaskPayload,
   SelectedArrayByCountries,
-} from '../../../common/types/index.js';
+} from '~/common/types/index';
 
 export interface FetchStageOptions {
   timeoutMs?: number;

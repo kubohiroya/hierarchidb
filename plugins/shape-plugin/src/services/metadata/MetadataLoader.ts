@@ -1,4 +1,4 @@
-import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   fetchGeoBoundariesMetadata,

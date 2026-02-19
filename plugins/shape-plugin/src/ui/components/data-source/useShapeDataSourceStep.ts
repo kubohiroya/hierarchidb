@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
-import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
-import { mergeBuildConfig, mergeProcessingConfig } from '../../../services/utils/utils.js';
+import type { DataSourceConfig, DataSourceName, ShapeEntity } from '~/common/types/index';
+import { mergeBuildConfig, mergeProcessingConfig } from '~/services/utils/utils';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   SHAPE_DATA_SOURCE_BY_NAME,
   SHAPE_DATA_SOURCES,
-} from '../../../common/types/index.js';
+} from '~/common/types/index';
 
 type Args = {
   data: Partial<ShapeEntity>;

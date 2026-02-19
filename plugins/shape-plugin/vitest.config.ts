@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 const useForkPool = process.env.SHAPE_VITEST_POOL === 'forks';
 const includeDeepTests = process.env.ENABLE_SHAPE_DEEP_TESTS === '1';
@@ -142,11 +143,8 @@ export default defineConfig({
           '../../packages/tools/gen-iso3166-2/src/index.ts',
         ),
       },
-      {
-        find: '~',
-        replacement: path.resolve(__dirname, './src'),
-      },
       // App client hook is now injected via registerWorkerClientHook in tests
     ],
   },
+  plugins: [tsconfigPaths()],
 });

@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { PauseWithCancelHookActionsArgs, ShapeBuildPauseReason } from './types.js';
-import { runWithTimeout } from '../useShapeBuildStepHelpers/elapsed.ts';
-import { SHAPE_NODE_TYPE } from '../../shapeBuildTaskSyncDebug.ts';
-import { PAUSE_COMMAND_TIMEOUT_MS } from '../useShapeBuildStepHelpers/constants.ts';
+import { runWithTimeout } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
+import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
+import { PAUSE_COMMAND_TIMEOUT_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants';
 
 export const useShapeBuildPause = ({
   activeNodeId,

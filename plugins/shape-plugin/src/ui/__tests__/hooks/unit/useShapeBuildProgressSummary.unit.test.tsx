@@ -2,8 +2,8 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { TaskStage } from '@hierarchidb/batch-api';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation.ts';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation';
 
 const stages: BuildStage[] = [
   { id: 'fetch', title: 'Fetch', icon: null },

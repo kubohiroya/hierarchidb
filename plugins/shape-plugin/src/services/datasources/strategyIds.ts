@@ -1,5 +1,5 @@
 import type { DataSourceStrategyId } from './DataSourceStrategyFactory.js';
-import type { DataSourceName } from '../../common/types/index.js';
+import type { DataSourceName } from '~/common/types/index';
 
 export const resolveStrategyIdFromDataSource = (source?: DataSourceName): DataSourceStrategyId | null => {
   switch (source) {

@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CountryMetadata } from '../../../../common/types/index.js';
-import type { DataSourceName } from '../../../../common/types/index.js';
-import type { SerializedCountryAvailability } from '../../../workers/countryAvailability.types.js';
+import type { CountryMetadata } from '~/common/types/index';
+import type { DataSourceName } from '~/common/types/index';
+import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
 import { buildBootstrapCacheKey, countrySelectionBootstrapCache } from './selectionUtils.js';
 import { getOrCreateAvailabilityWorkerHandle, type AvailabilityWorkerHandle } from './availabilityWorker.js';
 

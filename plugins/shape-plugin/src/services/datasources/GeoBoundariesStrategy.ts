@@ -12,7 +12,7 @@ import {
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeFeaturePayload } from '../../common/types/index.js';
+import type { ShapeFeaturePayload } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   buildRawDataDataSourceCacheKey,
@@ -22,14 +22,14 @@ import {
   jsonDeserializer,
   jsonSerializer,
   type RetryConfig,
-} from '../utils/chunkStore.js';
+} from '../utils/chunkStore';
 import {
   GEOBOUNDARIES_API_BASE_URL,
   GEOBOUNDARIES_RELEASE_TYPE,
   buildGeoBoundariesMetadataUrl,
-} from '../utils/geoboundariesEndpoints.js';
-import { decodeFlatGeoJson, encodeFlatGeoJson } from '../batch/strategies/flatgeobuf.js';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
+} from '../utils/geoboundariesEndpoints';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from '../batch/strategies/flatgeobuf';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline';
 import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;

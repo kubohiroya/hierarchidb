@@ -1,7 +1,7 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import { isTaskSkipped } from '../../../../../common/utils/taskMessages.js';
-import { sortTransformTasks, sortVectorTileTasks } from '../../taskItemCardList/useTaskItemCardList.js';
-import type { TaskItemWithMetadata } from '../../taskItemCardList/types.ts';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 
 export type ViewportRange = {
   stageId: string;

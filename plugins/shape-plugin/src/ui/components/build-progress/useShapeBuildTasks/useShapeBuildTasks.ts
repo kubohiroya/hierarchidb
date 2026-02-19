@@ -7,16 +7,16 @@ import {
   tasksAtom,
   tasksErrorAtom,
   tasksLoadingAtom,
-} from '../../../atoms/shapeBuildProgressAtoms.js';
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
-import { parseGeometrySimplifyError } from '../geometrySimplifyError.js';
-import { useShapeBuildTaskSync } from '../useShapeBuildTaskSync/useShapeBuildTaskSync.js';
-import type { RawTaskSummary } from '../useShapeBuildTaskSync/useShapeBuildTaskSync.types.js';
+import { parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
+import { useShapeBuildTaskSync } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync';
+import type { RawTaskSummary } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
 import {
   SHAPE_NODE_TYPE,
   isTaskInFlight,
   logRunningResidueDrop,
-} from '../shapeBuildTaskSyncDebug.js';
+} from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 
 export interface UseShapeBuildTasksOptions {
   autoSubscribe?: boolean;
