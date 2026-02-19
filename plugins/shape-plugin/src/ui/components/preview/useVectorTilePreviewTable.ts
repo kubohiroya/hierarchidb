@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { useTranslation } from '../../i18n.js';
+import { useTranslation } from '~/ui/i18n';
 import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
 import { Typography } from '@mui/material';
 

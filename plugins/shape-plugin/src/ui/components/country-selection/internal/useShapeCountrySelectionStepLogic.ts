@@ -5,15 +5,15 @@ import {
   type DataSourceName,
   isDataSourceName,
   SHAPE_DATA_SOURCE_BY_NAME,
-} from '../../../../common/types/index.js';
+} from '~/common/types/index';
 import type { MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
 import type { Country } from '@hierarchidb/ui-country-select';
 import { invalidateBuildForSelectionChange } from './selectionInvalidate.js';
 import { useShapeCountrySelectionStepDataLoader } from './useShapeCountrySelectionStepDataLoader.js';
 import { useShapeCountrySelectionStepSelectionState } from './useShapeCountrySelectionStepSelectionState.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '../../../../common/types/index.js';
-import { type SerializedCountryAvailability } from '../../../workers/countryAvailability.types.js';
+import type { ShapeEntity } from '~/common/types/index';
+import { type SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
 import type { CountrySelectionIsoState } from './useShapeCountrySelectionStepSelectionState.js';
 
 type Args = {

@@ -4,13 +4,13 @@ import type { NodeId } from '@hierarchidb/core-types';
 
 import {
   taskStatusAtom,
-} from '../../../atoms/shapeBuildProgressAtoms.js';
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
 
 import { useBuildProgressStepState } from './useBuildProgressStepState.js';
 import { useShapeBuildStepAtomSync } from './useShapeBuildStepAtomSync/index.js';
-import type { ShapeDialogStepProps } from '../../ShapeDialogStepProps.js';
-import { ShapeBuildProgressPanel } from '../ShapeBuildProgressPanel/ShapeBuildProgressPanel.tsx';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { ShapeBuildProgressPanel } from '~/ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 
 
 const ShapeBuildAtomSync: React.FC<ShapeDialogStepProps> = (props) => {

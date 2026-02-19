@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
-import type { ShapeEntity } from '../../../common/types/index.js';
+import type { ShapeEntity } from '~/common/types/index';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
   validateBatchConfig,
-} from '../../../common/types/index.js';
-import '../../components/steps-provider.tsx';
+} from '~/common/types/index';
+import '~/ui/components/steps-provider';
 
 vi.mock('../../i18n.js', () => ({
   useTranslation: () => ({

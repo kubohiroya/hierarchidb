@@ -1,7 +1,7 @@
 import type { ContinentCode } from '@hierarchidb/ui-country-select';
-import type { CountryMetadata } from '../../../../common/types/index.js';
+import type { CountryMetadata } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { SerializedCountryAvailability } from '../../../workers/countryAvailability.types.js';
+import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
 
 export const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN', 'XX'];
 

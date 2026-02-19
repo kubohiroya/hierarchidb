@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { TaskProgressControls } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { logStartResumeTrace } from './useBuildProgressPanelState.utils.js';
 
 type Params = {

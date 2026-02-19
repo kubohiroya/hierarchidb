@@ -1,9 +1,9 @@
 import { wrap, proxy } from 'comlink';
-import type { CountryAvailabilityWorkerAPI } from '../../../workers/countryAvailability.types.js';
+import type { CountryAvailabilityWorkerAPI } from '../../../workers/countryAvailability.types';
 
 // availability is loaded in a dedicated worker thread
 const createAvailabilityWorker = () => new Worker(
-  new URL('../../../workers/countryAvailability.worker.ts', import.meta.url),
+  new URL('../../../workers/countryAvailability.worker', import.meta.url),
   { type: 'module' },
 );
 

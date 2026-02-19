@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeEntity } from '../../../../common/types/ShapeEntity.ts';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.ts';
-import { resolveShapeTaskTitle } from '../../../../common/utils/taskTitles.ts';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.ts';
-import type { TaskItemWithMetadata } from '../taskItemCardList/types.ts';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '~/common/types/index';
+import { resolveShapeTaskTitle } from '~/common/utils/taskTitles';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {
   buildStageTaskScan,
   type FailureInfo,

@@ -11,9 +11,9 @@ import {
 } from '@mui/material';
 import { Rule as RuleIcon } from '@mui/icons-material';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
-import { useTranslation } from '../../i18n.js';
-import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { mergeBuildConfig } from '../../../common/types/index.js';
+import { useTranslation } from '~/ui/i18n';
+import type { ShapeBuildConfig } from '~/common/types/index';
+import { mergeBuildConfig } from '~/common/types/index';
 
 type Props = {
   config: ShapeBuildConfig;

@@ -154,6 +154,8 @@ function createRuntimeAliasConfig({
     if (exclude) optimizeExclude.add(specifier);
   };
 
+  addAlias('~/', '../plugins/shape-plugin/src', { exact: false });
+
   const processedPackages = new Set<string>();
   const shouldAliasPackage = (specifier: string, group?: string) => shouldUseSource(selection, specifier, group);
 
@@ -383,6 +385,143 @@ function facadeAliasPlugin(): Plugin {
         if (resolved) return resolved;
         return normalized;
       }
+      return null;
+    },
+  };
+}
+
+function pluginTildeRootAliasPlugin(): Plugin {
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
+
+  return {
+    name: 'hierarchidb:plugin-tilde-root-alias',
+    enforce: 'pre',
+      resolveId(source, importer) {
+      if (typeof source !== 'string' || !source.startsWith('~/')) return null;
+      if (typeof importer !== 'string' || importer.length === 0) return null;
+      const importerUrl: string = importer;
+      const questionIndex = importerUrl.indexOf('?');
+      const sanitizedImporter = (
+        questionIndex >= 0 ? importerUrl.slice(0, questionIndex) : importerUrl
+      ).replace(/\\/g, '/');
+      const importerDir = path.dirname(sanitizedImporter);
+      let pluginRoot: string | null = null;
+      let pluginSrcRoot: string | null = null;
+      let cursor = importerDir;
+
+      while (cursor && cursor !== path.dirname(cursor)) {
+        const packageJsonPath = path.join(cursor, 'package.json');
+        if (fs.existsSync(packageJsonPath)) {
+          try {
+            const raw = fs.readFileSync(packageJsonPath, 'utf8');
+            const packageJson = JSON.parse(raw);
+            const hasPluginName =
+              typeof packageJson?.name === 'string' &&
+              /plugin/i.test(packageJson.name);
+            const isPluginPackage =
+              packageJson &&
+              typeof packageJson === 'object' &&
+              !!((packageJson as { hierarchidb?: { plugin?: unknown } }).hierarchidb?.plugin || packageJson?.nodeType);
+            if (isPluginPackage || hasPluginName) {
+              pluginRoot = cursor;
+              const candidateSrcRoot = path.join(cursor, 'src');
+              pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : cursor;
+              break;
+            }
+          } catch (error) {
+            // Ignore malformed package.json and continue searching parent directories.
+          }
+        }
+
+        if (cursor.endsWith('/plugins')) {
+          break;
+        }
+
+        const parent = path.dirname(cursor);
+        if (parent === cursor) break;
+        cursor = parent;
+      }
+
+      if (!pluginRoot) return null;
+
+      const withoutPrefix = source.slice(2).replace(/^\/+/, '');
+      const baseRoot = pluginSrcRoot ?? pluginRoot;
+      if (!baseRoot) return null;
+      const candidatePath = path.resolve(baseRoot, withoutPrefix);
+      const explicitExt = path.extname(candidatePath);
+      const explicitExtSupported = extensions.includes(explicitExt);
+      const candidateCandidates: string[] = [];
+      const withoutExtPath =
+        explicitExt && explicitExtSupported
+          ? candidatePath.slice(0, -explicitExt.length)
+          : candidatePath;
+
+      if (explicitExtSupported) {
+        candidateCandidates.push(candidatePath);
+      } else {
+        for (const ext of extensions) {
+          candidateCandidates.push(`${candidatePath}${ext}`);
+        }
+      }
+
+      candidateCandidates.push(`${withoutExtPath}/index.ts`);
+      candidateCandidates.push(`${withoutExtPath}/index.tsx`);
+      candidateCandidates.push(`${withoutExtPath}/index.js`);
+      candidateCandidates.push(`${withoutExtPath}/index.mjs`);
+      candidateCandidates.push(`${withoutExtPath}/index.cjs`);
+      candidateCandidates.push(`${withoutExtPath}/index.mts`);
+      candidateCandidates.push(`${withoutExtPath}/index.cts`);
+
+      for (const candidate of candidateCandidates) {
+        const normalizedCandidate = candidate.replace(/\\/g, '/');
+        const exists = fs.existsSync(normalizedCandidate);
+        if (!exists) continue;
+        if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1') {
+          // eslint-disable-next-line no-console
+          console.log(
+            '[plugin-tilde-root-alias] resolved',
+            source,
+            '=>',
+            normalizedCandidate,
+            'from',
+            importer,
+            'candidate=',
+            normalizedCandidate,
+          );
+        }
+        return normalizedCandidate;
+      }
+
+      if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1') {
+        // eslint-disable-next-line no-console
+        console.log(
+          '[plugin-tilde-root-alias] unresolved',
+          source,
+          'candidates=',
+          candidateCandidates.join(' | '),
+          'pluginRoot=',
+          pluginRoot,
+          'importer=',
+          importer,
+        );
+      }
+
+      return null;
+    },
+    async load(id) {
+      if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1' && id.includes('/plugins/shape-plugin/src/common/types/metadata.ts')) {
+        // eslint-disable-next-line no-console
+        console.log('[plugin-tilde-root-alias] load metadata', id);
+      }
+
+      if (
+        process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1'
+        && id.includes('/plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts')
+      ) {
+        // eslint-disable-next-line no-console
+        console.log('[plugin-tilde-root-alias] load resolver', id);
+      }
+
       return null;
     },
   };
@@ -821,6 +960,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
       rootDir: repoRoot,
       shouldAlias: (entry) => isDev && shouldUsePluginSource(devAliasSelection, entry.packageName, entry.nodeType),
     }),
+    pluginTildeRootAliasPlugin(),
     facadeAliasPlugin(),
     pluginWorkerVirtualModule(),
     /*
@@ -1093,7 +1233,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
         '@hierarchidb/runtime-worker-ui-plugin-dialog',
       ],
       alias: [
-        { find: '~', replacement: path.resolve(__dirname, './src') },
+        { find: '~~', replacement: path.resolve(__dirname, './src') },
         // Force ESM/modern entrypoints for MUI to avoid SSR CJS 'require is not defined'
         // These aliases are safe across v5/v7 as they point to ESM builds.
         // Do not alias MUI packages to ESM entry files.
@@ -1185,6 +1325,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
     worker: {
       format: 'es',
       plugins: () => [
+        pluginTildeRootAliasPlugin(),
         comlink(),
       ],
       rollupOptions: {

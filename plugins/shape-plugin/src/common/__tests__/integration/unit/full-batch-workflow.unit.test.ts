@@ -14,7 +14,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
-import { ShapeErrorHandler } from '../../services/ShapeErrorHandler.js';
+import { ShapeErrorHandler } from '~/common/__tests__/services/ShapeErrorHandler';
 
 import {
   createTestShapeEntity,
@@ -23,7 +23,7 @@ import {
   GEOBOUNDARIES_TEST_ENDPOINTS,
   TEST_NODE_ID,
   TEST_TIMEOUTS,
-} from '../fixtures/test-shape-entity-data.js';
+} from '~/common/__tests__/integration/fixtures/test-shape-entity-data';
 
 describe('Full Batch Processing Workflow Integration Tests', () => {
   let errorHandler: ShapeErrorHandler;

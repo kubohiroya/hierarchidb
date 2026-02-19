@@ -8,7 +8,7 @@ import {
   mergeSnapshotWithCurrent,
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSync.state.js';
 import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSync.types.js';
 

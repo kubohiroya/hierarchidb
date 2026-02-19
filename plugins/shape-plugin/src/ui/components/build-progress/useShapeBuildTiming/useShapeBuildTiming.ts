@@ -10,7 +10,7 @@ import {
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
 import { useBuildSessionTiming } from '@hierarchidb/batch-runtime-services';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.js';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 
 const buildMonitorConfig = {
   storagePrefix: 'hdb:shape:stage-monitor',

@@ -5,14 +5,14 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
-import type { DataSourceName } from '../../common/types/index.js';
+import type { DataSourceName } from '~/common/types/index';
 import type {
   ShapeEntity,
   ShapePreviewMapView,
   ShapeStageTimingSnapshot,
   SelectedArrayByCountries,
-} from '../../common/types/index.js';
-import type { ShapeBuildConfig } from '../../common/types/build.js';
+} from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/build';
 import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import { CoreDB } from '@hierarchidb/runtime-worker';
 

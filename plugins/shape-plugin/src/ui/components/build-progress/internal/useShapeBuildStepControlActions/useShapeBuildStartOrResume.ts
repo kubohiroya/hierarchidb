@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components/notify';
 import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.js';
-import { shouldResumeBuildSession } from '../../shouldResumeBuildSession.js';
+import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
 import { executeStartOrResumeFlow } from './useShapeBuildStartOrResumeExecution.js';
 
 export const useShapeBuildStartOrResume = ({

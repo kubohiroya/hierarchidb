@@ -24,7 +24,8 @@
     "module": "NodeNext",
     "noEmit": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
   },
   "include": [
     "src/**/*.ts",

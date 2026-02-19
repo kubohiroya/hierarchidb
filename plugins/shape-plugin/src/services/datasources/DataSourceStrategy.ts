@@ -2,9 +2,9 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import type { ShapeFeaturePayload } from '../../common/types/ShapeFeaturePayload.js';
+import type { ShapeFeaturePayload } from '~/common/types/ShapeFeaturePayload';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeStepValidationResult } from '../../common/types/index.js';
+import type { ShapeStepValidationResult } from '~/common/types/index';
 import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
 
 export interface DataSourceConfig {

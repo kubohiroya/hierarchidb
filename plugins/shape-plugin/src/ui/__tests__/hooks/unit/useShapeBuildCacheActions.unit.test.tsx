@@ -97,7 +97,7 @@ vi.mock('@hierarchidb/vt-orchestrator', () => {
   };
 });
 
-import { useShapeBuildCacheActions } from '../../../hooks/useShapeBuildCacheActions.ts';
+import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <Provider store={createStore()}>{children}</Provider>

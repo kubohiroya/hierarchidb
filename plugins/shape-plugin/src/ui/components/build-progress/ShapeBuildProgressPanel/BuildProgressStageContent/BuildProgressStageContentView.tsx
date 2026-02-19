@@ -1,7 +1,7 @@
 import { ArrowCircleDown as ArrowCircleDownIcon, ArrowCircleUp as ArrowCircleUpIcon } from '@mui/icons-material';
 import { Box, Skeleton, Stack, Tooltip, Typography, IconButton } from '@mui/material';
 import type { BuildProgressStageContentState } from './useBuildProgressStageContentState.js';
-import { TaskItemCardListCard } from '../../TaskItemCardListCard/TaskItemCardListCard.tsx';
+import { TaskItemCardListCard } from '~/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 
 type BuildProgressStageContentViewProps = BuildProgressStageContentState & {
   showHeader?: boolean;

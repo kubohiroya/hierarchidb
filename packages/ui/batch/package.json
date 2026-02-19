@@ -33,6 +33,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@mui/icons-material": ">=5.0.0",
     "@mui/material": ">=5.0.0",
     "comlink": ">=4.0.0"
@@ -48,6 +49,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@mui/icons-material": ">=5.0.0",
     "@mui/material": ">=5.0.0",
     "comlink": ">=4.0.0",

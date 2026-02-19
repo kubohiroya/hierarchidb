@@ -1,8 +1,8 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import { ephemeralShapeAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.js';
-import type { ShapeBuildConfig } from '../../../common/types/build.js';
-import { mergeBuildConfig } from '../../../services/utils/utils.js';
+import { ephemeralShapeAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import type { ShapeBuildConfig } from '~/common/types/build';
+import { mergeBuildConfig } from '~/services/utils/utils';
 
 const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
 

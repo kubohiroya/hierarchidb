@@ -7,11 +7,11 @@ import type {
   FetchStageStrategy,
   FetchPayloadBuildContext,
 } from './FetchStageStrategy.ts';
-import type { CountryMetadata, FetchTask, FetchTaskPayload } from '../../../common/types/index.js';
+import type { CountryMetadata, FetchTask, FetchTaskPayload } from '~/common/types/index';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
-import { metadataLoader } from '../../metadata/MetadataLoader.js';
-import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
-import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '../../utils/chunkStore.js';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '~/services/utils/utils';
+import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '~/services/utils/chunkStore';
 
 type CountryLookup = Map<string, CountryMetadata>;
 

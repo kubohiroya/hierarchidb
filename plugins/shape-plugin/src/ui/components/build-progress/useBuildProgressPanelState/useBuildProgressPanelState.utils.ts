@@ -1,6 +1,6 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import { resolveMostAdvancedStageId } from '../stagePriority.ts';
+import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stagePriority';
 
 export const isDev = import.meta.env.DEV;
 

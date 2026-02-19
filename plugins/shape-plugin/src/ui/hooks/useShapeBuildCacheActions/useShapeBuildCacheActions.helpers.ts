@@ -1,9 +1,9 @@
 import type { BuildSessionStatus, TaskStage } from '@hierarchidb/batch-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { countRawDataDataSourceBuffersForNode, deleteRawDataDataSourceBuffersForNode } from '../../../services/utils/chunkStore.js';
+import { countRawDataDataSourceBuffersForNode, deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 
 export const SHAPE_NODE_TYPE = 'shape' as NodeType;
 export const KNOWN_TASK_STAGES: TaskStage[] = ['fetch', 'transform', 'vt'];

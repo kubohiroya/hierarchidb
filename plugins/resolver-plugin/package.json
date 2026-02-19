@@ -65,6 +65,7 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*"
@@ -87,6 +88,7 @@
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*"

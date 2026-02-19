@@ -1,9 +1,9 @@
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '../../../../services/utils/chunkStore.ts';
-import { shapeMutationAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.ts';
-import { sanitizeShapeDraftData } from '../../../utils/sanitizeShapeDraftData.ts';
+import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '~/services/utils/chunkStore';
+import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { sanitizeShapeDraftData } from '~/ui/utils/sanitizeShapeDraftData';
 import { type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildSelectionSet } from './selectionUtils.js';

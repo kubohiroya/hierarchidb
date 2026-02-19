@@ -3,9 +3,9 @@ import { useTheme } from '@mui/material/styles';
 import { useAtomValue } from 'jotai';
 import { useBuildStageFilter } from '@hierarchidb/components';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import { taskViewportRangeAtom } from '../../../../atoms/shapeBuildProgressAtoms.js';
-import type { TaskItemWithMetadata } from '../../taskItemCardList/types.ts';
-import type { TaskProgressSummary } from '../../../../atoms/shapeBuildProgressAtoms.js';
+import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { buildTaskProgressSegments, resolveViewportIndices, type TaskProgressSegment } from './useTaskProgressBarComputation.js';
 import { useTaskProgressBarInteraction } from './useTaskProgressBarInteraction.js';
 

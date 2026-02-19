@@ -17,8 +17,8 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
-import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';

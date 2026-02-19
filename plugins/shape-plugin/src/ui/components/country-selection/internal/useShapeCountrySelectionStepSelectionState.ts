@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSnackbar } from 'notistack';
-import { calculateEstimatedFeatures, calculateEstimatedSize, formatBytes, formatNumber } from '../../../../common/utils/estimates.js';
-import type { CountryMetadata } from '../../../../common/types/index.js';
+import { calculateEstimatedFeatures, calculateEstimatedSize, formatBytes, formatNumber } from '~/common/utils/estimates';
+import type { CountryMetadata } from '~/common/types/index';
 import {
   isSelectionEqual,
   normalizeContinentCode,
   normalizeCountryCodeFromMetadata,
 } from './selectionUtils.js';
 import type { Country, MatrixConfig, MatrixSelection } from '@hierarchidb/ui-country-select';
-import type { SerializedCountryAvailability } from '../../../workers/countryAvailability.types.js';
+import type { SerializedCountryAvailability } from '~/ui/workers/countryAvailability.types';
 import type { NodeId } from '@hierarchidb/core-types';
 
 export type CountrySelectionIsoState = {

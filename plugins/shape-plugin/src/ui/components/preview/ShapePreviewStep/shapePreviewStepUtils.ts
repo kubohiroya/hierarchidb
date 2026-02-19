@@ -1,5 +1,5 @@
 import type { MapViewState } from '@hierarchidb/ui-map';
-import type { ShapePreviewMapView } from '../../../../common/types/index.js';
+import type { ShapePreviewMapView } from '~/common/types/index';
 
 export const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);

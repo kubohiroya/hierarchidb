@@ -1,7 +1,7 @@
 import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeRuntimeBuildConfig } from '../../common/types/index.js';
-import type { CountryMetadata } from '../../common/types/index.js';
+import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
+import type { CountryMetadata } from '~/common/types/index';
 import {
   createTransformByBandHandler,
   deleteTasksByIds,

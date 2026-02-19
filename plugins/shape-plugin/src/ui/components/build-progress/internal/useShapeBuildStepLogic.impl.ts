@@ -1,39 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useShapeBuildTasks } from '../useShapeBuildTasks/useShapeBuildTasks.js';
-import { useBuildProgress } from '../useBuildProgress/useBuildProgress.js';
-import { useTranslation } from '../../../i18n.js';
+import { useShapeBuildTasks } from '~/ui/components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
+import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
+import { useTranslation } from '~/ui/i18n';
 import {
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
   validateBatchConfig,
   type ShapeEntity,
-} from '../../../../common/types/index.js';
+} from '~/common/types/index';
 import {
   useBuildSessionTransition,
   type BuildSessionTransitionNotificationLevel,
 } from '@hierarchidb/components/build-session';
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { isTaskPhaseDisplay, isTaskSkipped } from '../../../../common/utils/taskMessages.js';
+import { isTaskPhaseDisplay, isTaskSkipped } from '~/common/utils/taskMessages';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
-import { useShapeBuildAutoResume } from '../useShapeBuildAutoResume/useShapeBuildAutoResume.js';
+import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
-import { useShapeBuildStages } from '../useShapeBuildStages/useShapeBuildStages.js';
-import { useShapeBuildLabels } from '../useShapeBuildLabels/useShapeBuildLabels.js';
-import { resolveBuildStatusSource } from '../resolveBuildStatusSource.js';
-import { createBuildStartDraftData } from '../createBuildStartDraftData.js';
-import { hasAwaitingFirstTaskSignal } from '../awaitingFirstTaskSignal.js';
-import { resolveAwaitingFirstTaskDecision } from '../resolveAwaitingFirstTaskDecision.js';
+import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
+import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuildLabels/useShapeBuildLabels';
+import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import { createBuildStartDraftData } from '~/ui/components/build-progress/createBuildStartDraftData';
+import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/awaitingFirstTaskSignal';
+import { resolveAwaitingFirstTaskDecision } from '~/ui/components/build-progress/resolveAwaitingFirstTaskDecision';
 import {
   resolveStartupTransitionWatchdogEvent,
-} from '../resolveStartupTransitionWatchdogEvent.js';
+} from '~/ui/components/build-progress/resolveStartupTransitionWatchdogEvent';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.js';
-import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { persistedTasksAtom, type ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { UI_POLL_INTERVAL_MS, UI_QUIET_THRESHOLD_MS } from './useShapeBuildStepHelpers/constants.js';
 import {
   emitShapeProgressStepTrace,
@@ -59,7 +59,7 @@ import {
   resolveMostAdvancedRunningStageId,
 } from './useShapeBuildStepHelpers/stage.js';
 import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
-import { useShapeBuildProgressSummaryComputation } from '../shapeBuildProgressSummaryComputation.js';
+import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation';
 
 export {
   shouldResetElapsedState,

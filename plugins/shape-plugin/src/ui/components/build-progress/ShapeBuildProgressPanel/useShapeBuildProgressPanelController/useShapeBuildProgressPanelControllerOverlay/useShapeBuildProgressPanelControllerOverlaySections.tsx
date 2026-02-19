@@ -1,8 +1,8 @@
 import { type ReactNode, useMemo } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { ShapeBuildProgressPanelControllerBaseResult } from '../base/useShapeBuildProgressPanelControllerBaseState.js';
-import { TaskProgressBar } from '../../TaskProgressBar/TaskProgressBar.tsx';
-import { BuildProgressStageContent } from '../../BuildProgressStageContent/BuildProgressStageContent.tsx';
+import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
+import { TaskProgressBar } from '~/ui/components/build-progress/ShapeBuildProgressPanel/TaskProgressBar/TaskProgressBar';
+import { BuildProgressStageContent } from '~/ui/components/build-progress/ShapeBuildProgressPanel/BuildProgressStageContent/BuildProgressStageContent';
 
 type StageRecord = Record<string, ReactNode>;
 

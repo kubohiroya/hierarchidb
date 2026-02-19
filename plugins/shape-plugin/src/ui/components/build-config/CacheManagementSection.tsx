@@ -15,9 +15,9 @@ import {
   ExpandMore as ExpandMoreIcon,
   Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
-import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import type { FetchConfigSectionState } from '../../hooks/useFetchConfigSection.ts';
-import { useTranslation } from '../../i18n.js';
+import type { ShapeBuildConfig } from '~/common/types/index';
+import type { FetchConfigSectionState } from '~/ui/hooks/useFetchConfigSection';
+import { useTranslation } from '~/ui/i18n';
 import { getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 
 type Props = {

@@ -36,7 +36,7 @@ vi.mock('~/worker-runtime/WorkerModuleLoader.ts', async () => {
   };
 });
 
-vi.mock('~/worker-runtime/client.ts', async () => {
+vi.mock('~~/worker-runtime/client.ts', async () => {
   const Comlink = await vi.importActual<typeof import('comlink')>('comlink');
   const { WorkerService } = await import('@hierarchidb/runtime-worker');
   type ShapeDownloadPayloads = Awaited<ReturnType<BuildWorkerAPI['generateShapeDownloadTaskPayloadsFromSelection']>>;

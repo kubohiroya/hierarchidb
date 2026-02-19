@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '../../../../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { useShapeBuildProgressPanelControllerBaseStateData } from './useShapeBuildProgressPanelControllerBaseState/useShapeBuildProgressPanelControllerBaseStateData.js';
 
 export type ShapeBuildProgressPanelControllerBaseResult =

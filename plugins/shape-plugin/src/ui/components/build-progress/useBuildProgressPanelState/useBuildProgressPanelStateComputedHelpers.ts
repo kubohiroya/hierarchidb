@@ -1,6 +1,6 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { isTaskPhaseDisplay, isTaskPhaseMessage } from '../../../../common/utils/taskMessages.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { isTaskPhaseDisplay, isTaskPhaseMessage } from '~/common/utils/taskMessages';
 
 export type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 

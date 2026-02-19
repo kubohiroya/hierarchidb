@@ -40,4 +40,4 @@ export {
   mergeProcessingConfig,
   summarizeCheckboxState,
   validateBatchConfig,
-} from '../../services/utils/utils.js';
+} from '../../services/utils/utils';

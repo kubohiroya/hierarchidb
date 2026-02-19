@@ -19,11 +19,11 @@ import {
   suspendSuspectControlsAtom,
   buildStageProgressAtom,
   buildStagesAtom,
-} from '../../../../atoms/shapeBuildProgressAtoms.js';
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildStepAtomSyncCallbacks } from './useShapeBuildStepAtomSyncCallbacks.js';
 import { useShapeBuildStepAtomSyncAtomEffects } from './useShapeBuildStepAtomSyncEffects.js';
-import type { ShapeDialogStepProps } from '../../../ShapeDialogStepProps.js';
-import { useShapeBuildStep } from '../../internal/useShapeBuildStepLogic.js';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
+import { useShapeBuildStep } from '~/ui/components/build-progress/internal/useShapeBuildStepLogic';
 
 export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialogStepProps) => {
   const resolvedNodeId = nodeId as NodeId | undefined;

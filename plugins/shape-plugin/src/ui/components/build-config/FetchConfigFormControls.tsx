@@ -5,7 +5,7 @@ import {
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import { useTranslation } from '../../i18n.js';
+import { useTranslation } from '~/ui/i18n';
 import { LoadingButton } from '@hierarchidb/components';
 
 type Props = {

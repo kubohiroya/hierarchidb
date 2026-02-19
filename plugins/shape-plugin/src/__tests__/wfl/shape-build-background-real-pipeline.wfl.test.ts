@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { FetchTaskPayload, ShapeBuildConfig } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
+import type { FetchTaskPayload, ShapeBuildConfig } from '~/common/types/index';
+import { DEFAULT_BUILD_CONFIG } from '~/common/types/constants';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import * as Comlink from 'comlink';
 vi.mock('comlink', async () => (
@@ -127,7 +127,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/datasources/DataSource
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
+import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
 
 type EphemeralCacheType =
   | 'fetchCache'
@@ -188,7 +188,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   console.info('[test][setup] setupWorker: import start');
   const [{ SingletonMixin }, { exposeShapeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
-    import('../../e2e/shape-test-worker.entry.js'),
+    import('~/e2e/shape-test-worker.entry'),
   ]);
   console.info('[test][setup] setupWorker: import done');
   console.info('[test][setup] setupWorker: terminateAll start');
@@ -213,7 +213,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
 
 const setupAdditionalClient = async (): Promise<WorkerSetup> => {
   console.info('[test][setup] setupAdditionalClient: import start');
-  const { exposeShapeTestAPI } = await import('../../e2e/shape-test-worker.entry.js');
+  const { exposeShapeTestAPI } = await import('~/e2e/shape-test-worker.entry');
   console.info('[test][setup] setupAdditionalClient: import done');
   console.info('[test][setup] setupAdditionalClient: MessageChannel start');
   const { port1, port2 } = new MessageChannel();

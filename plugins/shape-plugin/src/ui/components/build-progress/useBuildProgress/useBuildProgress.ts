@@ -8,7 +8,7 @@ import {
   type ExtendedProgress,
   type BuildProgress,
   type BuildProgressStatus,
-} from '../shapeBuildProgressMapping.ts';
+} from '~/ui/components/build-progress/shapeBuildProgressMapping';
 
 export type { BuildProgress, BuildProgressStatus };
 

@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CountryMetadata } from '../../../../../common/types/index.js';
+import type { CountryMetadata } from '~/common/types/index';
 
 const enqueueSnackbarMock = vi.fn();
 const onStepNavigateMock = vi.fn();
@@ -94,7 +94,7 @@ describe('useShapeCountrySelectionStep cache behavior', () => {
   });
 
   it('loads metadata/availability only on first open for same node/dataSource', async () => {
-    const { useShapeCountrySelectionStep } = await import('../../../components/country-selection/useShapeCountrySelectionStep.ts');
+    const { useShapeCountrySelectionStep } = await import('~/ui/components/country-selection/useShapeCountrySelectionStep');
     const nodeId = 'node-country-1' as NodeId;
 
     const first = renderHook(() => useShapeCountrySelectionStep(buildArgs(nodeId)));
@@ -113,7 +113,7 @@ describe('useShapeCountrySelectionStep cache behavior', () => {
   });
 
   it('re-fetches metadata/availability when reloadAll is explicitly requested', async () => {
-    const { useShapeCountrySelectionStep } = await import('../../../components/country-selection/useShapeCountrySelectionStep.ts');
+    const { useShapeCountrySelectionStep } = await import('~/ui/components/country-selection/useShapeCountrySelectionStep');
     const nodeId = 'node-country-2' as NodeId;
     const { result } = renderHook(() => useShapeCountrySelectionStep(buildArgs(nodeId)));
 
@@ -132,7 +132,7 @@ describe('useShapeCountrySelectionStep cache behavior', () => {
   });
 
   it('does not reuse cache across different nodes', async () => {
-    const { useShapeCountrySelectionStep } = await import('../../../components/country-selection/useShapeCountrySelectionStep.ts');
+    const { useShapeCountrySelectionStep } = await import('~/ui/components/country-selection/useShapeCountrySelectionStep');
     const firstNodeId = 'node-country-3' as NodeId;
     const secondNodeId = 'node-country-4' as NodeId;
 

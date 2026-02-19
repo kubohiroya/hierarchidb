@@ -30,15 +30,15 @@ const appWorkerStorePreloadsMock: Record<string, string[]> = {
   timeline: ['loadTimelineEntitiesDbModule'],
 };
 
-vi.mock('~/plugin-loaders/worker-loaders.ts', () => ({
+vi.mock('~~/plugin-loaders/worker-loaders.ts', () => ({
   pluginWorkerLoaders: {},
 }));
 
-vi.mock('~/plugin-runtime/store-selection.ts', () => ({
+vi.mock('~~/plugin-runtime/store-selection.ts', () => ({
   APP_WORKER_STORE_PRELOADS: appWorkerStorePreloadsMock,
 }));
 
-vi.mock('~/plugin-loaders/index.ts', () => ({
+vi.mock('~~/plugin-loaders/index.ts', () => ({
   pluginRegistry: Object.keys(appWorkerStorePreloadsMock).map((nodeType) => ({
     nodeType,
     modules: { worker: `./${nodeType}/worker` },

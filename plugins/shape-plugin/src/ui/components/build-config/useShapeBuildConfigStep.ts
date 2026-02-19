@@ -14,9 +14,9 @@ import {
   DEFAULT_PROCESSING_CONFIG,
   mergeBuildConfig,
   mergeProcessingConfig,
-} from '../../../common/types/index.js';
-import type { ShapeEntity } from '../../../common/types/index.js';
-import type { ShapeBuildConfig } from '../../../common/types/index.js';
+} from '~/common/types/index';
+import type { ShapeEntity } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/index';
 
 type Args = {
   data: Partial<ShapeEntity>;

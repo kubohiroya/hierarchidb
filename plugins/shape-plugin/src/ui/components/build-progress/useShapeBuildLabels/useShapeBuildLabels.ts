@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { TaskCountSummary } from '@hierarchidb/ui-batch-progress';
-import type { BuildProgress, BuildProgressStatus } from '../shapeBuildProgressMapping.ts';
-import { formatTaskDisplayMessage } from '../taskDisplayText.ts';
+import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import { formatTaskDisplayMessage } from '~/ui/components/build-progress/taskDisplayText';
 
 type Translate = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 

@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume.ts';
+import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume';
 
 describe('useShapeBuildAutoResume reload behavior', () => {
   const activeNodeId = 'node-1' as NodeId;

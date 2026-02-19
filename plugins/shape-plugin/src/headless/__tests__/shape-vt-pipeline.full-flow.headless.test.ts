@@ -2,8 +2,8 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
-import type { FetchTaskPayload } from '../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '~/common/types/constants';
+import type { FetchTaskPayload } from '~/common/types/index';
 
 const nodeId = 'shape-full-flow-test-node' as NodeId;
 
@@ -81,9 +81,9 @@ describeNetwork('Shape full-flow pipeline', () => {
       ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
       ({ ephemeralDB: ephemeralDB } = await import('@hierarchidb/gis-sdk'));
       ({ shapeDB } = await import('@hierarchidb/shape-store'));
-      ({ runShapePipeline } = await import('../../services/vt/shapePipeline.js'));
-      ({ metadataLoader } = await import('../../services/metadata/MetadataLoader.js'));
-      ({ resolveCountryCodeForDataSource } = await import('../../services/utils/utils.js'));
+      ({ runShapePipeline } = await import('~/services/vt/shapePipeline'));
+      ({ metadataLoader } = await import('~/services/metadata/MetadataLoader'));
+      ({ resolveCountryCodeForDataSource } = await import('~/services/utils/utils'));
     }
   });
 

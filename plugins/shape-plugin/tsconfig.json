@@ -11,10 +11,22 @@
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,
     "experimentalDecorators": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": [
       "vite/client",
       "node"
-    ]
+    ],
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*",
+        "*.ts",
+        "*.tsx",
+        "*.js",
+        "*.jsx"
+      ]
+    }
   },
   "include": [
     "../../global.d.ts",
@@ -34,8 +46,5 @@
     "**/__tests__/**",
     "**/*.test.*",
     "**/*.spec.*"
-  ],
-  "paths": {
-    "~/*": ["*"]
-  }
+  ]
 }

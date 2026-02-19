@@ -2,17 +2,19 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
+import { unpackTileId } from '@hierarchidb/vt-orchestrator';
+
 vi.mock('comlink', async () => (
   await vi.importActual('comlink')
 ));
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../../packages/gis-sdk/src/index.ts')
+  await import('@hierarchidb/gis-sdk')
 ));
 
 vi.mock('@hierarchidb/vt-orchestrator', async () => {
   const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
-  const { unpackTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
+  //const { unpackTileId } = await import('@hierarchidb/vt-orchestrator');
   const createVtHandler: typeof actual.createVtHandler = (context) => {
     type HandlerTask = Parameters<ReturnType<typeof actual.createVtHandler>>[0];
     return async (task: HandlerTask) => {
@@ -37,7 +39,7 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
+import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint.js';
 
 type WorkerTestAPI = {
   getShapeQueryAPI(): Promise<ShapeQueryAPI>;
@@ -55,7 +57,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   vi.resetModules();
   const [{ SingletonMixin }, { exposeShapeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
-    import('../../e2e/shape-test-worker.entry.js'),
+    import('~/e2e/shape-test-worker.entry'),
   ]);
   SingletonMixin.terminateAll();
   const { port1, port2 } = new MessageChannel();

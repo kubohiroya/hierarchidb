@@ -24,7 +24,7 @@ import {
 } from '~/router/loaders/treeLoaders';
 
 // Mock the loader module
-vi.mock('~/loader.js', () => ({
+vi.mock('~~/loader.js', () => ({
   loadWorkerAPIClient: vi.fn(),
   loadTree: vi.fn(),
   loadPageNode: vi.fn(),

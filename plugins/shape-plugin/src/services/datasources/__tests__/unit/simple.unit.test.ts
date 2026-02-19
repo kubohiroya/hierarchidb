@@ -3,7 +3,7 @@
   */
 
 import { describe, expect, it } from 'vitest';
-import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
+import { DataSourceStrategyFactory } from '~/services/datasources/__tests__/DataSourceStrategyFactory';
 
 describe('Data Source Strategy Simple Test', () => {
   it('should create factory', () => {

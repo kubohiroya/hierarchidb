@@ -1,6 +1,6 @@
 import { useShapeBuildProgressPanelControllerBase } from './useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '../../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import { useShapeBuildProgressPanelControllerOverlay } from './useShapeBuildProgressPanelController/useShapeBuildProgressPanelControllerOverlay.js';
 
 export type ShapeBuildProgressPanelControllerProps = {

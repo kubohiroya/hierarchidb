@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { type TaskItemWithMetadata } from '../../taskItemCardList/types.ts';
-import { sortTransformTasks, sortVectorTileTasks } from '../../taskItemCardList/useTaskItemCardList.ts';
-import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../../../atoms/shapeBuildProgressAtoms.ts';
-import { isTaskSkipped } from '../../../../../common/utils/taskMessages.ts';
+import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
+import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 type BuildProgressStageContentStateArgs = {
   stage: {

@@ -2,7 +2,7 @@ import { type ReactNode, useMemo } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Alert, Popover, Typography } from '@mui/material';
 import { DownloadRetryControls, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
-import type { ShapeBuildProgressPanelControllerBaseResult } from '../base/useShapeBuildProgressPanelControllerBaseState.js';
+import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
 
 type UseShapeBuildProgressPanelControllerOverlayDialogsArgs = ShapeBuildProgressPanelControllerBaseResult;
 

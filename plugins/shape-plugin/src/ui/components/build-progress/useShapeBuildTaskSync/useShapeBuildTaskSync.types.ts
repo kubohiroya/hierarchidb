@@ -1,6 +1,6 @@
 import type { BuildTaskSummary, TaskDisplayPayload } from '@hierarchidb/batch-api';
 import type { MutableRefObject } from 'react';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type RawTaskSummary = BuildTaskSummary & {
   taskType?: string;

@@ -9,15 +9,15 @@ import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
-import { useTranslation } from '../../i18n.js';
-import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.js';
+import { useTranslation } from '~/ui/i18n';
+import type { ShapeDialogStepProps } from '~/ui/components/ShapeDialogStepProps';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useFetchConfigSection } from '../../hooks/useFetchConfigSection.ts';
+import { useFetchConfigSection } from '~/ui/hooks/useFetchConfigSection';
 import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
-} from '../../assets/filtering-samples/filteringSamples.ts';
+} from '~/ui/assets/filtering-samples/filteringSamples';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
   composeRuntimeBuildConfig,
@@ -27,8 +27,8 @@ import {
   type ShapeBuildConfig,
   type ShapeEntity,
   type ShapeRuntimeBuildConfig,
-} from '../../../common/types/index.js';
-import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+} from '~/common/types/index';
+import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 
 const toBuildConfigUpdate = (
   partial: Partial<ShapeRuntimeBuildConfig>,

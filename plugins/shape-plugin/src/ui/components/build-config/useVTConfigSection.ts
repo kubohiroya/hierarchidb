@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { mergeBuildConfig } from '../../../common/types/index.js';
+import type { ShapeBuildConfig } from '~/common/types/index';
+import { mergeBuildConfig } from '~/common/types/index';
 //import { VTConfig } from '@hierarchidb/shape-store/ShapeDB.js';
 
 type Args = {

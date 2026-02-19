@@ -3,9 +3,9 @@ import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import { deleteFetchRawCache, resolveKnownTaskStage } from './useShapeBuildCacheActions.helpers.js';
-import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 type BuildTaskFilterDeps = {
   nodeId?: NodeId;

@@ -1,10 +1,10 @@
-import { isTaskPhaseDisplay } from '../../../../common/utils/taskMessages.js';
+import { isTaskPhaseDisplay } from '~/common/utils/taskMessages';
 import type {
   RunningResidueLogPayload,
   TaskSyncDebugChannel,
   TaskSyncDebugConfig,
 } from './useShapeBuildTaskSync.types.js';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 const isDev = import.meta.env.DEV;
 const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';

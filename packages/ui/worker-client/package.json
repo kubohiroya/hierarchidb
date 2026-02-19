@@ -53,6 +53,7 @@
     "vitest": "^3.2.4",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"

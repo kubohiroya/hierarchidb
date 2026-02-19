@@ -1,9 +1,9 @@
 import { type ForwardedRef, type MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
-import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { taskViewportRangeAtom } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { TASK_ITEM_HEIGHT } from '../TaskItem/taskItem.constants.ts';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { TASK_ITEM_HEIGHT } from '~/ui/components/build-progress/TaskItem/taskItem.constants';
 import { type TaskItemWithMetadata } from './types.js';
 
 type TaskItemCardListArgs = {

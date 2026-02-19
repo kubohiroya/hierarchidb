@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { mergeBuildConfig } from '../../common/types/index.js';
-import type { ShapeBuildConfig } from '../../common/types/index.js';
+import { mergeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig } from '~/common/types/index';
 
 type Args = {
   config: ShapeBuildConfig;

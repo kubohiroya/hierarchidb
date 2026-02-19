@@ -1,10 +1,10 @@
 import type { ReactNode, MouseEvent } from 'react';
 import type { BuildStepStageMenu } from '@hierarchidb/components';
-import type { ShapeProcessingConfig } from '../../../../../../../common/types/build.js';
-import type { ShapeEntity } from '../../../../../../../common/types/ShapeEntity.js';
-import type { TaskProgressControls } from '../../../../../../atoms/shapeBuildProgressAtoms.js';
-import type { TaskItemWithMetadata } from '../../../../taskItemCardList/types.ts';
-import type { StartWarning } from '../../../../useBuildProgressPanelState/useShapeBuildProgressWarnings.js';
+import type { ShapeProcessingConfig } from '~/common/types/build';
+import type { ShapeEntity } from '~/common/types/ShapeEntity';
+import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
 
 type StageMetadataMap<T> = Record<string, T>;
 
