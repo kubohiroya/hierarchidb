@@ -25,7 +25,7 @@ import {
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { useTransformConfigSection } from './useTransformConfigSection.ts';
+import { useTransformConfigSection } from '../../hooks/useTransformConfigSection.ts';
 import type { ChangeEvent } from 'react';
 
 type Props = {

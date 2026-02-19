@@ -4,14 +4,14 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
+import { persistedTasksAtom, tasksAtom } from '../atoms/shapeBuildProgressAtoms.js';
 import {
   loadCacheCounts,
   clearBuildTasksForStages,
   SHAPE_NODE_TYPE,
   type CacheCounts,
   type ResultCounts,
-} from './useShapeBuildCacheActions.helpers.js';
+} from './useShapeBuildCacheActions/useShapeBuildCacheActions.helpers.js';
 import {
   handleDeleteFetchApiCache as handleDeleteFetchApiCacheAction,
   handleDeleteFetchFilteredCache as handleDeleteFetchFilteredCacheAction,
@@ -20,8 +20,8 @@ import {
   handleDeleteVTCache as handleDeleteVTCacheAction,
   handleDeleteTransformCache as handleDeleteTransformCacheAction,
   type CacheActionKey,
-} from './useShapeBuildCacheActions.handlers.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+} from './useShapeBuildCacheActions/useShapeBuildCacheActions.handlers.js';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
 
 type BuildBridge = {
   initialize: () => Promise<void>;

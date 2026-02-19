@@ -30,7 +30,7 @@ vi.mock('../../components/country-selection/ShapeCountrySelectionStep.tsx', () =
 vi.mock('../../components/preview/ShapePreviewStep.tsx', () => ({
   ShapePreviewStep: () => null,
 }));
-vi.mock('../../components/build-progress/ShapeBuildStep.tsx', () => ({
+vi.mock('../../components/build-progress/ShapeBuildStep/ShapeBuildStep.tsx', () => ({
   ShapeBuildStep: () => null,
 }));
 

@@ -14,7 +14,7 @@ export type StageLikeTask = {
   taskType?: TaskStage;
 };
 
-export type TaskQueueRecordLike = Partial<StageLikeTask> & {
+type TaskQueueRecordLike = Partial<StageLikeTask> & {
   taskId?: string;
 };
 

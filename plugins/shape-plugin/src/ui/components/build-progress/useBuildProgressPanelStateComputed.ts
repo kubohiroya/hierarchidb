@@ -5,7 +5,7 @@ import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import type { TaskItemWithMetadata } from './TaskItemCardListCard.tsx';
+import type { TaskItemWithMetadata } from './TaskItemCardListCard/TaskItemCardListCard.tsx';
 import {
   buildStageTaskScan,
   type FailureInfo,

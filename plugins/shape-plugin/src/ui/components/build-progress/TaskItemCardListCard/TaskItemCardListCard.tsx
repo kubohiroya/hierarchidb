@@ -1,15 +1,15 @@
 import { type CSSProperties, type ReactNode, forwardRef, useCallback, useMemo } from 'react';
 import { Box } from '@mui/material';
-import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import { useTranslation } from '../../i18n.js';
-import { useShapeBuildStages } from './useShapeBuildStages.ts';
-import { TaskItemCard } from './TaskItemCard.tsx';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import { useTranslation } from '../../../i18n.js';
+import { useShapeBuildStages } from '../useShapeBuildStages.ts';
+import { TaskItemCard } from '../TaskItemCard/TaskItemCard.tsx';
 import {
   useTaskItemCardList,
   sortTransformTasks,
   sortVectorTileTasks,
   type TaskItemWithMetadata,
-} from './useTaskItemCardList.ts';
+} from '../useTaskItemCardList.ts';
 
 type TaskItemCardListCardProps = {
   stageId: string;

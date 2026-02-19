@@ -2098,7 +2098,7 @@ export const createTransformByBandHandler = (
         };
       };
       const shouldDeferSimplifyToVt = fetchCache.format === 'topojson' && simplifyAlgorithm === 'topojson';
-      let simplifyAttempt = 1;
+      const simplifyAttempt = 1;
       try {
         assertNotAborted(abortSignal);
         const simplifyStartAt = Date.now();

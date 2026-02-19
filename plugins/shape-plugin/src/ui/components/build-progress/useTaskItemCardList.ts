@@ -3,7 +3,7 @@ import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
-import { TASK_ITEM_HEIGHT } from './TaskItem.tsx';
+import { TASK_ITEM_HEIGHT } from './TaskItem/TaskItem.tsx';
 
 export type TaskItemWithMetadata = ShapeBuildTaskSummary & { title?: string };
 

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard.tsx';
+import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard.tsx';
 
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),

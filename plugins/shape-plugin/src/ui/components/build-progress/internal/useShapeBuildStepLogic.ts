@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { TaskStage } from '@hierarchidb/batch-api';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useShapeBuildTasks } from '../useShapeBuildTasks.ts';
 import { useBuildProgress } from '../useBuildProgress.js';
@@ -12,7 +11,6 @@ import {
   type ShapeEntity,
 } from '../../../../common/types/index.js';
 import {
-  executePauseBuildFlow,
   useBuildSessionTransition,
   type BuildSessionTransitionNotificationLevel,
 } from '@hierarchidb/components/build-session';
@@ -28,7 +26,6 @@ import { useShapeBuildStages } from '../useShapeBuildStages.ts';
 import { useShapeBuildProgressSummary } from '../useShapeBuildProgressSummary.ts';
 import { useShapeBuildLabels } from '../useShapeBuildLabels.ts';
 import { resolveBuildStatusSource } from '../resolveBuildStatusSource.ts';
-import { shouldResumeBuildSession } from '../shouldResumeBuildSession.ts';
 import { createBuildStartDraftData } from '../createBuildStartDraftData.ts';
 import { hasAwaitingFirstTaskSignal } from '../awaitingFirstTaskSignal.ts';
 import { resolveAwaitingFirstTaskDecision } from '../resolveAwaitingFirstTaskDecision.ts';
@@ -39,14 +36,26 @@ import {
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.ts';
 import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { resolveMostAdvancedStageId } from '../stagePriority.ts';
+import {
+  UI_POLL_INTERVAL_MS,
+  UI_QUIET_THRESHOLD_MS,
+  isShapeProgressStepDebugEnabled,
+  emitShapeProgressStepTrace,
+  shallowEqualNumberRecord,
+  sumNumberRecord,
+  hasPositiveElapsed,
+  mergeElapsedByStage,
+  shouldResetElapsedState,
+  resolveDisplayBuildStatus,
+  shouldRefreshTasksSnapshot,
+  resolveMostAdvancedRunningStageId,
+  resolveMostAdvancedInFlightStageId,
+  toBuildStatus,
+  toProcessingStatus,
+  normalizeStageKey,
+} from './useShapeBuildStepHelpers.ts';
+import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.ts';
 
-const SHAPE_NODE_TYPE = 'shape' as NodeType;
-const PAUSE_COMMAND_TIMEOUT_MS = 60_000;
-const UI_POLL_INTERVAL_MS = 3000;
-const UI_QUIET_THRESHOLD_MS = 5000;
-const isDev = import.meta.env.DEV;
-type ShapeProgressStepDebugConfig = Partial<Record<'progress' | 'all', boolean>>;
 type ShapeProgressStepTracePayload = {
   nodeId: string | null;
   phase: BuildStatus;
@@ -60,248 +69,6 @@ type ShapeProgressStepTracePayload = {
   failed: number;
   skipped: number;
   message: string | null;
-};
-
-const readShapeProgressStepDebugConfig = (): ShapeProgressStepDebugConfig | null => {
-  const scope = globalThis as typeof globalThis & {
-    __HDB_SHAPE_PROGRESS_STEP_DEBUG__?: unknown;
-  };
-  const raw = scope.__HDB_SHAPE_PROGRESS_STEP_DEBUG__;
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  return raw as ShapeProgressStepDebugConfig;
-};
-
-const isShapeProgressStepDebugEnabled = (): boolean => {
-  if (!isDev) return false;
-  const config = readShapeProgressStepDebugConfig();
-  if (!config) return false;
-  return config.all === true || config.progress === true;
-};
-
-const emitShapeProgressStepTrace = (payload: ShapeProgressStepTracePayload): void => {
-  if (!isDev) return;
-  console.debug('[ShapeBuildProgressStepTrace]', payload);
-};
-
-type StageLikeTask = {
-  taskType?: string;
-  type?: string;
-  stage?: string;
-};
-
-type StageLikeRunningTask = StageLikeTask & {
-  status?: string;
-};
-
-const runWithTimeout = async <T>(
-  action: Promise<T>,
-  timeoutMs: number,
-  timeoutMessage: string,
-): Promise<T> => {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  try {
-    return await Promise.race([
-      action,
-      new Promise<T>((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new Error(timeoutMessage));
-        }, timeoutMs);
-      }),
-    ]);
-  } finally {
-    if (timeoutId !== null) clearTimeout(timeoutId);
-  }
-};
-
-const shallowEqualNumberRecord = (left: Record<string, number>, right: Record<string, number>): boolean => {
-  if (left === right) return true;
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
-  return leftKeys.every((key) => left[key] === right[key]);
-};
-
-const sumNumberRecord = (values: Record<string, number>): number => (
-  Object.values(values).reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0)
-);
-
-const hasPositiveElapsed = (values: Record<string, number>): boolean => (
-  Object.values(values).some((value) => Number.isFinite(value) && value > 0)
-);
-
-const mergeElapsedByStage = (
-  current: Record<string, number>,
-  persisted: Record<string, number>,
-): Record<string, number> => {
-  const next: Record<string, number> = { ...current };
-  Object.entries(persisted).forEach(([stageId, persistedMs]) => {
-    if (!Number.isFinite(persistedMs) || persistedMs < 0) return;
-    const currentMs = next[stageId] ?? 0;
-    if (persistedMs > currentMs) {
-      next[stageId] = persistedMs;
-    }
-  });
-  return next;
-};
-
-export const shouldResetElapsedState = (params: {
-  buildStatus: BuildStatus;
-  buildElapsedMs: number | undefined;
-  stageElapsedByStage: Record<string, number>;
-  localElapsedByStage: Record<string, number>;
-}): boolean => {
-  if (params.buildStatus === 'running') return false;
-  if (hasPositiveElapsed(params.stageElapsedByStage)) return false;
-  if (typeof params.buildElapsedMs === 'number' && params.buildElapsedMs > 0) return false;
-  if (hasPositiveElapsed(params.localElapsedByStage)) return false;
-  return true;
-};
-
-export const resolveDisplayBuildStatus = (params: {
-  baseBuildStatus: BuildStatus;
-  tasksCompletionStatus: BuildStatus | null;
-  hasInFlightTasks: boolean;
-}): BuildStatus => {
-  if (params.tasksCompletionStatus === 'failed') {
-    return 'failed';
-  }
-  if (params.baseBuildStatus === 'running') {
-    return 'running';
-  }
-  if (params.tasksCompletionStatus === 'completed') {
-    return params.baseBuildStatus === 'paused' ? 'paused' : 'completed';
-  }
-  if (params.baseBuildStatus === 'paused') {
-    return 'paused';
-  }
-  if (params.hasInFlightTasks) {
-    return 'running';
-  }
-  return params.baseBuildStatus;
-};
-
-export const shouldRefreshTasksSnapshot = (params: {
-  displayTaskCount: number;
-  hasInFlightTasks: boolean;
-  hasProgressTaskSignal: boolean;
-  buildStatus: BuildStatus;
-  runtimeStatus: string | null;
-  processingStatus: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
-  buildSessionTransitionActive: boolean;
-}): boolean => {
-  const hasProcessingSignal = (
-    params.buildStatus === 'running'
-    || params.runtimeStatus === 'processing'
-    || params.processingStatus === 'processing'
-    || params.buildSessionTransitionActive
-  );
-  if (params.displayTaskCount === 0) {
-    return (
-      params.hasProgressTaskSignal
-      || hasProcessingSignal
-      || params.buildStatus === 'completed'
-    );
-  }
-  if (params.hasInFlightTasks) {
-    return false;
-  }
-  return hasProcessingSignal;
-};
-
-const normalizeStageKey = (task: StageLikeTask): TaskStage => (
-  (task.stage ?? task.taskType ?? task.type ?? 'fetch') as TaskStage
-);
-
-const resolveMostAdvancedStageIdByStatus = (params: {
-  stages: Array<{ id: string }>;
-  tasks: StageLikeRunningTask[];
-  statuses: Set<string>;
-}): string | null => {
-  const stageIds = new Set<string>();
-  params.tasks.forEach((task) => {
-    if (!task.status || !params.statuses.has(task.status)) return;
-    stageIds.add(normalizeStageKey(task));
-  });
-  return resolveMostAdvancedStageId(stageIds, params.stages);
-};
-
-export const resolveMostAdvancedRunningStageId = (params: {
-  stages: Array<{ id: string }>;
-  tasks: StageLikeRunningTask[];
-}): string | null => {
-  return resolveMostAdvancedStageIdByStatus({
-    stages: params.stages,
-    tasks: params.tasks,
-    statuses: new Set(['running']),
-  });
-};
-
-export const resolveMostAdvancedInFlightStageId = (params: {
-  stages: Array<{ id: string }>;
-  tasks: StageLikeRunningTask[];
-}): string | null => {
-  return resolveMostAdvancedStageIdByStatus({
-    stages: params.stages,
-    tasks: params.tasks,
-    statuses: new Set(['running', 'queued']),
-  });
-};
-
-const toBuildStatus = (status?: string | null): BuildStatus => {
-  switch (status) {
-    case 'processing':
-      return 'running';
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
-    default:
-      return 'idle';
-  }
-};
-
-const toProcessingStatus = (status?: string | null): 'idle' | 'processing' | 'paused' | 'completed' | 'failed' => {
-  switch (status) {
-    case 'running':
-    case 'processing':
-      return 'processing';
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
-    default:
-      return 'idle';
-  }
-};
-
-const summarizeSelectedEntries = (
-  selectedArrayByCountries: ShapeEntity['selectedArrayByCountries'] | null | undefined,
-): { selectedCountryCount: number; selectedAdminPairCount: number } => {
-  if (!selectedArrayByCountries || typeof selectedArrayByCountries !== 'object' || Array.isArray(selectedArrayByCountries)) {
-    return { selectedCountryCount: 0, selectedAdminPairCount: 0 };
-  }
-  let selectedCountryCount = 0;
-  let selectedAdminPairCount = 0;
-  Object.values(selectedArrayByCountries).forEach((row) => {
-    if (!Array.isArray(row)) return;
-    let hasSelectedInCountry = false;
-    row.forEach((selected) => {
-      if (selected) {
-        hasSelectedInCountry = true;
-        selectedAdminPairCount += 1;
-      }
-    });
-    if (hasSelectedInCountry) {
-      selectedCountryCount += 1;
-    }
-  });
-  return { selectedCountryCount, selectedAdminPairCount };
 };
 
 type BuildSessionTransitionPhase =
@@ -329,24 +96,6 @@ type StartupStepMemorySnapshot = {
   usedJSHeapSize: number | null;
   totalJSHeapSize: number | null;
   jsHeapSizeLimit: number | null;
-};
-
-const getErrorMessage = (error: unknown): string => (
-  error instanceof Error ? error.message : String(error)
-);
-
-const toTransitionErrorMessage = (error: unknown, fallback: string): string => {
-  if (typeof error === 'string' && error.length > 0) {
-    return error;
-  }
-  const message = getErrorMessage(error);
-  if (error === null || error === undefined) {
-    return fallback;
-  }
-  if (message === 'undefined' || message === '[object Object]') {
-    return fallback;
-  }
-  return message;
 };
 
 const toMemoryValue = (value: number | undefined): number | null => (
@@ -1439,458 +1188,34 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     t,
   ]);
 
-  const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
-    const requestStartedAt = Date.now();
-    cancelStartRequestRef.current = false;
-    const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
-      console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-        nodeId: activeNodeId ? String(activeNodeId) : null,
-        elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-        event,
-        ...(payload ?? {}),
-      });
-    };
-    const runTimedStep = async <T,>(stepName: string, runner: () => Promise<T>): Promise<T> => {
-      const stepStartedAt = Date.now();
-      logStartResumeTrace(`${stepName}:start`);
-      try {
-        const result = await runner();
-        logStartResumeTrace(`${stepName}:finish`, {
-          stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
-        });
-        return result;
-      } catch (error) {
-        logStartResumeTrace(`${stepName}:error`, {
-          stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
-          errorMessage: getErrorMessage(error),
-        });
-        throw error;
-      }
-    };
-    logStartResumeTrace('request-received', {
-      source: options?.autoResume ? 'auto' : 'manual',
-      forceRestart: Boolean(options?.forceRestart),
-      buildStatus,
-      runtimeStatus,
-    });
-    if (!activeNodeId) {
-      logStartResumeTrace('abort:missing-node-id');
-      notify.warning('NodeId is missing.');
-      return false;
-    }
-    const startupSource = options?.autoResume ? 'auto' : 'manual';
-    const shouldResumeSession = shouldResumeBuildSession({
-      forceRestart: options?.forceRestart,
-      buildStatus,
-      runtimeStatus,
-    });
-    if (shouldResumeSession) {
-      void refreshTasks();
-    }
-    beginBuildSessionTransition(
-      'acquiring-lock',
-      options?.autoResume || shouldResumeSession
-        ? 'Resuming build session...'
-        : 'Starting build session...',
-    );
-    const now = Date.now();
-    beginBuildStartupStep('lock-acquire', {
-      source: startupSource,
-      mode: shouldResumeSession ? 'resume' : 'start',
-    });
-    let acquired = false;
-    try {
-      acquired = await runTimedStep('lock-acquire', () => tryAcquireBuildLock({ notifyOnFailure: !options?.autoResume }));
-      finishBuildStartupStep('lock-acquire', 'success', {
-        acquired,
-      });
-    } catch (error) {
-      finishBuildStartupStep('lock-acquire', 'error', {
-        errorMessage: getErrorMessage(error),
-      });
-      finishBuildSessionTransition({
-        level: 'error',
-        message: 'Failed to acquire build lock.',
-      });
-      console.error('[ShapeBuildProgressStep] lock acquire failed', error);
-      return false;
-    }
-    if (!acquired) {
-      advanceBuildSessionTransitionPhase('waiting-lock', {
-        level: 'info',
-        message: 'Waiting for build lock held by another tab...',
-      });
-      beginBuildStartupStep('lock-wait', {
-        source: startupSource,
-      });
-      let queued = false;
-      try {
-        queued = await runTimedStep('lock-wait', () => waitForBuildLock(now));
-      } catch (error) {
-        finishBuildStartupStep('lock-wait', 'error', {
-          errorMessage: getErrorMessage(error),
-        });
-        finishBuildSessionTransition({
-          level: 'error',
-          message: 'Failed while waiting for build lock.',
-        });
-        console.error('[ShapeBuildProgressStep] lock wait failed', error);
-        return false;
-      }
-      if (!queued) {
-        finishBuildStartupStep('lock-wait', 'cancelled', {
-          reason: 'cancelled-while-waiting-lock',
-        });
-        finishBuildSessionTransition({
-          level: 'warning',
-          message: 'Build start was cancelled while waiting for lock.',
-        });
-        return false;
-      }
-      finishBuildStartupStep('lock-wait', 'success', {
-        queued,
-      });
-    }
-    if (cancelStartRequestRef.current) {
-      releaseBuildLock();
-      finishBuildSessionTransition({
-        level: 'warning',
-        message: 'Build start was cancelled.',
-      });
-      return false;
-    }
-    advanceBuildSessionTransitionPhase('saving-draft');
-    beginBuildStartupStep('draft-save', {
-      source: startupSource,
-    });
-    const saved = await runTimedStep('draft-save', () => saveDraftBeforeBuild());
-    if (!saved) {
-      finishBuildStartupStep('draft-save', 'error', {
-        reason: 'save-draft-returned-false',
-      });
-      releaseBuildLock();
-      finishBuildSessionTransition({
-        level: 'error',
-        message: 'Failed to start build because draft save did not complete.',
-      });
-      return false;
-    }
-    finishBuildStartupStep('draft-save', 'success');
-    if (cancelStartRequestRef.current) {
-      releaseBuildLock();
-      finishBuildSessionTransition({
-        level: 'warning',
-        message: 'Build start was cancelled.',
-      });
-      return false;
-    }
-    try {
-      advanceBuildSessionTransitionPhase('initializing-worker');
-      beginBuildStartupStep('worker-initialize', {
-        source: startupSource,
-      });
-      try {
-        await runTimedStep('worker-initialize', () => bridgeRef.current.initialize());
-        finishBuildStartupStep('worker-initialize', 'success');
-        if (cancelStartRequestRef.current) {
-          releaseBuildLock();
-          finishBuildSessionTransition({
-            level: 'warning',
-            message: 'Build start was cancelled.',
-          });
-          return false;
-        }
-      } catch (error) {
-        finishBuildStartupStep('worker-initialize', 'error', {
-          errorMessage: getErrorMessage(error),
-        });
-        throw error;
-      }
-      if (shouldResumeSession) {
-        advanceBuildSessionTransitionPhase('starting-session');
-        beginBuildStartupStep('session-resume-request', {
-          source: startupSource,
-        });
-        try {
-          await runTimedStep('session-resume-request', () => (
-            bridgeRef.current.resumeBuildSession(SHAPE_NODE_TYPE, activeNodeId)
-          ));
-          finishBuildStartupStep('session-resume-request', 'success');
-        } catch (error) {
-          finishBuildStartupStep('session-resume-request', 'error', {
-            errorMessage: getErrorMessage(error),
-          });
-          throw error;
-        }
-        emitBuildSessionTransitionLog('info', 'resume session requested', {
-          forceRestart: Boolean(options?.forceRestart),
-          source: startupSource,
-        });
-        void updateSessionRecord({ status: 'running', stopReason: undefined, canResume: false });
-        awaitingFirstTaskExpectationRef.current = false;
-        advanceBuildSessionTransitionPhase('awaiting-first-task', {
-          level: 'info',
-          message: 'Build resumed. Waiting for worker task updates...',
-        });
-        beginBuildStartupStep('awaiting-first-task', {
-          source: startupSource,
-          mode: 'resume',
-        });
-        return true;
-      }
-      advanceBuildSessionTransitionPhase('building-payloads');
-      const resolvedDataSource = data?.buildConfig?.dataSourceName;
-      const selectionSummary = summarizeSelectedEntries(data?.selectedArrayByCountries);
-      beginBuildStartupStep('payload-build', {
-        source: startupSource,
-        mode: 'worker-side',
-        dataSource: resolvedDataSource ?? null,
-        selectedCountryCount: selectionSummary.selectedCountryCount,
-        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-      });
-      if (!resolvedDataSource) {
-        finishBuildStartupStep('payload-build', 'error', {
-          reason: 'missing-data-source',
-          mode: 'worker-side',
-        });
-        releaseBuildLock();
-        finishBuildSessionTransition({
-          level: 'error',
-          message: 'Failed to start build because data source is missing.',
-        });
-        return false;
-      }
-      if (selectionSummary.selectedAdminPairCount === 0) {
-        finishBuildStartupStep('payload-build', 'error', {
-          reason: 'selection-empty',
-          mode: 'worker-side',
-        });
-        releaseBuildLock();
-        finishBuildSessionTransition({
-          level: 'error',
-          message: 'Failed to start build because selection is empty.',
-        });
-        return false;
-      }
-      finishBuildStartupStep('payload-build', 'success', {
-        mode: 'worker-side',
-        dataSource: resolvedDataSource,
-        selectedCountryCount: selectionSummary.selectedCountryCount,
-        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-      });
-      advanceBuildSessionTransitionPhase('starting-session');
-      beginBuildStartupStep('session-start-request', {
-        source: startupSource,
-        payloadMode: 'worker-side',
-        selectedCountryCount: selectionSummary.selectedCountryCount,
-        selectedAdminPairCount: selectionSummary.selectedAdminPairCount,
-      });
-      let statusResult: Awaited<ReturnType<typeof bridgeRef.current.startBuildSession>>;
-      try {
-        statusResult = await runTimedStep('session-start-request', () => bridgeRef.current.startBuildSession(
-          SHAPE_NODE_TYPE,
-          activeNodeId,
-          undefined,
-        ));
-        finishBuildStartupStep('session-start-request', 'success', {
-          status: statusResult.status,
-          hasError: Boolean(statusResult.error),
-          payloadMode: 'worker-side',
-        });
-      } catch (error) {
-        finishBuildStartupStep('session-start-request', 'error', {
-          errorMessage: getErrorMessage(error),
-          payloadMode: 'worker-side',
-        });
-        throw error;
-      }
-      emitBuildSessionTransitionLog('info', 'start session response', {
-        status: statusResult.status,
-        hasError: Boolean(statusResult.error),
-      });
-      const nextStatus = statusResult.status === 'completed'
-        ? 'completed'
-        : statusResult.status === 'failed'
-          ? 'failed'
-          : 'processing';
-      void updateSessionRecord({
-        status: nextStatus === 'processing' ? 'running' : nextStatus,
-        stopReason: nextStatus === 'processing' ? undefined : nextStatus,
-        canResume: nextStatus === 'processing',
-      });
-      if (nextStatus === 'failed') {
-        const startRequestErrorMessage = toTransitionErrorMessage(
-          statusResult.error,
-          'Build failed before task execution started.',
-        );
-        finishBuildSessionTransition({
-          level: 'error',
-          message: startRequestErrorMessage,
-        });
-      } else if (nextStatus === 'completed') {
-        finishBuildSessionTransition({
-          level: 'info',
-          message: 'Build completed immediately after start.',
-        });
-      } else {
-        awaitingFirstTaskExpectationRef.current = true;
-        advanceBuildSessionTransitionPhase('awaiting-first-task', {
-          level: 'info',
-          message: 'Build requested. Waiting for worker task updates...',
-        });
-        beginBuildStartupStep('awaiting-first-task', {
-          source: startupSource,
-          mode: 'start',
-        });
-      }
-      logStartResumeTrace('request-finished:success', {
-        nextStatus,
-      });
-      return true;
-    } catch (error) {
-      logStartResumeTrace('request-finished:error', {
-        errorMessage: getErrorMessage(error),
-      });
-      releaseBuildLock();
-      finishBuildSessionTransition({
-        level: 'error',
-        message: 'Failed to start or resume build.',
-      });
-      console.error('[ShapeBuildProgressStep] start/resume failed', error);
-      return false;
-    }
-  }, [
+  const {
+    handleStartOrResume,
+    handlePause,
+  } = useShapeBuildStepControlActions({
     activeNodeId,
-    advanceBuildSessionTransitionPhase,
-    beginBuildSessionTransition,
+    data,
     buildStatus,
-    data?.buildConfig?.dataSourceName,
-    data?.selectedArrayByCountries,
-    emitBuildSessionTransitionLog,
+    runtimeStatus,
+    buildSessionTransitionActive: buildSessionTransition.active,
+    isStopRequestedInFlight,
+    bridgeRef,
+    beginBuildSessionTransition,
+    advanceBuildSessionTransitionPhase,
+    finishBuildSessionTransition,
     beginBuildStartupStep,
     finishBuildStartupStep,
-    finishBuildSessionTransition,
+    emitBuildSessionTransitionLog,
+    clearStartPendingRef,
     releaseBuildLock,
-    runtimeStatus,
+    tryAcquireBuildLock,
+    waitForBuildLock,
+    cancelStartRequestRef,
     saveDraftBeforeBuild,
     refreshTasks,
-    tryAcquireBuildLock,
     updateSessionRecord,
-    waitForBuildLock,
-  ]);
-
-  const handleCancelQueued = useCallback(async (
-    reason: 'route-leave' | 'user-pause' = 'user-pause',
-  ): Promise<void> => {
-    if (!activeNodeId || isStopRequestedInFlight) return;
-    cancelStartRequestRef.current = true;
-    clearStartPendingRef.current?.();
-    setIsStopRequested(true);
-    try {
-      await bridgeRef.current.initialize();
-      await runWithTimeout(
-        bridgeRef.current.cancelQueuedBuildSession(SHAPE_NODE_TYPE, activeNodeId, reason),
-        PAUSE_COMMAND_TIMEOUT_MS,
-        `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
-      );
-      setIsStopAccepted(true);
-      releaseBuildLock();
-      if (buildSessionTransition.active) {
-        finishBuildSessionTransition({
-          level: 'warning',
-          message: 'Build start was cancelled.',
-        });
-      }
-    } catch (error) {
-      notify.error('Failed to cancel queued build.');
-      console.error('[ShapeBuildProgressStep] cancel queued failed', error);
-      setIsStopRequested(false);
-      setIsStopAccepted(false);
-    }
-  }, [
-    activeNodeId,
-    buildSessionTransition.active,
-    finishBuildSessionTransition,
-    isStopRequestedInFlight,
-    releaseBuildLock,
-  ]);
-
-  const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
-    if (!activeNodeId) {
-      notify.warning('NodeId is missing.');
-      return;
-    }
-    if (isStopRequestedInFlight) return;
-    const shouldCancelQueued = buildSessionTransition.active
-      && buildStatus !== 'running'
-      && runtimeStatus !== 'processing';
-    if (shouldCancelQueued) {
-      await handleCancelQueued(reason);
-      return;
-    }
-    const pauseRequestedAt = Date.now();
-    const logPauseTrace = (event: string, payload?: Record<string, unknown>): void => {
-      console.log('[ShapeBuildPauseTrace] handlePause', {
-        nodeId: String(activeNodeId),
-        elapsedMs: Math.max(0, Date.now() - pauseRequestedAt),
-        event,
-        reason,
-        buildStatus,
-        runtimeStatus,
-        ...(payload ?? {}),
-      });
-    };
-    logPauseTrace('request-received');
-    clearStartPendingRef.current?.();
-    await executePauseBuildFlow({
-      reason,
-      onPendingChange: setIsStopRequested,
-      onAccepted: () => {
-        setIsStopAccepted(true);
-      },
-      pauseSession: async (pauseReason) => {
-        logPauseTrace('worker-initialize:start');
-        await bridgeRef.current.initialize();
-        logPauseTrace('worker-initialize:finish');
-        logPauseTrace('pause-command:start', { pauseReason });
-        await runWithTimeout(
-          bridgeRef.current.pauseBuildSession(SHAPE_NODE_TYPE, activeNodeId, pauseReason),
-          PAUSE_COMMAND_TIMEOUT_MS,
-          `Pause command timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms while worker is busy.`,
-        );
-        logPauseTrace('worker-command-finished', { pauseReason });
-      },
-      persistPausedStatus: async (pauseReason) => {
-        const persisted = await updateSessionRecord({
-          status: 'idle',
-          stopReason: pauseReason,
-          canResume: true,
-        });
-        if (!persisted) {
-          throw new Error('Failed to persist paused status.');
-        }
-        logPauseTrace('session-persisted', { pauseReason });
-      },
-      onError: (error) => {
-        setIsStopRequested(false);
-        setIsStopAccepted(false);
-        notify.error('Failed to pause build.');
-        console.error('[ShapeBuildProgressStep] pause failed', error);
-        logPauseTrace('request-failed', {
-          errorMessage: error instanceof Error ? error.message : String(error),
-        });
-      },
-    });
-    logPauseTrace('request-finished');
-  }, [
-    activeNodeId,
-    buildSessionTransition.active,
-    buildStatus,
-    handleCancelQueued,
-    isStopRequestedInFlight,
-    runtimeStatus,
-    updateSessionRecord,
-  ]);
+    setIsStopRequested,
+    setIsStopAccepted,
+  });
 
   useEffect(() => {
     if (!isStopRequestedInFlight) return;

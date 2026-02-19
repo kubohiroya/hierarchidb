@@ -12,7 +12,7 @@ import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useFetchConfigSection } from './useFetchConfigSection.ts';
+import { useFetchConfigSection } from '../../hooks/useFetchConfigSection.ts';
 import {
   filteringHighUrl,
   filteringLowUrl,
