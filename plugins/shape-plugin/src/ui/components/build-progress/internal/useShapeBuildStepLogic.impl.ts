@@ -61,6 +61,14 @@ import {
 import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
 import { useShapeBuildProgressSummaryComputation } from '../shapeBuildProgressSummaryComputation.js';
 
+export {
+  shouldResetElapsedState,
+  resolveDisplayBuildStatus,
+  shouldRefreshTasksSnapshot,
+  resolveMostAdvancedRunningStageId,
+  resolveMostAdvancedInFlightStageId,
+};
+
 type ShapeProgressStepTracePayload = {
   nodeId: string | null;
   phase: BuildStatus;
