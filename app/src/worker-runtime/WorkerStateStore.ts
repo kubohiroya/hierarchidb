@@ -1,9 +1,9 @@
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { Remote } from 'comlink';
 import {
   getWorkerInitCompleteMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages.js';
+} from '~/i18n/workerInitMessages';
 import { ensureWorkerRuntime, resetWorkerRuntime } from './WorkerModuleLoader.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 

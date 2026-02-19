@@ -8,7 +8,7 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { rootRoute } from '../rootRoute.js';
+import { rootRoute } from '~/router/routes/rootRoute';
 import CallbackRoute from './auth.callback.js';
 // Import existing auth components from React Router routes
 import LoginRoute from './auth.login.js';

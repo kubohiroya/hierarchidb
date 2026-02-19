@@ -12,12 +12,12 @@ import {
   parseNodeCreateAction,
   resolveNodeCreateDefaults,
   resolveNodeTemplateExecution,
-} from '~/features/templates/nodeCreateTemplates.ts';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
-import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
-import type { ContextAction, TreeConsoleActionDeps } from '../types.js';
+} from '~/features/templates/nodeCreateTemplates';
+import { loadUIPlugin } from '~/plugin-loaders/ui-plugin-loader';
+import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
+import type { ContextAction, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
-import { openInNewTab } from '~/utils/openInNewTab.ts';
+import { openInNewTab } from '~/utils/openInNewTab';
 import {
   createUniqueName,
   fireCmdEvent,

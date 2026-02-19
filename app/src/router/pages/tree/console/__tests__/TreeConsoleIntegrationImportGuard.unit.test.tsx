@@ -121,7 +121,7 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-import { canImportFromNode, TreeConsoleIntegration } from '../TreeConsoleIntegration.js';
+import { canImportFromNode, TreeConsoleIntegration } from '~/router/pages/tree/console/TreeConsoleIntegration';
 
 const buildNode = (overrides: Partial<TreeNode>): TreeNode =>
   ({

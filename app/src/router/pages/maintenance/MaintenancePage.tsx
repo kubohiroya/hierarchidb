@@ -14,17 +14,17 @@ import {
 } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { useWorker } from '~/contexts/WorkerProvider.js';
+import { useWorker } from '~/contexts/WorkerProvider';
 import {
   executeIndexedDbMaintenance,
   type MaintenanceExecutionResult,
   type MaintenanceStepEvent,
-} from '~/maintenance/maintenanceExecution.js';
+} from '~/maintenance/maintenanceExecution';
 import {
   clearMaintenanceSession,
   markMaintenanceSessionConsumed,
   validateMaintenanceSession,
-} from '~/maintenance/maintenanceSession.js';
+} from '~/maintenance/maintenanceSession';
 
 const invalidReasonMessage = (reason: string): string => {
   switch (reason) {

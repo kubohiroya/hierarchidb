@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatZxyParam,
   type MapViewState as LoaderMapViewState,
-} from '../../loaders/mapLoader.js';
+} from '~/router/loaders/mapLoader';
 
 export type UseMapViewStateParams = {
   nodeId?: string;

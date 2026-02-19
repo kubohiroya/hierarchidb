@@ -7,10 +7,10 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
-import type { TreeConsoleActionDeps } from '../types.js';
+import { loadUIPlugin } from '~/plugin-loaders/ui-plugin-loader';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { showCommandError } from './helpers.ts';
-import { openInNewTab } from '~/utils/openInNewTab.ts';
+import { openInNewTab } from '~/utils/openInNewTab';
 
 export const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',

@@ -4,7 +4,7 @@ import {
   markMaintenanceSessionConsumed,
   validateMaintenanceSession,
   clearMaintenanceSession,
-} from '~/maintenance/maintenanceSession.js';
+} from '~/maintenance/maintenanceSession';
 
 describe('maintenanceSession', () => {
   beforeEach(() => {

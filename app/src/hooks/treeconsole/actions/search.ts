@@ -5,7 +5,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
-import type { TreeConsoleActionDeps } from '../types.js';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { buildIndexFromNodes } from './helpers.ts';
 
 export const createSearchActions = (deps: TreeConsoleActionDeps) => {

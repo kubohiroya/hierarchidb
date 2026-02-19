@@ -46,8 +46,8 @@ import {
 import { alpha } from '@mui/material/styles';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LoadTreeReturn } from '~/loader.js';
-import { loadTree } from '~/loader.js';
+import type { LoadTreeReturn } from '~/loader';
+import { loadTree } from '~/loader';
 import { getArchiveDisplayName } from './getArchiveDisplayName.js';
 import { ArchiveBreadcrumb } from './ArchiveBreadcrumb.js';
 import { useArchiveDialog } from './useArchiveDialog.js';

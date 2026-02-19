@@ -3,7 +3,7 @@ import {
   getNodeCreateTemplateMenuEntries,
   parseNodeCreateAction,
   resolveNodeTemplateExecution,
-} from '../nodeCreateTemplates.ts';
+} from '~/features/templates/nodeCreateTemplates';
 
 describe('nodeCreateTemplates', () => {
   it('parses shape preset create action', () => {

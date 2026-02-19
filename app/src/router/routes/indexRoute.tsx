@@ -5,7 +5,7 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import HomePage from '~/router/pages/home/HomePage.js';
+import HomePage from '~/router/pages/home/HomePage';
 import { rootRoute } from './rootRoute.js';
 
 export const indexRoute = createRoute({

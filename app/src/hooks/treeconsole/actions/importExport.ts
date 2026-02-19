@@ -2,7 +2,7 @@
  * Import/export actions for TreeConsole.
  */
 
-import type { TreeConsoleActionDeps } from '../types.js';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { fireCmdEvent } from './helpers.ts';
 
 export const createImportExportActions = (deps: TreeConsoleActionDeps) => {

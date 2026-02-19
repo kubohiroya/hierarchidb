@@ -5,7 +5,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeConsoleActionDeps } from '../types.js';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 
 export type NavigationHelpers = {
   pushToNode: (targetNodeId?: NodeId | null) => void;

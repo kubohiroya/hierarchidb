@@ -5,7 +5,7 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { type MapViewState, mapLoader } from '../loaders/mapLoader.js';
+import { type MapViewState, mapLoader } from '~/router/loaders/mapLoader';
 // Import the existing map page component
 import MapPage from './map.js';
 import { rootRoute } from './rootRoute.js';

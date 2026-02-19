@@ -23,7 +23,7 @@
     ],
     "target": "es2022",
     "module": "NodeNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "NodeNext",
     "jsx": "react-jsx"
   },
   "include": [

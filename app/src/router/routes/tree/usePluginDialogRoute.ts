@@ -3,7 +3,7 @@ import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import { useLocation, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
+import { shiftBuildQueue } from '~/router/pages/tree/console/buildQueue';
 import { treeRouteIds } from './shared.ts';
 import type { PluginDialogLoaderData } from './PluginDialogRoute.tsx';
 

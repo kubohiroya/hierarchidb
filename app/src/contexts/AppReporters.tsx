@@ -1,8 +1,8 @@
 import { useSimpleBFFAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBootProgress } from '../contexts/BootProgressProvider.js';
-import { useWorker } from '../contexts/WorkerProvider.js';
+import { useBootProgress } from '~/contexts/BootProgressProvider';
+import { useWorker } from '~/contexts/WorkerProvider';
 
 const logInitReporterWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -110,7 +110,7 @@ export const WorkerProgressReporter: React.FC = () => {
     }
     const intervalId = window.setInterval(() => {
       // Late import to avoid circular
-      import('~/worker-runtime/WorkerAPIClient.ts')
+      import('~/worker-runtime/WorkerAPIClient')
         .then(({ WorkerAPIClient }) => {
           if (WorkerAPIClient.isReady()) {
             markStepDone('Worker', readyLabel);

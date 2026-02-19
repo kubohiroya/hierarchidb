@@ -8,7 +8,7 @@ import {
 import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { treeRouteIds } from '../router/routes/tree/shared.ts';
+import { treeRouteIds } from '~/router/routes/tree/shared';
 
 const HANDLER_ID = 'app-auth-required-dialog';
 

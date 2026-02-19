@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
-import { emptyArchiveBranch } from '../../emptyArchiveBranch.js';
+import { emptyArchiveBranch } from '~/router/pages/tree/archive/emptyArchiveBranch';
 
 const nodeA = 'archive-node-a' as NodeId;
 const nodeB = 'archive-node-b' as NodeId;

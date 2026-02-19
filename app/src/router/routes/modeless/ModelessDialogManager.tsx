@@ -28,7 +28,7 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type React from 'react';
 import { useCallback, useMemo, useRef } from 'react';
-import type { MapStylerSummary } from '../map/types.js';
+import type { MapStylerSummary } from '~/router/routes/map/types';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
 import {

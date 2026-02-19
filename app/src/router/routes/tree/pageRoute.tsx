@@ -7,9 +7,9 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { loadPageNode } from '../../loaders/treeLoaders.js';
+import { loadPageNode } from '~/router/loaders/treeLoaders';
 // Import the existing React Router component to reuse
-import TreePageLayout from '../t.($treeId).($pageNodeId).js';
+import TreePageLayout from '~/router/routes/t.($treeId).($pageNodeId)';
 import { treeLayoutRoute } from './layoutRoute.js';
 export const treePageRoute = createRoute({
   getParentRoute: () => treeLayoutRoute,

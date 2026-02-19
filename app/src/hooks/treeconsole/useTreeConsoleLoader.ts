@@ -4,15 +4,15 @@
  * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
-import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive.js';
+import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
+import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive';
 import type { TreeConsoleState } from './types.js';
 
 interface Params {

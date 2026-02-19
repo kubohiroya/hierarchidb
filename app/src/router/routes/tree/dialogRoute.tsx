@@ -12,12 +12,12 @@ import { lazy, Suspense } from 'react';
 import type {
   ArchiveDialogData,
   ArchiveDialogRouteParams,
-} from '~/router/pages/tree/archive/ArchiveDialog.js';
+} from '~/router/pages/tree/archive/ArchiveDialog';
 import {
   type LoadNodeActionReturn,
   loadNodeAction,
   loadWorkerAPIClient,
-} from '../../loaders/treeLoaders.js';
+} from '~/router/loaders/treeLoaders';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
 
@@ -32,7 +32,7 @@ export type TreeDialogLoaderResult =
       data: PluginDialogLoaderData;
     };
 
-const ArchiveDialogLazy = lazy(() => import('~/router/pages/tree/archive/ArchiveDialog.js'));
+const ArchiveDialogLazy = lazy(() => import('~/router/pages/tree/archive/ArchiveDialog'));
 
 const loadTreeDialog = async ({
   params,
@@ -67,7 +67,7 @@ const loadTreeDialog = async ({
 
   // Special handling for archive dialog
   if (normalizedNodeType === 'archive') {
-    const archiveDialogModule = await import('~/router/pages/tree/archive/ArchiveDialog.js');
+    const archiveDialogModule = await import('~/router/pages/tree/archive/ArchiveDialog');
     if (archiveDialogModule.clientLoader) {
       const archiveParams = toArchiveDialogParams(resolvedParams);
       const data = await archiveDialogModule.clientLoader({ params: archiveParams });

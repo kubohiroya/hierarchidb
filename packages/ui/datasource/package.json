@@ -13,7 +13,8 @@
     }
   },
   "dependencies": {
-    "@hierarchidb/ui-license": "workspace:*"
+    "@hierarchidb/ui-license": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*"
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",

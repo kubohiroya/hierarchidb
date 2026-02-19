@@ -2,11 +2,11 @@
  * UI-side worker bootstrap: create and wrap SharedWorker via Comlink.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { Remote } from 'comlink';
-import { bootLog } from '~/utils/bootLog.ts';
-import { APP_VERSION } from '~/version.ts';
-import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock.js';
+import { bootLog } from '~/utils/bootLog';
+import { APP_VERSION } from '~/version';
+import { isMaintenanceLockActive } from '~/maintenance/maintenanceLock';
 import sharedWorkerScriptUrl from './shared-worker.ts?sharedworker&url';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/ui-worker-client to avoid `any` fallbacks

@@ -2,7 +2,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { ResourcesGuidedTour } from '../tour/ResourcesGuidedTour.tsx';
+import { ResourcesGuidedTour } from '~/router/pages/tree/tour/ResourcesGuidedTour';
 
 type ContextMenuHandler = (
   action: string,

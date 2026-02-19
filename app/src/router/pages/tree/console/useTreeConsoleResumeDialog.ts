@@ -1,10 +1,10 @@
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import { useCallback } from 'react';
-import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
 import { logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 type IntegrationActions = {

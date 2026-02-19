@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo, type MouseEvent } from 'react';
-import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton.js';
+import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;

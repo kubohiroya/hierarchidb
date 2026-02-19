@@ -12,11 +12,11 @@ import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar'
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useImportExport } from '../hooks/useImportExport.ts';
-import { getMenuSpec } from '../plugin-loaders/menu-spec.ts';
-import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
-import { buildVisibleRows, syncNodeIndex } from '../state/treeconsole.derive.js';
-import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
+import { useImportExport } from '~/hooks/useImportExport';
+import { getMenuSpec } from '~/plugin-loaders/menu-spec';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
+import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive';
+import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
 import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
 import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
 import type {

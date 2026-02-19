@@ -7,9 +7,9 @@ import type { TreeId } from '@hierarchidb/core-types';
 import {
   getNodeCreateTemplateMenuEntries,
   type TemplateTreeContext,
-} from '../features/templates/nodeCreateTemplates.ts';
-import { getPresentation, prefetchAllIcons } from '../plugin-runtime/plugin-presentation.ts';
-import { getInstalledPlugins, type InstalledPlugin } from '../plugin-runtime/plugin-registry.ts';
+} from '~/features/templates/nodeCreateTemplates';
+import { getPresentation, prefetchAllIcons } from '~/plugin-runtime/plugin-presentation';
+import { getInstalledPlugins, type InstalledPlugin } from '~/plugin-runtime/plugin-registry';
 import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
 
 export type TreeContext = 'resources' | 'projects';

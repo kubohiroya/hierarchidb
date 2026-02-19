@@ -23,8 +23,8 @@ import {
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '../../../state/mapSearch.atoms.js';
-import { mapLayerInfoAtom } from '../../../state/mapSearch.atoms.js';
+import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '~/state/mapSearch.atoms';
+import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
 
 export const MAX_ROWS = 1000;
 

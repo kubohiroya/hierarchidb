@@ -5,9 +5,9 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import type { LoadPageNodeReturn } from '../../loaders/treeLoaders.js';
-import { loadPageNode } from '../../loaders/treeLoaders.js';
-import { TreeLayoutBody } from '../t.($treeId).($pageNodeId).js';
+import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
+import { loadPageNode } from '~/router/loaders/treeLoaders';
+import { TreeLayoutBody } from '~/router/routes/t.($treeId).($pageNodeId)';
 import { treeLayoutRoute } from './layoutRoute.js';
 
 export const treeLayoutIndexRoute = createRoute({

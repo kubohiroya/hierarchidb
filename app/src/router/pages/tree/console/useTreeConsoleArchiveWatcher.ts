@@ -1,9 +1,9 @@
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';
-import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
+import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices';
 import { isSubscriptionDebug, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 export type ArchiveWatcherState = {

@@ -37,9 +37,9 @@ import {
   type WorkerInitializationReporter,
   wirePluginsFromModules,
 } from '@hierarchidb/ui-worker-client';
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
-import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index.ts';
-import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
+import type { BuildWorkerAPI } from '~/types/worker-api';
+import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index';
+import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {

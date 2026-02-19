@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import {
   isFolderNodeType,
@@ -8,7 +8,7 @@ import {
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { i18n } from '@hierarchidb/ui-i18n';
 import type { Remote } from 'comlink';
-import { loadAllUIPlugins, loadUIPlugin } from '../../plugin-loaders/ui-plugin-loader.js';
+import { loadAllUIPlugins, loadUIPlugin } from '~/plugin-loaders/ui-plugin-loader';
 
 type StepConfigLike = {
   id: string;

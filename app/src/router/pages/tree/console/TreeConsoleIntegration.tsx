@@ -11,7 +11,7 @@ import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconso
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
-import { useWorker } from '~/contexts/WorkerProvider.tsx';
+import { useWorker } from '~/contexts/WorkerProvider';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
 import { useTreeConsoleSpeedDial } from './useTreeConsoleSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';

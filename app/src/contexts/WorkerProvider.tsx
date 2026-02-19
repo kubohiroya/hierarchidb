@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -43,15 +43,15 @@ import {
   getWorkerInitCompleteMessage,
   getWorkerInitFallbackMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages.js';
-import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
-import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
-import { bootLog } from '../utils/bootLog.ts';
-import { resetWorkerState } from '../worker-runtime/WorkerStateStore.js';
+} from '~/i18n/workerInitMessages';
+import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy';
+import { useWorkerRuntimeProxy } from '~/hooks/useWorkerRuntimeProxy';
+import { bootLog } from '~/utils/bootLog';
+import { resetWorkerState } from '~/worker-runtime/WorkerStateStore';
 import {
   getWorkerAPIClientModule,
   loadWorkerAPIClientModule,
-} from '../worker-runtime/workerApiClientLoader.js';
+} from '~/worker-runtime/workerApiClientLoader';
 import { useOptionalBootProgress } from './BootProgressProvider.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {

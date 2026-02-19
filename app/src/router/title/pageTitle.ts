@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { loadAppConfig } from '~/loadAppConfig.js';
-import { treeRouteIds } from '~/router/routes/tree/shared.js';
+import { loadAppConfig } from '~/loadAppConfig';
+import { treeRouteIds } from '~/router/routes/tree/shared';
 import type {
   LoadPageNodeReturn,
   LoadTargetNodeReturn,
   LoadNodeActionReturn,
-} from '~/router/loaders/treeLoaders.js';
+} from '~/router/loaders/treeLoaders';
 
 export type AppTitleOptions = {
   appNameOnly?: boolean;

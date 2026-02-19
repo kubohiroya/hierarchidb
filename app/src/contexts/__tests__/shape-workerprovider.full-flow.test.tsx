@@ -3,14 +3,14 @@ import { render, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
 import { readFile } from 'node:fs/promises';
 import type { BuildProgressEvent, BuildProgressPayload, BuildTaskSummary, BuildTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   type SelectedArrayByCountries,
 } from '@hierarchidb/shape-plugin';
-import { WorkerProvider } from '../WorkerProvider.tsx';
+import { WorkerProvider } from '~/contexts/WorkerProvider';
 
 // Run with: pnpm --filter @hierarchidb/app test -- --run src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx
 // Requires network access to GeoBoundaries.
@@ -26,7 +26,7 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
 }));
 
 vi.mock('~/worker-runtime/WorkerModuleLoader.ts', async () => {
-  const loader = await import('~/worker-runtime/workerApiClientLoader.ts');
+  const loader = await import('~/worker-runtime/workerApiClientLoader');
   return {
     ensureWorkerRuntime: async () => {
       const { WorkerAPIClient } = await loader.loadWorkerAPIClientModule();

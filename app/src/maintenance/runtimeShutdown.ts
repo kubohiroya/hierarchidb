@@ -1,5 +1,5 @@
 import { Dexie } from 'dexie';
-import { geosWorkerClient } from '~/geos/geosWorkerClient.js';
+import { geosWorkerClient } from '~/geos/geosWorkerClient';
 
 type WorkerClientRefLike = {
   client?: {

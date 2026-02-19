@@ -1,4 +1,4 @@
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -16,7 +16,7 @@ export type {
   LoadTreeArgs,
   LoadTreeReturn,
   LoadWorkerAPIClientReturn,
-} from '~/loader.js';
+} from '~/loader';
 
 // Import the actual loader functions from the existing loader.ts
 export {
@@ -26,7 +26,7 @@ export {
   loadTargetNode,
   loadTree,
   loadWorkerAPIClient,
-} from '~/loader.js';
+} from '~/loader';
 
 /**
  * Context type for TanStack Router console routes
