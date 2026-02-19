@@ -52,7 +52,7 @@
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "build:dts": "rollup -c rollup.dts.config.mjs",
-    "build:js": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts"
+    "build:js": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts --outDir dist"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

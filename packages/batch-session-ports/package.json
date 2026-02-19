@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "build:types": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest"
