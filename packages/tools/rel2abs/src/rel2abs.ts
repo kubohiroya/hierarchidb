@@ -1,4 +1,5 @@
 import fs from "node:fs/promises"
+import { existsSync } from "node:fs"
 import path from "node:path"
 import ts from "typescript"
 
@@ -42,7 +43,7 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return {
-    rootDir: path.resolve(positional[0]),
+    rootDir: path.resolve(positional[0] ?? ""),
     dryRun: options.has("--dry-run") || options.has("-d"),
   }
 }
@@ -58,6 +59,92 @@ function stripKnownExtension(importPath: string): string {
     }
   }
   return importPath
+}
+
+const SCOPE_DIRECTORIES = new Set(["packages", "plugins"])
+
+const packageRootCache = new Map<string, string | null>()
+
+function getPackageRoot(sourceFilePath: string, rootDir: string): string | null {
+  const cached = packageRootCache.get(sourceFilePath)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  let current = path.dirname(sourceFilePath)
+  const resolvedRoot = path.resolve(rootDir)
+
+  while (true) {
+    if (existsSync(path.join(current, "package.json"))) {
+      const packageRoot = current
+      packageRootCache.set(sourceFilePath, packageRoot)
+      return packageRoot
+    }
+
+    const parent = path.dirname(current)
+    if (current === parent || !parent.startsWith(resolvedRoot)) {
+      packageRootCache.set(sourceFilePath, null)
+      return null
+    }
+
+    current = parent
+  }
+}
+
+function getPackageScopePrefix(sourceFilePath: string, rootDir: string): string | null {
+  const packageRoot = getPackageRoot(sourceFilePath, rootDir)
+  if (packageRoot === null) {
+    return null
+  }
+
+  let current = path.dirname(packageRoot)
+  const resolvedRoot = path.resolve(rootDir)
+
+  while (true) {
+    const basename = path.basename(current)
+    if (SCOPE_DIRECTORIES.has(basename)) {
+      return toPosix(path.relative(current, packageRoot))
+    }
+
+    const parent = path.dirname(current)
+    if (current === parent || !parent.startsWith(resolvedRoot)) {
+      return null
+    }
+
+    current = parent
+  }
+}
+
+const packageScopePrefixCache = new Map<string, string | null>()
+
+function getPackageScopePrefixCached(sourceFilePath: string, rootDir: string): string | null {
+  const key = `${sourceFilePath}::${path.resolve(rootDir)}`
+  const cached = packageScopePrefixCache.get(key)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const prefix = getPackageScopePrefix(sourceFilePath, rootDir)
+  packageScopePrefixCache.set(key, prefix)
+  return prefix
+}
+
+function toLegacyAbsoluteAlias(
+  moduleSpecifier: string,
+  sourceFilePath: string,
+  rootDir: string,
+): string | null {
+  const prefix = getPackageScopePrefixCached(sourceFilePath, rootDir)
+  if (prefix === null || prefix.length === 0) {
+    return null
+  }
+
+  const legacyPrefix = `~/${prefix}/`
+  if (!moduleSpecifier.startsWith(legacyPrefix)) {
+    return null
+  }
+
+  return `~/${stripKnownExtension(moduleSpecifier.slice(legacyPrefix.length))}`
 }
 
 function isRelativeImport(moduleSpecifier: string): boolean {
@@ -86,20 +173,21 @@ function isUrlConstructorWithImportMetaUrl(node: ts.Node): node is ts.NewExpress
     return false
   }
 
-  const args = node.arguments
-  if (!args || args.length === 0 || !ts.isStringLiteral(args[0])) {
+  const [specifier, baseArg] = node.arguments ?? []
+
+  if (specifier === undefined || !ts.isStringLiteral(specifier)) {
     return false
   }
 
-  if (!isRelativeImport(args[0].text)) {
+  if (!isRelativeImport(specifier.text)) {
     return false
   }
 
-  if (args.length < 2) {
+  if (baseArg === undefined) {
     return false
   }
 
-  return isImportMetaUrl(args[1])
+  return isImportMetaUrl(baseArg)
 }
 
 function isWithinRoot(resolved: string, rootDir: string): boolean {
@@ -119,12 +207,16 @@ function toAbsoluteAlias(
 ): string | null {
   const sourceDir = path.dirname(sourceFilePath)
   const targetPath = path.resolve(sourceDir, moduleSpecifier)
-
-  if (!isWithinRoot(targetPath, rootDir)) {
+  const packageRoot = getPackageRoot(sourceFilePath, rootDir)
+  if (packageRoot === null) {
     return null
   }
 
-  const rel = path.relative(rootDir, targetPath)
+  if (!isWithinRoot(targetPath, packageRoot)) {
+    return null
+  }
+
+  const rel = path.relative(packageRoot, targetPath)
   const alias = `~/${stripKnownExtension(toPosix(rel))}`
 
   return alias
@@ -194,14 +286,25 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
 
   const pushRewrite = (node: ts.StringLiteral): void => {
     const moduleSpecifier = node.text
-    if (!isRelativeImport(moduleSpecifier)) {
-      return
-    }
-    if (isKeepAsRelativeImport(moduleSpecifier)) {
+
+    const isLegacy = moduleSpecifier.startsWith("~/")
+    const legacyAlias = isLegacy
+      ? toLegacyAbsoluteAlias(moduleSpecifier, filePath, rootDir)
+      : null
+
+    const hasNext = isRelativeImport(moduleSpecifier) || isLegacy
+    if (!hasNext) {
       return
     }
 
-    const next = toAbsoluteAlias(filePath, moduleSpecifier, rootDir)
+    if (isRelativeImport(moduleSpecifier) && isKeepAsRelativeImport(moduleSpecifier)) {
+      return
+    }
+
+    const next = isRelativeImport(moduleSpecifier)
+      ? toAbsoluteAlias(filePath, moduleSpecifier, rootDir)
+      : legacyAlias
+
     if (next === null || next === moduleSpecifier) {
       return
     }
@@ -227,14 +330,19 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
     } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       pushRewrite(node.moduleSpecifier)
     } else if (isUrlConstructorWithImportMetaUrl(node)) {
-      pushRewrite(node.arguments[0])
+      const sourceArgument = node.arguments?.[0]
+      if (sourceArgument !== undefined && ts.isStringLiteral(sourceArgument)) {
+        pushRewrite(sourceArgument)
+      }
     } else if (
       ts.isCallExpression(node)
-      && ts.isImportCall(node)
-      && node.arguments.length > 0
-      && ts.isStringLiteral(node.arguments[0])
+      && node.expression.kind === ts.SyntaxKind.ImportKeyword
+      && node.arguments !== undefined
     ) {
-      pushRewrite(node.arguments[0])
+      const sourceArgument = node.arguments[0]
+      if (sourceArgument && ts.isStringLiteral(sourceArgument)) {
+        pushRewrite(sourceArgument)
+      }
     } else if (
       ts.isImportEqualsDeclaration(node)
       && ts.isExternalModuleReference(node.moduleReference)
