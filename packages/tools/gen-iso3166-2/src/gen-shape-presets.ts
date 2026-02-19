@@ -220,7 +220,11 @@ const readJsonArrayTextFromGeneratedCache = (
     return null;
   }
   let cursor = markerIndex + marker.length;
-  while (cursor < text.length && /\s/.test(text[cursor])) {
+  while (cursor < text.length) {
+    const char = text[cursor];
+    if (char === undefined || !/\s/.test(char)) {
+      break;
+    }
     cursor += 1;
   }
 
