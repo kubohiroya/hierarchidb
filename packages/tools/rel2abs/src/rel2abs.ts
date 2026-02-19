@@ -64,6 +64,10 @@ function isRelativeImport(moduleSpecifier: string): boolean {
   return moduleSpecifier.startsWith("./") || moduleSpecifier.startsWith("../")
 }
 
+function isKeepAsRelativeImport(moduleSpecifier: string): boolean {
+  return moduleSpecifier.startsWith("./")
+}
+
 function isImportMetaUrl(node: ts.Node): boolean {
   return (
     ts.isPropertyAccessExpression(node) &&
@@ -191,6 +195,9 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
   const pushRewrite = (node: ts.StringLiteral): void => {
     const moduleSpecifier = node.text
     if (!isRelativeImport(moduleSpecifier)) {
+      return
+    }
+    if (isKeepAsRelativeImport(moduleSpecifier)) {
       return
     }
 

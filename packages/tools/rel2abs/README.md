@@ -1,6 +1,6 @@
 # rel2abs
 
-`@hierarchidb/tools-rel2abs` is a workspace CLI that rewrites relative imports to a `~`-prefixed absolute import style.
+`@hierarchidb/tools-rel2abs` is a workspace CLI that rewrites some relative imports to a `~`-prefixed absolute import style.
 
 ## Purpose
 
@@ -13,7 +13,8 @@ Input:
 
 Output:
 
-- `./` and `../` imports are rewritten to `~/<path from root>`
+- `../` imports are rewritten to `~/<path from root>`
+- `./` imports are kept as-is (local relative path exception)
 - File extensions such as `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` are stripped
 - Only imports that resolve inside the target root are rewritten
 - No file is modified in dry-run mode
@@ -55,8 +56,7 @@ The tool rewrites module specifiers in:
 
 ## Conversion rules
 
-- Converts only relative module specifiers:
-  - `./foo`
+- Converts only relative module specifiers that navigate outside the current directory:
   - `../bar`
 - Leaves non-relative references unchanged:
   - `@scope/pkg`
