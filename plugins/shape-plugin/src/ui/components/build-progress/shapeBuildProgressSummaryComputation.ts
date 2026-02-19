@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
+import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.js';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,
@@ -19,7 +19,7 @@ import {
   makePaneProgress,
   makeRawDisplayCounts,
   makeStageTotals,
-} from './shapeBuildProgressSummaryComputationHelpers.ts';
+} from './shapeBuildProgressSummaryComputationHelpers.js';
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 

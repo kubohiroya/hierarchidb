@@ -1,6 +1,6 @@
-import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '../useShapeBuildStepHelpers.ts';
-import { onTraceFailure, runResumeSessionRequest, runStartSessionRequest } from './useShapeBuildStartOrResumeExecutionHelpers.ts';
-import { type StartOrResumeExecutionArgs } from './types.ts';
+import { onTraceFailure, runResumeSessionRequest, runStartSessionRequest } from './useShapeBuildStartOrResumeExecutionHelpers.js';
+import { type StartOrResumeExecutionArgs } from './types.js';
+import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '../useShapeBuildStepHelpers/errors.js';
 
 export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs): Promise<boolean> => {
   const {

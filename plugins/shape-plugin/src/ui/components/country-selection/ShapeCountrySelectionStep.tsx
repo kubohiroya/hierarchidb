@@ -6,7 +6,7 @@ import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js'
 import { useTranslation } from '../../i18n.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
-import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
+import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.js';
 
 const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const { t } = useTranslation();

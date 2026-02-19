@@ -1,10 +1,8 @@
 import { useCallback } from 'react';
-import {
-  PAUSE_COMMAND_TIMEOUT_MS,
-  SHAPE_NODE_TYPE,
-  runWithTimeout,
-} from '../useShapeBuildStepHelpers.ts';
-import { type CancelQueuedControlActionsArgs, type ShapeBuildPauseReason } from './types.ts';
+
+import type { CancelQueuedControlActionsArgs, ShapeBuildPauseReason } from './types.js';
+import { runWithTimeout } from '../useShapeBuildStepHelpers/elapsed.ts';
+import { PAUSE_COMMAND_TIMEOUT_MS, SHAPE_NODE_TYPE } from '../useShapeBuildStepHelpers/constants.ts';
 
 export const useShapeBuildCancelQueued = ({
   activeNodeId,

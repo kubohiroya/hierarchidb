@@ -1,5 +1,5 @@
 import { useBuildProgressStageContentState } from './useBuildProgressStageContentState.js';
-import { BuildProgressStageContentView } from './BuildProgressStageContentView.js';
+import { BuildProgressStageContentView } from './BuildProgressStageContentView.tsx';
 
 type BuildProgressStageContentProps = {
   showHeader?: boolean;
@@ -9,7 +9,7 @@ type BuildProgressStageContentProps = {
     description?: string | null;
   };
   stageValue: number;
-  tasksByStage: Record<string, import('../../useTaskItemCardList.ts').TaskItemWithMetadata[]>;
+  tasksByStage: Record<string, import('../../taskItemCardList/types.js').TaskItemWithMetadata[]>;
   paneProgress?: Array<{
     paneId?: string;
     progress?: number;
@@ -21,9 +21,9 @@ type BuildProgressStageContentProps = {
   isTasksLoading: boolean;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
-  resolveTaskTitle: (task: import('../../useTaskItemCardList.ts').TaskItemWithMetadata) => string;
+  resolveTaskTitle: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
-  matchesSearchQuery: (task: import('../../useTaskItemCardList.ts').TaskItemWithMetadata) => boolean;
+  matchesSearchQuery: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => boolean;
 };
 
 export const BuildProgressStageContent = ({

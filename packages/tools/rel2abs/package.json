@@ -1,0 +1,23 @@
+{
+  "name": "@hierarchidb/tools-rel2abs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/rel2abs.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node' --external typescript",
+    "clean": "rm -rf dist",
+    "rel2abs": "pnpm run build && node dist/rel2abs.js",
+    "start": "node dist/rel2abs.js",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "bin": {
+    "rel2abs": "dist/rel2abs.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.123",
+    "typescript": "^5.9.3"
+  }
+}

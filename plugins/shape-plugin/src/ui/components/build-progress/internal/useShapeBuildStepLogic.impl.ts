@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useShapeBuildTasks } from '../useShapeBuildTasks.ts';
-import { useBuildProgress } from '../useBuildProgress.js';
+import { useShapeBuildTasks } from '../useShapeBuildTasks/useShapeBuildTasks.js';
+import { useBuildProgress } from '../useBuildProgress/useBuildProgress.js';
 import { useTranslation } from '../../../i18n.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
@@ -16,45 +16,50 @@ import {
 } from '@hierarchidb/components/build-session';
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { isTaskPhaseDisplay, isTaskSkipped } from '../../../../common/utils/taskMessages.ts';
+import { isTaskPhaseDisplay, isTaskSkipped } from '../../../../common/utils/taskMessages.js';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
-import { useShapeBuildAutoResume } from '../useShapeBuildAutoResume.ts';
+import { useShapeBuildAutoResume } from '../useShapeBuildAutoResume/useShapeBuildAutoResume.js';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
-import { useShapeBuildStages } from '../useShapeBuildStages.ts';
-import { useShapeBuildProgressSummary } from '../useShapeBuildProgressSummary.ts';
-import { useShapeBuildLabels } from '../useShapeBuildLabels.ts';
-import { resolveBuildStatusSource } from '../resolveBuildStatusSource.ts';
-import { createBuildStartDraftData } from '../createBuildStartDraftData.ts';
-import { hasAwaitingFirstTaskSignal } from '../awaitingFirstTaskSignal.ts';
-import { resolveAwaitingFirstTaskDecision } from '../resolveAwaitingFirstTaskDecision.ts';
+import { useShapeBuildStages } from '../useShapeBuildStages/useShapeBuildStages.js';
+import { useShapeBuildLabels } from '../useShapeBuildLabels/useShapeBuildLabels.js';
+import { resolveBuildStatusSource } from '../resolveBuildStatusSource.js';
+import { createBuildStartDraftData } from '../createBuildStartDraftData.js';
+import { hasAwaitingFirstTaskSignal } from '../awaitingFirstTaskSignal.js';
+import { resolveAwaitingFirstTaskDecision } from '../resolveAwaitingFirstTaskDecision.js';
 import {
   resolveStartupTransitionWatchdogEvent,
-  type BuildStartupTransitionWarnStep,
-} from '../resolveStartupTransitionWatchdogEvent.ts';
+} from '../resolveStartupTransitionWatchdogEvent.js';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../../services/batch/ShapeBuildAPIClient.js';
 import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import { UI_POLL_INTERVAL_MS, UI_QUIET_THRESHOLD_MS } from './useShapeBuildStepHelpers/constants.js';
 import {
-  UI_POLL_INTERVAL_MS,
-  UI_QUIET_THRESHOLD_MS,
-  isShapeProgressStepDebugEnabled,
   emitShapeProgressStepTrace,
-  shallowEqualNumberRecord,
-  sumNumberRecord,
+  isShapeProgressStepDebugEnabled,
+} from './useShapeBuildStepHelpers/debug.js';
+import {
   hasPositiveElapsed,
   mergeElapsedByStage,
+  shallowEqualNumberRecord,
   shouldResetElapsedState,
+  sumNumberRecord,
+} from './useShapeBuildStepHelpers/elapsed.js';
+import {
+  type BuildStartupTransitionWarnStep,
   resolveDisplayBuildStatus,
   shouldRefreshTasksSnapshot,
-  resolveMostAdvancedRunningStageId,
-  resolveMostAdvancedInFlightStageId,
   toBuildStatus,
   toProcessingStatus,
+} from './useShapeBuildStepHelpers/status.js';
+import {
   normalizeStageKey,
-} from './useShapeBuildStepHelpers.ts';
-import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.ts';
+  resolveMostAdvancedInFlightStageId,
+  resolveMostAdvancedRunningStageId,
+} from './useShapeBuildStepHelpers/stage.js';
+import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
+import { useShapeBuildProgressSummaryComputation } from '../shapeBuildProgressSummaryComputation.js';
 
 type ShapeProgressStepTracePayload = {
   nodeId: string | null;
@@ -693,13 +698,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setCompletedStageElapsedMs((current) => (
       shallowEqualNumberRecord(current, {}) ? current : {}
     ));
-  }, [buildStatus]);
+  }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
 
   const hasFailedFetchTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
   ), [displayTasks]);
 
-  const progressSummary = useShapeBuildProgressSummary({
+  const progressSummary = useShapeBuildProgressSummaryComputation({
     stages,
     resolvedTaskType: timingStageId ?? resolvedTaskType,
     overallProgress,
@@ -709,7 +714,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     taskType,
     tasks: displayTasks,
     normalizeStageKey,
-    isSkippedTask: (task) => isTaskSkipped(task.display, task.message),
+    isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, task.message),
     timingStageMs: stageElapsedMs,
   });
   const displayTotalElapsedMs = totalElapsedMs;

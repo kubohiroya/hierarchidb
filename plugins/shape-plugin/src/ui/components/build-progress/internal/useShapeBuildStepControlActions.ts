@@ -1,11 +1,11 @@
-import { useShapeBuildCancelQueued } from './useShapeBuildStepControlActions/useShapeBuildCancelQueued.ts';
-import { useShapeBuildPause } from './useShapeBuildStepControlActions/useShapeBuildPause.ts';
-import { useShapeBuildStartOrResume } from './useShapeBuildStepControlActions/useShapeBuildStartOrResume.ts';
+import { useShapeBuildCancelQueued } from './useShapeBuildStepControlActions/useShapeBuildCancelQueued.js';
+import { useShapeBuildPause } from './useShapeBuildStepControlActions/useShapeBuildPause.js';
+import { useShapeBuildStartOrResume } from './useShapeBuildStepControlActions/useShapeBuildStartOrResume.js';
 import type {
   StartOrResumeControlActionsArgs,
   PauseControlActionsArgs,
   CancelQueuedControlActionsArgs,
-} from './useShapeBuildStepControlActions/types.ts';
+} from './useShapeBuildStepControlActions/types.js';
 
 export const useShapeBuildStepControlActions = ({
   activeNodeId,

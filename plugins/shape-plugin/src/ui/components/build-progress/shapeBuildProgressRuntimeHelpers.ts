@@ -1,7 +1,7 @@
 import { computePercentage, type TaskCountSummary } from '@hierarchidb/ui-batch-progress';
-import type { BuildProgress } from './shapeBuildProgressMapping.ts';
+import type { BuildProgress } from './shapeBuildProgressMapping.js';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.ts';
+import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 
 export type CountsWithPercentage = TaskCountSummary & { percentage: number };
 

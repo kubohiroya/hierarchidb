@@ -7,6 +7,7 @@
     "analyze-licenses",
     "codemods",
     "build-scripts",
+    "rel2abs",
     "load-plugin-manifest",
     "schemas",
     "gen-iso3166-2"

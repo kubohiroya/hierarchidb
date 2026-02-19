@@ -4,7 +4,7 @@ import { useAtomValue } from 'jotai';
 import { useBuildStageFilter } from '@hierarchidb/components';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { taskViewportRangeAtom } from '../../../../atoms/shapeBuildProgressAtoms.js';
-import type { TaskItemWithMetadata } from '../../TaskItemCardListCard/TaskItemCardListCard.tsx';
+import type { TaskItemWithMetadata } from '../../taskItemCardList/types.ts';
 import type { TaskProgressSummary } from '../../../../atoms/shapeBuildProgressAtoms.js';
 import { buildTaskProgressSegments, resolveViewportIndices, type TaskProgressSegment } from './useTaskProgressBarComputation.js';
 import { useTaskProgressBarInteraction } from './useTaskProgressBarInteraction.js';
@@ -29,6 +29,8 @@ export type TaskProgressData = {
   onPointerMove: (event: PointerEvent<SVGSVGElement>) => void;
   onPointerUp: (event: PointerEvent<SVGSVGElement>) => void;
 };
+
+export type TaskProgressBarProps = TaskProgressBarStateOptions;
 
 export type TaskProgressBarStateOptions = {
   stages: BuildStage[];

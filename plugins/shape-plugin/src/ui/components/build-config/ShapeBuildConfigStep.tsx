@@ -10,7 +10,7 @@ import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
+import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useFetchConfigSection } from '../../hooks/useFetchConfigSection.ts';
 import {

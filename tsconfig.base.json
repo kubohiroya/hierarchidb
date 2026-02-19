@@ -10,9 +10,6 @@
     "allowUnusedLabels": false,
     "moduleResolution": "NodeNext",
     "paths": {
-      "~/*": [
-        "app/src/*"
-      ],
       "@hierarchidb/auth": [
         "packages/auth/dist/index.d.ts"
       ],
@@ -647,7 +644,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "baseUrl": ".",
+    "baseUrl": "src",
     "strict": true,
     "resolveJsonModule": true,
     "noImplicitReturns": false,

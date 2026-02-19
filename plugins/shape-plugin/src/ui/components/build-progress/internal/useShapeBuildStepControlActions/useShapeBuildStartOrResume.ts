@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components/notify';
-import { shouldResumeBuildSession } from '../../shouldResumeBuildSession.ts';
-import { executeStartOrResumeFlow } from './useShapeBuildStartOrResumeExecution.ts';
-import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.ts';
+import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.js';
+import { shouldResumeBuildSession } from '../../shouldResumeBuildSession.js';
+import { executeStartOrResumeFlow } from './useShapeBuildStartOrResumeExecution.js';
 
 export const useShapeBuildStartOrResume = ({
   activeNodeId,
@@ -126,11 +126,10 @@ export const useShapeBuildStartOrResume = ({
       bridgeRef,
     });
   }, [
+    data,
     activeNodeId,
     buildStatus,
     runtimeStatus,
-    data?.buildConfig?.dataSourceName,
-    data?.selectedArrayByCountries,
     bridgeRef,
     beginBuildSessionTransition,
     advanceBuildSessionTransitionPhase,
