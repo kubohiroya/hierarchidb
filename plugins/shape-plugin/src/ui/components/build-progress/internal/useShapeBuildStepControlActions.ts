@@ -51,6 +51,8 @@ export const useShapeBuildStepControlActions = ({
     saveDraftBeforeBuild,
     refreshTasks,
     updateSessionRecord,
+    setIsStopRequested,
+    setIsStopAccepted,
   });
 
   const handleCancelQueued = useShapeBuildCancelQueued({
@@ -74,7 +76,6 @@ export const useShapeBuildStepControlActions = ({
     isStopRequestedInFlight,
     bridgeRef,
     clearStartPendingRef,
-    updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
     handleCancelQueued,

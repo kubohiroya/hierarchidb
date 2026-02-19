@@ -15,7 +15,6 @@ export const useShapeBuildPause = ({
   isStopRequestedInFlight,
   bridgeRef,
   clearStartPendingRef,
-  updateSessionRecord,
   setIsStopRequested,
   setIsStopAccepted,
   handleCancelQueued,
@@ -66,12 +65,6 @@ export const useShapeBuildPause = ({
         PAUSE_COMMAND_TIMEOUT_MS,
         `Pause command timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms while worker is busy.`,
       );
-
-      await updateSessionRecord({
-        status: 'idle',
-        stopReason: reason,
-        canResume: true,
-      });
       setIsStopAccepted(true);
       logPauseTrace('request-finished');
     } catch (error) {
@@ -94,7 +87,6 @@ export const useShapeBuildPause = ({
     handleCancelQueued,
     setIsStopRequested,
     setIsStopAccepted,
-    updateSessionRecord,
   ]);
 
   return handlePause;
