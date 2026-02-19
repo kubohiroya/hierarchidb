@@ -4,7 +4,9 @@
     "isolatedModules": false,
     "paths": {
       "~/*": [
-        "./src/*"
+        "*.ts",
+        "./src/*",
+        "*"
       ]
     },
     "baseUrl": ".",

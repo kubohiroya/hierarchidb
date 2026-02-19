@@ -5,5 +5,14 @@
   ],
   "exclude": [
     "dist"
-  ]
+  ],
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*.ts",
+        "*"
+      ]
+    }
+  }
 }

@@ -5,7 +5,14 @@
       "node"
     ],
     "skipLibCheck": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*.ts",
+        "*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

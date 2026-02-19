@@ -4,7 +4,14 @@
     "target": "es2020",
     "types": [
       "node"
-    ]
+    ],
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*.ts",
+        "*"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts"
