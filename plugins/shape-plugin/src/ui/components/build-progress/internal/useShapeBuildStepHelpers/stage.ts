@@ -54,6 +54,15 @@ const resolveMostAdvancedRunningStage = (
   stages: Array<{ id: string }>,
 ): string | null => {
   const stageOrder = stages.map((stage) => stage.id);
+  const preferredStageOrder = ['fetch', 'transform', 'vt'];
+  for (let index = preferredStageOrder.length - 1; index >= 0; index -= 1) {
+    const stage = preferredStageOrder[index];
+    if (typeof stage !== 'string') {
+      continue;
+    }
+    if (!stageIds.has(stage)) continue;
+    return stage;
+  }
   for (let index = stageOrder.length - 1; index >= 0; index -= 1) {
     const stage = stageOrder[index];
     if (typeof stage !== 'string') {
