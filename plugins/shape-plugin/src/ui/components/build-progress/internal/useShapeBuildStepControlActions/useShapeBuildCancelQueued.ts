@@ -32,6 +32,7 @@ export const useShapeBuildCancelQueued = ({
         `Cancel queued build timed out after ${PAUSE_COMMAND_TIMEOUT_MS}ms.`,
       );
       setIsStopAccepted(true);
+      setIsStopRequested(false);
       releaseBuildLock();
       if (buildSessionTransitionActive) {
         finishBuildSessionTransition({

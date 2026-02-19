@@ -112,6 +112,8 @@ export type StartOrResumeControlActionsArgs = Pick<
   | 'saveDraftBeforeBuild'
   | 'refreshTasks'
   | 'updateSessionRecord'
+  | 'setIsStopRequested'
+  | 'setIsStopAccepted'
 >;
 
 export type StartOrResumeExecutionArgs = StartOrResumeControlActionsArgs & {
@@ -134,7 +136,6 @@ export type PauseControlActionsArgs = Pick<
   | 'isStopRequestedInFlight'
   | 'bridgeRef'
   | 'clearStartPendingRef'
-  | 'updateSessionRecord'
   | 'setIsStopRequested'
   | 'setIsStopAccepted'
 >;

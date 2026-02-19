@@ -1219,7 +1219,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
 
   useEffect(() => {
     if (!isStopRequestedInFlight) return;
-    if (sessionRecord?.status === 'idle') {
+    if (sessionRecord?.status === 'idle' || sessionRecord?.status === 'paused') {
       setIsStopRequested(false);
       setIsStopAccepted(false);
     }

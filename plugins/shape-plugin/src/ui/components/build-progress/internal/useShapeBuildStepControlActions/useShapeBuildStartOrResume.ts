@@ -23,9 +23,13 @@ export const useShapeBuildStartOrResume = ({
   saveDraftBeforeBuild,
   refreshTasks,
   updateSessionRecord,
+  setIsStopRequested,
+  setIsStopAccepted,
 }: StartOrResumeControlActionsArgs) => {
   const handleStartOrResume = useCallback(async (options?: StartOrResumeOptions): Promise<boolean> => {
     const requestStartedAt = Date.now();
+    setIsStopRequested(false);
+    setIsStopAccepted(false);
     cancelStartRequestRef.current = false;
 
     const startupSource = options?.autoResume ? 'auto' : 'manual';
@@ -78,6 +82,8 @@ export const useShapeBuildStartOrResume = ({
       saveDraftBeforeBuild,
       updateSessionRecord,
       refreshTasks,
+      setIsStopRequested,
+      setIsStopAccepted,
       options,
       startupSource,
       shouldResumeSession,
@@ -139,6 +145,8 @@ export const useShapeBuildStartOrResume = ({
     saveDraftBeforeBuild,
     refreshTasks,
     updateSessionRecord,
+    setIsStopRequested,
+    setIsStopAccepted,
   ]);
 
   return handleStartOrResume;
