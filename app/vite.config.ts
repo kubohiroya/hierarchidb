@@ -407,12 +407,12 @@ function pluginTildeRootAliasPlugin(): Plugin {
       const importerWithoutFsPrefix = normalizedImporter.startsWith('/@fs/')
         ? normalizedImporter.slice(5)
         : normalizedImporter;
-      const importerDir = path.dirname(importerWithoutFsPrefix);
+      const importerDir = path.posix.dirname(importerWithoutFsPrefix);
       let pluginRoot: string | null = null;
       let pluginSrcRoot: string | null = null;
       let cursor = importerDir;
 
-      while (cursor && cursor !== path.dirname(cursor)) {
+      while (cursor && cursor !== path.posix.dirname(cursor)) {
         const packageJsonPath = path.join(cursor, 'package.json');
         if (fs.existsSync(packageJsonPath)) {
           try {
@@ -440,7 +440,7 @@ function pluginTildeRootAliasPlugin(): Plugin {
           break;
         }
 
-        const parent = path.dirname(cursor);
+        const parent = path.posix.dirname(cursor);
         if (parent === cursor) break;
         cursor = parent;
       }
