@@ -1,0 +1,35 @@
+{
+  "name": "@hierarchidb/ui-build-progress",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "format": "biome check --write src",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "clean": "rm -rf dist",
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@hierarchidb/components": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/components": "workspace:*",
+    "@mui/icons-material": "^7.3.6",
+    "react": "^19.0.0",
+    "@types/react": "^19.1.1",
+    "typescript": "workspace:^5.9.3"
+  },
+  "license": "MIT",
+  "module": "dist/index.js"
+}

@@ -10,12 +10,19 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { CheckCircle, CloudDownload, Tune } from '@mui/icons-material';
 import {
-  BuildSessionProgressPanel,
-  type BuildStage,
+  CheckCircle,
+} from '@mui/icons-material';
+import {
   type BuildStatus,
 } from '@hierarchidb/components';
+import {
+  BuildSessionProgressPanelShell,
+  resolveBuildStages,
+  resolveSplitViewAutoCloseCounts,
+  resolveSplitViewInitialSizes,
+  SPLITVIEW_BREAKPOINTS,
+} from '@hierarchidb/ui-build-progress';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -51,39 +58,6 @@ interface RouteBuildStepProps {
   mode: 'create' | 'edit';
 }
 
-const STAGES: BuildStage[] = [
-  {
-    icon: <CloudDownload/>,
-    id: 'fetch',
-    title: 'Fetch',
-    description: 'Download, parse, and save route features.',
-  },
-  {
-    icon: <Tune/>,
-    id: 'transform',
-    title: 'Transform',
-    description: 'Build tile index for route lookup.',
-  },
-  {
-    icon: <CheckCircle/>,
-    id: 'vt',
-    title: 'Vector Tiles',
-    description: 'Generate vector tiles for rendering.',
-  },
-];
-const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
-const SPLITVIEW_INITIAL_SIZES = [
-  Array.from({ length: STAGES.length }, () => 300),
-  Array.from({ length: STAGES.length }, () => 300),
-  Array.from({ length: STAGES.length }, () => 300),
-  Array.from({ length: STAGES.length }, () => 300),
-];
-const SPLITVIEW_AUTO_CLOSE_COUNTS = [
-  Math.max(0, STAGES.length - 1),
-  Math.max(0, STAGES.length - 2),
-  Math.max(0, STAGES.length - 3),
-  0,
-];
 const buildMonitorConfig = {
   storagePrefix: 'hdb:route:stage-monitor',
   keyMode: 'node',
@@ -169,6 +143,28 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       draft.startLocationId &&
       draft.endLocationId,
   );
+
+  const stages = useMemo(() => resolveBuildStages({
+    t,
+    includeDescriptions: true,
+    overrides: {
+      fetch: {
+        title: t('processing.fetch.title', 'Fetch'),
+        description: t('stage.route.fetch.description', 'Download, parse, and save route features.'),
+      },
+      transform: {
+        title: t('processing.transform.title', 'Transform'),
+        description: t('stage.route.transform.description', 'Build tile index for route lookup.'),
+      },
+      vt: {
+        title: t('processing.vt.title', 'Vector Tiles'),
+        description: t('stage.route.vt.description', 'Generate vector tiles for rendering.'),
+        icon: <CheckCircle />,
+      },
+    },
+  }), [t]);
+  const splitViewInitialSizes = useMemo(() => resolveSplitViewInitialSizes(stages.length), [stages.length]);
+  const splitViewAutoCloseCounts = useMemo(() => resolveSplitViewAutoCloseCounts(stages.length), [stages.length]);
 
   const resolveZoomRange = useCallback((): [number, number] => {
     const zoomRange = draft.zoomRange;
@@ -323,7 +319,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       transform: { start: FETCH_STAGE_MAX, end: TRANSFORM_STAGE_MAX },
       vt: { start: TRANSFORM_STAGE_MAX, end: VT_STAGE_MAX },
     };
-    STAGES.forEach((stage) => {
+    stages.forEach((stage) => {
       const range = ranges[stage.id] ?? { start: 0, end: VT_STAGE_MAX };
       if (overallProgress <= range.start) {
         map[stage.id] = 0;
@@ -337,7 +333,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       map[stage.id] = Math.round(((overallProgress - range.start) / denom) * 100);
     });
     return map;
-  }, [overallProgress]);
+  }, [overallProgress, stages]);
 
   useEffect(() => {
     if (!heapEvent) return;
@@ -354,7 +350,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     heapPauseRef.current = heapEvent.timestamp;
     setStatus('paused');
     setHeapDialogOpen(true);
-  }, [heapEvent, status]);
+  }, [heapEvent, setStatus, setHeapDialogOpen, status]);
 
   useEffect(() => {
     if (!monitorKey) return;
@@ -392,9 +388,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
   const completionStageLabel = useMemo(() => {
     if (ideGsmPhase) return resolveIdeGsmLabel(ideGsmPhase);
-    const activeStage = [...STAGES].reverse().find((stage) => (stageProgress[stage.id] ?? 0) > 0);
-    return activeStage?.title ?? STAGES[0]?.title ?? t('stage.progress.unknownStage', 'Unknown stage');
-  }, [ideGsmPhase, resolveIdeGsmLabel, stageProgress, t]);
+    const activeStage = [...stages].reverse().find((stage) => (stageProgress[stage.id] ?? 0) > 0);
+    return activeStage?.title ?? stages[0]?.title ?? t('stage.progress.unknownStage', 'Unknown stage');
+  }, [ideGsmPhase, resolveIdeGsmLabel, stageProgress, stages, t]);
   const completionTaskTitle = useMemo(() => {
     const title = ideGsmPhase ? resolveIdeGsmLabel(ideGsmPhase) : completionStageLabel;
     return title?.trim() ? title : t('stage.tasks.unknown', '(Task unavailable)');
@@ -503,14 +499,14 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           {resolveIdeGsmLabel(ideGsmPhase)}
         </Typography>
       ) : null}
-      <BuildSessionProgressPanel
+      <BuildSessionProgressPanelShell
         status={status}
         overallProgress={overallProgress}
-        stages={STAGES}
+        stages={stages}
         stageProgress={stageProgress}
         splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
-        splitViewInitialSizesByBreakpoint={SPLITVIEW_INITIAL_SIZES}
-        splitViewAutoCloseCountsByBreakpoint={SPLITVIEW_AUTO_CLOSE_COUNTS}
+        splitViewInitialSizesByBreakpoint={splitViewInitialSizes}
+        splitViewAutoCloseCountsByBreakpoint={splitViewAutoCloseCounts}
         onPause={() => {
           void handlePause('user-pause');
         }}

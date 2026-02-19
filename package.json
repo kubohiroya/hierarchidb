@@ -64,8 +64,6 @@
     "generate:pdf:ja": "node scripts/generate-pdf-with-translation.js --japanese",
     "guard:deps:extra": "pnpm run guard:deps:extra:exec",
     "guard:deps:extra:exec": "node scripts/with-clean-npm-config.mjs node scripts/run-dependency-guard.mjs",
-    "guards:pre-commit": "tsx scripts/dep-fence-guards.run.ts --mode pre-commit --config .mrtask/dep-fence.guards.ts",
-    "guards:pre-push": "tsx scripts/dep-fence-guards.run.ts --mode pre-push --config .mrtask/dep-fence.guards.ts",
     "lint": "turbo run lint",
     "pkg:attw": "pnpm -r --filter \"...[[private=false]]\" exec npx attw .",
     "pkg:publint": "pnpm -r --filter \"...[[private=false]]\" exec npx publint .",

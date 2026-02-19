@@ -63,6 +63,7 @@
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
+    "@hierarchidb/ui-build-progress": "workspace:*",
     "@hierarchidb/tabular-source-xlsx": "workspace:*"
   },
   "peerDependencies": {
@@ -128,6 +129,7 @@
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
+    "@hierarchidb/ui-build-progress": "workspace:*",
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@mui/icons-material": "^7.3.6",

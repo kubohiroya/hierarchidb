@@ -1,4 +1,4 @@
-import { BuildSessionProgressPanel } from '@hierarchidb/components';
+import { BuildSessionProgressPanelShell } from '@hierarchidb/ui-build-progress';
 import type { ShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.tsx';
 
 export type ShapeBuildProgressPanelViewProps = ShapeBuildProgressPanelViewModel;
@@ -42,7 +42,7 @@ export const ShapeBuildProgressPanelView = ({
   crashDialog,
   footer,
 }: ShapeBuildProgressPanelViewProps) => (
-  <BuildSessionProgressPanel
+  <BuildSessionProgressPanelShell
     status={status}
     overallProgress={overallProgress}
     stages={stages}
@@ -82,4 +82,3 @@ export const ShapeBuildProgressPanelView = ({
     footer={footer}
   />
 );
-

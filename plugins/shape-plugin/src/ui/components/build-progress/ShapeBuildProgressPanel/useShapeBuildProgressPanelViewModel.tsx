@@ -1,5 +1,10 @@
 import { toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
+import {
+  resolveSplitViewAutoCloseCounts,
+  resolveSplitViewInitialSizes,
+  SPLITVIEW_BREAKPOINTS,
+} from '@hierarchidb/ui-build-progress';
 import { Box } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
@@ -98,19 +103,9 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageProgress: stageProgressForDisplay,
     paneProgress: paneProgressForDisplay,
     stageLoadingState,
-    splitViewBreakpoints: [600, 900, 1200],
-    splitViewInitialSizesByBreakpoint: [
-      Array.from({ length: stages.length }, () => 250),
-      Array.from({ length: stages.length }, () => 250),
-      Array.from({ length: stages.length }, () => 250),
-      Array.from({ length: stages.length }, () => 250),
-    ],
-    splitViewAutoCloseCountsByBreakpoint: [
-      Math.max(0, stages.length - 1),
-      Math.max(0, stages.length - 2),
-      Math.max(0, stages.length - 3),
-      0,
-    ],
+    splitViewBreakpoints: SPLITVIEW_BREAKPOINTS,
+    splitViewInitialSizesByBreakpoint: resolveSplitViewInitialSizes(stages.length, 250),
+    splitViewAutoCloseCountsByBreakpoint: resolveSplitViewAutoCloseCounts(stages.length),
     stageContents,
     stageProgressContent,
     stageConcurrencyIndicators,
