@@ -8,6 +8,11 @@ type GeoboundariesRecord = Record<string, unknown>;
 type GeoboundariesLevel = 0 | 1 | 2;
 type GeoboundariesPayload = GeoboundariesRecord | GeoboundariesRecord[];
 type Iso3ToIso2Map = Map<string, string>;
+type GeoboundariesLevelName = `level${GeoboundariesLevel}`;
+type CachedGeoboundariesCache = {
+  level0: string[];
+  level1: string[];
+};
 
 const GEOBOUNDARIES_API_BY_LEVEL: Record<GeoboundariesLevel, string> = {
   0: "https://www.geoboundaries.org/api/current/gbOpen/ALL/ADM0/",
@@ -34,6 +39,53 @@ const USER_ASSIGNED_MAP_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../user-assigned-iso3166.json",
 );
+const GENERATED_CACHE_PATH = OUTPUT_PATH;
+const MAX_FETCH_RETRIES = 3;
+const FETCH_TIMEOUT_MS = 30000;
+const FETCH_RETRY_DELAY_MS = 1000;
+
+const toPositiveInteger = (value: string | undefined, fallback: number): number => {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+};
+
+const resolveFetchTimeoutMs = (): number => toPositiveInteger(
+  process.env.GEOBOUNDARIES_FETCH_TIMEOUT_MS,
+  FETCH_TIMEOUT_MS,
+);
+
+const resolveFetchRetries = (): number => toPositiveInteger(
+  process.env.GEOBOUNDARIES_FETCH_RETRIES,
+  MAX_FETCH_RETRIES,
+);
+
+const resolveFetchRetryDelayMs = (): number => toPositiveInteger(
+  process.env.GEOBOUNDARIES_FETCH_RETRY_DELAY_MS,
+  FETCH_RETRY_DELAY_MS,
+);
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const fetchWithTimeout = async (url: string, timeoutMs: number, init?: RequestInit): Promise<Response> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 const isFile = async (path: string): Promise<boolean> => {
   try {
@@ -158,6 +210,115 @@ const loadIso3166Map = async (): Promise<Iso3ToIso2Map> => {
   return map;
 };
 
+const readJsonArrayTextFromGeneratedCache = (
+  text: string,
+  levelName: GeoboundariesLevelName,
+): string | null => {
+  const marker = `${levelName}:`;
+  const markerIndex = text.indexOf(marker);
+  if (markerIndex === -1) {
+    return null;
+  }
+  let cursor = markerIndex + marker.length;
+  while (cursor < text.length && /\s/.test(text[cursor])) {
+    cursor += 1;
+  }
+
+  if (text[cursor] !== "[") {
+    return null;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  const start = cursor;
+  for (let i = cursor; i < text.length; i += 1) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+    if (char === "[") {
+      depth += 1;
+      continue;
+    }
+    if (char === "]") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+  }
+  return null;
+};
+
+const loadGeoboundariesCachedByLevel = async (
+  level: GeoboundariesLevel,
+): Promise<ReadonlySet<string> | null> => {
+  try {
+    const text = await fs.readFile(GENERATED_CACHE_PATH, "utf8");
+    const levelName = `level${level}` as GeoboundariesLevelName;
+
+    const cache: CachedGeoboundariesCache | null = (() => {
+      const level0Text = readJsonArrayTextFromGeneratedCache(text, "level0");
+      const level1Text = readJsonArrayTextFromGeneratedCache(text, "level1");
+      if (!level0Text || !level1Text) {
+        return null;
+      }
+
+      const parseArray = (value: string): unknown[] => {
+        const parsed = JSON.parse(value);
+        if (!Array.isArray(parsed)) {
+          return [];
+        }
+        return parsed;
+      };
+
+      const level0 = parseArray(level0Text).filter((value): value is string => typeof value === "string");
+      const level1 = parseArray(level1Text).filter((value): value is string => typeof value === "string");
+
+      return {
+        level0,
+        level1,
+      };
+    })();
+
+    if (!cache) return null;
+
+    const rawValues = levelName === "level0" ? cache.level0 : cache.level1;
+    const output = new Set<string>();
+    for (const rawValue of rawValues) {
+      const normalized = toMap(rawValue);
+      if (isCode(normalized, 2)) {
+        output.add(normalized);
+      }
+    }
+    if (output.size === 0) {
+      return null;
+    }
+    return output;
+  } catch {
+    return null;
+  }
+};
+
 const isString = (value: unknown): value is string => typeof value === "string";
 
 const readFirstString = (record: GeoboundariesRecord, keys: readonly string[]): string | null => {
@@ -211,20 +372,44 @@ const loadGeoboundariesCountries = async (
   iso3ToIso2: Map<string, string>,
 ): Promise<ReadonlySet<string>> => {
   const url = GEOBOUNDARIES_API_BY_LEVEL[level];
-  const response = await fetch(url, { headers: { accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch geoboundaries level ${level}: ${response.status}`);
-  }
-  const payload = await response.json();
-  const records = readGeoboundariesPayload(payload);
-  const output = new Set<string>();
-  for (const record of records) {
-    const iso = extractIso2(record, iso3ToIso2);
-    if (iso && /^[A-Z]{2}$/.test(iso)) {
-      output.add(iso);
+  const maxRetries = resolveFetchRetries();
+  const timeoutMs = resolveFetchTimeoutMs();
+  const retryDelayMs = resolveFetchRetryDelayMs();
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, timeoutMs, { headers: { accept: "application/json" } });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch geoboundaries level ${level}: ${response.status}`);
+      }
+      const payload = await response.json();
+      const records = readGeoboundariesPayload(payload);
+      const output = new Set<string>();
+      for (const record of records) {
+        const iso = extractIso2(record, iso3ToIso2);
+        if (iso && /^[A-Z]{2}$/.test(iso)) {
+          output.add(iso);
+        }
+      }
+      return output;
+  } catch (error) {
+      lastError = error;
+      if (attempt >= maxRetries) {
+        const fallback = await loadGeoboundariesCachedByLevel(level);
+        if (fallback) {
+          console.warn(`Using cached geoboundaries level ${level} data due to fetch failure.`);
+          return fallback;
+        }
+        break;
+      }
+      const nextDelay = retryDelayMs * 2 ** attempt;
+      const waitMs = Math.min(10000, nextDelay);
+      console.warn(`Failed geoboundaries level ${level} fetch (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${waitMs}ms`, error);
+      await sleep(waitMs);
     }
   }
-  return output;
+  throw lastError instanceof Error ? lastError : new Error(`Failed to fetch geoboundaries level ${level}`);
 };
 
 const buildGeneratedPayload = async (): Promise<{
