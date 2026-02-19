@@ -1,6 +1,20 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*",
+        "*.ts",
+        "*.tsx",
+        "*.js",
+        "*.jsx",
+        "*.mjs",
+        "*.cjs",
+        "*.mts",
+        "*.cts"
+      ]
+    },
     "experimentalDecorators": true,
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,

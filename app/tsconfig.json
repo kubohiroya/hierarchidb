@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "outDir": "dist",
     "lib": [
       "ES2022",
@@ -21,11 +21,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowImportingTsExtensions": true,
-    "module": "NodeNext",
+    "module": "ESNext",
     "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
+    "baseUrl": ".."
   },
   "include": [
     "src/**/*.ts",

@@ -401,10 +401,13 @@ function pluginTildeRootAliasPlugin(): Plugin {
       if (typeof importer !== 'string' || importer.length === 0) return null;
       const importerUrl: string = importer;
       const questionIndex = importerUrl.indexOf('?');
-      const sanitizedImporter = (
+      const normalizedImporter = (
         questionIndex >= 0 ? importerUrl.slice(0, questionIndex) : importerUrl
       ).replace(/\\/g, '/');
-      const importerDir = path.dirname(sanitizedImporter);
+      const importerWithoutFsPrefix = normalizedImporter.startsWith('/@fs/')
+        ? normalizedImporter.slice(5)
+        : normalizedImporter;
+      const importerDir = path.dirname(importerWithoutFsPrefix);
       let pluginRoot: string | null = null;
       let pluginSrcRoot: string | null = null;
       let cursor = importerDir;
@@ -415,14 +418,14 @@ function pluginTildeRootAliasPlugin(): Plugin {
           try {
             const raw = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(raw);
-            const hasPluginName =
-              typeof packageJson?.name === 'string' &&
-              /plugin/i.test(packageJson.name);
+            const packageName = typeof packageJson?.name === 'string' ? packageJson.name : '';
+            const hasPluginName = /plugin/i.test(packageName);
+            const isAppPackage = packageName === '@hierarchidb/app';
             const isPluginPackage =
               packageJson &&
               typeof packageJson === 'object' &&
               !!((packageJson as { hierarchidb?: { plugin?: unknown } }).hierarchidb?.plugin || packageJson?.nodeType);
-            if (isPluginPackage || hasPluginName) {
+            if (isPluginPackage || isAppPackage || hasPluginName) {
               pluginRoot = cursor;
               const candidateSrcRoot = path.join(cursor, 'src');
               pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : cursor;
@@ -440,6 +443,21 @@ function pluginTildeRootAliasPlugin(): Plugin {
         const parent = path.dirname(cursor);
         if (parent === cursor) break;
         cursor = parent;
+      }
+
+      if (!pluginRoot) {
+        const appRoot = path.resolve(__dirname);
+        const withinAppPath =
+          importerWithoutFsPrefix.includes(`${path.sep}app${path.sep}`)
+          || importerWithoutFsPrefix.endsWith(`${path.sep}app`)
+          || importerWithoutFsPrefix.includes('/app/');
+        if (withinAppPath && fs.existsSync(appRoot)) {
+          const appSrcRoot = path.join(appRoot, 'src');
+          if (fs.existsSync(appSrcRoot)) {
+            pluginRoot = appRoot;
+            pluginSrcRoot = appSrcRoot;
+          }
+        }
       }
 
       if (!pluginRoot) return null;

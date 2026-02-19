@@ -1,13 +1,5 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "@hierarchidb/ui-file": [
-        "../packages/ui/file/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-file/*": [
-        "../packages/ui/file/dist/*"
-      ]
-    }
   }
 }

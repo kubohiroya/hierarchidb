@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --target es2020",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --target es2020 --outDir dist",
     "clean": "rm -rf dist",
     "lint": "eslint 'src/**/*.ts'",
     "typecheck": "tsc --noEmit --project tsconfig.json"
