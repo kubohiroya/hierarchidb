@@ -129,11 +129,37 @@ function getPackageScopePrefixCached(sourceFilePath: string, rootDir: string): s
   return prefix
 }
 
+function getAppScopeRoot(sourceFilePath: string): string | null {
+  let current = path.dirname(sourceFilePath)
+
+  while (true) {
+    const basename = path.basename(current)
+    if (basename === "src" && path.basename(path.dirname(current)) === "app") {
+      return current
+    }
+
+    const parent = path.dirname(current)
+    if (current === parent) {
+      return null
+    }
+    current = parent
+  }
+}
+
 function toLegacyAbsoluteAlias(
   moduleSpecifier: string,
   sourceFilePath: string,
   rootDir: string,
 ): string | null {
+  const appScopeRoot = getAppScopeRoot(sourceFilePath)
+  if (appScopeRoot !== null) {
+    const appPrefix = "~/"
+    if (!moduleSpecifier.startsWith(appPrefix)) {
+      return null
+    }
+    return `~/${stripKnownExtension(moduleSpecifier.slice(appPrefix.length))}`
+  }
+
   const prefix = getPackageScopePrefixCached(sourceFilePath, rootDir)
   if (prefix === null || prefix.length === 0) {
     return null
@@ -207,16 +233,19 @@ function toAbsoluteAlias(
 ): string | null {
   const sourceDir = path.dirname(sourceFilePath)
   const targetPath = path.resolve(sourceDir, moduleSpecifier)
+  const appScopeRoot = getAppScopeRoot(sourceFilePath)
   const packageRoot = getPackageRoot(sourceFilePath, rootDir)
-  if (packageRoot === null) {
+
+  const scopeRoot = appScopeRoot ?? packageRoot
+  if (scopeRoot === null) {
     return null
   }
 
-  if (!isWithinRoot(targetPath, packageRoot)) {
+  if (!isWithinRoot(targetPath, scopeRoot)) {
     return null
   }
 
-  const rel = path.relative(packageRoot, targetPath)
+  const rel = path.relative(scopeRoot, targetPath)
   const alias = `~/${stripKnownExtension(toPosix(rel))}`
 
   return alias
