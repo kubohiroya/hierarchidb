@@ -4,7 +4,7 @@
   "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
   "type": "module",
   "module": "src/index.ts",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
