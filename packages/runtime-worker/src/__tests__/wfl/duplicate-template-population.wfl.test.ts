@@ -23,7 +23,7 @@ type TemplateNode = {
   metadata?: { name?: string; description?: string } | Record<string, unknown>;
   draftData?: Partial<PeerEntity<TreeNodeData>>;
   draftMetadata?: Record<string, unknown> | undefined;
-  data?: Record<string, unknown> | undefined;
+  data?: PeerEntity<TreeNodeData> | undefined;
   children?: TemplateNode[];
 };
 
@@ -57,7 +57,7 @@ function buildImportNodes(data: TemplateFile): ImportData<TreeNodeData>['nodes']
         : undefined;
     const dataPayload =
       node.data && typeof node.data === 'object'
-        ? (node.data as Record<string, unknown>)
+        ? node.data
         : undefined;
     const children =
       node.children

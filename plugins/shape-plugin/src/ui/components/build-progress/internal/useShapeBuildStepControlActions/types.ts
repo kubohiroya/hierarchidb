@@ -1,0 +1,158 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
+import { type BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
+import type { BuildSessionTransitionLogLevel } from '@hierarchidb/components/build-session';
+import type { BuildSessionStatus } from '@hierarchidb/batch-api';
+import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import type { ShapeEntity } from '../../../../../common/types/index.js';
+import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+
+export type ShapeBuildPauseReason = ShapeBuildStopReason;
+
+export type BuildSessionTransitionPhase =
+  | 'acquiring-lock'
+  | 'waiting-lock'
+  | 'saving-draft'
+  | 'initializing-worker'
+  | 'building-payloads'
+  | 'starting-session'
+  | 'awaiting-first-task';
+
+export type BuildStartupStep =
+  | 'lock-acquire'
+  | 'lock-wait'
+  | 'draft-save'
+  | 'worker-initialize'
+  | 'payload-build'
+  | 'session-resume-request'
+  | 'session-start-request'
+  | 'session-status-persist'
+  | 'awaiting-first-task';
+
+export type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
+
+export type StartOrResumeOptions = {
+  forceRestart?: boolean;
+  autoResume?: boolean;
+};
+
+export type StartOrResumeTrace = {
+  event: string;
+  payload?: Record<string, unknown>;
+};
+
+export type ShapeBuildWorkerBuildSessionData = {
+  selectedArrayByCountries?: ShapeEntity['selectedArrayByCountries'];
+  buildConfig?: {
+    dataSourceName?: string | null;
+  };
+};
+
+export type ShapeBuildSessionPatch = Partial<ShapeBuildSessionRecord> & {
+  stopReason?: ShapeBuildStopReason;
+};
+
+export type BridgeApi = Pick<
+  BuildWorkerBridge,
+  'initialize' | 'startBuildSession' | 'resumeBuildSession' | 'pauseBuildSession' | 'cancelQueuedBuildSession'
+>;
+
+export type ControlActionsArgs = {
+  activeNodeId: NodeId | null;
+  data?: ShapeBuildWorkerBuildSessionData;
+  buildStatus: BuildStatus;
+  runtimeStatus: string | null;
+  buildSessionTransitionActive: boolean;
+  isStopRequestedInFlight: boolean;
+  bridgeRef: React.RefObject<BridgeApi>;
+  beginBuildSessionTransition: (phase: BuildSessionTransitionPhase, message?: string) => void;
+  advanceBuildSessionTransitionPhase: (
+    phase: BuildSessionTransitionPhase,
+    options?: {
+      message?: string;
+      level?: BuildSessionTransitionNotificationLevel;
+    },
+  ) => void;
+  finishBuildSessionTransition: (options?: {
+    message?: string;
+    level?: BuildSessionTransitionNotificationLevel;
+  }) => void;
+  beginBuildStartupStep: (step: BuildStartupStep, extra?: Record<string, unknown>) => void;
+  finishBuildStartupStep: (step: BuildStartupStep, outcome: BuildStartupStepOutcome, extra?: Record<string, unknown>) => void;
+  emitBuildSessionTransitionLog: (level: BuildSessionTransitionLogLevel, message: string, extra?: Record<string, unknown>) => void;
+  clearStartPendingRef: React.MutableRefObject<(() => void) | null>;
+  releaseBuildLock: () => void;
+  tryAcquireBuildLock: (options?: { notifyOnFailure?: boolean }) => Promise<boolean>;
+  waitForBuildLock: (requestedAt: number) => Promise<boolean>;
+  cancelStartRequestRef: React.MutableRefObject<boolean>;
+  saveDraftBeforeBuild: () => Promise<boolean>;
+  refreshTasks: () => void | Promise<void>;
+  updateSessionRecord: (patch: ShapeBuildSessionPatch) => Promise<boolean>;
+  setIsStopRequested: (next: boolean) => void;
+  setIsStopAccepted: (next: boolean) => void;
+};
+
+export type StartOrResumeControlActionsArgs = Pick<
+  ControlActionsArgs,
+  | 'activeNodeId'
+  | 'data'
+  | 'buildStatus'
+  | 'runtimeStatus'
+  | 'bridgeRef'
+  | 'beginBuildSessionTransition'
+  | 'advanceBuildSessionTransitionPhase'
+  | 'finishBuildSessionTransition'
+  | 'beginBuildStartupStep'
+  | 'finishBuildStartupStep'
+  | 'emitBuildSessionTransitionLog'
+  | 'releaseBuildLock'
+  | 'tryAcquireBuildLock'
+  | 'waitForBuildLock'
+  | 'cancelStartRequestRef'
+  | 'saveDraftBeforeBuild'
+  | 'refreshTasks'
+  | 'updateSessionRecord'
+>;
+
+export type StartOrResumeExecutionArgs = StartOrResumeControlActionsArgs & {
+  options?: StartOrResumeOptions;
+  startupSource: 'manual' | 'auto';
+  shouldResumeSession: boolean;
+  onTrace: (trace: StartOrResumeTrace) => void;
+  requestStartedAt: number;
+  runTimedStep: <T>(stepName: string, runner: () => Promise<T>) => Promise<T>;
+};
+
+export type { BuildSessionStatus };
+
+export type PauseControlActionsArgs = Pick<
+  ControlActionsArgs,
+  | 'activeNodeId'
+  | 'buildStatus'
+  | 'runtimeStatus'
+  | 'buildSessionTransitionActive'
+  | 'isStopRequestedInFlight'
+  | 'bridgeRef'
+  | 'clearStartPendingRef'
+  | 'updateSessionRecord'
+  | 'setIsStopRequested'
+  | 'setIsStopAccepted'
+>;
+
+export type PauseWithCancelHookActionsArgs = PauseControlActionsArgs & {
+  handleCancelQueued: (reason: ShapeBuildPauseReason) => Promise<void>;
+};
+
+export type CancelQueuedControlActionsArgs = Pick<
+  ControlActionsArgs,
+  | 'activeNodeId'
+  | 'bridgeRef'
+  | 'clearStartPendingRef'
+  | 'buildSessionTransitionActive'
+  | 'cancelStartRequestRef'
+  | 'releaseBuildLock'
+  | 'finishBuildSessionTransition'
+  | 'isStopRequestedInFlight'
+  | 'setIsStopRequested'
+  | 'setIsStopAccepted'
+>;

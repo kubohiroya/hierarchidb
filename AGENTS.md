@@ -127,6 +127,71 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 TypeScript is standard. Keep one primary export per file, match CamelCase filenames to exported symbols, and avoid deep `../src` imports. Use `import.meta.env` instead of `process.env`, keep browser code free of Node globals, and run `pnpm format` plus `pnpm lint` or `pnpm biome:check` before review. Runtime feature flags backed by `FEATURE_FLAGS` have been retired—prefer explicit configuration modules or environment variables documented in Issue/Project（運用ルールは `docs/task-management.md`） when conditional behavior is unavoidable.
 - 再エクスポートは禁止。例外は `src/index.ts` と package.json の export エントリに対応するトップレベルの `index.ts` のみ。
 
+## Hook Organization (4-class model)
+
+- This repository uses a two-axis refactoring policy for hooks to keep ownership and reuse boundaries explicit:
+  - **Usage axis**
+    - Shared hook (共用): used by 2+ components.
+    - Specific hook (特定): owned by one component subtree.
+  - **Call depth axis**
+    - Parent hook (親): directly used by a component.
+    - Descendant hook (子孫): used only through a parent hook.
+- Directory policy:
+  - Shared parent hook: `src/ui/hooks/useXXX.ts`
+  - Shared descendants / utilities: `src/ui/hooks/useXXX/`
+  - Specific parent hook: `src/ui/components/<ComponentName>/useYYY.ts`
+  - Specific descendants / utilities: `src/ui/components/<ComponentName>/yyy/`
+- API boundary rules:
+  - Components must import only parent hooks directly.
+  - Components must not import descendant hook files directly.
+  - Do not import by implementation details across component scopes.
+- Promotion / demotion rules:
+  - Promote `特定` → `共用` when a hook is used by two or more parent hooks.
+  - Demote `共用` → `特定` when actual usage is verified as one parent only.
+- Migration rules:
+  - Refactor moves in one atomic step: update all imports in one change and remove moved legacy files in the same PR.
+  - Name hooks in `PascalCase` style for the basename (`useShapeBuildCacheActions`) and keep filenames aligned with the exported symbol.
+  - Keep tests for shared hooks under `src/ui/__tests__/hooks`, and tests for component-local parent hooks under their component scope.
+
+### 形名・運用整理ルール（適用対象: *-plugin）
+
+1. 共用 + 親 となる場合は、まず `src/ui/hooks` を第一候補とする。
+2. 特定 + 親 の場合は、`src/ui/components/<ComponentName>/useXXX.ts` に置き、親コンポーネントからのみ直接 import する。
+3. 親から呼ぶための helper 系は、同名ディレクトリにまとめて置く（`src/ui/hooks/useX/` または `src/ui/components/<ComponentName>/x/`）。
+4. リファクタ実施時は、対象フックがどのコンポーネントから使われるかをまず明示し、4分類（共用/特定 × 親/子孫）を更新してから移動する。
+
+### 例（shape-plugin）
+
+- `useShapeBuildCacheActions` は build-config と build-progress の複数親で利用しているため「共用＋親」に分類し、
+  `plugins/shape-plugin/src/ui/hooks/useShapeBuildCacheActions.ts` に置いた。
+- そのサブロジックは `plugins/shape-plugin/src/ui/hooks/useShapeBuildCacheActions/` に集約する。
+
+- 4分類を実装に反映する際は、同一責務の親フックを1つの入口として公開する:
+  - `useShapeBuildCacheActions`（共用＋親）
+    - 本体: `plugins/shape-plugin/src/ui/hooks/useShapeBuildCacheActions.ts`
+    - 子孫: `plugins/shape-plugin/src/ui/hooks/useShapeBuildCacheActions/*`
+  - `useFetchConfigSection`（共用＋親）
+    - 本体: `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`
+  - `useTransformConfigSection`（共用＋親）
+    - 本体: `plugins/shape-plugin/src/ui/hooks/useTransformConfigSection.ts`
+- これらは次の親からのみ直接 import される想定:
+  - `ShapeBuildConfigStep`, `TransformConfigSection`, `ZoomBandConfigSection`,
+    `CacheManagementSection`, `ShapeBuildProgressPanel`
+- 特定＋親は各コンポーネント配下に明示配置し、該当コンポーネントだけが直接 import する:
+  - `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildConfigStep.ts`
+  - `plugins/shape-plugin/src/ui/components/build-config/useVTConfigSection.ts`
+  - `plugins/shape-plugin/src/ui/components/country-selection/useShapeCountrySelectionStep.ts`
+  - `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStep.ts`
+  - `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`
+  - `plugins/shape-plugin/src/ui/components/build-progress/*` 配下の親フック群（必要に応じて配下フォルダへ分割）
+- API境界に関する確認事項（CI/レビュー前チェック）:
+  - コンポーネントは `./hooks/useXxx` または `./<Component>/useXxx` の親フックしか import しない。
+  - 子孫フック（`*/xxx/`）が親経由で使われていることを import path で監査する。
+  - 1ファイル当たり300行を超える親フックは、まず子孫フックへ分離したうえで再集約する。
+- 運用ルール（今回の再整理で必須）:
+  - 2 か所以上で使う親フックは `src/ui/hooks` に寄せる（新規追加時は原則としてここを選ぶ）。
+  - `build-config` 配下の汎用フックは、共用化後に `src/ui/hooks` へ昇格し、旧ロケーションは即削除。
+
 ## Testing Guidelines
 Run Vitest globally (`pnpm test`) or per package (`pnpm --filter <pkg> test`) and extend Worker Flow Lab suites under `packages/runtime-worker`. Playwright specs live in `e2e/`; name files `*.spec.ts` and clear skip markers quickly. Log each command and outcome in Issue/Project（必要に応じて `TASKS.md` 運用ログ）, add regression coverage for new logic, and document any remaining gaps with timestamps and next steps.
 

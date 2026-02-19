@@ -1,12 +1,12 @@
 import { type ReactElement, type ReactNode, cloneElement, isValidElement } from 'react';
 import { Box } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
-import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
-import { isTaskSkipped } from '../../../common/utils/taskMessages.ts';
-import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
-import { formatTaskDisplayMessage } from './taskDisplayText.ts';
-import { TaskItem } from './TaskItem.tsx';
-import type { TaskItemWithMetadata } from './useTaskItemCardList.ts';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
+import { isTaskSkipped } from '../../../../common/utils/taskMessages.ts';
+import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '../geometrySimplifyError.ts';
+import { formatTaskDisplayMessage } from '../taskDisplayText.ts';
+import { TaskItem } from '../TaskItem/TaskItem.tsx';
+import type { TaskItemWithMetadata } from '../useTaskItemCardList.ts';
 
 type Translate = (key: string, fallback?: string) => string;
 

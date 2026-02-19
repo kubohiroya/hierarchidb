@@ -18,7 +18,7 @@ import { useTranslation as getTranslation } from '../../ui/i18n.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
-import { ShapeBuildStep } from './build-progress/ShapeBuildStep.tsx';
+import { ShapeBuildStep } from './build-progress/ShapeBuildStep/ShapeBuildStep.tsx';
 
 const registry = PluginStepRegistry.getInstance();
 

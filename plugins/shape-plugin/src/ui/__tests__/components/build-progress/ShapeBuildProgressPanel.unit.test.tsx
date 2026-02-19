@@ -37,7 +37,7 @@ vi.mock('@hierarchidb/ui-batch-progress', () => ({
   BuildSessionLauncherPanel: () => null,
 }));
 
-import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel.tsx';
+import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel.tsx';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
 import {
   buildStagesAtom,

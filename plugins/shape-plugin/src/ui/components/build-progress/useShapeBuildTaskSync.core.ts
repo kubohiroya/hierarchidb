@@ -1,0 +1,62 @@
+import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import { resolveProgressValue, resolveTaskStage } from './useShapeBuildTaskSync.comparison.utils.ts';
+import { resetTaskSyncDebugLogCounters } from './useShapeBuildTaskSync.debug.ts';
+import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSync.resolver.ts';
+import type { RawTaskSummary, SyncArgs, SyncResult } from './useShapeBuildTaskSync.types.ts';
+import { useShapeBuildTaskSyncScheduling } from './useShapeBuildTaskSync.sync.ts';
+import type { HandlerRefs } from './useShapeBuildTaskSync.types.ts';
+
+type CoreDeps = {
+  sessionNodeId: SyncArgs['sessionNodeId'];
+  markTaskStreamSynchronized?: SyncArgs['markTaskStreamSynchronized'];
+  refs: HandlerRefs;
+  setTasks: SyncArgs['setTasks'];
+};
+
+type CoreResult = {
+  resolveTaskSummary: (task: RawTaskSummary) => ShapeBuildTaskSummary;
+  bufferTaskUpdate: SyncResult['bufferTaskUpdate'];
+  scheduleBufferedFlush: SyncResult['scheduleBufferedFlush'];
+  scheduleFlush: SyncResult['scheduleFlush'];
+  syncTasksRef: SyncResult['syncTasksRef'];
+  syncLoadingRef: SyncResult['syncLoadingRef'];
+  syncErrorRef: SyncResult['syncErrorRef'];
+  resetPending: SyncResult['resetPending'];
+  resetDebugCounters: () => void;
+};
+
+export const useShapeBuildTaskSyncCore = ({
+  sessionNodeId,
+  markTaskStreamSynchronized,
+  refs,
+  setTasks,
+}: CoreDeps): CoreResult => {
+  const resolver = useShapeBuildTaskSyncResolver({
+    sessionNodeId,
+    refs: {
+      completedTasksRef: refs.completedTasksRef,
+      vtParentInputDebugLogKeysRef: refs.vtParentInputDebugLogKeysRef,
+    },
+    resolveTaskStage,
+    resolveProgressValue,
+  });
+
+  const scheduling = useShapeBuildTaskSyncScheduling({
+    sessionNodeId,
+    markTaskStreamSynchronized,
+    refs,
+    setTasks,
+  });
+
+  return {
+    resolveTaskSummary: resolver,
+    bufferTaskUpdate: scheduling.bufferTaskUpdate,
+    scheduleBufferedFlush: scheduling.scheduleBufferedFlush,
+    scheduleFlush: scheduling.scheduleFlush,
+    syncTasksRef: scheduling.syncTasksRef,
+    syncLoadingRef: scheduling.syncLoadingRef,
+    syncErrorRef: scheduling.syncErrorRef,
+    resetPending: scheduling.resetPending,
+    resetDebugCounters: resetTaskSyncDebugLogCounters,
+  };
+};

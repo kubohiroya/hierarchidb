@@ -1,6 +1,6 @@
 import { ZoomBandConfigSection as SharedZoomBandConfigSection } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '../../i18n.js';
-import { useTransformConfigSection } from './useTransformConfigSection.ts';
+import { useTransformConfigSection } from '../../hooks/useTransformConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
