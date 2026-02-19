@@ -1,9 +1,17 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["@hierarchidb/gen-iso3166-2"],
+    "types": [
+      "@hierarchidb/gen-iso3166-2"
+    ],
     "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
-    "allowArbitraryExtensions": true
+    "allowArbitraryExtensions": true,
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*"
+      ]
+    }
   }
 }

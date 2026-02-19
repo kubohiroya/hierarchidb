@@ -3,7 +3,14 @@
   "compilerOptions": {
     "skipLibCheck": false,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*.ts",
+        "*"
+      ]
+    }
   },
   "include": [
     "src/**/*",

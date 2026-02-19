@@ -6,9 +6,12 @@
     "allowImportingTsExtensions": true,
     "paths": {
       "~/*": [
-        "./src/*"
+        "*.ts",
+        "./src/*",
+        "*"
       ]
-    }
+    },
+    "baseUrl": "src"
   },
   "include": [
     "src/**/*.ts",

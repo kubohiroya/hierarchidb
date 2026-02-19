@@ -8,5 +8,14 @@
     "node_modules",
     "**/*.test.ts",
     "**/*.spec.ts"
-  ]
+  ],
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "~/*": [
+        "*.ts",
+        "*"
+      ]
+    }
+  }
 }

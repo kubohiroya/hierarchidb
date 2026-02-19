@@ -7,8 +7,13 @@
       ],
       "@hierarchidb/tabular-store/*": [
         "src/*"
+      ],
+      "~/*": [
+        "*.ts",
+        "*"
       ]
-    }
+    },
+    "baseUrl": "src"
   },
   "include": [
     "src/**/*.ts",
