@@ -5,7 +5,7 @@ import {
   resolveDisplayBuildStatus,
   shouldRefreshTasksSnapshot,
   shouldResetElapsedState,
-} from '../../../components/build-progress/useShapeBuildStep.js';
+} from '../../../components/build-progress/internal/useShapeBuildStepLogic.js';
 
 describe('shouldResetElapsedState', () => {
   it('returns false while build is running', () => {

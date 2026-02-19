@@ -1,10 +1,10 @@
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '../../../../../common/types/index.js';
-import { toProcessingStatus } from './status.ts';
+import { toProcessingStatus } from './status.js';
 
 export const getErrorMessage = (error: unknown): string => (
-  error instanceof Error ? error.message : String(error)
-);
+  error instanceof Error ? error.message : String(error))
+
 
 export const toTransitionErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === 'string' && error.length > 0) {

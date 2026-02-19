@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { type BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
+import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
 import type { BuildSessionTransitionLogLevel } from '@hierarchidb/components/build-session';
 import type { BuildSessionStatus } from '@hierarchidb/batch-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
-import type { ShapeEntity } from '../../../../../common/types/index.js';
+import type { ShapeEntity } from '../../../../../common/types/index.ts';
 import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export type ShapeBuildPauseReason = ShapeBuildStopReason;

@@ -7,7 +7,7 @@ import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
 import { useTranslation } from '../../i18n.js';
 import { clearShapeDataSourceCache } from '../../utils/clearDataSourceCache.js';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
+import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.js';
 
 /**
  * Data Source Selection step for Shape plugin

@@ -1,10 +1,10 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildProgressStatus } from './shapeBuildProgressMapping.ts';
+import type { BuildProgressStatus } from './shapeBuildProgressMapping.js';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { BuildTaskSummary } from '@hierarchidb/batch-api';
 import type { TaskStageCarrier } from '@hierarchidb/ui-batch-progress';
-import { resolveMostAdvancedStageId } from './stagePriority.ts';
-import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.ts';
+import { resolveMostAdvancedStageId } from './stagePriority.js';
+import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 
 const normalizePaneStatus = (status: BuildStatus | BuildProgressStatus['status']): BuildProgressStatus['status'] => {
   if (status === 'running') {

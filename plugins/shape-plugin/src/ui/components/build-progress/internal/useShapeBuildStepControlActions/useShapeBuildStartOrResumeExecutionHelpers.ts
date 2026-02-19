@@ -1,6 +1,9 @@
 import type { BuildSessionStatus } from '@hierarchidb/batch-api';
-import { SHAPE_NODE_TYPE, getErrorMessage, summarizeSelectedEntries } from '../useShapeBuildStepHelpers.ts';
-import type { StartOrResumeExecutionArgs } from './types.ts';
+//import { SHAPE_NODE_TYPE } from '../constants';
+//import { getErrorMessage, summarizeSelectedEntries } from '../errors';
+import type { StartOrResumeExecutionArgs } from './types.js';
+import { getErrorMessage, summarizeSelectedEntries } from '../useShapeBuildStepHelpers/errors.js';
+import { SHAPE_NODE_TYPE } from '../../shapeBuildTaskSyncDebug.js';
 
 type BaseRequestContext = Pick<
   StartOrResumeExecutionArgs,

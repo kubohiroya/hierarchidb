@@ -1,21 +1,21 @@
 export type { TaskCountSummary } from '@hierarchidb/ui-batch-progress';
 export type { BuildStatus } from '@hierarchidb/components/build-status';
-export type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.ts';
+export type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 export {
   createStageTaskCounts,
   buildStageCountPlan,
   makeStageTotals,
-} from './shapeBuildProgressSummaryCountHelpers.ts';
+} from './shapeBuildProgressSummaryCountHelpers.js';
 
 export {
   chooseInFlightStage,
   makePaneProgress,
-} from './shapeBuildProgressSummaryPaneHelpers.ts';
+} from './shapeBuildProgressSummaryPaneHelpers.js';
 
 export {
   estimateStageRemainingMs,
   makeRawDisplayCounts,
   resolveFailureStage,
   shouldExposeBuildStatus,
-} from './shapeBuildProgressRuntimeHelpers.ts';
-export type { CountsWithPercentage } from './shapeBuildProgressRuntimeHelpers.ts';
+} from './shapeBuildProgressRuntimeHelpers.js';
+export type { CountsWithPercentage } from './shapeBuildProgressRuntimeHelpers.js';

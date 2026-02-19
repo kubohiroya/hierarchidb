@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Box, Chip, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
+import { TASK_ITEM_HEIGHT } from './taskItem.constants.ts';
 
 type Props = {
   title: string;
@@ -12,8 +13,6 @@ type Props = {
   progress?: number;
   fallbackProgress: number;
 };
-
-export const TASK_ITEM_HEIGHT = 56;
 
 export const TaskItem: React.FC<Props> = ({
   title,

@@ -1,14 +1,16 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Provider, useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import { ShapeBuildProgressPanel } from '../ShapeBuildProgressPanel/ShapeBuildProgressPanel.js';
+
 import {
   taskStatusAtom,
 } from '../../../atoms/shapeBuildProgressAtoms.js';
 import { HeapPressureDialog } from '@hierarchidb/ui-memory';
-import type { ShapeDialogStepProps } from '../../ShapeDialogStepProps.tsx';
-import { useBuildProgressStepState } from '../useBuildProgressStepState.ts';
-import { useShapeBuildStepAtomSync } from '../useShapeBuildStepAtomSync.ts';
+
+import { useBuildProgressStepState } from './useBuildProgressStepState.js';
+import { useShapeBuildStepAtomSync } from './useShapeBuildStepAtomSync/index.js';
+import type { ShapeDialogStepProps } from '../../ShapeDialogStepProps.js';
+import { ShapeBuildProgressPanel } from '../ShapeBuildProgressPanel/ShapeBuildProgressPanel.tsx';
 
 
 const ShapeBuildAtomSync: React.FC<ShapeDialogStepProps> = (props) => {

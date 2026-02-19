@@ -1,5 +1,5 @@
 import { BuildSessionProgressPanel } from '@hierarchidb/components';
-import type { ShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.js';
+import type { ShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.tsx';
 
 export type ShapeBuildProgressPanelViewProps = ShapeBuildProgressPanelViewModel;
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
-import { useShapeBuildProgressSummary } from '../../../components/build-progress/useShapeBuildProgressSummary.ts';
+import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation.ts';
 
 const stages: BuildStage[] = [
   { id: 'fetch', title: 'Fetch', icon: null },

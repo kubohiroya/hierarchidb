@@ -1,5 +1,5 @@
-import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
-import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.ts';
+import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
+import { sanitizeShapeDraftData } from '../../utils/sanitizeShapeDraftData.js';
 
 type RecordShape = Record<string, unknown>;
 
