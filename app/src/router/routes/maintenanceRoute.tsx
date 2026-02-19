@@ -1,5 +1,5 @@
 import { createRoute } from '@tanstack/react-router';
-import MaintenancePage from '~/router/pages/maintenance/MaintenancePage.js';
+import MaintenancePage from '~/router/pages/maintenance/MaintenancePage';
 import { rootRoute } from './rootRoute.js';
 
 export const maintenanceRoute = createRoute({

@@ -1,8 +1,8 @@
 import {
   executeIndexedDbMaintenance,
   type MaintenanceDeleteResult,
-} from '~/maintenance/maintenanceExecution.js';
-import { getMaintenanceLock } from '~/maintenance/maintenanceLock.js';
+} from '~/maintenance/maintenanceExecution';
+import { getMaintenanceLock } from '~/maintenance/maintenanceLock';
 
 describe('executeIndexedDbMaintenance', () => {
   it('returns failure when delete reports blocked databases', async () => {

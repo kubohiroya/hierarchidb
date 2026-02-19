@@ -6,7 +6,7 @@
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { loadTree } from '../../loaders/treeLoaders.js';
+import { loadTree } from '~/router/loaders/treeLoaders';
 import { treeBaseRoute } from './baseRoute.js';
 
 export const treeLayoutRoute = createRoute({

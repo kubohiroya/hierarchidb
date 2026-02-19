@@ -7,9 +7,9 @@ import {
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { pluginIconLoaders } from '~/plugin-loaders/icon-loaders.ts';
-import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry.ts';
-import { normalizeIconComponent } from '~/utils/normalizeIconComponent.ts';
+import { pluginIconLoaders } from '~/plugin-loaders/icon-loaders';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry';
+import { normalizeIconComponent } from '~/utils/normalizeIconComponent';
 
 type IconDescriptor = {
   nodeType: string;

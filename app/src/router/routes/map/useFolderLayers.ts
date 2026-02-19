@@ -15,8 +15,8 @@ import { DEFAULT_LAYER_SETS } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import { useEffect, useState } from 'react';
-import { parseZxyParam } from '../../loaders/mapLoader.js';
-import type { MapInfoSummary } from '../modeless/modelessDialogContent.js';
+import { parseZxyParam } from '~/router/loaders/mapLoader';
+import type { MapInfoSummary } from '~/router/routes/modeless/modelessDialogContent';
 import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 import type {
   BasemapStyleEntry,

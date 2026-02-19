@@ -5,7 +5,7 @@ import {
   getShapePresetMenuEntries,
   parseCreateAction,
   resolveShapePresetNodeDefaults,
-} from '../shapeCreatePresets.ts';
+} from '~/features/shape/shapeCreatePresets';
 
 describe('shapeCreatePresets', () => {
   it('parses create action with shape preset id', () => {

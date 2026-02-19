@@ -7,9 +7,9 @@ import { FloatingWindowPortalProvider } from '@hierarchidb/ui-floating-window';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
-import { AppConfigProvider } from '../contexts/AppConfigContext.js';
-import { BootProgressProvider } from '../contexts/BootProgressProvider.js';
-import { WorkerProvider } from '../contexts/WorkerProvider.js';
+import { AppConfigProvider } from '~/contexts/AppConfigContext';
+import { BootProgressProvider } from '~/contexts/BootProgressProvider';
+import { WorkerProvider } from '~/contexts/WorkerProvider';
 import {
   AuthReadyReporter,
   ConfigReadyReporter,

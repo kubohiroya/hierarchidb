@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAppConfig } from '~/contexts/AppConfigContext.js';
+import { useAppConfig } from '~/contexts/AppConfigContext';
 
 export function useHomePage() {
   const navigate = useNavigate();

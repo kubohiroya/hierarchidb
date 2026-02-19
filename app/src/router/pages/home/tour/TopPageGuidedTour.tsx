@@ -1,7 +1,7 @@
 import { GenericGuidedTour } from '@hierarchidb/ui-plugin-shell/ui-tour';
 import { Box, Typography } from '@mui/material';
 import type { Step } from 'react-joyride';
-import { useAppConfig } from '~/contexts/AppConfigContext.js';
+import { useAppConfig } from '~/contexts/AppConfigContext';
 
 interface TopPageGuidedTourProps {
   run: boolean;

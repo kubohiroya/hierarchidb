@@ -6,7 +6,7 @@ export interface MenuSpec {
   groupOf: Record<string, MenuGroup>;
 }
 
-import { getInstalledPlugins } from '../plugin-runtime/plugin-registry.ts';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry';
 
 const RESOURCES_GROUPS: MenuGroup[] = ['core', 'base', 'geo', 'tabular'];
 const PROJECTS_GROUPS: MenuGroup[] = ['core', 'project'];

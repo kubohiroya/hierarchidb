@@ -3,8 +3,8 @@ import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { useCallback, useMemo } from 'react';
-import { useWorker } from '~/contexts/WorkerProvider.js';
-import { useQuery } from '~/hooks/useQuery.js';
+import { useWorker } from '~/contexts/WorkerProvider';
+import { useQuery } from '~/hooks/useQuery';
 
 export interface TaggedNode {
   node: TreeNode;

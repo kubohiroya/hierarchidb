@@ -40,10 +40,10 @@ import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
-import type { MapLayerInfo } from '../../../state/mapSearch.atoms.js';
-import { mapLayerInfoAtom, mapStylerToggleAtom } from '../../../state/mapSearch.atoms.js';
-import type { MapViewState as LoaderMapViewState } from '../../loaders/mapLoader.js';
-import { ModelessDialogManager } from '../modeless/ModelessDialogManager.js';
+import type { MapLayerInfo } from '~/state/mapSearch.atoms';
+import { mapLayerInfoAtom, mapStylerToggleAtom } from '~/state/mapSearch.atoms';
+import type { MapViewState as LoaderMapViewState } from '~/router/loaders/mapLoader';
+import { ModelessDialogManager } from '~/router/routes/modeless/ModelessDialogManager';
 import {
   BUILT_IN_STYLE_URLS,
   LOCATION_TYPE_COLORS,

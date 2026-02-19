@@ -2,13 +2,13 @@ import type {
   ImportProgress as APIImportProgress,
   ImportData,
   ImportValidationResult,
-} from '~/types/import-export.js';
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+} from '~/types/import-export';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { useCallback, useRef, useState } from 'react';
-import { getInstalledPlugins } from '../plugin-runtime/plugin-registry.ts';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry';
 
 // Import/Export Types
 export interface ImportFileOptions {

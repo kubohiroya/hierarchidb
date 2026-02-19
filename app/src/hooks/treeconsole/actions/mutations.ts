@@ -4,7 +4,7 @@
 
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
+import type { MaybeCP, TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import {
   createUniqueName,
   confirmOverwrite,

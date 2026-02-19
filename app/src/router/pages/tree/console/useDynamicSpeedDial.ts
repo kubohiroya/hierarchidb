@@ -3,8 +3,8 @@ import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';
+import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
+import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders';
 
 type DynamicSpeedDialWindow = Window & {
   __HDB_SD_HITBOX__?: boolean;

@@ -1,8 +1,8 @@
 import type { TreeId } from '@hierarchidb/core-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
-import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
+import type { PluginMenuItem } from '~/hooks/usePluginMenuItems';
+import { DynamicSpeedDial } from '~/router/pages/tree/console/DynamicSpeedDial';
 import '@testing-library/jest-dom';
 
 const iconModule = vi.hoisted(() => {

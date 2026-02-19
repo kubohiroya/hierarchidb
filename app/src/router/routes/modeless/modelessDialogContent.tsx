@@ -40,7 +40,7 @@ import { useTheme } from '@mui/material/styles';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '../../../state/mapSearch.atoms.js';
+import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '~/state/mapSearch.atoms';
 import {
   MAX_ROWS,
   type DataGridPagination,
@@ -57,8 +57,8 @@ import {
   useShapeTableData,
   useViewportIdSet,
 } from './modelessDialogContentData.js';
-import { mapLayerInfoAtom } from '../../../state/mapSearch.atoms.js';
-import type { MapStylerSummary } from '../map/types.js';
+import { mapLayerInfoAtom } from '~/state/mapSearch.atoms';
+import type { MapStylerSummary } from '~/router/routes/map/types';
 
 export type MapInfoSummary = {
   name?: string | null;

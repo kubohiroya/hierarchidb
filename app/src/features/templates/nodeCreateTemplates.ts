@@ -1,7 +1,7 @@
 import type { NodeId, PeerEntity, TreeId } from '@hierarchidb/core-types';
 import type { NodePayload, TreeNodeData } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import {
   buildShapePresetDraftDataPatch,
   getShapePresetMenuEntries,
@@ -10,7 +10,7 @@ import {
   resolveShapePresetNodeDefaults,
   type ShapeCreatePresetId,
   type TranslateWithFallback,
-} from '~/features/shape/shapeCreatePresets.ts';
+} from '~/features/shape/shapeCreatePresets';
 
 export type TemplateTreeContext = 'resources' | 'projects';
 

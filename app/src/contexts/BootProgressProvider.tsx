@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { getWorkerInitCompleteMessage } from '~/i18n/workerInitMessages.js';
+import { getWorkerInitCompleteMessage } from '~/i18n/workerInitMessages';
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 

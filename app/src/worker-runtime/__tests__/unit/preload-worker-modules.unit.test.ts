@@ -1,4 +1,4 @@
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -100,7 +100,7 @@ describe('WorkerModuleLoader', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    const { ensureWorkerRuntime } = await import('../../WorkerModuleLoader.js');
+    const { ensureWorkerRuntime } = await import('~/worker-runtime/WorkerModuleLoader');
 
     await ensureWorkerRuntime();
     await ensureWorkerRuntime();

@@ -6,7 +6,7 @@
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { loadPageNode, loadTargetNode } from '../../loaders/treeLoaders.js';
+import { loadPageNode, loadTargetNode } from '~/router/loaders/treeLoaders';
 import { treePageRoute } from './pageRoute.js';
 export const treeTargetRoute = createRoute({
   getParentRoute: () => treePageRoute,

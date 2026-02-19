@@ -3,7 +3,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeConsoleActionDeps } from '../types.js';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import {
   confirmOverwrite,
   ensureClipboard,

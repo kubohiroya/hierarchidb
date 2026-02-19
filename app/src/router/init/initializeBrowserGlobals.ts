@@ -1,9 +1,9 @@
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
-import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannel.js';
-import { pluginRegistry } from '~/plugin-loaders/index.ts';
-import { useWorker } from '../../contexts/WorkerProvider.js';
-import { bootLog } from '../../utils/bootLog.ts';
-import { APP_VERSION, BUILD_TIME } from '../../version.ts';
+import { initializeMaintenanceChannel } from '~/maintenance/maintenanceChannel';
+import { pluginRegistry } from '~/plugin-loaders/index';
+import { useWorker } from '~/contexts/WorkerProvider';
+import { bootLog } from '~/utils/bootLog';
+import { APP_VERSION, BUILD_TIME } from '~/version';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -150,11 +150,11 @@ export function initializeBrowserGlobals(): void {
     /* swallow to avoid unhandled rejection */
   });
 
-  void import('../../worker-runtime/WorkerAPIClient.ts').catch((error) => {
+  void import('~/worker-runtime/WorkerAPIClient').catch((error) => {
     console.error('[browser-globals] Failed to load WorkerAPIClient module:', error);
   });
 
-  void import('~/plugin-loaders/menu-builders.js')
+  void import('~/plugin-loaders/menu-builders')
     .then(async (mod) => {
       (globalWindow as Window & { __HDB_MENU_BUILDERS__?: unknown }).__HDB_MENU_BUILDERS__ = mod;
       try {
@@ -217,7 +217,7 @@ export function initializeBrowserGlobals(): void {
   const shouldPrewarm = prewarmFlag === '1' || (import.meta.env.PROD && prewarmFlag !== '0');
 
   if (shouldPrewarm) {
-    void import('~/plugin-runtime/databases.js')
+    void import('~/plugin-runtime/databases')
       .then(async (db) => {
         const nodeTypes = await db.prewarmPluginDatabases();
         window.dispatchEvent(

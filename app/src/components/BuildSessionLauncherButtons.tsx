@@ -2,9 +2,9 @@ import { useCallback, useMemo } from 'react';
 import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/core-types';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { BuildSessionLauncherPanel, type BuildSessionLauncherEntry } from '@hierarchidb/ui-batch-progress';
-import { useWorker } from '~/contexts/WorkerProvider.js';
-import { startBuildFlow } from '~/router/pages/tree/console/buildFlow.ts';
-import { openInNewTab } from '~/utils/openInNewTab.ts';
+import { useWorker } from '~/contexts/WorkerProvider';
+import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
+import { openInNewTab } from '~/utils/openInNewTab';
 
 type BuildSessionLauncherButtonsProps = {
   treeId?: TreeId;

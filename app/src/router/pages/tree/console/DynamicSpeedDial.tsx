@@ -14,7 +14,7 @@ import {
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialIcon } from '@mui/material';
 import { useMemo } from 'react';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';
+import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 
 interface DynamicSpeedDialProps {

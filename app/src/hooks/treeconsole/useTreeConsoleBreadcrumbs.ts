@@ -5,7 +5,7 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api.js';
+import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';

@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { createRoute, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { loadNodeType } from '../../loaders/treeLoaders.js';
+import { loadNodeType } from '~/router/loaders/treeLoaders';
 import { treeTargetRoute } from './targetRoute.js';
 
 export const treeNodeTypeRoute = createRoute({

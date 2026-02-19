@@ -2,7 +2,7 @@ import React from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { WorkerClientProxy } from '~/worker-runtime/WorkerClientProxy.ts';
+import type { WorkerClientProxy } from '~/worker-runtime/WorkerClientProxy';
 import { WorkerProvider } from './WorkerProvider.tsx';
 
 const ensureInitializedMock = vi.fn(() => new Promise<never>(() => {}));

@@ -8,8 +8,8 @@
  */
 
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { AuthRequiredDialogHost } from '../../contexts/AuthRequiredDialogHost.js';
-import { setupUIPlugins } from '../loaders/uiPlugins.js';
+import { AuthRequiredDialogHost } from '~/contexts/AuthRequiredDialogHost';
+import { setupUIPlugins } from '~/router/loaders/uiPlugins';
 
 interface RootContext {
   uiPluginsReady: boolean;

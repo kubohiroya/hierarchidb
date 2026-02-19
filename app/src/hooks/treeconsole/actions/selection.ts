@@ -3,8 +3,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import { buildVisibleRows } from '../../../state/treeconsole.derive.js';
-import type { TreeConsoleActionDeps } from '../types.js';
+import { buildVisibleRows } from '~/state/treeconsole.derive';
+import type { TreeConsoleActionDeps } from '~/hooks/treeconsole/types';
 import { attachChildrenToIndex, getOrCreateIndex } from './helpers.ts';
 
 export const createSelectionActions = (deps: TreeConsoleActionDeps) => {

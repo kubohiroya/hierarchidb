@@ -26,8 +26,8 @@ import {
 } from '@mui/material';
 import { createRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import TagDetailRoute from '../tags.($tagName).js';
-import { type TagWithUsage, useTagsPage } from '../useTagsPage.js';
+import TagDetailRoute from '~/router/routes/tags.($tagName)';
+import { type TagWithUsage, useTagsPage } from '~/router/routes/useTagsPage';
 import { treePageRoute } from './pageRoute.js';
 
 function TreeTagsDialog() {

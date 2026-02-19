@@ -1,6 +1,6 @@
 import type { NodeType } from '@hierarchidb/core-types';
 import { useCallback, useEffect, useState } from 'react';
-import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry.js';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry';
 import type { DisplayPlugin } from './pluginsTypes.js';
 
 type UsePluginsPageStateResult = {

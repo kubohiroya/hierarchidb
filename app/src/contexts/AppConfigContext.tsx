@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext } from 'react';
-import type { LoadAppConfigReturn } from '../loadAppConfig.ts';
-import { loadAppConfig } from '../loadAppConfig.ts';
+import type { LoadAppConfigReturn } from '~/loadAppConfig';
+import { loadAppConfig } from '~/loadAppConfig';
 
 export type AppConfig = LoadAppConfigReturn;
 

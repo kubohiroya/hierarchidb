@@ -12,13 +12,13 @@ import { proxy as comlinkProxy } from 'comlink';
 import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useWorker } from '~/contexts/WorkerProvider.tsx';
-import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
-import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
-import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
+import { useWorker } from '~/contexts/WorkerProvider';
+import { Subscriptions } from '~/hooks/SubscriptionServices';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
 import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
-import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
-import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
+import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
+import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 

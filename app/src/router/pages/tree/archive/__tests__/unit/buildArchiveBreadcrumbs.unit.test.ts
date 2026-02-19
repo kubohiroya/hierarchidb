@@ -5,7 +5,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { buildArchiveBreadcrumbs } from '../../buildArchiveBreadcrumbs.js';
+import { buildArchiveBreadcrumbs } from '~/router/pages/tree/archive/buildArchiveBreadcrumbs';
 
 function createNode(
   id: string,

@@ -5,7 +5,7 @@
 
 import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
 import { useLoaderData } from '@tanstack/react-router';
-import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
+import type { LoadNodeActionReturn } from '~/router/loaders/treeLoaders';
 import { usePluginDialogRoute } from './usePluginDialogRoute.js';
 
 type TreeDialogRouteParams = {

@@ -16,7 +16,7 @@ import { DualKeyMap } from '@hierarchidb/util';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
+import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient';
 import { buildArchiveBreadcrumbs } from './buildArchiveBreadcrumbs.js';
 import { buildArchiveTreeData } from './buildArchiveTreeData.js';
 import { emptyArchiveBranch } from './emptyArchiveBranch.js';

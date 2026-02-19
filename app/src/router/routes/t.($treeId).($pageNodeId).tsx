@@ -31,27 +31,27 @@ import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/re
 import type { ReactNode } from 'react';
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { i18n as I18nInstance } from 'i18next';
-import AppLogoIcon from '~/components/AppLogoIcon.js';
-import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherButtons.js';
-import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
-import { useWorker } from '~/contexts/WorkerProvider.js';
-import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession.js';
+import AppLogoIcon from '~/components/AppLogoIcon';
+import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherButtons';
+import { useOptionalBootProgress } from '~/contexts/BootProgressProvider';
+import { useWorker } from '~/contexts/WorkerProvider';
+import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession';
 import {
   resolveStepTitleFromRegistry,
   type StepTitleTranslator,
 } from '@hierarchidb/plugin-registry/derivations';
-import { pluginRegistry } from '~/plugin-loaders/index.js';
-import { resolveTreePageTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
-import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
+import { pluginRegistry } from '~/plugin-loaders/index';
+import { resolveTreePageTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
+import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration';
 import type {
   LoadNodeActionReturn,
   LoadPageNodeReturn,
   LoadTargetNodeReturn,
-} from '../loaders/treeLoaders.js';
+} from '~/router/loaders/treeLoaders';
 import { treeRouteIds } from './tree/shared.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
-  const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration.js');
+  const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration');
   return { default: mod.TreeConsoleIntegration };
 });
 

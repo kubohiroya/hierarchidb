@@ -11,7 +11,7 @@ import {
   Speed as SpeedIcon,
   Train as TrainIcon,
 } from '@mui/icons-material';
-import type { MapSearchTargetId } from '../../../state/mapSearch.atoms.js';
+import type { MapSearchTargetId } from '~/state/mapSearch.atoms';
 import type { MapStyle } from './types.js';
 
 export type RouteModeOption = MapToggleOption & { modes: RouteMode[] };

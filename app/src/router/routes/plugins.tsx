@@ -5,8 +5,8 @@ import { useIconRegistry } from '@hierarchidb/ui-icon';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
-import { loadAppConfig } from '~/loadAppConfig.js';
-import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle.js';
+import { loadAppConfig } from '~/loadAppConfig';
+import { formatAppTitle, useAppDocumentTitle } from '~/router/title/pageTitle';
 import {
   AccountTree as AccountTreeIcon,
   CheckCircle as CheckCircleIcon,
