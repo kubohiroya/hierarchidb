@@ -159,7 +159,7 @@ export const TaskProgressBarView = ({
         ) : null}
         {segments.length > 0 ? (() => {
           let offset = 0;
-          return segments.map((segment, index) => {
+          return segments.map((segment: TaskProgressSegment, index: number) => {
             const segmentStart = offset;
             const segmentEnd = segmentStart + segment.width - 1;
             const inViewport = isSegmentInViewport(
