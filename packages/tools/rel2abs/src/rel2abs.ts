@@ -64,6 +64,40 @@ function isRelativeImport(moduleSpecifier: string): boolean {
   return moduleSpecifier.startsWith("./") || moduleSpecifier.startsWith("../")
 }
 
+function isImportMetaUrl(node: ts.Node): boolean {
+  return (
+    ts.isPropertyAccessExpression(node) &&
+    ts.isMetaProperty(node.expression) &&
+    node.expression.keywordToken === ts.SyntaxKind.ImportKeyword &&
+    node.name.text === "url"
+  )
+}
+
+function isUrlConstructorWithImportMetaUrl(node: ts.Node): node is ts.NewExpression {
+  if (!ts.isNewExpression(node)) {
+    return false
+  }
+
+  if (!ts.isIdentifier(node.expression) || node.expression.text !== "URL") {
+    return false
+  }
+
+  const args = node.arguments
+  if (!args || args.length === 0 || !ts.isStringLiteral(args[0])) {
+    return false
+  }
+
+  if (!isRelativeImport(args[0].text)) {
+    return false
+  }
+
+  if (args.length < 2) {
+    return false
+  }
+
+  return isImportMetaUrl(args[1])
+}
+
 function isWithinRoot(resolved: string, rootDir: string): boolean {
   const rel = path.relative(rootDir, resolved)
 
@@ -185,6 +219,8 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
       pushRewrite(node.moduleSpecifier)
     } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       pushRewrite(node.moduleSpecifier)
+    } else if (isUrlConstructorWithImportMetaUrl(node)) {
+      pushRewrite(node.arguments[0])
     } else if (
       ts.isCallExpression(node)
       && ts.isImportCall(node)
@@ -276,7 +312,7 @@ async function run(): Promise<void> {
   const changedFiles = fileChanges.length
   const changedImports = fileChanges.reduce((acc, entry) => acc + entry.changes.length, 0)
   console.log(
-    `${changedImports} import replacements in ${changedFiles} file(s).`,
+    `${changedImports} specifier replacements in ${changedFiles} file(s).`,
   )
 }
 

@@ -51,6 +51,7 @@ The tool rewrites module specifiers in:
 - `export ... from` declarations
 - `import = require`-style external module references
 - dynamic `import("...")` expressions
+- `new URL("...", import.meta.url)` expressions (common with Comlink/WebWorker worker loading)
 
 ## Conversion rules
 
@@ -59,6 +60,8 @@ The tool rewrites module specifiers in:
   - `../bar`
 - Leaves non-relative references unchanged:
   - `@scope/pkg`
+- Converts URL-constructor relative paths with `import.meta.url` base:
+  - `new URL('../worker.ts', import.meta.url)`
 - `~/foo` style aliases
 - absolute path imports
 - Rewrites only files under the provided root directory
