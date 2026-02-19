@@ -23,7 +23,7 @@ type TaskItemCardListCardProps = {
   virtualize?: boolean;
 };
 
-export const TaskItemCardListCard = forwardRef<HTMLDivElement, TaskItemCardListCardProps>(({
+export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCardListCardProps>(({
   stageId,
   tasks,
   stageValue,
