@@ -154,8 +154,6 @@ function createRuntimeAliasConfig({
     if (exclude) optimizeExclude.add(specifier);
   };
 
-  addAlias('~/', '../plugins/shape-plugin/src', { exact: false });
-
   const processedPackages = new Set<string>();
   const shouldAliasPackage = (specifier: string, group?: string) => shouldUseSource(selection, specifier, group);
 
