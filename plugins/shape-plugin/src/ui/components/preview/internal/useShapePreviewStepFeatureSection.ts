@@ -222,7 +222,7 @@ export const useShapePreviewFeatureSection = ({
       let count = 0;
       let errorCount = 0;
       let repairCount = 0;
-      const messages: string[] = [];
+      const messages = new Set<string>();
       memberFeatureIds.forEach((memberId) => {
         const summary = baseErrorSummaryById.get(String(memberId));
         if (!summary) return;
@@ -231,16 +231,12 @@ export const useShapePreviewFeatureSection = ({
         const summaryRepairCount = summary.repairCount ?? 0;
         errorCount += summaryErrorCount;
         repairCount += summaryRepairCount;
-        summary.messages.forEach((message) => {
-          if (!messages.includes(message)) {
-            messages.push(message);
-          }
-        });
+        summary.messages.forEach((message) => messages.add(message));
       });
       if (count > 0) {
         aggregated.set(groupId, {
           count,
-          messages,
+          messages: Array.from(messages),
           errorCount,
           repairCount,
         });
@@ -271,12 +267,10 @@ export const useShapePreviewFeatureSection = ({
 
     try {
       await shapeMutationAPIImpl.putFeatureMetadata(updatedRows);
-      const updatedRowIds = new Set(updatedRows.map((row) => String(row.featureId ?? row.id)));
+      const updatedRowsMap = new Map(updatedRows.map((row) => [String(row.featureId ?? row.id), row]));
       const nextRows = featureMetadataRows.map((row) => {
         const key = String(row.featureId ?? row.id);
-        if (!updatedRowIds.has(key)) return row;
-        const updated = updatedRows.find((entry) => String(entry.featureId ?? entry.id) === key);
-        return updated ?? row;
+        return updatedRowsMap.get(key) ?? row;
       });
       setFeatureMetadataOverride(nextRows);
     } catch (error) {

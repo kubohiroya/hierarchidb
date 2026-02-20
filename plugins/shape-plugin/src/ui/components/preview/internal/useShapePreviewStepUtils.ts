@@ -82,7 +82,7 @@ export const resolveAdminLevelFromProps = (
 };
 
 export const pickCountryNameFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
-  pickFromProps(properties, ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
+  pickFromProps(properties, ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNTY']);
 
 export const pickCountryCodeFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
   pickFromProps(properties, ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
@@ -171,6 +171,11 @@ export const buildCountryGroupKey = (countryCode?: string): string | null => {
   return `country:${normalized}`;
 };
 
+/**
+ * Determines if an issue kind represents a repair (successfully fixed) vs an error (needs attention).
+ * Issues without a specific kind are typically self-intersection repairs that were automatically fixed.
+ * Issues with specific kinds like 'max-vertices' are hard errors that couldn't be automatically resolved.
+ */
 export const isRepairIssueKind = (issueKind?: string): boolean => {
   return issueKind === undefined || issueKind === null;
 };
