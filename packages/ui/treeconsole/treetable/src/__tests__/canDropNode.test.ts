@@ -3,7 +3,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { toNodeId } from '@hierarchidb/core-types';
 
 const ROOT_PARENT_ID = toNodeId('__root__');
-import { canDropNode } from '~/utils/index';
+import { canDropNode } from '../utils/index';
 
 const N = (id: string, parentId?: string): TreeNode => ({
   id: toNodeId(id),

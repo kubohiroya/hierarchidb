@@ -3,7 +3,7 @@ import {
   getMaintenanceLock,
   isMaintenanceLockActive,
   setMaintenanceLock,
-} from '~/maintenance/maintenanceLock';
+} from '../maintenanceLock.ts';
 
 describe('maintenanceLock', () => {
   beforeEach(() => {

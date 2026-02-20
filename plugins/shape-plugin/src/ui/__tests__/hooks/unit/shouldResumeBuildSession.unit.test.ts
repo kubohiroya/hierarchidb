@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
+import { shouldResumeBuildSession } from '../../../components/build-progress/shouldResumeBuildSession';
 
 describe('shouldResumeBuildSession', () => {
   it('returns true when build status is paused', () => {

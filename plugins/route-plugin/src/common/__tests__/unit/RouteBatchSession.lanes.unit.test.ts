@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import type { RouteBuildTask } from '~/common/src/services/RouteBuildSession';
-import { RouteBuildSession } from '~/common/src/services/RouteBuildSession';
+import type { RouteBuildTask } from '../../src/services/RouteBuildSession';
+import { RouteBuildSession } from '../../src/services/RouteBuildSession';
 import type { NodeId } from '@hierarchidb/core-types';
-import { RouteGenerationMethod } from '~/common/__tests__/entities/RouteEntity';
+import { RouteGenerationMethod } from '../entities/RouteEntity';
 
 class TestGenerator {
   public activeOsm = 0;

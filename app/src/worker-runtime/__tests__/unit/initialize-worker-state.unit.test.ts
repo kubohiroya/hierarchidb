@@ -1,4 +1,4 @@
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -42,7 +42,7 @@ describe('WorkerStateStore', () => {
     ensureWorkerRuntimeMock.mockResolvedValue(fakeClient);
 
     const { ensureWorkerInitialized, getWorkerSnapshot, subscribeWorkerState } = await import(
-      '~/worker-runtime/WorkerStateStore'
+      '../../WorkerStateStore.ts'
     );
 
     const observedStates: string[] = [];
@@ -70,7 +70,7 @@ describe('WorkerStateStore', () => {
     ensureWorkerRuntimeMock.mockRejectedValue(loaderError);
 
     const { ensureWorkerInitialized, getWorkerSnapshot } = await import(
-      '~/worker-runtime/WorkerStateStore'
+      '../../WorkerStateStore.ts'
     );
 
     await expect(ensureWorkerInitialized()).rejects.toThrow('boom');

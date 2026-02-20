@@ -39,7 +39,7 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
 
 type WorkerTestAPI = {
   getShapeQueryAPI(): Promise<ShapeQueryAPI>;
@@ -57,7 +57,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   vi.resetModules();
   const [{ SingletonMixin }, { exposeShapeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
-    import('~/e2e/shape-test-worker.entry'),
+    import('../../e2e/shape-test-worker.entry'),
   ]);
   SingletonMixin.terminateAll();
   const { port1, port2 } = new MessageChannel();

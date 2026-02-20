@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ThrottledPort, type NetworkPortLike } from '~/common/__tests__/services/net/ThrottledPort';
+import { ThrottledPort, type NetworkPortLike } from '../services/net/ThrottledPort';
 
 class FakePort implements NetworkPortLike {
   constructor(private readonly mockDelayMs = 0) {}

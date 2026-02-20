@@ -2,11 +2,19 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { TaskItemCardListCard } from '~/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
+import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
+import { createElement } from 'react';
 
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+}));
+vi.mock('../../../components/build-progress/useShapeBuildStages/useShapeBuildStages', () => ({
+  useShapeBuildStages: () => [
+    { id: 'fetch', title: 'Fetch', icon: createElement('span', null, 'fetch') },
+    { id: 'transform', title: 'Transform', icon: createElement('span', null, 'transform') },
+    { id: 'vt', title: 'Vector Tiles', icon: createElement('span', null, 'vt') },
+  ],
 }));
 
 describe('TaskItemCardListCard', () => {

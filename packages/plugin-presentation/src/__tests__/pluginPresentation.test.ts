@@ -5,7 +5,7 @@ import {
   getIconComponent,
   prefetchAllIcons,
   resetPluginPresentationCacheForTests,
-} from '~/index';
+} from '../index';
 
 const baseDefinition = {
   nodeType: 'folder',

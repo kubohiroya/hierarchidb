@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import * as chunkStore from '~/services/utils/chunkStore';
+import { metadataLoader } from '../../../services/metadata/MetadataLoader';
+import * as chunkStore from '../../../services/utils/chunkStore';
 
 const cache = new Map<string, { value: unknown; metadata?: unknown }>();
 const relationsByNode = new Map<string, Set<string>>();

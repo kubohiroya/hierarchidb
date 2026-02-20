@@ -3,7 +3,7 @@ import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
 import { Subject } from 'rxjs';
-import type { CoreDB } from '~/services/CoreDB';
+import type { CoreDB } from '../../CoreDB';
 
 // fulltext tables removed; core stub only
 
@@ -51,7 +51,7 @@ function makeCore(): CoreStubBase {
 describe('Undo/Redo finalize: create -> undo -> redo', () => {
   it('removes created node on undo and restores on redo with same id', async () => {
     const core = makeCore();
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../../CommandProcessor');
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
     const parentId = 'p1' as NodeId;

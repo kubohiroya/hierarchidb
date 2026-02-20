@@ -3,7 +3,7 @@
  * Testing the loader functions that will be used by TanStack Router
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
@@ -14,17 +14,17 @@ import type {
   LoadPageNodeReturn,
   LoadTargetNodeReturn,
   LoadTreeReturn,
-} from '~/loader';
+} from '../../../../loader.ts';
 import {
   loadNodeAction,
   loadNodeType,
   loadPageNode,
   loadTargetNode,
   loadTree,
-} from '~/router/loaders/treeLoaders';
+} from '../../treeLoaders.ts';
 
 // Mock the loader module
-vi.mock('~~/loader.js', () => ({
+vi.mock('../../../../loader.js', () => ({
   loadWorkerAPIClient: vi.fn(),
   loadTree: vi.fn(),
   loadPageNode: vi.fn(),
@@ -80,7 +80,7 @@ describe('console Loaders for TanStack Router', () => {
 
   describe('loadTree', () => {
     it('should throw error when treeId is missing', async () => {
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadTree).mockImplementation(async ({ treeId }) => {
         if (!treeId) {
           throw new Error('treeId is required');
@@ -96,7 +96,7 @@ describe('console Loaders for TanStack Router', () => {
 
     it('should load console data when treeId is provided', async () => {
       const mockTree = createTree({ id: 'r' as TreeId, name: 'Resource console' });
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadTree).mockResolvedValue({
         tree: mockTree,
         client: createMockClient(),
@@ -114,7 +114,7 @@ describe('console Loaders for TanStack Router', () => {
         id: 'r:root' as NodeId,
         metadata: { name: 'Root', description: '', tags: [] },
       });
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadPageNode).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),
         client: createMockClient(),
@@ -134,7 +134,7 @@ describe('console Loaders for TanStack Router', () => {
         id: 'target123' as NodeId,
         metadata: { name: 'Target', description: '', tags: [] },
       });
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadTargetNode).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),
         client: createMockClient(),
@@ -156,7 +156,7 @@ describe('console Loaders for TanStack Router', () => {
 
   describe('loadNodeType', () => {
     it('should load node type data', async () => {
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadNodeType).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),
         client: createMockClient(),
@@ -180,7 +180,7 @@ describe('console Loaders for TanStack Router', () => {
 
   describe('loadNodeAction', () => {
     it('should load node action data', async () => {
-      const loaderModule = await import('~/loader');
+      const loaderModule = await import('../../../../loader.ts');
       vi.mocked(loaderModule.loadNodeAction).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),
         client: createMockClient(),

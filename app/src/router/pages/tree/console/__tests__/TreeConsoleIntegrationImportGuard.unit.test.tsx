@@ -92,7 +92,7 @@ const useTreeConsoleIntegrationMock = vi.fn(() => ({
   },
 }));
 
-vi.mock('~~/hooks/useTreeConsoleIntegration.ts', () => ({
+vi.mock('../../../../../hooks/useTreeConsoleIntegration.ts', () => ({
   useTreeConsoleIntegration: () => useTreeConsoleIntegrationMock(),
 }));
 
@@ -104,11 +104,11 @@ const workerClientStub = {
   getSubscriptionAPI: vi.fn(async () => ({})),
 };
 
-vi.mock('~~/contexts/WorkerProvider.tsx', () => ({
+vi.mock('../../../../../contexts/WorkerProvider.tsx', () => ({
   useWorker: () => ({ client: workerClientStub, isConnected: true }),
 }));
 
-vi.mock('~~/hooks/SubscriptionServices.ts', () => ({
+vi.mock('../../../../../hooks/SubscriptionServices.ts', () => ({
   Subscriptions: {
     subscribe: vi.fn(async () => ({ subId: 'sub-1', created: true })),
     release: vi.fn(async () => {}),
@@ -121,7 +121,7 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-import { canImportFromNode, TreeConsoleIntegration } from '~/router/pages/tree/console/TreeConsoleIntegration';
+import { canImportFromNode, TreeConsoleIntegration } from '../TreeConsoleIntegration.tsx';
 
 const buildNode = (overrides: Partial<TreeNode>): TreeNode =>
   ({

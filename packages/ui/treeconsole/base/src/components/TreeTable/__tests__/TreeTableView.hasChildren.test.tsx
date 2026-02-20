@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { HierarchicalTreeNode } from '~/types/index';
-import type { TreeTableColumn } from '~/components/TreeTable/core/TreeTableView';
-import { TreeTableView } from '~/components/TreeTable/core/TreeTableView';
+import type { HierarchicalTreeNode } from '../../../types/index';
+import type { TreeTableColumn } from '../core/TreeTableView';
+import { TreeTableView } from '../core/TreeTableView';
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   getPluginIconColor: () => undefined,

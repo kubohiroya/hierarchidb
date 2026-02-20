@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ShapeFeaturePayload } from '~/common/types/index';
+import type { ShapeFeaturePayload } from '../../common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { CountryMetadata } from '~/common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '~/common/types/constants';
+import type { CountryMetadata } from '../../common/types/index';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
 import { listTasksByStageAndStatus, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 const { mockFetchData, mockProcessData, mockPutFeatureMetadata } = vi.hoisted(() => ({
@@ -43,7 +43,7 @@ vi.mock('../../services/batch/ShapeBuildAPIClient.ts', () => ({
   },
 }));
 
-import { runShapeFetchStage } from '~/services/vt/shapeFetchStage';
+import { runShapeFetchStage } from '../../services/vt/shapeFetchStage';
 
 const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 

@@ -7,9 +7,9 @@ import type {
   TreeNode,
 } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CoreDB } from '~/services/CoreDB';
-import type { CommandEnvelope } from '~/services/command-types';
-import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
+import type { CoreDB } from '../../../services/CoreDB';
+import type { CommandEnvelope } from '../../../services/command-types';
+import { EntityLifecycleManager } from '../../EntityLifecycleManager';
 
 describe('EntityLifecycleManager dispatch', () => {
   beforeEach(() => {

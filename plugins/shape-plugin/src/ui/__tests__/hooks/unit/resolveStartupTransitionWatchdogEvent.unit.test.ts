@@ -4,7 +4,7 @@ import {
   START_DIAGNOSTIC_LONG_WAIT_MS,
   START_DIAGNOSTIC_TIMEOUT_MS,
   START_DIAGNOSTIC_WARN_MS,
-} from '~/ui/components/build-progress/resolveStartupTransitionWatchdogEvent';
+} from '../../../components/build-progress/resolveStartupTransitionWatchdogEvent';
 
 describe('resolveStartupTransitionWatchdogEvent', () => {
   it('returns wait when warn threshold is reached first time', () => {

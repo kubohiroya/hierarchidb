@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldReuseTaskQueueOnStart } from '~/worker/shouldReuseTaskQueueOnStart';
+import { shouldReuseTaskQueueOnStart } from '../../../../worker/shouldReuseTaskQueueOnStart';
 
 describe('shouldReuseTaskQueueOnStart', () => {
   it('returns false for completed sessions', () => {

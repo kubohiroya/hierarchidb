@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
-import { RouteEntityHandler } from '~/common/entities/__tests__/RouteEntityHandler';
-import type { RouteEntity } from '~/common/entities/__tests__/RouteEntity';
+import { RouteEntityHandler } from '../RouteEntityHandler';
+import type { RouteEntity } from '../RouteEntity';
 
 type RouteFactoryOptions = {
   id: string;

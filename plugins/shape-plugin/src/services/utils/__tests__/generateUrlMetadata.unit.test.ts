@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CountryMetadata, DataSourceName } from '~/common/types/index';
-import { generateDownloadTaskPayloads } from '~/services/utils/utils';
+import type { CountryMetadata, DataSourceName } from '../../../common/types/index';
+import { generateDownloadTaskPayloads } from '../utils';
 
 const COUNTRY_METADATA: CountryMetadata[] = [
   {

@@ -5,13 +5,13 @@
  * Tests retry logic, timeout handling, and success scenarios
  */
 
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '../../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getWorkerInitCompleteMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages';
+} from '../../../../i18n/workerInitMessages.ts';
 
 // Mock the WorkerStateStore module
 vi.mock('../../../../worker-runtime/WorkerStateStore.js', () => ({
@@ -37,9 +37,9 @@ describe('workerClient', () => {
     it('should successfully initialize worker on first try', async () => {
       // Import after mocks are set up
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
       vi.mocked(ensureWorkerInitialized).mockResolvedValue(mockClient);
@@ -52,9 +52,9 @@ describe('workerClient', () => {
 
     it('should retry on failure and succeed on second attempt', async () => {
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
 
@@ -74,9 +74,9 @@ describe('workerClient', () => {
 
     it('should throw error after all retries exhausted', async () => {
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const error = new Error('Worker initialization failed');
       vi.mocked(ensureWorkerInitialized).mockRejectedValue(error);
@@ -93,9 +93,9 @@ describe('workerClient', () => {
 
     it('should timeout if initialization takes too long', async () => {
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       // Mock a never-resolving promise
       vi.mocked(ensureWorkerInitialized).mockImplementation(
@@ -114,9 +114,9 @@ describe('workerClient', () => {
 
     it('should use default retry delays if not specified', async () => {
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
       vi.mocked(ensureWorkerInitialized).mockResolvedValue(mockClient);
@@ -129,9 +129,9 @@ describe('workerClient', () => {
 
     it('should handle AbortSignal correctly', async () => {
       const { ensureWorkerInitialized } = await import(
-        '~/worker-runtime/WorkerStateStore'
+        '../../../../worker-runtime/WorkerStateStore.ts'
       );
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const controller = new AbortController();
       const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
@@ -150,7 +150,7 @@ describe('workerClient', () => {
     });
 
     it('should respect aborted signal and throw immediately', async () => {
-      const { ensureWorkerStarted } = await import('~/router/loaders/workerClient');
+      const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const controller = new AbortController();
       controller.abort(); // Abort before calling
@@ -165,8 +165,8 @@ describe('workerClient', () => {
 
   describe('getWorkerClient', () => {
     it('should return cached client if available', async () => {
-      const { getWorkerSnapshot } = await import('~/worker-runtime/WorkerStateStore');
-      const { getWorkerClient } = await import('~/router/loaders/workerClient');
+      const { getWorkerSnapshot } = await import('../../../../worker-runtime/WorkerStateStore.ts');
+      const { getWorkerClient } = await import('../../workerClient.ts');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
       vi.mocked(getWorkerSnapshot).mockReturnValue({
@@ -182,8 +182,8 @@ describe('workerClient', () => {
     });
 
     it('should return null if worker not initialized', async () => {
-      const { getWorkerSnapshot } = await import('~/worker-runtime/WorkerStateStore');
-      const { getWorkerClient } = await import('~/router/loaders/workerClient');
+      const { getWorkerSnapshot } = await import('../../../../worker-runtime/WorkerStateStore.ts');
+      const { getWorkerClient } = await import('../../workerClient.ts');
 
       vi.mocked(getWorkerSnapshot).mockReturnValue({
         state: 'uninitialized',

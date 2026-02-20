@@ -5,7 +5,7 @@ import {
   getMuiIconComponent,
   getMuiIconWithColor,
   setGlobalMuiIconMap,
-} from '~/getMuiIconComponent';
+} from '../getMuiIconComponent';
 
 describe('getMuiIconComponent', () => {
   it('prefers custom icon components registered under raw names before normalization', () => {

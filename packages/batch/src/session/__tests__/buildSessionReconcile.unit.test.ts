@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reconcileByMetadata } from '~/session/buildSessionReconcile';
+import { reconcileByMetadata } from '../buildSessionReconcile';
 
 describe('reconcileByMetadata', () => {
   it('creates when artifact is missing', () => {

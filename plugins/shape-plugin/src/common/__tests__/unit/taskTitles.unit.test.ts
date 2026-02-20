@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
+import { buildShapeTaskTitle } from '../../utils/taskTitles';
 
 describe('taskTitles', () => {
   it('formats transform task title as country code + level + band + zoom range', () => {

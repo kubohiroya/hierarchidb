@@ -4,8 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InitializationResult, WorkerInitMessage } from '~/types';
-import { WorkerInitializationChannel } from '~/WorkerInitializationChannel';
+import type { InitializationResult, WorkerInitMessage } from '../types';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
 
 type MessageListener = (event: MessageEvent<WorkerInitMessage>) => void;
 type WorkerInboundMessage =

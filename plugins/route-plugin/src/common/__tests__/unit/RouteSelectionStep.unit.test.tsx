@@ -1,9 +1,9 @@
 import { describe, expect, vi, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { RouteSelectionStep } from '~/common/__tests__/components/RouteSelectionStep';
-import type { RouteEntity, RouteUpdaterPayload, NodeId } from '~/common/__tests__/types/index';
-import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '~/common/__tests__/utils/draft';
-import { en as enTranslations } from '~/common/__tests__/i18n/en';
+import { RouteSelectionStep } from '../components/RouteSelectionStep';
+import type { RouteEntity, RouteUpdaterPayload, NodeId } from '../types/index';
+import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draft';
+import { en as enTranslations } from '../i18n/en';
 
 vi.mock('../i18n/index.js', () => ({
   useTranslation: () => ({

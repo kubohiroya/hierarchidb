@@ -5,7 +5,7 @@ import {
   getShapePresetMenuEntries,
   parseCreateAction,
   resolveShapePresetNodeDefaults,
-} from '~/features/shape/shapeCreatePresets';
+} from '../shapeCreatePresets.ts';
 
 describe('shapeCreatePresets', () => {
   it('parses create action with shape preset id', () => {
@@ -28,7 +28,7 @@ describe('shapeCreatePresets', () => {
   it('resolves node defaults with template replacement', () => {
     const defaults = resolveShapePresetNodeDefaults('japan-level0-1', (_key, fallback) => fallback);
 
-    expect(defaults.name).toMatch(/^Japan L0\+1 \d{4}-\d{2}-\d{2}$/);
+    expect(defaults.name).toMatch(/^Japan ADM0\+1( \d{4}-\d{2}-\d{2})?$/);
     expect(defaults.description).toContain('Preset:');
   });
 

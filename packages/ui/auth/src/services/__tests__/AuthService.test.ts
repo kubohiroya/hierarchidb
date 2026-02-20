@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '~/services/AuthService';
+import { AuthService } from '../AuthService';
 
 // Mock global objects
 const mockCrypto = {
@@ -24,7 +24,7 @@ const mockPopup = {
 };
 
 // Mock logger
-vi.mock('~/utils/logger', () => ({
+vi.mock('../../utils/logger', () => ({
   devLog: vi.fn(),
   devError: vi.fn(),
 }));

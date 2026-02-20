@@ -5,7 +5,7 @@ import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PluginDialogFooter } from '~/headless/components/PluginDialogFooter';
+import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => () => Promise.resolve(),

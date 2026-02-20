@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASIC_INFO_META_KEY, buildStepWorkingData } from '~/headless/usePluginDialogController';
+import { BASIC_INFO_META_KEY, buildStepWorkingData } from '../usePluginDialogController';
 
 describe('buildStepWorkingData', () => {
   it('leaves step data untouched (basic info is not merged into plugin data)', () => {

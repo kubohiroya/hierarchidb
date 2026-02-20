@@ -3,7 +3,7 @@ import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { useDialogSteps } from '~/headless/usePluginDialogController/steps';
+import { useDialogSteps } from '../usePluginDialogController/steps';
 
 const composedConfigs = {
   hasHostBase: false,

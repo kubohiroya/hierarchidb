@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runVectorTileStageOrchestrator } from '~/vectortile/runVectorTileStageOrchestrator';
+import { runVectorTileStageOrchestrator } from '../runVectorTileStageOrchestrator';
 
-import type { ProgressInfo } from '~/ports/sharedTypes';
-import type { RunVectorTileStageOrchestratorParams } from '~/vectortile/orchestratorTypes';
+import type { ProgressInfo } from '../ports/sharedTypes';
+import type { RunVectorTileStageOrchestratorParams } from '../orchestratorTypes';
 
 import {
   makeAdapter,
@@ -163,7 +163,12 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
 
     let paused = true;
     const waitIfPaused = vi.fn(async () => {
+      const timeoutMs = 5000;
+      const start = Date.now();
       while (paused) {
+        if (Date.now() - start > timeoutMs) {
+          throw new Error(`waitIfPaused timed out after ${timeoutMs}ms`);
+        }
         await new Promise((r) => setTimeout(r, 1));
       }
     });

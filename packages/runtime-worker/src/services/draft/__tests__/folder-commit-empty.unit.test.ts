@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { assertCommitOk } from '~/test-utils/assertions';
-import { CoreDB } from '~/services/CoreDB';
-import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
+import { assertCommitOk } from '../../../test-utils/assertions';
+import { CoreDB } from '../../CoreDB';
+import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService';
 
 describe('folder commit clears draft and keeps metadata (empty payload)', () => {
   const treeId = 'r' as TreeId;

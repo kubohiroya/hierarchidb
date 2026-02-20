@@ -5,7 +5,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, vi } from 'vitest';
-import { PluginDialogHeader } from '~/headless/components/PluginDialogHeader';
+import { PluginDialogHeader } from '../components/PluginDialogHeader';
 import '@testing-library/jest-dom/vitest';
 
 const headerLocationRef = {

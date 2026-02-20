@@ -4,9 +4,9 @@ import type { TreeNode, TreeNodeData } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
-import { exposeTestAPI } from '~/e2e/test-worker.entry';
-import { assertCommandSuccess, type CommandResultSuccess } from '~/test-utils/assertions';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
+import { exposeTestAPI } from '../../e2e/test-worker.entry';
+import { assertCommandSuccess, type CommandResultSuccess } from '../../test-utils/assertions';
 
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;

@@ -1,8 +1,8 @@
 import type { TreeId } from '@hierarchidb/core-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PluginMenuItem } from '~/hooks/usePluginMenuItems';
-import { DynamicSpeedDial } from '~/router/pages/tree/console/DynamicSpeedDial';
+import type { PluginMenuItem } from '../../../../../hooks/usePluginMenuItems.ts';
+import { DynamicSpeedDial } from '../DynamicSpeedDial.tsx';
 import '@testing-library/jest-dom';
 
 const iconModule = vi.hoisted(() => {
@@ -40,7 +40,7 @@ const menuItemsModule = vi.hoisted(() => ({
   usePluginMenuItems: vi.fn<() => PluginMenuItem[]>(),
 }));
 
-vi.mock('~~/hooks/usePluginMenuItems.js', () => menuItemsModule);
+vi.mock('../../../../../hooks/usePluginMenuItems.js', () => menuItemsModule);
 
 describe('DynamicSpeedDial', () => {
   beforeEach(() => {

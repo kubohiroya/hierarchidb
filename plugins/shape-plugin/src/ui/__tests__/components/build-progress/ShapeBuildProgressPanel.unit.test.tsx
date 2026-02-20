@@ -37,8 +37,8 @@ vi.mock('@hierarchidb/ui-batch-progress', () => ({
   BuildSessionLauncherPanel: () => null,
 }));
 
-import { ShapeBuildProgressPanel } from '~/ui/components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
+import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import {
   buildStagesAtom,
   buildStageProgressAtom,
@@ -51,7 +51,7 @@ import {
   tasksLoadingAtom,
   taskWarningMessageAtom,
   tasksByStageAtom,
-} from '~/ui/atoms/shapeBuildProgressAtoms';
+} from '../../../atoms/shapeBuildProgressAtoms';
 
 const makeStore = () => {
   const store = createStore();

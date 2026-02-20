@@ -3,9 +3,9 @@ import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { ObserveNodePayload, TreeChangeEvent, TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import type { CoreDB } from '~/services/CoreDB';
-import type { CommandEnvelope } from '~/services/command-types';
-import { TreeSubscriptionService } from '~/services/TreeSubscriptionService';
+import type { CoreDB } from '../../CoreDB';
+import type { CommandEnvelope } from '../../command-types';
+import { TreeSubscriptionService } from '../../TreeSubscriptionService';
 
 function createCoreStub(
   initialNodes: TreeNode[] = []

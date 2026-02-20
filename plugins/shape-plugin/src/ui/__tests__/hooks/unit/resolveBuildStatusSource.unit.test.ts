@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import { resolveBuildStatusSource } from '../../../components/build-progress/resolveBuildStatusSource';
 
 describe('resolveBuildStatusSource', () => {
   it('keeps persisted processing when runtime reports stale completed', () => {

@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
-import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '~/common/types/constants';
+import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../common/types/index';
+import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants';
 import * as Comlink from 'comlink';
 vi.mock('comlink', async () => (
   await vi.importActual('comlink')
@@ -190,7 +190,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/datasources/DataSource
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
 
 type EphemeralCacheType =
   | 'fetchCache'
@@ -272,7 +272,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   vi.resetModules();
   const [{ SingletonMixin }, { exposeShapeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
-    import('~/e2e/shape-test-worker.entry'),
+    import('../../e2e/shape-test-worker.entry'),
   ]);
   SingletonMixin.terminateAll();
   const { port1, port2 } = new MessageChannel();
@@ -287,7 +287,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
 };
 
 const setupAdditionalClient = async (): Promise<WorkerSetup> => {
-  const { exposeShapeTestAPI } = await import('~/e2e/shape-test-worker.entry');
+  const { exposeShapeTestAPI } = await import('../../e2e/shape-test-worker.entry');
   const { port1, port2 } = new MessageChannel();
   await exposeShapeTestAPI(createEndpointFromMessagePort(port1));
   const client = Comlink.wrap<WorkerTestAPI>(createEndpointFromMessagePort(port2));

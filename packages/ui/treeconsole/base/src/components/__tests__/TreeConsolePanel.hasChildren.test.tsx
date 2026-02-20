@@ -1,13 +1,13 @@
 import { describe, expect, it, afterEach, vi } from 'vitest';
 import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeConsolePanelProps } from '~/components/TreeConsolePanel';
+import type { TreeConsolePanelProps } from '../TreeConsolePanel';
 // Lazy import after mocking
-import { TreeConsolePanel } from '~/components/TreeConsolePanel';
+import { TreeConsolePanel } from '../TreeConsolePanel';
 
 import { render, cleanup } from '@testing-library/react';
 import React = require('react');
-import type { HierarchicalTreeNode } from '~/types/index';
-import type { TreeTableColumn } from '~/components/TreeTable/index';
+import type { HierarchicalTreeNode } from '../../types/index';
+import type { TreeTableColumn } from '../TreeTable/index';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';

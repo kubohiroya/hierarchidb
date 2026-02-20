@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NodeAction } from '@hierarchidb/tree-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { Tree } from '@hierarchidb/tree-api';
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '../../../types/worker-api.ts';
 import type { Remote } from 'comlink';
-import { treeRouteIds } from '~/router/routes/tree/shared';
-import { usePluginDialogRoute } from '~/router/routes/tree/usePluginDialogRoute';
+import { treeRouteIds } from '../../routes/tree/shared.ts';
+import { usePluginDialogRoute } from '../../routes/tree/usePluginDialogRoute.ts';
 
 const mockNavigate = vi.fn();
 let mockLocation = { pathname: '/t/r/root', searchStr: '', hash: '' };

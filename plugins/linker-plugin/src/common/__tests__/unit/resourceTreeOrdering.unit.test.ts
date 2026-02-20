@@ -6,7 +6,7 @@ import {
   combineStylerStyleSpecs,
   getNonOverlappingBranchRoots,
   type TreeNodeLike,
-} from '~/common/resourceTreeOrdering';
+} from '../../resourceTreeOrdering';
 
 const createNodeMap = (nodes: TreeNodeLike[]): Map<string, TreeNodeLike> =>
   new Map(nodes.map((node) => [String(node.id), node]));

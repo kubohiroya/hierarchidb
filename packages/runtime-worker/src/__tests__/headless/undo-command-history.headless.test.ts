@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import { CoreDB } from '~/services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB';
 
 describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', () => {
   const rTree = 'r' as TreeId;

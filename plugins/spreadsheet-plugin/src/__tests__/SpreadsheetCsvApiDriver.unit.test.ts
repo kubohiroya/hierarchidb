@@ -13,9 +13,9 @@ let SpreadsheetTabularApiDriver: typeof import('../services/SpreadsheetTabularAp
 let SpreadsheetMetadataManager: typeof import('../services/SpreadsheetMetadataManager.js').SpreadsheetMetadataManager;
 
 beforeAll(async () => {
-  const driverModule = await import('~/services/SpreadsheetTabularApiDriver');
+  const driverModule = await import('../services/SpreadsheetTabularApiDriver');
   SpreadsheetTabularApiDriver = driverModule.SpreadsheetTabularApiDriver;
-  const metadataModule = await import('~/services/SpreadsheetMetadataManager');
+  const metadataModule = await import('../services/SpreadsheetMetadataManager');
   SpreadsheetMetadataManager = metadataModule.SpreadsheetMetadataManager;
 });
 

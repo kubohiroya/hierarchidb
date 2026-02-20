@@ -2,8 +2,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useCallback, useState } from 'react';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { LocationEntity } from '~/common/types/index';
-import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
+import type { LocationEntity } from '../../../../common/types/index';
+import { useIdeGsmImportOnEntry } from '../../useIdeGsmImportOnEntry';
 
 type ImportProgressCallback = (progress: {
   phase: string;

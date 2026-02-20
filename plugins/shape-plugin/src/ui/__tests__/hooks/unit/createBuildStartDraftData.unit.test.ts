@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createBuildStartDraftData } from '~/ui/components/build-progress/createBuildStartDraftData';
+import { createBuildStartDraftData } from '../../../components/build-progress/createBuildStartDraftData';
 
 describe('createBuildStartDraftData', () => {
   it('persists live selection when current draft does not have selection', () => {

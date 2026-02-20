@@ -13,10 +13,10 @@ describe('geosWorkerClient (Comlink worker)', () => {
   beforeAll(async () => {
     vi.unmock('comlink');
     vi.resetModules();
-    const clientModule = await import('~/geos/geosWorkerClient');
+    const clientModule = await import('../geosWorkerClient.ts');
     geosWorkerClient = clientModule.geosWorkerClient;
     setGeosWorkerEndpointFactoryForTests = clientModule.setGeosWorkerEndpointFactoryForTests;
-    const workerModule = await import('~/geos/geosWorker.entry');
+    const workerModule = await import('../geosWorker.entry');
     exposeGeosWorker = workerModule.exposeGeosWorker;
   });
 

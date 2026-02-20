@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { WorkerInitMessage } from '~/types';
-import { WorkerInitializationChannel } from '~/WorkerInitializationChannel';
+import type { WorkerInitMessage } from '../types';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
 
 type MessageListener = (this: Worker, ev: MessageEvent<WorkerInitMessage>) => unknown;
 

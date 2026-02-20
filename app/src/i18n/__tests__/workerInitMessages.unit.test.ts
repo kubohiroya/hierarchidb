@@ -3,7 +3,7 @@ import {
   getWorkerInitCompleteMessage,
   getWorkerInitFallbackMessage,
   getWorkerInitStartMessage,
-} from '~/i18n/workerInitMessages';
+} from '../workerInitMessages.ts';
 
 type MockI18n = {
   t: (key: string, options?: { defaultValue?: string }) => string;

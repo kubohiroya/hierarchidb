@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StylerMetadataManager } from '~/services/StylerMetadataManager';
+import { StylerMetadataManager } from '../../../services/StylerMetadataManager';
 
 const originalFetch = global.fetch;
 

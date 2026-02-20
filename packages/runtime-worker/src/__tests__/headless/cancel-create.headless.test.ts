@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CoreDB } from '~/services/CoreDB';
-import { discardTreeNodeDraft } from '~/services/draft/cleanupOperations';
-import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
+import { CoreDB } from '../../services/CoreDB';
+import { discardTreeNodeDraft } from '../../services/draft/cleanupOperations';
+import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService';
 
 describe('create dialog cancel discards draft nodes', () => {
   const treeId = 'r' as TreeId;
