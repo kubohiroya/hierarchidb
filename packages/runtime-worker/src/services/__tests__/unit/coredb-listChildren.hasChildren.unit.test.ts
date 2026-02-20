@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CoreDB } from '~/services/CoreDB';
+import { CoreDB } from '../../CoreDB';
 
 function legacyListChildrenProjection(children: TreeNode[]) {
   return children.map((node) => ({

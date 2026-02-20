@@ -5,7 +5,7 @@ import {
   buildTransformTaskCacheIdentity,
   buildVtTaskCacheIdentity,
   resolveTaskCacheIdentity,
-} from '~/services/vt/shapeTaskCacheIdentity';
+} from '../../services/vt/shapeTaskCacheIdentity';
 
 describe('shapeTaskCacheIdentity', () => {
   it('uses namespace policy to switch fetch key space', () => {

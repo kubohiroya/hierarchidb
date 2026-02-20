@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPluginIconColor, isFolderNodeType } from '~/utils/nodeTypeIconColor';
+import { getPluginIconColor, isFolderNodeType } from '../nodeTypeIconColor';
 
 describe('nodeTypeIconColor helpers', () => {
   it('returns manifest color for known plugin node type', () => {

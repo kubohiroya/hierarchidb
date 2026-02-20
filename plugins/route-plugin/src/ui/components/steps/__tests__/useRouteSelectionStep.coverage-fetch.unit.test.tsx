@@ -39,7 +39,7 @@ vi.mock('../../../common/i18n/index.js', () => ({
   }),
 }));
 
-import { useRouteSelectionStep } from '~/ui/components/steps/useRouteSelectionStep';
+import { useRouteSelectionStep } from '../useRouteSelectionStep';
 
 describe('useRouteSelectionStep IDE-GSM coverage resolution', () => {
   it('does not re-run coverage fetch for identical node/source on rerender', async () => {

@@ -5,8 +5,8 @@
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthUser } from '~/types/AuthUser';
-import { MultiAuthProvider, useMultiAuth } from '~/contexts/MultiAuthContext';
+import type { AuthUser } from '../../types/AuthUser';
+import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext';
 
 // Mock @provider-oauth/google
 const mockGoogleLogin = vi.fn();
@@ -21,7 +21,7 @@ vi.mock('@provider-oauth/google', () => ({
 }));
 
 // Mock environment variables
-vi.mock('~/config/env', () => ({
+vi.mock('../../config/env', () => ({
   VITE_GOOGLE_CLIENT_ID: 'test-google-client-id',
   VITE_OIDC_CLIENT_ID: 'test-oidc-client-id',
   VITE_MICROSOFT_CLIENT_ID: 'test-microsoft-client-id',
@@ -437,7 +437,7 @@ describe('MultiAuthProvider', () => {
 
     it('should handle missing client ID', () => {
       // Mock environment to return empty client ID
-      vi.doMock('~/config/env', () => ({
+      vi.doMock('../../config/env', () => ({
         VITE_MICROSOFT_CLIENT_ID: '',
       }));
 

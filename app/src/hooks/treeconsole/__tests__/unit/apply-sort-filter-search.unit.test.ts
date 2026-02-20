@@ -7,7 +7,7 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { describe, expect, it } from 'vitest';
-import { applySortFilterSearch } from '~/hooks/treeconsole/sortFilter';
+import { applySortFilterSearch } from '../../sortFilter.ts';
 
 const baseNode = (
   id: string,

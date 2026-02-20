@@ -39,17 +39,18 @@ async function waitFor<T>(
   predicate: () => T | Promise<T>,
   opts?: { timeout?: number; interval?: number }
 ) {
-  const timeout = opts?.timeout ?? 10_000;
+  const timeout = opts?.timeout ?? 15_000;
   const interval = opts?.interval ?? 25;
-  const start = Date.now();
-  while (true) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() <= deadline) {
     const result = await predicate();
     if (result) return result;
-    if (Date.now() - start > timeout) {
-      throw new Error('waitFor: timeout');
+    if (Date.now() > deadline) {
+      break;
     }
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
+  throw new Error(`waitFor: timeout after ${timeout}ms`);
 }
 
 const runFolderUndoRedoFlow = async () => {

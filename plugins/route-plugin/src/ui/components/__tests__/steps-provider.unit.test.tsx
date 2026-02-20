@@ -2,7 +2,7 @@ import type React from 'react';
 import { describe, expect, it } from 'vitest';
 import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import '~/ui/components/steps-provider';
+import '../steps-provider';
 
 type RouteStepData = Partial<RouteEntity>;
 

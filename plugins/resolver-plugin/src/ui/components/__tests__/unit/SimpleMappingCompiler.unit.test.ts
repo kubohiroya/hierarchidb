@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MappingCompiler } from '~/services/SimpleMappingCompiler.ts';
+import { MappingCompiler } from '../../../../services/SimpleMappingCompiler.ts';
 
 describe('SimpleMappingCompiler', () => {
   it('should handle basic transformations', () => {

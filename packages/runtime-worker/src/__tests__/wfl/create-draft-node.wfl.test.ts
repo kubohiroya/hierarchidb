@@ -5,8 +5,8 @@ import type { TreeNodeEvent } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
-import { exposeTestAPI } from '~/e2e/test-worker.entry';
+import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint';
+import { exposeTestAPI } from '../../e2e/test-worker.entry';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;

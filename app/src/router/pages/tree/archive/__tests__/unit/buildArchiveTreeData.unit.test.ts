@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { buildArchiveTreeData } from '~/router/pages/tree/archive/buildArchiveTreeData';
+import { buildArchiveTreeData } from '../../buildArchiveTreeData.ts';
 
 function createNode(
   id: string,

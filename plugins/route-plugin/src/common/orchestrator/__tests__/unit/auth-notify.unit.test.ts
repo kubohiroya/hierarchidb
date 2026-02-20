@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RouteSourceOrchestrator } from '~/common/orchestrator/__tests__/RouteSourceOrchestrator';
+import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator';
 import { FetchNetworkPort, registerPluginAuthNotifier } from '@hierarchidb/download';
-import type { RouteBuildSpec } from '~/common/orchestrator/__tests__/types';
+import type { RouteBuildSpec } from '../types';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {

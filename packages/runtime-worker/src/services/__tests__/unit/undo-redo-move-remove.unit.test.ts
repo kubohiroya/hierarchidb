@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CommandTestHarness } from '~/services/test-helpers/commandProcessorHarness';
-import { createCommandTestHarness, seedNode } from '~/services/test-helpers/commandProcessorHarness';
+import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness';
+import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness';
 
 describe('Undo/Redo for moveNodes and remove', () => {
   let harness: CommandTestHarness;

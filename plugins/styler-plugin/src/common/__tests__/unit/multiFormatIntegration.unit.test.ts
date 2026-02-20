@@ -6,8 +6,8 @@
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StylerMetadataManager } from '~/services/StylerMetadataManager';
-import { detectFileType } from '~/common/utils/fileProcessingUtils';
+import { StylerMetadataManager } from '../../../services/StylerMetadataManager';
+import { detectFileType } from '../../utils/fileProcessingUtils';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({

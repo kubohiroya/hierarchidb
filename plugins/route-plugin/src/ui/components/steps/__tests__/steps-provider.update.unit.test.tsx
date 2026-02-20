@@ -30,7 +30,7 @@ vi.mock('@hierarchidb/components', () => ({
   },
 }));
 
-import '~/ui/components/steps-provider';
+import '../../steps-provider';
 
 type RouteStepData = Partial<RouteEntity>;
 

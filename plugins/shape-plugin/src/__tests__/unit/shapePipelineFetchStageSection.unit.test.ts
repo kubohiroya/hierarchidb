@@ -2,10 +2,10 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName } from '~/common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '~/common/types/constants';
-import { runShapeFetchStageSection } from '~/services/vt/shapePipelineFetchStage';
-import * as shapeFetchStageModule from '~/services/vt/shapeFetchStage';
+import type { DataSourceName } from '../../common/types/index';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
+import { runShapeFetchStageSection } from '../../services/vt/shapePipelineFetchStage';
+import * as shapeFetchStageModule from '../../services/vt/shapeFetchStage';
 import {
   listTasksByStageAndStatus,
   putTasks,

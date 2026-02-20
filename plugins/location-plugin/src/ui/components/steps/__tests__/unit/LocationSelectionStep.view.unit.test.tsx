@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { LocationEntity } from '~/ui/components/types/index';
+import type { LocationEntity } from '../../../types/index';
 import type { Timestamp } from '@hierarchidb/core-types';
-import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionStep';
-import en from '~/ui/locales/en' with { type: 'json' };
+import { LocationSelectionStep } from '../../LocationSelectionStep';
+import en from '../../../../locales/en' with { type: 'json' };
 
 vi.mock('@hierarchidb/ui-country-select', () => ({
   useIsoCountries: () => ({

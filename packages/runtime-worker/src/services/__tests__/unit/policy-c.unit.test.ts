@@ -3,8 +3,8 @@ import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Subject } from 'rxjs';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import type { CoreDB } from '~/services/CoreDB';
+import { CommandProcessor } from '../../CommandProcessor';
+import type { CoreDB } from '../../CoreDB';
 
 // fulltext tables removed; stub without fulltext support
 const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) => `${parentId}::${nodeId}`;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHierarchiRouter, getBasePath, getRouterMode } from '~/router/index';
+import { createHierarchiRouter, getBasePath, getRouterMode } from '../../index.tsx';
 
 function createMockRoute() {
   return {

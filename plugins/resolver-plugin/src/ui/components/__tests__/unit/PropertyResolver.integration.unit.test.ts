@@ -2,7 +2,7 @@ import { vi, afterAll, afterEach, beforeEach, describe, expect, it } from 'vites
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { ResolverEntityService } from '~/worker/ResolverEntityService.ts';
+import { ResolverEntityService } from '../../../../worker/ResolverEntityService.ts';
 
 vi.mock('@hierarchidb/plugin-registry', () => ({
   pluginRegistry: {},

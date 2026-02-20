@@ -3,14 +3,14 @@ import { render, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
 import { readFile } from 'node:fs/promises';
 import type { BuildProgressEvent, BuildProgressPayload, BuildTaskSummary, BuildTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
-import type { BuildWorkerAPI } from '~/types/worker-api';
+import type { BuildWorkerAPI } from '../../types/worker-api.ts';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   type SelectedArrayByCountries,
 } from '@hierarchidb/shape-plugin';
-import { WorkerProvider } from '~/contexts/WorkerProvider';
+import { WorkerProvider } from '../WorkerProvider.tsx';
 
 // Run with: pnpm --filter @hierarchidb/app test -- --run src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx
 // Requires network access to GeoBoundaries.
@@ -25,297 +25,18 @@ vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock('~/worker-runtime/WorkerModuleLoader.ts', async () => {
-  const loader = await import('~/worker-runtime/workerApiClientLoader');
-  return {
-    ensureWorkerRuntime: async () => {
-      const { WorkerAPIClient } = await loader.loadWorkerAPIClientModule();
-      return WorkerAPIClient.getOrInit();
-    },
-    resetWorkerRuntime: () => {},
-  };
-});
+vi.mock(
+  '../../worker-runtime/WorkerModuleLoader.ts',
+  () => import('./__mocks__/worker-module-loader-mock.ts').then((module) => module.createWorkerModuleLoaderMock()),
+);
 
-vi.mock('~~/worker-runtime/client.ts', async () => {
-  const Comlink = await vi.importActual<typeof import('comlink')>('comlink');
-  const { WorkerService } = await import('@hierarchidb/runtime-worker');
-  type ShapeDownloadPayloads = Awaited<ReturnType<BuildWorkerAPI['generateShapeDownloadTaskPayloadsFromSelection']>>;
-  type ShapeBuildAPI = {
-    startBuildSession: (
-      nodeId: NodeId,
-      buildConfig: Record<string, unknown>,
-      processingConfig: Record<string, unknown>,
-      downloadTaskPayloads: unknown[],
-    ) => Promise<void>;
-    getBuildStatus: (nodeId: NodeId) => Promise<{ status: string; progress?: number }>;
-    invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
-    pauseBuildSession?: (nodeId: NodeId, reason?: string) => Promise<void>;
-    resumeBuildSession?: (nodeId: NodeId) => Promise<void>;
-    getBuildTasks: (nodeId: NodeId) => Promise<Array<{
-      taskId: string;
-      type?: string;
-      status?: string;
-      progress?: number;
-      message?: string;
-    }>>;
-    generateDownloadTaskPayloadsFromSelection: (
-      nodeId: NodeId,
-      dataSource: string,
-      selectedArrayByCountries: SelectedArrayByCountries
-    ) => Promise<ShapeDownloadPayloads>;
-    subscribeToProgress: (
-      nodeId: NodeId,
-      callback: (payload: BuildProgressEvent<BuildProgressPayload>) => void
-    ) => () => void;
-    subscribeToTasks?: (
-      nodeId: NodeId,
-      callback: (event: BuildTaskUpdateEvent) => void
-    ) => () => void;
-  };
-  const shapeWorker = await import('@hierarchidb/shape-plugin/worker') as unknown as {
-    shapeBuildAPI: ShapeBuildAPI;
-  };
-  const shapeBuildAPI = shapeWorker.shapeBuildAPI;
-
-  let workerClient: import('comlink').Remote<BuildWorkerAPI> | null = null;
-  let workerInitCompleted = false;
-  let rawWorkerInstance: { terminate: () => void } | null = null;
-
-  const resolveShapeDraftData = async (
-    nodeId: NodeId,
-  ): Promise<{ buildConfig: Record<string, unknown>; processingConfig: Record<string, unknown> }> => {
-    const services = await WorkerService.getSingleton([]);
-    const updater = services.getTreeNodeUpdaterAPI();
-    const node = await updater.getTreeNode(nodeId);
-    const payload = (node?.draftData ?? node?.data) as Record<string, unknown> | undefined;
-    if (!payload) {
-      throw new Error(`[test-worker] draft data missing for node ${String(nodeId)}`);
-    }
-    const buildConfig = payload.buildConfig as Record<string, unknown> | undefined;
-    if (!buildConfig) {
-      throw new Error(`[test-worker] buildConfig missing for node ${String(nodeId)}`);
-    }
-    const processingConfig = payload.processingConfig as Record<string, unknown> | undefined;
-    if (!processingConfig) {
-      throw new Error(`[test-worker] processingConfig missing for node ${String(nodeId)}`);
-    }
-    return { buildConfig, processingConfig };
-  };
-
-  const toBuildSessionStatus = (nodeId: NodeId, status: string, progress?: number) => ({
-    nodeId,
-    status: status as 'idle' | 'running' | 'paused' | 'completed' | 'failed',
-    progress: {
-      total: 0,
-      completed: 0,
-      failed: 0,
-      skipped: 0,
-      percentage: progress ?? 0,
-    },
-    lastActivity: Date.now(),
-  });
-
-  const toBuildTaskSummary = (task: {
-    taskId: string;
-    type?: string;
-    status?: string;
-    progress?: number;
-    message?: string;
-  }): BuildTaskSummary => {
-    const status = (task.status ?? 'queued').toLowerCase();
-    const phase: ProgressPhase =
-      status === 'idle'
-        ? 'queued'
-        : status === 'running' ||
-            status === 'queued' ||
-            status === 'completed' ||
-            status === 'failed' ||
-            status === 'paused'
-          ? status
-          : 'queued';
-    return {
-      taskId: task.taskId,
-      stage: task.type ?? 'unknown',
-      status: phase,
-      progress: task.progress ?? 0,
-      message: task.message,
-    };
-  };
-
-  const createWorkerApi = async (): Promise<BuildWorkerAPI> => {
-    const services = await WorkerService.getSingleton([]);
-    const startBuildSessionImpl = async (
-      nodeType: NodeType,
-      nodeId: NodeId,
-      downloadTaskPayloads: ShapeDownloadPayloads | null | undefined,
-    ) => {
-      if (nodeType !== ('shape' as NodeType)) {
-        throw new Error(`[test-worker] unsupported nodeType ${String(nodeType)}`);
-      }
-      const draftConfig = await resolveShapeDraftData(nodeId);
-      await shapeBuildAPI.startBuildSession(
-        nodeId,
-        draftConfig.buildConfig,
-        draftConfig.processingConfig,
-        downloadTaskPayloads ?? [],
-      );
-      const batchStatus = await shapeBuildAPI.getBuildStatus(nodeId);
-      return toBuildSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
-    };
-    const getBuildSessionStatusImpl = async (nodeType: NodeType, nodeId: NodeId) => {
-      if (nodeType !== ('shape' as NodeType)) {
-        return toBuildSessionStatus(nodeId, 'idle');
-      }
-      const batchStatus = await shapeBuildAPI.getBuildStatus(nodeId);
-      return toBuildSessionStatus(nodeId, batchStatus.status, batchStatus.progress);
-    };
-
-    const cancelQueuedBuildSessionImpl = async (_nodeType: NodeType, nodeId: NodeId, reason?: string) => {
-      if (shapeBuildAPI.invokeBuildCommand) {
-        await shapeBuildAPI.invokeBuildCommand('session/cancel-queued', { nodeId, reason });
-        return;
-      }
-      await shapeBuildAPI.pauseBuildSession?.(nodeId, reason);
-    };
-    const pauseBuildSessionImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
-      if (shapeBuildAPI.invokeBuildCommand) {
-        await shapeBuildAPI.invokeBuildCommand('session/pause', { nodeId });
-        return;
-      }
-      if (shapeBuildAPI.pauseBuildSession) {
-        await shapeBuildAPI.pauseBuildSession(nodeId);
-        return;
-      }
-    };
-    const resumeBuildSessionImpl = async (
-      _nodeType: NodeType,
-      nodeId: NodeId
-    ) => {
-      if (shapeBuildAPI.invokeBuildCommand) {
-        await shapeBuildAPI.invokeBuildCommand('session/resume', { nodeId });
-        return;
-      }
-      if (shapeBuildAPI.resumeBuildSession) {
-        await shapeBuildAPI.resumeBuildSession(nodeId);
-        return;
-      }
-    };
-    const getBuildTasksImpl = async (_nodeType: NodeType, nodeId: NodeId) => {
-      const tasks = await shapeBuildAPI.getBuildTasks(nodeId);
-      return tasks.map(toBuildTaskSummary);
-    };
-    const subscribeBuildTasksImpl = async (
-      _nodeType: NodeType,
-      nodeId: NodeId,
-      callback: (event: BuildTaskUpdateEvent) => void
-    ) => {
-      if (shapeBuildAPI.subscribeToTasks) {
-        return shapeBuildAPI.subscribeToTasks(nodeId, callback);
-      }
-      return () => {};
-    };
-    const subscribeBuildProgressImpl = async (
-      _nodeType: NodeType,
-      nodeId: NodeId,
-      callback: (payload: BuildProgressEvent<BuildProgressPayload>) => void
-    ) => {
-      const unsubscribe = shapeBuildAPI.subscribeToProgress(nodeId, callback);
-      return () => unsubscribe();
-    };
-    return {
-      ping: async () => ({ response: 'pong', timestamp: Date.now() }),
-      initialize: async () => {},
-      shutdown: async () => services.shutdown(),
-      getSystemHealth: async () => {
-        const health = await services.getSystemHealth();
-        return {
-          ...health,
-          databases: {
-            coreDB: health.databases?.coreDB ?? false,
-            ephemeralDB: false,
-          },
-        };
-      },
-      getQueryAPI: async () => Comlink.proxy(services.getQueryAPI()),
-      getMutationAPI: async () => Comlink.proxy(services.getMutationAPI()),
-      getSubscriptionAPI: async () => Comlink.proxy(services.getSubscriptionAPI()),
-      getTreeNodeUpdaterAPI: async () => Comlink.proxy(services.getTreeNodeUpdaterAPI()),
-      getTreeTableExpandedAPI: async () => Comlink.proxy(services.getTreeTableExpandedAPI()),
-      getImportExportAPI: async () => Comlink.proxy(services.getImportExportAPI()),
-      getTagAPI: async () => Comlink.proxy(services.getTagAPI()),
-      getStyleQueryAPI: async () => Comlink.proxy(services.getStyleQueryAPI()),
-      getStyleMutationAPI: async () => Comlink.proxy(services.getStyleMutationAPI()),
-      getShapeQueryAPI: async () => Comlink.proxy(services.getShapeQueryAPI()),
-      getShapeMutationAPI: async () => Comlink.proxy(services.getShapeMutationAPI()),
-      getLocationQueryAPI: async () => Comlink.proxy(services.getLocationQueryAPI()),
-      getLocationMutationAPI: async () => Comlink.proxy(services.getLocationMutationAPI()),
-      getRouteQueryAPI: async () => Comlink.proxy(services.getRouteQueryAPI()),
-      getRouteMutationAPI: async () => Comlink.proxy(services.getRouteMutationAPI()),
-      getPluginLifecycleAPI: async () => Comlink.proxy(services.getPluginLifecycleAPI()),
-      getCommandProcessor: async () => (
-        Comlink.proxy(services.getCommandProcessor()) as unknown as Awaited<ReturnType<BuildWorkerAPI['getCommandProcessor']>>
-      ),
-      startBuildSession: async (
-        nodeType: NodeType,
-        nodeId: NodeId,
-        downloadTaskPayloads: ShapeDownloadPayloads | null | undefined
-      ) => startBuildSessionImpl(nodeType, nodeId, downloadTaskPayloads),
-      getBuildSessionStatus: getBuildSessionStatusImpl,
-      pauseBuildSession: pauseBuildSessionImpl,
-      resumeBuildSession: resumeBuildSessionImpl,
-      getBuildTasks: getBuildTasksImpl,
-      cancelQueuedBuildSession: cancelQueuedBuildSessionImpl,
-      listBuildSessionRecordsByStatus: async () => [],
-      subscribeBuildSessionRecordsByStatus: async (
-        _nodeType: Parameters<BuildWorkerAPI['subscribeBuildSessionRecordsByStatus']>[0],
-        _statuses: Parameters<BuildWorkerAPI['subscribeBuildSessionRecordsByStatus']>[1],
-        _callback: Parameters<BuildWorkerAPI['subscribeBuildSessionRecordsByStatus']>[2]
-      ) => () => {},
-      getBuildSessionRuntime: async () => null,
-      listBuildSessionRuntimes: async () => [],
-      subscribeBuildSessionRuntimes: async () => () => {},
-      deleteBuildSession: async () => {},
-      subscribeBuildTasks: subscribeBuildTasksImpl,
-      generateShapeDownloadTaskPayloadsFromSelection: async (
-        nodeId: NodeId,
-        dataSource: string,
-        selectedArrayByCountries: SelectedArrayByCountries
-      ) =>
-        shapeBuildAPI.generateDownloadTaskPayloadsFromSelection(
-          nodeId,
-          dataSource,
-          selectedArrayByCountries
-        ),
-      subscribeBuildProgress: subscribeBuildProgressImpl,
-      subscribeHeapPressure: async () => () => {},
-      setUiStorageBridge: async () => {},
-      setAuthToken: async () => {},
-      setCorsProxyBaseURL: async () => {},
-    };
-  };
-
-  const createWorkerClient = async (): Promise<import('comlink').Remote<BuildWorkerAPI>> => {
-    const channel = new MessageChannel();
-    channel.port1.start();
-    channel.port2.start();
-    rawWorkerInstance = { terminate: () => channel.port2.close() };
-    const api = await createWorkerApi();
-    Comlink.expose(api, channel.port2);
-    workerInitCompleted = true;
-    return Comlink.wrap<BuildWorkerAPI>(channel.port1);
-  };
-
-  return {
-    getWorkerClient: async () => {
-      if (!workerClient) {
-        workerClient = await createWorkerClient();
-      }
-      return workerClient;
-    },
-    getRawWorkerInstance: () => rawWorkerInstance,
-    isWorkerInitCompleted: () => workerInitCompleted,
-  };
-});
+vi.mock(
+  '../../worker-runtime/client.ts',
+  () =>
+    import('./__mocks__/shape-workerclient-mock.ts').then((module) =>
+      module.createWorkerClientMockModule()
+    ),
+);
 
 describe('Shape WorkerProvider full flow', () => {
   const originalAbortSignal = globalThis.AbortSignal;

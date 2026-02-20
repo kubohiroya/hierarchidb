@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DualKeyMap } from '~/dualKeyMap';
+import { DualKeyMap } from '../dualKeyMap';
 
 type Primary = string;
 type Secondary = string;

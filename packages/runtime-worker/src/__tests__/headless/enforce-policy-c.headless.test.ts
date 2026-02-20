@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import { CoreDB } from '~/services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB';
 
 const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) => `${parentId}::${nodeId}`;
 

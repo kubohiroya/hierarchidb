@@ -5,10 +5,10 @@
   */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DataSourceStrategyFactory } from '~/services/datasources/__tests__/DataSourceStrategyFactory';
-import type { FetchOptions } from '~/services/datasources/__tests__/DataSourceStrategy';
-import { GeoBoundariesStrategy } from '~/services/datasources/__tests__/GeoBoundariesStrategy';
-import { metadataLoader } from '~/services/datasources/metadata/MetadataLoader';
+import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory';
+import type { FetchOptions } from '../DataSourceStrategy';
+import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
+import { metadataLoader } from '../../metadata/MetadataLoader';
 
 describe('Data Source Integration Tests', () => {
   let factory: DataSourceStrategyFactory;

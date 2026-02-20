@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { useTreeTableSelectionOverlay } from '~/components/hooks/useTreeTableSelectionOverlay';
-import type { TreeTableController } from '~/types';
+import { useTreeTableSelectionOverlay } from '../components/hooks/useTreeTableSelectionOverlay';
+import type { TreeTableController } from '../types';
 
 describe('useTreeTableSelectionOverlay', () => {
   it('invokes controller to clear selections when selectAll is toggled off', () => {

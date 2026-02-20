@@ -7,7 +7,7 @@ import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
   listRawDataDataSourceMetadataForNode,
   storeRawDataDataSourceBufferForNode,
-} from '~/services/utils/chunkStore';
+} from '../../../services/utils/chunkStore';
 
 const textEncoder = new TextEncoder();
 

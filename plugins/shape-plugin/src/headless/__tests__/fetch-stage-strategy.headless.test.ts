@@ -1,18 +1,23 @@
 // @vitest-environment node
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildProcessConfig } from '~/services/batch/types';
-import type { FetchTaskPayload } from '~/common/types/index';
-import { DEFAULT_BUILD_CONFIG } from '~/common/types/index';
+import type { BuildProcessConfig } from '../../services/batch/types';
+import type { FetchTaskPayload } from '../../common/types/index';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/index';
 //import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
-import { encodeFlatGeoJson } from '~/services/batch/strategies/flatgeobuf';
-import { GadmFetchStageStrategy } from '~/services/batch/strategies/GadmFetchStageStrategy';
-import { GeoBoundariesFetchStageStrategy } from '~/services/batch/strategies/GeoBoundariesFetchStageStrategy';
-import { NaturalEarthDownloadStrategy } from '~/services/batch/strategies/NaturalEarthDownloadStrategy';
+import { encodeFlatGeoJson } from '../../services/batch/strategies/flatgeobuf';
+import { GadmFetchStageStrategy } from '../../services/batch/strategies/GadmFetchStageStrategy';
+import { GeoBoundariesFetchStageStrategy } from '../../services/batch/strategies/GeoBoundariesFetchStageStrategy';
+import { NaturalEarthDownloadStrategy } from '../../services/batch/strategies/NaturalEarthDownloadStrategy';
 import type { Feature, FeatureCollection } from 'geojson';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
-import { buildRawDataDataSourceCacheKey } from '~/services/utils/chunkStore';
+import { metadataLoader } from '../../services/metadata/MetadataLoader';
+import {
+  buildRawDataDataSourceCacheKey,
+  deleteRawDataDataSourceBuffersForNode,
+  storeRawDataDataSourceBufferForNode,
+} from '../../services/utils/chunkStore';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
@@ -50,10 +55,13 @@ describe('Fetch stage strategies', () => {
 
   beforeEach(async () => {
     await ephemeralDB.clearAll();
+    await deleteRawDataDataSourceBuffersForNode(nodeId);
+    vi.restoreAllMocks();
   });
 
   afterEach(async () => {
     await ephemeralDB.clearAll();
+    await deleteRawDataDataSourceBuffersForNode(nodeId);
   });
 
   it('GADM strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
@@ -138,7 +146,7 @@ describe('Fetch stage strategies', () => {
     );
   });
 
-  it.skip('NaturalEarth strategy groups fetch tasks by level and splits outputs by country', async () => {
+  it('NaturalEarth strategy groups fetch tasks by level and splits outputs by country', async () => {
     const strategy = new NaturalEarthDownloadStrategy();
     const fetchTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 0, dataSource: 'naturalearth' },
@@ -160,28 +168,45 @@ describe('Fetch stage strategies', () => {
     ] satisfies Feature[];
     const collection = { type: 'FeatureCollection', features } satisfies FeatureCollection;
     const encoded = await encodeFlatGeoJson(collection);
-    const bufferId0 = `${nodeId}-download-0`;
-    const bufferId1 = `${nodeId}-download-1`;
-    await ephemeralDB.fetchCache.put({
-      id: bufferId0,
-      nodeId,
-      data: encoded,
-      featureCount: features.length,
-      bbox: [0, 0, 1, 1],
-      downloadTime: Date.now(),
-      size: encoded.byteLength,
-      timestamp: Date.now(),
+    const [taskAdm0, taskAdm1] = tasks;
+    const sourceKeyAdm0 = buildRawDataDataSourceCacheKey({
+      dataSource: 'naturalearth',
+      adminLevel: taskAdm0?.adminLevel ?? 0,
+      url: taskAdm0?.url ?? '',
     });
-    ephemeralDB.fetchCache.put({
-      id: bufferId1,
-      nodeId,
-      data: encoded,
-      featureCount: features.length,
-      bbox: [0, 0, 1, 1],
-      downloadTime: Date.now(),
-      size: encoded.byteLength,
-      timestamp: Date.now(),
+    const sourceKeyAdm1 = buildRawDataDataSourceCacheKey({
+      dataSource: 'naturalearth',
+      adminLevel: taskAdm1?.adminLevel ?? 1,
+      url: taskAdm1?.url ?? '',
     });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId,
+      cacheKey: sourceKeyAdm0,
+      buffer: encoded,
+    });
+    await storeRawDataDataSourceBufferForNode({
+      nodeId,
+      cacheKey: sourceKeyAdm1,
+      buffer: encoded,
+    });
+    const getCountriesMetadataSpy = vi.spyOn(metadataLoader, 'getCountriesMetadata').mockResolvedValue([
+      {
+        countryCode: 'JP',
+        countryName: 'Japan',
+        continent: 'Asia',
+        availableAdminLevels: [0, 1],
+        iso2: 'JP',
+        iso3: 'JPN',
+      },
+      {
+        countryCode: 'ID',
+        countryName: 'Indonesia',
+        continent: 'Asia',
+        availableAdminLevels: [0, 1],
+        iso2: 'ID',
+        iso3: 'IDN',
+      },
+    ]);
 
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
@@ -193,9 +218,49 @@ describe('Fetch stage strategies', () => {
     });
     expect(postprocess.outputs.length).toBeGreaterThanOrEqual(4);
     const outputIds = new Set(postprocess.outputs.map((output) => output.inputBufferId));
-    expect(outputIds.has(`${nodeId}-download-jp-adm0`)).toBe(true);
-    expect(outputIds.has(`${nodeId}-download-id-adm0`)).toBe(true);
-    expect(outputIds.has(`${nodeId}-download-jp-adm1`)).toBe(true);
-    expect(outputIds.has(`${nodeId}-download-id-adm1`)).toBe(true);
+    const [taskAdm0ForVerify, taskAdm1ForVerify] = tasks;
+    expect(taskAdm0ForVerify).toBeDefined();
+    expect(taskAdm1ForVerify).toBeDefined();
+    expect(getCountriesMetadataSpy).toHaveBeenCalledTimes(1);
+    expect(
+      outputIds.has(
+        buildRawDataDataSourceCacheKey({
+          dataSource: 'naturalearth',
+          countryCode: 'JP',
+          adminLevel: 0,
+          url: taskAdm0ForVerify?.url,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      outputIds.has(
+        buildRawDataDataSourceCacheKey({
+          dataSource: 'naturalearth',
+          countryCode: 'ID',
+          adminLevel: 0,
+          url: taskAdm0ForVerify?.url,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      outputIds.has(
+        buildRawDataDataSourceCacheKey({
+          dataSource: 'naturalearth',
+          countryCode: 'JP',
+          adminLevel: 1,
+          url: taskAdm1ForVerify?.url,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      outputIds.has(
+        buildRawDataDataSourceCacheKey({
+          dataSource: 'naturalearth',
+          countryCode: 'ID',
+          adminLevel: 1,
+          url: taskAdm1ForVerify?.url,
+        }),
+      ),
+    ).toBe(true);
   }, 30_000);
 });

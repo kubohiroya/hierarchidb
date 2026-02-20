@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_VIEW_STATE, formatZxyParam, mapLoader, parseZxyParam } from '~/router/loaders/mapLoader';
+import { DEFAULT_VIEW_STATE, formatZxyParam, mapLoader, parseZxyParam } from '../../mapLoader.ts';
 
 describe('parseZxyParam', () => {
   it('should return null for null input', () => {

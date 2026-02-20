@@ -4,14 +4,14 @@
 
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeProcessingConfig } from '../../../common/types/index';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   mergeBuildConfig,
   mergeProcessingConfig,
-} from '~/common/types/index';
-import { shapeBuildAPI } from '~/worker/api';
+} from '../../../common/types/index';
+import { shapeBuildAPI } from '../../api';
 
 const createBuildConfig = (
   overrides: Partial<ShapeBuildConfig> = {},

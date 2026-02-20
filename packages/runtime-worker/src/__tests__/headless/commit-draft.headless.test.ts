@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, PeerEntity, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import { CoreDB } from '~/services/CoreDB';
-import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
+import { CommandProcessor } from '../../services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB';
+import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService';
 import {
   assertCommitConflict,
   assertCommitNameConflict,
   assertCommitOk,
-} from '~/test-utils/assertions';
+} from '../../test-utils/assertions';
 
 describe('Draft commit E2E (holder-less)', () => {
   let core: CoreDB;

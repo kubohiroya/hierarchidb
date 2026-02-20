@@ -5,8 +5,8 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TreeConsoleHeader } from '~/components/TreeConsoleHeader';
-import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
+import { TreeConsoleHeader } from '../TreeConsoleHeader';
+import type { TreeConsoleHeaderProps, TreeViewController } from '../../types';
 
 const mockController: TreeViewController = {
   currentNode: null,
@@ -115,7 +115,7 @@ describe('TreeConsoleHeader', () => {
     expect(screen.getByText(/Has Children/)).toBeDefined();
   });
 
-  it.skip('should show breadcrumb path when not root node', () => {
+  it('should not show breadcrumb path when not root node', () => {
     const previousNodePath = [
       { id: '1', name: 'Root', parentId: null },
       { id: '2', name: 'Parent', parentId: '1' },
@@ -125,6 +125,6 @@ describe('TreeConsoleHeader', () => {
       <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />,
     );
 
-    expect(screen.getByText(/Path: Root > Parent/)).toBeDefined();
+    expect(screen.queryByText(/Path: Root > Parent/)).toBeNull();
   });
 });

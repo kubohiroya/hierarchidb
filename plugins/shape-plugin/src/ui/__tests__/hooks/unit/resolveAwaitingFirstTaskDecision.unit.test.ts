@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAwaitingFirstTaskDecision } from '~/ui/components/build-progress/resolveAwaitingFirstTaskDecision';
+import { resolveAwaitingFirstTaskDecision } from '../../../components/build-progress/resolveAwaitingFirstTaskDecision';
 
 describe('resolveAwaitingFirstTaskDecision', () => {
   it('returns success with task execution start when started tasks exist', () => {

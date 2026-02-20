@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@hierarchidb/tree-api';
 
-import { buildVisibleNodes } from '~/utils/visible-nodes';
+import { buildVisibleNodes } from '../utils/visible-nodes';
 
 const makeNode = (id: string, parentId: string | null, overrides: Partial<TreeNode> = {}): TreeNode => {
   const parentKey = parentId ?? '';

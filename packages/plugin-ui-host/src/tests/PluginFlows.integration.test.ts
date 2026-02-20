@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
-import { WorkerAPIMock } from '~/__tests__/plugin-dialog-mocks';
+import { WorkerAPIMock } from '../__tests__/plugin-dialog-mocks';
 
 type DialogAPI = ReturnType<WorkerAPIMock['getPluginDialogAPI']>;
 

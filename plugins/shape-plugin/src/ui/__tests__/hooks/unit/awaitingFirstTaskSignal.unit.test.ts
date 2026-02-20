@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/awaitingFirstTaskSignal';
+import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal';
 
 describe('hasAwaitingFirstTaskSignal', () => {
   it('returns true when started task exists', () => {

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { ImportData } from '@hierarchidb/import-export-api';
-import type { ImportExportDBPort } from '~/ports';
+import type { ImportExportDBPort } from '../ports';
 
 class InMemoryImportExportPort implements ImportExportDBPort {
   private nodes = new Map<NodeId, TreeNode>();
@@ -100,7 +100,7 @@ describe('Import Template - depth assignment', () => {
     const payloadNodes = await loadPopulationTemplate();
     const port = new InMemoryImportExportPort('root' as NodeId, 0);
 
-    const { ImportExportService } = await import('~/ImportExportService');
+    const { ImportExportService } = await import('../ImportExportService');
     const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
 
     const result = await svc.importNodes({
@@ -151,7 +151,7 @@ describe('Import Template - name conflicts', () => {
       ],
     };
 
-    const { ImportExportService } = await import('~/ImportExportService');
+    const { ImportExportService } = await import('../ImportExportService');
     const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
 
     const result = await svc.importNodes({

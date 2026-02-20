@@ -5,10 +5,10 @@
 
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
-import { SPREADSHEET_PLUGIN_ID } from '@hierarchidb/spreadsheet-plugin/common/constants.js';
+import { SPREADSHEET_PLUGIN_ID } from '@hierarchidb/spreadsheet-plugin';
 import type { TabularColumnMapping, TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StylerMetadataManager } from '~/services/StylerMetadataManager';
+import { StylerMetadataManager } from '../../../../services/StylerMetadataManager';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({

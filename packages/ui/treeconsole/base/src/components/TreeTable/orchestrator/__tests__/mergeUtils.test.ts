@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
-import { coalesceBatches } from '~/components/TreeTable/orchestrator/mergeUtils';
+import type { SubTreeChanges } from '../../state/features/subscription.atoms';
+import { coalesceBatches } from '../mergeUtils';
 
 describe('coalesceBatches', () => {
   it('coalesces added/updated/removed/moved with last-write-wins', () => {

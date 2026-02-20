@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { RouteBuildLiveProgress } from '~/ui/components/__tests__/RouteBuildLiveProgress';
-import { RouteBuildSummary } from '~/ui/components/__tests__/RouteBuildSummary';
+import { RouteBuildLiveProgress } from '../RouteBuildLiveProgress';
+import { RouteBuildSummary } from '../RouteBuildSummary';
 
 const mockUseRouteBuildProgress = vi.fn();
 
