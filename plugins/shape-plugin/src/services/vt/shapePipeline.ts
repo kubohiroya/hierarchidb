@@ -8,6 +8,9 @@ import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import {
+  runWithStageCheckpoint,
+} from '@hierarchidb/batch-runtime-services';
+import {
   buildBands,
   buildContinentLookup,
   buildCountryLookup,
@@ -370,47 +373,55 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       stageHeartbeatAt: Date.now(),
     }).catch(() => {});
   };
-  const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => {
-    const startedAt = Date.now();
-    markPipelineCheckpoint(stage, 'start');
-    console.warn('[ShapePipeline][Checkpoint] start', JSON.stringify({
-      nodeId: params.nodeId,
-      runId: params.pipelineRunId ?? null,
-      stage,
-      startedAt,
-    }));
-    try {
-      const result = await action();
-      const finishedAt = Date.now();
-      markPipelineCheckpoint(stage, 'success');
-      console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-        stage,
-        outcome: 'success',
-        startedAt,
-        finishedAt,
-        elapsedMs: finishedAt - startedAt,
-      }));
-      return result;
-    } catch (error) {
-      const finishedAt = Date.now();
-      markPipelineCheckpoint(stage, 'error');
-      console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
-        nodeId: params.nodeId,
-        runId: params.pipelineRunId ?? null,
-        stage,
-        outcome: 'error',
-        startedAt,
-        finishedAt,
-        elapsedMs: finishedAt - startedAt,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        errorName: error instanceof Error ? error.name : undefined,
-        errorStack: error instanceof Error ? error.stack : undefined,
-      }));
-      throw error;
-    }
-  };
+
+  const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => runWithStageCheckpoint({
+    nodeId: params.nodeId,
+    stage,
+    action,
+    runId: params.pipelineRunId,
+    writeHeartbeat: async (checkpointStage, _phase) => {
+      markPipelineCheckpoint(checkpointStage, _phase);
+      return undefined;
+    },
+    logger: {
+      onStart: ({ stage, startedAt, memory }) => {
+        console.warn('[ShapePipeline][Checkpoint] start', JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          stage,
+          startedAt,
+          memory,
+        }));
+      },
+      onSuccess: ({ stage, startedAt, elapsedMs, memory }) => {
+        const finishedAt = Date.now();
+        console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          stage,
+          outcome: 'success',
+          startedAt,
+          finishedAt,
+          elapsedMs,
+          memory,
+        }));
+      },
+      onError: ({ stage, startedAt, elapsedMs, errorMessage, memory }) => {
+        const finishedAt = Date.now();
+        console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          stage,
+          outcome: 'error',
+          startedAt,
+          finishedAt,
+          elapsedMs,
+          errorMessage,
+          memory,
+        }));
+      },
+    },
+  });
 
   await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
 

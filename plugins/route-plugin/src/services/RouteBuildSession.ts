@@ -1,22 +1,23 @@
 import { AbstractBuildSession } from '@hierarchidb/batch-runtime-services';
-import type { BuildProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent, TaskStatus } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { TaskQueueRecord } from '@hierarchidb/batch-api';
-import { updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { runStageTasks } from '@hierarchidb/vt-orchestrator';
+import type { TaskStage } from '@hierarchidb/batch-api';
 
-export type RouteBuildTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type RouteBuildTaskType = 'location_resolution' | 'route_generation' | 'validation' | 'optimization';
+export type RouteBuildTaskStage = 'location-resolution' | 'route-generation' | 'validation' | 'optimization';
 
 export type RouteBuildTask = {
   taskId: string;
   treeNodeId: NodeId;
   nodeId: NodeId;
   taskType: RouteBuildTaskType;
-  stage: string;
-  status: RouteBuildTaskStatus;
+  stage: RouteBuildTaskStage;
+  status: TaskStatus;
   index: number;
   routeData?: {
     startLocationId?: NodeId;
@@ -29,15 +30,13 @@ export type RouteBuildTask = {
   error?: string;
 };
 
-export type RouteBuildSessionDeps = {
-  generator?: { generate: (points: [number, number][], config: RouteGenerationConfig) => Promise<unknown> };
-  taskQueue?: VtTaskQueueDb;
+export type RouteBuildTaskQueueInput = {
+  taskType: RouteBuildTaskType;
+  routeData?: RouteBuildTask['routeData'];
 };
 
-type LaneGate = {
-  limit: number;
-  active: number;
-  queue: Array<() => void>;
+export type RouteBuildSessionDeps = {
+  generator?: { generate: (points: [number, number][], config: RouteGenerationConfig) => Promise<unknown> };
 };
 
 const DEFAULT_LANE_CAPS: Record<string, number> = {
@@ -50,60 +49,127 @@ const DEFAULT_LANE_CAPS: Record<string, number> = {
 
 export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   private readonly tasks: RouteBuildTask[];
+  private readonly tasksById: Map<string, RouteBuildTask>;
   private readonly generator: RouteBuildSessionDeps['generator'];
-  private readonly taskQueue?: VtTaskQueueDb;
 
   constructor(nodeId: NodeId, config: RouteBuildConfig, tasks: RouteBuildTask[], deps?: RouteBuildSessionDeps) {
     super(nodeId, config);
     this.tasks = tasks;
+    this.tasksById = new Map(tasks.map((task) => [task.taskId, task]));
     this.generator = deps?.generator ?? new RouteGenerator();
-    this.taskQueue = deps?.taskQueue;
   }
 
   protected async processBatch(signal: AbortSignal): Promise<void> {
     if (signal.aborted) throw abortError('Route build aborted');
 
     const total = this.tasks.length;
-    let completed = 0;
-    let failed = 0;
+    let { completed, failed } = this.countTaskResults();
     this.updateProgress({ total, completed, failed }, 'idle');
 
-    const locationTasks = this.tasks.filter((task) => task.taskType === 'location_resolution');
-    const routeTasks = this.tasks.filter((task) => task.taskType === 'route_generation');
-    const validationTasks = this.tasks.filter((task) => task.taskType === 'validation');
-    const optimizationTasks = this.tasks.filter((task) => task.taskType === 'optimization');
+    const resolveTaskFilter = (taskType: RouteBuildTaskType) =>
+      (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.taskType === taskType;
 
-    for (const task of locationTasks) {
-      await this.runTask(task, signal, () => Promise.resolve());
-      ({ completed, failed } = this.bumpCounts(task, completed, failed));
-      this.updateProgress({ total, completed, failed }, task.stage);
-    }
+    await runStageTasks<RouteBuildTaskQueueInput>({
+      nodeId: this.nodeId,
+      stage: 'fetch',
+      taskFilter: resolveTaskFilter('location_resolution'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleNoopRouteTask(task, 'location_resolution', 'location-resolution'),
+      failureHandling: 'continue',
+    } as {
+      nodeId: TaskQueueRecord['nodeId'];
+      stage: TaskStage;
+      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => Promise<{ status: 'completed'; progress: number }>;
+      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
+      maxConcurrent?: number;
+      failureHandling?: 'continue' | 'stop' | 'skip';
+      lanePolicy?: {
+        enabled: boolean;
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => string;
+        maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<RouteBuildTaskQueueInput>) => number;
+      };
+    });
+    ({ completed, failed } = this.countTaskResults());
+    this.updateProgress({ total, completed, failed }, 'location-resolution');
 
-    if (routeTasks.length > 0) {
-      const parallel = Boolean(this.config.routeGeneration?.parallel);
-      const maxConcurrent = Math.max(1, this.config.routeGeneration?.maxConcurrent ?? 1);
-      const globalGate = createGate(parallel ? maxConcurrent : 1);
-      const laneGates = new Map<string, LaneGate>();
+    const globalMaxConcurrent = Math.max(1, this.config.routeGeneration?.maxConcurrent ?? 1);
+    await runStageTasks<RouteBuildTaskQueueInput>({
+      nodeId: this.nodeId,
+      stage: 'transform',
+      taskFilter: resolveTaskFilter('route_generation'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>, _signal: AbortSignal) =>
+        this.handleRouteGenerationTask(task, signal),
+      maxConcurrent: this.config.routeGeneration?.parallel ? globalMaxConcurrent : 1,
+      failureHandling: 'continue',
+      lanePolicy: {
+        enabled: true,
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.resolveRouteLane(task),
+        maxConcurrentForLane: (lane: string) => {
+          const override = this.config.laneCaps?.[lane as RouteGenerationMethod];
+          return override ?? DEFAULT_LANE_CAPS[lane] ?? 1;
+        },
+      },
+    } as {
+      nodeId: TaskQueueRecord['nodeId'];
+      stage: TaskStage;
+      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>, signal?: AbortSignal) => Promise<{ status: 'completed'; progress: number }>;
+      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
+      maxConcurrent?: number;
+      failureHandling?: 'continue' | 'stop' | 'skip';
+      lanePolicy?: {
+        enabled: boolean;
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => string;
+        maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<RouteBuildTaskQueueInput>) => number;
+      };
+    });
+    ({ completed, failed } = this.countTaskResults());
+    this.updateProgress({ total, completed, failed }, 'route-generation');
 
-      const runners = routeTasks.map((task) => this.runWithGates(task, signal, globalGate, laneGates)
-        .then(() => {
-          ({ completed, failed } = this.bumpCounts(task, completed, failed));
-          this.updateProgress({ total, completed, failed }, task.stage);
-        }));
-      await Promise.all(runners);
-    }
+    await runStageTasks<RouteBuildTaskQueueInput>({
+      nodeId: this.nodeId,
+      stage: 'transform',
+      taskFilter: resolveTaskFilter('validation'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleNoopRouteTask(task, 'validation', 'validation'),
+      failureHandling: 'continue',
+    } as {
+      nodeId: TaskQueueRecord['nodeId'];
+      stage: TaskStage;
+      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => Promise<{ status: 'completed'; progress: number }>;
+      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
+      maxConcurrent?: number;
+      failureHandling?: 'continue' | 'stop' | 'skip';
+      lanePolicy?: {
+        enabled: boolean;
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => string;
+        maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<RouteBuildTaskQueueInput>) => number;
+      };
+    });
+    ({ completed, failed } = this.countTaskResults());
+    this.updateProgress({ total, completed, failed }, 'validation');
 
-    for (const task of validationTasks) {
-      await this.runTask(task, signal, () => Promise.resolve());
-      ({ completed, failed } = this.bumpCounts(task, completed, failed));
-      this.updateProgress({ total, completed, failed }, task.stage);
-    }
-
-    for (const task of optimizationTasks) {
-      await this.runTask(task, signal, () => Promise.resolve());
-      ({ completed, failed } = this.bumpCounts(task, completed, failed));
-      this.updateProgress({ total, completed, failed }, task.stage);
-    }
+    await runStageTasks<RouteBuildTaskQueueInput>({
+      nodeId: this.nodeId,
+      stage: 'vt',
+      taskFilter: resolveTaskFilter('optimization'),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
+        this.handleNoopRouteTask(task, 'optimization', 'optimization'),
+      failureHandling: 'continue',
+    } as {
+      nodeId: TaskQueueRecord['nodeId'];
+      stage: TaskStage;
+      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => Promise<{ status: 'completed'; progress: number }>;
+      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
+      maxConcurrent?: number;
+      failureHandling?: 'continue' | 'stop' | 'skip';
+      lanePolicy?: {
+        enabled: boolean;
+        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => string;
+        maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<RouteBuildTaskQueueInput>) => number;
+      };
+    });
+    ({ completed, failed } = this.countTaskResults());
+    this.updateProgress({ total, completed, failed }, 'optimization');
 
     if (failed > 0) {
       throw new Error('Route build completed with failures');
@@ -113,109 +179,105 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
   protected onBuildProgressEvent(_event: BuildProgressEvent): void {
   }
 
-  private async runWithGates(
-    task: RouteBuildTask,
+  private async handleRouteGenerationTask(
+    task: TaskQueueRecord<RouteBuildTaskQueueInput>,
     signal: AbortSignal,
-    globalGate: LaneGate,
-    laneGates: Map<string, LaneGate>,
-  ): Promise<void> {
-    const method = task.routeData?.method ?? this.config.routeGeneration.method;
-    const laneGate = getLaneGate(laneGates, method, this.config.laneCaps);
-
-    await acquire(globalGate);
-    await acquire(laneGate);
-    try {
-      await this.runTask(task, signal, () => this.runRouteTask(task, method, signal));
-    } finally {
-      release(laneGate);
-      release(globalGate);
+  ): Promise<{ status: 'completed'; progress: number }> {
+    const localTask = this.findTask(task.taskId);
+    if (!localTask) {
+      throw new Error(`Unknown route task ${task.taskId}`);
     }
-  }
 
-  private async runTask(task: RouteBuildTask, signal: AbortSignal, work: () => Promise<void>): Promise<void> {
-    if (signal.aborted) throw abortError('Route build aborted');
-    task.status = 'processing';
-    await this.updateTaskQueue(task, { status: 'running', startedAt: Date.now(), progress: 0 });
-    this.updateProgress({ total: this.tasks.length }, task.stage);
+    localTask.status = 'running';
+    localTask.error = undefined;
+    const method = localTask.routeData?.method ?? this.config.routeGeneration.method;
+    const options = localTask.routeData?.methodOptions;
+    const start = localTask.routeData?.startCoordinates;
+    const end = localTask.routeData?.endCoordinates;
 
-    try {
-      await work();
-      task.status = 'completed';
-      await this.updateTaskQueue(task, { status: 'completed', progress: 100, completedAt: Date.now() });
-    } catch (error) {
-      task.status = 'failed';
-      task.error = error instanceof Error ? error.message : String(error);
-      await this.updateTaskQueue(task, { status: 'failed', errorMessage: task.error });
-    }
-  }
-
-  private async runRouteTask(task: RouteBuildTask, method: RouteGenerationMethod, signal: AbortSignal): Promise<void> {
-    if (signal.aborted) throw abortError('Route build aborted');
-    const start = task.routeData?.startCoordinates;
-    const end = task.routeData?.endCoordinates;
     if (!start || !end) {
-      throw new Error('Route build task missing coordinates');
+      const message = 'Route build task missing coordinates';
+      localTask.status = 'failed';
+      localTask.error = message;
+      this.updateProgressByTaskType(localTask.stage);
+      throw new Error(message);
     }
+
+    await this.runRouteTask([start, end], method, options, signal);
+
+    localTask.status = 'completed';
+    this.updateProgressByTaskType(localTask.stage);
+    return {
+      status: 'completed',
+      progress: 100,
+    };
+  }
+
+  private async handleNoopRouteTask(
+    task: TaskQueueRecord<RouteBuildTaskQueueInput>,
+    taskType: RouteBuildTaskType,
+    stage: RouteBuildTaskStage,
+  ): Promise<{ status: 'completed'; progress: number }> {
+    const localTask = this.findTask(task.taskId);
+    if (!localTask) {
+      throw new Error(`Unknown route task ${task.taskId}`);
+    }
+    if (localTask.taskType !== taskType) {
+      localTask.status = 'failed';
+      const error = `Unexpected route task type. expected=${taskType}, actual=${localTask.taskType}`;
+      localTask.error = error;
+      this.updateProgressByTaskType(stage);
+      throw new Error(error);
+    }
+    localTask.status = 'completed';
+    localTask.error = undefined;
+    this.updateProgressByTaskType(stage);
+    return {
+      status: 'completed',
+      progress: 100,
+    };
+  }
+
+  private async runRouteTask(
+    points: [number, number][],
+    method: RouteGenerationMethod,
+    options: RouteGenerationConfig['options'],
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (signal.aborted) throw abortError('Route build aborted');
     const config: RouteGenerationConfig = {
       method,
-      options: task.routeData?.methodOptions,
+      options,
     };
-    await this.generator?.generate([start, end], config);
+    await this.generator?.generate(points, config);
   }
 
-  private async updateTaskQueue(task: RouteBuildTask, updates: Partial<TaskQueueRecord>): Promise<void> {
-    if (!this.taskQueue) return;
-    await updateTask(this.taskQueue, task.taskId, updates);
+  private resolveRouteLane(task: TaskQueueRecord<RouteBuildTaskQueueInput>): string {
+    const fallbackMethod = this.config.routeGeneration.method;
+    return task.inputData?.routeData?.method ?? fallbackMethod;
   }
 
-  private bumpCounts(task: RouteBuildTask, completed: number, failed: number): { completed: number; failed: number } {
-    if (task.status === 'completed') {
-      return { completed: completed + 1, failed };
-    }
-    if (task.status === 'failed') {
-      return { completed, failed: failed + 1 };
+  private countTaskResults(): { completed: number; failed: number } {
+    let completed = 0;
+    let failed = 0;
+    for (const task of this.tasks) {
+      if (task.status === 'completed') {
+        completed += 1;
+      } else if (task.status === 'failed') {
+        failed += 1;
+      }
     }
     return { completed, failed };
   }
-}
 
-function createGate(limit: number): LaneGate {
-  return {
-    limit: Math.max(1, limit),
-    active: 0,
-    queue: [],
-  };
-}
-
-async function acquire(gate: LaneGate): Promise<void> {
-  if (gate.active < gate.limit) {
-    gate.active += 1;
-    return;
+  private findTask(taskId: string): RouteBuildTask | undefined {
+    return this.tasksById.get(taskId);
   }
-  await new Promise<void>((resolve) => gate.queue.push(resolve));
-  gate.active += 1;
-}
 
-function release(gate: LaneGate): void {
-  gate.active = Math.max(0, gate.active - 1);
-  const next = gate.queue.shift();
-  if (next && gate.active < gate.limit) {
-    next();
+  private updateProgressByTaskType(stage: RouteBuildTaskStage): void {
+    const { completed, failed } = this.countTaskResults();
+    this.updateProgress({ total: this.tasks.length, completed, failed }, stage);
   }
-}
-
-function getLaneGate(
-  lanes: Map<string, LaneGate>,
-  method: RouteGenerationMethod,
-  overrides: RouteBuildConfig['laneCaps'] | undefined,
-): LaneGate {
-  const key = method ?? 'direct';
-  const existing = lanes.get(key);
-  if (existing) return existing;
-  const cap = overrides?.[key] ?? DEFAULT_LANE_CAPS[key] ?? 1;
-  const gate = createGate(cap);
-  lanes.set(key, gate);
-  return gate;
 }
 
 function abortError(message: string): Error {

@@ -7,7 +7,11 @@ import type { NodeId } from '@hierarchidb/core-types';
 
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
-import { RouteBuildSession, type RouteBuildTask } from './RouteBuildSession.js';
+import {
+  RouteBuildSession,
+  type RouteBuildTask,
+  type RouteBuildTaskStage,
+} from './RouteBuildSession.js';
 import type { BuildProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
@@ -83,8 +87,8 @@ export class RouteBuildManager {
             treeNodeId: nodeId,
             nodeId,
             taskType: 'location_resolution',
-            stage: 'download', // Reuse Shape's stage
-            status: 'pending',
+            stage: 'location-resolution',
+            status: 'queued',
             index: routeTasks.length,
             routeData: {
               startLocationId: route.startLocationId,
@@ -104,8 +108,8 @@ export class RouteBuildManager {
         treeNodeId: nodeId,
         nodeId,
         taskType: 'route_generation',
-        stage: 'extract1', // Reuse Shape's stage for processing
-        status: 'pending',
+        stage: 'route-generation',
+        status: 'queued',
         index: routeTasks.length,
         routeData: {
           startLocationId: route?.startLocationId,
@@ -128,8 +132,8 @@ export class RouteBuildManager {
         treeNodeId: nodeId,
         nodeId,
         taskType: 'validation',
-        stage: 'extract2', // Reuse Shape's stage for validation
-        status: 'pending',
+        stage: 'validation',
+        status: 'queued',
         index: routeTasks.length,
       });
     }
@@ -140,8 +144,8 @@ export class RouteBuildManager {
       treeNodeId: nodeId,
       nodeId,
       taskType: 'optimization',
-      stage: 'vectortile', // Reuse Shape's stage for final optimization
-      status: 'pending',
+      stage: 'optimization',
+      status: 'queued',
       index: routeTasks.length,
     });
 
@@ -152,7 +156,7 @@ export class RouteBuildManager {
     await putTasks(taskQueue, routeTasks.map((task) => toTaskQueueRecord(task)));
 
     // Start processing using Shape's infrastructure
-    const session = new RouteBuildSession(nodeId, config, routeTasks, { taskQueue });
+    const session = new RouteBuildSession(nodeId, config, routeTasks);
     this.activeSessions.set(nodeId, session);
     const unsubscribe = session.addBuildProgressListener((event: BuildProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
@@ -225,9 +229,9 @@ export class RouteBuildManager {
     phase: string;
     progress: number;
     completedRoutes: number;
-    totalRoutes: number;
-    errors: string[];
-  }> {
+  totalRoutes: number;
+  errors: string[];
+}> {
     const tasks = this.routeSpecificTasks.get(nodeId) || [];
     const completedTasks = tasks.filter((t) => t.status === 'completed');
     const failedTasks = tasks.filter((t) => t.status === 'failed');
@@ -241,13 +245,13 @@ export class RouteBuildManager {
 
     // Determine current phase
     let phase = 'idle';
-    if (tasks.some((t) => t.taskType === 'location_resolution' && t.status === 'processing')) {
+    if (tasks.some((t) => t.taskType === 'location_resolution' && t.status === 'running')) {
       phase = 'resolving_locations';
-    } else if (tasks.some((t) => t.taskType === 'route_generation' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'route_generation' && t.status === 'running')) {
       phase = 'generating_routes';
-    } else if (tasks.some((t) => t.taskType === 'validation' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'validation' && t.status === 'running')) {
       phase = 'validating';
-    } else if (tasks.some((t) => t.taskType === 'optimization' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'optimization' && t.status === 'running')) {
       phase = 'optimizing';
     }
 
@@ -265,11 +269,12 @@ export class RouteBuildManager {
     const total = coerceNumber(payload.total);
     const completed = coerceNumber(payload.completed);
     const percentage = computePercentage(total, completed, event.phase === 'completed');
+    const stage = normalizeRouteProgressStage(event.stage);
     const ts = event.timestamp ?? Date.now();
     const update: ProgressUpdate = {
       jobId: event.nodeId,
       progress: percentage,
-      phase: event.stage,
+      phase: stage,
       ts,
     };
     try {
@@ -310,18 +315,33 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
   };
 }
 
-function mapRouteStageToVtStage(stage: string): TaskStage {
+function mapRouteStageToVtStage(stage: RouteBuildTaskStage): TaskStage {
   switch (stage) {
-    case 'download':
+    case 'location-resolution':
       return 'fetch';
-    case 'extract1':
+    case 'route-generation':
       return 'transform';
-    case 'extract2':
+    case 'validation':
       return 'transform';
-    case 'vectortile':
+    case 'optimization':
       return 'vt';
     default:
       throw new Error(`Unsupported route stage for vt task queue: ${stage}`);
+  }
+}
+
+function normalizeRouteProgressStage(stage: string): string {
+  switch (stage) {
+    case 'location-resolution':
+      return 'resolving_locations';
+    case 'route-generation':
+      return 'generating_routes';
+    case 'validation':
+      return 'validating';
+    case 'optimization':
+      return 'optimizing';
+    default:
+      return stage;
   }
 }
 
