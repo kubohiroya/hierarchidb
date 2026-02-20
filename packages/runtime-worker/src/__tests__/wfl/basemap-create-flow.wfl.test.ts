@@ -5,8 +5,8 @@ import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
-import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
+import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
+import { exposeTestAPI } from '~/e2e/test-worker.entry';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<TreeQueryAPI>;

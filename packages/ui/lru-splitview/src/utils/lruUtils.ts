@@ -3,7 +3,7 @@
  * @module @hierarchidb/ui-lru-splitview/utils
  */
 
-import type { PaneConfig, PaneProgress, PaneState } from '../types/LRUSplitView.js';
+import type { PaneConfig, PaneProgress, PaneState } from '~/types/LRUSplitView';
 
 /**
  * Create a simple pane configuration

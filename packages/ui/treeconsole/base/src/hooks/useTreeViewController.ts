@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WorkerAPIAdapter } from '../adapters/index.js';
-import type { CRUDResult, SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
+import { WorkerAPIAdapter } from '~/adapters/index';
+import type { CRUDResult, SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';

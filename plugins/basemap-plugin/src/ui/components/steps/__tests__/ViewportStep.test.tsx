@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { MapStyle } from '../../../../common/types/BaseMapEntity.js';
-import { ViewportStep } from '../ViewportStep.js';
+import type { MapStyle } from '~/common/types/BaseMapEntity';
+import { ViewportStep } from '~/ui/components/steps/ViewportStep';
 
 const renderViewportStep = (options: {
   value?: undefined;

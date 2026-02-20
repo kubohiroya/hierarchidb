@@ -6,17 +6,17 @@ import {
   jsonSerializer,
   textDeserializer,
   textSerializer,
-} from '../utils/chunkStore';
-import type { CountryMetadata } from '../../common/types/index';
+} from '~/services/utils/chunkStore';
+import type { CountryMetadata } from '~/common/types/index';
 import {
   DEFAULT_ISO3166_CSV_URL,
   type ContinentCode,
   normalizeCountryCodeForDataSource,
   resolveCountryContinentCode,
   resolveCountryContinentName,
-} from '../utils/iso3166';
+} from '~/services/utils/iso3166';
 import type { NodeId } from '@hierarchidb/core-types';
-import { GEOBOUNDARIES_ALL_METADATA_URL } from '../utils/geoboundariesEndpoints';
+import { GEOBOUNDARIES_ALL_METADATA_URL } from '~/services/utils/geoboundariesEndpoints';
 
 type GeoBoundariesRecord = Record<string, unknown>;
 

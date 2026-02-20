@@ -37,7 +37,7 @@
   "scripts": {
     "build": "tsdown src/index.ts src/build-session/index.ts src/notify/index.ts src/build-status/index.ts src/build-stage/index.ts --config ../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {},
   "peerDependencies": {

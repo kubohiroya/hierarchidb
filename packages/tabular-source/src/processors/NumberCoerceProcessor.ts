@@ -1,4 +1,4 @@
-import type { TabularProcessor } from '../processor.js';
+import type { TabularProcessor } from '~/processor';
 
 export interface NumberCoerceRule {
   column: string;
@@ -11,11 +11,12 @@ export function createNumberCoerceProcessor(id: string, rules: NumberCoerceRule[
   const ruleFor = (c: string) => rules.find(r => r.column === c);
   return {
     id,
-    transformRow(row) {
+    transformRow(row: Record<string, any>) {
       const out = { ...row };
       for (const col of Object.keys(row)) {
         if (!set.has(col)) continue;
-        const rule = ruleFor(col)!;
+        const rule = ruleFor(col);
+        if (!rule) continue;
         const v = row[col];
         if (typeof v === 'number') continue;
         if (v === null || v === undefined || v === '') {
@@ -30,4 +31,3 @@ export function createNumberCoerceProcessor(id: string, rules: NumberCoerceRule[
     },
   };
 }
-

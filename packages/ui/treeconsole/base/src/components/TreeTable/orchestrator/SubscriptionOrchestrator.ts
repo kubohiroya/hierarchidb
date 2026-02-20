@@ -2,7 +2,7 @@ import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
-import type { SubTreeChanges } from '../state/features/subscription.atoms.js';
+import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
 import { coalesceBatches } from './mergeUtils.js';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import {
@@ -12,7 +12,7 @@ import {
   subscriptionDepthAtom,
   subscriptionIdAtom,
   tableDataAtom,
-} from '../state/index.js';
+} from '~/components/TreeTable/state/index';
 
 const BATCH_DELAY_MS = 100;
 

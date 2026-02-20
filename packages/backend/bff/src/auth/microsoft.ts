@@ -1,4 +1,4 @@
-import { generateCodeChallenge, generateCodeVerifier, generateState } from '../utils/pkce.js';
+import { generateCodeChallenge, generateCodeVerifier, generateState } from '~/utils/pkce';
 
 export interface MicrosoftOAuth2Config {
   clientId: string;

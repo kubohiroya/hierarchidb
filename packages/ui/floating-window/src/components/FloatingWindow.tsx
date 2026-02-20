@@ -14,7 +14,7 @@ import {
   Minimize as MinimizeIcon,
   Window as WindowIcon,
 } from '@mui/icons-material';
-import type { FloatingWindowProps } from '../types/WindowState.js';
+import type { FloatingWindowProps } from '~/types/WindowState';
 import { useFloatingWindowController } from './useFloatingWindowController.js';
 
 const StyledWindow = styled(Paper)(({ theme }) => ({

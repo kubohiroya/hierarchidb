@@ -5,8 +5,8 @@
 
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import type { TreeTableController, TreeNodeInUI } from '../../types.js';
-import { isElementWithClosest } from '../../utils/treeTableHelpers.js';
+import type { TreeTableController, TreeNodeInUI } from '~/types';
+import { isElementWithClosest } from '~/utils/treeTableHelpers';
 
 interface UseTreeTableRowInteractionsParams {
   controller: TreeTableController | null;

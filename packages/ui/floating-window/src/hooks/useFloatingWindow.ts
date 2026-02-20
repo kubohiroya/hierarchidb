@@ -5,7 +5,7 @@
 
  
 import { useCallback, useEffect, useState } from 'react';
-import type { Position, Size, WindowState } from '../types/WindowState.js';
+import type { Position, Size, WindowState } from '~/types/WindowState';
 
 export interface UseFloatingWindowOptions {
   initialPosition?: Position;
@@ -92,42 +92,42 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
 
   // Handler for atoms changes from the FloatingWindow component
   const onStateChange = useCallback((newState: WindowState) => {
-    setWindowState((prev) => (isSameWindowState(prev, newState) ? prev : newState));
+    setWindowState((prev: WindowState) => (isSameWindowState(prev, newState) ? prev : newState));
   }, [isSameWindowState]);
 
   // Handler for closing the window
   const onClose = useCallback(() => {
-    setWindowState(prev => ({ ...prev, isVisible: false }));
+    setWindowState((prev: WindowState) => ({ ...prev, isVisible: false }));
   }, []);
 
   // Handler for minimizing the window
   const onMinimize = useCallback(() => {
-    setWindowState(prev => ({ ...prev, isMinimized: true }));
+    setWindowState((prev: WindowState) => ({ ...prev, isMinimized: true }));
   }, []);
 
   // Handler for restoring the window
   const onRestore = useCallback(() => {
-    setWindowState(prev => ({ ...prev, isMinimized: false }));
+    setWindowState((prev: WindowState) => ({ ...prev, isMinimized: false }));
   }, []);
 
   // Handler for setting position
   const setPosition = useCallback((position: Position) => {
-    setWindowState(prev => ({ ...prev, position }));
+    setWindowState((prev: WindowState) => ({ ...prev, position }));
   }, []);
 
   // Handler for setting size
   const setSize = useCallback((size: Size) => {
-    setWindowState(prev => ({ ...prev, size }));
+    setWindowState((prev: WindowState) => ({ ...prev, size }));
   }, []);
 
   // Handler for showing the window
   const show = useCallback(() => {
-    setWindowState(prev => ({ ...prev, isVisible: true }));
+    setWindowState((prev: WindowState) => ({ ...prev, isVisible: true }));
   }, []);
 
   // Handler for hiding the window
   const hide = useCallback(() => {
-    setWindowState(prev => ({ ...prev, isVisible: false }));
+    setWindowState((prev: WindowState) => ({ ...prev, isVisible: false }));
   }, []);
 
   return {

@@ -1,21 +1,19 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
+    "baseUrl": ".",
     "declaration": false,
     "declarationMap": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "baseUrl": ".",
     "jsx": "react-jsx"
   },
   "exclude": [
     "dist",
     "node_modules",
     "src/stories/**"
+  ],
+  "include": [
+    "src/**/*"
   ]
 }

@@ -13,8 +13,8 @@ import type { ShapeMutationAPI } from '@hierarchidb/shape-api';
 import { getLocationDB } from '@hierarchidb/location-store';
 import { getRouteDB } from '@hierarchidb/route-store';
 import { shapeDB } from '@hierarchidb/shape-store';
-import type { CoreDB } from '../services/CoreDB.js';
-import type { CommandEnvelope } from '../services/command-types.js';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandEnvelope } from '~/services/command-types';
 
 type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
 type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;

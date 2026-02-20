@@ -2,12 +2,12 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '@hierarchidb/tag';
-import { assertCommitOk } from '../../../test-utils/assertions.js';
-import { CoreDB } from '../../CoreDB.js';
-import { CommandProcessor } from '../../CommandProcessor.js';
-import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService.js';
-import { TagDBPortCoreDBAdapter } from '../../adapters/TagDBPortCoreDBAdapter.js';
-import { EntityLifecycleManager } from '../../../entity/EntityLifecycleManager.js';
+import { assertCommitOk } from '~/test-utils/assertions';
+import { CoreDB } from '~/services/CoreDB';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
+import { TagDBPortCoreDBAdapter } from '~/services/adapters/TagDBPortCoreDBAdapter';
+import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
 
 describe('tag association lifecycle (draft/archive/remove)', () => {
   const treeId = 'r' as TreeId;

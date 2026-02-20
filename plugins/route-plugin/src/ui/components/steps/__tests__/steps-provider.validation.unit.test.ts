@@ -28,7 +28,7 @@ vi.mock('@hierarchidb/components', () => ({
   },
 }));
 
-import '../../steps-provider.tsx';
+import '~/ui/components/steps-provider';
 
 const getDataSourceValidate = () => {
   const provider = PluginStepRegistry.getInstance().getConfigProvider('route');

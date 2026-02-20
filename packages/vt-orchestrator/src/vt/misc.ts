@@ -1,6 +1,6 @@
-import { runStageTasks } from '../compareTaskOrder.js';
-import { createTransformByBandHandler } from '../transform/createTransformByBandHandler.js';
-import type { PipelineRunConfig } from '../types/types.js';
+import { runStageTasks } from '~/compareTaskOrder';
+import { createTransformByBandHandler } from '~/transform/createTransformByBandHandler';
+import type { PipelineRunConfig } from '~/types/types';
 import { createVtHandler } from './vtStage.js';
 
 export async function runPipeline(

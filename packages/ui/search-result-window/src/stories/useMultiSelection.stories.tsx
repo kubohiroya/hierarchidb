@@ -14,8 +14,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useMultiSelection } from '../hooks/useMultiSelection.js';
-import type { SearchResult } from '../types/index.js';
+import { useMultiSelection } from '~/hooks/useMultiSelection';
+import type { SearchResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 
 const meta: Meta = {

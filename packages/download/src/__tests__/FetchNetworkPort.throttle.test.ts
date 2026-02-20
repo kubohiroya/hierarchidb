@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FetchNetworkPort } from '../adapters/FetchNetworkPort.js';
+import { FetchNetworkPort } from '~/adapters/FetchNetworkPort';
 
 // Fake fetch that records concurrent calls and resolves after a delay
 function makeFakeFetch(delayMs = 50) {

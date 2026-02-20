@@ -5,9 +5,9 @@
 
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '../services/BFFAuthService.js';
-import { PopupDetectionService } from '../services/PopupDetectionService.js';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
+import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '~/services/BFFAuthService';
+import { PopupDetectionService } from '~/services/PopupDetectionService';
+import type { AuthProviderType } from '~/types/AuthProviderType';
 
 // Storage keys
 const STORAGE_KEYS = {

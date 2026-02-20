@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
-import { CommandProcessor } from '../CommandProcessor.js';
-import { CoreDB } from '../CoreDB.js';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import { CoreDB } from '~/services/CoreDB';
 
 export type CommandTestHarness = {
   core: CoreDB;

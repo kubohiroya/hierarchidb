@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson';
-import type { GeometryEngine } from '../config.js';
-import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '../geometryEngine.js';
+import type { GeometryEngine } from '~/config';
+import { geometryCleanCoords, geometrySimplify, geometryUnkinkPolygons } from '~/geometryEngine';
 
 export interface ExtractOptions {
   tolerance: number;
@@ -34,7 +34,7 @@ const extractFeature = (
   const mergedGeometry: Polygon | MultiPolygon | undefined =
     polygons.length === 1
       ? polygons[0]
-      : { type: 'MultiPolygon', coordinates: polygons.map((polygon) => polygon.coordinates) };
+      : { type: 'MultiPolygon', coordinates: polygons.map((polygon: Polygon) => polygon.coordinates) };
   if (!mergedGeometry) {
     return { ...extracted };
   }

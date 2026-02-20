@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it, vi } from 'vitest';
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
+import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
 
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
@@ -21,7 +21,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   vi.resetModules();
   const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
-    import('../../e2e/test-worker.entry.js'),
+    import('~/e2e/test-worker.entry'),
   ]);
   SingletonMixin.terminateAll();
   const { port1, port2 } = new MessageChannel();

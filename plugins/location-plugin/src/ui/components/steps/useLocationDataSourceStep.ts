@@ -6,10 +6,10 @@ import {
   type IdeGsmImportPayload,
 } from '@hierarchidb/ui-datasource';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+import type { LocationDataSource, LocationEntity, LocationType } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import { createLocationTabularApi } from '../../../common/tabular/createLocationTabularApi.js';
+import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'ide-gsm',

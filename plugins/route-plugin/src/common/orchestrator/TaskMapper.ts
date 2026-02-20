@@ -1,5 +1,5 @@
 import type { OdPair, RouteBuildSpec } from './types.js';
-import type { RouteBuildRouteInput } from '../../services/RouteBuildManager.js';
+import type { RouteBuildRouteInput } from '~/services/RouteBuildManager';
 
 export type RouteTaskInput = RouteBuildRouteInput;
 

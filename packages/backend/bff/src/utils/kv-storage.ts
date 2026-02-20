@@ -2,7 +2,7 @@
  * KV Storage utilities with optimized transaction support
  */
 
-import { decrypt, deriveKey, encrypt, generateSecureToken } from './encryption.js';
+import { decrypt, deriveKey, encrypt, generateSecureToken } from '~/utils/encryption';
 
 /**
  * Combined data structure to reduce KV operations

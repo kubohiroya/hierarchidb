@@ -33,7 +33,7 @@
     "lint": "eslint src",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*",

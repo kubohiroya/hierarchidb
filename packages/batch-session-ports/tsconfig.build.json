@@ -7,17 +7,12 @@
     "declarationMap": true,
     "outDir": "dist",
     "types": [],
-    "skipLibCheck": true,
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    }
+    "skipLibCheck": true
   },
   "include": [
-    "src/**/*.ts"
+
+    "src/**/*"
+
   ],
   "exclude": [
     "dist",

@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { AuthContextProps } from 'react-oidc-context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu.js';
+import { UserAvatarMenu, UserProfile } from '~/components/UserAvatarMenu';
 
 // Mock dependencies
 vi.mock('../utils/logger', () => ({

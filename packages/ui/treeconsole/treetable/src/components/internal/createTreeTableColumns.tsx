@@ -8,9 +8,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
-import { IndentSpace, NameCell } from '../TreeTableStyles.js';
-import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
-import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '../../types.js';
+import { IndentSpace, NameCell } from '~/components/TreeTableStyles';
+import { extractTags, normalizeNodeKey } from '~/utils/treeTableHelpers';
+import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 import {
   buildTreeConsoleLinkHref,
   getPluginIconColor,

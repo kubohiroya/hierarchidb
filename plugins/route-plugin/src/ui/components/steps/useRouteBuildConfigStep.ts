@@ -5,7 +5,7 @@ import {
   loadTreeConsoleSettings,
 } from '@hierarchidb/util';
 import type { RouteEntity } from '@hierarchidb/route-store';
-import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
+import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '~/common/config/buildConfig';
 
 const resolveInitialBuildConfig = (dataSourceName?: string) => {
   const settings = loadTreeConsoleSettings();

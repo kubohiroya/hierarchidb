@@ -7,7 +7,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { IControl } from 'maplibre-gl';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type { MapboxOverlay as DeckMapboxOverlay } from '@deck.gl/mapbox';
 import type { Layer, PickingInfo } from '@deck.gl/core';
 import type { MapLibreMapProps } from './MapLibreMap.js';

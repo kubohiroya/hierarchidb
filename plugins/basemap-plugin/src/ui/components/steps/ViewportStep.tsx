@@ -2,7 +2,7 @@ import { loadMapLibreMap } from '@hierarchidb/ui-map';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense } from 'react';
-import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
+import type { MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
 import { useViewportStep } from './useViewportStep.js';
 
 export interface ViewportStepProps {

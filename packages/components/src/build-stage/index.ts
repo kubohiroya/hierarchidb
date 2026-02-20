@@ -1,1 +1,1 @@
-export type { BuildStage } from '../BuildStage.tsx';
+export type { BuildStage } from '~/BuildStage';

@@ -18,7 +18,7 @@ import {
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from './GenericDataGrid.js';
 import { CrossViewSnackbar } from './CrossViewSnackbar.js';
-import { useTranslation } from '../../i18n/src/index.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useDataGridPreview, type DataGridPreviewOp } from './hooks/useDataGridPreview.js';
 import type { ReactNode } from 'react';
 

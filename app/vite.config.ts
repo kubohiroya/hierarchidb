@@ -389,7 +389,7 @@ function facadeAliasPlugin(): Plugin {
 }
 
 function pluginTildeRootAliasPlugin(): Plugin {
-  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'];
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts', '.json'];
 
   return {
     name: 'hierarchidb:plugin-tilde-root-alias',
@@ -417,13 +417,14 @@ function pluginTildeRootAliasPlugin(): Plugin {
             const raw = fs.readFileSync(packageJsonPath, 'utf8');
             const packageJson = JSON.parse(raw);
             const packageName = typeof packageJson?.name === 'string' ? packageJson.name : '';
+            const isWorkspacePackage = packageName.startsWith('@hierarchidb/');
             const hasPluginName = /plugin/i.test(packageName);
             const isAppPackage = packageName === '@hierarchidb/app';
             const isPluginPackage =
               packageJson &&
               typeof packageJson === 'object' &&
               !!((packageJson as { hierarchidb?: { plugin?: unknown } }).hierarchidb?.plugin || packageJson?.nodeType);
-            if (isPluginPackage || isAppPackage || hasPluginName) {
+            if (isWorkspacePackage || isPluginPackage || isAppPackage || hasPluginName) {
               pluginRoot = cursor;
               const candidateSrcRoot = path.join(cursor, 'src');
               pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : cursor;
@@ -444,6 +445,17 @@ function pluginTildeRootAliasPlugin(): Plugin {
       }
 
       if (!pluginRoot) {
+        const packagesMatch = importerWithoutFsPrefix.match(/(.*\/packages\/[^/]+)(?:\/|$)/);
+        const pluginsMatch = importerWithoutFsPrefix.match(/(.*\/plugins\/[^/]+)(?:\/|$)/);
+        const match = packagesMatch || pluginsMatch;
+        if (match && match[1]) {
+          pluginRoot = match[1];
+          const candidateSrcRoot = path.join(pluginRoot, 'src');
+          pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : pluginRoot;
+        }
+      }
+
+      if (!pluginRoot) {
         const appRoot = path.resolve(__dirname);
         const withinAppPath =
           importerWithoutFsPrefix.includes(`${path.sep}app${path.sep}`)
@@ -461,32 +473,44 @@ function pluginTildeRootAliasPlugin(): Plugin {
       if (!pluginRoot) return null;
 
       const withoutPrefix = source.slice(2).replace(/^\/+/, '');
-      const baseRoot = pluginSrcRoot ?? pluginRoot;
-      if (!baseRoot) return null;
-      const candidatePath = path.resolve(baseRoot, withoutPrefix);
+      const normalizedWithoutPrefix =
+        withoutPrefix === 'src'
+          ? ''
+          : withoutPrefix.replace(/^src\//, '');
+      const searchRoots = [pluginSrcRoot, pluginRoot].filter(Boolean) as string[];
+      if (!searchRoots.length) return null;
+
+      const candidateCandidates: string[] = [];
+      for (const baseRoot of searchRoots) {
+        const candidatePath = path.resolve(baseRoot, normalizedWithoutPrefix);
       const explicitExt = path.extname(candidatePath);
       const explicitExtSupported = extensions.includes(explicitExt);
-      const candidateCandidates: string[] = [];
       const withoutExtPath =
         explicitExt && explicitExtSupported
           ? candidatePath.slice(0, -explicitExt.length)
           : candidatePath;
 
       if (explicitExtSupported) {
-        candidateCandidates.push(candidatePath);
+          candidateCandidates.push(candidatePath);
+          for (const fallbackExt of ['.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.mts', '.cts']) {
+            if (fallbackExt === explicitExt) continue;
+            candidateCandidates.push(`${withoutExtPath}${fallbackExt}`);
+          }
       } else {
         for (const ext of extensions) {
           candidateCandidates.push(`${candidatePath}${ext}`);
         }
       }
 
-      candidateCandidates.push(`${withoutExtPath}/index.ts`);
-      candidateCandidates.push(`${withoutExtPath}/index.tsx`);
-      candidateCandidates.push(`${withoutExtPath}/index.js`);
-      candidateCandidates.push(`${withoutExtPath}/index.mjs`);
-      candidateCandidates.push(`${withoutExtPath}/index.cjs`);
-      candidateCandidates.push(`${withoutExtPath}/index.mts`);
-      candidateCandidates.push(`${withoutExtPath}/index.cts`);
+        candidateCandidates.push(`${withoutExtPath}/index.ts`);
+        candidateCandidates.push(`${withoutExtPath}/index.tsx`);
+        candidateCandidates.push(`${withoutExtPath}/index.js`);
+        candidateCandidates.push(`${withoutExtPath}/index.mjs`);
+        candidateCandidates.push(`${withoutExtPath}/index.cjs`);
+        candidateCandidates.push(`${withoutExtPath}/index.mts`);
+        candidateCandidates.push(`${withoutExtPath}/index.cts`);
+        candidateCandidates.push(`${withoutExtPath}/index.json`);
+      }
 
       for (const candidate of candidateCandidates) {
         const normalizedCandidate = candidate.replace(/\\/g, '/');
@@ -851,7 +875,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
   const appName = (env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const isDev = mode === 'development';
   const base = isDev ? '/' : appName ? `/${appName}/` : '/';
-  const enableWorkspaceAliases = mode === 'development' || mode === 'test';
+  const enableWorkspaceAliases = mode === 'development' || mode === 'test' || mode === 'production';
   const requestedPluginSpecMode = (env.HDB_PLUGIN_SPEC_MODE || process.env.HDB_PLUGIN_SPEC_MODE || '').toLowerCase();
   if (requestedPluginSpecMode && requestedPluginSpecMode !== 'package') {
     throw new Error(`[plugin-registry] HDB_PLUGIN_SPEC_MODE must be "package" for this build (got "${requestedPluginSpecMode}").`);

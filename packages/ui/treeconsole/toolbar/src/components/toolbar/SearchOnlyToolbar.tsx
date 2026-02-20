@@ -1,4 +1,4 @@
-import type { TreeConsoleToolbarController } from '../../types.js';
+import type { TreeConsoleToolbarController } from '~/types';
 import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 
 export interface SearchStrings {

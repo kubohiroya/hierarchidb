@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CoreDB } from '../../CoreDB.js';
-import { TreeQueryService } from '../../TreeQueryService.js';
+import type { CoreDB } from '~/services/CoreDB';
+import { TreeQueryService } from '~/services/TreeQueryService';
 
 const makeNode = (id: string, parentId: string | null, name: string): TreeNode => ({
   id: id as NodeId,

@@ -24,9 +24,9 @@ import type {
   StylerEntity,
   StylerMapping,
   StylerTableRow,
-} from '../common/types/StylerEntity.js';
-import { MAPLIBRE_PROPERTY_METADATA } from '../common/types/StylerEntity.js';
-import { valueToColor } from '../common/utils/colorUtils.js';
+} from '~/common/types/StylerEntity';
+import { MAPLIBRE_PROPERTY_METADATA } from '~/common/types/StylerEntity';
+import { valueToColor } from '~/common/utils/colorUtils';
 
 type StyledCellStyle = {
   backgroundColor: string;

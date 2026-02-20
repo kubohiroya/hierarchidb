@@ -1,11 +1,11 @@
 import { expose } from 'comlink';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
-import { fetchCountryAvailability } from '../../services/datasources/CountryAvailabilityResolver.js';
+import { fetchCountryAvailability } from '~/services/datasources/CountryAvailabilityResolver';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailability.types.js';
 import type { NodeId } from '@hierarchidb/core-types';
-import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { AuthService } from '@hierarchidb/auth';
-import type { DataSourceName } from '../../common/types/index.js';
+import type { DataSourceName } from '~/common/types/index';
 
 const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
   ? import.meta.env.VITE_CORS_PROXY_BASE_URL

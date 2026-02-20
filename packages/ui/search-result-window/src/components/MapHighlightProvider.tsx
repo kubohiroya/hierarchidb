@@ -1,8 +1,8 @@
 import type React from 'react';
 import { createContext, type ReactNode, useContext } from 'react'
 import type { NodeId } from '@hierarchidb/core-types';
-import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
-import { useMapHighlight } from '../hooks/useMapHighlightJotai.js';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
+import { useMapHighlight } from '~/hooks/useMapHighlightJotai';
 
 interface MapHighlightContextValue {
   highlightState: MapHighlightState;

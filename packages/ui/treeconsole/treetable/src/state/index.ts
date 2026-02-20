@@ -6,7 +6,7 @@
 
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { atom } from 'jotai';
-import type { DragDropState, EditingState, ExpansionState, SearchState, SelectionState } from '../types.js';
+import type { DragDropState, EditingState, ExpansionState, SearchState, SelectionState } from '~/types';
 
 // === Core Data Atoms ===
 

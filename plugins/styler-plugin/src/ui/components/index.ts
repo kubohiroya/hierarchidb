@@ -15,12 +15,12 @@ export type {
   MapLibreStyleProperty,
   PropertyGroup,
   StylerConfig,
-} from '../../common/types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
 export {
   MAPLIBRE_PROPERTY_GROUPS,
   MAPLIBRE_PROPERTY_METADATA,
   StylerConfigDefault,
-} from '../../common/types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
 // Re-export utilities
 export {
   adjustBrightness,
@@ -33,7 +33,7 @@ export {
   rgbToHex,
   rgbToHsv,
   valueToColor,
-} from '../../common/utils/colorUtils.js';
+} from '~/common/utils/colorUtils';
 export type { StylerMappingProps } from './StylerAlgorithmPanel.tsx';
 
 // Re-export components for direct use

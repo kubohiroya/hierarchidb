@@ -1,23 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "skipLibCheck": false,
-    "baseUrl": "src",
-    "paths": {
-      "react-transition-group/Transition": [
-        "../../../types/react-transition-group/Transition.d.ts"
-      ],
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    }
+    "skipLibCheck": false
   },
   "include": [
     "src/**/*"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
   ]
 }

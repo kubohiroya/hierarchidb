@@ -1,4 +1,4 @@
-import type { MapAttributionItem } from '../types/attribution.js';
+import type { MapAttributionItem } from '~/types/attribution';
 
 const escapeHtml = (value: string): string =>
   value.replace(/[&<>"']/g, (char) => {

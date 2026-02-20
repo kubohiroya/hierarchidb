@@ -3,8 +3,8 @@ import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import type { RouteBuildSpec } from './types.js';
 import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
 import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks, type RouteTaskInput } from './TaskMapper.js';
-import { RouteBuildSessionOrchestrator, type RouteBuildSessionConfig } from '../../services/RouteBuildSessionOrchestrator.js';
-import type { RouteBuildManagerDeps } from '../../services/RouteBuildManager.js';
+import { RouteBuildSessionOrchestrator, type RouteBuildSessionConfig } from '~/services/RouteBuildSessionOrchestrator';
+import type { RouteBuildManagerDeps } from '~/services/RouteBuildManager';
 
 export type RouteBuildManagerLike = RouteBuildSessionOrchestrator;
 

@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "comlink": "^4.4.2",

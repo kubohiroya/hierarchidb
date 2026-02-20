@@ -1,12 +1,7 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*"
-      ]
-    }
+    "baseUrl": "."
   },
   "exclude": [
     "node_modules",
@@ -14,5 +9,8 @@
     "**/__tests__/**",
     "**/*.test.ts",
     "**/*.spec.ts"
+  ],
+  "include": [
+    "src/**/*"
   ]
 }

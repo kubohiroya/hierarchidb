@@ -14,7 +14,7 @@ vi.mock('@hierarchidb/ui-grid', () => ({
   saveGridStateValue: () => {},
 }));
 
-import { MapPreviewFloatingTable } from '../preview/MapPreviewFloatingTable.tsx';
+import { MapPreviewFloatingTable } from '~/preview/MapPreviewFloatingTable';
 
 type TestRow = { id: number; name: string };
 

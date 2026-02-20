@@ -9,8 +9,8 @@ import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack,
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 
 import { CountryMatrixSelector } from './CountryMatrixSelector.js';
-import type { Country } from '../types/Country.js';
-import type { ColumnSet, MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
+import type { Country } from '~/types/Country';
+import type { ColumnSet, MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
 
 export interface CountryMatrixStepProps {
   /** Step title */

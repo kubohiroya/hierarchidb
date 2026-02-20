@@ -15,9 +15,9 @@ import {
   Typography,
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import { useTabularFilter } from '../hooks/useTabularFilter.js';
+import { useTabularFilter } from '~/hooks/useTabularFilter';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index.js';
+import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '~/types/index';
 import type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
 import { LinearProgress } from '@mui/material';

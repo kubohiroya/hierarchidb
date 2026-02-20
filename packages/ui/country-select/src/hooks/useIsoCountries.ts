@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ensureIso3166Data, getAllCountries, resolveIso3166CsvUrl, type CountryRecord } from '@hierarchidb/gen-iso3166-2/browser';
-import type { Country, ContinentCode } from '../types/Country.js';
+import type { Country, ContinentCode } from '~/types/Country';
 
 type State =
   | { status: 'loading'|'ready'; countries: Country[] }

@@ -6,10 +6,10 @@ import {
   type TabularDataResult,
   type TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { rulesEqual } from '../state/tabularKeyValueAtoms.js';
+import { rulesEqual } from '~/ui/state/tabularKeyValueAtoms';
 import type { useTabularKeyValueState } from './useTabularKeyValueState.js';
 
 type KeyValueState = ReturnType<typeof useTabularKeyValueState<SpreadsheetDraft>>;

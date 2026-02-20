@@ -1,5 +1,5 @@
 import type { NodeType } from '@hierarchidb/core-types';
-import type { NodeLifecycleHooks } from '../services/lifecycle-types.js';
+import type { NodeLifecycleHooks } from '~/services/lifecycle-types';
 
 export type RuntimePluginDefinition = {
   nodeType: NodeType | string;

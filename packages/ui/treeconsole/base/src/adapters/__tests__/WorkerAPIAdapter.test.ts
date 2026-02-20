@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
 import type { CommandResult, TreeChangeEvent } from '@hierarchidb/tree-api';
-import { WorkerAPIAdapter } from '../WorkerAPIAdapter.js';
+import { WorkerAPIAdapter } from '~/adapters/WorkerAPIAdapter';
 
 //  WorkerAPI
 const createMockWorkerAPI = () =>

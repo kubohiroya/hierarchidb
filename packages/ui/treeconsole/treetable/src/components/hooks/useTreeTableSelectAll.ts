@@ -43,7 +43,7 @@ export function useTreeTableSelectAll({
 
     (async () => {
       try {
-        const { getSelectAll } = await import('../../state/properties-db.js');
+        const { getSelectAll } = await import('~/state/properties-db');
         const saved = await getSelectAll(pageNodeId);
         if (!cancelled) {
           setSelectAll(saved ?? false);
@@ -68,7 +68,7 @@ export function useTreeTableSelectAll({
     if (persistence !== 'page') return;
     if (!pageNodeId || !selectAllHydrated) return;
     (async () => {
-      const { saveSelectAll } = await import('../../state/properties-db.js');
+      const { saveSelectAll } = await import('~/state/properties-db');
       await saveSelectAll(pageNodeId, selectAll);
     })();
   }, [selectAll, pageNodeId, selectAllHydrated, persistence]);

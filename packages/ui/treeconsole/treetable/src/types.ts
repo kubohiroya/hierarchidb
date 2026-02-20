@@ -54,8 +54,6 @@ export interface TreeTableController {
   onCreate?: (parentId: string, type: string) => void;
   onDuplicate?: (nodeId: string) => void;
   onArchive?: (nodeIds: string[]) => void;
-  /** @deprecated Use onArchive */
-  onRemove?: (nodeIds: string[]) => void;
   // Move nodes to a new parent
   onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   onContextAction?: (

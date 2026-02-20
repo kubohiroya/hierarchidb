@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
-import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
-import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
+import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import { createSpreadsheetTabularApi } from '~/services/spreadsheetTabularApiFactory';
 
 const coerceDialogData = <T extends SpreadsheetDraft>(value: unknown): T =>
   (typeof value === 'object' && value !== null ? (value as T) : ({} as T));

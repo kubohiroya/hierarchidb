@@ -1,4 +1,4 @@
-import type { StageControls } from '../ports/StageControls.js';
+import type { StageControls } from '~/ports/StageControls';
 
 const neverAbortController = new AbortController();
 

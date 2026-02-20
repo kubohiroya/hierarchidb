@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
 
 type MapStatsSnapshot = {
   tileStats: { requests: number; bytes: number };

@@ -17,30 +17,30 @@ import type { SxProps } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
-import type { MapAttributionItem } from '../types/attribution.js';
-import type { LayerSetId } from '../preview/layerSetDefinitions.js';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '~/types/maplibre-public';
+import type { MapAttributionItem } from '~/types/attribution';
+import type { LayerSetId } from '~/preview/layerSetDefinitions';
 import type { FeatureCollection } from 'geojson';
 import { VectorTileLayer } from './VectorTileLayer.js';
-import { normalizePaintLiteralArrays } from '../utils/maplibre-style-utils.js';
+import { normalizePaintLiteralArrays } from '~/utils/maplibre-style-utils';
 import {
   DEFAULT_MAP_CONFIG,
   type BaseMapProps,
   type VectorTileDataSource,
   type VectorTileLayerConfig,
-} from '../types/unified-map-props.js';
-import type { MapLibreFilter } from '../types/maplibre-public.js';
+} from '~/types/unified-map-props';
+import type { MapLibreFilter } from '~/types/maplibre-public';
 import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
 import { useResourceLayerMapStats, type MapStatsStore } from './useResourceLayerMapStats.js';
-import { MapPreviewSearchPanel } from '../preview/MapPreviewSearchPanel.js';
-import { MapPreviewSearchSettingsDialog } from '../preview/MapPreviewSearchSettingsDialog.js';
-import { useMapFeatureHighlights } from '../preview/useMapFeatureHighlights.js';
-import { useMapFeatureHoverCandidates } from '../preview/useMapFeatureHoverCandidates.js';
-import { useMapFeatureSearch } from '../preview/useMapFeatureSearch.js';
-import { useMapFeatureSelectionGestures } from '../preview/useMapFeatureSelectionGestures.js';
-import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
-import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
-import type { MapSearchTargetDefinition, MapSearchTargetGroup } from '../preview/mapPreviewSearchTypes.js';
+import { MapPreviewSearchPanel } from '~/preview/MapPreviewSearchPanel';
+import { MapPreviewSearchSettingsDialog } from '~/preview/MapPreviewSearchSettingsDialog';
+import { useMapFeatureHighlights } from '~/preview/useMapFeatureHighlights';
+import { useMapFeatureHoverCandidates } from '~/preview/useMapFeatureHoverCandidates';
+import { useMapFeatureSearch } from '~/preview/useMapFeatureSearch';
+import { useMapFeatureSelectionGestures } from '~/preview/useMapFeatureSelectionGestures';
+import { defaultFeatureIdAccessor } from '~/lib/feature-identification';
+import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
+import type { MapSearchTargetDefinition, MapSearchTargetGroup } from '~/preview/mapPreviewSearchTypes';
 import {
   buildHighlightKey,
   mapHoverCandidatesAtom,
@@ -52,7 +52,7 @@ import {
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
   type MapHighlightEntry,
-} from '../interaction/mapInteractionStore.js';
+} from '~/interaction/mapInteractionStore';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 type BasemapStyleEntry = {

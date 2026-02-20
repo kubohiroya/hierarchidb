@@ -1,11 +1,11 @@
 import { vi } from 'vitest';
 
-import type { ProgressInfo, VectorTileTask } from '../../../ports/sharedTypes.js';
+import type { ProgressInfo, VectorTileTask } from '~/ports/sharedTypes';
 import type {
   RunVectorTileStageOrchestratorParams,
   VectorTileStageSummary,
-} from '../../orchestratorTypes.js';
-import type { VectorTileStageAdapter, VectorTileStageAdapterResult } from '../../../ports/VectorTileStageAdapter.js';
+} from '~/vectortile/orchestratorTypes';
+import type { VectorTileStageAdapter, VectorTileStageAdapterResult } from '~/ports/VectorTileStageAdapter';
 
 export type FakeTask = VectorTileTask & { index: number };
 

@@ -1,14 +1,14 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../../CoreDB.js';
+import type { CoreDB } from '~/services/CoreDB';
 import type {
   CommandEnvelope,
   CommandEvent,
   CommandResult,
   WorkerErrorCode,
-} from '../../command-types.js';
-import { WorkerErrorCodeValue } from '../../command-types.js';
-import { createNewName } from '../../DraftTreeNodeOperations.js';
+} from '~/services/command-types';
+import { WorkerErrorCodeValue } from '~/services/command-types';
+import { createNewName } from '~/services/DraftTreeNodeOperations';
 
 type SanitizedLogResult = {
   success: boolean;

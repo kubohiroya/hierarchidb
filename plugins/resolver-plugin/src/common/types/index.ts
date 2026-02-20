@@ -13,4 +13,4 @@ export type {
   ValidationWarning,
   ResolverPeerData,
   StylerIntegration,
-} from '../entities/ResolverEntity.js';
+} from '~/common/entities/ResolverEntity';

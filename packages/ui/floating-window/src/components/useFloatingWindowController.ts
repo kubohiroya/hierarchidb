@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
+import type { FloatingWindowProps, WindowState } from '~/types/WindowState';
 import {
   DEFAULT_FLOATING_WINDOW_Z_INDEX,
   FLOATING_WINDOW_ROOT_ID,
@@ -193,7 +193,7 @@ export function useFloatingWindowController(
   );
 
   useEffect(() => {
-    setState((prev) => {
+    setState((prev: WindowState) => {
       const next = resolveIncomingState(prev, initialState);
       if (next) {
         suppressNotifyRef.current = true;
@@ -300,7 +300,7 @@ export function useFloatingWindowController(
         const newX = clamp(event.clientX - dragStart.current.x, minX, maxX);
         const newY = clamp(event.clientY - dragStart.current.y, minY, maxY);
 
-        setState((prev) => ({
+        setState((prev: WindowState) => ({
           ...prev,
           position: { x: newX, y: newY },
         }));
@@ -335,7 +335,7 @@ export function useFloatingWindowController(
         const bounds = resolveBounds();
         const clampedX = clamp(newX, bounds.minX, bounds.maxX);
         const clampedY = clamp(newY, bounds.minY, bounds.maxY);
-        setState((prev) => ({
+        setState((prev: WindowState) => ({
           ...prev,
           position: { x: clampedX, y: clampedY },
           size: { width: newWidth, height: newHeight },
@@ -374,7 +374,7 @@ export function useFloatingWindowController(
   const handleMinimize = useCallback(() => {
     resetInteractionState();
     bringToFront();
-    setState((prev) => {
+    setState((prev: WindowState) => {
       if (prev.isMinimized) {
         return { ...prev, isMinimized: false };
       }
@@ -392,7 +392,7 @@ export function useFloatingWindowController(
   const handleFullscreen = useCallback(() => {
     resetInteractionState();
     bringToFront();
-    setState((prev) => {
+    setState((prev: WindowState) => {
       if (prev.isFullscreen) {
         const normal = normalStateRef.current;
         return {
@@ -416,14 +416,14 @@ export function useFloatingWindowController(
   const handleClose = useCallback(() => {
     resetInteractionState();
     bringToFront();
-    setState((prev) => ({ ...prev, isVisible: false }));
+    setState((prev: WindowState) => ({ ...prev, isVisible: false }));
     onClose?.();
   }, [bringToFront, onClose, resetInteractionState]);
 
   useEffect(() => {
     if (!state.isFullscreen) return;
     const handleResize = () => {
-      setState((prev) => {
+      setState((prev: WindowState) => {
         if (prev.isFullscreen) {
           return {
             ...prev,

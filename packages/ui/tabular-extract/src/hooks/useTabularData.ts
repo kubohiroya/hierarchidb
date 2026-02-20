@@ -4,12 +4,12 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useTabularApi } from '../context/TabularContext.js';
+import { useTabularApi } from '~/context/TabularContext';
 import type {
   TabularProcessingConfig,
   TabularTableListResult,
   PaginationOptions,
-} from '../types/index.js';
+} from '~/types/index';
 import { TabularTableMetadata, TabularTableMetadataLike } from '@hierarchidb/tabular-store';
 
 /**

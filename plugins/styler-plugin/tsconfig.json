@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "lib": [
       "ES2022",
@@ -14,6 +14,7 @@
     "strictFunctionTypes": true,
     "noImplicitReturns": true,
     "jsxImportSource": "react",
+    "baseUrl": "."
   },
   "include": [
     "src/**/*",

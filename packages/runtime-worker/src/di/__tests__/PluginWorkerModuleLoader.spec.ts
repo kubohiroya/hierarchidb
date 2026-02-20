@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PluginWorkerModuleLoader } from '../PluginWorkerModuleLoader.js';
+import { PluginWorkerModuleLoader } from '~/di/PluginWorkerModuleLoader';
 
 class TestableLoader extends PluginWorkerModuleLoader {
   public lastSpecifier: string | undefined;

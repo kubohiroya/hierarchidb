@@ -15,7 +15,7 @@ import {
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense } from 'react';
-import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
+import type { BaseMapEntity } from '~/common/types/BaseMapEntity';
 import { useBaseMapDisplay } from './useBaseMapDisplay.js';
 
 export interface BaseMapDisplayProps {

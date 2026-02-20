@@ -3,9 +3,9 @@ import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { Place } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LocationType, NodeId } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
-import { LOCATION_TYPE_STYLES } from '../steps/locationTypes.js';
+import type { LocationType, NodeId } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
+import { LOCATION_TYPE_STYLES } from '~/ui/components/steps/locationTypes';
 import type { LocationMapPreviewMarkerEntry } from './LocationMapPreviewElements.js';
 import type {
   DisplayMode,

@@ -28,8 +28,8 @@ import {
   Downloading,
   InsertDriveFile,
 } from '@mui/icons-material';
-import type { TabularProcessingConfig } from '../types/index.js';
-import { useTabularData } from '../hooks/useTabularData.js';
+import type { TabularProcessingConfig } from '~/types/index';
+import { useTabularData } from '~/hooks/useTabularData';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
 

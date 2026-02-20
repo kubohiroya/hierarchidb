@@ -8,8 +8,8 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import type { LanguageConfig } from '../provider/LanguageProvider.js';
-import { useLanguage } from '../provider/LanguageProvider.js';
+import type { LanguageConfig } from '~/provider/LanguageProvider';
+import { useLanguage } from '~/provider/LanguageProvider';
 
 export interface LanguageSelectorProps {
   variant?: 'dropdown' | 'buttons' | 'compact';

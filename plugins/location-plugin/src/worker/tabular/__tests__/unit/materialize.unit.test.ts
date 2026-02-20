@@ -18,7 +18,7 @@ describe('materializeLocationPointsFromTabular', () => {
   });
 
   it('adds tile id fields for z0-z9', async () => {
-    const { materializeLocationPointsFromTabular } = await import('../../materialize.js');
+    const { materializeLocationPointsFromTabular } = await import('~/worker/tabular/materialize');
     const rows: TabularDataResult = {
       columns: [],
       totalRows: 1,

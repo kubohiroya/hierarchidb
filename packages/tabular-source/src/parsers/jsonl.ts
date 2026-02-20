@@ -1,4 +1,4 @@
-import type { TabularParserPort } from '../ports.js';
+import type { TabularParserPort } from '~/ports';
 import type {
   DetectionResult,
   FileLike,
@@ -6,7 +6,7 @@ import type {
   TabularChunk,
   TabularParseResult,
   TabularPreview,
-} from '../types.js';
+} from '~/types';
 
 type FileMeta = { name?: string };
 

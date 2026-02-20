@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createTheme } from '@mui/material/styles';
 import { darken } from '@mui/material/styles';
-import { getArchiveRowSx } from '../components/internal/TreeTableRows.js';
+import { getArchiveRowSx } from '~/components/internal/TreeTableRows';
 
 describe('getArchiveRowSx', () => {
   it('returns empty styles in light mode', () => {

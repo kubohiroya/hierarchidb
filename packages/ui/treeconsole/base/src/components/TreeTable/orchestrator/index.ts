@@ -7,10 +7,10 @@
   */
 
 import { useMemo } from 'react';
-import type { TreeViewController } from '../../../types/index.js';
+import type { TreeViewController } from '~/types/index';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtomValue } from 'jotai';
-import { tableDataAtom } from '../state/index.js';
+import { tableDataAtom } from '~/components/TreeTable/state/index';
 
 // Individual Orchestrators
 import { type SelectionOrchestratorResult, useSelectionOrchestrator } from './SelectionOrchestrator.js';

@@ -12,13 +12,13 @@ import type {
   LocationDialogProps,
   LocationDraft,
   LocationEntity,
-} from '../types/index.js';
-import { useTranslation } from '../i18n/index.js';
-import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
-import { LocationBuildParametersStep } from '../../ui/components/steps/LocationBuildParametersStep.js';
-import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
-import { listLocationPoints } from '../../services/pointRepository.js';
-import { runLocationTabularBuild } from '../../worker/tabular/task.js';
+} from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
+import { LocationSelectionStep } from '~/ui/components/steps/LocationSelectionStep';
+import { LocationBuildParametersStep } from '~/ui/components/steps/LocationBuildParametersStep';
+import { LocationMapPreviewStep } from '~/ui/components/steps/LocationMapPreviewStep';
+import { listLocationPoints } from '~/services/pointRepository';
+import { runLocationTabularBuild } from '~/worker/tabular/task';
 import {
   TabularProvider,
   TabularDataFilter,
@@ -29,7 +29,7 @@ import {
   type TabularColumnMapping,
 } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { createLocationTabularApi } from '../tabular/createLocationTabularApi.js';
+import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
 import {
   FRAME_CONSTANTS,
   getViewportSize,

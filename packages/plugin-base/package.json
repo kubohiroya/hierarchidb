@@ -22,7 +22,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {},
   "peerDependencies": {

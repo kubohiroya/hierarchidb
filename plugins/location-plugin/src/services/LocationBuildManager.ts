@@ -9,8 +9,8 @@ import type {
   LocationBuildFilterCriteria,
   LocationSearchConfig,
   LocationType,
-} from '../common/entities/LocationEntity.js';
-import type { LocationPointProperties } from '../common/entities/LocationPoint.js';
+} from '~/common/entities/LocationEntity';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import {
   mapType,
   parseNumber,
@@ -19,7 +19,7 @@ import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFa
 import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from './download/csvSources.js';
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
-import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
+import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
 import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
 import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 

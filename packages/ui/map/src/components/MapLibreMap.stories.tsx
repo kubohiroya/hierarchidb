@@ -4,12 +4,12 @@ import type React from 'react';
 import { useCallback, useState } from 'react';
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
 import { MapLibreMap } from './MapLibreMap.js';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type {
   MapClickEvent,
   MapFeatureIdentifyResult,
   MapFeatureIdentifier,
-} from '../types/unified-map-props.js';
+} from '~/types/unified-map-props';
 
 const DEMO_SOURCE_ID = 'demo-click-points';
 const DEMO_LAYER_ID = 'demo-click-points-layer';

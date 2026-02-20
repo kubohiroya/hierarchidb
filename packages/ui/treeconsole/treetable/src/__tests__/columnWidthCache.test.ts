@@ -11,7 +11,7 @@ import {
   mergeWithDefaults,
   resolveInitialColumnWidths,
   __columnWidthCacheTesting,
-} from '../utils/column-width-cache.js';
+} from '~/utils/column-width-cache';
 
 declare global {
   // Vitest runs in Node; declare localStorage for the tests.

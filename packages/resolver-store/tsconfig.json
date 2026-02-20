@@ -1,15 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "./src/*",
-        "*"
-      ]
-    },
-    "baseUrl": "."
-  },
+  "extends": "../../tsconfig.package.local-alias.base.json",
+  "compilerOptions": {},
   "include": [
     "src/**/*"
   ]

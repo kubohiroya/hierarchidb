@@ -1,8 +1,8 @@
 import React, { type ReactNode } from 'react';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns.js';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
+import type { ColumnBuilderParams } from '~/components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '~/components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 

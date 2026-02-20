@@ -2,7 +2,7 @@ export {
   SPREADSHEET_PLUGIN_ID,
   SPREADSHEET_PLUGIN_VERSION,
   SPREADSHEET_NODE_TYPE,
-} from '../plugin-manifest.js';
+} from '~/plugin-manifest';
 
 export const DATA_SOURCE_TYPES = {
   FILE: 'file',

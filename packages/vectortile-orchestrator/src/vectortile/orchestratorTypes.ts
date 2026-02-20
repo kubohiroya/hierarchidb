@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 
-import type { ProgressInfo, VectorTileTask } from '../ports/sharedTypes.js';
-import type { VectorTileStageAdapter } from '../ports/VectorTileStageAdapter.js';
+import type { ProgressInfo, VectorTileTask } from '~/ports/sharedTypes';
+import type { VectorTileStageAdapter } from '~/ports/VectorTileStageAdapter';
 import type { GeometryStatsSummary } from './types.js';
 
 export type DefaultVectorTileTask = VectorTileTask;

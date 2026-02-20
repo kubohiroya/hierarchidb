@@ -2,7 +2,7 @@ import type {
   DuplicateResolutionStrategy,
   PropertyMappingRule,
   ValidationRule,
-} from '../common/types/index.js';
+} from '~/common/types/index';
 
 /**
  * Optimization levels for compilation

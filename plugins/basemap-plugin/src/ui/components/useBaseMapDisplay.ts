@@ -5,10 +5,10 @@ import {
   type MapViewState,
 } from '@hierarchidb/ui-map';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BUILT_IN_STYLES } from '../../common/constants/builtInStyles.js';
-import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
-import { useBaseMapEntity } from '../hooks/useBaseMapEntity.js';
-import { resolveMapStyleSource } from '../utils/mapStyle.js';
+import { BUILT_IN_STYLES } from '~/common/constants/builtInStyles';
+import type { BaseMapEntity } from '~/common/types/BaseMapEntity';
+import { useBaseMapEntity } from '~/ui/hooks/useBaseMapEntity';
+import { resolveMapStyleSource } from '~/ui/utils/mapStyle';
 
 interface DemoFeatureCollection {
   type: 'FeatureCollection';

@@ -1,16 +1,14 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*"
-      ]
-    }
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "storybook@9 type defs are not TS4.9 clean; leaf-only allowance"
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

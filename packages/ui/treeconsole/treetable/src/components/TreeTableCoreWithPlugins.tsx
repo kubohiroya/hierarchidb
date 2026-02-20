@@ -5,9 +5,9 @@
 
 import { TreeTableCore as TreeTableCoreOriginal } from './TreeTableCore.js';
 import type { ReactElement } from 'react';
-import { PluginProvider } from '../plugin/PluginProvider.js';
-import type { TreeTableCoreProps } from '../types.js';
-import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '../plugin/types.js';
+import { PluginProvider } from '~/plugin/PluginProvider';
+import type { TreeTableCoreProps } from '~/types';
+import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '~/plugin/types';
 
 export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
   plugins?: TreeTablePlugin[];

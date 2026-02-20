@@ -2,8 +2,8 @@
  * Dynamic redirect URI utilities
  */
 
-import { parseAllowedOrigins } from './cors.js';
-import { type BffContext, getEnv } from './env.js';
+import { parseAllowedOrigins } from '~/utils/cors';
+import { type BffContext, getEnv } from '~/utils/env';
 
 const parseAppBaseUrls = (value?: string): string[] => {
   if (!value) return [];

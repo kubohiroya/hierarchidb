@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { TabularWriter, closeRowStoreDB } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
-import { loadTabularTableRows } from '../tabular.js';
+import { loadTabularTableRows } from '~/services/utils/tabular';
 
 type PrefixGlobal = typeof globalThis & { APP_PREFIX?: string };
 const globalWithPrefix = globalThis as PrefixGlobal;

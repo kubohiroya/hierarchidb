@@ -1,21 +1,29 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "emitDeclarationOnly": false,
     "noEmit": true,
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "*.ts",
         "./src/*",
-        "*"
+        "./src/*.ts",
+        "./src/*.tsx",
+        "./src/*.mts",
+        "./src/*.cts",
+        "./src/*.js",
+        "./src/*.jsx",
+        "./src/*.mjs",
+        "./src/*.cjs",
+        "./src/*.json"
+      ],
+      "~/public/*": [
+        "./public/*"
       ]
-    },
-    "baseUrl": "src"
+    }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.css"
+    "src/**/*"
   ]
 }

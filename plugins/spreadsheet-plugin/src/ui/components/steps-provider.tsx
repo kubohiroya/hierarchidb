@@ -1,8 +1,8 @@
 import { type PluginStepProps, PluginStepRegistry, type PluginStepConfig } from '@hierarchidb/plugin-base';
-import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { TabularDataSourceStep } from './steps/TabularDataSourceStep.js';
 import { TabularDataFilterStep } from './steps/TabularDataFilterStep.js';
-import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
+import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
 import { i18n } from '@hierarchidb/ui-i18n';
 
 const registry = PluginStepRegistry.getInstance();

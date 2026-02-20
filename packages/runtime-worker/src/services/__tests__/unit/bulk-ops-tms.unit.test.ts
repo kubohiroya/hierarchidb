@@ -1,8 +1,8 @@
 import { toNodeId, toNodeType } from '@hierarchidb/core-types';
 import type { CommandEnvelope, CommandResult, PasteNodesPayload, TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
+import type { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
 
 const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
   id: toNodeId(id),
@@ -31,7 +31,7 @@ describe('TreeMutationService bulk paths', () => {
     const processor: Pick<CommandProcessor, 'processCommand'> = {
       processCommand: vi.fn(async () => ({ success: true, seq: 1 }) as CommandResult),
     };
-    const { TreeMutationService } = await import('../../TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as CommandProcessor);
 
     const payload: PasteNodesPayload = {

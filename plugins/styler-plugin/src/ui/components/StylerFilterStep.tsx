@@ -4,7 +4,7 @@ import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { StylerStepData } from '../../common/types/StylerEntity.js';
+import type { StylerStepData } from '~/common/types/StylerEntity';
 
 export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (props) => {
   const { t } = useTranslation('styler-plugin');

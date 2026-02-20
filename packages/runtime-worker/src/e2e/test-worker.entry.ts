@@ -15,8 +15,8 @@ import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import type { CommandProcessor } from '../services/CommandProcessor.js';
-import { WorkerService } from '../WorkerService.js';
+import type { CommandProcessor } from '~/services/CommandProcessor';
+import { WorkerService } from '~/WorkerService';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 

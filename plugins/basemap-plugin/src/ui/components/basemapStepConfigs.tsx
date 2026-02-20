@@ -1,7 +1,7 @@
 import type { PluginStepConfig, PluginStepProps } from '@hierarchidb/plugin-base';
 import { i18n } from '@hierarchidb/ui-i18n';
-import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
-import { DEFAULT_MAP_STYLE, DEFAULT_VIEWPORT } from '../hooks/useBaseMapEntity.js';
+import type { BaseMapEntity, MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
+import { DEFAULT_MAP_STYLE, DEFAULT_VIEWPORT } from '~/ui/hooks/useBaseMapEntity';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
 

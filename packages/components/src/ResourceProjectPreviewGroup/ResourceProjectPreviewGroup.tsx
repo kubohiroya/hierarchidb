@@ -8,7 +8,7 @@ import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // import { AttachmentIcon, MapIcon } from '~/icon';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
-import { ButtonGroupOrientation, ButtonGroupSize } from '../TreeToggleButtonGroup/TreeToggleButtonGroup.js';
+import { ButtonGroupOrientation, ButtonGroupSize } from '~/TreeToggleButtonGroup/TreeToggleButtonGroup';
 const useNavigate = (): ((path: string, options?: any) => void) => {
   return () => {
     /* no-op placeholder */

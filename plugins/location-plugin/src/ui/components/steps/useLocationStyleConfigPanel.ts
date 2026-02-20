@@ -14,8 +14,8 @@ import type {
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
   LocationType,
-} from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+} from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const MIN_ZOOM_LEVEL = 0;

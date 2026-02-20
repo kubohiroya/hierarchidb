@@ -32,8 +32,8 @@ import {
 import { useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { StylerConfig, StylerTableRow } from '../../common/types/StylerEntity.js';
-import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
+import type { StylerConfig, StylerTableRow } from '~/common/types/StylerEntity';
+import { StylerConfigDefault } from '~/common/types/StylerEntity';
 import { useStylerConfigPanelState } from './hooks/useStylerConfigPanelState.js';
 
 export interface StylerMappingProps {

@@ -1,13 +1,13 @@
-import type { ILocationDownloadStrategy } from '../types.js';
+import type { ILocationDownloadStrategy } from '~/services/download/types';
 import type {
   LocationSearchConfig,
-} from '../../../common/entities/LocationEntity.js';
-import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
+} from '~/common/entities/LocationEntity';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import {
   mapType,
-} from '../mappers.js';
-import type { RawOverpassElement } from '../rawTypes.js';
-import { buildOverpassPointProperties } from '../../pointFactories.js';
+} from '~/services/download/mappers';
+import type { RawOverpassElement } from '~/services/download/rawTypes';
+import { buildOverpassPointProperties } from '~/services/pointFactories';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';

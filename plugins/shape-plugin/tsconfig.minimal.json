@@ -1,13 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": false,
     "noEmit": true,
     "jsx": "react-jsx",
-    "module": "NodeNext"
+    "module": "ESNext"
   },
   "include": [
     "src/shared*",

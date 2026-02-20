@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyledAccordion, type StyledAccordionProps } from '../components/StyledAccordion.js';
+import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { Restore, Save, Settings } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
 

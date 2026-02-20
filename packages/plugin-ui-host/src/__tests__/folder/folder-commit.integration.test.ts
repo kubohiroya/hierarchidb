@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   teardownWorkerClientRef,
   workerClientRef,
-} from '../plugin-dialog-mocks/setupPluginWorkerMock.js';
+} from '~/__tests__/plugin-dialog-mocks/setupPluginWorkerMock';
 
 function useFolderDialogForTest(parentId: NodeId) {
   return useTreeNodeDialog<PeerEntity>({

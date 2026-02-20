@@ -4,7 +4,7 @@ import type {
   MapLibreStyleProperty,
   StylerStepData,
   StyleType,
-} from '../../common/types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

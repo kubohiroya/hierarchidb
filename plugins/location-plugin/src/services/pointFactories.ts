@@ -4,8 +4,8 @@ import type {
   LocationPointProperties,
   LocationPointId,
   LocationPointMetadata,
-} from '../common/entities/LocationPoint.js';
-import type { LocationPointKind } from '../common/entities/LocationPoint.js';
+} from '~/common/entities/LocationPoint';
+import type { LocationPointKind } from '~/common/entities/LocationPoint';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { sanitizeTags } from './download/mappers.js';
 

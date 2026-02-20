@@ -8,8 +8,8 @@ import type {
   ColorScheme,
   StylerConfig,
   StylerMapping,
-} from '../types/StylerEntity.js';
-import { StylerConfigDefault } from '../types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
+import { StylerConfigDefault } from '~/common/types/StylerEntity';
 
 /**
  * @param h - Hue (0-360)

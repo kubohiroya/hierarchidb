@@ -9,8 +9,8 @@
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TreeViewController } from '../../../types/index.js';
-import { expandedAtom, toggleAllExpandedAtom, toggleExpandedAtom } from '../state/index.js';
+import type { TreeViewController } from '~/types/index';
+import { expandedAtom, toggleAllExpandedAtom, toggleExpandedAtom } from '~/components/TreeTable/state/index';
 
 export interface ExpansionOrchestratorResult {
   // State

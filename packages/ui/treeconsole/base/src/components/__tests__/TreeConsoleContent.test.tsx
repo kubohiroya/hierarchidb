@@ -17,7 +17,7 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   isFolderNodeType: () => true,
 }));
 
-import { TreeConsoleContent } from '../TreeConsoleContent.js';
+import { TreeConsoleContent } from '~/components/TreeConsoleContent';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
 import type { NodeId } from '@hierarchidb/core-types';
 import { DualKeyMap } from '@hierarchidb/util';

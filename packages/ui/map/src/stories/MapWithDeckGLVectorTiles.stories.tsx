@@ -5,7 +5,7 @@ import { TileLayer } from '@deck.gl/geo-layers';
 import type { TileLayerProps } from '@deck.gl/geo-layers';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import type { GeoJsonLayerProps } from '@deck.gl/layers';
-import { DEFAULT_MAP_CONFIG, loadMapWithDeckGL } from '../index.js';
+import { DEFAULT_MAP_CONFIG, loadMapWithDeckGL } from '~/index';
 
 const LazyMapWithDeckGL = lazy(async () => {
   const mod = await loadMapWithDeckGL();

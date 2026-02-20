@@ -4,7 +4,7 @@ import {
   parseOpenFlightsCsv,
   parseOurAirportsCsv,
   parseWorldPortIndexCsv,
-} from '../../csvSources.js';
+} from '~/services/download/csvSources';
 
 describe('csvSources', () => {
   const timestamp = Date.now() as Timestamp;

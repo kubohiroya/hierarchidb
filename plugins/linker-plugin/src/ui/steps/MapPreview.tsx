@@ -3,7 +3,7 @@ import { Suspense, lazy, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { loadMapLibreMap } from '@hierarchidb/ui-map';
 import type { ResourceSummary } from './ResourcePicker.js';
-import { useTranslation } from '../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 
 export interface MapPreviewProps {
   items: ResourceSummary[];

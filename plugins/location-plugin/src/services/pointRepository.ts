@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { buildTileIdByZoom } from '@hierarchidb/location-store';
-import { LocationDB } from '../worker/locationEntitiesDB.js';
-import { toGroupRow, fromGroupRow } from '../worker/normalizers.js';
-import type { LocationGroupItemData } from '../common/types/entities.js';
-import type { LocationPointProperties } from '../common/entities/LocationPoint.js';
+import { LocationDB } from '~/worker/locationEntitiesDB';
+import { toGroupRow, fromGroupRow } from '~/worker/normalizers';
+import type { LocationGroupItemData } from '~/common/types/entities';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 
 type PointItem = FeatureItemBase<LocationGroupItemData>;
 type PointProperties = LocationPointProperties;

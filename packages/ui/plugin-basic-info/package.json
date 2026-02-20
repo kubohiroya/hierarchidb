@@ -17,10 +17,11 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "react": "^18.3.1",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "react": "^18.3.1",

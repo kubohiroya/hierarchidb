@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { WorkerAPIAdapter } from '../adapters/index.js';
-import type { CRUDResult } from '../types/index.js';
+import type { WorkerAPIAdapter } from '~/adapters/index';
+import type { CRUDResult } from '~/types/index';
 
 type StateManagerLike = Partial<{
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<CRUDResult> | void;

@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { HeadlessDialogContextValue } from '../headless/types.js';
+import type { HeadlessDialogContextValue } from '~/headless/types';
 
 const PluginDialogContext = createContext<HeadlessDialogContextValue<any> | null>(null);
 

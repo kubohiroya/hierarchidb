@@ -1,12 +1,12 @@
-import type { ILocationDownloadStrategy } from '../types.js';
+import type { ILocationDownloadStrategy } from '~/services/download/types';
 import type {
   LocationSearchConfig,
   LocationType,
-} from '../../../common/entities/LocationEntity.js';
-import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
-import { mapType, parseNumber } from '../mappers.js';
-import type { RawNominatimResult } from '../rawTypes.js';
-import { buildOsmPointProperties } from '../../pointFactories.js';
+} from '~/common/entities/LocationEntity';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
+import { mapType, parseNumber } from '~/services/download/mappers';
+import type { RawNominatimResult } from '~/services/download/rawTypes';
+import { buildOsmPointProperties } from '~/services/pointFactories';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';

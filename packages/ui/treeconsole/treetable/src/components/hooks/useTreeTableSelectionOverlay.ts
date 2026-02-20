@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { TreeTableController } from '../../types.js';
+import type { TreeTableController } from '~/types';
 
 interface UseTreeTableSelectionOverlayParams {
   data: readonly TreeNode[];

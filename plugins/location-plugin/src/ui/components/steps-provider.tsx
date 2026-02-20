@@ -1,6 +1,6 @@
 import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import type { LocationEntity } from '../../common/types/index.js';
+import type { LocationEntity } from '~/common/types/index';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';

@@ -22,7 +22,7 @@ import {
   isShallowEqualStepData,
   mergeDialogData,
   toRecord,
-} from '../controller/step-guards.js';
+} from '~/headless/controller/step-guards';
 import type { BasicInfoMeta, DialogUiState, StepCompositionResult } from './data-types.js';
 
 type PluginDefinedEntity = PeerEntity<TreeNodeData>;

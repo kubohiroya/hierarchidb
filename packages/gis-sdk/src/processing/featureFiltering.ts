@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { FeatureFilterMethod, GeometryEngine, HybridFilterConfig } from '../config.js';
-import { geometryArea, geometryBbox, geometryBboxPolygon } from '../geometryEngine.js';
+import type { FeatureFilterMethod, GeometryEngine, HybridFilterConfig } from '~/config';
+import { geometryArea, geometryBbox, geometryBboxPolygon } from '~/geometryEngine';
 
 export type { FeatureFilterMethod, HybridFilterConfig };
 

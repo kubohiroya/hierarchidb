@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DialogActionInFlight } from '../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 
 export function usePendingAction(open: boolean) {
   const [pendingAction, setPendingAction] = useState<DialogActionInFlight | null>(null);

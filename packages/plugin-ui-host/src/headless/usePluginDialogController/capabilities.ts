@@ -5,7 +5,7 @@ import {
   emptyGuards,
   evaluateStepGuards,
   evaluateValidationState,
-} from '../controller/step-guards.js';
+} from '~/headless/controller/step-guards';
 
 interface Params<T extends Record<string, unknown> = Record<string, unknown>> {
   steps: DialogStep[];

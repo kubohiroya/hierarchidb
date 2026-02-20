@@ -1,5 +1,5 @@
 import type { Seq } from '@hierarchidb/tree-api';
-import type { CommandEnvelope } from '../command-types.js';
+import type { CommandEnvelope } from '~/services/command-types';
 
 // Minimal command handler interfaces and registry implementation.
 // Keeps behavior identical to the previous switch-case logic while

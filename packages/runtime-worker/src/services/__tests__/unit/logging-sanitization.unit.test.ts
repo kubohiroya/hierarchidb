@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
-import { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
-import type { CommandEnvelope } from '../../command-types.js';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandEnvelope } from '~/services/command-types';
 
 let coreDBStub: CoreDB;
 

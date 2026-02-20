@@ -20,11 +20,11 @@ import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
 import { buildBoundaryFeature } from './geometry.js';
 import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
-import type { TransformByBandStageContext } from '../contexts.js';
-import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
-import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
-import { logDebug } from '../debug/persistentDebugLog.js';
-import { packTileId } from '../tiles/tileId.js';
+import type { TransformByBandStageContext } from '~/contexts';
+import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
+import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
+import { logDebug } from '~/debug/persistentDebugLog';
+import { packTileId } from '~/tiles/tileId';
 import { getTopojsonRuntime } from './topojsonRuntimeAdapter.js';
 
 const TASKDEBUG_BUILD_TAG = 'taskdebug-2026-02-09-0240';

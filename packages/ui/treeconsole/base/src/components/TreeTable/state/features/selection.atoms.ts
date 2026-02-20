@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { filteredDataAtom } from '../core/data.atoms.js';
+import { filteredDataAtom } from '~/components/TreeTable/state/core/data.atoms';
 
 export const rowSelectionAtom = atom<RowSelectionState>({});
 

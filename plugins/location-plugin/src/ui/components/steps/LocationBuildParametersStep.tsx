@@ -4,9 +4,9 @@
  */
 
 import type React from 'react';
-import type { LocationEntity } from '../../../common/types/index.js';
+import type { LocationEntity } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
+import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 
 interface LocationBuildParametersStepProps {

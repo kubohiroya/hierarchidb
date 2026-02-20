@@ -1,9 +1,9 @@
 import type { Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { recordCommandLatency } from '../utils/metrics.js';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
+import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
+import { recordCommandLatency } from '~/utils/metrics';
+import { PERFORMANCE_CONFIG } from '~/utils/performance-config';
 import type { CoreDB } from './CoreDB.js';
 import { executeCoreCommand } from './command/core-handlers/index.js';
 import { CommandExecutionRunner } from './command/execution/CommandExecutionRunner.js';

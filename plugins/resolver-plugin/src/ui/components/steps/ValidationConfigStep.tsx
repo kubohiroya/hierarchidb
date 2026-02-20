@@ -31,7 +31,7 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
+import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '~/common/types/index';
 import { useValidationConfigStepView } from './useValidationConfigStepView.js';
 import { ValidationRuleParameterFields, ValidationRuleTypeMenu } from './ValidationConfigStepViewElements.js';
 import { useValidationConfigStep } from './useValidationConfigStep.js';

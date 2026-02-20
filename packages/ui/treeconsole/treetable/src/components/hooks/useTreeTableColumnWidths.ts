@@ -13,8 +13,8 @@ import {
   loadCachedColumnWidths,
   mergeWithDefaults,
   resolveInitialColumnWidths,
-} from '../../utils/column-width-cache.js';
-import type { ColumnWidthMap } from '../../utils/column-width-cache.js';
+} from '~/utils/column-width-cache';
+import type { ColumnWidthMap } from '~/utils/column-width-cache';
 
 const MIN_COLUMN_WIDTH = 50;
 const FIXED_COLUMNS = new Set(['selection']);
@@ -87,7 +87,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
 
     let cancelled = false;
     (async () => {
-      const { getColumnWidths } = await import('../../state/column-widths-db.js');
+      const { getColumnWidths } = await import('~/state/column-widths-db');
       const saved = await getColumnWidths(pageNodeId);
       if (cancelled) return;
       if (saved) {
@@ -108,7 +108,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
     if (!pageNodeId || !columnWidthsHydrated) return;
     cacheColumnWidths(pageNodeId, columnWidths);
     (async () => {
-      const { saveColumnWidths } = await import('../../state/column-widths-db.js');
+      const { saveColumnWidths } = await import('~/state/column-widths-db');
       await saveColumnWidths(pageNodeId, columnWidths);
     })();
   }, [columnWidths, columnWidthsHydrated, pageNodeId]);

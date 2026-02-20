@@ -39,7 +39,7 @@ vi.mock('@hierarchidb/vt-orchestrator', async () => {
 });
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
-import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint.js';
+import { createEndpointFromMessagePort } from '~/e2e/test-utils/messagePortEndpoint';
 
 type WorkerTestAPI = {
   getShapeQueryAPI(): Promise<ShapeQueryAPI>;

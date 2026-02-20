@@ -7,7 +7,7 @@ import { Box, Button, LinearProgress } from '@mui/material';
 import { LocationOn, Palette, LocationCity } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { DEFAULT_MAP_CONFIG, MapToggleCard, LocationPreviewList, MapPreviewShell } from '@hierarchidb/ui-map';
-import type { LocationEntity } from '../../../common/types/index.js';
+import type { LocationEntity } from '~/common/types/index';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
 import { useLocationMapPreviewStep } from './useLocationMapPreviewStep.js';

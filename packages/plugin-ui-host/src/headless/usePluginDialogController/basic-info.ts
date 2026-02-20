@@ -6,7 +6,7 @@ import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toRecord } from '../controller/step-guards.js';
+import { toRecord } from '~/headless/controller/step-guards';
 import type { BasicInfoMeta, TreeNodeUpdaterPayload } from './data-types.js';
 
 interface Params {

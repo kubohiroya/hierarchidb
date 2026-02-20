@@ -1,4 +1,4 @@
-import type { LocationType } from '../../common/entities/LocationEntity.js';
+import type { LocationType } from '~/common/entities/LocationEntity';
 
 const TYPE_MAP: Record<string, LocationType> = {
   centroid: 'area_centroid',

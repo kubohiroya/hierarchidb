@@ -11,7 +11,7 @@ import type {
   ShapeBuildConfig,
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
-} from '../common/types/index';
+} from '~/common/types/index';
 import {
   type BuildSession,
   type BuildTask,
@@ -33,10 +33,10 @@ import {
   validateBatchConfig,
   type ShapeStepValidationResult,
   type SelectedArrayByCountries,
-} from '../common/types/index';
+} from '~/common/types/index';
 import { ShapeEntityHandler } from './handlers/index.js';
 
-import { metadataLoader } from '../services/metadata/MetadataLoader';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {
   type BuildProgressEvent,
   type BuildProgressPayload,
@@ -48,14 +48,14 @@ import {
   countSelectedAdminPairs,
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
-} from '../services/utils/utils';
+} from '~/services/utils/utils';
 import {
   deleteRawDataDataSourceBuffersForNode,
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
-} from '../services/utils/chunkStore';
-import { normalizeCountryCodeFormat } from '../services/utils/iso3166';
-import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveFetchStageStrategy';
-import { toBuildSessionRecord } from '../services/batch/shapeSessionMappers';
+} from '~/services/utils/chunkStore';
+import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
+import { resolveFetchStageStrategy } from '~/services/batch/strategies/resolveFetchStageStrategy';
+import { toBuildSessionRecord } from '~/services/batch/shapeSessionMappers';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
@@ -69,17 +69,17 @@ import {
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
-import { runShapePipeline } from '../services/vt/shapePipeline';
-import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient';
-import { isTaskSkipped } from '../common/utils/taskMessages';
-import { buildShapeTaskTitle } from '../common/utils/taskTitles';
+import { runShapePipeline } from '~/services/vt/shapePipeline';
+import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import {
   resolveTaskActivityTimestamp,
   resolveTaskProcessingTimestamp,
   selectLatestTaskBySequence,
 } from './taskOrdering.ts';
-import { getStagePlan, setFetchPlannedTotal } from '../services/vt/shapeProgressPlan';
+import { getStagePlan, setFetchPlannedTotal } from '~/services/vt/shapeProgressPlan';
 import { shouldReuseTaskQueueOnStart } from './shouldReuseTaskQueueOnStart.ts';
 
 const buildBuildSessionConfig = (buildConfig: ShapeRuntimeBuildConfig): BuildSessionConfig => {

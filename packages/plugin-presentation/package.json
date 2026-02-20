@@ -19,7 +19,7 @@
     "lint": "eslint src",
     "test": "vitest run",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
     "@hierarchidb/ui-icon": "workspace:*"

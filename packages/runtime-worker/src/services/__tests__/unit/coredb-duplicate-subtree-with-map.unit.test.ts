@@ -1,7 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { CoreDB } from '../../CoreDB.js';
+import { CoreDB } from '~/services/CoreDB';
 
 function node(
   id: string,

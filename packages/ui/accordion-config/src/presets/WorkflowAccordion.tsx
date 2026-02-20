@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyledAccordion, type StyledAccordionProps } from '../components/StyledAccordion.js';
+import { StyledAccordion, type StyledAccordionProps } from '~/components/StyledAccordion';
 import { Chip } from '@mui/material';
 import type { ChipProps } from '@mui/material';
 

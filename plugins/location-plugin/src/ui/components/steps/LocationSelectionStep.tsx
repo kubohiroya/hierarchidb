@@ -5,8 +5,8 @@
 import type React from 'react';
 import { Suspense } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import type { LocationEntity, LocationType } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+import type { LocationEntity, LocationType } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 import { CountryMatrixSelector, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { useLocationSelectionStep } from './useLocationSelectionStep.ts';

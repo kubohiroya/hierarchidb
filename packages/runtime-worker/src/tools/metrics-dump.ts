@@ -1,4 +1,4 @@
-import { commandMetrics } from '../services/utils/metrics.js';
+import { commandMetrics } from '~/services/utils/metrics';
 
 // Development helper: dump metrics snapshot as JSON and reset
 if (require.main === module) {

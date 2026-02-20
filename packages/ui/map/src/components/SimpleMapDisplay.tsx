@@ -5,7 +5,7 @@
 
 import type React from 'react';
 import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
 
 export type SimpleMapDisplayProps = MapLibreMapProps;
 

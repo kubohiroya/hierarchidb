@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import { assertCommandFailure } from '../../../test-utils/assertions.js';
-import { CommandProcessor } from '../../CommandProcessor.js';
-import { CoreDB } from '../../CoreDB.js';
-import { commandRegistry } from '../../command/registry.js';
-import { WorkerErrorCodeValue } from '../../command-types.js';
+import { assertCommandFailure } from '~/test-utils/assertions';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import { CoreDB } from '~/services/CoreDB';
+import { commandRegistry } from '~/services/command/registry';
+import { WorkerErrorCodeValue } from '~/services/command-types';
 
 describe('CommandProcessor error model', () => {
   let core: CoreDB;

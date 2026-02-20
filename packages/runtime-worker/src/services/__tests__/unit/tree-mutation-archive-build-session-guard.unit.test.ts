@@ -1,8 +1,8 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
+import type { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
 
 const sessionsBulkGetMock = vi.hoisted(() => vi.fn());
 const sessionsOpenMock = vi.hoisted(() => vi.fn(async () => undefined));
@@ -103,7 +103,7 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     const processor = createCommandProcessorMock();
     sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'running' }]);
 
-    const { TreeMutationService } = await import('../../TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const service = new TreeMutationService(
       core as unknown as CoreDB,
       processor as unknown as CommandProcessor
@@ -125,7 +125,7 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
     const processor = createCommandProcessorMock();
     sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'completed' }]);
 
-    const { TreeMutationService } = await import('../../TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const service = new TreeMutationService(
       core as unknown as CoreDB,
       processor as unknown as CommandProcessor

@@ -1,4 +1,5 @@
-import type { TabularProcessor } from '../processor.js';
+import type { TabularProcessor } from '~/processor';
+import type { TabularSchema } from '~/types';
 
 export interface ColumnRenameRule {
   from: string;
@@ -9,9 +10,9 @@ export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[
   const map = new Map(rules.map(r => [r.from, r.to]));
   return {
     id,
-    mapSchema(schema) {
+    mapSchema(schema: TabularSchema) {
       return {
-        columns: schema.columns.map(c => ({ name: map.get(c.name) || c.name, type: c.type })),
+        columns: schema.columns.map((c) => ({ name: map.get(c.name) || c.name, type: c.type })),
       };
     },
     transformRow(row: Record<string, any>): Record<string, any> {

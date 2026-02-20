@@ -5,10 +5,10 @@ import type {
   TabularDataResult,
   TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
-import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
-import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
-import { filterRulesAtom } from '../../state/tabularKeyValueAtoms.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
+import { useTabularDataFilter } from '~/ui/hooks/useTabularDataFilter';
+import { useTabularKeyValueState } from '~/ui/hooks/useTabularKeyValueState';
+import { filterRulesAtom } from '~/ui/state/tabularKeyValueAtoms';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 
 export interface TabularDataFilterStepProps<T extends SpreadsheetDraft> extends PluginStepProps<T> {

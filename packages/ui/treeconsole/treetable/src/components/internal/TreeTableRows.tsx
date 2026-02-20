@@ -8,7 +8,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeDescription, getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
-import { NameCell, IndentSpace, StyledTableRow } from '../TreeTableStyles.js';
+import { NameCell, IndentSpace, StyledTableRow } from '~/components/TreeTableStyles';
 import { Link as RouterLink } from '@tanstack/react-router';
 
 export interface TreeTableRowsProps {

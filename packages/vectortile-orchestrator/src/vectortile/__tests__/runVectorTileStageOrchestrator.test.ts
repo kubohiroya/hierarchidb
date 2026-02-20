@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runVectorTileStageOrchestrator } from '../runVectorTileStageOrchestrator.js';
+import { runVectorTileStageOrchestrator } from '~/vectortile/runVectorTileStageOrchestrator';
 
-import type { ProgressInfo } from '../../ports/sharedTypes.js';
-import type { RunVectorTileStageOrchestratorParams } from '../orchestratorTypes.js';
+import type { ProgressInfo } from '~/ports/sharedTypes';
+import type { RunVectorTileStageOrchestratorParams } from '~/vectortile/orchestratorTypes';
 
 import {
   makeAdapter,

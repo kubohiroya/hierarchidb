@@ -1,16 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
     "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "./src/*",
-        "*"
-      ]
-    },
+    "outDir": "./dist",
     "jsx": "react-jsx"
   },
   "include": [

@@ -3,9 +3,9 @@
  * Worker environment plugin registration
  */
 
-import { ShapeMetadata } from '../common/types/metadata.js';
+import { ShapeMetadata } from '~/common/types/metadata';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeEntity } from '../common/types/index.js';
+import type { ShapeEntity } from '~/common/types/index';
 import { shapeBuildAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 

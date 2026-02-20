@@ -1,8 +1,8 @@
 import type { MapViewState } from '@hierarchidb/ui-map';
 import { useCallback, useMemo } from 'react';
-import { getStyleAttribution } from '../../common/constants/builtInStyles.js';
-import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
-import { resolvePreviewMapStyle } from '../utils/mapStyle.js';
+import { getStyleAttribution } from '~/common/constants/builtInStyles';
+import type { MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
+import { resolvePreviewMapStyle } from '~/ui/utils/mapStyle';
 
 interface UseBaseMapPreviewProps {
   mapStyle: MapStyle;

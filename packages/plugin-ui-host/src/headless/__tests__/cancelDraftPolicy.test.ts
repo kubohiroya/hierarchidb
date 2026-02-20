@@ -1,6 +1,6 @@
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { describe, expect, it } from 'vitest';
-import { evaluateCancelPolicy } from '../cancelDraftPolicy.js';
+import { evaluateCancelPolicy } from '~/headless/cancelDraftPolicy';
 import '@testing-library/jest-dom/vitest';
 import type { NodeId } from '@hierarchidb/core-types';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { computeDescendants, collectDescendantIdList } from '../utils/descendants.js';
+import { computeDescendants, collectDescendantIdList } from '~/utils/descendants';
 
 const N = (id: string, parentId?: string): TreeNode => ({
   id: id as any,

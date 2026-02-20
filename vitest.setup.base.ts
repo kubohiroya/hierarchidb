@@ -91,7 +91,10 @@ if (typeof Worker === 'undefined') {
 
 // structuredClone polyfill (force node:util when available)
 try {
-  const { structuredClone: nodeStructuredClone } = await import('node:util');
+  const util = (await import('node:util')) as Record<string, unknown>;
+  const nodeStructuredClone = util.structuredClone as
+    | ((value: unknown, options?: unknown) => unknown)
+    | undefined;
   if (typeof nodeStructuredClone === 'function') {
     try {
       Object.defineProperty(globalThis, 'structuredClone', {

@@ -2,10 +2,10 @@
 import type React from 'react';
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { Source, Layer } from '@vis.gl/react-maplibre';
-import { MapLibreMap } from '../components/MapLibreMap.js';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
-import type { MapViewState } from '../types/unified-map-props.js';
+import { MapLibreMap } from '~/components/MapLibreMap';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
+import type { MapViewState } from '~/types/unified-map-props';
 import type { Meta, StoryObj } from '@storybook/react';
 
 type Position = [number, number];

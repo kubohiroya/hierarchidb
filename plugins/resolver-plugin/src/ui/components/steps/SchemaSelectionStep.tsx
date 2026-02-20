@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
-import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '../../../common/types/index.js';
+import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/types/index';
 import { useSchemaSelectionStep } from './hooks/useSchemaSelectionStep.js';
 
 interface SchemaSelectionStepProps {

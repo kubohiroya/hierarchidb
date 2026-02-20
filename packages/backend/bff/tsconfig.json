@@ -1,18 +1,8 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-  "baseUrl": ".",
+    "baseUrl": ".",
     "noImplicitAny": false,
-    "paths": {
-      "~/*": [
-        "./src/*.ts",
-        "./src/*.tsx",
-        "./src/*.js",
-        "./src/*.jsx",
-        "./src/*.json",
-        "./src/*"
-      ]
-    },
     "skipLibCheck": true,
     "types": [
       "@cloudflare/workers-types",
@@ -22,12 +12,12 @@
       "ES2022"
     ],
     "target": "es2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*"
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

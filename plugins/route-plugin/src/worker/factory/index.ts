@@ -1,1 +1,1 @@
-export { registerRouteWorkerStores } from '../index.js';
+export { registerRouteWorkerStores } from '~/worker/index';

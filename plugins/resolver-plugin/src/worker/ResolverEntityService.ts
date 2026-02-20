@@ -8,7 +8,7 @@ import type {
   ResolverEntity,
   SchemaInfo,
   ValidationRule,
-} from '../common/entities/ResolverEntity.js';
+} from '~/common/entities/ResolverEntity';
 import { CoreDB } from '@hierarchidb/runtime-worker';
 
 type ResolverEntityPayload = ResolverEntity & {

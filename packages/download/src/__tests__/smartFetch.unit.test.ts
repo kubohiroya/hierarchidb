@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { smartFetch } from '../smartFetch.js';
+import { smartFetch } from '~/smartFetch';
 
 const originalFetch = globalThis.fetch;
 

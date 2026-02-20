@@ -36,7 +36,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   virtualize = true,
 }: TaskItemCardListCardProps, ref) => {
   const { t } = useTranslation();
-  const stages = useShapeBuildStages(t);
+  const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => {
     return new Map(stages.map((stage) => [stage.id, stage.icon]));
   }, [stages]);

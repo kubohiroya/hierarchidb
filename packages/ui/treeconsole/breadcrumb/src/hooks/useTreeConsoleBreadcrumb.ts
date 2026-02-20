@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentProps, ComponentType, Dispatch, KeyboardEvent, MouseEvent, SetStateAction } from 'react';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
-import { NodeContextMenu, type OpenStepOption } from '../components/NodeContextMenu.js';
-import { NodeTypeIcon } from '../components/NodeTypeIcon.js';
+import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
+import { NodeContextMenu, type OpenStepOption } from '~/components/NodeContextMenu';
+import { NodeTypeIcon } from '~/components/NodeTypeIcon';
 
 interface UseTreeConsoleBreadcrumbResult {
   pathToUse: BreadcrumbNode[];

@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import { clearLocationPoints } from '../../services/pointRepository.js';
+import { clearLocationPoints } from '~/services/pointRepository';
 
 export const clearLocationDataSourceCache = async (
   nodeId: NodeId,

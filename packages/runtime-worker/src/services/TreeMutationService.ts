@@ -13,9 +13,9 @@ import type {
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { resolveDefaultNodeName } from '../utils/default-node-name.js';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
+import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
+import { resolveDefaultNodeName } from '~/utils/default-node-name';
+import { PERFORMANCE_CONFIG } from '~/utils/performance-config';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { createNewName } from './DraftTreeNodeOperations.js';

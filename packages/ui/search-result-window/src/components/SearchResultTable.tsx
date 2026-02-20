@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { SearchResult } from '../types/index.js';
+import type { SearchResult } from '~/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import {
   clearSelectionAtom,
@@ -25,7 +25,7 @@ import {
   selectNodeAtom,
   selectRangeAtom,
   toggleNodeSelectionAtom,
-} from '../state/index.js';
+} from '~/state/index';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: 400,

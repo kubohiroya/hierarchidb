@@ -5,13 +5,13 @@ import {
   type TabularDataResult,
   type TabularFilterRule,
 } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { useTabularDataFilterStep } from '../../hooks/useTabularDataFilterStep.js';
-import { TabularFilterSections } from '../TabularFilterSections.js';
+import { useTabularDataFilterStep } from '~/ui/hooks/useTabularDataFilterStep';
+import { TabularFilterSections } from '~/ui/components/TabularFilterSections';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import type { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
-import type { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
+import type { useTabularKeyValueState } from '~/ui/hooks/useTabularKeyValueState';
+import type { useTabularDataFilter } from '~/ui/hooks/useTabularDataFilter';
 import {
   useTabularDataFilterStepView,
   type TabularDataFilterStepProps,

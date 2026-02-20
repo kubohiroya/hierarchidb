@@ -1,27 +1,8 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@hierarchidb/tabular-source": [
-        "src/index.ts"
-      ],
-      "@hierarchidb/tabular-source/*": [
-        "src/*"
-      ],
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    },
-    "baseUrl": "src"
-  },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
+
+    "src/**/*"
+
   ]
 }

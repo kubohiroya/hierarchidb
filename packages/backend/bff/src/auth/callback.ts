@@ -1,31 +1,31 @@
-import { type BffContext, getEnv } from '../utils/env.js';
-import { createSessionToken } from '../utils/jwt.js';
-import { KVStorageManager } from '../utils/kv-storage.js';
-import { parseEnvInt } from '../utils/number.js';
+import { type BffContext, getEnv } from '~/utils/env';
+import { createSessionToken } from '~/utils/jwt';
+import { KVStorageManager } from '~/utils/kv-storage';
+import { parseEnvInt } from '~/utils/number';
 import {
   buildAppCallbackUrl,
   getAppCallbackUrlFromState,
   getDynamicRedirectUri,
   validateRedirectUri,
-} from '../utils/redirect-uri.js';
-import { StateManager } from '../utils/state-manager.js';
-import { buildKvWarning, type KvWarning } from '../utils/kv-warning.js';
+} from '~/utils/redirect-uri';
+import { StateManager } from '~/utils/state-manager';
+import { buildKvWarning, type KvWarning } from '~/utils/kv-warning';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   type GitHubOAuth2Config,
   getGitHubUserInfo,
-} from './github.js';
+} from '~/auth/github';
 import {
   type ExchangeCodeForTokensReturn,
   exchangeCodeForTokens,
   type GoogleOAuth2Config,
   getGoogleUserInfo,
-} from './google.js';
+} from '~/auth/google';
 import {
   exchangeCodeForTokens as exchangeMicrosoftCodeForTokens,
   getMicrosoftUserInfo,
   type MicrosoftOAuth2Config,
-} from './microsoft.js';
+} from '~/auth/microsoft';
 
 /**
  * Handle OAuth2 callback from OAuth providers

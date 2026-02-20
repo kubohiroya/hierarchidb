@@ -1,18 +1,15 @@
 {
-  "extends": "../../../../tsconfig.base.json",
+  "extends": "../../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "types": [
       "vitest/globals",
       "@testing-library/jest-dom"
     ],
     "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
   "include": [
-    "src*.test.ts",
-    "src*.test.ts",
-    "src*.spec.ts",
-    "src*.spec.ts"
+    "src/**/*"
   ]
 }

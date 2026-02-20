@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../CoreDB.js';
+import type { CoreDB } from '~/services/CoreDB';
 
 export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise<Set<NodeId>> {
   const ids = new Set<NodeId>();

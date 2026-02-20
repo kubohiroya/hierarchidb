@@ -29,7 +29,7 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ResolverEntity, PropertyMappingRule } from '../../common/types/index.js';
+import type { ResolverEntity, PropertyMappingRule } from '~/common/types/index';
 import { useResolverPanel } from './useResolverPanel.js';
 
 interface ResolverPanelProps {

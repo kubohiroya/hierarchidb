@@ -25,7 +25,7 @@ import {
   type StylerDialogData,
   type StylerStepData,
   type StyleType,
-} from '../../common/types/StylerEntity.ts';
+} from '~/common/types/StylerEntity';
 
 const TARGET_PROPERTY_CARDS: Record<
   MapLibreStyleProperty,

@@ -143,7 +143,7 @@ vi.mock('../useRoutePreviewStep.js', () => ({
   }),
 }));
 
-import { RoutePreviewStep } from '../RoutePreviewStep.js';
+import { RoutePreviewStep } from '~/ui/components/steps/RoutePreviewStep';
 
 describe('RoutePreviewStep style floating window', () => {
   it('renders route style controls in preview overlay', () => {

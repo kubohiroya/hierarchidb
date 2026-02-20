@@ -4,10 +4,16 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import type { MapAttributionControlOptions } from '../types/attribution.js';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  Map as ReactMapLibreMap,
+  MapProvider,
+  type MapLayerMouseEvent,
+  type MapEvent,
+  type ViewState as ReactMapViewState,
+} from '@vis.gl/react-maplibre';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
+import type { MapAttributionControlOptions } from '~/types/attribution';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
@@ -15,10 +21,10 @@ import {
   type MapFeatureIdentifyResult,
   type MapFeatureIdentifyConfig,
   type MapViewState,
-} from '../types/unified-map-props.js';
-import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '../lib/feature-identification.js';
-import { loadMapLibreModule } from '../utils/maplibre-loader.js';
-import { formatAttributionItems } from '../utils/attribution.js';
+} from '~/types/unified-map-props';
+import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '~/lib/feature-identification';
+import { loadMapLibreModule } from '~/utils/maplibre-loader';
+import { formatAttributionItems } from '~/utils/attribution';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
@@ -26,7 +32,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Re-export types for backward compatibility
-export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props.js';
+export type { MapViewState, MapInteractionOptions } from '~/types/unified-map-props';
 
 export type MapLibreMapProps = BaseMapProps & {
   /** Children components (layers, markers, etc.) */
@@ -48,6 +54,49 @@ export type MapLibreMapProps = BaseMapProps & {
 const { mapStyleUrl: defaultMapStyleUrl, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
 type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
+
+type ControlledViewState = ReactMapViewState & {
+  width: number;
+  height: number;
+};
+
+type MapContainerSize = {
+  width: number;
+  height: number;
+};
+
+const ZERO_PADDING = { top: 0, right: 0, bottom: 0, left: 0 } as const;
+
+const parsePxToNumber = (value: string | number | undefined): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const toControlledViewState = (
+  viewState: MapViewState | undefined,
+  size: MapContainerSize,
+): ControlledViewState | undefined => {
+  if (!viewState || size.width <= 0 || size.height <= 0) {
+    return undefined;
+  }
+
+  return {
+    longitude: viewState.longitude,
+    latitude: viewState.latitude,
+    zoom: viewState.zoom,
+    bearing: viewState.bearing ?? 0,
+    pitch: viewState.pitch ?? 0,
+    width: size.width,
+    height: size.height,
+    padding: ZERO_PADDING,
+  };
+};
 
 const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
   if (!style) return undefined;
@@ -83,10 +132,12 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           identifyFeatureOnClick,
                                                           showTileBoundaries,
                                                           showTileCoordinates,
-                                                        }) => {
+}) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const loggedPaintArraysRef = useRef(new Set<string>());
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapContainerSize, setMapContainerSize] = useState<MapContainerSize>({ width: 0, height: 0 });
 
   const defaultIdentifyConfig = useMemo<MapFeatureIdentifyConfig>(() => ({
     radius: DEFAULT_IDENTIFY_RADIUS,
@@ -146,8 +197,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     map.triggerRepaint?.();
   }, [resolvedShowTileBoundaries, resolvedShowTileCoordinates]);
 
-  const handleMapLoad = useCallback((e: {target: MapLibreMapInstance}) => {
-    const map = e.target;
+  const handleMapLoad = useCallback((event: MapEvent<unknown>) => {
+    const map = event.target as unknown as MapLibreMapInstance;
     mapRef.current = map;
     normalizePaintArrays(map);
     map.on('styledata', () => normalizePaintArrays(map));
@@ -212,9 +263,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     [clampViewStateZoom, onMoveEnd]
   );
 
-  const handleMapClick = useCallback(
-    (event: MapClickEvent) => {
-      const mapEvent = event;
+  const handleMapClick = useCallback((event: MapLayerMouseEvent) => {
+    const mapEvent = event as MapClickEvent;
       const effectiveIdentifyConfig: MapFeatureIdentifyConfig = identifyFeatureOnClick ?? defaultIdentifyConfig;
 
       const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, effectiveIdentifyConfig);
@@ -246,6 +296,29 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     ...normalizeStyle(style),
   };
 
+  useLayoutEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) return;
+
+    const updateSize = () => {
+      const nextWidth = mapContainer.clientWidth;
+      const nextHeight = mapContainer.clientHeight;
+      setMapContainerSize((prev) => {
+        if (prev.width === nextWidth && prev.height === nextHeight) return prev;
+        return { width: nextWidth, height: nextHeight };
+      });
+    };
+
+    updateSize();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      updateSize();
+    });
+    observer.observe(mapContainer);
+    return () => observer.disconnect();
+  }, []);
+
   const mapStyleForMapLibre = {
     width: '100%',
     height: '100%',
@@ -271,18 +344,30 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     if (!viewState) return viewState;
     return clampViewStateZoom(viewState);
   }, [clampViewStateZoom, viewState]);
-  const disableDefaultAttribution = Boolean(controls?.attribution);
+  const resolvedMapSize = useMemo<MapContainerSize>(() => {
+    const fallbackWidth = parsePxToNumber(width);
+    const fallbackHeight = parsePxToNumber(height);
+    return {
+      width: mapContainerSize.width || fallbackWidth || 0,
+      height: mapContainerSize.height || fallbackHeight || 0,
+    };
+  }, [height, mapContainerSize.height, mapContainerSize.width, width]);
+  const resolvedViewState = useMemo(
+    () => toControlledViewState(clampedViewState, resolvedMapSize),
+    [clampedViewState, resolvedMapSize],
+  );
+  const disableDefaultAttribution = controls?.attribution === true || typeof controls?.attribution === 'object';
   const resolvedZoomBounds = useMemo(() => resolveZoomBounds(), [resolveZoomBounds]);
 
   return (
-    <div style={containerStyle}>
+    <div ref={mapContainerRef} style={containerStyle}>
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}
           mapStyle={resolvedMapStyle}
           initialViewState={clampedInitialViewState}
-          viewState={clampedViewState}
-          attributionControl={!disableDefaultAttribution}
+          viewState={resolvedViewState}
+          attributionControl={disableDefaultAttribution ? false : undefined}
           onLoad={handleMapLoad}
           onMove={handleMove}
           onMoveEnd={handleMoveEnd}
@@ -295,8 +380,6 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           touchZoomRotate={mapOptions.touchZoomRotate}
           minZoom={resolvedZoomBounds.minZoom}
           maxZoom={resolvedZoomBounds.maxZoom}
-          showTileBoundaries={resolvedShowTileBoundaries}
-          showTileCoordinates={resolvedShowTileCoordinates}
         >
           {mapLoaded && children}
         </ReactMapLibreMap>

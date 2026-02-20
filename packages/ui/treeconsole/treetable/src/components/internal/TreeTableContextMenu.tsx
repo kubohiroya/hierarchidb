@@ -7,7 +7,7 @@ import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
-import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '../../types.js';
+import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 
 interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;

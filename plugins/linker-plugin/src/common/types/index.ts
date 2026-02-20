@@ -1,1 +1,1 @@
-export type { LinkerEntity, LinkerDraft } from '../entities/LinkerEntity.js';
+export type { LinkerEntity, LinkerDraft } from '~/common/entities/LinkerEntity';

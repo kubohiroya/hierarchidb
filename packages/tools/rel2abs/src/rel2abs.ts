@@ -216,6 +216,88 @@ function isUrlConstructorWithImportMetaUrl(node: ts.Node): node is ts.NewExpress
   return isImportMetaUrl(baseArg)
 }
 
+function isWorkerUrlOrComlinkContext(node: ts.Node): boolean {
+  let current: ts.Node | undefined = node
+
+  const unwrapNode = (target: ts.Node): ts.Node => {
+    let currentNode: ts.Node = target
+    while (
+      ts.isParenthesizedExpression(currentNode)
+      || ts.isAsExpression(currentNode)
+      || ts.isTypeAssertionExpression(currentNode)
+    ) {
+      currentNode = currentNode.expression
+    }
+    return currentNode
+  }
+
+  const isDirectArgumentNode = (target: ts.Node, candidates?: ts.NodeArray<ts.Expression>): boolean => {
+    if (candidates === undefined || candidates.length === 0) {
+      return false
+    }
+
+    const normalizedTarget = unwrapNode(target)
+    return candidates.some((candidate) => unwrapNode(candidate) === normalizedTarget)
+  }
+
+  const isWorkerOrUrlIdentifier = (expression: ts.Expression): boolean => {
+    if (ts.isIdentifier(expression)) {
+      return expression.text === "URL" || expression.text === "Worker"
+    }
+
+    if (ts.isPropertyAccessExpression(expression)) {
+      return expression.name.text === "URL" || expression.name.text === "Worker"
+    }
+
+    if (ts.isParenthesizedExpression(expression)) {
+      return isWorkerOrUrlIdentifier(expression.expression)
+    }
+
+    return false
+  }
+
+  const isComlinkIdentifier = (expression: ts.Expression): boolean => {
+    if (ts.isIdentifier(expression)) {
+      return expression.text === "Comlink"
+    }
+
+    if (ts.isPropertyAccessExpression(expression)) {
+      return isComlinkIdentifier(expression.expression)
+    }
+
+    if (ts.isParenthesizedExpression(expression)) {
+      return isComlinkIdentifier(expression.expression)
+    }
+
+    return false
+  }
+
+  while (current !== undefined) {
+    if (ts.isNewExpression(current) && isWorkerOrUrlIdentifier(current.expression)) {
+      if (current.arguments !== undefined && isDirectArgumentNode(node, current.arguments)) {
+        return true
+      }
+    }
+
+    if (ts.isCallExpression(current)) {
+      const expression = current.expression
+      if (
+        ts.isPropertyAccessExpression(expression)
+        && expression.name.text === "wrap"
+        && isComlinkIdentifier(expression.expression)
+      ) {
+        if (isDirectArgumentNode(node, current.arguments)) {
+          return true
+        }
+      }
+    }
+
+    current = current.parent
+  }
+
+  return false
+}
+
 function isWithinRoot(resolved: string, rootDir: string): boolean {
   const rel = path.relative(rootDir, resolved)
 
@@ -314,6 +396,10 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
   const rewrites: Rewrite[] = []
 
   const pushRewrite = (node: ts.StringLiteral): void => {
+    if (isWorkerUrlOrComlinkContext(node)) {
+      return
+    }
+
     const moduleSpecifier = node.text
 
     const isLegacy = moduleSpecifier.startsWith("~/")
@@ -359,10 +445,7 @@ function rewriteSourceFile(sourceText: string, filePath: string, rootDir: string
     } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       pushRewrite(node.moduleSpecifier)
     } else if (isUrlConstructorWithImportMetaUrl(node)) {
-      const sourceArgument = node.arguments?.[0]
-      if (sourceArgument !== undefined && ts.isStringLiteral(sourceArgument)) {
-        pushRewrite(sourceArgument)
-      }
+      return
     } else if (
       ts.isCallExpression(node)
       && node.expression.kind === ts.SyntaxKind.ImportKeyword

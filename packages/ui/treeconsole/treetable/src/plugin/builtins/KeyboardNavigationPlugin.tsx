@@ -2,7 +2,7 @@
  * Keyboard Navigation Plugin (built-in)
  */
 
-import type { TreeTablePlugin } from '../types.js';
+import type { TreeTablePlugin } from '~/plugin/types';
 import type { KeyboardEvent } from 'react';
 
 export interface KeyboardNavigationPluginConfig {

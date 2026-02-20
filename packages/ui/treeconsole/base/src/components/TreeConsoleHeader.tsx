@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import type { TreeConsoleHeaderProps } from '../types/index.js';
+import type { TreeConsoleHeaderProps } from '~/types/index';
 
 /**
   * TreeConsoleHeader

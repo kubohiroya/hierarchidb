@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import type { BuildStage } from '@hierarchidb/components';
-import type { BuildSessionSnapshot } from '../hooks/useBuildSessionSnapshots.js';
+import type { BuildSessionSnapshot } from '~/hooks/useBuildSessionSnapshots';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
@@ -37,9 +37,9 @@ import {
   Layers as LayersIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
-import { useOptionalBuildSessionRuntimeContext } from '../contexts/TreeBuildSessionContexts.js';
-import { useBuildSessionSnapshots } from '../hooks/useBuildSessionSnapshots.js';
-import { useWorkerQueryAPI } from '../hooks/useWorkerQueryAPI.js';
+import { useOptionalBuildSessionRuntimeContext } from '~/contexts/TreeBuildSessionContexts';
+import { useBuildSessionSnapshots } from '~/hooks/useBuildSessionSnapshots';
+import { useWorkerQueryAPI } from '~/hooks/useWorkerQueryAPI';
 
 export type BuildSessionLauncherEntry = {
   session: BuildSessionSnapshot;

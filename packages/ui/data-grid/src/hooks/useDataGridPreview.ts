@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, useId } from 'react';
-import { useCrossHighlightSync } from '../hooks/useCrossHighlightSync.js';
-import { ensureDefaultStyles } from '../utils/ensureDefaultStyles.js';
+import { useCrossHighlightSync } from '~/hooks/useCrossHighlightSync';
+import { ensureDefaultStyles } from '~/utils/ensureDefaultStyles';
 import { getDBName } from '@hierarchidb/util';
 import { type ColumnFilter, TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
-import type { Id } from '../CrossViewStyles.js';
+import type { Id } from '~/CrossViewStyles';
 
 export type DataGridPreviewOp = ColumnFilter['op'];
 

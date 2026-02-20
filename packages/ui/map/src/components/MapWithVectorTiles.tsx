@@ -5,7 +5,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import {
   type BaseMapProps,
@@ -13,7 +13,7 @@ import {
   type MapClickEvent,
   type VectorTileDataSource,
   type VectorTileLayerConfig,
-} from '../types/unified-map-props.js';
+} from '~/types/unified-map-props';
 import type { MapLibreMapProps } from './MapLibreMap.js';
 
 type MapLibreComponent = React.ComponentType<MapLibreMapProps>;

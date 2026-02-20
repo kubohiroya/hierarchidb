@@ -10,14 +10,14 @@ import { BuildConfigShell, FetchConfigSection, VTConfigSection, ZoomBandConfigSe
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { useTranslation } from '../../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 import { useRouteBuildConfigStep } from './useRouteBuildConfigStep.js';
-import { mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
+import { mergeRouteBuildConfig } from '~/common/config/buildConfig';
 import {
   filteringHighUrl,
   filteringLowUrl,
   filteringMediumUrl,
-} from '../../assets/filtering-samples/filteringSamples.ts';
+} from '~/ui/assets/filtering-samples/filteringSamples';
 
 export interface RouteProcessingStepProps {
   draft: Partial<RouteEntity>;

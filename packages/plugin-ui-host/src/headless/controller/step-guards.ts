@@ -1,7 +1,7 @@
 import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
-import type { BasicInfoMeta } from '../usePluginDialogController/data-types.js';
+import type { BasicInfoMeta } from '~/headless/usePluginDialogController/data-types';
 import type { StepGuardState } from './types.js';
 
 export const emptyGuards: StepGuardState = {

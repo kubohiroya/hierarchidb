@@ -1,20 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "rootDir": "../../../",
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    }
+    "rootDir": "../../../"
   },
   "include": [
-    "src"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
+    "src/**/*"
   ]
 }

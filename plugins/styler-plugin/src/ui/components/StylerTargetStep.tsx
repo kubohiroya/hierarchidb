@@ -17,7 +17,7 @@ import type {
   StylerStepData,
   StylerValueType,
   StyleType,
-} from '../../common/types/StylerEntity.ts';
+} from '~/common/types/StylerEntity';
 import { useStylerTargetStep } from './useStylerTargetStep.js';
 
 type TargetOption = {

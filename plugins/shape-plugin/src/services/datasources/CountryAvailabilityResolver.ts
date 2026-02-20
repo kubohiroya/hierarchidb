@@ -1,9 +1,9 @@
-import { metadataLoader } from '../metadata/MetadataLoader';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { DataSourceName } from '../../common/types/index';
+import type { DataSourceName } from '~/common/types/index';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';
-import { SHAPE_DATA_SOURCE_BY_NAME } from '../../common/types/constants';
+import { SHAPE_DATA_SOURCE_BY_NAME } from '~/common/types/constants';
 
 type AvailabilitySource = 'strategy' | 'metadata' | 'none';
 

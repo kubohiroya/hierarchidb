@@ -5,7 +5,7 @@ import type {
   PropertyMappingRule,
   ResolverUpdaterPayload,
   SchemaInfo,
-} from '../../../../common/types/index.js';
+} from '~/common/types/index';
 
 interface UsePropertyMappingStepArgs {
   data: Partial<ResolverUpdaterPayload>;

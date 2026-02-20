@@ -4,7 +4,7 @@ import type {
   LocationIconConfig,
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
-} from '../../../common/types/index.js';
+} from '~/common/types/index';
 import {
   DEFAULT_ICON_IDS,
   DEFAULT_ICON_SIZE_RANGE,

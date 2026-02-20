@@ -24,12 +24,12 @@ import type {
   LocationIconId,
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
-} from '../entities/LocationEntity.js';
+} from '~/common/entities/LocationEntity';
 import type {
   LocationPointProperties,
   LocationPointKind,
   LocationPointId,
-} from '../entities/LocationPoint.js';
+} from '~/common/entities/LocationPoint';
 
 export type LocationEntity = LocationEntityDefinition;
 export type {

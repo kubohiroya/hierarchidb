@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import { useTranslation } from '../../common/i18n/index.js';
-import type { TimelineFrame } from '../../common/types/index.js';
+import { useTranslation } from '~/common/i18n/index';
+import type { TimelineFrame } from '~/common/types/index';
 
 export function FramesPreviewStep({
   frames,

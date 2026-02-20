@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../CoreDB.js';
+import type { CoreDB } from '~/services/CoreDB';
 
 export async function getChildNames(coreDB: CoreDB, parentId: NodeId): Promise<string[]> {
   const children = await coreDB.listChildren(parentId);

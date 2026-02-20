@@ -22,7 +22,7 @@
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",

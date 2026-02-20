@@ -10,9 +10,9 @@ import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
-import { useLRUPanes } from '../hooks/useLRUPanes.js';
+import { useLRUPanes } from '~/hooks/useLRUPanes';
 import { PaneHeader } from './PaneHeader.js';
-import type { LRUSplitViewConfig } from '../types/LRUSplitView.js';
+import type { LRUSplitViewConfig } from '~/types/LRUSplitView';
 
 export interface LRUSplitViewProps extends LRUSplitViewConfig {
   /** Component height */

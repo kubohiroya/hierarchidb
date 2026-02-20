@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "lib": [
       "ES2022",
@@ -17,16 +17,7 @@
       "vite/client",
       "node"
     ],
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*",
-        "*.ts",
-        "*.tsx",
-        "*.js",
-        "*.jsx"
-      ]
-    }
+    "baseUrl": "."
   },
   "include": [
     "../../global.d.ts",

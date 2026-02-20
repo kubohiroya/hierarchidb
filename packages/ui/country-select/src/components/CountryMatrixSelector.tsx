@@ -11,9 +11,9 @@ import { TreeTableSearchInput as SearchField } from '@hierarchidb/ui-search-inpu
 import type { PrimitiveAtom } from 'jotai';
 import { Provider, atom, useAtomValue } from 'jotai';
 import { createStore } from 'jotai/vanilla';
-import type { Country } from '../types/Country.js';
-import { CONTINENTS } from '../types/Country.js';
-import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
+import type { Country } from '~/types/Country';
+import { CONTINENTS } from '~/types/Country';
+import type { MatrixConfig, MatrixSelection } from '~/types/MatrixColumn';
 
 export interface CountryMatrixSelectorProps {
   /** Available countries to select from */

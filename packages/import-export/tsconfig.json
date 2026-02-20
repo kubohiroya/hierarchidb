@@ -1,15 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-    "rootDir": "../../../",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "./src/*",
-        "*"
-      ]
-    },
     "baseUrl": ".",
+    "rootDir": "../../../",
     "jsx": "react-jsx"
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

@@ -3,17 +3,17 @@ import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetDraft } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.ts';
+import { type UseTabularDataSourceResult, useTabularDataSource } from '~/ui/hooks/useTabularDataSource';
 import { TabularPreviewGrid } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
-import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
+import { tabularRowsAtom } from '~/ui/state/tabularKeyValueAtoms';
 
 const TabularDataImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 

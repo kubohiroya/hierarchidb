@@ -3,7 +3,7 @@ import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isDevEnv } from '../../utils/env.js';
+import { isDevEnv } from '~/utils/env';
 
 interface MemoryUsageChartProps {
   /**

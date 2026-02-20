@@ -4,14 +4,14 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { StylerDataService } from '../../services/StylerDataService.js';
+import type { StylerDataService } from '~/services/StylerDataService';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
 import {
   StylerConfigDefault,
   type StylerEntity,
   StylerMappingDefault,
-} from '../types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
 
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 type HandlerPayload<T> =

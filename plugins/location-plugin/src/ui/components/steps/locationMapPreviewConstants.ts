@@ -1,6 +1,6 @@
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import type { LocationIconId, LocationType } from '../../../common/types/index.js';
+import type { LocationIconId, LocationType } from '~/common/types/index';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 export const DEBUG_PREFIX = '[LocationPreview]';

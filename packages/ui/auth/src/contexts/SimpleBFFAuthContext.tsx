@@ -1,10 +1,10 @@
 import React from 'react';
-import { BffKvWarningDialog } from '../components/BffKvWarningDialog.js';
-import { maybeEmitBffWarning, readWarningFromResponse } from '../services/BffWarning.js';
-import { PopupDetectionService } from '../services/PopupDetectionService.js';
-import type { AuthContextType } from '../types/AuthContextType.js';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
-import type { AuthUser } from '../types/AuthUser.js';
+import { BffKvWarningDialog } from '~/components/BffKvWarningDialog';
+import { maybeEmitBffWarning, readWarningFromResponse } from '~/services/BffWarning';
+import { PopupDetectionService } from '~/services/PopupDetectionService';
+import type { AuthContextType } from '~/types/AuthContextType';
+import type { AuthProviderType } from '~/types/AuthProviderType';
+import type { AuthUser } from '~/types/AuthUser';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 
