@@ -4,7 +4,6 @@ import type {
   DataSourceName,
   FetchTaskPayload,
   ShapeEntity,
-  ShapePreviewMapView,
 } from '~/common/types/index';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
@@ -20,14 +19,12 @@ import {
 } from '~/ui/atoms/shapePreviewAtoms';
 import type {
   MapHighlightEntry,
-  MapPreviewErrorSummaryById,
   MapWithVectorTilesProps,
   ResolvedLayerSetEntry,
   ShapePreviewFeatureRow,
 } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
-  buildErrorSummaryById,
   buildHighlightKey,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
@@ -41,271 +38,28 @@ import {
   useVectorTilePreviewSelection,
 } from '@hierarchidb/ui-map';
 import { getDBName } from '@hierarchidb/util';
-import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import type { ShapePreviewDraft as PreviewDraftType } from './useShapePreviewStepUtils';
+import {
+  DEFAULT_BOUNDS_MARGIN,
+  DEFAULT_VIEW,
+  MIN_BOUNDS_MARGIN,
+  buildHoverLabel,
+  buildLookupKey,
+  isNumericId,
+  normalizeCountryCodeValue,
+  normalizeText,
+  parseSourceKey,
+  parseVectorTileLayerNames,
+  fetchTile,
+  resolveAdminLevelFromProps,
+  resolvePersistedViewState,
+} from './useShapePreviewStepUtils';
+import { useShapePreviewFeatureSection } from './useShapePreviewStepFeatureSection';
 
-type ShapePreviewDraft = Partial<ShapeEntity> & {
-  tilesUrl?: string;
-  tilesEndpoint?: string;
-  tilesLayer?: string;
-};
-
-const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
-  longitude: 0,
-  latitude: 20,
-  zoom: 1.5,
-};
-
-const DEFAULT_BOUNDS_MARGIN = 0.1;
-const MIN_BOUNDS_MARGIN = 0.25;
-
-const normalizeText = (value?: string): string | undefined => {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-};
-
-const normalizeCountryCodeValue = (value?: string): string | undefined => {
-  const trimmed = normalizeText(value);
-  if (!trimmed) return undefined;
-  const upper = trimmed.toUpperCase();
-  const dashIndex = upper.indexOf('-');
-  if (dashIndex > 0) return upper.slice(0, dashIndex);
-  return upper;
-};
-
-const toPropString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') return normalizeText(value);
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  return undefined;
-};
-
-const pickFromProps = (properties: Record<string, unknown> | undefined, keys: string[]): string | undefined => {
-  if (!properties) return undefined;
-  for (const key of keys) {
-    const value = toPropString(properties[key]);
-    if (value) return value;
-  }
-  return undefined;
-};
-
-const resolveAdminLevelFromProps = (
-  properties: Record<string, unknown> | undefined,
-  fallback?: number,
-): number | undefined => {
-  if (properties) {
-    const candidates = [
-      properties.adminLevel,
-      properties.admin_level,
-      properties.ADM_LEVEL,
-      properties.level,
-      properties.admin_lvl,
-    ];
-    for (const value of candidates) {
-      if (typeof value === 'number' && Number.isFinite(value)) return value;
-      if (typeof value === 'string') {
-        const parsed = Number(value);
-        if (Number.isFinite(parsed)) return parsed;
-      }
-    }
-  }
-  return fallback;
-};
-
-const pickCountryNameFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
-  pickFromProps(properties, ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
-
-const pickCountryCodeFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
-  pickFromProps(properties, ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
-
-const buildFlagEmoji = (countryCode?: string): string | null => {
-  if (!countryCode || countryCode.length !== 2) return null;
-  const normalized = countryCode.toUpperCase();
-  if (!/^[A-Z]{2}$/.test(normalized)) return null;
-  const base = 0x1f1e6;
-  const first = normalized.charCodeAt(0) - 65;
-  const second = normalized.charCodeAt(1) - 65;
-  return String.fromCodePoint(base + first, base + second);
-};
-
-const pickAdminNameByLevel = (
-  properties: Record<string, unknown> | undefined,
-  level: number,
-): string | undefined => {
-  if (level === 2) {
-    return pickFromProps(properties, ['admin2Name', 'NAME_2', 'name_2', 'ADM2_NAME', 'admin2', 'name', 'NAME']);
-  }
-  if (level === 1) {
-    return pickFromProps(properties, ['admin1Name', 'NAME_1', 'name_1', 'ADM1_NAME', 'admin1', 'name', 'NAME']);
-  }
-  return pickFromProps(properties, ['adminName', 'name', 'NAME', 'shapeName']);
-};
-
-const buildHoverLabel = (
-  row: ShapeDataSourceMetadata,
-  properties?: Record<string, unknown>,
-): string => {
-  const resolvedLevel = resolveAdminLevelFromProps(properties, row.adminLevel);
-  const adminLevel = typeof resolvedLevel === 'number' ? resolvedLevel : 0;
-  const countryName =
-    pickCountryNameFromProps(properties)
-    ?? row.countryName
-    ?? row.countryCode
-    ?? 'Unknown';
-  const countryCode = normalizeCountryCodeValue(
-    pickCountryCodeFromProps(properties) ?? row.countryCode,
-  );
-  const normalizedCountryName = normalizeText(countryName);
-  const hasCountryName = Boolean(normalizedCountryName) && normalizedCountryName !== 'unknown';
-  const flagEmoji = hasCountryName ? buildFlagEmoji(countryCode) : null;
-  const countryLabel = flagEmoji ? `${flagEmoji} ${countryName}` : countryName;
-  const countrySuffix = countryCode ? ` (${countryCode})` : '';
-  if (adminLevel <= 0) {
-    return `ADM0: ${countryLabel}${countrySuffix}`;
-  }
-  if (adminLevel === 1) {
-    const admin1 = pickAdminNameByLevel(properties, 1) ?? countryName;
-    return `ADM1: ${admin1} / ${countryLabel}${countrySuffix}`;
-  }
-  if (adminLevel === 2) {
-    const admin2 = pickAdminNameByLevel(properties, 2) ?? pickAdminNameByLevel(properties, 1);
-    const admin1 = pickAdminNameByLevel(properties, 1);
-    const parts = [admin2, admin1, countryLabel].filter((part, index, arr) => {
-      if (!part) return false;
-      return arr.indexOf(part) === index;
-    });
-    return `ADM2: ${parts.join(' / ')}${countrySuffix}`;
-  }
-  const adminName = pickAdminNameByLevel(properties, adminLevel) ?? countryName;
-  return `ADM${adminLevel}: ${adminName} / ${countryLabel}${countrySuffix}`;
-};
-
-const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {
-  const trimmed = normalizeText(sourceKey);
-  if (!trimmed) return {};
-  const [countryCodeRaw, adminLevelRaw] = trimmed.split(':');
-  const adminLevel = adminLevelRaw != null ? Number(adminLevelRaw) : undefined;
-  return {
-    countryCode: normalizeCountryCodeValue(countryCodeRaw),
-    adminLevel: Number.isFinite(adminLevel) ? adminLevel : undefined,
-  };
-};
-
-const buildLookupKey = (countryCode?: string, adminLevel?: number): string | null => {
-  if (!countryCode || adminLevel == null) return null;
-  return `${countryCode}:${adminLevel}`;
-};
-
-
-const buildCountryGroupKey = (countryCode?: string): string | null => {
-  const normalized = normalizeCountryCodeValue(countryCode);
-  if (!normalized) return null;
-  return `country:${normalized}`;
-};
-
-/**
- * Determines if an issue kind represents a repair (successfully fixed) vs an error (needs attention).
- * Issues without a specific kind are typically self-intersection repairs that were automatically fixed.
- * Issues with specific kinds like 'max-vertices' are hard errors that couldn't be automatically resolved.
- */
-const isRepairIssueKind = (issueKind?: string): boolean => {
-  // Issues without a kind are typically repairs (e.g., self-intersection fixes)
-  // Specific kinds like 'max-vertices' are hard errors
-  return issueKind === undefined || issueKind === null;
-};
-
-const resolveAdminNameFromMetadata = (
-  row: ShapeFeatureMetadata,
-  adminLevel: number | undefined,
-  context: { countryName?: string },
-): string | undefined => {
-  if (adminLevel === 2) {
-    return normalizeText(row.admin2Name)
-      ?? normalizeText(row.admin1Name)
-      ?? normalizeText(row.admin0Name)
-      ?? normalizeText(row.countryName)
-      ?? normalizeText(context.countryName);
-  }
-  if (adminLevel === 1) {
-    return normalizeText(row.admin1Name)
-      ?? normalizeText(row.admin0Name)
-      ?? normalizeText(row.countryName)
-      ?? normalizeText(context.countryName);
-  }
-  return normalizeText(row.admin0Name)
-    ?? normalizeText(row.countryName)
-    ?? normalizeText(context.countryName);
-};
-
-const resolveAdminCodeFromMetadata = (
-  row: ShapeFeatureMetadata,
-  adminLevel: number | undefined,
-  context: { countryCode?: string },
-): string | undefined => {
-  if (adminLevel === 2) {
-    return normalizeText(row.admin2Code)
-      ?? normalizeText(row.admin1Code)
-      ?? normalizeCountryCodeValue(row.admin0Code)
-      ?? normalizeCountryCodeValue(row.countryCode)
-      ?? normalizeCountryCodeValue(context.countryCode);
-  }
-  if (adminLevel === 1) {
-    return normalizeText(row.admin1Code)
-      ?? normalizeCountryCodeValue(row.admin0Code)
-      ?? normalizeCountryCodeValue(row.countryCode)
-      ?? normalizeCountryCodeValue(context.countryCode);
-  }
-  return normalizeCountryCodeValue(row.admin0Code)
-    ?? normalizeCountryCodeValue(row.countryCode)
-    ?? normalizeCountryCodeValue(context.countryCode);
-};
-
-
-const isNumericId = (value?: string): boolean => {
-  if (!value) return false;
-  return /^[0-9]+$/.test(value);
-};
-
-const parseVectorTileLayerNames = (data: ArrayBuffer): string[] => {
-  if (!data || data.byteLength === 0) return [];
-  try {
-    const tile = new VectorTile(new Pbf(new Uint8Array(data)));
-    return Object.keys(tile.layers ?? {});
-  } catch {
-    return [];
-  }
-};
-
-const fetchTile = async (
-  nodeId: string,
-  z: number,
-  x: number,
-  y: number,
-): Promise<ArrayBuffer | null> => {
-  const data = await shapeQueryAPIImpl.getVectorTile(toNodeId(nodeId), z, x, y);
-  if (!data) return null;
-  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-};
-
-const resolvePersistedViewState = (
-  view?: ShapePreviewMapView,
-): MapWithVectorTilesProps['initialViewState'] | null => {
-  if (!view) return null;
-  const { longitude, latitude, zoom } = view;
-  if (!Number.isFinite(longitude) || !Number.isFinite(latitude) || !Number.isFinite(zoom)) {
-    return null;
-  }
-  return {
-    longitude,
-    latitude,
-    zoom,
-    bearing: 0,
-    pitch: 0,
-  };
-};
+type ShapePreviewDraft = PreviewDraftType;
 
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
   const { t } = useTranslation();
@@ -847,121 +601,19 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     }
   }, [hoverCandidates, hoveredId, setHoveredId]);
 
-  const toFeatureListRow = useCallback(
-    (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => {
-      const context = resolveSourceContext({
-        countryCode: row.countryCode,
-        countryName: row.countryName,
-        adminLevel: row.adminLevel,
-        dataSource: row.dataSource,
-      });
-      const adminLevel = context.adminLevel ?? row.adminLevel;
-      const adminName = resolveAdminNameFromMetadata(row, adminLevel, context);
-      const adminCode = resolveAdminCodeFromMetadata(row, adminLevel, context);
-      return {
-        id: row.id,
-        featureId: row.featureId,
-        countryName: context.countryName ?? row.countryName,
-        countryCode: context.countryCode ?? row.countryCode,
-        adminName,
-        adminLevel,
-        adminCode,
-        dataSource: context.dataSource ?? row.dataSource,
-        createdAt: row.createdAt,
-        vertexCount: row.vertexCount,
-        polygonCount: row.polygonCount,
-        bbox: row.bbox,
-        area: row.area,
-        recycling: row.recycling ?? false,
-      };
-    },
-    [resolveSourceContext],
-  );
-
   const {
     featureListRows,
     rowIdToMembers,
     featureToCountryKey,
     countryGroupMembers,
-  } = useMemo(() => {
-    const rows = featureMetadataRows.map((row) => toFeatureListRow(row));
-    const collapsed = new Map<string, ShapePreviewFeatureRow>();
-    const pickPreferredRow = (current: ShapePreviewFeatureRow, next: ShapePreviewFeatureRow) => {
-      const currentVertices = current.vertexCount ?? 0;
-      const nextVertices = next.vertexCount ?? 0;
-      const currentPolygons = current.polygonCount ?? 0;
-      const nextPolygons = next.polygonCount ?? 0;
-      if (nextVertices + nextPolygons > currentVertices + currentPolygons) {
-        return next;
-      }
-      if (!current.dataSource && next.dataSource) return next;
-      if (!current.adminName && next.adminName) return next;
-      if (!current.adminCode && next.adminCode) return next;
-      return current;
-    };
-    rows.forEach((row) => {
-      const key = row.featureId ?? row.id;
-      if (!key) return;
-      const existingRow = collapsed.get(key);
-      collapsed.set(key, existingRow ? pickPreferredRow(existingRow, row) : row);
-    });
-    const existing = new Set(collapsed.keys());
-    normalizedTransformErrorRows.forEach((errorRow) => {
-      const featureId = errorRow.featureId;
-      if (!featureId) return;
-      if (existing.has(featureId)) return;
-      const context = resolveSourceContext({
-        countryCode: errorRow.countryCode,
-        countryName: errorRow.countryName,
-        adminLevel: errorRow.adminLevel,
-        sourceKey: errorRow.sourceKey,
-      });
-      const adminLevel = context.adminLevel ?? errorRow.adminLevel;
-      const adminName = adminLevel === 0 ? context.countryName : undefined;
-      const adminCode = adminLevel === 0 ? context.countryCode : undefined;
-      collapsed.set(featureId, {
-        id: featureId,
-        featureId,
-        countryName: context.countryName ?? errorRow.countryName,
-        countryCode: context.countryCode ?? errorRow.countryCode,
-        adminName,
-        adminLevel,
-        adminCode,
-        dataSource: context.dataSource,
-        createdAt: errorRow.createdAt,
-      });
-      existing.add(featureId);
-    });
-
-    const baseRows = Array.from(collapsed.values());
-    const listRows: ShapePreviewFeatureRow[] = [];
-    const rowIdToMembers = new Map<string, string[]>();
-    const featureToCountryKey = new Map<string, string>();
-    const countryGroupMembers = new Map<string, string[]>();
-
-    baseRows.forEach((row) => {
-      const memberId = String(row.featureId ?? row.id ?? '');
-      if (!memberId) return;
-      const rowKey = String(row.featureId ?? row.id ?? '');
-      const countryKey = buildCountryGroupKey(row.countryCode);
-      if (countryKey) {
-        featureToCountryKey.set(memberId, countryKey);
-        const members = countryGroupMembers.get(countryKey) ?? [];
-        members.push(memberId);
-        countryGroupMembers.set(countryKey, members);
-      }
-      listRows.push({ ...row, aggregationLevel: 'feature' });
-      rowIdToMembers.set(rowKey, [memberId]);
-    });
-
-    const featureListRows = [...listRows];
-    return {
-      featureListRows,
-      rowIdToMembers,
-      featureToCountryKey,
-      countryGroupMembers,
-    };
-  }, [featureMetadataRows, normalizedTransformErrorRows, resolveSourceContext, toFeatureListRow]);
+    errorSummaryById,
+    toggleRecyclingForSelection,
+  } = useShapePreviewFeatureSection({
+    featureMetadataRows,
+    normalizedTransformErrorRows,
+    resolveSourceContext,
+    setFeatureMetadataOverride,
+  });
 
   const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''), []);
   const buildFeatureSearchText = useCallback((row: ShapePreviewFeatureRow) => (
@@ -1009,113 +661,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return featureListRows.filter((row) => viewportFeatureIdSet.has(String(row.featureId ?? row.id)));
   }, [featureListRows, featureRowFilterMode, viewportFeatureIdSet]);
 
-  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
-    const summary = new Map<string, {
-      errorCount: number;
-      repairCount: number;
-      count: number;
-      messages: string[];
-    }>();
-    featureListRows.forEach((row) => {
-      const id = row.featureId ?? row.id;
-      if (!id) return;
-      const key = String(id);
-      // Note: errorCount and repairCount don't exist on ShapePreviewFeatureRow,
-      // so these will always be 0 and this entry won't be added to the summary
-      const metadataErrorCount = typeof (row as any).errorCount === 'number' ? Math.max(0, (row as any).errorCount) : 0;
-      const metadataRepairCount = typeof (row as any).repairCount === 'number' ? Math.max(0, (row as any).repairCount) : 0;
-      if (metadataErrorCount === 0 && metadataRepairCount === 0) return;
-      summary.set(key, {
-        errorCount: metadataErrorCount,
-        repairCount: metadataRepairCount,
-        count: metadataErrorCount,
-        messages: [],
-      });
-    });
-    
-    // Build error summary from transform errors using the utility function
-    const transformErrorSummary = buildErrorSummaryById(normalizedTransformErrorRows, {
-      getId: (row) => row.featureId ?? undefined,
-      getMessage: (row) => normalizeText(row.message),
-      getKind: (row) => (isRepairIssueKind(row.issueKind) ? 'repair' : 'error'),
-    });
-    
-    // Merge transform error summary into the main summary
-    transformErrorSummary.forEach((transformEntry, key) => {
-      const entry = summary.get(key) ?? {
-        errorCount: 0,
-        repairCount: 0,
-        count: 0,
-        messages: [],
-      };
-      entry.errorCount += transformEntry.errorCount ?? 0;
-      entry.repairCount += transformEntry.repairCount ?? 0;
-      entry.count = entry.errorCount;
-      entry.messages.push(...transformEntry.messages);
-      summary.set(key, entry);
-    });
-    
-    return summary;
-  }, [featureListRows, normalizedTransformErrorRows]);
-
-  const toggleRecyclingForSelection = useCallback(async () => {
-    if (selectedFeatureIds.length === 0) return;
-    const expandedIds = new Set<string>();
-    selectedFeatureIds.forEach((id) => {
-      const members = rowIdToMembers.get(id) ?? [id];
-      members.forEach((memberId) => expandedIds.add(memberId));
-    });
-    if (expandedIds.size === 0) return;
-    const selectedRows = featureMetadataRows.filter((row) => {
-      const key = String(row.featureId ?? row.id);
-      return expandedIds.has(key);
-    });
-    if (selectedRows.length === 0) return;
-    const recyclingCount = selectedRows.filter((row) => row.recycling).length;
-    const nextValue = recyclingCount !== selectedRows.length;
-    const updatedRows = selectedRows.map((row) => ({ ...row, recycling: nextValue }));
-    try {
-      await shapeMutationAPIImpl.putFeatureMetadata(updatedRows);
-      const updatedRowIds = new Set(updatedRows.map((row) => String(row.featureId ?? row.id)));
-      const nextRows = featureMetadataRows.map((row) => {
-        const key = String(row.featureId ?? row.id);
-        if (!updatedRowIds.has(key)) return row;
-        const updated = updatedRows.find((entry) => String(entry.featureId ?? entry.id) === key);
-        return updated ?? row;
-      });
-      setFeatureMetadataOverride(nextRows);
-    } catch (error) {
-      console.warn('[ShapePreviewStep] failed to toggle recycling', error);
-    }
-  }, [featureMetadataRows, rowIdToMembers, selectedFeatureIds]);
-
-  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
-    if (featureListRows.length === 0) return baseErrorSummaryById;
-    const aggregated = new Map(baseErrorSummaryById);
-    featureListRows.forEach((row) => {
-      if (!row.memberFeatureIds || row.memberFeatureIds.length === 0) return;
-      const groupId = String(row.featureId ?? row.id ?? '');
-      if (!groupId) return;
-      let count = 0;
-      const messages: string[] = [];
-      row.memberFeatureIds.forEach((memberId) => {
-        const summary = baseErrorSummaryById.get(String(memberId));
-        if (!summary) return;
-        count += summary.count;
-        if (summary.messages.length > 0) {
-          summary.messages.forEach((message) => {
-            if (!messages.includes(message)) {
-              messages.push(message);
-            }
-          });
-        }
-      });
-      if (count > 0) {
-        aggregated.set(groupId, { count, messages });
-      }
-    });
-    return aggregated;
-  }, [baseErrorSummaryById, featureListRows]);
+  const wrappedToggleRecyclingForSelection = useCallback(async () => {
+    await toggleRecyclingForSelection(selectedFeatureIds);
+  }, [toggleRecyclingForSelection, selectedFeatureIds]);
 
   const expandMapIds = useCallback((ids: string[]) => {
     const result = new Set<string>();
@@ -1345,7 +893,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     setSelectedIds,
     selectedFeatureIds,
     setSelectedFeatureIds,
-    toggleRecyclingForSelection,
+    toggleRecyclingForSelection: wrappedToggleRecyclingForSelection,
     hoveredId,
     setHoveredId,
     selectionContext,
