@@ -1,7 +1,18 @@
 {
-  "extends": "../../tsconfig.package.local-alias.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "composite": false,
+    "incremental": false
   },
   "include": [
     "src/**/*"

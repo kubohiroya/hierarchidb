@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureCollection } from 'geojson';
-import { vtStageTestUtils } from '~/vt/vtStage';
+import { vtStageTestUtils } from '../vtStageTestUtils.js';
 
 describe('vtStage summary helpers', () => {
   it('builds admin feature summary from feature levels', () => {

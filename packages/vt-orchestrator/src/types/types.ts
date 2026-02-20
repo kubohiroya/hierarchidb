@@ -17,6 +17,17 @@ export type TaskStatus = CommonTaskStatus;
 
 export type FailureHandling = 'continue' | 'stop' | 'skip';
 
+export type TaskFilter<TInput = unknown, TOutput = unknown> = (
+  task: TaskQueueRecord<TInput, TOutput>,
+) => boolean;
+
+export type LaneExecutionPolicy<TInput = unknown, TOutput = unknown> = {
+  enabled: boolean;
+  laneOfTask: (task: TaskQueueRecord<TInput, TOutput>) => string;
+  maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<TInput, TOutput>) => number;
+  defaultLane?: string;
+};
+
 export type DynamicConcurrencyConfig = {
   enabled: boolean;
   minConcurrent: number;
@@ -97,6 +108,8 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
   dynamicConcurrency?: DynamicConcurrencyConfig;
   failureHandling?: FailureHandling;
   abortController?: AbortController;
+  lanePolicy?: LaneExecutionPolicy<TInput, TOutput>;
+  taskFilter?: TaskFilter<TInput, TOutput>;
 }
 
 export type PipelineRunConfig<

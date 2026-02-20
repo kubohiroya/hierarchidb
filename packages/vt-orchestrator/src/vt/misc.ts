@@ -1,5 +1,5 @@
 import { runStageTasks } from '~/compareTaskOrder';
-import { createTransformByBandHandler } from '~/transform/createTransformByBandHandler';
+import { createTransformByBandHandler } from '~/transform/createTransformByBandHandler/handler';
 import type { PipelineRunConfig } from '~/types/types';
 import { createVtHandler } from './vtStage.js';
 

@@ -28,6 +28,7 @@ import {
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+export { resolveFetchStageStrategy } from '../batch/strategies/resolveFetchStageStrategy';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
   if (!dataSource) return undefined;

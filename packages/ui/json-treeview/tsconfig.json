@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.package.local-alias.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {},
   "include": [
     "src/**/*"

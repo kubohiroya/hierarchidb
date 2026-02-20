@@ -12,3 +12,16 @@ export {
   type BuildSessionTimingSnapshot,
   type UseBuildSessionTimingArgs,
 } from '@hierarchidb/batch';
+
+export {
+  toBuildProgressEventFromUpdate,
+  runWithStageCheckpoint,
+  createMemorySnapshot,
+} from './progressHelpers.js';
+export type {
+  ProgressBridgeUpdate,
+  StageCheckpointPhase,
+  StageCheckpointContext,
+  StageCheckpointLogger,
+  StageHeartbeatWriter,
+} from './progressHelpers.js';

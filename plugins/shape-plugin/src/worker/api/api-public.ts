@@ -1,0 +1,480 @@
+import type { NodeId } from '@hierarchidb/core-types';
+import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/batch-api';
+import {
+  type BuildSession,
+  type CountryMetadata,
+  type DataSourceConfig,
+  type DataSourceName,
+  type FetchTaskPayload,
+  type ProgressInfo,
+  type ShapeBuildConfig,
+  type ShapeProcessingConfig,
+  type ShapeStepValidationResult,
+  type SelectedArrayByCountries,
+  SHAPE_DATA_SOURCES,
+  isDataSourceName,
+  requireDataSourceName,
+  getPreferredCountryCodeFormat,
+} from '~/common/types/index';
+import { Dexie } from 'dexie';
+import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
+import {
+  generateDownloadTaskPayloads,
+} from '~/services/utils/utils';
+import { resolveFetchStageStrategy } from '~/services/batch/strategies/resolveFetchStageStrategy';
+import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeBuildMonitoringAPI } from './api-public-monitoring.js';
+import { shapeBuildRuntime } from './api-internal.js';
+
+export const shapeBuildAPI = {
+
+  // ===================================
+  // Data Source Operations
+  // ===================================
+
+  getDataSourceConfigs: async (): Promise<DataSourceConfig[]> => {
+    return SHAPE_DATA_SOURCES;
+  },
+
+  getCountryMetadata: async (nodeId: NodeId, dataSource: DataSourceName): Promise<CountryMetadata[]> => {
+    const data = await metadataLoader.loadMetadata(dataSource, nodeId);
+    if (Array.isArray(data) && data.length > 0) return data;
+    throw new Error(`No country metadata returned for data source: ${dataSource}`);
+  },
+
+  generateDownloadTaskPayloads: async (
+    nodeId: NodeId,
+    dataSource: DataSourceName,
+    countries: string[],
+    adminLevels: number[],
+  ): Promise<FetchTaskPayload[]> => {
+    const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloads');
+    // Get country metadata first
+    const preferredFormat = getPreferredCountryCodeFormat(resolvedDataSource);
+    const normalizedCountries = await Promise.all(
+      countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
+    );
+    const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    return generateDownloadTaskPayloads(resolvedDataSource, normalizedCountries, adminLevels, countryMetadata);
+  },
+
+  generateDownloadTaskPayloadsFromSelection: async (
+    nodeId: NodeId,
+    dataSource: DataSourceName,
+    selectedArrayByCountries: SelectedArrayByCountries,
+  ): Promise<FetchTaskPayload[]> => {
+    const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
+    const countryMetadata = await shapeBuildAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    const strategy = resolveFetchStageStrategy(resolvedDataSource);
+    return strategy.buildFetchTaskPayloads({
+      selectedArrayByCountries,
+      countryMetadata,
+    });
+  },
+
+  // ===================================
+  // Selection Validation
+  // ===================================
+
+  validateSelection: async (
+    countries: string[],
+    adminLevels: number[],
+    dataSource: DataSourceName,
+  ): Promise<ShapeStepValidationResult> => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    if (!isDataSourceName(dataSource)) {
+      errors.push('Invalid data source selected');
+    }
+    if (countries.length === 0) {
+      errors.push('At least one country must be selected');
+    }
+
+    if (adminLevels.length === 0) {
+      errors.push('At least one administrative level must be selected');
+    }
+
+    if (countries.length > 10) {
+      warnings.push('Large country selection may require significant processing time');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    };
+  },
+
+  // ===================================
+  // DraftTypes-based Build Processing
+  // ===================================
+
+  startBuildSession: async (
+    draftId: NodeId,
+    buildConfig: ShapeBuildConfig,
+    processingConfig: ShapeProcessingConfig | undefined,
+    downloadTaskPayloads: FetchTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
+    progressCallback?: (event: BuildProgressEvent) => void,
+  ): Promise<NodeId> => shapeBuildRuntime.startBuildSessionInternal(
+    'startBuildSession',
+    draftId,
+    buildConfig,
+    processingConfig,
+    downloadTaskPayloads,
+    buildContinuationPolicy,
+    progressCallback,
+  ),
+  pauseBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
+    await shapeBuildAPI.invokeBuildCommand('session/pause', {
+      nodeId: draftId,
+      stopReason: reason,
+    });
+  },
+  resumeBuildSession: async (
+    draftId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildConfig?: ShapeBuildConfig,
+    processingConfig?: ShapeProcessingConfig,
+  ): Promise<void> => {
+    await shapeBuildAPI.invokeBuildCommand('session/resume', {
+      nodeId: draftId,
+      buildContinuationPolicy,
+      buildConfig,
+      processingConfig,
+    });
+  },
+  cancelQueuedBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
+    await shapeBuildAPI.invokeBuildCommand('session/cancel-queued', {
+      nodeId: draftId,
+      stopReason: reason,
+    });
+  },
+
+  invokeBuildCommand: async (command: string, payload: Record<string, unknown>): Promise<void> => {
+    return shapeBuildRuntime.invokeShapeBuildCommand(command, payload);
+  },
+
+  getBuildSession: async (nodeId: NodeId): Promise<BuildSession | undefined> => (
+    shapeBuildRuntime.getBuildSessionInternal(nodeId)
+  ),
+
+  getBuildTasks: async (nodeId: NodeId): Promise<BuildTaskSummary[]> => {
+    const taskQueue = new VtTaskQueueDb();
+    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      return vtTasks.map((task) => shapeBuildRuntime.mapTaskQueueRecordToTaskSummary(task));
+    }
+    return [];
+  },
+
+  getBuildProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
+    const handler = shapeBuildRuntime.getShapeEntityHandler();
+    const entity = await handler.getEntity(draftId);
+    const nodeId = draftId;
+    if (!entity || !nodeId) {
+      return {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      };
+    }
+    const taskQueue = new VtTaskQueueDb();
+    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
+      return summary.progress;
+    }
+    return {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      percentage: 0,
+    };
+  },
+
+  getBuildStatus: async (
+    nodeId: NodeId,
+  ): Promise<{
+    nodeId: NodeId;
+    draftId?: NodeId;
+    status: string;
+    progress?: number;
+    completedTasks?: number;
+    totalTasks?: number;
+  }> => {
+    const taskQueue = new VtTaskQueueDb();
+    await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
+    const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
+      const paused = shapeBuildRuntime.getPauseState(nodeId).paused;
+      return {
+        nodeId,
+        status: paused ? 'paused' : summary.status,
+        progress: summary.progress.percentage,
+        completedTasks: summary.progress.completed,
+        totalTasks: summary.progress.total,
+      };
+    }
+    return {
+      nodeId,
+      status: 'idle',
+    };
+  },
+
+  // ===================================
+  // Build Session Recovery
+  // ===================================
+
+  findPendingBuildSessions: async (nodeId: NodeId): Promise<BuildSession[]> => {
+    console.log(`Finding pending build sessions for node: ${nodeId}`);
+    return [];
+  },
+
+  getBuildSessionStatus: async (
+    nodeId: NodeId,
+  ): Promise<{
+    exists: boolean;
+    canResume: boolean;
+    lastActivity: number;
+    expiresAt: number;
+  }> => {
+    const sessionRecord = await shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null);
+    if (sessionRecord) {
+      const fallbackLastActivity = sessionRecord.updatedAt ?? Date.now();
+      const lastActivity = sessionRecord.lastActivity ?? fallbackLastActivity;
+      const expiresAt = sessionRecord.expiresAt ?? shapeBuildRuntime.resolveSessionExpiresAt(lastActivity);
+      return {
+        exists: true,
+        canResume: Boolean(sessionRecord.canResume ?? sessionRecord.status === 'paused'),
+        lastActivity,
+        expiresAt,
+      };
+    }
+
+    const taskQueue = new VtTaskQueueDb();
+    const counts = await shapeBuildRuntime.countTaskQueueStatuses(taskQueue, nodeId);
+    if (counts.total > 0) {
+      const now = Date.now();
+      const firstTask = await taskQueue.tasks
+        .where('[nodeId+index]')
+        .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
+        .first();
+      const lastActivity = typeof firstTask?.updatedAt === 'number' ? firstTask.updatedAt : now;
+      return {
+        exists: true,
+        canResume: shapeBuildRuntime.getPauseState(nodeId).paused,
+        lastActivity,
+        expiresAt: shapeBuildRuntime.resolveSessionExpiresAt(lastActivity),
+      };
+    }
+    return {
+      exists: false,
+      canResume: false,
+      lastActivity: 0,
+      expiresAt: 0,
+    };
+  },
+
+  // ===================================
+  // Cleanup (mock/no-op placeholder)
+  // ===================================
+
+  performCleanup: async (): Promise<{
+    workingCopiesRemoved: number;
+    buildSessionsRemoved: number;
+    totalSpaceRecovered: number;
+    timestamp: number;
+  }> => {
+    console.log('Performing draft cleanup (mock)');
+    return {
+      workingCopiesRemoved: 0,
+      buildSessionsRemoved: 0,
+      totalSpaceRecovered: 0,
+      timestamp: Date.now(),
+    };
+  },
+
+  getCleanupStats: async (): Promise<{
+    totalDrafts: number;
+    expiredDrafts: number;
+    totalBuildSessions: number;
+    expiredBuildSessions: number;
+    estimatedSpaceUsed: number;
+    lastCleanupAt?: number;
+  }> => {
+    console.log('Getting cleanup statistics (mock)');
+    return {
+      totalDrafts: 0,
+      expiredDrafts: 0,
+      totalBuildSessions: 0,
+      expiredBuildSessions: 0,
+      estimatedSpaceUsed: 0,
+      lastCleanupAt: Date.now(),
+    };
+  },
+
+  // ===================================
+  // Real-time Progress Subscription
+  // ===================================
+
+  subscribeToProgress: (nodeId: NodeId, callback: (event: BuildProgressEvent) => void): (() => void) => {
+    const existing = shapeBuildRuntime.progressCallbacks.get(String(nodeId));
+    existing?.unsubscribe?.();
+    const taskQueue = new VtTaskQueueDb();
+    const sequenceByTaskId = new Map<string, number>();
+    const readSequence = (sequence: unknown): number | null => (
+      typeof sequence === 'number' && Number.isFinite(sequence) ? sequence : null
+    );
+    const shouldProcessEvent = (taskId: string, sequence: number | null): boolean => {
+      if (sequence === null) return true;
+      const current = sequenceByTaskId.get(taskId);
+      if (current !== undefined && sequence <= current) {
+        return false;
+      }
+      sequenceByTaskId.set(taskId, sequence);
+      return true;
+    };
+    const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
+      if (event.type === 'delete') {
+        sequenceByTaskId.delete(event.taskId);
+        return;
+      }
+      if (!shouldProcessEvent(event.task.taskId, readSequence(event.task.sequence))) {
+        return;
+      }
+      void (async () => {
+        try {
+          const vtTasks = await shapeBuildRuntime.listTasks(taskQueue, event.nodeId);
+          callback({
+            nodeId: event.nodeId,
+            stage: event.task.stage,
+            phase: shapeBuildRuntime.resolveProgressPhase(event.nodeId, vtTasks),
+            timestamp: Date.now(),
+            message: event.task.errorMessage,
+            payload: await shapeBuildRuntime.buildProgressPayloadFromTasks(nodeId, vtTasks, {
+              eventTask: event.task,
+              source: 'event',
+            }),
+          });
+        } catch (error) {
+          console.error('[shapeBuildAPI] progress payload build failed', error);
+        }
+      })();
+    });
+    const unsubscribe = () => {
+      unsubscribeTaskQueue();
+    };
+    shapeBuildRuntime.progressCallbacks.set(String(nodeId), { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.progressCallbacks.get(String(nodeId));
+      active?.unsubscribe?.();
+      shapeBuildRuntime.progressCallbacks.delete(String(nodeId));
+    };
+  },
+
+  subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = shapeBuildRuntime.taskCallbacks.get(key);
+    existing?.unsubscribe?.();
+    const taskQueue = new VtTaskQueueDb();
+    const sequenceByTaskId = new Map<string, number>();
+    const readSequence = (taskId: string, sequence: unknown): number => {
+      if (typeof sequence === 'number' && Number.isFinite(sequence)) return sequence;
+      throw new Error(`[shapeBuildAPI] missing task sequence (taskId=${taskId})`);
+    };
+    const shouldEmitTask = (taskId: string, sequence: number): boolean => {
+      const current = sequenceByTaskId.get(taskId);
+      if (current !== undefined && sequence <= current) return false;
+      sequenceByTaskId.set(taskId, sequence);
+      return true;
+    };
+    let snapshotInFlight = false;
+    const sendSnapshot = async () => {
+      if (snapshotInFlight) return;
+      snapshotInFlight = true;
+      try {
+        await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
+        let tasks = await shapeBuildRuntime.buildTaskSummarySnapshot(nodeId, taskQueue);
+        tasks.forEach((task) => {
+          const sequence = readSequence(task.taskId, task.sequence);
+          sequenceByTaskId.set(task.taskId, sequence);
+        });
+        callback({ type: 'snapshot', nodeId, tasks });
+      } catch (error) {
+        console.error('[shapeBuildAPI] task snapshot failed', error);
+      } finally {
+        snapshotInFlight = false;
+      }
+    };
+    void sendSnapshot();
+    const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
+      if (event.type === 'delete') {
+        sequenceByTaskId.delete(event.taskId);
+        callback({ type: 'delete', nodeId: event.nodeId, taskId: event.taskId });
+        return;
+      }
+      void (async () => {
+        try {
+          const summary = shapeBuildRuntime.mapTaskQueueRecordToTaskSummary(event.task);
+          const sequence = readSequence(summary.taskId, summary.sequence);
+          const current = sequenceByTaskId.get(summary.taskId);
+          if (current !== undefined && sequence > current + 1) {
+            console.warn('[shapeBuildAPI] task sequence gap detected; triggering snapshot resync', {
+              nodeId: event.nodeId,
+              taskId: summary.taskId,
+              currentSequence: current,
+              nextSequence: sequence,
+            });
+            void sendSnapshot();
+            return;
+          }
+          if (!shouldEmitTask(summary.taskId, sequence)) {
+            return;
+          }
+          callback({ type: 'update', nodeId: event.nodeId, task: summary });
+        } catch (error) {
+          console.error('[shapeBuildAPI] task update failed', error);
+        }
+      })();
+    });
+    const unsubscribe = () => {
+      unsubscribeTaskQueue();
+    };
+    shapeBuildRuntime.taskCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = shapeBuildRuntime.taskCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        shapeBuildRuntime.taskCallbacks.delete(key);
+      }
+      unsubscribe();
+    };
+  },
+
+  forceCleanup: async (): Promise<{
+    workingCopiesRemoved: number;
+    buildSessionsRemoved: number;
+    totalSpaceRecovered: number;
+    timestamp: number;
+  }> => {
+    console.log('Force cleaning all transient data (mock)');
+    return {
+      workingCopiesRemoved: 0,
+      buildSessionsRemoved: 0,
+      totalSpaceRecovered: 0,
+      timestamp: Date.now(),
+    };
+  },
+
+  ...shapeBuildMonitoringAPI,
+};
