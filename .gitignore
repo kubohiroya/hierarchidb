@@ -158,6 +158,7 @@ vite.config.ts.timestamp-*
 build/
 playwright-report/
 test-results/
+/.tmp
 **/.tmp/
 
 # Generated metadata snapshot (documentation reference only)
