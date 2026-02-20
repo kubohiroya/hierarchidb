@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import type { MapViewState } from '../types/unified-map-props.js';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import type { MapViewState } from '~/types/unified-map-props';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
 
 const mapProps: Array<Record<string, unknown>> = [];
 
@@ -15,7 +15,7 @@ vi.mock('@vis.gl/react-maplibre', () => ({
 
 vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}), { virtual: true });
 
-import { MapLibreMap } from '../components/MapLibreMap.tsx';
+import { MapLibreMap } from '~/components/MapLibreMap';
 
 const baseViewState: MapViewState = {
   longitude: 139.7,

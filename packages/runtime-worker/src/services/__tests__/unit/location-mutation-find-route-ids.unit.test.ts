@@ -4,7 +4,7 @@ import type { LocationFeatureId } from '@hierarchidb/location-api';
 import type { RouteMode, RouteLineString } from '@hierarchidb/route-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { clearRouteDatabases, closeRouteDB, countRouteReferencesToLocations, getRouteDB } from '@hierarchidb/route-store';
-import { LocationMutationService } from '../../../services/LocationMutationService.js';
+import { LocationMutationService } from '~/services/LocationMutationService';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 const asLocationFeatureId = (value: string): LocationFeatureId => value as LocationFeatureId;

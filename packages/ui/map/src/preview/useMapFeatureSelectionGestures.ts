@@ -3,8 +3,8 @@ import type {
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
-} from '../types/maplibre-public.js';
-import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '../lib/feature-identification.js';
+} from '~/types/maplibre-public';
+import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '~/lib/feature-identification';
 
 const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
   const layerType = feature.layer?.type;

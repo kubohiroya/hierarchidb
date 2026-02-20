@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { useDialogSteps } from '../usePluginDialogController/steps.js';
+import { useDialogSteps } from '~/headless/usePluginDialogController/steps';
 
 vi.mock('@hierarchidb/ui-worker-provider', () => ({
   getWorkerClientHook: () => () => null,

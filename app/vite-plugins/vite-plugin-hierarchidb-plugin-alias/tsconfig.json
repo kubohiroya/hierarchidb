@@ -6,12 +6,6 @@
     "types": [
       "node"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
     "jsx": "react-jsx"
   }
 }

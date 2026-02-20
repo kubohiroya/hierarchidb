@@ -4,7 +4,7 @@
  */
 
 import { Fragment } from 'react';
-import { PluginDialogProvider } from '../hooks/useDialogContext.js';
+import { PluginDialogProvider } from '~/hooks/useDialogContext';
 import type { HeadlessDialogProps } from './types.js';
 import { useAbstractDialog } from './useAbstractDialog.js';
 import { AbstractDialogContent, AbstractDialogFooter, AbstractDialogHeader } from './AbstractDialogElements.js';

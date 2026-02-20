@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
-import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
+import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/types/types';
 // import { logDebug } from '../debug/persistentDebugLog.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 

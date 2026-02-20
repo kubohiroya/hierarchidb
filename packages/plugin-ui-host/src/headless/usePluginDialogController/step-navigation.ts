@@ -8,7 +8,7 @@ import type {
 } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { StepNavigationEvent } from '@hierarchidb/ui-dialog';
-import type { DialogActionInFlight } from '../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 
 type UseStepNavigationArgs<TData extends PeerEntity<TreeNodeData>> = {
   activeStepIndex: number;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSimpleBFFAuth } from '../contexts/SimpleBFFAuthContext.js';
+import { useSimpleBFFAuth } from '~/contexts/SimpleBFFAuthContext';
 
 type AuthReadyGateProps = {
   children: React.ReactNode;

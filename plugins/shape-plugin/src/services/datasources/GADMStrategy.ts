@@ -12,12 +12,12 @@ import {
   type RawDataPipelineContext,
 } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { ShapeFeaturePayload } from '../../common/types/index.js';
+import type { ShapeFeaturePayload } from '~/common/types/index';
 import {
   buildRawDataDataSourceCacheKey,
   type RetryConfig,
-} from '../utils/chunkStore.js';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
+} from '~/services/utils/chunkStore';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
 import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 //  GADM

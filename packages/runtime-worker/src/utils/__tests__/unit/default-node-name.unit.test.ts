@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveDefaultNodeName } from '../../../utils/default-node-name.js';
+import { resolveDefaultNodeName } from '~/utils/default-node-name';
 
 describe('resolveDefaultNodeName', () => {
   it('uses plugin manifest displayName when available', () => {

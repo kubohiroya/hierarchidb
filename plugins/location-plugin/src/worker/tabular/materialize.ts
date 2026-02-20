@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';
-import { replaceLocationPoints } from '../../services/pointRepository.js';
+import { replaceLocationPoints } from '~/services/pointRepository';
 type ProgressReporter = (progress: {
   stage?: string;
   completed?: number;

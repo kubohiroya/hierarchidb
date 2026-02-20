@@ -6,7 +6,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, vi } from 'vitest';
-import { PluginDialogFooter } from '../components/PluginDialogFooter.js';
+import { PluginDialogFooter } from '~/headless/components/PluginDialogFooter';
 
 type ContextOverrides = Partial<Parameters<typeof PluginDialogProvider>[0]['value']>;
 

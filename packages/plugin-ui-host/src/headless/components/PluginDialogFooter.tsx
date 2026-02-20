@@ -17,7 +17,7 @@ import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DialogActionInFlight } from '../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 import { usePluginDialogFooterLogic } from './hooks/usePluginDialogFooterLogic.js';
 
 export interface PluginDialogFooterPrimaryButtonOptions {

@@ -6,8 +6,8 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Chip, Grid, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
-import type { LocationEntity, NodeId } from '../types/index.js';
-import { useTranslation } from '../i18n/index.js';
+import type { LocationEntity, NodeId } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 
 export interface LocationPanelProps {
   nodeId: NodeId;

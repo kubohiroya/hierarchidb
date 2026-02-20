@@ -48,9 +48,9 @@ import {
   Timeline,
   Warning,
 } from '@mui/icons-material';
-import type { NodeId } from '../../../common/types/index.js';
-import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
-import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../../common/i18n/index.js';
+import type { NodeId } from '~/common/types/index';
+import { useLocationProgress } from '~/common/hooks/useLocationProgress';
+import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '~/common/i18n/index';
 import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
 
 interface ProgressInfo {

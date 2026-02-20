@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
  
 import type React from 'react';
-import type { Position } from '../types/WindowState.js';
+import type { Position } from '~/types/WindowState';
 
 export interface UseDraggingOptions {
   onDragStart?: () => void;

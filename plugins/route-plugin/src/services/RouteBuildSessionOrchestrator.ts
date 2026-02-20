@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDeps } from './RouteBuildManager.js';
 import type { RouteBuildSession } from './RouteBuildSession.js';
-import { DEFAULT_ROUTE_BUILD_CONFIG } from '../common/config/buildConfig.js';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { BuildProgressCallback, BuildProgressEvent, BuildSessionStatus, StageKey } from '@hierarchidb/batch-api';
 import { BaseBuildSessionManager } from '@hierarchidb/batch-runtime-services';

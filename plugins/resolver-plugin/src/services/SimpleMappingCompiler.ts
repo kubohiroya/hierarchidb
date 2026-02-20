@@ -1,4 +1,4 @@
-import type { PropertyMappingRule } from '../common/types/index.js';
+import type { PropertyMappingRule } from '~/common/types/index';
 
 export type CompiledFunction = (data: any) => any;
 

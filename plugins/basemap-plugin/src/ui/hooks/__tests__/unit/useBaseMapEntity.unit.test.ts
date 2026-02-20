@@ -1,6 +1,6 @@
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
-import { __testUtils } from '../../useBaseMapEntity.js';
+import { __testUtils } from '~/ui/hooks/useBaseMapEntity';
 
 const { buildBaseMapEntityFromNode, normalizeMapStyle, normalizeViewport } = __testUtils;
 

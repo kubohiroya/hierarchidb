@@ -1,26 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "composite": true,
     "declaration": true,
     "declarationDir": "dist",
     "emitDeclarationOnly": true,
     "rootDir": "src",
-    "outDir": "dist",
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    }
+    "outDir": "dist"
   },
   "include": [
+
     "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/__tests__/**/*"
+
   ]
 }

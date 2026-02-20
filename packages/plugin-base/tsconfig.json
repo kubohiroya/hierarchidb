@@ -1,22 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "rootDir": ".",
     "types": [
       "react",
       "react/jsx-runtime"
     ],
-    "jsx": "react-jsx",
-    "baseUrl": "src",
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    }
+    "jsx": "react-jsx"
   },
-  "exclude": [
-    "node_modules",
-    "dist"
+  "include": [
+    "src/**/*"
   ]
 }

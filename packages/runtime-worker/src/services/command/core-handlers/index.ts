@@ -2,11 +2,11 @@
 
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../../CoreDB.js';
-import type { CommandEnvelope, CommandResult, WorkerErrorCode } from '../../command-types.js';
-import { WorkerErrorCodeValue } from '../../command-types.js';
-import { commitDraft, createNewName } from '../../DraftTreeNodeOperations.js';
-import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandEnvelope, CommandResult, WorkerErrorCode } from '~/services/command-types';
+import { WorkerErrorCodeValue } from '~/services/command-types';
+import { commitDraft, createNewName } from '~/services/DraftTreeNodeOperations';
+import type { CommandHistoryManager } from '~/services/command/history/CommandHistoryManager';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;

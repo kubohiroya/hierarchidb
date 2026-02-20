@@ -15,9 +15,9 @@ import type {
   TreeNode,
 } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import { createCommand } from '../utils.js';
-import type { CommandAdapterOptions } from '../../types/index.js';
-import { TreeConsoleAdapterError } from '../../types/index.js';
+import { createCommand } from '~/adapters/utils';
+import type { CommandAdapterOptions } from '~/types/index';
+import { TreeConsoleAdapterError } from '~/types/index';
 
 export interface DraftEditSession {
   draftId: string;

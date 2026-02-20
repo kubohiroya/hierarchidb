@@ -1,4 +1,4 @@
-import type { CachePort, HashAlgorithm, ResponseLike } from '../ports.js';
+import type { CachePort, HashAlgorithm, ResponseLike } from '~/ports';
 
 export class CacheAPICachePort implements CachePort {
   private key(hash: string, algo: HashAlgorithm) {

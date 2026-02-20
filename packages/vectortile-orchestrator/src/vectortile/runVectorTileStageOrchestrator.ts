@@ -1,7 +1,7 @@
 import type { RunVectorTileStageOrchestratorParams } from './orchestratorTypes.js';
-import type { ProgressInfo } from '../ports/sharedTypes.js';
+import type { ProgressInfo } from '~/ports/sharedTypes';
 
-import { defaultStageControls } from '../common/defaultStageControls.js';
+import { defaultStageControls } from '~/common/defaultStageControls';
 import { buildVectorTileProgressReporter, resolveRunnableVectorTileTasks } from './resolveRunnableVectorTileTasks.js';
 import { runVectorTileAdapter } from './runVectorTileAdapter.js';
 import { postprocessVectorTileStage } from './postprocessVectorTileStage.js';

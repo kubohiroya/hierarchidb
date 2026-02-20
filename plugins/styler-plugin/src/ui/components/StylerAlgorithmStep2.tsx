@@ -28,8 +28,8 @@ import type React from 'react';
 import {
   type StylerConfig,
   type StylerStepData,
-} from '../../common/types/StylerEntity.ts';
-import { generateColorGradient } from '../../common/utils/colorUtils.ts';
+} from '~/common/types/StylerEntity';
+import { generateColorGradient } from '~/common/utils/colorUtils';
 import { GradientSwatch } from './GradientSwatch.tsx';
 import { useStylerAlgorithmStep2 } from './useStylerAlgorithmStep2.ts';
 

@@ -42,7 +42,7 @@
   },
   "scripts": {
     "build": "pnpm build:js && pnpm build:dts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
@@ -54,6 +54,8 @@
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/tabular-source-xlsx": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",

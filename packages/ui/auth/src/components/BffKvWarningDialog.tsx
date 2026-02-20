@@ -6,7 +6,7 @@ import {
   BFF_WARNING_EVENT,
   type BffWarning,
   isBffWarning,
-} from '../services/BffWarning.js';
+} from '~/services/BffWarning';
 
 const buildDetailKey = (operation: BffWarning['operation']): string =>
   `auth.kvFallback.detail.${operation}`;

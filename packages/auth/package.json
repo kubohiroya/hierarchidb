@@ -17,7 +17,7 @@
     "build": "tsdown src/index.ts src/AuthService.ts src/AuthRecoveryService.ts src/AuthNotificationSystem.ts --config ../../../tsdown.config.ts --outDir dist",
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
     "@hierarchidb/auth-api": "workspace:*",

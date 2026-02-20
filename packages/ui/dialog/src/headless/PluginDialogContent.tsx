@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useDialogContext } from '../hooks/useDialogContext.js';
+import { useDialogContext } from '~/hooks/useDialogContext';
 import type {
   HeadlessContentRenderProps,
   HeadlessDialogContentProps,

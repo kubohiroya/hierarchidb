@@ -1,10 +1,10 @@
 import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { LinkerDraft } from '../../common/types/index.js';
-import { ResourcePicker } from '../steps/ResourcePicker.js';
-import { AggregatedList } from '../steps/AggregatedList.js';
-import { MapPreview } from '../steps/MapPreview.js';
-import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import type { LinkerDraft } from '~/common/types/index';
+import { ResourcePicker } from '~/ui/steps/ResourcePicker';
+import { AggregatedList } from '~/ui/steps/AggregatedList';
+import { MapPreview } from '~/ui/steps/MapPreview';
+import { useTranslation as getTranslation } from '~/common/i18n/index';
 import { useLinkerSteps } from './hooks/useLinkerSteps.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 

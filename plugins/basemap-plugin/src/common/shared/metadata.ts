@@ -1,5 +1,5 @@
 import type { PluginManifest } from '@hierarchidb/plugin-base';
-import { PLUGIN_MANIFEST } from '../../plugin-manifest.js';
+import { PLUGIN_MANIFEST } from '~/plugin-manifest';
 
 /**
  * Re-export plugin manifest for shared layer consumers.

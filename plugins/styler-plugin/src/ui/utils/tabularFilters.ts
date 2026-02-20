@@ -1,5 +1,5 @@
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
-import type { StylerTableRow } from '../../common/types/StylerEntity.js';
+import type { StylerTableRow } from '~/common/types/StylerEntity';
 
 export type PreparedFilter = {
   column: string;

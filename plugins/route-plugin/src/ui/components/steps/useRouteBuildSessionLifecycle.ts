@@ -16,7 +16,7 @@ import {
   type PauseBuildReason,
   useBuildSessionTransition,
 } from '@hierarchidb/components';
-import { PLUGIN_NODE_TYPE } from '../../../plugin-manifest.js';
+import { PLUGIN_NODE_TYPE } from '~/plugin-manifest';
 import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
 
 export type RouteBuildSessionTransitionPhase =

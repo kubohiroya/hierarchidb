@@ -1,4 +1,4 @@
-import type { SubTreeChanges } from '../state/features/subscription.atoms.js';
+import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
 
 export function coalesceBatches(pending: SubTreeChanges[]): SubTreeChanges {
   const added = new Map<string, Record<string, unknown>>();

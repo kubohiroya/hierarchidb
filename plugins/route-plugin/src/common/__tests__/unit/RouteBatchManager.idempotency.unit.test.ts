@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RouteBuildManager, type RouteBuildRouteInput } from '../../src/services/RouteBuildManager.js';
+import { RouteBuildManager, type RouteBuildRouteInput } from '~/common/src/services/RouteBuildManager';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
 import type { NodeId } from '@hierarchidb/core-types';
 

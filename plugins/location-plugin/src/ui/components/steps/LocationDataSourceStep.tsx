@@ -11,7 +11,7 @@ import {
   type DataSourceOption,
   IdeGsmImportPanel,
 } from '@hierarchidb/ui-datasource';
-import type { LocationDataSource, LocationEntity } from '../../../common/types/index.js';
+import type { LocationDataSource, LocationEntity } from '~/common/types/index';
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import { useLocationDataSourceStep } from './useLocationDataSourceStep.js';
 

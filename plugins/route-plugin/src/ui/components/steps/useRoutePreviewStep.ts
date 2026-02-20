@@ -29,7 +29,7 @@ import type {
   RouteMetadataSyncSummary,
   RouteNearestLineResponse,
 } from '@hierarchidb/route-api';
-import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
+import { formatDistance, getTransportModeName, useTranslation } from '~/common/i18n/index';
 import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
@@ -37,9 +37,9 @@ import {
   ROUTE_STYLE_OPTIONS,
 } from './useRouteSelectionStep.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
-import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
+import { ROUTE_DATA_SOURCES } from '~/common/datasource/configs';
 import { getDBName } from '@hierarchidb/util';
-import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '../../../common/styles/routeStyle.js';
+import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '~/common/styles/routeStyle';
 
 type Bounds = { minLon: number; maxLon: number; minLat: number; maxLat: number };
 const HOVER_DISTANCE_PX = 16;

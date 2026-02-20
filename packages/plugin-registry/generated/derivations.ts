@@ -1,1 +1,1 @@
-export * from '../src/derivations.ts';
+export * from '../src/derivations.js';

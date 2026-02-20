@@ -4,14 +4,14 @@ import type {
   ColorSpace,
   StylerConfig,
   StylerTableRow,
-} from '../../../common/types/StylerEntity.js';
-import { StylerConfigDefault } from '../../../common/types/StylerEntity.js';
-import { generateColorGradient } from '../../../common/utils/colorUtils.js';
+} from '~/common/types/StylerEntity';
+import { StylerConfigDefault } from '~/common/types/StylerEntity';
+import { generateColorGradient } from '~/common/utils/colorUtils';
 import {
   analyzeData,
   type DataAnalysisResult,
   extractNumericValues,
-} from '../../../common/utils/dataAnalysis.js';
+} from '~/common/utils/dataAnalysis';
 
 type FormatFn = (key: string, defaultValue: string) => string;
 

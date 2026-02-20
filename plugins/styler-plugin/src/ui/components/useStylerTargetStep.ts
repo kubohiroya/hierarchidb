@@ -7,7 +7,7 @@ import {
   type StylerStepData,
   type StylerValueType,
   type StyleType,
-} from '../../common/types/StylerEntity.ts';
+} from '~/common/types/StylerEntity';
 
 interface UseStylerTargetStepProps {
   data: unknown;

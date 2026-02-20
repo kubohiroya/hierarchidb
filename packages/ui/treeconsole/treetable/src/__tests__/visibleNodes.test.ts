@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@hierarchidb/tree-api';
 
-import { buildVisibleNodes } from '../utils/visible-nodes.js';
+import { buildVisibleNodes } from '~/utils/visible-nodes';
 
 const makeNode = (id: string, parentId: string | null, overrides: Partial<TreeNode> = {}): TreeNode => {
   const parentKey = parentId ?? '';
@@ -9,7 +9,14 @@ const makeNode = (id: string, parentId: string | null, overrides: Partial<TreeNo
     id: id as TreeNode['id'],
     parentId: parentKey as TreeNode['parentId'],
     nodeType: 'folder' as TreeNode['nodeType'],
-    name: id,
+    metadata: {
+      name: id,
+      description: '',
+      tags: [],
+    },
+    draftMetadata: undefined,
+    data: undefined,
+    visible: true,
     depth: 0,
     createdAt: 0 as TreeNode['createdAt'],
     updatedAt: 0 as TreeNode['updatedAt'],

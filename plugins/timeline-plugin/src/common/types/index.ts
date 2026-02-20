@@ -4,4 +4,4 @@ export type {
   TimelineFrameViewState,
   TimelineDraft,
   TimelineDraftPatch,
-} from '../entities/TimelineEntity.js';
+} from '~/common/entities/TimelineEntity';

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type {
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
-} from '../types/maplibre-public.js';
+} from '~/types/maplibre-public';
 import type { MapSearchTargetDefinition } from './mapPreviewSearchTypes.js';
 
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();

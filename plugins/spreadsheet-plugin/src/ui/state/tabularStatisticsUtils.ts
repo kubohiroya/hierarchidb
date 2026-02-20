@@ -1,4 +1,4 @@
-import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 
 export interface TabularStatistics {
   min: number;

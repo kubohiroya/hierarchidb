@@ -12,8 +12,8 @@ import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { createTreeNodeUpdaterActions, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DEFAULT_VIEWPORT as BASEMAP_DEFAULT_VIEWPORT } from '../../common/constants/constants.js';
-import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import { DEFAULT_VIEWPORT as BASEMAP_DEFAULT_VIEWPORT } from '~/common/constants/constants';
+import type { BaseMapEntity, MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
 
 export interface UseBaseMapEntityResult {
   entity: BaseMapEntity | null;

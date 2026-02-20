@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
-import type { LocationIconConfig, LocationType } from '../../../common/types/index.js';
+import type { LocationIconConfig, LocationType } from '~/common/types/index';
 import { LOCATION_ICON_COMPONENTS, DEFAULT_ICON_IDS, DEFAULT_TYPE_COLORS } from './locationMapPreviewConstants.js';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveCountryFlag, resolveLocationType } from './locationMapPreviewUtils.js';

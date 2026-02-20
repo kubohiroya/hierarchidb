@@ -4,7 +4,7 @@ import { createContext, type ReactNode, useContext, useMemo } from 'react';
 import {
   type BuildSessionSnapshot,
   useBuildSessionSnapshots,
-} from '../hooks/useBuildSessionSnapshots.js';
+} from '~/hooks/useBuildSessionSnapshots';
 
 type TreeContextValue = {
   treeId: TreeId | null;

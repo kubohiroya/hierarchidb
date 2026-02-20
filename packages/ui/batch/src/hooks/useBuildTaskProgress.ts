@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BuildTaskSummary } from '@hierarchidb/batch-api';
-import { buildTaskCountSummary } from '../utils/taskProgressSummary.js';
+import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
 
 type TaskStageCarrier = BuildTaskSummary & { taskType?: string; type?: string; stage?: string };
 

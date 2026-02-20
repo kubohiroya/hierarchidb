@@ -1,8 +1,8 @@
 import type React from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { ResourceLayerMap } from '../components/ResourceLayerMap.js';
-import type { ResourceLayerMapProps } from '../components/ResourceLayerMap.js';
+import { ResourceLayerMap } from '~/components/ResourceLayerMap';
+import type { ResourceLayerMapProps } from '~/components/ResourceLayerMap';
 import { useMonochromeBasemapStyleUrl } from './useMonochromeBasemapStyleUrl.js';
 
 export type MapPreviewShellProps = {

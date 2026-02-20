@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { ResolverUpdaterPayload, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
+import type { ResolverUpdaterPayload, SchemaInfo, PropertyInfo } from '~/common/types/index';
 import { usePropertyMappingStep } from './hooks/usePropertyMappingStep.js';
 
 interface PropertyMappingStepProps {

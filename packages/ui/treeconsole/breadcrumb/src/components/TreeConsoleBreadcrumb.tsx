@@ -21,11 +21,11 @@ import { styled } from '@mui/material/styles';
 import { Link as RouterLink } from '@tanstack/react-router';
 import type { DragEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
-import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
-import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
-import { getPluginIconColor, isFolderNodeType } from '../utils/nodeTypeIconColor.js';
-import { useTreeConsoleBreadcrumb } from '../hooks/useTreeConsoleBreadcrumb.js';
+import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '~/types';
+import type { BuildTreeConsoleLinkOptions } from '~/utils/linkFactory';
+import { buildTreeConsoleLinkHref } from '~/utils/linkFactory';
+import { getPluginIconColor, isFolderNodeType } from '~/utils/nodeTypeIconColor';
+import { useTreeConsoleBreadcrumb } from '~/hooks/useTreeConsoleBreadcrumb';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';

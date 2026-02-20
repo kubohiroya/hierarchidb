@@ -8,7 +8,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import type { OpenStepOption, TreeConsoleBreadcrumbProps, TreeConsoleBreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { DualKeyMap } from '@hierarchidb/util';
-import type { HierarchicalTreeNode } from '../types/index.js';
+import type { HierarchicalTreeNode } from '~/types/index';
 
 type DefaultBreadcrumbProps = TreeConsoleBreadcrumbProps;
 type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;

@@ -11,16 +11,16 @@ import type {
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
 
 type MapLibreLayerUpdater = MapLibreMapInstance & {
   setFilter?: (layerId: string, filter?: unknown) => void;
   setLayerZoomRange?: (layerId: string, minzoom: number, maxzoom: number) => void;
 };
-import type { FeatureStateRecord, VectorTileProps } from '../types/unified-map-props.js';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
-import { loadMapLibreModule } from '../utils/maplibre-loader.js';
-import { normalizePaintLiteralArrays } from '../utils/maplibre-style-utils.js';
+import type { FeatureStateRecord, VectorTileProps } from '~/types/unified-map-props';
+import { DEFAULT_MAP_CONFIG } from '~/types/unified-map-props';
+import { loadMapLibreModule } from '~/utils/maplibre-loader';
+import { normalizePaintLiteralArrays } from '~/utils/maplibre-style-utils';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;

@@ -9,9 +9,9 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import * as Comlink from 'comlink';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeEvent } from '@hierarchidb/tree-api';
-import type { AdapterContext, UnsubscribeFunction } from '../../types/index.js';
-import { TreeConsoleAdapterError } from '../../types/index.js';
-import { createCommand } from '../utils.js';
+import type { AdapterContext, UnsubscribeFunction } from '~/types/index';
+import { TreeConsoleAdapterError } from '~/types/index';
+import { createCommand } from '~/adapters/utils';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 

@@ -1,4 +1,4 @@
-import type { LocationType, NodeId } from '../../../common/types/index.js';
+import type { LocationType, NodeId } from '~/common/types/index';
 
 export interface PreviewLocationPoint {
   id: string;

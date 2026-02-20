@@ -1,4 +1,4 @@
-import type { LocationType } from '../../../common/types/index.js';
+import type { LocationType } from '~/common/types/index';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
   Anchor,

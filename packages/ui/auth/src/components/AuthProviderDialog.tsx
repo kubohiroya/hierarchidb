@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useId } from 'react';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '~/types/AuthProviderType';
 import { AuthProviderOptions } from './AuthProviderOptions.js';
 
 interface AuthProviderDialogProps {

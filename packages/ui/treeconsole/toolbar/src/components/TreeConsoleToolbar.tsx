@@ -1,7 +1,7 @@
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { TreeConsoleToolbarProps } from '../types.js';
+import type { TreeConsoleToolbarProps } from '~/types';
 import { SearchOnlyToolbar, type SearchStrings } from './toolbar/SearchOnlyToolbar.js';
 import { TreeConsoleToolbarContent } from './toolbar/TreeConsoleToolbarContent.js';
 

@@ -1,4 +1,4 @@
-import { pluginRegistry } from '../plugin-registry/index.js';
+import { pluginRegistry } from '~/plugin-registry/index';
 
 function titleCase(input: string): string {
   const words = input.replace(/[-_]+/g, ' ').split(' ').filter(Boolean);

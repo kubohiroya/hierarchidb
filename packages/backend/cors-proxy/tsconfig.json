@@ -1,12 +1,7 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-  "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
+    "baseUrl": ".",
     "types": [
       "@cloudflare/workers-types",
       "node"
@@ -17,8 +12,7 @@
     "target": "ES2022"
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.mts"
+    "src/**/*"
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

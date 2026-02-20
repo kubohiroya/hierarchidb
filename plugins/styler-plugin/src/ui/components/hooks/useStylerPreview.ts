@@ -11,10 +11,10 @@ import {
   type StylerMapping,
   StylerMappingDefault,
   type StylerTableRow,
-} from '../../../common/types/StylerEntity.js';
-import { normalizeStylerConfig } from '../../../common/utils/colorUtils.js';
-import { useTabularFilterWorker } from '../../hooks/useTabularFilterWorker.js';
-import type { StylerStepProps } from '../StylerStepProps.js';
+} from '~/common/types/StylerEntity';
+import { normalizeStylerConfig } from '~/common/utils/colorUtils';
+import { useTabularFilterWorker } from '~/ui/hooks/useTabularFilterWorker';
+import type { StylerStepProps } from '~/ui/components/StylerStepProps';
 
 const useValueColorScale = ({
   baseConfig,

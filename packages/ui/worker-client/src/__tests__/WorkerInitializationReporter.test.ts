@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InitializationStep } from '../types.js';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
+import type { InitializationStep } from '~/types';
+import { WorkerInitializationReporter } from '~/WorkerInitializationReporter';
 
 type WorkerLikeScope = {
   addEventListener: (type: 'message', handler: (event: MessageEvent) => void) => void;

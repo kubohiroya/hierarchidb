@@ -10,18 +10,18 @@ import type {
   FetchTaskPayload,
   ShapeStepValidationResult,
   SelectedArrayByCountries,
-} from '../../common/types/index';
+} from '~/common/types/index';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   SHAPE_DATA_SOURCES,
-} from '../../common/types/constants';
+} from '~/common/types/constants';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 import type {
   ShapeBuildConfig,
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
-} from '../../common/types/index';
+} from '~/common/types/index';
 import {
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,

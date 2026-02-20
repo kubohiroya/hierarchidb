@@ -1,7 +1,7 @@
 import React from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
-import type { LocationDialogProps } from '../common/types/index.js';
-import type { LocationPanelProps } from '../common/components/LocationPanel.js';
+import type { LocationDialogProps } from '~/common/types/index';
+import type { LocationPanelProps } from '~/common/components/LocationPanel';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
 type PluginPanelComponent = (props: HostPluginPanelProps) => JSX.Element | null;
@@ -41,7 +41,7 @@ export async function getDialogComponent(): Promise<PluginDialogComponent> {
 }
 
 export async function getPanelComponent(): Promise<PluginPanelComponent> {
-  const { LocationPanel } = await import('../common/components/LocationPanel.js');
+  const { LocationPanel } = await import('~/common/components/LocationPanel');
 
   const Adapter: PluginPanelComponent = (props: HostPluginPanelProps) => {
     const rawNodeId = props['nodeId'];

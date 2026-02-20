@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 
-import type { PaneHeaderProps } from '../types/LRUSplitView.js';
+import type { PaneHeaderProps } from '~/types/LRUSplitView';
 import { PaneProgressSummary } from './PaneProgressSummary.js';
 
 export interface PaneHeaderComponentProps extends PaneHeaderProps {

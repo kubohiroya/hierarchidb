@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import type { TreeConsoleContentProps } from '../types/index.js';
+import type { TreeConsoleContentProps } from '~/types/index';
 import type { TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { NodeId } from '@hierarchidb/core-types';

@@ -1,4 +1,4 @@
-import { generateState } from '../utils/pkce.js';
+import { generateState } from '~/utils/pkce';
 
 export interface GitHubOAuth2Config {
   clientId: string;

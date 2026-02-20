@@ -1,5 +1,5 @@
 import { DialogActions } from '@mui/material';
-import type { TreeConsoleActionsProps } from '../types/index.js';
+import type { TreeConsoleActionsProps } from '~/types/index';
 
 export function TreeConsoleActions(_props: TreeConsoleActionsProps): React.JSX.Element {
 

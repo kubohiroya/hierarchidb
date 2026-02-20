@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ProgressInfo, VectorTileTask } from '../ports/sharedTypes.js';
+import type { ProgressInfo, VectorTileTask } from '~/ports/sharedTypes';
 
 export type ResolveRunnableResult<TTask> = {
   runnableTasks: TTask[];

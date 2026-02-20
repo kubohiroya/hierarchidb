@@ -1,20 +1,17 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "lib": [
       "ES2020",
       "DOM"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
     "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "TanStack RouterとMUIの型依存を leaf パッケージ内で完結させるため"
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

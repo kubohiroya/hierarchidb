@@ -8,7 +8,7 @@ import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { BFFAuthService } from '../services/BFFAuthService.js';
+import { BFFAuthService } from '~/services/BFFAuthService';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { Theme } from '@mui/material/styles';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
+import type { MapLibreMapInstance } from '~/types/maplibre-public';
+import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
 
 type MapLibreInteractiveMap = MapLibreMapInstance & {
   on(event: string, cb: (...args: unknown[]) => void): void;

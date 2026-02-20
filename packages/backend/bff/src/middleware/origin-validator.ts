@@ -3,8 +3,8 @@
  */
 
 import type { Next } from 'hono';
-import { parseAllowedOrigins } from '../utils/cors.js';
-import { type BffContext, getEnv } from '../utils/env.js';
+import { parseAllowedOrigins } from '~/utils/cors';
+import { type BffContext, getEnv } from '~/utils/env';
 
 const parseAppBaseUrls = (value?: string): string[] => {
   if (!value) return [];

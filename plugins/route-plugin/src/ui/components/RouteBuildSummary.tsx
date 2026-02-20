@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
-import { useRouteBuildProgress } from '../hooks/useRouteBuildProgress.js';
-import { useTranslation } from '../../common/i18n/index.js';
+import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
+import { useTranslation } from '~/common/i18n/index';
 
 export interface RouteBuildSummaryProps {
   nodeId: string;

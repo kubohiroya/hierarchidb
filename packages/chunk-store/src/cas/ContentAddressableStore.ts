@@ -1,4 +1,4 @@
-import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, ResponseLike } from '../ports.js';
+import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, ResponseLike } from '~/ports';
 import type { NetworkPort } from '@hierarchidb/download';
 
 export interface FetchToCasOptions {

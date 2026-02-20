@@ -1,8 +1,8 @@
 import { validateExternalURL } from '@hierarchidb/util';
 import type { KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { downloadFile } from '../services/UnifiedDownloadService.js';
-import { devError, devLog } from '../utils/logger.js';
+import { downloadFile } from '~/services/UnifiedDownloadService';
+import { devError, devLog } from '~/utils/logger';
 
 interface UrlDownloadAuth {
   accessToken?: string;

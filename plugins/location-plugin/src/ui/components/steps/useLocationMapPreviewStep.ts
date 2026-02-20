@@ -3,14 +3,14 @@ import { useTheme } from '@mui/material';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { MapAttributionItem, MapToggleSelection, MapViewState } from '@hierarchidb/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-map';
-import type { LocationEntity, LocationType } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+import type { LocationEntity, LocationType } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
-import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
+import { resolveLocationAttribution } from '~/common/datasources/attribution';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
-import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
+import { useIdeGsmImportOnEntry } from '~/ui/hooks/useIdeGsmImportOnEntry';
+import { subscribeIdeGsmProgress } from '~/ui/state/ideGsmProgress';
 import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 import {
   DEFAULT_TYPE_COLORS,

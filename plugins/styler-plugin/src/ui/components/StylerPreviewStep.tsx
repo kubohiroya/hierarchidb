@@ -21,14 +21,14 @@ import {
 import type React from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
-import type { ColorCalculationResult } from '../../common/types/StylerEntity.js';
+import type { ColorCalculationResult } from '~/common/types/StylerEntity';
 import {
   type ColorStyleKeyValue,
   MAPLIBRE_PROPERTY_METADATA,
   type ScalarStyleKeyValue,
   type StylerStepData,
-} from '../../common/types/StylerEntity.js';
-import { valueToColor } from '../../common/utils/colorUtils.js';
+} from '~/common/types/StylerEntity';
+import { valueToColor } from '~/common/utils/colorUtils';
 import { useStylerPreview } from './hooks/useStylerPreview.js';
 import type { StylerStepProps } from './StylerStepProps.tsx';
 

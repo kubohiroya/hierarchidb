@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import type { LocationType } from '../../../common/types/index.js';
+import type { LocationType } from '~/common/types/index';
 
 export type LocationMapPreviewIconProps = {
   Icon: SvgIconComponent;

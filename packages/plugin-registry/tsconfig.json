@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "files": [
     "types/plugin-modules.d.ts"
   ],
@@ -9,15 +9,7 @@
     "typeRoots": [
       "./types",
       "../../node_modules/@types"
-    ],
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "./src/*",
-        "*"
-      ]
-    },
-    "baseUrl": "src"
+    ]
   },
   "include": [
     "src/**/*",

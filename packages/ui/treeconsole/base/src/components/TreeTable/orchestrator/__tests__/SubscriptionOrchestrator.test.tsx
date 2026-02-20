@@ -4,8 +4,8 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { type FC, useEffect, type PropsWithChildren, type ReactElement } from 'react';
-import { useSubscriptionOrchestrator } from '../SubscriptionOrchestrator.js';
-import { tableDataAtom } from '../../state/index.js';
+import { useSubscriptionOrchestrator } from '~/components/TreeTable/orchestrator/SubscriptionOrchestrator';
+import { tableDataAtom } from '~/components/TreeTable/state/index';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,

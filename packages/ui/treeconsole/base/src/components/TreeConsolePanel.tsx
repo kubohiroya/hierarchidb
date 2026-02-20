@@ -9,10 +9,10 @@ import { type BuildSessionIndicator, TreeTableCore } from '@hierarchidb/ui-treec
 import type { OpenStepOption, TreeConsoleBreadcrumbRendererProps as BreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-import type { HierarchicalTreeNode } from '../types/index.js';
+import type { HierarchicalTreeNode } from '~/types/index';
 import type { DualKeyMap } from '@hierarchidb/util';
-import type { PanelBreadcrumbNode } from '../hooks/useTreeConsolePanel.js';
-import { useTreeConsolePanel } from '../hooks/useTreeConsolePanel.js';
+import type { PanelBreadcrumbNode } from '~/hooks/useTreeConsolePanel';
+import { useTreeConsolePanel } from '~/hooks/useTreeConsolePanel';
 import { TagsLinkButton } from './TagsLinkButton.js';
 
 export type TreeConsoleBreadcrumbRendererProps = BreadcrumbRendererProps;

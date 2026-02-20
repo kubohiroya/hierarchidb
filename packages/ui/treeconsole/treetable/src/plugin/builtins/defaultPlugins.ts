@@ -4,7 +4,7 @@
 
 import { inlineEditPlugin } from './InlineEditPlugin.js';
 import { keyboardNavigationPlugin } from './KeyboardNavigationPlugin.js';
-import type { TreeTablePlugin } from '../types.js';
+import type { TreeTablePlugin } from '~/plugin/types';
 
 export const defaultPlugins: TreeTablePlugin[] = [
   keyboardNavigationPlugin,

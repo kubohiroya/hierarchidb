@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 import { useCallback, useState } from 'react';
-import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams, TreeConsoleSearchMode } from '../../types.js';
+import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams, TreeConsoleSearchMode } from '~/types';
 import { ActionButtons } from './ActionButtons.js';
 import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 import type { SearchStrings } from './SearchOnlyToolbar.js';

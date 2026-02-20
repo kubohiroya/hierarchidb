@@ -40,4 +40,4 @@ export {
   mergeProcessingConfig,
   summarizeCheckboxState,
   validateBatchConfig,
-} from '../../services/utils/utils';
+} from '~/services/utils/utils';

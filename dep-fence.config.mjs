@@ -3,14 +3,11 @@ import { defaultPolicies } from 'dep-fence';
 import fs from 'fs';
 import path from 'path';
 
-function readJsonLoose(filePath) {
+function readTsconfigExtends(filePath) {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
-    const sanitized = raw
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/(^|\s+)\/\/.*$/gm, '')
-      .replace(/,(\s*[}\]])/g, '$1');
-    return JSON.parse(sanitized);
+    const match = raw.match(/"extends"\s*:\s*"([^"\n]+)"/);
+    return match ? match[1] : null;
   } catch {
     return null;
   }
@@ -191,6 +188,7 @@ const custom = [
 // - Check package-local tsconfig.json and ensure it extends repo base and sets jsx: 'react-jsx'.
 // - If満たす場合のみ、既定のtsconfig-hygieneの検査をスキップ。
 const defaultPolicyAllowlist = new Set([
+  'tsconfig-no-base',
   'publishable-tsconfig-hygiene',
   'publishable-local-shims',
   'skipLibCheck-governance',
@@ -201,7 +199,7 @@ const defaultPolicyAllowlist = new Set([
 const patchedDefaults = defaultPolicies
   .filter((policy) => defaultPolicyAllowlist.has(policy.id))
   .map((policy) => {
-    if (policy.id !== 'publishable-tsconfig-hygiene') return policy;
+    if (policy.id !== 'publishable-tsconfig-hygiene' && policy.id !== 'tsconfig-no-base') return policy;
 
     const origWhen = policy.when || (() => true);
     return {
@@ -211,12 +209,11 @@ const patchedDefaults = defaultPolicies
         if (dir) {
           const tsconfigPath = path.join(dir, 'tsconfig.json');
           if (fs.existsSync(tsconfigPath)) {
-            const ts = readJsonLoose(tsconfigPath);
-            const jsx = ts?.compilerOptions?.jsx;
-            const ext = ts?.extends;
-            const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
-            const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev' || jsx === undefined;
-            if (okExtends && okJsx) {
+            const ext = readTsconfigExtends(tsconfigPath);
+            const okExtends =
+              typeof ext === 'string' &&
+              (ext.includes('tsconfig.base.json') || ext.includes('tsconfig.package.base.json') || ext.includes('tsconfig.package.local-alias.base.json'));
+            if (okExtends) {
               return false;
             }
           }

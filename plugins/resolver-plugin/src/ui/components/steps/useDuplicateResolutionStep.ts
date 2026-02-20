@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DuplicateResolutionStrategy, ResolverUpdaterPayload } from '../../../common/types/index.js';
+import type { DuplicateResolutionStrategy, ResolverUpdaterPayload } from '~/common/types/index';
 
 interface UseDuplicateResolutionStepProps {
   data: Partial<ResolverUpdaterPayload>;

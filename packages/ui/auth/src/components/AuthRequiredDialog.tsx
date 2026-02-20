@@ -29,8 +29,8 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { useBFFAuthService } from '../hooks/useAuth.js';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
+import { useBFFAuthService } from '~/hooks/useAuth';
+import type { AuthProviderType } from '~/types/AuthProviderType';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.

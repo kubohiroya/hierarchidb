@@ -1,5 +1,5 @@
 import type { Next } from 'hono';
-import { type BffContext, getEnv } from './env.js';
+import { type BffContext, getEnv } from '~/utils/env';
 
 interface TurnstileVerifyResponse {
   success: boolean;

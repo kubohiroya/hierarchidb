@@ -54,7 +54,7 @@ The tool rewrites module specifiers in:
 - `export ... from` declarations
 - `import = require`-style external module references
 - dynamic `import("...")` expressions
-- `new URL("...", import.meta.url)` expressions (common with Comlink/WebWorker worker loading)
+- `new URL("...", import.meta.url)` expressions
 
 ## Conversion rules
 
@@ -62,8 +62,6 @@ The tool rewrites module specifiers in:
   - `../bar`
 - Leaves non-relative references unchanged:
   - `@scope/pkg`
-- Converts URL-constructor relative paths with `import.meta.url` base:
-  - `new URL('../worker.ts', import.meta.url)`
 - `~/*` aliases are resolved from the nearest scope root:
   - package scopes (`packages/*`, `plugins/*`) resolve from package root
   - `app` resolves from `app/src`
@@ -74,6 +72,19 @@ The tool rewrites module specifiers in:
   - `node_modules`
   - `dist`
   - hidden directories (name starts with `.`)
+
+The tool intentionally skips conversions under the following runtime contexts:
+
+- `new URL("...", import.meta.url)`
+  - e.g. `new URL("../worker.js", import.meta.url)` is kept unchanged.
+- `new Worker("...")` and `new Worker(...)` overload variants
+  - The string argument is not rewritten when it is an argument to `new Worker(...)`.
+- `Comlink.wrap(...)`
+  - `wrap` calls where the member access base resolves to `Comlink` (for example `Comlink.wrap(...)`, `SomeNamespace.Comlink.wrap(...)`) keep their argument strings unchanged.
+
+Dynamic import (`import("...")`) is intentionally still rewritten when the argument is a rewritable relative specifier, and no special skip rule is applied.
+
+If you need to preserve a specific dynamic import string from rewriting in a special case, pass that file through an explicit ignore list in the CI process for now (tool-level exclusion is currently only for the contexts above).
 
 ## Output format in `--dry-run`
 

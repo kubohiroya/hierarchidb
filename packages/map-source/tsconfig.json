@@ -1,19 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "isolatedModules": false,
-    "paths": {
-      "~/*": [
-        "*.ts",
-        "./src/*",
-        "*"
-      ]
-    },
-    "baseUrl": ".",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": "."
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

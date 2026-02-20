@@ -294,26 +294,67 @@ for (const dir of workspaces) {
       const baseUrl = normalizeBaseUrl(co.baseUrl);
       const paths = co.paths || {};
 
-      // Allow baseUrl only if '.' or undefined
-      if (typeof baseUrl !== 'undefined' && baseUrl !== '.') {
+      // Allow baseUrl only if '.' or 'src' (historical local convention) is used.
+      const normalizeBaseAlias = (value) => {
+        if (value === undefined || value === null) return value;
+        const trimmed = String(value).trim();
+        if (trimmed === '.' || trimmed === './' || trimmed === '.\\') return '.';
+        if (trimmed === 'src' || trimmed === './src' || trimmed === 'src/' || trimmed === './src/') return 'src';
+        return trimmed;
+      };
+
+      const resolvedBaseUrl = normalizeBaseAlias(baseUrl);
+      const isAllowedBaseUrl = resolvedBaseUrl === undefined || resolvedBaseUrl === '.' || resolvedBaseUrl === 'src';
+
+      if (!isAllowedBaseUrl) {
         disallowed = true;
-        reason = `baseUrl should be '.' or omitted (found '${baseUrl}')`;
+        reason = `baseUrl should be '.'/omitted or 'src' (found '${baseUrl}')`;
       }
 
-      // Allow either no paths, or a single safe alias "~/*": ["./src/*"]
+      // Allow either no paths, or a single alias "~/*" with safe wildcards.
+      const allowedAliasTargets = new Set([
+        './src/*',
+        'src/*',
+        './*',
+        '*',
+        '*.ts',
+        '*.tsx',
+        '*.d.ts',
+        './*.ts',
+        './*.tsx',
+        './*.d.ts',
+        '*.js',
+        '*.jsx',
+        '*.mjs',
+        '*.cjs',
+        '*.mts',
+        '*.cts',
+      ]);
+
+      const isAllowedSupplementalAlias = (key, values) => {
+        if (key === '~/*' || !Array.isArray(values) || values.length === 0) return false;
+        return values.every((value) => {
+          const s = String(value);
+          return (s.startsWith('./') || s.startsWith('../')) && s.endsWith('.d.ts');
+        });
+      };
+
       const keys = Object.keys(paths);
       if (!disallowed && keys.length > 0) {
-        const isOnlyTilde = keys.length === 1 && keys[0] === '~/*';
-      const vals = isOnlyTilde ? paths['~/*'] : [];
+        const hasTildeAlias = keys.includes('~/*');
+      const vals = hasTildeAlias ? paths['~/*'] : [];
       const okVals = Array.isArray(vals)
         && vals.length > 0
         && vals.every((v) => {
              const s = String(v);
-             return s === './src/*' || s === 'src/*';
+             return allowedAliasTargets.has(s);
            });
-        if (!(isOnlyTilde && okVals)) {
+      const otherKeys = keys.filter((k) => k !== '~/*');
+      const okSupplemental = otherKeys.every((k) => isAllowedSupplementalAlias(k, paths[k]));
+
+        if ((hasTildeAlias && !okVals) || !okSupplemental) {
           disallowed = true;
-          reason = `paths must be limited to { "~/*": ["./src/*"] }`;
+          reason = `paths must be limited to { "~/*": [safe wildcard entries] }`;
         }
       }
     }

@@ -61,7 +61,7 @@ vi.mock('../useRouteSelectionStep.js', () => ({
   }),
 }));
 
-import { RouteSelectionStep } from '../RouteSelectionStep.js';
+import { RouteSelectionStep } from '~/ui/components/steps/RouteSelectionStep';
 
 describe('RouteSelectionStep style placement', () => {
   it('does not render route style controls in Step3', () => {

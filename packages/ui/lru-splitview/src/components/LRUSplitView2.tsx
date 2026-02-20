@@ -10,8 +10,8 @@ import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
-import { useLRUPanes } from '../hooks/useLRUPanes.js';
-import type { LRUSplitViewConfig, PaneProgress, PaneState } from '../types/LRUSplitView.js';
+import { useLRUPanes } from '~/hooks/useLRUPanes';
+import type { LRUSplitViewConfig, PaneProgress, PaneState } from '~/types/LRUSplitView';
 
 export type LRUSplitView2Pane = {
   id: string;

@@ -2,7 +2,7 @@
   * Folder plugin utilities - UIWorker
   */
 
-import { CreateFolderData } from '../types/types.ts';
+import { CreateFolderData } from '~/common/types/types';
 
 /**
  * Validation utilities - now using _obsolate_common validation from @hierarchidb/core

@@ -1,6 +1,6 @@
 import { i18n as globalI18n } from '@hierarchidb/ui-i18n';
-import en from '../../ui/locales/en.json' with { type: 'json' };
-import ja from '../../ui/locales/ja.json' with { type: 'json' };
+import en from '~/ui/locales/en.json' with { type: 'json' };
+import ja from '~/ui/locales/ja.json' with { type: 'json' };
 
 type SupportedLocale = 'en' | 'ja';
 const bundles: Record<SupportedLocale, any> = { en, ja };

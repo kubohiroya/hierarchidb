@@ -3,10 +3,10 @@ import {
   type DataSourceSelectionOption,
   type IdeGsmImportPayload,
 } from '@hierarchidb/ui-datasource';
-import { useTranslation } from '../../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
-import { createRouteTabularApi } from '../../../common/tabular/createRouteTabularApi.js';
+import { ROUTE_DATA_SOURCES } from '~/common/datasource/configs';
+import { createRouteTabularApi } from '~/common/tabular/createRouteTabularApi';
 
 export interface RouteDataSourceStepHookParams {
   draft: Partial<RouteEntity>;

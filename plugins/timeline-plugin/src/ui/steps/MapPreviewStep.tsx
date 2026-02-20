@@ -1,8 +1,8 @@
 import { useMemo, useState, useId } from 'react';
 import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
-import { useTranslation } from '../../common/i18n/index.js';
-import type { TimelineFrame } from '../../common/types/index.js';
+import { useTranslation } from '~/common/i18n/index';
+import type { TimelineFrame } from '~/common/types/index';
 
 export interface MapPreviewStepProps {
   frames: TimelineFrame[];

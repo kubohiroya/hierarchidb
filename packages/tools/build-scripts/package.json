@@ -14,7 +14,7 @@
     "sync-peer-dependencies": "pnpm run build && node dist/sync-peer-dependencies.js",
     "fix-spa-build": "pnpm run build && node dist/env-vite.js",
     "tsconfig:set-nodenext": "pnpm run build && node dist/tsconfig-set-nodenext.js",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "globby": "^14.1.0",

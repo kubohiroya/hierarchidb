@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { CoreDB } from '../../services/CoreDB.js';
-import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
+import { CoreDB } from '~/services/CoreDB';
+import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
 
 const TREE_ID = 'r' as TreeId;
 const ROOT_ID = `${TREE_ID}:root` as NodeId;

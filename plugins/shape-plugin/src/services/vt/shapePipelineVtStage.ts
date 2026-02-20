@@ -15,6 +15,7 @@ import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeB
 import { buildStableSignature } from './taskSignatures.ts';
 import type { ShapeVtTaskInput } from './shapePipelineShared.ts';
 import { buildShapeVectorTileRecord, buildVtTasks, resolveVtConfig } from './shapePipelineShared.ts';
+import type { Tile } from 'geojson-vt';
 import { reconcileStageTasksByMetadata } from './shapeStageReconcile.ts';
 import {
   finalizePendingStageTasks,
@@ -195,7 +196,23 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     topojsonSource: isTopojsonSource,
     topojsonSimplify,
     featureGeojsonByteSizeById,
-    tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
+    tileWriter: async ({
+      tileId,
+      z,
+      x,
+      y,
+      data,
+      layers,
+      bufferSetHash,
+    }: {
+      tileId: number;
+      z: number;
+      x: number;
+      y: number;
+      data: ArrayBuffer;
+      layers: Record<string, Tile>;
+      bufferSetHash: string;
+    }) => {
       await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
         nodeId: params.nodeId,
         tileId,

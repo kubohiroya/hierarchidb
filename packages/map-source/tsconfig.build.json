@@ -1,27 +1,8 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@hierarchidb/map-source": [
-        "src/index.ts"
-      ],
-      "@hierarchidb/map-source/*": [
-        "src/*"
-      ],
-      "~/*": [
-        "*.ts",
-        "*"
-      ]
-    },
-    "baseUrl": "src"
-  },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
+
+    "src/**/*"
+
   ]
 }

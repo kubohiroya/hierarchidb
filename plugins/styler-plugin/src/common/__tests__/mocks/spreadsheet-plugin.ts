@@ -9,7 +9,7 @@ import type {
 } from '@hierarchidb/ui-tabular';
 import * as JSZipNS from 'jszip';
 import * as XLSX from 'xlsx';
-import type { SimpleTableMetadataManager } from '../../services/StylerMetadataManager.js';
+import type { SimpleTableMetadataManager } from '~/common/services/StylerMetadataManager';
 
 const hasControlCharacters = (value: string): boolean => {
   for (let i = 0; i < value.length; i += 1) {

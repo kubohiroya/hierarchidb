@@ -4,7 +4,7 @@ import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-m
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
 import { ROUTE_MODES, type IdeGsmRouteCoverageResult, type RouteMode } from '@hierarchidb/route-api';
-import { useTranslation } from '../../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { type GridColumn } from '@hierarchidb/ui-grid';

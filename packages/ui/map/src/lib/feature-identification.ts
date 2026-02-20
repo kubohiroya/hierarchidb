@@ -3,11 +3,11 @@ import type {
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
   MapLibrePoint,
-} from '../types/maplibre-public.js';
+} from '~/types/maplibre-public';
 import type {
   MapFeatureIdentifyConfig,
   MapFeatureIdentifier,
-} from '../types/unified-map-props.js';
+} from '~/types/unified-map-props';
 
 export const DEFAULT_IDENTIFY_RADIUS = 5;
 

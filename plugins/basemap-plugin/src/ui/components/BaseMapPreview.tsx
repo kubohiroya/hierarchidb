@@ -11,7 +11,7 @@ import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense } from 'react';
-import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import type { MapStyle, MapViewport } from '~/common/types/BaseMapEntity';
 import { useBaseMapPreview } from './useBaseMapPreview.js';
 
 export interface BaseMapPreviewProps {

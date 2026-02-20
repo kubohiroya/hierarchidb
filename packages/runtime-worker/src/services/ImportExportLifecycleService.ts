@@ -4,7 +4,7 @@ import type { CommandEnvelope, ImportNodesPayload, TreeNodeData } from '@hierarc
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
 import { SingletonMixin } from '@hierarchidb/util';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
+import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
 import type { CoreDB } from './CoreDB.js';
 
 // Augment base ImportExportService with lifecycle notifications.

@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CoreDB } from '../../CoreDB.js';
-import { discardTreeNodeDraft } from '../cleanupOperations.js';
-import { initTreeNode } from '../initOperations.js';
+import { CoreDB } from '~/services/CoreDB';
+import { discardTreeNodeDraft } from '~/services/draft/cleanupOperations';
+import { initTreeNode } from '~/services/draft/initOperations';
 
 describe('discardTreeNodeDraft', () => {
   const treeId = 'tree' as TreeId;

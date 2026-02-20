@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { assertCommitOk } from '../../../test-utils/assertions.js';
-import { CoreDB } from '../../CoreDB.js';
-import { TreeNodeUpdaterService } from '../../TreeNodeUpdaterService.js';
+import { assertCommitOk } from '~/test-utils/assertions';
+import { CoreDB } from '~/services/CoreDB';
+import { TreeNodeUpdaterService } from '~/services/TreeNodeUpdaterService';
 
 describe('create dialog commit (draft survives discard)', () => {
   const treeId = 'r' as TreeId;

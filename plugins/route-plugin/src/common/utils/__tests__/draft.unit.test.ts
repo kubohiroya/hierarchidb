@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import {
   getRouteUpdaterPayload,
   toRouteUpdaterPayload,
-} from '../draft.js';
+} from '~/common/utils/draft';
 
 describe('route draft utilities', () => {
   it('returns only draftData from updater payload', () => {

@@ -8,8 +8,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../../services/CommandProcessor.js';
-import type { CoreDB } from '../../../services/CoreDB.js';
+import type { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
 
 describe('Entity lifecycle notifications from services', () => {
   beforeEach(() => {
@@ -51,7 +51,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(
@@ -62,7 +62,7 @@ describe('Entity lifecycle notifications from services', () => {
       processCommand: vi.fn(),
     };
 
-    const { TreeMutationService } = await import('../../../services/TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
     const duplicatePayload: DuplicateNodesPayload = { nodeIds: [sourceId], toParentId: parentId };
     const result = await svc.duplicateNodes(duplicatePayload);
@@ -83,7 +83,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(
@@ -94,7 +94,7 @@ describe('Entity lifecycle notifications from services', () => {
       processCommand: vi.fn(),
     };
 
-    const { TreeMutationService } = await import('../../../services/TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
     const payload: PasteNodesPayload = {
       nodes: {
@@ -157,7 +157,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(
@@ -165,7 +165,7 @@ describe('Entity lifecycle notifications from services', () => {
       );
 
     const { ImportExportLifecycleService } = await import(
-      '../../../services/ImportExportLifecycleService.js'
+      '~/services/ImportExportLifecycleService'
     );
     const svc = await ImportExportLifecycleService.getSingleton(core as unknown as CoreDB);
     const importPayload: ImportNodesPayload = {

@@ -3,7 +3,7 @@ import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material'
 import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isDevEnv } from '../../utils/env.js';
+import { isDevEnv } from '~/utils/env';
 
 interface MemoryDataPoint {
   timestamp: number;

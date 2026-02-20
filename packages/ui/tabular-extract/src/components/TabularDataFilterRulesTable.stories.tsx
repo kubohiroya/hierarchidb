@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { Box } from '@mui/material';
 import { useState } from 'react';
 import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
-import type { TabularFilterRule } from '../types/index.js';
+import type { TabularFilterRule } from '~/types/index';
 import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
 const operatorOptions: FilterOperatorOption[] = [

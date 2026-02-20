@@ -1,8 +1,8 @@
 /**
  * Download Strategy interfaces for Location plugin
  */
-import type { LocationSearchConfig } from '../../common/entities/LocationEntity.js';
-import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
+import type { LocationSearchConfig } from '~/common/entities/LocationEntity';
+import type { LocationPointProperties } from '~/common/entities/LocationPoint';
 
 export interface ILocationDownloadStrategy {
   readonly id: string;

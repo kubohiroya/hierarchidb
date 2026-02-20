@@ -6,7 +6,7 @@
   "main": "src/index.mts",
   "scripts": {
     "dev:manual": "wrangler dev",
-    "typecheck": "tsc -b tsconfig.json --noEmit",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "build": "node -e \"const fs=require('fs');fs.mkdirSync('dist',{recursive:true});fs.writeFileSync('dist/.placeholder','');\"",
     "deploy": "wrangler deploy",
     "deploy:development": "wrangler deploy --env development",

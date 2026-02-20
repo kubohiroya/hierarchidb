@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CoreDB } from '../../CoreDB.js';
-import { initTreeNode } from '../initOperations.js';
+import { CoreDB } from '~/services/CoreDB';
+import { initTreeNode } from '~/services/draft/initOperations';
 
 describe('initTreeNode - default name uniqueness', () => {
   const treeId = 'tree' as TreeId;

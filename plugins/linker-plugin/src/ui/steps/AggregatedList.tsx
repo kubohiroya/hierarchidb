@@ -7,7 +7,7 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
-import { useTranslation } from '../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)

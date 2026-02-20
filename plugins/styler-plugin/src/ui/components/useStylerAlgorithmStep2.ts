@@ -10,9 +10,9 @@ import {
   StylerConfigDefault,
   type StylerMapping,
   type StylerStepData,
-} from '../../common/types/StylerEntity.ts';
-import { valueToColor } from '../../common/utils/colorUtils.ts';
-import { calculateStatistics } from '../../common/utils/dataAnalysis.ts';
+} from '~/common/types/StylerEntity';
+import { valueToColor } from '~/common/utils/colorUtils';
+import { calculateStatistics } from '~/common/utils/dataAnalysis';
 import { useStylerMappingState } from './useStylerMappingState.ts';
 
 type StylerAlgorithmStep2Params = Pick<

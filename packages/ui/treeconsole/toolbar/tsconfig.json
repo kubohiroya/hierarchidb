@@ -1,6 +1,7 @@
 {
-  "extends": "../../../../tsconfig.base.json",
+  "extends": "../../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "types": [
       "react"
     ],
@@ -9,5 +10,8 @@
       "DOM"
     ],
     "jsx": "react-jsx"
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

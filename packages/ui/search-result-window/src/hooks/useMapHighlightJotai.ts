@@ -6,7 +6,7 @@
 import { useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index';
 import {
   addHighlightedNodeAtom,
   addSearchMatchedNodeAtom,
@@ -22,7 +22,7 @@ import {
   setHighlightedNodesAtom,
   setSearchMatchedNodesAtom,
   updateHighlightStylesAtom,
-} from '../state/index.js';
+} from '~/state/index';
 
 interface UseMapHighlightProps {
   mapInstance?: any;

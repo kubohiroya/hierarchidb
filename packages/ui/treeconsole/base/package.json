@@ -21,7 +21,7 @@
     "test:run": "vitest run --passWithNoTests",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@hierarchidb/ui-search-input": "workspace:*",

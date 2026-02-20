@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LocationEntity } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+import type { LocationEntity } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
 import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { notify } from '@hierarchidb/components';
-import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
-import type { LocationType } from '../../../common/types/index.js';
+import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '~/ui/utils/ideGsmSelection';
+import type { LocationType } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import {
   useIsoCountries,
@@ -14,7 +14,7 @@ import {
   type MatrixSelection,
 } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
-import { createLocationTabularApi } from '../../../common/tabular/createLocationTabularApi.js';
+import { createLocationTabularApi } from '~/common/tabular/createLocationTabularApi';
 
 interface LocationSelectionStepProps {
   draft: Partial<LocationEntity>;

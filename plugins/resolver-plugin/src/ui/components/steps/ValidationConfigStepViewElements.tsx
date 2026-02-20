@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Box, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import type { ValidationRule } from '../../../common/types/index.js';
+import type { ValidationRule } from '~/common/types/index';
 
 export type ValidationRuleTypeOption = {
   value: ValidationRule['ruleType'];

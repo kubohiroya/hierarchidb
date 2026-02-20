@@ -424,7 +424,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
   const effectiveProgressTraceRef = useRef<string | null>(null);
-  const stages = useShapeBuildStages(t);
+  const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback) });
   const persistedProcessingStatus = sessionRecord ? toProcessingStatus(sessionRecord.status) : null;
   const processingStatus = persistedProcessingStatus ?? 'idle';
   const persistedStageElapsedStageId = typeof sessionRecord?.stageId === 'string'

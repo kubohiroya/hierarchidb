@@ -1,8 +1,8 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type { DialogUIState, OnNameConflict, TreeNode } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../CoreDB.js';
-import type { CommandResult } from '../command-types.js';
-import { WorkerErrorCodeValue } from '../command-types.js';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandResult } from '~/services/command-types';
+import { WorkerErrorCodeValue } from '~/services/command-types';
 import { checkDraftConflict } from './lookupOperations.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 

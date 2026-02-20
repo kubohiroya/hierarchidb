@@ -1,6 +1,6 @@
-import type { NetworkPort, ResponseLike } from '../ports.js';
-import { resolveNetworkUrl } from '../helpers/resolveNetworkUrl.js';
-import { smartFetch } from '../smartFetch.js';
+import type { NetworkPort, ResponseLike } from '~/ports';
+import { resolveNetworkUrl } from '~/helpers/resolveNetworkUrl';
+import { smartFetch } from '~/smartFetch';
 import { sleep } from '@hierarchidb/util';
 
 export interface FetchNetworkPortOptions {
@@ -189,7 +189,7 @@ export class FetchNetworkPort implements NetworkPort {
           retries: this.opts.retries,
           baseDelayMs: this.opts.baseDelayMs,
           maxDelayMs: this.opts.maxDelayMs,
-          shouldRetry: (r) => this.shouldRetry(r.status),
+          shouldRetry: (r: { status: number }) => this.shouldRetry(r.status),
         },
       });
 

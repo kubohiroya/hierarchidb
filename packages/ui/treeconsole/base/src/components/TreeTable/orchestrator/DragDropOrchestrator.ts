@@ -10,8 +10,8 @@ import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { TreeViewController } from '../../../types/index.js';
-import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state/index.js';
+import type { TreeViewController } from '~/types/index';
+import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '~/components/TreeTable/state/index';
 import { computeDescendants } from '@hierarchidb/ui-treeconsole-treetable';
 
 export interface DragDropOrchestratorResult {

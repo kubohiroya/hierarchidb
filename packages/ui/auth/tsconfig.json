@@ -1,7 +1,7 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-  "baseUrl": ".",
+    "baseUrl": ".",
     "lib": [
       "ES2020",
       "DOM",
@@ -9,11 +9,6 @@
     ],
     "composite": false,
     "emitDeclarationOnly": false,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "types": [
       "vite/client"
     ]
@@ -30,5 +25,8 @@
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."
-  }
+  },
+  "include": [
+    "src/**/*"
+  ]
 }

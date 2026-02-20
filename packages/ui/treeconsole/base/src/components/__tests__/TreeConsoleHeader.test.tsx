@@ -5,8 +5,8 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TreeConsoleHeader } from '../TreeConsoleHeader.js';
-import type { TreeConsoleHeaderProps, TreeViewController } from '../../types';
+import { TreeConsoleHeader } from '~/components/TreeConsoleHeader';
+import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
 
 const mockController: TreeViewController = {
   currentNode: null,

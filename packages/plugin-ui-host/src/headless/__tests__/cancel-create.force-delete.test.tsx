@@ -1,7 +1,7 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { usePluginDialogController } from '../usePluginDialogController.js';
+import { usePluginDialogController } from '~/headless/usePluginDialogController';
 
 const discardDraft = vi.fn();
 

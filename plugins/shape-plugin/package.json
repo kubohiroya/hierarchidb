@@ -46,7 +46,7 @@
   ],
   "scripts": {
     "build": "pnpm build:js && pnpm build:dts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "SHAPE_VITEST_POOL=forks vitest run",
     "test:watch": "SHAPE_VITEST_POOL=forks vitest",
     "coverage": "SHAPE_VITEST_POOL=forks vitest run --coverage",

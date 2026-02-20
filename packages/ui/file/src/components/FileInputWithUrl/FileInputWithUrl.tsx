@@ -2,7 +2,7 @@ import { Login } from '@mui/icons-material';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import type React from 'react';
 import { useState } from 'react';
-import { devError, devLog } from '../../utils/logger.js';
+import { devError, devLog } from '~/utils/logger';
 import { DragDropSection } from './DragDropSection.js';
 import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
 import { LoadingOverlay } from './LoadingOverlay.js';

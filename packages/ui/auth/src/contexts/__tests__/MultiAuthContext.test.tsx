@@ -5,8 +5,8 @@
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthUser } from '../../types/AuthUser.js';
-import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext.js';
+import type { AuthUser } from '~/types/AuthUser';
+import { MultiAuthProvider, useMultiAuth } from '~/contexts/MultiAuthContext';
 
 // Mock @provider-oauth/google
 const mockGoogleLogin = vi.fn();

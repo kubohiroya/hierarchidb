@@ -1,5 +1,5 @@
 import type { ILocationDownloadStrategy } from './types.js';
-import type { LocationSearchConfig } from '../../common/entities/LocationEntity.js';
+import type { LocationSearchConfig } from '~/common/entities/LocationEntity';
 
 const strategies: ILocationDownloadStrategy[] = [];
 

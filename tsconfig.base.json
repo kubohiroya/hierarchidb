@@ -5,10 +5,11 @@
     "noEmit": false,
     "noImplicitAny": true,
     "isolatedModules": true,
-    "module": "NodeNext",
+    "module": "ESNext",
     "incremental": false,
+    "outDir": "dist",
     "allowUnusedLabels": false,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "paths": {
       "@hierarchidb/auth": [
         "./packages/auth/dist/index.d.ts"
@@ -631,15 +632,6 @@
       "@hierarchidb/ui-treeconsole-treetable/*": [
         "./packages/ui/treeconsole/treetable/dist/*"
       ],
-      "~~/*": [
-        "app/src/*"
-      ],
-      "~": [
-        "app/src"
-      ],
-      "~/*": [
-        "app/src/*"
-      ],
       "@hierarchidb/ui-usermenu": [
         "./packages/ui/usermenu/dist/index.d.ts"
       ],
@@ -676,6 +668,9 @@
     "allowUnreachableCode": false,
     "allowSyntheticDefaultImports": true
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",

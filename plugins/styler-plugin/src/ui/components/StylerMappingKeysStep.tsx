@@ -5,7 +5,7 @@ import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/ma
 import type React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { StylerStepData } from '../../common/types/StylerEntity.js';
+import type { StylerStepData } from '~/common/types/StylerEntity';
 
 const coerceColumns = (
   metadata?: TabularTableMetadata | null,

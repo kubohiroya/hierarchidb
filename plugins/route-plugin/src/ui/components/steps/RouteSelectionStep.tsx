@@ -16,7 +16,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '../../../common/i18n/index.js';
+import { useTranslation } from '~/common/i18n/index';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';

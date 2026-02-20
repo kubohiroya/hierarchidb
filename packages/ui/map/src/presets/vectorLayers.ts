@@ -1,4 +1,4 @@
-import type { VectorTileLayerConfig } from '../types/unified-map-props.js';
+import type { VectorTileLayerConfig } from '~/types/unified-map-props';
 
 export const pointCirclePreset = (opts?: {
   color?: string;

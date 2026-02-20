@@ -5,7 +5,7 @@ import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { DialogActionInFlight } from '../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 import { usePluginDialogHeaderLogic } from './hooks/usePluginDialogHeaderLogic.js';
 import {
   PluginDialogCloseButton,
@@ -225,7 +225,10 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               onMouseOut={stopPointerPropagation}
             >
               <PluginDialogStepper
-                steps={ctx.stepComponents.map((s) => ({ id: s.id, label: s.label }))}
+                steps={ctx.stepComponents.map((s: { id: string; label: string }) => ({
+                  id: s.id,
+                  label: s.label,
+                }))}
                 activeStepIndex={ctx.activeStepIndex}
                 enabledStepIndices={ctx.enabledStepIndices}
                 validatedStepIndices={ctx.validatedStepIndices}

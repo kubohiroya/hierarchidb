@@ -3,7 +3,7 @@ import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import type {
   LocationPeerData,
   LocationGroupItemData,
-} from '../common/types/entities.js';
+} from '~/common/types/entities';
 import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
 import type { LocationFeature } from './locationEntitiesDB.js';
 

@@ -30,7 +30,10 @@ export async function encodeMvtFromGeojsonVt(
 ): Promise<Uint8Array> {
   const vtpbf = await loadVtPbf();
   const version = options.version ?? 2;
-  const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version });
+  const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], {
+    version,
+    extent: 4096,
+  });
   return pbf as Uint8Array;
 }
 
@@ -57,4 +60,3 @@ export type PlainFeature = {
   geometry: Geometry;
   properties: GeoJsonProperties;
 };
-

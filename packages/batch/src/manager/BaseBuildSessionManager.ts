@@ -6,7 +6,7 @@ import type {
   IBuildSessionManager,
 } from '@hierarchidb/batch-api';
 import { isBuildControlAPIV2Enabled } from '@hierarchidb/batch-api';
-import type { AbstractBuildSession } from '../session/AbstractBuildSession.js';
+import type { AbstractBuildSession } from '../session/AbstractBuildSession';
 
 /**
  * Base implementation for plugin build session managers.

@@ -105,7 +105,7 @@
   ],
   "scripts": {
     "build": "tsdown src/index.ts src/components.ts src/plugin-ui-host.ts src/ui-auth.ts src/ui-dialog.ts src/ui-icon.ts src/ui-i18n.ts src/ui-layout.ts src/ui-map.ts src/ui-navigation.ts src/ui-routing.ts src/ui-theme.ts src/ui-tour.ts src/ui-treeconsole-base.ts src/ui-treeconsole-breadcrumb.ts src/ui-treeconsole-toolbar.ts src/ui-treeconsole-treetable.ts src/ui-usermenu.ts --config ../../tsdown.config.ts --outDir dist",
-    "typecheck": "tsc --project tsconfig.typecheck.json",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "lint": "eslint src",
     "clean": "rm -rf dist"
   },

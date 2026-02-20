@@ -21,7 +21,7 @@ import {
   histogramStatsAtom,
   numericValuesAtom,
   tabularProcessingAtom,
-} from '../state/tabularKeyValueAtoms.js';
+} from '~/ui/state/tabularKeyValueAtoms';
 import { KeyValueSourcePanel } from './KeyValueSourcePanel.js';
 import { ValueHistogram } from './ValueHistogram.js';
 

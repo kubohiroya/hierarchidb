@@ -35,7 +35,7 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, ValidationWarning } from '../../../common/types/index.js';
+import type { MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, ValidationWarning } from '~/common/types/index';
 import { usePreviewTestStep } from './usePreviewTestStep.js';
 
 interface PreviewTestStepProps {

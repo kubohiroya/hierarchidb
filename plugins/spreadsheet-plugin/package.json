@@ -46,7 +46,7 @@
   },
   "scripts": {
     "build": "pnpm build:js && pnpm build:dts",
-    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "test": "pnpm vitest",
     "test:run": "pnpm vitest run",
     "clean": "rm -rf dist",

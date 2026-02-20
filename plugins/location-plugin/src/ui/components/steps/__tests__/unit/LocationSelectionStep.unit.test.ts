@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSelectionRecord } from '../../LocationSelectionStep';
-import type { LocationType } from '../../../../common/types/index';
+import { buildSelectionRecord } from '~/ui/components/steps/LocationSelectionStep';
+import type { LocationType } from '~/ui/common/types/index';
 
 const mockCountries = [
   { code: 'AAA', name: 'Alpha', continent: 'Test' },

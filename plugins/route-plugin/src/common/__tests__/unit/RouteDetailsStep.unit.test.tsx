@@ -1,9 +1,9 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { RouteDetailsStep } from '../components/RouteDetailsStep.js';
-import { RouteType, TransportMode, type RouteEntity, type RouteUpdaterPayload, type NodeId } from '../types/index.js';
-import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draft.js';
-import { en as enTranslations } from '../i18n/en.js';
+import { RouteDetailsStep } from '~/common/__tests__/components/RouteDetailsStep';
+import { RouteType, TransportMode, type RouteEntity, type RouteUpdaterPayload, type NodeId } from '~/common/__tests__/types/index';
+import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '~/common/__tests__/utils/draft';
+import { en as enTranslations } from '~/common/__tests__/i18n/en';
 import "@testing-library/jest-dom/vitest";
 
 vi.mock('../i18n/index.js', () => ({

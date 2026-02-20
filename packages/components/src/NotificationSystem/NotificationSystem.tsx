@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, IconButton, Slide, Snackbar, Stack } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { announceToScreenReader } from '../AriaLiveRegion/AriaLiveRegion.js';
+import { announceToScreenReader } from '~/AriaLiveRegion/AriaLiveRegion';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
 

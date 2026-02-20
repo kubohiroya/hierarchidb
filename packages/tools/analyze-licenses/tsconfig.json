@@ -1,22 +1,15 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-  "baseUrl": ".",
     "target": "ES2022",
     "lib": [
       "ES2022"
     ],
     "types": [
       "node"
-    ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    ]
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts"
+    "src/**/*"
   ]
 }

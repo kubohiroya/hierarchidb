@@ -1,4 +1,4 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from '../types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBuildSpec, StrategyContext, TaskPlan } from '~/common/orchestrator/types';
 import { normalizeEngine, normalizeMode, toFiniteNumber } from './strategy-utils.js';
 
 export class TabularStrategy implements DataSourceStrategy {

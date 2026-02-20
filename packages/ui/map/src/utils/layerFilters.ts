@@ -1,4 +1,4 @@
-import type { MapLibreFilter } from '../types/maplibre-public.js';
+import type { MapLibreFilter } from '~/types/maplibre-public';
 
 const buildPropertyExpression = (keys: string[]) =>
   keys.length === 1 ? ['get', keys[0]] : ['coalesce', ...keys.map((key) => ['get', key])];

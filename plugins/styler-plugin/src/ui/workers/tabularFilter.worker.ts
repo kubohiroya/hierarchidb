@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
-import type { StylerTableRow } from '../../common/types/StylerEntity.js';
-import { applyFilters } from '../utils/tabularFilters.js';
+import type { StylerTableRow } from '~/common/types/StylerEntity';
+import { applyFilters } from '~/ui/utils/tabularFilters';
 
 type FilterRequest = {
   id: number;

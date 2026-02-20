@@ -3,7 +3,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
-import type { SpreadsheetDraft } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDraft } from '~/common/types/SpreadsheetEntity';
 import {
   binCountAtom,
   filterRulesAtom,
@@ -14,7 +14,7 @@ import {
   tabularProcessingAtom,
   tabularRowsAtom,
   valueColumnAtom,
-} from '../state/tabularKeyValueAtoms.js';
+} from '~/ui/state/tabularKeyValueAtoms';
 
 const coerceColumns = (
   metadata?: TabularTableMetadata | null,

@@ -11,7 +11,7 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 import type React from 'react';
 import { memo } from 'react';
-import type { DialogActionInFlight } from '../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 import { PluginDialogFooter, type PluginDialogFooterProps } from './PluginDialogFooter.js';
 import { PluginDialogHeader } from './PluginDialogHeader.js';
 

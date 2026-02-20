@@ -11,7 +11,7 @@
     "clean": "rm -rf dist",
     "rel2abs": "pnpm run build && node dist/rel2abs.js",
     "start": "node dist/rel2abs.js",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "bin": {
     "rel2abs": "dist/rel2abs.js"

@@ -20,7 +20,7 @@ import type {
   LocationEntity,
   LocationIconId,
   LocationType,
-} from '../../../common/types/index.js';
+} from '~/common/types/index';
 import {
   Anchor,
   FlightTakeoff,

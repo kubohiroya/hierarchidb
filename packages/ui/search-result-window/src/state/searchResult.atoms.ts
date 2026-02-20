@@ -8,7 +8,7 @@
 
 import { atom } from 'jotai';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { SearchResult } from '../types/index.js';
+import type { SearchResult } from '~/types/index';
 
 /**
     */

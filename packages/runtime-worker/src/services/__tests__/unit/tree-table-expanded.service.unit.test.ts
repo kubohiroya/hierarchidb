@@ -3,8 +3,8 @@ import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TreeTableExpandedService } from '../../TreeTableExpandedService.js';
-import { UIStateDB } from '../../UIStateDB.js';
+import { TreeTableExpandedService } from '~/services/TreeTableExpandedService';
+import { UIStateDB } from '~/services/UIStateDB';
 
 describe('TreeTableExpandedService', () => {
   let db: UIStateDB;

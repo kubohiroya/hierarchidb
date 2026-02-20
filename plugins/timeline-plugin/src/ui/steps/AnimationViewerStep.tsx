@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
-import { useFramePlayer } from '../utils/useFramePlayer.js';
-import { useTranslation } from '../../common/i18n/index.js';
-import type { TimelineFrame } from '../../common/types/index.js';
+import { useFramePlayer } from '~/ui/utils/useFramePlayer';
+import { useTranslation } from '~/common/i18n/index';
+import type { TimelineFrame } from '~/common/types/index';
 
 export interface AnimationViewerStepProps {
   frames: TimelineFrame[];

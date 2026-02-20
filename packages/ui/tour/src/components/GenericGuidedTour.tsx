@@ -3,7 +3,7 @@ import { Box, Checkbox, FormControlLabel, GlobalStyles, IconButton, Portal } fro
 import { useTheme } from '@mui/material/styles';
 import { type MouseEvent, useCallback, useEffect, useId, useState } from 'react';
 import Joyride, { type CallBackProps, STATUS, type Step } from 'react-joyride';
-import { GuidedTourStateManager } from '../managers/GuidedTourStateManager.js';
+import { GuidedTourStateManager } from '~/managers/GuidedTourStateManager';
 
 export interface GenericGuidedTourProps {
   run: boolean;

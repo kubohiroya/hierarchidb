@@ -36,7 +36,7 @@ import {
 import type {
   TabularColumnMapping,
   TabularDataResult,
-} from '../types/index.js';
+} from '~/types/index';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 
 export interface TabularColumnSelectProps {

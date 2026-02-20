@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
  
 import type React from 'react';
-import type { Size } from '../types/WindowState.js';
+import type { Size } from '~/types/WindowState';
 
 export interface UseResizingOptions {
   onResizeStart?: () => void;

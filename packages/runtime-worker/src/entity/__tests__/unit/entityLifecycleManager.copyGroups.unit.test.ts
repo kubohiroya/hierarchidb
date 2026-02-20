@@ -3,8 +3,8 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getLocationDB } from '@hierarchidb/location-store';
 import type { LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
-import type { CoreDB } from '../../../services/CoreDB.js';
-import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
+import type { CoreDB } from '~/services/CoreDB';
+import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
 
 describe('EntityLifecycleManager.copyGroupsByMapping', () => {
   beforeEach(() => {

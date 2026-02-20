@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsdown';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 
 const originalWarn = console.warn;
@@ -73,9 +73,17 @@ if (Array.isArray(userExternal)) {
   mergedExternal = userExternal;
 }
 
-const { external: _ignoredExternal, outExtension: rawOutExtension, ...restUserConfig } = userConfig as {
+const {
+  external: _ignoredExternal,
+  outExtension: rawOutExtension,
+  tsconfig: userTsconfig,
+  alias: userAlias,
+  ...restUserConfig
+} = userConfig as {
   external?: unknown;
   outExtension?: unknown;
+  tsconfig?: unknown;
+  alias?: Record<string, string>;
 };
 
 let normalizedOutExtension = rawOutExtension;
@@ -87,6 +95,57 @@ const defaultOutExtension = () => ({
   js: '.js',
   dts: '.d.ts',
 });
+
+const defaultAlias: Record<string, string> = {
+  '~': path.resolve(cwd, 'src'),
+  '~/' : path.resolve(cwd, 'src'),
+};
+const defaultPublicAliasPath = path.resolve(cwd, 'public');
+if (existsSync(defaultPublicAliasPath)) {
+  defaultAlias['~/public/'] = defaultPublicAliasPath;
+  defaultAlias['~/public'] = defaultPublicAliasPath;
+}
+
+const mergedAlias = {
+  ...defaultAlias,
+  ...(typeof userAlias === 'object' && userAlias && !Array.isArray(userAlias) ? userAlias : {}),
+};
+
+const packageWorkspaceAliasPlugin = {
+  name: 'workspace-tilde-alias',
+  async resolveId(id: string) {
+    if (!id.startsWith('~/')) {
+      return undefined;
+    }
+
+    const normalizedPath = id.slice(2);
+    const isPublic = normalizedPath.startsWith('public/');
+    const baseDir = isPublic ? path.join(cwd, 'public') : path.join(cwd, 'src');
+    const relativePath = isPublic ? normalizedPath.slice('public/'.length) : normalizedPath;
+    const targetWithoutExt = path.join(baseDir, relativePath);
+
+    const candidates = [
+      targetWithoutExt,
+      `${targetWithoutExt}.ts`,
+      `${targetWithoutExt}.tsx`,
+      `${targetWithoutExt}.mts`,
+      `${targetWithoutExt}.cts`,
+      `${targetWithoutExt}.js`,
+      `${targetWithoutExt}.jsx`,
+      `${targetWithoutExt}.mjs`,
+      `${targetWithoutExt}.cjs`,
+      `${targetWithoutExt}.json`,
+    ];
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate) && statSync(candidate).isFile()) {
+        return candidate;
+      }
+    }
+
+    return undefined;
+  },
+};
 
 const baseConfig = {
   name: pkg.name,
@@ -105,6 +164,16 @@ const baseConfig = {
 const finalConfig: Record<string, unknown> = {
   ...baseConfig,
   ...restUserConfig,
+  tsconfig: userTsconfig ?? true,
+  alias: mergedAlias,
+  plugins: [
+    ...((() => {
+      const userPlugins = (restUserConfig as { plugins?: unknown }).plugins;
+      if (!userPlugins) return [];
+      return Array.isArray(userPlugins) ? userPlugins : [userPlugins];
+    })() as Array<unknown>),
+    packageWorkspaceAliasPlugin,
+  ],
 };
 
 if (normalizedOutExtension !== undefined) {

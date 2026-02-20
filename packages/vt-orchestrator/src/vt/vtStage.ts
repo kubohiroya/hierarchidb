@@ -13,15 +13,15 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
 import { geometryBboxClip } from '@hierarchidb/gis-sdk';
-import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
+import { packTileId, parentToChildRange, unpackTileId } from '~/tiles/tileId';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import type { VTStageContext } from '../contexts.js';
-import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
-import { updateTask, VtTaskQueueDb } from '../task/taskQueue.js';
+import type { VTStageContext } from '~/contexts';
+import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '~/types/types';
+import { updateTask, VtTaskQueueDb } from '~/task/taskQueue';
 import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
 import type { Topology } from 'topojson-specification';
-import { quantizeTopoJsonToGrid } from '../transform/topojsonGrid.js';
-import { getTopojsonRuntime } from '../transform/topojsonRuntimeAdapter.js';
+import { quantizeTopoJsonToGrid } from '~/transform/topojsonGrid';
+import { getTopojsonRuntime } from '~/transform/topojsonRuntimeAdapter';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -2183,7 +2183,10 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             let bytes: Uint8Array;
             try {
               const encodeStartedAt = Date.now();
-              bytes = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 }) as Uint8Array;
+              bytes = vtpbf.fromGeojsonVt(layers as unknown as Tile[], {
+                version: 2,
+                extent: vtConfig.extent,
+              }) as Uint8Array;
               encodeStats.duration += Date.now() - encodeStartedAt;
               encodeStats.tileCount += 1;
               encodeStats.bytes += bytes.byteLength;

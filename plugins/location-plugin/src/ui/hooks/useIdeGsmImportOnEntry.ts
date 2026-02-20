@@ -5,11 +5,11 @@ import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
 import { resolveDbPrefix } from '@hierarchidb/util';
-import type { LocationEntity } from '../../common/types/index.js';
+import type { LocationEntity } from '~/common/types/index';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
-import { BASE_LOCATION_TYPES } from '../components/steps/locationTypes.js';
-import { updateIdeGsmProgress } from '../state/ideGsmProgress.js';
-import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/ideGsmSelection.js';
+import { BASE_LOCATION_TYPES } from '~/ui/components/steps/locationTypes';
+import { updateIdeGsmProgress } from '~/ui/state/ideGsmProgress';
+import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '~/ui/utils/ideGsmSelection';
 
 const debugPrefix = '[LocationIdeGsmImport]';
 const inFlightByNode = new Map<string, boolean>();

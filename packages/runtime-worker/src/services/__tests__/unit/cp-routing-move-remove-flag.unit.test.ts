@@ -1,8 +1,8 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
+import type { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 const asNodeType = (value: string): NodeType => value as NodeType;
@@ -86,7 +86,7 @@ describe('TreeMutationService command processor routing', () => {
     const core = createCoreMock(nodes);
     const processor = createProcessorMock();
 
-    const { TreeMutationService } = await import('../../TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(
       core as unknown as CoreDB,
       processor as unknown as CommandProcessor
@@ -111,7 +111,7 @@ describe('TreeMutationService command processor routing', () => {
     const core = createCoreMock(nodes);
     const processor = createProcessorMock();
 
-    const { TreeMutationService } = await import('../../TreeMutationService.js');
+    const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(
       core as unknown as CoreDB,
       processor as unknown as CommandProcessor

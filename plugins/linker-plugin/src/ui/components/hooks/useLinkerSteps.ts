@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
-import type { ResourceSummary } from '../../steps/ResourcePicker.js';
-import type { LinkerDraft } from '../../../common/types/index.js';
+import type { ResourceSummary } from '~/ui/steps/ResourcePicker';
+import type { LinkerDraft } from '~/common/types/index';
 import type { StepData } from '@hierarchidb/plugin-base';
 
 type LinkerStepData = StepData & LinkerDraft;

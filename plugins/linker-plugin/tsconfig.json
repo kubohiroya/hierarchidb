@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "types": [
       "node"
@@ -7,7 +7,8 @@
     "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "baseUrl": "."
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

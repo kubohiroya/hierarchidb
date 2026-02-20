@@ -33,9 +33,9 @@ import type {
   RouteTransportSelection,
   RouteEntity,
 } from '@hierarchidb/route-api';
-import { useTranslation } from '../../../common/i18n/index.js';
-import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
-import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
+import { useTranslation } from '~/common/i18n/index';
+import { useRouteBuildCrashInsight } from '~/ui/hooks/useRouteBuildCrashInsight';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,

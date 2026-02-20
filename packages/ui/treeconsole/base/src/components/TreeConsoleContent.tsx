@@ -8,9 +8,9 @@ import type React from 'react';
 import { memo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { TreeConsoleContentProps } from '../types/index.js';
+import type { TreeConsoleContentProps } from '~/types/index';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import { useTreeConsoleContent } from '../hooks/useTreeConsoleContent.js';
+import { useTreeConsoleContent } from '~/hooks/useTreeConsoleContent';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;

@@ -1,4 +1,4 @@
-import type { StylerStepData, StylerTableRow } from '../../common/types/StylerEntity.js';
+import type { StylerStepData, StylerTableRow } from '~/common/types/StylerEntity';
 
 export interface StylerStepProps {
   data: StylerStepData;

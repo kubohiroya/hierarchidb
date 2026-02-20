@@ -24,7 +24,7 @@ import {
   SkipNext as SkipIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverUpdaterPayload, PropertyMappingRule } from '../../../common/types/index.js';
+import type { DuplicateResolutionStrategy, ResolverUpdaterPayload, PropertyMappingRule } from '~/common/types/index';
 import { useDuplicateResolutionStep } from './useDuplicateResolutionStep.js';
 
 interface DuplicateResolutionStepProps {

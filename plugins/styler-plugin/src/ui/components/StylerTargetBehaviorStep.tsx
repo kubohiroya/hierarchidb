@@ -20,7 +20,7 @@ import {
   type StylerMappingMode,
   type StylerStepData,
   type StylerValueType,
-} from '../../common/types/StylerEntity.js';
+} from '~/common/types/StylerEntity';
 import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
 import { useStylerMappingState } from './useStylerMappingState.ts';
 

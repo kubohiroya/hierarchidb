@@ -1,9 +1,9 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
-import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
-import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness.js';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandTestHarness } from '~/services/test-helpers/commandProcessorHarness';
+import { createCommandTestHarness, seedNode } from '~/services/test-helpers/commandProcessorHarness';
 
 const TX_NODE_TYPE = 'tx-test' as NodeType;
 

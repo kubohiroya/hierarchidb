@@ -1,6 +1,6 @@
 import { formatBytes } from '@hierarchidb/util';
 
-import type { MemoryData } from '../hooks/useMemoryData.js';
+import type { MemoryData } from '~/hooks/useMemoryData';
 
 export interface CanvasRenderOptions {
   width: number;

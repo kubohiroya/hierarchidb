@@ -1,8 +1,8 @@
 import type { DiscardDraftOptions } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { generateUUID } from '@hierarchidb/util';
-import type { CoreDB } from '../CoreDB.js';
-import type { CommandEnvelope } from '../command-types.js';
+import type { CoreDB } from '~/services/CoreDB';
+import type { CommandEnvelope } from '~/services/command-types';
 
 /**
  * Discard a draft by clearing draftMetadata/draftData/dialogUIState on the node.
@@ -46,7 +46,7 @@ export async function discardTreeNodeDraft(
     });
   }
 
-  const { EntityLifecycleManager } = await import('../../entity/EntityLifecycleManager.js');
+  const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
   const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
   const envelope: CommandEnvelope<'discardDraft', { draftId: NodeId }> = {
     commandId: generateUUID(),

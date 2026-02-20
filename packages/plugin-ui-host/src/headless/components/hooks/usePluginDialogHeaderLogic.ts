@@ -1,6 +1,6 @@
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { useCallback, useMemo } from 'react';
-import type { DialogActionInFlight } from '../../types.js';
+import type { DialogActionInFlight } from '~/headless/types';
 
 type WorkerStepState = {
   id: string;

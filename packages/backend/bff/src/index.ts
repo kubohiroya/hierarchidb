@@ -1,25 +1,25 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { type Context, Hono } from 'hono';
-import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
-import type { GitHubOAuth2Config } from './auth/github.js';
+import { exchangeCodeForToken, handleOAuth2Callback } from '~/auth/callback';
+import type { GitHubOAuth2Config } from '~/auth/github';
 import {
   exchangeCodeForTokens,
   type GoogleOAuth2Config,
   getGoogleUserInfo,
-} from './auth/google.js';
-import type { MicrosoftOAuth2Config } from './auth/microsoft.js';
-import { refreshToken, revokeToken } from './auth/refresh.js';
-import { mapEnvironmentVariables } from './env-mapper.js';
-import { validateOrigin } from './middleware/origin-validator.js';
-import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
-import { type BffBindings, getEnv } from './utils/env.js';
-import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
-import { buildKvWarning, type KvWarning } from './utils/kv-warning.js';
-import { parseEnvInt } from './utils/number.js';
-import { getDynamicRedirectUri, resolveStateOrigin } from './utils/redirect-uri.js';
-import { StateManager } from './utils/state-manager.js';
-import { requireTurnstile } from './utils/turnstile.js';
+} from '~/auth/google';
+import type { MicrosoftOAuth2Config } from '~/auth/microsoft';
+import { refreshToken, revokeToken } from '~/auth/refresh';
+import { mapEnvironmentVariables } from '~/env-mapper';
+import { validateOrigin } from '~/middleware/origin-validator';
+import { getCORSHeaders, parseAllowedOrigins } from '~/utils/cors';
+import { type BffBindings, getEnv } from '~/utils/env';
+import { createSessionToken, extractBearerToken, verifySessionToken } from '~/utils/jwt';
+import { buildKvWarning, type KvWarning } from '~/utils/kv-warning';
+import { parseEnvInt } from '~/utils/number';
+import { getDynamicRedirectUri, resolveStateOrigin } from '~/utils/redirect-uri';
+import { StateManager } from '~/utils/state-manager';
+import { requireTurnstile } from '~/utils/turnstile';
 
 export const app = new Hono<BffBindings>();
 export default {
@@ -77,7 +77,7 @@ app.use('*', async (c, next) => {
 
   // Add CORS headers to response
   Object.entries(corsHeaders).forEach(([key, value]) => {
-    c.res.headers.set(key, value);
+    c.res.headers.set(key, String(value));
   });
 
   return;

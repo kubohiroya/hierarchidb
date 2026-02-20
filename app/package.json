@@ -11,7 +11,7 @@
     "dev": "vite dev",
     "test": "vitest run",
     "typecheck": "pnpm --filter @hierarchidb/plugin-base build && NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",
-    "build": "pnpm run generate:favicon && pnpm run generate:shape-presets && pnpm run generate:nojekyll && pnpm --filter @hierarchidb/plugin-base build && pnpm --workspace-root run tools:gen-plugin-registry && pnpm --filter @hierarchidb/plugin-registry build && pnpm --filter @hierarchidb/runtime-worker build && vite build --config vite.config.ts",
+    "build": "pnpm run generate:favicon && pnpm run generate:shape-presets && pnpm run generate:nojekyll && pnpm --workspace-root run tools:gen-plugin-registry && vite build --config vite.config.ts",
     "preview": "vite preview",
     "format": "biome check --write src",
     "format:check": "biome check src --reporter summary",
@@ -43,6 +43,7 @@
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",
@@ -113,13 +114,14 @@
           "^build",
           "@hierarchidb/tools-build-scripts#build",
           "@hierarchidb/tools-load-plugin-manifest#build",
-          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
-          "@hierarchidb/plugin-base#build",
-          "@hierarchidb/runtime-worker#build",
-          "@hierarchidb/plugin-registry#build",
-          "@hierarchidb/tabular-store#build",
-          "@hierarchidb/ui-grid#build"
-        ]
+        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+        "@hierarchidb/plugin-base#build",
+        "@hierarchidb/runtime-worker#build",
+        "@hierarchidb/download#build",
+        "@hierarchidb/plugin-registry#build",
+        "@hierarchidb/tabular-store#build",
+        "@hierarchidb/ui-grid#build"
+      ]
       },
       "typecheck": {
         "dependsOn": [

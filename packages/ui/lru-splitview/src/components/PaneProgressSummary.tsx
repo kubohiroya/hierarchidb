@@ -1,5 +1,5 @@
 import { Chip, Stack } from '@mui/material';
-import type { PaneProgress } from '../types/LRUSplitView.js';
+import type { PaneProgress } from '~/types/LRUSplitView';
 
 type Props = {
   summary: NonNullable<PaneProgress['summary']>;

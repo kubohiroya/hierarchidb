@@ -1,5 +1,5 @@
-import type { ProgressInfo, VectorTileTask } from '../ports/sharedTypes.js';
-import type { VectorTileStageAdapter } from '../ports/VectorTileStageAdapter.js';
+import type { ProgressInfo, VectorTileTask } from '~/ports/sharedTypes';
+import type { VectorTileStageAdapter } from '~/ports/VectorTileStageAdapter';
 
 export async function runVectorTileAdapter<TTask = VectorTileTask, TProgress extends ProgressInfo = ProgressInfo>(params: {
   adapter: VectorTileStageAdapter<TTask, TProgress>;

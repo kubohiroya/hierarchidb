@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../types/maplibre-public.js';
-import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '~/types/maplibre-public';
+import { defaultFeatureIdAccessor } from '~/lib/feature-identification';
 
 type MapLibreSourceWithType = { type?: string };
 type MapLibreLayerWithSource = { source?: string; sourceLayer?: string; 'source-layer'?: string };

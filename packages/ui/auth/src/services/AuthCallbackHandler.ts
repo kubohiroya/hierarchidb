@@ -1,7 +1,7 @@
-import type { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '~/types/AuthProviderType';
 // import { devError } from "@/shared/utils/logger";
 // const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
-import type { AuthUser } from '../types/AuthUser.js';
+import type { AuthUser } from '~/types/AuthUser';
 
 // Temporary implementation for secureConfig
 const getSecureConfig = () => ({

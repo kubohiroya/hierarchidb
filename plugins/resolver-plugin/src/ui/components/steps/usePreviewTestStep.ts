@@ -6,7 +6,7 @@ import type {
   PropertyMappingRule,
   ResolverUpdaterPayload,
   SchemaInfo,
-} from '../../../common/types/index.js';
+} from '~/common/types/index';
 
 interface UsePreviewTestStepProps {
   data: Partial<ResolverUpdaterPayload>;

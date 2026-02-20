@@ -1,4 +1,4 @@
-import type { ValidationRule } from '../../../common/types/index.js';
+import type { ValidationRule } from '~/common/types/index';
 import type { ValidationRuleParameterFieldsProps, ValidationRuleTypeMenuProps, ValidationRuleTypeOption } from './ValidationConfigStepViewElements.js';
 
 const VALIDATION_RULE_TYPES: ValidationRuleTypeOption[] = [

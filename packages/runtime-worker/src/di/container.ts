@@ -5,7 +5,7 @@ import {
   pluginWorkerLoaders,
   pluginWorkerModuleMap,
   pluginWorkerSourceMap,
-} from '../plugin-registry/index.js';
+} from '~/plugin-registry/index';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';
 import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
 import { WorkerDiTokens } from './tokens.js';

@@ -1,4 +1,4 @@
-import { mapEnvironmentVariables, type RawEnv } from './env-mapper.js';
+import { mapEnvironmentVariables, type RawEnv } from '~/env-mapper';
 
 type JwtHeader = {
   alg?: string;

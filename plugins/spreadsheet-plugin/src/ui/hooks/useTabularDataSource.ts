@@ -6,9 +6,9 @@ import type {
   TabularProcessingConfig,
 } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetDraft, SpreadSheetDataSourceType } from '../../common/types/SpreadsheetEntity.js';
-import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
-import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';
+import type { SpreadsheetDraft, SpreadSheetDataSourceType } from '~/common/types/SpreadsheetEntity';
+import { SPREADSHEET_NODE_TYPE } from '~/common/constants';
+import { createSpreadsheetTabularApi } from '~/services/spreadsheetTabularApiFactory';
 
 const coerceDialogData = (value: unknown): SpreadsheetDraft =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetDraft) : {});

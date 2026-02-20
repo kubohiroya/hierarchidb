@@ -36,7 +36,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@mui/icons-material';
-import type { LocationType } from '../../../common/types/index.js';
+import type { LocationType } from '~/common/types/index';
 import type {
   LocationMapPreviewProps,
   PreviewLocationPoint,

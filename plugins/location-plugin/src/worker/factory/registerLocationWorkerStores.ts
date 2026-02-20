@@ -12,7 +12,7 @@ type LocationEntitiesDbModule = typeof import('../locationEntitiesDB.js');
 
 export async function loadLocationEntitiesDbModule(): Promise<LocationEntitiesDbModule | null> {
   try {
-    return await import('../locationEntitiesDB.js');
+    return await import('~/worker/locationEntitiesDB');
   } catch {
     return null;
   }

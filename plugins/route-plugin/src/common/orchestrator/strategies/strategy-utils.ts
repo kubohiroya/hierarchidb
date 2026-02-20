@@ -1,4 +1,4 @@
-import type { EngineMethod, TransportMode } from '../types.js';
+import type { EngineMethod, TransportMode } from '~/common/orchestrator/types';
 
 const ENGINE_ALIASES: Record<string, EngineMethod> = {
   direct: 'direct',

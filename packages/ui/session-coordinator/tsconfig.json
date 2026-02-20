@@ -1,24 +1,21 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
-  "baseUrl": ".",
     "lib": [
       "ES2020",
       "DOM"
     ],
     "types": [
       "vite/client"
-    ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    ]
   },
   "exclude": [
     "src/vite-env.d.ts",
     "**/*.test.*",
     "**/*.spec.*",
     "src/__tests__/**"
+  ],
+  "include": [
+    "src/**/*"
   ]
 }

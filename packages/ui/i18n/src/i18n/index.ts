@@ -14,19 +14,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import type { HttpBackendOptions } from 'i18next-http-backend';
 import HttpBackend from 'i18next-http-backend';
 import * as ReactI18NextModule from 'react-i18next';
-import enCommon from '../../public/locales/en/common.json' with { type: 'json' };
-import enGuidedTour from '../../public/locales/en/guidedTour.json' with { type: 'json' };
-import enPluginBasicInfo from '../../public/locales/en/plugin-basic-info.json' with {
-  type: 'json',
-};
-import enStylerPlugin from '../../public/locales/en/styler-plugin.json' with { type: 'json' };
-import jaCommon from '../../public/locales/ja/common.json' with { type: 'json' };
-import jaGuidedTour from '../../public/locales/ja/guidedTour.json' with { type: 'json' };
-import jaPluginBasicInfo from '../../public/locales/ja/plugin-basic-info.json' with {
-  type: 'json',
-};
-import jaStylerPlugin from '../../public/locales/ja/styler-plugin.json' with { type: 'json' };
-import { getEnvString, isDevEnv } from '../utils/env.js';
+import { getEnvString, isDevEnv } from '~/utils/env';
 
 interface AppWindow extends Window {
   __HDB_APP_BASE__?: unknown;
@@ -135,21 +123,7 @@ const baseInitOptions: InitOptions = {
   supportedLngs: ['en', 'ja'],
   load: 'languageOnly',
   defaultNS: 'common',
-  ns: ['common', 'guidedTour', 'plugin-basic-info', 'styler-plugin'],
-  resources: {
-    en: {
-      common: enCommon,
-      guidedTour: enGuidedTour,
-      'plugin-basic-info': enPluginBasicInfo,
-      'styler-plugin': enStylerPlugin,
-    },
-    ja: {
-      common: jaCommon,
-      guidedTour: jaGuidedTour,
-      'plugin-basic-info': jaPluginBasicInfo,
-      'styler-plugin': jaStylerPlugin,
-    },
-  },
+  ns: ['common', 'guidedTour'],
   debug: false,
   interpolation: interpolationOptions,
   react: reactOptions,

@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import type { MapLibreStyle } from '../types/maplibre-public.js';
+import type { MapLibreStyle } from '~/types/maplibre-public';
 import {
   ResourceLayerMap,
   type ResourceLayerMapProps,

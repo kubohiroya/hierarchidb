@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.package.local-alias.base.json",
   "compilerOptions": {
     "lib": [
       "ES2022",
@@ -12,11 +12,12 @@
     "types": [
       "vite/client",
       "node"
-    ]
+    ],
+    "baseUrl": "."
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
-    "reason": "UI transitive types (MUI/Emotion) \u2014 tracked to remove."
+    "reason": "UI transitive types (MUI/Emotion) — tracked to remove."
   },
   "include": [
     "src",

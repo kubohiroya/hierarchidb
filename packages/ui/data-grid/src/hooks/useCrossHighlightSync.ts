@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { CrossViewStyles } from '../CrossViewStyles.js';
-import type { Id } from '../CrossViewStyles.js';
+import { CrossViewStyles } from '~/CrossViewStyles';
+import type { Id } from '~/CrossViewStyles';
 
 const logCrossHighlightWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

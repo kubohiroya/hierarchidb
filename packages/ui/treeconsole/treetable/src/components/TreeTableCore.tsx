@@ -17,7 +17,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Skeleton, TableBody, TableCell, TableRow } from '@mui/material';
-import type { TreeNodeInUI, TreeTableCoreProps } from '../types.js';
+import type { TreeNodeInUI, TreeTableCoreProps } from '~/types';
 import { StyledTable, StyledTableContainer, StyledTableHead } from './TreeTableStyles.js';
 import { TreeTableRows } from './internal/TreeTableRows.js';
 import { TreeTableHeader } from './internal/TreeTableHeader.js';

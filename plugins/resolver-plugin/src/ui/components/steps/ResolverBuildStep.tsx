@@ -1,5 +1,5 @@
 import { Alert, Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import type { ResolverUpdaterPayload } from '../../../common/types/index.js';
+import type { ResolverUpdaterPayload } from '~/common/types/index';
 
 interface ResolverBuildStepProps {
   draft: ResolverUpdaterPayload;

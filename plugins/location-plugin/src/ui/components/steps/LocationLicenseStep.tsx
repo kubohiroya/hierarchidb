@@ -6,9 +6,9 @@ import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { Timestamp } from '@hierarchidb/core-types';
-import type { LocationEntity } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
-import { getLocationDataSource } from '../../../common/datasources/LocationDataSourceDefinitions.js';
+import type { LocationEntity } from '~/common/types/index';
+import { useTranslation } from '~/common/i18n/index';
+import { getLocationDataSource } from '~/common/datasources/LocationDataSourceDefinitions';
 
 interface LocationLicenseStepProps {
   draft: Partial<LocationEntity>;

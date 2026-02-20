@@ -6,7 +6,7 @@ import {
 } from '@hierarchidb/plugin-base';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity } from '@hierarchidb/route-api';
-import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import { useTranslation as getTranslation } from '~/common/i18n/index';
 import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
 import { RouteDataSourceStep } from './steps/RouteDataSourceStep.js';

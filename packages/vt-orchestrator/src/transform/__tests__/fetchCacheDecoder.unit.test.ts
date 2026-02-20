@@ -1,11 +1,11 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { decodeFetchCacheByFormat } from '../createTransformByBandHandler.js';
+import { decodeFetchCacheByFormat } from '~/transform/createTransformByBandHandler';
 import {
   __getTopojsonRuntimeLoadCount,
   __resetTopojsonRuntimeForTests,
-} from '../topojsonRuntimeAdapter.js';
+} from '~/transform/topojsonRuntimeAdapter';
 
 const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => (
   bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)

@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { TabularDataApi } from '../types/index.js';
+import type { TabularDataApi } from '~/types/index';
 
 /**
  * Tabular API Context

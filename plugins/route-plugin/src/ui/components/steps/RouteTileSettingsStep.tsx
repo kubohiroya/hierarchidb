@@ -3,8 +3,8 @@ import { useEffect, useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
 import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
-import { useTranslation } from '../../../common/i18n/index.js';
+import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '~/common/config/buildConfig';
+import { useTranslation } from '~/common/i18n/index';
 
 interface RouteTileSettingsStepProps {
   draft: RouteUpdaterPayload;

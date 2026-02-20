@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '../../../../common/types/index.js';
+import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '~/common/types/index';
 
 interface UseSchemaSelectionStepArgs {
   data: Partial<ResolverUpdaterPayload>;

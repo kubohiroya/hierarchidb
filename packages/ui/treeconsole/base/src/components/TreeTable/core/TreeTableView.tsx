@@ -24,7 +24,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { HierarchicalTreeNode } from '../../../types/index.js';
+import type { HierarchicalTreeNode } from '~/types/index';
 
 export interface TreeTableColumn {
   readonly id: string;

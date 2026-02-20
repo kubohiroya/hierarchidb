@@ -22,14 +22,14 @@ import {
   jsonDeserializer,
   jsonSerializer,
   type RetryConfig,
-} from '../utils/chunkStore';
+} from '~/services/utils/chunkStore';
 import {
   GEOBOUNDARIES_API_BASE_URL,
   GEOBOUNDARIES_RELEASE_TYPE,
   buildGeoBoundariesMetadataUrl,
-} from '../utils/geoboundariesEndpoints';
-import { decodeFlatGeoJson, encodeFlatGeoJson } from '../batch/strategies/flatgeobuf';
-import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline';
+} from '~/services/utils/geoboundariesEndpoints';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from '~/services/batch/strategies/flatgeobuf';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '~/services/utils/rawDataPipeline';
 import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;

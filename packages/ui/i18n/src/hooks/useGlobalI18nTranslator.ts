@@ -1,6 +1,6 @@
 import type { i18n as I18nInstance, TFunction, TOptions } from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { i18n as configuredI18n } from '../i18n/index.js';
+import { i18n as configuredI18n } from '~/i18n/index';
 
 interface TranslatorOptions {
   namespaces?: string[];

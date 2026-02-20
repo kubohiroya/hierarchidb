@@ -1,5 +1,5 @@
-import { THEME_STORAGE_KEY } from '../constants.js';
-import type { ThemeMode } from '../types.js';
+import { THEME_STORAGE_KEY } from '~/constants';
+import type { ThemeMode } from '~/types';
 
 /**
  * Get stored theme mode from localStorage

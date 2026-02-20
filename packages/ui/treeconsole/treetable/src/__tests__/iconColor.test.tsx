@@ -2,8 +2,8 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { rainbowColors } from '@hierarchidb/ui-theme';
-import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns.js';
-import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
+import type { ColumnBuilderParams } from '~/components/internal/createTreeTableColumns';
+import { createTreeTableColumns } from '~/components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 

@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { type MappedEnv, mapEnvironmentVariables, type RawEnv } from '../env-mapper.js';
+import { type MappedEnv, mapEnvironmentVariables, type RawEnv } from '~/env-mapper';
 
 export type BffBindings = { Bindings: RawEnv; Variables: { mappedEnv: MappedEnv } };
 export type BffContext = Context<BffBindings>;

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { CoreDB } from '../../CoreDB.js';
+import { CoreDB } from '~/services/CoreDB';
 
 describe('CoreDB runInTx coverage', () => {
   it('allows accessing trees table inside transactional runner', async () => {

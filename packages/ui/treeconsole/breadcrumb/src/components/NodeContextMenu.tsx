@@ -25,7 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import { isFolderNodeType } from '../utils/nodeTypeIconColor.js';
+import { isFolderNodeType } from '~/utils/nodeTypeIconColor';
 type CreateMenuEntry = {
   key: string;
   nodeType: string;

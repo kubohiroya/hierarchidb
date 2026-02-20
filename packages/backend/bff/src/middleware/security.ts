@@ -1,4 +1,4 @@
-import { parseEnvInt } from '../utils/number.js';
+import { parseEnvInt } from '~/utils/number';
 
 export interface Env {
   ALLOWED_ORIGINS: string;

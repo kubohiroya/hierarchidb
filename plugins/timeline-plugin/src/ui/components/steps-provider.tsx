@@ -1,9 +1,9 @@
 import { PluginStepRegistry, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
-import type { TimelineDraft, TimelineFrame } from '../../common/types/index.js';
-import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
-import { MapPreviewStep } from '../steps/MapPreviewStep.js';
-import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
-import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import type { TimelineDraft, TimelineFrame } from '~/common/types/index';
+import { FramesPreviewStep } from '~/ui/steps/FramesPreviewStep';
+import { MapPreviewStep } from '~/ui/steps/MapPreviewStep';
+import { AnimationViewerStep } from '~/ui/steps/AnimationViewerStep';
+import { useTranslation as getTranslation } from '~/common/i18n/index';
 
 const registry = PluginStepRegistry.getInstance();
 

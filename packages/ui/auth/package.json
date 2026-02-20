@@ -21,7 +21,7 @@
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",

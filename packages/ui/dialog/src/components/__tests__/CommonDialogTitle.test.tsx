@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CommonDialogTitle } from '../CommonDialogTitle.js';
+import { CommonDialogTitle } from '~/components/CommonDialogTitle';
 
 const baseProps = {
   title: 'Example Dialog',

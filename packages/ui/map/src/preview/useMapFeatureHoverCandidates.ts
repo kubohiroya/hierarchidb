@@ -3,9 +3,9 @@ import type {
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
-} from '../types/maplibre-public.js';
-import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '../lib/feature-identification.js';
-import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
+} from '~/types/maplibre-public';
+import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '~/lib/feature-identification';
+import { isFloatingWindowInteractionActive } from '~/lib/floating-window-interaction';
 
 const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
   const layerType = feature.layer?.type;

@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { createStore } from 'jotai/vanilla';
 import type { Store } from 'jotai/vanilla/store';
-import type { MapLibreGeoJSONFeature } from '../types/maplibre-public.js';
+import type { MapLibreGeoJSONFeature } from '~/types/maplibre-public';
 
 export type MapHighlightEntry = {
   source: string;

@@ -1,10 +1,10 @@
 import { describe, expect, it, afterEach, vi } from 'vitest';
-import type { TreeConsoleBreadcrumbRendererProps, TreeConsolePanelProps } from '../TreeConsolePanel.js';
-import { TreeConsolePanel } from '../TreeConsolePanel.js';
+import type { TreeConsoleBreadcrumbRendererProps, TreeConsolePanelProps } from '~/components/TreeConsolePanel';
+import { TreeConsolePanel } from '~/components/TreeConsolePanel';
 import { cleanup, render, screen } from '@testing-library/react';
 import React = require('react');
-import type { HierarchicalTreeNode } from '../../types/index.js';
-import type { TreeTableColumn } from '../TreeTable/index.js';
+import type { HierarchicalTreeNode } from '~/types/index';
+import type { TreeTableColumn } from '~/components/TreeTable/index';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';

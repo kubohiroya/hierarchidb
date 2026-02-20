@@ -1,6 +1,6 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
-import type { CoreDB } from '../CoreDB.js';
+import type { CoreDB } from '~/services/CoreDB';
 
 /**
  * Detects conflicts by comparing draft.version with the latest stored version.
