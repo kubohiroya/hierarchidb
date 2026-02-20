@@ -31,9 +31,8 @@ import { resolveAwaitingFirstTaskDecision } from '~/ui/components/build-progress
 import {
   resolveStartupTransitionWatchdogEvent,
 } from '~/ui/components/build-progress/resolveStartupTransitionWatchdogEvent';
-import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 import { persistedTasksAtom, type ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { useShapeBuildSessionRecord } from './useShapeBuildSessionRecord.js';
 import { UI_POLL_INTERVAL_MS, UI_QUIET_THRESHOLD_MS } from './useShapeBuildStepHelpers/constants.js';
 import {
   emitShapeProgressStepTrace,
@@ -214,8 +213,12 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
   const [suspendSuspectMessage, setSuspendSuspectMessage] = useState<string | null>(null);
-  const [sessionRecord, setSessionRecord] = useState<ShapeBuildSessionRecord | null>(null);
-  const lastWorkerStageTraceKeyRef = useRef<string | null>(null);
+  const {
+    sessionRecord,
+    updateSessionRecord,
+  } = useShapeBuildSessionRecord({
+    activeNodeId,
+  });
   const lastAwaitingFirstTaskDecisionTraceKeyRef = useRef<string | null>(null);
   const persistedStageElapsedByStage = useMemo<Record<string, number>>(
     () => (sessionRecord?.elapsedByStage ?? {}),
@@ -348,76 +351,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     }
     previousTransitionActiveRef.current = buildSessionTransition.active;
   }, [buildSessionTransition.active, finishBuildStartupStep]);
-  const refreshSessionRecord = useCallback(async () => {
-    if (!activeNodeId) {
-      setSessionRecord(null);
-      return null;
-    }
-    const next = await shapeQueryAPIImpl.getBuildSessionRecord(activeNodeId).catch(() => null);
-    setSessionRecord(next);
-    return next;
-  }, [activeNodeId]);
-
-  const updateSessionRecord = useCallback(async (patch: Partial<ShapeBuildSessionRecord>): Promise<boolean> => {
-    if (!activeNodeId) return false;
-    if (Object.keys(patch).length === 0) return true;
-    try {
-      await shapeMutationAPIImpl.updateBuildSession(activeNodeId, patch);
-      setSessionRecord((current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          ...patch,
-          updatedAt: Date.now(),
-        };
-      });
-      return true;
-    } catch (error) {
-      console.warn('[ShapeBuildProgressStep] failed to update build session record', error);
-      return false;
-    }
-  }, [activeNodeId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      await refreshSessionRecord();
-      if (cancelled) return;
-    };
-    void load();
-    const interval = window.setInterval(() => {
-      void load();
-    }, 1000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, [refreshSessionRecord]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    if (!activeNodeId) return;
-    const stageId = sessionRecord?.stageId ?? null;
-    const status = sessionRecord?.status ?? null;
-    const stageHeartbeatAt = sessionRecord?.stageHeartbeatAt ?? null;
-    const updatedAt = sessionRecord?.updatedAt ?? null;
-    const key = `${String(activeNodeId)}:${status ?? '-'}:${stageId ?? '-'}:${stageHeartbeatAt ?? '-'}`;
-    if (lastWorkerStageTraceKeyRef.current === key) return;
-    lastWorkerStageTraceKeyRef.current = key;
-    console.log('[ShapeBuildWorkerStageTrace]', {
-      nodeId: String(activeNodeId),
-      status,
-      stageId,
-      stageHeartbeatAt,
-      updatedAt,
-    });
-  }, [
-    activeNodeId,
-    sessionRecord?.stageHeartbeatAt,
-    sessionRecord?.stageId,
-    sessionRecord?.status,
-    sessionRecord?.updatedAt,
-  ]);
+  
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
