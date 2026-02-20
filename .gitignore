@@ -158,6 +158,7 @@ vite.config.ts.timestamp-*
 build/
 playwright-report/
 test-results/
+**/.tmp/
 
 # Generated metadata snapshot (documentation reference only)
 packages/runtime-shared/shape-plugin-fetch-metadata/docs/metadata.ts
