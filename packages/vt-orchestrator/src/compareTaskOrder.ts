@@ -1,5 +1,11 @@
 import { listTasksByStage, listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from './task/taskQueue.js';
-import type { FailureHandling, RunStageOptions, TaskQueueRecord } from './types/types.js';
+import type {
+  FailureHandling,
+  LaneExecutionPolicy,
+  RunStageOptions,
+  TaskQueueRecord,
+  TaskFilter,
+} from './types/types.js';
 
 const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
   const pa = a.stagePriority ?? 0;
@@ -8,10 +14,72 @@ const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
   return a.index - b.index;
 };
 
+type ConcurrencyGate = {
+  limit: number;
+  active: number;
+  queue: Array<() => void>;
+};
+
+type StageTask<TInput = unknown, TOutput = unknown> = TaskQueueRecord<TInput, TOutput>;
+
+const createGate = (limit: number): ConcurrencyGate => ({
+  limit: Math.max(1, limit),
+  active: 0,
+  queue: [],
+});
+
+const acquire = async (gate: ConcurrencyGate): Promise<void> => {
+  if (gate.active < gate.limit) {
+    gate.active += 1;
+    return;
+  }
+  await new Promise<void>((resolve) => gate.queue.push(resolve));
+  gate.active += 1;
+};
+
+const release = (gate: ConcurrencyGate): void => {
+  gate.active = Math.max(0, gate.active - 1);
+  const next = gate.queue.shift();
+  if (next && gate.active < gate.limit) {
+    next();
+  }
+};
+
+const buildTaskFilter = <TInput = unknown, TOutput = unknown>(
+  taskFilter?: TaskFilter<TInput, TOutput>,
+) => (task: StageTask<TInput, TOutput>): boolean => taskFilter ? taskFilter(task) : true;
+
+const buildLanePolicy = <TInput = unknown, TOutput = unknown>(
+  lanePolicy?: LaneExecutionPolicy<TInput, TOutput>,
+) => {
+  const enabled = lanePolicy?.enabled === true;
+  const laneOfTask = lanePolicy?.laneOfTask;
+  const resolveLaneLimit = lanePolicy?.maxConcurrentForLane;
+  const defaultLane = lanePolicy?.defaultLane ?? 'default';
+  return {
+    enabled,
+    getLaneKey: (task: StageTask<TInput, TOutput>): string => {
+      if (!enabled || !laneOfTask) return defaultLane;
+      const lane = laneOfTask(task);
+      return lane?.trim().length ? lane : defaultLane;
+    },
+    resolveLaneLimit,
+    defaultLane,
+  };
+};
+
 export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   options: RunStageOptions<TInput, TOutput>
 ): Promise<void> {
-  const { nodeId, stage, handler, waitIfPaused, maxConcurrent } = options;
+  const {
+    nodeId,
+    stage,
+    handler,
+    waitIfPaused,
+    maxConcurrent,
+    taskFilter,
+    lanePolicy,
+  } = options;
   const failureHandling: FailureHandling = options.failureHandling ?? 'continue';
   const stopOnFailure = failureHandling === 'stop';
   const skipOnFailure = failureHandling === 'skip';
@@ -19,7 +87,15 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   const abortSignal = abortController?.signal;
   const db = new VtTaskQueueDb();
   const tasks = await listTasksByStage(db, nodeId, stage);
-  const pending = tasks.filter((task) => task.status === 'queued').sort(compareTaskOrder);
+  const typedTasks = tasks as Array<StageTask<TInput, TOutput>>;
+  const shouldRunTask = buildTaskFilter(taskFilter);
+  const pending: Array<StageTask<TInput, TOutput>> = typedTasks
+    .filter((task) => task.status === 'queued')
+    .filter(shouldRunTask)
+    .sort((a, b) => compareTaskOrder(a, b));
+  const trackedTaskIds = new Set(pending.map((task) => task.taskId));
+  const lane = buildLanePolicy(lanePolicy);
+  const laneGates = new Map<string, ConcurrencyGate>();
   const baseMaxConcurrent = Math.max(1, Math.floor(maxConcurrent ?? 1));
   const dynamicConfig = options.dynamicConcurrency?.enabled ? options.dynamicConcurrency : null;
   const minConcurrent = dynamicConfig
@@ -45,6 +121,26 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   let loggedTaskError = 0;
   let loggedPauseWait = 0;
   const maxTaskLogs = 2;
+
+  const resolveLaneLimit = (task: StageTask<TInput, TOutput>): number => {
+    if (!lane.enabled || !lane.resolveLaneLimit) return desiredConcurrent;
+    const key = lane.getLaneKey(task);
+    const resolved = lane.resolveLaneLimit(key, task);
+    if (typeof resolved === 'number' && Number.isFinite(resolved)) {
+      return Math.max(1, Math.floor(resolved));
+    }
+    return desiredConcurrent;
+  };
+
+  const getLaneGate = (task: StageTask<TInput, TOutput>): ConcurrencyGate | undefined => {
+    if (!lane.enabled) return undefined;
+    const key = lane.getLaneKey(task);
+    let next = laneGates.get(key);
+    if (next) return next;
+    next = createGate(resolveLaneLimit(task));
+    laneGates.set(key, next);
+    return next;
+  };
 
   const extractTaskId = (error: unknown): string | null => {
     if (!error || typeof error !== 'object') return null;
@@ -136,6 +232,10 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       cursor += 1;
       const task = pending[index];
       if (!task) return;
+      const laneGate = getLaneGate(task);
+      if (laneGate) {
+        await acquire(laneGate);
+      }
       if (waitIfPaused) {
         const pauseWaitStartedAt = Date.now();
         await waitIfPaused();
@@ -244,6 +344,10 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           abortAll(new Error(err), task.taskId);
           return;
         }
+      } finally {
+        if (laneGate) {
+          release(laneGate);
+        }
       }
     }
   };
@@ -293,7 +397,9 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       listTasksByStageAndStatus(db, nodeId, stage, 'running'),
     ]);
     await Promise.all(
-      [...queued, ...running].map((task) => (
+      [...queued, ...running]
+        .filter((task) => trackedTaskIds.has(task.taskId))
+        .map((task) => (
         markTaskFailed(task.taskId, `aborted: ${reason}`)
       ))
     );

@@ -3,8 +3,11 @@ import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDep
 import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import type { BuildProgressCallback, BuildProgressEvent, BuildSessionStatus, StageKey } from '@hierarchidb/batch-api';
-import { BaseBuildSessionManager } from '@hierarchidb/batch-runtime-services';
+import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/batch-api';
+import {
+  BaseBuildSessionManager,
+  toBuildProgressEventFromUpdate,
+} from '@hierarchidb/batch-runtime-services';
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;
@@ -25,17 +28,7 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
     super();
     const emitter = {
       emit: (update: { jobId: string; progress: number; phase: string; ts: number }) => {
-        const event: BuildProgressEvent = {
-          nodeId: update.jobId as NodeId,
-          stage: update.phase as StageKey,
-          phase: update.progress >= 100 ? 'completed' : 'running',
-          timestamp: update.ts,
-          payload: {
-            total: 100,
-            completed: update.progress,
-            failed: 0,
-          },
-        };
+        const event = toBuildProgressEventFromUpdate(update);
         this.emitProgress(update.jobId as NodeId, event);
       },
     };
