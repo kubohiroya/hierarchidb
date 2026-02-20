@@ -19,7 +19,8 @@ import {
   loadWorkerAPIClient,
 } from '~/router/loaders/treeLoaders';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
-import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
+import { PluginDialogRoute } from './PluginDialogRoute.js';
+import type { PluginDialogLoaderData } from './pluginDialogRouteTypes.js';
 
 export type TreeDialogLoaderResult =
   | {
