@@ -236,49 +236,49 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
       if (laneGate) {
         await acquire(laneGate);
       }
-      if (waitIfPaused) {
-        const pauseWaitStartedAt = Date.now();
-        await waitIfPaused();
-        const pauseWaitElapsedMs = Date.now() - pauseWaitStartedAt;
-        if (pauseWaitElapsedMs > 0 && loggedPauseWait < maxTaskLogs) {
-          loggedPauseWait += 1;
-          console.warn('[vt-orchestrator][runStageTasks] pause wait resolved', {
+      try {
+        if (waitIfPaused) {
+          const pauseWaitStartedAt = Date.now();
+          await waitIfPaused();
+          const pauseWaitElapsedMs = Date.now() - pauseWaitStartedAt;
+          if (pauseWaitElapsedMs > 0 && loggedPauseWait < maxTaskLogs) {
+            loggedPauseWait += 1;
+            console.warn('[vt-orchestrator][runStageTasks] pause wait resolved', {
+              nodeId,
+              stage,
+              taskId: task.taskId,
+              waitMs: pauseWaitElapsedMs,
+            });
+          }
+        }
+        if (aborted || abortSignal?.aborted) return;
+        if (loggedTaskStart < maxTaskLogs) {
+          loggedTaskStart += 1;
+          const inputKeys = task.inputData && typeof task.inputData === 'object'
+            ? Object.keys(task.inputData as Record<string, unknown>)
+            : null;
+          console.warn('[vt-orchestrator][runStageTasks] task start', {
             nodeId,
             stage,
             taskId: task.taskId,
-            waitMs: pauseWaitElapsedMs,
+            index,
+            inputKeys,
           });
         }
-      }
-      if (aborted || abortSignal?.aborted) return;
-      if (loggedTaskStart < maxTaskLogs) {
-        loggedTaskStart += 1;
-        const inputKeys = task.inputData && typeof task.inputData === 'object'
-          ? Object.keys(task.inputData as Record<string, unknown>)
-          : null;
-        console.warn('[vt-orchestrator][runStageTasks] task start', {
-          nodeId,
-          stage,
-          taskId: task.taskId,
-          index,
-          inputKeys,
+        await updateTask(db, task.taskId, {
+          status: 'running',
+          startedAt: Date.now(),
+          progress: 0,
         });
-      }
-      await updateTask(db, task.taskId, {
-        status: 'running',
-        startedAt: Date.now(),
-        progress: 0,
-      });
-      if (loggedTaskUpdate < maxTaskLogs) {
-        loggedTaskUpdate += 1;
-        console.warn('[vt-orchestrator][runStageTasks] task status updated', {
-          nodeId,
-          stage,
-          taskId: task.taskId,
-        });
-      }
+        if (loggedTaskUpdate < maxTaskLogs) {
+          loggedTaskUpdate += 1;
+          console.warn('[vt-orchestrator][runStageTasks] task status updated', {
+            nodeId,
+            stage,
+            taskId: task.taskId,
+          });
+        }
 
-      try {
         const result = await handler(task as TaskQueueRecord<TInput, TOutput>);
         if (loggedTaskDone < maxTaskLogs) {
           loggedTaskDone += 1;
