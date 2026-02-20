@@ -1,4 +1,5 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { useCallback } from 'react';
 import { isCompletedAtFullProgress } from './useShapeBuildTaskSync.comparison.utils.js';
 import type { HandlerRefs, SyncResult } from './useShapeBuildTaskSync.types.js';
 
@@ -40,7 +41,7 @@ export const useShapeBuildTaskSyncState = ({
     completedTasksRef,
   } = refs;
 
-  const syncTasksRef = (tasks: ShapeBuildTaskSummary[]) => {
+  const syncTasksRef = useCallback((tasks: ShapeBuildTaskSummary[]) => {
     pendingTasksRef.current = null;
     pendingDirtyRef.current = false;
     flushScheduledRef.current = false;
@@ -66,9 +67,23 @@ export const useShapeBuildTaskSyncState = ({
         .map((task) => [task.taskId, task]),
     );
     updateCommittedSequences(tasks);
-  };
+  }, [
+    pendingTasksRef,
+    pendingDirtyRef,
+    flushScheduledRef,
+    bufferedSnapshotRef,
+    bufferedUpdatesRef,
+    bufferedSequenceRef,
+    flushFrameRef,
+    flushTimeoutRef,
+    tasksRef,
+    committedTasksRef,
+    tasksMapRef,
+    completedTasksRef,
+    updateCommittedSequences,
+  ]);
 
-  const resetPending = () => {
+  const resetPending = useCallback(() => {
     pendingTasksRef.current = null;
     pendingDirtyRef.current = false;
     bufferedSnapshotRef.current = null;
@@ -84,7 +99,16 @@ export const useShapeBuildTaskSyncState = ({
       window.clearTimeout(flushTimeoutRef.current);
       flushTimeoutRef.current = null;
     }
-  };
+  }, [
+    pendingTasksRef,
+    pendingDirtyRef,
+    bufferedSnapshotRef,
+    bufferedUpdatesRef,
+    bufferedSequenceRef,
+    flushScheduledRef,
+    flushFrameRef,
+    flushTimeoutRef,
+  ]);
 
   return {
     syncTasksRef,

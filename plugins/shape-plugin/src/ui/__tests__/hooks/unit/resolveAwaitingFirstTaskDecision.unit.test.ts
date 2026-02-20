@@ -58,10 +58,18 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       isTaskStreamReady: true,
       expectTaskGeneration: false,
     });
-    expect(decision).toEqual({
+    expect(decision).toMatchObject({
       kind: 'success',
       reason: 'completed-without-generating-tasks',
       transitionFinish: {
+        level: 'info',
+        message: 'Build completed without generating tasks.',
+      },
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: false,
+      },
+      notification: {
         level: 'info',
         message: 'Build completed without generating tasks.',
       },
@@ -275,10 +283,18 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       isTaskStreamReady: true,
       expectTaskGeneration: true,
     });
-    expect(decision).toEqual({
+    expect(decision).toMatchObject({
       kind: 'success',
       reason: 'completed-before-first-task-update',
       transitionFinish: undefined,
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: false,
+      },
+      notification: {
+        level: 'info',
+        message: 'Build completed before first task update.',
+      },
     });
   });
 
@@ -293,10 +309,18 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toEqual({
+    expect(decision).toMatchObject({
       kind: 'success',
       reason: 'completed-with-session-progress-evidence',
       transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: true,
+      },
+      notification: {
         level: 'info',
         message: 'Build completed before task stream synchronization.',
       },
@@ -314,10 +338,18 @@ describe('resolveAwaitingFirstTaskDecision', () => {
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toEqual({
+    expect(decision).toMatchObject({
       kind: 'success',
       reason: 'completed-with-session-progress-evidence',
       transitionFinish: {
+        level: 'info',
+        message: 'Build completed before task stream synchronization.',
+      },
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: false,
+      },
+      notification: {
         level: 'info',
         message: 'Build completed before task stream synchronization.',
       },

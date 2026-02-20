@@ -16,8 +16,7 @@ import {
 } from '@hierarchidb/components/build-session';
 import { notify } from '@hierarchidb/components/notify';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { isTaskPhaseDisplay, isTaskSkipped } from '~/common/utils/taskMessages';
-import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { useShapeBuildAutoResume } from '~/ui/components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -27,17 +26,19 @@ import { useShapeBuildLabels } from '~/ui/components/build-progress/useShapeBuil
 import { resolveBuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { createBuildStartDraftData } from '~/ui/components/build-progress/createBuildStartDraftData';
 import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/awaitingFirstTaskSignal';
-import { resolveAwaitingFirstTaskDecision } from '~/ui/components/build-progress/resolveAwaitingFirstTaskDecision';
-import {
-  resolveStartupTransitionWatchdogEvent,
-} from '~/ui/components/build-progress/resolveStartupTransitionWatchdogEvent';
 import { persistedTasksAtom, type ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
 import { useShapeBuildSessionRecord } from './useShapeBuildSessionRecord.js';
 import { UI_POLL_INTERVAL_MS, UI_QUIET_THRESHOLD_MS } from './useShapeBuildStepHelpers/constants.js';
 import {
-  emitShapeProgressStepTrace,
-  isShapeProgressStepDebugEnabled,
-} from './useShapeBuildStepHelpers/debug.js';
+  type BuildSessionTransitionPhase,
+  type BuildStartupStep,
+  type BuildStartupStepOutcome,
+  type StartupStepMemorySnapshot,
+  captureStartupStepMemorySnapshot,
+  calculateMemoryDelta,
+  getBuildSessionTransitionStatusLabel,
+} from './useShapeBuildStepHelpers/startupTrace.js';
 import {
   hasPositiveElapsed,
   mergeElapsedByStage,
@@ -59,6 +60,8 @@ import {
 } from './useShapeBuildStepHelpers/stage.js';
 import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation';
+import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildStepStartupLifecycle.js';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 
 export {
   shouldResetElapsedState,
@@ -68,102 +71,25 @@ export {
   resolveMostAdvancedInFlightStageId,
 };
 
-type ShapeProgressStepTracePayload = {
-  nodeId: string | null;
-  phase: BuildStatus;
-  progressTaskId: string | null;
-  progressTaskStatus: string | null;
-  progressTaskStage: string | null;
-  progressTaskProgress: number | null;
-  percentage: number | null;
-  total: number;
-  completed: number;
-  failed: number;
-  skipped: number;
-  message: string | null;
-};
+type RuntimeBuildStatus = BuildProgressStatus['status'] | 'running';
 
-type BuildSessionTransitionPhase =
-  | 'acquiring-lock'
-  | 'waiting-lock'
-  | 'saving-draft'
-  | 'initializing-worker'
-  | 'building-payloads'
-  | 'starting-session'
-  | 'awaiting-first-task';
+const resolveRuntimeBuildStatus = (status?: RuntimeBuildStatus | null): BuildStatusSource | null => {
+  if (status == null) return null;
+  if (status === 'running') return 'processing';
+  if (
+    status === 'idle'
+    || status === 'queued'
+    || status === 'processing'
+    || status === 'completed'
+    || status === 'paused'
+    || status === 'failed'
+  ) {
+    return status;
+  }
+  return null;
+};
 
 type NotificationLevel = BuildSessionTransitionNotificationLevel;
-type BuildStartupStep =
-  | 'lock-acquire'
-  | 'lock-wait'
-  | 'draft-save'
-  | 'worker-initialize'
-  | 'payload-build'
-  | 'session-resume-request'
-  | 'session-start-request'
-  | 'session-status-persist'
-  | 'awaiting-first-task';
-type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
-type StartupStepMemorySnapshot = {
-  usedJSHeapSize: number | null;
-  totalJSHeapSize: number | null;
-  jsHeapSizeLimit: number | null;
-};
-
-const toMemoryValue = (value: number | undefined): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
-
-const captureStartupStepMemorySnapshot = (): StartupStepMemorySnapshot => {
-  const snapshot = getMemorySnapshot();
-  return {
-    usedJSHeapSize: toMemoryValue(snapshot.usedJSHeapSize),
-    totalJSHeapSize: toMemoryValue(snapshot.totalJSHeapSize),
-    jsHeapSizeLimit: toMemoryValue(snapshot.jsHeapSizeLimit),
-  };
-};
-
-const subtractMemoryValues = (started: number | null | undefined, finished: number | null): number | null => {
-  if (started === null || started === undefined || finished === null) {
-    return null;
-  }
-  return finished - started;
-};
-
-const calculateMemoryDelta = (
-  started: StartupStepMemorySnapshot | null,
-  finished: StartupStepMemorySnapshot,
-): StartupStepMemorySnapshot => ({
-  usedJSHeapSize: subtractMemoryValues(started?.usedJSHeapSize, finished.usedJSHeapSize),
-  totalJSHeapSize: subtractMemoryValues(started?.totalJSHeapSize, finished.totalJSHeapSize),
-  jsHeapSizeLimit: subtractMemoryValues(started?.jsHeapSizeLimit, finished.jsHeapSizeLimit),
-});
-
-const getBuildSessionTransitionStatusLabel = (
-  t: (key: string, fallback?: string) => string,
-  phase: BuildSessionTransitionPhase | 'idle',
-  elapsedMs: number,
-): string => {
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
-  switch (phase) {
-    case 'acquiring-lock':
-      return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
-    case 'waiting-lock':
-      return t('stage.status.startingQueueElapsed', `Starting build (waiting for lock, ${elapsedSeconds}s)...`);
-    case 'saving-draft':
-      return t('stage.status.startingSave', 'Starting build (saving draft)...');
-    case 'initializing-worker':
-      return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
-    case 'building-payloads':
-      return t('stage.status.startingPayload', 'Starting build (preparing tasks)...');
-    case 'starting-session':
-      return t('stage.status.startingSession', 'Starting build (launching session)...');
-    case 'awaiting-first-task':
-      return t('stage.status.startingAwaitElapsed', `Build requested; waiting for first task (${elapsedSeconds}s)...`);
-    default:
-      return t('stage.status.starting', 'Starting stage...');
-  }
-};
 
 type Args = {
   data?: Partial<ShapeEntity>;
@@ -208,7 +134,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const buildStartupStepMemoryAtStartRef = useRef<Map<BuildStartupStep, StartupStepMemorySnapshot>>(new Map());
   const previousTransitionActiveRef = useRef(false);
   const progressTerminalLogKeyRef = useRef<string | null>(null);
-  const [buildSessionTransitionElapsedMs, setBuildSessionTransitionElapsedMs] = useState(0);
   const [crashSuspectOpen, setCrashSuspectOpen] = useState(false);
   const [crashSuspectMessage, setCrashSuspectMessage] = useState<string | null>(null);
   const [suspendSuspectOpen, setSuspendSuspectOpen] = useState(false);
@@ -264,7 +189,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionWaitLogStepRef.current = -1;
     awaitingFirstTaskExpectationRef.current = false;
     progressTerminalLogKeyRef.current = null;
-    setBuildSessionTransitionElapsedMs(0);
   }, []);
   const {
     buildSessionTransition,
@@ -285,7 +209,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
     progressTerminalLogKeyRef.current = null;
-    setBuildSessionTransitionElapsedMs(0);
     beginBuildSessionTransitionInternal(phase, {
       message,
       level: 'info',
@@ -357,7 +280,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
-  const effectiveProgressTraceRef = useRef<string | null>(null);
   const stages = useShapeBuildStages({ t: (key, fallback) => t(key, fallback) });
   const persistedProcessingStatus = sessionRecord ? toProcessingStatus(sessionRecord.status) : null;
   const processingStatus = persistedProcessingStatus ?? 'idle';
@@ -368,10 +290,13 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
   const stageRemainingTickRef = useRef<number | null>(null);
   const latestStageRemainingMsRef = useRef<number | null>(null);
-  const runtimeStatus = status?.status ?? sessionRecord?.status ?? null;
+  const runtimeStatus: BuildProgressStatus['status'] | 'running' = (() => {
+    const recordStatus = sessionRecord?.status;
+    return status?.status ?? (recordStatus === 'running' ? 'running' : recordStatus ?? 'idle');
+  })();
   const stopReason = sessionRecord?.stopReason;
   const statusSource = useMemo(() => {
-    return resolveBuildStatusSource(processingStatus, effectiveStatus?.status ?? null);
+    return resolveBuildStatusSource(processingStatus, resolveRuntimeBuildStatus(effectiveStatus?.status ?? null));
   }, [effectiveStatus?.status, processingStatus]);
   const isStopRequestedInFlight = isStopRequested || isStopAccepted;
   const isSessionStopping = isStopRequestedInFlight;
@@ -425,7 +350,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const hasQueuedTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'queued')
   ), [displayTasks]);
-  const taskProgressTotal = effectiveProgress?.total ?? sessionRecord?.progress?.total ?? null;
+  const taskProgressTotal = effectiveProgress?.total ?? sessionRecord?.progress?.total;
   const hasProgressTaskSignal = useMemo(() => hasAwaitingFirstTaskSignal({
     hasStartedTasks,
     hasQueuedTasks,
@@ -503,32 +428,40 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     refreshTasks,
     runtimeStatus,
   ]);
-  useEffect(() => {
-    if (!isShapeProgressStepDebugEnabled()) return;
-    const nextTrace: ShapeProgressStepTracePayload = {
-      nodeId: activeNodeId,
-      phase: buildStatus,
-      progressTaskId: effectiveProgress?.progressTaskId ?? null,
-      progressTaskStatus: effectiveProgress?.progressTaskStatus ?? null,
-      progressTaskStage: effectiveProgress?.progressTaskStage ?? null,
-      progressTaskProgress: effectiveProgress?.progressTaskProgress ?? null,
-      percentage: effectiveProgress?.percentage ?? null,
-      total: effectiveProgress?.total ?? 0,
-      completed: effectiveProgress?.completed ?? 0,
-      failed: effectiveProgress?.failed ?? 0,
-      skipped: effectiveProgress?.skipped ?? 0,
-      message: effectiveProgress?.message ?? null,
-    };
-    const signature = JSON.stringify(nextTrace);
-    if (signature === effectiveProgressTraceRef.current) return;
-    effectiveProgressTraceRef.current = signature;
-    emitShapeProgressStepTrace(nextTrace);
-  }, [activeNodeId, buildStatus, effectiveProgress]);
+  const taskType = effectiveProgress?.taskType;
+  const liveTaskType = taskType ?? effectiveStatus?.stage;
+  const resolvedTaskType = liveTaskType ?? stages[0]?.id;
+
+  const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } = useShapeBuildSessionStartupLifecycle({
+    activeNodeId,
+    buildSessionTransition,
+    buildStatus: effectiveStatusSource,
+    resolveTaskType: effectiveProgress?.progressTaskStage ?? null,
+    effectiveProgress,
+    displayTasks,
+    hasFirstTaskSignal,
+    hasStartedTasks,
+    hasProgressTaskSignal,
+    isTaskStreamReady,
+    runtimeStatus: runtimeStatus === 'running' ? 'processing' : runtimeStatus,
+    sessionProgressTotal: sessionRecord?.progress?.total,
+    sessionStageId: sessionRecord?.stageId ?? null,
+    awaitingFirstTaskExpectationRef,
+    completedTaskSequenceById,
+    resolvedTaskType,
+    lastAwaitingFirstTaskDecisionTraceKeyRef,
+    buildSessionTransitionTaskStartNotifiedRef,
+    progressTerminalLogKeyRef,
+    buildSessionTransitionWarnStepRef,
+    buildSessionTransitionWaitLogStepRef,
+    emitBuildSessionTransitionLog,
+    pushBuildSessionTransitionNotification,
+    finishBuildStartupStep,
+    finishBuildSessionTransition,
+  });
 
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
-  const taskType = effectiveProgress?.taskType;
-  const liveTaskType = taskType ?? effectiveStatus?.stage;
   const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
     stages,
     tasks: displayTasks,
@@ -537,7 +470,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     stages,
     tasks: displayTasks,
   }), [displayTasks, stages]);
-  const resolvedTaskType = liveTaskType ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const isElapsedResetState = useMemo(() => shouldResetElapsedState({
     buildStatus,
@@ -807,266 +739,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   ]);
 
   useEffect(() => {
-    const progressMessage = typeof effectiveProgress?.message === 'string'
-      ? effectiveProgress.message.trim()
-      : '';
-    const progressDisplay = effectiveProgress?.progressTaskDisplay;
-    if (!progressDisplay && !progressMessage) return;
-    if (!buildSessionTransition.active && buildStatus !== 'running' && runtimeStatus !== 'processing') return;
-    const progressTaskId = effectiveProgress?.progressTaskId;
-    const progressTaskSequence = effectiveProgress?.progressTaskSequence;
-    const progressTaskStatus = effectiveProgress?.progressTaskStatus;
-    const progressTaskTitle = typeof effectiveProgress?.progressTaskTitle === 'string'
-      ? effectiveProgress.progressTaskTitle.trim()
-      : '';
-    const canCheckStale = (
-      typeof progressTaskId === 'string'
-      && typeof progressTaskSequence === 'number'
-      && Number.isFinite(progressTaskSequence)
-      && (progressTaskStatus === 'running' || progressTaskStatus === 'queued')
-    );
-    if (canCheckStale) {
-      const completedSequence = completedTaskSequenceById.get(progressTaskId);
-      if (typeof completedSequence === 'number' && completedSequence >= progressTaskSequence) {
-        return;
-      }
-    }
-    const isPhaseMessage = isTaskPhaseDisplay(progressDisplay);
-    const isTerminalUpdate = (
-      progressTaskStatus === 'completed'
-      || ((effectiveProgress?.percentage ?? 0) >= 100 && !isPhaseMessage)
-    );
-    if (!isTerminalUpdate) return;
-    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
-    if (progressTerminalLogKeyRef.current === key) return;
-    progressTerminalLogKeyRef.current = key;
-    emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
-      stage: resolvedTaskType ?? null,
-      message: progressMessage || null,
-      displayKind: progressDisplay?.kind ?? null,
-      displayKey: progressDisplay?.key ?? null,
-      percentage: effectiveProgress?.percentage ?? null,
-      taskId: progressTaskId ?? null,
-      taskTitle: progressTaskTitle || null,
-      taskSequence: progressTaskSequence ?? null,
-      taskStatus: progressTaskStatus ?? null,
-    });
-  }, [
-    buildStatus,
-    effectiveProgress?.message,
-    effectiveProgress?.percentage,
-    effectiveProgress?.progressTaskDisplay,
-    effectiveProgress?.progressTaskId,
-    effectiveProgress?.progressTaskSequence,
-    effectiveProgress?.progressTaskStatus,
-    effectiveProgress?.progressTaskTitle,
-    emitBuildSessionTransitionLog,
-    completedTaskSequenceById,
-    resolvedTaskType,
-    runtimeStatus,
-    buildSessionTransition.active,
-  ]);
-
-  useEffect(() => {
-    if (!buildSessionTransition.active) {
-      setBuildSessionTransitionElapsedMs(0);
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      const elapsedMs = Date.now() - buildSessionTransition.startedAt;
-      setBuildSessionTransitionElapsedMs(elapsedMs);
-      const watchdogEvent = resolveStartupTransitionWatchdogEvent({
-        elapsedMs,
-        warnStep: buildSessionTransitionWarnStepRef.current,
-      });
-      if (watchdogEvent.kind === 'none') {
-        return;
-      }
-      buildSessionTransitionWarnStepRef.current = watchdogEvent.nextWarnStep;
-      if (watchdogEvent.kind === 'timeout') {
-        emitBuildSessionTransitionLog('error', 'build session transition timeout', {
-          phase: buildSessionTransition.phase,
-          elapsedMs,
-        });
-        if (buildSessionTransition.phase === 'awaiting-first-task') {
-          finishBuildStartupStep('awaiting-first-task', 'error', {
-            reason: 'timeout-before-task-start',
-            elapsedMs,
-          });
-        }
-        finishBuildSessionTransition({
-          level: 'error',
-          message: `Build did not start task processing (${buildSessionTransition.phase}, ${Math.round(elapsedMs / 1000)}s).`,
-        });
-        return;
-      }
-      if (watchdogEvent.kind === 'long-wait') {
-        emitBuildSessionTransitionLog('warn', 'build session transition long wait', {
-          phase: buildSessionTransition.phase,
-          elapsedMs,
-        });
-        pushBuildSessionTransitionNotification(
-          'warning',
-          `Build start is still waiting at "${buildSessionTransition.phase}".`,
-        );
-        return;
-      }
-      if (watchdogEvent.kind === 'wait') {
-        emitBuildSessionTransitionLog('info', 'build session transition wait', {
-          phase: buildSessionTransition.phase,
-          elapsedMs,
-        });
-        pushBuildSessionTransitionNotification(
-          'info',
-          `Build start is taking longer than expected (${buildSessionTransition.phase}).`,
-        );
-      }
-    }, 1000);
-    setBuildSessionTransitionElapsedMs(Math.max(0, Date.now() - buildSessionTransition.startedAt));
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [
-    emitBuildSessionTransitionLog,
-    finishBuildStartupStep,
-    finishBuildSessionTransition,
-    pushBuildSessionTransitionNotification,
-    buildSessionTransition.active,
-    buildSessionTransition.phase,
-    buildSessionTransition.startedAt,
-  ]);
-
-  useEffect(() => {
-    if (!buildSessionTransition.active || buildSessionTransition.phase !== 'waiting-lock') {
-      buildSessionTransitionWaitLogStepRef.current = -1;
-      return;
-    }
-    const intervalMs = UI_POLL_INTERVAL_MS;
-    const tick = () => {
-      const elapsedMs = Date.now() - buildSessionTransition.startedAt;
-      const nextStep = Math.floor(elapsedMs / intervalMs);
-      if (nextStep <= buildSessionTransitionWaitLogStepRef.current) return;
-      buildSessionTransitionWaitLogStepRef.current = nextStep;
-      emitBuildSessionTransitionLog('info', 'build session waiting for lock', {
-        phase: buildSessionTransition.phase,
-        elapsedMs,
-        pollIntervalMs: intervalMs,
-      });
-    };
-    tick();
-    const intervalId = window.setInterval(tick, intervalMs);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [
-    emitBuildSessionTransitionLog,
-    buildSessionTransition.active,
-    buildSessionTransition.phase,
-    buildSessionTransition.startedAt,
-  ]);
-
-  useEffect(() => {
-    if (!buildSessionTransition.active) return;
-    if (buildSessionTransition.phase !== 'awaiting-first-task') return;
-    const decisionInput = {
-      hasFirstTaskSignal,
-      hasStartedTasks,
-      hasProgressTaskSignal,
-      buildStatus,
-      taskCount: isTaskStreamReady ? displayTasks.length : undefined,
-      isTaskStreamReady,
-      expectTaskGeneration: awaitingFirstTaskExpectationRef.current,
-      sessionProgressTotal: sessionRecord?.progress?.total,
-      sessionStageId: sessionRecord?.stageId ?? null,
-    };
-    const decisionTraceKey = import.meta.env.DEV
-      ? JSON.stringify({
-        phase: buildSessionTransition.phase,
-        buildStatus: decisionInput.buildStatus,
-        hasFirstTaskSignal: decisionInput.hasFirstTaskSignal,
-        hasStartedTasks: decisionInput.hasStartedTasks,
-        hasProgressTaskSignal: decisionInput.hasProgressTaskSignal,
-        taskCount: decisionInput.taskCount,
-        isTaskStreamReady: decisionInput.isTaskStreamReady,
-        expectTaskGeneration: decisionInput.expectTaskGeneration,
-        sessionProgressTotal: decisionInput.sessionProgressTotal ?? null,
-        sessionStageId: decisionInput.sessionStageId ?? null,
-      })
-      : null;
-    if (decisionTraceKey && lastAwaitingFirstTaskDecisionTraceKeyRef.current !== decisionTraceKey) {
-      lastAwaitingFirstTaskDecisionTraceKeyRef.current = decisionTraceKey;
-      console.log('[ShapeAwaitingFirstTaskDecisionTrace] input', JSON.stringify({
-        nodeId: activeNodeId ? String(activeNodeId) : null,
-        ...decisionInput,
-      }));
-    }
-    const decision = resolveAwaitingFirstTaskDecision({
-      ...decisionInput,
-    });
-    if (import.meta.env.DEV && decision.kind !== 'continue') {
-      console.log('[ShapeAwaitingFirstTaskDecisionTrace] decision', JSON.stringify({
-        nodeId: activeNodeId ? String(activeNodeId) : null,
-        decision,
-      }));
-    }
-    if (decision.kind === 'continue') return;
-
-    if (decision.kind === 'success') {
-      if (decision.taskExecutionStarted && !buildSessionTransitionTaskStartNotifiedRef.current) {
-        buildSessionTransitionTaskStartNotifiedRef.current = true;
-        emitBuildSessionTransitionLog('info', 'task execution started', {
-          tasks: displayTasks.length,
-          queuedOnly: decision.taskExecutionStarted.queuedOnly,
-          hasProgressTaskSignal: decision.taskExecutionStarted.hasProgressTaskSignal,
-        });
-        if (decision.notification) {
-          pushBuildSessionTransitionNotification(decision.notification.level, decision.notification.message);
-        }
-      }
-      finishBuildStartupStep('awaiting-first-task', 'success', {
-        reason: decision.reason,
-        tasks: displayTasks.length,
-        hasProgressTaskSignal,
-      });
-      if (decision.transitionFinish) {
-        finishBuildSessionTransition(decision.transitionFinish);
-      } else {
-        finishBuildSessionTransition();
-      }
-      return;
-    }
-
-    if (decision.kind === 'error') {
-      finishBuildStartupStep('awaiting-first-task', 'error', {
-        reason: decision.reason,
-      });
-      finishBuildSessionTransition(decision.transitionFinish);
-      return;
-    }
-
-    finishBuildStartupStep('awaiting-first-task', 'cancelled', {
-      reason: decision.reason,
-    });
-    finishBuildSessionTransition(decision.transitionFinish);
-  }, [
-    activeNodeId,
-    buildStatus,
-    displayTasks.length,
-    emitBuildSessionTransitionLog,
-    finishBuildStartupStep,
-    finishBuildSessionTransition,
-    hasFirstTaskSignal,
-    hasProgressTaskSignal,
-    hasStartedTasks,
-    isStopRequestedInFlight,
-    isTaskStreamReady,
-    pushBuildSessionTransitionNotification,
-    sessionRecord?.progress?.total,
-    buildSessionTransition.active,
-    buildSessionTransition.phase,
-  ]);
-
-  useEffect(() => {
     if (!activeNodeId) return;
     if (buildSessionTransition.active) {
       if (crashSuspectOpen) {
@@ -1189,7 +861,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   }, [clearStartPending]);
   const effectiveBuildStatus: BuildStatus = buildStatus;
   const effectiveStatusLabel = buildSessionTransition.active
-    ? getBuildSessionTransitionStatusLabel(t, buildSessionTransition.phase, buildSessionTransitionElapsedMs)
+    ? getBuildSessionTransitionStatusLabel(t, buildSessionTransition.phase, startupLifecycleElapsedMs)
     : isStartPending && buildStatus === 'idle'
       ? t('stage.status.starting', 'Starting stage...')
       : statusLabel;

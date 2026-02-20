@@ -1,0 +1,103 @@
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
+
+export type BuildSessionTransitionPhase =
+  | 'acquiring-lock'
+  | 'waiting-lock'
+  | 'saving-draft'
+  | 'initializing-worker'
+  | 'building-payloads'
+  | 'starting-session'
+  | 'awaiting-first-task';
+
+export type BuildStartupStep =
+  | 'lock-acquire'
+  | 'lock-wait'
+  | 'draft-save'
+  | 'worker-initialize'
+  | 'payload-build'
+  | 'session-resume-request'
+  | 'session-start-request'
+  | 'session-status-persist'
+  | 'awaiting-first-task';
+
+export type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
+
+export type StartupStepMemorySnapshot = {
+  usedJSHeapSize: number | null;
+  totalJSHeapSize: number | null;
+  jsHeapSizeLimit: number | null;
+};
+
+export type ShapeProgressStepTracePayload = {
+  nodeId: string | null;
+  phase: BuildStatusSource;
+  progressTaskId: string | null;
+  progressTaskStatus: string | null;
+  progressTaskStage: string | null;
+  progressTaskProgress: number | null;
+  percentage: number | null;
+  total: number;
+  completed: number;
+  failed: number;
+  skipped: number;
+  message: string | null;
+};
+
+const toMemoryValue = (value: number | undefined): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+export const captureStartupStepMemorySnapshot = (): StartupStepMemorySnapshot => {
+  const snapshot = getMemorySnapshot();
+  return {
+    usedJSHeapSize: toMemoryValue(snapshot.usedJSHeapSize),
+    totalJSHeapSize: toMemoryValue(snapshot.totalJSHeapSize),
+    jsHeapSizeLimit: toMemoryValue(snapshot.jsHeapSizeLimit),
+  };
+};
+
+const subtractMemoryValues = (
+  started: number | null | undefined,
+  finished: number | null,
+): number | null => {
+  if (started === null || started === undefined || finished === null) {
+    return null;
+  }
+  return finished - started;
+};
+
+export const calculateMemoryDelta = (
+  started: StartupStepMemorySnapshot | null,
+  finished: StartupStepMemorySnapshot,
+): StartupStepMemorySnapshot => ({
+  usedJSHeapSize: subtractMemoryValues(started?.usedJSHeapSize, finished.usedJSHeapSize),
+  totalJSHeapSize: subtractMemoryValues(started?.totalJSHeapSize, finished.totalJSHeapSize),
+  jsHeapSizeLimit: subtractMemoryValues(started?.jsHeapSizeLimit, finished.jsHeapSizeLimit),
+});
+
+export const getBuildSessionTransitionStatusLabel = (
+  t: (key: string, fallback?: string) => string,
+  phase: BuildSessionTransitionPhase | 'idle',
+  elapsedMs: number,
+): string => {
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  switch (phase) {
+    case 'acquiring-lock':
+      return t('stage.status.startingLock', 'Starting build (acquiring lock)...');
+    case 'waiting-lock':
+      return t('stage.status.startingQueueElapsed', `Starting build (waiting for lock, ${elapsedSeconds}s)...`);
+    case 'saving-draft':
+      return t('stage.status.startingSave', 'Starting build (saving draft)...');
+    case 'initializing-worker':
+      return t('stage.status.startingWorker', 'Starting build (initializing worker)...');
+    case 'building-payloads':
+      return t('stage.status.startingPayload', 'Starting build (preparing tasks)...');
+    case 'starting-session':
+      return t('stage.status.startingSession', 'Starting build (launching session)...');
+    case 'awaiting-first-task':
+      return t('stage.status.startingAwaitElapsed', `Build requested; waiting for first task (${elapsedSeconds}s)...`);
+    default:
+      return t('stage.status.starting', 'Starting stage...');
+  }
+};

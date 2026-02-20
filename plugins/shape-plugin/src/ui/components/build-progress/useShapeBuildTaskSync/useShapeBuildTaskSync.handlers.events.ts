@@ -9,6 +9,19 @@ import {
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 
+const normalizeTaskSnapshot = (tasks: unknown): RawTaskSummary[] => {
+  if (!Array.isArray(tasks)) {
+    return [];
+  }
+  const snapshot: RawTaskSummary[] = [];
+  for (const task of tasks) {
+    if (task && typeof task === 'object') {
+      snapshot.push(task as RawTaskSummary);
+    }
+  }
+  return snapshot;
+};
+
 type EventHandlerRefs = {
   tasksMapRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
   completedTasksRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
@@ -45,20 +58,35 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   setError,
   markTaskStreamSynchronized,
 }: EventHandlerDeps) => {
+  const {
+    tasksMapRef,
+    completedTasksRef,
+    errorRef,
+    isLoadingRef,
+    bufferedSnapshotRef,
+    bufferedUpdatesRef,
+    bufferedSequenceRef,
+    pendingTasksRef,
+    committedTasksRef,
+    committedSequenceRef,
+    isMountedRef,
+    sessionNodeId,
+  } = refs;
+
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
-    const snapshotTasks = next.map(resolveTaskSummary);
-    refs.bufferedSnapshotRef.current = snapshotTasks;
+    const snapshotTasks = normalizeTaskSnapshot(next).map(resolveTaskSummary);
+    bufferedSnapshotRef.current = snapshotTasks;
     scheduleBufferedFlush();
-    if (refs.errorRef.current !== null) {
+    if (errorRef.current !== null) {
       setError(null);
     }
-    if (refs.isLoadingRef.current) {
+    if (isLoadingRef.current) {
       setIsLoading(false);
     }
   }, [
-    refs.bufferedSnapshotRef,
-    refs.errorRef,
-    refs.isLoadingRef,
+    bufferedSnapshotRef,
+    errorRef,
+    isLoadingRef,
     resolveTaskSummary,
     scheduleBufferedFlush,
     setError,
@@ -67,12 +95,12 @@ export const useShapeBuildTaskSyncEventHandlers = ({
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
-    const previous = refs.tasksMapRef.current.get(resolved.taskId);
+    const previous = tasksMapRef.current.get(resolved.taskId);
     const isEquivalent = previous ? areTasksEquivalentForView(previous, resolved) : false;
     const shouldPrefer = previous ? shouldPreferNextTask(previous, resolved) : true;
     if (previous && (isEquivalent || !shouldPrefer)) {
       emitRunningResidueLog('STALE_DROP', {
-        nodeId: refs.sessionNodeId,
+        nodeId: sessionNodeId,
         stage: resolved.stage,
         taskId: resolved.taskId,
         sequence: resolved.sequence ?? null,
@@ -86,7 +114,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     }
     if (previous && previous.status !== resolved.status) {
       emitRunningResidueLog('STATUS_TRANSITION', {
-        nodeId: refs.sessionNodeId,
+        nodeId: sessionNodeId,
         stage: resolved.stage,
         taskId: resolved.taskId,
         sequence: resolved.sequence ?? null,
@@ -99,30 +127,34 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     bufferTaskUpdate(resolved);
     scheduleBufferedFlush();
     logTaskUpdate100(resolved);
-    if (refs.errorRef.current !== null) {
+    if (errorRef.current !== null) {
       setError(null);
     }
-    if (refs.isLoadingRef.current) {
+    if (isLoadingRef.current) {
       setIsLoading(false);
     }
-    if (refs.sessionNodeId && markTaskStreamSynchronized) {
+    if (sessionNodeId && markTaskStreamSynchronized) {
       markTaskStreamSynchronized();
     }
   }, [
-    refs,
+    completedTasksRef,
+    tasksMapRef,
+    errorRef,
+    isLoadingRef,
     resolveTaskSummary,
     bufferTaskUpdate,
     scheduleBufferedFlush,
+    sessionNodeId,
     setError,
     setIsLoading,
     markTaskStreamSynchronized,
   ]);
 
   const handleDelete = useCallback((taskId: string) => {
-    const existing = refs.tasksMapRef.current.get(taskId);
+    const existing = tasksMapRef.current.get(taskId);
     if (!existing) {
       emitRunningResidueLog('STALE_DROP', {
-        nodeId: refs.sessionNodeId,
+        nodeId: sessionNodeId,
         stage: null,
         taskId,
         sequence: null,
@@ -135,7 +167,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
       return;
     }
     emitRunningResidueLog('STATUS_TRANSITION', {
-      nodeId: refs.sessionNodeId,
+      nodeId: sessionNodeId,
       source: 'event',
       eventType: 'delete',
       taskId,
@@ -144,39 +176,56 @@ export const useShapeBuildTaskSyncEventHandlers = ({
       prevStatus: existing.status ?? null,
       nextStatus: 'deleted',
     });
-    const nextMap = new Map(refs.tasksMapRef.current);
+
+    const nextMap = new Map(tasksMapRef.current);
     nextMap.delete(taskId);
-    refs.tasksMapRef.current = nextMap;
-    const nextCompletedMap = new Map(refs.completedTasksRef.current);
+    tasksMapRef.current = nextMap;
+
+    const nextCompletedMap = new Map(completedTasksRef.current);
     nextCompletedMap.delete(taskId);
-    refs.completedTasksRef.current = nextCompletedMap;
-    const nextCommittedSequences = new Map(refs.committedSequenceRef.current);
+    completedTasksRef.current = nextCompletedMap;
+
+    const nextCommittedSequences = new Map(committedSequenceRef.current);
     nextCommittedSequences.delete(taskId);
-    refs.committedSequenceRef.current = nextCommittedSequences;
-    refs.bufferedUpdatesRef.current.delete(taskId);
-    refs.bufferedSequenceRef.current.delete(taskId);
-    if (refs.bufferedSnapshotRef.current) {
-      refs.bufferedSnapshotRef.current = refs.bufferedSnapshotRef.current.filter((task) => task.taskId !== taskId);
+    committedSequenceRef.current = nextCommittedSequences;
+
+    bufferedUpdatesRef.current.delete(taskId);
+    bufferedSequenceRef.current.delete(taskId);
+    if (bufferedSnapshotRef.current) {
+      bufferedSnapshotRef.current = bufferedSnapshotRef.current.filter((item) => item.taskId !== taskId);
     }
+
     if (isCompletedAtFullProgress(existing)) {
-      refs.completedTasksRef.current.delete(taskId);
+      completedTasksRef.current.delete(taskId);
     }
-    const current = refs.pendingTasksRef.current ?? refs.committedTasksRef.current;
-    const next = current.filter((task) => task.taskId !== taskId);
-    if (refs.isMountedRef.current) {
+
+    const current = pendingTasksRef.current ?? committedTasksRef.current;
+    const next = current.filter((item) => item.taskId !== taskId);
+    if (isMountedRef.current) {
       setTasks(next);
     }
-    if (refs.errorRef.current !== null) {
+    if (errorRef.current !== null) {
       setError(null);
     }
-    if (refs.isLoadingRef.current) {
+    if (isLoadingRef.current) {
       setIsLoading(false);
     }
     if (markTaskStreamSynchronized) {
       markTaskStreamSynchronized();
     }
   }, [
-    refs,
+    completedTasksRef,
+    errorRef,
+    bufferedSnapshotRef,
+    bufferedUpdatesRef,
+    bufferedSequenceRef,
+    committedSequenceRef,
+    isMountedRef,
+    isLoadingRef,
+    pendingTasksRef,
+    tasksMapRef,
+    committedTasksRef,
+    sessionNodeId,
     setTasks,
     setError,
     setIsLoading,

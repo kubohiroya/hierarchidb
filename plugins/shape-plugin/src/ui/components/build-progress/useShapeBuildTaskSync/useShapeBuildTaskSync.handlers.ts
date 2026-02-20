@@ -1,5 +1,6 @@
 import { useShapeBuildTaskSyncCore } from './useShapeBuildTaskSync.core.js';
 import { useShapeBuildTaskSyncEventHandlers } from './useShapeBuildTaskSync.handlers.events.js';
+import { useMemo } from 'react';
 import type { RawTaskSummary, SyncArgs } from './useShapeBuildTaskSync.types.js';
 import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 
@@ -89,10 +90,12 @@ export const useShapeBuildTaskSyncHandlers = ({
     markTaskStreamSynchronized,
   });
 
-  const withTypes = <T extends Record<string, unknown>>(value: T) => value;
+  const handleSnapshot = useMemo(() => {
+    return (snapshot: unknown) => events.handleSnapshot(snapshot as RawTaskSummary[]);
+  }, [events.handleSnapshot]);
 
-  return withTypes({
-    handleSnapshot: (snapshot: RawTaskSummary[]) => events.handleSnapshot(snapshot),
+  return useMemo(() => ({
+    handleSnapshot,
     handleUpdate: (task: RawTaskSummary) => events.handleUpdate(task),
     handleDelete: (taskId: string) => events.handleDelete(taskId),
     syncTasksRef: core.syncTasksRef,
@@ -101,5 +104,15 @@ export const useShapeBuildTaskSyncHandlers = ({
     resetPending: core.resetPending,
     scheduleFlush: core.scheduleFlush,
     resetDebugCounters: core.resetDebugCounters,
-  });
+  }), [
+    core.syncTasksRef,
+    core.syncLoadingRef,
+    core.syncErrorRef,
+    core.resetPending,
+    core.scheduleFlush,
+    core.resetDebugCounters,
+    events.handleDelete,
+    events.handleUpdate,
+    handleSnapshot,
+  ]);
 };

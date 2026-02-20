@@ -100,11 +100,14 @@ export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
     return;
   }
   taskUpdate100LogCount += 1;
-  const messageParts = [
-    `[TaskUpdate100] ${task.taskId}`,
-    `status=${task.status}`,
-    `stage=${task.stage}`,
-    `progress=${task.progress ?? 0}`,
-  ];
-  console.log(messageParts.join(' '));
+
+  const taskIdParts = task.taskId.split(':');
+  const countryIndex = taskIdParts.length >= 4 ? taskIdParts[2] : taskIdParts[1];
+  const indexValue = taskIdParts.length >= 4 ? taskIdParts[3] : taskIdParts[2];
+  const resolvedCountry = countryIndex || 'unknown';
+  const resolvedIndex = typeof indexValue === 'string' && indexValue.length > 0 ? indexValue : '0';
+  const message = task.message ?? task.status;
+  console.log(
+    `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${message}, ${task.status}`,
+  );
 };

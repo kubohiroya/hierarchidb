@@ -46,7 +46,7 @@ export function useShapeBuildTasks(
   const [error, setError] = useAtom(tasksErrorAtom);
   const [isTaskStreamReady, setIsTaskStreamReady] = useState(false);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
-  const handleSnapshotRef = useRef<(tasks: RawTaskSummary[]) => void>(() => {});
+  const handleSnapshotRef = useRef<(tasks: unknown) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
   const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
   const reconcileInFlightRef = useRef(false);
@@ -184,7 +184,7 @@ export function useShapeBuildTasks(
         if (cancelled || subscriptionIdRef.current !== subscriptionId) {
           return;
         }
-        handleSnapshotRef.current(latestTasks as RawTaskSummary[]);
+        handleSnapshotRef.current(latestTasks);
       } catch (err) {
         if (!cancelled && isDev) {
           console.debug('[ShapeBuildStep] task snapshot reconcile skipped', err);
@@ -247,7 +247,7 @@ export function useShapeBuildTasks(
     }
     try {
       const latestTasks = await bridgeRef.current.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
-      handleSnapshotRef.current(latestTasks as RawTaskSummary[]);
+      handleSnapshotRef.current(latestTasks);
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to refresh build tasks');
       setError(errObj);
