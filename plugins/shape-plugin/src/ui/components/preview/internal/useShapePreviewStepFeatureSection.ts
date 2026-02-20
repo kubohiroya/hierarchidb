@@ -222,7 +222,7 @@ export const useShapePreviewFeatureSection = ({
       let count = 0;
       let errorCount = 0;
       let repairCount = 0;
-      const messages: string[] = [];
+      const messages = new Set<string>();
       memberFeatureIds.forEach((memberId) => {
         const summary = baseErrorSummaryById.get(String(memberId));
         if (!summary) return;
@@ -231,16 +231,12 @@ export const useShapePreviewFeatureSection = ({
         const summaryRepairCount = summary.repairCount ?? 0;
         errorCount += summaryErrorCount;
         repairCount += summaryRepairCount;
-        summary.messages.forEach((message) => {
-          if (!messages.includes(message)) {
-            messages.push(message);
-          }
-        });
+        summary.messages.forEach((message) => messages.add(message));
       });
       if (count > 0) {
         aggregated.set(groupId, {
           count,
-          messages,
+          messages: Array.from(messages),
           errorCount,
           repairCount,
         });
