@@ -1,4 +1,4 @@
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 
 export type ShapeProgressStepDebugConfig = Partial<Record<'progress' | 'all', boolean>>;
 
@@ -31,7 +31,7 @@ export const emitShapeProgressStepTrace = (payload: ShapeProgressStepTracePayloa
 
 export type ShapeProgressStepTracePayload = {
   nodeId: string | null;
-  phase: BuildStatus;
+  phase: BuildStatusSource;
   progressTaskId: string | null;
   progressTaskStatus: string | null;
   progressTaskStage: string | null;

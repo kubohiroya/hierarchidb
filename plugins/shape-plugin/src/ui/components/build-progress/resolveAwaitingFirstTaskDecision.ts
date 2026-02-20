@@ -1,4 +1,4 @@
-import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
 
 type Notification = {
@@ -26,8 +26,8 @@ export type AwaitingFirstTaskDecision =
       | 'completed-without-generating-tasks'
       | 'completed-before-first-task-update'
       | 'completed-with-session-progress-evidence';
-    taskExecutionStarted?: TaskExecutionStarted;
-    notification?: Notification;
+    taskExecutionStarted: TaskExecutionStarted;
+    notification: Notification;
     transitionFinish?: TransitionFinish;
   }
   | {
@@ -41,11 +41,16 @@ export type AwaitingFirstTaskDecision =
     transitionFinish: TransitionFinish;
   };
 
+export type AwaitingFirstTaskSuccessDecision = Extract<
+  AwaitingFirstTaskDecision,
+  { kind: 'success' }
+>;
+
 export type AwaitingFirstTaskDecisionInput = {
   hasFirstTaskSignal: boolean;
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
-  buildStatus: BuildStatus;
+  buildStatus: BuildStatusSource;
   taskCount: number | undefined;
   isTaskStreamReady: boolean;
   expectTaskGeneration: boolean;
@@ -103,6 +108,14 @@ export const resolveAwaitingFirstTaskDecision = (
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',
+          taskExecutionStarted: {
+            queuedOnly: false,
+            hasProgressTaskSignal: input.hasProgressTaskSignal,
+          },
+          notification: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
           transitionFinish: {
             level: 'info',
             message: 'Build completed before task stream synchronization.',
@@ -116,6 +129,14 @@ export const resolveAwaitingFirstTaskDecision = (
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',
+          taskExecutionStarted: {
+            queuedOnly: false,
+            hasProgressTaskSignal: input.hasProgressTaskSignal,
+          },
+          notification: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
           transitionFinish: {
             level: 'info',
             message: 'Build completed before task stream synchronization.',
@@ -130,6 +151,14 @@ export const resolveAwaitingFirstTaskDecision = (
         return {
           kind: 'success',
           reason: 'completed-with-session-progress-evidence',
+          taskExecutionStarted: {
+            queuedOnly: false,
+            hasProgressTaskSignal: input.hasProgressTaskSignal,
+          },
+          notification: {
+            level: 'info',
+            message: 'Build completed before task stream synchronization.',
+          },
           transitionFinish: {
             level: 'info',
             message: 'Build completed before task stream synchronization.',
@@ -143,6 +172,16 @@ export const resolveAwaitingFirstTaskDecision = (
       reason: completedWithoutTasks
         ? 'completed-without-generating-tasks'
         : 'completed-before-first-task-update',
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: input.hasProgressTaskSignal,
+      },
+      notification: {
+        level: 'info',
+        message: completedWithoutTasks
+          ? 'Build completed without generating tasks.'
+          : 'Build completed before first task update.',
+      },
       transitionFinish: completedWithoutTasks
         ? {
           level: 'info',

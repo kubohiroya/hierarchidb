@@ -16,17 +16,17 @@ export default defineConfig({
     pool: useForkPool ? 'forks' : 'threads',
     poolOptions: useForkPool
       ? {
-        forks: {
-          singleFork: true,
-          execArgv: ['--max-old-space-size=8192'],
-        },
-      }
+          forks: {
+            singleFork: true,
+            execArgv: ['--max-old-space-size=8192'],
+          },
+        }
       : {
-        threads: {
-          minThreads: 1,
-          maxThreads: 1,
+          threads: {
+            minThreads: 1,
+            maxThreads: 1,
+          },
         },
-      },
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
@@ -54,6 +54,48 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      { find: '~/i18n/index', replacement: path.resolve(__dirname, '../../packages/ui/i18n/src/i18n/index.ts') },
+      {
+        find: '~/debug/persistentDebugLog',
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/debug/persistentDebugLog.ts'),
+      },
+      {
+        find: '~/utils/env',
+        replacement: path.resolve(__dirname, '../../packages/ui/i18n/src/utils/env.ts'),
+      },
+      {
+        find: '~/transform/topojsonGrid.js',
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/vt-orchestrator/src/transform/topojsonGrid.ts',
+        ),
+      },
+      {
+        find: '~/transform/topojsonRuntimeAdapter.js',
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/vt-orchestrator/src/transform/topojsonRuntimeAdapter.ts',
+        ),
+      },
+      {
+        find: /^~\/task\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/task/$1'),
+      },
+      { find: /^~\/contexts$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/contexts') },
+      { find: /^~\/types\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types/$1') },
+      { find: /^~\/types$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/types') },
+      { find: /^~\/tiles\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles/$1') },
+      { find: /^~\/tiles$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/tiles') },
+      { find: /^~\/transform\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform/$1') },
+      { find: /^~\/transform$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/transform') },
+      { find: /^~\/compareTaskOrder\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/compareTaskOrder/$1') },
+      { find: /^~\/compareTaskOrder$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/compareTaskOrder.ts') },
+      { find: /^~\/vt\/(.*)$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt/$1') },
+      { find: /^~\/vt$/, replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/vt') },
+      { find: /^~\/hooks\/useLRUPanes$/, replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/hooks/useLRUPanes.ts') },
+      { find: /^~\/types\/LRUSplitView$/, replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/types/LRUSplitView.ts') },
+      { find: /^~\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
+      { find: '~', replacement: path.resolve(__dirname, 'src') },
       // Map legacy core imports to public dist builds for tests
       {
         find: '@hierarchidb/core',
@@ -69,15 +111,19 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/ui-worker-client',
-        replacement: path.resolve(__dirname, '../../packages/ui/worker-client/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/worker-client/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-batch',
-        replacement: path.resolve(__dirname, '../../packages/ui/batch/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/batch/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-batch-progress',
-        replacement: path.resolve(__dirname, '../../packages/ui/batch/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/ui/batch/dist/index.js'),
+      },
+      {
+        find: '@hierarchidb/ui-worker-provider',
+        replacement: path.resolve(__dirname, '../../packages/ui/worker-provider/dist/index.js'),
       },
       {
         find: '@hierarchidb/runtime-worker',
@@ -119,7 +165,7 @@ export default defineConfig({
       },
       {
         find: '@hierarchidb/download',
-        replacement: path.resolve(__dirname, '../../packages/download/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/download/dist/index.js'),
       },
       {
         find: '@hierarchidb/shape-store',

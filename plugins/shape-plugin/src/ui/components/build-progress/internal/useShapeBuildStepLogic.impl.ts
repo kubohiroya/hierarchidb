@@ -435,7 +435,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const { buildSessionTransitionElapsedMs: startupLifecycleElapsedMs } = useShapeBuildSessionStartupLifecycle({
     activeNodeId,
     buildSessionTransition,
-    buildStatus,
+    buildStatus: effectiveStatusSource,
     resolveTaskType: effectiveProgress?.progressTaskStage ?? null,
     effectiveProgress,
     displayTasks,

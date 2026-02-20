@@ -1,4 +1,4 @@
-import { type BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { getMemorySnapshot } from '@hierarchidb/ui-monitoring';
 
 export type BuildSessionTransitionPhase =
@@ -31,7 +31,7 @@ export type StartupStepMemorySnapshot = {
 
 export type ShapeProgressStepTracePayload = {
   nodeId: string | null;
-  phase: BuildStatus;
+  phase: BuildStatusSource;
   progressTaskId: string | null;
   progressTaskStatus: string | null;
   progressTaskStage: string | null;

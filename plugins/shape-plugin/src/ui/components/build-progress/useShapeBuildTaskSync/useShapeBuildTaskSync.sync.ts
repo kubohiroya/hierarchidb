@@ -282,12 +282,12 @@ export const useShapeBuildTaskSyncScheduling = ({
     scheduleBufferedFlush,
     scheduleFlush,
     syncTasksRef,
-    syncLoadingRef: (loading: boolean) => {
+    syncLoadingRef: useCallback((loading: boolean) => {
       isLoadingRef.current = loading;
-    },
-    syncErrorRef: (error: Error | null) => {
+    }, [isLoadingRef]),
+    syncErrorRef: useCallback((error: Error | null) => {
       errorRef.current = error;
-    },
+    }, [errorRef]),
     resetPending,
   };
 };

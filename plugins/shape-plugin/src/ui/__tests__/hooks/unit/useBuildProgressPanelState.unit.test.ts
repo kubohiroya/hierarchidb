@@ -3,7 +3,7 @@ import {
   resolveCompletionFailedStageLabel,
   resolveActiveRunningStageId,
   shouldUpdateElapsedSnapshot,
-} from '~/ui/components/build-progress/useBuildProgressPanelState.utils';
+} from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils';
 
 describe('shouldUpdateElapsedSnapshot', () => {
   it('returns true when there is no snapshot yet', () => {
