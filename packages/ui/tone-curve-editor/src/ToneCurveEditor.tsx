@@ -82,11 +82,12 @@ const clampInOrder = (value: number, min: number, max: number): number => {
 };
 
 const snapValue = (value: number, step: number | undefined): number => {
-  if (!Number.isFinite(step) || step === 0) {
+  const resolvedStep = step ?? 0;
+  if (!Number.isFinite(resolvedStep) || resolvedStep === 0) {
     return value;
   }
 
-  return Math.round(value / step) * step;
+  return Math.round(value / resolvedStep) * resolvedStep;
 };
 
 const normalizeAxisMarks = (
@@ -376,6 +377,28 @@ export function ToneCurveEditor({
     [sortedPoints, xToScreen, yToScreen],
   );
 
+  const fixedXForCount = React.useCallback(
+    (count: number): Array<number | undefined> => {
+      const next = new Array<number | undefined>(count).fill(undefined);
+      for (let i = 0; i < count; i += 1) {
+        next[i] = i < fixedHorizontalValues.length ? fixedHorizontalValues[i] : undefined;
+      }
+      return next;
+    },
+    [fixedHorizontalValues],
+  );
+
+  const fixedYForCount = React.useCallback(
+    (count: number): Array<number | undefined> => {
+      const next = new Array<number | undefined>(count).fill(undefined);
+      for (let i = 0; i < count; i += 1) {
+        next[i] = i < fixedVerticalValues.length ? fixedVerticalValues[i] : undefined;
+      }
+      return next;
+    },
+    [fixedVerticalValues],
+  );
+
   const getAnchorCursor = React.useCallback(
     (index: number, count: number): string => {
       const fixedX = fixedXForCount(count)[index];
@@ -410,36 +433,23 @@ export function ToneCurveEditor({
     [fixedXForCount, fixedYForCount],
   );
 
-  const fixedXForCount = React.useCallback(
-    (count: number): Array<number | undefined> => {
-      const next = new Array<number | undefined>(count).fill(undefined);
-      for (let i = 0; i < count; i += 1) {
-        next[i] = i < fixedHorizontalValues.length ? fixedHorizontalValues[i] : undefined;
-      }
-      return next;
-    },
-    [fixedHorizontalValues],
-  );
-
-  const fixedYForCount = React.useCallback(
-    (count: number): Array<number | undefined> => {
-      const next = new Array<number | undefined>(count).fill(undefined);
-      for (let i = 0; i < count; i += 1) {
-        next[i] = i < fixedVerticalValues.length ? fixedVerticalValues[i] : undefined;
-      }
-      return next;
-    },
-    [fixedVerticalValues],
-  );
-
   const addAnchor = React.useCallback(() => {
     setAnchors((current) => {
       const list = [...current].sort((a, b) => a.x - b.x);
+      if (list.length < 2) {
+        return current;
+      }
+
       let insertIndex = 0;
       let maxGap = -Infinity;
 
       for (let i = 0; i < list.length - 1; i += 1) {
-        const gap = list[i + 1].x - list[i].x;
+        const left = list[i];
+        const right = list[i + 1];
+        if (!left || !right) {
+          continue;
+        }
+        const gap = right.x - left.x;
         if (gap > maxGap) {
           maxGap = gap;
           insertIndex = i;
@@ -447,7 +457,11 @@ export function ToneCurveEditor({
       }
 
       const left = list[insertIndex];
-      const right = list[insertIndex + 1] ?? list[list.length - 1];
+      const right = list[insertIndex + 1];
+      if (!left || !right) {
+        return current;
+      }
+
       const nextX = (left.x + right.x) / 2;
       const nextY = (left.y + right.y) / 2;
       const next = [...list];
