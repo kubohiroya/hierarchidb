@@ -1,0 +1,308 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { BuildProgress, BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation.js';
+import {
+  hasPositiveElapsed,
+  mergeElapsedByStage,
+  shallowEqualNumberRecord,
+  shouldResetElapsedState,
+  sumNumberRecord,
+} from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed.js';
+import {
+  normalizeStageKey,
+  resolveMostAdvancedInFlightStageId,
+  resolveMostAdvancedRunningStageId,
+} from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
+
+type SessionRecordLike = {
+  elapsedByStage?: Record<string, number> | null;
+  elapsedMs?: number | null;
+  stageId?: string | null;
+};
+
+type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>>;
+
+type Args = {
+  buildStatus: BuildStatus;
+  stages: BuildStage[];
+  resolvedTaskType: string | undefined;
+  liveTaskType: string | undefined;
+  timingFallbackTaskType: string | null;
+  displayTasks: ShapeBuildTaskSummary[];
+  overallProgress: number;
+  effectiveProgress: BuildProgress | null;
+  effectiveStatus: BuildProgressStatus | null;
+  taskTypeFromState: string | null;
+  sessionRecord: SessionRecordLike | null | undefined;
+  activeNodeId: string | null;
+  updateSessionRecord: (patch: {
+    elapsedByStage: Record<string, number>;
+    elapsedMs: number;
+    stageId?: string;
+  }) => void | Promise<void>;
+};
+
+export const useShapeBuildStepProgressState = ({
+  buildStatus,
+  stages,
+  resolvedTaskType,
+  liveTaskType,
+  timingFallbackTaskType,
+  displayTasks,
+  overallProgress,
+  effectiveProgress,
+  effectiveStatus,
+  taskTypeFromState,
+  sessionRecord,
+  activeNodeId,
+  updateSessionRecord,
+}: Args) => {
+  const persistedStageElapsedByStage = useMemo<Record<string, number>>(
+    () => (sessionRecord?.elapsedByStage ?? {}),
+    [sessionRecord?.elapsedByStage],
+  );
+  const persistedStageElapsedStageId = useMemo(() => (
+    typeof sessionRecord?.stageId === 'string' ? sessionRecord.stageId : null
+  ), [sessionRecord?.stageId]);
+
+  const [completedStageElapsedMs, setCompletedStageElapsedMs] = useState<Record<string, number>>(
+    () => persistedStageElapsedByStage,
+  );
+  const [timingStageId, setTimingStageId] = useState<string | null>(persistedStageElapsedStageId);
+  const [displayStageRemainingMs, setDisplayStageRemainingMs] = useState<number | null>(null);
+  const stageRemainingTickRef = useRef<number | null>(null);
+  const latestStageRemainingMsRef = useRef<number | null>(null);
+  const lastPersistedStageMapRef = useRef<Record<string, number> | null>(null);
+  const lastPersistedStageIdRef = useRef<string | null>(null);
+  const isTaskSummaryLoading = false;
+
+  const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
+    stages,
+    tasks: displayTasks,
+  }), [displayTasks, stages]);
+  const inFlightStageIdFromTasks = useMemo(() => resolveMostAdvancedInFlightStageId({
+    stages,
+    tasks: displayTasks,
+  }), [displayTasks, stages]);
+
+  const isElapsedResetState = useMemo(
+    () => shouldResetElapsedState({
+      buildStatus,
+      buildElapsedMs: sessionRecord?.elapsedMs ?? undefined,
+      stageElapsedByStage: persistedStageElapsedByStage,
+      localElapsedByStage: completedStageElapsedMs,
+    }),
+    [
+      buildStatus,
+      completedStageElapsedMs,
+      sessionRecord?.elapsedMs,
+      persistedStageElapsedByStage,
+    ],
+  );
+
+  useEffect(() => {
+    if (buildStatus === 'idle' || isElapsedResetState) {
+      if (timingStageId !== null) {
+        setTimingStageId(null);
+      }
+      return;
+    }
+
+    const fallbackStageId = buildStatus === 'running' ? timingFallbackTaskType : null;
+    const nextStageId = runningStageIdFromTasks
+      ?? inFlightStageIdFromTasks
+      ?? liveTaskType
+      ?? timingStageId
+      ?? persistedStageElapsedStageId
+      ?? fallbackStageId
+      ?? null;
+    if (nextStageId && nextStageId !== timingStageId) {
+      setTimingStageId(nextStageId);
+    }
+  }, [
+    buildStatus,
+    isElapsedResetState,
+    inFlightStageIdFromTasks,
+    liveTaskType,
+    persistedStageElapsedStageId,
+    runningStageIdFromTasks,
+    timingFallbackTaskType,
+    timingStageId,
+  ]);
+
+  const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
+  const totalElapsedMs = useMemo(() => sumNumberRecord(completedStageElapsedMs), [completedStageElapsedMs]);
+
+  useEffect(() => {
+    if (isElapsedResetState) {
+      if (!shallowEqualNumberRecord(completedStageElapsedMs, {})) {
+        setCompletedStageElapsedMs({});
+      }
+      return;
+    }
+    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
+    if (shallowEqualNumberRecord(completedStageElapsedMs, merged)) return;
+    setCompletedStageElapsedMs(merged);
+  }, [completedStageElapsedMs, isElapsedResetState, persistedStageElapsedByStage]);
+
+  useEffect(() => {
+    if (!isElapsedResetState) return;
+    setDisplayStageRemainingMs(null);
+    stageRemainingTickRef.current = null;
+    latestStageRemainingMsRef.current = null;
+    lastPersistedStageMapRef.current = null;
+    lastPersistedStageIdRef.current = null;
+    if (timingStageId !== null) {
+      setTimingStageId(null);
+    }
+  }, [isElapsedResetState, timingStageId]);
+
+  const isTimingStageRunning = useMemo(() => {
+    if (!timingStageId) return false;
+    return displayTasks.some((task) => (
+      normalizeStageKey(task) === timingStageId
+      && task.status === 'running'
+    ));
+  }, [displayTasks, timingStageId]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') return;
+    if (!timingStageId) return;
+    if (!isTimingStageRunning) return;
+    const intervalId = window.setInterval(() => {
+      setCompletedStageElapsedMs((current) => ({
+        ...current,
+        [timingStageId]: (current[timingStageId] ?? 0) + 1000,
+      }));
+    }, 1000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [buildStatus, isTimingStageRunning, timingStageId]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') return;
+    if (hasPositiveElapsed(persistedStageElapsedByStage)) return;
+    if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) return;
+    setCompletedStageElapsedMs((current) => (
+      shallowEqualNumberRecord(current, {}) ? current : {}
+    ));
+  }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
+
+  const hasFailedFetchTasks = useMemo(() => (
+    displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
+  ), [displayTasks]);
+
+  const progressSummary: SummaryResult = useShapeBuildProgressSummaryComputation({
+    stages,
+    resolvedTaskType: timingStageId ?? resolvedTaskType,
+    overallProgress,
+    buildStatus,
+    effectiveProgress,
+    effectiveStatus,
+    taskType: taskTypeFromState ?? undefined,
+    tasks: displayTasks,
+    normalizeStageKey,
+    isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, task.message),
+    timingStageMs: stageElapsedMs,
+  });
+
+  useEffect(() => {
+    latestStageRemainingMsRef.current = progressSummary.stageRemainingMs;
+    if (buildStatus !== 'running') {
+      setDisplayStageRemainingMs(progressSummary.stageRemainingMs);
+    }
+  }, [buildStatus, progressSummary.stageRemainingMs]);
+
+  useEffect(() => {
+    if (stageRemainingTickRef.current !== null) {
+      window.clearInterval(stageRemainingTickRef.current);
+      stageRemainingTickRef.current = null;
+    }
+    if (buildStatus !== 'running') {
+      return;
+    }
+
+    setDisplayStageRemainingMs((prev) => {
+      const next = latestStageRemainingMsRef.current;
+      return prev === next ? prev : next;
+    });
+    stageRemainingTickRef.current = window.setInterval(() => {
+      setDisplayStageRemainingMs((prev) => {
+        const next = latestStageRemainingMsRef.current;
+        return prev === next ? prev : next;
+      });
+    }, 1000);
+
+    return () => {
+      if (stageRemainingTickRef.current !== null) {
+        window.clearInterval(stageRemainingTickRef.current);
+        stageRemainingTickRef.current = null;
+      }
+    };
+  }, [buildStatus]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (isElapsedResetState) {
+      lastPersistedStageMapRef.current = null;
+      lastPersistedStageIdRef.current = null;
+      return;
+    }
+
+    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
+    if (!shallowEqualNumberRecord(completedStageElapsedMs, merged)) {
+      setCompletedStageElapsedMs(merged);
+      return;
+    }
+
+    const stageId = timingStageId ?? null;
+    const mapUnchanged = shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage);
+    const stageUnchanged = lastPersistedStageIdRef.current === stageId;
+    if (mapUnchanged && stageUnchanged) return;
+    if (
+      lastPersistedStageMapRef.current
+      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, completedStageElapsedMs)
+      && stageUnchanged
+    ) {
+      return;
+    }
+
+    lastPersistedStageMapRef.current = completedStageElapsedMs;
+    lastPersistedStageIdRef.current = stageId;
+
+    void updateSessionRecord({
+      elapsedByStage: completedStageElapsedMs,
+      elapsedMs: totalElapsedMs,
+      stageId: stageId ?? undefined,
+    });
+  }, [
+    activeNodeId,
+    completedStageElapsedMs,
+    isElapsedResetState,
+    persistedStageElapsedByStage,
+    timingStageId,
+    totalElapsedMs,
+    updateSessionRecord,
+  ]);
+
+  return {
+    persistedStageElapsedByStage,
+    persistedStageElapsedStageId,
+    completedStageElapsedMs,
+    timingStageId,
+    stageElapsedMs,
+    totalElapsedMs,
+    displayStageRemainingMs,
+    progressSummary,
+    hasFailedFetchTasks,
+    isTaskSummaryLoading,
+    runningStageIdFromTasks,
+    inFlightStageIdFromTasks,
+  };
+};
+
