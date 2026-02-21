@@ -1,9 +1,8 @@
 import { toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
 import {
-  resolveSplitViewAutoCloseCounts,
-  resolveSplitViewInitialSizes,
-  SPLITVIEW_BREAKPOINTS,
+  type BuildSessionProgressPanelViewModel,
+  resolveBuildSessionProgressPanelSplitViewProps,
 } from '@hierarchidb/ui-build-progress';
 import { Box } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
@@ -15,9 +14,6 @@ type UseShapeBuildProgressPanelViewModelArgs = {
   nodeId?: ShapeEntity['id'];
 };
 
-type StageSplitSizesByBreakpoint = number[];
-type StageSplitAutoCloseCounts = [number, number, number, number];
-
 type ShapeBuildProgressPanelControllerResult = ReturnType<typeof useShapeBuildProgressPanelController>;
 
 type ShapeBuildProgressPanelViewModel = {
@@ -27,14 +23,6 @@ type ShapeBuildProgressPanelViewModel = {
   stageProgress: ShapeBuildProgressPanelControllerResult['stageProgressForDisplay'];
   paneProgress: ShapeBuildProgressPanelControllerResult['paneProgressForDisplay'];
   stageLoadingState: ShapeBuildProgressPanelControllerResult['stageLoadingState'];
-  splitViewBreakpoints: number[];
-  splitViewInitialSizesByBreakpoint: [
-    StageSplitSizesByBreakpoint,
-    StageSplitSizesByBreakpoint,
-    StageSplitSizesByBreakpoint,
-    StageSplitSizesByBreakpoint,
-  ];
-  splitViewAutoCloseCountsByBreakpoint: StageSplitAutoCloseCounts;
   stageContents: ShapeBuildProgressPanelControllerResult['stageContents'];
   stageProgressContent: ShapeBuildProgressPanelControllerResult['stageProgressContent'];
   stageConcurrencyIndicators: ShapeBuildProgressPanelControllerResult['stageConcurrencyIndicators'];
@@ -63,7 +51,7 @@ type ShapeBuildProgressPanelViewModel = {
   suspendDialog: ShapeBuildProgressPanelControllerResult['suspendDialog'];
   crashDialog: ShapeBuildProgressPanelControllerResult['crashDialog'];
   footer: ShapeBuildProgressPanelControllerResult['footer'];
-};
+} & BuildSessionProgressPanelViewModel;
 
 export const useShapeBuildProgressPanelViewModel = ({
   coreState,
@@ -103,9 +91,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageProgress: stageProgressForDisplay,
     paneProgress: paneProgressForDisplay,
     stageLoadingState,
-    splitViewBreakpoints: SPLITVIEW_BREAKPOINTS,
-    splitViewInitialSizesByBreakpoint: resolveSplitViewInitialSizes(stages.length, 250),
-    splitViewAutoCloseCountsByBreakpoint: resolveSplitViewAutoCloseCounts(stages.length),
+    ...resolveBuildSessionProgressPanelSplitViewProps({ stagesLength: stages.length, splitViewPanelSize: 250 }),
     stageContents,
     stageProgressContent,
     stageConcurrencyIndicators,

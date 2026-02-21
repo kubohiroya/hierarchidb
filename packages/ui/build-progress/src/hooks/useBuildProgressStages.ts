@@ -1,6 +1,7 @@
 import { createElement, useMemo, type ReactNode } from 'react';
 import { CloudDownload, Layers, Tune } from '@mui/icons-material';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildSessionProgressPanelProps } from '@hierarchidb/components';
 
 type BuildStageId = 'fetch' | 'transform' | 'vt';
 
@@ -21,6 +22,11 @@ export type ResolveBuildStagesOptions = {
 type SplitViewInitialSizes = [number[], number[], number[], number[]];
 
 const DEFAULT_STAGE_ORDER: BuildStageId[] = ['fetch', 'transform', 'vt'];
+
+export type BuildSessionProgressPanelSplitViewLayoutProps = Pick<
+  BuildSessionProgressPanelProps,
+  'splitViewBreakpoints' | 'splitViewInitialSizesByBreakpoint' | 'splitViewAutoCloseCountsByBreakpoint'
+>;
 
 export const resolveBuildStages = ({
   t,
@@ -104,3 +110,19 @@ export const resolveSplitViewInitialSizes = (stageCount: number, panelSize = 300
 };
 
 export const SPLITVIEW_BREAKPOINTS: number[] = [600, 900, 1200];
+
+export type BuildSessionProgressPanelViewModel = Omit<
+  BuildSessionProgressPanelProps,
+  'splitViewBreakpoints' | 'splitViewInitialSizesByBreakpoint' | 'splitViewAutoCloseCountsByBreakpoint'
+>;
+
+export const resolveBuildSessionProgressPanelSplitViewProps = (
+  params: {
+    stagesLength: number;
+    splitViewPanelSize?: number;
+  },
+): BuildSessionProgressPanelSplitViewLayoutProps => ({
+  splitViewBreakpoints: SPLITVIEW_BREAKPOINTS,
+  splitViewInitialSizesByBreakpoint: resolveSplitViewInitialSizes(params.stagesLength, params.splitViewPanelSize),
+  splitViewAutoCloseCountsByBreakpoint: resolveSplitViewAutoCloseCounts(params.stagesLength),
+});
