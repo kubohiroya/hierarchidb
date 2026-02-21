@@ -1,5 +1,8 @@
 import type { Feature, FeatureCollection } from 'geojson';
 
+const MAX_BISECTION_STEPS = 8;
+const BISECTION_STEP_DECAY_FACTOR = 2;
+
 export type RetrySimplifyFeatureResult = {
   feature: Feature;
   vertexCount: number;
@@ -143,7 +146,7 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
   }
 
   if (bestFeature && successTolerance !== null && successIndex !== null) {
-    const bisectionSteps = Math.max(0, 8 - Math.ceil(successIndex / 2));
+    const bisectionSteps = Math.max(0, MAX_BISECTION_STEPS - Math.ceil(successIndex / BISECTION_STEP_DECAY_FACTOR));
     const bisectionAttemptTotal = maxRetrySteps + bisectionSteps;
     let low = lastFailTolerance;
     let high = successTolerance;
