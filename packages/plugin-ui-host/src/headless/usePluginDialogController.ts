@@ -30,7 +30,6 @@ import type {
 } from '@hierarchidb/ui-dialog';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
@@ -51,6 +50,15 @@ import { createPluginDialogContentComponent } from './PluginDialogControllerElem
 import { toRecord } from './controller/step-guards.js';
 import { useAutosave } from './usePluginDialogController/autosave.js';
 import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
+import {
+  buildDraftSignature,
+  formatTimestamp,
+  isSyncDebugActive,
+  logSync,
+  reuseNumberArray,
+  useAutosavePreference,
+  WINDOW_STATE_PERSIST_DEBOUNCE_MS,
+} from './usePluginDialogController/helpers.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useConflictGuard } from './usePluginDialogController/conflict-guard.js';
 import type {
@@ -63,28 +71,6 @@ import { useDialogFrameState } from './usePluginDialogController/frame-state.js'
 import { usePendingAction } from './usePluginDialogController/pending-action.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepNavigation } from './usePluginDialogController/step-navigation.js';
-
-const SYNC_DEBUG_STORAGE_KEY = 'hdb:dialog-sync-debug';
-const WINDOW_STATE_PERSIST_DEBOUNCE_MS = 250;
-
-function isSyncDebugActive(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(SYNC_DEBUG_STORAGE_KEY) === '1';
-}
-
-function buildDraftSignature(value: unknown): string | null {
-  if (value == null) return null;
-  try {
-    return JSON.stringify(value);
-  } catch (error) {
-    return `[unserializable:${String(error)}]`;
-  }
-}
-
-function logSync(label: string, payload: { draftData?: string | null; dialogUIState?: string | null }): void {
-  if (!isSyncDebugActive()) return;
-  console.debug(`[PluginDialogSync] ${label}`, payload);
-}
 
 type WorkerApi = WorkerAPI<TreeNodeData>;
 
@@ -145,13 +131,6 @@ export interface PluginDialogControllerState {
 
 const PlaceholderStep: React.FC = () => null;
 
-const formatTimestamp = (timestamp?: number): string => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  const pad = (v: number) => `${v}`.padStart(2, '0');
-  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
 /*
 // Lightweight deep-ish equality to reuse stepData references when unchanged.
 const shallowEqualValue = (a: unknown, b: unknown): boolean => {
@@ -191,51 +170,6 @@ const shallowEqualValue = (a: unknown, b: unknown): boolean => {
   return true;
 };
 */
-
-const reuseNumberArray = (
-  prevRef: React.MutableRefObject<ReadonlyArray<number>>,
-  next: ReadonlyArray<number>
-) => {
-  const prev = prevRef.current;
-  if (prev === next) return prev;
-  if (prev.length === next.length && prev.every((v, i) => v === next[i])) {
-    return prev;
-  }
-  prevRef.current = next;
-  return next;
-};
-
-const readStoredAutosave = (): boolean => {
-  const stored = loadTreeConsoleSettings().autosaveEnabled;
-  return typeof stored === 'boolean' ? stored : true;
-};
-
-const useAutosavePreference = (explicit?: boolean): boolean => {
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    if (typeof explicit === 'boolean') return explicit;
-    return readStoredAutosave();
-  });
-
-  useEffect(() => {
-    if (typeof explicit === 'boolean') {
-      setEnabled(explicit);
-      return undefined;
-    }
-    setEnabled(readStoredAutosave());
-    const global = typeof window !== 'undefined' ? window : null;
-    if (!global) return undefined;
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
-      setEnabled(readStoredAutosave());
-    };
-    global.addEventListener('storage', handleStorage);
-    return () => {
-      global.removeEventListener('storage', handleStorage);
-    };
-  }, [explicit]);
-
-  return enabled;
-};
 
 export function usePluginDialogController(
   options: PluginDialogControllerOptions
@@ -442,27 +376,36 @@ export function usePluginDialogController(
   const handleDraftMetadataChange = useCallback(
     (patch: Partial<TreeNodeMetadata>) => {
       if (!treeUpdater) return;
-      const currentBuildMetadata = treeUpdater.draftMetadata?.buildMetadata;
-      const nextBuildMetadata = patch.buildMetadata
+      const currentMetadata = treeUpdater.draftMetadata as
+        | (TreeNodeMetadata & { buildMetadata?: Record<string, unknown> })
+        | null
+        | undefined;
+      const draftMetadataPatch = patch as
+        | (TreeNodeMetadata & { buildMetadata?: Record<string, unknown> })
+        | undefined;
+      const currentBuildMetadata = currentMetadata?.buildMetadata;
+      const nextBuildMetadata = draftMetadataPatch?.buildMetadata
         ? {
             ...(currentBuildMetadata ?? {}),
-            ...patch.buildMetadata,
+            ...draftMetadataPatch.buildMetadata,
           }
         : currentBuildMetadata;
       const nextDraftMetadata: TreeNodeMetadata = {
         ...(treeUpdater.draftMetadata ?? {}),
-        ...patch,
-        ...(patch.buildMetadata || nextBuildMetadata ? { buildMetadata: nextBuildMetadata } : {}),
+        ...(patch as Partial<TreeNodeMetadata>),
+        ...(draftMetadataPatch?.buildMetadata || nextBuildMetadata
+          ? { buildMetadata: nextBuildMetadata }
+          : {}),
         name:
-          patch.name ??
+          draftMetadataPatch?.name ??
           treeUpdater.draftMetadata?.name ??
           '',
         description:
-          patch.description ??
+          draftMetadataPatch?.description ??
           treeUpdater.draftMetadata?.description ??
           '',
         tags:
-          patch.tags ??
+          draftMetadataPatch?.tags ??
           treeUpdater.draftMetadata?.tags ??
           [],
       };

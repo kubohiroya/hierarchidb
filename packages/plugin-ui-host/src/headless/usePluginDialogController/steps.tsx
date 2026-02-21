@@ -37,6 +37,7 @@ type StepContextSnapshot = {
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   updateUiState: (next: DialogUiState) => void;
   handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
+  onDraftMetadataChange?: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -187,6 +188,7 @@ interface Params {
   draftData: Partial<PluginDefinedEntity>;
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
+  onDraftMetadataChange?: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
   basicInfoLabel: string;
   onTagClick?: (tag: string) => void;
@@ -206,6 +208,7 @@ export function useDialogSteps({
   draftData,
   setDraftData,
   handleBasicInfoBridge,
+  onDraftMetadataChange,
   dialogRef,
   basicInfoLabel,
   onTagClick,
@@ -234,11 +237,12 @@ export function useDialogSteps({
     parentId: pageNodeId,
     basicInfo,
     uiState,
-    draftData,
-    setDraftData,
-    updateUiState: setUiState,
-    handleBasicInfoBridge,
-    dialogRef,
+  draftData,
+  setDraftData,
+  updateUiState: setUiState,
+  handleBasicInfoBridge,
+    onDraftMetadataChange,
+  dialogRef,
   });
 
   stepContextRef.current = {
@@ -251,6 +255,7 @@ export function useDialogSteps({
     setDraftData,
     updateUiState: setUiState,
     handleBasicInfoBridge,
+    onDraftMetadataChange,
     dialogRef,
   };
 
@@ -410,7 +415,11 @@ export function useDialogSteps({
           updateUiState={ctx.updateUiState}
           onDataChange={
             cfg.id === 'basic-info'
-              ? (data) => ctx.handleBasicInfoBridge(data as TreeNodeMetadata)
+              ? (data) => {
+                  const metadata = data as TreeNodeMetadata;
+                  ctx.handleBasicInfoBridge(metadata);
+                  ctx.onDraftMetadataChange?.(metadata);
+                }
               : undefined
           }
           dialogRef={ctx.dialogRef}
