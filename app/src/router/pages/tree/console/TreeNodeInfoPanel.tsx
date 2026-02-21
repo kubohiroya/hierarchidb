@@ -5,7 +5,7 @@ import {
   isFolderNodeType,
   NodeContextMenu,
   NodeTypeIcon,
-} from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
 import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-input';
 import {
@@ -33,7 +33,7 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo, type MouseEvent } from 'react';
 import { BuildSessionSpinnerButton } from '~/components/BuildSessionSpinnerButton';
-import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
+import { useTreeNodeInfoPanel } from './hooks/useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -67,6 +67,7 @@ export function TreeNodeInfoPanel({
     canMutate,
     isDraft,
     isBuildable,
+    folderBuildReady,
     buildTargetLoading,
     canPreview,
     previewGuardLoading,
@@ -124,6 +125,7 @@ export function TreeNodeInfoPanel({
     currentNode?.depth === 0 ||
     (currentNode?.id && parentNodeId === currentNode.id);
   const showCloseButton = Boolean(treeId && parentNodeId && !isRootNode);
+  const isFolderNode = isFolderNodeType(menuNode?.nodeType);
   const handleNavigateToParent = useCallback(() => {
     if (!treeId || !parentNodeId || isRootNode) return;
     navigate({ to: `/t/${treeId}/${parentNodeId}` });
@@ -348,9 +350,11 @@ export function TreeNodeInfoPanel({
         canCut={canMutate}
         canImport={canCreate}
         canExport={canCreate}
+        folderBuildReady={isFolderNode ? folderBuildReady : undefined}
+        buildRequired={isBuildable && !isFolderNode}
         canArchive={canMutate && !isBuildRunning}
         canRemove={canMutate && !isBuildRunning}
-        canBuild={isBuildable && !isStylerMenuNode}
+        canBuild={isStylerMenuNode ? false : undefined}
         canPreview={canPreview && !previewGuardLoading}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}

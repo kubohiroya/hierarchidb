@@ -16,13 +16,17 @@ import { useWorker } from '~/contexts/WorkerProvider';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
-import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
+import {
+  collectBuildUrlsForFolder,
+  resolveBuildTargetForNode,
+  startBuildFlow,
+} from '../buildFlow.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
-type BuildStepTarget = import('./buildFlow.ts').BuildStepTarget;
+type BuildStepTarget = import('../buildFlow.ts').BuildStepTarget;
 
 export interface UseTreeNodeInfoPanelParams {
   treeId?: TreeId;
@@ -48,6 +52,7 @@ export function useTreeNodeInfoPanel({
   );
   const [currentNode, setCurrentNode] = useState<TreeNode | undefined>(node);
   const [buildTarget, setBuildTarget] = useState<BuildStepTarget | null>(null);
+  const [folderBuildReady, setFolderBuildReady] = useState(false);
   const [buildTargetLoading, setBuildTargetLoading] = useState(false);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
@@ -61,6 +66,10 @@ export function useTreeNodeInfoPanel({
   const [pendingArchiveNode, setPendingArchiveNode] = useState<HierarchicalTreeNode | null>(null);
   const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
   const [openStepsLoading, setOpenStepsLoading] = useState(false);
+  const returnTo = useMemo(() => {
+    const search = location.searchStr ?? '';
+    return `${location.pathname}${search}`;
+  }, [location.pathname, location.searchStr]);
 
   useEffect(() => {
     setMenuAnchorEl(null);
@@ -123,12 +132,42 @@ export function useTreeNodeInfoPanel({
       const nodeType = String(candidate?.nodeType ?? '');
       if (!candidate?.id || !nodeType) {
         setBuildTarget(null);
+        setFolderBuildReady(false);
         setBuildTargetLoading(false);
         return;
       }
       if (isFolderNodeType(nodeType)) {
         setBuildTarget(null);
-        setBuildTargetLoading(false);
+        if (!treeId) {
+          setFolderBuildReady(false);
+          setBuildTargetLoading(false);
+          return;
+        }
+        if (!workerClient) {
+          setFolderBuildReady(false);
+          setBuildTargetLoading(false);
+          return;
+        }
+        setBuildTargetLoading(true);
+        try {
+          const { urls } = await collectBuildUrlsForFolder({
+            treeId,
+            pageNodeId: candidate.id as NodeId,
+            folderNode: candidate,
+            returnTo,
+            workerClient,
+          });
+          if (!cancelled) {
+            setFolderBuildReady(urls.length > 0);
+            setBuildTargetLoading(false);
+          }
+        } catch (error) {
+          console.warn('[TreeNodeInfoPanel] failed to resolve folder build targets', error);
+          if (!cancelled) {
+            setFolderBuildReady(false);
+            setBuildTargetLoading(false);
+          }
+        }
         return;
       }
       setBuildTargetLoading(true);
@@ -137,6 +176,7 @@ export function useTreeNodeInfoPanel({
         workerClient,
       });
       if (!cancelled) {
+        setFolderBuildReady(false);
         setBuildTarget(target);
         setBuildTargetLoading(false);
       }
@@ -145,7 +185,7 @@ export function useTreeNodeInfoPanel({
     return () => {
       cancelled = true;
     };
-  }, [currentNode, node, workerClient]);
+  }, [currentNode, node, workerClient, treeId, returnTo]);
 
   useEffect(() => {
     setMenuNode(nodeData ?? null);
@@ -281,11 +321,6 @@ export function useTreeNodeInfoPanel({
     [nodeData, onContextMenuAction, currentNode]
   );
 
-  const returnTo = useMemo(() => {
-    const search = location.searchStr ?? '';
-    return `${location.pathname}${search}`;
-  }, [location.pathname, location.searchStr]);
-
   const handleBuild = useCallback(async () => {
     if (!treeId) return;
     const candidate = currentNode ?? node;
@@ -385,8 +420,10 @@ export function useTreeNodeInfoPanel({
     ),
   };
 
-  const isBuildable =
-    Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel)) || Boolean(buildTarget?.stepNumber);
+  const isFolderNode = Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel));
+  const isBuildRequired = Boolean(currentNode?.draftMetadata?.buildMetadata?.buildRequired)
+    || Boolean(currentNode?.metadata?.buildMetadata?.buildRequired);
+  const isBuildableByMetadata = isFolderNode ? folderBuildReady : (Boolean(buildTarget?.stepNumber) && isBuildRequired);
   const canPreview = previewGuardState?.canOpen ?? true;
 
   return {
@@ -405,7 +442,8 @@ export function useTreeNodeInfoPanel({
     nodeIconColor,
     canMutate,
     isDraft,
-    isBuildable,
+    isBuildable: isBuildableByMetadata,
+    folderBuildReady,
     buildTargetLoading,
     canPreview,
     previewGuardLoading,

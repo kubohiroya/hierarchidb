@@ -5,7 +5,7 @@ import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import { useCallback } from 'react';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
-import { logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
+import { logIntegrationWarning } from '../treeConsoleIntegrationUtils.js';
 
 type IntegrationActions = {
   handleEdit?: (() => void) | null;

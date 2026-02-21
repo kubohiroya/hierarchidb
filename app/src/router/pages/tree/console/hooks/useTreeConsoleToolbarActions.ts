@@ -15,7 +15,7 @@ import {
   TREE_CONSOLE_SETTINGS_STORAGE_KEY,
 } from '@hierarchidb/util';
 import { useCallback, useEffect, useState } from 'react';
-import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
+import { canImportFromNode, logIntegrationWarning } from '../treeConsoleIntegrationUtils.js';
 
 type IntegrationActions = {
   handleUndo?: () => void;

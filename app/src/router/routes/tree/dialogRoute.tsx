@@ -20,7 +20,7 @@ import {
 } from '~/router/loaders/treeLoaders';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { PluginDialogRoute } from './PluginDialogRoute.js';
-import type { PluginDialogLoaderData } from './pluginDialogRouteTypes.js';
+import type { PluginDialogLoaderData } from './PluginDialogRoute.js';
 
 export type TreeDialogLoaderResult =
   | {
