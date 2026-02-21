@@ -1,11 +1,11 @@
-import type { StageHandlerResult } from '~/types/types';
 import type { VTStageContext } from '~/contexts';
 import { assertNotAborted } from './vtStageCore.js';
-import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
 import { logVtTaskOutputCompletion } from './vtStageTaskOutputCompletion.js';
-import { buildCompletedMessage } from './vtStageTaskOutputLogging.js';
-import { buildTileSummary } from './vtStageSummary.js';
+import { buildFinalTileCompletionSummary } from './vtStageTaskOutputFinalizeSummary.js';
+import { buildTileOutputResult } from './vtStageTaskOutputFinalizeResult.js';
 import type { VtTileBandRange, VtTileParent, VtTileProgressReporter, VtTileTaskContext } from './vtStageTaskOutputTypes.js';
+import type { StageHandlerResult } from '~/types/types';
+import type { VtTileOutputAggregates } from './vtStageTaskOutputStats.js';
 
 type VtTileOutputFinalizeInput = {
   context: VTStageContext;
@@ -22,52 +22,6 @@ type VtTileOutputFinalizeInput = {
   parentInputMetadata: Record<string, unknown>;
   reportTileProgress: VtTileProgressReporter;
 };
-
-type VtTileCompletionSummary = {
-  finalTileSummary: string;
-  message: string;
-};
-
-type VtFinalOutputInput = {
-  generatedTiles: number;
-  totalTiles: number;
-  parentInputMetadata: Record<string, unknown>;
-  finalMessage: string;
-};
-
-const buildFinalTileCompletionSummary = ({
-  adminFeatureSummary,
-  tilesByZoom,
-  generatedTiles,
-}: {
-  adminFeatureSummary: string;
-  tilesByZoom: Map<number, { total: number; generated: number }>;
-  generatedTiles: number;
-}): VtTileCompletionSummary => {
-  const finalTileSummary = buildTileSummary(tilesByZoom);
-  const message = buildCompletedMessage(
-    adminFeatureSummary,
-    finalTileSummary,
-    generatedTiles,
-  );
-  return { finalTileSummary, message };
-};
-
-const buildTileOutputResult = ({
-  generatedTiles,
-  totalTiles,
-  parentInputMetadata,
-  finalMessage,
-}: VtFinalOutputInput): StageHandlerResult => ({
-  status: 'completed',
-  progress: 100,
-  message: finalMessage,
-  metadata: parentInputMetadata,
-  outputData: {
-    tilesGenerated: generatedTiles,
-    totalTiles,
-  },
-});
 
 export const finalizeVtTileOutput = async ({
   context,
