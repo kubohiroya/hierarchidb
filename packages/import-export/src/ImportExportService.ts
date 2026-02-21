@@ -13,10 +13,25 @@ import type {
   ImportValidationResult,
 } from '@hierarchidb/import-export-api';
 import { SingletonMixin, generateUUID } from '@hierarchidb/util';
-import type { ImportExportDBPort } from './ports.js';
+import type { ImportExportDBPort, VectorTileRecord } from './ports.js';
 
 type ImportNodeInput<T> = ImportData<T>['nodes'][number];
 type ValidationIssue = ImportValidationIssue;
+type ExportFormat = ExportNodesParams['format'];
+type VectorTileZipMetadata = {
+  exportDate: string;
+  nodeCount: number;
+  tileCount: number;
+  format: ExportFormat;
+  includeMetadata: boolean;
+  totalBytes: number;
+  nodeIds: NodeId[];
+};
+type JSZipInstance = {
+  file: (name: string, data: BlobPart) => void;
+  generateAsync: (options: { type: 'nodebuffer'; compression?: 'DEFLATE'; compressionOptions?: { level: number } }) => Promise<ArrayBuffer | Uint8Array>;
+};
+type JSZipConstructor = new () => JSZipInstance;
 
 export class ImportExportService<T> implements ImportExportAPI<T> {
   private operations = new Map<string, OperationStatus>();
@@ -259,17 +274,39 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
         });
       }
 
-      let exportedData: string;
+      let exportedData: string | Blob;
       let mimeType: string;
+      let exportedCount = 0;
       switch (params.format) {
         case 'json':
           exportedData = this.formatAsJSON(collectedNodes, params.includeMetadata);
           mimeType = 'application/json';
+          exportedCount = collectedNodes.length;
           break;
         case 'csv':
           exportedData = this.formatAsCSV(collectedNodes, params.tabularColumns);
           mimeType = 'text/csv';
+          exportedCount = collectedNodes.length;
           break;
+        case 'pbf.zip':
+        case 'mvf': {
+          const shapeNodeIds = [
+            ...new Set(
+              collectedNodes
+                .filter((node) => node.nodeType === 'shape')
+                .map((node) => node.id),
+            ),
+          ];
+          const tiles = await this.collectVectorTileRecords(shapeNodeIds);
+
+          const summary = this.buildVectorTileSummary(shapeNodeIds, tiles, params.format, params.includeMetadata);
+          exportedData = await this.buildVectorTileZipExport(params.format, tiles, summary, params.includeMetadata);
+          mimeType = params.format === 'mvf' ? 'application/octet-stream' : 'application/zip';
+          exportedCount = tiles.length;
+          break;
+        }
+        case 'xml':
+          throw new Error(`Unsupported export format: ${params.format}`);
         default:
           throw new Error(`Unsupported export format: ${params.format}`);
       }
@@ -278,9 +315,9 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
         success: true,
         data: exportedData,
         format: params.format,
-        exportedCount: collectedNodes.length,
+        exportedCount,
         mimeType,
-        filename: `export-${Date.now()}.${params.format}`,
+        filename: this.getExportFilename(params.format),
         operationId,
       };
 
@@ -288,6 +325,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
       operation.completedAt = Date.now();
       operation.result = result;
       return result;
+
     } catch (error) {
       operation.status = 'failed';
       operation.completedAt = Date.now();
@@ -303,7 +341,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   }
 
   async getSupportedExportFormats(): Promise<NodeType[]> {
-    return ['json' as NodeType, 'csv' as NodeType];
+    return ['json' as NodeType, 'csv' as NodeType, 'pbf.zip' as NodeType, 'mvf' as NodeType];
   }
 
   async validateImportData(params: ValidateImportParams<T>): Promise<ImportValidationResult> {
@@ -416,6 +454,89 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
   private generateOperationId(): string {
     return `op-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  private async collectVectorTileRecords(shapeNodeIds: NodeId[]): Promise<VectorTileRecord[]> {
+    if (shapeNodeIds.length === 0) {
+      return [];
+    }
+    return this.db.listVectorTileRecords(shapeNodeIds);
+  }
+
+  private buildVectorTileSummary(
+    shapeNodeIds: NodeId[],
+    tiles: VectorTileRecord[],
+    format: ExportFormat,
+    includeMetadata?: boolean
+  ): {
+    exportDate: string;
+    nodeCount: number;
+    tileCount: number;
+    format: ExportFormat;
+    includeMetadata: boolean;
+    totalBytes: number;
+    nodeIds: NodeId[];
+  } {
+    const totalBytes = tiles.reduce(
+      (acc, tile) => acc + (tile.size || tile.data_Uint8Array.byteLength),
+      0,
+    );
+    return {
+      exportDate: new Date().toISOString(),
+      nodeCount: shapeNodeIds.length,
+      tileCount: tiles.length,
+      format,
+      includeMetadata: Boolean(includeMetadata),
+      totalBytes,
+      nodeIds: [...shapeNodeIds],
+    };
+  }
+
+  private async buildVectorTileZipExport(
+    format: ExportFormat,
+    tiles: VectorTileRecord[],
+    summary: VectorTileZipMetadata,
+    includeMetadata?: boolean
+  ): Promise<Blob> {
+    const jsZipMod = await import('jszip');
+    const Ctor = jsZipMod.default ?? jsZipMod;
+    if (typeof Ctor !== 'function') {
+      throw new Error('Failed to initialize zip utility');
+    }
+    const JSZip = Ctor as JSZipConstructor;
+    const zip = new JSZip();
+    const sortedTiles = [...tiles].sort(
+      (a, b) =>
+        a.nodeId.localeCompare(b.nodeId) || a.z - b.z || a.x - b.x || a.y - b.y,
+    );
+    for (const tile of sortedTiles) {
+      const bytes = tile.data_Uint8Array instanceof Uint8Array ? tile.data_Uint8Array : new Uint8Array(tile.data_Uint8Array);
+      const path = `${tile.nodeId}/${tile.z}/${tile.x}/${tile.y}.pbf`;
+      zip.file(path, bytes);
+    }
+
+    if (includeMetadata) {
+      zip.file('metadata.json', JSON.stringify({
+        format: 'vector-tile-export',
+        summary,
+      }, null, 2));
+    }
+    zip.file('summary.json', JSON.stringify(summary, null, 2));
+
+    const nodeBuffer = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+    const blobType = format === 'mvf' ? 'application/octet-stream' : 'application/zip';
+    return new Blob([nodeBuffer as BlobPart], { type: blobType });
+  }
+
+  private getExportFilename(format: ExportFormat): string {
+    if (format === 'pbf.zip') return `export-${Date.now()}.pbf.zip`;
+    if (format === 'mvf') return `export-${Date.now()}.mvf`;
+    return `export-${Date.now()}.${format}`;
+  }
+
 }
 
 function createUniqueName(existingNames: Set<string>, baseName: string): string {

@@ -67,7 +67,7 @@ export interface ImportNodesParams<T> {
   data: ImportData<T>;
 
   /** Import format */
-  format: 'json' | 'csv' | 'xml';
+  format: 'json' | 'csv' | 'xml' | 'pbf.zip' | 'mvf';
 
   /** Options for handling conflicts */
   conflictResolution?: 'skip' | 'replace' | 'rename';
@@ -117,7 +117,7 @@ export interface ExportNodesParams {
   nodeIds: NodeId[];
 
   /** Export format */
-  format: 'json' | 'csv' | 'xml';
+  format: 'json' | 'csv' | 'xml' | 'pbf.zip' | 'mvf';
 
   /** Whether to include child nodes */
   includeChildren?: boolean;
@@ -189,7 +189,7 @@ export interface ValidateImportParams<T> {
   data: ImportData<T>;
 
   /** Expected format */
-  format: 'json' | 'csv' | 'xml';
+  format: 'json' | 'csv' | 'xml' | 'pbf.zip' | 'mvf';
 
   /** Target console context for validation */
   treeId?: TreeId;

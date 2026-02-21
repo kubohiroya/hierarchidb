@@ -121,8 +121,10 @@ export class WorkerService {
         pluginMap
       );
 
+      const shapeDB = new ShapeDB();
+
       // Import/Export services
-      const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
+      const iePort = new ImportExportDBPortCoreDBAdapter(coreDB, shapeDB);
       const importExportService: ImportExportAPI<TreeNodeData> =
         await ImportExportLifecycleService.getSingleton<TreeNodeData>(iePort);
 
@@ -141,7 +143,6 @@ export class WorkerService {
       const styleDB = await StylerDB.getSingleton();
       const styleService: StyleQueryAPI & StyleMutationAPI =
         await StyleService.getSingleton(styleDB);
-      const shapeDB = new ShapeDB();
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
       const shapeMutationService: ShapeMutationAPI =
         await ShapeMutationService.getSingleton(shapeDB);
