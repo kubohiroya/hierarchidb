@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createBuildStartDraftData } from '../../../components/build-progress/createBuildStartDraftData';
+import type { ShapeBuildUrlRule } from '../../../../common/types';
+import type { ShapeEntity } from '../../../../common/types';
 
 describe('createBuildStartDraftData', () => {
   it('persists live selection when current draft does not have selection', () => {
@@ -41,5 +43,35 @@ describe('createBuildStartDraftData', () => {
     expect(next.selectedArrayByCountries).toEqual({
       JP: [false, true, false],
     });
+  });
+
+  it('persists urlBuildConfigRules in buildConfig', () => {
+    const rule: ShapeBuildUrlRule = {
+      key: 'test',
+      matchType: 'regexp',
+      pattern: '.*',
+      buildConfig: {
+        transformConfig: {
+          tolerance: 0.2,
+        },
+      },
+    };
+    const next = createBuildStartDraftData({
+      currentDraftData: {
+        buildConfig: {
+          dataSourceName: 'gadm',
+          fetchConfig: {},
+          transformConfig: {},
+          vtConfig: {},
+        },
+      },
+      patch: {
+        buildConfig: {
+          urlBuildConfigRules: [rule],
+        } as ShapeEntity['buildConfig'],
+      },
+    });
+
+    expect(next.buildConfig?.urlBuildConfigRules).toEqual([rule]);
   });
 });
