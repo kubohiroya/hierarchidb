@@ -1,23 +1,32 @@
-import type { Feature, FeatureCollection } from 'geojson';
 import type { VTStageContext } from '~/contexts';
-import type { InputFeatureStats } from './vtStageGeometryTypes.js';
+import { getCollectDebugSettings } from './vtStageFeatureCollectorDebugSettings.js';
 import { runFeatureCollectionCoordinator } from './vtStageFeatureCollectorCoordinator.js';
+import { getCollectTimeoutMs, withCollectTimeout } from './vtStageTaskCollectorTimeout.js';
+import type { CollectedVtFeatures } from './vtStageTaskTypes.js';
 
-export const collectFeatures = async (
+export const collectTaskFeatures = async (
   context: VTStageContext,
-  bufferIds: string[],
-  nodeId: string,
-  options?: { groupByContinent?: boolean; continentByCountry?: Map<string, string> },
-): Promise<{
-  collection: FeatureCollection;
-  featureStats: InputFeatureStats[];
-  bufferSizes: Map<string, number>;
-  featuresByContinent?: Map<string, Feature[]>;
-} | null> => {
-  return runFeatureCollectionCoordinator({
+  input: {
+    nodeId: string;
+    bufferIds: string[];
+    groupByContinent: boolean;
+    taskId: string;
+  },
+): Promise<CollectedVtFeatures | null> => {
+  const { testTimeoutMs } = getCollectDebugSettings();
+  const collectPromise = runFeatureCollectionCoordinator({
     context,
-    bufferIds,
-    nodeId,
-    options,
+    bufferIds: input.bufferIds,
+    nodeId: input.nodeId,
+    options: {
+      groupByContinent: input.groupByContinent,
+      continentByCountry: context.continentByCountry,
+    },
+  });
+  return withCollectTimeout<CollectedVtFeatures | null>({
+    nodeId: input.nodeId,
+    taskId: input.taskId,
+    promise: collectPromise,
+    timeoutMs: getCollectTimeoutMs({ testTimeoutMs }),
   });
 };

@@ -9,22 +9,21 @@ import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
 import type { StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
 import { buildBoundaryFeature } from '../geometry.js';
 import { finalizeTransformByBandCache } from './transformByBandTaskFinalize.js';
+import { collectTileIdsForCollection, buildBoundaryDiagnostics, validateOutputForVt } from './helpers/collection.js';
 import type { GeometryOps } from './helpers/core.js';
-import * as transformHelpers from './helpers.js';
-
-const {
+import {
   TASKDEBUG_BUILD_TAG,
   TRANSFORM_DB_WRITE_TIMEOUT_MS,
-  buildBoundaryDiagnostics,
+  isTaskDebugLoggingEnabled,
+  validateEncodedFlatGeobuf,
+  withTimeout,
+} from './helpers/core.js';
+import {
   countPolygonsFromGeometry,
   countVerticesFromGeometry,
-  collectTileIdsForCollection,
-  isTaskDebugLoggingEnabled,
-  runStageWithLabel,
-  validateEncodedFlatGeobuf,
-  validateOutputForVt,
-  withTimeout,
-} = transformHelpers;
+} from './helpers/validation.js';
+import { runStageWithLabel } from './helpers/runtime.js';
+
 
 type UpdateTaskStrict = (taskId: string, updates: Record<string, unknown>, operation: string) => Promise<void>;
 

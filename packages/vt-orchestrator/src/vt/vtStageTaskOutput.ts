@@ -1,7 +1,48 @@
-import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
 import type { StageHandlerResult } from '~/types/types';
-import { runVtTileOutputFlow } from './vtStageTaskOutputFlow.js';
+import { getHeapSnapshot } from './vtStageCore.js';
+import type { VtTileOutputContext } from './vtStageTaskOutputTypes.js';
+import { runVtTileOutputWriter } from './vtStageTaskOutputWriterFlow.js';
+import { finalizeVtTileOutput } from './vtStageTaskOutputFinalize.js';
 
-export const writeVtTiles = async (outputContext: VtTileOutputContext): Promise<StageHandlerResult> => {
-  return runVtTileOutputFlow(outputContext);
+type VtTaskOutputFlowInput = VtTileOutputContext;
+
+export const runVtTileOutputFlow = async (
+  outputContext: VtTaskOutputFlowInput,
+): Promise<StageHandlerResult> => {
+  const {
+    context,
+    input,
+    taskContext,
+    parent,
+    band,
+    parentInputMetadata,
+    tilesByZoom,
+    totalTiles,
+    adminFeatureSummary,
+  } = outputContext;
+
+  const tileOutputSession = await runVtTileOutputWriter(outputContext);
+
+  console.info('[vt] encode/store start', JSON.stringify({
+    ...taskContext,
+    totalTiles,
+    bufferCount: input.bufferIds.length,
+    heap: getHeapSnapshot(),
+  }));
+
+  return finalizeVtTileOutput({
+    context,
+    taskContext,
+    parent,
+    band,
+    totalTiles,
+    processedTiles: tileOutputSession.processedTiles,
+    generatedTiles: tileOutputSession.generatedTiles,
+    totals: tileOutputSession.totals,
+    tilingStartedAt: tileOutputSession.tilingStartedAt,
+    adminFeatureSummary,
+    tilesByZoom,
+    parentInputMetadata,
+    reportTileProgress: tileOutputSession.reportTileProgress,
+  });
 };

@@ -7,6 +7,10 @@ import {
 } from './vtStageTaskProcessorLogger.js';
 import { collectVtTaskForExecution } from './vtStageTaskProcessorExecutionCollect.js';
 import { writeVtTaskFromExecution } from './vtStageTaskProcessorExecutionBuild.js';
+import {
+  buildSkippedVtTaskResult,
+  buildVtTaskRunInput,
+} from './vtStageTaskProcessorExecutionHelpers.js';
 
 type VtTaskProcessorExecutionInput = {
   context: VTStageContext;
@@ -39,7 +43,7 @@ export const executeVtTaskProcessing = async (
     input: taskInput,
   } = input;
   const { abortSignal } = context;
-  const runInput: VtTaskRunInput = {
+  const runInput: VtTaskRunInput = buildVtTaskRunInput({
     context,
     taskContext,
     band,
@@ -49,7 +53,7 @@ export const executeVtTaskProcessing = async (
     groupByContinent,
     useTopojsonTileSimplify,
     topojsonSimplify,
-  };
+  });
 
   try {
     assertNotAborted(abortSignal);
@@ -66,7 +70,7 @@ export const executeVtTaskProcessing = async (
       taskInput,
     });
     if (!collected) {
-      return { status: 'completed', message: 'skipped: no features' };
+      return buildSkippedVtTaskResult('skipped: no features');
     }
     return writeVtTaskFromExecution({
       context,

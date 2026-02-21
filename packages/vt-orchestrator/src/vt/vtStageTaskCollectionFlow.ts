@@ -1,7 +1,7 @@
 import type { VTStageContext } from '~/contexts';
 import {
   collectTaskFeatures,
-} from './vtStageTaskCollector.js';
+} from './vtStageFeatureCollector.js';
 import { logCollectDone } from './vtStageTaskCollectionFlowLogger.js';
 import { buildTaskCollectionMetadata } from './vtStageTaskCollectionMetadata.js';
 import type {

@@ -7,38 +7,46 @@ import type { TransformByBandStageContext } from '~/contexts';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
 import { VtTaskQueueDb, updateTask } from '~/task/taskQueue';
 import { runTransformByBandOutputPhase } from './transformByBandOutput.js';
-import * as transformHelpers from './helpers.js';
-
-const {
+import {
   TASKDEBUG_BUILD_TAG,
   TRANSFORM_TASK_UPDATE_TIMEOUT_MS,
   TASK_PHASE_PROGRESS_UPDATE_INTERVAL_MS,
-  analyzeGeometryIssues,
-  assertNotAborted,
-  buildCollectionDiagnostics,
-  buildErrorLineFeatures,
-  countPolygonsFromGeometry,
-  countVerticesFromGeometry,
   createGeometryOps,
-  decodeFetchCacheByFormat,
   emitTransformTrace,
-  filterFeaturesByAspectRatioAndArea,
-  formatArea,
-  formatAverage,
-  formatToleranceForDisplay,
-  isGeometryBooleanValid,
   isTaskDebugLoggingEnabled,
   normalizeTraceLogLevel,
-  resolveFeatureIdentifier,
   resolveRetryVertexLimit,
   resolveSimplifyAlgorithm,
   resolveTransformTolerance,
+  withTimeout,
+} from './helpers/core.js';
+import {
+  analyzeGeometryIssues,
+  isGeometryBooleanValid,
+  filterFeaturesByAspectRatioAndArea,
+  buildErrorLineFeatures,
+  resolveFeatureIdentifier,
+} from './helpers/analysis.js';
+import {
+  decodeFetchCacheByFormat,
+  countPolygonsFromGeometry,
+  countVerticesFromGeometry,
+  simplifyOnlyCollection,
   repairCollectionSelfIntersections,
+} from './helpers/validation.js';
+import {
+  assertNotAborted,
+  buildCollectionDiagnostics,
+  formatArea,
+  formatAverage,
+  formatToleranceForDisplay,
   runStageWithLabel,
   runWithStallTimeout,
-  simplifyOnlyCollection,
-  withTimeout,
-} = transformHelpers;
+} from './helpers/runtime.js';
+import {
+  countVertexLimitOverages,
+  retrySimplifyFeatureWithinVertexLimit,
+} from './transformByBandRetrySimplify.js';
 
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
@@ -985,29 +993,14 @@ export const createTransformByBandHandler = (
         const maxRetrySteps = MAX_RETRY_STEPS;
         const resolveRetryToleranceStep = (): number => configuredRetryToleranceStep;
         const retryToleranceStep = resolveRetryToleranceStep() * RETRY_TOLERANCE_STEP_MULTIPLIER;
-        const countVertexLimitOverages = (collection: FeatureCollection) => {
-          let maxVertexCount = 0;
-          let overLimitFeatureCount = 0;
-          for (const feature of collection.features) {
-            if (!feature?.geometry) continue;
-            const vertexCount = countVerticesFromGeometry(feature.geometry);
-            if (vertexCount < retryVertexLimit) continue;
-            overLimitFeatureCount += 1;
-            maxVertexCount = Math.max(maxVertexCount, vertexCount);
-          }
-          return { maxVertexCount, overLimitFeatureCount };
-        };
 
-        const resolveRetryToleranceK = (baseToleranceK: number) => baseToleranceK;
-
-        const simplifyFeatureWithTolerance = (feature: Feature, baseToleranceK: number): Feature => {
-          const effectiveToleranceK = resolveRetryToleranceK(baseToleranceK);
-          return geometryOps.simplifyFeature(feature, band.zMax, effectiveToleranceK);
-        };
-
-        const runRetrySimplifyFeature = async (feature: Feature, baseToleranceK: number): Promise<Feature | null> => {
+        const runRetrySimplifyAttempt = async (feature: Feature, nextToleranceValue: number): Promise<Feature | null> => {
           const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () => (
-            simplifyFeatureWithTolerance(feature, baseToleranceK)
+            geometryOps.simplifyFeature(
+              feature,
+              band.zMax,
+              nextToleranceValue,
+            )
           ));
           return await runWithStallTimeout({
             promise: retrySimplifyPromise,
@@ -1018,131 +1011,12 @@ export const createTransformByBandHandler = (
             getLastProgressAt: () => Date.now(),
           });
         };
-
-        const retrySimplifyFeatureIfNeeded = async (
-          feature: Feature,
-          params: {
-            featureIndex: number;
-            featureTotal: number;
-          },
-        ): Promise<{
-          feature: Feature;
-          vertexCount: number;
-          overLimit: boolean;
-          retryAttempts: number;
-          finalTolerance: number;
-        }> => {
-          if (!feature.geometry) {
-            return { feature, vertexCount: 0, overLimit: false, retryAttempts: 0, finalTolerance: tolerance };
-          }
-          const baseVertexCount = countVerticesFromGeometry(feature.geometry);
-          if (baseVertexCount < retryVertexLimit) {
-            return {
-              feature,
-              vertexCount: baseVertexCount,
-              overLimit: false,
-              retryAttempts: 0,
-              finalTolerance: tolerance,
-            };
-          }
-
-          let lastFailTolerance = tolerance;
-          let successTolerance: number | null = null;
-          let successIndex: number | null = null;
-          let bestFeature: Feature | null = null;
-          let bestTolerance = tolerance;
-          let bestVertexCount = baseVertexCount;
-          let lastAttemptFeature: Feature = feature;
-          let lastAttemptVertexCount = baseVertexCount;
-          let lastAttemptTolerance = tolerance;
-          let retryAttempts = 0;
-
-          if (retryToleranceStep <= 0) {
-            return {
-              feature,
-              vertexCount: baseVertexCount,
-              overLimit: true,
-              retryAttempts: 0,
-              finalTolerance: tolerance,
-            };
-          }
-          for (let i = 0; i < maxRetrySteps; i += 1) {
-            const nextToleranceValue = tolerance + retryToleranceStep * (i + 1);
-            await updateRetrySimplifyAttemptPhase(taskId, {
-              featureIndex: params.featureIndex,
-              featureTotal: params.featureTotal,
-              attempt: retryAttempts + 1,
-              attemptTotal: maxRetrySteps,
-              tolerance: nextToleranceValue,
-            });
-            const retryFeature = await runRetrySimplifyFeature(feature, nextToleranceValue);
-            retryAttempts += 1;
-            lastAttemptTolerance = nextToleranceValue;
-            if (!retryFeature?.geometry) break;
-            const retryVertexCount = countVerticesFromGeometry(retryFeature.geometry);
-            lastAttemptFeature = retryFeature;
-            lastAttemptVertexCount = retryVertexCount;
-            if (retryVertexCount < retryVertexLimit) {
-              successTolerance = nextToleranceValue;
-              successIndex = i;
-              bestFeature = retryFeature;
-              bestTolerance = nextToleranceValue;
-              bestVertexCount = retryVertexCount;
-              break;
-            }
-            lastFailTolerance = nextToleranceValue;
-          }
-
-          if (bestFeature && successTolerance !== null && successIndex !== null) {
-            const bisectionSteps = Math.max(0, 8 - Math.ceil(successIndex / 2));
-            const bisectionAttemptTotal = maxRetrySteps + bisectionSteps;
-            let low = lastFailTolerance;
-            let high = successTolerance;
-            for (let stepIndex = 0; stepIndex < bisectionSteps; stepIndex += 1) {
-              const mid = (low + high) / 2;
-              await updateRetrySimplifyAttemptPhase(taskId, {
-                featureIndex: params.featureIndex,
-                featureTotal: params.featureTotal,
-                attempt: retryAttempts + 1,
-                attemptTotal: bisectionAttemptTotal,
-                tolerance: mid,
-              });
-              const midFeature = await runRetrySimplifyFeature(feature, mid);
-              retryAttempts += 1;
-              lastAttemptTolerance = mid;
-              if (!midFeature?.geometry) break;
-              const midVertexCount = countVerticesFromGeometry(midFeature.geometry);
-              if (midVertexCount < retryVertexLimit) {
-                high = mid;
-                bestFeature = midFeature;
-                bestTolerance = mid;
-                bestVertexCount = midVertexCount;
-              } else {
-                low = mid;
-              }
-            }
-            if (bestFeature) {
-              return {
-                feature: bestFeature,
-                vertexCount: bestVertexCount,
-                overLimit: false,
-                retryAttempts,
-                finalTolerance: bestTolerance,
-              };
-            }
-          }
-
-          return {
-            feature: lastAttemptFeature,
-            vertexCount: lastAttemptVertexCount,
-            overLimit: lastAttemptVertexCount >= retryVertexLimit,
-            retryAttempts,
-            finalTolerance: lastAttemptTolerance,
-          };
-        };
-
         let adjustedSimplified = simplified;
-        let vertexLimitStats = countVertexLimitOverages(adjustedSimplified);
+        let vertexLimitStats = countVertexLimitOverages(
+          adjustedSimplified,
+          retryVertexLimit,
+          countVerticesFromGeometry,
+        );
         const retryDiagnosticsByFeatureIndex = new Map<number, {
           retryAttempts: number;
           finalTolerance: number;
@@ -1162,9 +1036,17 @@ export const createTransformByBandHandler = (
               nextFeatures.push(feature);
               continue;
             }
-            const result = await retrySimplifyFeatureIfNeeded(feature, {
+            const result = await retrySimplifyFeatureWithinVertexLimit({
+              feature,
+              baseTolerance: tolerance,
+              retryVertexLimit,
+              retryToleranceStep,
+              maxRetrySteps,
               featureIndex: featureIndex + 1,
               featureTotal: adjustedSimplified.features.length,
+              runRetrySimplifyAttempt: (nextTolerance) => runRetrySimplifyAttempt(feature, nextTolerance),
+              countVerticesFromGeometry,
+              updateRetrySimplifyAttemptPhase: (params) => updateRetrySimplifyAttemptPhase(taskId, params),
             });
             retryDiagnosticsByFeatureIndex.set(featureIndex, {
               retryAttempts: result.retryAttempts,

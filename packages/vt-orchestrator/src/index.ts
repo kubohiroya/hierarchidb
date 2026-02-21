@@ -13,9 +13,9 @@ export {
 export {
   runStageTasks,
 } from './compareTaskOrder.js';
-export { createTransformByBandHandler } from './transform/createTransformByBandHandler/handler.js';
+export { createTransformByBandHandler } from './transform/createTransformByBandHandler/execute.js';
 export { quantizeTopoJsonToGrid } from './transform/topojsonGrid.js';
-export { createVtHandler } from './vt/vtStage.js';
+export { createVtHandler } from './vt/vtStageHandler.js';
 export {unpackTileId} from './tiles/tileId.js';
 
 export { DEFAULT_TASK_SPLIT } from './types/types.js';
