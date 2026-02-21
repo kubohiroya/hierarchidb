@@ -82,6 +82,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     controlRightContent,
     isBuildStartupPending,
     pauseButtonLabel,
+    startPendingHold,
     handleStartClickWithHold,
   } = coreState;
 
@@ -110,7 +111,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     pauseLabel: pauseButtonLabel,
     stopRequested: controls.stopRequested ?? false,
     pauseActsAsCancel: isBuildStartupPending,
-    startPending: controls.startPending,
+    startPending: controls.startPending || startPendingHold,
     showResumeLabel: controls.showResumeLabel ?? false,
     startLabel: t('stage.controls.start', 'Start Build'),
     resumeLabel: t('stage.controls.resume', 'Resume Build'),

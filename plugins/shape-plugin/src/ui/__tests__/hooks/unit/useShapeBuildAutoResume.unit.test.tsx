@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { BuildStatus } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useShapeBuildAutoResume } from '../../../components/build-progress/useShapeBuildAutoResume/useShapeBuildAutoResume';
 
 const createLocalStorage = () => {
@@ -20,7 +21,7 @@ const createLocalStorage = () => {
 };
 
 const createArgs = (overrides: Partial<Parameters<typeof useShapeBuildAutoResume>[0]> = {}) => ({
-  activeNodeId: 'node-1',
+  activeNodeId: 'node-1' as NodeId,
   buildStatus: 'paused' as BuildStatus,
   stopReason: 'route-leave' as const,
   runtimeStatus: 'paused',
