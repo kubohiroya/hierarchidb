@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode, cloneElement, isValidElement } from 'react';
+import { type ReactNode } from 'react';
 import { Box } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -19,11 +19,6 @@ type TaskItemCardProps = {
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   stageIcon?: ReactNode | null;
   translate: Translate;
-};
-
-const withIconSize = (icon: ReactElement): ReactElement => {
-  const existingSx = icon.props?.sx ?? {};
-  return cloneElement(icon, { sx: { ...existingSx, fontSize: 16 } });
 };
 
 export const TaskItemCard = ({
@@ -70,10 +65,18 @@ export const TaskItemCard = ({
       <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
     );
   } else if (stageIcon) {
-    const stageIconElement = isValidElement(stageIcon) ? withIconSize(stageIcon) : stageIcon;
     leadingIcon = (
-      <Box data-testid={`task-icon-stage-${stageId}`} sx={{ display: 'flex', alignItems: 'center' }}>
-        {stageIconElement}
+      <Box
+        data-testid={`task-icon-stage-${stageId}`}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          '& .MuiSvgIcon-root': {
+            fontSize: 16,
+          },
+        }}
+      >
+        {stageIcon}
       </Box>
     );
   }

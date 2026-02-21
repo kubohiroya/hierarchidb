@@ -109,7 +109,7 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'mapping-keys',
         label: t('steps.mappingKeys.label', 'Mapping Keys'),
-        componentFactory: StylerMappingKeysStep,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerMappingKeysStep {...p} />,
         validate: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),

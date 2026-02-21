@@ -1,4 +1,4 @@
-import type React from 'react';
+import type { ReactElement } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import type {
@@ -26,7 +26,7 @@ type ShapeStepProps = PluginStepProps<Partial<ShapeEntity>>;
 
 function createStepAdapter(
   Component: React.ComponentType<ShapeDialogStepProps>,
-): (props: ShapeStepProps) => JSX.Element {
+): (props: ShapeStepProps) => ReactElement {
   return function ShapeStepAdapter(props: ShapeStepProps) {
     const latestDataRef = useRef<Partial<ShapeEntity> | null>(null);
     useEffect(() => {

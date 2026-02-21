@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { ImportExportDBPort, VectorTileRecord } from '@hierarchidb/import-export';
-import type { ShapeVectorTileRecord, ShapeDB } from '@hierarchidb/shape-store';
+import type { ShapeDB, VectorTileRecord as ShapeVectorTileRecord } from '@hierarchidb/shape-store';
 import type { CoreDB } from '~/services/CoreDB';
 
 export class ImportExportDBPortCoreDBAdapter implements ImportExportDBPort {

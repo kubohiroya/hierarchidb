@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, IconButton, Slide, Snackbar, Stack } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { announceToScreenReader } from '~/AriaLiveRegion/AriaLiveRegion';
@@ -119,7 +120,7 @@ export function replaceWindowAlert() {
  * });
  * ```
  */
-export function NotificationSystem(): JSX.Element | null {
+export function NotificationSystem(): ReactElement | null {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [, forceUpdate] = useState({});
 

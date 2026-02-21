@@ -3,6 +3,7 @@
  * @description Flexible button group for toggling between multiple console pages
  */
 
+import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // import { SvgIconComponent } from '@mui/icon-material';
 
@@ -85,7 +86,7 @@ export function TreeToggleButtonGroup({
                                         showLabelsOnSmallScreens = false,
                                         sx,
                                         onTreeSelect,
-                                      }: TreeToggleButtonGroupProps): JSX.Element | null {
+                                      }: TreeToggleButtonGroupProps): ReactElement | null {
   const navigate = useNavigate();
 
   // Safe handling of loader data that might not be available

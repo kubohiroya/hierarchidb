@@ -1,8 +1,9 @@
 
 import './i18n.js';
 import './components/steps-provider.js';
+import type { ReactElement } from 'react';
 
-type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
+type PluginDialogComponent = (props: HostPluginDialogProps) => ReactElement | null;
 
 interface HostPluginDialogProps {
   open: boolean;

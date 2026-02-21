@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { ReactElement } from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
 import { useRouteBuildProgress } from '~/ui/hooks/useRouteBuildProgress';
 import { useTranslation } from '~/common/i18n/index';
@@ -7,7 +8,7 @@ export interface RouteBuildSummaryProps {
   nodeId: string;
 }
 
-export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): JSX.Element {
+export function RouteBuildSummary({ nodeId }: RouteBuildSummaryProps): ReactElement {
   const { progress, lastError } = useRouteBuildProgress(toNodeId(nodeId));
   const { translations } = useTranslation();
 

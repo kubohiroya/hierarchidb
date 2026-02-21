@@ -33,7 +33,7 @@ export const useMapViewState = ({
     zoom: loaderViewState.zoom,
   }));
   const persistedZxyApplied = useRef(false);
-  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastUpdateRef = useRef<string>(formatZxyParam(loaderViewState));
 
   useEffect(() => {

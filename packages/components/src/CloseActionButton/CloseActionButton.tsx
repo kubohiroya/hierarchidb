@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Button } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
@@ -5,7 +6,7 @@ interface CloseActionButtonProps {
   to: string;
 }
 
-export function CloseActionButton({ to }: CloseActionButtonProps): JSX.Element {
+export function CloseActionButton({ to }: CloseActionButtonProps): ReactElement {
   return (
     <Button
       onClick={() => (window.location.href = to)}

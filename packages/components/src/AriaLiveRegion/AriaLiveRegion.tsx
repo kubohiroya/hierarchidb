@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Box } from '@mui/material';
 
 export type AriaLiveMode = 'polite' | 'assertive';
@@ -61,7 +62,7 @@ function notifyListeners() {
  * announceToScreenReader('Error: Invalid file format', 'assertive');
  * ```
  */
-export function AriaLiveRegion(): JSX.Element {
+export function AriaLiveRegion(): ReactElement {
   const [messages, setMessages] = useState<AriaLiveMessage[]>([]);
   const politeRef = useRef<HTMLDivElement>(null);
   const assertiveRef = useRef<HTMLDivElement>(null);

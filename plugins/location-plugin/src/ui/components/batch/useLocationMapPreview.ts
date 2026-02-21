@@ -85,7 +85,7 @@ type UseLocationMapPreviewResult = {
   mapPreviewTranslations: ReturnType<typeof useTranslation>['translations']['mapPreview'];
   formatTemplate: (template: string, values: Record<string, string | number>) => string;
   typeSettings: Record<LocationType, TypeStyle & { name: string }>;
-  mapRef: React.RefObject<HTMLDivElement>;
+  mapRef: React.RefObject<HTMLDivElement | null>;
   displayMode: DisplayMode;
   visibleTypes: LocationType[];
   zoom: number;
@@ -147,7 +147,7 @@ export const useLocationMapPreview = (
       ) as Record<LocationType, TypeStyle & { name: string }>,
     [translations.locationTypes]
   );
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const [mapSize, setMapSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(

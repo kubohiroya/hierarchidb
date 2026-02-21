@@ -50,6 +50,5 @@ export function useDynamicSpeedDial(params: {
         icon: icon as IconDescriptorInput['icon'],
       });
     },
-    translateWithFallback,
   });
 }

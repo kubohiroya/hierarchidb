@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import type { ReactElement } from 'react';
 import { useDialogContext } from '~/hooks/useDialogContext';
 import type { HeadlessFooterRenderProps, HeadlessDialogFooterProps } from './types.js';
 
@@ -30,4 +31,4 @@ PluginDialogFooterComponent.displayName = 'HeadlessPluginDialogFooter';
 
 export const PluginDialogFooter = memo(PluginDialogFooterComponent) as <TData,>(
   props: HeadlessDialogFooterProps<TData>,
-) => JSX.Element | null;
+) => ReactElement | null;

@@ -98,8 +98,8 @@
     "@vitejs/plugin-react": "^5.0.1",
     "gh-pages": "^6.3.0",
     "license-checker": "^25.0.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "rollup-plugin-visualizer": "5.12.0",
     "tsx": "^4.20.5",
     "vite": "npm:rolldown-vite@7.2.10",
@@ -115,14 +115,14 @@
           "^build",
           "@hierarchidb/tools-build-scripts#build",
           "@hierarchidb/tools-load-plugin-manifest#build",
-        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
-        "@hierarchidb/plugin-base#build",
-        "@hierarchidb/runtime-worker#build",
-        "@hierarchidb/download#build",
-        "@hierarchidb/plugin-registry#build",
-        "@hierarchidb/tabular-store#build",
-        "@hierarchidb/ui-grid#build"
-      ]
+          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+          "@hierarchidb/plugin-base#build",
+          "@hierarchidb/runtime-worker#build",
+          "@hierarchidb/download#build",
+          "@hierarchidb/plugin-registry#build",
+          "@hierarchidb/tabular-store#build",
+          "@hierarchidb/ui-grid#build"
+        ]
       },
       "typecheck": {
         "dependsOn": [

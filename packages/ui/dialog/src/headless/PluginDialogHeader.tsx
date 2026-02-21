@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import type { ReactElement } from 'react';
 import { useDialogContext } from '~/hooks/useDialogContext';
 import type { HeadlessHeaderRenderProps, HeadlessDialogHeaderProps } from './types.js';
 
@@ -34,4 +35,4 @@ PluginDialogHeaderComponent.displayName = 'HeadlessPluginDialogHeader';
 
 export const PluginDialogHeader = memo(PluginDialogHeaderComponent) as <TData,>(
   props: HeadlessDialogHeaderProps<TData>,
-) => JSX.Element | null;
+) => ReactElement | null;
