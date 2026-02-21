@@ -355,12 +355,15 @@ const waitFor = async (
     label?: string;
   } = {}
 ): Promise<void> => {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() <= deadline) {
     if (await check()) return;
+    if (Date.now() > deadline) {
+      break;
+    }
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
-  throw new Error(`Timed out waiting for ${label}`);
+  throw new Error(`Timed out waiting for ${label} after ${timeoutMs}ms`);
 };
 
 const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
