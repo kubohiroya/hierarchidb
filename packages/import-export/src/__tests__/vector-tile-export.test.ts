@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { ImportExportDBPort } from '../ports';
+import type { ImportExportDBPort, VectorTileRecord } from '../ports';
 
 type JszipArchiveFile = {
   [name: string]: unknown;
@@ -38,7 +38,7 @@ class InMemoryExportPort implements ImportExportDBPort {
     return node ? { ...node } : undefined;
   }
 
-  async listVectorTileRecords(nodeIds: NodeId[]) {
+  async listVectorTileRecords(nodeIds: NodeId[]): Promise<VectorTileRecord[]> {
     return this.vectorTiles.filter((tile) => nodeIds.includes(tile.nodeId));
   }
 
@@ -87,6 +87,10 @@ class MissingListVectorTileRecordsPort implements ImportExportDBPort {
   async getNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = this.nodes.get(nodeId);
     return node ? { ...node } : undefined;
+  }
+
+  async listVectorTileRecords(_nodeIds: NodeId[]): Promise<VectorTileRecord[]> {
+    throw new Error('Vector tile export is not supported in this runtime environment.');
   }
 }
 

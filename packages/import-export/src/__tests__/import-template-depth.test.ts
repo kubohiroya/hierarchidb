@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { ImportData } from '@hierarchidb/import-export-api';
-import type { ImportExportDBPort } from '../ports';
+import type { ImportExportDBPort, VectorTileRecord } from '../ports';
 
 class InMemoryImportExportPort implements ImportExportDBPort {
   private nodes = new Map<NodeId, TreeNode>();
@@ -60,6 +60,10 @@ class InMemoryImportExportPort implements ImportExportDBPort {
   async getNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = this.nodes.get(nodeId);
     return node ? { ...node } : undefined;
+  }
+
+  async listVectorTileRecords(_nodeIds: NodeId[]): Promise<VectorTileRecord[]> {
+    return [];
   }
 }
 

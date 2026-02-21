@@ -65,6 +65,11 @@ const loadTreeDialog = async ({
   };
 
   const normalizedNodeType = nodeType.toLowerCase();
+  const normalizedAction = action.toLowerCase();
+  const resolvedNodeType =
+    normalizedNodeType === 'folder' && normalizedAction === 'export'
+      ? 'folder-export'
+      : normalizedNodeType;
 
   // Special handling for archive dialog
   if (normalizedNodeType === 'archive') {
@@ -80,7 +85,7 @@ const loadTreeDialog = async ({
     }
   }
 
-  if (normalizedNodeType === 'folder') {
+  if (normalizedNodeType === 'folder' && normalizedAction !== 'export') {
     const { client } = await loadWorkerAPIClient();
     return {
       kind: 'plugin',
@@ -93,7 +98,10 @@ const loadTreeDialog = async ({
         targetNode: undefined,
         nodeType: undefined,
         action: undefined,
-        params: resolvedParams,
+        params: {
+          ...resolvedParams,
+          nodeType: resolvedNodeType,
+        },
       },
     } satisfies TreeDialogLoaderResult;
   }
@@ -102,13 +110,17 @@ const loadTreeDialog = async ({
     treeId,
     pageNodeId: resolvedPageNodeId,
     targetNodeId,
-    nodeType,
+    nodeType: resolvedNodeType,
     action,
   });
 
   return {
     kind: 'plugin',
-    data: toPluginDialogLoaderData(pluginData, resolvedParams),
+    data: toPluginDialogLoaderData(pluginData, {
+      ...resolvedParams,
+      nodeType: resolvedNodeType,
+      action,
+    }),
   } satisfies TreeDialogLoaderResult;
 };
 
