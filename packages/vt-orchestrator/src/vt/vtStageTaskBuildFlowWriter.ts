@@ -1,6 +1,6 @@
 import type { StageHandlerResult } from '~/types/types';
 import { loadVtPbfWithTiming } from './vtStageTaskTilePbfLoader.js';
-import { writeVtTiles } from './vtStageTaskOutput.js';
+import { runVtTileOutputFlow } from './vtStageTaskOutputFlow.js';
 import { buildTileOutputWriteContext, type VtTaskOutputWriteInput } from './vtStageTaskBuildFlowWriterInput.js';
 
 export const writeVtTaskOutput = async ({
@@ -24,7 +24,7 @@ export const writeVtTaskOutput = async ({
     nodeId: runInput.taskContext.nodeId,
   });
 
-  return writeVtTiles({
+  return runVtTileOutputFlow({
     ...writeContext,
     vtpbf,
   });
