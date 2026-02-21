@@ -47,6 +47,7 @@ import {
 import type { WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy';
 import { useWorkerRuntimeProxy } from '~/hooks/useWorkerRuntimeProxy';
 import { bootLog } from '~/utils/bootLog';
+import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxy';
 import { resetWorkerState } from '~/worker-runtime/WorkerStateStore';
 import {
   getWorkerAPIClientModule,
@@ -401,15 +402,21 @@ export const WorkerProvider = ({
     });
   }, [proxy, proxyState, proxyError]);
 
+  const storageBridgeClientRef = useRef<Remote<BuildWorkerAPI> | null>(null);
+  const safeClient = useMemo(
+    () => (status.client ? sanitizeRemoteForReact(status.client) : null),
+    [status.client]
+  );
+
   useEffect(() => {
-    if (!status.client || !status.isInitialized) return;
+    if (!safeClient || !status.isInitialized) return;
     if (typeof window === 'undefined') return;
     try {
       const token = localStorage.getItem('access_token') || '';
       if (!token || token === lastAuthTokenRef.current) return;
       const rawExpires = localStorage.getItem('token_expires_at');
       const expiresAt = rawExpires ? Number(rawExpires) : undefined;
-      status.client
+      safeClient
         .setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
         .catch((error: unknown) => {
           logWorkerProviderWarning('Failed to sync worker auth token', error);
@@ -418,15 +425,13 @@ export const WorkerProvider = ({
     } catch (error) {
       logWorkerProviderWarning('Failed to read access_token for worker', error);
     }
-  }, [status.client, status.isInitialized]);
-
-  const storageBridgeClientRef = useRef<Remote<BuildWorkerAPI> | null>(null);
+  }, [safeClient, status.isInitialized]);
 
   useEffect(() => {
-    if (!status.client || !status.isInitialized) return;
+    if (!safeClient || !status.isInitialized) return;
     if (typeof window === 'undefined') return;
-    if (storageBridgeClientRef.current === status.client) return;
-    storageBridgeClientRef.current = status.client;
+    if (storageBridgeClientRef.current === safeClient) return;
+    storageBridgeClientRef.current = safeClient;
     const bridge = Comlink.proxy({
       getItem: async (key: string) => localStorage.getItem(key),
       setItem: async (key: string, value: string) => {
@@ -436,10 +441,10 @@ export const WorkerProvider = ({
         localStorage.removeItem(key);
       },
     });
-    status.client.setUiStorageBridge(bridge).catch((error: unknown) => {
+    safeClient.setUiStorageBridge(bridge).catch((error: unknown) => {
       logWorkerProviderWarning('Failed to register UI storage bridge', error);
     });
-  }, [status.client, status.isInitialized]);
+  }, [safeClient, status.isInitialized]);
 
   const finalizeInitialized = useCallback(async () => {
     try {
@@ -607,11 +612,11 @@ export const WorkerProvider = ({
   }, [bootProgress, resetState, runInitialization, t]);
 
   const getAPI = useCallback((): Remote<BuildWorkerAPI> => {
-    if (!status.client) {
+    if (!safeClient) {
       throw new Error('Worker client not initialized');
     }
-    return status.client;
-  }, [status.client]);
+    return safeClient;
+  }, [safeClient]);
 
   const reset = useCallback(() => {
     bootLog('WorkerProvider reset requested');
@@ -691,9 +696,9 @@ export const WorkerProvider = ({
 
   const contextValue = useMemo<WorkerContextValue>(
     () => ({
-      client: status.client,
+      client: safeClient,
       isInitialized: status.isInitialized,
-      isConnected: Boolean(status.client && status.isInitialized),
+      isConnected: Boolean(safeClient && status.isInitialized),
       initProgress: status.initProgress,
       initMessage: status.initMessage,
       error: status.error,

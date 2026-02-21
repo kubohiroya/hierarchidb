@@ -4,6 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
 import { coalesceBatches } from './mergeUtils.js';
+import { sanitizeForComlink } from '../../../adapters/subscriptions/comlinkSanitizer.js';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import {
   lastUpdateTimestampAtom,
@@ -183,24 +184,28 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
         //  WorkerAPI
         const subscriptionAPI = await workerAPI.getSubscriptionAPI();
         const proxied = (await import('comlink')).proxy((event: TreeNodeEvent) => {
+          const safeEvent = sanitizeForComlink(event);
+          const safeNode = (safeEvent.node as Record<string, unknown> | undefined) ?? undefined;
           console.log('[TreeConsole][Subscription] event received', {
-            type: event.type,
-            nodeId: event.nodeId,
-            hasNode: Boolean(event.node),
-            keys: event.node ? Object.keys(event.node) : [],
+            type: safeEvent.type,
+            nodeId: safeEvent.nodeId,
+            hasNode: Boolean(safeNode),
+            keys: safeNode ? Object.keys(safeNode) : [],
           });
           // Map a single node event to our local SubTreeChanges batch form
           const batch: SubTreeChanges = (() => {
-            switch (event.type) {
+            switch (safeEvent.type) {
               case 'created':
-                return { added: [Object.assign({ id: event.nodeId }, event.node || {})] };
+                return {
+                  added: [Object.assign({ id: safeEvent.nodeId }, safeNode || {})],
+                };
               case 'updated': {
-                const payload = (event.node || {}) as Record<string, unknown>;
-                const base = { nodeId: event.nodeId as string, changes: payload };
+                const payload = safeNode || {};
+                const base = { nodeId: safeEvent.nodeId as string, changes: payload };
                 // Treat prefetch snapshot events (delivered as "updated" with node payload)
                 // as additions when we have no existing row.
                 const added = Object.keys(payload).length > 0
-                  ? [Object.assign({ id: event.nodeId }, payload)]
+                  ? [Object.assign({ id: safeEvent.nodeId }, payload)]
                   : undefined;
                 return {
                   updated: [base],
@@ -208,9 +213,17 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
                 };
               }
               case 'deleted':
-                return { removed: [event.nodeId as string] };
+                return { removed: [safeEvent.nodeId as string] };
               case 'moved':
-                return { moved: [{ nodeId: event.nodeId as string, oldParentId: event.previousParentNodeId as string | undefined, newParentId: event.parentId as string, oldIndex: -1, newIndex: -1 }] };
+                return {
+                  moved: [{
+                    nodeId: safeEvent.nodeId as string,
+                    oldParentId: safeEvent.previousParentNodeId as string | undefined,
+                    newParentId: safeEvent.parentId as string,
+                    oldIndex: -1,
+                    newIndex: -1,
+                  }],
+                };
               default:
                 return {};
             }

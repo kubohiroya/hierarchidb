@@ -30,6 +30,60 @@ import { type SubscriptionInfo, SubscriptionRegistry } from './SubscriptionRegis
 import { TreeQueryService } from './TreeQueryService.js';
 import { TreeSearchService } from './TreeSearchService.js';
 
+const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()): T => {
+  if (typeof value === 'bigint') {
+    return value.toString() as T;
+  }
+
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return new Date(value.getTime()) as T;
+  }
+
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack ?? undefined,
+    } as T;
+  }
+
+  if (value instanceof Map) {
+    return Array.from(value.values()).map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (value instanceof Set) {
+    return Array.from(value).map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (Array.isArray(value)) {
+    const list = value as unknown[];
+    return list.map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (typeof value === 'object') {
+    if (seen.has(value as object)) {
+      return seen.get(value as object) as T;
+    }
+    const source = value as Record<string, unknown>;
+    const safe = {} as Record<string, unknown>;
+    seen.set(value as object, safe);
+    for (const key of Object.keys(source)) {
+      const raw = source[key];
+      if (typeof raw === 'function' || typeof raw === 'symbol') {
+        continue;
+      }
+      safe[key] = sanitizeForComlink(raw, seen);
+    }
+    return safe as T;
+  }
+
+  return value;
+};
+
 /**
  * TreeSubscriptionService - Implements TreeSubscriptionAPI
  * Provides real-time subscription functionality for console structure changes
@@ -780,7 +834,7 @@ export class TreeSubscriptionService {
           hasNode: Boolean(event.node),
         });
       }
-      callback(event);
+      callback(sanitizeForComlink(event));
     };
 
     const subscription = stream.subscribe(instrumentedCallback);
@@ -806,7 +860,7 @@ export class TreeSubscriptionService {
         const node = await this.getNodeFromDB(nodeId);
         if (node) {
           const initialEvent = this.createTreeNodeEvent('updated', node);
-          callback(initialEvent);
+          callback(sanitizeForComlink(initialEvent));
         }
       } catch (error) {
         console.warn(`Failed to get initial value for node ${nodeId}:`, error);
@@ -849,7 +903,10 @@ export class TreeSubscriptionService {
       rxFilter((event): event is TreeNodeEvent => event !== null)
     ) as Observable<TreeNodeEvent>;
 
-    const subscription = stream.subscribe(callback);
+    const safeCallback = (event: TreeNodeEvent) => {
+      callback(sanitizeForComlink(event));
+    };
+    const subscription = stream.subscribe(safeCallback);
 
     // Store the subscription for cleanup
     subscriptionInfo.subscription = subscription;
@@ -861,13 +918,15 @@ export class TreeSubscriptionService {
         });
         const timestamp = Date.now() as Timestamp;
         for (const node of nodes) {
-          callback({
-            type: 'updated',
-            nodeId: node.id,
-            node,
-            parentId: node.parentId,
-            timestamp,
-          });
+          callback(
+            sanitizeForComlink({
+              type: 'updated',
+              nodeId: node.id,
+              node,
+              parentId: node.parentId,
+              timestamp,
+            })
+          );
         }
       } catch (error) {
         console.warn('[TreeSubscriptionService] Failed to deliver prefetch snapshot', error);
@@ -911,7 +970,10 @@ export class TreeSubscriptionService {
       rxFilter((event): event is TreeNodeEvent => event !== null)
     ) as Observable<TreeNodeEvent>;
 
-    const subscription = stream.subscribe(callback);
+    const safeCallback = (event: TreeNodeEvent) => {
+      callback(sanitizeForComlink(event));
+    };
+    const subscription = stream.subscribe(safeCallback);
     subscriptionInfo.subscription = subscription;
 
     if (options?.prefetch?.depth && options.prefetch.depth > 0) {
@@ -921,13 +983,15 @@ export class TreeSubscriptionService {
         });
         const timestamp = Date.now() as Timestamp;
         for (const node of nodes) {
-          callback({
-            type: 'updated',
-            nodeId: node.id,
-            node,
-            parentId: node.parentId,
-            timestamp,
-          });
+          callback(
+            sanitizeForComlink({
+              type: 'updated',
+              nodeId: node.id,
+              node,
+              parentId: node.parentId,
+              timestamp,
+            })
+          );
         }
       } catch (error) {
         console.warn('[TreeSubscriptionService] Failed to deliver prefetch snapshot', error);
@@ -954,7 +1018,7 @@ export class TreeSubscriptionService {
     });
 
     try {
-      callback(this.latestUndoState);
+      callback(sanitizeForComlink(this.latestUndoState));
     } catch (error) {
       console.warn('[TreeSubscriptionService] undo-atoms callback threw', error);
     }
@@ -1087,7 +1151,7 @@ export class TreeSubscriptionService {
     this.latestUndoState = event;
     for (const [subscriptionId, callback] of this.undoStateSubscriptions.entries()) {
       try {
-        callback(event);
+        callback(sanitizeForComlink(event));
       } catch (error) {
         console.warn('[TreeSubscriptionService] undo-atoms callback threw', error);
       }

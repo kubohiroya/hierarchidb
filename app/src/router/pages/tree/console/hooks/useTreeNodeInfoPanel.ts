@@ -16,6 +16,7 @@ import { useWorker } from '~/contexts/WorkerProvider';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 import {
   collectBuildUrlsForFolder,
   resolveBuildTargetForNode,
@@ -222,8 +223,9 @@ export function useTreeNodeInfoPanel({
     let subId: string | null = null;
 
     const cb = comlinkProxy((ev: unknown) => {
+      const safeEvent = sanitizeForComlink(ev);
       if (disposed) return;
-      const event = ev as { nodeId?: NodeId; node?: TreeNode } | null;
+      const event = safeEvent as { nodeId?: NodeId; node?: TreeNode } | null;
       if (event?.node) {
         if (event.node.id === node.id) {
           setCurrentNode(event.node);

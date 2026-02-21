@@ -12,6 +12,7 @@ import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 
 interface Params {
   client: Remote<BuildWorkerAPI> | undefined;
@@ -121,7 +122,7 @@ export function useTreeConsoleBreadcrumbs({
         if (subscriptionAPI) {
           const targetIds = [...ancestors.map((ancestor) => ancestor.id as NodeId), pageTreeNode.id as NodeId];
           const cb = comlinkProxy((event: unknown) => {
-            const ev = event as { nodeId?: string; node?: TreeNode };
+            const ev = sanitizeForComlink(event) as { nodeId?: string; node?: TreeNode };
             const changedId = ev?.nodeId || ev?.node?.id;
             if (!changedId) return;
             setBreadcrumbItems((prev) =>

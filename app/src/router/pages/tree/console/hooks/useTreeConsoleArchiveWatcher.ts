@@ -5,6 +5,7 @@ import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';
 import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices';
 import { isSubscriptionDebug, logIntegrationWarning } from '../treeConsoleIntegrationUtils.js';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 
 export type ArchiveWatcherState = {
   hasArchiveItems: boolean;
@@ -85,8 +86,9 @@ export function useTreeConsoleArchiveWatcher({
         requestRefresh();
 
         const cb = comlinkProxy((ev: unknown) => {
+          const safeEvent = sanitizeForComlink(ev);
           if (isSubscriptionDebug()) {
-            console.log('[Subscription][archive] event', ev);
+            console.log('[Subscription][archive] event', safeEvent);
           }
           requestRefresh();
         });

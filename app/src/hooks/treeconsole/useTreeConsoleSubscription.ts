@@ -13,6 +13,7 @@ import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
 import { Subscriptions } from '~/hooks/SubscriptionServices';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.derive';
 import type { LoadChildrenOf } from './types.js';
@@ -97,12 +98,13 @@ export function useTreeConsoleSubscription({
 
       const cb = comlinkProxy((event: unknown) => {
         try {
+          const safeEvent = sanitizeForComlink(event);
           if (
             typeof import.meta !== 'undefined' &&
             (import.meta as unknown as { env?: Record<string, string> }).env
               ?.VITE_SUBSCRIPTION_DEBUG === '1'
           ) {
-            console.log('[Subscription][page] event', event);
+            console.log('[Subscription][page] event', safeEvent);
           }
 
           type Ev = {
@@ -113,7 +115,7 @@ export function useTreeConsoleSubscription({
             previousParentNodeId?: string;
           };
 
-          const ev = event as Ev;
+          const ev = safeEvent as Ev;
           const index = nodeIndexRef.current.clone();
 
           if (ev.type === 'created' && ev.node) {
