@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #466 / `feat/shape/url-build-rules-persistence` / start: 2026-02-21 19:02 JST
 - #344 / `codex/refactor/build-session/residual-unification-344` / start: 2026-02-17 16:52 JST
 - #340 / `codex/refactor/runtime/sharedworker-only-build-session-340` / start: 2026-02-17 10:56 JST
 - #339 / `codex/docs/shape/session-manager-state-transition-339` / start: 2026-02-17 10:04 JST
@@ -114,6 +115,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-21 19:02 JST #466 Issue #466 を起票（https://github.com/kubohiroya/hierarchidb/issues/466）し、ブランチ `feat/shape/url-build-rules-persistence` を作成して着手。
 - update: 2026-02-17 17:12 JST #344 Issue DoD チェックを更新（全項目 `[x]`）し、コミット `8f7f8a299`（`refactor(build-session): drop shape UI coordinator control path`）を作成。
 - update: 2026-02-17 17:13 JST #344 ブランチ `codex/refactor/build-session/residual-unification-344` を push し、PR #345（https://github.com/kubohiroya/hierarchidb/pull/345, base: `main`）を作成。
 - update: 2026-02-17 17:10 JST #344 shape build-step の通常 start/stop/progress 経路から `@hierarchidb/session-coordinator` 依存を除去（`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`）。`plugins/shape-plugin/package.json` から同依存を削除し、`pnpm tools:gen-plugin-registry` 実行で `packages/plugin-registry/generated/registry.ts` を同期。

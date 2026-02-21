@@ -5,6 +5,9 @@ export type {
   ShapeBuildFetchConfig,
   ShapeBuildTransformConfig,
   ShapeBuildVtConfig,
+  ShapeBuildUrlConfigPatch,
+  ShapeBuildUrlRule,
+  ShapeUrlMatchType,
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
 } from './build.ts';

@@ -23,12 +23,25 @@ export type ShapeBuildFetchConfig = Omit<
 export type ShapeBuildTransformConfig = Omit<TransformConfig, 'maxConcurrent'>;
 export type ShapeBuildVtConfig = Omit<VTConfig, 'maxConcurrent' | 'dynamicConcurrency'>;
 
+export type ShapeUrlMatchType = 'default' | 'regexp' | 'prefix';
+
+export interface ShapeBuildUrlRule {
+  key?: string;
+  matchType: ShapeUrlMatchType;
+  pattern?: string;
+  buildConfig?: ShapeBuildUrlConfigPatch;
+  enabled?: boolean;
+}
+
+export type ShapeBuildUrlConfigPatch = Omit<Partial<ShapeBuildConfig>, 'urlBuildConfigRules'>;
+
 export interface ShapeBuildConfig {
   dataSourceName: DataSourceName;
   fetchConfig: ShapeBuildFetchConfig;
   transformConfig: ShapeBuildTransformConfig;
   vtConfig: ShapeBuildVtConfig;
   cleanupConfig?: CleanupConfig;
+  urlBuildConfigRules?: ShapeBuildUrlRule[];
 }
 
 export interface ShapeProcessingConfig {
@@ -48,7 +61,14 @@ export interface ShapeProcessingConfig {
 export type ShapeRuntimeBuildConfig = BaseBuildConfig<DataSourceName>;
 
 export type BuildTaskType = TaskStage;
-export type BuildTaskStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'paused' | 'recycled';
+export type BuildTaskStatus =
+  | 'idle'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'paused'
+  | 'recycled';
 
 export const BuildTaskResult = {
   WAIT: 'wait',
@@ -175,7 +195,6 @@ export interface ProgressInfo {
   taskType?: BuildTaskType | 'processing';
 }
 
-
 export interface BuildSession {
   nodeId: NodeId;
   draftId?: NodeId;
@@ -214,7 +233,6 @@ export type ShapeBuildCommandMap = {
 
 export type ShapeBuildCommand = keyof ShapeBuildCommandMap;
 export type ShapeBuildCommandPayload<K extends ShapeBuildCommand> = ShapeBuildCommandMap[K];
-
 
 export interface LayerConfig {
   name: string;

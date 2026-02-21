@@ -2,11 +2,16 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { AlertColor } from '@mui/material';
-import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
+import {
+  BuildConfigShell,
+  FetchConfigSection,
+  VTConfigSection,
+} from '@hierarchidb/ui-accordion-config';
 import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
+import { UrlBuildConfigRulesSection } from './UrlBuildConfigRulesSection.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '~/ui/i18n';
@@ -31,7 +36,7 @@ import {
 import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
 
 const toBuildConfigUpdate = (
-  partial: Partial<ShapeRuntimeBuildConfig>,
+  partial: Partial<ShapeRuntimeBuildConfig>
 ): Partial<ShapeBuildConfig> => {
   const next: Partial<ShapeBuildConfig> = {};
   if (partial.dataSourceName !== undefined) {
@@ -79,11 +84,11 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   const { config, handleChange } = useShapeBuildConfigStep({ data, onChange });
   const processingConfig = useMemo(
     () => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data?.processingConfig),
-    [data?.processingConfig],
+    [data?.processingConfig]
   );
   const runtimeBuildConfig = useMemo(
     () => composeRuntimeBuildConfig(config, processingConfig),
-    [config, processingConfig],
+    [config, processingConfig]
   );
   const { event: heapPressure } = useHeapPressureMonitor();
   const heapWarning = useMemo(() => {
@@ -100,19 +105,25 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
           ratio: ratioPercent,
           used: usedMb,
           limit: limitMb,
-        },
+        }
       ),
     };
   }, [heapPressure, t]);
-  const filteringPreviewImages = useMemo(() => ({
-    weak: filteringLowUrl,
-    medium: filteringMediumUrl,
-    strong: filteringHighUrl,
-  }), []);
-  const updateRuntimeBuildConfig = useCallback((partial: Partial<ShapeRuntimeBuildConfig>) => {
-    const nextBuildConfig = mergeBuildConfig(config, toBuildConfigUpdate(partial));
-    handleChange(nextBuildConfig);
-  }, [config, handleChange]);
+  const filteringPreviewImages = useMemo(
+    () => ({
+      weak: filteringLowUrl,
+      medium: filteringMediumUrl,
+      strong: filteringHighUrl,
+    }),
+    []
+  );
+  const updateRuntimeBuildConfig = useCallback(
+    (partial: Partial<ShapeRuntimeBuildConfig>) => {
+      const nextBuildConfig = mergeBuildConfig(config, toBuildConfigUpdate(partial));
+      handleChange(nextBuildConfig);
+    },
+    [config, handleChange]
+  );
   const fetchState = useFetchConfigSection({
     config,
     nodeId: nodeId as NodeId,
@@ -124,17 +135,15 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     <BuildConfigShell
       padding={2}
       spacing={2}
-      alert={heapWarning ? (
-        <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
-          {heapWarning.message}
-        </Alert>
-      ) : null}
+      alert={
+        heapWarning ? (
+          <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
+            {heapWarning.message}
+          </Alert>
+        ) : null
+      }
     >
-      <ZoomBandConfigSection
-        config={config}
-        onChange={handleChange}
-        disabled={disabled}
-      />
+      <ZoomBandConfigSection config={config} onChange={handleChange} disabled={disabled} />
       <FetchConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
@@ -143,19 +152,20 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         showRetryCard={false}
         disabled={disabled}
-        additionalCards={(
+        additionalCards={
           <FetchInvalidGeometryFilterCard
             config={config}
             onChange={handleChange}
             disabled={disabled}
           />
-        )}
+        }
       />
-      <TransformConfigSection
+      <UrlBuildConfigRulesSection
         config={config}
         onChange={handleChange}
         disabled={disabled}
       />
+      <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
       <VTConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
@@ -171,9 +181,10 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
 const ShapeBuildConfigRunningNotice: React.FC = () => {
   const { t } = useTranslation();
   const { stepComponents, onStepNavigate } = useDialogContext<Partial<ShapeEntity>>();
-  const buildStepIndex = useMemo(() => (
-    stepComponents.findIndex((step) => step.id === 'build')
-  ), [stepComponents]);
+  const buildStepIndex = useMemo(
+    () => stepComponents.findIndex((step) => step.id === 'build'),
+    [stepComponents]
+  );
   const handleOpenBuildStep = useCallback(() => {
     if (buildStepIndex < 0) return;
     onStepNavigate({ type: 'direct', targetIndex: buildStepIndex });
@@ -187,7 +198,7 @@ const ShapeBuildConfigRunningNotice: React.FC = () => {
       <Typography variant="body2" color="text.secondary">
         {t(
           'processing.buildRunning.body',
-          'A build session is currently running. Open the Build step to view progress.',
+          'A build session is currently running. Open the Build step to view progress.'
         )}
       </Typography>
       <Button variant="contained" onClick={handleOpenBuildStep} disabled={buildStepIndex < 0}>
