@@ -17,11 +17,7 @@ import {
   type BuildStatus,
 } from '@hierarchidb/components';
 import {
-  BuildSessionProgressPanelShell,
   resolveBuildStages,
-  resolveSplitViewAutoCloseCounts,
-  resolveSplitViewInitialSizes,
-  SPLITVIEW_BREAKPOINTS,
 } from '@hierarchidb/ui-build-progress';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
@@ -49,6 +45,8 @@ import {
   useRouteBuildSessionLifecycle,
   type RouteBuildSessionTransitionPhase,
 } from './useRouteBuildSessionLifecycle.ts';
+import { RouteBuildProgressPanel } from './RouteBuildProgressPanel.tsx';
+import { useRouteBuildProgressPanelViewModel } from './useRouteBuildProgressPanelViewModel.ts';
 
 interface RouteBuildStepProps {
   draft: Partial<RouteEntity>;
@@ -163,9 +161,6 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       },
     },
   }), [t]);
-  const splitViewInitialSizes = useMemo(() => resolveSplitViewInitialSizes(stages.length), [stages.length]);
-  const splitViewAutoCloseCounts = useMemo(() => resolveSplitViewAutoCloseCounts(stages.length), [stages.length]);
-
   const resolveZoomRange = useCallback((): [number, number] => {
     const zoomRange = draft.zoomRange;
     if (zoomRange && zoomRange.length === 2) {
@@ -413,6 +408,124 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     return t('stage.progress.endedReason', 'Build ended.');
   }, [draft, errorRows.length, status, t]);
 
+  const progressPanelViewModel = useRouteBuildProgressPanelViewModel({
+    status,
+    overallProgress,
+    stages,
+    stageProgress,
+    onPause: () => {
+      void handlePause('user-pause');
+    },
+    onResume: isWebLockSupported && !isStopRequested ? runIdeGsmBuild : undefined,
+    onComplete: () => {
+      setStatus('completed');
+      setOverallProgress(100);
+    },
+    stopRequested: isStopRequested,
+    startPending: buildSessionTransition.active && status !== 'running',
+    statusLabel: buildSessionTransition.active
+      ? getRouteBuildTransitionStatusLabel(t, buildSessionTransition.phase)
+      : undefined,
+    suppressStatusFallback: true,
+    suspendDialog: {
+      open: suspendSuspectOpen,
+      onClose: () => closeSuspendSuspect(),
+      title: t('stage.progress.suspendSuspectTitle', 'Build tab suspended'),
+      message: suspendSuspectMessage
+        ?? t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
+      closeLabel: t('common.close', 'Close'),
+    },
+    crashDialog: {
+      open: crashSuspectOpen,
+      onClose: () => closeCrashSuspect(),
+      title: t('stage.progress.crashSuspectTitle', 'Build may have stopped'),
+      message: crashSuspectMessage
+        ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
+      closeLabel: t('common.close', 'Close'),
+    },
+    completionDialog: {
+      open: completionDialogOpen,
+      onClose: () => setCompletionDialogOpen(false),
+      title: completionSnapshot?.status === 'completed'
+        ? t('stage.progress.completedTitle', 'Build completed')
+        : t('stage.progress.failedTitle', 'Build failed'),
+      closeLabel: t('common.close', 'Close'),
+      content: (
+        <>
+          <Typography variant="body2">
+            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+          </Typography>
+          {completionSnapshot?.status === 'failed' ? (
+            <>
+              <Typography variant="body2">
+                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+              </Typography>
+              <Typography variant="body2">
+                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body2">
+              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+            </Typography>
+          )}
+        </>
+      ),
+    },
+    footer: (
+      <>
+        <HeapPressureDialog
+          open={heapDialogOpen}
+          event={heapEvent}
+          onClose={() => {
+            setHeapDialogOpen(false);
+            dismissHeapEvent();
+          }}
+          title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+          confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
+          description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+        />
+        <Dialog
+          open={errorDialogOpen}
+          onClose={() => setErrorDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>{t('stage.errors.title', 'Build errors')}</DialogTitle>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              {t('stage.errors.description', 'Some rows were skipped. Review the list below.')}
+            </Typography>
+            <Box sx={{ height: 360 }}>
+              <GenericDataGrid
+                columns={errorColumns}
+                rows={errorRows}
+                getRowId={(row) => row.id}
+                enableVirtualization
+                rowHeight={38}
+                maxHeight={360}
+                stickyHeader
+                dense
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
+            <Typography variant="caption" color="text.secondary">
+              {`${errorRows.length} ${t('stage.errors.countLabel', 'errors')}`}
+            </Typography>
+            <Chip
+              size="small"
+              label={t('stage.errors.close', 'Close')}
+              onClick={() => setErrorDialogOpen(false)}
+              clickable
+            />
+          </DialogActions>
+        </Dialog>
+      </>
+    ),
+    stagesLength: stages.length,
+  });
+
   useEffect(() => {
     if (completionStatusRef.current === null) {
       completionStatusRef.current = status;
@@ -499,123 +612,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           {resolveIdeGsmLabel(ideGsmPhase)}
         </Typography>
       ) : null}
-      <BuildSessionProgressPanelShell
-        status={status}
-        overallProgress={overallProgress}
-        stages={stages}
-        stageProgress={stageProgress}
-        splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
-        splitViewInitialSizesByBreakpoint={splitViewInitialSizes}
-        splitViewAutoCloseCountsByBreakpoint={splitViewAutoCloseCounts}
-        onPause={() => {
-          void handlePause('user-pause');
-        }}
-        onResume={isWebLockSupported && !isStopRequested ? runIdeGsmBuild : undefined}
-        onComplete={() => {
-          setStatus('completed');
-          setOverallProgress(100);
-        }}
-        stopRequested={isStopRequested}
-        startPending={buildSessionTransition.active && status !== 'running'}
-        statusLabel={buildSessionTransition.active
-          ? getRouteBuildTransitionStatusLabel(t, buildSessionTransition.phase)
-          : undefined}
-        suppressStatusFallback
-        suspendDialog={{
-          open: suspendSuspectOpen,
-          onClose: () => closeSuspendSuspect(),
-          title: t('stage.progress.suspendSuspectTitle', 'Build tab suspended'),
-          message: suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build tab is in background; waiting for it to resume.'),
-          closeLabel: t('common.close', 'Close'),
-        }}
-        crashDialog={{
-          open: crashSuspectOpen,
-          onClose: () => closeCrashSuspect(),
-          title: t('stage.progress.crashSuspectTitle', 'Build may have stopped'),
-          message: crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.'),
-          closeLabel: t('common.close', 'Close'),
-        }}
-        completionDialog={{
-          open: completionDialogOpen,
-          onClose: () => setCompletionDialogOpen(false),
-          title: completionSnapshot?.status === 'completed'
-            ? t('stage.progress.completedTitle', 'Build completed')
-            : t('stage.progress.failedTitle', 'Build failed'),
-          closeLabel: t('common.close', 'Close'),
-          content: (
-            <>
-              <Typography variant="body2">
-                {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
-              </Typography>
-              {completionSnapshot?.status === 'failed' ? (
-                <>
-                  <Typography variant="body2">
-                    {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
-                  </Typography>
-                  <Typography variant="body2">
-                    {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="body2">
-                  {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
-                </Typography>
-              )}
-            </>
-          ),
-        }}
-        footer={(
-          <>
-            <HeapPressureDialog
-              open={heapDialogOpen}
-              event={heapEvent}
-              onClose={() => {
-                setHeapDialogOpen(false);
-                dismissHeapEvent();
-              }}
-              title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
-              confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
-              description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
-            />
-            <Dialog
-              open={errorDialogOpen}
-              onClose={() => setErrorDialogOpen(false)}
-              maxWidth="md"
-              fullWidth
-            >
-              <DialogTitle>{t('stage.errors.title', 'Build errors')}</DialogTitle>
-              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('stage.errors.description', 'Some rows were skipped. Review the list below.')}
-                </Typography>
-                <Box sx={{ height: 360 }}>
-                  <GenericDataGrid
-                    columns={errorColumns}
-                    rows={errorRows}
-                    getRowId={(row) => row.id}
-                    enableVirtualization
-                    rowHeight={38}
-                    maxHeight={360}
-                    stickyHeader
-                    dense
-                  />
-                </Box>
-              </DialogContent>
-              <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {`${errorRows.length} ${t('stage.errors.countLabel', 'errors')}`}
-                </Typography>
-                <Chip
-                  size="small"
-                  label={t('stage.errors.close', 'Close')}
-                  onClick={() => setErrorDialogOpen(false)}
-                  clickable
-                />
-              </DialogActions>
-            </Dialog>
-          </>
-        )}
-      />
+      <RouteBuildProgressPanel {...progressPanelViewModel} />
     </Box>
   );
 };
