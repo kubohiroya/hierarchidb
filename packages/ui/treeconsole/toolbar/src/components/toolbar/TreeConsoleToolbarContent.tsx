@@ -70,7 +70,7 @@ export function TreeConsoleToolbarContent({
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [archiveAnchorEl, setArchiveAnchorEl] = useState<HTMLElement | null>(null);
-  const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
+  const { t: tCommon } = useTranslation('common');
 
   const handleAction = useCallback(
     (action: string, params?: TreeConsoleToolbarActionParams) => {
@@ -104,69 +104,75 @@ export function TreeConsoleToolbarContent({
   };
 
   const tooltips = {
-    undo: t('tooltips.undo', { shortcut: '⌘+Z' }),
-    redo: t('tooltips.redo', { shortcut: '⌘+Shift+Z' }),
-    cut: t('tooltips.cut', { shortcut: '⌘+X' }),
-    copy: t('tooltips.copy', { shortcut: '⌘+C' }),
-    paste: t('tooltips.paste', { shortcut: '⌘+V' }),
-    duplicate: t('tooltips.duplicate', { shortcut: '⌘+D' }),
-    moveToArchive: t('tooltips.moveToArchive', { shortcut: '⌘+X' }),
+    undo: tCommon('treeConsole.toolbar.tooltips.undo', { shortcut: '⌘+Z' }),
+    redo: tCommon('treeConsole.toolbar.tooltips.redo', { shortcut: '⌘+Shift+Z' }),
+    cut: tCommon('treeConsole.toolbar.tooltips.cut', { shortcut: '⌘+X' }),
+    copy: tCommon('treeConsole.toolbar.tooltips.copy', { shortcut: '⌘+C' }),
+    paste: tCommon('treeConsole.toolbar.tooltips.paste', { shortcut: '⌘+V' }),
+    duplicate: tCommon('treeConsole.toolbar.tooltips.duplicate', { shortcut: '⌘+D' }),
+    moveToArchive: tCommon('treeConsole.toolbar.tooltips.moveToArchive', { shortcut: '⌘+X' }),
   } as const;
 
-  const archiveButtonLabel = t('aria.archiveMenuButton');
-  const settingsButtonLabel = t('aria.settingsButton');
+  const archiveButtonLabel = tCommon('treeConsole.toolbar.aria.archiveMenuButton');
+  const settingsButtonLabel = tCommon('treeConsole.toolbar.aria.settingsButton');
 
   const labels = {
-    restoreLabel: t('archiveMenu.restore'),
-    emptyLabel: t('archiveMenu.empty'),
-    rowClickTitle: t('rowClick.title'),
-    rowClickSelectNavigate: t('rowClick.options.selectNavigate'),
-    rowClickEdit: t('rowClick.options.edit'),
-    themeTitle: t('settings.theme.title'),
+    restoreLabel: tCommon('treeConsole.toolbar.archiveMenu.restore'),
+    emptyLabel: tCommon('treeConsole.toolbar.archiveMenu.empty'),
+    rowClickTitle: tCommon('treeConsole.toolbar.rowClick.title'),
+    rowClickSelectNavigate: tCommon('treeConsole.toolbar.rowClick.options.selectNavigate'),
+    rowClickEdit: tCommon('treeConsole.toolbar.rowClick.options.edit'),
+    themeTitle: tCommon('treeConsole.toolbar.settings.theme.title'),
     themeModes: {
-      system: t('settings.theme.modes.system'),
-      light: t('settings.theme.modes.light'),
-      dark: t('settings.theme.modes.dark'),
+      system: tCommon('treeConsole.toolbar.settings.theme.modes.system'),
+      light: tCommon('treeConsole.toolbar.settings.theme.modes.light'),
+      dark: tCommon('treeConsole.toolbar.settings.theme.modes.dark'),
     },
-    languageTitle: t('settings.language.title'),
+    languageTitle: tCommon('treeConsole.toolbar.settings.language.title'),
     languageModes: {
-      system: t('settings.language.modes.system'),
-      en: t('settings.language.modes.en'),
-      ja: t('settings.language.modes.ja'),
+      system: tCommon('treeConsole.toolbar.settings.language.modes.system'),
+      en: tCommon('treeConsole.toolbar.settings.language.modes.en'),
+      ja: tCommon('treeConsole.toolbar.settings.language.modes.ja'),
     },
-    developerMenuLabel: t('developerMenu.clearIndexedDb'),
-    autosaveTitle: t('settings.autosave.title', 'Autosave'),
-    dialogBackdropDismissTitle: t(
-      'settings.dialogBackdropDismiss.title',
+    developerMenuLabel: tCommon('treeConsole.toolbar.developerMenu.clearIndexedDb'),
+    autosaveTitle: tCommon('treeConsole.toolbar.settings.autosave.title', 'Autosave'),
+    dialogBackdropDismissTitle: tCommon(
+      'treeConsole.toolbar.settings.dialogBackdropDismiss.title',
       'Close dialogs on outside click',
     ),
-    zoomBandsTitle: t('settings.zoomBands.title', 'Zoom bands'),
-    zoomBandsHelper: t(
-      'settings.zoomBands.helper',
+    zoomBandsTitle: tCommon('treeConsole.toolbar.settings.zoomBands.title', 'Zoom bands'),
+    zoomBandsHelper: tCommon(
+      'treeConsole.toolbar.settings.zoomBands.helper',
       'Default zoom band settings for new Shape/Route builds.',
     ),
-    zoomBandsSummary: t(
-      'settings.zoomBands.summary',
+    zoomBandsSummary: tCommon(
+      'treeConsole.toolbar.settings.zoomBands.summary',
       'Used as the default Transform zoom bands when creating new Shape/Route nodes.',
     ),
-    zoomBandsRangeCount: t('settings.zoomBands.rangeCount', 'Number of ranges'),
-    zoomBandsRangeCountHelp: t(
-      'settings.zoomBands.rangeCountHelp',
+    zoomBandsRangeCount: tCommon('treeConsole.toolbar.settings.zoomBands.rangeCount', 'Number of ranges'),
+    zoomBandsRangeCountHelp: tCommon(
+      'treeConsole.toolbar.settings.zoomBands.rangeCountHelp',
       'Set how many zoom ranges to use for transforms.',
     ),
-    zoomBandsBoundaries: t('settings.zoomBands.boundaries', 'Range boundaries'),
-    zoomBandsBoundariesHelp: t(
-      'settings.zoomBands.boundariesHelp',
+    zoomBandsBoundaries: tCommon('treeConsole.toolbar.settings.zoomBands.boundaries', 'Range boundaries'),
+    zoomBandsBoundariesHelp: tCommon(
+      'treeConsole.toolbar.settings.zoomBands.boundariesHelp',
       'Adjust the zoom levels that split each range.',
     ),
-    buildPolicyTitle: t('settings.buildPolicy.title', 'Build continuation policy'),
-    buildPolicyHelper: t(
-      'settings.buildPolicy.helper',
+    buildPolicyTitle: tCommon('treeConsole.toolbar.settings.buildPolicy.title', 'Build continuation policy'),
+    buildPolicyHelper: tCommon(
+      'treeConsole.toolbar.settings.buildPolicy.helper',
       'Controls how builds behave after errors.',
     ),
-    buildPolicyFinishAll: t('settings.buildPolicy.options.finishAll', 'Finish all stages'),
-    buildPolicyFinishStage: t('settings.buildPolicy.options.finishStage', 'Finish stage then stop'),
-    buildPolicyStop: t('settings.buildPolicy.options.stop', 'Stop on first error'),
+    buildPolicyFinishAll: tCommon(
+      'treeConsole.toolbar.settings.buildPolicy.options.finishAll',
+      'Finish all stages',
+    ),
+    buildPolicyFinishStage: tCommon(
+      'treeConsole.toolbar.settings.buildPolicy.options.finishStage',
+      'Finish stage then stop',
+    ),
+    buildPolicyStop: tCommon('treeConsole.toolbar.settings.buildPolicy.options.stop', 'Stop on first error'),
   } as const;
 
   return (

@@ -33,13 +33,13 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   } = props;
 
   const theme = useTheme();
-  const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
+  const { t: tCommon } = useTranslation('common');
 
   const searchStrings: SearchStrings = {
-    placeholder: t('search.placeholder'),
-    ariaLabel: t('search.ariaLabel'),
+    placeholder: tCommon('treeConsole.toolbar.search.placeholder', 'Search tree…'),
+    ariaLabel: tCommon('treeConsole.toolbar.search.ariaLabel', 'Tree search'),
   };
-  const toolbarAriaLabel = t('aria.toolbarLabel');
+  const toolbarAriaLabel = tCommon('treeConsole.toolbar.aria.toolbarLabel', 'Tree console toolbar');
 
   if (hideConsole) {
     return null;
