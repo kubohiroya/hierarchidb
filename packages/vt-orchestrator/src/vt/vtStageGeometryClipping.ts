@@ -15,6 +15,7 @@ import {
   isEmptyGeometry,
   isPointGeometry,
 } from './vtStageGeometryFeature.js';
+import { bboxIntersects } from './vtStageGeometryTile.js';
 
 export const clipFeatureForTile = (feature: Feature<Geometry>, tileBBox: TileBBox): Feature<Geometry> | null => {
   const geometry = feature.geometry;
@@ -38,6 +39,7 @@ export const clipFeaturesForTile = (
 ): Feature<Geometry>[] => {
   const clippedFeatures: Feature<Geometry>[] = [];
   for (const entry of featuresWithBBox) {
+    if (!bboxIntersects(entry.bbox, tileBBox)) continue;
     const clipped = clipFeatureForTile(entry.feature, tileBBox);
     if (!clipped || isEmptyGeometry(clipped.geometry)) continue;
     clippedFeatures.push(clipped);

@@ -494,7 +494,7 @@ export const generateVectorTilesFromFeatureCollection = async (
             : null;
         if (layer?.features?.length) {
           const layers: Record<string, Tile> = { layer0: layer };
-          const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], {
+          const pbf = vtpbf.fromGeojsonVt(layers, {
             version: 2,
             extent: 4096,
           });

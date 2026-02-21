@@ -21,14 +21,14 @@ export const runVtTileOutputFlow = async (
     adminFeatureSummary,
   } = outputContext;
 
-  const tileOutputSession = await runVtTileOutputWriter(outputContext);
-
   console.info('[vt] encode/store start', JSON.stringify({
     ...taskContext,
     totalTiles,
     bufferCount: input.bufferIds.length,
     heap: getHeapSnapshot(),
   }));
+
+  const tileOutputSession = await runVtTileOutputWriter(outputContext);
 
   return finalizeVtTileOutput({
     context,
