@@ -1,7 +1,8 @@
 import type { Tile } from 'geojson-vt';
 import type { Feature, Geometry } from 'geojson';
-import { dedupeTileLines } from './vtStageGeometry.js';
+import { dedupeTileLines } from './vtStageTileLineUtils.js';
 import type { VTStageContext } from '~/contexts';
+import type { TaskLayerContext } from './vtStageTaskLayerBuilderTypes.js';
 import {
   buildTileLayerIndexFromFeatures,
   type GeojsonVtIndex,
@@ -122,4 +123,48 @@ export const createLayerIndexForTile = (params: LayerIndexParams): GeojsonVtInde
       debugCollect,
     });
   };
+};
+
+export const logLayerIndexBuildStart = ({
+  taskContext,
+  layerCount,
+  debugCollect,
+  extra,
+}: {
+  taskContext: TaskLayerContext;
+  layerCount: number;
+  debugCollect: boolean;
+  extra?: Record<string, unknown>;
+}): void => {
+  if (!debugCollect) {
+    return;
+  }
+  console.info('[vt][debug] buildLayerIndexes start', JSON.stringify({
+    ...taskContext,
+    ...extra,
+    layerCount,
+    heap: null,
+  }));
+};
+
+export const logLayerIndexBuildDone = ({
+  taskContext,
+  indexCount,
+  debugCollect,
+  extra,
+}: {
+  taskContext: TaskLayerContext;
+  indexCount: number;
+  debugCollect: boolean;
+  extra?: Record<string, unknown>;
+}): void => {
+  if (!debugCollect) {
+    return;
+  }
+  console.info('[vt][debug] buildLayerIndexes done', JSON.stringify({
+    ...taskContext,
+    ...extra,
+    indexCount,
+    heap: null,
+  }));
 };

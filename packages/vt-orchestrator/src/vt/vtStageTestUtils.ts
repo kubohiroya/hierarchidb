@@ -9,8 +9,9 @@ import {
   buildSkippedMessage,
   buildTileSummary,
   computeOutputTileTotals,
+  buildAdminFeatureSummary,
+  buildVtParentInputSummary,
 } from './vtStageSummary.js';
-import { buildAdminFeatureSummary, buildVtParentInputSummary } from './vtStageCore.js';
 
 export const vtStageTestUtils = {
   buildAdminFeatureSummary,
