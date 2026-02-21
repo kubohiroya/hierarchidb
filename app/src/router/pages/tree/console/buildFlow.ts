@@ -34,6 +34,47 @@ export const resolveBuildStepTarget = (
   return { stepId, stepNumber };
 };
 
+const isBuildRequired = (node: TreeNode): boolean =>
+  Boolean(node.draftMetadata?.buildMetadata?.buildRequired) ||
+  Boolean(node.metadata?.buildMetadata?.buildRequired);
+
+type FolderQueryApi = {
+  listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
+};
+
+const collectBuildUrlsFromDescendants = async (params: {
+  treeId: TreeId;
+  pageNodeId: NodeId;
+  folderNode: TreeNode;
+  returnTo: string;
+  queueKey: string;
+  queryAPI: FolderQueryApi;
+}): Promise<string[]> => {
+  const { treeId, pageNodeId, folderNode, returnTo, queueKey, queryAPI } = params;
+  const urls: string[] = [];
+  const descendants = await queryAPI.listDescendants(folderNode.id as NodeId);
+  for (const item of descendants) {
+    const itemType = String(item.nodeType ?? '');
+    if (isFolderNodeType(itemType)) continue;
+    if (!isBuildRequired(item)) continue;
+    await loadUIPlugin(itemType).catch(() => false);
+    const target = resolveBuildStepTarget(itemType, mergeNodeData(item));
+    if (!target) continue;
+    urls.push(
+      buildDialogUrl({
+        treeId,
+        pageNodeId,
+        targetNodeId: item.id as NodeId,
+        nodeType: itemType,
+        stepNumber: target.stepNumber,
+        returnTo,
+        buildQueueKey: queueKey,
+      })
+    );
+  }
+  return urls;
+};
+
 export const buildDialogUrl = (params: {
   treeId: TreeId;
   pageNodeId: NodeId;
@@ -62,42 +103,21 @@ export const collectBuildUrlsForFolder = async (params: {
   returnTo: string;
   workerClient: {
     getQueryAPI: () => Promise<{
-      listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>;
       listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
     }>;
   };
 }): Promise<{ urls: string[]; queueKey: string }> => {
   const { treeId, pageNodeId, folderNode, returnTo, workerClient } = params;
   const queryAPI = await workerClient.getQueryAPI();
-  const [ancestors, descendants] = await Promise.all([
-    queryAPI.listAncestors(folderNode.id as NodeId),
-    queryAPI.listDescendants(folderNode.id as NodeId),
-  ]);
-  const ordered = [...ancestors, ...descendants];
-  const unique = new Map<NodeId, TreeNode>();
-  for (const item of ordered) {
-    unique.set(item.id as NodeId, item);
-  }
   const queueKey = createBuildQueueKey();
-  const urls: string[] = [];
-  for (const item of unique.values()) {
-    const itemType = String(item.nodeType ?? '');
-    if (isFolderNodeType(itemType)) continue;
-    await loadUIPlugin(itemType).catch(() => false);
-    const target = resolveBuildStepTarget(itemType, mergeNodeData(item));
-    if (!target) continue;
-    urls.push(
-      buildDialogUrl({
-        treeId,
-        pageNodeId,
-        targetNodeId: item.id as NodeId,
-        nodeType: itemType,
-        stepNumber: target.stepNumber,
-        returnTo,
-        buildQueueKey: queueKey,
-      })
-    );
-  }
+  const urls = await collectBuildUrlsFromDescendants({
+    treeId,
+    pageNodeId,
+    folderNode,
+    returnTo,
+    queueKey,
+    queryAPI,
+  });
   return { urls, queueKey };
 };
 
@@ -126,7 +146,6 @@ export const startBuildFlow = async (params: {
   workerClient: {
     getQueryAPI: () => Promise<{
       getNode: (nodeId: NodeId) => Promise<TreeNode | undefined>;
-      listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>;
       listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
     }>;
   } | null;
