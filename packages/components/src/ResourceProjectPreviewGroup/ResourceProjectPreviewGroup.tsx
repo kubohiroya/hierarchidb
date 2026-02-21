@@ -3,6 +3,7 @@
  * @description Unified button group for Resources, Projects, and PreviewStep navigation
  */
 
+import type { ReactElement } from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // Placeholder until moved to proper package
 // import { AttachmentIcon, MapIcon } from '~/icon';
@@ -53,7 +54,7 @@ export function ResourceProjectPreviewGroup({
                                               onPreviewClick: _onPreviewClick,
                                               orientation = 'horizontal',
                                               size = 'medium',
-                                            }: ResourceProjectPreviewGroupProps): JSX.Element {
+                                            }: ResourceProjectPreviewGroupProps): ReactElement {
   const navigate = useNavigate();
 
   const handleToggle = (targetType: ResourceProjectType) => {

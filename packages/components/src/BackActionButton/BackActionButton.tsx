@@ -1,4 +1,5 @@
 // import { LinkButton } from "@hierarchidb/ui-routing";
+import type { ReactElement } from 'react';
 import { Button } from '@mui/material';
 //import { APP_PREFIX } from "@/config/appDescription";
 //import { EriaCartLogo } from "@/domains/src-config/containers/info/EriaCartLogo";
@@ -18,7 +19,7 @@ export function BackActionButton({
                                    isProjectsPage: _isProjectsPage = false,
                                    children,
                                    to,
-                                 }: BackActionButtonProps): JSX.Element {
+                                 }: BackActionButtonProps): ReactElement {
   return (
     <Button
       onClick={() => (window.location.href = to)}

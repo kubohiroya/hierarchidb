@@ -2,9 +2,10 @@ import React from 'react';
 import { toNodeId } from '@hierarchidb/core-types';
 import type { LocationDialogProps } from '~/common/types/index';
 import type { LocationPanelProps } from '~/common/components/LocationPanel';
+import type { ReactElement } from 'react';
 
-type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
-type PluginPanelComponent = (props: HostPluginPanelProps) => JSX.Element | null;
+type PluginDialogComponent = (props: HostPluginDialogProps) => ReactElement | null;
+type PluginPanelComponent = (props: HostPluginPanelProps) => ReactElement | null;
 
 interface HostPluginDialogProps {
   open: boolean;

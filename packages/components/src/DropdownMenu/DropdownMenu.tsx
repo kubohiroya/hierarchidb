@@ -18,7 +18,7 @@
  */
 
 import { Box, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { type MouseEvent, type ReactNode, useCallback, useState } from 'react';
+import { type MouseEvent, type ReactElement, type ReactNode, useCallback, useState } from 'react';
 import type { DropdownMenuItemType } from './DropdownMenuItemType.js';
 
 export interface DropdownMenuProps {
@@ -35,7 +35,7 @@ export const DropdownMenu = ({
                                disabled,
                                color,
                                children,
-                             }: DropdownMenuProps): JSX.Element => {
+                             }: DropdownMenuProps): ReactElement => {
   const [anchorElem, setAnchorElem] = useState<null | HTMLElement>(null);
   const handleMenuOpenButtonClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

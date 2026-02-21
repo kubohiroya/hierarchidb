@@ -42,12 +42,12 @@
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@tanstack/react-router": "^1.141.2",
-    "@types/react": "^18.3.27",
+    "@types/react": "^19.1.1",
     "comlink": "^4.4.2",
     "dequal": "^2.0.3",
     "jotai": "^2.16.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "5.8.2",
     "vitest": "^3.2.4"
   },
@@ -70,8 +70,8 @@
     "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2",
     "jotai": "^2.0.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "dequal": "^2.0.3"
   },
   "turbo": {

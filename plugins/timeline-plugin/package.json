@@ -69,7 +69,7 @@
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "react": ">=18.0.0"
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@hierarchidb/core-types": "workspace:*",
@@ -84,7 +84,7 @@
     "@hierarchidb/util": "workspace:*",
     "@types/node": "^20.10.5",
     "@types/react-transition-group": "^4.4.12",
-    "react": ">=18.0.0",
+    "react": "^19.0.0",
     "typescript": "workspace:^5.9.3"
   },
   "hierarchidb": {

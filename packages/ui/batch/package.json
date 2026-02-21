@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
+    "react": "^19.0.0",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
@@ -39,7 +39,7 @@
     "comlink": ">=4.0.0"
   },
   "devDependencies": {
-    "react": ">=18.0.0",
+    "react": "^19.0.0",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",

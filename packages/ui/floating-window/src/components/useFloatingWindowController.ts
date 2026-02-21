@@ -31,7 +31,7 @@ const ensureFloatingWindowRoot = (): HTMLElement | null => {
 type FloatingWindowController = {
   portalRoot: HTMLElement | null;
   portalHostRef: React.MutableRefObject<HTMLDivElement | null>;
-  windowRef: React.RefObject<HTMLDivElement>;
+  windowRef: React.RefObject<HTMLDivElement | null>;
   state: WindowState;
   overlayActive: boolean;
   overlayCursor: string;

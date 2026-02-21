@@ -23,7 +23,7 @@
   "peerDependencies": {
     "recharts": "^3.1.2",
     "@hierarchidb/util": "workspace:*",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "@emotion/react": "^11.14.0"
@@ -31,7 +31,7 @@
   "devDependencies": {
     "recharts": "^3.1.2",
     "@hierarchidb/util": "workspace:*",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6"
   }

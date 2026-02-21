@@ -288,13 +288,13 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     );
   }, [rows, selectionColumns, selectionMap]);
 
-  const storeRef = useRef<ReturnType<typeof createStore>>();
+  const storeRef = useRef<ReturnType<typeof createStore> | undefined>(undefined);
   if (!storeRef.current) {
     storeRef.current = createStore();
   }
   const store = storeRef.current;
 
-  const matrixAtomRef = useRef<PrimitiveAtom<boolean[][]>>();
+  const matrixAtomRef = useRef<PrimitiveAtom<boolean[][]> | undefined>(undefined);
   if (!matrixAtomRef.current) {
     matrixAtomRef.current = atom<boolean[][]>([]);
   }

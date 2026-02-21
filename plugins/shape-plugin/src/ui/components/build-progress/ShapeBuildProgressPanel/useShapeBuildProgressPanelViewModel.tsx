@@ -6,6 +6,7 @@ import {
 } from '@hierarchidb/ui-build-progress';
 import { Box } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import type { ReactElement } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 
@@ -35,7 +36,7 @@ type ShapeBuildProgressPanelViewModel = {
   suppressStatusFallback: true;
   onResume?: (() => void) | undefined;
   onPause?: (() => void) | undefined;
-  startIcon: JSX.Element;
+  startIcon: ReactElement;
   controlLabel: string;
   pauseLabel: string;
   stopRequested: boolean;
@@ -46,7 +47,7 @@ type ShapeBuildProgressPanelViewModel = {
   resumeLabel: string;
   statusLabel: string;
   controlDetails: ShapeBuildProgressPanelControllerResult['controlDetails'];
-  controlRightContent: JSX.Element;
+  controlRightContent: ReactElement;
   completionDialog: ShapeBuildProgressPanelControllerResult['completionDialog'];
   suspendDialog: ShapeBuildProgressPanelControllerResult['suspendDialog'];
   crashDialog: ShapeBuildProgressPanelControllerResult['crashDialog'];

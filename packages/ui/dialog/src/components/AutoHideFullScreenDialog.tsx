@@ -68,8 +68,8 @@ export function AutoHideFullScreenDialog({
                                          }: AutoHideFullScreenDialogProps): React.ReactElement {
   const [headerVisible, setHeaderVisible] = useState(!autoHide);
   const [footerVisible, setFooterVisible] = useState(!autoHide);
-  const headerTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const footerTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const headerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const footerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleHeaderMouseEnter = useCallback(() => {
     if (autoHide) {

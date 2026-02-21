@@ -79,7 +79,6 @@
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.6",
@@ -87,8 +86,8 @@
     "dexie": "^4.2.0",
     "i18next": "22.5.0",
     "jotai": "^2.11.2",
-    "react": "^18.3.1",
-    "react-dom": ">=18.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-i18next": "12.3.1"
   },
   "devDependencies": {
@@ -116,8 +115,8 @@
     "@vitest/ui": "^3.2.4",
     "dexie": "^4.2.0",
     "jotai": "^2.11.2",
-    "react": "^18.3.1",
-    "react-dom": ">=18.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "vitest": "^3.2.4"
   },
   "keywords": [

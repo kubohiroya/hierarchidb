@@ -29,7 +29,7 @@ export const useMapHighlight = ({
                                   initialStyles,
                                   onStateChange,
                                 }: UseMapHighlightProps): UseMapHighlightReturn => {
-  const serviceRef = useRef<MapHighlightService>();
+  const serviceRef = useRef<MapHighlightService | undefined>(undefined);
   const [highlightState, setHighlightState] = useState<MapHighlightState>({
     searchMatched: new Set(),
     selected: new Set(),

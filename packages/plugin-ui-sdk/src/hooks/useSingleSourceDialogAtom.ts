@@ -70,14 +70,14 @@ export function useSingleSourceDialogAtom<
     error,
   } = useTreeNodeUpdater<TEntity>(options);
 
-  const storeRef = useRef<ReturnType<typeof createStore>>();
+  const storeRef = useRef<ReturnType<typeof createStore> | undefined>(undefined);
   if (!storeRef.current) {
     storeRef.current = createStore();
   }
   const store = storeRef.current;
 
-  const draftAtomRef = useRef<PrimitiveAtom<DraftShape<TEntity>>>();
-  const metadataAtomRef = useRef<PrimitiveAtom<TreeNodeMetadata>>();
+  const draftAtomRef = useRef<PrimitiveAtom<DraftShape<TEntity>> | undefined>(undefined);
+  const metadataAtomRef = useRef<PrimitiveAtom<TreeNodeMetadata> | undefined>(undefined);
 
   const draftAtom = useMemo(() => {
     const initial = (treeNodeUpdater?.draftData ??

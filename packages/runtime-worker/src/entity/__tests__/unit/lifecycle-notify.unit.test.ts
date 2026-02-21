@@ -7,6 +7,7 @@ import type {
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/tree-api';
+import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../../services/CommandProcessor';
 import type { CoreDB } from '../../../services/CoreDB';
@@ -146,13 +147,21 @@ describe('Entity lifecycle notifications from services', () => {
 
   it('importNodes notifies lifecycle when flag ON', async () => {
     const bulkCreated: NodeId[] = [];
-    const core: Pick<CoreDB, 'bulkCreateNodes' | 'getNode'> = {
+    const core: Pick<
+      ImportExportDBPort,
+      'bulkCreateNodes' | 'getNode' | 'listChildren' | 'listVectorTileRecords'
+    > & {
+      getCoreDB: () => CoreDB;
+    } = {
       bulkCreateNodes: vi.fn(async (nodes: TreeNode[]) => {
         nodes.forEach((node) => {
           bulkCreated.push(node.id);
         });
       }),
       getNode: vi.fn(async () => undefined),
+      listChildren: vi.fn(async () => []),
+      listVectorTileRecords: vi.fn(async () => []),
+      getCoreDB: () => core as unknown as CoreDB,
     };
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
@@ -167,7 +176,7 @@ describe('Entity lifecycle notifications from services', () => {
     const { ImportExportLifecycleService } = await import(
       '../../../services/ImportExportLifecycleService'
     );
-    const svc = await ImportExportLifecycleService.getSingleton(core as unknown as CoreDB);
+    const svc = await ImportExportLifecycleService.getSingleton(core);
     const importPayload: ImportNodesPayload = {
       nodes: {},
       nodeIds: [],

@@ -26,13 +26,13 @@
     "@emotion/react": "^11.14.0",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "react": "^18.3.1"
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@hierarchidb/util": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "react": "^18.3.1"
+    "react": "^19.0.0"
   }
 }

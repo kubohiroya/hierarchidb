@@ -16,6 +16,7 @@ describe('ImportExportLifecycleService importNodes bulk path', () => {
       }),
       listChildren: vi.fn(async () => []),
       getNode: vi.fn(async () => undefined),
+      listVectorTileRecords: vi.fn(async () => []),
     };
     const { ImportExportLifecycleService } = await import('../../ImportExportLifecycleService');
     const svc = await ImportExportLifecycleService.getSingleton(port);

@@ -376,7 +376,11 @@ export function usePluginDialogController(
   const handleDraftMetadataChange = useCallback(
     (patch: Partial<TreeNodeMetadata>) => {
       if (!treeUpdater) return;
-      const currentDraft = treeUpdater.draftMetadata ?? {};
+      const currentDraft = (treeUpdater.draftMetadata ?? {
+        name: '',
+        description: '',
+        tags: [],
+      }) as TreeNodeMetadata;
       const { buildMetadata: patchBuildMetadata, ...otherPatchProps } = patch;
 
       const nextBuildMetadata = patchBuildMetadata

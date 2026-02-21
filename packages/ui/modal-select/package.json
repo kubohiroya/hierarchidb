@@ -21,13 +21,13 @@
   },
   "peerDependencies": {
     "@mui/material": "^7.3.6",
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@mui/material": "^7.3.6",
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "description": "Modal-friendly Select component with controllable portal container and z-index adjustments for dialog usage.",
   "repository": {

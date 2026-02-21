@@ -4,6 +4,7 @@
  */
 
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, type AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
@@ -158,7 +159,7 @@ export function ToastProvider({
                                 children,
                                 maxToasts = 3,
                                 defaultConfig = {},
-                              }: ToastProviderProps): JSX.Element {
+                              }: ToastProviderProps): ReactElement {
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
 
   const mergedDefaultConfig = useMemo(

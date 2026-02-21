@@ -7,7 +7,7 @@ import {
 } from '@hierarchidb/auth';
 import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { treeRouteIds } from '~/router/routes/tree/shared';
 
 const HANDLER_ID = 'app-auth-required-dialog';
@@ -22,7 +22,7 @@ type DialogRouteParams = {
   step?: string;
 };
 
-export function AuthRequiredDialogHost(): JSX.Element | null {
+export function AuthRequiredDialogHost(): ReactElement | null {
   const registry = AuthNotificationRegistry.getInstance();
   const [notification, setNotification] = useState<AuthRequiredNotification | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);

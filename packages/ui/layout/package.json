@@ -22,14 +22,14 @@
   "module": "dist/index.js",
   "peerDependencies": {
     "@hierarchidb/ui-theme": "workspace:*",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "@emotion/react": "^11.14.0"
   },
   "devDependencies": {
     "@hierarchidb/ui-theme": "workspace:*",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6"
   }
