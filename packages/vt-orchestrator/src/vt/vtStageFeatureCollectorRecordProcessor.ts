@@ -86,7 +86,7 @@ export const collectFeaturesFromRecord = async (
     ? (() => {
       const rawCountry = record.countryCode ?? record.sourceKey?.split(':')[0] ?? '';
       const code = rawCountry.trim().toUpperCase();
-      return code ? (continentByCountry?.get(code) ?? 'Unknown') : undefined;
+      return (code ? continentByCountry?.get(code) : undefined) ?? 'Unknown';
     })()
     : null;
 
