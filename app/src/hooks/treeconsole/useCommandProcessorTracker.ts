@@ -13,6 +13,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms';
 import type { MaybeCP, TreeConsoleState } from './types.js';
+import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 
 interface Params {
   client: Remote<BuildWorkerAPI> | undefined;
@@ -58,7 +59,8 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
         subscriptionAPI = await client.getSubscriptionAPI();
         const handler = proxy((event: UndoStateEvent) => {
           if (!isActive) return;
-          const { canUndo, canRedo } = event;
+          const safeEvent = sanitizeForComlink(event);
+          const { canUndo, canRedo } = safeEvent as UndoStateEvent;
           subscriptionEstablishedRef.current = true;
           setState((prev) =>
             prev.canUndo === canUndo && prev.canRedo === canRedo

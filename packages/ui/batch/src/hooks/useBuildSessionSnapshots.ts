@@ -5,6 +5,7 @@ import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { proxy } from 'comlink';
 import type { Remote } from 'comlink';
 import { useWorkerQueryAPI } from './useWorkerQueryAPI.js';
+import { sanitizeForComlink } from '../utils/comlinkSanitizer.js';
 
 export type BuildSessionSnapshot = {
   nodeId: NodeId;
@@ -93,7 +94,8 @@ class SharedBuildSessionSubscription {
         this.nodeType,
         { statuses: IN_PROGRESS_STATUSES },
         proxy((incoming: BuildSessionRuntimeRecord[]) => {
-          this.handleIncoming(incoming);
+          const safeIncoming = sanitizeForComlink(incoming);
+          this.handleIncoming(safeIncoming);
         })
       );
       if (this.disposed) {

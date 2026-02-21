@@ -108,7 +108,55 @@ const setHeapContext = (context: HeapPressureContext | null) => {
 };
 
 const toComlinkProxy = <T extends object>(Comlink: typeof import('comlink'), value: T): T =>
-  Comlink.proxy(value) as unknown as T;
+  Comlink.proxy(value) as T;
+
+const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()): T => {
+  if (typeof value === 'bigint') {
+    return value.toString() as T;
+  }
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return new Date(value.getTime()) as T;
+  }
+
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack ?? undefined,
+    } as T;
+  }
+
+  if (value instanceof Map) {
+    return Array.from(value.values()).map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (value instanceof Set) {
+    return Array.from(value).map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeForComlink(entry, seen)) as T;
+  }
+
+  if (seen.has(value as object)) {
+    return seen.get(value as object) as T;
+  }
+
+  const safe = {} as Record<string, unknown>;
+  seen.set(value as object, safe);
+  for (const key of Object.keys(value as Record<string, unknown>)) {
+    const rawValue = (value as Record<string, unknown>)[key];
+    if (typeof rawValue === 'function' || typeof rawValue === 'symbol') {
+      continue;
+    }
+    safe[key] = sanitizeForComlink(rawValue, seen);
+  }
+  return safe as T;
+};
 
 const resolveBuildTaskProvider = (mod: unknown): BuildTaskProvider | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
@@ -774,7 +822,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           if (!buildApi.subscribeToProgress) {
             return () => {};
           }
-          const unsubscribe = buildApi.subscribeToProgress(nodeId, callback);
+          const wrappedCallback = (event: BuildProgressEvent): void => {
+            callback(sanitizeForComlink(event));
+          };
+          const unsubscribe = buildApi.subscribeToProgress(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -787,7 +838,10 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           if (!buildApi.subscribeToTasks) {
             return () => {};
           }
-          const unsubscribe = buildApi.subscribeToTasks(nodeId, callback);
+          const wrappedCallback = (event: BuildTaskUpdateEvent): void => {
+            callback(sanitizeForComlink(event));
+          };
+          const unsubscribe = buildApi.subscribeToTasks(nodeId, wrappedCallback);
           return toComlinkProxy(Comlink, unsubscribe);
         };
 
@@ -868,9 +922,12 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           subscribeHeapPressure: async (
             callback: (event: HeapPressureEvent) => void
           ): Promise<() => void> => {
-            heapListeners.add(callback);
+            const wrappedCallback = (event: HeapPressureEvent): void => {
+              callback(sanitizeForComlink(event));
+            };
+            heapListeners.add(wrappedCallback);
             return toComlinkProxy(Comlink, () => {
-              heapListeners.delete(callback);
+              heapListeners.delete(wrappedCallback);
             });
           },
           getBuildTasks,
@@ -913,7 +970,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const dispatch = async () => {
               try {
                 const sessions = await getRuntimeRecordsForShape(filter);
-                callback(sessions);
+                callback(sanitizeForComlink(sessions));
               } catch (error) {
                 const msg = error instanceof Error ? error.message : String(error);
                 console.warn('[worker bootstrap] build runtime refresh failed:', msg);
@@ -926,7 +983,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               error: (error) => {
                 const msg = error instanceof Error ? error.message : String(error);
                 console.warn('[worker bootstrap] build runtime subscription failed:', msg);
-                callback([]);
+                callback(sanitizeForComlink([]));
               },
             });
             const broadcastUnsubscribe = subscribeToBuildSessionBroadcast(() => {
@@ -968,18 +1025,18 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
             const observable = liveQuery(() => queryAPI.listBuildSessionRecordsByStatus(normalized));
             const subscription = observable.subscribe({
               next: (sessions) => {
-                callback(sessions);
+                callback(sanitizeForComlink(sessions));
               },
               error: (error) => {
                 const msg = error instanceof Error ? error.message : String(error);
                 console.warn('[worker bootstrap] build session subscription failed:', msg);
-                callback([]);
+                callback(sanitizeForComlink([]));
               },
             });
             const dispatchSessions = async () => {
               try {
                 const sessions = await queryAPI.listBuildSessionRecordsByStatus(normalized);
-                callback(sessions);
+                callback(sanitizeForComlink(sessions));
               } catch (error) {
                 const msg = error instanceof Error ? error.message : String(error);
                 console.warn('[worker bootstrap] build session refresh failed:', msg);

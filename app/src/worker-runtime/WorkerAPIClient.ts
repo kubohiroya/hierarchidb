@@ -4,6 +4,7 @@
 
 import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { Remote } from 'comlink';
+import { sanitizeRemoteForReact } from '~/utils/comlinkSafeProxy';
 
 // Create a type that matches the shared contract
 type WorkerInterface = Remote<BuildWorkerAPI>;
@@ -12,6 +13,7 @@ let workerInstance: WorkerInterface | null = null;
 let state: 'uninitialized' | 'initializing' | 'initialized' | 'error' = 'uninitialized';
 let initializationPromise: Promise<void> | null = null;
 let verified = false;
+let sanitizedWorkerInstance: Remote<BuildWorkerAPI> | null = null;
 
 async function initialize(): Promise<void> {
   switch (state) {
@@ -46,8 +48,10 @@ async function doInitialize(): Promise<void> {
   try {
     const { getWorkerClient, isWorkerInitCompleted } = await loadClientModule();
     const remoteWorker = await getWorkerClient();
+    const safeRemoteWorker = sanitizeRemoteForReact(remoteWorker);
 
     workerInstance = remoteWorker;
+    sanitizedWorkerInstance = safeRemoteWorker;
 
     try {
       const initComplete = Boolean(isWorkerInitCompleted?.());
@@ -66,6 +70,7 @@ async function doInitialize(): Promise<void> {
     }
   } catch (error) {
     workerInstance = null;
+    sanitizedWorkerInstance = null;
     throw error;
   }
 }
@@ -77,7 +82,12 @@ function getSingleton(): WorkerInterface {
   if (state !== 'initialized' && import.meta?.env?.VITE_WORKERAPI_LOG === '1') {
     console.warn('[WorkerAPIClient] getSingleton called before initialization');
   }
-  return workerInstance;
+  if (sanitizedWorkerInstance) {
+    return sanitizedWorkerInstance;
+  }
+  const safeWorker = sanitizeRemoteForReact(workerInstance);
+  sanitizedWorkerInstance = safeWorker;
+  return safeWorker;
 }
 
 async function getOrInit(): Promise<WorkerInterface> {
@@ -99,6 +109,7 @@ function reset(): void {
     }
   }
   workerInstance = null;
+  sanitizedWorkerInstance = null;
   state = 'uninitialized';
   initializationPromise = null;
   verified = false;

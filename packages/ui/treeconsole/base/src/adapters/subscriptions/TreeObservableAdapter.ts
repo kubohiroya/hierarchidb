@@ -12,6 +12,7 @@ import type { TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { AdapterContext, UnsubscribeFunction } from '~/types/index';
 import { TreeConsoleAdapterError } from '~/types/index';
 import { createCommand } from '~/adapters/utils';
+import { sanitizeForComlink } from './comlinkSanitizer';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
@@ -57,7 +58,10 @@ export class TreeObservableAdapter<T> {
         }, { groupId: context.groupId, sourceViewId: context.viewId });
 
         const observable = await maybeObserve(envelope);
-        const sub = observable.subscribe((event: TreeNodeEvent) => setTimeout(() => callback(event), 0));
+        const sub = observable.subscribe((event: TreeNodeEvent) => {
+          const safeEvent = sanitizeForComlink(event);
+          setTimeout(() => callback(safeEvent), 0);
+        });
 
         const wrappedUnsubscribe = () => {
           try { sub.unsubscribe?.(); } finally { this.subscriptions.delete(internalSubscriptionId); }
@@ -74,7 +78,8 @@ export class TreeObservableAdapter<T> {
           nodeId: String(e.nodeId),
           hasNode: Boolean(e.node),
         });
-        setTimeout(() => callback(e), 0);
+        const safeEvent = sanitizeForComlink(e);
+        setTimeout(() => callback(safeEvent), 0);
       });
       const prefetchDepth = context.prefetchDepth ?? 2;
       const subscriptionId = await subscriptionAPI.subscribeSubtree(
@@ -121,7 +126,10 @@ export class TreeObservableAdapter<T> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
       const internalSubscriptionId = `node_${nodeId}_${context.viewId}`;
-      const proxied = Comlink.proxy((e: TreeNodeEvent) => setTimeout(() => callback(e), 0));
+      const proxied = Comlink.proxy((e: TreeNodeEvent) => {
+        const safeEvent = sanitizeForComlink(e);
+        setTimeout(() => callback(safeEvent), 0);
+      });
       const subscriptionId = await subscriptionAPI.subscribeNode(nodeId, proxied);
       this.proxiedCallbacks.set(internalSubscriptionId, proxied);
       const wrappedUnsubscribe = async () => {
@@ -156,7 +164,10 @@ export class TreeObservableAdapter<T> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
       const internalSubscriptionId = `children_${parentId}_${context.viewId}`;
-      const proxied = Comlink.proxy((e: TreeNodeEvent) => setTimeout(() => callback(e), 0));
+      const proxied = Comlink.proxy((e: TreeNodeEvent) => {
+        const safeEvent = sanitizeForComlink(e);
+        setTimeout(() => callback(safeEvent), 0);
+      });
       // Subscribe to subtree; consumer treats it as children-only
       const subscriptionId = await subscriptionAPI.subscribeSubtree(parentId, proxied);
       this.proxiedCallbacks.set(internalSubscriptionId, proxied);
