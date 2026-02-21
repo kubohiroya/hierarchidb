@@ -1,6 +1,16 @@
 import type { Tile } from 'geojson-vt';
-
-type TileGeometry = Tile['features'][number]['geometry'];
+import type { Feature, FeatureCollection } from 'geojson';
+import {
+  type InputFeatureStats,
+  type TileBBox,
+  type VtParentInputSummaryMetadata,
+} from './vtStageGeometryTypes.js';
+import { bboxIntersects } from './vtStageGeometryTile.js';
+import {
+  countTileLineStrings,
+  countTilePolygons,
+  countTileVertices,
+} from './vtStageGeometryCounts.js';
 
 export type GeojsonVtEmptyTileDetail = {
   z: number;
@@ -10,6 +20,50 @@ export type GeojsonVtEmptyTileDetail = {
   clippedFeatureCount: number;
   featureCount: number;
   matchedFeatureIds?: string[];
+};
+
+const resolveAdminLevel = (feature: Feature): number | null => {
+  const props = feature.properties as Record<string, unknown> | undefined;
+  const layer = typeof props?.layer === 'string' ? props.layer : '';
+  if (layer.endsWith('-boundary')) return null;
+  const level = typeof props?.level === 'number' ? props.level : null;
+  if (typeof level === 'number' && Number.isFinite(level)) return level;
+  const match = layer.match(/^admin(\d+)/);
+  return match ? Number(match[1]) : null;
+};
+
+export const buildAdminFeatureSummary = (collection: FeatureCollection): string => {
+  const counts = new Map<number, number>();
+  collection.features.forEach((feature) => {
+    if (!feature) return;
+    const level = resolveAdminLevel(feature);
+    if (level === null || Number.isNaN(level)) return;
+    counts.set(level, (counts.get(level) ?? 0) + 1);
+  });
+  if (counts.size === 0) return 'features: none';
+  const parts = Array.from(counts.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([level, count]) => `ADM${level}:${formatCount(count)}`);
+  return `features: ${parts.join(' / ')}`;
+};
+
+export const buildVtParentInputSummary = (params: {
+  featureStats: InputFeatureStats[];
+  parentBBox: TileBBox;
+  parentTile: { z: number; x: number; y: number };
+}): VtParentInputSummaryMetadata => {
+  let intersectingFeatureCount = 0;
+  let intersectingGeojsonByteSize = 0;
+  params.featureStats.forEach((stats) => {
+    if (!bboxIntersects(stats.bbox, params.parentBBox)) return;
+    intersectingFeatureCount += 1;
+    intersectingGeojsonByteSize += stats.geojsonByteSize ?? 0;
+  });
+  return {
+    parentTile: params.parentTile,
+    intersectingFeatureCount,
+    intersectingGeojsonByteSize,
+  };
 };
 
 const formatCount = (value: number): string => value.toLocaleString('en-US');
@@ -60,91 +114,15 @@ export const computeOutputTileTotals = (tiles: Tile[]): {
     acc.featureCount += features.length;
     features.forEach((feature) => {
       if (feature.type === 3) {
-        acc.polygonCount += countTilePolygons(feature.geometry as TileGeometry);
-        acc.vertexCount += countTileVertices(feature.geometry as TileGeometry);
+        acc.polygonCount += countTilePolygons(feature.geometry);
+        acc.vertexCount += countTileVertices(feature.geometry);
       } else if (feature.type === 2) {
-        acc.lineStringCount += countTileLineStrings(feature.geometry as TileGeometry);
-        acc.vertexCount += countTileVertices(feature.geometry as TileGeometry);
+        acc.lineStringCount += countTileLineStrings(feature.geometry);
+        acc.vertexCount += countTileVertices(feature.geometry);
       } else {
-        acc.vertexCount += countTileVertices(feature.geometry as TileGeometry);
+        acc.vertexCount += countTileVertices(feature.geometry);
       }
     });
     return acc;
   }, totals);
-};
-
-const countTileVertices = (geometry: TileGeometry): number => {
-  if (!Array.isArray(geometry) || geometry.length === 0) return 0;
-  const first = geometry[0];
-  if (!Array.isArray(first)) return 0;
-  if (typeof first[0] === 'number') return 1;
-  return geometry.reduce((sum, child) => sum + countTileVertices(child as unknown as TileGeometry), 0);
-};
-
-const normalizeTileRings = (geometry: TileGeometry): number[][][] => {
-  if (!Array.isArray(geometry) || geometry.length === 0) return [];
-  const first = geometry[0];
-  if (!Array.isArray(first)) return [];
-  const first0 = first[0];
-  if (Array.isArray(first0) && typeof first0[0] === 'number') {
-    return geometry as unknown as number[][][];
-  }
-  if (Array.isArray(first0) && Array.isArray(first0[0])) {
-    const rings: number[][][] = [];
-    (geometry as unknown as number[][][][]).forEach((polygon) => {
-      if (!Array.isArray(polygon)) return;
-      polygon.forEach((ring) => {
-        if (Array.isArray(ring)) rings.push(ring as number[][]);
-      });
-    });
-    return rings;
-  }
-  return [];
-};
-
-const signedRingArea = (ring: number[][]): number => {
-  let sum = 0;
-  for (let i = 0; i < ring.length; i += 1) {
-    const pointA = ring[i];
-    const pointB = ring[(i + 1) % ring.length];
-    if (!pointA || !pointB || pointA.length < 2 || pointB.length < 2) continue;
-    const x1 = pointA[0] ?? null;
-    const y1 = pointA[1] ?? null;
-    const x2 = pointB[0] ?? null;
-    const y2 = pointB[1] ?? null;
-    if (
-      typeof x1 !== 'number' || !Number.isFinite(x1)
-      || typeof y1 !== 'number' || !Number.isFinite(y1)
-      || typeof x2 !== 'number' || !Number.isFinite(x2)
-      || typeof y2 !== 'number' || !Number.isFinite(y2)
-    ) {
-      continue;
-    }
-    sum += (x1 * y2) - (x2 * y1);
-  }
-  return sum / 2;
-};
-
-const countTilePolygons = (geometry: TileGeometry): number => {
-  const rings = normalizeTileRings(geometry);
-  if (rings.length === 0) return 0;
-  const areas = rings.map((ring) => signedRingArea(ring));
-  let maxIndex = 0;
-  let maxAbs = 0;
-  for (let i = 0; i < areas.length; i += 1) {
-    const abs = Math.abs(areas[i] ?? 0);
-    if (abs > maxAbs) {
-      maxAbs = abs;
-      maxIndex = i;
-    }
-  }
-  const targetSign = Math.sign(areas[maxIndex] ?? 0) || 1;
-  return areas.reduce((count, area) => (Math.sign(area) === targetSign ? count + 1 : count), 0);
-};
-
-const countTileLineStrings = (geometry: TileGeometry): number => {
-  if (!Array.isArray(geometry) || geometry.length === 0) return 0;
-  const first = geometry[0];
-  if (Array.isArray(first) && typeof first[0] === 'number') return 1;
-  return geometry.length;
 };
