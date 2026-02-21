@@ -11,6 +11,7 @@ import type {
   DialogState,
   DialogUIState,
   DialogWindowState,
+  TreeNodeMetadata,
   TreeNodeData,
 } from '@hierarchidb/tree-api';
 import {
@@ -438,6 +439,38 @@ export function usePluginDialogController(
     [nodeId, treeUpdater?.treeNodeId, updateTreeNodeUpdater]
   );
 
+  const handleDraftMetadataChange = useCallback(
+    (patch: Partial<TreeNodeMetadata>) => {
+      if (!treeUpdater) return;
+      const currentBuildMetadata = treeUpdater.draftMetadata?.buildMetadata;
+      const nextBuildMetadata = patch.buildMetadata
+        ? {
+            ...(currentBuildMetadata ?? {}),
+            ...patch.buildMetadata,
+          }
+        : currentBuildMetadata;
+      const nextDraftMetadata: TreeNodeMetadata = {
+        ...(treeUpdater.draftMetadata ?? {}),
+        ...patch,
+        ...(patch.buildMetadata || nextBuildMetadata ? { buildMetadata: nextBuildMetadata } : {}),
+        name:
+          patch.name ??
+          treeUpdater.draftMetadata?.name ??
+          '',
+        description:
+          patch.description ??
+          treeUpdater.draftMetadata?.description ??
+          '',
+        tags:
+          patch.tags ??
+          treeUpdater.draftMetadata?.tags ??
+          [],
+      };
+      applyUpdateDraft({ draftMetadata: nextDraftMetadata });
+    },
+    [applyUpdateDraft, treeUpdater]
+  );
+
   const {
     basicInfo,
     setBasicInfo,
@@ -536,6 +569,7 @@ export function usePluginDialogController(
     draftData: localDraftData,
     setDraftData: (next) => setLocalDraftData('stepAdapter', next),
     handleBasicInfoBridge,
+    onDraftMetadataChange: handleDraftMetadataChange,
     dialogRef,
     basicInfoLabel: t('common.basicInfo.title', 'Info'),
     onTagClick: handleTagNavigate,
