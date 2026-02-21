@@ -68,6 +68,8 @@ export interface NodeContextMenuProps {
   canImport?: boolean;
   canExport?: boolean;
   canBuild?: boolean;
+  folderBuildReady?: boolean;
+  buildRequired?: boolean;
   canPreview?: boolean;
   onOpen?: (options?: { openInNewTab?: boolean }) => void;
   onOpenFolder?: (options?: { openInNewTab?: boolean }) => void;
@@ -203,11 +205,23 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const canPreview = typeof canPreviewOverride === 'boolean' ? canPreviewOverride : !effectiveInvisible;
   const normalizedNodeType = String(nodeType ?? '').trim().toLowerCase();
   const isLocationNode = normalizedNodeType === 'location';
+  const isFolderNode = isFolderNodeType(nodeType);
+  const folderBuildReadyForNode = typeof folderBuildReady === 'boolean' ? folderBuildReady : undefined;
+  const nodeBuildRequired = typeof buildRequired === 'boolean' ? buildRequired : undefined;
+  const canBuildForNode = (() => {
+    if (typeof canBuild === 'boolean') return canBuild;
+    if (isFolderNode) {
+      return typeof folderBuildReadyForNode === 'boolean'
+        ? folderBuildReadyForNode
+        : isFolderNode;
+    }
+    if (typeof nodeBuildRequired === 'boolean') {
+      return nodeBuildRequired;
+    }
+    return buildableNodeTypes.has(normalizedNodeType);
+  })();
   const canBuildEntry =
-    Boolean(_onBuild) &&
-    (typeof canBuild === 'boolean'
-      ? canBuild
-      : isFolderNodeType(nodeType) || buildableNodeTypes.has(normalizedNodeType));
+    Boolean(_onBuild) && canBuildForNode;
   const showBuildEntry = Boolean(_onBuild) && (canBuildEntry || isLocationNode);
   const buildDisabled = !canBuildEntry || isLocationNode;
   const openInNewAdornment = isShiftPressed ? <OpenInNewIcon fontSize="small" sx={{ m: 0, p: 0, fontSize: '95%' }} /> : null;

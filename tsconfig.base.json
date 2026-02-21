@@ -410,6 +410,12 @@
       "@hierarchidb/ui-datasource/*": [
         "./packages/ui/datasource/dist/*"
       ],
+      "@hierarchidb/ui-dynamic-speed-dial": [
+        "./packages/ui/dynamic-speed-dial/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-dynamic-speed-dial/*": [
+        "./packages/ui/dynamic-speed-dial/dist/*"
+      ],
       "@hierarchidb/ui-batch-progress": [
         "./packages/ui/batch/dist/index.d.ts"
       ],

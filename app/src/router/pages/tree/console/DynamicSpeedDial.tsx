@@ -1,278 +1,57 @@
-/**
- * DynamicSpeedDial Component
- *
- * A SpeedDial component that dynamically loads plugin-loaders from the registry
- * and displays them as creation actions, filtered by treeId.
- */
-
 import type { TreeId } from '@hierarchidb/core-types';
-import {
-  type SpeedDialSubmenuAction,
-  SpeedDialSubmenuActions,
-  type SpeedDialSubmenuItem,
-} from '@hierarchidb/ui-speeddial-submenu';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { Box, Portal, SpeedDial, SpeedDialIcon } from '@mui/material';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
+import type { IconDescriptorInput } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useMemo } from 'react';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders';
-import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
+import {
+  DynamicSpeedDial as BaseDynamicSpeedDial,
+  type DynamicSpeedDialProps as BaseDynamicSpeedDialProps,
+} from '@hierarchidb/ui-dynamic-speed-dial';
+import type { TreeContext } from '~/plugin-loaders/menu-builders';
+import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
 
-interface DynamicSpeedDialProps {
-  treeId: TreeId | undefined;
-  onCreateAction: (
-    action: string,
-    node: HierarchicalTreeNode,
-    options?: { openInNewTab?: boolean }
-  ) => void;
-  position?: { bottom?: number; right?: number; left?: number; top?: number };
-  hidden?: boolean;
-  menuContext?: TreeContext; // Optional explicit context to stage items from VM
-  onSuppress?: () => void;
+export interface DynamicSpeedDialProps
+  extends Omit<
+    BaseDynamicSpeedDialProps<HierarchicalTreeNode>,
+    'menuItems' | 'resolveIcon' | 'translateWithFallback'
+  > {
+  treeId?: TreeId;
+  menuContext?: TreeContext;
 }
 
-export function DynamicSpeedDial({
-  treeId,
-  onCreateAction,
-  position = { bottom: 16, right: 16 },
-  hidden = false,
-  onSuppress,
-}: DynamicSpeedDialProps) {
-  const {
-    open,
-    debugHitbox,
-    hitboxes,
-    useVM,
-    vmItems,
-    language,
-    actionsPointerEvents,
-    dialogOpen,
-    containerRef,
-    resolveIcon,
-    translateWithFallback,
-    handleClose,
-    toggleOpen,
-    handleVMActionClick,
-    transitionDuration,
-  } = useDynamicSpeedDial({ treeId, hidden, onCreateAction, onSuppress });
-  const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
-  const effectiveHidden = hidden || dialogOpen;
-  const submenuActions = useMemo<SpeedDialSubmenuAction[]>(() => {
-    if (!useVM) return [];
+export function DynamicSpeedDial({ treeId, menuContext, ...props }: DynamicSpeedDialProps) {
+  const menuItems = usePluginMenuItems(treeId);
+  const { t } = useGlobalI18nTranslator();
+  const { resolveIcon } = useIconRegistry();
 
-    const actions: SpeedDialSubmenuAction[] = [];
+  void menuContext;
 
-    const buildItemLabel = (item: PluginMenuItem) => {
-      if (item.labelKey) {
-        return translateWithFallback(item.labelKey, item.label);
-      }
-      return translateWithFallback(`plugins.${item.nodeType}.name`, item.label);
-    };
-
-    const buildTooltipLabel = (item: PluginMenuItem) => {
-      const localizedLabel = buildItemLabel(item);
-      const localizedDescription = item.descriptionKey
-        ? translateWithFallback(item.descriptionKey, (item.description ?? '').trim()).trim()
-        : translateWithFallback(`plugins.${item.nodeType}.description`, (item.description ?? '').trim()).trim();
-      const tooltipTemplate = translateWithFallback(
-        'treeConsole.contextMenu.createTooltip',
-        '{{label}}: {{description}}'
-      );
-      if (localizedDescription.length === 0) {
-        return localizedLabel;
-      }
-      return tooltipTemplate
-        .replace('{{label}}', localizedLabel)
-        .replace('{{description}}', localizedDescription);
-    };
-
-    const toCreateType = (item: PluginMenuItem) => item.createType ?? item.nodeType;
-
-    const buildLeafAction = (item: PluginMenuItem, testId: string): SpeedDialSubmenuItem => ({
-      id: `create:${toCreateType(item)}:${language}`,
-      label: buildItemLabel(item),
-      icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-      onClick: (event) => handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-      testId,
-    });
-
-    for (const item of vmItems) {
-      const hasChildren = Array.isArray(item.children) && item.children.length > 0;
-      const testIdBase = `create-${item.nodeType}`;
-      if (hasChildren) {
-        actions.push({
-          id: `create:${toCreateType(item)}:${language}`,
-          label: buildItemLabel(item),
-          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-          tooltipTitle: buildTooltipLabel(item),
-          onClick: (event) =>
-            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-          backgroundColor: item.backgroundColor,
-          hoverBackgroundColor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
-          testId: `${testIdBase}-action`,
-          submenuTestId: `${testIdBase}-submenu`,
-          submenuTriggerTestId: `${testIdBase}-submenu-trigger`,
-          children: item.children!.map((child, childIndex) =>
-            buildLeafAction(child, `${testIdBase}-submenu-action-${childIndex + 1}`)
-          ),
-        });
-      } else {
-        actions.push({
-          id: `create:${toCreateType(item)}:${language}`,
-          label: buildItemLabel(item),
-          icon: resolveIcon({ nodeType: item.nodeType, icon: item.icon }),
-          tooltipTitle: buildTooltipLabel(item),
-          onClick: (event) =>
-            handleVMActionClick(toCreateType(item), { openInNewTab: event.shiftKey }),
-          backgroundColor: item.backgroundColor,
-          hoverBackgroundColor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
-          testId: `${testIdBase}-action`,
-        });
-      }
-    }
-
-    return actions;
-  }, [handleVMActionClick, language, resolveIcon, translateWithFallback, useVM, vmItems]);
-
-  // Don't render if hidden
-  if (effectiveHidden) {
-    return null;
-  }
+  const translateWithFallback = useMemo(
+    () =>
+      (key: string, fallback: string) => {
+        const safeFallback = fallback?.trim?.() ?? '';
+        const translated = t(key, safeFallback);
+        if (translated === key) {
+          return safeFallback || key;
+        }
+        return translated;
+      },
+    [t]
+  );
 
   return (
-    <Portal>
-      <Box
-        ref={containerRef}
-        sx={{
-          position: 'fixed',
-          ...position,
-          // Keep above overlays only when open
-          zIndex: open ? 2147483000 : 0,
-          // Make only inner FAB/actions receive pointer events to avoid wrapper intercepts
-          pointerEvents: 'none',
-          outline: debugHitbox ? '2px solid rgba(0,255,255,0.6)' : undefined,
-          outlineOffset: debugHitbox ? '0px' : undefined,
-        }}
-        data-testid="dynamic-speed-dial-container"
-      >
-        <SpeedDial
-          ariaLabel={createLabel}
-          sx={{
-            position: 'static',
-            '& .MuiSpeedDial-fab': {
-              bgcolor: 'primary.main',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'primary.dark',
-              },
-              // Ensure the visible icon and the hitbox align perfectly
-              width: 56,
-              height: 56,
-              minWidth: 56,
-              minHeight: 56,
-              pointerEvents: 'auto',
-              transform: 'translate3d(0,0,0)',
-              willChange: 'transform',
-              touchAction: 'manipulation',
-              outline: debugHitbox ? '2px dashed rgba(0,255,0,0.9)' : undefined,
-              outlineOffset: debugHitbox ? '0px' : undefined,
-            },
-            '& .MuiSpeedDial-actions': {
-              pointerEvents: actionsPointerEvents,
-            },
-            '& .MuiSpeedDialAction-fab': {
-              pointerEvents: actionsPointerEvents,
-              outline: debugHitbox ? '2px dashed rgba(255,165,0,0.9)' : undefined,
-              outlineOffset: debugHitbox ? '0px' : undefined,
-            },
-            '& .MuiSpeedDial-actionsClosed': {
-              pointerEvents: 'none',
-            },
-          }}
-          icon={<SpeedDialIcon />}
-          direction="up"
-          open={open}
-          transitionDuration={transitionDuration}
-          onClose={(_, reason?: string) => {
-            // Ignore auto-close reasons we don’t want (blur/mouseLeave)
-            if (reason === 'blur' || reason === 'mouseLeave') return;
-            // Allow toggle, escape, clickAway to close
-            handleClose();
-          }}
-          FabProps={{
-            onClick: toggleOpen,
-            sx: { pointerEvents: 'auto' },
-            title: createLabel,
-            'aria-label': createLabel,
-          }}
-        >
-          {useVM ? (
-            <SpeedDialSubmenuActions
-              actions={submenuActions}
-              open={open}
-              onRequestClose={handleClose}
-              actionFabSx={{
-                pointerEvents: 'auto',
-                touchAction: 'manipulation',
-                transform: 'translate3d(0,0,0)',
-              }}
-            />
-          ) : null}
-        </SpeedDial>
-
-        {/* Debug overlays: fixed boxes showing current hitboxes and top element at FAB center */}
-        {debugHitbox && (
-          <>
-            {/* FAB center marker and info label */}
-            {hitboxes.fab && (
-              <Box
-                sx={{
-                  position: 'fixed',
-                  left: hitboxes.fab.left + hitboxes.fab.width / 2 - 4,
-                  top: hitboxes.fab.top + hitboxes.fab.height / 2 - 4,
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(0,255,0,0.9)',
-                  pointerEvents: 'none',
-                }}
-              />
-            )}
-            {(hitboxes.fab || hitboxes.container) && (
-              <Box
-                sx={{
-                  position: 'fixed',
-                  left: hitboxes.fab?.left ?? hitboxes.container?.left,
-                  top: (hitboxes.fab?.top ?? hitboxes.container?.top ?? 0) - 22,
-                  px: 1,
-                  py: 0.25,
-                  fontSize: 11,
-                  bgcolor: 'rgba(0,0,0,0.7)',
-                  color: '#fff',
-                  borderRadius: 1,
-                  pointerEvents: 'none',
-                }}
-              >
-                SD hitbox debug — topAtFab: {hitboxes.topAtFab || 'n/a'}
-              </Box>
-            )}
-            {/* Action boxes outline rendered via CSS; extra fixed rectangles to visualize area explicitly */}
-            {hitboxes.actions.map((r, idx) => (
-              <Box
-                key={`${r.left}-${r.top}-${r.width}-${r.height}-${idx}`}
-                sx={{
-                  position: 'fixed',
-                  left: r.left,
-                  top: r.top,
-                  width: r.width,
-                  height: r.height,
-                  border: '1px dotted rgba(255,165,0,0.9)',
-                  pointerEvents: 'none',
-                }}
-              />
-            ))}
-          </>
-        )}
-      </Box>
-    </Portal>
+    <BaseDynamicSpeedDial
+      {...props}
+      treeId={treeId}
+      menuItems={menuItems}
+      resolveIcon={({ nodeType, icon }) =>
+        resolveIcon({
+          nodeType,
+          icon: icon as IconDescriptorInput['icon'],
+        })
+      }
+      translateWithFallback={translateWithFallback}
+    />
   );
 }

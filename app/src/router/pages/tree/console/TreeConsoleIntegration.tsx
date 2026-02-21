@@ -13,10 +13,10 @@ import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
-import { useTreeConsoleSpeedDial } from './useTreeConsoleSpeedDial.js';
+import { useTreeConsoleSpeedDial } from './hooks/useTreeConsoleSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
-import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
+import { useTreeConsoleIntegrationInner } from './hooks/useTreeConsoleIntegrationInner.js';
 import { useCallback } from 'react';
 
 export interface TreeConsoleIntegrationProps {

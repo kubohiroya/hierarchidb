@@ -20,13 +20,13 @@ import {
   collectBuildUrlsForFolder,
   resolveBuildTargetForNode,
   startBuildFlow,
-} from './buildFlow.ts';
+} from '../buildFlow.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog';
 import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
-type BuildStepTarget = import('./buildFlow.ts').BuildStepTarget;
+type BuildStepTarget = import('../buildFlow.ts').BuildStepTarget;
 
 export interface UseTreeNodeInfoPanelParams {
   treeId?: TreeId;
@@ -66,6 +66,10 @@ export function useTreeNodeInfoPanel({
   const [pendingArchiveNode, setPendingArchiveNode] = useState<HierarchicalTreeNode | null>(null);
   const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
   const [openStepsLoading, setOpenStepsLoading] = useState(false);
+  const returnTo = useMemo(() => {
+    const search = location.searchStr ?? '';
+    return `${location.pathname}${search}`;
+  }, [location.pathname, location.searchStr]);
 
   useEffect(() => {
     setMenuAnchorEl(null);
@@ -317,11 +321,6 @@ export function useTreeNodeInfoPanel({
     [nodeData, onContextMenuAction, currentNode]
   );
 
-  const returnTo = useMemo(() => {
-    const search = location.searchStr ?? '';
-    return `${location.pathname}${search}`;
-  }, [location.pathname, location.searchStr]);
-
   const handleBuild = useCallback(async () => {
     if (!treeId) return;
     const candidate = currentNode ?? node;
@@ -422,7 +421,9 @@ export function useTreeNodeInfoPanel({
   };
 
   const isFolderNode = Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel));
-  const isBuildable = isFolderNode ? folderBuildReady : Boolean(buildTarget?.stepNumber);
+  const isBuildRequired = Boolean(currentNode?.draftMetadata?.buildMetadata?.buildRequired)
+    || Boolean(currentNode?.metadata?.buildMetadata?.buildRequired);
+  const isBuildableByMetadata = isFolderNode ? folderBuildReady : (Boolean(buildTarget?.stepNumber) && isBuildRequired);
   const canPreview = previewGuardState?.canOpen ?? true;
 
   return {
@@ -441,7 +442,8 @@ export function useTreeNodeInfoPanel({
     nodeIconColor,
     canMutate,
     isDraft,
-    isBuildable,
+    isBuildable: isBuildableByMetadata,
+    folderBuildReady,
     buildTargetLoading,
     canPreview,
     previewGuardLoading,

@@ -4,7 +4,7 @@ import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';
 import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices';
-import { isSubscriptionDebug, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
+import { isSubscriptionDebug, logIntegrationWarning } from '../treeConsoleIntegrationUtils.js';
 
 export type ArchiveWatcherState = {
   hasArchiveItems: boolean;

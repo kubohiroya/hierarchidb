@@ -24,7 +24,7 @@ type TreeConsoleBreadcrumbProps = React.ComponentProps<
   typeof import('@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb').TreeConsoleBreadcrumb
 >;
 type TreeNodeInfoPanelProps = React.ComponentProps<
-  typeof import('./TreeNodeInfoPanel.js').TreeNodeInfoPanel
+  typeof import('../TreeNodeInfoPanel.js').TreeNodeInfoPanel
 >;
 
 export type UseTreeConsoleIntegrationInnerArgs = {

@@ -1,0 +1,41 @@
+{
+  "name": "@hierarchidb/ui-dynamic-speed-dial",
+  "version": "0.1.0",
+  "description": "Generic floating speed dial with hierarchical create menu support",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
+  },
+  "dependencies": {
+    "@hierarchidb/ui-speeddial-submenu": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.0.0"
+  },
+  "devDependencies": {
+    "@mui/material": "^7.3.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -61,6 +61,7 @@
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/ui-search-input": "workspace:*",
     "@hierarchidb/ui-speeddial-submenu": "workspace:*",
+    "@hierarchidb/ui-dynamic-speed-dial": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",

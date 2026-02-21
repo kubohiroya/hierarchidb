@@ -1,10 +1,9 @@
-import type { TreeId } from '@hierarchidb/core-types';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders';
+import type {
+  DynamicSpeedDialNode,
+  UseDynamicSpeedDialParams,
+  UseDynamicSpeedDialResult,
+} from './types.js';
 
 type DynamicSpeedDialWindow = Window & {
   __HDB_SD_HITBOX__?: boolean;
@@ -14,40 +13,13 @@ type DialogVisibilityEvent = CustomEvent<{ open: boolean; count: number }>;
 
 const SPEED_DIAL_TRANSITION_MS = 220;
 
-export interface DynamicSpeedDialState {
-  open: boolean;
-  debugHitbox: boolean;
-  hitboxes: {
-    container?: DOMRect;
-    fab?: DOMRect;
-    actions: DOMRect[];
-    topAtFab?: string;
-  };
-  useVM: boolean;
-  vmItems: PluginMenuItem[];
-  language: string;
-  actionsPointerEvents: 'auto' | 'none';
-  dialogOpen: boolean;
-}
-
-export interface UseDynamicSpeedDialResult extends DynamicSpeedDialState {
-  containerRef: React.RefObject<HTMLDivElement | null>;
-  resolveIcon: ReturnType<typeof useIconRegistry>['resolveIcon'];
-  translateWithFallback: (key: string, fallback: string) => string;
-  handleClose: () => void;
-  toggleOpen: () => void;
-  handleVMActionClick: (createType: string, options?: { openInNewTab?: boolean }) => void;
-  transitionDuration: number;
-}
-
-export function useDynamicSpeedDial(params: {
-  treeId?: TreeId;
-  hidden?: boolean;
-  onCreateAction: (action: string, node: HierarchicalTreeNode, options?: { openInNewTab?: boolean }) => void;
-  onSuppress?: () => void;
-  menuContext?: TreeContext;
-}): UseDynamicSpeedDialResult {
-  const { treeId, hidden, onCreateAction, onSuppress } = params;
+export function useDynamicSpeedDial<TNode = DynamicSpeedDialNode>({
+  hidden,
+  menuItems,
+  onCreateAction,
+  onSuppress,
+  resolveIcon,
+}: UseDynamicSpeedDialParams<TNode>): UseDynamicSpeedDialResult {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [debugHitbox, setDebugHitbox] = useState<boolean>(() => {
@@ -65,28 +37,20 @@ export function useDynamicSpeedDial(params: {
     }
   });
 
-  const [hitboxes, setHitboxes] = useState<DynamicSpeedDialState['hitboxes']>({ actions: [] });
+  const [hitboxes, setHitboxes] = useState<UseDynamicSpeedDialResult['hitboxes']>({ actions: [] });
   const [dialogOpen, setDialogOpen] = useState<boolean>(() => {
     if (typeof document === 'undefined') return false;
     return document.body?.dataset?.hdbDialogOpen === '1';
   });
+  const language = (() => {
+    try {
+      return navigator?.language ?? 'en';
+    } catch {
+      return 'en';
+    }
+  })();
 
-  const vmItems = usePluginMenuItems(treeId);
-  const useVM = vmItems.length > 0;
-  const { t, language } = useGlobalI18nTranslator();
-  const { resolveIcon } = useIconRegistry();
-
-  const translateWithFallback = useCallback(
-    (key: string, fallback: string) => {
-      const safeFallback = fallback?.trim?.() ?? '';
-      const translated = t(key, safeFallback);
-      if (translated === key) {
-        return safeFallback || key;
-      }
-      return translated;
-    },
-    [t]
-  );
+  const useVM = menuItems.length > 0;
 
   const handleClose = useCallback(() => setOpen(false), []);
 
@@ -97,7 +61,7 @@ export function useDynamicSpeedDial(params: {
       const target = ev.target as Node | null;
       if (!root) return;
       if (target && target instanceof Element) {
-        if (target.closest('[data-hdb-speed-dial-submenu="1"]')) return;
+        if (target.closest('[data-hdb-speed-dial-submenu=\"1\"]')) return;
       }
       if (target && root.contains(target)) return;
       setOpen(false);
@@ -132,7 +96,7 @@ export function useDynamicSpeedDial(params: {
       const action = `create:${createType}`;
       onSuppress?.();
       handleClose();
-      onCreateAction(action, {} as HierarchicalTreeNode, options);
+      onCreateAction(action, {} as TNode, options);
     },
     [handleClose, onCreateAction, onSuppress]
   );
@@ -201,13 +165,12 @@ export function useDynamicSpeedDial(params: {
     debugHitbox,
     hitboxes,
     useVM,
-    vmItems,
+    vmItems: menuItems,
     language,
     actionsPointerEvents,
     dialogOpen,
     containerRef,
     resolveIcon,
-    translateWithFallback,
     handleClose,
     toggleOpen: () => setOpen((v) => !v),
     handleVMActionClick,
