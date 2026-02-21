@@ -1,12 +1,10 @@
+import { getHeapSnapshot } from './vtStageCore.js';
+import { collectForVtTask } from './vtStageTaskCollectionFlow.js';
+import { logVtCollectDuration, logVtCollectStart } from './vtStageTaskProcessorLogger.js';
+import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtTaskInput } from '~/types/types';
 import type { VTStageContext } from '~/contexts';
-import type { TaskContextForVt, VtTaskRunInput } from './vtStageTaskTypes.js';
 import type { VtCollectionResult } from './vtStageTaskTypes.js';
-import {
-  collectForVtTaskWithInput,
-  logCollectDurationIfNeeded,
-  logCollectStartWithHeap,
-} from './vtStageTaskProcessorExecutionCollectHelpers.js';
 
 type VtTaskCollectionExecutionInput = {
   context: VTStageContext;
@@ -21,7 +19,18 @@ type VtTaskCollectionExecutionInput = {
   taskInput: VtTaskInput;
 };
 
-export const collectVtTaskForExecution = async (
+export const logCollectStartWithHeap = (
+  taskContext: TaskContextForVt,
+  taskInput: VtTaskInput,
+): void => {
+  logVtCollectStart(
+    taskContext,
+    taskInput.bufferIds.length,
+    getHeapSnapshot(),
+  );
+};
+
+export const collectForVtTaskWithInput = async (
   input: VtTaskCollectionExecutionInput,
 ): Promise<VtCollectionResult | null> => {
   const {
@@ -37,9 +46,7 @@ export const collectVtTaskForExecution = async (
     taskInput,
   } = input;
 
-  const collectStartedAt = Date.now();
-  logCollectStartWithHeap(taskContext, taskInput);
-  const collected = await collectForVtTaskWithInput({
+  return collectForVtTask(context, {
     context,
     taskContext,
     band,
@@ -49,8 +56,18 @@ export const collectVtTaskForExecution = async (
     groupByContinent,
     useTopojsonTileSimplify,
     topojsonSimplify,
-    taskInput,
+    input: {
+      bufferIds: taskInput.bufferIds,
+    },
   });
-  logCollectDurationIfNeeded(taskContext, collectStartedAt, collected);
-  return collected;
+};
+
+export const logCollectDurationIfNeeded = (
+  taskContext: TaskContextForVt,
+  collectStartedAt: number,
+  collected: VtCollectionResult | null,
+): void => {
+  if (collected) {
+    logVtCollectDuration(taskContext, Date.now() - collectStartedAt);
+  }
 };
