@@ -3,7 +3,7 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from 'react';
-import type { TaskProgressData } from './useTaskProgressBarState.impl.js';
+import type { TaskProgressData } from './useTaskProgressBarState';
 import type { TaskProgressSegment } from './useTaskProgressBarComputation.js';
 
 type TaskProgressBarViewProps = TaskProgressData;
