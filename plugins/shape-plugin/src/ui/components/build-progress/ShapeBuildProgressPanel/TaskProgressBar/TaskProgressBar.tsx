@@ -2,10 +2,10 @@ import { Skeleton } from '@mui/material';
 import {
   useTaskProgressBarState,
   type TaskProgressBarProps,
-} from './useTaskProgressBarState.impl.js';
+} from './useTaskProgressBarState.js';
 import { TaskProgressBarView } from './TaskProgressBarView.tsx';
 
-export type { TaskProgressBarProps, TaskProgressData, TaskProgressSegment } from './useTaskProgressBarState.impl.ts';
+export type { TaskProgressBarProps, TaskProgressData, TaskProgressSegment } from './useTaskProgressBarState';
 
 export const TaskProgressBar = (props: TaskProgressBarProps) => {
   const state = useTaskProgressBarState(props);

@@ -1,5 +1,12 @@
 import { updateTask } from '~/task/taskQueue';
 import type { VtTaskQueueDb } from '~/task/taskQueue';
+import type { VtTileProgressReporter } from './vtStageTaskOutputTypes.js';
+import {
+  buildProgressPayload,
+  calculateProgress,
+  shouldReportProgress,
+  updateProgressState,
+} from './vtStageTaskOutputProgressPolicy.js';
 
 type ProgressMetadata = {
   taskId: string;
@@ -13,13 +20,6 @@ type ProgressTrackerInput = {
   parentInputMetadata: Record<string, unknown>;
 };
 
-type ProgressReportState = {
-  processedTiles: number;
-  generatedTiles: number;
-  force?: boolean;
-  message?: string;
-};
-
 export const createTileProgressReporter = (input: ProgressTrackerInput) => {
   const {
     taskQueue,
@@ -30,31 +30,36 @@ export const createTileProgressReporter = (input: ProgressTrackerInput) => {
   let lastReportAt = 0;
   let lastReported = -1;
   let lastMessage: string | null = null;
-  const reportTileProgress = async (state: ProgressReportState): Promise<void> => {
+  const reportTileProgress: VtTileProgressReporter = async (state) => {
     const { processedTiles, generatedTiles, force, message } = state;
-    const shouldReportMessage = Boolean(message && message !== lastMessage);
-    if (!force && !shouldReportMessage && processedTiles === lastReported) return;
     const now = Date.now();
-    if (!force && !shouldReportMessage && (now - lastReportAt < 500) && (processedTiles - lastReported < 25)) {
+    if (!shouldReportProgress({
+      force: Boolean(force),
+      message,
+      lastMessage,
+      processedTiles,
+      lastReported,
+      lastReportAt,
+      now,
+    })) {
       return;
     }
-    lastReportAt = now;
-    lastReported = processedTiles;
-    if (shouldReportMessage && message) {
-      lastMessage = message;
-    }
-    const progress = totalTiles > 0
-      ? Math.min(100, Math.max(0, Math.round((processedTiles / totalTiles) * 100)))
-      : 0;
+    ({ lastReportAt, lastReported, lastMessage } = updateProgressState(
+      { at: now, processedTiles, message },
+    ));
+
+    const payload = buildProgressPayload({
+      processedTiles,
+      generatedTiles,
+      totalTiles,
+      parentInputMetadata,
+      message,
+    });
+
     try {
       await updateTask(taskQueue, fixedTaskInfo.taskId, {
-        progress,
-        ...(shouldReportMessage && message ? { message } : {}),
-        metadata: parentInputMetadata,
-        outputData: {
-          tilesGenerated: generatedTiles,
-          totalTiles,
-        },
+        ...payload,
+        progress: calculateProgress(processedTiles, totalTiles),
       });
     } catch (error) {
       console.warn('[vt] failed to report tile progress', JSON.stringify({
