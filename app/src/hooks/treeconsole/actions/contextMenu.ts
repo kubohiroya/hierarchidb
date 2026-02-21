@@ -275,6 +275,22 @@ export const createContextMenuAction = (
         }
 
         if (normalizedAction === 'export') {
+          const resolvedNodeType = String(
+            node?.nodeType ?? (node as { type?: string })?.type ?? ''
+          );
+          const normalizedNodeType = resolvedNodeType.toLowerCase();
+          const isFolderExportAction =
+            isFolderNodeType(resolvedNodeType) || normalizedNodeType === 'folder';
+
+          if (isFolderExportAction && pushPath && treeId && pageNodeId) {
+            const parentForRoute = (node.parentId as NodeId | undefined) ?? pageNodeId;
+            const targetId = targetNodeId;
+            pushPath(
+              `/t/${treeId}/${parentForRoute}/${targetId}/folder-export/export/normal/1`
+            );
+            return;
+          }
+
           if (!selectedIds.length && !targetNodeId) return;
           const exportIds =
             selectedIds.length > 0 && selectedIds.includes(targetNodeId)
