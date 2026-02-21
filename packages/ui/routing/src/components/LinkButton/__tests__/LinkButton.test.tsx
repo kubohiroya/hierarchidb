@@ -8,8 +8,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LinkButton } from '~/components/LinkButton/LinkButton';
-import { useLinkButton } from '~/components/LinkButton/useLinkButton';
+import { LinkButton } from '../LinkButton';
+import { useLinkButton } from '../useLinkButton';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: vi.fn(),
