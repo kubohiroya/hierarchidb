@@ -13,6 +13,24 @@ export interface TreeNodeMetadata {
   name: string;
   description: string;
   tags: string[];
+  buildMetadata?: NodeBuildMetadata;
+}
+
+export interface NodeBuildMetadata {
+  buildState?: "ready" | "pending" | "building" | "failed";
+  buildRequired?: boolean;
+  buildProfile?: string;
+  buildMode?: string;
+  buildEstimate?: Record<string, unknown>;
+  buildActual?: Record<string, unknown>;
+  buildStartedAt?: Timestamp;
+  buildFinishedAt?: Timestamp;
+  buildError?: {
+    code: string;
+    message: string;
+    source?: string;
+    detail?: unknown;
+  };
 }
 
 export interface NodeBase {

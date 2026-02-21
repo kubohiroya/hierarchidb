@@ -61,6 +61,7 @@ export type { TreeChangeEvent, TreeNodeEvent } from './tree-node-event-types.js'
 export type {
   DescendantProperties,
   NodeBase,
+  NodeBuildMetadata,
   NodePayload,
   ReferenceProperties,
   TreeNode,
