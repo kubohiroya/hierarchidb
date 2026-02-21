@@ -376,38 +376,20 @@ export function usePluginDialogController(
   const handleDraftMetadataChange = useCallback(
     (patch: Partial<TreeNodeMetadata>) => {
       if (!treeUpdater) return;
-      const currentMetadata = treeUpdater.draftMetadata as
-        | (TreeNodeMetadata & { buildMetadata?: Record<string, unknown> })
-        | null
-        | undefined;
-      const draftMetadataPatch = patch as
-        | (TreeNodeMetadata & { buildMetadata?: Record<string, unknown> })
-        | undefined;
-      const currentBuildMetadata = currentMetadata?.buildMetadata;
-      const nextBuildMetadata = draftMetadataPatch?.buildMetadata
-        ? {
-            ...(currentBuildMetadata ?? {}),
-            ...draftMetadataPatch.buildMetadata,
-          }
-        : currentBuildMetadata;
+      const currentDraft = treeUpdater.draftMetadata ?? {};
+      const { buildMetadata: patchBuildMetadata, ...otherPatchProps } = patch;
+
+      const nextBuildMetadata = patchBuildMetadata
+        ? { ...(currentDraft.buildMetadata ?? {}), ...patchBuildMetadata }
+        : currentDraft.buildMetadata;
+
       const nextDraftMetadata: TreeNodeMetadata = {
-        ...(treeUpdater.draftMetadata ?? {}),
-        ...(patch as Partial<TreeNodeMetadata>),
-        ...(draftMetadataPatch?.buildMetadata || nextBuildMetadata
-          ? { buildMetadata: nextBuildMetadata }
-          : {}),
-        name:
-          draftMetadataPatch?.name ??
-          treeUpdater.draftMetadata?.name ??
-          '',
-        description:
-          draftMetadataPatch?.description ??
-          treeUpdater.draftMetadata?.description ??
-          '',
-        tags:
-          draftMetadataPatch?.tags ??
-          treeUpdater.draftMetadata?.tags ??
-          [],
+        ...currentDraft,
+        ...otherPatchProps,
+        buildMetadata: nextBuildMetadata,
+        name: patch.name ?? currentDraft.name ?? '',
+        description: patch.description ?? currentDraft.description ?? '',
+        tags: patch.tags ?? currentDraft.tags ?? [],
       };
       applyUpdateDraft({ draftMetadata: nextDraftMetadata });
     },
