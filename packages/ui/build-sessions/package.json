@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/ui-build",
+  "name": "@hierarchidb/ui-build-sessions",
   "version": "0.1.0",
   "description": "Shared build progress hooks for HierarchiDB UI",
   "type": "module",

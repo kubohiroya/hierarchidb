@@ -7,7 +7,7 @@ import {
   type TaskCountSummary,
   type TaskStageCarrier,
   type TaskLike,
-} from '../../../../../../packages/ui/build';
+} from '../../../../../../packages/ui/build-sessions';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildTaskSummary } from '../../../../../../packages/build-api';
 import type { BuildStage } from '@hierarchidb/components/build-stage';

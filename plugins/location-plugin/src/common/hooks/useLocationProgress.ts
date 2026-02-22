@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
-import { usePluginBuildProgress } from '../../../../../packages/ui/build';
+import { usePluginBuildProgress } from '../../../../../packages/ui/build-sessions';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;

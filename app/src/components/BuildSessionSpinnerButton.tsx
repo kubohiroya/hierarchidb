@@ -5,7 +5,7 @@ import {
   useOptionalPageNodeContext,
   useOptionalTargetNodeContext,
   useOptionalTreeContext,
-} from '@hierarchidb/ui-build';
+} from '@hierarchidb/ui-build-sessions';
 import { CircularProgress, IconButton, type SxProps, type Theme, Tooltip } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 

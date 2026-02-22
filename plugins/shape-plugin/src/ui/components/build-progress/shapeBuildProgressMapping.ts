@@ -1,6 +1,6 @@
 import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '../../../../../../packages/build-api';
-import { toBuildSessionStatusFromUnifiedProgress } from '../../../../../../packages/ui/build';
-import { computePercentage } from '../../../../../../packages/ui/build';
+import { toBuildSessionStatusFromUnifiedProgress } from '../../../../../../packages/ui/build-sessions';
+import { computePercentage } from '../../../../../../packages/ui/build-sessions';
 
 export interface BuildProgress {
   total: number;

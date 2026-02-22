@@ -114,12 +114,12 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/ui/worker-client/dist/index.js'),
       },
       {
-        find: '@hierarchidb/ui-build',
-        replacement: path.resolve(__dirname, '../../packages/ui/build/dist/index.js'),
+        find: '@hierarchidb/ui-build-sessions',
+        replacement: path.resolve(__dirname, '../../packages/ui/build-sessions/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-build-progress',
-        replacement: path.resolve(__dirname, '../../packages/ui/build/dist/index.js'),
+        replacement: path.resolve(__dirname, '../../packages/ui/build-sessions/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-worker-provider',

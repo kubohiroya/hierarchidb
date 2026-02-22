@@ -39,7 +39,7 @@ import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
-import { useWorkerQueryAPI } from '@hierarchidb/ui-build';
+import { useWorkerQueryAPI } from '@hierarchidb/ui-build-sessions';
 import type { TreeNode } from '@hierarchidb/tree-api';
 
 type BuildSessionStatusMode = 'running' | 'waiting';
