@@ -53,6 +53,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = (
         paneProgress={paneProgressForDisplay ?? []}
         isTasksLoading={isTasksLoadingForDisplay}
         isTaskSummaryLoading={isTaskSummaryLoadingForDisplay}
+        buildStatus={summary.buildStatus}
         resolveStatusLabel={resolveStatusLabel}
         resolveStatusColor={resolveStatusColor}
         resolveTaskTitle={resolveTaskTitle}
@@ -66,6 +67,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = (
     isTaskSummaryLoadingForDisplay,
     isTasksLoadingForDisplay,
     paneProgressForDisplay,
+    summary.buildStatus,
     resolveStatusColor,
     resolveStatusLabel,
     matchesSearchQuery,

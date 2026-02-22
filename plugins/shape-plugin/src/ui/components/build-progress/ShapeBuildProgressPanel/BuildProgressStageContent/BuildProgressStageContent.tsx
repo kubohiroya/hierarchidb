@@ -1,5 +1,6 @@
 import { useBuildProgressStageContentState } from './useBuildProgressStageContentState.js';
 import { BuildProgressStageContentView } from './BuildProgressStageContentView.tsx';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 
 type BuildProgressStageContentProps = {
   showHeader?: boolean;
@@ -19,6 +20,7 @@ type BuildProgressStageContentProps = {
   }>;
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
+  buildStatus: BuildStatus;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => string;
@@ -34,6 +36,7 @@ export const BuildProgressStageContent = ({
   paneProgress,
   isTaskSummaryLoading,
   isTasksLoading,
+  buildStatus,
   resolveStatusLabel,
   resolveStatusColor,
   resolveTaskTitle,
@@ -47,6 +50,7 @@ export const BuildProgressStageContent = ({
     paneProgress,
     isTaskSummaryLoading,
     isTasksLoading,
+    buildStatus,
     resolveStatusLabel,
     resolveStatusColor,
     resolveTaskTitle,
