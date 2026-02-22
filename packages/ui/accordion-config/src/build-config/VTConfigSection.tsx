@@ -7,14 +7,12 @@ import {
   Stack,
   TextField,
   Typography,
-  Tooltip,
   Slider,
   InputAdornment,
 } from '@mui/material';
 import {
   BorderAll as BorderAllIcon,
   ExpandMore as ExpandMoreIcon,
-  InfoOutlined as InfoOutlinedIcon,
   Layers as LayersIcon,
   GridView as GridViewIcon,
   Speed as SpeedIcon,
@@ -28,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useEffect, useMemo } from 'react';
 import type { BaseBuildConfig, DynamicConcurrencyConfig } from '@hierarchidb/gis-sdk';
+import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
@@ -88,24 +87,14 @@ export const VTConfigSection = <TDataSourceName,>({
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <LayersIcon color="primary" />
-          <Typography
-            variant="subtitle1"
-            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
-          >
-            {t('processing.vt.title', 'VT')}
-          </Typography>
-          <Tooltip
-            title={t(
-              'processing.tile.descriptionTooltip',
-              'Generate VT tiles for the selected zoom range.',
-            )}
-            placement="top"
-          >
-            <InfoOutlinedIcon color="action" fontSize="small" />
-          </Tooltip>
-        </Stack>
+        <BuildConfigAccordionSummary
+          icon={<LayersIcon color="primary" />}
+          title={t('processing.vt.title', 'VT generation')}
+          info={t(
+            'processing.tile.descriptionTooltip',
+            'Generate VT tiles for the selected zoom range.',
+          )}
+        />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={3}>

@@ -71,6 +71,16 @@ const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
   return true;
 };
 
+const isStepDataEqual = (a?: StepData, b?: StepData): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+};
+
 const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   cfg,
   mode,
@@ -85,6 +95,11 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   draftAtom,
 }) => {
   const [slice, setSlice] = useAtom(draftAtom);
+  const currentSliceRef = useRef<StepData>(slice);
+
+  useEffect(() => {
+    currentSliceRef.current = slice;
+  }, [slice]);
 
   useEffect(() => {
     const next = toRecord(stepData) ?? {};
@@ -93,10 +108,12 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
 
   const handleChange = useCallback(
     (patch: TreeNodeMetadata | Partial<PluginDefinedEntity>) => {
-      const current = toRecord(slice) ?? {};
+      const current = toRecord(currentSliceRef.current) ?? {};
       const nextData: Partial<PluginDefinedEntity> = { ...current, ...(patch as object) };
+      if (isStepDataEqual(toRecord(currentSliceRef.current), nextData)) {
+        return;
+      }
       onDataChange?.(nextData);
-      setSlice(nextData);
       const isBasicInfoStep = cfg.id === 'basic-info';
       if (!isBasicInfoStep) {
         const { name, description, tags, ...rest } = nextData as Record<string, unknown>;
@@ -108,8 +125,9 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
           ...(rest as Partial<PluginDefinedEntity>),
         }));
       }
+      setSlice(nextData);
     },
-    [cfg.id, onDataChange, setDraftData, setSlice, slice]
+    [cfg.id, onDataChange, setDraftData, setSlice]
   );
 
   const resolvedData = cfg.id === 'basic-info' ? stepData : (slice ?? {});

@@ -24,6 +24,16 @@ const registry = PluginStepRegistry.getInstance();
 
 type ShapeStepProps = PluginStepProps<Partial<ShapeEntity>>;
 
+const isSameShapeData = (left?: Partial<ShapeEntity>, right?: Partial<ShapeEntity>): boolean => {
+  if (left === right) return true;
+  if (left === null || left === undefined || right === null || right === undefined) return false;
+  try {
+    return JSON.stringify(left) === JSON.stringify(right);
+  } catch {
+    return false;
+  }
+};
+
 function createStepAdapter(
   Component: React.ComponentType<ShapeDialogStepProps>,
 ): (props: ShapeStepProps) => ReactElement {
@@ -43,9 +53,12 @@ function createStepAdapter(
         ...(latestDataRef.current ?? {}),
         ...updates,
       } as Partial<ShapeEntity>;
+      if (isSameShapeData(next, latestDataRef.current)) {
+        return;
+      }
       latestDataRef.current = next;
       props.onChange(next);
-    }, [props]);
+    }, [props.onChange]);
 
     return (
       <Component

@@ -13,7 +13,6 @@ import {
   Slider,
   Stack,
   Typography,
-  Tooltip,
 } from '@mui/material';
 import {
   DensityLarge as DensityLargeIcon,
@@ -22,7 +21,11 @@ import {
   InfoOutlined as InfoOutlinedIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
-import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
+import {
+  BuildConfigAccordionSummary,
+  BuildConfigSectionTitle,
+  getBuildConfigHoverCardSx,
+} from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
@@ -73,21 +76,11 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <TuneIcon color="primary" />
-          <Typography
-            variant="subtitle1"
-            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
-          >
-            {t('processing.transform.title', 'Transform')}
-          </Typography>
-          <Tooltip
-            title={summaryHelp}
-            placement="top"
-          >
-            <InfoOutlinedIcon color="action" fontSize="small" />
-          </Tooltip>
-        </Stack>
+        <BuildConfigAccordionSummary
+          icon={<TuneIcon color="primary" />}
+          title={t('processing.transform.title', 'Transform')}
+          info={summaryHelp}
+        />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={2} sx={{ opacity: disabled ? 0.6 : 1 }}>

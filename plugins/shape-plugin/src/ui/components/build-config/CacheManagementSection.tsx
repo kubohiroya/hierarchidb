@@ -8,7 +8,6 @@ import {
   Paper,
   Stack,
   Switch,
-  Typography,
 } from '@mui/material';
 import {
   DeleteSweep as DeleteSweepIcon,
@@ -20,6 +19,7 @@ import type { FetchConfigSectionState } from '~/ui/hooks/useFetchConfigSection';
 import { useTranslation } from '~/ui/i18n';
 import {
   BuildConfigSectionTitle,
+  BuildConfigAccordionSummary,
   getBuildConfigHoverCardSx,
 } from '@hierarchidb/ui-accordion-config';
 import { UrlBuildConfigRulesSection } from './UrlBuildConfigRulesSection.tsx';
@@ -49,12 +49,14 @@ export const CacheManagementSection: React.FC<Props> = ({
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <DeleteSweepIcon color="primary" />
-          <Typography variant="subtitle1">
-            {t('processing.cache.title', 'Build Behaviours')}
-          </Typography>
-        </Stack>
+        <BuildConfigAccordionSummary
+          icon={<DeleteSweepIcon color="primary" />}
+          title={t('processing.cache.title', 'Miscellaneous')}
+          info={t(
+            'processing.cache.descriptionTooltip',
+            'Control how build outputs are retained or removed after each stage.',
+          )}
+        />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={2} alignItems="stretch">
