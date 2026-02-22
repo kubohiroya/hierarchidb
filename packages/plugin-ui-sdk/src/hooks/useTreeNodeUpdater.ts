@@ -215,11 +215,15 @@ export function useTreeNodeUpdater<
             existing.data !== null &&
             (existing.data ? Object.keys(existing.data as Record<string, unknown>).length > 0 : false);
           if (needsDraftMeta) {
-            const fallbackMetadata = {
+            const fallbackMetadata: TreeNodeMetadata = {
               ...(existingMetadata ?? { name: '', description: '', tags: [] }),
             };
-            const existingDraftMetadataRecord = existingDraftMetadata ?? {};
-            const mergedMetadata = {
+            const existingDraftMetadataRecord: TreeNodeMetadata = existingDraftMetadata ?? {
+              name: '',
+              description: '',
+              tags: [],
+            };
+            const nextDraftMetadata: TreeNodeMetadata = {
               ...fallbackMetadata,
               ...existingDraftMetadataRecord,
               name:
@@ -233,9 +237,14 @@ export function useTreeNodeUpdater<
               tags: Array.isArray(existingDraftMetadataRecord.tags)
                 ? existingDraftMetadataRecord.tags
                 : fallbackMetadata.tags,
-            } as TreeNodeMetadata;
-            await wcAPI.updateTreeNodeDraftMetadata(nodeId, mergedMetadata);
-            (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = mergedMetadata;
+            };
+            await wcAPI.updateTreeNodeDraftMetadata(nodeId, {
+              ...nextDraftMetadata,
+            });
+            (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = {
+              ...nextDraftMetadata,
+            };
+>>>>>>> eef70a253 (fix(plugin-ui-sdk): type-safe draft metadata defaults)
           }
           if (needsDraftData) {
             await wcAPI.updateTreeNodeDraftData(
