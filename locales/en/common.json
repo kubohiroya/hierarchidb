@@ -79,7 +79,7 @@
     }
   },
   "dialogs": {
-    "trash": {
+    "archive": {
       "modeMenu": {
         "ariaLabel": "Display mode",
         "normal": "Normal (windowed)",
@@ -91,31 +91,31 @@
         "exitFullscreen": "Exit full screen"
       },
       "title": {
-        "empty": "Empty Trash",
-        "restore": "Restore from Trash"
+        "empty": "Delete Items",
+        "restore": "Restore from Archive"
       },
       "confirm": {
-        "title": "Empty Trash?",
+        "title": "Delete Items?",
         "description": "Delete {{count}} {{unit}} permanently?",
-        "empty": "This will permanently delete all items in the trash.",
-        "draftWarning": "Drafts are present. Emptying the trash will force-delete in-progress edits."
+        "empty": "This will permanently delete all items in the archive.",
+        "draftWarning": "Drafts are present. Deleting items from the archive will force-delete in-progress edits."
       },
       "buttons": {
         "cancel": "Cancel",
-        "confirmDelete": "Empty trash",
+        "confirmDelete": "Delete items",
         "restore": "Restore",
         "restoreWithCount": "Restore ({{count}})",
         "empty": "Empty",
         "emptyWithCount": "Empty ({{count}})"
       },
-      "searchPlaceholder": "Search in trash…",
-      "panelTitle": "Trash",
-      "stepLabel": "Trash",
+      "searchPlaceholder": "Search in archive…",
+      "panelTitle": "Archive",
+      "stepLabel": "Archive",
       "draftWarning": "Drafts are included in this view. Deleting will force-remove in-progress edits.",
       "aria": {
         "restore": "Restore selection",
         "restoreWithCount": "Restore {{count}} {{unit}}",
-        "empty": "Empty trash",
+        "empty": "Delete items",
         "emptyWithCount": "Empty {{count}} {{unit}}"
       },
       "units": {
@@ -171,7 +171,7 @@
       }
     }
   },
-  "trash": {
+  "archive": {
     "columns": {
       "name": "Name",
       "type": "Type",
@@ -250,7 +250,7 @@
       "usageAndCreated": "Usage: {{count}}",
       "loading": "Loading...",
       "notFound": "Tag not found.",
-      "empty": "No nodes are tagged with this label.",
+      "empty": "No nodes are tagged with this tag label.",
       "noAssignedAt": "-"
     }
   },
@@ -293,7 +293,7 @@
       },
       "aria": {
         "toolbarLabel": "Tree console toolbar",
-        "trashMenuButton": "Open trash actions",
+        "archiveMenuButton": "Open archive actions",
         "importExportButton": "Import and export options",
         "settingsButton": "Open toolbar settings"
       },
@@ -304,12 +304,11 @@
         "copy": "Copy ({{shortcut}})",
         "paste": "Paste ({{shortcut}})",
         "duplicate": "Duplicate ({{shortcut}})",
-        "moveToTrash": "Move to Trash ({{shortcut}})",
         "moveToArchive": "Move to Archive ({{shortcut}})"
       },
-      "trashMenu": {
-        "restore": "Restore from Trash",
-        "empty": "Empty Trash"
+      "archiveMenu": {
+        "restore": "Restore from Archive",
+        "empty": "Delete Items"
       },
       "importExportMenu": {
         "import": "Import from JSON file",
@@ -374,7 +373,6 @@
       "duplicate": "Duplicate",
       "import": "Import",
       "export": "Export",
-      "moveToTrash": "Move to Trash",
       "moveToArchive": "Move to Archive",
       "visible": "Visible",
       "hidden": "Hidden",
@@ -419,10 +417,10 @@
       }
     },
     "errors": {
-      "trashFailed": "Move to trash failed.",
-      "trashReferencedByRoutes": "Cannot move to trash because routes reference this location.",
-      "trashReferencedByLocations": "Cannot move to trash because locations reference this shape.",
-      "trashBuildSessionRunning": "Cannot move to trash while the build session is running."
+      "archiveFailed": "Move to archive failed.",
+      "archiveReferencedByRoutes": "Cannot move to archive because routes reference this location.",
+      "archiveReferencedByLocations": "Cannot move to archive because locations reference this shape.",
+      "archiveBuildSessionRunning": "Cannot move to archive while the build session is running."
     },
     "infoPanel": {
       "noTimestamp": "—",
@@ -441,10 +439,6 @@
       "noNode": "Node information is not available for this page.",
       "createdLabel": "Created",
       "updatedLabel": "Updated",
-      "confirmTrashTitle": "Move to Trash",
-      "confirmTrashDescription": "Move this item and all its children to trash?",
-      "confirmTrashCancel": "Cancel",
-      "confirmTrashConfirm": "Move to Trash",
       "confirmArchiveTitle": "Move to Archive",
       "confirmArchiveDescription": "Move this item and all its children to archive?",
       "confirmArchiveCancel": "Cancel",
@@ -466,7 +460,7 @@
     "copy": "Copy",
     "cut": "Cut",
     "duplicate": "Duplicate",
-    "moveToTrash": "Move to Trash",
+    "moveToArchive": "Move to Archive",
     "visible": "Visible",
     "hidden": "Hidden",
     "checkReference": "Check reference",

@@ -1,1 +1,0 @@
-import"./vendor-react-OyekpE5j.js";import{kr as e}from"./index.js";const t=e;var n=t;export{t as LocationPluginIcon,n as default};

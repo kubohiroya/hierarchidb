@@ -55,6 +55,7 @@ Antigua and Barbuda,ATG,AG,Central America,Saint Peter,Saint Peter,AG-07
 Antigua and Barbuda,ATG,AG,Central America,Saint Philip,Saint Philip,AG-08
 Antigua and Barbuda,ATG,AG,Central America,Barbuda,Barbuda,AG-10
 Antigua and Barbuda,ATG,AG,Central America,Redonda,Redonda,AG-11
+Anguilla,AIA,AI,Central America,,,
 Albania,ALB,AL,Eastern Europe,Berat,Berat,AL-BR
 Albania,ALB,AL,Eastern Europe,Bulqizë,Bulqizë,AL-BU
 Albania,ALB,AL,Eastern Europe,Dibër,Dibër,AL-DI
@@ -120,6 +121,7 @@ Angola,AGO,AO,Southern Africa,Moxico,Moxico,AO-MOX
 Angola,AGO,AO,Southern Africa,Namibe,Namibe,AO-NAM
 Angola,AGO,AO,Southern Africa,Uige,Uíge,AO-UIG
 Angola,AGO,AO,Southern Africa,Zaire,Zaire,AO-ZAI
+Antarctica,ATA,AQ,Antarctica,,,
 Argentina,ARG,AR,South America,Salta,Salta,AR-A
 Argentina,ARG,AR,South America,Buenos Aires,Buenos Aires,AR-B
 Argentina,ARG,AR,South America,Ciudad Autónoma de Buenos Aires,Ciudad Autónoma de Buenos Aires,AR-C
@@ -144,6 +146,7 @@ Argentina,ARG,AR,South America,Corrientes,Corrientes,AR-W
 Argentina,ARG,AR,South America,Córdoba,Córdoba,AR-X
 Argentina,ARG,AR,South America,Jujuy,Jujuy,AR-Y
 Argentina,ARG,AR,South America,Santa Cruz,Santa Cruz,AR-Z
+American Samoa,ASM,AS,Oceania,,,
 Austria,AUT,AT,Eastern Europe,Burgenland,Burgenland,AT-1
 Austria,AUT,AT,Eastern Europe,Carinthia,Kärnten,AT-2
 Austria,AUT,AT,Eastern Europe,Lower Austria,Niederösterreich,AT-3
@@ -161,6 +164,8 @@ Australia,AUS,AU,Oceania,South Australia,South Australia,AU-SA
 Australia,AUS,AU,Oceania,Tasmania,Tasmania,AU-TAS
 Australia,AUS,AU,Oceania,Victoria,Victoria,AU-VIC
 Australia,AUS,AU,Oceania,Western Australia,Western Australia,AU-WA
+Aruba,ABW,AW,Central America,,,
+Åland Islands,ALA,AX,Northern Europe,,,
 Azerbaijan,AZE,AZ,Eastern Europe,Absheron,Abşeron,AZ-ABS
 Azerbaijan,AZE,AZ,Eastern Europe,Aghstafa,Ağstafa,AZ-AGA
 Azerbaijan,AZE,AZ,Eastern Europe,Aghjabadi,Ağcabədi,AZ-AGC
@@ -433,6 +438,8 @@ Benin,BEN,BJ,Western Africa,Mono,Mono,BJ-MO
 Benin,BEN,BJ,Western Africa,Ouémé,Ouémé,BJ-OU
 Benin,BEN,BJ,Western Africa,Plateau,Plateau,BJ-PL
 Benin,BEN,BJ,Western Africa,Zou,Zou,BJ-ZO
+Saint Barthélemy,BLM,BL,Central America,,,
+Bermuda,BMU,BM,North America,,,
 Brunei Darussalam,BRN,BN,South-Eastern Asia,Belait,Belait,BN-BE
 Brunei Darussalam,BRN,BN,South-Eastern Asia,Brunei-Muara,Brunei-Muara,BN-BM
 Brunei Darussalam,BRN,BN,South-Eastern Asia,Temburong,Temburong,BN-TE
@@ -528,6 +535,7 @@ Bhutan,BTN,BT,South Asia,Lhuentse,Lhuentse,BT-44
 Bhutan,BTN,BT,South Asia,Samdrup Jongkhar,Samdrup Jongkhar,BT-45
 Bhutan,BTN,BT,South Asia,Gasa,Gasa,BT-GA
 Bhutan,BTN,BT,South Asia,Trashi Yangtse,Trashi Yangtse,BT-TY
+Bouvet Island,BVT,BV,Antarctica,,,
 Botswana,BWA,BW,Southern Africa,Central,Central,BW-CE
 Botswana,BWA,BW,Southern Africa,Chobe,Chobe,BW-CH
 Botswana,BWA,BW,Southern Africa,Francistown,Francistown,BW-FR
@@ -570,6 +578,7 @@ Canada,CAN,CA,North America,Prince Edward Island,Prince Edward Island,CA-PE
 Canada,CAN,CA,North America,Quebec,Quebec,CA-QC
 Canada,CAN,CA,North America,Saskatchewan,Saskatchewan,CA-SK
 Canada,CAN,CA,North America,Yukon,Yukon,CA-YT
+Cocos (Keeling) Islands,CCK,CC,Indian Ocean,,,
 "Congo, Democratic Republic of the",COD,CD,Central Africa,Central Kongo,Kongo Central,CD-BC
 "Congo, Democratic Republic of the",COD,CD,Central Africa,Lower Uele,Bas-Uélé,CD-BU
 "Congo, Democratic Republic of the",COD,CD,Central Africa,Equator,Équateur,CD-EQ
@@ -665,6 +674,7 @@ Côte d'Ivoire,CIV,CI,Western Africa,Bandama Valley,Vallée du Bandama,CI-VB
 Côte d'Ivoire,CIV,CI,Western Africa,Woroba,Woroba,CI-WR
 Côte d'Ivoire,CIV,CI,Western Africa,Yamoussoukro,Yamoussoukro,CI-YM
 Côte d'Ivoire,CIV,CI,Western Africa,Zanzan,Zanzan,CI-ZZ
+Cook Islands,COK,CK,Oceania,,,
 Chile,CHL,CL,South America,Aisen,Aisén del General Carlos Ibañez del Campo,CL-AI
 Chile,CHL,CL,South America,Antofagasta,Antofagasta,CL-AN
 Chile,CHL,CL,South America,Arica and Parinacota,Arica y Parinacota,CL-AP
@@ -803,6 +813,8 @@ Cabo Verde,CPV,CV,Western Africa,São Salvador do Mundo,São Salvador do Mundo,C
 Cabo Verde,CPV,CV,Western Africa,São Vicente,São Vicente,CV-SV
 Cabo Verde,CPV,CV,Western Africa,Tarrafal,Tarrafal,CV-TA
 Cabo Verde,CPV,CV,Western Africa,Tarrafal de São Nicolau,Tarrafal de São Nicolau,CV-TS
+Curaçao,CUW,CW,Central America,,,
+Christmas Island,CXR,CX,Oceania,,,
 Cyprus,CYP,CY,Mediterranean,Nicosia,Lefkosia,CY-01
 Cyprus,CYP,CY,Mediterranean,Limassol,Lemesos,CY-02
 Cyprus,CYP,CY,Mediterranean,Larnaca,Larnaka,CY-03
@@ -909,8 +921,8 @@ Djibouti,DJI,DJ,Eastern Africa,Obock,Obock,DJ-OB
 Djibouti,DJI,DJ,Eastern Africa,Tadjourah,Tadjourah,DJ-TA
 Denmark,DNK,DK,Northern Europe,North Denmark,Region Nordjylland,DK-81
 Denmark,DNK,DK,Northern Europe,Central Denmark,Region Midjylland,DK-82
-Denmark,DNK,DK,Northern Europe,Southern Denmark,Region Syddanmark,DK-83
-Denmark,DNK,DK,Northern Europe,Capital Region,Region Hovedstaden,DK-84
+Denmark,DNK,DK,Northern Europe,South Denmark,Region Syddanmark,DK-83
+Denmark,DNK,DK,Northern Europe,Capital,Region Hovedstaden,DK-84
 Denmark,DNK,DK,Northern Europe,Zealand,Region Sjælland,DK-85
 Dominica,DMA,DM,Central America,Saint Andrew,Saint Andrew,DM-02
 Dominica,DMA,DM,Central America,Saint David,Saint David,DM-03
@@ -1142,6 +1154,7 @@ Egypt,EGY,EG,Northern Africa,Al Sharqia,Ash Sharqīyah,EG-SHR
 Egypt,EGY,EG,Northern Africa,North Sinai,Shamāl Sīnā',EG-SIN
 Egypt,EGY,EG,Northern Africa,Suez,As Suways,EG-SUZ
 Egypt,EGY,EG,Northern Africa,New Valley,Al Wādī al Jadīd,EG-WAD
+Western Sahara,ESH,EH,Western Africa,,,
 Eritrea,ERI,ER,Eastern Africa,Anseba,Ansabā,ER-AN
 Eritrea,ERI,ER,Eastern Africa,Southern Red Sea,Janūbī al Baḩrī al Aḩmar,ER-DK
 Eritrea,ERI,ER,Eastern Africa,Southern,Al Janūbī,ER-DU
@@ -1244,10 +1257,12 @@ Fiji,FJI,FJ,Oceania,Ra,Ra,FJ-11
 Fiji,FJI,FJ,Oceania,Rewa,Rewa,FJ-12
 Fiji,FJI,FJ,Oceania,Serua,Serua,FJ-13
 Fiji,FJI,FJ,Oceania,Tailevu,Tailevu,FJ-14
+Falkland Islands (Malvinas),FLK,FK,South America,,,
 Micronesia (Federated States of),FSM,FM,Oceania,Kosrae,Kosrae,FM-KSA
 Micronesia (Federated States of),FSM,FM,Oceania,Pohnpei,Pohnpei,FM-PNI
 Micronesia (Federated States of),FSM,FM,Oceania,Chuuk,Chuuk,FM-TRK
 Micronesia (Federated States of),FSM,FM,Oceania,Yap,Yap,FM-YAP
+Faroe Islands,FRO,FO,Northern Europe,,,
 France,FRA,FR,Western Europe,Ain[note 1],Ain,FR-01
 France,FRA,FR,Western Europe,Aisne[note 1],Aisne,FR-02
 France,FRA,FR,Western Europe,Allier[note 1],Allier,FR-03
@@ -1658,6 +1673,8 @@ Georgia,GEO,GE,Eastern Europe,Tqibuli,Tqibuli,GE-TQI
 Georgia,GEO,GE,Eastern Europe,Tqvarcheli,Tqvarcheli,GE-TQV
 Georgia,GEO,GE,Eastern Europe,Tsqaltubo,Tsqaltubo,GE-TSQ
 Georgia,GEO,GE,Eastern Europe,Zugdidi,Zugdidi,GE-ZUG
+French Guiana,GUF,GF,South America,,,
+Guernsey,GGY,GG,Western Europe,,,
 Ghana,GHA,GH,Western Africa,Greater Accra,Greater Accra,GH-AA
 Ghana,GHA,GH,Western Africa,Ahafo,Ahafo,GH-AF
 Ghana,GHA,GH,Western Africa,Ashanti,Ashanti,GH-AH
@@ -1674,6 +1691,7 @@ Ghana,GHA,GH,Western Africa,Upper East,Upper East,GH-UE
 Ghana,GHA,GH,Western Africa,Upper West,Upper West,GH-UW
 Ghana,GHA,GH,Western Africa,Western North,Western North,GH-WN
 Ghana,GHA,GH,Western Africa,Western,Western,GH-WP
+Gibraltar,GIB,GI,Western Europe,,,
 Greenland,GRL,GL,Northern Europe,Avannaata,Avannaata Kommunia,GL-AV
 Greenland,GRL,GL,Northern Europe,Kujalleq,Kommune Kujalleq,GL-KU
 Greenland,GRL,GL,Northern Europe,Qeqqata,Qeqqata Kommunia,GL-QE
@@ -1718,6 +1736,7 @@ Guinea,GIN,GN,Western Africa,Siguiri,Siguiri,GN-SI
 Guinea,GIN,GN,Western Africa,Télimélé,Télimélé,GN-TE
 Guinea,GIN,GN,Western Africa,Tougué,Tougué,GN-TO
 Guinea,GIN,GN,Western Africa,Yomou,Yomou,GN-YO
+Guadeloupe,GLP,GP,Central America,,,
 Equatorial Guinea,GNQ,GQ,Central Africa,Annobon,Annobón,GQ-AN
 Equatorial Guinea,GNQ,GQ,Central Africa,North Bioko,Bioko Norte,GQ-BN
 Equatorial Guinea,GNQ,GQ,Central Africa,South Bioko,Bioko Sur,GQ-BS
@@ -1777,6 +1796,7 @@ Greece,GRC,GR,Western Europe,Lasíthi,Lasíthi,GR-92
 Greece,GRC,GR,Western Europe,Rethýmnis,Rethýmnis,GR-93
 Greece,GRC,GR,Western Europe,Chaniá,Chaniá,GR-94
 Greece,GRC,GR,Western Europe,Attikí,Attikí,GR-A1
+South Georgia and the South Sandwich Islands,SGS,GS,South America,,,
 Guatemala,GTM,GT,Central America,Guatemala,Guatemala,GT-01
 Guatemala,GTM,GT,Central America,El Progreso,El Progreso,GT-02
 Guatemala,GTM,GT,Central America,Sacatepéquez,Sacatepéquez,GT-03
@@ -1799,6 +1819,7 @@ Guatemala,GTM,GT,Central America,Zacapa,Zacapa,GT-19
 Guatemala,GTM,GT,Central America,Chiquimula,Chiquimula,GT-20
 Guatemala,GTM,GT,Central America,Jalapa,Jalapa,GT-21
 Guatemala,GTM,GT,Central America,Jutiapa,Jutiapa,GT-22
+Guam,GUM,GU,Oceania,,,
 Guinea-Bissau,GNB,GW,Western Africa,East,Leste,GW-L
 Guinea-Bissau,GNB,GW,Western Africa,North,Norte,GW-N
 Guinea-Bissau,GNB,GW,Western Africa,South,Sul,GW-S
@@ -1812,6 +1833,8 @@ Guyana,GUY,GY,South America,Pomeroon-Supenaam,Pomeroon-Supenaam,GY-PM
 Guyana,GUY,GY,South America,Potaro-Siparuni,Potaro-Siparuni,GY-PT
 Guyana,GUY,GY,South America,Upper Demerara-Berbice,Upper Demerara-Berbice,GY-UD
 Guyana,GUY,GY,South America,Upper Takutu-Upper Essequibo,Upper Takutu-Upper Essequibo,GY-UT
+Hong Kong,HKG,HK,Eastern Asia,,,
+Heard Island and McDonald Islands,HMD,HM,Indian Ocean,,,
 Honduras,HND,HN,Central America,Atlántida,Atlántida,HN-AT
 Honduras,HND,HN,Central America,Choluteca,Choluteca,HN-CH
 Honduras,HND,HN,Central America,Colón,Colón,HN-CL
@@ -1974,6 +1997,7 @@ Israel,ISR,IL,Asia,Al Quds,Al Quds,IL-JM
 Israel,ISR,IL,Asia,Al Awsaţ,Al Awsaţ,IL-M
 Israel,ISR,IL,Asia,Tall Abīb,Tall Abīb,IL-TA
 Israel,ISR,IL,Asia,Ash Shamālī,Ash Shamālī,IL-Z
+Isle of Man,IMN,IM,Western Europe,,,
 India,IND,IN,South Asia,Andhra Pradesh,Andhra Pradesh,IN-AP
 India,IND,IN,South Asia,Arunāchal Pradesh,Arunāchal Pradesh,IN-AR
 India,IND,IN,South Asia,Assam,Assam,IN-AS
@@ -2009,6 +2033,7 @@ India,IND,IN,South Asia,Telangāna,Telangāna,IN-TS
 India,IND,IN,South Asia,Uttarākhand,Uttarākhand,IN-UK
 India,IND,IN,South Asia,Uttar Pradesh,Uttar Pradesh,IN-UP
 India,IND,IN,South Asia,West Bengal,West Bengal,IN-WB
+British Indian Ocean Territory,IOT,IO,Indian Ocean,,,
 Iraq,IRQ,IQ,Asia,Anbar,Al Anbār,IQ-AN
 Iraq,IRQ,IQ,Asia,Erbil,Arbīl,IQ-AR
 Iraq,IRQ,IQ,Asia,Basra,Al Başrah,IQ-BA
@@ -2229,6 +2254,7 @@ Italy,ITA,IT,Western Europe,Vicenza,Vicenza,IT-VI
 Italy,ITA,IT,Western Europe,Verona,Verona,IT-VR
 Italy,ITA,IT,Western Europe,Viterbo,Viterbo,IT-VT
 Italy,ITA,IT,Western Europe,Vibo Valentia,Vibo Valentia,IT-VV
+Jersey,JEY,JE,Western Europe,,,
 Jamaica,JAM,JM,Central America,Kingston,Kingston,JM-01
 Jamaica,JAM,JM,Central America,Saint Andrew,Saint Andrew,JM-02
 Jamaica,JAM,JM,Central America,Saint Thomas,Saint Thomas,JM-03
@@ -2416,29 +2442,30 @@ Korea (the Democratic People's Republic of),PRK,KP,Eastern Asia,Ryanggang,Ryangg
 Korea (the Democratic People's Republic of),PRK,KP,Eastern Asia,Rason,Rasǒn(Local variant: Najin Sǒnbong),KP-13
 Korea (the Democratic People's Republic of),PRK,KP,Eastern Asia,Nampo,Namp’o,KP-14
 Korea (the Democratic People's Republic of),PRK,KP,Eastern Asia,Kaesong,Kaesŏng,KP-15
-Korea (the Republic of),KOR,KR,Eastern Asia,Seoul,Seoul-teukbyeolsi,KR-11
-Korea (the Republic of),KOR,KR,Eastern Asia,Busan,Busan-gwangyeoksi,KR-26
-Korea (the Republic of),KOR,KR,Eastern Asia,Daegu,Daegu-gwangyeoksi,KR-27
-Korea (the Republic of),KOR,KR,Eastern Asia,Incheon,Incheon-gwangyeoksi,KR-28
-Korea (the Republic of),KOR,KR,Eastern Asia,Gwangju,Gwangju-gwangyeoksi,KR-29
-Korea (the Republic of),KOR,KR,Eastern Asia,Daejeon,Daejeon-gwangyeoksi,KR-30
-Korea (the Republic of),KOR,KR,Eastern Asia,Ulsan,Ulsan-gwangyeoksi,KR-31
-Korea (the Republic of),KOR,KR,Eastern Asia,Gyeonggi,Gyeonggi-do,KR-41
-Korea (the Republic of),KOR,KR,Eastern Asia,Gangwon,Gangwon-teukbyeoljachido,KR-42
-Korea (the Republic of),KOR,KR,Eastern Asia,North Chungcheong,Chungcheongbuk-do,KR-43
-Korea (the Republic of),KOR,KR,Eastern Asia,South Chungcheong,Chungcheongnam-do,KR-44
-Korea (the Republic of),KOR,KR,Eastern Asia,North Jeolla,Jeollabuk-do,KR-45
-Korea (the Republic of),KOR,KR,Eastern Asia,South Jeolla,Jeollanam-do,KR-46
-Korea (the Republic of),KOR,KR,Eastern Asia,North Gyeongsang,Gyeongsangbuk-do,KR-47
-Korea (the Republic of),KOR,KR,Eastern Asia,South Gyeongsang,Gyeongsangnam-do,KR-48
-Korea (the Republic of),KOR,KR,Eastern Asia,Jeju,Jeju-teukbyeoljachido,KR-49
-Korea (the Republic of),KOR,KR,Eastern Asia,Sejong,Sejong,KR-50
+Korea (the Republic of),KOR,KR,Eastern Asia,서울특별시,서울특별시,KR-11
+Korea (the Republic of),KOR,KR,Eastern Asia,부산광역시,부산광역시,KR-26
+Korea (the Republic of),KOR,KR,Eastern Asia,대구광역시,대구광역시,KR-27
+Korea (the Republic of),KOR,KR,Eastern Asia,인천광역시,인천광역시,KR-28
+Korea (the Republic of),KOR,KR,Eastern Asia,광주광역시,광주광역시,KR-29
+Korea (the Republic of),KOR,KR,Eastern Asia,대전광역시,대전광역시,KR-30
+Korea (the Republic of),KOR,KR,Eastern Asia,울산광역시,울산광역시,KR-31
+Korea (the Republic of),KOR,KR,Eastern Asia,경기도,경기도,KR-41
+Korea (the Republic of),KOR,KR,Eastern Asia,강원특별자치도,강원특별자치도,KR-42
+Korea (the Republic of),KOR,KR,Eastern Asia,충청북도,충청북도,KR-43
+Korea (the Republic of),KOR,KR,Eastern Asia,충청남도,충청남도,KR-44
+Korea (the Republic of),KOR,KR,Eastern Asia,전라북도,전라북도,KR-45
+Korea (the Republic of),KOR,KR,Eastern Asia,전라남도,전라남도,KR-46
+Korea (the Republic of),KOR,KR,Eastern Asia,경상북도,경상북도,KR-47
+Korea (the Republic of),KOR,KR,Eastern Asia,경상남도,경상남도,KR-48
+Korea (the Republic of),KOR,KR,Eastern Asia,제주특별자치도,제주특별자치도,KR-49
+Korea (the Republic of),KOR,KR,Eastern Asia,세종,세종,KR-50
 Kuwait,KWT,KW,Asia,Ahmadi,Al Aḩmadī,KW-AH
 Kuwait,KWT,KW,Asia,Farwaniya,Al Farwānīyah,KW-FA
 Kuwait,KWT,KW,Asia,Hawalli,Ḩawallī,KW-HA
 Kuwait,KWT,KW,Asia,Jahra,Al Jahrā’,KW-JA
 Kuwait,KWT,KW,Asia,Capital,Al ‘Āşimah,KW-KU
 Kuwait,KWT,KW,Asia,Mubarak Al-Kabeer,Mubārak al Kabīr,KW-MU
+Cayman Islands,CYM,KY,Central America,,,
 Kazakhstan,KAZ,KZ,Central Asia,Abai,Abayoblysy,KZ-10
 Kazakhstan,KAZ,KZ,Central Asia,Akmola,Aqmola oblysy,KZ-11
 Kazakhstan,KAZ,KZ,Central Asia,Aktobe,Aqtöbe oblysy,KZ-15
@@ -2860,6 +2887,7 @@ Montenegro,MNE,ME,Eastern Europe,Gusinje,Gusinje,ME-22
 Montenegro,MNE,ME,Eastern Europe,Petnjica,Petnjica,ME-23
 Montenegro,MNE,ME,Eastern Europe,Tuzi,Tuzi,ME-24
 Montenegro,MNE,ME,Eastern Europe,Zeta,Zeta,ME-25
+Saint Martin (French part),MAF,MF,Central America,,,
 Madagascar,MDG,MG,Indian Ocean,Toamasina,Toamasina,MG-A
 Madagascar,MDG,MG,Indian Ocean,Antsiranana,Antsiranana,MG-D
 Madagascar,MDG,MG,Indian Ocean,Fianarantsoa,Fianarantsoa,MG-F
@@ -3018,6 +3046,9 @@ Mongolia,MNG,MN,Eastern Asia,Bayanhongor,Bayanhongor,MN-069
 Mongolia,MNG,MN,Eastern Asia,Bayan-Ölgiy,Bayan-Ölgiy,MN-071
 Mongolia,MNG,MN,Eastern Asia,Arhangay,Arhangay,MN-073
 Mongolia,MNG,MN,Eastern Asia,Ulaanbaatar,Ulaanbaatar,MN-1
+Macau,MAC,MO,Eastern Asia,,,
+Northern Mariana Islands,MNP,MP,Oceania,,,
+Martinique,MTQ,MQ,Central America,,,
 Mauritania,MRT,MR,Western Africa,Eastern Basin,Hodh ech Chargui,MR-01
 Mauritania,MRT,MR,Western Africa,Western Basin,Hodh el Gharbi,MR-02
 Mauritania,MRT,MR,Western Africa,Assaba,Assaba,MR-03
@@ -3033,6 +3064,7 @@ Mauritania,MRT,MR,Western Africa,Inchiri,Inchiri,MR-12
 Mauritania,MRT,MR,Western Africa,West Nouakchott,Nuwākshūţ al Gharbīyah,MR-13
 Mauritania,MRT,MR,Western Africa,North Nouakchott,Nuwākshūţ ash Shamālīyah,MR-14
 Mauritania,MRT,MR,Western Africa,South Nouakchott,Nuwākshūţ al Janūbīyah,MR-15
+Montserrat,MSR,MS,Central America,,,
 Malta,MLT,MT,Mediterranean,Attard,Attard,MT-01
 Malta,MLT,MT,Mediterranean,Balzan,Balzan,MT-02
 Malta,MLT,MT,Mediterranean,Birgu,Birgu,MT-03
@@ -3235,6 +3267,7 @@ Namibia,NAM,NA,Southern Africa,Oshana,Oshana,NA-ON
 Namibia,NAM,NA,Southern Africa,Omusati,Omusati,NA-OS
 Namibia,NAM,NA,Southern Africa,Oshikoto,Oshikoto,NA-OT
 Namibia,NAM,NA,Southern Africa,Ohangwena,Ohangwena,NA-OW
+New Caledonia,NCL,NC,Oceania,,,
 Niger,NER,NE,Central Africa,Agadez,Agadez,NE-1
 Niger,NER,NE,Central Africa,Diffa,Diffa,NE-2
 Niger,NER,NE,Central Africa,Dosso,Dosso,NE-3
@@ -3243,6 +3276,7 @@ Niger,NER,NE,Central Africa,Tahoua,Tahoua,NE-5
 Niger,NER,NE,Central Africa,Tillabéri,Tillabéri,NE-6
 Niger,NER,NE,Central Africa,Zinder,Zinder,NE-7
 Niger,NER,NE,Central Africa,Niamey,Niamey,NE-8
+Norfolk Island,NFK,NF,Oceania,,,
 Nigeria,NGA,NG,Central Africa,Abia,Abia,NG-AB
 Nigeria,NGA,NG,Central Africa,Adamawa,Adamawa,NG-AD
 Nigeria,NGA,NG,Central Africa,Akwa Ibom,Akwa Ibom,NG-AK
@@ -3343,6 +3377,7 @@ Nauru,NRU,NR,Oceania,Meneng,Meneng,NR-11
 Nauru,NRU,NR,Oceania,Nibok,Nibok,NR-12
 Nauru,NRU,NR,Oceania,Uaboe,Uaboe,NR-13
 Nauru,NRU,NR,Oceania,Yaren,Yaren,NR-14
+Niue,NIU,NU,Oceania,,,
 New Zealand,NZL,NZ,Oceania,Auckland,Auckland,NZ-AUK
 New Zealand,NZL,NZ,Oceania,Bay of Plenty,Bay of Plenty,NZ-BOP
 New Zealand,NZL,NZ,Oceania,Canterbury,Canterbury,NZ-CAN
@@ -3411,6 +3446,7 @@ Peru,PER,PE,South America,San Martín,San Martín,PE-SAM
 Peru,PER,PE,South America,Tacna,Tacna,PE-TAC
 Peru,PER,PE,South America,Tumbes,Tumbes,PE-TUM
 Peru,PER,PE,South America,Ucayali,Ucayali,PE-UCA
+French Polynesia,PYF,PF,Oceania,,,
 Papua New Guinea,PNG,PG,Oceania,Chimbu,Chimbu,PG-CPK
 Papua New Guinea,PNG,PG,Oceania,Central,Central,PG-CPM
 Papua New Guinea,PNG,PG,Oceania,East New Britain,East New Britain,PG-EBR
@@ -3571,6 +3607,9 @@ Poland,POL,PL,Eastern Europe,Włocławek,Włocławek,PL-WL
 Poland,POL,PL,Eastern Europe,Wrocław,Wrocław,PL-WR
 Poland,POL,PL,Eastern Europe,Zamość,Zamość,PL-ZA
 Poland,POL,PL,Eastern Europe,Zielona Góra,Zielona Góra,PL-ZG
+Saint Pierre and Miquelon,SPM,PM,North America,,,
+Pitcairn,PCN,PN,Oceania,,,
+Puerto Rico,PRI,PR,Central America,,,
 "Palestine, State of",PSE,PS,Asia,Bethlehem,Bayt Laḩm,PS-BTH
 "Palestine, State of",PSE,PS,Asia,Deir El Balah,Dayr al Balaḩ,PS-DEB
 "Palestine, State of",PSE,PS,Asia,Gaza,Ghazzah,PS-GZA
@@ -3649,6 +3688,7 @@ Qatar,QAT,QA,Asia,Shahaniya,Ash Shīḩānīyah,QA-SH
 Qatar,QAT,QA,Asia,Umm Salal,Umm Şalāl,QA-US
 Qatar,QAT,QA,Asia,Wakra,Al Wakrah,QA-WA
 Qatar,QAT,QA,Asia,Daayen,Az̧ Z̧a‘āyin,QA-ZA
+Réunion,REU,RE,Indian Ocean,,,
 Romania,ROU,RO,Eastern Europe,Alba,Alba,RO-AB
 Romania,ROU,RO,Eastern Europe,Argeș,Argeș,RO-AG
 Romania,ROU,RO,Eastern Europe,Arad,Arad,RO-AR
@@ -4118,6 +4158,7 @@ Slovenia,SVN,SI,Eastern Europe,Sveti Jurij v Slovenskih goricah,Sveti Jurij v Sl
 Slovenia,SVN,SI,Eastern Europe,Šentrupert,Šentrupert,SI-211
 Slovenia,SVN,SI,Eastern Europe,Mirna,Mirna,SI-212
 Slovenia,SVN,SI,Eastern Europe,Ankaran,Ankaran,SI-213
+Svalbard and Jan Mayen,SJM,SJ,Northern Europe,,,
 Slovakia,SVK,SK,Eastern Europe,Banská Bystrica,Banskobystrický kraj,SK-BC
 Slovakia,SVK,SK,Eastern Europe,Bratislava,Bratislavský kraj,SK-BL
 Slovakia,SVK,SK,Eastern Europe,Košice,Košický kraj,SK-KI
@@ -4131,6 +4172,7 @@ Sierra Leone,SLE,SL,Western Africa,Northern,Northern,SL-N
 Sierra Leone,SLE,SL,Western Africa,North Western,North Western,SL-NW
 Sierra Leone,SLE,SL,Western Africa,Southern,Southern,SL-S
 Sierra Leone,SLE,SL,Western Africa,Western Area (Freetown),Western Area (Freetown),SL-W
+San Marino,SMR,SM,Western Europe,,,
 Senegal,SEN,SN,Western Africa,Diourbel,Diourbel,SN-DB
 Senegal,SEN,SN,Western Africa,Dakar,Dakar,SN-DK
 Senegal,SEN,SN,Western Africa,Fatick,Fatick,SN-FK
@@ -4204,6 +4246,7 @@ El Salvador,SLV,SV,Central America,San Salvador,San Salvador,SV-SS
 El Salvador,SLV,SV,Central America,San Vicente,San Vicente,SV-SV
 El Salvador,SLV,SV,Central America,La Unión,La Unión,SV-UN
 El Salvador,SLV,SV,Central America,Usulután,Usulután,SV-US
+Sint Maarten (Dutch part),SXM,SX,Central America,,,
 Syrian Arab Republic,SYR,SY,Asia,Damascus,Dimashq,SY-DI
 Syrian Arab Republic,SYR,SY,Asia,Daraa,Dar'ā,SY-DR
 Syrian Arab Republic,SYR,SY,Asia,Deir Ezzor,Dayr az Zawr,SY-DY
@@ -4222,6 +4265,7 @@ Eswatini,SWZ,SZ,Southern Africa,Hhohho,Hhohho,SZ-HH
 Eswatini,SWZ,SZ,Southern Africa,Lubombo,Lubombo,SZ-LU
 Eswatini,SWZ,SZ,Southern Africa,Manzini,Manzini,SZ-MA
 Eswatini,SWZ,SZ,Southern Africa,Shiselweni,Shiselweni,SZ-SH
+Turks and Caicos Islands,TCA,TC,Central America,,,
 Chad,TCD,TD,Central Africa,Batha,Al Baţḩā’,TD-BA
 Chad,TCD,TD,Central Africa,Bahr El Gazal,Baḩr al Ghazāl,TD-BG
 Chad,TCD,TD,Central Africa,Borkou,Būrkū,TD-BO
@@ -4245,6 +4289,7 @@ Chad,TCD,TD,Central Africa,Sila,Sīlā,TD-SI
 Chad,TCD,TD,Central Africa,Tandjile,Tānjīlī,TD-TA
 Chad,TCD,TD,Central Africa,Tibesti,Tibastī,TD-TI
 Chad,TCD,TD,Central Africa,Wadi Fira,Wādī Fīrā’,TD-WF
+French Southern Territories,ATF,TF,Indian Ocean,,,
 Togo,TGO,TG,Western Africa,Central,Centrale,TG-C
 Togo,TGO,TG,Western Africa,Kara,Kara,TG-K
 Togo,TGO,TG,Western Africa,Maritime,Maritime (Région),TG-M
@@ -4333,6 +4378,7 @@ Tajikistan,TJK,TJ,Central Asia,Gorno-Badakhshan,Kŭhistoni Badakhshon,TJ-GB
 Tajikistan,TJK,TJ,Central Asia,Khatlon,Khatlon,TJ-KT
 Tajikistan,TJK,TJ,Central Asia,districts under government jurisdiction,nohiyahoi tobei jumhurí,TJ-RA
 Tajikistan,TJK,TJ,Central Asia,Sughd,Sughd,TJ-SU
+Tokelau,TKL,TK,Oceania,,,
 Timor-Leste,TLS,TL,South-Eastern Asia,Aileu,Aileu,TL-AL
 Timor-Leste,TLS,TL,South-Eastern Asia,Ainaro,Ainaro,TL-AN
 Timor-Leste,TLS,TL,South-Eastern Asia,Baucau,Baucau,TL-BA
@@ -4799,6 +4845,7 @@ Uzbekistan,UZB,UZ,Central Asia,Surkhondaryo,Surxondaryo,UZ-SU
 Uzbekistan,UZB,UZ,Central Asia,Tashkent City,Toshkent,UZ-TK
 Uzbekistan,UZB,UZ,Central Asia,Tashkent,Toshkent,UZ-TO
 Uzbekistan,UZB,UZ,Central Asia,Khorezm,Xorazm,UZ-XO
+Holy See,VAT,VA,Western Europe,,,
 Saint Vincent and the Grenadines,VCT,VC,Central America,Charlotte,Charlotte,VC-01
 Saint Vincent and the Grenadines,VCT,VC,Central America,Saint Andrew,Saint Andrew,VC-02
 Saint Vincent and the Grenadines,VCT,VC,Central America,Saint David,Saint David,VC-03
@@ -4830,6 +4877,8 @@ Venezuela (Bolivarian Republic of),VEN,VE,South America,Federal Dependencies,Dep
 Venezuela (Bolivarian Republic of),VEN,VE,South America,La Guaira,La Guaira,VE-X
 Venezuela (Bolivarian Republic of),VEN,VE,South America,Amacuro Delta,Delta Amacuro,VE-Y
 Venezuela (Bolivarian Republic of),VEN,VE,South America,Amazonia,Amazonas,VE-Z
+Virgin Islands (British),VGB,VG,Central America,,,
+Virgin Islands (U.S.),VIR,VI,Central America,,,
 Viet Nam,VNM,VN,South-Eastern Asia,Lai Châu,Lai Châu,VN-01
 Viet Nam,VNM,VN,South-Eastern Asia,Lào Cai,Lào Cai,VN-02
 Viet Nam,VNM,VN,South-Eastern Asia,Hà Giang,Hà Giang,VN-03
@@ -4935,6 +4984,7 @@ Yemen,YEM,YE,Asia,Shabwah,Shabwah,YE-SH
 Yemen,YEM,YE,Asia,Sanaa,Şanʻā’,YE-SN
 Yemen,YEM,YE,Asia,Socotra,Arkhabīl Suquţrá,YE-SU
 Yemen,YEM,YE,Asia,Taiz,Tāʻizz,YE-TA
+Mayotte,MYT,YT,Indian Ocean,,,
 South Africa,ZAF,ZA,Southern Africa,Eastern Cape,Eastern Cape,ZA-EC
 South Africa,ZAF,ZA,Southern Africa,Free State,Free State,ZA-FS
 South Africa,ZAF,ZA,Southern Africa,Gauteng,Gauteng,ZA-GP
