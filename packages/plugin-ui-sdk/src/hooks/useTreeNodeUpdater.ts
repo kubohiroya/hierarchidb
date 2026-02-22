@@ -192,10 +192,18 @@ export function useTreeNodeUpdater<
           const existing = await wcAPI.getTreeNode(nodeId);
           if (!existing) throw new Error('Working copy not found for edit');
 
-          // If drafts are empty, seed them from committed values so the dialog edits a draft copy.
+          // If drafts are empty or malformed, seed them from committed values so the dialog edits a draft copy.
+          const existingDraftMetadata = (existing as {
+            draftMetadata?: TreeNodeMetadata | null;
+          }).draftMetadata;
+          const existingMetadata = (existing as { metadata?: TreeNodeMetadata }).metadata;
           const needsDraftMeta =
-            ((existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null) === null &&
-            existing.metadata !== undefined;
+            existingMetadata !== undefined &&
+            (existingDraftMetadata === null ||
+              !existingDraftMetadata ||
+              typeof existingDraftMetadata.name !== 'string' ||
+              typeof existingDraftMetadata.description !== 'string' ||
+              !Array.isArray(existingDraftMetadata.tags));
           const existingDraftData = (existing as { draftData?: Partial<PeerEntity<TreeNodeData>> }).draftData;
           const hasEmptyDraftData =
             existingDraftData
@@ -207,9 +215,39 @@ export function useTreeNodeUpdater<
             existing.data !== null &&
             (existing.data ? Object.keys(existing.data as Record<string, unknown>).length > 0 : false);
           if (needsDraftMeta) {
-            await wcAPI.updateTreeNodeDraftMetadata(nodeId, existing.metadata as TreeNodeMetadata);
+            const fallbackMetadata = {
+              ...(existingMetadata ?? { name: '', description: '', tags: [] }),
+            };
+            const existingDraftMetadataRecord = existingDraftMetadata ?? {};
+            await wcAPI.updateTreeNodeDraftMetadata(nodeId, {
+              ...fallbackMetadata,
+              ...existingDraftMetadataRecord,
+              name:
+                typeof existingDraftMetadataRecord.name === 'string'
+                  ? existingDraftMetadataRecord.name
+                  : fallbackMetadata.name,
+              description:
+                typeof existingDraftMetadataRecord.description === 'string'
+                  ? existingDraftMetadataRecord.description
+                  : fallbackMetadata.description,
+              tags: Array.isArray(existingDraftMetadataRecord.tags)
+                ? existingDraftMetadataRecord.tags
+                : fallbackMetadata.tags,
+            } as TreeNodeMetadata);
             (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = {
-              ...(existing.metadata ?? { name: '', description: '', tags: [] }),
+              ...(existingDraftMetadataRecord as Record<string, unknown>),
+              ...fallbackMetadata,
+              name:
+                typeof existingDraftMetadataRecord.name === 'string'
+                  ? existingDraftMetadataRecord.name
+                  : fallbackMetadata.name,
+              description:
+                typeof existingDraftMetadataRecord.description === 'string'
+                  ? existingDraftMetadataRecord.description
+                  : fallbackMetadata.description,
+              tags: Array.isArray(existingDraftMetadataRecord.tags)
+                ? existingDraftMetadataRecord.tags
+                : fallbackMetadata.tags,
             };
           }
           if (needsDraftData) {

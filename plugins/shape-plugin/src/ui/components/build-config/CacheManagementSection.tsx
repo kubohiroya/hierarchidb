@@ -18,15 +18,25 @@ import {
 import type { ShapeBuildConfig } from '~/common/types/index';
 import type { FetchConfigSectionState } from '~/ui/hooks/useFetchConfigSection';
 import { useTranslation } from '~/ui/i18n';
-import { getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
+import {
+  BuildConfigSectionTitle,
+  getBuildConfigHoverCardSx,
+} from '@hierarchidb/ui-accordion-config';
+import { UrlBuildConfigRulesSection } from './UrlBuildConfigRulesSection.tsx';
 
 type Props = {
   config: ShapeBuildConfig;
+  onChange: (next: ShapeBuildConfig) => void;
   fetchState: FetchConfigSectionState;
   disabled?: boolean;
 };
 
-export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, disabled }) => {
+export const CacheManagementSection: React.FC<Props> = ({
+  config,
+  onChange,
+  fetchState,
+  disabled,
+}) => {
   const { t } = useTranslation();
   const {
     switchId,
@@ -42,23 +52,44 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
         <Stack direction="row" spacing={2} alignItems="center">
           <DeleteSweepIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.cache.title', 'Cache management')}
+            {t('processing.cache.title', 'Build Behaviours')}
           </Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
-        <Stack spacing={2} direction={{ xs: 'column', lg: 'row' }} alignItems="stretch">
+        <Stack spacing={2} alignItems="stretch">
           <Paper
             variant="outlined"
             sx={{ p: 2, width: '100%', flex: 1, minWidth: 0, ...hoverCardSx }}
           >
             <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Inventory2Icon fontSize="small" color="primary" />
-                <Typography variant="subtitle2">
-                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
-                </Typography>
-              </Stack>
+              <BuildConfigSectionTitle
+                icon={<DeleteSweepIcon fontSize="small" color="primary" />}
+                title={t('processing.download.resetDefaultsAction', 'Reset to defaults')}
+              />
+              <Button
+                fullWidth
+                variant="outlined"
+                color="warning"
+                disabled={disabled}
+                onClick={handleResetDefaults}
+              >
+                {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
+              </Button>
+            </Stack>
+          </Paper>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, width: '100%', flex: 1, minWidth: 0, ...hoverCardSx }}
+          >
+            <Stack spacing={1.5}>
+              <BuildConfigSectionTitle
+                icon={<Inventory2Icon fontSize="small" color="primary" />}
+                title={t(
+                  'processing.download.retainTitle',
+                  'Retail intermediate outputs after build'
+                )}
+              />
               <FormGroup>
                 <FormControlLabel
                   control={
@@ -151,17 +182,12 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
               </FormGroup>
             </Stack>
           </Paper>
-          <Stack sx={{ flex: 1, minWidth: 0 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="warning"
-              disabled={disabled}
-              onClick={handleResetDefaults}
-            >
-              {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
-            </Button>
-          </Stack>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, width: '100%', flex: 1, minWidth: 0, ...hoverCardSx }}
+          >
+            <UrlBuildConfigRulesSection config={config} onChange={onChange} disabled={disabled} />
+          </Paper>
         </Stack>
       </AccordionDetails>
     </Accordion>

@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
-  Paper,
+  Typography,
   Stack,
   TextField,
-  Typography,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Link as LinkIcon } from '@mui/icons-material';
-import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
+import { Link as LinkIcon } from '@mui/icons-material';
+import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '~/ui/i18n';
 import type {
   ShapeBuildConfig,
@@ -86,7 +82,6 @@ const parseRules = (raw: string): { value?: ShapeBuildUrlRule[]; error?: string 
 
 export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, disabled }) => {
   const { t } = useTranslation();
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
   const normalized = useMemo(
     () => serializeRules(config.urlBuildConfigRules),
     [config.urlBuildConfigRules],
@@ -143,58 +138,51 @@ export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, 
   }, [error]);
 
   return (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">
-          {t('processing.urlRules.title', 'URL specific build config rules')}
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails sx={{ p: 2 }}>
-        <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-          <Stack spacing={1.5} sx={{ opacity: disabled ? 0.6 : 1 }}>
-            <BuildConfigSectionTitle
-              icon={<LinkIcon fontSize="small" color="primary" />}
-              title={t('processing.urlRules.sectionTitle', 'URL-specific rules')}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {t(
-                'processing.urlRules.description',
-                'Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.',
-              )}
-            </Typography>
-            <TextField
-              size="small"
-              multiline
-              minRows={10}
-              maxRows={20}
-              value={text}
-              disabled={disabled}
-              onChange={(event) => handleChange(event.target.value)}
-              onBlur={handleBlur}
-              error={Boolean(error)}
-              helperText={error}
-              fullWidth
-              sx={{
-                '& .MuiInputBase-root': {
-                  alignItems: 'stretch',
-                  lineHeight: 1.5,
-                  fontFamily: 'monospace',
-                },
-              }}
-            />
-            <Alert severity="info" sx={{ whiteSpace: 'pre-line' }}>
-              {t(
-                'processing.urlRules.example',
-                `Example:
+    <Stack spacing={1.5} sx={{ opacity: disabled ? 0.6 : 1 }}>
+      <BuildConfigSectionTitle
+        icon={<LinkIcon fontSize="small" color="primary" />}
+        title={t('processing.urlRules.sectionTitle', 'URL-specific rules')}
+      />
+      <TextField
+        size="small"
+        multiline
+        minRows={10}
+        maxRows={20}
+        value={text}
+        disabled={disabled}
+        onChange={(event) => handleChange(event.target.value)}
+        onBlur={handleBlur}
+        error={Boolean(error)}
+        helperText={error}
+        fullWidth
+        sx={{
+          '& .MuiInputBase-root': {
+            alignItems: 'stretch',
+            lineHeight: 1.5,
+            fontFamily: 'monospace',
+          },
+        }}
+      />
+      <Alert severity="info" sx={{ whiteSpace: 'pre-wrap' }}>
+        {t(
+          'processing.urlRules.example',
+          `Example:
 [
   { "key": "default", "matchType": "default", "buildConfig": { "transformConfig": { "tolerance": 0.12 } } },
   { "key": "russia-coast", "matchType": "regexp", "pattern": "(?i).*russia.*", "buildConfig": { "transformConfig": { "tolerance": 0.3 } }
 ]`,
-              )}
-            </Alert>
-          </Stack>
-        </Paper>
-      </AccordionDetails>
-    </Accordion>
+        )}
+      </Alert>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ whiteSpace: 'pre-wrap' }}
+      >
+        {t(
+          'processing.urlRules.description',
+          'Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.',
+        )}
+      </Typography>
+    </Stack>
   );
 };

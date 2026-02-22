@@ -158,6 +158,9 @@
       "body": "A build session is currently running. Open the Build step to view progress.",
       "action": "Open Build Step"
     },
+    "cache": {
+      "title": "Build Behaviours"
+    },
     "vt": {
       "title": "VT Generation"
     },
@@ -165,7 +168,7 @@
       "title": "Fetch stage settings",
       "workers": "Concurrent Fetch Workers",
       "workersHelp": "Controls how many fetches run in parallel.",
-      "retainTitle": "Retain intermediate outputs after build",
+      "retainTitle": "Retail intermediate outputs after build",
       "retainApiCache": "API cache",
       "retainFilteredCache": "Filtered cache",
       "retainStage1Cache": "Simplified cache",
@@ -202,6 +205,12 @@
       "retryBackoffHelp": "Spacing pattern used between retries.",
       "retryBackoffLinear": "Linear",
       "retryBackoffExponential": "Exponential"
+    },
+    "urlRules": {
+      "title": "URL specific build config rules",
+      "sectionTitle": "URL-specific rules",
+      "description": "Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.",
+      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.12 } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.3 } }\n]"
     },
     "extract1": {
       "title": "Transform (Filtering)",

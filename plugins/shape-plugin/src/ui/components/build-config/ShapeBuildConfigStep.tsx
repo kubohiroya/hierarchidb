@@ -11,7 +11,6 @@ import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { FetchInvalidGeometryFilterCard } from './FetchInvalidGeometryFilterCard.tsx';
-import { UrlBuildConfigRulesSection } from './UrlBuildConfigRulesSection.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '~/ui/i18n';
@@ -160,11 +159,6 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
           />
         }
       />
-      <UrlBuildConfigRulesSection
-        config={config}
-        onChange={handleChange}
-        disabled={disabled}
-      />
       <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
       <VTConfigSection
         t={t}
@@ -173,7 +167,12 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         disabled={disabled}
       />
-      <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
+      <CacheManagementSection
+        config={config}
+        onChange={handleChange}
+        fetchState={fetchState}
+        disabled={disabled}
+      />
     </BuildConfigShell>
   );
 };

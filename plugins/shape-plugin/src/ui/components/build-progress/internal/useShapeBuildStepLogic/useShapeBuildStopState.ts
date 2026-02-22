@@ -13,7 +13,11 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
 
   useEffect(() => {
     if (!isStopRequestedInFlight) return;
-    if (sessionRecord?.status === 'idle' || sessionRecord?.status === 'paused') {
+    if (
+      sessionRecord?.status === 'paused'
+      || sessionRecord?.status === 'completed'
+      || sessionRecord?.status === 'failed'
+    ) {
       setIsStopRequested(false);
       setIsStopAccepted(false);
     }
@@ -28,4 +32,3 @@ export const useShapeBuildStopState = ({ sessionRecord }: UseShapeBuildStopState
     isSessionStopping,
   };
 };
-

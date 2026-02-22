@@ -938,7 +938,7 @@ const invokeShapeBuildCommand = async (
         }
         await upsertBuildSessionSnapshot({
           nodeId,
-          status: 'idle',
+          status: 'paused',
           stopReason,
           canResume: true,
         });

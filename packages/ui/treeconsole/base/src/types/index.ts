@@ -9,7 +9,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
-import type { MouseEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 /**
