@@ -1,1 +1,0 @@
-import"./vendor-react-OyekpE5j.js";import{Rr as e}from"./index.js";const t=e;var n=t;export{t as ResolverPluginIcon,n as default};

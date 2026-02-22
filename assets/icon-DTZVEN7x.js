@@ -1,0 +1,1 @@
+import"./vendor-react-DIwP1lUV.js";import{kr as e}from"./index.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};

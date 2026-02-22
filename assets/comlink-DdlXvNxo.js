@@ -1,1 +1,0 @@
-import{An as e,Fn as t,In as n,Ln as r,Mn as i,Nn as a,Pn as o,Rn as s,jn as c,zn as l}from"./index.js";export{e as createEndpoint,c as expose,i as finalizer,a as proxy,o as proxyMarker,t as releaseProxy,n as transfer,r as transferHandlers,s as windowEndpoint,l as wrap};

@@ -79,7 +79,7 @@
     }
   },
   "dialogs": {
-    "trash": {
+    "archive": {
       "modeMenu": {
         "ariaLabel": "表示モード",
         "normal": "Normal（通常）",
@@ -171,7 +171,7 @@
       }
     }
   },
-  "trash": {
+  "archive": {
     "columns": {
       "name": "名称",
       "type": "種類",
@@ -252,7 +252,7 @@
       },
       "aria": {
         "toolbarLabel": "ツリーコンソールツールバー",
-        "trashMenuButton": "アーカイブメニューを開く",
+        "archiveMenuButton": "アーカイブメニューを開く",
         "importExportButton": "インポート／エクスポートメニューを開く",
         "settingsButton": "ツールバー設定を開く"
       },
@@ -263,10 +263,9 @@
         "copy": "コピー ({{shortcut}})",
         "paste": "貼り付け ({{shortcut}})",
         "duplicate": "複製 ({{shortcut}})",
-        "moveToTrash": "アーカイブに移動する ({{shortcut}})",
         "moveToArchive": "アーカイブに移動する ({{shortcut}})"
       },
-      "trashMenu": {
+      "archiveMenu": {
         "restore": "アーカイブから戻す",
         "empty": "アーカイブから削除する"
       },
@@ -333,7 +332,6 @@
       "duplicate": "複製",
       "import": "インポート",
       "export": "エクスポート",
-      "moveToTrash": "アーカイブに移動する",
       "moveToArchive": "アーカイブに移動する",
       "visible": "表示",
       "hidden": "非表示",
@@ -378,10 +376,10 @@
       }
     },
     "errors": {
-      "trashFailed": "アーカイブへの移動に失敗しました。",
-      "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはアーカイブに移動できません。",
-      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはアーカイブに移動できません。",
-      "trashBuildSessionRunning": "ビルドセッション実行中のため、アーカイブに移動できません。"
+      "archiveFailed": "アーカイブへの移動に失敗しました。",
+      "archiveReferencedByRoutes": "ルートが参照しているため、このロケーションはアーカイブに移動できません。",
+      "archiveReferencedByLocations": "ロケーションが参照しているため、このシェイプはアーカイブに移動できません。",
+      "archiveBuildSessionRunning": "ビルドセッション実行中のため、アーカイブに移動できません。"
     },
     "infoPanel": {
       "noTimestamp": "—",
@@ -400,10 +398,6 @@
       "noNode": "このページではノード情報を表示できません。",
       "createdLabel": "作成",
       "updatedLabel": "更新",
-      "confirmTrashTitle": "アーカイブに移動する",
-      "confirmTrashDescription": "この項目と子要素をアーカイブに移動しますか？",
-      "confirmTrashCancel": "キャンセル",
-      "confirmTrashConfirm": "アーカイブに移動する",
       "confirmArchiveTitle": "アーカイブに移動する",
       "confirmArchiveDescription": "この項目と子要素をアーカイブに移動しますか？",
       "confirmArchiveCancel": "キャンセル",
