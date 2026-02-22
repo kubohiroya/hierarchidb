@@ -185,14 +185,41 @@ function toImportNode(node: TemplateNodeInput): {
   const normalizedData = normalizeRecord(node.data);
   const data =
     normalizedData && isPeerEntityPayload(normalizedData) ? normalizedData : undefined;
+  const normalizedDraftMetadata = normalizeRecord(node.draftMetadata);
+  const rawBuildMetadata = rawMetadata.buildMetadata;
+  const draftBuildMetadata = normalizedDraftMetadata?.buildMetadata;
+  const hasBuildMetadata = rawBuildMetadata != null || draftBuildMetadata != null;
+  const rawBuildMetadataObject =
+    typeof rawBuildMetadata === 'object' && rawBuildMetadata !== null
+      ? rawBuildMetadata
+      : undefined;
+  const draftBuildMetadataObject =
+    typeof draftBuildMetadata === 'object' && draftBuildMetadata !== null
+      ? draftBuildMetadata
+      : undefined;
+  const requiresBuildMetadataDefault = resolvedNodeType === 'shape' || resolvedNodeType === 'styler';
+  const importedMetadata = {
+    ...rawMetadata,
+    ...(requiresBuildMetadataDefault && !hasBuildMetadata
+      ? { buildMetadata: { buildRequired: true } }
+      : rawBuildMetadataObject
+      ? { buildMetadata: rawBuildMetadataObject }
+      : {}),
+  };
+  const importedDraftMetadata =
+    requiresBuildMetadataDefault && !hasBuildMetadata
+      ? { ...(normalizedDraftMetadata ?? {}), buildMetadata: { buildRequired: true } }
+      : draftBuildMetadataObject
+      ? { ...(normalizedDraftMetadata ?? {}), buildMetadata: draftBuildMetadataObject }
+      : normalizedDraftMetadata;
 
   return {
     name,
     version,
     nodeType: resolvedNodeType,
     description,
-    metadata: rawMetadata,
-    draftMetadata: normalizeRecord(node.draftMetadata),
+    metadata: importedMetadata,
+    draftMetadata: importedDraftMetadata,
     draftData: normalizeRecord(node.draftData) ?? undefined,
     data,
     children: children && children.length > 0 ? children : undefined,
