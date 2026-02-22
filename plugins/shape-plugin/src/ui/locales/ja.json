@@ -158,6 +158,9 @@
       "body": "現在ビルドセッションが実行中です。進捗を確認するにはビルド画面を開いてください。",
       "action": "ビルド画面を開く"
     },
+    "cache": {
+      "title": "ビルド動作"
+    },
     "vt": {
       "title": "VT 生成"
     },
@@ -202,6 +205,12 @@
       "retryBackoffHelp": "再試行の間隔を伸長する方式です。",
       "retryBackoffLinear": "線形",
       "retryBackoffExponential": "指数"
+    },
+    "urlRules": {
+      "title": "URL単位のビルド設定ルール",
+      "sectionTitle": "URL別ルール",
+      "description": "URLごとの上書き設定をJSONで定義します。JSONは順番に評価され、該当するURLへ適用されます。",
+      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.12 } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.3 } }\n]"
     },
     "extract1": {
       "title": "Transform（フィルタリング）",
