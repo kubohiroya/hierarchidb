@@ -5,8 +5,8 @@ import {
   Box,
   Grid,
   Paper,
-  Stack,
   Typography,
+  Stack,
 } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
@@ -18,6 +18,7 @@ import type { ReactNode } from 'react';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { DownloadRetryControls, type DownloadRetryConfig } from './DownloadRetryControls.js';
 import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.js';
+import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
 import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
@@ -105,15 +106,14 @@ export const FetchConfigSection = <TDataSourceName,>({
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <CloudDownloadIcon color="primary" />
-          <Typography
-            variant="subtitle1"
-            sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
-          >
-            {t('processing.fetch.title', 'Fetch')}
-          </Typography>
-        </Stack>
+        <BuildConfigAccordionSummary
+          icon={<CloudDownloadIcon color="primary" />}
+          title={t('processing.fetch.title', 'Fetch')}
+          info={t(
+            'processing.fetch.descriptionTooltip',
+            'Fetches source data, prepares filters, and provides input for transform.',
+          )}
+        />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 1 }}>
         <Grid container rowSpacing={2} columnSpacing={2}>

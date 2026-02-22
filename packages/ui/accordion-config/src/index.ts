@@ -29,6 +29,7 @@ export type { PhaseConfigAccordionProps } from './components/PhaseConfigAccordio
 
 // Build config components
 export { BuildConfigSectionTitle } from './build-config/BuildConfigSectionTitle.js';
+export { BuildConfigAccordionSummary } from './build-config/BuildConfigAccordionSummary.js';
 export { BuildConfigShell } from './build-config/BuildConfigShell.js';
 export { DownloadRetryControls } from './build-config/DownloadRetryControls.js';
 export type { DownloadRetryConfig } from './build-config/DownloadRetryControls.js';

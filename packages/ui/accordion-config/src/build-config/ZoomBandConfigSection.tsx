@@ -5,12 +5,9 @@ import {
   AccordionSummary,
   Button,
   Stack,
-  Tooltip,
-  Typography,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  InfoOutlined as InfoOutlinedIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import {
@@ -23,6 +20,7 @@ import {
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+import { BuildConfigAccordionSummary } from './BuildConfigAccordionSummary.js';
 import { ZoomBandRangeCard } from './ZoomBandRangeCard.js';
 
 export type ZoomBandConfigSectionProps = {
@@ -52,26 +50,14 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <SettingsIcon color="primary" />
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography
-              variant="subtitle1"
-              sx={{ fontSize: 'calc(1rem + 2px)', color: 'primary.main' }}
-            >
-              {t('processing.zoomBandSettings.title', 'Zoom band settings')}
-            </Typography>
-            <Tooltip
-              title={t(
-                'processing.tile.zoomBandsSummary',
-                'Zoom bands follow the Transform range boundaries. The representative zoom is the smallest in each band.',
-              )}
-              placement="top"
-            >
-              <InfoOutlinedIcon color="action" fontSize="small" />
-            </Tooltip>
-          </Stack>
-        </Stack>
+        <BuildConfigAccordionSummary
+          icon={<SettingsIcon color="primary" />}
+          title={t('processing.zoomBandSettings.title', 'Zoom band settings')}
+          info={t(
+            'processing.tile.zoomBandsSummary',
+            'Zoom bands follow the Transform range boundaries. The representative zoom is the smallest in each band.',
+          )}
+        />
       </AccordionSummary>
       <AccordionDetails sx={{ p: 1 }}>
         <Stack spacing={2}>

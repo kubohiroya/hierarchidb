@@ -69,6 +69,7 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
+      "descriptionTooltip": "Fetches source data, prepares filters, and provides input for transform.",
       "geometryIntakeGuard": {
         "title": "Fetch Geometry Intake Guard",
         "description": "Normalize and validate fetched geometry before transform to reduce unstable simplification artifacts.",
@@ -159,10 +160,11 @@
       "action": "Open Build Step"
     },
     "cache": {
-      "title": "Build Behaviours"
+      "title": "Miscellaneous",
+      "descriptionTooltip": "Control how build outputs are retained or removed for each stage."
     },
     "vt": {
-      "title": "VT Generation"
+      "title": "VT generation"
     },
     "download": {
       "title": "Fetch stage settings",
@@ -293,10 +295,11 @@
       "title": "Zoom band settings"
     },
     "cache": {
-      "title": "Cache management"
+      "title": "Cache management",
+      "descriptionTooltip": "Controls build output retention and cleanup behavior by stage."
     },
     "tile": {
-      "title": "VT Generation",
+      "title": "VT generation",
       "descriptionTooltip": "Generate VT tiles for the selected zoom range.",
       "basicSettings": "Basic settings",
       "basicPerformance": "Concurrency",

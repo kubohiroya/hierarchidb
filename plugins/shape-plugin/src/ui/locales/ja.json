@@ -69,6 +69,7 @@
   "processing": {
     "fetch": {
       "title": "Fetch",
+      "descriptionTooltip": "取得したデータを取り込み、フィルタリングを準備して transform へ渡します。",
       "geometryIntakeGuard": {
         "title": "Fetch Geometry Intake Guard",
         "description": "Transform 前に取得済みジオメトリを正規化・検証し、不安定な簡略化アーティファクトを抑制します。",
@@ -159,7 +160,8 @@
       "action": "ビルド画面を開く"
     },
     "cache": {
-      "title": "ビルド動作"
+      "title": "その他",
+      "descriptionTooltip": "ステージごとの生成物の保持・削除動作を設定します。"
     },
     "vt": {
       "title": "VT 生成"
@@ -293,7 +295,8 @@
       "title": "ズーム帯設定"
     },
     "cache": {
-      "title": "キャッシュ管理"
+      "title": "キャッシュ管理",
+      "descriptionTooltip": "ステージごとの生成物の保持・削除動作を設定します。"
     },
     "tile": {
       "title": "VT 生成",

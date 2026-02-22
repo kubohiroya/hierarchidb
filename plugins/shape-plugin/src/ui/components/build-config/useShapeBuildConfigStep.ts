@@ -63,6 +63,17 @@ const normalizeZoomBandConfig = (
   };
 };
 
+const isStepValueEqual = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  if (a === null || a === undefined || b === null || b === undefined) return false;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+};
+
 export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
   const config = useMemo(() => {
     const baseConfig = resolveInitialBuildConfig();
@@ -82,21 +93,16 @@ export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
       return;
     }
     const nextConfig = normalizeZoomBandConfig(baseConfig, data.buildConfig);
-    const coefficient = data.buildConfig.transformConfig?.excludePolygonAreaCoefficient;
-    const rawBoundaries = data.buildConfig.transformConfig?.zoomBandBoundaries;
-    const normalizedBoundaries = nextConfig.transformConfig.zoomBandBoundaries;
-    const boundariesChanged = !areZoomBandBoundariesEqual(rawBoundaries, normalizedBoundaries);
-    if (!Number.isFinite(coefficient)) {
-      onChange({
-        buildConfig: nextConfig,
-        processingConfig: nextProcessingConfig,
-      });
-      return;
+    const nextPatch: Partial<ShapeEntity> = {};
+    if (!isStepValueEqual(data.buildConfig, nextConfig)) {
+      nextPatch.buildConfig = nextConfig;
     }
-    if (boundariesChanged || !data.processingConfig) {
+    if (!isStepValueEqual(data.processingConfig, nextProcessingConfig)) {
+      nextPatch.processingConfig = nextProcessingConfig;
+    }
+    if (Object.keys(nextPatch).length > 0) {
       onChange({
-        buildConfig: nextConfig,
-        processingConfig: nextProcessingConfig,
+        ...nextPatch,
       });
     }
   }, [data?.buildConfig, data?.processingConfig, onChange]);
