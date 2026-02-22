@@ -203,7 +203,22 @@ export function useTreeConsoleIntegrationInner({
         nodeType?: string;
         type?: string;
         name?: string;
-        metadata?: { name?: string; description?: string; tags?: string[] };
+        metadata?: {
+          name?: string;
+          description?: string;
+          tags?: string[];
+          buildMetadata?: {
+            buildRequired?: boolean;
+          };
+        };
+        draftMetadata?: {
+          name?: string;
+          description?: string;
+          tags?: string[];
+          buildMetadata?: {
+            buildRequired?: boolean;
+          };
+        } | null;
         visible?: boolean;
         depth?: number;
       },
@@ -221,9 +236,17 @@ export function useTreeConsoleIntegrationInner({
           name: breadcrumbNode.metadata?.name ?? breadcrumbNode.name ?? '',
           description: breadcrumbNode.metadata?.description,
           tags: breadcrumbNode.metadata?.tags ?? [],
+          buildMetadata: breadcrumbNode.metadata?.buildMetadata,
         },
+        draftMetadata: breadcrumbNode.draftMetadata
+          ? {
+              name: breadcrumbNode.draftMetadata.name,
+              description: breadcrumbNode.draftMetadata.description,
+              tags: breadcrumbNode.draftMetadata.tags ?? [],
+              buildMetadata: breadcrumbNode.draftMetadata.buildMetadata,
+            }
+          : null,
         visible: breadcrumbNode.visible,
-        draftMetadata: null,
         data: null,
         draftData: undefined,
         parentId: parentFallback ? (parentFallback as NodeId) : (pageNodeId as NodeId | undefined),

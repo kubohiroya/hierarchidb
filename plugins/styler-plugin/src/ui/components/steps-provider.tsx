@@ -56,7 +56,13 @@ const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
   const data = dialogData as StylerStepData;
   const dataSource = data.dataSource;
   const size = typeof dataSource?.sizeBytes === 'number' ? dataSource.sizeBytes : 0;
-  return (size ?? 0) > 0;
+  const hasUrlLikeSource = typeof dataSource?.source === 'string' && /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(dataSource.source);
+  const hasSpreadsheetMetadata = Boolean(data.spreadsheetMetadataId);
+  const isUrlMode = dataSource?.type === 'url';
+  if (isUrlMode) {
+    return hasSpreadsheetMetadata && hasUrlLikeSource && size > 0;
+  }
+  return size > 0 && hasSpreadsheetMetadata;
 };
 
 registry.registerConfigProvider<StylerStepData>({

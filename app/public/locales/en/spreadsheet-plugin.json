@@ -15,7 +15,7 @@
       "title": "Import Tabular Data"
     },
     "details": {
-      "title": "Imported File Details",
+      "title": "Imported Tabular Data Details",
       "filename": "filename: {{value}}",
       "size": "size: {{value}}",
       "lastModified": "lastModified: {{value}}",

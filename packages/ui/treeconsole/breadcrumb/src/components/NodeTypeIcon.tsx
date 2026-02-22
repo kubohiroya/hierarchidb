@@ -28,6 +28,7 @@ interface NodeTypeIconProps {
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   isDraft?: boolean;
+  buildRequired?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
   /**
    * Optional explicit color (hex or css color). When provided,
@@ -95,6 +96,7 @@ export function NodeTypeIcon({
                                color = 'inherit',
                                htmlColor,
                                isDraft = false,
+                               buildRequired = false,
                              }: NodeTypeIconProps): ReactElement {
   // Handle both standard sizes and string size
   const standardSizes = ['small', 'medium', 'large'];
@@ -108,7 +110,7 @@ export function NodeTypeIcon({
     <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
   );
 
-  const badgeProps = isDraft
+  const draftBadgeProps = isDraft
     ? {
         color: 'error' as const,
         variant: 'dot' as const,
@@ -120,15 +122,45 @@ export function NodeTypeIcon({
             width: 8,
             height: 8,
             minWidth: 8,
-            transform: 'scale(1) translate(20%, -20%) translateX(3px)',
+            transform: 'scale(1) translate(22%, -22%) translateX(2px)',
+            borderRadius: '50%',
+            border: '1px solid currentColor',
           },
         },
       }
     : { invisible: true as const };
 
+  const buildRequiredBadgeProps = buildRequired
+    ? {
+        color: 'warning' as const,
+        variant: 'dot' as const,
+        overlap: 'circular' as const,
+        anchorOrigin: { vertical: 'top' as const, horizontal: 'right' as const },
+        invisible: false,
+        sx: {
+          '& .MuiBadge-badge': {
+            width: 12,
+            height: 12,
+            minWidth: 12,
+            transform: 'scale(1) translate(18%, -18%) translateX(3px)',
+            borderRadius: '50%',
+            border: '2px solid',
+            backgroundColor: 'background.paper',
+            color: 'warning.main',
+            boxSizing: 'border-box',
+          },
+        },
+      }
+    : { invisible: true as const };
+
+  const withBadges = (children: ReactElement): ReactElement => {
+    const withDraftBadge = isDraft ? <Badge {...draftBadgeProps}>{children}</Badge> : children;
+    return buildRequired ? <Badge {...buildRequiredBadgeProps}>{withDraftBadge}</Badge> : withDraftBadge;
+  };
+
   if (clickable && onClick) {
     return (
-      <Badge {...badgeProps}>
+      withBadges(
         <IconButton
           size={iconSize}
           onClick={onClick}
@@ -144,7 +176,7 @@ export function NodeTypeIcon({
           {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
           {icon}
         </IconButton>
-      </Badge>
+      )
     );
   }
 
@@ -160,10 +192,9 @@ export function NodeTypeIcon({
       }}
     >
       {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
-      <Badge {...badgeProps}>
-        {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+      {withBadges(
         <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
-      </Badge>
+      )}
     </Box>
   );
 }

@@ -55,6 +55,72 @@ const formatBytes = (value?: number | null): string => {
   return `${bytes} B`;
 };
 
+const decodeSafe = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+const parseCorsProxyUrl = (source: string): string | null => {
+  try {
+    const parsed = new URL(source, 'http://localhost');
+    const proxied = parsed.searchParams.get('url');
+    if (!proxied) return null;
+    return decodeSafe(proxied);
+  } catch {
+    return null;
+  }
+};
+
+const isLooksLikeUrl = (source?: string): boolean => {
+  if (!source) return false;
+  if (/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(source) || source.startsWith('//')) {
+    return true;
+  }
+  return parseCorsProxyUrl(source) !== null;
+};
+
+const normalizeImportUrl = (source?: string): string => {
+  if (!source) return '';
+  const candidate = source.trim();
+  const decodedProxy = parseCorsProxyUrl(candidate);
+  if (decodedProxy && isLooksLikeUrl(decodedProxy)) {
+    return decodedProxy;
+  }
+  return candidate;
+};
+
+const resolveImportMethod = (
+  type: SpreadSheetDataSourceType['type'] | undefined,
+  source?: string,
+): ImportMethod => {
+  if (type === 'url') return 'url';
+  if (type === 'file') return 'file';
+  return isLooksLikeUrl(source) ? 'url' : 'file';
+};
+
+const clearUrlDownloadState = (
+  dialogData: SpreadsheetDraft,
+  source?: string,
+): Pick<
+  SpreadsheetDraft,
+  'spreadsheetMetadataId' | 'dataSource' | 'tabularTableMetadata' | 'file'
+> => ({
+  spreadsheetMetadataId: undefined,
+  tabularTableMetadata: undefined,
+  file: undefined,
+  dataSource: {
+    ...(dialogData.dataSource ?? { type: 'url' }),
+    ...(source === undefined ? {} : { source }),
+    type: 'url',
+    filename: undefined,
+    sizeBytes: undefined,
+    contentHash: undefined,
+  },
+});
+
 export const useTabularDataSource = ({
   data,
   onChange,
@@ -67,10 +133,12 @@ export const useTabularDataSource = ({
   const dialogData = useMemo<SpreadsheetDraft>(() => coerceDialogData(data), [data]);
 
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
-  const derivedImportMethod: ImportMethod =
-    dialogData.dataSource?.type === 'url' || dialogData.dataSource?.source?.startsWith('http') ? 'url' : 'file';
-  const derivedUrl = dialogData.dataSource?.source ?? '';
+  const derivedImportMethod = resolveImportMethod(dialogData.dataSource?.type, dialogData.dataSource?.source);
+  const derivedUrl = normalizeImportUrl(dialogData.dataSource?.source);
   const derivedProcessing = dialogData.tabularProcessingConfig;
+  const importMethodRef = useRef<ImportMethod>(derivedImportMethod);
+  const downloadUrlRef = useRef(derivedUrl);
+  const urlImportPendingRef = useRef(derivedImportMethod === 'url');
   const autoStartDownload = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const { search, hash } = window.location;
@@ -80,14 +148,13 @@ export const useTabularDataSource = ({
     return params.get('build') === '1';
   }, []);
 
-  const [importMethod, setImportMethod] = useState<ImportMethod>(derivedImportMethod);
   const [downloadUrl, setDownloadUrl] = useState(derivedUrl);
   const [lastSuccessfulUrl, setLastSuccessfulUrl] = useState<string | null>(() => {
     const source = dialogData.dataSource?.source ?? null;
     const hasMetadata = Boolean(dialogData.spreadsheetMetadataId && source);
-    const sourceLooksLikeUrl = source?.startsWith('http');
+    const sourceLooksLikeUrl = isLooksLikeUrl(source);
     const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedImportMethod === 'url';
-    return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl) ? source : null;
+    return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl) ? normalizeImportUrl(source) : null;
   });
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(derivedProcessing);
   const importSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
@@ -97,10 +164,12 @@ export const useTabularDataSource = ({
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    setImportMethod(derivedImportMethod);
+    importMethodRef.current = derivedImportMethod;
+    urlImportPendingRef.current = derivedImportMethod === 'url';
   }, [derivedImportMethod]);
 
   useEffect(() => {
+    downloadUrlRef.current = derivedUrl;
     setDownloadUrl(derivedUrl);
   }, [derivedUrl]);
 
@@ -120,9 +189,15 @@ export const useTabularDataSource = ({
 
   const onFileImported = useCallback(
     (tabularTableMetadata: TabularTableMetadata) => {
+      const isUrlImport = urlImportPendingRef.current || importMethodRef.current === 'url';
+      const normalizedDownloadUrl = normalizeImportUrl(downloadUrlRef.current);
+      const nextSource = isUrlImport
+        ? (normalizedDownloadUrl || tabularTableMetadata.fileUrl) ?? tabularTableMetadata.filename
+        : tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename;
+      const nextType: ImportMethod = isUrlImport ? 'url' : 'file';
       const nextDataSource: SpreadSheetDataSourceType = {
-        type: importMethod,
-        source: importMethod === 'url' ? downloadUrl : tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename,
+        type: nextType,
+        source: nextSource,
         filename: tabularTableMetadata.filename,
         sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
         contentHash: tabularTableMetadata.contentHash,
@@ -139,16 +214,17 @@ export const useTabularDataSource = ({
         },
         tabularProcessingConfig: processingConfig,
       });
-      if (importMethod === 'url') {
-        setLastSuccessfulUrl(downloadUrl);
+      if (nextType === 'url' && normalizedDownloadUrl) {
+        setLastSuccessfulUrl(normalizedDownloadUrl);
       }
+      urlImportPendingRef.current = false;
       setImportExpanded(false);
       setDetailsExpanded(true);
       setLocalError(null);
       setValid(true);
       setError(null);
     },
-    [dialogData, downloadUrl, importMethod, onChange, processingConfig, setError, setValid],
+    [dialogData, onChange, processingConfig, setError, setValid],
   );
 
   const handleImportError = useCallback(
@@ -204,7 +280,20 @@ export const useTabularDataSource = ({
     initialUrl: downloadUrl,
     initialProcessingConfig: processingConfig,
     onImportMethodChange: (method: ImportMethod) => {
-      setImportMethod(method);
+      importMethodRef.current = method;
+      urlImportPendingRef.current = method === 'url';
+      if (method === 'url') {
+        const nextSource = isLooksLikeUrl(dialogData.dataSource?.source)
+          ? dialogData.dataSource?.source
+          : undefined;
+        onChange({
+          ...dialogData,
+          ...clearUrlDownloadState(dialogData, nextSource),
+        });
+        setLastSuccessfulUrl(null);
+        return;
+      }
+
       onChange({
         ...dialogData,
         dataSource: {
@@ -215,15 +304,19 @@ export const useTabularDataSource = ({
     },
     onUrlChange: (url: string) => {
       setDownloadUrl(url);
+      downloadUrlRef.current = url;
+      urlImportPendingRef.current = true;
       if (lastSuccessfulUrl && url !== lastSuccessfulUrl) {
         setLastSuccessfulUrl(null);
       }
+      const nextState = clearUrlDownloadState(dialogData, url);
       onChange({
         ...dialogData,
+        ...nextState,
         dataSource: {
-          ...(dialogData.dataSource ?? { type: 'url' }),
-          type: 'url',
+          ...nextState.dataSource,
           source: url,
+          type: 'url',
         },
       });
     },

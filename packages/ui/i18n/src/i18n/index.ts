@@ -217,20 +217,8 @@ function computeBasePath(): string {
         }
       }
 
-      // Dev fallback: detect first path segment as base (e.g., /hierarchidb/...) when Vite serves under a subpath
-      try {
-        const pathname = window.location.pathname || '/';
-        const parts = pathname.split('/').filter(Boolean);
-        if (parts.length > 0) {
-          const seg = parts[0] ?? '';
-          // Ignore technical segments that should not be treated as base
-          if (!['node_modules', 'assets', 'locales'].includes(String(seg))) {
-            return toAbs(`/${seg}/`);
-          }
-        }
-      } catch (error) {
-        logI18nWarning('Failed to derive base path from window.location', error);
-      }
+      // In development, avoid deriving base path from current route
+      // because auth and other top-level routes can be mistaken as app base.
     }
   } catch (error) {
     logI18nWarning('Failed to compute base path from document context', error);

@@ -67,6 +67,7 @@ export function TreeNodeInfoPanel({
     canMutate,
     isDraft,
     isBuildable,
+    isBuildRequired,
     folderBuildReady,
     buildTargetLoading,
     canPreview,
@@ -119,7 +120,6 @@ export function TreeNodeInfoPanel({
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
   const parentNodeId = currentNode?.parentId;
-  const isStylerNode = currentNode?.nodeType === 'styler';
   const isRootNode =
     (treeId && currentNode?.id === `${treeId}:root`) ||
     currentNode?.depth === 0 ||
@@ -137,7 +137,6 @@ export function TreeNodeInfoPanel({
     },
     [handleNavigateToParent]
   );
-  const isStylerMenuNode = menuNode?.nodeType === 'styler';
   const canCreate = isFolderNodeType(menuNode?.nodeType);
 
   if (!currentNode) {
@@ -193,6 +192,7 @@ export function TreeNodeInfoPanel({
               color="inherit"
               htmlColor={nodeIconColor}
               isDraft={isDraft}
+              buildRequired={isBuildRequired}
             />
           </span>
         </Tooltip>
@@ -210,7 +210,7 @@ export function TreeNodeInfoPanel({
           >
             {displayName || labels.unnamedNodeLabel}
           </Typography>
-          {(isDraft || isBuildRunning || tagNames.length > 0) && (
+          {(isDraft || isBuildRequired || isBuildRunning || tagNames.length > 0) && (
             <Stack
               direction="row"
               spacing={0.75}
@@ -218,6 +218,19 @@ export function TreeNodeInfoPanel({
               justifyContent="center"
               sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
             >
+              {isBuildRequired && (
+                <Tooltip arrow placement="top" title={labels.buildRequiredLabel}>
+                  <span>
+                    <Chip
+                      label={labels.buildRequiredLabel}
+                      size="small"
+                      color="warning"
+                      variant="filled"
+                      sx={{ height: 20 }}
+                    />
+                  </span>
+                </Tooltip>
+              )}
               {isDraft && (
                 <Tooltip
                   arrow
@@ -298,7 +311,7 @@ export function TreeNodeInfoPanel({
           >
             {labels.editLabel}
           </Button>
-          {isBuildable && currentNode?.nodeType !== 'location' && !isStylerNode && (
+          {isBuildable && currentNode?.nodeType !== 'location' && (
             <Button
               variant="outlined"
               startIcon={<ConstructionIcon />}
@@ -351,10 +364,10 @@ export function TreeNodeInfoPanel({
         canImport={canCreate}
         canExport={canCreate}
         folderBuildReady={isFolderNode ? folderBuildReady : undefined}
-        buildRequired={isBuildable && !isFolderNode}
+        buildRequired={isBuildRequired && !isFolderNode}
         canArchive={canMutate && !isBuildRunning}
         canRemove={canMutate && !isBuildRunning}
-        canBuild={isStylerMenuNode ? false : undefined}
+        canBuild={isBuildable}
         canPreview={canPreview && !previewGuardLoading}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
