@@ -244,7 +244,6 @@ export function useTreeNodeUpdater<
             (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = {
               ...nextDraftMetadata,
             };
->>>>>>> eef70a253 (fix(plugin-ui-sdk): type-safe draft metadata defaults)
           }
           if (needsDraftData) {
             await wcAPI.updateTreeNodeDraftData(
