@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -23,6 +24,7 @@ type BuildProgressStageContentStateArgs = {
   }>;
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
+  buildStatus: BuildStatus;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (
     statusValue?: string,
@@ -69,6 +71,7 @@ export const useBuildProgressStageContentState = ({
   paneProgress,
   isTaskSummaryLoading,
   isTasksLoading,
+  buildStatus,
   resolveStatusLabel,
   resolveStatusColor,
   resolveTaskTitle,
@@ -77,6 +80,34 @@ export const useBuildProgressStageContentState = ({
 }: BuildProgressStageContentStateArgs): BuildProgressStageContentState => {
   const filter = useBuildStageFilter();
   const stageTasks = tasksByStage[stage.id] ?? [];
+  const isBuildInProgressState = buildStatus === 'running' || buildStatus === 'paused';
+  const cachedTasksByStageRef = useRef<Record<string, TaskItemWithMetadata[]>>({});
+  const previousBuildStatusRef = useRef<BuildStatus>(buildStatus);
+
+  useEffect(() => {
+    if (previousBuildStatusRef.current === buildStatus) return;
+    if (isBuildInProgressState && ![
+      'running',
+      'paused',
+    ].includes(previousBuildStatusRef.current)) {
+      cachedTasksByStageRef.current = {};
+    }
+    previousBuildStatusRef.current = buildStatus;
+  }, [buildStatus, isBuildInProgressState]);
+
+  useEffect(() => {
+    if (!isBuildInProgressState) return;
+    if (stageTasks.length > 0) {
+      cachedTasksByStageRef.current[stage.id] = stageTasks;
+    }
+  }, [isBuildInProgressState, stage.id, stageTasks]);
+
+  const stageTasksForDisplay = useMemo(() => {
+    if (isBuildInProgressState && stageTasks.length === 0) {
+      return cachedTasksByStageRef.current[stage.id] ?? [];
+    }
+    return stageTasks;
+  }, [isBuildInProgressState, stage.id, stageTasks]);
   const scrollTarget = useAtomValue(taskScrollTargetAtom);
   const setScrollTarget = useSetAtom(taskScrollTargetAtom);
   const viewportRange = useAtomValue(taskViewportRangeAtom);
@@ -87,13 +118,13 @@ export const useBuildProgressStageContentState = ({
   const disableVirtualization = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('noTaskVirtual');
 
-  const filteredTasks = useMemo(() => stageTasks.filter((task) => {
+  const filteredTasks = useMemo(() => stageTasksForDisplay.filter((task) => {
     if (!matchesSearchQuery(task)) return false;
     if (isTaskSkipped(task.display, task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed' || task.status === 'recycled') return filter.completedMode;
     return true;
-  }), [filter, stageTasks, matchesSearchQuery]);
+  }), [filter, matchesSearchQuery, stageTasksForDisplay]);
 
   const orderedTasks = useMemo(() => {
     if (stage.id === 'vt') return sortVectorTileTasks(filteredTasks);

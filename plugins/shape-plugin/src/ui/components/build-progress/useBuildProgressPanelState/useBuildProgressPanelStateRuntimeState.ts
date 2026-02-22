@@ -125,6 +125,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const completionKeyRef = useRef<string | null>(null);
   const totalElapsedSnapshotRef = useRef<{ elapsedMs: number; capturedAt: number } | null>(null);
   const mismatchSignatureRef = useRef<Map<string, string>>(new Map());
+  const snapshotNodeIdRef = useRef<string | undefined>(undefined);
 
   const completion = useBuildCrashInsight({
     draft: params.data,
@@ -192,16 +193,24 @@ export const useBuildProgressPanelStateRuntimeState = (
     mismatchSignatureRef,
   });
 
+  if (nodeIdForLog !== snapshotNodeIdRef.current) {
+    snapshotNodeIdRef.current = nodeIdForLog;
+    totalElapsedSnapshotRef.current = null;
+  }
+
   const liveTotalElapsedMs = useMemo(() => {
     const snapshot = totalElapsedSnapshotRef.current;
-    if (summary.buildStatus === 'running' && snapshot) {
+    if (!snapshot) {
+      return summary.totalElapsedMs;
+    }
+    if ((summary.buildStatus === 'running' || summary.buildStatus === 'paused') && snapshot) {
       const drift = Math.max(0, elapsedTickMs - snapshot.capturedAt);
       return snapshot.elapsedMs + drift;
     }
-    if (summary.buildStatus !== 'running' && summary.totalElapsedMs === 0) {
-      return 0;
+    if (summary.totalElapsedMs > snapshot.elapsedMs) {
+      return summary.totalElapsedMs;
     }
-    return summary.totalElapsedMs;
+    return snapshot.elapsedMs;
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
 
   return {
