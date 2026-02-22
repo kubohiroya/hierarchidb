@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #513 / `fix/shape/initial-build-progress-stability` / start: 2026-02-22 10:40 JST
 - #466 / `feat/shape/url-build-rules-persistence` / start: 2026-02-21 19:02 JST
 - #344 / `codex/refactor/build-session/residual-unification-344` / start: 2026-02-17 16:52 JST
 - #340 / `codex/refactor/runtime/sharedworker-only-build-session-340` / start: 2026-02-17 10:56 JST
