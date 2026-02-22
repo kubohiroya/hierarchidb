@@ -267,6 +267,57 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('does not downgrade running status with equal progress from snapshot', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2x'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-2x',
+        task: {
+          taskId: 'node-2x:fetch:JP:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 42,
+          message: 'running',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('running');
+      expect(result.current.tasks[0]?.progress).toBe(42);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-2x',
+        tasks: [
+          {
+            taskId: 'node-2x:fetch:JP:0',
+            stage: 'fetch',
+            status: 'queued',
+            progress: 42,
+            message: 'queued',
+            index: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('running');
+      expect(result.current.tasks[0]?.message).toBe('running');
+      expect(result.current.tasks[0]?.progress).toBe(42);
+    });
+  });
+
   it('keeps completed message stable when late phase updates arrive', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-2b'));
 
