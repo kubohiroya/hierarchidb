@@ -9,7 +9,7 @@ WorkerInitializationReporter.ts Worker-side reporter to emit init progress/event
 workerBridge.ts                 Bridge getter/setter for the Worker remote proxy
 events/                        Comlink event/command bridges
 wiring/                        Runtime export registry & plugin wiring helpers
-utils.ts, batch-types.ts             Shared helpers and message types
+utils.ts, build-types.ts             Shared helpers and message types
 ```
 
 ## Key exports
@@ -283,7 +283,7 @@ MIT © HierarchiDB Project
 
 - [@hierarchidb/runtime-worker](../runtime/worker) - Worker implementation
 - [@hierarchidb/worker-api](../features/worker-api) - Worker RPC interfaces
-- [@hierarchidb/batch-api](../features/batch-api) - Batch progress interfaces
+- [@hierarchidb/build-api](../features/build-api) - Batch progress interfaces
 - [Comlink](https://github.com/GoogleChromeLabs/comlink) - RPC library for Web Workers
 
 ## 💡 Best Practices

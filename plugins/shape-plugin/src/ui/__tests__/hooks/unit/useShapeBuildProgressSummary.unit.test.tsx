@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { TaskStage } from 'packages/build-api';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation';
 
@@ -18,7 +18,6 @@ describe('useShapeBuildProgressSummary', () => {
         taskId: 'task-recycled',
         nodeId: 'node-1',
         stage: 'fetch',
-        taskType: 'fetch',
         status: 'recycled',
         progress: 100,
       } as ShapeBuildTaskSummary,
@@ -31,7 +30,7 @@ describe('useShapeBuildProgressSummary', () => {
       buildStatus: 'running',
       effectiveProgress: null,
       effectiveStatus: null,
-      taskType: undefined,
+      stage: undefined,
       tasks,
       normalizeStageKey,
       isSkippedTask: () => false,
@@ -43,7 +42,7 @@ describe('useShapeBuildProgressSummary', () => {
     expect(result.current.displayCounts.percentage).toBe(0);
   });
 
-  it('groups tasks by canonical stage even when legacy taskType is stale', () => {
+  it('groups tasks by stage only', () => {
     const multiStages: BuildStage[] = [
       { id: 'fetch', title: 'Fetch', icon: null },
       { id: 'transform', title: 'Transform', icon: null },
@@ -54,8 +53,6 @@ describe('useShapeBuildProgressSummary', () => {
         taskId: 'task-vt-running',
         nodeId: 'node-2',
         stage: 'vt',
-        taskType: 'fetch',
-        type: 'fetch',
         status: 'running',
         progress: 10,
       } as ShapeBuildTaskSummary,
@@ -68,7 +65,7 @@ describe('useShapeBuildProgressSummary', () => {
       buildStatus: 'running',
       effectiveProgress: null,
       effectiveStatus: null,
-      taskType: 'vt',
+      stage: 'vt',
       tasks,
       normalizeStageKey,
       isSkippedTask: () => false,
@@ -90,7 +87,6 @@ describe('useShapeBuildProgressSummary', () => {
         taskId: 'task-fetch-completed',
         nodeId: 'node-3',
         stage: 'fetch',
-        taskType: 'fetch',
         status: 'completed',
         progress: 100,
       } as ShapeBuildTaskSummary,
@@ -98,7 +94,6 @@ describe('useShapeBuildProgressSummary', () => {
         taskId: 'task-transform-running',
         nodeId: 'node-3',
         stage: 'transform',
-        taskType: 'transform',
         status: 'running',
         progress: 5,
       } as ShapeBuildTaskSummary,
@@ -115,7 +110,7 @@ describe('useShapeBuildProgressSummary', () => {
         failed: 0,
         skipped: 0,
         percentage: 12,
-        taskType: 'fetch',
+        stage: 'fetch',
         stageTotals: {
           fetch: { total: 2, completed: 1, failed: 0, skipped: 0 },
           transform: { total: 4, completed: 0, failed: 0, skipped: 0 },
@@ -123,7 +118,7 @@ describe('useShapeBuildProgressSummary', () => {
         },
       },
       effectiveStatus: { status: 'processing', progress: 12 },
-      taskType: 'fetch',
+      stage: 'fetch',
       tasks,
       normalizeStageKey,
       isSkippedTask: () => false,

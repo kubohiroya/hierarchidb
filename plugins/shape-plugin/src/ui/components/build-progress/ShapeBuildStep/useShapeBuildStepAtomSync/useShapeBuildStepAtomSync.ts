@@ -61,6 +61,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     showResumeLabel,
     handleStartOrResume,
     handlePause,
+    handleCancelQueued,
     isStartPending,
     stopRequested,
     authDialogOpen,
@@ -123,6 +124,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     startPending?: boolean;
     handleStartOrResume?: () => Promise<void>;
     handlePause?: () => void;
+    handleCancelQueued?: () => Promise<void> | void;
     stopRequested?: boolean;
   } | null>(null);
   const authRef = useRef<{
@@ -134,6 +136,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const {
     stableHandleStartOrResume,
     stableHandlePause,
+    stableHandleCancelQueued,
     stableCloseAuthDialog,
     stableHandleProviderSelect,
     stableCloseCrashSuspect,
@@ -141,6 +144,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   } = useShapeBuildStepAtomSyncCallbacks({
     handleStartOrResume,
     handlePause,
+    handleCancelQueued,
     closeAuthDialog,
     handleProviderSelect,
     setCrashSuspectOpenFromHook,
@@ -207,6 +211,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stopRequested,
     stableHandleStartOrResume,
     stableHandlePause,
+    stableHandleCancelQueued,
     authDialogOpen,
     stableCloseAuthDialog,
     stableHandleProviderSelect,

@@ -1,5 +1,5 @@
 import { toNodeType } from '@hierarchidb/core-types';
-import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
+import { BuildSessionLauncherPanel } from '../../../../../../../packages/ui/build';
 import type { BuildControlMenuItem } from '@hierarchidb/components';
 import {
   type BuildSessionProgressPanelViewModel,
@@ -40,8 +40,8 @@ type ShapeBuildProgressPanelViewModel = {
   startIcon: ReactElement;
   controlLabel: string;
   pauseLabel: string;
+  cancelLabel: string;
   stopRequested: boolean;
-  pauseActsAsCancel: boolean;
   startPending: boolean;
   showResumeLabel: boolean;
   startLabel: string;
@@ -90,8 +90,6 @@ export const useShapeBuildProgressPanelViewModel = ({
     suspendDialog,
     crashDialog,
     controlRightContent,
-    isBuildStartupPending,
-    pauseButtonLabel,
     startPendingHold,
     isResetSessionLoading,
     handleStartClickWithHold,
@@ -118,17 +116,18 @@ export const useShapeBuildProgressPanelViewModel = ({
     suppressStatusFallback: true,
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : controls.handlePause,
+    onCancel: controls.handleCancelQueued,
     startIcon: <ConstructionIcon fontSize="small" />,
     controlLabel: t('stage.controls.title', 'Build controls'),
     controlMenuItems,
     controlMenuAriaLabel,
     controlMenuDisabled: isControlMenuDisabled,
-    pauseLabel: pauseButtonLabel,
+    pauseLabel: t('stage.controls.pause', 'Pause'),
+    cancelLabel: t('cancel', 'Cancel'),
     stopRequested: controls.stopRequested ?? false,
-    pauseActsAsCancel: isBuildStartupPending,
     startPending: controls.startPending || startPendingHold || isResetSessionLoading,
     startLoading: isStartButtonLoading,
-    showResumeLabel: controls.showResumeLabel ?? false,
+    showResumeLabel: false,
     startLabel: t('stage.controls.start', 'Start Build'),
     resumeLabel: t('stage.controls.resume', 'Resume Build'),
     statusLabel: controls.statusLabel,

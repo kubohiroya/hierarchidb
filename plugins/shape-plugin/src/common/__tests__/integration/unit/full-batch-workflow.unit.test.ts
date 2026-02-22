@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
-  * @file full-batch-workflow.test.ts
+  * @file full-build-workflow.test.ts
  * @description
   * :
  * 1. - geoBoundaries
@@ -25,7 +25,7 @@ import {
   TEST_TIMEOUTS,
 } from '../fixtures/test-shape-entity-data';
 
-describe('Full Batch Processing Workflow Integration Tests', () => {
+describe('Full Build Workflow Integration Tests', () => {
   let errorHandler: ShapeErrorHandler;
   let testEntity: ShapeEntity;
 
@@ -86,7 +86,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         json: async () => mockJapanGeoJSON,
       });
 
-      // When: Execute full batch workflow
+      // When: Execute full build workflow
       const startTime = Date.now();
 
       try {
@@ -128,7 +128,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       // Mock geoBoundaries API responses for all three countries
       setupMockGeoBoundariesResponses();
 
-      // When: Execute full batch workflow
+      // When: Execute full build workflow
       const startTime = Date.now();
 
       try {

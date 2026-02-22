@@ -34,8 +34,6 @@ export const useShapeBuildTaskSyncResolver = ({
     const normalized: ShapeBuildTaskSummary = {
       ...task,
       stage,
-      taskType: stage,
-      type: stage,
       status: normalizedStatus,
       progress: normalizeTaskProgress(normalizedStatus, progress, task.display, task.message),
     };

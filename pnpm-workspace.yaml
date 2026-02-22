@@ -27,9 +27,9 @@ packages:
   - packages/*
   - packages/plugin-ui-sdk
   - packages/plugin-types
-  - packages/batch-runtime-worker-services
-  - packages/batch-runtime-services
-  - packages/batch-types
+  - packages/build-runtime-worker-services
+  - packages/build-runtime-services
+  - packages/build-types
   - packages/vt-*
   - plugins/*
 

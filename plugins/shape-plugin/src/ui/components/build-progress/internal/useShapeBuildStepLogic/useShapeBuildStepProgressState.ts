@@ -29,14 +29,14 @@ type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<S
 type Args = {
   buildStatus: BuildStatus;
   stages: BuildStage[];
-  resolvedTaskType: string | undefined;
-  liveTaskType: string | undefined;
-  timingFallbackTaskType: string | null;
+  resolvedStage: string | undefined;
+  liveStage: string | undefined;
+  timingFallbackStage: string | null;
   displayTasks: ShapeBuildTaskSummary[];
   overallProgress: number;
   effectiveProgress: BuildProgress | null;
   effectiveStatus: BuildProgressStatus | null;
-  taskTypeFromState: string | null;
+  stageFromState: string | null;
   sessionRecord: SessionRecordLike | null | undefined;
   activeNodeId: string | null;
   updateSessionRecord: (patch: {
@@ -49,14 +49,14 @@ type Args = {
 export const useShapeBuildStepProgressState = ({
   buildStatus,
   stages,
-  resolvedTaskType,
-  liveTaskType,
-  timingFallbackTaskType,
+  resolvedStage,
+  liveStage,
+  timingFallbackStage,
   displayTasks,
   overallProgress,
   effectiveProgress,
   effectiveStatus,
-  taskTypeFromState,
+  stageFromState,
   sessionRecord,
   activeNodeId,
   updateSessionRecord,
@@ -112,10 +112,10 @@ export const useShapeBuildStepProgressState = ({
       return;
     }
 
-    const fallbackStageId = buildStatus === 'running' ? timingFallbackTaskType : null;
+    const fallbackStageId = buildStatus === 'running' ? timingFallbackStage : null;
     const nextStageId = runningStageIdFromTasks
       ?? inFlightStageIdFromTasks
-      ?? liveTaskType
+      ?? liveStage
       ?? timingStageId
       ?? persistedStageElapsedStageId
       ?? fallbackStageId
@@ -127,12 +127,14 @@ export const useShapeBuildStepProgressState = ({
     buildStatus,
     isElapsedResetState,
     inFlightStageIdFromTasks,
-    liveTaskType,
+    liveStage,
     persistedStageElapsedStageId,
     runningStageIdFromTasks,
-    timingFallbackTaskType,
+    timingFallbackStage,
     timingStageId,
   ]);
+
+  const resolvedStageFromState = stageFromState ?? resolvedStage ?? stages[0]?.id;
 
   const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
   const totalElapsedMs = useMemo(() => sumNumberRecord(completedStageElapsedMs), [completedStageElapsedMs]);
@@ -199,12 +201,12 @@ export const useShapeBuildStepProgressState = ({
 
   const progressSummary: SummaryResult = useShapeBuildProgressSummaryComputation({
     stages,
-    resolvedTaskType: timingStageId ?? resolvedTaskType,
+    resolvedTaskType: timingStageId ?? resolvedStageFromState,
     overallProgress,
     buildStatus,
     effectiveProgress,
     effectiveStatus,
-    taskType: taskTypeFromState ?? undefined,
+    stage: stageFromState ?? undefined,
     tasks: displayTasks,
     normalizeStageKey,
     isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, task.message),
@@ -305,4 +307,3 @@ export const useShapeBuildStepProgressState = ({
     inFlightStageIdFromTasks,
   };
 };
-

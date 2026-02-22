@@ -204,7 +204,7 @@ describe('Multi-Step Dialog Integration', () => {
       expect(results[locationDraftId].errors).toContain('ロケーション名は必須です');
     });
 
-    it('should batch evaluate capabilities', async () => {
+    it('should build evaluate capabilities', async () => {
       const draftId1 = await dialogAPI.createDraft('folder-plugin');
       const draftId2 = await dialogAPI.createDraft('location');
 

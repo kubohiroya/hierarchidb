@@ -60,7 +60,7 @@ export function buildVectorTileProgressReporter<TProgress extends ProgressInfo =
       failed,
       skipped,
       percentage,
-      taskType: 'vectortile',
+      stage: 'vectortile',
     });
   };
 }

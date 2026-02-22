@@ -10,7 +10,7 @@ import { pickAdminCode, type GeometryEngine } from '@hierarchidb/gis-sdk';
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 import type { shapeDB } from '@hierarchidb/shape-store';
 import {

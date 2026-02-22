@@ -9,7 +9,7 @@ import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
-  validateBatchConfig,
+  validateBuildConfig,
 } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
@@ -88,7 +88,7 @@ const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   const hasSelection = summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   if (!data?.buildConfig) return false;
-  const processingValid = validateBatchConfig(
+  const processingValid = validateBuildConfig(
     data.buildConfig,
     data.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
   ).isValid;
@@ -136,7 +136,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.processing.label', 'Config'),
         componentFactory: (props: ShapeStepProps) => <ShapeProcessing {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          validateBatchConfig(
+          validateBuildConfig(
             data?.buildConfig ?? DEFAULT_BUILD_CONFIG,
             data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
           ).isValid,

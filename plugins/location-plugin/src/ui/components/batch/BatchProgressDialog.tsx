@@ -1,5 +1,5 @@
 /**
-  * Batch Progress Dialog
+  * Build Dialog
    */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -100,7 +100,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null
 );
 
-export interface BatchProgressDialogProps {
+export interface BuildProgressDialogProps {
   open: boolean;
   onClose: () => void;
   nodeId: NodeId;
@@ -140,7 +140,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
-export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
+export const BuildProgressDialog: React.FC<BuildProgressDialogProps> = ({
                                                                           open,
                                                                           onClose,
                                                                           nodeId,
@@ -153,7 +153,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     progress: locationProgress,
     unifiedProgress,
   } = useLocationProgress(nodeId, { autoSubscribe: true });
-  const showAuthRequired = locationProgress?.taskType === 'auth-required';
+  const showAuthRequired = locationProgress?.stage === 'auth-required';
   const phaseLabel = useCallback((phase: string) => {
     const phases = translations.batch?.phases;
     if (isRecord(phases)) {
@@ -170,7 +170,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     const completed = typeof payload?.completed === 'number' ? payload.completed : locationProgress?.completed ?? 0;
     const failed = typeof payload?.failed === 'number' ? payload.failed : locationProgress?.failed ?? 0;
     const percentageRaw = unifiedProgress?.percentage ?? locationProgress?.percentage ?? 0;
-    const phase = (unifiedProgress?.phase ?? locationProgress?.taskType ?? 'running').toLowerCase();
+    const phase = (unifiedProgress?.phase ?? locationProgress?.stage ?? 'running').toLowerCase();
     const phaseText = phaseLabel(phase);
     const taskLabel = unifiedProgress?.message
       ?? locationProgress?.message
@@ -201,7 +201,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   ]), [translations.batch?.stages]);
 
   const stages: StageInfo[] = useMemo(() => {
-    const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.taskType ?? '').toLowerCase();
+    const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.stage ?? '').toLowerCase();
     const currentIndex = stageDefinitions.findIndex((stage) => normalizedStage.includes(stage.id));
     return stageDefinitions.map((stage, index) => {
       let status: StageInfo['status'];
@@ -242,7 +242,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     return [{
       timestamp: new Date(locationProgress?.timestamp ?? Date.now()),
       level: 'info',
-      source: 'BatchWorker',
+      source: 'BuildWorker',
       message: locationProgress?.message ?? translations.batch?.logsDefault ?? 'Running',
     }];
   }, [locationProgress?.message, locationProgress?.timestamp, translations.batch?.logsDefault]);
@@ -268,7 +268,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   };
 
   const handleCancel = () => {
-    console.log('Cancelling batch process...');
+    console.log('Cancelling build process...');
   };
 
   const getStageIcon = (status: StageInfo['status']) => {
@@ -296,7 +296,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">{translations.batch?.dialogTitle ?? 'Batch Processing Progress'}</Typography>
+          <Typography variant="h6">{translations.batch?.dialogTitle ?? 'Build Progress'}</Typography>
           <Box display="flex" alignItems="center" gap={1}>
             <Chip label={derivedProgress.phaseLabel} color="primary" size="small" />
             <IconButton size="small" onClick={onClose} aria-label={translations.common?.close ?? 'Close'}>
@@ -464,7 +464,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     <ListItem>
                       <ListItemText
                         primary={translations.batch?.tasksEmpty ?? 'No active tasks at the moment'}
-                        secondary={translations.batch?.tasksEmptyHint ?? 'Tasks will appear here while the batch is running'}
+                        secondary={translations.batch?.tasksEmptyHint ?? 'Tasks will appear here while the build is running'}
                       />
                     </ListItem>
                   ) : activeTasks.map(task => (
@@ -578,7 +578,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       {/*
 */}
       <SpeedDial
-        ariaLabel={translations.batch?.ariaLabel ?? 'Batch processing actions'}
+        ariaLabel={translations.batch?.ariaLabel ?? 'Build actions'}
         sx={{ position: 'absolute', bottom: 16, right: 16 }}
         icon={<SpeedDialIcon />}
         direction="up"

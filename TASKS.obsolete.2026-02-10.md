@@ -269,7 +269,7 @@
 
 2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
-- 依存: 2669) fix/build/app-unloadable-ui-batch-progress-dependency
+- 依存: 2669) fix/build/app-unloadable-ui-build-progress-dependency
 - 受け入れ基準: `LocationMapPreview` 表示時に同一 `nodeId + sourceKey + selectionHash` の IDE-GSM import が多重再起動しない／`metadata-fetch` と `viewport-fetch` が import の再起動ループに巻き込まれず安定表示される／`useIdeGsmImportOnEntry` の回帰防止テストを追加する／影響範囲の typecheck/test が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
 - 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts` / `plugins/location-plugin/src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx`（新規）
 - ロールバック手順: 上記2ファイルの差分を revert し、従来の import 起動・effect 依存挙動へ戻す
@@ -286,22 +286,22 @@
   - blocked: 2026-02-10 19:46 JST 初回 `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` は新規テスト失敗（`processing` のまま `completed` 未到達）で exit 1。`workerApi` 参照変化でも完了更新が失われる経路を追加修正して再実行へ切り替え。
   - done: 2026-02-10 19:46 JST `pnpm -w turbo run test --filter @hierarchidb/location-plugin -- --run src/ui/hooks/__tests__/unit/useIdeGsmImportOnEntry.unit.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/location-plugin` はいずれも exit 0。新規テストは pass し、`[LocationIdeGsmImport] source-complete` / `complete` ログ出力まで確認。
 
-2669) fix/build/app-unloadable-ui-batch-progress-dependency (P1) — 完了 (2026-02-10)
+2669) fix/build/app-unloadable-ui-build-progress-dependency (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2668) fix/ui/archive-dialog-titlebar-back-button-layout
-- 受け入れ基準: `pnpm -w turbo run build --filter @hierarchidb/app` で `Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator` が発生しない／`@hierarchidb/app` から `@hierarchidb/ui-batch-progress` import が解決できる／影響範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: `pnpm -w turbo run build --filter @hierarchidb/app` で `Could not load @hierarchidb/ui-build-progress` / `Could not load @hierarchidb/ui-session-coordinator` が発生しない／`@hierarchidb/app` から `@hierarchidb/ui-build-progress` import が解決できる／影響範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `app/package.json`（必要に応じて `pnpm-lock.yaml`）
 - ロールバック手順: 追加した依存宣言と lockfile 差分を revert し、元の依存構成へ戻す
 - チェックリスト:
-  - `@hierarchidb/ui-batch-progress` の依存解決が失敗する原因を特定する
+  - `@hierarchidb/ui-build-progress` の依存解決が失敗する原因を特定する
   - `@hierarchidb/app` の依存宣言を修正する
   - `pnpm install` で lockfile / node_modules を同期する
   - `pnpm -w turbo run typecheck --filter @hierarchidb/app` を実行する
   - `pnpm -w turbo run build --filter @hierarchidb/app` を実行する
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
-  - start: 2026-02-10 18:06 JST `@hierarchidb/app` build の `Could not load @hierarchidb/ui-batch-progress` / `@hierarchidb/ui-session-coordinator` 解決エラー修正に着手。
-  - update: 2026-02-10 18:08 JST 原因は `app/package.json` に `@hierarchidb/ui-batch-progress` 依存が未宣言で、`BuildSessionLauncherButtons.tsx` の import 解決時に `app/node_modules/@hierarchidb/ui-batch-progress` が存在しなかったこと。`@hierarchidb/ui-session-coordinator` のエラーは同パッケージ経由の連鎖失敗として発生。`app/package.json` へ依存追加し `pnpm install` で lockfile と node_modules を同期。
+  - start: 2026-02-10 18:06 JST `@hierarchidb/app` build の `Could not load @hierarchidb/ui-build-progress` / `@hierarchidb/ui-session-coordinator` 解決エラー修正に着手。
+  - update: 2026-02-10 18:08 JST 原因は `app/package.json` に `@hierarchidb/ui-build-progress` 依存が未宣言で、`BuildSessionLauncherButtons.tsx` の import 解決時に `app/node_modules/@hierarchidb/ui-build-progress` が存在しなかったこと。`@hierarchidb/ui-session-coordinator` のエラーは同パッケージ経由の連鎖失敗として発生。`app/package.json` へ依存追加し `pnpm install` で lockfile と node_modules を同期。
   - done: 2026-02-10 18:10 JST `pnpm install` / `pnpm -w turbo run typecheck --filter @hierarchidb/app` / `pnpm -w turbo run build --filter @hierarchidb/app` はすべて exit 0。`UNLOADABLE_DEPENDENCY` は再現せず解消を確認。
 
 2668) fix/ui/archive-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
@@ -320,7 +320,7 @@
 - 運用ログ:
   - start: 2026-02-10 18:01 JST Archive系ダイアログ2種（restore / empty）のタイトルバー close ボタンを左端 `←` / `large` へ変更する修正に着手。
   - update: 2026-02-10 18:03 JST 原因は `app/src/router/pages/tree/archive/ArchiveDialog.tsx` の `ArchiveDialogHeader` が右端 control 群に `Close` アイコン（small）を固定配置していたこと。ヘッダー左端に `IconButton(size='large') + ArrowBack` を移設し、右端は maximize/full-screen のみ残す構成へ変更。close の click 動作は `onRequestClose('close')` を維持。
-  - blocked: 2026-02-10 18:05 JST `pnpm -w turbo run build --filter @hierarchidb/app` は既知の依存解決エラー（`Could not load @hierarchidb/ui-batch-progress` / `Could not load @hierarchidb/ui-session-coordinator`）で exit 1。`pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/ui-session-coordinator` 実行後に再試行しても再現（今回差分外）。
+  - blocked: 2026-02-10 18:05 JST `pnpm -w turbo run build --filter @hierarchidb/app` は既知の依存解決エラー（`Could not load @hierarchidb/ui-build-progress` / `Could not load @hierarchidb/ui-session-coordinator`）で exit 1。`pnpm -w turbo run build --filter @hierarchidb/ui-build-progress --filter @hierarchidb/ui-session-coordinator` 実行後に再試行しても再現（今回差分外）。
   - done: 2026-02-10 18:05 JST `pnpm -w turbo run typecheck --filter @hierarchidb/app` は exit 0。Archive ダイアログ（restore / empty 共通ヘッダー）の close ボタン左端 `←` / `large` 化を反映完了。
 
 2667) fix/ui/plugin-dialog-titlebar-back-button-layout (P2) — 完了 (2026-02-10)
@@ -1178,12 +1178,12 @@
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-10 02:50 JST 開始待機（queued）と AppBar/Step5 表示の実装に着手。
-  - update: 2026-02-10 03:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（`@hierarchidb/plugin-base` build の tsdown で define 警告あり）。
+  - update: 2026-02-10 03:38 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-build-progress --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/app` exit 0（`@hierarchidb/plugin-base` build の tsdown で define 警告あり）。
   - done: 2026-02-10 03:38 JST 変更完了（待機表示/並び順/Step5 右側パネル反映）。
   - update: 2026-02-10 03:47 JST BuildSessionLauncherButtons をメニュー化し、待機順の移動/削除を追加する対応に着手。
   - update: 2026-02-10 04:15 JST `pnpm -w turbo run build --filter @hierarchidb/session-coordinator` exit 0（tsdown define 警告あり）。
-  - update: 2026-02-10 04:18 JST `pnpm -w turbo run build --filter @hierarchidb/ui-batch-progress` exit 0（tsdown define 警告あり）。
-  - update: 2026-02-10 04:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/app --filter @hierarchidb/shape-plugin` exit 0（`@hierarchidb/plugin-base` build の tsdown define 警告あり）。
+  - update: 2026-02-10 04:18 JST `pnpm -w turbo run build --filter @hierarchidb/ui-build-progress` exit 0（tsdown define 警告あり）。
+  - update: 2026-02-10 04:19 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-build-progress --filter @hierarchidb/app --filter @hierarchidb/shape-plugin` exit 0（`@hierarchidb/plugin-base` build の tsdown define 警告あり）。
 
 2623) fix/ui/shape-step5-elapsed-remaining-values (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/fix/ui/shape-step5-elapsed-remaining-values
@@ -1461,7 +1461,7 @@
 - ブランチ名: ERIA-Cartograph
 - 依存: なし
 - 受け入れ基準: shape Step5 build 画面の上部全体進捗サマリーカードが撤去される／各ステージサマリーで進捗率%と▼の間に「経過時間 0時間0分0秒 ・ 推計残り 0時間0分0秒」が i18n キー経由で表示される／ステージ説明文行が撤去され余白が詰まる／進捗バー直下に Chip 行が表示され (アイコン・英文ラベル・数字) 形式で Completed も省略せず「完了数/全体数」で表示される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `packages/ui/batch-progress/**` / `packages/ui/i18n/public/locales/{ja,en}/**`（必要に応じて追加）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `packages/ui/build-progress/**` / `packages/ui/i18n/public/locales/{ja,en}/**`（必要に応じて追加）
 - ロールバック手順: 変更差分を revert し、従来のサマリー表示/ラベル/レイアウトへ戻す
 - チェックリスト:
   - 全体進捗サマリーカードを撤去する
@@ -1499,7 +1499,7 @@
 - ブランチ名: codex/fix/ui/shape-step5-progress-ui
 - 依存: なし
 - 受け入れ基準: shape Step5 build のステージ別サマリーに並列度に応じた `CircularProgress` の進捗中インジケータが表示される／plugin dialog タイトルバーの「全画面化」ボタンが有効化され操作できる／ビルド実行中に「経過時間」「このステージの経過時間」「このステージの残り時間（概算）」が継続更新される／既存 UI に回帰がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/**` / `packages/ui/dialog/src/**` / `packages/ui/batch-progress/src/**` / `app/src/**`（必要に応じて追加）
+- 影響範囲: `plugins/shape-plugin/src/**` / `packages/ui/dialog/src/**` / `packages/ui/build-progress/src/**` / `app/src/**`（必要に応じて追加）
 - ロールバック手順: 変更差分を revert して Step5 サマリー表示/タイマー更新/全画面化操作を従来挙動へ戻す
 - チェックリスト:
   - Step5 サマリーの並列度インジケータ表示を復旧する
@@ -2626,7 +2626,7 @@
   - start: 2026-02-07 10:28 JST ステージ進捗パーセント表示の追加に着手。
   - update: 2026-02-07 10:31 JST BuildStepStagePanel の見出しに進捗パーセント表示を追加。
   - update: 2026-02-07 10:32 JST taskProgressSummary にパーセント表示用ユーティリティを追加。
-  - done: 2026-02-07 10:32 JST pnpm --filter @hierarchidb/components typecheck / pnpm --filter @hierarchidb/ui-batch-progress typecheck exit 0 を確認。
+  - done: 2026-02-07 10:32 JST pnpm --filter @hierarchidb/components typecheck / pnpm --filter @hierarchidb/ui-build-progress typecheck exit 0 を確認。
 
 2561) investigate/shape-build/step5-ui-busy-loop (P1) — 進行中 (2026-02-07)
 - ブランチ名: investigate/shape-build/step5-ui-busy-loop
@@ -3430,8 +3430,8 @@
   - update: 2026-02-06 01:17 JST DoD 承認のうえ、タスク結果のトランザクション化と再処理条件の調査を再開。
   - update: 2026-02-06 01:24 JST transform 完了時の transformCache と buildTasks 更新を同一トランザクションに統合し、taskUpdated フラグで二重更新を抑止。
   - update: 2026-02-06 01:24 JST TaskStatus に regression を追加し、ephemeral buildTasks の outputData を拡張して進捗情報を許容。
-  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/batch-api build exit 0（tsdown define 警告あり）。
-  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/batch-api typecheck exit 0。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/build-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/build-api typecheck exit 0。
   - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
   - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/gis-sdk typecheck exit 0。
   - update: 2026-02-06 01:24 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
@@ -3870,9 +3870,9 @@
   - 棚卸し表（2026-02-06 時点）:
     - `packages/auth` → `packages/auth`（@hierarchidb/auth） 依存: @hierarchidb/auth-api, @hierarchidb/util
     - `packages/auth-api` → `packages/auth-api`（@hierarchidb/auth-api） 依存: なし
-    - `packages/batch` → `packages/batch`（@hierarchidb/batch） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/download
-    - `packages/batch-api` → `packages/batch-api`（@hierarchidb/batch-api） 依存: @hierarchidb/core-types
-    - `packages/batch-session-ports` → `packages/batch-session-ports`（@hierarchidb/batch-session-ports） 依存: @hierarchidb/core-types
+    - `packages/batch` → `packages/batch`（@hierarchidb/batch） 依存: @hierarchidb/build-api, @hierarchidb/core-types, @hierarchidb/download
+    - `packages/build-api` → `packages/build-api`（@hierarchidb/build-api） 依存: @hierarchidb/core-types
+    - `packages/build-session-ports` → `packages/build-session-ports`（@hierarchidb/build-session-ports） 依存: @hierarchidb/core-types
     - `packages/chunk-store` → `packages/chunk-store`（@hierarchidb/chunk-store） 依存: @hierarchidb/core-types, @hierarchidb/download, @hierarchidb/util
     - `packages/download` → `packages/download`（@hierarchidb/download） 依存: @hierarchidb/util, @hierarchidb/auth, @hierarchidb/auth-api
     - `packages/gis-sdk` → `packages/gis-sdk`（@hierarchidb/gis-sdk） 依存: @hierarchidb/core-types, @hierarchidb/shape-api, @hierarchidb/util, @hierarchidb/vectortile-store
@@ -3883,7 +3883,7 @@
     - `packages/map-adapter` → `packages/map-adapter`（@hierarchidb/map-adapter） 依存: @hierarchidb/map-source, @hierarchidb/util
     - `packages/map-source` → `packages/map-source`（@hierarchidb/map-source） 依存: @hierarchidb/util
     - `packages/resolver-store` → `packages/resolver-store`（@hierarchidb/resolver-store） 依存: @hierarchidb/core-types, @hierarchidb/util
-    - `packages/route-api` → `packages/route-api`（@hierarchidb/route-api） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/gis-sdk, @hierarchidb/location-api, @hierarchidb/tree-api
+    - `packages/route-api` → `packages/route-api`（@hierarchidb/route-api） 依存: @hierarchidb/build-api, @hierarchidb/core-types, @hierarchidb/gis-sdk, @hierarchidb/location-api, @hierarchidb/tree-api
     - `packages/route-engine` → `packages/route-engine`（@hierarchidb/route-engine） 依存: @hierarchidb/route-store, @hierarchidb/util
     - `packages/route-resolver` → `packages/route-resolver`（@hierarchidb/route-resolver） 依存: なし
     - `packages/route-searoute` → `packages/route-searoute`（@hierarchidb/route-searoute） 依存: @hierarchidb/download
@@ -3901,7 +3901,7 @@
     - `packages/tree-api` → `packages/tree-api`（@hierarchidb/tree-api） 依存: @hierarchidb/core-types
     - `packages/vectortile-orchestrator` → `packages/vectortile-orchestrator`（@hierarchidb/vectortile-orchestrator） 依存: @hierarchidb/core-types, @hierarchidb/plugin-service-api
     - `packages/vectortile-store` → `packages/vectortile-store`（@hierarchidb/vectortile-store） 依存: @hierarchidb/shape-api, @hierarchidb/util
-    - `packages/worker-api` → `packages/worker-api`（@hierarchidb/worker-api） 依存: @hierarchidb/batch-api, @hierarchidb/core-types, @hierarchidb/import-export-api, @hierarchidb/location-api, @hierarchidb/memory, @hierarchidb/plugin-base, @hierarchidb/route-api, @hierarchidb/shape-api, @hierarchidb/style-api, @hierarchidb/tag-api, @hierarchidb/tree-api
+    - `packages/worker-api` → `packages/worker-api`（@hierarchidb/worker-api） 依存: @hierarchidb/build-api, @hierarchidb/core-types, @hierarchidb/import-export-api, @hierarchidb/location-api, @hierarchidb/memory, @hierarchidb/plugin-base, @hierarchidb/route-api, @hierarchidb/shape-api, @hierarchidb/style-api, @hierarchidb/tag-api, @hierarchidb/tree-api
   - 影響範囲の棚卸し:
     - `pnpm-workspace.yaml`: `packages/*` の glob 更新
     - `tsconfig.base.json`: paths の dist 参照が移動先に一致するか確認
@@ -4047,7 +4047,7 @@
     5) Turbo/ツール/ドキュメントを更新
   - 移行順序（フェーズ案）:
     - Phase 1: 依存が軽い API/ユーティリティ系
-      - auth-api, batch-api, batch-session-ports, import-export-api, shape-api, style-api, tag-api, tree-api, location-api, worker-api
+      - auth-api, build-api, build-session-ports, import-export-api, shape-api, style-api, tag-api, tree-api, location-api, worker-api
     - Phase 2: 低依存ストア/ソース系
       - map-source, tabular-store, tabular-source, tabular-source-xlsx, resolver-store, route-resolver
     - Phase 3: 中依存ストア/サービス系
@@ -4573,8 +4573,8 @@
   - update: 2026-02-04 18:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - done: 2026-02-04 18:35 JST 品質優先の頂点超過 retry 方式へ更新完了。
 
-2515) fix/shape-build/validate-batch-config-guard (P1) — 進行中 (2026-02-04)
-- ブランチ名: fix/shape-build/validate-batch-config-guard
+2515) fix/shape-build/validate-build-config-guard (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape-build/validate-build-config-guard
 - 依存: なし
 - 受け入れ基準: validateBatchConfig が areaBasedTolerance 未定義でも例外にならない／Shape Step5 がクラッシュしない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/services/utils/utils.ts`
@@ -5022,7 +5022,7 @@
 - ブランチ名: fix/batch/prepare-session-signature
 - 依存: なし
 - 受け入れ基準: IBatchSessionManager の prepareSession 型が UnifiedBatchManagerBase と整合し build:types が exit 0 になる／必要な参照先が型エラーなくビルドできる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/batch-api/src/BatchControlAPI.ts`, `packages/batch/src/manager/UnifiedBatchManagerBase.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`（必要に応じて追加）
+- 影響範囲: `packages/build-api/src/BatchControlAPI.ts`, `packages/batch/src/manager/UnifiedBatchManagerBase.ts`, `packages/build-runtime-services/src/BaseBatchSessionManager.ts`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して prepareSession の型定義を元に戻す
 - チェックリスト:
   - IBatchSessionManager の型パラメータ設計を調整する
@@ -5032,7 +5032,7 @@
 - 運用ログ：
   - start: 2026-01-31 00:05 JST IBatchSessionManager の prepareSession 型エラー修正に着手。
   - blocked: 2026-01-31 00:09 JST pnpm --filter @hierarchidb/batch build:types が IBatchSessionManager 未更新の dist 解決で失敗。
-  - update: 2026-01-31 00:10 JST pnpm --filter @hierarchidb/batch-api build:types を先行実行。
+  - update: 2026-01-31 00:10 JST pnpm --filter @hierarchidb/build-api build:types を先行実行。
   - update: 2026-01-31 00:10 JST IBatchSessionManager をジェネリック化し UnifiedBatchManagerBase を対応、pnpm --filter @hierarchidb/batch build:types exit 0 を確認。
   - done: 2026-01-31 00:11 JST prepareSession 型整合の修正を完了。
 
@@ -5238,24 +5238,24 @@
   - update: 2026-01-30 16:03 JST pnpm --filter @hierarchidb/common-api build を実行し BaseBatchConfig を dist へ反映（tsdown define 警告あり）。
   - done: 2026-01-30 16:05 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
 
-2437) refactor/common-api/move-batch-control-api (P1) — 進行中 (2026-01-30)
-- ブランチ名: refactor/common-api/move-batch-control-api
+2437) refactor/common-api/move-build-control-api (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/common-api/move-build-control-api
 - 依存: なし
-- 受け入れ基準: packages/batch-api を新設し BatchControlAPI/taskStatus を移設する／common-api から該当 export を撤去する／参照先の import を @hierarchidb/batch-api に切替する／tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する／pnpm --filter @hierarchidb/batch-api build が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/api/src/**`, `packages/batch-api/src/**`, `packages/**`, `app/**`（必要に応じて追加）
-- ロールバック手順: batch-api を削除し common-api に BatchControlAPI/taskStatus を復元、参照を差し戻す
+- 受け入れ基準: packages/build-api を新設し BatchControlAPI/taskStatus を移設する／common-api から該当 export を撤去する／参照先の import を @hierarchidb/build-api に切替する／tsconfig.base.json と app/tsconfig.json に build-api paths を追加する／pnpm --filter @hierarchidb/build-api build が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/**`, `packages/build-api/src/**`, `packages/**`, `app/**`（必要に応じて追加）
+- ロールバック手順: build-api を削除し common-api に BatchControlAPI/taskStatus を復元、参照を差し戻す
 - チェックリスト:
-  - batch-api を新設して BatchControlAPI/taskStatus を移設する
+  - build-api を新設して BatchControlAPI/taskStatus を移設する
   - common-api から該当 export を撤去する
-  - 参照先を batch-api へ切替する
-  - tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する
-  - pnpm --filter @hierarchidb/batch-api build を実行する
+  - 参照先を build-api へ切替する
+  - tsconfig.base.json と app/tsconfig.json に build-api paths を追加する
+  - pnpm --filter @hierarchidb/build-api build を実行する
   - pnpm --filter @hierarchidb/app typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-30 16:10 JST BatchControlAPI/taskStatus の batch-api 移設作業に着手。
-  - update: 2026-01-30 16:22 JST BatchControlAPI/taskStatus を features/batch-api に移設し、参照・依存・tsconfig を batch-api へ切替。
-  - update: 2026-01-30 16:25 JST pnpm --filter @hierarchidb/batch-api build を実行（tsdown define 警告あり）。
+  - start: 2026-01-30 16:10 JST BatchControlAPI/taskStatus の build-api 移設作業に着手。
+  - update: 2026-01-30 16:22 JST BatchControlAPI/taskStatus を features/build-api に移設し、参照・依存・tsconfig を build-api へ切替。
+  - update: 2026-01-30 16:25 JST pnpm --filter @hierarchidb/build-api build を実行（tsdown define 警告あり）。
   - blocked: 2026-01-30 16:27 JST pnpm --filter @hierarchidb/app typecheck が common-types の既存 export 欠落（SubscriptionId/TreeChangeEvent/CommandEnvelope など）で失敗。
 
 2438) refactor/tsconfig/paths-dist-align (P1) — 進行中 (2026-01-30)
@@ -5295,13 +5295,13 @@
 - ブランチ名: refactor/common-types/split-into-domain-packages
 - 依存: なし
 - ExecPlan: plans/refactor-common-types-execplan.md
-- 受け入れ基準: tree-api/tag-api/import-export-api/batch-api/core-types へ型が移設され、参照先が切替される／common-types は再エクスポートのみ（最終的に空にして削除可能な状態）／build/typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/common/types/src/**`, `packages/tree-api/**`, `packages/tag-api/**`, `packages/import-export-api/**`, `packages/batch-api/**`, `packages/core-types/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
+- 受け入れ基準: tree-api/tag-api/import-export-api/build-api/core-types へ型が移設され、参照先が切替される／common-types は再エクスポートのみ（最終的に空にして削除可能な状態）／build/typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/types/src/**`, `packages/tree-api/**`, `packages/tag-api/**`, `packages/import-export-api/**`, `packages/build-api/**`, `packages/core-types/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
 - ロールバック手順: 新規パッケージ追加と移設差分を revert し、common-types の型を元に戻す
 - チェックリスト:
   - ExecPlan を作成し、移設対象と順序を明記する
   - tag-api と core-types を新設する
-  - tree-api/tag-api/import-export-api/batch-api/core-types へ型を移設する
+  - tree-api/tag-api/import-export-api/build-api/core-types へ型を移設する
   - 参照先の import を新パッケージへ切替する
   - common-types を再エクスポート専用に縮退する
   - 影響範囲の build/typecheck を実行する
@@ -5313,7 +5313,7 @@
   - update: 2026-01-30 23:59 JST runtime-worker の common-types import を core-types/tree-api へ切替（command/Tree* 系、lifecycle、draft、adapter など）。
   - blocked: 2026-01-30 23:59 JST pnpm --filter @hierarchidb/runtime-worker typecheck が ValidationResult の export 不足で失敗。
   - update: 2026-01-30 23:59 JST ValidationResult を core-types に切替し、pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
-  - update: 2026-01-31 00:23 JST app/ui/plugins の common-types 参照を core-types/tree-api/batch-api/tag-api へ切替（treeconsole/treetable/worker-client/batch/shape/route/location 等）。
+  - update: 2026-01-31 00:23 JST app/ui/plugins の common-types 参照を core-types/tree-api/build-api/tag-api へ切替（treeconsole/treetable/worker-client/batch/shape/route/location 等）。
   - blocked: 2026-01-31 00:24 JST pnpm --filter @hierarchidb/app typecheck が依存パッケージの dist 未生成等で失敗（@hierarchidb/ui-treeconsole-base, ui-dialog, ui-icon, plugin-registry/types などの解決不可と暗黙 any 連鎖）。
   - update: 2026-01-31 00:32 JST pnpm build を実行し、exit 0 を確認（lint や build の警告は既知）。
   - update: 2026-01-31 00:35 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
@@ -5323,7 +5323,7 @@
   - blocked: 2026-01-31 01:40 JST @hierarchidb/testing-plugin-dialog-mocks typecheck が @hierarchidb/core-types 未解決で失敗。
   - update: 2026-01-31 01:41 JST pnpm install を実行（peer dependency 警告あり）。
   - update: 2026-01-31 01:42 JST @hierarchidb/runtime-worker / plugin-ui-host / import-export / chunk-store / testing-plugin-dialog-mocks typecheck exit 0 を確認。
-  - update: 2026-01-31 02:05 JST production code の common-types 参照を core-types/tree-api/batch-api へ移行（plugin-ui-host/sdk, route/location/import-export/gis/vt 等）。
+  - update: 2026-01-31 02:05 JST production code の common-types 参照を core-types/tree-api/build-api へ移行（plugin-ui-host/sdk, route/location/import-export/gis/vt 等）。
   - update: 2026-01-31 02:18 JST pnpm install / pnpm build を実行し exit 0 を確認（tsdown define 警告は既知）。
   - blocked: 2026-01-31 02:28 JST pnpm typecheck が styler-plugin の implicit any で失敗。
   - update: 2026-01-31 02:30 JST StylerMappingKeysStep の nextKey/nextValue に型注釈を追加。
@@ -5503,13 +5503,13 @@
 2431) refactor/ui/build-progress-shared (P2) — 未着手 (2026-01-29)
 - ブランチ名: refactor/ui/build-progress-shared
 - 依存: 2428
-- 受け入れ基準: 進捗サマリ/一覧表示が共通コンポーネント化され Shape/Route/Location で利用される／UI表示差分がない／タスク更新ロジックが共通関数に統合される／pnpm --filter @hierarchidb/ui-batch-progress build が exit 0／関連プラグインの typecheck が exit 0／TASKS.md に運用ログを記載
+- 受け入れ基準: 進捗サマリ/一覧表示が共通コンポーネント化され Shape/Route/Location で利用される／UI表示差分がない／タスク更新ロジックが共通関数に統合される／pnpm --filter @hierarchidb/ui-build-progress build が exit 0／関連プラグインの typecheck が exit 0／TASKS.md に運用ログを記載
 - 影響範囲: `packages/ui/batch/src/**`, `plugins/shape-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`
 - ロールバック手順: 該当差分を revert して各プラグイン固有の進捗UIに戻す
 - チェックリスト:
   - 共通化対象の UI/ロジック を確定する
   - 共通コンポーネントへ移行する
-  - pnpm --filter @hierarchidb/ui-batch-progress build を実行する
+  - pnpm --filter @hierarchidb/ui-build-progress build を実行する
   - 主要プラグインの typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ:
@@ -5810,8 +5810,8 @@
   - update: 2026-01-30 17:25 JST runtime-worker の SubscriptionId/SubscriptionOptions を tree-api へ切替。
   - update: 2026-01-30 17:28 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
   - blocked: 2026-01-30 17:29 JST pnpm --filter @hierarchidb/runtime-worker typecheck が import-export-api 未解決と common-types exports 不足で失敗（SubscriptionId/Options 切替とは別要因）。
-  - start: 2026-01-30 17:40 JST common-api 廃止のため、参照を batch-api/tree-api/import-export-api へ移設しパッケージ削除を進行。
-  - update: 2026-01-30 18:05 JST common-api 参照のコード/依存/設定/ドキュメントを batch-api/tree-api/import-export-api へ切替し、packages/common/api を削除。
+  - start: 2026-01-30 17:40 JST common-api 廃止のため、参照を build-api/tree-api/import-export-api へ移設しパッケージ削除を進行。
+  - update: 2026-01-30 18:05 JST common-api 参照のコード/依存/設定/ドキュメントを build-api/tree-api/import-export-api へ切替し、packages/common/api を削除。
   - update: 2026-01-30 18:08 JST pnpm install を実行（peer 警告あり、tsdown define 警告はなし）。
   - update: 2026-01-30 18:10 JST pnpm tools:gen-plugin-registry を実行（tsdown define 警告あり、registry 更新なし）。
   - blocked: 2026-01-30 18:12 JST pnpm --filter @hierarchidb/app typecheck が多数の依存未解決/暗黙 any で失敗（既存課題）。
@@ -6728,7 +6728,7 @@
 - ブランチ名: analysis/shape-route/build-commonization-status
 - 依存: なし
 - 受け入れ基準: shape/route のビルドプロセス共通化の現状をコード参照付きで説明できる／共通化済み領域と未共通化領域を整理できる／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `plugins/route-plugin/src/services/**`, `packages/batch-runtime-services/**`, `packages/ui-batch-progress/**`（必要に応じて追加）
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `plugins/route-plugin/src/services/**`, `packages/build-runtime-services/**`, `packages/ui-build-progress/**`（必要に応じて追加）
 - ロールバック手順: なし（調査のみ）
 - チェックリスト:
   - 共通化済みの基盤（BatchSession/TaskQueue/Progress）を列挙する
@@ -7483,8 +7483,8 @@
   - update: 2026-01-26 13:21 JST useShapeBuildTasksでマイクロタスクflushと差分更新を導入、useBatchProgressで重複progress更新を抑止、useShapeBuildStepでtimingSnapshotの同値更新を抑止。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-01-26 13:06 JST useShapeBuildTasksの購読依存を安定化、useBatchProgressのadapter参照と重複更新抑止、useShapeBuildStepのbuildStartedAt更新を単発化。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
-2369) fix/shape/update-depth-loop-batch-footer (P1) — 進行中 (2026-01-26)
-- ブランチ名: fix/shape/update-depth-loop-batch-footer
+2369) fix/shape/update-depth-loop-build-footer (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/update-depth-loop-build-footer
 - 依存: なし
 - 受け入れ基準: useShapeBuildTasks/useBatchProgress/PluginDialogFooter の update depth ループが解消される／setTimeout起因の再入が抑止される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/batch/src/progress/useBatchProgress.ts`, `packages/ui/dialog/src/PluginDialogFooter.tsx`
@@ -8079,8 +8079,8 @@
   - start: 2026-01-25 20:40 JST ビルド完了/失敗時に理由とステージを示すダイアログを表示する対応に着手。
   - done: 2026-01-25 20:58 JST shape/location/route のビルド完了/失敗でダイアログを表示するよう統一。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
 
-2336) fix/ui/batch-progress-final-sync (P1) — 進行中 (2026-01-25)
-- ブランチ名: fix/ui/batch-progress-final-sync
+2336) fix/ui/build-progress-final-sync (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui/build-progress-final-sync
 - 依存: なし
 - 受け入れ基準: ビルド完了/エラー中止時に全体進捗・ステージサマリー・タスク一覧の数値が最終的に一致する／更新の一時的な遅延は許容されるが終了時点で stale のまま停止しない／進捗購読のフラッシュ条件が整理される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/**`（調査後に確定）
@@ -10346,7 +10346,7 @@
   - blocked: 2026-01-19 21:40 JST pnpm test を 120s/240s/360s で再実行したが完走前にタイムアウト。
   - update: 2026-01-20 00:20 JST vt-store/vt-shape-store の残存参照と削除対象の棚卸しを再開。
   - update: 2026-01-20 00:45 JST pnpm lint/format/typecheck を実行し完走（format は警告のみ）。
-  - blocked: 2026-01-20 00:50 JST pnpm test が 120s タイムアウト、再実行(240s)で @hierarchidb/batch-session-ports の OOM により失敗。
+  - blocked: 2026-01-20 00:50 JST pnpm test が 120s タイムアウト、再実行(240s)で @hierarchidb/build-session-ports の OOM により失敗。
   - update: 2026-01-19 09:22 JST ターゲット検証として pnpm --filter @hierarchidb/shape-plugin test と pnpm --filter @hierarchidb/runtime-worker test を実行し exit 0 を確認。
   - update: 2026-01-19 10:30 JST 2258 の残存 VtShapeDb/VtDb 参照の再棚卸しと移行差分の確認に着手。
   - blocked: 2026-01-19 10:55 JST pnpm test が shape-plugin の full-flow テストで失敗（geoboundaries へのネットワーク接続で ENOTFOUND）。
@@ -10648,7 +10648,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-17 23:50 JST shape ビルドのタスク stage 型を TaskStage に厳格化する対応に着手。
-  - update: 2026-01-17 23:56 JST @hierarchidb/ui-batch-progress の型変更に合わせて build を実行（tsdown define 警告あり、exit 0）。
+  - update: 2026-01-17 23:56 JST @hierarchidb/ui-build-progress の型変更に合わせて build を実行（tsdown define 警告あり、exit 0）。
   - done: 2026-01-17 23:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
   - done: 2026-01-17 23:58 JST shape ビルドの task stage を TaskStage に厳格化し、フォールバックを排除。
 
@@ -10670,7 +10670,7 @@
   - update: 2026-01-17 23:33 JST normalizeStageKey の fetch フォールバックを撤廃し unknown に変更。
   - done: 2026-01-17 23:34 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
   - update: 2026-01-17 23:41 JST useBuildTaskProgress の download フォールバックを unknown に変更し、ステージ誤分類を排除。
-  - done: 2026-01-17 23:42 JST pnpm --filter @hierarchidb/ui-batch-progress typecheck を実行（exit 0）。
+  - done: 2026-01-17 23:42 JST pnpm --filter @hierarchidb/ui-build-progress typecheck を実行（exit 0）。
 
 2245) feat/ui-auth/unauthenticated-avatar-menu (P1) — 完了 (2026-01-17)
 - ブランチ名: feat/ui-auth/unauthenticated-avatar-menu
@@ -11645,7 +11645,7 @@
   - update: 2026-01-18 12:10 JST success/error/process を completed/failed/running に統一し、タスク表記の状態を正規化。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
   - start: 2026-01-18 12:20 JST Transform進捗サマリーSVGが灰色のままになる問題の再調査に着手。
   - update: 2026-01-18 12:35 JST transform-by-zoom のタスクを transform ステージへ集約するマッピングを追加。
-  - update: 2026-01-18 12:40 JST pnpm --filter @hierarchidb/ui-batch-progress typecheck を実行（exit 0）。
+  - update: 2026-01-18 12:40 JST pnpm --filter @hierarchidb/ui-build-progress typecheck を実行（exit 0）。
   - update: 2026-01-18 12:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
   - update: 2026-01-18 12:50 JST transform-by-zoom→transform のステージ集約マッピングを撤去。
   - start: 2026-01-18 13:05 JST Transform進捗サマリーの灰色表示を調査するため tasksByStage のステージキー/状態内訳ログを追加する対応に着手。
@@ -12421,8 +12421,8 @@
   - done: 2026-01-14 10:10 JST ShapeEntity/SelectedArrayByCountries の export を追加し、GeoBoundaries/CrashInsight の型不整合を修正。検証: 未実施。
   - update: 2026-01-14 10:15 JST GeoBoundaries metadata.continent の null を undefined に補正。検証: 未実施。
 
-2182) fix/route/typecheck-missing-route-batch-session (P1) — 進行中 (2026-01-14)
-- ブランチ名: fix/route/typecheck-missing-route-batch-session
+2182) fix/route/typecheck-missing-route-build-session (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/route/typecheck-missing-route-build-session
 - 依存: なし
 - 受け入れ基準: RouteBatchSession の import 解決エラー（TS2307）が解消される／`@hierarchidb/route-plugin typecheck` が通る／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/route-plugin/src/services/RouteBatchManager.ts`, `plugins/route-plugin/src/services/RouteBatchSessionOrchestrator.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`（調査結果に応じて）
@@ -12449,8 +12449,8 @@
   - start: 2026-01-10 22:59 JST ShapePreviewStep のロジック抽出に着手。
   - done: 2026-01-10 23:04 JST ShapePreviewStep の表示ロジックを useShapePreviewStepView に抽出。検証: 未実施。
 
-2181) refactor/shape/batch-progress-summary-card-component (P2) — 進行中 (2026-01-10)
-- ブランチ名: refactor/shape/batch-progress-summary-card-component
+2181) refactor/shape/build-progress-summary-card-component (P2) — 進行中 (2026-01-10)
+- ブランチ名: refactor/shape/build-progress-summary-card-component
 - 依存: なし
 - 受け入れ基準: TaskProgressSummaryCard がコンポーネントとして切り出される／ShapeBuildProgressPanel からの利用は既存挙動と同等である／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressPanel.tsx`
@@ -12732,8 +12732,8 @@
   - start: 2026-01-10 15:41 JST Step5 の進捗 phase が不安定でボタン状態が揺れる問題の対応に着手。
   - done: 2026-01-10 15:43 JST taskQueue 進捗イベントの phase をセッション状態へ統一し、完了/一時停止で揺れないよう補正。検証: 未実施。
 
-2164) fix/ui/batch-progress-debounce (P1) — 完了 (2026-01-10)
-- ブランチ名: fix/ui/batch-progress-debounce
+2164) fix/ui/build-progress-debounce (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/build-progress-debounce
 - 依存: なし
 - 受け入れ基準: batch progress の UI 更新が適度にバウンスされ、Maximum update depth 警告が発生しない／更新頻度が抑制されても最終状態が反映される／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/batch/src/progress/useBatchProgress.ts`（必要に応じて）
@@ -13223,8 +13223,8 @@
   - update: 2026-01-14 03:05 JST 進捗購読のプロパティ整理と購読単位の確認に着手。
   - done: 2026-01-14 03:30 JST 進捗購読のpollingフォールバックと関連プロパティを撤去し、UI側の進捗状態をpush購読のみで統一。
 
-2145) fix/shape/batch-task-schema-cleanup (P1) — 完了 (2026-01-14)
-- ブランチ名: fix/shape/batch-task-schema-cleanup
+2145) fix/shape/build-task-schema-cleanup (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/build-task-schema-cleanup
 - 依存: なし
 - 受け入れ基準: batchTasks の未使用インデックスを削除する／BatchTaskRecord/ShapeBatchTaskRecord/ShapeBatchTaskSummary の未使用プロパティを削除する／ShapeBatchTaskStatus と ProgressPhase の関係を整理する／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/shape-store/src/EphemeralShapeDB.ts`, `packages/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
@@ -13238,8 +13238,8 @@
   - start: 2026-01-14 04:05 JST batchTasks のインデックス整理とタスク型の簡素化に着手。
   - done: 2026-01-14 05:20 JST batchTasks インデックスを整理し、タスク status を queued に統一して不要プロパティを削除。
 
-2146) fix/route/typecheck-batch-progress (P1) — 完了 (2026-01-14)
-- ブランチ名: fix/route/typecheck-batch-progress
+2146) fix/route/typecheck-build-progress (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/route/typecheck-build-progress
 - 依存: なし
 - 受け入れ基準: RouteBatchSession の未使用引数を削除して TS6133 を解消する／useRouteBatchProgress の percentage を number に統一して TS2322 を解消する／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
@@ -13266,8 +13266,8 @@
   - start: 2026-01-14 05:45 JST shape-plugin の progress hooks typecheck エラー修正に着手。
   - done: 2026-01-14 05:50 JST toShapeProgress の引数削除と normalizedBuildStatus の宣言順を調整。
 
-2148) fix/app/typecheck-batch-progress-tasktype (P1) — 完了 (2026-01-14)
-- ブランチ名: fix/app/typecheck-batch-progress-tasktype
+2148) fix/app/typecheck-build-progress-tasktype (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/app/typecheck-build-progress-tasktype
 - 依存: なし
 - 受け入れ基準: worker-runtime の BatchProgress 生成から currentStage/currentTask を除去し taskType を使用する／TS2353 を解消する／TASKS.md に運用ログを記載する
 - 影響範囲: `app/src/worker-runtime/worker.ts`
@@ -13712,8 +13712,8 @@
   - update: 2026-01-11 19:30 JST SearchField の幅定数をエクスポートし TreeNodeInfoPanel の max/min 幅を揃えるよう調整。検証: 未実施。
   - update: 2026-01-11 20:05 JST TreeConsole の split view カラム幅を SearchField と同じ 281-420px に調整。検証: 未実施。
 
-2122) docs/shape-step5-batch-modeling (P1) — 進行中 (2026-01-11)
-- ブランチ名: docs/shape-step5-batch-modeling
+2122) docs/shape-step5-build-modeling (P1) — 進行中 (2026-01-11)
+- ブランチ名: docs/shape-step5-build-modeling
 - 依存: なし
 - 受け入れ基準: Step5 の extract2/vectortile 処理をモデル化して I/O/CPU/メモリの流れとボトルネック仮説を整理する／改善方向の候補を列挙する／着手優先度の判断材料を示す／TASKS.md に運用ログを記載する
 - 影響範囲: ドキュメント/調査（コード変更なし）
@@ -15026,8 +15026,8 @@
   - start: 2026-01-05 00:28 JST PluginDialogHeader のダブルクリックで最大化トグル実装に着手。
   - done: 2026-01-05 00:29 JST ヘッダ背景のダブルクリックで最大化トグルを追加。検証: 未実施（UI 操作のみ）。
 
-2063) refactor/shape-plugin/batch-storage-ephemeral (P1) — 進行中 (2026-01-09)
-- ブランチ名: refactor/shape-plugin/batch-storage-ephemeral
+2063) refactor/shape-plugin/build-storage-ephemeral (P1) — 進行中 (2026-01-09)
+- ブランチ名: refactor/shape-plugin/build-storage-ephemeral
 - 依存: なし
 - 受け入れ基準: batchTasks を hdb-shape-ephemeral へ移設し hdb-shape 側を撤去する／TreeNode削除時に batchSessions を削除する／バッチ成功時に Step3 の保持スイッチ設定に従って batchTasks を自動削除する／rawBuffers の chunk-store 経由書き込みを撤去し ephem 保存へ統一する／ShapeEphemeralDBAPI を追加し ShapeDB/ShapeEphemeralDB の直接読み書きを API 経由へ統一する／参照先を一括で更新する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `packages/plugin-service-api/src/types`, `packages/common/api/src/WorkerAPI.ts`, `packages/runtime-worker/src/services`, `packages/shape-store/src/ShapeDB.ts`, `packages/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/worker/api.ts`, `packages/runtime-worker/src/entity/EntityLifecycleManager.ts`（他参照先含む）
@@ -15106,7 +15106,7 @@
 - ブランチ名: test/shape-plugin/enable-headless-batch
 - 依存: なし
 - 受け入れ基準: shape-plugin の headless バッチテストがスキップされずに実行可能になる／実アプリ相当の依存を使い、Dexie は FakeIndexedDB を利用する／実行方法と注意点を TASKS.md に記録する
-- 影響範囲: `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`, `plugins/shape-plugin/vitest.setup.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/headless/shape-build-progress.headless.test.ts`, `plugins/shape-plugin/vitest.setup.ts`（必要に応じて）
 - ロールバック手順: headless テストの変更を revert してスキップ状態へ戻す
 - チェックリスト:
   - headless テストを実行可能にし、実アプリ相当の依存構成で動作させる
@@ -15146,10 +15146,10 @@
   - done: 2026-01-09 16:55 JST Step6 プレビューのタイル可用性判定を runtime-worker 経由に優先し、tileDataProvider も runtime-worker から取得するよう更新。検証: 未実施。
   - done: 2026-01-09 17:02 JST Step6 プレビューのタイル判定をローカルDB参照のみに戻し、runtime-worker 依存を撤去。検証: 未実施。
 
-2059) refactor/ui-batch/rename-to-ui-batch-progress (P1) — 進行中 (2026-01-09)
-- ブランチ名: refactor/ui-batch/rename-to-ui-batch-progress
+2059) refactor/ui-batch/rename-to-ui-build-progress (P1) — 進行中 (2026-01-09)
+- ブランチ名: refactor/ui-batch/rename-to-ui-build-progress
 - 依存: なし
-- 受け入れ基準: @hierarchidb/ui-batch を @hierarchidb/ui-batch-progress に改名し、import/依存/paths/文書の参照を更新する／旧名称参照が残らない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 受け入れ基準: @hierarchidb/ui-batch を @hierarchidb/ui-build-progress に改名し、import/依存/paths/文書の参照を更新する／旧名称参照が残らない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `packages/ui/batch`, `plugins/*-plugin`, `tsconfig.base.json`, `app/tsconfig.json`, `plans/*`, `packages/plugin-registry/generated/registry.ts`
 - ロールバック手順: package.json の name と全参照を @hierarchidb/ui-batch に戻す
 - チェックリスト:
@@ -15158,11 +15158,11 @@
   - 計画ドキュメントの記述を更新する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-09 16:05 JST ui-batch → ui-batch-progress 改名に着手。
-  - done: 2026-01-09 16:28 JST ui-batch を ui-batch-progress に改名し、依存/import/paths/計画文書/registry を更新。検証: 未実施。
+  - start: 2026-01-09 16:05 JST ui-batch → ui-build-progress 改名に着手。
+  - done: 2026-01-09 16:28 JST ui-batch を ui-build-progress に改名し、依存/import/paths/計画文書/registry を更新。検証: 未実施。
 
-2058) chore/analysis/ui-batch-usage (P2) — 進行中 (2026-01-09)
-- ブランチ名: chore/analysis/ui-batch-usage
+2058) chore/analysis/ui-build-usage (P2) — 進行中 (2026-01-09)
+- ブランチ名: chore/analysis/ui-build-usage
 - 依存: なし
 - 受け入れ基準: @hierarchidb/ui-batch の目的を一次情報から要約する／参照元（import/依存関係）を列挙し実際の利用有無を判断する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `packages/ui/batch`, `plugins/*-plugin`
@@ -15249,8 +15249,8 @@
   - start: 2026-01-09 14:05 JST WorkerErrorCode の export/参照不整合の修正に着手。
   - done: 2026-01-09 14:12 JST WorkerErrorCode の値参照を WorkerErrorCodeValue に統一し、runtime-worker 内の import/参照を修正。検証: 未実施。
 
-2052) fix/shape-plugin/batch-resume-stuck (P1) — 進行中 (2026-01-04)
-- ブランチ名: fix/shape-plugin/batch-resume-stuck
+2052) fix/shape-plugin/build-resume-stuck (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/shape-plugin/build-resume-stuck
 - 依存: なし
 - 受け入れ基準: shape-plugin のバッチ再開時に全体進捗カードの "Primary Extraction ... 0/342 Completed failed 0 skipped 339" が残留せず、再開に応じて進捗が更新される／LRUSplitView の "No tasks yet" 3ペインのフラッシュが解消する／extract2 で tileId を生成して `shape-ephemeral` の `tileIdToBufferRelations`（nodeId+tileId の複合インデックス）に保存される／vectortile の入力生成が `tileIdToBufferRelations` を参照する／ツリーノード削除で `extractedBuffers` と `tileIdToBufferRelations` が削除される／ズームレンジUIが「0-12のレンジ選択」「n分割指定」「n+1ブレークポイント指定」に対応しデフォルトが 0-7 / n=2 / [0,4,7] である／extract2 がズーム範囲セット（n分割ブレークポイント）ごとにタスクを生成し、各タスク入力に対象ズーム範囲の識別情報が保持される／extract2 の単純化パラメータが各タスクの「最も詳細側のズーム率」に連動してスケールされる／extract2 完了後に vectortile のタスク群が開始される／Download Files を残したまま再開したケースの再現/解消手順を TASKS.md に記録する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
  - 受け入れ基準: shape-plugin のバッチ再開時に全体進捗カードの "Primary Extraction ... 0/342 Completed failed 0 skipped 339" が残留せず、再開に応じて進捗が更新される／LRUSplitView の "No tasks yet" 3ペインのフラッシュが解消する／extract2 で tileId を生成して `shape-ephemeral` の `tileIdToBufferRelations`（nodeId+tileId の複合インデックス）に保存される／vectortile の入力生成が `tileIdToBufferRelations` を参照する／ツリーノード削除で `extractedBuffers` と `tileIdToBufferRelations` が削除される／ズームレンジUIが「0-12のレンジ選択」「n分割指定」「n+1ブレークポイント指定」に対応しデフォルトが 0-7 / n=2 / [0,4,7] である／extract2 がズーム範囲セット（n分割ブレークポイント）ごとにタスクを生成し、各タスク入力に対象ズーム範囲の識別情報が保持される／extract2 の単純化パラメータが各タスクの「最も詳細側のズーム率」に連動してスケールされる／extract2 完了後に vectortile のタスク群が開始される／TopoJSON版の extract2/vectortile が z0/z1-4/z5-9 の集約方針に従い再構築され、タイルBBox拡張（係数/マージン）で周辺国/大陸を合成したTopoJSONから簡略化・flatgeobuf化・tileId索引化する／Step4で拡張係数とマージンを設定でき、extract2 に反映される／Download Files を残したまま再開したケースの再現/解消手順を TASKS.md に記録する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
@@ -15444,8 +15444,8 @@
   - start: 2026-01-04 00:33 JST ui-map selection gesture の型エラー修正に着手。
   - done: 2026-01-04 00:34 JST entries[0] の null チェックを追加し TS2322 を回避。検証: 未実施。
 
-2052) fix/runtime-worker/shape-batch-session-types (P1) — 進行中 (2026-01-04)
-- ブランチ名: fix/runtime-worker/shape-batch-session-types
+2052) fix/runtime-worker/shape-build-session-types (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/runtime-worker/shape-build-session-types
 - 依存: なし
 - 受け入れ基準: `@hierarchidb/runtime-worker` の typecheck で ShapeMutationService/ShapeQueryService の TS2345/TS2352 が解消する／BatchSessionRecord と ShapeBatchSessionRecord の型整合が取れる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `packages/runtime-worker/src/services/ShapeMutationService.ts` と `packages/runtime-worker/src/services/ShapeQueryService.ts`（必要に応じて関連型）
@@ -15462,8 +15462,8 @@
   - done: 2026-01-04 00:55 JST unknown キャストを撤去し、型ガード/明示的変換で BatchSessionRecord を構築。検証: 未実施。
   - done: 2026-01-04 01:02 JST currentStage の許容値へ正規化して型エラーを解消。検証: 未実施。
 
-2053) fix/shape-plugin/batch-session-types (P1) — 進行中 (2026-01-04)
-- ブランチ名: fix/shape-plugin/batch-session-types
+2053) fix/shape-plugin/build-session-types (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/shape-plugin/build-session-types
 - 依存: なし
 - 受け入れ基準: `@hierarchidb/shape-plugin` の typecheck で batch session/vector tile/geometry/NodeId 関連の型エラーが解消する／plugin-service-api と shape-store の型境界が明確になる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `plugins/shape-plugin/src/services/batch/*` と `plugins/shape-plugin/src/services/tiles/VectorTileService.ts`、`plugins/shape-plugin/src/ui/components/steps-provider.tsx`、`plugins/shape-plugin/src/worker/api.ts`
@@ -15565,8 +15565,8 @@
   - start: 2026-01-09 11:10 JST ShapeDB 型の直接利用と Record キャスト撤去に着手。
   - done: 2026-01-09 11:15 JST ShapeDB へ置換し、VectorTile アイテム型を明示して Record キャストを撤去。検証: 未実施。
 
-2045) fix/shape-plugin/typecheck-batch-and-tiles (P2) — 完了 (2026-01-09)
-- ブランチ名: fix/shape-plugin/typecheck-batch-and-tiles
+2045) fix/shape-plugin/typecheck-build-and-tiles (P2) — 完了 (2026-01-09)
+- ブランチ名: fix/shape-plugin/typecheck-build-and-tiles
 - 依存: なし
 - 受け入れ基準: shape-plugin の typecheck エラー（BatchTaskBase/zoomRanges/GeoJSON/NodeId/VectorTileDB2Procedure）を解消する／挙動は維持する／抽象化や Record キャストの追加をしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/build.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
@@ -15922,7 +15922,7 @@
 - 要点：Shape Step3 の国×自治体レベルマトリクスをメタデータ駆動でオンデマンド生成し、データソース別ストラテジー＋WebWorkerで可用レベルを取得してUIへ反映するようにした。
 - 原因/影響範囲：従来は geoBoundaries 固定でレベル2までの静的前提だったため、他データソースや実際の可用レベルに追随できず UI が実態と乖離するリスクがあった。影響範囲は shape-plugin Step3 UI（国×自治体レベル選択）と可用性取得の裏側ロジック。
 - 修正内容と適用範囲：ストラテジーID解決を共通化、データソース可用性解決サービスと Comlink WebWorker を追加し、各ストラテジーが提供する可用性情報やメタデータから国別レベルを構築。Step3 フックは可用性通知を受けてマトリクスを再構成し、非対応セルは「-」を表示、仮想化を維持。適用範囲は `plugins/shape-plugin/src/services/datasources/*`, `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`, `plugins/shape-plugin/src/ui/workers/*`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`。
-- 検証：`pnpm --filter @hierarchidb/shape-plugin test -- --runInBand --testTimeout=20000`（依存パッケージ @hierarchidb/shape-store / @hierarchidb/util / @hierarchidb/ui-batch-progress の解決不可で失敗。テストは走らず。環境依存のため後続で要再実行）。
+- 検証：`pnpm --filter @hierarchidb/shape-plugin test -- --runInBand --testTimeout=20000`（依存パッケージ @hierarchidb/shape-store / @hierarchidb/util / @hierarchidb/ui-build-progress の解決不可で失敗。テストは走らず。環境依存のため後続で要再実行）。
 - ロールバック手順：上記ファイルの差分を revert（特に `CountryAvailabilityResolver` 追加や Step3 フックの worker 連携部分を戻す）。
 - 運用ログ：
   - start: 2026-01-09 00:55 JST Step3 可用性動的化と worker 背景取得の設計開始。
@@ -16383,8 +16383,8 @@
   - start: 2026-01-26 21:55 JST IDE-GSM 初期選択を全チェックに変更する作業に着手。
   - update: 2026-01-26 22:20 JST IDE-GSM の存在タイプのみ初期ONにし、存在しない種別はセルを無効化。
   - done: 2026-01-26 22:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
-2393) fix/location/test-unified-batch-manager-types (P1) — 完了 (2026-01-26)
-- ブランチ名: fix/location/test-unified-batch-manager-types
+2393) fix/location/test-unified-build-manager-types (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/test-unified-build-manager-types
 - 依存: なし
 - 受け入れ基準: UnifiedLocationBatchManager.unit.test.ts から any と top-level await が撤去される／テストの意図と既存アサーションが維持される／pnpm --filter @hierarchidb/location-plugin test が exit 0（必要なら実行）／TASKS.mdに運用ログを記載する
 - 影響範囲: `plugins/location-plugin/src/services/batch/__tests__/unit/UnifiedLocationBatchManager.unit.test.ts`
@@ -16399,8 +16399,8 @@
   - update: 2026-01-26 22:36 JST any撤去とtop-level await廃止、テスト用モック型を整理。
   - update: 2026-01-26 22:39 JST vitest用に@hierarchidb/ui-fileをテストシム化し、CSVテストのtype参照を修正。
   - done: 2026-01-26 22:41 JST pnpm --filter @hierarchidb/location-plugin test exit 0 を確認。
-2394) fix/location/unified-batch-manager-test-typecheck (P1) — 完了 (2026-01-26)
-- ブランチ名: fix/location/unified-batch-manager-test-typecheck
+2394) fix/location/unified-build-manager-test-typecheck (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/unified-build-manager-test-typecheck
 - 依存: なし
 - 受け入れ基準: UnifiedLocationBatchManager.unit.test.ts の型エラーが解消される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
 - 影響範囲: `plugins/location-plugin/src/services/batch/__tests__/unit/UnifiedLocationBatchManager.unit.test.ts`
@@ -16602,11 +16602,11 @@
 2423) refactor/ui-batch/task-merge-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/ui-batch/task-merge-unify
 - 依存: 2422
-- 受け入れ基準: タスク更新のマージ/順序ロジックが ui-batch-progress 側に移行し shape 側の同期ロジックが薄くなる／既存の更新順/表示が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: タスク更新のマージ/順序ロジックが ui-build-progress 側に移行し shape 側の同期ロジックが薄くなる／既存の更新順/表示が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTaskSync.ts`, `packages/ui/batch/src/**`
 - ロールバック手順: 該当差分を revert して shape 側にロジックを戻す
 - チェックリスト:
-  - ui-batch-progress に共通マージロジックを追加する
+  - ui-build-progress に共通マージロジックを追加する
   - shape 側の同期ロジックを共通関数参照へ移行する
   - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
@@ -16614,7 +16614,7 @@
 - 運用ログ：
   - done: 2026-01-29 07:15 JST task merge/ordering の共通化が完了。
   - start: 2026-01-29 04:50 JST task merge/ordering の共通化に着手。
-  - update: 2026-01-29 04:54 JST ui-batch-progress に taskSyncHelpers を追加し、shape の task merge/ordering を共通関数へ移行。
+  - update: 2026-01-29 04:54 JST ui-build-progress に taskSyncHelpers を追加し、shape の task merge/ordering を共通関数へ移行。
 
 2424) refactor/shape/status-phase-normalize-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/status-phase-normalize-unify
@@ -16649,7 +16649,7 @@
   - done: 2026-01-29 07:15 JST task summary mapper の統合が完了。
   - start: 2026-01-29 04:55 JST task summary mapper の統合に着手。
   - update: 2026-01-29 04:56 JST task summary の共通フィールド生成を追加し mapper を統合。
-  - update: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/ui-batch-progress build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/ui-build-progress build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - blocked: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
   - update: 2026-01-29 07:15 JST pnpm --filter @hierarchidb/shape-plugin test が Test Files 6 passed / Tests 9 passed | 1 skipped で成功。
 2422) refactor/shape/build-progress-aggregation-and-pipeline-split (P1) — 完了 (2026-01-29)
@@ -16667,8 +16667,8 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-29 09:12 JST Step5 集計ロジックの共通化と runShapePipeline 分割に着手。
-  - update: 2026-01-29 09:25 JST ui-batch-progress に taskProgressSummary を追加し、Step5 集計/ラベル/進捗を分割フック化。shapePipeline をステージ単位関数に分割。
-  - update: 2026-01-29 09:27 JST pnpm --filter @hierarchidb/ui-batch-progress build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 09:25 JST ui-build-progress に taskProgressSummary を追加し、Step5 集計/ラベル/進捗を分割フック化。shapePipeline をステージ単位関数に分割。
+  - update: 2026-01-29 09:27 JST pnpm --filter @hierarchidb/ui-build-progress build exit 0（tsdown define warning あり）。
   - update: 2026-01-29 09:28 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 09:28 JST Step5 集計共通化・useShapeBuildStep 分割・shapePipeline 分割を完了。
 2440) investigation/feature-definition-usage (P2) — 進行中 (2026-01-30)
@@ -17222,7 +17222,7 @@
 - ブランチ名: refactor/ui-build-progress/panel-unify
 - 依存: 2443
 - ExecPlan: plans/ui-build-progress-panel-unify-execplan.md
-- 受け入れ基準: Shape/Route の Step5 進捗 UI が共通パネルに統合される／ステージ表示とタスクサマリーの表示仕様が維持される／共通パネルで ui-batch-progress のロジックを利用する／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: Shape/Route の Step5 進捗 UI が共通パネルに統合される／ステージ表示とタスクサマリーの表示仕様が維持される／共通パネルで ui-build-progress のロジックを利用する／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/components/src/**`, `plugins/shape-plugin/src/ui/components/build-progress/**`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
 - ロールバック手順: 共通パネルの追加と参照変更を revert して元の Shape/Route UI へ戻す
 - チェックリスト:
@@ -18470,7 +18470,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - ブランチ名: investigation/location-db-separation
 - 依存: なし
 - 受け入れ基準: LocationDB/Location-metadata の利用実態と分離理由をコード根拠付きで整理できる／未使用テーブル（vectorTiles/pendingSessions 等）の扱い案を提示できる／統合/分離/ephemeral 化の比較案を提示できる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/common/tabular/LocationTabularMetadataManager.ts`, `app/src/router/routes/modeless/modelessDialogContentData.ts`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`（調査後に確定）
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/common/tabular/LocationTabularMetadataManager.ts`, `app/src/router/routes/modeless/modelessDialogContentData.ts`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/build-processing-ja.md`（調査後に確定）
 - ロールバック手順: 調査のみのため差分なし
 - チェックリスト:
   - LocationDB のテーブル/利用箇所を確認する
@@ -18669,7 +18669,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - ブランチ名: fix/location-db/doc-alignment
 - 依存: なし
 - 受け入れ基準: LocationDB/location-metadata の役割が現行コードに一致するようドキュメントを更新する／未使用の ephemaral/pending/vectorTiles 記述を整理する／LocationDB の互換 alias を撤去する／`pnpm --filter @hierarchidb/location-store typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/location-store/src/index.ts`, `docs/vt-pipeline-design.md`, `docs/build-artifacts-by-node-type.md`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`, `docs/architecture/plugin-dialog-integration.md`
+- 影響範囲: `packages/location-store/src/LocationDB.ts`, `packages/location-store/src/index.ts`, `docs/vt-pipeline-design.md`, `docs/build-artifacts-by-node-type.md`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/build-processing-ja.md`, `docs/architecture/plugin-dialog-integration.md`
 - ロールバック手順: 該当差分を revert して旧ドキュメント/alias に戻す
 - チェックリスト:
   - LocationDB の alias を撤去する
@@ -19113,10 +19113,10 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-09 21:30 JST 公開APIの Batch→Build エイリアス追加に着手。
-  - update: 2026-02-09 21:38 JST batch-api に Build* 型エイリアスと isBuildControlAPIV2Enabled を追加し、Batch* に @deprecated を付与。progress-types に BuildStage を追加。
+  - update: 2026-02-09 21:38 JST build-api に Build* 型エイリアスと isBuildControlAPIV2Enabled を追加し、Batch* に @deprecated を付与。progress-types に BuildStage を追加。
   - update: 2026-02-09 21:40 JST batch/ui-batch/worker-api の公開エクスポートに Build* エイリアスを追加（useBuildProgress/useBuildProgressState/usePluginBuildProgress/BuildWorkerAPI など）。
-  - update: 2026-02-09 21:46 JST `packages/batch/src/index.ts` が useBuildSessionTiming の BuildStatus と batch-api の BuildStatus を二重 export し typecheck が失敗したため、index の re-export を明示化して BuildStatus を除外するよう修正。
-  - done: 2026-02-09 21:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch-api --filter @hierarchidb/batch --filter @hierarchidb/ui-batch-progress --filter @hierarchidb/worker-api` exit 0。
+  - update: 2026-02-09 21:46 JST `packages/batch/src/index.ts` が useBuildSessionTiming の BuildStatus と build-api の BuildStatus を二重 export し typecheck が失敗したため、index の re-export を明示化して BuildStatus を除外するよう修正。
+  - done: 2026-02-09 21:52 JST `pnpm -w turbo run typecheck --filter @hierarchidb/build-api --filter @hierarchidb/batch --filter @hierarchidb/ui-build-progress --filter @hierarchidb/worker-api` exit 0。
 
 2629) refactor/api/build-worker-api-aliases (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/refactor/api/build-worker-api-aliases
@@ -19134,8 +19134,8 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-09 22:07 JST WorkerAPI に Build 名メソッドを追加し、Batch 名へ @deprecated を付与。
   - done: 2026-02-09 22:09 JST `pnpm -w turbo run typecheck --filter @hierarchidb/worker-api` exit 0。
 
-2630) refactor/internal/batch-identifiers-step1 (P1) — 進行中 (2026-02-09)
-- ブランチ名: codex/refactor/internal/batch-identifiers-step1
+2630) refactor/internal/build-identifiers-step1 (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/internal/build-identifiers-step1
 - 依存: 2629
 - 受け入れ基準: 非公開範囲で Batch 識別子の Build 統一を段階的に進め、影響範囲とロールバックを明記する／挙動は維持される／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `packages/batch/**` / `packages/ui/batch/**` / `packages/worker-api/**` / `plugins/*-plugin/src/**`（必要に応じて追加）
@@ -19148,7 +19148,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - 運用ログ:
   - start: 2026-02-09 22:05 JST Batch 識別子の内部統一（step1）に着手。
   - update: 2026-02-09 22:18 JST batch/ui-batch の内部型参照を Build*（BuildProgress/BuildSessionStatus/BuildUnifiedProgressInfo 等）へ切替し、Batch 系の識別子依存を縮小。
-  - done: 2026-02-09 22:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch --filter @hierarchidb/ui-batch-progress` exit 0。
+  - done: 2026-02-09 22:20 JST `pnpm -w turbo run typecheck --filter @hierarchidb/batch --filter @hierarchidb/ui-build-progress` exit 0。
 
 2631) refactor/api/build-worker-impl-aliases (P1) — 進行中 (2026-02-09)
 - ブランチ名: codex/refactor/api/build-worker-impl-aliases
@@ -19167,8 +19167,8 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-09 22:37 JST app の workerBootstrap に Build 名メソッドを追加し Batch 名へ委譲。テストの WorkerAPI mock に Build 名メソッドを追加。
   - done: 2026-02-09 22:41 JST `pnpm -w turbo run typecheck --filter @hierarchidb/ui-worker-client --filter @hierarchidb/app` exit 0（tsdown define 警告あり）。
 
-2632) refactor/internal/batch-identifiers-step2 (P1) — 進行中 (2026-02-09)
-- ブランチ名: codex/refactor/internal/batch-identifiers-step2
+2632) refactor/internal/build-identifiers-step2 (P1) — 進行中 (2026-02-09)
+- ブランチ名: codex/refactor/internal/build-identifiers-step2
 - 依存: 2630
 - 受け入れ基準: plugins 内の非公開識別子（型/関数/変数名）を Build へ寄せ、公開API・永続スキーマ・外部I/Fは変更しない／影響範囲とロールバックを TASKS.md に明記／影響範囲の typecheck が exit 0／挙動は不変
 - 影響範囲: `plugins/*-plugin/src/**`（候補を絞ってから確定）

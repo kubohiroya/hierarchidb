@@ -4,6 +4,7 @@ import type { AuthProviderType } from '@hierarchidb/ui-auth';
 type CallbackInput = {
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void | Promise<void>;
+  handleCancelQueued?: () => void | Promise<void>;
   closeAuthDialog?: () => void;
   handleProviderSelect?: (provider: AuthProviderType) => void;
   setCrashSuspectOpenFromHook: () => void;
@@ -13,10 +14,12 @@ type CallbackInput = {
 type ShapeBuildStepAtomSyncCallbacks = {
   handleStartOrResumeRef: MutableRefObject<(() => Promise<void>) | null>;
   handlePauseRef: MutableRefObject<(() => void | Promise<void>) | null>;
+  handleCancelQueuedRef: MutableRefObject<(() => void | Promise<void>) | null>;
   closeAuthDialogRef: MutableRefObject<(() => void) | null>;
   handleProviderSelectRef: MutableRefObject<((provider: AuthProviderType) => void) | null>;
   stableHandleStartOrResume: () => Promise<void>;
   stableHandlePause: () => void;
+  stableHandleCancelQueued: () => void;
   stableCloseAuthDialog: () => void;
   stableHandleProviderSelect: (provider: AuthProviderType) => void;
   stableCloseCrashSuspect: () => void;
@@ -26,6 +29,7 @@ type ShapeBuildStepAtomSyncCallbacks = {
 export const useShapeBuildStepAtomSyncCallbacks = ({
   handleStartOrResume,
   handlePause,
+  handleCancelQueued,
   closeAuthDialog,
   handleProviderSelect,
   setCrashSuspectOpenFromHook,
@@ -33,6 +37,7 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
 }: CallbackInput): ShapeBuildStepAtomSyncCallbacks => {
   const handleStartOrResumeRef = useRef<(() => Promise<void>) | null>(null);
   const handlePauseRef = useRef<(() => void | Promise<void>) | null>(null);
+  const handleCancelQueuedRef = useRef<(() => void | Promise<void>) | null>(null);
   const closeAuthDialogRef = useRef<(() => void) | null>(null);
   const handleProviderSelectRef = useRef<((provider: AuthProviderType) => void) | null>(null);
 
@@ -42,6 +47,10 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
 
   const stableHandlePause = useCallback(() => {
     void handlePauseRef.current?.();
+  }, []);
+
+  const stableHandleCancelQueued = useCallback(() => {
+    void handleCancelQueuedRef.current?.();
   }, []);
 
   const stableCloseAuthDialog = useCallback(() => {
@@ -63,17 +72,20 @@ export const useShapeBuildStepAtomSyncCallbacks = ({
   useEffect(() => {
     handleStartOrResumeRef.current = handleStartOrResume ?? null;
     handlePauseRef.current = handlePause ?? null;
+    handleCancelQueuedRef.current = handleCancelQueued ?? null;
     closeAuthDialogRef.current = closeAuthDialog ?? null;
     handleProviderSelectRef.current = handleProviderSelect ?? null;
-  }, [handleStartOrResume, handlePause, closeAuthDialog, handleProviderSelect]);
+  }, [handleStartOrResume, handlePause, handleCancelQueued, closeAuthDialog, handleProviderSelect]);
 
   return {
     handleStartOrResumeRef,
     handlePauseRef,
+    handleCancelQueuedRef,
     closeAuthDialogRef,
     handleProviderSelectRef,
     stableHandleStartOrResume,
     stableHandlePause,
+    stableHandleCancelQueued,
     stableCloseAuthDialog,
     stableHandleProviderSelect,
     stableCloseCrashSuspect,

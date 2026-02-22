@@ -13,8 +13,8 @@ graph LR
 
   %% Shared libraries (light nodes)
   CT["@hierarchidb/core-types"]
-  BA["@hierarchidb/batch-api"]
-  BT["@hierarchidb/batch-types"]
+  BA["@hierarchidb/build-api"]
+  BT["@hierarchidb/build-types"]
   DL["@hierarchidb/download"]
   MAP["@hierarchidb/map-adapter"]
   MS["@hierarchidb/map-source"]

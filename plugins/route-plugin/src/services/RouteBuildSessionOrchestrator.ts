@@ -3,11 +3,11 @@ import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDep
 import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/batch-api';
+import type { BuildProgressCallback, BuildSessionStatus } from '../../../../packages/build-api';
 import {
   BaseBuildSessionManager,
   toBuildProgressEventFromUpdate,
-} from '@hierarchidb/batch-runtime-services';
+} from '@hierarchidb/build-runtime-services';
 
 export interface RouteBuildSessionConfig {
   routeGeneration?: Partial<RouteBuildConfig['routeGeneration']>;

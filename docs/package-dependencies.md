@@ -18,11 +18,11 @@ graph LR
     N2["@hierarchidb/bff"]
     N3["@hierarchidb/cors-proxy"]
   end
-  subgraph G_packages_batch_runtime_services["packages/batch-runtime-services"]
-    N4["@hierarchidb/batch-runtime-services"]
+  subgraph G_packages_batch_runtime_services["packages/build-runtime-services"]
+    N4["@hierarchidb/build-runtime-services"]
   end
   subgraph G_packages_common["packages/common"]
-    N5["@hierarchidb/batch-api"]
+    N5["@hierarchidb/build-api"]
     N6["@hierarchidb/common-auth"]
     N7["@hierarchidb/core-types"]
   end

@@ -9,7 +9,7 @@ type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   buildStatus: BuildProgressStatus['status'];
   effectiveProgress: BuildProgress | null;
   runtimeStatus: BuildProgressStatus['status'];
-  resolvedTaskType: string | undefined;
+  resolvedStage: string | undefined;
   progressTerminalLogKeyRef: { current: string | null };
   emitBuildSessionTransitionLog: (
     level: 'info' | 'warn' | 'error',
@@ -23,7 +23,7 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
   buildStatus,
   effectiveProgress,
   runtimeStatus,
-  resolvedTaskType,
+  resolvedStage,
   progressTerminalLogKeyRef,
   emitBuildSessionTransitionLog,
   buildSessionTransition,
@@ -56,7 +56,7 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     if (progressTerminalLogKeyRef.current === key) return;
     progressTerminalLogKeyRef.current = key;
     emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
-      stage: resolvedTaskType ?? null,
+      stage: resolvedStage ?? null,
       message: progressMessage || null,
       displayKind: progressDisplay?.kind ?? null,
       displayKey: progressDisplay?.key ?? null,
@@ -77,7 +77,7 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     effectiveProgress?.progressTaskTitle,
     emitBuildSessionTransitionLog,
     progressTerminalLogKeyRef,
-    resolvedTaskType,
+    resolvedStage,
     buildSessionTransition,
   ]);
 };

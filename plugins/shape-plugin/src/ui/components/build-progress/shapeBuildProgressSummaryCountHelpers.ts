@@ -1,9 +1,9 @@
-import type { TaskCountSummary } from '@hierarchidb/ui-batch-progress';
+import type { TaskCountSummary } from '../../../../../../packages/ui/build';
 import type { BuildProgress } from './shapeBuildProgressMapping.js';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { BuildTaskSummary } from '@hierarchidb/batch-api';
-import type { TaskStageCarrier } from '@hierarchidb/ui-batch-progress';
+import type { BuildTaskSummary } from '../../../../../../packages/build-api';
+import type { TaskStageCarrier } from '../../../../../../packages/ui/build';
 
 export type StageCountInfo = { counts: TaskCountSummary; hasIncomplete: boolean };
 

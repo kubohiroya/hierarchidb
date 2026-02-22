@@ -105,7 +105,7 @@ const startRouteBuild = async (data: RouteStepData, _context: StartBuildContext)
     return;
   }
 
-  notify.info(t('messages.batchNotImplemented', 'Route batch launch is not yet implemented in this dialog.'));
+  notify.info(t('messages.batchNotImplemented', 'Route build launch is not yet implemented in this dialog.'));
 };
 
 registry.registerConfigProvider<RouteStepData>({

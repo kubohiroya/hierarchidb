@@ -11,7 +11,7 @@ export * as worker from './worker/index.js';
 export class AuthRuntimeBridge {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
-      const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
+      const mod = await import('./services/build/adapters/registerRuntimeWorker.js');
       await mod.registerRouteRuntimeWorkerAdapters();
     } catch {
       /* noop */

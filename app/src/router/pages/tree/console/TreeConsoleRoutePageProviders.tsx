@@ -5,7 +5,7 @@ import {
   TargetNodeBuildSessionContextProvider,
   TargetNodeContextProvider,
   TreeContextProvider,
-} from '@hierarchidb/ui-batch-progress';
+} from '@hierarchidb/ui-build';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
 import type { TargetContextState } from './hooks/useTreeTargetContextState';
 import { TreeConsoleRouteThemeBoundary } from './TreeConsoleRouteThemeBoundary';

@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
@@ -6,10 +6,10 @@ import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { shapeDB } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralDB } from '@hierarchidb/gis-sdk';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
   runWithStageCheckpoint,
-} from '@hierarchidb/batch-runtime-services';
+} from '@hierarchidb/build-runtime-services';
 import {
   buildBands,
   buildContinentLookup,

@@ -107,8 +107,8 @@ describe('resolveMostAdvancedRunningStageId', () => {
     expect(resolveMostAdvancedRunningStageId({
       stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
       tasks: [
-        { stage: 'transform', taskType: 'transform', type: 'transform', status: 'running' },
-        { stage: 'vt', taskType: 'fetch', type: 'fetch', status: 'running' },
+        { stage: 'transform', status: 'running' },
+        { stage: 'vt', status: 'running' },
       ],
     })).toBe('vt');
   });
@@ -117,7 +117,7 @@ describe('resolveMostAdvancedRunningStageId', () => {
     expect(resolveMostAdvancedRunningStageId({
       stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
       tasks: [
-        { stage: 'fetch', taskType: 'fetch', type: 'fetch', status: 'completed' },
+        { stage: 'fetch', status: 'completed' },
       ],
     })).toBeNull();
   });
@@ -126,8 +126,8 @@ describe('resolveMostAdvancedRunningStageId', () => {
     expect(resolveMostAdvancedRunningStageId({
       stages: [{ id: 'fetch' }, { id: 'vt' }, { id: 'transform' }],
       tasks: [
-        { stage: 'transform', taskType: 'transform', type: 'transform', status: 'running' },
-        { stage: 'vt', taskType: 'vt', type: 'vt', status: 'running' },
+        { stage: 'transform', status: 'running' },
+        { stage: 'vt', status: 'running' },
       ],
     })).toBe('vt');
   });
@@ -138,8 +138,8 @@ describe('resolveMostAdvancedInFlightStageId', () => {
     expect(resolveMostAdvancedInFlightStageId({
       stages: [{ id: 'fetch' }, { id: 'transform' }, { id: 'vt' }],
       tasks: [
-        { stage: 'fetch', taskType: 'fetch', type: 'fetch', status: 'completed' },
-        { stage: 'transform', taskType: 'transform', type: 'transform', status: 'queued' },
+        { stage: 'fetch', status: 'completed' },
+        { stage: 'transform', status: 'queued' },
       ],
     })).toBe('transform');
   });

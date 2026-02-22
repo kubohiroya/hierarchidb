@@ -43,5 +43,5 @@ export {
   mergeProcessingConfig,
   summarizeCheckboxState,
   getPreferredCountryCodeFormat,
-  validateBatchConfig,
+  validateBuildConfig,
 } from '~/services/utils/utils';

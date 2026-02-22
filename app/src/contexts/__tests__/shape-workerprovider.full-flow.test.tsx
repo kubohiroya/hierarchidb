@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { render, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
 import { readFile } from 'node:fs/promises';
-import type { BuildProgressEvent, BuildProgressPayload, BuildTaskSummary, BuildTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent, BuildProgressPayload, BuildTaskSummary, BuildTaskUpdateEvent, ProgressPhase } from 'packages/build-api';
 import type { BuildWorkerAPI } from '../../types/worker-api.ts';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import {

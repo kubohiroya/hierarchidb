@@ -13,8 +13,8 @@
 | --- | --- |
 | `packages/backend/bff` | tsconfig.json |
 | `packages/backend/cors-proxy` | tsconfig.json |
-| `packages/batch-runtime-services` | tsconfig.json |
-| `packages/batch-types` | tsconfig.json |
+| `packages/build-runtime-services` | tsconfig.json |
+| `packages/build-types` | tsconfig.json |
 | `packages/common/api` | tsconfig.json |
 | `packages/common/auth` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/common/types` | tsconfig.json |

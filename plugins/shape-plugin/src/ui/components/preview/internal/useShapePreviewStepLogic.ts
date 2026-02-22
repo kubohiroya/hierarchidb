@@ -38,9 +38,9 @@ import {
   useVectorTilePreviewSelection,
 } from '@hierarchidb/ui-map';
 import { getDBName } from '@hierarchidb/util';
-//import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
+//import { getShapeDbAPIClient } from '../../../services/build/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapePreviewDraft as PreviewDraftType } from './useShapePreviewStepUtils';
 import {
   DEFAULT_BOUNDS_MARGIN,

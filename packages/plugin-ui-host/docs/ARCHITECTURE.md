@@ -72,7 +72,7 @@ export interface StepCapabilities {
   /** Whether this step can be navigated to directly */
   canNavigateTo: (fromStep: number, data: any) => boolean | Promise<boolean>;
   
-  /** Whether batch processing can start from this step */
+  /** Whether build processing can start from this step */
   canStartBatch: (data: any) => boolean | Promise<boolean>;
   
   /** Whether the dialog can be saved and closed from this step */
@@ -197,7 +197,7 @@ export class SamplePluginProvider implements PluginStepProvider {
         }
       },
       {
-        id: 'batch-config',
+        id: 'build-config',
         label: 'Batch Configuration',
         optional: true,
         capabilities: {

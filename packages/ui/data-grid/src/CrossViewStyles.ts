@@ -13,7 +13,7 @@
  * 典型的な利用手順:
  * 1) CrossViewStyles.setMapping(datasetId, [{ rowId, featureIds }...])
  * 2) CrossViewStyles.setStyles(datasetId, new Map([[styleId, styleSpec], ...]))
- * 3) CrossViewStyles.assignRows/assignFeatures で batch 割当 or setState() で状態更新（hover/selected/matched 等）
+ * 3) CrossViewStyles.assignRows/assignFeatures で build 割当 or setState() で状態更新（hover/selected/matched 等）
  * 4) 表: DataGrid から onRowHover などで setState() + emitFocus()
  * 5) 地図: deck.gl の onHover / MapLibre の mousemove を受けて setState() + emitFocus()
  * 6) CrossViewSnackbar を配置して subscribeFocus() でイベントを受け取り表示

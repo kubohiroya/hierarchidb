@@ -56,7 +56,7 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB
 - `@hierarchidb/common-core` - Core types and utilities
 - `@hierarchidb/core-types` - Shared primitive/id/entity definitions
 - `@hierarchidb/tree-api` - Tree domain type definitions
-- `@hierarchidb/batch-api` - Batch API interfaces
+- `@hierarchidb/build-api` - Batch API interfaces
 - `@hierarchidb/common-plugin-base` - Base plugin classes
 
 #### Runtime UI Packages
@@ -75,7 +75,7 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB
 #### Runtime Shared Packages
 - `@hierarchidb/runtime-shared-fetch-metadata` - Metadata fetching
 - `@hierarchidb/runtime-shared-client` - Client functionality
-- `@hierarchidb/runtime-shared-batch-processor` - Batch processing
+- `@hierarchidb/runtime-shared-build-processor` - Batch processing
 - `@hierarchidb/runtime-shared-*-datasource` - Data source definitions (shape, location, route, folder)
 
 #### UI Packages

@@ -4,15 +4,18 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskDisplayPayload, TaskQueueRecord } from '@hierarchidb/batch-api';
-import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import type { TaskDisplayPayload, TaskQueueRecord } from '../../../../../packages/build-api';
+import type {
+  ShapeBuildProgressSummary,
+  ShapeBuildSessionRecord,
+  ShapeBuildStopReason,
+} from '@hierarchidb/shape-api';
 import type {
   ShapeRuntimeBuildConfig,
 } from '~/common/types/index';
 import {
   type BuildSession,
   type BuildTask,
-  type ProgressInfo,
   type SelectedArrayByCountries,
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
@@ -29,7 +32,7 @@ import {
   type BuildTaskSummary,
   type BuildTaskUpdateEvent,
   type ProgressPhase,
-} from '@hierarchidb/batch-api';
+} from '../../../../../packages/build-api';
 import { Dexie } from 'dexie';
 import {
   VtTaskQueueDb,
@@ -41,7 +44,7 @@ import {
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
 import {
@@ -50,7 +53,7 @@ import {
   selectLatestTaskByProgress,
 } from '../taskOrdering.js';
 import { getStagePlan } from '~/services/vt/shapeProgressPlan';
-import { toBuildSessionRecord } from '~/services/batch/shapeSessionMappers';
+import { toBuildSessionRecord } from '~/services/build/shapeSessionMappers';
 const mapBuildSessionRecordToBuildSession = (
   record: BuildSessionRecord,
   config: BuildSessionConfig,
@@ -474,15 +477,15 @@ const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
           : 'idle';
   return {
     status,
-    taskType: resolveTaskType(tasks),
+    stage: resolveTaskType(tasks),
   };
 };
 
 const summarizeTaskQueueProgress = async (
   nodeId: NodeId,
   tasks: TaskQueueRecord[],
-  taskType?: TaskQueueRecord['stage'],
-): Promise<ProgressInfo> => {
+  stage?: TaskQueueRecord['stage'],
+): Promise<ShapeBuildProgressSummary> => {
   const stageCounts: Record<TaskQueueRecord['stage'], {
     total: number;
     completed: number;
@@ -529,12 +532,12 @@ const summarizeTaskQueueProgress = async (
   const total = resolveStageTotal(stageCounts.fetch, plan?.fetchTotal)
     + resolveStageTotal(stageCounts.transform, plan?.transformTotal)
     + resolveStageTotal(stageCounts.vt);
-  let resolvedTaskType = taskType;
-  if (!resolvedTaskType && tasks.length === 0 && plan?.fetchTotal && plan.fetchTotal > 0) {
-    resolvedTaskType = 'fetch';
+  let resolvedStage = stage;
+  if (!resolvedStage && tasks.length === 0 && plan?.fetchTotal && plan.fetchTotal > 0) {
+    resolvedStage = 'fetch';
   }
-  if (!resolvedTaskType && tasks.length === 0 && plan?.transformTotal && plan.transformTotal > 0) {
-    resolvedTaskType = 'transform';
+  if (!resolvedStage && tasks.length === 0 && plan?.transformTotal && plan.transformTotal > 0) {
+    resolvedStage = 'transform';
   }
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -544,13 +547,13 @@ const summarizeTaskQueueProgress = async (
     failed,
     skipped,
     percentage,
-    taskType: resolvedTaskType,
+    stage: resolvedStage,
   };
 };
 
 const buildTaskQueueSummary = async (nodeId: NodeId, tasks: TaskQueueRecord[]) => {
   const statusSummary = summarizeTaskQueueStatus(tasks);
-  const progress = await summarizeTaskQueueProgress(nodeId, tasks, statusSummary.taskType);
+  const progress = await summarizeTaskQueueProgress(nodeId, tasks, statusSummary.stage);
   return {
     status: statusSummary.status,
     progress,
@@ -993,7 +996,7 @@ const emitProgressSnapshot = async (
     const payload = await buildProgressPayloadFromTasks(nodeId, vtTasks, { source: 'snapshot' });
     sub.callback({
       nodeId,
-      stage: statusSummary.taskType ?? 'fetch',
+      stage: statusSummary.stage ?? 'fetch',
       phase,
       timestamp: Date.now(),
       message,

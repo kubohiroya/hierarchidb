@@ -7,7 +7,7 @@ import type {
   BuildTaskSummary,
   BuildTaskUpdateEvent,
   BuildContinuationPolicy,
-} from '@hierarchidb/batch-api';
+} from 'packages/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
@@ -18,7 +18,7 @@ import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import { shapeBuildAPI } from '~/worker/api';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '~/services/vt/shapePipelineShared';
 import { runShapeFetchStageSection } from '~/services/vt/shapePipelineFetchStage';
 import { runShapeTransformStageSection } from '~/services/vt/shapePipelineTransformStage';

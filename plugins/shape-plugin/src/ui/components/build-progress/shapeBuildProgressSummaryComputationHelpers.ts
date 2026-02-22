@@ -1,4 +1,4 @@
-export type { TaskCountSummary } from '@hierarchidb/ui-batch-progress';
+export type { TaskCountSummary } from '../../../../../../packages/ui/build';
 export type { BuildStatus } from '@hierarchidb/components/build-status';
 export type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
 export {

@@ -100,14 +100,14 @@ export function useTreeConsoleLoader({
         let displayNodes: TreeNode[] = children;
 
         if (shouldFlattenArchive) {
-          const batches: TreeNode[][] = await Promise.all(
+          const changes: TreeNode[][] = await Promise.all(
             children.map((child) => queryAPI.listChildren(child.id as NodeId))
           );
-          displayNodes = batches.flat();
+          displayNodes = changes.flat();
           if (debugEnabled) {
             console.log('[TreeConsoleLoader] flattened archive nodes', {
               parentId: String(parentId),
-              batches: batches.map((batch, index) => ({
+              changes: changes.map((batch, index) => ({
                 parent: String(children[index]?.id ?? ''),
                 count: batch.length,
               })),

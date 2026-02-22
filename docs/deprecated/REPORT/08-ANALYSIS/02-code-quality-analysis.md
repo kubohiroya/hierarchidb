@@ -370,7 +370,7 @@ const technicalDebt = {
   high_priority: [
     {
       area: 'Shape plugin',
-      issue: 'Overly complex batch processing',
+      issue: 'Overly complex build processing',
       effort: '2 weeks',
       impact: 'Performance, maintainability',
       recommendation: 'Refactor to use worker pool pattern'

@@ -3,6 +3,9 @@ import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 import type { StepData } from '@hierarchidb/plugin-base';
+
+export type { SpreadSheetDataSourceType };
+
 export type StyleType = 'choropleth' | 'points' | 'lines';
 export type StylerValueType = 'number' | 'color';
 export type StylerMappingMode = 'map-interpolate' | 'precomputed';

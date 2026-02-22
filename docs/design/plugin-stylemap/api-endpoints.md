@@ -583,7 +583,7 @@ interface BatchRowOperations {
 }
 
 async function executeBatchOperations(operations: BatchRowOperations): Promise<void> {
-  // Implementation would batch all operations in a single transaction
+  // Implementation would build all operations in a single transaction
 }
 ```
 

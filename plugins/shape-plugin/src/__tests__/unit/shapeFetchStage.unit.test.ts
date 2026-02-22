@@ -37,7 +37,7 @@ vi.mock('../../services/vt/fetchGeometryFilters.ts', () => ({
   }),
 }));
 
-vi.mock('../../services/batch/ShapeBuildAPIClient.ts', () => ({
+vi.mock('../../services/build/ShapeBuildAPIClient.ts', () => ({
   shapeMutationAPIImpl: {
     putFeatureMetadata: mockPutFeatureMetadata,
   },

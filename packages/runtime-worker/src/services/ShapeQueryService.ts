@@ -30,6 +30,7 @@ import type {
 import {
   ephemeralDB,
   type EphemeralBuildSessionRecord,
+  type EphemeralBuildTaskRecord,
 } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
@@ -38,8 +39,7 @@ import {
   readRawDataDataSourceBuffer,
 } from './shapeChunkStore.js';
 
-const toBuildStage = (stage?: string): ProgressInfo['taskType'] => {
-  if (stage === 'processing') return stage;
+const toBuildStage = (stage: ShapeBuildProgressSummary['stage']): ProgressInfo['stage'] => {
   if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
   return undefined;
 };
@@ -50,7 +50,21 @@ const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  taskType: toBuildStage(progress.taskType),
+  stage: toBuildStage(progress.stage),
+});
+
+const toShapeBuildStage = (stage?: ProgressInfo['stage']): ShapeBuildStage | undefined => {
+  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
+  return undefined;
+};
+
+const toShapeBuildProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary => ({
+  total: progress.total,
+  completed: progress.completed,
+  failed: progress.failed,
+  skipped: progress.skipped,
+  percentage: progress.percentage,
+  stage: toShapeBuildStage(progress.stage),
 });
 
 const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessionRecord => {
@@ -64,7 +78,7 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toProgressInfo(session.progress),
+    progress: toShapeBuildProgressSummary(session.progress),
     stages,
     resourceUsage,
     stopReason: session.stopReason,
@@ -92,13 +106,13 @@ const toSessionSummary = (session: BuildSessionRecord): ShapeBuildSessionSummary
   startedAt: session.startedAt,
   updatedAt: session.updatedAt,
   completedAt: session.completedAt,
-  progress: session.progress,
+  progress: toShapeBuildProgressSummary(session.progress),
 });
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
-  taskType: task.stage,
+  stage: task.stage,
   status: task.status,
   index: task.index,
   progress: task.progress,
@@ -140,7 +154,7 @@ const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary =
     && isNumber(value.failed)
     && isNumber(value.skipped)
     && isNumber(value.percentage)
-    && (value.taskType === undefined || typeof value.taskType === 'string');
+    && (value.stage === undefined || value.stage === 'fetch' || value.stage === 'transform' || value.stage === 'vt');
 };
 
 const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
@@ -201,7 +215,33 @@ const toBuildSessionRecordFromEphemeral = (
   };
 };
 
+const isShapeBuildStage = (value: unknown): value is ShapeBuildStage => {
+  return value === 'fetch' || value === 'transform' || value === 'vt';
+};
+
+const toShapeBuildTaskRecordFromEphemeral = (
+  task: EphemeralBuildTaskRecord
+): ShapeBuildTaskRecord | null => {
+  if (!isShapeBuildStage(task.stage)) return null;
+  return {
+    taskId: task.taskId,
+    nodeId: task.nodeId,
+    stage: task.stage,
+    status: task.status,
+    index: task.index,
+    progress: task.progress,
+    message: task.message,
+    retryCount: task.retryCount,
+    inputData: task.inputData as ShapeBuildTaskRecord['inputData'],
+    outputData: task.outputData as ShapeBuildTaskRecord['outputData'],
+    errorMessage: task.errorMessage,
+  };
+};
+
 const isNonNull = <T>(value: T | null): value is T => value !== null;
+const isShapeBuildTaskRecord = (
+  value: ShapeBuildTaskRecord | null
+): value is ShapeBuildTaskRecord => value !== null;
 
 export class ShapeQueryService implements ShapeQueryAPI {
   static async getSingleton(db: ShapeDB): Promise<ShapeQueryService> {
@@ -264,12 +304,16 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     await this.ensureOpen();
     const tasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-    return tasks.map((task) => toTaskSummary(task));
+    const records = tasks
+      .map(toShapeBuildTaskRecordFromEphemeral)
+      .filter(isShapeBuildTaskRecord);
+    return records.map(toTaskSummary);
   }
 
   async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     await this.ensureOpen();
-    return ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
+    const tasks = await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
+    return tasks.map(toShapeBuildTaskRecordFromEphemeral).filter(isShapeBuildTaskRecord);
   }
 
   async listBuildTaskRecordsByStage(
@@ -283,7 +327,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null> {
     await this.ensureOpen();
     const task = await ephemeralDB.buildTasks.get?.(taskId);
-    return task ?? null;
+    return task ? toShapeBuildTaskRecordFromEphemeral(task) : null;
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
@@ -315,7 +359,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
       totalVectorTiles,
       hasErrors: latestSession.status === 'failed',
       errorMessages: latestSession.status === 'failed' ? ['Build processing failed'] : [],
-      stage: latestSession.progress?.taskType,
+      stage: latestSession.progress?.stage,
       progress: latestSession.progress?.percentage,
       lastUpdated: latestSession.updatedAt,
     };

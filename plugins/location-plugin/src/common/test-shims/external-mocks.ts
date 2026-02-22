@@ -4,7 +4,7 @@ import type {
   BuildProgressEvent,
   BuildUnifiedProgressInfo,
   UseBuildProgressOptions,
-} from '@hierarchidb/batch-api';
+} from '../../../../../packages/build-api';
 
 export class BuildService {
   async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {

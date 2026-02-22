@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { TaskQueueRecord } from 'packages/build-api';
 import { reconcileStageTasksByMetadata } from '../../services/vt/shapeStageReconcile';
 
 type TestInput = {

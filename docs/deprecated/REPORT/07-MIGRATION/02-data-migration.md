@@ -322,7 +322,7 @@ export class DataCleaner {
 ### Batch Import
 
 ```typescript
-// batch-import.ts
+// build-import.ts
 export class BatchImporter {
   async importBatch(
     items: ImportItem[],

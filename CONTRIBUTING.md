@@ -64,7 +64,7 @@ This repository consolidates plugin batch execution on a shared architecture:
 
 - Execution: use `@hierarchidb/batch` `BatchService.mapChunks` for parallel work.
 - Session abstraction: extend `runtime-shared/AbstractBatchSession` and delegate pause/resume/cancel and progress updates.
-- Download: use `runtime-shared/batch-processor/downloadAdapter` (`createSharedDownloadService()` for GET; `postJson()` for POST).
+- Download: use `runtime-shared/build-processor/downloadAdapter` (`createSharedDownloadService()` for GET; `postJson()` for POST).
 - Progress types: adopt `@hierarchidb/common-type` `ProgressEvent` across plugins; UI wires via injected emitter/store.
 - Lane control: when external API concurrency must be capped (e.g., OSRM), gate calls with a semaphore per lane in addition to mapChunks concurrency.
 

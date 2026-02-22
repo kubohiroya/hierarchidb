@@ -4,19 +4,19 @@ import { coalesceBatches } from '../mergeUtils';
 
 describe('coalesceBatches edge cases', () => {
   it('drops updates/moves for nodes that are later removed', () => {
-    const batches: SubTreeChanges[] = [
+    const changes: SubTreeChanges[] = [
       { updated: [{ nodeId: 'x', changes: { name: 'X1' } }] },
       { moved: [{ nodeId: 'x', newParentId: 'r' }] },
       { removed: ['x'] },
     ];
-    const r = coalesceBatches(batches);
+    const r = coalesceBatches(changes);
     expect(r.removed).toEqual(['x']);
     expect(r.updated?.some(u => u.nodeId === 'x')).toBeFalsy();
     expect(r.moved?.some(m => m.nodeId === 'x')).toBeFalsy();
   });
 
   it('last write wins across multiple updates and moves', () => {
-    const batches: SubTreeChanges[] = [
+    const changes: SubTreeChanges[] = [
       { added: [{ id: 'a', parentId: 'p1' }] },
       { updated: [{ nodeId: 'a', changes: { name: 'N1' } }] },
       { moved: [{ nodeId: 'a', newParentId: 'p2' }] },
@@ -24,7 +24,7 @@ describe('coalesceBatches edge cases', () => {
       { moved: [{ nodeId: 'a', newParentId: 'p3' }] },
       { updated: [{ nodeId: 'a', changes: { name: 'N2' } }] },
     ];
-    const r = coalesceBatches(batches);
+    const r = coalesceBatches(changes);
     const u = r.updated?.find(x => x.nodeId === 'a');
     expect(u?.changes).toMatchObject({ name: 'N2', desc: 'D1' });
     const m = r.moved?.find(x => x.nodeId === 'a');

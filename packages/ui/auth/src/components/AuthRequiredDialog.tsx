@@ -1,8 +1,8 @@
 /**
  * @file AuthRequiredDialog.tsx
- * @description Authentication required base-dialog for batch processing interruption
+ * @description Authentication required base-dialog for build processing interruption
  *
- * This base-dialog is shown when batch processing encounters authentication errors
+ * This base-dialog is shown when build processing encounters authentication errors
  * and needs user intervention to continue.
  */
 
@@ -249,19 +249,19 @@ export function AuthRequiredDialog({
 
   const handleCancel = useCallback(() => {
     if (cancelLabel) {
-      console.log('🚫 User cancelled authentication for batch processing');
+      console.log('🚫 User cancelled authentication for build processing');
       onCancel();
       return;
     }
 
     const hasSession = Boolean(sessionId);
     const confirmMessage = hasSession
-      ? 'Canceling authentication will stop the batch processing session. Are you sure?'
+      ? 'Canceling authentication will stop the build processing session. Are you sure?'
       : 'Are you sure you want to cancel?';
 
     const confirmed = window.confirm(confirmMessage);
     if (confirmed) {
-      console.log('🚫 User cancelled authentication for batch processing');
+      console.log('🚫 User cancelled authentication for build processing');
       onCancel();
     }
   }, [cancelLabel, sessionId, onCancel]);
@@ -366,7 +366,7 @@ export function AuthRequiredDialog({
           <Alert severity="info" sx={{ mb: 3 }}>
             <Box>
               <Typography variant="body2" gutterBottom>
-                <strong>Batch Processing Session:</strong> {sessionId.slice(-12)}
+                <strong>Build Session:</strong> {sessionId.slice(-12)}
               </Typography>
               <Typography variant="body2">
                 <strong>Plugin:</strong> {pluginType.charAt(0).toUpperCase() + pluginType.slice(1)}

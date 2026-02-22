@@ -1,8 +1,6 @@
 type StageLike = {
   title?: string | null;
   stage?: string;
-  taskType?: string;
-  type?: string;
   inputData?: unknown;
 };
 
@@ -21,7 +19,7 @@ const readCode = (value: unknown): string | null => {
 };
 
 const resolveStageKey = (task: StageLike): string | undefined => (
-  task.taskType ?? task.type ?? task.stage
+  task.stage
 );
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (

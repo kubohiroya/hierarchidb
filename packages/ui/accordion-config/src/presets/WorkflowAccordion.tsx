@@ -40,7 +40,7 @@ const getStatusColor = (status?: WorkflowStep['status']) => {
 
 /**
  * Accordion designed for workflow/process steps
- * Can be used for wizards, multi-step forms, batch processes, etc.
+ * Can be used for wizards, multi-step forms, build processes, etc.
  */
 export const WorkflowAccordion: React.FC<WorkflowAccordionProps> = ({
                                                                       step,

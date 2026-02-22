@@ -976,7 +976,7 @@ const BatchConsolePanel = ({ nodeId, config, urlMetadata, onBatchConsoleUpdated,
   useEffect(() => {
     if (hasFinished && onBatchCompleted) {
       onBatchCompleted();
-      enqueueSnackbar('All batch processes completed successfully!', { 
+      enqueueSnackbar('All build processes completed successfully!', { 
         variant: 'success',
         autoHideDuration: 5000 
       });
@@ -1228,7 +1228,7 @@ useEffect(() => {
   if (hasFinished && onBatchCompleted) {
     onBatchCompleted();
     // スナックバー通知
-    enqueueSnackbar('All batch processes completed successfully!', { 
+    enqueueSnackbar('All build processes completed successfully!', { 
       variant: 'success',
       autoHideDuration: 5000 
     });

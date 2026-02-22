@@ -8,14 +8,14 @@ type UseShapeBuildSessionStartupTraceArgs = {
   activeNodeId: string | null;
   buildStatus: BuildStatusSource;
   effectiveProgress: BuildProgress | null;
-  resolveTaskType: string | null;
+  resolveStage: string | null;
 };
 
 export const useShapeBuildSessionStartupTrace = ({
   activeNodeId,
   buildStatus,
   effectiveProgress,
-  resolveTaskType,
+  resolveStage,
 }: UseShapeBuildSessionStartupTraceArgs): void => {
   useEffect(() => {
     if (!isShapeProgressStepDebugEnabled()) return;
@@ -24,7 +24,7 @@ export const useShapeBuildSessionStartupTrace = ({
       phase: buildStatus,
       progressTaskId: effectiveProgress?.progressTaskId ?? null,
       progressTaskStatus: effectiveProgress?.progressTaskStatus ?? null,
-      progressTaskStage: resolveTaskType,
+      progressTaskStage: resolveStage,
       progressTaskProgress: effectiveProgress?.progressTaskProgress ?? null,
       percentage: effectiveProgress?.percentage ?? null,
       total: effectiveProgress?.total ?? 0,
@@ -34,5 +34,5 @@ export const useShapeBuildSessionStartupTrace = ({
       message: effectiveProgress?.message ?? null,
     };
     emitShapeProgressStepTrace(nextTrace);
-  }, [activeNodeId, buildStatus, effectiveProgress, resolveTaskType]);
+  }, [activeNodeId, buildStatus, effectiveProgress, resolveStage]);
 };

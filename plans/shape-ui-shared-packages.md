@@ -1,4 +1,4 @@
-# Move shared Shape UI/hooks into ui-map and ui-batch-progress packages
+# Move shared Shape UI/hooks into ui-map and ui-build-progress packages
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -6,14 +6,14 @@ This plan is governed by `PLANS.md` at repository root. Maintain this document i
 
 ## Purpose / Big Picture
 
-The shape plugin currently owns hooks and UI logic that are useful across GIS-oriented plugins (shape, location, route) and across generic batch-processing UIs. This change extracts those reusable parts into shared packages: `@hierarchidb/ui-map` for vector-tile preview helpers and `@hierarchidb/ui-batch-progress` for batch progress and task aggregation hooks. After the change, shape-plugin imports these shared packages, reducing duplication and paving the way for location/route to adopt the same APIs. Success is confirmed by passing `pnpm --filter @hierarchidb/shape-plugin typecheck` and by seeing the shared packages compile in the workspace.
+The shape plugin currently owns hooks and UI logic that are useful across GIS-oriented plugins (shape, location, route) and across generic build-processing UIs. This change extracts those reusable parts into shared packages: `@hierarchidb/ui-map` for vector-tile preview helpers and `@hierarchidb/ui-build-progress` for batch progress and task aggregation hooks. After the change, shape-plugin imports these shared packages, reducing duplication and paving the way for location/route to adopt the same APIs. Success is confirmed by passing `pnpm --filter @hierarchidb/shape-plugin typecheck` and by seeing the shared packages compile in the workspace.
 
 ## Progress
 
 - [x] (2025-12-21 23:16) Create this ExecPlan and enumerate candidate shared units.
 - [x] (2025-12-21 23:18) Add new `packages/ui/gis` and `packages/ui/batch` with initial exports.
 - [x] (2025-12-21 23:18) Move generic preview hooks into ui-gis and update shape-plugin imports.
-- [x] (2025-12-21 23:18) Move generic batch hooks into ui-batch-progress and update shape-plugin imports.
+- [x] (2025-12-21 23:18) Move generic batch hooks into ui-build-progress and update shape-plugin imports.
 - [x] (2025-12-21 23:18) Update workspace paths and package dependencies.
 - [x] (2025-12-21 23:18) Run shape-plugin typecheck and record results in `TASKS.md`.
 - [x] (2026-01-09) Consolidate preview hooks into `@hierarchidb/ui-map` and remove `@hierarchidb/ui-gis`.
@@ -24,13 +24,13 @@ None yet.
 
 ## Decision Log
 
-- Decision: Consolidate shared map preview helpers into `@hierarchidb/ui-map` and keep `@hierarchidb/ui-batch-progress` for batch progress.
+- Decision: Consolidate shared map preview helpers into `@hierarchidb/ui-map` and keep `@hierarchidb/ui-build-progress` for batch progress.
   Rationale: A single shared map package avoids encouraging bespoke map components across plugins while still allowing focused batch UI helpers.
   Date/Author: 2025-12-21 Codex
 
 ## Outcomes & Retrospective
 
-Shared preview hooks now live in `@hierarchidb/ui-map` and batch progress helpers in `@hierarchidb/ui-batch-progress`. Shape-plugin builds against those packages and typecheck passes, making the shared APIs ready for location/route adoption.
+Shared preview hooks now live in `@hierarchidb/ui-map` and batch progress helpers in `@hierarchidb/ui-build-progress`. Shape-plugin builds against those packages and typecheck passes, making the shared APIs ready for location/route adoption.
 
 ## Context and Orientation
 
@@ -38,11 +38,11 @@ The shape-plugin UI hooks live under `plugins/shape-plugin/src/ui/hooks` and wer
 
 `@hierarchidb/ui-map` contains hooks that coordinate vector tile preview behavior: metadata loading, search/match, map layer highlighting, and map identify selection. These are GIS-specific and share the same MapLibre primitives and MUI theme.
 
-`@hierarchidb/ui-batch-progress` will contain hooks that coordinate batch progress subscriptions and task aggregation for staged builds. These are not GIS-specific and should depend on the batch and worker client packages.
+`@hierarchidb/ui-build-progress` will contain hooks that coordinate batch progress subscriptions and task aggregation for staged builds. These are not GIS-specific and should depend on the batch and worker client packages.
 
 ## Plan of Work
 
-Create the new `packages/ui/gis` and `packages/ui/batch` packages with `package.json`, `tsconfig.json`, and `src/index.ts`. Move the preview hooks into `ui-map` and adapt them to accept generic row/selection callbacks so shape-plugin can keep its domain rules outside of the shared package. Move the batch progress hook and stage task aggregation hook into `ui-batch-progress`. Update `tsconfig.base.json` paths so the workspace can resolve the new packages, and update `plugins/shape-plugin/package.json` peer/dev dependencies to include `@hierarchidb/ui-map` and `@hierarchidb/ui-batch-progress`. Finally, update `useShapePreviewStep` and `useShapeProgress`/`useShapeBuildStep` to import the shared hooks.
+Create the new `packages/ui/gis` and `packages/ui/batch` packages with `package.json`, `tsconfig.json`, and `src/index.ts`. Move the preview hooks into `ui-map` and adapt them to accept generic row/selection callbacks so shape-plugin can keep its domain rules outside of the shared package. Move the batch progress hook and stage task aggregation hook into `ui-build-progress`. Update `tsconfig.base.json` paths so the workspace can resolve the new packages, and update `plugins/shape-plugin/package.json` peer/dev dependencies to include `@hierarchidb/ui-map` and `@hierarchidb/ui-build-progress`. Finally, update `useShapePreviewStep` and `useShapeProgress`/`useShapeBuildStep` to import the shared hooks.
 
 ## Concrete Steps
 
@@ -73,10 +73,10 @@ Keep the shared hooks generic by accepting callbacks for row IDs, search text, a
 * `useVectorTilePreviewSelection`
 * `useVectorTilePreviewMapLayers`
 
-`@hierarchidb/ui-batch-progress` exports:
+`@hierarchidb/ui-build-progress` exports:
 * `useBatchProgressState`
 * `useBuildTaskProgress`
 
 Shape-plugin uses these exports in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`.
 
-Plan update note: marked milestones complete after moving hooks into ui-gis/ui-batch-progress and passing shape-plugin typecheck.
+Plan update note: marked milestones complete after moving hooks into ui-gis/ui-build-progress and passing shape-plugin typecheck.

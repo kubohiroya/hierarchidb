@@ -5,7 +5,7 @@ import { useTranslation } from '~/ui/i18n';
 import {
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
-  validateBatchConfig,
+  validateBuildConfig,
   type ShapeEntity,
 } from '~/common/types/index';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
@@ -169,22 +169,15 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     activeNodeId,
     isSessionStopping,
     stages,
-    processingStatus,
-    runtimeStatus: runtimeStatusForBuildStatus,
-    effectiveProgress: effectiveProgress
-      ? {
-        percentage: effectiveProgress.percentage,
-        taskType: effectiveProgress.taskType,
+      processingStatus,
+      runtimeStatus: runtimeStatusForBuildStatus,
+      effectiveProgress: effectiveProgress
+        ? {
+          percentage: effectiveProgress.percentage,
+        stage: effectiveProgress.stage,
         progressTaskId: effectiveProgress.progressTaskId,
-        progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
-      }
-      : null,
-      effectiveStatus: effectiveStatus
-      ? {
-        status: {
-          status: effectiveStatus.status,
-        },
-      }
+          progressTaskStage: (effectiveProgress as { progressTaskStage?: string | null }).progressTaskStage ?? null,
+        }
       : null,
     sessionProgressTotal: sessionRecord?.progress?.total,
     hasNodeId,
@@ -209,9 +202,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     isLoading: isTasksLoading,
     isTaskStreamReady,
     refreshTasks,
-    taskType: taskTypeFromState,
-    liveTaskType,
-    resolvedTaskType,
+    stageFromState,
+    liveStageFromState,
+    resolvedStageFromState,
     hasStartedTasks,
     buildStatus,
     hasProgressTaskSignal,
@@ -230,14 +223,14 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   } = useShapeBuildStepProgressState({
     buildStatus,
     stages,
-    resolvedTaskType,
-    liveTaskType,
-    timingFallbackTaskType: resolvedTaskType ?? null,
+    resolvedStage: resolvedStageFromState,
+    liveStage: liveStageFromState,
+    timingFallbackStage: resolvedStageFromState ?? null,
     displayTasks,
     overallProgress: effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0,
     effectiveProgress: effectiveProgress ?? null,
     effectiveStatus: effectiveStatus ?? null,
-    taskTypeFromState,
+    stageFromState,
     sessionRecord,
     activeNodeId,
     updateSessionRecord: async (patch) => {
@@ -249,7 +242,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     activeNodeId,
     buildSessionTransition,
     buildStatus: effectiveStatusSource,
-    resolveTaskType: effectiveProgress?.progressTaskStage ?? null,
+    resolveStage: effectiveProgress?.progressTaskStage ?? null,
     effectiveProgress,
     displayTasks,
     hasFirstTaskSignal,
@@ -260,7 +253,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     sessionProgressTotal: sessionRecord?.progress?.total,
     sessionStageId: sessionRecord?.stageId ?? null,
     awaitingFirstTaskExpectationRef,
-    resolvedTaskType,
+    resolvedStage: resolvedStageFromState,
     lastAwaitingFirstTaskDecisionTraceKeyRef,
     buildSessionTransitionTaskStartNotifiedRef,
     progressTerminalLogKeyRef,
@@ -285,21 +278,21 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     effectiveStatus: effectiveStatus ?? null,
     effectiveProgress: effectiveProgress ?? null,
     stages,
-    resolvedTaskType: timingStageId ?? resolvedTaskType,
+    resolvedTaskType: timingStageId ?? resolvedStageFromState,
     displayStageId: progressSummary.displayStageId,
     rawDisplayCounts: progressSummary.rawDisplayCounts,
   });
 
   const isProcessingValid = useMemo(() => {
     if (!data?.buildConfig) return false;
-    return validateBatchConfig(
+    return validateBuildConfig(
       data.buildConfig,
       data.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
     ).isValid;
   }, [data?.buildConfig, data?.processingConfig]);
 
   const showResumeLabel = useMemo(() => (
-    buildStatus === 'paused' || (!buildSessionTransition.active && displayTasks.length > 0)
+    buildStatus !== 'paused' && (!buildSessionTransition.active && displayTasks.length > 0)
   ), [buildStatus, displayTasks.length, buildSessionTransition.active]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
@@ -348,6 +341,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const {
     handleStartOrResume,
     handlePause,
+    handleCancelQueued,
   } = useShapeBuildStepControlActions({
     activeNodeId,
     data,
@@ -424,6 +418,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,
+    handleCancelQueued,
     isStartPending,
     stopRequested: isStopRequestedInFlight,
     authDialogOpen,

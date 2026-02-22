@@ -11,7 +11,7 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-} from '@hierarchidb/batch-api';
+} from 'packages/build-api';
 import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
@@ -210,7 +210,7 @@ const toBuildSessionStatus = (
       failed: (progress.failed as number | undefined) ?? 0,
       skipped: (progress.skipped as number | undefined) ?? 0,
       percentage: (progress.percentage as number | undefined) ?? 0,
-      taskType: progress.taskType as string | undefined,
+      stage: progress.stage as string | undefined,
     },
     startedAt: session?.startedAt as number | undefined,
     completedAt: session?.completedAt as number | undefined,

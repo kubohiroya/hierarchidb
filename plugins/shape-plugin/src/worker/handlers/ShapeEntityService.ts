@@ -122,7 +122,7 @@ export interface ShapeFilterCriteria {
   name?: string;
   dataSource?: DataSourceName;
   processingStatus?: string;
-  hasActiveBatch?: boolean;
+  hasActiveBuild?: boolean;
 }
 
 export class ShapeEntityService {

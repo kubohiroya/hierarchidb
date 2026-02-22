@@ -49,11 +49,12 @@ export interface BuildStepPanelProps {
   chipPlacement?: 'header' | 'belowProgress';
   onPause?: () => void;
   onResume?: () => void;
+  onCancel?: () => void;
   onComplete?: () => void;
   controlLabel?: string;
   pauseLabel?: string;
+  cancelLabel?: string;
   stopRequested?: boolean;
-  pauseActsAsCancel?: boolean;
   startPending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
@@ -93,11 +94,12 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   chipPlacement,
   onPause,
   onResume,
+  onCancel,
   onComplete,
   controlLabel,
   pauseLabel,
+  cancelLabel,
   stopRequested,
-  pauseActsAsCancel,
   startPending,
   startLabel,
   resumeLabel,
@@ -279,10 +281,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           status={status}
           onPause={onPause}
           onResume={onResume}
+          onCancel={onCancel}
           controlLabel={controlLabel}
           pauseLabel={pauseLabel}
+          cancelLabel={cancelLabel}
           stopRequested={stopRequested}
-          pauseActsAsCancel={pauseActsAsCancel}
           startPending={startPending}
           startLabel={startLabel}
           resumeLabel={resumeLabel}

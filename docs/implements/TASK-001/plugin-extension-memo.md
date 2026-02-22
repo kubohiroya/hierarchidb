@@ -11,7 +11,7 @@
 - 元タスクファイル: `docs/tasks/plugin-extension-tasks.md`
 - 要件定義: `docs/implements/TASK-001/plugin-extension-requirements.md`
 - テストケース定義: `docs/implements/TASK-001/plugin-extension-testcases.md`
-- 実装ファイル: `packages/common/core/src/types/batch-types.ts`
+- 実装ファイル: `packages/common/core/src/types/build-types.ts`
 - テストファイル: `packages/common/core/src/types/plugin-extension.test.ts`
 
 ## Redフェーズ（失敗するテスト作成）
@@ -71,7 +71,7 @@
 
 ### 期待される失敗
 
-現時点では`batch-types.ts`ファイルが存在しないため、以下のエラーが発生する：
+現時点では`build-types.ts`ファイルが存在しないため、以下のエラーが発生する：
 
 ```
 Error: Cannot find module './plugin-extension'
@@ -83,7 +83,7 @@ Error: Cannot find module './plugin-extension'
 
 Greenフェーズで実装すべき内容：
 
-1. `packages/common/core/src/types/batch-types.ts`ファイルの作成
+1. `packages/common/core/src/types/build-types.ts`ファイルの作成
 2. 以下の型定義の実装：
    - ExtendableNodeTypeDefinition
    - BaseNodeDefinition
@@ -111,7 +111,7 @@ Greenフェーズで実装すべき内容：
 
 ### 実装コード
 
-`packages/common/core/src/types/batch-types.ts`に以下を実装：
+`packages/common/core/src/types/build-types.ts`に以下を実装：
 
 1. **基本型定義**
    - StepComponent: Reactコンポーネントの最小定義

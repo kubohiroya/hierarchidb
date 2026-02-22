@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
-import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { StageHandler, TaskQueueRecord } from '../../../../../packages/build-api';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   VtTaskQueueDb,
@@ -35,7 +35,7 @@ import type { RetryConfig } from '~/services/datasources/DataSourceStrategy';
 import type { Topology } from 'topojson-specification';
 import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
 import { topology as topojsonTopology } from 'topojson-server';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import {
   buildFeatureId,
   extractGeometryStats,

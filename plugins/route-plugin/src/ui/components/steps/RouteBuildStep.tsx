@@ -562,7 +562,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="body2" color="text.secondary">
-        {t('stage.review', 'Review the configuration and press Build to start the batch route generation.')}
+        {t('stage.review', 'Review the configuration and press Build to start the build route generation.')}
       </Typography>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">

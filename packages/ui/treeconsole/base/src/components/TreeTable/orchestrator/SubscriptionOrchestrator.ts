@@ -48,7 +48,7 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
   const [tableData, setTableData] = useAtom(tableDataAtom);
 
   // Refs for batching
-  const updateBatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateBuildTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Holds an unsubscribe function returned by subscription API
   const subscriptionRef = useRef<(() => void) | null>(null);
 
@@ -115,22 +115,22 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
       const batch = coalesceBatches(pending);
       const mergedData = mergeUpdates([batch]);
       setTableData(mergedData);
-      console.log('[TreeConsole][Subscription] processed batch', {
+      console.log('[TreeConsole][Subscription] processed build', {
         pendingCount: pending.length,
         mergedLength: mergedData.length,
       });
 
       const dt = (performance.now?.() ?? Date.now()) - t0;
       if (pending.length > 200 || dt > 200) {
-        console.warn('[Subscription] heavy batch', { count: pending.length, ms: Math.round(dt) });
+        console.warn('[Subscription] heavy build', { count: pending.length, ms: Math.round(dt) });
       }
 
       return [];
     });
 
-    if (updateBatchTimerRef.current) {
-      clearTimeout(updateBatchTimerRef.current);
-      updateBatchTimerRef.current = null;
+    if (updateBuildTimerRef.current) {
+      clearTimeout(updateBuildTimerRef.current);
+      updateBuildTimerRef.current = null;
     }
   }, [setPendingUpdates, mergeUpdates, setTableData]);
 
@@ -141,17 +141,17 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
   let scheduleProcess: () => void;
 
   scheduleProcess = useCallback(() => {
-    if (updateBatchTimerRef.current) {
-      clearTimeout(updateBatchTimerRef.current);
+    if (updateBuildTimerRef.current) {
+      clearTimeout(updateBuildTimerRef.current);
     }
-    updateBatchTimerRef.current = setTimeout(() => {
+    updateBuildTimerRef.current = setTimeout(() => {
       processPendingUpdates();
     }, BATCH_DELAY_MS);
   }, [processPendingUpdates]);
 
   const handleSubTreeUpdate = useCallback(
     (changes: SubTreeChanges) => {
-      console.log('[TreeConsole][Subscription] enqueue batch', {
+      console.log('[TreeConsole][Subscription] enqueue build', {
         added: changes.added?.length ?? 0,
         updated: changes.updated?.length ?? 0,
         removed: changes.removed?.length ?? 0,
@@ -192,7 +192,7 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
             hasNode: Boolean(safeNode),
             keys: safeNode ? Object.keys(safeNode) : [],
           });
-          // Map a single node event to our local SubTreeChanges batch form
+          // Map a single node event to our local SubTreeChanges build form
           const batch: SubTreeChanges = (() => {
             switch (safeEvent.type) {
               case 'created':
@@ -265,9 +265,9 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
       }
     }
 
-    if (updateBatchTimerRef.current) {
-      clearTimeout(updateBatchTimerRef.current);
-      updateBatchTimerRef.current = null;
+    if (updateBuildTimerRef.current) {
+      clearTimeout(updateBuildTimerRef.current);
+      updateBuildTimerRef.current = null;
     }
 
     processPendingUpdates();
@@ -281,8 +281,8 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
       if (subscriptionRef.current) {
         subscriptionRef.current();
       }
-      if (updateBatchTimerRef.current) {
-        clearTimeout(updateBatchTimerRef.current);
+      if (updateBuildTimerRef.current) {
+        clearTimeout(updateBuildTimerRef.current);
       }
     };
   }, []);

@@ -10,7 +10,7 @@ After this change, the Step5 Build screen in the shape plugin shows a stage-by-s
 
 ## Progress
 
-- [x] (2025-12-21 08:35 JST) Create a shared batch-task summary type in `packages/common/api/src/BatchControlAPI.ts` and expose `getBatchTasks` on `WorkerAPI`.
+- [x] (2025-12-21 08:35 JST) Create a shared build-task summary type in `packages/common/api/src/BatchControlAPI.ts` and expose `getBatchTasks` on `WorkerAPI`.
 - [x] (2025-12-21 08:40 JST) Expose a `getBatchTasks` entry in the worker API facade in `app/src/worker-runtime/worker.ts` and wire a nodeType → provider map from loaded plugin modules.
 - [x] (2025-12-21 08:45 JST) Implement shape worker task retrieval in `plugins/shape-plugin/src/worker/api.ts` and export a summary provider from `plugins/shape-plugin/src/worker/index.ts`.
 - [x] (2025-12-21 08:55 JST) Add a UI hook that fetches batch tasks via `WorkerBridge` and use it in Step5 to render task lists and update pane header counts.

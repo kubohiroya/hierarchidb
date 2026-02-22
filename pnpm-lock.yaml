@@ -283,9 +283,9 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../packages/batch-api
+        version: link:../packages/build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../packages/core-types
@@ -355,9 +355,12 @@ importers:
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../packages/tree-api
-      '@hierarchidb/ui-batch-progress':
+      '@hierarchidb/ui-build':
         specifier: workspace:*
-        version: link:../packages/ui/batch
+        version: link:../packages/ui/build
+      '@hierarchidb/ui-build-progress':
+        specifier: workspace:*
+        version: link:../packages/ui/build-progress
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../packages/ui/country-select
@@ -597,11 +600,11 @@ importers:
         specifier: ^4.31.0
         version: 4.42.2(@cloudflare/workers-types@4.20251011.0)
 
-  packages/batch:
+  packages/build:
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
@@ -618,7 +621,7 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/batch-api:
+  packages/build-api:
     devDependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
@@ -627,15 +630,14 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/batch-runtime-services:
-    dependencies:
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../batch
+  packages/build-runtime-services:
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build
+      '@hierarchidb/build-api':
+        specifier: workspace:*
+        version: link:../build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
@@ -649,7 +651,7 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/batch-session-ports:
+  packages/build-session-ports:
     dependencies:
       '@hierarchidb/core-types':
         specifier: workspace:*
@@ -1193,9 +1195,9 @@ importers:
 
   packages/route-api:
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
@@ -1358,9 +1360,9 @@ importers:
       '@hierarchidb/auth-api':
         specifier: workspace:*
         version: link:../auth-api
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../chunk-store
@@ -1763,14 +1765,14 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/ui/batch:
+  packages/ui/build:
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../batch-api
-      '@hierarchidb/batch-runtime-services':
+        version: link:../../build-api
+      '@hierarchidb/build-runtime-services':
         specifier: workspace:*
-        version: link:../../batch-runtime-services
+        version: link:../../build-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../components
@@ -1797,10 +1799,10 @@ importers:
         version: link:../../worker-api
       '@mui/icons-material':
         specifier: ^7.3.6
-        version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+        version: 7.3.8(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@mui/material':
         specifier: ^7.3.6
-        version: 7.3.6(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       comlink:
         specifier: '>=4.0.0'
         version: 4.4.2
@@ -2853,9 +2855,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.2
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../../batch-api
+        version: link:../../../build-api
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
@@ -2987,9 +2989,9 @@ importers:
         specifier: workspace:*
         version: link:../../auth-api
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../batch-api
+        version: link:../../build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
@@ -3084,9 +3086,9 @@ importers:
 
   packages/util:
     dependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
     devDependencies:
       '@types/node':
         specifier: 18.19.123
@@ -3135,9 +3137,9 @@ importers:
         specifier: ^7.0.0
         version: 7.2.0
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../chunk-store
@@ -3192,9 +3194,9 @@ importers:
 
   packages/worker-api:
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../batch-api
+        version: link:../build-api
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
@@ -3565,9 +3567,9 @@ importers:
       '@hierarchidb/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../packages/batch-api
+        version: link:../../packages/build-api
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3592,9 +3594,9 @@ importers:
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth
-      '@hierarchidb/ui-batch-progress':
+      '@hierarchidb/ui-build-progress':
         specifier: workspace:*
-        version: link:../../packages/ui/batch
+        version: link:../../packages/ui/build-progress
       '@hierarchidb/ui-floating-window':
         specifier: workspace:*
         version: link:../../packages/ui/floating-window
@@ -3722,9 +3724,9 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
-      '@hierarchidb/batch-runtime-services':
+      '@hierarchidb/build-runtime-services':
         specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
+        version: link:../../packages/build-runtime-services
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
@@ -3755,9 +3757,6 @@ importers:
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
         version: link:../../packages/tabular-source-xlsx
-      '@hierarchidb/ui-batch-progress':
-        specifier: workspace:*
-        version: link:../../packages/ui/batch
       '@hierarchidb/ui-build-progress':
         specifier: workspace:*
         version: link:../../packages/ui/build-progress
@@ -3804,9 +3803,9 @@ importers:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
     devDependencies:
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../packages/batch-api
+        version: link:../../packages/build-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/chunk-store
@@ -3934,12 +3933,12 @@ importers:
       '@hierarchidb/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@hierarchidb/batch-api':
+      '@hierarchidb/build-api':
         specifier: workspace:*
-        version: link:../../packages/batch-api
-      '@hierarchidb/batch-runtime-services':
+        version: link:../../packages/build-api
+      '@hierarchidb/build-runtime-services':
         specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
+        version: link:../../packages/build-runtime-services
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/chunk-store
@@ -3988,9 +3987,6 @@ importers:
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth
-      '@hierarchidb/ui-batch-progress':
-        specifier: workspace:*
-        version: link:../../packages/ui/batch
       '@hierarchidb/ui-build-progress':
         specifier: workspace:*
         version: link:../../packages/ui/build-progress
@@ -4202,6 +4198,9 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/spreadsheet-store':
+        specifier: workspace:*
+        version: link:../../packages/spreadsheet-store
       '@hierarchidb/styler-store':
         specifier: workspace:*
         version: link:../../packages/styler-store

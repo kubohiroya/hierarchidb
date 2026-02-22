@@ -13,7 +13,7 @@ processor.ts        Processor pipeline helpers
 store.ts            StorePort helpers
 ports.ts            StorePort/ParserPort contracts
 capability.ts       Capability helpers
-batch-types.ts            Tabular types (schema/chunks)
+build-types.ts            Tabular types (schema/chunks)
 index.ts            Public exports
 ```
 

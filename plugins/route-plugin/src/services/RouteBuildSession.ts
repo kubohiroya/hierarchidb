@@ -1,21 +1,19 @@
-import { AbstractBuildSession } from '@hierarchidb/batch-runtime-services';
-import type { BuildProgressEvent, TaskStatus } from '@hierarchidb/batch-api';
+import { AbstractBuildSession } from '@hierarchidb/build-runtime-services';
+import type { BuildProgressEvent, TaskStatus } from '../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
-import type { TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { TaskQueueRecord } from '../../../../packages/build-api';
 import { runStageTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { TaskStage } from '../../../../packages/build-api';
 
-export type RouteBuildTaskType = 'location_resolution' | 'route_generation' | 'validation' | 'optimization';
 export type RouteBuildTaskStage = 'location-resolution' | 'route-generation' | 'validation' | 'optimization';
 
 export type RouteBuildTask = {
   taskId: string;
   treeNodeId: NodeId;
   nodeId: NodeId;
-  taskType: RouteBuildTaskType;
   stage: RouteBuildTaskStage;
   status: TaskStatus;
   index: number;
@@ -31,7 +29,7 @@ export type RouteBuildTask = {
 };
 
 export type RouteBuildTaskQueueInput = {
-  taskType: RouteBuildTaskType;
+  routeStage: RouteBuildTaskStage;
   routeData?: RouteBuildTask['routeData'];
 };
 
@@ -66,15 +64,15 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     let { completed, failed } = this.countTaskResults();
     this.updateProgress({ total, completed, failed }, 'idle');
 
-    const resolveTaskFilter = (taskType: RouteBuildTaskType) =>
-      (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.taskType === taskType;
+    const resolveTaskFilter = (routeStage: RouteBuildTaskStage) =>
+      (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.routeStage === routeStage;
 
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'fetch',
-      taskFilter: resolveTaskFilter('location_resolution'),
+      taskFilter: resolveTaskFilter('location-resolution'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleNoopRouteTask(task, 'location_resolution', 'location-resolution'),
+        this.handleNoopRouteTask(task, 'location-resolution'),
       failureHandling: 'continue',
     } as {
       nodeId: TaskQueueRecord['nodeId'];
@@ -96,7 +94,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'transform',
-      taskFilter: resolveTaskFilter('route_generation'),
+      taskFilter: resolveTaskFilter('route-generation'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>, _signal: AbortSignal) =>
         this.handleRouteGenerationTask(task, signal),
       maxConcurrent: this.config.routeGeneration?.parallel ? globalMaxConcurrent : 1,
@@ -130,7 +128,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       stage: 'transform',
       taskFilter: resolveTaskFilter('validation'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleNoopRouteTask(task, 'validation', 'validation'),
+        this.handleNoopRouteTask(task, 'validation'),
       failureHandling: 'continue',
     } as {
       nodeId: TaskQueueRecord['nodeId'];
@@ -153,7 +151,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       stage: 'vt',
       taskFilter: resolveTaskFilter('optimization'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleNoopRouteTask(task, 'optimization', 'optimization'),
+        this.handleNoopRouteTask(task, 'optimization'),
       failureHandling: 'continue',
     } as {
       nodeId: TaskQueueRecord['nodeId'];
@@ -199,14 +197,14 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       const message = 'Route build task missing coordinates';
       localTask.status = 'failed';
       localTask.error = message;
-      this.updateProgressByTaskType(localTask.stage);
+      this.updateProgressByStage(localTask.stage);
       throw new Error(message);
     }
 
     await this.runRouteTask([start, end], method, options, signal);
 
     localTask.status = 'completed';
-    this.updateProgressByTaskType(localTask.stage);
+    this.updateProgressByStage(localTask.stage);
     return {
       status: 'completed',
       progress: 100,
@@ -215,23 +213,22 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
   private async handleNoopRouteTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
-    taskType: RouteBuildTaskType,
     stage: RouteBuildTaskStage,
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.taskType !== taskType) {
+    if (localTask.stage !== stage) {
       localTask.status = 'failed';
-      const error = `Unexpected route task type. expected=${taskType}, actual=${localTask.taskType}`;
+      const error = `Unexpected route task stage. expected=${stage}, actual=${localTask.stage}`;
       localTask.error = error;
-      this.updateProgressByTaskType(stage);
+      this.updateProgressByStage(stage);
       throw new Error(error);
     }
     localTask.status = 'completed';
     localTask.error = undefined;
-    this.updateProgressByTaskType(stage);
+    this.updateProgressByStage(stage);
     return {
       status: 'completed',
       progress: 100,
@@ -274,7 +271,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     return this.tasksById.get(taskId);
   }
 
-  private updateProgressByTaskType(stage: RouteBuildTaskStage): void {
+  private updateProgressByStage(stage: RouteBuildTaskStage): void {
     const { completed, failed } = this.countTaskResults();
     this.updateProgress({ total: this.tasks.length, completed, failed }, stage);
   }

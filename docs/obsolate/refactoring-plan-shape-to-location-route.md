@@ -52,7 +52,7 @@
 
 > 低リスク・高リターンの順。
 
-### 1) Layer0: `batch-session-ports` を新設（型/ポートのみ）
+### 1) Layer0: `build-session-ports` を新設（型/ポートのみ）
 
 **目的**: orchestrator をアプリ/プラグイン実装から切り離すための最小契約を固める。
 

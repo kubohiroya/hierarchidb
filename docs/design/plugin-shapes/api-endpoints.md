@@ -232,7 +232,7 @@ options: {
 {
   "success": true,
   "data": {
-    "taskId": "batch-task-001",
+    "taskId": "build-task-001",
     "status": "pending",
     "estimatedDuration": 15000,
     "sourcesCount": 2
@@ -248,7 +248,7 @@ options: {
 {
   "success": true,
   "data": {
-    "taskId": "batch-task-001",
+    "taskId": "build-task-001",
     "status": "running",
     "progress": {
       "current": 1,
@@ -554,7 +554,7 @@ wss://api.example.com/t/:treeId/:pageNodeId/:targetNodeId/shapes/ws
 ```json
 {
   "type": "progress",
-  "taskId": "batch-task-001",
+  "taskId": "build-task-001",
   "data": {
     "percentage": 75,
     "stage": "processing",

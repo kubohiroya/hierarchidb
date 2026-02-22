@@ -106,7 +106,7 @@ export const resolveTaskDisplay = (task: RawTaskSummary): ShapeBuildTaskSummary 
   const progress = typeof task.progress === 'number' && Number.isFinite(task.progress)
     ? task.progress : 0;
   const normalizedStage = ((): ShapeBuildTaskSummary['stage'] => {
-    const candidates: Array<unknown> = [task.stage, task.type];
+    const candidates: Array<unknown> = [task.stage];
     if (candidates.includes('fetch')) return 'fetch';
     if (candidates.includes('transform')) return 'transform';
     return 'vt';
@@ -121,8 +121,6 @@ export const resolveTaskDisplay = (task: RawTaskSummary): ShapeBuildTaskSummary 
   return {
     ...task,
     stage: normalizedStage,
-    taskType: normalizedStage,
-    type: normalizedStage,
     status: normalizedStatus,
     progress: normalizeTaskProgress(normalizedStatus, progress, task.display, task.message),
   };

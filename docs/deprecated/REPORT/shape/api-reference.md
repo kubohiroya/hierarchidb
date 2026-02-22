@@ -559,15 +559,15 @@ export interface TaskCompletedEvent {
 
 ```typescript
 // Subscribe to events
-shapesAPI.on('batch:progress', (event) => {
+shapesAPI.on('build:progress', (event) => {
   console.log(`Batch ${event.sessionId} progress: ${event.progress.overallProgress}%`);
 });
 
 // Unsubscribe
-shapesAPI.off('batch:progress', handler);
+shapesAPI.off('build:progress', handler);
 
 // One-time subscription
-shapesAPI.once('batch:completed', (event) => {
+shapesAPI.once('build:completed', (event) => {
   console.log('Batch processing completed');
 });
 ```

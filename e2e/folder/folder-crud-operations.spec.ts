@@ -344,9 +344,9 @@ test.describe('Folder CRUD Operations', () => {
     // 一括削除を実行
     await page.locator('[data-testid="context-menu-remove"]').click();
     await expect(
-      page.locator('[data-testid="batch-archive-confirmation-base-dialog"]')
+      page.locator('[data-testid="build-archive-confirmation-base-dialog"]')
     ).toBeVisible();
-    await page.locator('[data-testid="confirm-batch-archive"]').click();
+    await page.locator('[data-testid="confirm-build-archive"]').click();
 
     // すべてのフォルダが削除されることを確認
     await expect(

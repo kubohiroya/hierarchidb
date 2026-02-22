@@ -1,13 +1,11 @@
 import { atom } from 'jotai';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import type { BuildTaskSummary } from '@hierarchidb/batch-api';
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary } from '../../../../../packages/build-api';
+import type { TaskStage } from '../../../../../packages/build-api';
 
 export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
   stage: TaskStage;
-  taskType?: TaskStage;
-  type?: TaskStage;
   index?: number;
   stagePriority?: number;
   metadata?: Record<string, unknown>;
@@ -47,6 +45,7 @@ export type TaskProgressControls = {
   startPending?: boolean;
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void;
+  handleCancelQueued?: () => Promise<void> | void;
   stopRequested?: boolean;
 };
 
@@ -124,6 +123,7 @@ export const taskProgressControlsAtom = atom<TaskProgressControls>({
   startPending: false,
   handleStartOrResume: async () => {},
   handlePause: () => {},
+  handleCancelQueued: async () => {},
   stopRequested: false,
 });
 export const taskProgressAuthAtom = atom<TaskProgressAuthState>({

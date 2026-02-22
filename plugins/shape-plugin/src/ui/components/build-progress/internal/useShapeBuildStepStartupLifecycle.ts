@@ -22,7 +22,7 @@ type UseShapeBuildSessionStartupLifecycleArgs = {
   activeNodeId: string | null;
   buildSessionTransition: BuildSessionTransitionState<BuildSessionTransitionPhase>;
   buildStatus: BuildStatusSource;
-  resolveTaskType: string | null;
+  resolveStage: string | null;
   effectiveProgress: BuildProgress | null;
   displayTasks: ShapeBuildTaskSummary[];
   hasFirstTaskSignal: boolean;
@@ -33,7 +33,7 @@ type UseShapeBuildSessionStartupLifecycleArgs = {
   sessionProgressTotal?: number;
   sessionStageId: string | null;
   awaitingFirstTaskExpectationRef: { current: boolean };
-  resolvedTaskType: string | undefined;
+  resolvedStage: string | undefined;
   lastAwaitingFirstTaskDecisionTraceKeyRef: { current: string | null };
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
   progressTerminalLogKeyRef: { current: string | null };
@@ -63,7 +63,7 @@ export const useShapeBuildSessionStartupLifecycle = ({
   activeNodeId,
   buildSessionTransition,
   buildStatus,
-  resolveTaskType,
+  resolveStage,
   effectiveProgress,
   displayTasks,
   hasFirstTaskSignal,
@@ -74,7 +74,7 @@ export const useShapeBuildSessionStartupLifecycle = ({
   sessionProgressTotal,
   sessionStageId,
   awaitingFirstTaskExpectationRef,
-  resolvedTaskType,
+  resolvedStage,
   lastAwaitingFirstTaskDecisionTraceKeyRef,
   buildSessionTransitionTaskStartNotifiedRef,
   progressTerminalLogKeyRef,
@@ -91,14 +91,14 @@ export const useShapeBuildSessionStartupLifecycle = ({
     activeNodeId,
     buildStatus,
     effectiveProgress,
-    resolveTaskType,
+    resolveStage,
   });
 
   useShapeBuildSessionStartupProgressTerminalLog({
     buildStatus,
     effectiveProgress,
     runtimeStatus,
-    resolvedTaskType,
+    resolvedStage,
     progressTerminalLogKeyRef,
     emitBuildSessionTransitionLog,
     buildSessionTransition,

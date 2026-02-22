@@ -2,12 +2,12 @@
     */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory';
-import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type SaveTarget, type DataSourceConfig } from '../DataSourceStrategy';
-import { NaturalEarthStrategy } from '../NaturalEarthStrategy';
-import { GADMStrategy } from '../GADMStrategy';
-import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
-import type { ShapeFeaturePayload } from '../../../common/types/ShapeFeaturePayload';
+import { DataSourceStrategyFactory, type DataSourceStrategyId, defaultDataSourceFactory } from '../../DataSourceStrategyFactory';
+import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type SaveTarget, type DataSourceConfig } from '../../DataSourceStrategy';
+import { NaturalEarthStrategy } from '../../NaturalEarthStrategy';
+import { GADMStrategy } from '../../GADMStrategy';
+import { GeoBoundariesStrategy } from '../../GeoBoundariesStrategy';
+import type { ShapeFeaturePayload } from '../../../../common/types/ShapeFeaturePayload';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -30,7 +30,7 @@ vi.mock('@hierarchidb/auth', () => {
       return new Response(JSON.stringify({ simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
     }
     if (url.includes('mock.local/gb.geojson')) {
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] } as any), { status: 200 });
+      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });
     }
 
     // Default health check OK
@@ -50,7 +50,7 @@ const mockFetch = vi.mocked(fetch);
 
 // (Removed unused mock fixtures)
 
-const minimalBatchConfig = {
+const minimalBuildConfig = {
   dataSource: 'naturalearth' as const,
   downloadConfig: {
     maxConcurrent: 1,
@@ -83,7 +83,7 @@ const minimalBatchConfig = {
   },
 };
 
-class TestStrategy extends BaseDataSourceStrategy<any, ShapeFeaturePayload[]> {
+class TestStrategy extends BaseDataSourceStrategy<unknown, ShapeFeaturePayload[]> {
   readonly id = 'test-strategy';
   readonly name = 'Test Strategy';
   readonly config: DataSourceConfig = {
@@ -101,15 +101,16 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeFeaturePayload[]> {
     },
   };
 
-  async fetchData(options?: FetchOptions): Promise<any> {
+  async fetchData(options?: FetchOptions): Promise<{test: string, options?: FetchOptions}> {
     return { test: 'data', options };
   }
 
-  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeFeaturePayload[]> {
+  async processData(_rawData: unknown, _options?: ProcessOptions): Promise<ShapeFeaturePayload[]> {
     const entity: ShapeFeaturePayload = {
-      buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
-      licenseAgreement: true,
-      selectedArrayByCountries: { US: [true] },
+      properties: {
+        licenseAgreement: true,
+        selectedArrayByCountries: { US: [true] },
+      },
     };
     return [entity];
   }
@@ -151,14 +152,16 @@ describe('DataSourceStrategy', () => {
 
       const result = await strategy.processData(rawData, options);
       expect(result).toHaveLength(1);
-      expect(result[0]?.buildConfig).toBeDefined();
+      expect(result[0]?.properties).toBeDefined();
     });
 
     it('should validate data successfully', async () => {
     const data: ShapeFeaturePayload[] = [{
-        buildConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
+      properties: {
+        buildConfig: { ...minimalBuildConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
+      },
       }];
 
       const result = await strategy.validateData(data);
@@ -236,7 +239,7 @@ describe('DataSourceStrategyFactory', () => {
 
   it('should throw error for unknown strategy', () => {
     expect(() => {
-      factory.create('unknown-strategy' as any);
+      factory.create('unknown-strategy' as DataSourceStrategyId);
     }).toThrow('Unknown data source strategy: unknown-strategy');
   });
 
@@ -272,8 +275,8 @@ describe('DataSourceStrategyFactory', () => {
 
   it('should register custom strategy', () => {
     const customStrategy = new TestStrategy();
-    factory.register('test-strategy' as any, () => customStrategy, {
-      id: 'test-strategy' as any,
+    factory.register('test-strategy' as DataSourceStrategyId, () => customStrategy, {
+      id: 'test-strategy' as DataSourceStrategyId,
       name: 'Test Strategy',
       description: 'Test strategy for unit tests',
       category: 'general',
@@ -285,8 +288,8 @@ describe('DataSourceStrategyFactory', () => {
       supported: true,
     });
 
-    expect(factory.hasStrategy('test-strategy' as any)).toBe(true);
-    const created = factory.create('test-strategy' as any);
+    expect(factory.hasStrategy('test-strategy' as DataSourceStrategyId)).toBe(true);
+    const created = factory.create('test-strategy' as DataSourceStrategyId);
     expect(created).toBeInstanceOf(TestStrategy);
   });
 
@@ -422,7 +425,7 @@ describe('Integration Tests', () => {
   it('should handle errors gracefully', async () => {
     const strategy = new TestStrategy();
 
-    const invalidData = null as any;
+    const invalidData = null;
     const result = await strategy.validateData(invalidData);
     expect(result.isValid).toBe(false);
 

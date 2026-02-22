@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, TaskQueueRecord } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 

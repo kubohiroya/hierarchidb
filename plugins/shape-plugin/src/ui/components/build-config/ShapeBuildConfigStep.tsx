@@ -32,7 +32,7 @@ import {
   type ShapeEntity,
   type ShapeRuntimeBuildConfig,
 } from '~/common/types/index';
-import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const toBuildConfigUpdate = (
   partial: Partial<ShapeRuntimeBuildConfig>

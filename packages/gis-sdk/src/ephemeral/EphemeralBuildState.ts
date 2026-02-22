@@ -71,8 +71,7 @@ export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   domainType?: EphemeralDomainType;
   status: BuildTaskStatus;
   index: number;
-  stage?: BuildStage;
-  taskType?: never;
+  stage: BuildStage;
   stagePriority?: number;
   progress: number;
   display?: TaskDisplayPayload;
@@ -173,9 +172,9 @@ export const EPHEMERAL_DB_SCHEMA_V1: Record<string, string> = {
   sessions:
     '&nodeId, status, updatedAt',
   buildTasks:
-    '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]',
+    '&taskId, nodeId, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
   fetchCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   fetchCacheMeta:
@@ -194,9 +193,9 @@ export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
   sessions:
     '&nodeId',
   buildTasks:
-    '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
-    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage]'
-    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]',
+    '&taskId, nodeId, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
   fetchCache:
     '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
   fetchCacheMeta:

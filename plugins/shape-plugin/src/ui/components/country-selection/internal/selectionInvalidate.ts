@@ -2,7 +2,7 @@ import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { deleteRawDataDataSourceBuffersForNodeMetadataIds } from '~/services/utils/chunkStore';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { sanitizeShapeDraftData } from '~/ui/utils/sanitizeShapeDraftData';
 import { type BuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { NodeId } from '@hierarchidb/core-types';

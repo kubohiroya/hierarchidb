@@ -146,7 +146,7 @@ export type ResourceReferenceType =
   | 'styler'          // Reference to styler-plugin node
   | 'location'          // Reference to location node
   | 'route'             // Reference to route node
-  | 'folder';           // Reference to folder-plugin (for batch operations)
+  | 'folder';           // Reference to folder-plugin (for build operations)
 ```
 
 #### LayerConfiguration (RelationalEntity)

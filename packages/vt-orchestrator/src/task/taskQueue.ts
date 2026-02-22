@@ -12,10 +12,14 @@ export type StoredTaskRecord = EphemeralBuildTaskRecord;
 export const toTaskQueueRecord = (
   task: StoredTaskRecord
 ): TaskQueueRecord => {
-  if (task.stage === undefined) {
+  const { stage } = task;
+  if (stage === undefined) {
     throw new Error(`Task ${task.taskId} is missing required stage`);
   }
-  return task;
+  return {
+    ...task,
+    stage,
+  };
 };
 
 export class VtTaskQueueDb {

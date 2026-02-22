@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
   deleteTasksByNode: vi.fn(),
   initializeBridge: vi.fn(),
   getBuildSessionStatus: vi.fn(),
-  listBuildTasksByType: vi.fn(),
+  listBuildTasksByStage: vi.fn(),
   deleteBuildTasksByIds: vi.fn(),
   notifySuccess: vi.fn(),
   notifyError: vi.fn(),
@@ -48,11 +48,11 @@ vi.mock('../../../../services/utils/chunkStore.js', () => ({
   deleteRawDataDataSourceBuffersForNode: mocks.deleteRawDataDataSourceBuffersForNode,
 }));
 
-vi.mock('../../../../services/batch/ShapeBuildAPIClient.ts', () => ({
+vi.mock('../../../../services/build/ShapeBuildAPIClient.ts', () => ({
   ephemeralShapeAPIImpl: {
     countFetchCaches: mocks.countFetchCaches,
     countTransformCaches: mocks.countTransformCaches,
-    listBuildTasksByType: mocks.listBuildTasksByType,
+    listBuildTasksByStage: mocks.listBuildTasksByStage,
     deleteBuildTasksByIds: mocks.deleteBuildTasksByIds,
   },
   shapeMutationAPIImpl: {
@@ -118,7 +118,7 @@ describe('useShapeBuildCacheActions', () => {
     mocks.countRawDataDataSourceBuffersForNode.mockResolvedValue(0);
     mocks.deleteRawDataDataSourceBuffersForNode.mockResolvedValue(undefined);
     mocks.deleteTasksByNode.mockResolvedValue(undefined);
-    mocks.listBuildTasksByType.mockResolvedValue([]);
+    mocks.listBuildTasksByStage.mockResolvedValue([]);
     mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
     mocks.initializeBridge.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });
@@ -129,7 +129,7 @@ describe('useShapeBuildCacheActions', () => {
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0);
     mocks.countFetchCaches.mockResolvedValue(0);
-    mocks.listBuildTasksByType
+    mocks.listBuildTasksByStage
       .mockResolvedValueOnce([{ taskId: 'task-fetch' }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
@@ -155,7 +155,7 @@ describe('useShapeBuildCacheActions', () => {
     });
 
     expect(mocks.deleteRawDataDataSourceBuffersForNode).toHaveBeenCalledWith('node-1');
-    expect(mocks.listBuildTasksByType).toHaveBeenCalledWith('node-1', 'fetch');
+    expect(mocks.listBuildTasksByStage).toHaveBeenCalledWith('node-1', 'fetch');
     expect(mocks.deleteBuildTasksByIds).toHaveBeenCalledWith(['task-fetch']);
     expect(mocks.notifySuccess).toHaveBeenCalledWith('Deleted API cache');
   });
@@ -165,7 +165,7 @@ describe('useShapeBuildCacheActions', () => {
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0);
     mocks.countFetchCaches.mockResolvedValue(0);
-    mocks.listBuildTasksByType.mockResolvedValueOnce([{ taskId: 'task-1' }]);
+    mocks.listBuildTasksByStage.mockResolvedValueOnce([{ taskId: 'task-1' }]);
     mocks.deleteBuildTasksByIds.mockRejectedValue(new Error('task clear failed'));
     mocks.deleteBuildTasksByIds.mockResolvedValue(undefined);
     mocks.getBuildSessionStatus.mockResolvedValue({ status: 'idle' });

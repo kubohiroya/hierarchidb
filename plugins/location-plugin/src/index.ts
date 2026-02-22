@@ -9,5 +9,5 @@ export type { LocationAttributionInfo } from './common/datasources/attribution.j
 export { resolveLocationAttribution } from './common/datasources/attribution.js';
 export * as worker from './worker/index.js';
 
-// Services entry (DB, batch managers, download registry, etc.)
+// Services entry (DB, build managers, download registry, etc.)
 export * from './services/index.js';

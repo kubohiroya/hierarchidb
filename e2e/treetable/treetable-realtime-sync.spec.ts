@@ -161,7 +161,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     ).toBeVisible();
 
     // バッチ更新インジケーターの確認
-    await expect(page.locator('[data-testid="batch-update-indicator"]')).toHaveText(
+    await expect(page.locator('[data-testid="build-update-indicator"]')).toHaveText(
       /3 items updated/
     );
   });

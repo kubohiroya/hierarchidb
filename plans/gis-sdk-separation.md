@@ -55,7 +55,7 @@ Second, update `plugins/shape-plugin`, `plugins/location-plugin`, and `plugins/r
 
 Third, align type definitions and dependencies. The GIS SDK should own dependencies like `geojson-vt`, `@turf/area`, and any GeoJSON-related helpers. The runtime-worker should not depend on GIS-specific libraries. Where possible, move imports from runtime-worker into the GIS SDK or into the plugins that use the SDK. This keeps the dependency graph clean and avoids forcing runtime-worker to ship GIS dependencies.
 
-Fourth, prioritize shared logic under `plugins/shape-plugin/src/services` and migrate it into the SDK with abstractions so that location/route can reuse it. This includes batch-stage helpers, storage ports, data normalization utilities, and tile-generation helpers. The goal is to keep plugin-specific code small and focused on configuration rather than implementation.
+Fourth, prioritize shared logic under `plugins/shape-plugin/src/services` and migrate it into the SDK with abstractions so that location/route can reuse it. This includes build-stage helpers, storage ports, data normalization utilities, and tile-generation helpers. The goal is to keep plugin-specific code small and focused on configuration rather than implementation.
 
 Finally, update tests and validation. Add or update tests in the GIS SDK package or in the plugins so that vector tile generation still works. Verify that shape/location/route plugin flows still behave as before.
 

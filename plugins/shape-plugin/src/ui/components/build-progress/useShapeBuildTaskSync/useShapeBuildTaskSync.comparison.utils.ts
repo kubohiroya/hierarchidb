@@ -1,5 +1,5 @@
-import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
-import { compareTaskOrderByIndexThenId } from '@hierarchidb/ui-batch-progress';
+import type { TaskDisplayPayload, TaskStage } from '../../../../../../../packages/build-api';
+import { compareTaskOrderByIndexThenId } from '../../../../../../../packages/ui/build';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
@@ -44,7 +44,7 @@ export const areTasksEquivalentForView = (
 );
 
 export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  const candidates = [task.stage, task.type] as Array<unknown>;
+  const candidates = [task.stage] as Array<unknown>;
   return candidates.find((candidate) => (
     candidate === 'fetch' || candidate === 'transform' || candidate === 'vt'
   )) as TaskStage;
@@ -237,8 +237,6 @@ export const normalizeTask = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   return {
     ...task,
     stage,
-    taskType: stage,
-    type: stage,
     status: normalizedStatus,
     progress: normalizeTaskProgress(normalizedStatus, task.display, task.message, progress),
   };

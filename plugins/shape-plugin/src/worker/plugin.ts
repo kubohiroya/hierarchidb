@@ -9,13 +9,44 @@ import type { ShapeEntity } from '~/common/types/index';
 import { shapeBuildAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
+type ShapeWorkerPluginValidationResult = {
+  isValid: boolean;
+  errors?: string[];
+};
+
+type ShapeWorkerPluginType = {
+  metadata: typeof ShapeMetadata;
+  build: Record<string, unknown>;
+  entityHandler: ShapeEntityHandler;
+  database: {
+    tableName: string;
+    schema: string;
+    version: number;
+    additionalTables: Record<string, string>;
+  };
+  validation: {
+    validateEntity: (
+      entity: Partial<ShapeEntity>,
+    ) => Promise<ShapeWorkerPluginValidationResult> | ShapeWorkerPluginValidationResult;
+  };
+  lifecycle: {
+    afterCreate: (_nodeId: NodeId, _entity: ShapeEntity) => Promise<void> | void;
+    beforeDelete: (_nodeId: NodeId, _entity: ShapeEntity) => Promise<void> | void;
+    afterUpdate: (
+      _nodeId: NodeId,
+      _entity: ShapeEntity,
+      _changes: Partial<ShapeEntity>,
+    ) => Promise<void> | void;
+  };
+};
+
 /**
  * Worker Plugin definition for Shape plugin
  * Exports API implementation and entity handler for Worker environment
  */
 const shapeEntityHandlerInstance = new ShapeEntityHandler();
 
-export const ShapeWorkerPlugin = {
+export const ShapeWorkerPlugin: ShapeWorkerPluginType = {
   metadata: ShapeMetadata,
 
   // Build API for runtime worker adapters.
@@ -32,8 +63,8 @@ export const ShapeWorkerPlugin = {
 
     // Additional tables for shape-plugin data
     additionalTables: {
-      shapeBatchSessions: '&nodeId',
-      shapeBatchTasks: '&taskId, nodeId, stage, progress',
+      shapeBuildSessions: '&nodeId',
+      shapeBuildTasks: '&taskId, nodeId, stage, progress',
       shapeFeatures: '&featureId, nodeId, countryCode, adminLevel, geometry',
       shapeVectorTiles: '&tileId, nodeId, z, x, y, data, size',
       shapeCache: '&cacheKey, nodeId, cacheType, data, size, createdAt',
@@ -75,4 +106,4 @@ export const ShapeWorkerPlugin = {
       // Could trigger reprocessing if configuration changed
     },
   },
-} as const;
+};

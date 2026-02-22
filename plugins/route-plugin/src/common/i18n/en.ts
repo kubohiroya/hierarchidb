@@ -72,8 +72,8 @@ export const en: RoutePluginTranslations = {
     accessibility: 'Accessibility',
   },
 
-  // Batch processing
-  batch: {
+  // Build processing
+  build: {
     progressTitle: 'Progress',
     logsTitle: 'Logs',
     mapPreviewTitle: 'Route Preview',
@@ -85,7 +85,7 @@ export const en: RoutePluginTranslations = {
     exportRoutes: 'Export Routes',
     pauseTooltip: 'Pause processing',
     resumeTooltip: 'Resume processing',
-    cancelTooltip: 'Cancel batch',
+    cancelTooltip: 'Cancel build',
     stages: {
       planning: 'Route Planning',
       routing: 'Route Generation',

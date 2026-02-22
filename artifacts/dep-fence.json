@@ -301,7 +301,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-grid -> ../../ui/data-grid/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-build-processor -> ../../runtime-shared/build-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-grid -> ../../ui/data-grid/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -309,7 +309,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-grid -> ../../ui/data-grid/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-build-processor -> ../../runtime-shared/build-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-grid -> ../../ui/data-grid/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -433,8 +433,8 @@
       "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
     },
     {
-      "packageName": "@hierarchidb/runtime-shared-batch-processor",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-shared/batch-processor",
+      "packageName": "@hierarchidb/runtime-shared-build-processor",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-shared/build-processor",
       "rule": "external-in-deps",
       "severity": "WARN",
       "message": "external also in dependencies (consider peer):\n- @hierarchidb/download\n- @hierarchidb/auth-recovery",

@@ -657,7 +657,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
       // 4. Store in features buffers
       const bufferIds = await this.storeFeatureBuffers(geoJson, spatialIndices);
       
-      // 5. Create batch buffer record
+      // 5. Create build buffer record
       const bufferId = await this.createBatchBuffer(taskId, rawData, bufferIds);
       
       return {

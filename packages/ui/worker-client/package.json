@@ -52,7 +52,7 @@
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
@@ -62,7 +62,7 @@
     "comlink": "^4.4.1",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"

@@ -1,6 +1,6 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type TreeNode } from '@hierarchidb/tree-api';
-import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-batch-progress';
+import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build';
 import {
   isFolderNodeType,
   NodeContextMenu,

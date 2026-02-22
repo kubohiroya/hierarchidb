@@ -5,7 +5,7 @@ import {
   type EphemeralTransformCacheRecord,
 } from '@hierarchidb/gis-sdk';
 import type { Feature, FeatureCollection } from 'geojson';
-import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
+import type { TaskDisplayPayload } from '../../../../build-api';
 import type { StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
 import { buildBoundaryFeature } from '../geometry.js';
 import { finalizeTransformByBandCache } from './transformByBandTaskFinalize.js';

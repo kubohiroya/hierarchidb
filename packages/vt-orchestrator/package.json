@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
@@ -35,7 +35,7 @@
     "topojson-simplify": "^3.0.3"
   },
   "devDependencies": {
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",

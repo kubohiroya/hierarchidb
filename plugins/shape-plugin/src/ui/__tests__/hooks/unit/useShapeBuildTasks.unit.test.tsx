@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
+import type { BuildTaskUpdateEvent } from 'packages/build-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
 
 const hoistedMocks = vi.hoisted(() => ({
@@ -169,7 +169,7 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('prioritizes canonical stage over legacy taskType when they differ', async () => {
+  it('keeps canonical stage in task records', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-stage-priority'));
 
     await waitFor(() => {
@@ -184,7 +184,6 @@ describe('useShapeBuildTasks', () => {
           {
             taskId: 'task-stage-priority',
             stage: 'vt',
-            taskType: 'fetch',
             status: 'queued',
             progress: 0,
             index: 1,
@@ -195,8 +194,6 @@ describe('useShapeBuildTasks', () => {
 
     await waitFor(() => {
       expect(result.current.tasks[0]?.stage).toBe('vt');
-      expect(result.current.tasks[0]?.taskType).toBe('vt');
-      expect(result.current.tasks[0]?.type).toBe('vt');
     });
   });
 

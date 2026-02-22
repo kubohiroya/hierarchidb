@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Location auth-required visualization (mock 401)', () => {
-  test.skip(true, 'Wire up to UI flow when Location batch/search UI is live');
+  test.skip(true, 'Wire up to UI flow when Location build/search UI is live');
 
   test('shows auth-required banner when 401 occurs', async ({ page }) => {
     await page.route('**/nominatim.openstreetmap.org/**', (route) => {
@@ -9,7 +9,7 @@ test.describe('Location auth-required visualization (mock 401)', () => {
     });
     await page.goto('/');
     // TODO: Navigate to Location wizard and start a search that hits Nominatim
-    // Expect banner in BatchProgressDialog
+    // Expect banner in BuildProgressDialog
     // await expect(page.getByText('認証が必要です')).toBeVisible();
   });
 });

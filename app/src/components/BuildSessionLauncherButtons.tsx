@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/core-types';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { BuildSessionLauncherPanel, type BuildSessionLauncherEntry } from '@hierarchidb/ui-batch-progress';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
 import { openInNewTab } from '~/utils/openInNewTab';
+import { BuildSessionQueueList, type BuildSessionQueueEntry } from '~/components/BuildSessionQueueList';
 
 type BuildSessionLauncherButtonsProps = {
   treeId?: TreeId;
@@ -19,30 +19,33 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
     [location.pathname, location.searchStr]
   );
 
-  const handleNavigateToBuild = useCallback(
-    async (entry: BuildSessionLauncherEntry, options?: { openInNewTab?: boolean }) => {
-      if (!treeId || !pageNodeId || !workerClient) return;
-      if (!entry.node?.id) return;
-      await startBuildFlow({
-        treeId,
-        pageNodeId,
-        node: entry.node,
-        returnTo,
-        workerClient,
-        navigate: (to) => {
-          if (options?.openInNewTab) {
-            openInNewTab(to);
-            return;
-          }
-          navigate({ to });
-        },
-      });
-    },
-    [navigate, pageNodeId, returnTo, treeId, workerClient]
-  );
+  const handleNavigateToBuild = useCallback(async (entry: BuildSessionQueueEntry, options?: { openInNewTab?: boolean }) => {
+    if (!treeId || !pageNodeId || !workerClient) return;
+    const targetNode = entry.node
+      ?? await workerClient.getQueryAPI().then((queryAPI) => queryAPI.getNode(entry.session.nodeId)).catch(() => null);
+
+    if (!targetNode) {
+      return;
+    }
+
+    await startBuildFlow({
+      treeId,
+      pageNodeId,
+      node: targetNode,
+      returnTo,
+      workerClient,
+      navigate: (to) => {
+        if (options?.openInNewTab) {
+          openInNewTab(to);
+          return;
+        }
+        navigate({ to });
+      },
+    });
+  }, [navigate, pageNodeId, returnTo, treeId, workerClient]);
 
   return (
-    <BuildSessionLauncherPanel
+    <BuildSessionQueueList
       nodeType={toNodeType('shape')}
       onNavigateToBuild={handleNavigateToBuild}
     />

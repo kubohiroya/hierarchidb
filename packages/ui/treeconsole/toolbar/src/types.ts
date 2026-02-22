@@ -2,7 +2,7 @@
  * Types for TreeConsoleToolbar_Deprecated package
  */
 
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy } from '../../../../build-api';
 
 export type TreeConsoleSearchMode = 'local';
 
@@ -143,7 +143,7 @@ export interface TreeConsoleToolbarProps {
   onZoomBandBoundariesChange?: (boundaries: number[]) => void;
 
   /**
-   * Build continuation policy for batch processing.
+   * Build continuation policy for build processing.
    */
   buildContinuationPolicy?: BuildContinuationPolicy;
 

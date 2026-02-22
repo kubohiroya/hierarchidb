@@ -23,7 +23,6 @@ export interface ShapeEntityPayload {
   processingConfig?: ShapeProcessingConfig;
 
   selectedArrayByCountries?: SelectedArrayByCountries;
-  //batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
   stopReason?: ShapeBuildStopReason;
   buildStartedAt?: number;

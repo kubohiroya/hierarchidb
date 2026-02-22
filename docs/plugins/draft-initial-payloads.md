@@ -7,7 +7,7 @@
 ## folder (`nodeType: "folder"`)
 
 ### Payload 正規化
-参照: `plugins/folder-plugin/src/common/types/batch-types.ts`
+参照: `plugins/folder-plugin/src/common/types/build-types.ts`
 
 ```json
 {
