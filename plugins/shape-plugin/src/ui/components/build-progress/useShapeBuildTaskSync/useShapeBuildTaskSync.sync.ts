@@ -8,7 +8,7 @@ import {
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { upsertTaskInOrder } from '../../../../../../../packages/ui/build';
+import { upsertTaskInOrder } from '../../../../../../../packages/ui/build-sessions';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSync.state.js';
 import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSync.types.js';
 

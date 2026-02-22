@@ -1,6 +1,6 @@
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build';
+import { useOptionalBuildSessionRuntimeContext } from '@hierarchidb/ui-build-sessions';
 import type {
   TreeConsolePanelProps as BaseTreeConsolePanelProps,
   HierarchicalTreeNode,

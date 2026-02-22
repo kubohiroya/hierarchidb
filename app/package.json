@@ -50,7 +50,7 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/tag-api": "workspace:*",
-    "@hierarchidb/ui-build": "workspace:*",
+    "@hierarchidb/ui-build-sessions": "workspace:*",
     "@hierarchidb/ui-build-progress": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",

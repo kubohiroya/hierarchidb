@@ -1,5 +1,5 @@
 import type { TaskDisplayPayload, TaskStage } from '../../../../../../../packages/build-api';
-import { compareTaskOrderByIndexThenId } from '../../../../../../../packages/ui/build';
+import { compareTaskOrderByIndexThenId } from '../../../../../../../packages/ui/build-sessions';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
