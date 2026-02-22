@@ -219,7 +219,7 @@ export function useTreeNodeUpdater<
               ...(existingMetadata ?? { name: '', description: '', tags: [] }),
             };
             const existingDraftMetadataRecord = existingDraftMetadata ?? {};
-            await wcAPI.updateTreeNodeDraftMetadata(nodeId, {
+            const mergedMetadata = {
               ...fallbackMetadata,
               ...existingDraftMetadataRecord,
               name:
@@ -233,22 +233,9 @@ export function useTreeNodeUpdater<
               tags: Array.isArray(existingDraftMetadataRecord.tags)
                 ? existingDraftMetadataRecord.tags
                 : fallbackMetadata.tags,
-            } as TreeNodeMetadata);
-            (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = {
-              ...(existingDraftMetadataRecord as Record<string, unknown>),
-              ...fallbackMetadata,
-              name:
-                typeof existingDraftMetadataRecord.name === 'string'
-                  ? existingDraftMetadataRecord.name
-                  : fallbackMetadata.name,
-              description:
-                typeof existingDraftMetadataRecord.description === 'string'
-                  ? existingDraftMetadataRecord.description
-                  : fallbackMetadata.description,
-              tags: Array.isArray(existingDraftMetadataRecord.tags)
-                ? existingDraftMetadataRecord.tags
-                : fallbackMetadata.tags,
-            };
+            } as TreeNodeMetadata;
+            await wcAPI.updateTreeNodeDraftMetadata(nodeId, mergedMetadata);
+            (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = mergedMetadata;
           }
           if (needsDraftData) {
             await wcAPI.updateTreeNodeDraftData(
