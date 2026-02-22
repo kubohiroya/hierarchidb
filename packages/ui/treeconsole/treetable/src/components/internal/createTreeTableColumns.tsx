@@ -27,6 +27,7 @@ type NodeTypeIconLikeProps = {
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
   htmlColor?: string;
   isDraft?: boolean;
+  buildRequired?: boolean;
 };
 
 export interface ColumnBuilderParams {
@@ -90,6 +91,7 @@ export interface ColumnBuilderParams {
       plural: string;
     };
   };
+  buildRequiredChipLabel: string;
   draftFlags: {
     hasDraft: Set<NodeId>;
     hasDescendantDraft: (nodeId: NodeId) => boolean;
@@ -296,6 +298,11 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       );
       const isBuildActive = isBuildRunning
         && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
+      const isBuildRequired = Boolean(
+        node.metadata?.buildMetadata?.buildRequired ||
+          (node as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } }).draftMetadata
+            ?.buildMetadata?.buildRequired
+      );
       const descendantDraftLabel = descendantDraftCount === 1
         ? params.draftChipLabels.descendant.singular
         : params.draftChipLabels.descendant.plural;
@@ -405,6 +412,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 color="inherit"
                 htmlColor={iconColor}
                 isDraft={hasSelfDraft}
+                buildRequired={isBuildRequired}
               />
             </IconButton>
           </Box>
@@ -539,7 +547,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                         onClick={(e) => e.stopPropagation()}
                       />
                     </span>
-                  </Tooltip>
+                </Tooltip>
                 ) : hasDescendantDraft ? (
                   <Chip
                     label={descendantDraftLabel}
@@ -549,6 +557,20 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                     sx={{ height: 20 }}
                     onClick={(e) => e.stopPropagation()}
                   />
+                ) : null}
+                {isBuildRequired ? (
+                  <Tooltip arrow placement="top" title={params.buildRequiredChipLabel}>
+                    <span>
+                      <Chip
+                        label={params.buildRequiredChipLabel}
+                        size="small"
+                        color="warning"
+                        variant="filled"
+                        sx={{ height: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </span>
+                  </Tooltip>
                 ) : null}
                 {isBuildRunning ? (
                   <CircularProgress

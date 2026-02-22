@@ -2,8 +2,19 @@
  * Types for TreeConsoleBreadcrumb package
  */
 
-import type { ReactElement } from 'react';
+import type { MouseEvent, ReactElement } from 'react';
 import type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';
+
+type BreadcrumbBuildMetadata = {
+  buildRequired?: boolean;
+};
+
+type BreadcrumbNodeMetadata = {
+  name?: string;
+  description?: string;
+  tags?: string[];
+  buildMetadata?: BreadcrumbBuildMetadata;
+};
 
 export interface BreadcrumbNode {
   treeNodeId?: string;
@@ -18,6 +29,8 @@ export interface BreadcrumbNode {
   holderTargetId?: string;
   holderMetaParentId?: string;
   visible?: boolean;
+  metadata?: BreadcrumbNodeMetadata;
+  draftMetadata?: BreadcrumbNodeMetadata | null;
 }
 
 export interface TreeConsoleBreadcrumbContext {
@@ -62,7 +75,13 @@ export interface TreeConsoleBreadcrumbProps {
   NodeTypeIcon?: React.ComponentType<{
     nodeType: string;
     size?: string;
+    clickable?: boolean;
+    color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
+    htmlColor?: string;
     isDraft?: boolean;
+    buildRequired?: boolean;
+    onClick?: (event: MouseEvent<HTMLElement>) => void;
+    disabled?: boolean;
   }>;
 
   /**

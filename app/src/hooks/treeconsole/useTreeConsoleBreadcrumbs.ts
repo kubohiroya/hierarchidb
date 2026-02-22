@@ -92,6 +92,22 @@ export function useTreeConsoleBreadcrumbs({
           nodeType: node.nodeType,
           visible: node.visible,
           parentId: parentMap.get(String(node.id)) ?? null,
+          metadata: node.metadata
+            ? {
+                name: node.metadata.name,
+                description: node.metadata.description,
+                tags: node.metadata.tags,
+                buildMetadata: node.metadata.buildMetadata,
+              }
+            : undefined,
+          draftMetadata: node.draftMetadata
+            ? {
+                name: node.draftMetadata.name,
+                description: node.draftMetadata.description,
+                tags: node.draftMetadata.tags,
+                buildMetadata: node.draftMetadata.buildMetadata,
+              }
+            : null,
         }));
 
         if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
@@ -113,6 +129,22 @@ export function useTreeConsoleBreadcrumbs({
           nodeType: pageTreeNode.nodeType,
           visible: pageTreeNode.visible,
           parentId: pageTreeNode.parentId ? String(pageTreeNode.parentId) : null,
+          metadata: pageTreeNode.metadata
+            ? {
+                name: pageTreeNode.metadata.name,
+                description: pageTreeNode.metadata.description,
+                tags: pageTreeNode.metadata.tags,
+                buildMetadata: pageTreeNode.metadata.buildMetadata,
+              }
+            : undefined,
+          draftMetadata: pageTreeNode.draftMetadata
+            ? {
+                name: pageTreeNode.draftMetadata.name,
+                description: pageTreeNode.draftMetadata.description,
+                tags: pageTreeNode.draftMetadata.tags,
+                buildMetadata: pageTreeNode.draftMetadata.buildMetadata,
+              }
+            : null,
         };
 
         if (!disposed) {
@@ -132,11 +164,31 @@ export function useTreeConsoleBreadcrumbs({
                 const nextNodeType = ev.node?.nodeType ?? item.nodeType;
                 const nextVisible =
                   typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
+                const nextMetadata =
+                  ev.node?.metadata
+                    ? {
+                        name: ev.node.metadata.name,
+                        description: ev.node.metadata.description,
+                        tags: ev.node.metadata.tags,
+                        buildMetadata: ev.node.metadata.buildMetadata,
+                      }
+                    : item.metadata;
+                const nextDraftMetadata =
+                  ev.node?.draftMetadata
+                    ? {
+                        name: ev.node.draftMetadata.name,
+                        description: ev.node.draftMetadata.description,
+                        tags: ev.node.draftMetadata.tags,
+                        buildMetadata: ev.node.draftMetadata.buildMetadata,
+                      }
+                    : item.draftMetadata;
                 return {
                   ...item,
                   name: nextName,
                   nodeType: nextNodeType,
                   visible: nextVisible,
+                  metadata: nextMetadata,
+                  draftMetadata: nextDraftMetadata,
                 };
               })
             );
@@ -158,6 +210,22 @@ export function useTreeConsoleBreadcrumbs({
               id: pageTreeNode.id,
               name: getTreeNodeName(pageTreeNode),
               nodeType: pageTreeNode.nodeType,
+              metadata: pageTreeNode.metadata
+                ? {
+                    name: pageTreeNode.metadata.name,
+                    description: pageTreeNode.metadata.description,
+                    tags: pageTreeNode.metadata.tags,
+                    buildMetadata: pageTreeNode.metadata.buildMetadata,
+                  }
+                : undefined,
+              draftMetadata: pageTreeNode.draftMetadata
+                ? {
+                    name: pageTreeNode.draftMetadata.name,
+                    description: pageTreeNode.draftMetadata.description,
+                    tags: pageTreeNode.draftMetadata.tags,
+                    buildMetadata: pageTreeNode.draftMetadata.buildMetadata,
+                  }
+                : null,
             },
           ]);
         }

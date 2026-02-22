@@ -133,6 +133,7 @@ export interface TreeTableCoreProps {
     nodeType: string;
     size?: string;
     isDraft?: boolean;
+    buildRequired?: boolean;
   }>;
   NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
 

@@ -37,6 +37,13 @@ export function TreeTableContextMenu({
   const isBuildRunning = Boolean(
     node?.id && buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
   );
+  const nodeDraftMetadata = node?.draftMetadata as
+    | { buildMetadata?: { buildRequired?: boolean } }
+    | undefined;
+  const isBuildRequiredForNode = Boolean(
+    node?.metadata?.buildMetadata?.buildRequired ||
+      nodeDraftMetadata?.buildMetadata?.buildRequired
+  );
   const canArchive = !isRoot && !isBuildRunning;
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
@@ -126,6 +133,8 @@ export function TreeTableContextMenu({
       treeId={treeId}
       nodeName={node ? getTreeNodeName(node) : ''}
       isVisible={node?.visible ?? true}
+      buildRequired={isBuildRequiredForNode}
+      canBuild={isBuildRequiredForNode || undefined}
       canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}
       canRemove={canArchive}

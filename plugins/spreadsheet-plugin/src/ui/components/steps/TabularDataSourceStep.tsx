@@ -63,7 +63,7 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { sho
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TaskAltIcon fontSize="small" color={hasMetadata ? 'success' : 'disabled'} />
             <Typography variant="subtitle1">
-              {t('dataSource.details.title', 'Imported File Details')}
+              {t('dataSource.details.title', 'Imported Tabular Data Details')}
             </Typography>
           </Box>
         </AccordionSummary>

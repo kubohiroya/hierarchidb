@@ -238,6 +238,10 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                   : Math.max(0, index + _depthOffset);
               const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
               const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
+              const isBuildRequiredForNode = Boolean(
+                nodeWithAbsolute.draftMetadata?.buildMetadata?.buildRequired ||
+                  nodeWithAbsolute.metadata?.buildMetadata?.buildRequired
+              );
               const manifestIconColor = getPluginIconColor(nodeType);
               const iconColor = isFolderNodeType(nodeType)
                 ? baseIconColor
@@ -269,14 +273,15 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
                 <>
               <IconComponent
                 nodeType={nodeType}
-                size="small"
-                color="inherit"
-                htmlColor={iconColor}
-                clickable={iconInteractive}
-                isDraft={node.holderType === 'draft'}
-                onClick={
-                  iconInteractive
-                    ? (event: MouseEvent<HTMLElement>) => {
+                  size="small"
+                  color="inherit"
+                  htmlColor={iconColor}
+                  clickable={iconInteractive}
+                  isDraft={node.holderType === 'draft'}
+                  buildRequired={isBuildRequiredForNode}
+                  onClick={
+                    iconInteractive
+                      ? (event: MouseEvent<HTMLElement>) => {
                         event.preventDefault();
                             event.stopPropagation();
                             openContextMenu(node, event.currentTarget as HTMLElement);
@@ -404,6 +409,14 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
             onContextAction(`open-step:${step}`, contextMenuNode, { source: 'breadcrumb' });
           }
         }}
+        buildRequired={
+          contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired ||
+          contextMenuNode?.metadata?.buildMetadata?.buildRequired
+        }
+        canBuild={Boolean(
+          contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired ||
+          contextMenuNode?.metadata?.buildMetadata?.buildRequired
+        )}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {

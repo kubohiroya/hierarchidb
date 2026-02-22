@@ -9,7 +9,7 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { OnNameConflict, TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 /**
@@ -145,7 +145,13 @@ export interface TreeConsoleContentProps {
   NodeTypeIcon?: React.ComponentType<{
     nodeType: string;
     size?: string;
+    clickable?: boolean;
+    color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
+    htmlColor?: string;
+    onClick?: (event: React.MouseEvent<HTMLElement>) => void;
+    disabled?: boolean;
     isDraft?: boolean;
+    buildRequired?: boolean;
   }>;
   NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
   onRowClick?: (node: TreeNode, event: React.MouseEvent) => void;

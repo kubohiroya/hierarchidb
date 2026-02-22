@@ -386,7 +386,12 @@ export function useTreeNodeInfoPanel({
     /root/i.test(currentNode?.nodeType ?? '') ||
     /archive/i.test(currentNode?.nodeType ?? '');
   const canMutate = !isRootLike;
-  const isDraft = currentNode?.version === 0;
+  const statusSourceNode = currentNode ?? node;
+  const readBuildRequired = (sourceNode?: TreeNode | null): boolean =>
+    Boolean(sourceNode?.draftMetadata?.buildMetadata?.buildRequired) ||
+    Boolean(sourceNode?.metadata?.buildMetadata?.buildRequired);
+  const isBuildRequired = readBuildRequired(currentNode) || readBuildRequired(node);
+  const isDraft = statusSourceNode?.version === 0 || node?.version === 0;
 
   const labels = {
     createdLabel: getString('treeConsole.infoPanel.createdLabel', 'Created'),
@@ -408,6 +413,7 @@ export function useTreeNodeInfoPanel({
       type: nodeTypeLabel,
     }),
     draftLabel: getString('treeConsole.infoPanel.draftLabel', 'Draft'),
+    buildRequiredLabel: getString('treeConsole.infoPanel.buildRequiredLabel', 'Build Required'),
     editLabel: getString('treeConsole.infoPanel.editLabel', 'Edit'),
     editAria: getString('treeConsole.infoPanel.editButton', 'Edit node'),
     buildLabel: getString('treeConsole.infoPanel.buildLabel', 'Build'),
@@ -423,9 +429,9 @@ export function useTreeNodeInfoPanel({
   };
 
   const isFolderNode = Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel));
-  const isBuildRequired = Boolean(currentNode?.draftMetadata?.buildMetadata?.buildRequired)
-    || Boolean(currentNode?.metadata?.buildMetadata?.buildRequired);
-  const isBuildableByMetadata = isFolderNode ? folderBuildReady : (Boolean(buildTarget?.stepNumber) && isBuildRequired);
+  const isBuildableByMetadata = isFolderNode
+    ? folderBuildReady
+    : isBuildRequired || Boolean(buildTarget?.stepNumber);
   const canPreview = previewGuardState?.canOpen ?? true;
 
   return {
@@ -445,6 +451,7 @@ export function useTreeNodeInfoPanel({
     canMutate,
     isDraft,
     isBuildable: isBuildableByMetadata,
+    isBuildRequired,
     folderBuildReady,
     buildTargetLoading,
     canPreview,

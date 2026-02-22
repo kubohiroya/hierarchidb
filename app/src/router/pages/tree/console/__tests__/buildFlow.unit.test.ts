@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import { collectBuildUrlsForFolder } from '../buildFlow.ts';
+import { collectBuildUrlsForFolder, startBuildFlow } from '../buildFlow.ts';
 
 const composeStepConfigsMock = vi.fn();
 
@@ -111,5 +111,210 @@ describe('collectBuildUrlsForFolder', () => {
     expect(result.urls.some((url) => decodeURIComponent(url).includes('shape-no-build'))).toBe(true);
     expect(result.urls.some((url) => decodeURIComponent(url).includes('route-build'))).toBe(true);
     expect(result.urls.every((url) => !decodeURIComponent(url).includes('/folder-child'))).toBe(true);
+  });
+
+  it('stores all resolvable buildable descendants into the build queue for folder build flow', async () => {
+    composeStepConfigsMock.mockImplementation((nodeType: string) => {
+      if (nodeType === 'shape') {
+        return { configs: [{ id: 'build' }], hasHostBase: false };
+      }
+      if (nodeType === 'route') {
+        return { configs: [{ id: 'data-source' }], hasHostBase: false };
+      }
+      if (nodeType === 'styler') {
+        return { configs: [{ id: 'data-source' }], hasHostBase: false };
+      }
+      return { configs: [{ id: 'build' }], hasHostBase: false };
+    });
+
+    const descendants: TreeNode[] = [
+      makeNode({
+        id: 'r:shape-build' as NodeId,
+        nodeType: 'shape',
+        metadata: {
+          name: 'Shape Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: true },
+        },
+      }),
+      makeNode({
+        id: 'r:route-build' as NodeId,
+        nodeType: 'route',
+        metadata: {
+          name: 'Route Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: true },
+        },
+      }),
+      makeNode({
+        id: 'r:styler-build' as NodeId,
+        nodeType: 'styler',
+        metadata: {
+          name: 'Styler Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: true },
+        },
+      }),
+      makeNode({
+        id: 'r:folder-child' as NodeId,
+        nodeType: 'folder',
+        metadata: {
+          name: 'Folder child',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: true },
+        },
+      }),
+      makeNode({
+        id: 'r:shape-not-build' as NodeId,
+        nodeType: 'shape',
+        metadata: {
+          name: 'Shape No Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: false },
+        },
+      }),
+    ];
+    const folderNode = makeNode({ id: 'r:root-folder' as NodeId, nodeType: 'folder' });
+    const workerClient = {
+      getQueryAPI: vi.fn(async () => ({
+        getNode: vi.fn(async () => undefined),
+        listDescendants: async () => descendants,
+      })),
+    };
+    const navigate = vi.fn();
+
+    window.localStorage.clear();
+    await startBuildFlow({
+      treeId: 'tree-1' as TreeId,
+      pageNodeId: folderNode.id as NodeId,
+      node: folderNode,
+      returnTo: '/treeconsole',
+      workerClient,
+      navigate,
+    });
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    const [navigatedUrl] = navigate.mock.calls[0]!;
+    const url = new URL(navigatedUrl, 'http://localhost');
+    const queueKey = url.searchParams.get('buildQueue');
+    expect(queueKey).toBeTruthy();
+    expect(url.searchParams.get('build')).toBe('1');
+    const rawQueueKey = `hdb.buildQueue.${queueKey}`;
+    const rawQueue = window.localStorage.getItem(rawQueueKey);
+    expect(rawQueue).not.toBeNull();
+
+    const queueState = JSON.parse(rawQueue as string) as {
+      urls: string[];
+      returnTo: string;
+      createdAt: number;
+      treeId?: string;
+    };
+    expect(queueState.urls).toHaveLength(3);
+    expect(queueState.urls.map((item) => new URL(item, 'http://localhost').pathname)).toEqual(
+      expect.arrayContaining([
+        '/t/tree-1/r:root-folder/r:shape-build/shape/edit/normal/2',
+        '/t/tree-1/r:root-folder/r:route-build/route/edit/normal/2',
+        '/t/tree-1/r:root-folder/r:styler-build/styler/edit/normal/2',
+      ])
+    );
+  });
+
+  it('treats a folder as build-required when at least one descendant is build-required and resolvable', async () => {
+    composeStepConfigsMock.mockImplementation((nodeType: string) => {
+      if (nodeType === 'shape') {
+        return { configs: [{ id: 'build' }], hasHostBase: false };
+      }
+      return { configs: [{ id: 'data-source' }], hasHostBase: false };
+    });
+
+    const descendants: TreeNode[] = [
+      makeNode({
+        id: 'r:shape-build' as NodeId,
+        nodeType: 'shape',
+        metadata: {
+          name: 'Shape Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: true },
+        },
+      }),
+      makeNode({
+        id: 'r:folder-child' as NodeId,
+        nodeType: 'folder',
+        metadata: {
+          name: 'Folder child',
+          description: '',
+          tags: [],
+        },
+      }),
+    ];
+    const folderNode = makeNode({ id: 'r:parent-folder' as NodeId, nodeType: 'folder' });
+    const workerClient = {
+      getQueryAPI: vi.fn(async () => ({
+        listDescendants: async () => descendants,
+      })),
+    };
+
+    const { urls } = await collectBuildUrlsForFolder({
+      treeId: 'tree-1' as TreeId,
+      pageNodeId: folderNode.id as NodeId,
+      folderNode,
+      returnTo: '/t/tree-1/r:parent-folder',
+      workerClient,
+    });
+
+    const isFolderBuildRequired = urls.length > 0;
+    expect(isFolderBuildRequired).toBe(true);
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain('r:shape-build');
+  });
+
+  it('does not mark a folder as build-required when no buildable descendants are collected', async () => {
+    composeStepConfigsMock.mockImplementation(() => ({ configs: [{ id: 'data-source' }], hasHostBase: false }));
+
+    const descendants: TreeNode[] = [
+      makeNode({
+        id: 'r:shape-not-build' as NodeId,
+        nodeType: 'shape',
+        metadata: {
+          name: 'Shape No Build',
+          description: '',
+          tags: [],
+          buildMetadata: { buildRequired: false },
+        },
+      }),
+      makeNode({
+        id: 'r:folder-child' as NodeId,
+        nodeType: 'folder',
+        metadata: {
+          name: 'Folder child',
+          description: '',
+          tags: [],
+        },
+      }),
+    ];
+    const folderNode = makeNode({ id: 'r:parent-folder-empty' as NodeId, nodeType: 'folder' });
+    const workerClient = {
+      getQueryAPI: vi.fn(async () => ({
+        listDescendants: async () => descendants,
+      })),
+    };
+
+    const { urls } = await collectBuildUrlsForFolder({
+      treeId: 'tree-1' as TreeId,
+      pageNodeId: folderNode.id as NodeId,
+      folderNode,
+      returnTo: '/t/tree-1/r:parent-folder-empty',
+      workerClient,
+    });
+
+    const isFolderBuildRequired = urls.length > 0;
+    expect(isFolderBuildRequired).toBe(false);
+    expect(urls).toHaveLength(0);
   });
 });

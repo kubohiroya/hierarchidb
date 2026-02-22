@@ -148,6 +148,16 @@ export const createContextMenuAction = (
             showCommandError('INVALID_OPERATION', `Unknown template: ${selectedTemplateId}`);
             return;
           }
+
+          const markShapeBuildRequired = async (createdNodeId: NodeId) => {
+            const updaterAPI = await client.getTreeNodeUpdaterAPI();
+            await updaterAPI.updateTreeNodeDraftMetadata(createdNodeId, {
+              buildMetadata: {
+                buildRequired: true,
+              },
+            });
+          };
+
           try {
             if (execution?.kind === 'importTemplate') {
               await importNodeTemplateById({
@@ -189,6 +199,10 @@ export const createContextMenuAction = (
               return;
             }
             const wcNodeId = res.nodeId as NodeId;
+
+            if (newType === 'shape') {
+              await markShapeBuildRequired(wcNodeId);
+            }
 
             if (templateDefaults?.draftPatch) {
               const updaterAPI = await client.getTreeNodeUpdaterAPI();

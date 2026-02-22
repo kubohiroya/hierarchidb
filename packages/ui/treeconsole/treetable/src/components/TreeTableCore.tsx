@@ -206,6 +206,10 @@ export function TreeTableCore({
           plural: commonT('treeTable.chips.draftDescendantPlural', 'Drafts in Subtree'),
         },
       },
+      buildRequiredChipLabel: commonT(
+        'treeTable.chips.buildRequired',
+        'Build Required'
+      ),
       columnWidths,
       selectAll,
       allRowsSelected,
