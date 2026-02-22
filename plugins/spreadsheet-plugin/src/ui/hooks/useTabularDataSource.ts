@@ -150,7 +150,7 @@ export const useTabularDataSource = ({
 
   const [downloadUrl, setDownloadUrl] = useState(derivedUrl);
   const [lastSuccessfulUrl, setLastSuccessfulUrl] = useState<string | null>(() => {
-    const source = dialogData.dataSource?.source ?? null;
+    const source = dialogData.dataSource?.source ?? undefined;
     const hasMetadata = Boolean(dialogData.spreadsheetMetadataId && source);
     const sourceLooksLikeUrl = isLooksLikeUrl(source);
     const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedImportMethod === 'url';
