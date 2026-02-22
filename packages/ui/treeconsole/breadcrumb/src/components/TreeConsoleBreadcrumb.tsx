@@ -29,6 +29,7 @@ import { useTreeConsoleBreadcrumb } from '~/hooks/useTreeConsoleBreadcrumb';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
+const buildActionNodeTypes = new Set(['shape', 'route', 'styler']);
 
 const parseDescendantPayload = (event: DragEvent<HTMLElement>): string[] => {
   const raw = event.dataTransfer?.getData(DESCENDANT_MIME);
@@ -196,6 +197,13 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
     contextMenuNodeId && props.archiveDisabledNodeIds?.has(String(contextMenuNodeId))
   );
   const canArchiveFromContextMenu = !isRootContext && !isArchiveDisabledForContextNode;
+  const contextMenuNodeType = String(
+    contextMenuNode?.nodeType ?? contextMenuNode?.type ?? ''
+  ).toLowerCase();
+  const isBuildActionNodeType = buildActionNodeTypes.has(contextMenuNodeType);
+  const contextMenuBuildRequired =
+    Boolean(contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired) ||
+    Boolean(contextMenuNode?.metadata?.buildMetadata?.buildRequired);
 
   return (
     <>
@@ -409,14 +417,10 @@ function TreeConsoleBreadcrumbBase(props: TreeConsoleBreadcrumbBaseProps): React
             onContextAction(`open-step:${step}`, contextMenuNode, { source: 'breadcrumb' });
           }
         }}
-        buildRequired={
-          contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired ||
-          contextMenuNode?.metadata?.buildMetadata?.buildRequired
-        }
-        canBuild={Boolean(
-          contextMenuNode?.draftMetadata?.buildMetadata?.buildRequired ||
-          contextMenuNode?.metadata?.buildMetadata?.buildRequired
-        )}
+        buildRequired={contextMenuBuildRequired}
+        canBuild={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)
+          ? contextMenuBuildRequired
+          : isBuildActionNodeType}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {

@@ -8,7 +8,7 @@ import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions'
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildStepStageMenu } from '@hierarchidb/components';
+import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 
 type StageMetadataMap<T> = Record<string, T>;
@@ -82,11 +82,13 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     canDeleteFetchFilteredCache: cacheCanDeleteFetchFilteredCache,
     canDeleteTransformCache: cacheCanDeleteTransformCache,
     canDeleteVTCache: cacheCanDeleteVTCache,
+    canDeleteTransposeIndex: cacheCanDeleteTransposeIndex,
     canDeleteMetadata: cacheCanDeleteMetadata,
     handleDeleteFetchApiCache: cacheHandleDeleteFetchApiCache,
     handleDeleteFetchFilteredCache: cacheHandleDeleteFetchFilteredCache,
     handleDeleteTransformCache: cacheHandleDeleteTransformCache,
     handleDeleteVTCache: cacheHandleDeleteVTCache,
+    handleDeleteTransposeIndex: cacheHandleDeleteTransposeIndex,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
   } = useShapeBuildCacheActions({ nodeId });
@@ -145,10 +147,12 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const handleResetSessionWithSkeleton = useCallback(async () => {
     if (isResetSessionLoading) return;
+    setStartPendingHold(false);
     setIsResetSessionPending(true);
     try {
       await cacheHandleResetSession();
     } finally {
+      setStartPendingHold(false);
       setIsResetSessionPending(false);
     }
   }, [cacheHandleResetSession, isResetSessionLoading]);
@@ -158,6 +162,10 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     || controls.startPending
     || startPendingHold;
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
+  const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';
+  const isStartButtonLoading = isResetSessionLoading
+    ? false
+    : (summary.buildStatus === 'running' || controls.startPending || startPendingHold);
 
   const tasksByStageForDisplay = useMemo(() => {
     if (!isResetSessionLoading) return tasksByStage;
@@ -206,10 +214,157 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     return controlsByStage;
   }, []);
 
+  const deleteCountUnit = t('processing.download.countUnit', ' items');
+  const formatDeleteLabelWithCount = useCallback((label: string, count: number, unit = deleteCountUnit) => (
+    count > 0 ? `${label} (${count}${unit})` : label
+  ), [deleteCountUnit]);
+
+  const fetchApiDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteApiCache', 'Delete API cache'),
+      cacheCounts.fetchApi ?? 0,
+    )
+  ), [cacheCounts.fetchApi, formatDeleteLabelWithCount, t]);
+  const fetchFilteredDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
+      cacheCounts.fetchFiltered ?? 0,
+    )
+  ), [cacheCounts.fetchFiltered, formatDeleteLabelWithCount, t]);
+  const transformDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
+      cacheCounts.transform ?? 0,
+    )
+  ), [cacheCounts.transform, formatDeleteLabelWithCount, t]);
+  const vtDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteTiles', 'Delete tile data'),
+      cacheCounts.vt ?? 0,
+    )
+  ), [cacheCounts.vt, formatDeleteLabelWithCount, t]);
+  const transposeIndexDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteTransposeIndex', 'Delete transpose index'),
+      cacheCounts.vt ?? 0,
+    )
+  ), [cacheCounts.vt, formatDeleteLabelWithCount, t]);
+  const metadataDeleteLabel = useMemo(() => (
+    formatDeleteLabelWithCount(
+      t('processing.download.deleteMetadata', 'Delete feature metadata'),
+      cacheResultCounts.featureMetadata ?? 0,
+    )
+  ), [cacheResultCounts.featureMetadata, formatDeleteLabelWithCount, t]);
+
+  const resetSessionLabel = useMemo(() => (
+    t('processing.download.resetSession', 'Reset build session')
+  ), [t]);
+  const controlMenuAriaLabel = useMemo(() => (
+    String(t('build.controls.title', 'Build controls'))
+  ), [t]);
+
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
     const menusByStage: Record<string, BuildStepStageMenu> = {};
+    menusByStage.fetch = {
+      disabled: isResetSessionLoading,
+      items: [
+        {
+          id: 'delete-fetch-api-cache',
+          label: fetchApiDeleteLabel,
+          onClick: cacheHandleDeleteFetchApiCache,
+          disabled: isResetSessionLoading || !cacheCanDeleteFetchApiCache || cacheDeleteLoading.fetchApi,
+        },
+        {
+          id: 'delete-fetch-filtered-cache',
+          label: fetchFilteredDeleteLabel,
+          onClick: cacheHandleDeleteFetchFilteredCache,
+          disabled: isResetSessionLoading || !cacheCanDeleteFetchFilteredCache || cacheDeleteLoading.fetchFiltered,
+        },
+      ],
+      ariaLabel: controlMenuAriaLabel,
+    };
+    menusByStage.transform = {
+      disabled: isResetSessionLoading,
+      items: [
+        {
+          id: 'delete-transform-cache',
+          label: transformDeleteLabel,
+          onClick: cacheHandleDeleteTransformCache,
+          disabled: isResetSessionLoading || !cacheCanDeleteTransformCache || cacheDeleteLoading.transform,
+        },
+      ],
+      ariaLabel: controlMenuAriaLabel,
+    };
+    menusByStage.vt = {
+      disabled: isResetSessionLoading,
+      items: [
+        {
+          id: 'delete-vt-cache',
+          label: vtDeleteLabel,
+          onClick: cacheHandleDeleteVTCache,
+          disabled: isResetSessionLoading || !cacheCanDeleteVTCache || cacheDeleteLoading.vt,
+        },
+      ],
+      ariaLabel: controlMenuAriaLabel,
+    };
     return menusByStage;
-  }, []);
+  }, [
+    cacheCanDeleteFetchApiCache,
+    cacheCanDeleteFetchFilteredCache,
+    cacheCanDeleteMetadata,
+    cacheCanDeleteTransformCache,
+    cacheCanDeleteVTCache,
+    cacheDeleteLoading.fetchApi,
+    cacheDeleteLoading.fetchFiltered,
+    cacheDeleteLoading.metadata,
+    cacheDeleteLoading.transform,
+    cacheDeleteLoading.vt,
+    fetchApiDeleteLabel,
+    fetchFilteredDeleteLabel,
+    handleResetSessionWithSkeleton,
+    isResetSessionLoading,
+    controlMenuAriaLabel,
+    transformDeleteLabel,
+    vtDeleteLabel,
+    cacheHandleDeleteFetchApiCache,
+    cacheHandleDeleteFetchFilteredCache,
+    cacheHandleDeleteTransformCache,
+    cacheHandleDeleteVTCache,
+    cacheHandleDeleteMetadata,
+  ]);
+
+  const controlMenuItems = useMemo<BuildControlMenuItem[]>(() => ([
+    {
+      id: 'delete-metadata-cache',
+      label: metadataDeleteLabel,
+      onClick: cacheHandleDeleteMetadata,
+      disabled: isResetSessionLoading || !cacheCanDeleteMetadata || cacheDeleteLoading.metadata,
+    },
+    {
+      id: 'delete-transpose-index',
+      label: transposeIndexDeleteLabel,
+      onClick: cacheHandleDeleteTransposeIndex,
+      disabled: isResetSessionLoading || !cacheCanDeleteTransposeIndex || cacheDeleteLoading.transposeIndex,
+    },
+    {
+      id: 'reset-build-session',
+      label: resetSessionLabel,
+      onClick: handleResetSessionWithSkeleton,
+      disabled: isResetSessionLoading,
+    },
+  ]), [
+    cacheCanDeleteMetadata,
+    cacheCanDeleteTransposeIndex,
+    cacheDeleteLoading.metadata,
+    cacheDeleteLoading.transposeIndex,
+    cacheHandleDeleteMetadata,
+    cacheHandleDeleteTransposeIndex,
+    handleResetSessionWithSkeleton,
+    isResetSessionLoading,
+    transposeIndexDeleteLabel,
+    metadataDeleteLabel,
+    resetSessionLabel,
+  ]);
 
   const stageHeaderMeta = useMemo<StageMetadataMap<ReactNode>>(() => {
     const headerMetaByStage: Record<string, ReactNode> = {};
@@ -322,6 +477,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     isBuildSessionStarted,
     isBuildStartupPending,
     isResetSessionLoading,
+    isControlMenuDisabled,
+    isStartButtonLoading,
     isTerminalStatus,
     isResetSessionPending,
     startPendingHold,
@@ -335,6 +492,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     pauseButtonLabel,
     hasAnyTasks,
     hasAnySummaryTasks,
+    controlMenuItems,
+    controlMenuAriaLabel,
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,

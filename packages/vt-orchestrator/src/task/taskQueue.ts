@@ -12,8 +12,10 @@ export type StoredTaskRecord = EphemeralBuildTaskRecord;
 export const toTaskQueueRecord = (
   task: StoredTaskRecord
 ): TaskQueueRecord => {
-  const { taskType, ...rest } = task;
-  return { ...rest, stage: rest.stage ?? taskType };
+  if (task.stage === undefined) {
+    throw new Error(`Task ${task.taskId} is missing required stage`);
+  }
+  return task;
 };
 
 export class VtTaskQueueDb {
@@ -81,25 +83,13 @@ export async function putTasks(
 ): Promise<void> {
   if (tasks.length === 0) return;
   const now = Date.now();
-  const taskIds = tasks.map((task) => task.taskId);
-  const existing = await db.tasks.bulkGet(taskIds);
-  const existingSequence = new Map(
-    existing
-      .filter((task): task is StoredTaskRecord => Boolean(task))
-      .map((task) => [task.taskId, task.sequence ?? 0])
-  );
   const payload: StoredTaskRecord[] = tasks.map((task) => {
-    const baseSequence = Number.isFinite(task.sequence) ? task.sequence ?? 0 : 0;
-    const priorSequence = existingSequence.get(task.taskId) ?? 0;
-    const nextSequence = Math.max(baseSequence, priorSequence, 1);
     return {
       ...task,
-      taskType: task.stage,
       progress: Number.isFinite(task.progress) ? task.progress : 0,
       status: task.status ?? 'queued',
       createdAt: task.createdAt ?? now,
       updatedAt: now,
-      sequence: nextSequence,
     };
   });
   await db.tasks.bulkPut(payload);
@@ -116,8 +106,6 @@ export async function updateTask(
 ): Promise<void> {
   const now = Date.now();
   const current = await db.tasks.get(taskId);
-  const currentSequence = typeof current?.sequence === 'number' ? current.sequence : 0;
-  const nextSequence = currentSequence + 1;
   const currentStatus = current?.status;
   const nextStatusCandidate = updates.status;
   const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
@@ -129,13 +117,11 @@ export async function updateTask(
     ? {
       status: currentStatus,
       updatedAt: now,
-      sequence: nextSequence,
     }
     : {
       ...updates,
       status: nextStatusCandidate ?? currentStatus,
       updatedAt: now,
-      sequence: nextSequence,
     };
   await db.tasks.update(taskId, payload);
   const task = await db.tasks.get(taskId);
@@ -159,7 +145,7 @@ export async function listTasksByStage(
   stage: TaskStage
 ): Promise<TaskQueueRecord[]> {
   const tasks = await db.tasks
-    .where('[nodeId+taskType+index]')
+    .where('[nodeId+stage+index]')
     .between([nodeId, stage, Dexie.minKey], [nodeId, stage, Dexie.maxKey])
     .toArray();
   return tasks.map((task) => toTaskQueueRecord(task));
@@ -184,7 +170,7 @@ export async function listTasksByStageAndStatus(
   status: TaskStatus
 ): Promise<TaskQueueRecord[]> {
   const tasks = await db.tasks
-    .where('[nodeId+taskType+status+index]')
+    .where('[nodeId+stage+status+index]')
     .between([nodeId, stage, status, Dexie.minKey], [nodeId, stage, status, Dexie.maxKey])
     .toArray();
   return tasks.map((task) => toTaskQueueRecord(task));

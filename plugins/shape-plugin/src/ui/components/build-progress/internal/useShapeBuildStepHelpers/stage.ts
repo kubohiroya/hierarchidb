@@ -1,7 +1,6 @@
 import type { TaskStage } from '@hierarchidb/batch-api';
 
 export type StageLikeTask = {
-  taskType?: string;
   type?: string;
   stage?: string;
 };
@@ -11,7 +10,7 @@ export type StageLikeRunningTask = StageLikeTask & {
 };
 
 export const normalizeStageKey = (task: StageLikeTask): TaskStage => (
-  (task.stage ?? task.taskType ?? task.type ?? 'fetch') as TaskStage
+  (task.stage ?? task.type ?? 'fetch') as TaskStage
 );
 
 export const resolveMostAdvancedStageIdByStatus = (params: {

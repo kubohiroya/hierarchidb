@@ -45,6 +45,7 @@ import { notify } from '@hierarchidb/components/notify';
 import { useShapeBuildDraftSaver } from './useShapeBuildStepLogic/useShapeBuildDraftSaver.js';
 import { useShapeBuildProgressResidueMonitor } from './useShapeBuildStepLogic/useShapeBuildProgressResidueMonitor.js';
 import { useShapeBuildStopState } from './useShapeBuildStepLogic/useShapeBuildStopState.js';
+import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 
 export {
   shouldResetElapsedState,
@@ -167,7 +168,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const taskState = useShapeBuildStepTaskState({
     activeNodeId,
     isSessionStopping,
-    buildSessionTransitionActive: buildSessionTransition.active,
     stages,
     processingStatus,
     runtimeStatus: runtimeStatusForBuildStatus,
@@ -190,6 +190,19 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasNodeId,
     reportFailures: reportTaskFailures,
     baseBuildStatus,
+    onVtStageCompletion: async ({ completed, hasFailedVtTasks }) => {
+      if (!completed || sessionRecord?.status === 'completed' || sessionRecord?.status === 'failed') {
+        return;
+      }
+      const status = hasFailedVtTasks ? 'failed' : 'completed';
+      const stopReason: ShapeBuildStopReason = status === 'failed' ? 'failed' : 'completed';
+      await updateSessionRecord({
+        status,
+        stopReason,
+        canResume: false,
+        completedAt: Date.now(),
+      });
+    },
   });
   const {
     tasks: displayTasks,
@@ -200,7 +213,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     liveTaskType,
     resolvedTaskType,
     hasStartedTasks,
-    completedTaskSequenceById,
     buildStatus,
     hasProgressTaskSignal,
     hasFirstTaskSignal,
@@ -248,7 +260,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     sessionProgressTotal: sessionRecord?.progress?.total,
     sessionStageId: sessionRecord?.stageId ?? null,
     awaitingFirstTaskExpectationRef,
-    completedTaskSequenceById,
     resolvedTaskType,
     lastAwaitingFirstTaskDecisionTraceKeyRef,
     buildSessionTransitionTaskStartNotifiedRef,

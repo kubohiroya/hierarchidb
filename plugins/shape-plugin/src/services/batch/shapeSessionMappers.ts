@@ -126,7 +126,6 @@ const toResourceUsageRecord = (usage: ResourceUsage | undefined): Record<string,
 export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord | null => {
   return {
     nodeId: session.nodeId,
-    draftId: session.draftId,
     status: session.status,
     selectedArrayByCountries: session.selectedArrayByCountries,
     startedAt: session.startedAt,
@@ -153,7 +152,6 @@ export const toBuildSessionUpdates = (
   updates: Partial<ShapeBuildSessionRecord>,
 ): Partial<BuildSessionRecord> | null => {
   const next: Partial<BuildSessionRecord> = {};
-  if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;
@@ -184,7 +182,6 @@ export const toBuildSessionUpdates = (
 
 export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessionRecord => ({
   nodeId: session.nodeId,
-  draftId: session.draftId,
   status: session.status,
   selectedArrayByCountries: session.selectedArrayByCountries,
   startedAt: session.startedAt,
@@ -211,7 +208,6 @@ export const toShapeBuildSessionUpdates = (
   updates: Partial<BuildSessionRecord>,
 ): Partial<ShapeBuildSessionRecord> => {
   const next: Partial<ShapeBuildSessionRecord> = {};
-  if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.selectedArrayByCountries !== undefined) {
     next.selectedArrayByCountries = updates.selectedArrayByCountries;

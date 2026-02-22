@@ -12,19 +12,16 @@ export type TaskSyncStateArgs = {
     | 'flushScheduledRef'
     | 'bufferedSnapshotRef'
     | 'bufferedUpdatesRef'
-    | 'bufferedSequenceRef'
     | 'flushFrameRef'
     | 'flushTimeoutRef'
     | 'committedTasksRef'
     | 'tasksMapRef'
     | 'completedTasksRef'
   >;
-  updateCommittedSequences: (tasks: ShapeBuildTaskSummary[]) => void;
 };
 
 export const useShapeBuildTaskSyncState = ({
   refs,
-  updateCommittedSequences,
 }: TaskSyncStateArgs): Pick<SyncResult, 'syncTasksRef' | 'resetPending'> => {
   const {
     tasksRef,
@@ -33,7 +30,6 @@ export const useShapeBuildTaskSyncState = ({
     flushScheduledRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
     flushFrameRef,
     flushTimeoutRef,
     committedTasksRef,
@@ -47,7 +43,6 @@ export const useShapeBuildTaskSyncState = ({
     flushScheduledRef.current = false;
     bufferedSnapshotRef.current = null;
     bufferedUpdatesRef.current = new Map();
-    bufferedSequenceRef.current = new Map();
 
     if (flushFrameRef.current !== null) {
       window.cancelAnimationFrame(flushFrameRef.current);
@@ -66,21 +61,18 @@ export const useShapeBuildTaskSyncState = ({
         .filter((task) => isCompletedAtFullProgress(task))
         .map((task) => [task.taskId, task]),
     );
-    updateCommittedSequences(tasks);
   }, [
     pendingTasksRef,
     pendingDirtyRef,
     flushScheduledRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
     flushFrameRef,
     flushTimeoutRef,
     tasksRef,
     committedTasksRef,
     tasksMapRef,
     completedTasksRef,
-    updateCommittedSequences,
   ]);
 
   const resetPending = useCallback(() => {
@@ -88,7 +80,6 @@ export const useShapeBuildTaskSyncState = ({
     pendingDirtyRef.current = false;
     bufferedSnapshotRef.current = null;
     bufferedUpdatesRef.current = new Map();
-    bufferedSequenceRef.current = new Map();
     flushScheduledRef.current = false;
 
     if (flushFrameRef.current !== null) {
@@ -104,7 +95,6 @@ export const useShapeBuildTaskSyncState = ({
     pendingDirtyRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
     flushScheduledRef,
     flushFrameRef,
     flushTimeoutRef,

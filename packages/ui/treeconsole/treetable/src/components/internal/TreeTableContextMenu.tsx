@@ -9,6 +9,8 @@ import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hi
 import { useEffect, useState, type ComponentType } from 'react';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '~/types';
 
+const buildActionNodeTypes = new Set(['shape', 'route', 'styler']);
+
 interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;
   anchorPosition: { left: number; top: number } | null;
@@ -44,6 +46,8 @@ export function TreeTableContextMenu({
     node?.metadata?.buildMetadata?.buildRequired ||
       nodeDraftMetadata?.buildMetadata?.buildRequired
   );
+  const nodeType = String(node?.nodeType ?? '');
+  const isBuildActionNodeType = buildActionNodeTypes.has(nodeType.trim().toLowerCase());
   const canArchive = !isRoot && !isBuildRunning;
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
@@ -134,7 +138,11 @@ export function TreeTableContextMenu({
       nodeName={node ? getTreeNodeName(node) : ''}
       isVisible={node?.visible ?? true}
       buildRequired={isBuildRequiredForNode}
-      canBuild={isBuildRequiredForNode || undefined}
+      canBuild={
+        isFolderNodeType(node?.nodeType)
+          ? isBuildRequiredForNode
+          : isBuildActionNodeType
+      }
       canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}
       canRemove={canArchive}

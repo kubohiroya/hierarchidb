@@ -35,7 +35,11 @@ export const shouldRefreshTasksSnapshot = (params: {
   runtimeStatus: string | null;
   processingStatus: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
   buildSessionTransitionActive: boolean;
+  isTaskStreamReady?: boolean;
 }): boolean => {
+  if (params.isTaskStreamReady) {
+    return false;
+  }
   const hasProcessingSignal = (
     params.buildStatus === 'running'
     || params.runtimeStatus === 'processing'

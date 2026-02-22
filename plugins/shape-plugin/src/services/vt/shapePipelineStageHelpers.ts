@@ -101,7 +101,6 @@ export const resetStageRunningTasks = async (
   });
   await Promise.all(runningTasks.map((task) => updateTask(taskQueue, task.taskId, {
     status: 'queued',
-    progress: 0,
     startedAt: undefined,
     completedAt: undefined,
     errorMessage: undefined,

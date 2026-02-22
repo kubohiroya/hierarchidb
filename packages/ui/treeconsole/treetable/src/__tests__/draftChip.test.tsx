@@ -10,6 +10,7 @@ import type { ColumnBuilderParams } from '../components/internal/createTreeTable
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns';
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
+import { DualKeyMap } from '@hierarchidb/util';
 
 describe('TreeTable Draft chip', () => {
   const defaultParams: ColumnBuilderParams = {
@@ -120,19 +121,36 @@ describe('TreeTable Draft chip', () => {
     render(<>{cell}</>);
   };
 
-  it('renders Draft chip when node has draftData without explicit draft flag', () => {
+  const buildIconWithBuildRequiredFlag = () => {
+    const BuildRequiredIcon = ({ buildRequired }: { buildRequired?: boolean }) => (
+      <span>{buildRequired ? 'required' : 'not-required'}</span>
+    );
+    return BuildRequiredIcon;
+  };
+
+  const createNodeIndex = (nodes: TreeNode[]): { get: (id: NodeId) => TreeNode | undefined } => {
+    const nodeIndex = new DualKeyMap<NodeId, NodeId, TreeNode>();
+    nodes.forEach((node) => {
+      nodeIndex.set(node.id, node, node.parentId);
+    });
+    return {
+      get: (id: NodeId) => nodeIndex.get(id),
+    } as { get: (id: NodeId) => TreeNode | undefined };
+  };
+
+  it('does not render Draft chip when node has draftData without explicit draft flag', () => {
     renderNameCell(buildNode({ draftData: { foo: 'bar' } }));
-    expect(screen.getByText('Draft')).toBeTruthy();
+    expect(screen.queryByText('Draft')).toBeNull();
   });
 
-  it('renders Draft chip when draft flag set for node', () => {
+  it('does not render Draft chip when draft flag set for node', () => {
     renderNameCell(buildNode(), {
       draftFlags: {
         hasDraft: new Set<NodeId>(['node-1' as NodeId]),
         hasDescendantDraft: () => false,
       },
     });
-    expect(screen.getByText('Draft')).toBeTruthy();
+    expect(screen.queryByText('Draft')).toBeNull();
   });
 
   it('does not render Draft chip for nodes without draft data or flags', () => {
@@ -140,7 +158,7 @@ describe('TreeTable Draft chip', () => {
     expect(screen.queryByText('Draft')).toBeNull();
   });
 
-  it('renders singular descendant Draft chip when one descendant has draft', () => {
+  it('does not render singular descendant Draft chip when one descendant has draft', () => {
     renderNameCell(buildNode(), {
       collectDescendantIds: () => ['node-1', 'child-1'],
       draftFlags: {
@@ -148,10 +166,10 @@ describe('TreeTable Draft chip', () => {
         hasDescendantDraft: () => true,
       },
     });
-    expect(screen.getByText('Draft in Subtree')).toBeTruthy();
+    expect(screen.queryByText('Draft in Subtree')).toBeNull();
   });
 
-  it('renders plural descendant Draft chip when multiple descendants have draft', () => {
+  it('does not render plural descendant Draft chip when multiple descendants have draft', () => {
     renderNameCell(buildNode(), {
       collectDescendantIds: () => ['node-1', 'child-1', 'child-2'],
       draftFlags: {
@@ -159,6 +177,55 @@ describe('TreeTable Draft chip', () => {
         hasDescendantDraft: () => true,
       },
     });
-    expect(screen.getByText('Drafts in Subtree')).toBeTruthy();
+    expect(screen.queryByText('Drafts in Subtree')).toBeNull();
+  });
+
+  it('passes buildRequired=true when a folder node has descendant buildRequired', () => {
+    const folderNode = buildNode({
+      id: 'folder-1' as NodeId,
+      depth: 1,
+    });
+    const descendantNode = buildNode({
+      id: 'child-1' as NodeId,
+      parentId: 'folder-1' as NodeId,
+      depth: 2,
+      metadata: {
+        buildMetadata: {
+          buildRequired: true,
+        },
+      } as TreeNode['metadata'],
+    });
+
+    renderNameCell(folderNode, {
+      IconComponent: buildIconWithBuildRequiredFlag(),
+      collectDescendantIds: () => ['folder-1', 'child-1'],
+      controller: {
+        nodeIndex: createNodeIndex([folderNode, descendantNode]),
+      } as unknown as ColumnBuilderParams['controller'],
+    });
+
+    expect(screen.getByText('required')).toBeDefined();
+  });
+
+  it('does not pass buildRequired=true when no descendant has buildRequired', () => {
+    const folderNode = buildNode({
+      id: 'folder-2' as NodeId,
+      depth: 1,
+    });
+    const descendantNode = buildNode({
+      id: 'child-2' as NodeId,
+      parentId: 'folder-2' as NodeId,
+      depth: 2,
+    });
+
+    renderNameCell(folderNode, {
+      IconComponent: buildIconWithBuildRequiredFlag(),
+      collectDescendantIds: () => ['folder-2', 'child-2'],
+      controller: {
+        nodeIndex: createNodeIndex([folderNode, descendantNode]),
+      } as unknown as ColumnBuilderParams['controller'],
+    });
+
+    expect(screen.getByText('not-required')).toBeDefined();
   });
 });

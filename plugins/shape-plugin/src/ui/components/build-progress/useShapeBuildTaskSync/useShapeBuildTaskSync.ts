@@ -9,6 +9,8 @@ export const useShapeBuildTaskSync = ({
   setIsLoading,
   setError,
   markTaskStreamSynchronized,
+  onTaskSnapshot,
+  onTaskTerminalProgressUpdate,
 }: SyncArgs) => {
   const isLoadingRef = useRef(false);
   const errorRef = useRef<Error | null>(null);
@@ -20,8 +22,6 @@ export const useShapeBuildTaskSync = ({
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const bufferedSnapshotRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const bufferedUpdatesRef = useRef(new Map<string, ShapeBuildTaskSummary>());
-  const bufferedSequenceRef = useRef(new Map<string, number>());
-  const committedSequenceRef = useRef(new Map<string, number>());
   const pendingDirtyRef = useRef(false);
   const flushScheduledRef = useRef(false);
   const flushFrameRef = useRef<number | null>(null);
@@ -42,8 +42,6 @@ export const useShapeBuildTaskSync = ({
       pendingTasksRef,
       bufferedSnapshotRef,
       bufferedUpdatesRef,
-      bufferedSequenceRef,
-      committedSequenceRef,
       pendingDirtyRef,
       flushScheduledRef,
       flushFrameRef,
@@ -53,6 +51,8 @@ export const useShapeBuildTaskSync = ({
     setTasks,
     setIsLoading,
     setError,
+    onTaskSnapshot,
+    onTaskTerminalProgressUpdate,
   });
 
   useEffect(() => {

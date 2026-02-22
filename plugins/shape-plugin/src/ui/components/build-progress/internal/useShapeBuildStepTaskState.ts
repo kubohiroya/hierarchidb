@@ -7,9 +7,8 @@ import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/await
 import { persistedTasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildTasks } from '~/ui/components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
-import { normalizeStageKey } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
-import { resolveDisplayBuildStatus, shouldRefreshTasksSnapshot } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
+import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
 
 type StageLike = {
   id: string;
@@ -36,7 +35,6 @@ type ProcessingStatus = 'idle' | 'processing' | 'paused' | 'completed' | 'failed
 type Args = {
   activeNodeId: NodeId | null;
   isSessionStopping: boolean;
-  buildSessionTransitionActive: boolean;
   stages: StageLike[];
   processingStatus: ProcessingStatus;
   runtimeStatus: BuildProgressStatus['status'];
@@ -46,6 +44,10 @@ type Args = {
   reportFailures: boolean;
   baseBuildStatus: BuildStatus;
   hasNodeId: boolean;
+  onVtStageCompletion?: (options: {
+    completed: boolean;
+    hasFailedVtTasks: boolean;
+  }) => void;
 };
 
 export type UseShapeBuildStepTaskStateReturn = {
@@ -63,28 +65,36 @@ export type UseShapeBuildStepTaskStateReturn = {
   hasQueuedTasks: boolean;
   runningStageIdFromTasks: string | null;
   inFlightStageIdFromTasks: string | null;
-  completedTaskSequenceById: Map<string, number>;
+  snapshotTaskCountByStage: Record<string, number>;
+  terminalTaskCountByStage: Record<string, number>;
   hasFailedFetchTasks: boolean;
   taskProgressTotal: number | undefined;
   sessionProgressTotal: number | undefined;
   refreshTasks: () => void;
   tasksCompletionStatus: BuildStatus | null;
+  stageTaskCompletedById: Record<string, boolean>;
+  isVtStageCompleted: boolean;
 };
 
 export const useShapeBuildStepTaskState = ({
   activeNodeId,
   isSessionStopping,
-  buildSessionTransitionActive,
   stages,
-  processingStatus,
-  runtimeStatus,
   effectiveProgress,
   effectiveStatus,
   sessionProgressTotal,
   reportFailures,
   baseBuildStatus,
+  onVtStageCompletion,
 }: Args): UseShapeBuildStepTaskStateReturn => {
-  const { tasks, isLoading, isTaskStreamReady, refresh } = useShapeBuildTasks(activeNodeId, {
+  const {
+    tasks,
+    isLoading,
+    isTaskStreamReady,
+    refresh,
+    snapshotTaskCountByStage,
+    terminalTaskCountByStage,
+  } = useShapeBuildTasks(activeNodeId, {
     reportFailures,
   });
 
@@ -115,6 +125,7 @@ export const useShapeBuildStepTaskState = ({
       ))
       : rawDisplayTasks
   ), [isSessionStopping, rawDisplayTasks]);
+
   const hasInFlightTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
   ), [displayTasks]);
@@ -144,18 +155,46 @@ export const useShapeBuildStepTaskState = ({
     progressTotal: taskProgressTotal,
   });
 
-  const completedTaskSequenceById = useMemo(() => {
-    const map = new Map<string, number>();
-    displayTasks.forEach((task) => {
-      if (task.status !== 'completed' && task.status !== 'recycled') return;
-      if (!(typeof task.sequence === 'number' && Number.isFinite(task.sequence))) return;
-      const current = map.get(task.taskId);
-      if (current === undefined || task.sequence > current) {
-        map.set(task.taskId, task.sequence);
+  const stageTaskCompletedById = useMemo(() => {
+    const completed: Record<string, boolean> = {};
+    const stageIds = new Set<string>([
+      ...Object.keys(snapshotTaskCountByStage),
+      ...Object.keys(terminalTaskCountByStage),
+    ]);
+    stageIds.forEach((stageId) => {
+      const expected = snapshotTaskCountByStage[stageId];
+      if (typeof expected !== 'number' || expected <= 0) return;
+      const terminalCount = terminalTaskCountByStage[stageId] ?? 0;
+      if (terminalCount >= expected) {
+        completed[stageId] = true;
       }
     });
-    return map;
-  }, [displayTasks]);
+    return completed;
+  }, [snapshotTaskCountByStage, terminalTaskCountByStage]);
+
+  const isVtStageCompleted = useMemo(() => (
+    (terminalTaskCountByStage.vt ?? 0) >= (snapshotTaskCountByStage.vt ?? 0)
+    && (snapshotTaskCountByStage.vt ?? 0) > 0
+  ), [snapshotTaskCountByStage.vt, terminalTaskCountByStage.vt]);
+
+  const hasFailedVtTasks = useMemo(() => (
+    displayTasks.some((task) => task.status === 'failed' && task.stage === 'vt')
+  ), [displayTasks]);
+
+  const vtCompletionNotifiedRef = useRef(false);
+  useEffect(() => {
+    if (!onVtStageCompletion) return;
+    if (!isVtStageCompleted) {
+      vtCompletionNotifiedRef.current = false;
+      return;
+    }
+    if (vtCompletionNotifiedRef.current) return;
+    vtCompletionNotifiedRef.current = true;
+    onVtStageCompletion({
+      completed: true,
+      hasFailedVtTasks,
+    });
+  }, [isVtStageCompleted, hasFailedVtTasks, onVtStageCompletion]);
 
   const tasksCompletionStatus = useMemo<BuildStatus | null>(() => {
     if (displayTasks.length === 0) return null;
@@ -170,39 +209,6 @@ export const useShapeBuildStepTaskState = ({
     hasInFlightTasks,
   }), [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
 
-  const lastTaskRefreshRef = useRef<{ nodeId: string; at: number } | null>(null);
-  useEffect(() => {
-    const shouldRefresh = shouldRefreshTasksSnapshot({
-      displayTaskCount: displayTasks.length,
-      hasInFlightTasks,
-      hasProgressTaskSignal,
-      buildStatus,
-      runtimeStatus,
-      processingStatus,
-      buildSessionTransitionActive,
-    });
-    if (!shouldRefresh) return;
-    if (!activeNodeId) return;
-    const now = Date.now();
-    const last = lastTaskRefreshRef.current;
-    if (last && last.nodeId === String(activeNodeId) && now - last.at < 2000) {
-      return;
-    }
-    lastTaskRefreshRef.current = { nodeId: String(activeNodeId), at: now };
-    void refresh();
-  }, [
-    activeNodeId,
-    buildStatus,
-    buildSessionTransitionActive,
-    displayTasks.length,
-    hasInFlightTasks,
-    hasProgressTaskSignal,
-    processingStatus,
-    refresh,
-    runtimeStatus,
-    hasProgressTaskSignal,
-  ]);
-
   const taskType = effectiveProgress?.taskType ?? null;
   const liveTaskType = taskType ?? effectiveStatus?.status?.status;
   const resolvedTaskType = liveTaskType ?? stages[0]?.id;
@@ -215,10 +221,6 @@ export const useShapeBuildStepTaskState = ({
     stages,
     tasks: displayTasks,
   }), [displayTasks, stages]);
-
-  const hasFailedFetchTasks = useMemo(() => (
-    displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
-  ), [displayTasks]);
 
   return {
     tasks: displayTasks,
@@ -235,11 +237,14 @@ export const useShapeBuildStepTaskState = ({
     hasQueuedTasks,
     runningStageIdFromTasks,
     inFlightStageIdFromTasks,
-    completedTaskSequenceById,
-    hasFailedFetchTasks,
+    snapshotTaskCountByStage,
+    terminalTaskCountByStage,
+    hasFailedFetchTasks: displayTasks.some((task) => task.status === 'failed' && (task.stage === 'fetch')),
     taskProgressTotal,
     sessionProgressTotal,
     refreshTasks: refresh,
     tasksCompletionStatus,
+    stageTaskCompletedById,
+    isVtStageCompleted,
   };
 };

@@ -90,7 +90,6 @@ describe('useShapeBuildTasks', () => {
             progress: 0,
             message: 'Queued',
             index: 1,
-            sequence: 1,
           },
         ],
       });
@@ -113,7 +112,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Done',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -133,7 +131,6 @@ describe('useShapeBuildTasks', () => {
           progress: 50,
           message: 'Late',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -142,8 +139,6 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.status).toBe('completed');
     });
 
-    expect(getBuildTasksMock).toHaveBeenCalledTimes(1);
-    expect(getBuildTasksMock).toHaveBeenCalledWith('shape', 'node-1');
   });
 
   it('refreshes task snapshot from worker', async () => {
@@ -155,7 +150,6 @@ describe('useShapeBuildTasks', () => {
         progress: 100,
         message: 'Done',
         index: 1,
-        sequence: 2,
       },
     ]);
 
@@ -194,7 +188,6 @@ describe('useShapeBuildTasks', () => {
             status: 'queued',
             progress: 0,
             index: 1,
-            sequence: 1,
           },
         ],
       });
@@ -226,7 +219,6 @@ describe('useShapeBuildTasks', () => {
             progress: 100,
             message: 'Cache saving',
             index: 1,
-            sequence: 1,
           },
         ],
       });
@@ -248,7 +240,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Done',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -269,7 +260,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Late running',
           index: 1,
-          sequence: 3,
         },
       });
     });
@@ -298,7 +288,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'transform done',
           index: 1,
-          sequence: 10,
         },
       });
     });
@@ -319,7 +308,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'finalize',
           index: 1,
-          sequence: 11,
         },
       });
     });
@@ -330,7 +318,7 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('ignores later running updates after completed 100% even with higher sequence', async () => {
+  it('ignores later running updates after completed terminal status', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-2d'));
 
     await waitFor(() => {
@@ -348,7 +336,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Cache write done',
           index: 1,
-          sequence: 20,
         },
       });
     });
@@ -370,7 +357,6 @@ describe('useShapeBuildTasks', () => {
           progress: 97,
           message: 'Encode start',
           index: 1,
-          sequence: 21,
         },
       });
     });
@@ -379,6 +365,154 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.status).toBe('completed');
       expect(result.current.tasks[0]?.progress).toBe(100);
       expect(result.current.tasks[0]?.message).toBe('Cache write done');
+    });
+  });
+
+  it('preserves completed terminal state against later non-terminal updates', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-8'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-8',
+        task: {
+          taskId: 'node-8:fetch:US:0',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Done',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+      expect(result.current.tasks[0]?.message).toBe('Done');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-8',
+        task: {
+          taskId: 'node-8:fetch:US:0',
+          stage: 'fetch',
+          status: 'running',
+          progress: 50,
+          message: 'Recovered',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+      expect(result.current.tasks[0]?.message).toBe('Done');
+    });
+  });
+
+  it('preserves failed terminal state and keeps failed at 100%', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-9'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-9',
+        task: {
+          taskId: 'node-9:transform:DE:0',
+          stage: 'transform',
+          status: 'failed',
+          progress: 40,
+          message: 'transform failed',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('failed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-9',
+        task: {
+          taskId: 'node-9:transform:DE:0',
+          stage: 'transform',
+          status: 'running',
+          progress: 95,
+          message: 'retrying',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('failed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+      expect(result.current.tasks[0]?.message).toBe('transform failed');
+    });
+  });
+
+  it('treats skipped display task as terminal and keeps 100% progress', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-10'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-10',
+        task: {
+          taskId: 'node-10:vt:BR:0',
+          stage: 'vt',
+          status: 'running',
+          progress: 30,
+          message: 'skipped: vt source missing',
+          index: 1,
+          display: { kind: 'skip' },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-10',
+        task: {
+          taskId: 'node-10:vt:BR:0',
+          stage: 'vt',
+          status: 'running',
+          progress: 45,
+          message: 'running',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.progress).toBe(100);
     });
   });
 
@@ -400,7 +534,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'encode:start',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -421,7 +554,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'transform cache stored',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -442,7 +574,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'post-process',
           index: 1,
-          sequence: 3,
         },
       });
     });
@@ -472,7 +603,6 @@ describe('useShapeBuildTasks', () => {
             progress: 100,
             message: 'Cache saving',
             index: 1,
-            sequence: 1,
           },
           {
             taskId: 'task-4',
@@ -481,7 +611,6 @@ describe('useShapeBuildTasks', () => {
             progress: 100,
             message: 'Cache saving',
             index: 2,
-            sequence: 1,
           },
           {
             taskId: 'task-5',
@@ -490,7 +619,6 @@ describe('useShapeBuildTasks', () => {
             progress: 100,
             message: 'Cache saving',
             index: 3,
-            sequence: 1,
           },
         ],
       });
@@ -500,6 +628,56 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.status).toBe('completed');
       expect(result.current.tasks[1]?.status).toBe('completed');
       expect(result.current.tasks[2]?.status).toBe('completed');
+    });
+  });
+
+  it('keeps non-terminal status at less than 100 progress', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-3b'));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-3b',
+        tasks: [
+          {
+            taskId: 'task-3b',
+            stage: 'fetch',
+            status: 'recycled',
+            progress: 100,
+            message: 'recycled for retry',
+            index: 1,
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('recycled');
+      expect(result.current.tasks[0]?.progress).toBe(99);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-3b',
+        task: {
+          taskId: 'task-3b',
+          stage: 'fetch',
+          status: 'running',
+          progress: 100,
+          message: 'still active',
+          index: 1,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('recycled');
+      expect(result.current.tasks[0]?.progress).toBe(99);
     });
   });
 
@@ -522,7 +700,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Done',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -550,7 +727,6 @@ describe('useShapeBuildTasks', () => {
           progress: 99,
           message: 'Working',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -578,7 +754,6 @@ describe('useShapeBuildTasks', () => {
           progress: 50,
           message: 'running',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -588,7 +763,7 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('keeps terminal status when duplicate sequence updates arrive', async () => {
+  it('keeps terminal status when duplicate updates arrive', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-6'));
 
     await waitFor(() => {
@@ -606,7 +781,6 @@ describe('useShapeBuildTasks', () => {
           progress: 0,
           message: 'Queued',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -626,7 +800,6 @@ describe('useShapeBuildTasks', () => {
           progress: 50,
           message: 'Running',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -646,7 +819,6 @@ describe('useShapeBuildTasks', () => {
           progress: 0,
           message: 'Late queued',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -666,7 +838,6 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Done',
           index: 1,
-          sequence: 2,
         },
       });
     });
@@ -696,7 +867,6 @@ describe('useShapeBuildTasks', () => {
             progress: 70,
             message: 'Running',
             index: 1,
-            sequence: 2,
           },
           {
             taskId: 'node-7:fetch:ABW:1',
@@ -705,7 +875,6 @@ describe('useShapeBuildTasks', () => {
             progress: 0,
             message: 'Queued',
             index: 2,
-            sequence: 1,
           },
         ],
       });
@@ -727,7 +896,6 @@ describe('useShapeBuildTasks', () => {
             progress: 10,
             message: 'Start',
             index: 2,
-            sequence: 2,
           },
         ],
       });
@@ -758,7 +926,6 @@ describe('useShapeBuildTasks', () => {
           progress: 15,
           message: 'foreign',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -799,7 +966,6 @@ describe('useShapeBuildTasks', () => {
           progress: 20,
           message: 'stale',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -821,7 +987,6 @@ describe('useShapeBuildTasks', () => {
           progress: 0,
           message: 'queued',
           index: 1,
-          sequence: 1,
         },
       });
     });
@@ -850,7 +1015,6 @@ describe('useShapeBuildTasks', () => {
           progress: 30,
           message: 'tiles 12/40',
           index: 1,
-          sequence: 3,
           metadata: {
             vtParentInputSummary: {
               parentTile: { z: 6, x: 15, y: 23 },
@@ -870,59 +1034,41 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('recovers task snapshot when initial subscription events are missing', async () => {
-    vi.useFakeTimers();
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
-      return window.setTimeout(() => cb(performance.now()), 0);
+  it('can refresh task snapshot manually when updates are absent', async () => {
+    getBuildTasksMock.mockResolvedValue([
+      {
+        taskId: 'node-refresh-missing:fetch:JP:0',
+        stage: 'fetch',
+        status: 'running',
+        progress: 20,
+        message: 'Running',
+        index: 1,
+      },
+    ]);
+
+    const { result } = renderHook(() => useShapeBuildTasks('node-refresh-missing'));
+
+    await act(async () => {
+      await Promise.resolve();
     });
-    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number) => {
-      window.clearTimeout(id);
-    });
-    try {
-      getBuildTasksMock.mockResolvedValue([
-        {
-          taskId: 'node-reconcile:fetch:JP:0',
-          stage: 'fetch',
-          status: 'running',
-          progress: 20,
-          message: 'Running',
-          index: 1,
-          sequence: 1,
-        },
-      ]);
 
-      const { result } = renderHook(() => useShapeBuildTasks('node-reconcile'));
-
-      await act(async () => {
-        await Promise.resolve();
-      });
-
+    await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
+    });
 
-      await act(async () => {
-        vi.advanceTimersByTime(5000);
-        await Promise.resolve();
-      });
+    expect(getBuildTasksMock).not.toHaveBeenCalled();
 
-      await act(async () => {
-        vi.advanceTimersByTime(5000);
-        await Promise.resolve();
-      });
+    await act(async () => {
+      await result.current.refresh();
+    });
 
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      expect(getBuildTasksMock).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(getBuildTasksMock).toHaveBeenCalledWith('shape', 'node-refresh-missing');
       expect(result.current.tasks).toHaveLength(1);
       expect(result.current.tasks[0]?.status).toBe('running');
       expect(result.current.isLoading).toBe(false);
-    } finally {
-      rafSpy.mockRestore();
-      cancelSpy.mockRestore();
-      vi.useRealTimers();
-    }
-  }, 10000);
+    });
+  });
 
   it('flushes task updates via timeout fallback when requestAnimationFrame does not fire', async () => {
     vi.useFakeTimers();
@@ -948,7 +1094,6 @@ describe('useShapeBuildTasks', () => {
             progress: 0,
             message: 'Queued',
             index: 1,
-            sequence: 1,
           },
         });
       });

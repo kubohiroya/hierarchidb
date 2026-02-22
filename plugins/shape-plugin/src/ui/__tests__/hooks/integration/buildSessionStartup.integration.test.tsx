@@ -71,7 +71,6 @@ describe('buildSessionStartup integration baseline', () => {
             progress: 0,
             message: 'Queued',
             index: 1,
-            sequence: 1,
           },
         });
       });

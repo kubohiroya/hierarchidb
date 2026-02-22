@@ -21,7 +21,7 @@ type FilterContext = BuildTaskFilterDeps & {
   runClearTaskQueueStages: (taskTypes: BuildTaskType[]) => Promise<void>;
 };
 
-export type CacheActionKey = 'fetchApi' | 'fetchFiltered' | 'transform' | 'vt' | 'metadata' | 'resetSession';
+export type CacheActionKey = 'fetchApi' | 'fetchFiltered' | 'transform' | 'vt' | 'transposeIndex' | 'metadata' | 'resetSession';
 
 type ActionDeps = BuildTaskFilterDeps & {
   sessionStatus: BuildSessionStatus['status'] | null;
@@ -71,6 +71,25 @@ const clearSessionQueueIfNeeded = async (deps: ActionDeps, skipIfRunning = false
 const clearMetadataAndTaskStates = async (deps: ActionDeps, taskTypes: BuildTaskType[]): Promise<void> => {
   await deps.runClearTaskQueueStages(taskTypes);
   await filterByStage(deps, taskTypes);
+};
+
+const handleDeleteVtArtifacts = async (deps: ActionDeps, successMessage: string): Promise<void> => {
+  const nodeId = deps.nodeId;
+  if (!nodeId) return;
+  const taskTypes: BuildTaskType[] = ['vt'];
+  const taskQueue = new VtTaskQueueDb();
+  await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
+  await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+  await clearMetadataAndTaskStates(deps, taskTypes);
+  await taskQueue.tasks.where('nodeId').equals(nodeId).delete();
+  const shouldPreserveSession = deps.sessionStatus === 'completed' || (await deps.hasPersistedOutputs());
+  const resetByStale = await clearSessionQueueIfNeeded(deps);
+  if (!shouldPreserveSession && !resetByStale) {
+    deps.onResetSession?.();
+    await deps.persistSessionReset();
+  }
+  await deps.loadCountsSafely();
+  notify.success(successMessage);
 };
 
 export const handleDeleteFetchApiCache = async (deps: ActionDeps): Promise<void> => {
@@ -137,22 +156,15 @@ export const handleDeleteTransformCache = async (deps: ActionDeps): Promise<void
 
 export const handleDeleteVTCache = async (deps: ActionDeps): Promise<void> => {
   if (!deps.nodeId) return;
-  const nodeId = deps.nodeId;
-  const taskTypes: BuildTaskType[] = ['vt'];
-  const taskQueue = new VtTaskQueueDb();
   await deps.runDelete('vt', async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
-    await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
-    await clearMetadataAndTaskStates(deps, taskTypes);
-    await taskQueue.tasks.where('nodeId').equals(nodeId).delete();
-    const shouldPreserveSession = deps.sessionStatus === 'completed' || (await deps.hasPersistedOutputs());
-    const resetByStale = await clearSessionQueueIfNeeded(deps);
-    if (!shouldPreserveSession && !resetByStale) {
-      deps.onResetSession?.();
-      await deps.persistSessionReset();
-    }
-    await deps.loadCountsSafely();
-    notify.success('Deleted tile data');
+    await handleDeleteVtArtifacts(deps, 'Deleted tile data');
+  });
+};
+
+export const handleDeleteTransposeIndex = async (deps: ActionDeps): Promise<void> => {
+  if (!deps.nodeId) return;
+  await deps.runDelete('transposeIndex', async () => {
+    await handleDeleteVtArtifacts(deps, 'Deleted transpose index');
   });
 };
 

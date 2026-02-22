@@ -1,18 +1,17 @@
-import type { BuildTaskSummary, TaskDisplayPayload } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary, TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
 import type { MutableRefObject } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type RawTaskSummary = BuildTaskSummary & {
-  taskType?: string;
-  type?: string;
-  stage?: string;
+  taskType?: TaskStage;
+  type?: TaskStage;
+  stage?: TaskStage;
   title?: string;
   metadata?: Record<string, unknown>;
   error?: string;
   errorMessage?: string;
   index?: number;
   stagePriority?: number;
-  sequence?: number;
   updatedAt?: number;
 };
 
@@ -22,6 +21,8 @@ export type SyncArgs = {
   setIsLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
   markTaskStreamSynchronized?: () => void;
+  onTaskSnapshot?: (tasks: ShapeBuildTaskSummary[]) => void;
+  onTaskTerminalProgressUpdate?: (task: ShapeBuildTaskSummary) => void;
 };
 
 export type SyncSchedulingArgs = Pick<
@@ -35,7 +36,6 @@ export type RunningResidueLogPayload = {
   nodeId: string | null;
   stage?: string | null;
   taskId?: string | null;
-  sequence?: number | null;
   prevStatus?: string | null;
   nextStatus?: string | null;
   source?: string | null;
@@ -78,8 +78,6 @@ export type HandlerRefs = {
   pendingTasksRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
   bufferedSnapshotRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
   bufferedUpdatesRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
-  bufferedSequenceRef: MutableRefObject<Map<string, number>>;
-  committedSequenceRef: MutableRefObject<Map<string, number>>;
   pendingDirtyRef: MutableRefObject<boolean>;
   flushScheduledRef: MutableRefObject<boolean>;
   flushFrameRef: MutableRefObject<number | null>;

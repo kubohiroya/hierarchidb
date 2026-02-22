@@ -112,7 +112,6 @@ const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUs
 const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord => {
   return {
     nodeId: session.nodeId,
-    draftId: session.draftId,
     status: session.status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
@@ -137,7 +136,6 @@ const toBuildSessionUpdates = (
   updates: Partial<ShapeBuildSessionRecord>
 ): Partial<BuildSessionRecord> => {
   const next: Partial<BuildSessionRecord> = {};
-  if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;

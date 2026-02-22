@@ -1,6 +1,7 @@
 export * from './components/BuildSessionLauncherPanel.js';
 export * from './contexts/TreeBuildSessionContexts.js';
 export * from './hooks/taskSyncHelpers.js';
+export * from './hooks/buildSessionStatusMapper.js';
 export * from './hooks/useBuildProgressState.js';
 export * from './hooks/useBuildSessionMutation.js';
 export * from './hooks/useBuildSessionSnapshots.js';

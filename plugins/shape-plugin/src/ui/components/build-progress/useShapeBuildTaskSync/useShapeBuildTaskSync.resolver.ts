@@ -4,6 +4,7 @@ import {
   mergeTaskMessage,
   readVtParentInputSummary,
   normalizeTaskStatus,
+  normalizeTaskProgress,
 } from './useShapeBuildTaskSync.task-utils.js';
 import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
@@ -29,13 +30,14 @@ export const useShapeBuildTaskSyncResolver = ({
   return (task: RawTaskSummary): ShapeBuildTaskSummary => {
     const progress = resolveProgressValue(task.progress);
     const stage = resolveTaskStage(task);
+    const normalizedStatus = normalizeTaskStatus(task.status, progress, task.display, task.message);
     const normalized: ShapeBuildTaskSummary = {
       ...task,
       stage,
       taskType: stage,
       type: stage,
-      status: normalizeTaskStatus(task.status, progress),
-      progress: progress >= 100 ? 100 : task.progress,
+      status: normalizedStatus,
+      progress: normalizeTaskProgress(normalizedStatus, progress, task.display, task.message),
     };
 
     if (normalized.stage === 'vt') {
@@ -50,7 +52,6 @@ export const useShapeBuildTaskSyncResolver = ({
             console.debug('[ShapeVtParentInputSummary]', {
               nodeId: sessionNodeId,
               taskId: normalized.taskId,
-              sequence: normalized.sequence ?? null,
               message: parentInputMessage,
               summary: parentInputSummary,
             });

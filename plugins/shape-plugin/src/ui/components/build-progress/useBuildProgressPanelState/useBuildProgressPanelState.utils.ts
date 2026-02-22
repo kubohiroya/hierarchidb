@@ -39,7 +39,6 @@ export const logRunningResiduePanel = (
     + ` nodeId=${formatRunningResidueValue(payload.nodeId)}`
     + ` stage=${formatRunningResidueValue(payload.stage)}`
     + ` taskId=${formatRunningResidueValue(payload.runningTaskIds.join(','))}`
-    + ` sequence=- prevStatus=- nextStatus=-`
     + ` source=ui`
     + ` eventType=aggregate`
     + ` reason=${formatRunningResidueValue(payload.reasons.join(','))}`

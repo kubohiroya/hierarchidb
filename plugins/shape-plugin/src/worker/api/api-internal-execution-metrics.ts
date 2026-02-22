@@ -47,7 +47,7 @@ import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
 import {
   resolveTaskActivityTimestamp,
   resolveTaskProcessingTimestamp,
-  selectLatestTaskBySequence,
+  selectLatestTaskByProgress,
 } from '../taskOrdering.js';
 import { getStagePlan } from '~/services/vt/shapeProgressPlan';
 import { toBuildSessionRecord } from '~/services/batch/shapeSessionMappers';
@@ -56,7 +56,6 @@ const mapBuildSessionRecordToBuildSession = (
   config: BuildSessionConfig,
 ): BuildSession => ({
   nodeId: record.nodeId,
-  draftId: record.draftId,
   status: record.status,
   config,
   startedAt: record.startedAt,
@@ -167,7 +166,6 @@ const getBuildSessionInternal = async (nodeId: NodeId): Promise<BuildSession | u
   const startedAt = typeof firstTask?.createdAt === 'number' ? firstTask.createdAt : now;
 
   return {
-    draftId: nodeId,
     nodeId,
     status,
     config,
@@ -243,6 +241,13 @@ const normalizeTaskPhase = (status: TaskQueueRecord['status']): ProgressPhase =>
 
 type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
 
+const resolveBuildTaskStage = (
+  task: BuildTaskRecordLike
+): TaskQueueRecord['stage'] | undefined => {
+  const stageValue = (task as { stage?: unknown }).stage;
+  return isValidTaskStage(stageValue) ? stageValue : undefined;
+};
+
 const normalizeResumedTaskStatus = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
   if (status === 'failed' || status === 'running') {
     return 'queued';
@@ -260,6 +265,10 @@ const isStopReason = (value: string): value is ShapeBuildStopReason => (
 
 const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => {
   const nextStatus = normalizeResumedTaskStatus(task.status);
+  const taskStage = resolveBuildTaskStage(task);
+  if (!taskStage) {
+    throw new Error('[shapeBuildAPI] task stage missing while mapping to queue');
+  }
   const shouldKeepOutput = nextStatus === 'completed' || nextStatus === 'recycled';
   const resolvedProgress = shouldKeepOutput
     ? (Number.isFinite(task.progress) ? Math.min(100, Math.max(0, task.progress)) : 100)
@@ -268,7 +277,7 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
-    stage: task.taskType,
+    stage: taskStage,
     status: nextStatus,
     index: task.index,
     progress: resolvedProgress,
@@ -303,7 +312,7 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
     .each((task) => {
       scannedCount += 1;
-      if (!isValidTaskStage(task.taskType) || !isValidTaskStatus(task.status)) {
+      if (!resolveBuildTaskStage(task) || !isValidTaskStatus(task.status)) {
         skippedCount += 1;
         return;
       }
@@ -327,7 +336,7 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
 const purgeLegacyBuildTasks = async (nodeId: NodeId): Promise<number> => {
   const invalidTaskIds: string[] = [];
   await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).each((task) => {
-    if (!isValidTaskStatus(task.status) || !isValidTaskStage(task.taskType)) {
+    if (!isValidTaskStatus(task.status) || !resolveBuildTaskStage(task)) {
       invalidTaskIds.push(task.taskId);
     }
   });
@@ -383,7 +392,6 @@ const buildTaskSummaryFields = (
   error?: string;
   errorMessage?: string;
   index?: number;
-  sequence?: number;
   stagePriority?: number;
   metadata?: Record<string, unknown>;
 } => ({
@@ -392,7 +400,6 @@ const buildTaskSummaryFields = (
   error: task.errorMessage,
   errorMessage: task.errorMessage,
   index: task.index,
-  sequence: task.sequence,
   stagePriority: task.stagePriority,
   metadata: task.metadata,
 });
@@ -412,7 +419,6 @@ const mapTaskQueueRecordToTaskSummary = (
     error: base.error,
     errorMessage: base.errorMessage,
     index: base.index,
-    sequence: base.sequence,
     stagePriority: base.stagePriority,
     metadata: base.metadata,
   };
@@ -423,14 +429,12 @@ type ShapeBuildTaskSummary = BuildTaskSummary & {
   error?: string;
   errorMessage?: string;
   index?: number;
-  sequence?: number;
   stagePriority?: number;
   metadata?: Record<string, unknown>;
 };
 
 type ProgressTaskMeta = {
   taskId: string;
-  sequence?: number;
   status: TaskQueueRecord['status'];
   stage: TaskQueueRecord['stage'];
   progress: number;
@@ -568,13 +572,12 @@ const buildProgressPayloadFromTasks = async (
 ): Promise<BuildProgressPayload> => {
   const summary = await summarizeTaskQueueProgress(nodeId, tasks, resolveTaskType(tasks));
   const stageStatusMap = buildStageStatusMap(nodeId, tasks);
-  const progressTask = options?.eventTask ?? selectLatestTaskBySequence(tasks) ?? undefined;
+  const progressTask = options?.eventTask ?? selectLatestTaskByProgress(tasks) ?? undefined;
   const meta: Record<string, unknown> = {};
   if (progressTask) {
     const progressTaskSummary = buildTaskSummaryFields(progressTask);
     const progressTaskMeta: ProgressTaskMeta = {
       taskId: progressTask.taskId,
-      sequence: Number.isFinite(progressTask.sequence) ? progressTask.sequence : undefined,
       status: progressTask.status,
       stage: progressTask.stage,
       progress: resolveTaskProgress(progressTask),
@@ -693,7 +696,7 @@ const resolveSessionStatus = (
 };
 
 const resolveSessionLastActivity = (tasks: TaskQueueRecord[]): number => {
-  const latest = selectLatestTaskBySequence(tasks);
+  const latest = selectLatestTaskByProgress(tasks);
   const timestamp = latest ? resolveTaskActivityTimestamp(latest) : Date.now();
   return timestamp > 0 ? timestamp : Date.now();
 };
@@ -731,7 +734,6 @@ const updateBuildSessionFromTasks = async (
 const upsertBuildSessionSnapshot = async (
   input: {
     nodeId: NodeId;
-    draftId?: NodeId;
     selectedArrayByCountries?: SelectedArrayByCountries;
     tasks?: TaskQueueRecord[];
     status: ShapeBuildSessionRecord['status'];
@@ -762,7 +764,6 @@ const upsertBuildSessionSnapshot = async (
     : (existing?.expiresAt ?? resolveSessionExpiresAt(lastActivity));
   const record: ShapeBuildSessionRecord = {
     nodeId: input.nodeId,
-    draftId: input.draftId ?? existing?.draftId,
     status: input.status,
     selectedArrayByCountries: input.selectedArrayByCountries ?? existing?.selectedArrayByCountries,
     startedAt,
@@ -1019,7 +1020,7 @@ export const shapeBuildRuntimeExecutionMetrics = {
   emitProgressSnapshot,
   resolveProgressPhase,
   buildProgressPayloadFromTasks,
-  selectLatestTaskBySequence,
+  selectLatestTaskByProgress,
   resolveTaskProcessingTimestamp,
   listTasks,
   getShapeEntityHandler,

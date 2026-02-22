@@ -202,10 +202,7 @@ const toBuildSessionStatus = (
 ): BuildSessionStatus => {
   const progress = (session?.progress as Record<string, unknown> | undefined) ?? {};
   return {
-    nodeId:
-      (session?.nodeId as NodeId | undefined) ??
-      (session?.draftId as NodeId | undefined) ??
-      fallbackNodeId,
+    nodeId: (session?.nodeId as NodeId | undefined) ?? fallbackNodeId,
     status: (session?.status as BuildSessionStatus['status'] | undefined) ?? 'idle',
     progress: {
       total: (progress.total as number | undefined) ?? 0,
@@ -678,12 +675,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               await buildApi.invokeBuildCommand('session/pause', { nodeId, stopReason: reason });
             } else {
               const session = await getSessionSnapshot(buildApi, nodeId);
-              const draftId =
-                (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
-                (session as { draftId?: NodeId } | undefined)?.draftId ??
-                nodeId;
+              const nodeIdForCommand = (session as { nodeId?: NodeId } | undefined)?.nodeId ?? nodeId;
               if (buildApi.pauseBuildSession) {
-                await buildApi.pauseBuildSession(draftId);
+                await buildApi.pauseBuildSession(nodeIdForCommand);
               }
             }
             console.warn('[worker bootstrap][PauseTrace] pause-finished', {
@@ -762,12 +756,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
               return;
             }
             const session = await getSessionSnapshot(buildApi, nodeId);
-            const draftId =
-              (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
-              (session as { draftId?: NodeId } | undefined)?.draftId ??
-              nodeId;
+            const nodeIdForCommand = (session as { nodeId?: NodeId } | undefined)?.nodeId ?? nodeId;
             if (buildApi.resumeBuildSession) {
-              await buildApi.resumeBuildSession(draftId);
+              await buildApi.resumeBuildSession(nodeIdForCommand);
             }
             setHeapContext({ nodeType, nodeId });
             clearRuntimeTransientStatus(nodeType, nodeId, true);

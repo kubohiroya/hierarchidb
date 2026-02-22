@@ -8,7 +8,7 @@
 import type { BuildWorkerAPI } from '~/types/worker-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getTreeNodeName, type SubscriptionId, type TreeNode } from '@hierarchidb/tree-api';
-import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { isFolderNodeType, type BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -86,6 +86,28 @@ export function useTreeConsoleBreadcrumbs({
           const parent = i > 0 ? (ancestors[i - 1]?.id ?? null) : null;
           parentMap.set(String(node.id), parent ? String(parent) : null);
         }
+        const readBuildRequired = (sourceNode?: TreeNode | null): boolean => {
+          return Boolean(
+            sourceNode?.draftMetadata?.buildMetadata?.buildRequired ||
+              sourceNode?.metadata?.buildMetadata?.buildRequired
+          );
+        };
+        const hasBuildRequiredInDescendants = async (folderNodeId: string): Promise<boolean> => {
+          const listDescendants = (queryAPI as { listDescendants?: (nodeId: NodeId) => Promise<TreeNode[]> })
+            .listDescendants;
+          if (typeof listDescendants !== 'function') {
+            return false;
+          }
+          const descendants = await listDescendants(
+            folderNodeId as NodeId
+          );
+          return descendants.some(
+            (descendant) =>
+              !isFolderNodeType(String(descendant.nodeType ?? '')) &&
+              readBuildRequired(descendant)
+          );
+        };
+
         let nodes: BreadcrumbNode[] = ancestors.map((node) => ({
           id: node.id,
           name: getTreeNodeName(node),
@@ -143,9 +165,25 @@ export function useTreeConsoleBreadcrumbs({
                 description: pageTreeNode.draftMetadata.description,
                 tags: pageTreeNode.draftMetadata.tags,
                 buildMetadata: pageTreeNode.draftMetadata.buildMetadata,
-              }
+            }
             : null,
         };
+        const nodeType = currentBreadcrumb.nodeType;
+        const currentNodeIsFolder = isFolderNodeType(String(nodeType));
+        if (currentNodeIsFolder) {
+          const hasBuildRequiredDescendant = await hasBuildRequiredInDescendants(
+            String(pageTreeNode.id as NodeId)
+          );
+          const currentBuildMetadata = currentBreadcrumb.metadata?.buildMetadata;
+          const currentBuildRequired = readBuildRequired(pageTreeNode) || hasBuildRequiredDescendant;
+          currentBreadcrumb.metadata = {
+            ...currentBreadcrumb.metadata,
+            buildMetadata: {
+              ...currentBuildMetadata,
+              buildRequired: currentBuildRequired,
+            },
+          };
+        }
 
         if (!disposed) {
           setBreadcrumbItems([...nodes, currentBreadcrumb]);

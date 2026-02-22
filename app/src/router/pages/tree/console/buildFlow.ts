@@ -8,6 +8,7 @@ import { createBuildQueue, createBuildQueueKey } from './buildQueue.ts';
 export type BuildStepTarget = {
   stepId: 'build' | 'data-source';
   stepNumber: number;
+  shouldAutoStart: boolean;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -19,19 +20,39 @@ export const mergeNodeData = (node?: TreeNode | null): Record<string, unknown> =
   return { ...draft };
 };
 
-export const resolveBuildStepTarget = (
+export const resolveBuildStepTarget = async (
   nodeType: string,
   mergedData: Record<string, unknown>
-): BuildStepTarget | null => {
+): Promise<BuildStepTarget | null> => {
   const composed = composeStepConfigs(nodeType, 'edit', mergedData);
   const configs = composed.configs ?? [];
-  const buildIndex = configs.findIndex((cfg) => cfg.id === 'build');
-  const dataSourceIndex = configs.findIndex((cfg) => cfg.id === 'data-source');
-  const targetIndex = buildIndex >= 0 ? buildIndex : dataSourceIndex;
+  const isBuildLikeStep = (cfgId: string, type: string): boolean => {
+    if (cfgId === 'build') return true;
+    if (type === 'styler' && cfgId === 'data-source') return true;
+    return false;
+  };
+
+  const targetIndex = configs.findIndex((cfg) => isBuildLikeStep(cfg.id, nodeType));
   if (targetIndex < 0) return null;
-  const stepId = configs[targetIndex]?.id === 'build' ? 'build' : 'data-source';
+  const stepConfig = configs[targetIndex];
+  const stepId = stepConfig?.id === 'build' ? 'build' : 'data-source';
   const stepNumber = targetIndex + 1 + (composed.hasHostBase ? 0 : 1);
-  return { stepId, stepNumber };
+
+  const shouldAutoStart = await (async () => {
+    const evaluateAutoStart = async (): Promise<boolean> => {
+      if (!stepConfig?.capabilities?.canStartBuild) return true;
+      const result = await Promise.resolve(stepConfig.capabilities.canStartBuild(mergedData));
+      return Boolean(result);
+    };
+
+    try {
+      return await evaluateAutoStart();
+    } catch {
+      return false;
+    }
+  })();
+
+  return { stepId, stepNumber, shouldAutoStart };
 };
 
 const isBuildRequired = (node: TreeNode): boolean =>
@@ -58,7 +79,7 @@ const collectBuildUrlsFromDescendants = async (params: {
     if (isFolderNodeType(itemType)) continue;
     if (!isBuildRequired(item)) continue;
     await loadUIPlugin(itemType).catch(() => false);
-    const target = resolveBuildStepTarget(itemType, mergeNodeData(item));
+    const target = await resolveBuildStepTarget(itemType, mergeNodeData(item));
     if (!target) continue;
     urls.push(
       buildDialogUrl({
@@ -69,6 +90,7 @@ const collectBuildUrlsFromDescendants = async (params: {
         stepNumber: target.stepNumber,
         returnTo,
         buildQueueKey: queueKey,
+        buildQueued: true,
       })
     );
   }
@@ -83,10 +105,13 @@ export const buildDialogUrl = (params: {
   stepNumber: number;
   returnTo: string;
   buildQueueKey?: string | null;
+  buildQueued?: boolean;
 }): string => {
   const basePath = `/t/${params.treeId}/${params.pageNodeId}/${params.targetNodeId}/${params.nodeType}/edit/normal/${params.stepNumber}`;
   const search = new URLSearchParams();
-  search.set('build', '1');
+  if (params.buildQueued) {
+    search.set('build', '1');
+  }
   if (params.returnTo) {
     search.set('returnTo', params.returnTo);
   }
@@ -179,6 +204,7 @@ export const startBuildFlow = async (params: {
     nodeType,
     stepNumber: target.stepNumber,
     returnTo,
+    buildQueued: target.shouldAutoStart,
   });
   navigate(url);
 };
