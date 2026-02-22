@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskDisplayPayload } from '@hierarchidb/batch-api';
+import type { TaskDisplayPayload } from '../../../../build-api';
 import { applyFeatureFiltering } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import type { TransformByBandStageContext } from '~/contexts';

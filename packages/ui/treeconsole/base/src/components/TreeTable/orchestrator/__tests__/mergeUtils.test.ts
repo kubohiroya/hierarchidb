@@ -4,14 +4,14 @@ import { coalesceBatches } from '../mergeUtils';
 
 describe('coalesceBatches', () => {
   it('coalesces added/updated/removed/moved with last-write-wins', () => {
-    const batches: SubTreeChanges[] = [
+    const changes: SubTreeChanges[] = [
       { added: [{ id: 'a', parentId: null }] },
       { updated: [{ nodeId: 'a', changes: { name: 'A1' } }] },
       { moved: [{ nodeId: 'a', newParentId: 'r' }] },
       { removed: ['b'] },
       { updated: [{ nodeId: 'a', changes: { description: 'D' } }] },
     ];
-    const r = coalesceBatches(batches);
+    const r = coalesceBatches(changes);
     expect(r.removed).toEqual(['b']);
     const u = (r.updated || []).find((x) => x.nodeId === 'a');
     expect(u?.changes).toMatchObject({ name: 'A1', description: 'D' });

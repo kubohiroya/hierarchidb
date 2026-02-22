@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { NodeId } from '@hierarchidb/core-types';
 
 type UseShapeBuildSessionRecordArgs = {

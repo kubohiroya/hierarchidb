@@ -1,4 +1,4 @@
-import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
+import type { TaskDisplayPayload, TaskStage } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   BaseBuildConfig,
@@ -192,7 +192,6 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: BuildTaskType | 'processing';
 }
 
 export interface BuildSession {
@@ -208,7 +207,6 @@ export interface BuildSession {
     failed: number;
     skipped: number;
     percentage: number;
-    taskType?: BuildTaskType | 'processing';
   };
   canResume?: boolean;
   lastActivity?: number;

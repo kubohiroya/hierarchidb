@@ -157,19 +157,19 @@ export class SamplePluginProvider implements PluginStepProvider {
             return Boolean(_data?.setting1?.trim?.());
           },
           canProceedToNext: (data) => {
-            // Can proceed if batch settings are valid
+            // Can proceed if build settings are valid
             return !!(data?.buildSize && data?.buildSize > 0);
           },
           canBackToPrevious: (data) => {
-            // Can go back unless batch is currently running
+            // Can go back unless build is currently running
             return !data?.buildRunning;
           },
           canSave: (_data) => {
-            // Can save from batch step
+            // Can save from build step
             return true;
           },
           canStartBuild: (data) => {
-            // Can start batch if batch configuration is valid
+            // Can start build if build configuration is valid
             return !!(data?.buildSize && data?.buildSize > 0 && data?.buildSize <= 1000);
           },
         },
@@ -203,7 +203,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             return true;
           },
           canStartBuild: (data) => {
-            // Can start batch from review if batch is configured
+            // Can start build from review if build is configured
             return !!(data?.buildSize && data?.buildSize > 0 && data?.buildSize <= 1000);
           },
         },
@@ -266,7 +266,7 @@ export class SamplePluginProvider implements PluginStepProvider {
           canBackToPrevious: () => true,
           canSave: () => true,
           canStartBuild: (data) => {
-            // Batch update is available when batch is properly configured
+            // Batch update is available when build is properly configured
             return !!(
               data?.buildSize &&
               data?.buildSize > 0 &&

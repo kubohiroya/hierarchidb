@@ -81,7 +81,7 @@ export const shapesPlugin: PluginConfig = {
   id: 'com.hierarchidb._shapes_buggy',
   name: 'Shapes Plugin', 
   version: '1.0.0',
-  description: 'Geospatial shape_obsolate data management with batch processing and vector tiles',
+  description: 'Geospatial shape_obsolate data management with build processing and vector tiles',
   
   nodeTypes: [
     {
@@ -482,7 +482,7 @@ export class ShapesEntityHandler extends EntityHandler<ShapesEntity, never, Shap
     concurrent?: number;
     timeout?: number;
   }): Promise<string> {
-    const taskId = `batch-${nodeId}-${Date.now()}`;
+    const taskId = `build-${nodeId}-${Date.now()}`;
     
     const task: BatchTaskLike = {
       taskId,
@@ -808,7 +808,7 @@ export class ShapesService extends BaseResourceWorkerService<ShapesWorkerAPI> im
     timeout?: number;
   }): Promise<string> {
     const worker = await this.getWorker();
-    const taskId = `batch-${Date.now()}`;
+    const taskId = `build-${Date.now()}`;
     
     // バックグラウンドで処理開始
     worker.processBatchDownload(taskId, sources, {

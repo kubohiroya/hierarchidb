@@ -19,7 +19,7 @@ After this change, shape, location, and route batch session managers share a con
 
 ## Decision Log
 
-- Decision: Use `packages/batch-runtime-services/src/BaseBatchSessionManager.ts` as the shared base and align plugin managers to it.
+- Decision: Use `packages/build-runtime-services/src/BaseBatchSessionManager.ts` as the shared base and align plugin managers to it.
   Rationale: The base already models session lifecycle and progress callbacks and is intended for shared batch behavior.
   Date/Author: 2025-12-26 / Codex
 
@@ -29,11 +29,11 @@ Pending. This section will summarize what was achieved and any remaining gaps af
 
 ## Context and Orientation
 
-The batch session manager is the component that creates sessions, owns lifecycle controls, and emits progress events. Shape stores sessions in a Dexie-backed DB; location stores in an ephemeral DB; route uses orchestrator classes and worker bridge operations. The shared base class in `packages/batch-runtime-services` already supports pause/resume/cancel/status and progress emission via `emitProgress`.
+The batch session manager is the component that creates sessions, owns lifecycle controls, and emits progress events. Shape stores sessions in a Dexie-backed DB; location stores in an ephemeral DB; route uses orchestrator classes and worker bridge operations. The shared base class in `packages/build-runtime-services` already supports pause/resume/cancel/status and progress emission via `emitProgress`.
 
 Key files:
 
-- `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`
+- `packages/build-runtime-services/src/BaseBatchSessionManager.ts`
 - `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`
 - `plugins/location-plugin/src/services/batch/BatchSessionManager.ts`
 - `plugins/route-plugin/src/services/RouteBatchSessionOrchestrator.ts`
@@ -70,7 +70,7 @@ Refactor each plugin’s session manager to extend `BaseBatchSessionManager` and
 
 ## Validation and Acceptance
 
-- Run `pnpm --filter @hierarchidb/batch-runtime-services typecheck` and expect exit code 0.
+- Run `pnpm --filter @hierarchidb/build-runtime-services typecheck` and expect exit code 0.
 - Run `pnpm --filter @hierarchidb/shape-plugin typecheck`, `pnpm --filter @hierarchidb/location-plugin typecheck`, and `pnpm --filter @hierarchidb/route-plugin typecheck` and expect exit code 0.
 - If available, run any existing batch manager unit tests in the plugins to confirm progress events are still emitted.
 
@@ -90,6 +90,6 @@ Expected class outline after refactor:
 
 ## Interfaces and Dependencies
 
-- Base class: `BaseBatchSessionManager` in `packages/batch-runtime-services`.
+- Base class: `BaseBatchSessionManager` in `packages/build-runtime-services`.
 - Session classes must implement progress listener registration for `registerSession` to hook into.
 - Plugin-specific persistence and configuration remain in plugin packages.

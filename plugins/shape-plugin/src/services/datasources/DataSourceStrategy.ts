@@ -13,7 +13,7 @@ export interface DataSourceConfig {
   description?: string;
   version: string;
   access: AccessConfig;
-  processing: BatchConfig;
+  processing: BuildConfig;
   schedule?: ScheduleConfig;
   cache?: CacheConfig;
 }
@@ -34,7 +34,7 @@ export interface AuthConfig {
   refreshStrategy?: RefreshStrategy;
 }
 
-export interface BatchConfig {
+export interface BuildConfig {
   inputFormat: DataFormat;
   outputFormat: DataFormat;
   validation?: ValidationRule[];

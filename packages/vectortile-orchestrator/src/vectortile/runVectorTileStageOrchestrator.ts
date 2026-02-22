@@ -61,7 +61,7 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
       failed: baseFailed,
       skipped: 0,
       percentage: total > 0 ? (baseDone / total) * 100 : 0,
-      taskType: 'vectortile',
+      stage: 'vectortile',
     };
 
     // Orchestrator-generated progress events must be converted to TProgress explicitly.

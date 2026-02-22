@@ -184,7 +184,7 @@ export class ImportExportService<T> implements ImportExportAPI<T> {
         }
       }
 
-      const size = 100; // conservative batch size; callers can chunk earlier if needed
+      const size = 100; // conservative build size; callers can chunk earlier if needed
       for (let i = 0; i < toCreate.length; i += size) {
         const batch = toCreate.slice(i, i + size);
         await this.db.bulkCreateNodes(batch.map((b) => b.node));

@@ -27,6 +27,7 @@ export {
   type StylerTableRow,
   type StylerValueType,
   type TablePreviewProps,
+  type SpreadSheetDataSourceType,
 } from './StylerEntity.js';
 export { StylerDB } from './StylerDB.js';
 export type { StylerMutationAPI, StylerQueryAPI } from './StylerAPI.js';

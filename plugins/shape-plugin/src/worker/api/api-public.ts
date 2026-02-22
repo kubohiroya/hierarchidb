@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '../../../../../packages/build-api';
 import {
   type BuildSession,
   type CountryMetadata,
@@ -22,9 +22,9 @@ import { normalizeCountryCodeFormat } from '~/services/utils/iso3166';
 import {
   generateDownloadTaskPayloads,
 } from '~/services/utils/utils';
-import { resolveFetchStageStrategy } from '~/services/batch/strategies/resolveFetchStageStrategy';
+import { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { shapeBuildMonitoringAPI } from './api-public-monitoring.js';
 import { shapeBuildRuntime } from './api-internal.js';
 

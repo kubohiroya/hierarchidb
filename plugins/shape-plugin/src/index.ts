@@ -18,7 +18,7 @@ export { ShapeMetadata } from './common/types/metadata.js';
 export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
 //export type { CreateShapeData, UpdateShapeData, BuildTaskResultType, BuildTaskResult } from './common/types/index.js';
 
-// Batch processing exports are temporarily internal-only until type contracts are stabilized
+// Build processing exports are temporarily internal-only until type contracts are stabilized
 // Export plugin definition for worker fallback loading
 // Plugin definition export removed: metadata is sourced from package.json
 

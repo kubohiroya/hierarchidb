@@ -6,7 +6,7 @@
 
 ## Purpose / Big Picture
 
-Step5(Build Progress) の集計ロジックが shape-plugin と ui-batch で重複しており、変更時に不整合が起きやすい。共通ユーティリティへ集約し、UI の進捗/サマリ算出が単一ルールで動くようにする。併せて `useShapeBuildStep` の責務を分割し、表示/進捗/再開/タイマーの役割を明確にする。さらに `runShapePipeline` をステージ単位のランナーへ分割して orchestrator を薄くし、保守性とレビュー性を向上させる。
+Step5(Build Progress) の集計ロジックが shape-plugin と ui-build で重複しており、変更時に不整合が起きやすい。共通ユーティリティへ集約し、UI の進捗/サマリ算出が単一ルールで動くようにする。併せて `useShapeBuildStep` の責務を分割し、表示/進捗/再開/タイマーの役割を明確にする。さらに `runShapePipeline` をステージ単位のランナーへ分割して orchestrator を薄くし、保守性とレビュー性を向上させる。
 
 ## Progress
 
@@ -24,13 +24,13 @@ Step5(Build Progress) の集計ロジックが shape-plugin と ui-batch で重�
 
 ## Decision Log
 
-- Decision: 集計ユーティリティは `@hierarchidb/ui-batch-progress` に集約し、shape-plugin から参照する。
+- Decision: 集計ユーティリティは `@hierarchidb/ui-build-progress` に集約し、shape-plugin から参照する。
   Rationale: UI 側の Task 進捗集計と同一のロジックで揃えるため。
   Date/Author: 2026-01-29 (Codex).
 
 ## Outcomes & Retrospective
 
-- Outcome: Step5 の集計ロジックを ui-batch のユーティリティへ集約し、useShapeBuildStep を進捗/表示/サマリ/タイマーの責務に分割。shapePipeline はステージ単位の関数で orchestrator が簡潔化された。
+- Outcome: Step5 の集計ロジックを ui-build のユーティリティへ集約し、useShapeBuildStep を進捗/表示/サマリ/タイマーの責務に分割。shapePipeline はステージ単位の関数で orchestrator が簡潔化された。
 
 ## Context and Orientation
 
@@ -38,7 +38,7 @@ Step5(Build Progress) の集計ロジックが shape-plugin と ui-batch で重�
 
 ## Plan of Work
 
-1) Step5 集計ロジックを共通ユーティリティへ移動し、shape-plugin と ui-batch から参照する。
+1) Step5 集計ロジックを共通ユーティリティへ移動し、shape-plugin と ui-build から参照する。
 2) `useShapeBuildStep` のロジックを「進捗計算」「表示ラベル」「自動再開/タイマー」「サマリ生成」単位で分割フック化する。
 3) `runShapePipeline` をステージ単位ランナーに分割し orchestrator を薄くする。
 4) typecheck を実行し、TASKS.md にログを残す。
@@ -62,5 +62,5 @@ Step5(Build Progress) の集計ロジックが shape-plugin と ui-batch で重�
 
 ## Interfaces and Dependencies
 
-- 共通ユーティリティは ui-batch から export し、shape-plugin で import する。
+- 共通ユーティリティは ui-build から export し、shape-plugin で import する。
 - 既存の UI/Worker API には手を入れず、参照の入れ替えに留める。

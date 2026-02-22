@@ -1,6 +1,6 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
-import { ephemeralShapeAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeBuildConfig } from '~/common/types/build';
 import { mergeBuildConfig } from '~/services/utils/utils';
 

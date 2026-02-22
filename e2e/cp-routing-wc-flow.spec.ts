@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import {
   dismissGuidedTour,
   waitForTreeTableLoad,
@@ -12,8 +12,8 @@ import {
   buildAppUrl,
 } from './utils/test-helpers';
 
-test.describe.serial('CP routing + Working Copy batch flow', () => {
-  async function runBatchFlow(page: Parameters<typeof test>[0]['page']) {
+test.describe.serial('CP routing + Working Copy build flow', () => {
+  async function runBuildFlow(page: Page) {
     setupConsoleErrorTracking(page);
 
     await clearTestData(page);
@@ -23,7 +23,7 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
     await waitForTreeTableLoad(page);
 
     const timestamp = Date.now();
-    const initialName = await createTestFolder(page, `CP Batch ${timestamp}`);
+    const initialName = await createTestFolder(page, `CP Build ${timestamp}`);
     const nodeSelector = (name: string) => `[data-testid="tree-node"]:has-text("${name}")`;
     const createdNode = page.locator(nodeSelector(initialName)).first();
 
@@ -97,6 +97,6 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
   }
 
   test('end-to-end operations succeed with CommandProcessor routing enabled by default', async ({ page }) => {
-    await runBatchFlow(page);
+    await runBuildFlow(page);
   });
 });

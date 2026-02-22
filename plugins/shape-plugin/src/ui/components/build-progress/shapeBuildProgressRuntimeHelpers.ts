@@ -1,4 +1,4 @@
-import { computePercentage, type TaskCountSummary } from '@hierarchidb/ui-batch-progress';
+import { computePercentage, type TaskCountSummary } from '../../../../../../packages/ui/build';
 import type { BuildProgress } from './shapeBuildProgressMapping.js';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
@@ -90,15 +90,15 @@ export const estimateStageRemainingMs = ({
 
 export const resolveFailureStage = ({
   buildStatus,
-  taskType,
+  stage,
 }: {
   buildStatus: BuildStatus;
-  taskType?: string;
+  stage?: string;
 }): { failureStageId?: string; enabled: boolean } => {
-  if (buildStatus !== 'failed' || !taskType) {
+  if (buildStatus !== 'failed' || !stage) {
     return { failureStageId: undefined, enabled: false };
   }
-  return { failureStageId: taskType, enabled: true };
+  return { failureStageId: stage, enabled: true };
 };
 
 export const shouldExposeBuildStatus = ({

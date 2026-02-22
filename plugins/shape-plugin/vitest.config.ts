@@ -106,20 +106,20 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/core-types/src/index.ts'),
       },
       {
-        find: '@hierarchidb/batch-api',
-        replacement: path.resolve(__dirname, '../../packages/batch-api/src/index.ts'),
+        find: '@hierarchidb/build-api',
+        replacement: path.resolve(__dirname, '../../packages/build-api/src/index.ts'),
       },
       {
         find: '@hierarchidb/ui-worker-client',
         replacement: path.resolve(__dirname, '../../packages/ui/worker-client/dist/index.js'),
       },
       {
-        find: '@hierarchidb/ui-batch',
-        replacement: path.resolve(__dirname, '../../packages/ui/batch/dist/index.js'),
+        find: '@hierarchidb/ui-build',
+        replacement: path.resolve(__dirname, '../../packages/ui/build/dist/index.js'),
       },
       {
-        find: '@hierarchidb/ui-batch-progress',
-        replacement: path.resolve(__dirname, '../../packages/ui/batch/dist/index.js'),
+        find: '@hierarchidb/ui-build-progress',
+        replacement: path.resolve(__dirname, '../../packages/ui/build/dist/index.js'),
       },
       {
         find: '@hierarchidb/ui-worker-provider',

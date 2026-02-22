@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
-import { usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
+import { usePluginBuildProgress } from '../../../../../packages/ui/build';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -10,7 +10,7 @@ export interface UseLocationProgressOptions {
 
 type ProgressEvent = {
   nodeId: NodeId;
-  taskType: string;
+  stage: string;
   total: number;
   completed: number;
   failed: number;
@@ -43,10 +43,10 @@ function toProgressEvent(
 ): LocationProgressEvent | null {
   if (!info) return null;
   const resolvedNodeId = info.nodeId ?? fallbackNodeId;
-  const taskType = info.phase === 'completed' ? 'completed' : info.stage;
+  const stage = info.phase === 'completed' ? 'completed' : info.stage;
   const event: LocationProgressEvent = {
     nodeId: resolvedNodeId,
-    taskType,
+    stage,
     total: info.total ?? 0,
     completed: info.completed ?? 0,
     failed: info.failed ?? 0,
@@ -100,7 +100,7 @@ export function useLocationProgress(
       onAuthRequired: async (n) => {
         setOverrideProgress({
           nodeId,
-          taskType: 'auth-required',
+          stage: 'auth-required',
           total: 1,
           completed: 0,
           failed: 0,
@@ -112,7 +112,7 @@ export function useLocationProgress(
       onAuthSuccess: async (_n) => {
         setOverrideProgress({
           nodeId,
-          taskType: 'resumed',
+          stage: 'resumed',
           total: 1,
           completed: 1,
           failed: 0,
@@ -124,7 +124,7 @@ export function useLocationProgress(
       onAuthCancelled: async (n) => {
         setOverrideProgress({
           nodeId,
-          taskType: 'failed',
+          stage: 'failed',
           total: 1,
           completed: 0,
           failed: 1,

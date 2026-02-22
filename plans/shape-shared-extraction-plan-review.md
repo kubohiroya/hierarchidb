@@ -8,7 +8,7 @@
 - `plans/shape-shared-extraction-stage2-download-registry.md`: 現在 96 行 → 目標 192 行
 - `plans/shape-shared-extraction-stage3-tabular-api.md`: 現在 93 行 → 目標 186 行
 - `plans/shape-shared-extraction-stage4-progress-hooks.md`: 現在 91 行 → 目標 182 行
-- `plans/shape-shared-extraction-stage5-batch-session-manager.md`: 現在 95 行 → 目標 190 行
+- `plans/shape-shared-extraction-stage5-build-session-manager.md`: 現在 95 行 → 目標 190 行
 
 行数倍増は「内容の追加で達成する」ことを前提とし、空行のみの増加や無意味な繰り返しは行わない。増補は PLANS.md の要件（自己完結、用語定義、検証可能性、成果の観測方法）を満たす方向で行う。
 
@@ -34,14 +34,14 @@
 
 ### Stage 4: Progress Hooks
 
-- route は `@hierarchidb/batch-runtime-services` の hook を使っており、shape/location は `@hierarchidb/batch` を利用している。単一の UI hook に統一する際の依存調整が未明記。
+- route は `@hierarchidb/build-runtime-services` の hook を使っており、shape/location は `@hierarchidb/batch` を利用している。単一の UI hook に統一する際の依存調整が未明記。
 - location は `AuthNotificationRegistry` 連携により progress を上書きする独自挙動がある。共有 hook による保持方法の具体化が不足。
 - route は pause/resume を hook 内で提供しており、shared hook に統合するか、別 hook に分離するかの方針が未決。
 
 ### Stage 5: Batch Session Manager
 
-- `BaseBatchSessionManager` は `packages/batch-runtime-services` の `AbstractBatchSession` を前提にしているが、shape/location は `@hierarchidb/batch` の `AbstractBatchSession` を使用している。ここに互換性の断絶がある。
-- route の `RouteBatchSession` は既に `batch-runtime-services` を利用しており、shape/location を揃える場合に利用パッケージの統合が必要になる。
+- `BaseBatchSessionManager` は `packages/build-runtime-services` の `AbstractBatchSession` を前提にしているが、shape/location は `@hierarchidb/batch` の `AbstractBatchSession` を使用している。ここに互換性の断絶がある。
+- route の `RouteBatchSession` は既に `build-runtime-services` を利用しており、shape/location を揃える場合に利用パッケージの統合が必要になる。
 - shape の Dexie 永続化と location の ephemeral DB を共通 base にどう組み込むか（hook 位置、タイミング）が未記載。
 
 ## 行数倍増のための増補方針
@@ -97,13 +97,13 @@
 - 具体的な追加内容:
   - AuthNotificationRegistry の hook を共有 hook が受け取る設計
   - pause/resume を `useBatchControl` として分離する案
-  - `@hierarchidb/batch` と `@hierarchidb/batch-runtime-services` の統一方針
+  - `@hierarchidb/batch` と `@hierarchidb/build-runtime-services` の統一方針
 
 ### Stage 5（95 → 190）: 追加目標 +95 行
 
 - 追加セクション案: 「AbstractBatchSession の統一」「DB 永続化フック」「セッションID互換」
 - 具体的な追加内容:
-  - shape/location が `@hierarchidb/batch-runtime-services` へ移行する条件
+  - shape/location が `@hierarchidb/build-runtime-services` へ移行する条件
   - `BaseBatchSessionManager` の `emitProgress` 連携時の型要件
   - Dexie 更新と session lifecycle の順序（start/complete/cancel）
   - route の orchestrator を保持する場合の設計図

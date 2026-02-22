@@ -1,6 +1,7 @@
 import { Box, Button, CircularProgress, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { useState, type MouseEvent, type ReactNode } from 'react';
 import { LoadingButton } from './LoadingButton.js';
+import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -14,10 +15,11 @@ type BuildControlCardProps = {
   status: BuildStatus;
   onPause?: () => void;
   onResume?: () => void;
+  onCancel?: () => void;
   controlLabel?: string;
   pauseLabel?: string;
+  cancelLabel?: string;
   stopRequested?: boolean;
-  pauseActsAsCancel?: boolean;
   startPending?: boolean;
   startLabel?: string;
   resumeLabel?: string;
@@ -36,10 +38,11 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   status,
   onPause,
   onResume,
+  onCancel,
   controlLabel,
   pauseLabel,
+  cancelLabel,
   stopRequested,
-  pauseActsAsCancel,
   startPending,
   startLabel,
   resumeLabel,
@@ -62,6 +65,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     />
   );
   const computedPauseIcon = stopRequested ? pauseSpinner : <PauseIcon fontSize="small" />;
+  const computedCancelIcon = <ClearIcon fontSize="small" />;
   const shouldShowResume = Boolean(showResumeLabel) || status === 'paused';
   const computedLabel = shouldShowResume
     ? (resumeLabel ?? 'Resume Build')
@@ -69,12 +73,13 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const computedIcon = shouldShowResume
     ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
     : (startIcon ?? <PlayArrowIcon fontSize="small" />);
-  const cancelMode = Boolean(pauseActsAsCancel);
-  const disablePause = cancelMode
-    ? (!onPause || stopRequested)
-    : (status !== 'running' || !onPause || stopRequested || startPending);
-  const disableStart = !onResume || status === 'running' || stopRequested || startPending;
-  const isLoading = (startLoading ?? (status === 'running' || Boolean(startPending))) && !stopRequested;
+  const isRunning = status === 'running';
+  const isQueued = Boolean(startPending) && !isRunning;
+  const hasLoading = startLoading ?? (isRunning || isQueued);
+  const disableStart = !onResume || hasLoading || stopRequested;
+  const disablePause = !onPause || !isRunning || stopRequested;
+  const disableCancel = !onCancel || !isQueued || stopRequested;
+  const isLoading = hasLoading && !stopRequested;
   const hasControlMenuItems = (controlMenuItems?.length ?? 0) > 0;
   const isMenuOpen = Boolean(menuAnchorEl);
   const menuDisabled = stopRequested || hasControlMenuItems === false || Boolean(controlMenuDisabled);
@@ -134,6 +139,17 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           aria-label={pauseLabel ?? 'Pause'}
         >
           {pauseLabel ?? 'Pause'}
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={computedCancelIcon}
+          disabled={disableCancel}
+          onClick={onCancel}
+          data-testid="build-control-cancel-button"
+          aria-label={cancelLabel ?? 'Cancel'}
+        >
+          {cancelLabel ?? 'Cancel'}
         </Button>
         {hasControlMenuItems ? (
           <IconButton

@@ -20,7 +20,7 @@ Users will be able to run shape-plugin batch builds where each data source contr
 
 - Observation: The current download stage builds tasks from `urlMetadata` and assumes one output buffer per download task. This implicitly forces a 1:1 mapping, which is incompatible with OSM/NaturalEarth requirements.
   Evidence: `plugins/shape-plugin/src/services/batch/SessionController.ts` (download stage task build + extract1 stage uses `urlMetadata` indices), `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts` (writes one buffer per download task).
-- Observation: Running `pnpm --filter @hierarchidb/shape-plugin test -- <file>` still executed `shape-batch-progress.headless.test.ts` which hit the GeoBoundaries API and failed without network access.
+- Observation: Running `pnpm --filter @hierarchidb/shape-plugin test -- <file>` still executed `shape-build-progress.headless.test.ts` which hit the GeoBoundaries API and failed without network access.
   Evidence: vitest run output shows `fetch failed` for `https://www.geoboundaries.org/api/current/gbOpen/JPN/ADM0/`.
 - Observation: FlatGeobuf serialization rejects features with `geometry: null`.
   Evidence: `encodeFlatGeoJson` failed with `Cannot read properties of null (reading 'type')` until tests used Point geometries.

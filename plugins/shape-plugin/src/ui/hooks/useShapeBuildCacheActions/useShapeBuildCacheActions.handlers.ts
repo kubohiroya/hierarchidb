@@ -1,9 +1,9 @@
-import type { BuildSessionStatus } from '@hierarchidb/batch-api';
+import type { BuildSessionStatus } from '../../../../../../packages/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { deleteFetchRawCache, resolveKnownTaskStage } from './useShapeBuildCacheActions.helpers.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 

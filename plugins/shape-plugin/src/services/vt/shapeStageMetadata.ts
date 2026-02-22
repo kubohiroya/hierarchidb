@@ -7,7 +7,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '~/common/types/index';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 

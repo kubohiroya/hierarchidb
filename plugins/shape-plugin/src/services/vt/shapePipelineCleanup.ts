@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
 

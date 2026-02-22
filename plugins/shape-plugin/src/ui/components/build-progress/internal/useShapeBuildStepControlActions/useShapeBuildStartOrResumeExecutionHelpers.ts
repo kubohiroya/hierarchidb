@@ -1,4 +1,4 @@
-import type { BuildSessionStatus } from '@hierarchidb/batch-api';
+import type { BuildSessionStatus } from '../../../../../../../../packages/build-api';
 //import { SHAPE_NODE_TYPE } from '../constants';
 //import { getErrorMessage, summarizeSelectedEntries } from '../errors';
 import type { StartOrResumeExecutionArgs } from './types.js';

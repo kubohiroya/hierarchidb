@@ -6,7 +6,7 @@ import type {
   TaskQueueRecord as CommonTaskQueueRecord,
   TaskStage as CommonTaskStage,
   TaskStatus as CommonTaskStatus,
-} from '@hierarchidb/batch-api';
+} from '@hierarchidb/build-api';
 
 export type StageHandlerResult<TOutput = unknown> = CommonStageHandlerResult<TOutput>;
 export type StageHandler<TInput = unknown, TOutput = unknown> = CommonStageHandler<TInput, TOutput>;

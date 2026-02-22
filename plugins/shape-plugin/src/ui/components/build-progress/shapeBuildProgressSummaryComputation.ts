@@ -7,9 +7,9 @@ import {
   type TaskCountSummary,
   type TaskStageCarrier,
   type TaskLike,
-} from '@hierarchidb/ui-batch-progress';
+} from '../../../../../../packages/ui/build';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildTaskSummary } from '@hierarchidb/batch-api';
+import type { BuildTaskSummary } from '../../../../../../packages/build-api';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import {
   buildStageCountPlan,
@@ -24,8 +24,6 @@ import {
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
 type ShapeTaskStageCarrier = BuildTaskSummary & TaskLike & {
-  taskType?: string;
-  type?: string;
   stage?: string;
 };
 
@@ -36,7 +34,7 @@ type ShapeBuildProgressSummaryArgs<T extends BuildTaskSummary & TaskStageCarrier
   buildStatus: BuildStatus;
   effectiveProgress: BuildProgress | null;
   effectiveStatus: BuildProgressStatus | null;
-  taskType?: string;
+  stage?: string;
   tasks: T[];
   normalizeStageKey: (task: T) => string;
   isSkippedTask: (task: T) => boolean;
@@ -74,7 +72,7 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
   buildStatus,
   effectiveProgress,
   effectiveStatus,
-  taskType,
+  stage,
   tasks,
   normalizeStageKey,
   isSkippedTask,
@@ -116,7 +114,7 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
 
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
-    taskType,
+    stage,
     overallProgress,
     buildStatus,
     tasks,
@@ -149,10 +147,10 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
       paneProgress,
       stageCountsWithPlan,
       buildStatus,
-      failureStageId: buildStatus === 'failed' && taskType ? taskType : undefined,
+      failureStageId: buildStatus === 'failed' && stage ? stage : undefined,
       hasFailureData: aggregatedCounts.total > 0,
     }),
-    [aggregatedCounts, buildStatus, paneProgress, stageCountsWithPlan, taskType, stages],
+    [aggregatedCounts, buildStatus, paneProgress, stageCountsWithPlan, stage, stages],
   );
 
   const stageProgressWithSummary = useMemo(() => {

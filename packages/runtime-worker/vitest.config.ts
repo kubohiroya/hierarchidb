@@ -60,9 +60,9 @@ export default defineConfig({
         workspaceRoot,
         'packages/route-api/src/index.ts',
       ),
-      '@hierarchidb/batch-api': path.resolve(
+      '@hierarchidb/build-api': path.resolve(
         workspaceRoot,
-        'packages/batch-api/src/index.ts',
+        'packages/build-api/src/index.ts',
       ),
       '@hierarchidb/tree-api': path.resolve(
         workspaceRoot,

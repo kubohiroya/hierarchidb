@@ -155,7 +155,6 @@ vite.config.ts.timestamp-*
 .DS_Store
 
 # Build outputs
-build/
 playwright-report/
 test-results/
 /.tmp

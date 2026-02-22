@@ -12,9 +12,9 @@ import {
   type RouteBuildTask,
   type RouteBuildTaskStage,
 } from './RouteBuildSession.js';
-import type { BuildProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent } from '../../../../packages/build-api';
 import { VtTaskQueueDb, deleteTasksByNode, putTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
+import type { TaskQueueRecord, TaskStage } from '../../../../packages/build-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
@@ -49,7 +49,7 @@ export class RouteBuildManager {
 
   private routeSpecificTasks = new Map<NodeId, RouteBuildTask[]>();
   private activeSessions = new Map<NodeId, RouteBuildSession>();
-  // Lane semaphores: enforce per-engine concurrency regardless of batch size
+  // Lane semaphores: enforce per-engine concurrency regardless of build size
   // private laneSemaphores = new Map<string, Semaphore>();
   // private laneConfig: Record<string, number> = {
   //   osm_route: 1,
@@ -81,7 +81,6 @@ export class RouteBuildManager {
             taskId: crypto.randomUUID(),
             treeNodeId: nodeId,
             nodeId,
-            taskType: 'location_resolution',
             stage: 'location-resolution',
             status: 'queued',
             index: routeTasks.length,
@@ -102,7 +101,6 @@ export class RouteBuildManager {
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
         nodeId,
-        taskType: 'route_generation',
         stage: 'route-generation',
         status: 'queued',
         index: routeTasks.length,
@@ -126,7 +124,6 @@ export class RouteBuildManager {
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
         nodeId,
-        taskType: 'validation',
         stage: 'validation',
         status: 'queued',
         index: routeTasks.length,
@@ -138,7 +135,6 @@ export class RouteBuildManager {
       taskId: crypto.randomUUID(),
       treeNodeId: nodeId,
       nodeId,
-      taskType: 'optimization',
       stage: 'optimization',
       status: 'queued',
       index: routeTasks.length,
@@ -232,7 +228,7 @@ export class RouteBuildManager {
     const completedTasks = tasks.filter((t) => t.status === 'completed');
     const failedTasks = tasks.filter((t) => t.status === 'failed');
 
-    const routeGenerationTasks = tasks.filter((t) => t.taskType === 'route_generation');
+    const routeGenerationTasks = tasks.filter((t) => t.stage === 'route-generation');
     const completedRoutes = routeGenerationTasks.filter((t) => t.status === 'completed').length;
     const totalTasks = tasks.length;
     const percentage = totalTasks > 0
@@ -241,13 +237,13 @@ export class RouteBuildManager {
 
     // Determine current phase
     let phase = 'idle';
-    if (tasks.some((t) => t.taskType === 'location_resolution' && t.status === 'running')) {
+    if (tasks.some((t) => t.stage === 'location-resolution' && t.status === 'running')) {
       phase = 'resolving_locations';
-    } else if (tasks.some((t) => t.taskType === 'route_generation' && t.status === 'running')) {
+    } else if (tasks.some((t) => t.stage === 'route-generation' && t.status === 'running')) {
       phase = 'generating_routes';
-    } else if (tasks.some((t) => t.taskType === 'validation' && t.status === 'running')) {
+    } else if (tasks.some((t) => t.stage === 'validation' && t.status === 'running')) {
       phase = 'validating';
-    } else if (tasks.some((t) => t.taskType === 'optimization' && t.status === 'running')) {
+    } else if (tasks.some((t) => t.stage === 'optimization' && t.status === 'running')) {
       phase = 'optimizing';
     }
 
@@ -296,7 +292,7 @@ function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
     index: task.index,
     progress: 0,
     inputData: {
-      taskType: task.taskType,
+      routeStage: task.stage,
       routeData: task.routeData,
     },
   };

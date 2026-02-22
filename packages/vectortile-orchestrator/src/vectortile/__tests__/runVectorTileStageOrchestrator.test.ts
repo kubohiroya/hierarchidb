@@ -56,7 +56,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       completed: 2,
       failed: 0,
       skipped: 0,
-      taskType: 'vectortile',
+      stage: 'vectortile',
     });
 
     expect(afterRun).toHaveBeenCalledWith({ total: 2, completed: 2, failed: 0, skipped: 0 });
@@ -78,7 +78,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
           failed: 0,
           skipped: 0,
           percentage: 0,
-          taskType: 'vectortile',
+          stage: 'vectortile',
         });
       },
       result: { processed: 2, failed: 1 },
@@ -238,7 +238,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
           failed: 0,
           skipped: 0,
           percentage: 0,
-          taskType: 'processing',
+          stage: 'processing',
         } satisfies ProgressInfo);
       },
       result: { processed: 2, failed: 0 },
@@ -264,7 +264,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       total: 3,
       completed: 2, // base(1) + adapter(1)
       failed: 0,
-      taskType: 'vectortile',
+      stage: 'vectortile',
     });
   });
 

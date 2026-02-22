@@ -16,17 +16,11 @@ type StageLike = {
 
 type ProgressLike = {
   percentage?: number;
-  taskType?: string | null;
+  stage?: string | null;
   progressTaskId?: string | null;
   progressTaskStage?: string | null;
   status?: {
     progress?: number;
-  };
-};
-
-type StatusLike = {
-  status?: {
-    status?: BuildProgressStatus['status'];
   };
 };
 
@@ -39,7 +33,6 @@ type Args = {
   processingStatus: ProcessingStatus;
   runtimeStatus: BuildProgressStatus['status'];
   effectiveProgress: ProgressLike | null;
-  effectiveStatus: StatusLike | null;
   sessionProgressTotal?: number;
   reportFailures: boolean;
   baseBuildStatus: BuildStatus;
@@ -54,9 +47,9 @@ export type UseShapeBuildStepTaskStateReturn = {
   tasks: ShapeBuildTaskSummary[];
   isLoading: boolean;
   isTaskStreamReady: boolean;
-  taskType: string | null;
-  liveTaskType: string | undefined;
-  resolvedTaskType: string | undefined;
+  stageFromState: string | null;
+  liveStageFromState: string | undefined;
+  resolvedStageFromState: string | undefined;
   buildStatus: BuildStatus;
   hasFirstTaskSignal: boolean;
   hasProgressTaskSignal: boolean;
@@ -81,7 +74,6 @@ export const useShapeBuildStepTaskState = ({
   isSessionStopping,
   stages,
   effectiveProgress,
-  effectiveStatus,
   sessionProgressTotal,
   reportFailures,
   baseBuildStatus,
@@ -209,9 +201,9 @@ export const useShapeBuildStepTaskState = ({
     hasInFlightTasks,
   }), [baseBuildStatus, hasInFlightTasks, tasksCompletionStatus]);
 
-  const taskType = effectiveProgress?.taskType ?? null;
-  const liveTaskType = taskType ?? effectiveStatus?.status?.status;
-  const resolvedTaskType = liveTaskType ?? stages[0]?.id;
+  const stageFromState = effectiveProgress?.stage ?? null;
+  const liveStageFromState = stageFromState ?? undefined;
+  const resolvedStageFromState = liveStageFromState ?? stages[0]?.id;
 
   const runningStageIdFromTasks = useMemo(() => resolveMostAdvancedRunningStageId({
     stages,
@@ -226,9 +218,9 @@ export const useShapeBuildStepTaskState = ({
     tasks: displayTasks,
     isLoading,
     isTaskStreamReady,
-    taskType: taskType ?? null,
-    liveTaskType,
-    resolvedTaskType,
+    stageFromState: stageFromState ?? null,
+    liveStageFromState,
+    resolvedStageFromState,
     buildStatus,
     hasFirstTaskSignal,
     hasProgressTaskSignal,

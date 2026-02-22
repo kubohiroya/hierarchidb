@@ -65,7 +65,7 @@ Create a shared hook in `packages/ui/batch` that wraps `useBatchProgressState` a
 
 ## Validation and Acceptance
 
-- Run `pnpm --filter @hierarchidb/ui-batch-progress typecheck` and expect exit code 0.
+- Run `pnpm --filter @hierarchidb/ui-build-progress typecheck` and expect exit code 0.
 - Run `pnpm --filter @hierarchidb/shape-plugin typecheck`, `pnpm --filter @hierarchidb/location-plugin typecheck`, and `pnpm --filter @hierarchidb/route-plugin typecheck` and expect exit code 0.
 - Verify that the plugin-specific hooks are wrappers around the shared helper, with mapping functions supplied from plugin files.
 

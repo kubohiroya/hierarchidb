@@ -67,7 +67,7 @@ export interface PluginStepConfigProvider<TData extends StepData = StepData, TUi
  */
 export interface StartBuildContext<TData extends StepData = StepData, TUiState = unknown> {
   /**
-   * Canonical node id if already persisted. Use this to start worker-side batch jobs.
+   * Canonical node id if already persisted. Use this to start worker-side build jobs.
    */
   nodeId?: string;
 

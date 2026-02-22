@@ -70,7 +70,7 @@ export interface RoutePluginTranslations {
     accessibility: string;
   };
 
-  batch: {
+  build: {
     progressTitle: string;
     logsTitle: string;
     mapPreviewTitle: string;

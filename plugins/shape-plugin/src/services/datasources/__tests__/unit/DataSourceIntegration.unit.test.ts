@@ -1,14 +1,9 @@
-/**
-   * API
-  * :
- * CI/CD skip
-  */
-
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory';
-import type { FetchOptions } from '../DataSourceStrategy';
-import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
-import { metadataLoader } from '../../metadata/MetadataLoader';
+import { DataSourceStrategyFactory } from '../../DataSourceStrategyFactory';
+import type { FetchOptions } from '../../DataSourceStrategy';
+import { GeoBoundariesStrategy } from '../../GeoBoundariesStrategy';
+import { metadataLoader } from '../../../metadata/MetadataLoader';
+import { NodeId, TreeNodeId } from '@hierarchidb/core-types';
 
 describe('Data Source Integration Tests', () => {
   let factory: DataSourceStrategyFactory;
@@ -26,7 +21,7 @@ describe('Data Source Integration Tests', () => {
 
     it('should fetch metadata from GeoBoundaries API', async () => {
       try {
-        const countries = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
+        const countries = await metadataLoader.loadMetadata('geoboundaries', 'node-1' as NodeId);
         expect(Array.isArray(countries)).toBe(true);
 
         if (countries.length > 0) {
@@ -158,7 +153,7 @@ describe('Data Source Integration Tests', () => {
 
       //  rawDataprocessData
       try {
-        await strategy.processData(null as any);
+        await strategy.processData(null);
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
         console.log('Strategy properly handled null raw data');

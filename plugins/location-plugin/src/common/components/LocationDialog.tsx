@@ -305,7 +305,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       ),
     },
     {
-      id: 'batch-parameters',
+      id: 'build-parameters',
       label: translations.panel.processingSettings,
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <LocationBuildParametersStep draft={data} onUpdate={onChange} />

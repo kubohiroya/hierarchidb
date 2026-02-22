@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata } from '~/common/types/index';

@@ -70,7 +70,7 @@ export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",  // 追加
     "@hierarchidb/folder-plugin": "workspace:*", // 既存維持
     // その他は既存のまま保持

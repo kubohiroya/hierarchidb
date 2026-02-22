@@ -449,7 +449,7 @@ Reference plan: `plans/shape-shared-extraction-stage3-tabular-api.md`
 
 ### Alignment Notes
 
-- Align batch config file naming (`ObsolateBuildConfig.ts`, `batch-types.ts`, etc.) across plugins.
+- Align batch config file naming (`ObsolateBuildConfig.ts`, `build-types.ts`, etc.) across plugins.
 - Prefer matching file names to their primary exported type names.
 
 ### Integration Details
@@ -481,7 +481,7 @@ Reference plan: `plans/shape-shared-extraction-stage3-tabular-api.md`
 ### Implementation Plan (Stage 5)
 
 1) Inventory batch config naming across shape/location/route.
-2) Align filenames to primary exports (e.g., `ObsolateBuildConfig.ts`, `batch-types.ts`).
+2) Align filenames to primary exports (e.g., `ObsolateBuildConfig.ts`, `build-types.ts`).
 3) Update imports and re-exports in plugin entry points to preserve public API.
 4) Validate with plugin typechecks and update any doc references.
 5) Rollback by reverting file moves and import adjustments.
@@ -498,7 +498,7 @@ Reference plan: `plans/shape-shared-extraction-stage4-progress-hooks.md`
 
 ### Goals
 
-- Route progress hook delegates to shared UI-batch-progress helper.
+- Route progress hook delegates to shared UI-build-progress helper.
 - Route-specific status mapping remains in plugin-local logic.
 - Pause/resume controls remain available and use WorkerBridge.
 
@@ -510,7 +510,7 @@ Reference plan: `plans/shape-shared-extraction-stage4-progress-hooks.md`
 
 ### Current State (Observed)
 
-- Route already uses `usePluginBatchProgress` from `@hierarchidb/ui-batch-progress`.
+- Route already uses `usePluginBatchProgress` from `@hierarchidb/ui-build-progress`.
 - `useRouteBatchProgress` owns pause/resume mutations and maps status to unified
   progress locally.
 - Route uses WorkerBridge to pause/resume, and local state to show mutation status.
@@ -549,7 +549,7 @@ Reference plan: `plans/shape-shared-extraction-stage4-progress-hooks.md`
 
 ## Stage 7: Batch Session Manager Alignment (Route)
 
-Reference plan: `plans/shape-shared-extraction-stage5-batch-session-manager.md`
+Reference plan: `plans/shape-shared-extraction-stage5-build-session-manager.md`
 
 ### Scope
 
@@ -620,7 +620,7 @@ Rationale: One shared base for lifecycle + persistence reduces drift and keeps s
 3) Refactor shape/location managers to extend the shared base and migrate persistence logic into base hooks.
 4) Ensure progress listeners are registered via base manager APIs.
 5) Validation
-   - `pnpm --filter @hierarchidb/batch-runtime-services typecheck`
+   - `pnpm --filter @hierarchidb/build-runtime-services typecheck`
    - `pnpm --filter @hierarchidb/shape-plugin typecheck`
    - `pnpm --filter @hierarchidb/location-plugin typecheck`
    - `pnpm --filter @hierarchidb/route-plugin typecheck`
@@ -630,4 +630,4 @@ Rationale: One shared base for lifecycle + persistence reduces drift and keeps s
 
 Planned to follow in order (not detailed yet in this document):
 
-1) Batch session manager alignment (`plans/shape-shared-extraction-stage5-batch-session-manager.md`)
+1) Batch session manager alignment (`plans/shape-shared-extraction-stage5-build-session-manager.md`)

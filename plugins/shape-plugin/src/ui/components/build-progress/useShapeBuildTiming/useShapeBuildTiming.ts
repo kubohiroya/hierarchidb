@@ -9,8 +9,8 @@ import {
   recordBuildFinish,
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
-import { useBuildSessionTiming } from '@hierarchidb/batch-runtime-services';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { useBuildSessionTiming } from '@hierarchidb/build-runtime-services';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 
 const buildMonitorConfig = {
   storagePrefix: 'hdb:shape:stage-monitor',
@@ -26,7 +26,7 @@ const INACTIVE_GRACE_MS = 5000;
 
 type Args = {
   buildStatus: BuildStatus;
-  taskType?: string;
+  stage?: string;
   resolvedTaskType?: string;
   nodeId?: NodeId;
   monitorKey: string | null;
@@ -35,7 +35,7 @@ type Args = {
 
 export const useShapeBuildTiming = ({
   buildStatus,
-  taskType,
+  stage,
   resolvedTaskType,
   nodeId,
   monitorKey,
@@ -59,20 +59,20 @@ export const useShapeBuildTiming = ({
     if (buildStatus !== 'running') return;
     const startedAt = session?.startedAt ?? Date.now();
     recordBuildStart(buildMonitorConfig, monitorKey, {
-      nodeId: nodeId ? String(nodeId) : undefined,
-      startedAt,
-    });
+        nodeId: nodeId ? String(nodeId) : undefined,
+        startedAt,
+      });
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: taskType as 'fetch' | 'transform' | 'vt' | undefined,
+        stage: stage as 'fetch' | 'transform' | 'vt' | undefined,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
     return () => {
       window.clearInterval(interval);
     };
-  }, [buildStatus, canWrite, monitorKey, nodeId, taskType]);
+  }, [buildStatus, canWrite, monitorKey, nodeId, stage]);
 
   useEffect(() => {
     if (!monitorKey) return;

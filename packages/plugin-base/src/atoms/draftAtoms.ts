@@ -171,7 +171,7 @@ export const canSaveAtom = atom((get) => {
 });
 
 /**
- * Check if can start batch
+ * Check if can start build
  */
 export const canStartBuildAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);

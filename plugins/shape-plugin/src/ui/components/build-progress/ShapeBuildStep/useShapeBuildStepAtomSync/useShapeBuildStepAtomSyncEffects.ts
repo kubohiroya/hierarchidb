@@ -44,6 +44,7 @@ type UseShapeBuildStepAtomSyncAtomEffectsParams = {
   stopRequested: boolean | undefined;
   stableHandleStartOrResume: () => Promise<void>;
   stableHandlePause: () => void;
+  stableHandleCancelQueued: () => void;
   authDialogOpen: boolean | undefined;
   stableCloseAuthDialog: () => void;
   stableHandleProviderSelect: (provider: AuthProviderType) => void;
@@ -82,6 +83,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   stopRequested,
   stableHandleStartOrResume,
   stableHandlePause,
+  stableHandleCancelQueued,
   authDialogOpen,
   stableCloseAuthDialog,
   stableHandleProviderSelect,
@@ -147,6 +149,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
       startPending: Boolean(isStartPending),
       handleStartOrResume: stableHandleStartOrResume,
       handlePause: stableHandlePause,
+      handleCancelQueued: stableHandleCancelQueued,
       stopRequested: Boolean(stopRequested),
     };
     if (shallowEqualRecord(controlsRef.current, nextControls)) return;
@@ -159,6 +162,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
     setControls,
     showResumeLabel,
     statusLabel,
+    stableHandleCancelQueued,
     stableHandlePause,
     stableHandleStartOrResume,
     controlsRef,

@@ -7,7 +7,7 @@ import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
-  validateBatchConfig,
+  validateBuildConfig,
 } from '../../../common/types/index';
 import '../../components/steps-provider';
 
@@ -109,7 +109,7 @@ describe('shape dialog initial draft data', () => {
     expect(templateDraft.buildConfig?.dataSourceName).toBe('geoboundaries');
     expect(selection.hasSelection).toBe(true);
 
-    const processingValidation = validateBatchConfig(
+    const processingValidation = validateBuildConfig(
       templateDraft.buildConfig ?? DEFAULT_BUILD_CONFIG,
       templateDraft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
     );

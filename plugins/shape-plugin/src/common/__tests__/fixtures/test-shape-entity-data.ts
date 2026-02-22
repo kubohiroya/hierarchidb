@@ -16,11 +16,11 @@ interface ShapeEntity {
   id: EntityId;
   nodeId: NodeId;
   licenseAgreement: boolean;
-  buildConfig?: BatchConfig;
+  buildConfig?: BuildConfig;
   selectedArrayByCountries?: Record<string, boolean[]>;
 }
 
-interface BatchConfig {
+interface BuildConfig {
   dataSourceName?: string;
   fetchConfig: {
     maxConcurrent: number;
@@ -34,7 +34,7 @@ interface BatchConfig {
     minVertexCountForAreaFilter: number;
     aspectRatioThreshold: number;
     featureFilterMethod: string;
-    hybridFilterConfig?: any;
+    hybridFilterConfig?: unknown;
     deleteOnComplete?: boolean;
     tolerance: number;
     areaThreshold: number;
@@ -57,9 +57,9 @@ export const TEST_NODE_ID = 'test-shape-plugin-node-jpu-deu-usa' as NodeId;
 export const TEST_ENTITY_ID = 'test-shape-plugin-entity-jpu-deu-usa' as EntityId;
 
 /**
-  * 3Level 0BatchConfig
+  * 3Level 0BuildConfig
   */
-export function createTestBatchConfig(): BatchConfig {
+export function createTestBuildConfig(): BuildConfig {
   // Default configuration without external dependencies
 
   return {
@@ -107,7 +107,7 @@ export function createTestShapeEntity(): ShapeEntity {
     id: TEST_ENTITY_ID,
     nodeId: TEST_NODE_ID,
     licenseAgreement: true,
-    buildConfig: createTestBatchConfig(),
+    buildConfig: createTestBuildConfig(),
     selectedArrayByCountries: {
       JP: [true],
       DE: [true],

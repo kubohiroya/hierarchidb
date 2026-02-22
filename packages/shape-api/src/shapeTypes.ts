@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildStage } from './shapeBuildTypes.js';
 
 export type ShapeProcessingState =
   | 'idle'
@@ -57,7 +58,7 @@ export interface ShapeBuildProgressSummary {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: string;
+  stage?: ShapeBuildStage;
 }
 
 export interface ShapeBuildSessionSummary {
@@ -72,7 +73,7 @@ export interface ShapeBuildSessionSummary {
 export interface ShapeBuildTaskSummary {
   taskId: string;
   nodeId: NodeId;
-  taskType: string;
+  stage: ShapeBuildStage;
   status: string;
   index: number;
   progress: number;

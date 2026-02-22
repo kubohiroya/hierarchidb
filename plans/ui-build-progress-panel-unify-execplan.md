@@ -37,7 +37,7 @@ Shape/Route の Step5（Build 進捗）を同一の共通パネルで表示で�
 
 ## Context and Orientation
 
-ShapeのBuild進捗UIは `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` と `ShapeBuildStep.tsx` が中心で、`@hierarchidb/ui-batch-progress` のデータとJotai atomに同期して表示を構築している。RouteのBuild進捗UIは `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` が中心で、`BuildStepPanel` を使ったステージ進捗表示と独自のステータス表示を行っている。共通化では、両者が同一の「進捗パネル」コンポーネントを使い、BuildStepPanelの外枠レイアウトとフッター領域を共有する。Shape側の詳細タスク表示は既存のまま維持し、Route側は簡易表示のまま共通パネルを使用する。
+ShapeのBuild進捗UIは `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx` と `ShapeBuildStep.tsx` が中心で、`@hierarchidb/ui-build-progress` のデータとJotai atomに同期して表示を構築している。RouteのBuild進捗UIは `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` が中心で、`BuildStepPanel` を使ったステージ進捗表示と独自のステータス表示を行っている。共通化では、両者が同一の「進捗パネル」コンポーネントを使い、BuildStepPanelの外枠レイアウトとフッター領域を共有する。Shape側の詳細タスク表示は既存のまま維持し、Route側は簡易表示のまま共通パネルを使用する。
 
 `packages/components/src/BuildStepPanel.tsx` は既にステージ進捗UIの共通パーツとして利用されているため、新しい共通パネルもここに配置する。
 

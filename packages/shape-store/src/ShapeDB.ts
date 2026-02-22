@@ -69,7 +69,7 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: BuildStage | 'processing';
+  stage?: BuildStage | 'processing';
 }
 
 export interface StageStatus {

@@ -51,7 +51,7 @@ can assert bundle membership.
 - 依存の所在が不透明になり、`dep-fence` や Turbo の pipeline が複雑化する
 - プラグインごとの import path を把握しづらく、型調整のたびに bundle 側を更新する必要がある
 
-そのため App は `@hierarchidb/core-types` / `@hierarchidb/tree-api` / `@hierarchidb/batch-api` /
+そのため App は `@hierarchidb/core-types` / `@hierarchidb/tree-api` / `@hierarchidb/build-api` /
 `@hierarchidb/runtime-{client|worker}` / `@hierarchidb/plugin-registry` /
 `@hierarchidb/plugin-ui-sdk` などを**直接**依存する方針へ戻しました。
 `dep-fence` では “UI bundle 以外から UI 系パッケージを直 import しない”

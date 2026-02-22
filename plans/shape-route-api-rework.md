@@ -6,7 +6,7 @@ PLANS.md is checked into the repo at `PLANS.md`. This ExecPlan must be maintaine
 
 ## Purpose / Big Picture
 
-After this change, any package can read or update persisted shape and route artifacts through stable Worker APIs without touching plugin-internal Dexie tables. Shape-specific ad hoc APIs are removed, and Shape operations are split into read-only Query and write-only Mutation surfaces, while batch execution continues via the shared batch-control APIs. You can see this working by calling `getShapeQueryAPI()` and `getShapeMutationAPI()` from the UI worker client and observing that shape results, tile metadata, and cleanup actions work without importing the shape plugin directly.
+After this change, any package can read or update persisted shape and route artifacts through stable Worker APIs without touching plugin-internal Dexie tables. Shape-specific ad hoc APIs are removed, and Shape operations are split into read-only Query and write-only Mutation surfaces, while batch execution continues via the shared build-control APIs. You can see this working by calling `getShapeQueryAPI()` and `getShapeMutationAPI()` from the UI worker client and observing that shape results, tile metadata, and cleanup actions work without importing the shape plugin directly.
 
 ## Progress
 
@@ -14,7 +14,7 @@ After this change, any package can read or update persisted shape and route arti
 - [x] 2025-12-26 17:12 JST: Inventory completed; removed useShapeAPI exports/tests and verified no runtime UI usage remains.
 - [x] 2025-12-26 17:12 JST: Defined ShapeQueryAPI/ShapeMutationAPI and RouteMutationAPI in plugin-service-api and updated exports.
 - [x] 2025-12-26 17:12 JST: Implemented runtime-worker services and WorkerAPI wiring (worker runtime + ui worker client).
-- [x] 2025-12-26 17:12 JST: Migrated shape-plugin worker exports to batch-only entry points and removed ShapeAPI surface.
+- [x] 2025-12-26 17:12 JST: Migrated shape-plugin worker exports to build-only entry points and removed ShapeAPI surface.
 - [ ] 2025-12-26 17:12 JST: Update tests/docs, then validate with targeted typechecks (completed: docs/tests updated; remaining: run typecheck commands).
 
 ## Surprises & Discoveries
@@ -26,7 +26,7 @@ None yet.
 - Decision: Defer LocationQuery/LocationMutation changes and focus only on Shape/Route APIs.
   Rationale: User requested location be postponed while proceeding with Shape/Route.
   Date/Author: 2025-12-26, Codex
-- Decision: Keep batch execution on the shared batch-control API and remove batch responsibilities from the new Query/Mutation APIs.
+- Decision: Keep batch execution on the shared build-control API and remove batch responsibilities from the new Query/Mutation APIs.
   Rationale: Batch control already exists in `packages/common/api` and is wired through `WorkerAPI`; mixing batch with query/mutation would reintroduce the monolithic ShapeAPI.
   Date/Author: 2025-12-26, Codex
 - Decision: Preserve a worker-internal batch export (`shapeBatchAPI`) for runtime batch control while removing public ShapeAPI types and hooks.
@@ -49,13 +49,13 @@ In this plan, “Query API” means a read-only interface that does not mutate s
 
 ## Plan of Work
 
-First, inventory the existing ShapeAPI surface and decide which methods map to Query, which map to Mutation, and which belong to batch control or are obsolete. The guiding rule is that Query APIs only read persisted data, Mutation APIs only write or delete persisted data, and batch-control remains separate. The `ShapeWorkerPlugin` registration will stop exporting `api: shapePluginAPI` and instead export new query/mutation adapters, while any batch-only entry points are kept behind a smaller, dedicated internal interface used by the worker runtime.
+First, inventory the existing ShapeAPI surface and decide which methods map to Query, which map to Mutation, and which belong to batch control or are obsolete. The guiding rule is that Query APIs only read persisted data, Mutation APIs only write or delete persisted data, and build-control remains separate. The `ShapeWorkerPlugin` registration will stop exporting `api: shapePluginAPI` and instead export new query/mutation adapters, while any build-only entry points are kept behind a smaller, dedicated internal interface used by the worker runtime.
 
 Next, define new `ShapeQueryAPI`, `ShapeMutationAPI`, and `RouteMutationAPI` in `packages/plugin-service-api/src/types`, then export them from `packages/plugin-service-api/src/index.ts`. The Shape APIs will cover: reading batch session state, processed feature counts, vector tile metadata, and stored tile data; and mutating cleanup operations such as deleting sessions, tasks, tiles, and cached data for a node. The Route mutation API will cover cleanup of routeResults and routeCache for a node, and will be implemented using `RouteDatabase`.
 
 Then, implement new runtime-worker services: `ShapeQueryService`, `ShapeMutationService`, and `RouteMutationService`. These services should construct their plugin DBs internally (using dynamic imports of `@hierarchidb/shape-plugin` and `@hierarchidb/route-plugin/database`), read/write only through those DB instances, and expose deterministic read/write behavior. Update `packages/runtime-worker/src/WorkerService.ts` to instantiate these services and provide getters. Add new methods to `packages/common/api/src/WorkerAPI.ts` and the worker runtime API facade in `app/src/worker-runtime/worker.ts`, then expose them from `packages/ui/worker-client/src/workerBridge.ts`.
 
-Finally, refactor the shape-plugin worker exports: remove `ShapeAPI` type exports from `plugins/shape-plugin/src/common/types/index.ts` and the `useShapeAPI` hook plus its tests. The worker plugin should stop exposing `api: shapePluginAPI` and instead rely on the runtime-worker `ShapeQueryAPI`/`ShapeMutationAPI` wiring. Any remaining batch-specific calls should use the shared batch-control API rather than plugin-specific methods. Update or remove docs referencing the old ShapeAPI.
+Finally, refactor the shape-plugin worker exports: remove `ShapeAPI` type exports from `plugins/shape-plugin/src/common/types/index.ts` and the `useShapeAPI` hook plus its tests. The worker plugin should stop exposing `api: shapePluginAPI` and instead rely on the runtime-worker `ShapeQueryAPI`/`ShapeMutationAPI` wiring. Any remaining build-specific calls should use the shared build-control API rather than plugin-specific methods. Update or remove docs referencing the old ShapeAPI.
 
 ## Concrete Steps
 
@@ -102,7 +102,7 @@ Acceptance is met when:
 - `getShapeQueryAPI()` and `getShapeMutationAPI()` are available from the WorkerAPI client and return working proxies.
 - `getRouteMutationAPI()` is available and can remove routeResults for a node (verified by a small test or a manual call).
 - The shape plugin no longer exposes `ShapeAPI`, and no runtime references remain.
-- The shared batch-control API continues to start and monitor shape batch sessions without needing `shapePluginAPI` outside the worker-internal batch adapter.
+- The shared build-control API continues to start and monitor shape batch sessions without needing `shapePluginAPI` outside the worker-internal batch adapter.
 
 ## Idempotence and Recovery
 

@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
+import type { BuildTaskUpdateEvent } from 'packages/build-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
 import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal';
 

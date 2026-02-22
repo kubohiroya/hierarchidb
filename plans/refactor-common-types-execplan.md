@@ -13,7 +13,7 @@ common-types に集約されている型を、実際に使われる文脈ごと�
 - [x] 2026-01-30 23:24 JST 目的と移設方針を合意し、ExecPlan 作成に着手。
 - [ ] ExecPlan の初版を完成させ、移設対象の分類と順序を確定する。
 - [ ] tag-api と core-types を新設し、tsconfig/exports を整備する。
-- [ ] tree-api/tag-api/import-export-api/batch-api/core-types へ型を移設し、参照先を切替する。
+- [ ] tree-api/tag-api/import-export-api/build-api/core-types へ型を移設し、参照先を切替する。
 - [ ] common-types を再エクスポート専用に縮退する。
 - [ ] 影響範囲の build/typecheck を実行し、通過ログを残す。
 
@@ -63,13 +63,13 @@ common-types は `packages/common/types/src` にあり、以下のファイル�
 - undo-state-events.ts
 - validation-types.ts
 
-tree-api は `packages//src`、import-export-api は `packages//src`、batch-api は `packages//src` に存在する。新設する tag-api は `packages//src`、core-types は `packages/core-types/src` とする。
+tree-api は `packages//src`、import-export-api は `packages//src`、build-api は `packages//src` に存在する。新設する tag-api は `packages//src`、core-types は `packages/core-types/src` とする。
 
 本作業では、型定義を「利用文脈ごとのパッケージ」に移す。移設後は common-types を再エクスポート専用に縮退し、最終的に削除できる状態へ持っていく。再エクスポートは `src/index.ts` のみ許可というリポジトリ規約に従う。
 
 ## Plan of Work
 
-まず、移設先の基本方針を反映する。tree 関連は tree-api へ、tag は tag-api へ、import/export は import-export-api へ、batch/queue/progress は batch-api へ移設する。横断基盤型である id/primitive/entity/datasource は core-types に集約する。command/undo/commit は実際に使われる文脈に合わせて runtime/worker 側へ移設するが、現状は common-types 内にいるため、使用箇所の実態を確認し、移設先を確定する。
+まず、移設先の基本方針を反映する。tree 関連は tree-api へ、tag は tag-api へ、import/export は import-export-api へ、batch/queue/progress は build-api へ移設する。横断基盤型である id/primitive/entity/datasource は core-types に集約する。command/undo/commit は実際に使われる文脈に合わせて runtime/worker 側へ移設するが、現状は common-types 内にいるため、使用箇所の実態を確認し、移設先を確定する。
 
 次に、新設パッケージ tag-api と core-types を作成する。tsconfig、package.json、exports、paths を整備し、dist 指向の型解決に合わせる。既存パッケージの tsconfig/base の paths に新規パッケージを追加し、必要に応じて依存関係も追加する。
 
@@ -96,7 +96,7 @@ tree-api は `packages//src`、import-export-api は `packages//src`、batch-api
 4. 既存の feature API に移設する。
    - tree-api: tree-node-* / tree-root-* / tree-types / tree-node-event-types / validation-types 等。
    - import-export-api: import-export-types。
-   - batch-api: task-queue-types / progress-types。
+   - build-api: task-queue-types / progress-types。
 
 5. common-types を再エクスポート専用に縮退する。
    - `packages/common/types/src/index.ts` に各新パッケージからの export type を集約する。
@@ -108,7 +108,7 @@ tree-api は `packages//src`、import-export-api は `packages//src`、batch-api
      pnpm --filter @hierarchidb/tag-api build
      pnpm --filter @hierarchidb/tree-api build
      pnpm --filter @hierarchidb/import-export-api build
-     pnpm --filter @hierarchidb/batch-api build
+     pnpm --filter @hierarchidb/build-api build
      pnpm --filter @hierarchidb/core-types build
      pnpm --filter @hierarchidb/tag typecheck
      pnpm --filter @hierarchidb/plugin-base typecheck

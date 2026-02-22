@@ -28,7 +28,7 @@ import {
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-export { resolveFetchStageStrategy } from '../batch/strategies/resolveFetchStageStrategy';
+export { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
   if (!dataSource) return undefined;
@@ -89,7 +89,7 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 /**
  * Validate processing configuration
  */
-export function validateBatchConfig(
+export function validateBuildConfig(
   buildConfig: ShapeBuildConfig,
   processingConfig?: ShapeProcessingConfig,
 ): ShapeStepValidationResult {

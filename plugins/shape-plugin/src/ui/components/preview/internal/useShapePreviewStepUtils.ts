@@ -1,7 +1,7 @@
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { toNodeId } from '@hierarchidb/core-types';
-import { shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeDataSourceMetadata, ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import type { MapWithVectorTilesProps } from '@hierarchidb/ui-map';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';

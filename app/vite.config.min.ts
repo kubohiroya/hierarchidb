@@ -102,7 +102,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
-    { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/batch-types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
+    { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/build-types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
     { spec: '@hierarchidb/plugin-registry/ui-loaders', src: '../packages/plugin-registry/generated/ui-loaders.ts', dist: '../packages/plugin-registry/dist/ui-loaders.js' },
     { spec: '@hierarchidb/plugin-registry/worker-loaders', src: '../packages/plugin-registry/generated/worker-loaders.ts', dist: '../packages/plugin-registry/dist/worker-loaders.js' },
     { spec: '@hierarchidb/plugin-registry/icon-loaders', src: '../packages/plugin-registry/generated/icon-loaders.ts', dist: '../packages/plugin-registry/dist/icon-loaders.js' },
@@ -178,7 +178,7 @@ function createRuntimeAliasConfig({
       exclude: true,
       exact: true,
     });
-    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts', {
+    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/build/workers/shapeStageWorker.entry.ts', {
       exclude: true,
     });
     registerDevPackage('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', {
@@ -290,7 +290,7 @@ function createRuntimeAliasConfig({
       exclude: true,
       exact: true,
     });
-    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts', {
+    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/build/workers/shapeStageWorker.entry.ts', {
       exclude: true,
     });
     addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', { exact: true });

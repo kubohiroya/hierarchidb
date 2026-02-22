@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { type BuildSessionStatus, type BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import { type BuildSessionStatus, type BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
 import {
   toBuildSessionStatusFromUnifiedProgress,
   areBuildSessionStatusesEquivalent,
   useBuildSessionMutation,
   usePluginBuildProgress,
-} from '@hierarchidb/ui-batch-progress';
+} from '../../../../../packages/ui/build';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 

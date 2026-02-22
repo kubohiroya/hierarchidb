@@ -258,7 +258,7 @@ class StreamingProcessor {
       
       if (batch.length >= batchSize) {
         await this.processBatch(batch);
-        batch = []; // Clear batch to free memory
+        batch = []; // Clear build to free memory
       }
     }
     
@@ -315,7 +315,7 @@ Test complete processing pipelines:
 
 ```typescript
 describe('Shape Processing Pipeline', () => {
-  it('should process complete batch from download to tiles', async () => {
+  it('should process complete build from download to tiles', async () => {
     const batchConfig = createTestBatchConfig();
     const session = await batchManager.startSession(batchConfig);
     

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { buildErrorSummaryById, type MapPreviewErrorSummaryById } from '@hierarchidb/ui-map';
-import { shapeMutationAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type {
   ShapeFeatureMetadata,
   ShapeTransformErrorRecord,

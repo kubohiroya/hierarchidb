@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';

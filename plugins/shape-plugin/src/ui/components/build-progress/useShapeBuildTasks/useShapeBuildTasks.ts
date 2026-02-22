@@ -8,7 +8,7 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
+import type { BuildTaskUpdateEvent } from '../../../../../../../packages/build-api';
 import { parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
 import { useShapeBuildTaskSync } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync';
 import type { RawTaskSummary } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';

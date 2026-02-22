@@ -1,6 +1,6 @@
-import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/batch-api';
-import { toBuildSessionStatusFromUnifiedProgress } from '@hierarchidb/ui-batch-progress';
-import { computePercentage } from '@hierarchidb/ui-batch-progress';
+import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '../../../../../../packages/build-api';
+import { toBuildSessionStatusFromUnifiedProgress } from '../../../../../../packages/ui/build';
+import { computePercentage } from '../../../../../../packages/ui/build';
 
 export interface BuildProgress {
   total: number;
@@ -8,7 +8,7 @@ export interface BuildProgress {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: string;
+  stage?: string;
   timestamp?: number;
   message?: string | null;
   progressTaskId?: string;
@@ -126,7 +126,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
   const completed = info.completed ?? info.payload?.completed ?? 0;
   const failed = info.failed ?? info.payload?.failed ?? 0;
   const skipped = info.payload?.skipped ?? 0;
-  const taskType = info.stage ?? info.payload?.stage;
+  const stage = info.stage;
   const percentage = typeof info.percentage === 'number' && Number.isFinite(info.percentage)
     ? info.percentage
     : Math.max(0, Math.min(100, computePercentage({ total, completed, failed, skipped })));
@@ -138,7 +138,7 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     failed,
     skipped,
     percentage,
-    taskType,
+    stage,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message ?? undefined,
     progressTaskId: readString(progressTaskMeta?.taskId),
@@ -167,7 +167,7 @@ export function toShapeStatus(
   const status = mapPhaseToStatus(mergedStatus.status);
   const error = mergedStatus.error ?? null;
   const progress = mergedStatus.progress.percentage;
-  const stage = mergedStatus.progress.taskType ?? info?.payload?.stage;
+  const stage = mergedStatus.progress.stage;
   const hasErrors = status === 'failed' || Boolean(error);
   return {
     status,

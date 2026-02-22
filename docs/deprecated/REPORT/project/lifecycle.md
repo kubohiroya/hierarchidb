@@ -304,7 +304,7 @@ export class ChangeTrackingService {
       });
     }
 
-    // Process updates in batch for performance
+    // Process updates in build for performance
     this.processPendingUpdates();
   }
 

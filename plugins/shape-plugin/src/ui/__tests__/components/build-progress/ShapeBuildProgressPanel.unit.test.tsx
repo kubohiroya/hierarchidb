@@ -33,7 +33,7 @@ vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', (
   }),
 }));
 
-vi.mock('@hierarchidb/ui-batch-progress', () => ({
+vi.mock('@hierarchidb/ui-build-progress', () => ({
   BuildSessionLauncherPanel: () => null,
 }));
 
@@ -121,7 +121,7 @@ describe('ShapeBuildProgressPanel', () => {
     });
   });
 
-  it('shows resume label when tasks remain even if status is idle', async () => {
+  it('shows start label when tasks remain before start in idle state', async () => {
     const store = makeStore();
     store.set(taskProgressControlsAtom, {
       canStartOrResume: true,
@@ -155,7 +155,7 @@ describe('ShapeBuildProgressPanel', () => {
     const local = within(view.container);
     await local.findByText('Build controls');
     await waitFor(() => {
-      expect(local.getByText('Resume Build')).toBeTruthy();
+      expect(local.getByText('Start Build')).toBeTruthy();
     });
   });
 

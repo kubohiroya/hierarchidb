@@ -69,7 +69,7 @@ export const ja: RoutePluginTranslations = {
     accessibility: 'アクセシビリティ',
   },
 
-  batch: {
+  build: {
     progressTitle: '進捗状況',
     logsTitle: 'ログ',
     mapPreviewTitle: 'ルートプレビュー',

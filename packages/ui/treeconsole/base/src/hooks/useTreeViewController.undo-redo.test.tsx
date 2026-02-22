@@ -346,7 +346,7 @@ describe('useTreeViewController', () => {
     });
 
     describe('undo/redo with complex operations', () => {
-      it('should handle batch operations undo', async () => {
+      it('should handle build operations undo', async () => {
         const batchOperation = {
           nodeIds: ['node-1', 'node-2', 'node-3'],
           operation: 'delete',

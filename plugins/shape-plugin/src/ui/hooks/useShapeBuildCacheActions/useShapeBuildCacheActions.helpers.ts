@@ -1,7 +1,7 @@
-import type { BuildSessionStatus, TaskStage } from '@hierarchidb/batch-api';
+import type { BuildSessionStatus, TaskStage } from '../../../../../../packages/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { countRawDataDataSourceBuffersForNode, deleteRawDataDataSourceBuffersForNode } from '~/services/utils/chunkStore';
 
@@ -36,13 +36,13 @@ export type ResultCounts = {
 };
 
 export const resolveKnownTaskStage = (task: TaskQueueRecordLike): TaskStage | null => {
-  const candidate = task.stage ?? task.type;
+  const candidate = task.stage;
   if (!candidate) return null;
   return KNOWN_TASK_STAGES.includes(candidate) ? candidate : null;
 };
 
 export const resolveTaskStage = (task: StageLikeTask): TaskStage =>
-  task.stage ?? task.type ?? 'fetch';
+  task.stage ?? 'fetch';
 
 export const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
   stages.includes(resolveTaskStage(task));
@@ -153,7 +153,7 @@ export const clearBuildTasksForStages = async (
   if (uniqueTypes.length === 0) return;
 
   const taskRows = await Promise.all(
-    uniqueTypes.map((taskType) => ephemeralShapeAPIImpl.listBuildTasksByType(nodeId, taskType)),
+    uniqueTypes.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByStage(nodeId, stage)),
   );
   const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
   if (taskIds.length > 0) {

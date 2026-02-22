@@ -3,11 +3,14 @@ import {
   type PluginStepProps,
   PluginStepRegistry,
 } from '@hierarchidb/plugin-base';
-import type { SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
 import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { i18n } from '@hierarchidb/ui-i18n';
 import React from 'react';
-import type { StylerMapping, StylerStepData } from '~/common/types/StylerEntity';
+import type {
+  SpreadSheetDataSourceType,
+  StylerMapping,
+  StylerStepData,
+} from '~/common/types/StylerEntity';
 import { StylerAlgorithmStep2 } from './StylerAlgorithmStep2.tsx';
 import { StylerFilterStep } from './StylerFilterStep.tsx';
 import { StylerMappingKeysStep } from './StylerMappingKeysStep.tsx';

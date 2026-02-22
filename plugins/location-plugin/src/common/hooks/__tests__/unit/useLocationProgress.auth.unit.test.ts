@@ -28,7 +28,7 @@ describe('useLocationProgress - auth notifications', () => {
     await act(async () => {
       await reg.dispatch(authReq);
     });
-    expect(result.current.progress?.taskType).toBe('auth-required');
+    expect(result.current.progress?.stage).toBe('auth-required');
 
     const success = AuthNotificationFactory.createAuthSuccess({
       requestId: 'r1',
@@ -40,6 +40,6 @@ describe('useLocationProgress - auth notifications', () => {
     await act(async () => {
       await reg.dispatch(success);
     });
-    expect(result.current.progress?.taskType).toBe('resumed');
+    expect(result.current.progress?.stage).toBe('resumed');
   });
 });

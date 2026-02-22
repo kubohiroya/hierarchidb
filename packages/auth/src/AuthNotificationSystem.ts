@@ -2,7 +2,7 @@
  * @file AuthNotificationSystem.ts
  * @description Authentication notification system for Worker-to-UI communication
  *
- * This system handles authentication errors that occur during batch processing
+ * This system handles authentication errors that occur during build processing
  * in Worker threads and coordinates with the UI layer for authentication flows.
  */
 

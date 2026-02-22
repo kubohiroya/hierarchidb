@@ -136,9 +136,9 @@ export class LocationBuildManager {
     const concurrent = typeof config.processingOptions.concurrent === 'number'
       ? config.processingOptions.concurrent
       : 1;
-    const batches = this.createBatches(tasks, concurrent);
+    const changes = this.createBatches(tasks, concurrent);
 
-    for (const batch of batches) {
+    for (const batch of changes) {
       await Promise.all(batch.map(async (task) => {
         const searchResults = await this.searchLocations(task.searchConfig);
         const validatedResults = await this.validateAndFilterLocations(
@@ -175,7 +175,7 @@ export class LocationBuildManager {
   ): Promise<NodeId> {
     const totalTasks = config.searchConfigs.length;
 
-    // Create batch tasks
+    // Create build tasks
     const tasks: LocationBuildTask[] = config.searchConfigs.map((searchConfig, index) => ({
       taskId: `${nodeId}-task-${index}`,
       nodeId,
@@ -213,7 +213,7 @@ export class LocationBuildManager {
   }
 
   /**
-   * Process location batch
+   * Process location build
    */
   private async processLocationBatch(nodeId: NodeId): Promise<void> {
     const session = this.locationSessions.get(nodeId);
@@ -227,9 +227,9 @@ export class LocationBuildManager {
     const concurrent = typeof session.config.processingOptions.concurrent === 'number'
       ? session.config.processingOptions.concurrent
       : 1;
-    const batches = this.createBatches(tasks, concurrent);
+    const changes = this.createBatches(tasks, concurrent);
 
-    for (const batch of batches) {
+    for (const batch of changes) {
       await Promise.all(batch.map(task => this.processLocationTask(task, session)));
     }
 
@@ -892,14 +892,14 @@ export class LocationBuildManager {
   }
 
   /**
-   * Create batches for concurrent processing
+   * Create changes for concurrent processing
    */
   private createBatches<T>(items: T[], batchSize: number): T[][] {
-    const batches: T[][] = [];
+    const changes: T[][] = [];
     for (let i = 0; i < items.length; i += batchSize) {
-      batches.push(items.slice(i, i + batchSize));
+      changes.push(items.slice(i, i + batchSize));
     }
-    return batches;
+    return changes;
   }
 
   /**
@@ -913,7 +913,7 @@ export class LocationBuildManager {
   }
 
   /**
-   * Handle batch error
+   * Handle build error
    */
   private handleBatchError(nodeId: NodeId, error: {message:unknown}): void {
     const session = this.locationSessions.get(nodeId);

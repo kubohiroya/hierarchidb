@@ -43,7 +43,7 @@ After this change, the Step5 task list for shape builds will show cache-reuse wo
 
 ## Context and Orientation
 
-Shape build tasks live in the ephemeral task queue (`packages/vt-orchestrator/src/task/taskQueue.ts`) and are exposed to UI via the shape worker API (`plugins/shape-plugin/src/worker/api.ts`). UI state and progress counts are derived from `useShapeBuildTasks` and `useShapeBuildProgressSummary` in `plugins/shape-plugin/src/ui/components/build-progress/`. The task status unions are defined in `packages/batch-api/src/task-queue-types.ts` and mirrored in shape-specific types in `packages/shape-api/src/shapeBuildTypes.ts`, `packages/shape-store/src/ShapeDB.ts`, and `plugins/shape-plugin/src/common/types/build.ts`. The Step5 task list is rendered by `TaskListVirtualized.tsx`, which currently decides iconography based on legacy metadata.
+Shape build tasks live in the ephemeral task queue (`packages/vt-orchestrator/src/task/taskQueue.ts`) and are exposed to UI via the shape worker API (`plugins/shape-plugin/src/worker/api.ts`). UI state and progress counts are derived from `useShapeBuildTasks` and `useShapeBuildProgressSummary` in `plugins/shape-plugin/src/ui/components/build-progress/`. The task status unions are defined in `packages/build-api/src/task-queue-types.ts` and mirrored in shape-specific types in `packages/shape-api/src/shapeBuildTypes.ts`, `packages/shape-store/src/ShapeDB.ts`, and `plugins/shape-plugin/src/common/types/build.ts`. The Step5 task list is rendered by `TaskListVirtualized.tsx`, which currently decides iconography based on legacy metadata.
 
 ## Plan of Work
 
@@ -62,7 +62,7 @@ Finally, run the shape-plugin test suite, confirm exit 0, and record results in 
 ## Concrete Steps
 
 1. Update shared task status unions:
-   - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/batch-api/src/task-queue-types.ts` to include `recycled`.
+   - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/build-api/src/task-queue-types.ts` to include `recycled`.
    - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/shape-api/src/shapeBuildTypes.ts` and `/Users/hiroya/WebstormProjects/hierarchidb/packages/shape-store/src/ShapeDB.ts` to include `recycled`.
    - Edit `/Users/hiroya/WebstormProjects/hierarchidb/packages/vt-orchestrator/src/types/_BuildConfig.ts` and `/Users/hiroya/WebstormProjects/hierarchidb/packages/gis-sdk/src/ephemeral/EphemeralBuildState.ts` where BuildTaskStatus is defined.
 
@@ -117,7 +117,7 @@ Expected summary excerpt:
 ## Interfaces and Dependencies
 
 The task status `recycled` must be accepted by:
-- `TaskStatus` in `packages/batch-api/src/task-queue-types.ts`.
+- `TaskStatus` in `packages/build-api/src/task-queue-types.ts`.
 - Shape task status types in `packages/shape-api/src/shapeBuildTypes.ts`, `packages/shape-store/src/ShapeDB.ts`, and `plugins/shape-plugin/src/common/types/build.ts`.
 
 `TaskListVirtualized` must render:

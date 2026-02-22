@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
@@ -32,7 +32,7 @@
     "@hierarchidb/tree-api": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",

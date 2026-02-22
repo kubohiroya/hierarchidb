@@ -96,45 +96,9 @@ export class EphemeralDB extends Dexie {
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
     this.version(1).stores(EPHEMERAL_DB_SCHEMA_V1);
-    this.version(2).stores(EPHEMERAL_DB_SCHEMA_V2)
-      .upgrade(async (tx) => {
-        const buildTasks = tx.table('buildTasks');
-        await buildTasks.toCollection().modify((task: unknown) => {
-          if (typeof task === 'object' && task !== null) {
-            const item = task as { stage?: unknown; taskType?: unknown };
-            if (item.stage === undefined && typeof item.taskType === 'string') {
-              item.stage = item.taskType;
-            }
-          }
-        });
-      });
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA)
-      .upgrade(async (tx) => {
-        const buildTasks = tx.table('buildTasks');
-        await buildTasks.toCollection().modify((task: unknown) => {
-          if (typeof task === 'object' && task !== null) {
-            const item = task as { taskType?: unknown };
-            if ('taskType' in item) {
-              delete item.taskType;
-            }
-          }
-        });
-      });
-    this.version(4).stores(EPHEMERAL_DB_SCHEMA)
-      .upgrade(async (tx) => {
-        const buildTasks = tx.table('buildTasks');
-        await buildTasks.toCollection().modify((task: unknown) => {
-          if (typeof task === 'object' && task !== null) {
-            const item = task as { taskType?: unknown; sequence?: unknown };
-            if ('taskType' in item) {
-              delete item.taskType;
-            }
-            if ('sequence' in item) {
-              delete item.sequence;
-            }
-          }
-        });
-      });
+    this.version(2).stores(EPHEMERAL_DB_SCHEMA_V2);
+    this.version(3).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(4).stores(EPHEMERAL_DB_SCHEMA);
 
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');

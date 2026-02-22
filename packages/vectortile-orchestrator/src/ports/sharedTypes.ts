@@ -8,12 +8,11 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: ProcessingStage | 'processing';
+  stage?: ProcessingStage | 'processing' | 'vectortile';
 }
 
 export interface VectorTileTask {
   taskId: string;
-  taskType: string;
   nodeId?: NodeId;
   stage?: string;
   status?: string;

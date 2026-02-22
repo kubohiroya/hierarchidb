@@ -1,0 +1,42 @@
+{
+  "name": "@hierarchidb/build-runtime-services",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
+  },
+  "dependencies": {
+  },
+  "peerDependencies": {
+    "@hierarchidb/build": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/download": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/build": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/build-api": "workspace:*",
+    "@hierarchidb/download": "workspace:*"
+  }
+}

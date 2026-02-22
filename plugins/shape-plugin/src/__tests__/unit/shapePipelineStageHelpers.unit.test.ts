@@ -7,7 +7,7 @@ import {
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import { finalizePendingStageTasks } from '../../services/vt/shapePipelineStageHelpers';
-import type { TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { TaskQueueRecord } from 'packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
 const NODE_ID = 'shape-stage-helper-test-node' as NodeId;

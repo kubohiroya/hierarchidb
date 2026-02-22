@@ -294,7 +294,7 @@ test.describe('Shape build background (real pipeline)', () => {
     const launchBuildButtonAfter = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
     await expect(launchBuildButtonAfter).toBeVisible({ timeout: 10000 });
     await launchBuildButtonAfter.click();
-    const summaryCard = page.locator('[data-testid="shape-plugin-batch-progress-summary"]');
+    const summaryCard = page.locator('[data-testid="shape-plugin-build-progress-summary"]');
     await expect(summaryCard).toBeVisible({ timeout: 20000 });
 
     const completion = await page.evaluate(async (nodeId) => {

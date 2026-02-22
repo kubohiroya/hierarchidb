@@ -113,7 +113,7 @@
       - 実装: `UnifiedLocationBatchManager` で config を `prepareSession` から Dexie `sessions` まで伝播し、pause/resume/cancel 時にステータスを更新。`LocationVectorTileService.startSession` が concurrency を受け取り `prepareSession` へ渡すよう変更。
       - UI: `LocationDialog` に Start Batch ボタンを追加し、TreeNode の LocationPoint からバッチを起動するハンドラを実装。
       - 検証: `pnpm --filter @hierarchidb/location-plugin typecheck`、`UnifiedLocationBatchManager.test.ts` の追加アサーション、`LocationVectorTileService.test.ts` の config 透過テストを実行（Vitest 実行は sandbox の EPERM で失敗するためログ取得のみ）。
-    - [x] ドキュメント「batch-processing-ja.md」の DoD を更新し、Dexie `pendingSessions` / `sessions` / `vectorTiles` を扱うテスト状況（pending, progress, pause/resume/cancel）を反映。
+    - [x] ドキュメント「build-processing-ja.md」の DoD を更新し、Dexie `pendingSessions` / `sessions` / `vectorTiles` を扱うテスト状況（pending, progress, pause/resume/cancel）を反映。
     - [ ] PoC テストでポイント生成→Batch再開→タイル生成の一連動作を確認し、TASKS.md の DoD に沿ってログ化。
 
 - **Shape プラグイン wizard state 削減** (2025-10-05 start)

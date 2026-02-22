@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, ShapeBuildConfig } from '../../common/types/index';
@@ -672,7 +672,7 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         }
         logProgress(`${label}: taskQueue tasks loaded`, { count: queueTasks.length });
         if (step === 3) return;
-        const stageOf = (task: { taskType?: string; stage?: string }) => task.taskType ?? task.stage ?? 'unknown';
+        const stageOf = (task: { stage?: string }) => task.stage ?? 'unknown';
         const fetchTasks = queueTasks.filter((task) => stageOf(task) === 'fetch');
         const transformTasks = queueTasks.filter((task) => stageOf(task) === 'transform');
         const vtTasks = queueTasks.filter((task) => stageOf(task) === 'vt');

@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskStage } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, TaskStage } from '../../../../../packages/build-api';
 import type {
   ShapeBuildConfig,
   ShapeRuntimeBuildConfig,
@@ -21,9 +21,9 @@ import {
   mergeBuildConfig,
   mergeProcessingConfig,
   requireDataSourceName,
-  validateBatchConfig,
+  validateBuildConfig,
 } from '~/common/types/index';
-import type { BuildProgressEvent } from '@hierarchidb/batch-api';
+import type { BuildProgressEvent } from '../../../../../packages/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {
@@ -32,7 +32,7 @@ import {
 import {
   deleteRawDataDataSourceBuffersForNodeMetadataIds,
 } from '~/services/utils/chunkStore';
-import { resolveFetchStageStrategy } from '~/services/batch/strategies/resolveFetchStageStrategy';
+import { resolveFetchStageStrategy } from '~/services/build/strategies/resolveFetchStageStrategy';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
@@ -46,7 +46,7 @@ import {
 import type { BuildSessionConfig } from '@hierarchidb/shape-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '~/services/vt/shapePipeline';
-import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/batch/ShapeBuildAPIClient';
+import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import { setFetchPlannedTotal } from '~/services/vt/shapeProgressPlan';
 import { shouldReuseTaskQueueOnStart } from '../shouldReuseTaskQueueOnStart.js';
@@ -366,7 +366,7 @@ const clearBuildTasksByStage = async (nodeId: NodeId, stages: Array<TaskStage>):
   const uniqueStages = Array.from(new Set(stages));
   if (uniqueStages.length === 0) return;
   const taskRows = await Promise.all(
-    uniqueStages.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByType(nodeId, stage)),
+    uniqueStages.map((stage) => ephemeralShapeAPIImpl.listBuildTasksByStage(nodeId, stage)),
   );
   const taskIds = taskRows.flatMap((rows) => rows.map((task) => task.taskId));
   if (taskIds.length > 0) {
@@ -500,7 +500,7 @@ const startBuildSessionInternal = async (
     ? mergeProcessingConfig(normalizedDraftProcessingConfig, normalizedProcessingConfig)
     : normalizedProcessingConfig;
   const mergedRuntimeConfig = composeRuntimeBuildConfig(mergedBatchConfig, mergedProcessingConfig);
-  const validation = validateBatchConfig(mergedBatchConfig, mergedProcessingConfig);
+  const validation = validateBuildConfig(mergedBatchConfig, mergedProcessingConfig);
   if (!validation.isValid) {
     throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
   }

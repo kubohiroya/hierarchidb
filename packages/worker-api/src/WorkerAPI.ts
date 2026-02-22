@@ -17,7 +17,7 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-} from '@hierarchidb/batch-api';
+} from 'packages/build-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
 import type { TagAPI } from '@hierarchidb/tag-api';
 import type {

@@ -3,8 +3,8 @@
   */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory';
-import type { FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy';
+import { DataSourceStrategyFactory, DataSourceStrategyId } from '../../DataSourceStrategyFactory.js';
+import type { FetchOptions, ProcessOptions, SaveTarget } from '../../DataSourceStrategy';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth', () => {
@@ -53,9 +53,9 @@ vi.mock('@hierarchidb/auth', () => {
   };
 });
 
-export interface BatchJob {
+interface BuildJob {
   id: string;
-  config: BatchConfig;
+  config: BuildConfig;
   startTime: number;
   status: 'pending' | 'running' | 'completed' | 'failed';
   progress: {
@@ -63,11 +63,11 @@ export interface BatchJob {
     percentage: number;
     message?: string;
   };
-  result?: BatchResult;
+  result?: BuildResult;
   error?: Error;
 }
 
-export interface BatchConfig {
+interface BuildConfig {
   strategyId: string;
   fetchOptions?: FetchOptions;
   processOptions?: ProcessOptions;
@@ -77,12 +77,12 @@ export interface BatchConfig {
   retryCount?: number;
 }
 
-export interface BatchResult {
+interface BuildResult {
   jobId: string;
   success: boolean;
   dataCount: number;
-  validationResult?: any;
-  saveResult?: any;
+  validationResult?: unknown;
+  saveResult?: unknown;
   duration: number;
   phases: {
     fetching: number;
@@ -92,33 +92,33 @@ export interface BatchResult {
   };
 }
 
-export interface BatchStatusReporter {
+interface BuildStatusReporter {
   startJob(jobId: string): void;
 
-  updatePhase(jobId: string, phase: BatchJob['progress']['phase'], percentage?: number, message?: string): void;
+  updatePhase(jobId: string, phase: BuildJob['progress']['phase'], percentage?: number, message?: string): void;
 
   completeJob(jobId: string): void;
 
   failJob(jobId: string, error: Error): void;
 
-  getJobStatus(jobId: string): BatchJob | undefined;
+  getJobStatus(jobId: string): BuildJob | undefined;
 }
 
-export class DataSourceBatchProcessor {
-  private jobQueue = new Map<string, BatchJob>();
-  private statusReporter: MockBatchStatusReporter;
+class DataSourceBuildProcessor {
+  private jobQueue = new Map<string, BuildJob>();
+  private statusReporter: MockBuildStatusReporter;
   private factory: DataSourceStrategyFactory;
   private runningJobs = new Set<string>();
   private maxConcurrentJobs = 3;
 
   constructor(factory: DataSourceStrategyFactory) {
     this.factory = factory;
-    this.statusReporter = new MockBatchStatusReporter();
+    this.statusReporter = new MockBuildStatusReporter();
   }
 
-  async executeBatch(config: BatchConfig): Promise<BatchResult> {
+  async executeBuild(config: BuildConfig): Promise<BuildResult> {
     const jobId = this.generateJobId();
-    const job: BatchJob = {
+    const job: BuildJob = {
       id: jobId,
       config,
       startTime: Date.now(),
@@ -167,20 +167,20 @@ export class DataSourceBatchProcessor {
   }
 
   private generateJobId(): string {
-    return `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `build-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private async preProcess(job: BatchJob): Promise<void> {
-    if (!this.factory.hasStrategy(job.config.strategyId as any)) {
+  private async preProcess(job: BuildJob): Promise<void> {
+    if (!this.factory.hasStrategy(job.config.strategyId as DataSourceStrategyId)) {
       throw new Error(`Unknown strategy: ${job.config.strategyId}`);
     }
   }
 
-  private async processJob(job: BatchJob): Promise<BatchResult> {
+  private async processJob(job: BuildJob): Promise<BuildResult> {
     const startTime = Date.now();
     const phases = { fetching: 0, processing: 0, validating: 0, saving: 0 };
 
-    const strategy = this.factory.create(job.config.strategyId as any);
+    const strategy = this.factory.create(job.config.strategyId as DataSourceStrategyId);
 
     this.statusReporter.updatePhase(job.id, 'fetching', 10);
     const fetchStart = Date.now();
@@ -219,23 +219,23 @@ export class DataSourceBatchProcessor {
     };
   }
 
-  private async postProcess(job: BatchJob, result: BatchResult): Promise<void> {
-    console.log(`Batch job ${job.id} completed in ${result.duration}ms`);
+  private async postProcess(job: BuildJob, result: BuildResult): Promise<void> {
+    console.log(`Build job ${job.id} completed in ${result.duration}ms`);
   }
 
-  getJobStatus(jobId: string): BatchJob | undefined {
+  getJobStatus(jobId: string): BuildJob | undefined {
     return this.jobQueue.get(jobId);
   }
 
-  getAllJobs(): BatchJob[] {
+  getAllJobs(): BuildJob[] {
     return Array.from(this.jobQueue.values());
   }
 
-  getPendingJobs(): BatchJob[] {
+  getPendingJobs(): BuildJob[] {
     return this.getAllJobs().filter(job => job.status === 'pending');
   }
 
-  getRunningJobs(): BatchJob[] {
+  getRunningJobs(): BuildJob[] {
     return this.getAllJobs().filter(job => job.status === 'running');
   }
 
@@ -248,8 +248,8 @@ export class DataSourceBatchProcessor {
   }
 }
 
-class MockBatchStatusReporter implements BatchStatusReporter {
-  private jobs = new Map<string, BatchJob['progress']>();
+class MockBuildStatusReporter implements BuildStatusReporter {
+  private jobs = new Map<string, BuildJob['progress']>();
 
   startJob(jobId: string): void {
     this.jobs.set(jobId, {
@@ -258,7 +258,7 @@ class MockBatchStatusReporter implements BatchStatusReporter {
     });
   }
 
-  updatePhase(jobId: string, phase: BatchJob['progress']['phase'], percentage = 0, message?: string): void {
+  updatePhase(jobId: string, phase: BuildJob['progress']['phase'], percentage = 0, message?: string): void {
     this.jobs.set(jobId, { phase, percentage, message });
   }
 
@@ -276,13 +276,13 @@ class MockBatchStatusReporter implements BatchStatusReporter {
     });
   }
 
-  getJobStatus(jobId: string): BatchJob | undefined {
+  getJobStatus(jobId: string): BuildJob | undefined {
     const progress = this.jobs.get(jobId);
     if (!progress) return undefined;
 
     return {
       id: jobId,
-      config: {} as BatchConfig,
+      config: {} as BuildConfig,
       startTime: Date.now(),
       status: 'running',
       progress,
@@ -290,26 +290,26 @@ class MockBatchStatusReporter implements BatchStatusReporter {
   }
 }
 
-describe('Batch Processing System', () => {
+describe('Build System', () => {
   let factory: DataSourceStrategyFactory;
-  let batchProcessor: DataSourceBatchProcessor;
+  let batchProcessor: DataSourceBuildProcessor;
 
   beforeEach(() => {
     factory = new DataSourceStrategyFactory();
-    batchProcessor = new DataSourceBatchProcessor(factory);
+    batchProcessor = new DataSourceBuildProcessor(factory);
   });
 
   afterEach(() => {
     vi.clearAllTimers();
   });
 
-  describe('BatchProcessor', () => {
-    it('should create batch processor', () => {
-      expect(batchProcessor).toBeInstanceOf(DataSourceBatchProcessor);
+  describe('BuildProcessor', () => {
+    it('should create build processor', () => {
+      expect(batchProcessor).toBeInstanceOf(DataSourceBuildProcessor);
     });
 
-    it('should execute single batch job successfully', async () => {
-      const config: BatchConfig = {
+    it('should execute single build job successfully', async () => {
+      const config: BuildConfig = {
         strategyId: 'natural-earth-shapes',
         fetchOptions: {
           endpoint: 'countries-50m',
@@ -326,7 +326,7 @@ describe('Batch Processing System', () => {
         },
       };
 
-      const result = await batchProcessor.executeBatch(config);
+      const result = await batchProcessor.executeBuild(config);
 
       expect(result.success).toBe(true);
       expect(result.jobId).toBeDefined();
@@ -335,25 +335,25 @@ describe('Batch Processing System', () => {
       expect(typeof result.dataCount).toBe('number');
     });
 
-    it('should handle batch job failure', async () => {
-      const config: BatchConfig = {
+    it('should handle build job failure', async () => {
+      const config: BuildConfig = {
         strategyId: 'unknown-strategy',
         saveTarget: {
           type: 'hierarchidb',
         },
       };
 
-      await expect(batchProcessor.executeBatch(config)).rejects.toThrow('Unknown strategy');
+      await expect(batchProcessor.executeBuild(config)).rejects.toThrow('Unknown strategy');
     });
 
     it('should track job status', async () => {
-      const config: BatchConfig = {
+      const config: BuildConfig = {
         strategyId: 'natural-earth-shapes',
         saveTarget: { type: 'hierarchidb' },
       };
 
       //  job
-      const jobPromise = batchProcessor.executeBatch(config);
+      const jobPromise = batchProcessor.executeBuild(config);
 
       //  status
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -371,7 +371,7 @@ describe('Batch Processing System', () => {
     });
 
     it('should handle concurrent jobs', async () => {
-      const configs: BatchConfig[] = [
+      const configs: BuildConfig[] = [
         {
           strategyId: 'natural-earth-shapes',
           fetchOptions: { endpoint: 'countries-50m' },
@@ -390,7 +390,7 @@ describe('Batch Processing System', () => {
       ];
 
       const jobPromises = configs.map(config =>
-        batchProcessor.executeBatch(config),
+        batchProcessor.executeBuild(config),
       );
 
       const results = await Promise.all(jobPromises);
@@ -403,12 +403,12 @@ describe('Batch Processing System', () => {
     });
 
     it('should provide job statistics', async () => {
-      const config: BatchConfig = {
+      const config: BuildConfig = {
         strategyId: 'natural-earth-shapes',
         saveTarget: { type: 'hierarchidb' },
       };
 
-      await batchProcessor.executeBatch(config);
+      await batchProcessor.executeBuild(config);
 
       const allJobs = batchProcessor.getAllJobs();
       const pendingJobs = batchProcessor.getPendingJobs();
@@ -425,8 +425,8 @@ describe('Batch Processing System', () => {
     });
   });
 
-  describe('Batch Configuration Validation', () => {
-    it('should validate required batch config fields', async () => {
+  describe('Build Configuration Validation', () => {
+    it('should validate required build config fields', async () => {
       const invalidConfigs = [
         //  ID
         {
@@ -440,13 +440,13 @@ describe('Batch Processing System', () => {
       for (const config of invalidConfigs) {
         await expect(
           // Cast via unknown to satisfy strict type check for intentional invalid configs
-          batchProcessor.executeBatch(config as unknown as BatchConfig),
+          batchProcessor.executeBuild(config as unknown as BuildConfig),
         ).rejects.toThrow();
       }
     });
 
-    it('should handle batch options correctly', async () => {
-      const config: BatchConfig = {
+    it('should handle build options correctly', async () => {
+      const config: BuildConfig = {
         strategyId: 'natural-earth-shapes',
         fetchOptions: {
           endpoint: 'countries-50m',
@@ -469,7 +469,7 @@ describe('Batch Processing System', () => {
         retryCount: 3,
       };
 
-      const result = await batchProcessor.executeBatch(config);
+      const result = await batchProcessor.executeBuild(config);
       expect(result.success).toBe(true);
 
       const job = batchProcessor.getJobStatus(result.jobId);
@@ -481,12 +481,12 @@ describe('Batch Processing System', () => {
 
   describe('Performance and Resource Management', () => {
     it('should measure phase execution times', async () => {
-      const config: BatchConfig = {
+      const config: BuildConfig = {
         strategyId: 'natural-earth-shapes',
         saveTarget: { type: 'hierarchidb' },
       };
 
-      const result = await batchProcessor.executeBatch(config);
+      const result = await batchProcessor.executeBuild(config);
 
       expect(result.phases).toBeDefined();
       expect(result.phases.fetching).toBeGreaterThanOrEqual(0);
@@ -506,7 +506,7 @@ describe('Batch Processing System', () => {
       }));
 
       const jobPromises = configs.map(config =>
-        batchProcessor.executeBatch(config as BatchConfig),
+        batchProcessor.executeBuild(config as BuildConfig),
       );
 
       //  job

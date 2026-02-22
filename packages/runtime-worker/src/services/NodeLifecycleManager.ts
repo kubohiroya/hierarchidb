@@ -174,7 +174,7 @@ export class NodeLifecycleManager {
   }
 
   /**
-   * Handle batch node creation
+   * Handle build node creation
    */
   async handleBatchCreate(
     parentId: NodeId,
@@ -192,7 +192,7 @@ export class NodeLifecycleManager {
   }
 
   /**
-   * Handle batch node deletion
+   * Handle build node deletion
    */
   async handleBatchDelete(nodeIds: NodeId[], nodeType: NodeType): Promise<void> {
     for (const nodeId of nodeIds) {

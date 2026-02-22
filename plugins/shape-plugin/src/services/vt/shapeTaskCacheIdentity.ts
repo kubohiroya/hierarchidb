@@ -1,4 +1,4 @@
-import type { TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { TaskQueueRecord } from '../../../../../packages/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { buildStableSignature } from './taskSignatures.ts';
 

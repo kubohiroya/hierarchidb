@@ -5,7 +5,7 @@ import type {
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-} from '@hierarchidb/batch-api';
+} from '@hierarchidb/build-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
@@ -241,7 +241,7 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
     cb: (sessions: BuildSessionRuntimeRecord[]) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBuildSessionRuntimes(nodeType, filter, proxy((sessions) => {
+    const unsubscribe = await api.subscribeBuildSessionRuntimes(nodeType, filter, proxy((sessions: BuildSessionRuntimeRecord[]) => {
       cb(sanitizeForComlink(sessions));
     }));
     return () => {

@@ -61,7 +61,7 @@ After this change, shape/location/route plugins will call shared packages direct
 
 ## Context and Orientation
 
-The primary targets are shape/location/route plugins under plugins/*-plugin/src. Shared packages live under packages/ and include @hierarchidb/download, @hierarchidb/ui-monitoring, @hierarchidb/ui-batch-progress, @hierarchidb/ui-worker-client, and other shared utilities.
+The primary targets are shape/location/route plugins under plugins/*-plugin/src. Shared packages live under packages/ and include @hierarchidb/download, @hierarchidb/ui-monitoring, @hierarchidb/ui-build-progress, @hierarchidb/ui-worker-client, and other shared utilities.
 
 Wrapper/adapter modules in this context refer to plugin-local files that only re-export or lightly wrap shared APIs (for example, adding constant pluginId or naming aliases) without meaningful behavior. If a module contains logic that is truly plugin-specific (e.g., translating domain objects or enforcing plugin rules), it is not removed, but should still call shared APIs directly when available.
 

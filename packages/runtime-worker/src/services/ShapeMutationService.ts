@@ -1,6 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
   ShapeBuildTaskRecordInput,
   ShapeBuildTaskRecordUpdate,
@@ -12,16 +11,14 @@ import type {
   ShapeVectorTileRecord,
 } from '@hierarchidb/shape-api';
 import {
-  type BuildSessionRecord,
   type BuildStage,
   type LayerInfo,
-  type ProgressInfo,
   type ResourceUsage,
   type ShapeDB,
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import { ephemeralDB } from '@hierarchidb/gis-sdk';
+import { ephemeralDB, type EphemeralBuildSessionRecord } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { publishBuildSessionUpdate } from './buildSessionBroadcast.js';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
@@ -49,23 +46,6 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     isNumber(value.tasksFailed) &&
     (value.message === undefined || typeof value.message === 'string')
   );
-};
-
-const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
-  total: progress.total,
-  completed: progress.completed,
-  failed: progress.failed,
-  skipped: progress.skipped,
-  percentage: progress.percentage,
-  taskType: toBuildStage(progress.taskType),
-});
-
-const toBuildStage = (stage: ShapeBuildProgressSummary['taskType']): ProgressInfo['taskType'] => {
-  if (stage === 'processing') return stage;
-  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') {
-    return stage;
-  }
-  return undefined;
 };
 
 const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageStatus> => {
@@ -109,14 +89,14 @@ const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUs
   };
 };
 
-const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord => {
+const toBuildSessionRecord = (session: ShapeBuildSessionRecord): EphemeralBuildSessionRecord => {
   return {
     nodeId: session.nodeId,
     status: session.status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toProgressInfo(session.progress),
+    progress: session.progress,
     stages: toStageMap(session.stages),
     resourceUsage: toResourceUsage(session.resourceUsage),
     stopReason: session.stopReason,
@@ -134,13 +114,13 @@ const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRec
 
 const toBuildSessionUpdates = (
   updates: Partial<ShapeBuildSessionRecord>
-): Partial<BuildSessionRecord> => {
-  const next: Partial<BuildSessionRecord> = {};
+): Partial<EphemeralBuildSessionRecord> => {
+  const next: Partial<EphemeralBuildSessionRecord> = {};
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
   if (updates.updatedAt !== undefined) next.updatedAt = updates.updatedAt;
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
-  if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress);
+  if (updates.progress !== undefined) next.progress = updates.progress;
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
   if (updates.resourceUsage !== undefined)
     next.resourceUsage = toResourceUsage(updates.resourceUsage);

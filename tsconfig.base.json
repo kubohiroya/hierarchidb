@@ -32,17 +32,17 @@
       "@hierarchidb/basemap-plugin/*": [
         "./plugins/basemap-plugin/dist/*"
       ],
-      "@hierarchidb/batch": [
-        "./packages/batch/dist/index.d.ts"
+      "@hierarchidb/build": [
+        "./packages/build/dist/index.d.ts"
       ],
-      "@hierarchidb/batch/*": [
-        "./packages/batch/dist/*"
+      "@hierarchidb/build/*": [
+        "./packages/build/dist/*"
       ],
-      "@hierarchidb/batch-runtime-services": [
-        "./packages/batch-runtime-services/dist/index.d.ts"
+      "@hierarchidb/build-runtime-services": [
+        "./packages/build-runtime-services/dist/index.d.ts"
       ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "./packages/batch-runtime-services/dist/*"
+      "@hierarchidb/build-runtime-services/*": [
+        "./packages/build-runtime-services/dist/*"
       ],
       "@hierarchidb/bff": [
         "./packages/backend/bff/dist/index.d.ts"
@@ -104,11 +104,11 @@
       "@hierarchidb/tag-api/*": [
         "./packages/tag-api/dist/*"
       ],
-      "@hierarchidb/batch-api": [
-        "./packages/batch-api/dist/index.d.ts"
+      "@hierarchidb/build-api": [
+        "./packages/build-api/dist/index.d.ts"
       ],
-      "@hierarchidb/batch-api/*": [
-        "./packages/batch-api/dist/*"
+      "@hierarchidb/build-api/*": [
+        "./packages/build-api/dist/*"
       ],
       "@hierarchidb/import-export-api": [
         "./packages/import-export-api/dist/index.d.ts"
@@ -327,7 +327,7 @@
         "./plugins/shape-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/shape-plugin/shape-stage-worker": [
-        "./plugins/shape-plugin/dist/services/batch/workers/shapeStageWorker.entry.d.ts"
+        "./plugins/shape-plugin/dist/services/build/workers/shapeStageWorker.entry.d.ts"
       ],
       "@hierarchidb/shape-plugin/*": [
         "./plugins/shape-plugin/dist/*"
@@ -415,12 +415,6 @@
       ],
       "@hierarchidb/ui-dynamic-speed-dial/*": [
         "./packages/ui/dynamic-speed-dial/dist/*"
-      ],
-      "@hierarchidb/ui-batch-progress": [
-        "./packages/ui/batch/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-batch-progress/*": [
-        "./packages/ui/batch/dist/*"
       ],
       "@hierarchidb/ui-build-progress": [
         "./packages/ui/build-progress/dist/index.d.ts"

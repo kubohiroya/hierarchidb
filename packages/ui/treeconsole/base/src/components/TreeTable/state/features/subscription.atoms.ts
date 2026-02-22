@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-// Local batch-change payload used by SubscriptionOrchestrator.
+// Local build-change payload used by SubscriptionOrchestrator.
 // This avoids requiring treeId/pageNodeId/version at this UI layer
 // and focuses on minimal diffs the table merge can consume.
 export interface SubTreeChanges {
