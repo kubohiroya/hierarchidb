@@ -317,7 +317,7 @@ export function TreeNodeInfoPanel({
               startIcon={<ConstructionIcon />}
               onClick={handleBuild}
               aria-label={labels.buildAria}
-              disabled={buildTargetLoading}
+              disabled={buildTargetLoading || isBuildRequired === false}
             >
               {labels.buildLabel}
             </Button>

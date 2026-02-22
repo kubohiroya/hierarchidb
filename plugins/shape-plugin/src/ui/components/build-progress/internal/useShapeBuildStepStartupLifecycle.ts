@@ -33,7 +33,6 @@ type UseShapeBuildSessionStartupLifecycleArgs = {
   sessionProgressTotal?: number;
   sessionStageId: string | null;
   awaitingFirstTaskExpectationRef: { current: boolean };
-  completedTaskSequenceById: Map<string, number>;
   resolvedTaskType: string | undefined;
   lastAwaitingFirstTaskDecisionTraceKeyRef: { current: string | null };
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
@@ -75,7 +74,6 @@ export const useShapeBuildSessionStartupLifecycle = ({
   sessionProgressTotal,
   sessionStageId,
   awaitingFirstTaskExpectationRef,
-  completedTaskSequenceById,
   resolvedTaskType,
   lastAwaitingFirstTaskDecisionTraceKeyRef,
   buildSessionTransitionTaskStartNotifiedRef,
@@ -101,7 +99,6 @@ export const useShapeBuildSessionStartupLifecycle = ({
     effectiveProgress,
     runtimeStatus,
     resolvedTaskType,
-    completedTaskSequenceById,
     progressTerminalLogKeyRef,
     emitBuildSessionTransitionLog,
     buildSessionTransition,

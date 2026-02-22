@@ -204,7 +204,6 @@ export const shapeBuildAPI = {
     nodeId: NodeId,
   ): Promise<{
     nodeId: NodeId;
-    draftId?: NodeId;
     status: string;
     progress?: number;
     completedTasks?: number;
@@ -330,25 +329,8 @@ export const shapeBuildAPI = {
     const existing = shapeBuildRuntime.progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
-    const sequenceByTaskId = new Map<string, number>();
-    const readSequence = (sequence: unknown): number | null => (
-      typeof sequence === 'number' && Number.isFinite(sequence) ? sequence : null
-    );
-    const shouldProcessEvent = (taskId: string, sequence: number | null): boolean => {
-      if (sequence === null) return true;
-      const current = sequenceByTaskId.get(taskId);
-      if (current !== undefined && sequence <= current) {
-        return false;
-      }
-      sequenceByTaskId.set(taskId, sequence);
-      return true;
-    };
     const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
       if (event.type === 'delete') {
-        sequenceByTaskId.delete(event.taskId);
-        return;
-      }
-      if (!shouldProcessEvent(event.task.taskId, readSequence(event.task.sequence))) {
         return;
       }
       void (async () => {
@@ -387,17 +369,6 @@ export const shapeBuildAPI = {
     const existing = shapeBuildRuntime.taskCallbacks.get(key);
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
-    const sequenceByTaskId = new Map<string, number>();
-    const readSequence = (taskId: string, sequence: unknown): number => {
-      if (typeof sequence === 'number' && Number.isFinite(sequence)) return sequence;
-      throw new Error(`[shapeBuildAPI] missing task sequence (taskId=${taskId})`);
-    };
-    const shouldEmitTask = (taskId: string, sequence: number): boolean => {
-      const current = sequenceByTaskId.get(taskId);
-      if (current !== undefined && sequence <= current) return false;
-      sequenceByTaskId.set(taskId, sequence);
-      return true;
-    };
     let snapshotInFlight = false;
     const sendSnapshot = async () => {
       if (snapshotInFlight) return;
@@ -405,10 +376,6 @@ export const shapeBuildAPI = {
       try {
         await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
         let tasks = await shapeBuildRuntime.buildTaskSummarySnapshot(nodeId, taskQueue);
-        tasks.forEach((task) => {
-          const sequence = readSequence(task.taskId, task.sequence);
-          sequenceByTaskId.set(task.taskId, sequence);
-        });
         callback({ type: 'snapshot', nodeId, tasks });
       } catch (error) {
         console.error('[shapeBuildAPI] task snapshot failed', error);
@@ -419,28 +386,12 @@ export const shapeBuildAPI = {
     void sendSnapshot();
     const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
       if (event.type === 'delete') {
-        sequenceByTaskId.delete(event.taskId);
         callback({ type: 'delete', nodeId: event.nodeId, taskId: event.taskId });
         return;
       }
       void (async () => {
         try {
           const summary = shapeBuildRuntime.mapTaskQueueRecordToTaskSummary(event.task);
-          const sequence = readSequence(summary.taskId, summary.sequence);
-          const current = sequenceByTaskId.get(summary.taskId);
-          if (current !== undefined && sequence > current + 1) {
-            console.warn('[shapeBuildAPI] task sequence gap detected; triggering snapshot resync', {
-              nodeId: event.nodeId,
-              taskId: summary.taskId,
-              currentSequence: current,
-              nextSequence: sequence,
-            });
-            void sendSnapshot();
-            return;
-          }
-          if (!shouldEmitTask(summary.taskId, sequence)) {
-            return;
-          }
           callback({ type: 'update', nodeId: event.nodeId, task: summary });
         } catch (error) {
           console.error('[shapeBuildAPI] task update failed', error);

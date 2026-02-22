@@ -102,7 +102,6 @@ export interface LayerInfo {
 
 export interface BuildSessionRecord {
   nodeId: ShapeContainerNodeId;
-  draftId?: ShapeContainerNodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   selectedArrayByCountries?: Record<string, boolean[]>;
   startedAt: number;
@@ -253,10 +252,11 @@ export type ShapeBuildTaskResult =
 export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = ShapeBuildTaskResult> {
   taskId: string;
   nodeId: ShapeContainerNodeId;
-  taskType: BuildTaskType;
+  stage: BuildTaskType;
   status: TaskStatus;
   index: number;
   progress: number;
+  taskType?: never;
   display?: TaskDisplayPayload;
   message?: string;
   retryCount?: number;

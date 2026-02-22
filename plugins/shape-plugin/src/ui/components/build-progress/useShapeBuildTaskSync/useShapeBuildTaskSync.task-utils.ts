@@ -1,5 +1,6 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary, VtParentInputSummary } from './useShapeBuildTaskSync.types.js';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 const UNKNOWN_SCOPE_VALUE = 'unknown';
 const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
@@ -47,12 +48,31 @@ export const mergeTaskMessage = (base: string | undefined, addition: string): st
 export const normalizeTaskStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   progress: number,
+  display?: ShapeBuildTaskSummary['display'],
+  message?: ShapeBuildTaskSummary['message'],
 ): ShapeBuildTaskSummary['status'] => {
   const normalized = status ?? 'queued';
   if (normalized === 'running' && progress >= 100) {
     return 'completed';
   }
+  if (normalized === 'running' && isTaskSkipped(display, message)) {
+    return 'completed';
+  }
   return normalized;
+};
+
+export const normalizeTaskProgress = (
+  status: ShapeBuildTaskSummary['status'],
+  progress: number,
+  display?: ShapeBuildTaskSummary['display'],
+  message?: ShapeBuildTaskSummary['message'],
+): ShapeBuildTaskSummary['progress'] => {
+  const safeProgress = Number.isFinite(progress) ? progress : 0;
+  if (status === 'completed' || status === 'failed' || isTaskSkipped(display, message)) {
+    return 100;
+  }
+  if (safeProgress >= 100) return 99;
+  return Math.max(0, safeProgress);
 };
 
 export const parseScopeFromTaskId = (taskId: string): { iso2: string; adminLevel: string } | null => {
@@ -86,18 +106,24 @@ export const resolveTaskDisplay = (task: RawTaskSummary): ShapeBuildTaskSummary 
   const progress = typeof task.progress === 'number' && Number.isFinite(task.progress)
     ? task.progress : 0;
   const normalizedStage = ((): ShapeBuildTaskSummary['stage'] => {
-    const candidates: Array<unknown> = [task.stage, task.taskType, task.type];
+    const candidates: Array<unknown> = [task.stage, task.type];
     if (candidates.includes('fetch')) return 'fetch';
     if (candidates.includes('transform')) return 'transform';
     return 'vt';
   })();
 
+  const normalizedStatus = normalizeTaskStatus(
+    task.status,
+    progress,
+    task.display,
+    task.message,
+  );
   return {
     ...task,
     stage: normalizedStage,
     taskType: normalizedStage,
     type: normalizedStage,
-    status: normalizeTaskStatus(task.status, progress),
-    progress: progress >= 100 ? 100 : task.progress,
+    status: normalizedStatus,
+    progress: normalizeTaskProgress(normalizedStatus, progress, task.display, task.message),
   };
 };

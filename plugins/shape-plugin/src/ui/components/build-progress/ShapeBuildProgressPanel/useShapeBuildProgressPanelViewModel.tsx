@@ -1,5 +1,6 @@
 import { toNodeType } from '@hierarchidb/core-types';
 import { BuildSessionLauncherPanel } from '@hierarchidb/ui-batch-progress';
+import type { BuildControlMenuItem } from '@hierarchidb/components';
 import {
   type BuildSessionProgressPanelViewModel,
   resolveBuildSessionProgressPanelSplitViewProps,
@@ -48,6 +49,10 @@ type ShapeBuildProgressPanelViewModel = {
   statusLabel: string;
   controlDetails: ShapeBuildProgressPanelControllerResult['controlDetails'];
   controlRightContent: ReactElement;
+  controlMenuItems?: BuildControlMenuItem[];
+  controlMenuAriaLabel?: string;
+  controlMenuDisabled?: boolean;
+  startLoading?: boolean;
   completionDialog: ShapeBuildProgressPanelControllerResult['completionDialog'];
   suspendDialog: ShapeBuildProgressPanelControllerResult['suspendDialog'];
   crashDialog: ShapeBuildProgressPanelControllerResult['crashDialog'];
@@ -60,9 +65,14 @@ export const useShapeBuildProgressPanelViewModel = ({
 }: UseShapeBuildProgressPanelViewModelArgs): ShapeBuildProgressPanelViewModel => {
   const {
     t,
+    controlMenuItems,
+    controlMenuAriaLabel,
+    isControlMenuDisabled,
+    isStartButtonLoading,
     stages,
     stageProgressForDisplay,
     paneProgressForDisplay,
+    tasksByStageForDisplay,
     stageLoadingState,
     stageHeaderMeta,
     stageContents,
@@ -83,6 +93,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     isBuildStartupPending,
     pauseButtonLabel,
     startPendingHold,
+    isResetSessionLoading,
     handleStartClickWithHold,
   } = coreState;
 
@@ -92,6 +103,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     stages,
     stageProgress: stageProgressForDisplay,
     paneProgress: paneProgressForDisplay,
+    tasksByStageForDisplay,
     stageLoadingState,
     ...resolveBuildSessionProgressPanelSplitViewProps({ stagesLength: stages.length, splitViewPanelSize: 250 }),
     stageContents,
@@ -108,10 +120,14 @@ export const useShapeBuildProgressPanelViewModel = ({
     onPause: controls.stopRequested ? undefined : controls.handlePause,
     startIcon: <ConstructionIcon fontSize="small" />,
     controlLabel: t('stage.controls.title', 'Build controls'),
+    controlMenuItems,
+    controlMenuAriaLabel,
+    controlMenuDisabled: isControlMenuDisabled,
     pauseLabel: pauseButtonLabel,
     stopRequested: controls.stopRequested ?? false,
     pauseActsAsCancel: isBuildStartupPending,
-    startPending: controls.startPending || startPendingHold,
+    startPending: controls.startPending || startPendingHold || isResetSessionLoading,
+    startLoading: isStartButtonLoading,
     showResumeLabel: controls.showResumeLabel ?? false,
     startLabel: t('stage.controls.start', 'Start Build'),
     resumeLabel: t('stage.controls.resume', 'Resume Build'),

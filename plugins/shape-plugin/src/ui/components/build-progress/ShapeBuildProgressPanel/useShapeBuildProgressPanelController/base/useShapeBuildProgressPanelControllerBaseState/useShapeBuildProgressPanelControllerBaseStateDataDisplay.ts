@@ -1,5 +1,5 @@
 import type { ReactNode, MouseEvent } from 'react';
-import type { BuildStepStageMenu } from '@hierarchidb/components';
+import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
 import type { ShapeProcessingConfig } from '~/common/types/build';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -42,6 +42,8 @@ type DisplayArgs = {
   isBuildSessionStarted: boolean;
   isBuildStartupPending: boolean;
   isResetSessionLoading: boolean;
+  isControlMenuDisabled: boolean;
+  isStartButtonLoading: boolean;
   isTerminalStatus: boolean;
   isResetSessionPending: boolean;
   startPendingHold: boolean;
@@ -55,6 +57,8 @@ type DisplayArgs = {
   pauseButtonLabel: string;
   hasAnyTasks: boolean;
   hasAnySummaryTasks: boolean;
+  controlMenuItems: BuildControlMenuItem[];
+  controlMenuAriaLabel: string;
   cacheCounts: unknown;
   cacheResultCounts: unknown;
   cacheDeleteLoading: {
@@ -148,6 +152,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     isBuildSessionStarted,
     isBuildStartupPending,
     isResetSessionLoading,
+    isControlMenuDisabled,
+    isStartButtonLoading,
     isTerminalStatus,
     isResetSessionPending,
     startPendingHold,
@@ -161,6 +167,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     pauseButtonLabel,
     hasAnyTasks,
     hasAnySummaryTasks,
+    controlMenuItems,
+    controlMenuAriaLabel,
     cacheCounts,
     cacheResultCounts,
     cacheDeleteLoading,
@@ -247,11 +255,15 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     isResetSessionLoading,
     isResetSessionPending,
     startPendingHold,
+    isControlMenuDisabled,
+    isStartButtonLoading,
     isBuildSessionStarted,
     isBuildStartupPending,
     isTerminalStatus,
     hasAnyTasks,
     hasAnySummaryTasks,
+    controlMenuItems,
+    controlMenuAriaLabel,
     taskSearchText,
     setTaskSearchText,
     startupNoticeDismissed,

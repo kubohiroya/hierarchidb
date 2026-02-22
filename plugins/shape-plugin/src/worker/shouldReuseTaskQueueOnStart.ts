@@ -5,5 +5,4 @@ export const shouldReuseTaskQueueOnStart = (
 ): boolean => (
   previousStatus === 'running'
   || previousStatus === 'paused'
-  || previousStatus === 'failed'
 );

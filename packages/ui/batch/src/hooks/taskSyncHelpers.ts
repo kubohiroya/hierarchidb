@@ -1,6 +1,5 @@
 export type TaskSyncItem = {
   taskId: string;
-  sequence?: number;
   status?: string;
   progress?: number;
   index?: number;
@@ -65,29 +64,42 @@ export const removeTaskById = <T extends TaskSyncItem>(current: T[], taskId: str
   return next;
 };
 
-export const readTaskSequence = (task: TaskSyncItem): number | null => (
-  typeof task.sequence === 'number' && Number.isFinite(task.sequence) ? task.sequence : null
-);
-
-export const buildTaskSequenceMap = <T extends TaskSyncItem>(tasks: T[]): Map<string, number> => {
-  const map = new Map<string, number>();
-  tasks.forEach((task) => {
-    const seq = readTaskSequence(task);
-    if (seq !== null) {
-      map.set(task.taskId, seq);
-    }
-  });
-  return map;
-};
-
 export const shouldApplyTaskUpdate = <T extends TaskSyncItem>(
   current: T | undefined,
   next: T,
 ): boolean => {
   if (!current) return true;
-  const currentSequence = readTaskSequence(current);
-  const nextSequence = readTaskSequence(next);
-  if (currentSequence !== null && nextSequence !== null && nextSequence <= currentSequence) {
+
+  const resolveStatus = (task: TaskSyncItem): string => (
+    typeof task.status === 'string' ? task.status.toLowerCase() : ''
+  );
+  const isTerminalStatus = (task: TaskSyncItem): boolean => {
+    const status = resolveStatus(task);
+    return status === 'completed' || status === 'failed' || status === 'skipped';
+  };
+
+  const currentIsTerminal = isTerminalStatus(current);
+  const nextIsTerminal = isTerminalStatus(next);
+  const currentProgress = typeof current.progress === 'number' && Number.isFinite(current.progress) ? current.progress : 0;
+  const nextProgress = typeof next.progress === 'number' && Number.isFinite(next.progress) ? next.progress : 0;
+
+  if (currentIsTerminal && !nextIsTerminal) {
+    return false;
+  }
+  if (currentIsTerminal && nextIsTerminal) {
+    if (resolveStatus(current) !== resolveStatus(next)) {
+      return false;
+    }
+    if (nextProgress < currentProgress) {
+      return false;
+    }
+    return true;
+  }
+  if (!currentIsTerminal && nextIsTerminal) {
+    return true;
+  }
+
+  if (nextProgress < currentProgress) {
     return false;
   }
   return true;
@@ -100,12 +112,6 @@ export const areTaskListsEqual = <T extends TaskSyncItem>(next: T[], current: T[
     const currentTask = current[i];
     if (!nextTask || !currentTask) return false;
     if (nextTask.taskId !== currentTask.taskId) return false;
-    const nextSeq = readTaskSequence(nextTask);
-    const currentSeq = readTaskSequence(currentTask);
-    if (nextSeq !== null || currentSeq !== null) {
-      if (nextSeq !== currentSeq) return false;
-      continue;
-    }
     if (nextTask.status !== currentTask.status) return false;
     if (nextTask.progress !== currentTask.progress) return false;
   }

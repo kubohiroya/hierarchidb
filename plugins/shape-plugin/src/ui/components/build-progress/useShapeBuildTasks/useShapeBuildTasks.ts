@@ -12,11 +12,11 @@ import type { BuildTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
 import { useShapeBuildTaskSync } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync';
 import type { RawTaskSummary } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
-import {
-  SHAPE_NODE_TYPE,
-  isTaskInFlight,
-  logRunningResidueDrop,
-} from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
+import { SHAPE_NODE_TYPE, logRunningResidueDrop } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
+import { normalizeStageKey } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
+import { isTerminalTask } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.js';
+
+type StageCountByStage = Record<string, number>;
 
 export interface UseShapeBuildTasksOptions {
   autoSubscribe?: boolean;
@@ -29,11 +29,13 @@ export interface UseShapeBuildTasksState {
   error: Error | null;
   isTaskStreamReady: boolean;
   refresh: () => Promise<void>;
+  snapshotTaskCountByStage: StageCountByStage;
+  terminalTaskCountByStage: StageCountByStage;
 }
 
-const TASK_SNAPSHOT_RECONCILE_INTERVAL_MS = 1000;
-const EMPTY_TASK_RECONCILE_WINDOW_MS = 60_000;
-const isDev = import.meta.env.DEV;
+const isTerminalForCompletion = (task: ShapeBuildTaskSummary): boolean => (
+  isTerminalTask(task)
+);
 
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
@@ -45,16 +47,70 @@ export function useShapeBuildTasks(
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
   const [isTaskStreamReady, setIsTaskStreamReady] = useState(false);
+  const [snapshotTaskCountByStage, setSnapshotTaskCountByStage] = useState<StageCountByStage>({});
+  const [terminalTaskCountByStage, setTerminalTaskCountByStage] = useState<StageCountByStage>({});
+  const [subscriptionEpoch, setSubscriptionEpoch] = useState(0);
+  const snapshotTaskCountByStageRef = useRef<Map<string, number>>(new Map());
+  const terminalTaskCountByTaskIdRef = useRef<Map<string, string>>(new Map());
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const handleSnapshotRef = useRef<(tasks: unknown) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
   const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
-  const reconcileInFlightRef = useRef(false);
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
   const markTaskStreamSynchronized = useCallback(() => {
     setIsTaskStreamReady((current) => (current ? current : true));
+  }, []);
+
+  const resetSnapshotTaskCounts = useCallback(() => {
+    snapshotTaskCountByStageRef.current = new Map();
+    terminalTaskCountByTaskIdRef.current = new Map();
+    setSnapshotTaskCountByStage({});
+    setTerminalTaskCountByStage({});
+  }, []);
+
+  const onTaskSnapshot = useCallback((nextTasks: ShapeBuildTaskSummary[]) => {
+    const nextSnapshotCounts = new Map<string, number>();
+    const nextTerminalTaskIds = new Map<string, string>();
+    const nextTerminalCounts = new Map<string, number>();
+
+    for (const task of nextTasks) {
+      const stage = normalizeStageKey(task);
+      nextSnapshotCounts.set(stage, (nextSnapshotCounts.get(stage) ?? 0) + 1);
+
+      if (!isTerminalForCompletion(task)) {
+        continue;
+      }
+      nextTerminalTaskIds.set(task.taskId, stage);
+      nextTerminalCounts.set(stage, (nextTerminalCounts.get(stage) ?? 0) + 1);
+    }
+
+    snapshotTaskCountByStageRef.current = nextSnapshotCounts;
+    terminalTaskCountByTaskIdRef.current = nextTerminalTaskIds;
+    setSnapshotTaskCountByStage(Object.fromEntries(nextSnapshotCounts.entries()));
+    setTerminalTaskCountByStage(Object.fromEntries(nextTerminalCounts.entries()));
+  }, []);
+
+  const onTaskTerminalProgressUpdate = useCallback((task: ShapeBuildTaskSummary) => {
+    const stage = normalizeStageKey(task);
+    const previousStage = terminalTaskCountByTaskIdRef.current.get(task.taskId);
+    if (previousStage === stage) {
+      return;
+    }
+
+    if (!isTerminalForCompletion(task)) {
+      if (previousStage !== undefined) {
+        terminalTaskCountByTaskIdRef.current.delete(task.taskId);
+      }
+    } else {
+      terminalTaskCountByTaskIdRef.current.set(task.taskId, stage);
+    }
+    const nextTerminalCounts = new Map<string, number>();
+    for (const terminalTaskStage of terminalTaskCountByTaskIdRef.current.values()) {
+      nextTerminalCounts.set(terminalTaskStage, (nextTerminalCounts.get(terminalTaskStage) ?? 0) + 1);
+    }
+    setTerminalTaskCountByStage(Object.fromEntries(nextTerminalCounts.entries()));
   }, []);
 
   const {
@@ -74,15 +130,13 @@ export function useShapeBuildTasks(
     setIsLoading,
     setError,
     markTaskStreamSynchronized,
+    onTaskSnapshot,
+    onTaskTerminalProgressUpdate,
   });
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
   }, []);
-
-  useEffect(() => {
-    syncTasksRef(tasks);
-  }, [syncTasksRef, tasks]);
 
   useEffect(() => {
     syncLoadingRef(isLoading);
@@ -105,6 +159,7 @@ export function useShapeBuildTasks(
     }
     setIsTaskStreamReady(false);
     resetPending();
+    resetSnapshotTaskCounts();
     const hadTasks = tasksRef.current.length > 0;
     const hadError = errorRef.current !== null;
     const wasLoading = isLoadingRef.current;
@@ -135,7 +190,7 @@ export function useShapeBuildTasks(
     subscriptionIdRef.current = subscriptionId;
     let cancelled = false;
 
-    const handleEvent = (event: BuildTaskUpdateEvent<RawTaskSummary>) => {
+    const handleEvent = (event: BuildTaskUpdateEvent) => {
       if (String(event.nodeId) !== String(nodeId)) {
         logRunningResidueDrop({
           nodeId: nodeId ? String(nodeId) : null,
@@ -157,40 +212,15 @@ export function useShapeBuildTasks(
         return;
       }
       if (event.type === 'snapshot') {
-        handleSnapshotRef.current(event.tasks);
+        handleSnapshotRef.current(event.tasks as RawTaskSummary[]);
         return;
       }
       if (event.type === 'update') {
-        handleUpdateRef.current(event.task);
+        handleUpdateRef.current(event.task as RawTaskSummary);
         return;
       }
       if (event.type === 'delete') {
         handleDeleteRef.current(event.taskId);
-      }
-    };
-
-    const subscribedAt = Date.now();
-
-    const reconcileSnapshot = async () => {
-      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
-      const hasInFlightTasks = tasksRef.current.some((task) => isTaskInFlight(task));
-      const hasNoTasks = tasksRef.current.length === 0;
-      const withinEmptyTaskWindow = Date.now() - subscribedAt <= EMPTY_TASK_RECONCILE_WINDOW_MS;
-      if (!hasInFlightTasks && !(hasNoTasks && withinEmptyTaskWindow)) return;
-      if (reconcileInFlightRef.current) return;
-      reconcileInFlightRef.current = true;
-      try {
-        const latestTasks = await bridgeRef.current.getBuildTasks(SHAPE_NODE_TYPE, nodeId);
-        if (cancelled || subscriptionIdRef.current !== subscriptionId) {
-          return;
-        }
-        handleSnapshotRef.current(latestTasks);
-      } catch (err) {
-        if (!cancelled && isDev) {
-          console.debug('[ShapeBuildStep] task snapshot reconcile skipped', err);
-        }
-      } finally {
-        reconcileInFlightRef.current = false;
       }
     };
 
@@ -207,7 +237,6 @@ export function useShapeBuildTasks(
           return;
         }
         subscriptionRef.current = unsubscribe;
-        void reconcileSnapshot();
       } catch (err) {
         if (cancelled) return;
         const errObj = err instanceof Error ? err : new Error('Failed to subscribe build tasks');
@@ -217,30 +246,36 @@ export function useShapeBuildTasks(
     };
 
     void start();
-    const reconcileTimer = window.setInterval(() => {
-      void reconcileSnapshot();
-    }, TASK_SNAPSHOT_RECONCILE_INTERVAL_MS);
 
     return () => {
       cancelled = true;
-      window.clearInterval(reconcileTimer);
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
       }
-      reconcileInFlightRef.current = false;
     };
   }, [
     autoSubscribe,
     nodeId,
+    subscriptionEpoch,
     setError,
     setIsLoading,
     setTasks,
     syncTasksRef,
+    resetPending,
+    resetSnapshotTaskCounts,
+    tasksRef,
+    errorRef,
+    isLoadingRef,
   ]);
 
   const refresh = useCallback(async () => {
     if (!nodeId) return;
+    setSubscriptionEpoch((current) => current + 1);
+    if (subscriptionRef.current) {
+      subscriptionRef.current();
+      subscriptionRef.current = null;
+    }
     const wasLoading = isLoadingRef.current;
     if (!wasLoading) {
       setIsLoading(true);
@@ -287,7 +322,17 @@ export function useShapeBuildTasks(
       error,
       isTaskStreamReady,
       refresh,
+      snapshotTaskCountByStage,
+      terminalTaskCountByStage,
     }),
-    [error, isLoading, isTaskStreamReady, refresh, tasks],
+    [
+      error,
+      isLoading,
+      isTaskStreamReady,
+      refresh,
+      snapshotTaskCountByStage,
+      terminalTaskCountByStage,
+      tasks,
+    ],
   );
 }

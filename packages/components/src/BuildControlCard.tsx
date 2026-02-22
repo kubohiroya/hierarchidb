@@ -1,12 +1,15 @@
-import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Box, Button, CircularProgress, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import TimelapseIcon from '@mui/icons-material/Timelapse';
 import type { BuildControlDetail } from './BuildStepPanel.tsx';
+import type { BuildControlMenuItem } from './BuildStepPanel.tsx';
 import type { BuildStatus } from './build-status/BuildStatus.ts';
 
+export type { BuildControlMenuItem };
 type BuildControlCardProps = {
   status: BuildStatus;
   onPause?: () => void;
@@ -23,6 +26,10 @@ type BuildControlCardProps = {
   resumeIcon?: ReactNode;
   details?: BuildControlDetail[];
   rightContent?: ReactNode;
+  controlMenuItems?: BuildControlMenuItem[];
+  controlMenuAriaLabel?: string;
+  controlMenuDisabled?: boolean;
+  startLoading?: boolean;
 };
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
@@ -41,7 +48,12 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   resumeIcon,
   details,
   rightContent,
+  controlMenuItems,
+  controlMenuAriaLabel,
+  controlMenuDisabled,
+  startLoading,
 }) => {
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const pauseSpinner = (
     <CircularProgress
       size={16}
@@ -62,7 +74,20 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
     ? (!onPause || stopRequested)
     : (status !== 'running' || !onPause || stopRequested || startPending);
   const disableStart = !onResume || status === 'running' || stopRequested || startPending;
-  const isLoading = (status === 'running' || Boolean(startPending)) && !stopRequested;
+  const isLoading = (startLoading ?? (status === 'running' || Boolean(startPending))) && !stopRequested;
+  const hasControlMenuItems = (controlMenuItems?.length ?? 0) > 0;
+  const isMenuOpen = Boolean(menuAnchorEl);
+  const menuDisabled = stopRequested || hasControlMenuItems === false || Boolean(controlMenuDisabled);
+  const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+  const handleMenuItemClick = (item: BuildControlMenuItem) => {
+    item.onClick();
+    handleMenuClose();
+  };
 
   return (
     <Box
@@ -86,17 +111,6 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         {controlLabel ?? 'Build Controls'}
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={computedPauseIcon}
-          disabled={disablePause}
-          onClick={onPause}
-          data-testid="build-control-pause-button"
-          aria-label={pauseLabel ?? 'Pause'}
-        >
-          {pauseLabel ?? 'Pause'}
-        </Button>
         <LoadingButton
           color="secondary"
           variant="contained"
@@ -110,6 +124,45 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         >
           {computedLabel}
         </LoadingButton>
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={computedPauseIcon}
+          disabled={disablePause}
+          onClick={onPause}
+          data-testid="build-control-pause-button"
+          aria-label={pauseLabel ?? 'Pause'}
+        >
+          {pauseLabel ?? 'Pause'}
+        </Button>
+        {hasControlMenuItems ? (
+          <IconButton
+            size="small"
+            onClick={handleMenuOpen}
+            disabled={menuDisabled}
+            aria-label={controlMenuAriaLabel ?? 'Build control menu'}
+            data-testid="build-control-menu-button"
+          >
+            <ArrowDropDownIcon fontSize="small" />
+          </IconButton>
+        ) : null}
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={isMenuOpen}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          {controlMenuItems?.map((item) => (
+            <MenuItem
+              key={item.id}
+              onClick={() => handleMenuItemClick(item)}
+              disabled={item.disabled}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
+        </Menu>
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>

@@ -210,6 +210,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const isFolderNode = isFolderNodeType(nodeType);
   const folderBuildReadyForNode = typeof folderBuildReady === 'boolean' ? folderBuildReady : undefined;
   const nodeBuildRequired = typeof buildRequired === 'boolean' ? buildRequired : undefined;
+  const isBuildAllowed = typeof nodeBuildRequired === 'boolean' ? nodeBuildRequired : true;
   const canBuildForNode = (() => {
     if (typeof canBuild === 'boolean') return canBuild;
     if (isFolderNode) {
@@ -223,8 +224,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     return buildableNodeTypes.has(normalizedNodeType);
   })();
   const canBuildEntry =
-    Boolean(_onBuild) && canBuildForNode;
-  const showBuildEntry = Boolean(_onBuild) && (canBuildEntry || isLocationNode);
+    Boolean(_onBuild) && canBuildForNode && isBuildAllowed;
+  const showBuildEntry = Boolean(_onBuild) && (canBuildForNode || isLocationNode);
   const buildDisabled = !canBuildEntry || isLocationNode;
   const openInNewAdornment = isShiftPressed ? <OpenInNewIcon fontSize="small" sx={{ m: 0, p: 0, fontSize: '95%' }} /> : null;
 

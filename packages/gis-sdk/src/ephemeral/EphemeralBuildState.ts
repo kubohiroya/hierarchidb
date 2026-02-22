@@ -41,7 +41,6 @@ export interface EphemeralStageStatus {
 
 export interface EphemeralBuildSessionRecord {
   nodeId: NodeId;
-  draftId?: NodeId;
   domainType?: EphemeralDomainType;
   status: BuildStatus;
   stopReason?: StopReason;
@@ -56,7 +55,6 @@ export interface EphemeralBuildSessionRecord {
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
-  tableId?: string;
   inactiveMs?: number;
   lastHeartbeatAt?: number;
   stageInactiveMs?: number;
@@ -71,9 +69,10 @@ export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   taskId: string;
   nodeId: NodeId;
   domainType?: EphemeralDomainType;
-  taskType: BuildStage;
   status: BuildTaskStatus;
   index: number;
+  stage?: BuildStage;
+  taskType?: never;
   stagePriority?: number;
   progress: number;
   display?: TaskDisplayPayload;
@@ -82,8 +81,6 @@ export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {
   errorMessage?: string;
   createdAt?: number;
   updatedAt?: number;
-  sequence?: number;
-  stage?: BuildStage;
   inputData?: TInput;
   outputData?: TOutput;
   retryCount?: number;
@@ -153,7 +150,49 @@ export interface EphemeralTileIdToBufferRelation {
 
 export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
   sessions:
+    '&nodeId',
+  buildTasks:
+    '&taskId, nodeId, status, index, stagePriority'
+    + ', [nodeId+status], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+stage+index], [nodeId+stage+status+index]',
+  fetchCache:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  fetchCacheMeta:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  transformCache:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  transformCacheMeta:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  transformErrors:
+    '&id, nodeId',
+  tileIdToBufferRelations:
+    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+};
+
+export const EPHEMERAL_DB_SCHEMA_V1: Record<string, string> = {
+  sessions:
     '&nodeId, status, updatedAt',
+  buildTasks:
+    '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+stage]'
+    + ', [nodeId+index], [nodeId+status+index], [nodeId+taskType+index], [nodeId+taskType+status+index]',
+  fetchCache:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  fetchCacheMeta:
+    '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  transformCache:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  transformCacheMeta:
+    '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel], [nodeId+timestamp]',
+  transformErrors:
+    '&id, nodeId',
+  tileIdToBufferRelations:
+    '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+};
+
+export const EPHEMERAL_DB_SCHEMA_V2: Record<string, string> = {
+  sessions:
+    '&nodeId',
   buildTasks:
     '&taskId, nodeId, taskType, status, index, stagePriority, sequence'
     + ', [nodeId+status], [nodeId+taskType], [nodeId+stage]'

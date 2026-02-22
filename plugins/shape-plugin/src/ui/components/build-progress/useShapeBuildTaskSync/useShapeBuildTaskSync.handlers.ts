@@ -7,6 +7,8 @@ import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 type HandlerDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];
   markTaskStreamSynchronized?: SyncArgs['markTaskStreamSynchronized'];
+  onTaskSnapshot?: SyncArgs['onTaskSnapshot'];
+  onTaskTerminalProgressUpdate?: SyncArgs['onTaskTerminalProgressUpdate'];
   refs: HandlerRefs;
   setTasks: SyncArgs['setTasks'];
   setIsLoading: SyncArgs['setIsLoading'];
@@ -16,6 +18,8 @@ type HandlerDeps = {
 export const useShapeBuildTaskSyncHandlers = ({
   sessionNodeId,
   markTaskStreamSynchronized,
+  onTaskSnapshot,
+  onTaskTerminalProgressUpdate,
   refs,
   setTasks,
   setIsLoading,
@@ -32,8 +36,6 @@ export const useShapeBuildTaskSyncHandlers = ({
     pendingTasksRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
-    committedSequenceRef,
     pendingDirtyRef,
     flushScheduledRef,
     flushFrameRef,
@@ -55,8 +57,6 @@ export const useShapeBuildTaskSyncHandlers = ({
       pendingTasksRef,
       bufferedSnapshotRef,
       bufferedUpdatesRef,
-      bufferedSequenceRef,
-      committedSequenceRef,
       pendingDirtyRef,
       flushScheduledRef,
       flushFrameRef,
@@ -74,16 +74,16 @@ export const useShapeBuildTaskSyncHandlers = ({
       isLoadingRef,
       bufferedSnapshotRef,
       bufferedUpdatesRef,
-      bufferedSequenceRef,
       pendingTasksRef,
       committedTasksRef,
-      committedSequenceRef,
       isMountedRef,
       sessionNodeId,
     },
     resolveTaskSummary: core.resolveTaskSummary,
     scheduleBufferedFlush: core.scheduleBufferedFlush,
     bufferTaskUpdate: core.bufferTaskUpdate,
+    onTaskSnapshot,
+    onTaskTerminalProgressUpdate,
     setTasks,
     setIsLoading,
     setError,

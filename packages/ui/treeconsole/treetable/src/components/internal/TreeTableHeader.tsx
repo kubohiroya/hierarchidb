@@ -3,13 +3,12 @@
  * Renders the TreeTable header row with column resizing affordances.
  */
 
-import { TableCell, TableRow, TableSortLabel } from '@mui/material';
+import { Box, TableCell, TableRow, TableSortLabel } from '@mui/material';
 import { flexRender } from '@tanstack/react-table';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Header, Table as ReactTable } from '@tanstack/react-table';
 import { ResizeHandle, StyledTableHead } from '~/components/TreeTableStyles';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface TreeTableHeaderProps {
   table: ReactTable<TreeNode>;
@@ -19,7 +18,6 @@ interface TreeTableHeaderProps {
 }
 
 export function TreeTableHeader({ table, columnWidths, resizingColumn, handleResizeStart }: TreeTableHeaderProps) {
-  const { t } = useTranslation('common');
   return (
     <StyledTableHead>
       {table.getHeaderGroups().map((headerGroup) => (
@@ -30,6 +28,16 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
             const sortDirection = header.column.getIsSorted();
             const rightNeighbor = headerGroup.headers[index + 1];
             const rightId = rightNeighbor?.column.id ?? null;
+            const renderedHeader = flexRender(
+              header.column.columnDef.header,
+              header.getContext()
+            ) as React.ReactNode;
+            const isNameColumn = header.column.id === 'name';
+            const headerNode = isNameColumn ? (
+              <Box sx={{ marginLeft: '56px' }}>{renderedHeader}</Box>
+            ) : (
+              renderedHeader
+            );
 
             return (
               <TableCell
@@ -44,7 +52,7 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
                   {header.isPlaceholder ? null : (
                     <>
                       {isSelectionColumn ? (
-                        flexRender(header.column.columnDef.header, header.getContext()) as React.ReactNode
+                        renderedHeader
                       ) : canSort ? (
                         <TableSortLabel
                           sx={{paddingLeft:'4px'}}
@@ -52,15 +60,9 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
                           direction={sortDirection === 'asc' ? 'asc' : 'desc'}
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {typeof header.column.columnDef.header === 'string'
-                            ? header.column.columnDef.header
-                            : t('treeTable.header.default', 'Column')}
+                          {headerNode}
                         </TableSortLabel>
-                      ) : typeof header.column.columnDef.header === 'string' ? (
-                        header.column.columnDef.header
-                      ) : (
-                        t('treeTable.header.default', 'Column')
-                      )}
+                      ) : headerNode}
                       {!isSelectionColumn && rightId && (
                         <ResizeHandle
                           className={resizingColumn === header.column.id ? 'resizing' : ''}

@@ -14,7 +14,6 @@ export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
   title?: string;
   error?: string;
   errorMessage?: string;
-  sequence?: number;
 };
 
 export type TaskProgressSummary = {

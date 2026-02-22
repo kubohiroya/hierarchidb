@@ -3,6 +3,7 @@ import {
   type PluginStepProps,
   PluginStepRegistry,
 } from '@hierarchidb/plugin-base';
+import type { SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
 import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { i18n } from '@hierarchidb/ui-i18n';
 import React from 'react';
@@ -36,6 +37,12 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   );
 };
 
+const isUrlSource = (dialogData?: StylerStepData): boolean => {
+  const source = dialogData?.dataSource?.source;
+  if (dialogData?.dataSource?.type === 'url') return true;
+  return typeof source === 'string' && /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(source);
+};
+
 const hasMappingKeys = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
   const keyColumn = data.keyColumn;
@@ -63,6 +70,22 @@ const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
     return hasSpreadsheetMetadata && hasUrlLikeSource && size > 0;
   }
   return size > 0 && hasSpreadsheetMetadata;
+};
+
+const hasDownloadedUrlSource = (dialogData?: StylerStepData): boolean => {
+  if (!isUrlSource(dialogData)) {
+    return false;
+  }
+  const dataSource = (dialogData?.dataSource ?? {}) as Partial<SpreadSheetDataSourceType>;
+  const size = typeof dataSource.sizeBytes === 'number' ? dataSource.sizeBytes : 0;
+  return Boolean(dialogData?.spreadsheetMetadataId && size > 0);
+};
+
+const canStartStylerAutoBuild = (dialogData?: StylerStepData): boolean => {
+  const dataSource = dialogData?.dataSource;
+  if (dataSource?.type === 'file') return false;
+  if (!isUrlSource(dialogData)) return false;
+  return !hasDownloadedUrlSource(dialogData);
 };
 
 registry.registerConfigProvider<StylerStepData>({
@@ -100,6 +123,7 @@ registry.registerConfigProvider<StylerStepData>({
         componentFactory: DataSourceWithValidation,
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
+          canStartBuild: canStartStylerAutoBuild,
           canProceedToNext: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         },
       },

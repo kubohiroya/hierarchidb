@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
-import { buildTaskSequenceMap, readTaskSequence, upsertTaskInOrder } from '@hierarchidb/ui-batch-progress';
 import { emitRunningResidueLog } from './useShapeBuildTaskSync.debug.js';
 import {
   areTaskListsEquivalentForView,
   areTasksEquivalentForView,
   isCompletedAtFullProgress,
-  mergeSnapshotWithCurrent,
+  reconcileSnapshotWithCurrentTasks,
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import { upsertTaskInOrder } from '@hierarchidb/ui-batch-progress';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSync.state.js';
 import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSync.types.js';
 
@@ -30,18 +30,12 @@ export const useShapeBuildTaskSyncScheduling = ({
     pendingTasksRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
-    committedSequenceRef,
     pendingDirtyRef,
     flushScheduledRef,
     flushFrameRef,
     flushTimeoutRef,
     isMountedRef,
   } = refs;
-
-  const updateCommittedSequences = useCallback((tasks: ShapeBuildTaskSummary[]) => {
-    committedSequenceRef.current = buildTaskSequenceMap(tasks);
-  }, [committedSequenceRef]);
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
     if (!dirty) {
@@ -50,19 +44,17 @@ export const useShapeBuildTaskSyncScheduling = ({
     }
     if (areTaskListsEquivalentForView(committedTasksRef.current, next)) {
       committedTasksRef.current = next;
-      updateCommittedSequences(next);
       markTaskStreamSynchronized?.();
       return;
     }
     committedTasksRef.current = next;
-    updateCommittedSequences(next);
     if (!isMountedRef.current) {
       markTaskStreamSynchronized?.();
       return;
     }
     setTasks(next);
     markTaskStreamSynchronized?.();
-  }, [committedTasksRef, isMountedRef, markTaskStreamSynchronized, setTasks, updateCommittedSequences]);
+  }, [committedTasksRef, isMountedRef, markTaskStreamSynchronized, setTasks]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
     if (!isMountedRef.current) return;
@@ -138,41 +130,31 @@ export const useShapeBuildTaskSyncScheduling = ({
   }, [completedTasksRef, tasksMapRef]);
 
   const bufferTaskUpdate = useCallback((task: ShapeBuildTaskSummary) => {
-    const nextSequence = readTaskSequence(task);
-    const committedSequence = nextSequence === null ? undefined : committedSequenceRef.current.get(task.taskId);
-    if (nextSequence !== null && committedSequence !== undefined && nextSequence < committedSequence) {
+    const buffered = bufferedUpdatesRef.current.get(task.taskId);
+    if (buffered && !shouldPreferNextTask(buffered, task)) {
       emitRunningResidueLog('STALE_DROP', {
         nodeId: sessionNodeId,
         stage: task.stage,
         taskId: task.taskId,
-        sequence: nextSequence,
-        prevStatus: null,
+        prevStatus: buffered.status ?? null,
         nextStatus: task.status ?? null,
         source: 'buffer',
         eventType: 'update',
-        reason: 'sequence_older_than_committed',
+        reason: 'shouldPreferNextTask=false_or_buffered_equivalent',
       });
       return;
     }
-    const bufferedSequence = bufferedSequenceRef.current.get(task.taskId);
-    if (nextSequence !== null && bufferedSequence !== undefined && nextSequence <= bufferedSequence) {
-      return;
-    }
     bufferedUpdatesRef.current.set(task.taskId, task);
-    if (nextSequence !== null) {
-      bufferedSequenceRef.current.set(task.taskId, nextSequence);
-    }
-  }, [bufferedSequenceRef, bufferedUpdatesRef, committedSequenceRef, sessionNodeId]);
+  }, [bufferedUpdatesRef, sessionNodeId]);
 
   const applyBufferedEvents = useCallback(() => {
     const bufferedSnapshot = bufferedSnapshotRef.current;
     const bufferedUpdates = bufferedUpdatesRef.current;
     bufferedSnapshotRef.current = null;
     bufferedUpdatesRef.current = new Map();
-    bufferedSequenceRef.current = new Map();
 
     let nextList = bufferedSnapshot
-      ? mergeSnapshotWithCurrent(bufferedSnapshot, tasksMapRef.current)
+      ? reconcileSnapshotWithCurrentTasks(bufferedSnapshot, tasksMapRef.current)
       : (pendingTasksRef.current ?? committedTasksRef.current);
     let changed = bufferedSnapshot !== null;
 
@@ -185,34 +167,22 @@ export const useShapeBuildTaskSyncScheduling = ({
         }
       });
       completedTasksRef.current = nextCompletedMap;
-      updateCommittedSequences(nextList);
     }
 
     bufferedUpdates.forEach((task: ShapeBuildTaskSummary) => {
-      const nextSequence = readTaskSequence(task);
-      const committedSequence = nextSequence === null ? undefined : committedSequenceRef.current.get(task.taskId);
-      if (nextSequence !== null && committedSequence !== undefined && nextSequence < committedSequence) {
-        return;
-      }
       const result = mergeTaskWithBase(task, nextList);
       nextList = result.next;
       changed = changed || result.changed;
-      if (nextSequence !== null) {
-        committedSequenceRef.current.set(task.taskId, nextSequence);
-      }
     });
 
     return { nextList, changed };
   }, [
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
     pendingTasksRef,
     committedTasksRef,
     tasksMapRef,
     completedTasksRef,
-    committedSequenceRef,
-    updateCommittedSequences,
     mergeTaskWithBase,
   ]);
 
@@ -267,14 +237,12 @@ export const useShapeBuildTaskSyncScheduling = ({
       flushScheduledRef,
       bufferedSnapshotRef,
       bufferedUpdatesRef,
-      bufferedSequenceRef,
       flushFrameRef,
       flushTimeoutRef,
       committedTasksRef,
       tasksMapRef,
       completedTasksRef,
     },
-    updateCommittedSequences,
   });
 
   return {

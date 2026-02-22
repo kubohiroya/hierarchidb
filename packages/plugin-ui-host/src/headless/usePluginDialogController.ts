@@ -1060,10 +1060,11 @@ export function usePluginDialogController(
     if (autoBuildCompleteRef.current) return;
     const requiresStartBuild = Boolean(activeStartBuild);
     if (requiresStartBuild && !autoBuildStartedRef.current) return;
+    if (!canStartBuild) return;
     if (!isAutoBuildComplete(dialogData)) return;
     autoBuildCompleteRef.current = true;
     autoBuild?.onComplete?.();
-  }, [activeStartBuild, autoBuild, autoBuildEnabled, dialogData, isAutoBuildComplete, open]);
+  }, [activeStartBuild, autoBuild, autoBuildEnabled, canStartBuild, dialogData, isAutoBuildComplete, open]);
 
   const persistDialogUIState = useCallback(async () => {
     if (typeof window !== 'undefined' && dialogWindowPersistTimerRef.current !== null) {

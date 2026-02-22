@@ -1,11 +1,8 @@
 import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/batch-api';
-import {
-  compareTaskOrderByIndexThenId,
-  readTaskSequence,
-  shouldApplyTaskUpdate,
-} from '@hierarchidb/ui-batch-progress';
+import { compareTaskOrderByIndexThenId } from '@hierarchidb/ui-batch-progress';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 export const resolveProgressValue = (value: unknown): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
@@ -44,24 +41,82 @@ export const areTasksEquivalentForView = (
   && (left.errorMessage ?? null) === (right.errorMessage ?? null)
   && (left.index ?? null) === (right.index ?? null)
   && (left.stagePriority ?? null) === (right.stagePriority ?? null)
-  && (left.sequence ?? null) === (right.sequence ?? null)
 );
 
 export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  const candidates = [task.stage, task.taskType, task.type] as Array<unknown>;
+  const candidates = [task.stage, task.type] as Array<unknown>;
   return candidates.find((candidate) => (
     candidate === 'fetch' || candidate === 'transform' || candidate === 'vt'
   )) as TaskStage;
 };
 
 export const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => {
-  const isCompletedLike = task.status === 'completed' || task.status === 'recycled';
-  return isCompletedLike && resolveProgressValue(task.progress) >= 100;
+  if (!isTerminalTask(task)) return false;
+  return resolveProgressValue(task.progress) >= 100;
 };
 
-const isCompletedLikeStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean => (
-  status === 'completed' || status === 'recycled'
+export const isTerminalTask = (task: ShapeBuildTaskSummary | undefined): boolean => (
+  isTerminalTaskStatus(task?.status) || isTaskSkipped(task?.display, task?.message)
 );
+
+const isTerminalTaskStatus = (status: ShapeBuildTaskSummary['status'] | undefined): boolean => (
+  status === 'completed' || status === 'failed'
+);
+
+const isTerminalStatus = (task: ShapeBuildTaskSummary | undefined): boolean => (
+  isTerminalTask(task)
+);
+
+export const normalizeTaskProgress = (
+  status: ShapeBuildTaskSummary['status'] | undefined,
+  display: ShapeBuildTaskSummary['display'],
+  message: ShapeBuildTaskSummary['message'],
+  progress: number,
+): number => {
+  if (isTerminalTaskStatus(status) || isTaskSkipped(display, message)) {
+    return 100;
+  }
+  if (status === 'running' && progress >= 100) {
+    return 100;
+  }
+  if (!Number.isFinite(progress)) {
+    return 0;
+  }
+  if (progress < 0) {
+    return 0;
+  }
+  return progress >= 100 ? 99 : progress;
+};
+
+export const normalizeTaskStatus = (
+  status: ShapeBuildTaskSummary['status'] | undefined,
+  progress: number,
+  display: ShapeBuildTaskSummary['display'],
+  message: ShapeBuildTaskSummary['message'],
+): ShapeBuildTaskSummary['status'] => {
+  const normalizedStatus = status ?? 'queued';
+  if (normalizedStatus === 'running' && progress >= 100) {
+    return 'completed';
+  }
+  if (normalizedStatus === 'running' && isTaskSkipped(display, message)) {
+    return 'completed';
+  }
+  return normalizedStatus;
+};
+
+const shouldApplyTaskUpdate = (
+  current: ShapeBuildTaskSummary | undefined,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  if (!current) return true;
+  if (isTerminalStatus(current) && !isTerminalStatus(next)) {
+    return false;
+  }
+  const currentProgress = resolveProgressValue(current.progress);
+  const nextProgress = resolveProgressValue(next.progress);
+  if (nextProgress < currentProgress) return false;
+  return true;
+};
 
 const areDisplaysEqual = (
   left: TaskDisplayPayload | undefined,
@@ -97,11 +152,27 @@ const shouldPromoteCompletedDisplay = (
   return false;
 };
 
+const shouldPromoteFailedMessage = (
+  current: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  const currentMessage = current.message?.trim() ?? '';
+  const nextMessage = next.message?.trim() ?? '';
+  if (!nextMessage || nextMessage === currentMessage) return false;
+  return true;
+};
+
 const shouldPromoteCompletedMessage = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
   if (shouldPromoteCompletedDisplay(current, next)) return true;
+  if (current.status === 'failed' && next.status === 'failed') {
+    return shouldPromoteFailedMessage(current, next);
+  }
+  if (current.status !== 'failed' && next.status === 'failed') {
+    return true;
+  }
   const currentMessage = current.message?.trim() ?? '';
   const nextMessage = next.message?.trim() ?? '';
   if (!nextMessage || nextMessage === currentMessage) return false;
@@ -111,75 +182,41 @@ const shouldPromoteCompletedMessage = (
   return false;
 };
 
-const readStatusRank = (task: ShapeBuildTaskSummary): number => {
-  switch (task.status) {
-    case 'queued':
-      return 0;
-    case 'running':
-      return 1;
-    case 'paused':
-      return 2;
-    case 'completed':
-    case 'recycled':
-    case 'failed':
-      return 3;
-    default:
-      return 0;
-  }
-};
-
 export const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
-  const currentSequence = readTaskSequence(current);
-  const nextSequence = readTaskSequence(next);
-  if (currentSequence !== null && nextSequence !== null) {
-    if (nextSequence < currentSequence) {
-      if (
-        isCompletedAtFullProgress(next)
-        && !isCompletedAtFullProgress(current)
-        && (current.status === 'queued' || current.status === 'running')
-      ) {
-        return true;
-      }
-      return false;
-    }
-    if (nextSequence === currentSequence) {
-      if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) return true;
-      if (isCompletedAtFullProgress(current) && !isCompletedAtFullProgress(next)) return false;
-      const currentStatusRank = readStatusRank(current);
-      const nextStatusRank = readStatusRank(next);
-      if (nextStatusRank !== currentStatusRank) return nextStatusRank > currentStatusRank;
-      if (resolveProgressValue(next.progress) !== resolveProgressValue(current.progress)) {
-        return resolveProgressValue(next.progress) > resolveProgressValue(current.progress);
-      }
-      if (isCompletedLikeStatus(next.status) && isCompletedLikeStatus(current.status)) {
-        return shouldPromoteCompletedMessage(current, next);
-      }
-      return false;
-    }
-  }
-
   if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
     return shouldPromoteCompletedMessage(current, next);
   }
   if (isCompletedAtFullProgress(current) && !isCompletedAtFullProgress(next)) return false;
   if (isCompletedAtFullProgress(next) && !isCompletedAtFullProgress(current)) return true;
-  if (isCompletedLikeStatus(current.status) && next.status === 'running') return false;
-  if (isCompletedLikeStatus(current.status) && next.status === 'queued') return false;
-  if (current.status === 'running' && isCompletedLikeStatus(next.status)) return true;
-  if (isCompletedAtFullProgress(current) && isRunningAtFullProgress(next)) return false;
-  if (isCompletedAtFullProgress(next) && isRunningAtFullProgress(current)) return true;
+  if (isTerminalStatus(current) && !isTerminalStatus(next)) return false;
+  if (!isTerminalStatus(current) && isTerminalStatus(next)) return true;
+  if (isTerminalStatus(current) && isTerminalStatus(next)) {
+    if (current.status !== next.status) return false;
+    return shouldPromoteCompletedMessage(current, next);
+  }
   return shouldApplyTaskUpdate(current, next);
 };
 
-export const mergeSnapshotWithCurrent = (
+export const reconcileSnapshotWithCurrentTasks = (
   snapshotTasks: ShapeBuildTaskSummary[],
   currentMap: Map<string, ShapeBuildTaskSummary>,
 ): ShapeBuildTaskSummary[] => {
-  if (snapshotTasks.length === 0) return [];
-  const mergedMap = new Map<string, ShapeBuildTaskSummary>();
+  if (snapshotTasks.length === 0) {
+    // If the bridge momentarily emits an empty snapshot while tasks are still in-flight,
+    // keep existing in-progress tasks to avoid a UI flash that clears the task list.
+    const hasInFlightTask = [...currentMap.values()].some(
+      (task) => task.status === 'running' || task.status === 'queued',
+    );
+    if (!hasInFlightTask) return [];
+    const fallback = [...currentMap.values()];
+    fallback.sort(compareTaskOrderByIndexThenId);
+    return fallback;
+  }
+
+  const mergedMap = new Map<string, ShapeBuildTaskSummary>(currentMap);
   snapshotTasks.forEach((snapshotTask) => {
     const currentFromMap = currentMap.get(snapshotTask.taskId);
     if (!currentFromMap || shouldPreferNextTask(currentFromMap, snapshotTask)) {
@@ -193,21 +230,16 @@ export const mergeSnapshotWithCurrent = (
   return merged;
 };
 
-export const isRunningAtFullProgress = (task: ShapeBuildTaskSummary): boolean => (
-  isCompletedAtFullProgress(task)
-    ? false
-    : task.status === 'running' && resolveProgressValue(task.progress) >= 100
-);
-
 export const normalizeTask = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   const progress = resolveProgressValue(task.progress);
   const stage = resolveTaskStage(task);
+  const normalizedStatus = normalizeTaskStatus(task.status, progress, task.display, task.message);
   return {
     ...task,
     stage,
     taskType: stage,
     type: stage,
-    status: task.status === 'running' && progress >= 100 ? 'completed' : task.status,
-    progress: progress >= 100 ? 100 : task.progress,
+    status: normalizedStatus,
+    progress: normalizeTaskProgress(normalizedStatus, task.display, task.message, progress),
   };
 };

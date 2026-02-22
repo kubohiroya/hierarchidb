@@ -10,7 +10,6 @@ export interface ShapeBuildSessionRecord<
   ResourceUsage = Record<string, unknown>
 > {
   nodeId: NodeId;
-  draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   selectedArrayByCountries?: Record<string, boolean[]>;
   startedAt: number;

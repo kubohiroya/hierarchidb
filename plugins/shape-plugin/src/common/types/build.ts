@@ -197,7 +197,6 @@ export interface ProgressInfo {
 
 export interface BuildSession {
   nodeId: NodeId;
-  draftId?: NodeId;
   status: BuildTaskStatus;
   config: BuildSessionConfig;
   startedAt: number;

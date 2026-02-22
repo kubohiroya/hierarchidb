@@ -13,7 +13,7 @@ import {
   type RouteBuildTaskStage,
 } from './RouteBuildSession.js';
 import type { BuildProgressEvent } from '@hierarchidb/batch-api';
-import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb, deleteTasksByNode, putTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
@@ -49,8 +49,6 @@ export class RouteBuildManager {
 
   private routeSpecificTasks = new Map<NodeId, RouteBuildTask[]>();
   private activeSessions = new Map<NodeId, RouteBuildSession>();
-  // Idempotency (jobKey -> session)
-  private static jobKeyToSession = new Map<string, NodeId>();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
   // private laneSemaphores = new Map<string, Semaphore>();
   // private laneConfig: Record<string, number> = {
@@ -69,11 +67,8 @@ export class RouteBuildManager {
     config: RouteBuildConfig,
     routes: RouteBuildRouteInput[],
   ): Promise<NodeId> {
-    // Idempotency: reuse an existing session if the same payload arrives
-    const jobKey = this.computeJobKey(nodeId, config, routes);
-    const existing = RouteBuildManager.jobKeyToSession.get(jobKey);
-    if (existing) return existing;
-    RouteBuildManager.jobKeyToSession.set(jobKey, nodeId);
+    const existingSession = this.activeSessions.get(nodeId);
+    if (existingSession) return nodeId;
 
     // Create route-specific tasks
     const routeTasks: RouteBuildTask[] = [];
@@ -153,6 +148,7 @@ export class RouteBuildManager {
     this.routeSpecificTasks.set(nodeId, routeTasks);
 
     const taskQueue = new VtTaskQueueDb();
+    await deleteTasksByNode(taskQueue, nodeId);
     await putTasks(taskQueue, routeTasks.map((task) => toTaskQueueRecord(task)));
 
     // Start processing using Shape's infrastructure
@@ -289,15 +285,6 @@ export class RouteBuildManager {
     }
   }
 
-  private computeJobKey(nodeId: NodeId, config: RouteBuildConfig, routes: RouteBuildRouteInput[]): string {
-    const payload = {
-      nodeId,
-      method: config.routeGeneration.method,
-      mc: config.routeGeneration.maxConcurrent,
-      r: routes.map(r => ({ s: r.startCoordinates, e: r.endCoordinates, m: r.method })).slice(0, 200),
-    };
-    return hashCyrb53(stableStringify(payload));
-  }
 }
 
 function toTaskQueueRecord(task: RouteBuildTask): TaskQueueRecord {
@@ -345,25 +332,6 @@ function normalizeRouteProgressStage(stage: string): string {
   }
 }
 
-function stableStringify(x: unknown): string {
-  const seen = new WeakSet();
-  return JSON.stringify(x, (_key, value: unknown) => {
-    if (value && typeof value === 'object') {
-      if (seen.has(value)) return;
-      seen.add(value);
-      if (!Array.isArray(value)) {
-        const sorted: Record<string, unknown> = {};
-        const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
-        for (const [key, entryValue] of entries) {
-          sorted[key] = entryValue;
-        }
-        return sorted;
-      }
-    }
-    return value;
-  });
-}
-
 function coerceNumber(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -377,20 +345,6 @@ function computePercentage(total: number, completed: number, isCompletedPhase: b
   const ratio = (completed / total) * 100;
   if (!Number.isFinite(ratio)) return 0;
   return Math.max(0, Math.min(100, Math.round(ratio)));
-}
-
-function hashCyrb53(str: string, seed = 0): string {
-  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-  let ch: number = 0;
-  for (let i = 0; i < str.length; i++) {
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h2 >>> 15), 2246822507) ^ Math.imul(h2 ^ (h1 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h2 >>> 13), 3266489909);
-  const h = 4294967296 * (2097151 & h2) + (h1 >>> 0);
-  return h.toString(36);
 }
 
 // (removed) Semaphore helper; concurrency control is handled in RouteBuildSession

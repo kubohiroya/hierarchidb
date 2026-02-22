@@ -113,6 +113,61 @@ describe('collectBuildUrlsForFolder', () => {
     expect(result.urls.every((url) => !decodeURIComponent(url).includes('/folder-child'))).toBe(true);
   });
 
+  it('starts at build step without auto-build when canStartBuild returns false', async () => {
+    const composeConfigs = vi
+      .fn()
+      .mockImplementation((nodeType: string) =>
+        nodeType === 'shape'
+          ? {
+              configs: [
+                {
+                  id: 'build',
+                  capabilities: {
+                    canStartBuild: () => false,
+                  },
+                },
+              ],
+              hasHostBase: false,
+            }
+          : { configs: [{ id: 'build' }], hasHostBase: false }
+      );
+    composeStepConfigsMock.mockImplementation(composeConfigs);
+
+    const node = makeNode({
+      id: 'r:shape-no-autobuild' as NodeId,
+      nodeType: 'shape',
+      metadata: {
+        name: 'Shape Not Autobuild',
+        description: '',
+        tags: [],
+        buildMetadata: { buildRequired: true },
+      },
+    });
+    const workerClient = {
+      getQueryAPI: vi.fn(async () => ({
+        getNode: vi.fn(async () => node),
+        listDescendants: vi.fn(async () => []),
+      })),
+    };
+    const navigate = vi.fn();
+
+    await startBuildFlow({
+      treeId: 'tree-1' as TreeId,
+      pageNodeId: node.id as NodeId,
+      node,
+      returnTo: '/treeconsole',
+      workerClient,
+      navigate,
+    });
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    const [urlValue] = navigate.mock.calls[0]!;
+    const builtUrl = new URL(urlValue, 'http://localhost');
+    expect(builtUrl.pathname).toBe('/t/tree-1/r:shape-no-autobuild/shape/edit/normal/2');
+    expect(builtUrl.searchParams.get('build')).toBeNull();
+    expect(builtUrl.searchParams.get('returnTo')).toBe('/treeconsole');
+  });
+
   it('stores all resolvable buildable descendants into the build queue for folder build flow', async () => {
     composeStepConfigsMock.mockImplementation((nodeType: string) => {
       if (nodeType === 'shape') {

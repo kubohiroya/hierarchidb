@@ -18,6 +18,7 @@ import {
   handleDeleteFeatureMetadata,
   handleResetSession as handleResetSessionAction,
   handleDeleteVTCache as handleDeleteVTCacheAction,
+  handleDeleteTransposeIndex as handleDeleteTransposeIndexAction,
   handleDeleteTransformCache as handleDeleteTransformCacheAction,
   type CacheActionKey,
 } from './useShapeBuildCacheActions/useShapeBuildCacheActions.handlers.js';
@@ -33,6 +34,7 @@ export type DeleteLoadingState = {
   fetchFiltered: boolean;
   transform: boolean;
   vt: boolean;
+  transposeIndex: boolean;
   metadata: boolean;
   resetSession: boolean;
 };
@@ -80,6 +82,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     fetchFiltered: false,
     transform: false,
     vt: false,
+    transposeIndex: false,
     metadata: false,
     resetSession: false,
   });
@@ -222,6 +225,9 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const handleDeleteVTCache = useCallback(async () => {
     await handleDeleteVTCacheAction(deps);
   }, [deps]);
+  const handleDeleteTransposeIndex = useCallback(async () => {
+    await handleDeleteTransposeIndexAction(deps);
+  }, [deps]);
   const handleDeleteMetadata = useCallback(async () => {
     await handleDeleteFeatureMetadata(deps);
   }, [deps]);
@@ -237,6 +243,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
   const canDeleteFetchFilteredCache = deleteEnabled && counts.fetchFiltered > 0;
   const canDeleteTransformCache = deleteEnabled && counts.transform > 0;
   const canDeleteVTCache = deleteEnabled && counts.vt > 0;
+  const canDeleteTransposeIndex = deleteEnabled && counts.vt > 0;
   const canDeleteMetadata = deleteEnabled && resultCounts.featureMetadata > 0;
 
   return {
@@ -248,11 +255,13 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     canDeleteFetchFilteredCache,
     canDeleteTransformCache,
     canDeleteVTCache,
+    canDeleteTransposeIndex,
     canDeleteMetadata,
     handleDeleteFetchApiCache,
     handleDeleteFetchFilteredCache,
     handleDeleteTransformCache,
     handleDeleteVTCache,
+    handleDeleteTransposeIndex,
     handleDeleteMetadata,
     handleResetSession,
   };

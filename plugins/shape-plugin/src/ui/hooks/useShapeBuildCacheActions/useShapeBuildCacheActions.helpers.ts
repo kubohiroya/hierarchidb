@@ -11,7 +11,6 @@ export const KNOWN_TASK_STAGES: TaskStage[] = ['fetch', 'transform', 'vt'];
 export type StageLikeTask = {
   stage: TaskStage;
   type?: TaskStage;
-  taskType?: TaskStage;
 };
 
 type TaskQueueRecordLike = Partial<StageLikeTask> & {
@@ -37,20 +36,20 @@ export type ResultCounts = {
 };
 
 export const resolveKnownTaskStage = (task: TaskQueueRecordLike): TaskStage | null => {
-  const candidate = task.stage ?? task.taskType ?? task.type;
+  const candidate = task.stage ?? task.type;
   if (!candidate) return null;
   return KNOWN_TASK_STAGES.includes(candidate) ? candidate : null;
 };
 
 export const resolveTaskStage = (task: StageLikeTask): TaskStage =>
-  task.stage ?? task.type ?? task.taskType;
+  task.stage ?? task.type ?? 'fetch';
 
 export const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
   stages.includes(resolveTaskStage(task));
 
 export const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
   const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
-  const patches: Array<{ taskId: string; updates: { stage?: TaskStage; taskType?: TaskStage } }> = [];
+  const patches: Array<{ taskId: string; updates: { stage?: TaskStage } }> = [];
   records.forEach((record) => {
     if (!record || typeof record !== 'object') return;
     const taskId = (record as TaskQueueRecordLike).taskId;
@@ -58,10 +57,8 @@ export const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId:
     const resolvedStage = resolveKnownTaskStage(record as TaskQueueRecordLike);
     if (!resolvedStage) return;
     const currentStage = (record as TaskQueueRecordLike).stage;
-    const currentTaskType = (record as TaskQueueRecordLike).taskType;
-    const updates: { stage?: TaskStage; taskType?: TaskStage } = {};
+    const updates: { stage?: TaskStage } = {};
     if (currentStage !== resolvedStage) updates.stage = resolvedStage;
-    if (currentTaskType !== resolvedStage) updates.taskType = resolvedStage;
     if (Object.keys(updates).length > 0) {
       patches.push({ taskId, updates });
     }

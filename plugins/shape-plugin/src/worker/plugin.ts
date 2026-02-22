@@ -28,12 +28,12 @@ export const ShapeWorkerPlugin = {
   database: {
     tableName: 'shapes',
     schema: '&id, nodeId, name, processingStatus, createdAt, updatedAt',
-    version: 2,
+    version: 3,
 
     // Additional tables for shape-plugin data
     additionalTables: {
-      shapeBatchSessions: '&nodeId, status, startedAt, updatedAt',
-      shapeBatchTasks: '&taskId, nodeId, taskType, stage, progress',
+      shapeBatchSessions: '&nodeId',
+      shapeBatchTasks: '&taskId, nodeId, stage, progress',
       shapeFeatures: '&featureId, nodeId, countryCode, adminLevel, geometry',
       shapeVectorTiles: '&tileId, nodeId, z, x, y, data, size',
       shapeCache: '&cacheKey, nodeId, cacheType, data, size, createdAt',

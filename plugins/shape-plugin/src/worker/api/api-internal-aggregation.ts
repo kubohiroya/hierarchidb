@@ -9,7 +9,7 @@ export const shapeBuildRuntimeAggregation = {
   resolveSessionExpiresAt: shapeBuildRuntimeExecutionMetrics.resolveSessionExpiresAt,
   resolveProgressPhase: shapeBuildRuntimeExecutionMetrics.resolveProgressPhase,
   buildProgressPayloadFromTasks: shapeBuildRuntimeExecutionMetrics.buildProgressPayloadFromTasks,
-  selectLatestTaskBySequence: shapeBuildRuntimeExecutionMetrics.selectLatestTaskBySequence,
+  selectLatestTaskByProgress: shapeBuildRuntimeExecutionMetrics.selectLatestTaskByProgress,
   resolveTaskProcessingTimestamp: shapeBuildRuntimeExecutionMetrics.resolveTaskProcessingTimestamp,
   emitProgressSnapshot: shapeBuildRuntimeExecutionMetrics.emitProgressSnapshot,
 } as const;

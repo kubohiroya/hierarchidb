@@ -20,12 +20,20 @@ export type BuildControlDetail = {
   icon?: 'timelapse';
 };
 
+export type BuildControlMenuItem = {
+  id: string;
+  label: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+};
+
 export interface BuildStepPanelProps {
   status: BuildStatus;
   overallProgress: number;
   stages: BuildStage[];
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
+  tasksByStageForDisplay?: Record<string, unknown[]>;
   stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
   onStageConcurrencyIndicatorClick?: (stageId: string, event: ReactMouseEvent<HTMLElement>) => void;
   stageConcurrencyIndicatorAriaLabels?: Record<string, string>;
@@ -57,6 +65,10 @@ export interface BuildStepPanelProps {
   suppressStatusFallback?: boolean;
   controlDetails?: BuildControlDetail[];
   controlRightContent?: ReactNode;
+  controlMenuItems?: BuildControlMenuItem[];
+  controlMenuAriaLabel?: string;
+  controlMenuDisabled?: boolean;
+  startLoading?: boolean;
 }
 
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
@@ -77,6 +89,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   stageContents,
   stageProgressContent,
   stageLoadingState,
+  tasksByStageForDisplay = {},
   chipPlacement,
   onPause,
   onResume,
@@ -96,6 +109,10 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   suppressStatusFallback,
   controlDetails,
   controlRightContent,
+  controlMenuItems,
+  controlMenuAriaLabel,
+  controlMenuDisabled,
+  startLoading,
 }) => {
   void onComplete;
 
@@ -164,6 +181,14 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const renderPane = useCallback(({ id, toggle }: LRUSplitView2RenderContext) => {
     const stage = stageById.get(id);
     if (!stage) return null;
+    const stageTasksForDisplay = tasksByStageForDisplay[stage.id] ?? [];
+    const stageProgressInfo = paneProgress?.find((entry) => entry.paneId === stage.id);
+    const hasStageSummaryTasks = (stageProgressInfo?.taskCount ?? 0) > 0;
+    const isStageLoading = Boolean(
+      stageLoadingState?.[stage.id]
+      && stageTasksForDisplay.length === 0
+      && !hasStageSummaryTasks,
+    );
     const progressValue = resolveStageProgress(id);
     const taskCount = taskCountByStage[id];
     const filter = resolveStageFilter(id);
@@ -203,7 +228,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           onCompletedModeUpdate={(next) => updateStageFilter(id, { completedMode: next })}
           skippedMode={filter.skippedMode}
           onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
-          loading={Boolean(stageLoadingState?.[stage.id])}
+          loading={isStageLoading}
         >
           {stageContentNode ? (
             <BuildStageFilterProvider value={filter}>
@@ -225,6 +250,8 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     stageLoadingState,
     stageMenus,
     stageProgressContent,
+    tasksByStageForDisplay,
+    paneProgress,
     taskCountByStage,
     updateStageFilter,
   ]);
@@ -263,6 +290,10 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           startIcon={startIcon}
           resumeIcon={resumeIcon}
           details={controlDetails}
+          controlMenuItems={controlMenuItems}
+          controlMenuAriaLabel={controlMenuAriaLabel}
+          controlMenuDisabled={controlMenuDisabled}
+          startLoading={startLoading}
           rightContent={controlRightContent}
         />
         {statusContent ? (

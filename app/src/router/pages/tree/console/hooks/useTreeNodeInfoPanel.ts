@@ -387,10 +387,22 @@ export function useTreeNodeInfoPanel({
     /archive/i.test(currentNode?.nodeType ?? '');
   const canMutate = !isRootLike;
   const statusSourceNode = currentNode ?? node;
-  const readBuildRequired = (sourceNode?: TreeNode | null): boolean =>
-    Boolean(sourceNode?.draftMetadata?.buildMetadata?.buildRequired) ||
-    Boolean(sourceNode?.metadata?.buildMetadata?.buildRequired);
-  const isBuildRequired = readBuildRequired(currentNode) || readBuildRequired(node);
+  const readBuildRequired = (sourceNode?: TreeNode | null): boolean | undefined => {
+    const draftValue = sourceNode?.draftMetadata?.buildMetadata?.buildRequired;
+    if (typeof draftValue === 'boolean') {
+      return draftValue;
+    }
+    const metadataValue = sourceNode?.metadata?.buildMetadata?.buildRequired;
+    if (typeof metadataValue === 'boolean') {
+      return metadataValue;
+    }
+    return undefined;
+  };
+  const resolvedBuildRequiredForCurrentNode = readBuildRequired(currentNode);
+  const resolvedBuildRequiredForFallbackNode = resolvedBuildRequiredForCurrentNode ?? readBuildRequired(node);
+  const isBuildRequired = isFolderNodeType(nodeTypeLabel)
+    ? Boolean(resolvedBuildRequiredForCurrentNode || resolvedBuildRequiredForFallbackNode || folderBuildReady)
+    : resolvedBuildRequiredForCurrentNode ?? resolvedBuildRequiredForFallbackNode;
   const isDraft = statusSourceNode?.version === 0 || node?.version === 0;
 
   const labels = {
@@ -431,7 +443,7 @@ export function useTreeNodeInfoPanel({
   const isFolderNode = Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel));
   const isBuildableByMetadata = isFolderNode
     ? folderBuildReady
-    : isBuildRequired || Boolean(buildTarget?.stepNumber);
+    : Boolean(buildTarget?.stepNumber);
   const canPreview = previewGuardState?.canOpen ?? true;
 
   return {

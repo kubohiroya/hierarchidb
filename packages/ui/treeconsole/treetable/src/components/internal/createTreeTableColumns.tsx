@@ -288,24 +288,27 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const hasSelfDraft =
         params.draftFlags.hasDraft.has(node.id as NodeId) ||
         version === 0;
-      const descendantDraftCount = collectDescendantIds(node.id as NodeId).reduce(
-        (count, id) => (params.draftFlags.hasDraft.has(id as NodeId) ? count + 1 : count),
-        0,
-      );
-      const hasDescendantDraft = descendantDraftCount > 0;
       const isBuildRunning = Boolean(
         buildSessionIndicator?.runningNodeIds.has(node.id as NodeId)
       );
       const isBuildActive = isBuildRunning
         && Boolean(buildSessionIndicator?.activeNodeIds.has(node.id as NodeId));
-      const isBuildRequired = Boolean(
+      const isBuildRequiredForNode = Boolean(
         node.metadata?.buildMetadata?.buildRequired ||
           (node as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } }).draftMetadata
             ?.buildMetadata?.buildRequired
       );
-      const descendantDraftLabel = descendantDraftCount === 1
-        ? params.draftChipLabels.descendant.singular
-        : params.draftChipLabels.descendant.plural;
+      const descendantIds = collectDescendantIds(node.id as NodeId)
+        .filter((descendantId) => descendantId !== node.id);
+      const hasBuildRequiredDescendant = descendantIds.some((descendantId) => {
+        const descendant = controller?.nodeIndex?.get(descendantId as NodeId);
+        return Boolean(
+          descendant?.metadata?.buildMetadata?.buildRequired ||
+            (descendant as { draftMetadata?: { buildMetadata?: { buildRequired?: boolean } } })?.draftMetadata
+              ?.buildMetadata?.buildRequired
+        );
+      });
+      const isBuildRequired = isBuildRequiredForNode || hasBuildRequiredDescendant;
 
       return (
         <NameCell>
@@ -522,56 +525,6 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   {getTreeNodeName(node)}
                 </Box>
                 <SparkleAnimation showSparkle={showSparkle} />
-                {hasSelfDraft ? (
-                  <Tooltip
-                    arrow
-                    placement="top"
-                    title={(
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 160 }}>
-                        <Box sx={{ fontWeight: 600 }}>
-                          {columnLabels.name}: {typeof node.metadata?.name === 'string' && node.metadata.name.length > 0 ? node.metadata.name : emptyValue}
-                        </Box>
-                        <Box>
-                          {columnLabels.description}: {typeof node.metadata?.description === 'string' && node.metadata.description.length > 0 ? node.metadata.description : emptyValue}
-                        </Box>
-                      </Box>
-                    )}
-                  >
-                    <span>
-                      <Chip
-                        label={params.draftChipLabels.self}
-                        size="small"
-                        color="error"
-                        variant="filled"
-                        sx={{ height: 20 }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </span>
-                </Tooltip>
-                ) : hasDescendantDraft ? (
-                  <Chip
-                    label={descendantDraftLabel}
-                    size="small"
-                    color="warning"
-                    variant="outlined"
-                    sx={{ height: 20 }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : null}
-                {isBuildRequired ? (
-                  <Tooltip arrow placement="top" title={params.buildRequiredChipLabel}>
-                    <span>
-                      <Chip
-                        label={params.buildRequiredChipLabel}
-                        size="small"
-                        color="warning"
-                        variant="filled"
-                        sx={{ height: 20 }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </span>
-                  </Tooltip>
-                ) : null}
                 {isBuildRunning ? (
                   <CircularProgress
                     size={14}

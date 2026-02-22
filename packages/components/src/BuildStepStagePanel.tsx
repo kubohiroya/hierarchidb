@@ -215,7 +215,9 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
             <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
               {icon ? <Box>{icon}</Box> : null}
-              <Skeleton variant="text" width="40%" height={30} />
+              <Typography variant="subtitle2" sx={{ fontSize: 'calc(1rem + 2px)' }}>
+                {title}
+              </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <Skeleton variant="rounded" width={96} height={20} />

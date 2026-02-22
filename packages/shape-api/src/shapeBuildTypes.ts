@@ -145,7 +145,8 @@ export interface ShapeBuildTaskRecord<
 > {
   taskId: string;
   nodeId: NodeId;
-  taskType: ShapeBuildStage;
+  stage: ShapeBuildStage;
+  taskType?: never;
   status: ShapeBuildTaskStatus;
   index: number;
   progress: number;
@@ -157,7 +158,7 @@ export interface ShapeBuildTaskRecord<
 }
 
 export type ShapeBuildTaskRecordInput = Omit<ShapeBuildTaskRecord, 'taskType'> & {
-  taskType: ShapeBuildStage;
+  stage: ShapeBuildStage;
 };
 
 export type ShapeBuildTaskRecordUpdate = Partial<Omit<ShapeBuildTaskRecord, 'taskType'>> & {

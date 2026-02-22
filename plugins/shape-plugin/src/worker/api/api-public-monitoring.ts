@@ -34,7 +34,7 @@ export const shapeBuildMonitoringAPI = {
     if (vtTasks.length > 0) {
       const summary = await shapeBuildRuntime.buildTaskQueueSummary(nodeId, vtTasks);
       const paused = shapeBuildRuntime.getPauseState(nodeId).paused;
-      const latestTask = shapeBuildRuntime.selectLatestTaskBySequence(vtTasks);
+      const latestTask = shapeBuildRuntime.selectLatestTaskByProgress(vtTasks);
       const lastProcessed = latestTask ? shapeBuildRuntime.resolveTaskProcessingTimestamp(latestTask) : 0;
       return {
         status: paused

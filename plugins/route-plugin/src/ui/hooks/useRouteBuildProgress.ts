@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { type BuildSessionStatus, type ProgressPhase, type BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { useBuildSessionMutation, usePluginBuildProgress } from '@hierarchidb/ui-batch-progress';
+import { type BuildSessionStatus, type BuildUnifiedProgressInfo } from '@hierarchidb/batch-api';
+import {
+  toBuildSessionStatusFromUnifiedProgress,
+  areBuildSessionStatusesEquivalent,
+  useBuildSessionMutation,
+  usePluginBuildProgress,
+} from '@hierarchidb/ui-batch-progress';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
@@ -29,21 +34,32 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
 
   const {
     progress,
-    status: derivedStatus,
   } = usePluginBuildProgress<BuildUnifiedProgressInfo, BuildSessionStatus>(
     ROUTE_NODE_TYPE,
     nodeId,
     {
       autoSubscribe: true,
       mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) => info ?? null,
-      mapUnifiedToStatus: (info: BuildUnifiedProgressInfo | null) => (nodeId && info ? toBuildSessionStatus(nodeId, info) : null),
     },
   );
 
+  const mappedStatus = useMemo(() => {
+    if (!nodeId) return null;
+    return toBuildSessionStatusFromUnifiedProgress({
+      nodeId,
+      info: progress,
+      fallback: status,
+    });
+  }, [nodeId, progress, status]);
+
   useEffect(() => {
-    if (!derivedStatus) return;
-    setStatus(derivedStatus);
-  }, [derivedStatus]);
+    if (!mappedStatus) return;
+    setStatus((prev: BuildSessionStatus | null) => (
+      prev && areBuildSessionStatusesEquivalent(prev, mappedStatus)
+        ? prev
+        : mappedStatus
+    ));
+  }, [mappedStatus]);
 
   const [snapshot, setSnapshot] = useState<BuildUnifiedProgressInfo | null>(null);
   useEffect(() => {
@@ -75,12 +91,12 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
   }, [nodeId, resumeSession]);
 
   const lastError = useMemo(() => {
-    if (status?.error) return status.error;
+    if (mappedStatus?.error) return mappedStatus.error;
     const meta = progress?.payload?.meta;
     const errors = extractErrors(meta);
     if (errors.length > 0) return errors[errors.length - 1] ?? null;
     return progress?.message ?? null;
-  }, [progress?.message, progress?.payload?.meta, status?.error]);
+  }, [mappedStatus?.error, progress?.message, progress?.payload?.meta]);
 
   return {
     snapshot,
@@ -93,24 +109,6 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
     lastError,
     pause,
     resume,
-  };
-}
-
-function toBuildSessionStatus(nodeId: NodeId, info: BuildUnifiedProgressInfo): BuildSessionStatus {
-  const phase = info.phase as ProgressPhase | undefined;
-  return {
-    nodeId,
-    status: phase ?? 'idle',
-    progress: {
-      total: info.total ?? 0,
-      completed: info.completed ?? 0,
-      failed: info.failed ?? 0,
-      skipped: typeof info.payload?.skipped === 'number' ? info.payload?.skipped : undefined,
-      percentage: typeof info.percentage === 'number' ? info.percentage : 0,
-      taskType: info.stage,
-    },
-    lastActivity: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
-    error: typeof info.message === 'string' ? info.message : undefined,
   };
 }
 

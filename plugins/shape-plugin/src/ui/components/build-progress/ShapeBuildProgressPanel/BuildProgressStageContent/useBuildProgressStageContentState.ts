@@ -50,7 +50,6 @@ export type BuildProgressStageContentState = {
   showSummarySkeleton: boolean;
   showTaskSkeleton: boolean;
   hasSummaryTasks: boolean;
-  hasOnlyQueuedInViewport: boolean;
   showUpArrow: boolean;
   showDownArrow: boolean;
   scrollTargetTaskId?: string;
@@ -171,15 +170,9 @@ export const useBuildProgressStageContentState = ({
     }, [])
   ), [orderedTasks]);
 
-  const hasRunningTask = useMemo(() => orderedTasks.some((task) => task.status === 'running'), [orderedTasks]);
-
-  const hasOnlyQueuedInViewport = useMemo(() => {
-    if (viewportIndices == null) return false;
-    for (let i = viewportIndices.startIndex; i <= viewportIndices.endIndex; i += 1) {
-      if (orderedTasks[i]?.status !== 'queued') return false;
-    }
-    return true;
-  }, [orderedTasks, viewportIndices]);
+  const hasActiveTargetTask = useMemo(() => (
+    orderedTasks.some((task) => task.status === 'running' || task.status === 'queued')
+  ), [orderedTasks]);
 
   const upTargetIndex = useMemo(() => {
     if (currentIndex == null) return null;
@@ -208,15 +201,13 @@ export const useBuildProgressStageContentState = ({
   const viewportStartIndex = viewportIndices?.startIndex;
   const viewportEndIndex = viewportIndices?.endIndex;
   const showUpArrow = !isScrollTargetReached
-    && !hasOnlyQueuedInViewport
-    && hasRunningTask
+    && hasActiveTargetTask
     && upTargetIndex !== null
     && currentIndex !== null
     && upTargetIndex < currentIndex
     && (viewportStartIndex == null || upTargetIndex < viewportStartIndex);
   const showDownArrow = !isScrollTargetReached
-    && !hasOnlyQueuedInViewport
-    && hasRunningTask
+    && hasActiveTargetTask
     && downTargetIndex !== null
     && currentIndex !== null
     && currentIndex < downTargetIndex
@@ -270,7 +261,6 @@ export const useBuildProgressStageContentState = ({
     showSummarySkeleton,
     showTaskSkeleton,
     hasSummaryTasks,
-    hasOnlyQueuedInViewport,
     showUpArrow,
     showDownArrow,
     scrollTargetTaskId: scrollToTaskId,

@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
+import type { BuildContinuationPolicy, TaskStage } from '@hierarchidb/batch-api';
 import type {
   ShapeBuildConfig,
   ShapeRuntimeBuildConfig,
@@ -70,7 +70,6 @@ const {
   activePipelines,
   activePipelineRuns,
   seedTaskQueueFromBuildTasks,
-  isTaskStageValue,
   isStopReason,
 } = shapeBuildRuntimeExecutionMetrics;
 
@@ -332,7 +331,7 @@ const applySelectionDiffCleanup = async (
   const removedSet = new Set(removedPairs.map((entry) => `${normalizeSelectionKey(entry.countryCode)}:${entry.adminLevel}`));
   const removedTaskIds = tasks
     .filter((task) => {
-      const stage = task.stage ?? task.taskType;
+      const stage = task.stage;
       if (stage === 'fetch' || stage === 'transform') {
         const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
         if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
@@ -617,7 +616,7 @@ const startBuildSessionInternal = async (
         },
       );
     }
-    if (existingTaskCount === 0 && canReuseTaskQueue) {
+    if (existingTaskCount === 0) {
       await executeStartupStep(
         'seed-task-queue',
         async () => {
@@ -626,18 +625,7 @@ const startBuildSessionInternal = async (
         },
       );
     }
-    const resumeExistingTasks = canReuseTaskQueue && existingTaskCount > 0;
-    if (resumeExistingTasks) {
-      await executeStartupStep(
-        'normalize-existing-tasks',
-        async () => {
-          await resetRunningTasks(nodeForSession);
-          await resetFailedTasks(nodeForSession);
-          await normalizeTaskQueueStageFields(nodeForSession);
-        },
-        { existingTaskCount },
-      );
-    }
+    const resumeExistingTasks = false;
     const existingFetchTaskCount = await executeStartupStep(
       'count-existing-fetch-tasks',
       async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeForSession, 'fetch']).count(),
@@ -649,7 +637,6 @@ const startBuildSessionInternal = async (
       'upsert-session-snapshot',
       async () => upsertBuildSessionSnapshot({
         nodeId: nodeForSession,
-        draftId,
         selectedArrayByCountries: draftEntity.selectedArrayByCountries,
         tasks: existingTaskCount === 0 ? [] : undefined,
         status: 'running',
@@ -795,56 +782,6 @@ const startBuildSessionInternal = async (
   return nodeForSession;
 };
 
-const normalizeTaskQueueStageFields = async (nodeId: NodeId): Promise<void> => {
-  const taskQueue = new VtTaskQueueDb();
-  const patches: Array<{ taskId: string; updates: { taskType?: TaskQueueRecord['stage']; stage?: TaskQueueRecord['stage'] } }> = [];
-  await taskQueue.tasks.where('nodeId').equals(nodeId).each((record) => {
-    if (!record || typeof record !== 'object') return;
-    const taskId = (record as { taskId?: unknown }).taskId;
-    if (typeof taskId !== 'string' || taskId.length === 0) return;
-    const taskType = (record as { taskType?: unknown }).taskType;
-    const stage = (record as { stage?: unknown }).stage;
-    const normalizedStage = isTaskStageValue(stage)
-      ? stage
-      : isTaskStageValue(taskType)
-        ? taskType
-        : undefined;
-    if (!normalizedStage) return;
-    const updates: { taskType?: TaskQueueRecord['stage']; stage?: TaskQueueRecord['stage'] } = {};
-    if (!isTaskStageValue(taskType)) updates.taskType = normalizedStage;
-    if (!isTaskStageValue(stage)) updates.stage = normalizedStage;
-    if (Object.keys(updates).length > 0) {
-      patches.push({ taskId, updates });
-    }
-  });
-  if (patches.length === 0) return;
-  const debugTag = 'normalize-task-queue-2026-02-09-0334';
-  const startedAt = Date.now();
-  console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields start', {
-    tag: debugTag,
-    nodeId,
-    patchCount: patches.length,
-  });
-  let waitTimer: ReturnType<typeof setInterval> | null = null;
-  waitTimer = setInterval(() => {
-    console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields waiting', {
-      tag: debugTag,
-      nodeId,
-      elapsedMs: Date.now() - startedAt,
-    });
-  }, 5000);
-  try {
-    await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
-    console.warn('[shapeBuildAPI][TaskDebug] normalizeTaskQueueStageFields done', {
-      tag: debugTag,
-      nodeId,
-      elapsedMs: Date.now() - startedAt,
-    });
-  } finally {
-    if (waitTimer) clearInterval(waitTimer);
-  }
-};
-
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
@@ -883,7 +820,6 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   await Promise.all(runningTasks.map((task) => (
     updateTask(taskQueue, task.taskId, {
       status: 'queued',
-      progress: 0,
       startedAt: undefined,
       completedAt: undefined,
       errorMessage: undefined,
@@ -895,23 +831,6 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
 };
 
 
-const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
-  const taskQueue = new VtTaskQueueDb();
-  const failedTasks = await listTasksByStatus(taskQueue, nodeId, 'failed');
-  if (failedTasks.length === 0) return;
-  await Promise.all(failedTasks.map((task) => (
-    updateTask(taskQueue, task.taskId, {
-      status: 'queued',
-      progress: 0,
-      startedAt: undefined,
-      completedAt: undefined,
-      errorMessage: undefined,
-      display: undefined,
-      message: undefined,
-      outputData: undefined,
-    }, { allowTerminalStatusTransition: true })
-  )));
-};
 const invokeShapeBuildCommand = async (
   command: string,
   payload: Record<string, unknown>,
@@ -1053,21 +972,12 @@ const invokeShapeBuildCommand = async (
     setPaused(nodeId, false);
     await executeResumeStep('emit-progress-snapshot', async () => emitProgressSnapshot(nodeId));
     const taskQueue = new VtTaskQueueDb();
-    const runningTaskCount = await executeResumeStep(
-      'count-running-tasks',
-      async () => taskQueue.tasks.where('[nodeId+status]').equals([nodeId, 'running']).count(),
-    );
-    if (runningTaskCount > 0) {
-      await executeResumeStep(
-        'reset-running-tasks',
-        async () => resetRunningTasks(nodeId),
-        { runningTaskCount },
-      );
+    await executeResumeStep('clear-existing-task-queue', async () => {
+      await deleteTasksByNode(taskQueue, nodeId);
       if (activePipelines.has(pipelineKey)) {
         clearActivePipelineRuntimeState(nodeId);
       }
-    }
-    await executeResumeStep('reset-failed-tasks', async () => resetFailedTasks(nodeId));
+    });
     let existingTaskCount = await executeResumeStep(
       'count-existing-tasks',
       async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
@@ -1079,13 +989,6 @@ const invokeShapeBuildCommand = async (
           await seedTaskQueueFromBuildTasks(nodeId);
           existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
         },
-      );
-    }
-    if (existingTaskCount > 0) {
-      await executeResumeStep(
-        'normalize-existing-tasks',
-        async () => normalizeTaskQueueStageFields(nodeId),
-        { existingTaskCount },
       );
     }
     if (activePipelines.has(pipelineKey)) {
@@ -1251,7 +1154,7 @@ const invokeShapeBuildCommand = async (
       buildConfig: mergedRuntimeConfig,
       selectedArrayByCountries: draftEntity.selectedArrayByCountries,
       waitIfPaused: () => waitIfPaused(nodeId),
-      resumeExistingTasks: true,
+      resumeExistingTasks: false,
       buildContinuationPolicy,
       pipelineRunId,
       onTasksEnqueued: emitQueuedProgressSnapshot,

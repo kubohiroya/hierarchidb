@@ -5,6 +5,7 @@ import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { emitRunningResidueLog, logTaskUpdate100 } from './useShapeBuildTaskSync.debug.js';
 import {
   areTasksEquivalentForView,
+  isTerminalTask,
   isCompletedAtFullProgress,
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
@@ -29,10 +30,8 @@ type EventHandlerRefs = {
   isLoadingRef: MutableRefObject<boolean>;
   bufferedSnapshotRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
   bufferedUpdatesRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
-  bufferedSequenceRef: MutableRefObject<Map<string, number>>;
   pendingTasksRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
   committedTasksRef: MutableRefObject<ShapeBuildTaskSummary[]>;
-  committedSequenceRef: MutableRefObject<Map<string, number>>;
   isMountedRef: MutableRefObject<boolean>;
   sessionNodeId: string | null;
 };
@@ -42,17 +41,25 @@ type EventHandlerDeps = {
   resolveTaskSummary: (task: RawTaskSummary) => ShapeBuildTaskSummary;
   scheduleBufferedFlush: () => void;
   bufferTaskUpdate: (task: ShapeBuildTaskSummary) => void;
+  onTaskSnapshot?: (tasks: ShapeBuildTaskSummary[]) => void;
+  onTaskTerminalProgressUpdate?: (task: ShapeBuildTaskSummary) => void;
   setTasks: (tasks: ShapeBuildTaskSummary[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: Error | null) => void;
   markTaskStreamSynchronized?: () => void;
 };
 
+const isTerminalTaskLike = (task: ShapeBuildTaskSummary): boolean => (
+  isTerminalTask(task)
+);
+
 export const useShapeBuildTaskSyncEventHandlers = ({
   refs,
   resolveTaskSummary,
   scheduleBufferedFlush,
   bufferTaskUpdate,
+  onTaskSnapshot,
+  onTaskTerminalProgressUpdate,
   setTasks,
   setIsLoading,
   setError,
@@ -65,10 +72,8 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     isLoadingRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
     pendingTasksRef,
     committedTasksRef,
-    committedSequenceRef,
     isMountedRef,
     sessionNodeId,
   } = refs;
@@ -76,6 +81,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
     const snapshotTasks = normalizeTaskSnapshot(next).map(resolveTaskSummary);
     bufferedSnapshotRef.current = snapshotTasks;
+    onTaskSnapshot?.(snapshotTasks);
     scheduleBufferedFlush();
     if (errorRef.current !== null) {
       setError(null);
@@ -87,6 +93,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     bufferedSnapshotRef,
     errorRef,
     isLoadingRef,
+    onTaskSnapshot,
     resolveTaskSummary,
     scheduleBufferedFlush,
     setError,
@@ -103,7 +110,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
         nodeId: sessionNodeId,
         stage: resolved.stage,
         taskId: resolved.taskId,
-        sequence: resolved.sequence ?? null,
         prevStatus: previous.status ?? null,
         nextStatus: resolved.status ?? null,
         source: 'event',
@@ -117,7 +123,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
         nodeId: sessionNodeId,
         stage: resolved.stage,
         taskId: resolved.taskId,
-        sequence: resolved.sequence ?? null,
         prevStatus: previous.status ?? null,
         nextStatus: resolved.status ?? null,
         source: 'event',
@@ -126,7 +131,12 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     }
     bufferTaskUpdate(resolved);
     scheduleBufferedFlush();
-    logTaskUpdate100(resolved);
+    if (isTerminalTaskLike(resolved) || resolved.progress >= 100) {
+      onTaskTerminalProgressUpdate?.(resolved);
+      logTaskUpdate100(resolved);
+    } else {
+      logTaskUpdate100(resolved);
+    }
     if (errorRef.current !== null) {
       setError(null);
     }
@@ -144,6 +154,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     resolveTaskSummary,
     bufferTaskUpdate,
     scheduleBufferedFlush,
+    onTaskTerminalProgressUpdate,
     sessionNodeId,
     setError,
     setIsLoading,
@@ -157,7 +168,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
         nodeId: sessionNodeId,
         stage: null,
         taskId,
-        sequence: null,
         prevStatus: null,
         nextStatus: null,
         source: 'event',
@@ -172,7 +182,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
       eventType: 'delete',
       taskId,
       stage: existing.stage,
-      sequence: existing.sequence ?? null,
       prevStatus: existing.status ?? null,
       nextStatus: 'deleted',
     });
@@ -185,12 +194,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     nextCompletedMap.delete(taskId);
     completedTasksRef.current = nextCompletedMap;
 
-    const nextCommittedSequences = new Map(committedSequenceRef.current);
-    nextCommittedSequences.delete(taskId);
-    committedSequenceRef.current = nextCommittedSequences;
-
     bufferedUpdatesRef.current.delete(taskId);
-    bufferedSequenceRef.current.delete(taskId);
     if (bufferedSnapshotRef.current) {
       bufferedSnapshotRef.current = bufferedSnapshotRef.current.filter((item) => item.taskId !== taskId);
     }
@@ -218,8 +222,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     errorRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    bufferedSequenceRef,
-    committedSequenceRef,
     isMountedRef,
     isLoadingRef,
     pendingTasksRef,

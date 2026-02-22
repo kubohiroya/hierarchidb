@@ -72,7 +72,6 @@ export const emitRunningResidueLog = (keyword: string, payload: RunningResidueLo
     + ` nodeId=${formatLogValue(logPayload.nodeId)}`
     + ` stage=${formatLogValue(logPayload.stage)}`
     + ` taskId=${formatLogValue(logPayload.taskId)}`
-    + ` sequence=${formatLogValue(logPayload.sequence)}`
     + ` prevStatus=${formatLogValue(logPayload.prevStatus)}`
     + ` nextStatus=${formatLogValue(logPayload.nextStatus)}`
     + ` source=${formatLogValue(logPayload.source)}`

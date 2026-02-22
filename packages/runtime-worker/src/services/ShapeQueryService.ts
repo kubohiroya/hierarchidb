@@ -60,7 +60,6 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
   const stages: Record<string, unknown> = { ...session.stages };
   return {
     nodeId: session.nodeId,
-    draftId: session.draftId,
     status: session.status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
@@ -99,7 +98,7 @@ const toSessionSummary = (session: BuildSessionRecord): ShapeBuildSessionSummary
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
-  taskType: task.taskType,
+  taskType: task.stage,
   status: task.status,
   index: task.index,
   progress: task.progress,
@@ -182,7 +181,6 @@ const toBuildSessionRecordFromEphemeral = (
   if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
   return {
     nodeId: session.nodeId,
-    draftId: session.draftId,
     status: session.status,
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
@@ -279,7 +277,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     stage: ShapeBuildStage
   ): Promise<ShapeBuildTaskRecord[]> {
     const tasks = await this.listBuildTaskRecords(nodeId);
-    return tasks.filter((task) => task.taskType === stage);
+    return tasks.filter((task) => task.stage === stage);
   }
 
   async getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null> {

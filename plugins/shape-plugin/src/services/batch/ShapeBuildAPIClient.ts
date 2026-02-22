@@ -151,7 +151,6 @@ const toBuildSessionRecordFromEphemeral = (
   if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
   return {
     nodeId: session.nodeId,
-    draftId: session.draftId,
     status: normalizeBuildSessionStatus(session.status),
     selectedArrayByCountries: isSelectedArrayByCountries(session.selectedArrayByCountries)
       ? session.selectedArrayByCountries
@@ -688,7 +687,7 @@ export class EphemeralShapeApiImpl {
   }
 
   async listBuildTasksByType(nodeId: NodeId, taskType: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
-    return shapeBuildTaskTable().where('[nodeId+taskType]').equals([nodeId, taskType]).toArray();
+    return shapeBuildTaskTable().where('[nodeId+stage]').equals([nodeId, taskType]).toArray();
   }
 
   async getBuildTask(taskId: string): Promise<ShapeBuildTaskRecord | null> {

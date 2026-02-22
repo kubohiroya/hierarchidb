@@ -1,4 +1,5 @@
 import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/batch-api';
+import { toBuildSessionStatusFromUnifiedProgress } from '@hierarchidb/ui-batch-progress';
 import { computePercentage } from '@hierarchidb/ui-batch-progress';
 
 export interface BuildProgress {
@@ -11,7 +12,6 @@ export interface BuildProgress {
   timestamp?: number;
   message?: string | null;
   progressTaskId?: string;
-  progressTaskSequence?: number;
   progressTaskStatus?: string;
   progressTaskStage?: string;
   progressTaskProgress?: number;
@@ -45,7 +45,6 @@ export type ExtendedProgress = BuildUnifiedProgressInfo & {
 
 type ProgressTaskMeta = {
   taskId?: unknown;
-  sequence?: unknown;
   status?: unknown;
   stage?: unknown;
   progress?: unknown;
@@ -143,7 +142,6 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message ?? undefined,
     progressTaskId: readString(progressTaskMeta?.taskId),
-    progressTaskSequence: readNumber(progressTaskMeta?.sequence),
     progressTaskStatus: readString(progressTaskMeta?.status),
     progressTaskStage: readString(progressTaskMeta?.stage),
     progressTaskProgress: readNumber(progressTaskMeta?.progress),
@@ -157,22 +155,27 @@ export function toShapeStatus(
   info: ExtendedProgress | null,
   fallback?: BuildSessionStatus | null,
 ): BuildProgressStatus | null {
-  const fallbackStatus = fallback?.status;
-  const phase = fallbackStatus && fallbackStatus !== 'idle'
-    ? fallbackStatus
-    : info?.phase ?? fallbackStatus;
-  if (!phase) return null;
-  const status = mapPhaseToStatus(phase);
-  const error = fallback?.error ?? info?.message ?? null;
-  const progress = info?.percentage ?? fallback?.progress?.percentage;
+  const nodeId = info?.nodeId ?? fallback?.nodeId;
+  if (!nodeId) return null;
+  const mergedStatus = toBuildSessionStatusFromUnifiedProgress({
+    nodeId,
+    info,
+    fallback,
+  });
+  if (!mergedStatus) return null;
+
+  const status = mapPhaseToStatus(mergedStatus.status);
+  const error = mergedStatus.error ?? null;
+  const progress = mergedStatus.progress.percentage;
+  const stage = mergedStatus.progress.taskType ?? info?.payload?.stage;
   const hasErrors = status === 'failed' || Boolean(error);
   return {
     status,
-    stage: info?.stage ?? info?.payload?.stage ?? fallback?.progress?.taskType,
-    progress: typeof progress === 'number' ? progress : undefined,
+    stage,
+    progress,
     hasErrors,
     error,
-    lastUpdated: info?.timestamp ?? fallback?.lastActivity ?? Date.now(),
+    lastUpdated: mergedStatus.lastActivity ?? Date.now(),
   };
 }
 

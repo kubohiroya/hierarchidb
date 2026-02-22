@@ -10,7 +10,6 @@ type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   effectiveProgress: BuildProgress | null;
   runtimeStatus: BuildProgressStatus['status'];
   resolvedTaskType: string | undefined;
-  completedTaskSequenceById: Map<string, number>;
   progressTerminalLogKeyRef: { current: string | null };
   emitBuildSessionTransitionLog: (
     level: 'info' | 'warn' | 'error',
@@ -20,30 +19,11 @@ type UseShapeBuildSessionStartupProgressTerminalLogArgs = {
   buildSessionTransition: BuildSessionTransitionState<BuildSessionTransitionPhase>;
 };
 
-const shouldSkipStaleUpdate = (
-  progressTaskId: string | undefined,
-  progressTaskSequence: number | undefined,
-  progressTaskStatus: string | null | undefined,
-  completedTaskSequenceById: Map<string, number>,
-): boolean => {
-  if (!(
-    typeof progressTaskId === 'string'
-    && typeof progressTaskSequence === 'number'
-    && Number.isFinite(progressTaskSequence)
-    && (progressTaskStatus === 'running' || progressTaskStatus === 'queued')
-  )) {
-    return false;
-  }
-  const completedSequence = completedTaskSequenceById.get(progressTaskId);
-  return typeof completedSequence === 'number' && completedSequence >= progressTaskSequence;
-};
-
 export const useShapeBuildSessionStartupProgressTerminalLog = ({
   buildStatus,
   effectiveProgress,
   runtimeStatus,
   resolvedTaskType,
-  completedTaskSequenceById,
   progressTerminalLogKeyRef,
   emitBuildSessionTransitionLog,
   buildSessionTransition,
@@ -61,7 +41,6 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     ) return;
 
     const progressTaskId = effectiveProgress?.progressTaskId;
-    const progressTaskSequence = effectiveProgress?.progressTaskSequence;
     const progressTaskStatus = effectiveProgress?.progressTaskStatus;
     const progressTaskTitle = typeof effectiveProgress?.progressTaskTitle === 'string'
       ? effectiveProgress.progressTaskTitle.trim()
@@ -73,15 +52,7 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     );
     if (!isTerminalUpdate) return;
 
-    const isStale = shouldSkipStaleUpdate(
-      progressTaskId,
-      progressTaskSequence,
-      progressTaskStatus,
-      completedTaskSequenceById,
-    );
-    if (isStale) return;
-
-    const key = `${progressTaskId ?? ''}:${progressTaskSequence ?? ''}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
+    const key = `${progressTaskId ?? ''}:${progressTaskStatus ?? ''}:${progressDisplay?.kind ?? ''}:${progressDisplay?.key ?? ''}:${progressMessage}`;
     if (progressTerminalLogKeyRef.current === key) return;
     progressTerminalLogKeyRef.current = key;
     emitBuildSessionTransitionLog('info', 'worker progress terminal update', {
@@ -92,7 +63,6 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
       percentage: effectiveProgress?.percentage ?? null,
       taskId: progressTaskId ?? null,
       taskTitle: progressTaskTitle || null,
-      taskSequence: progressTaskSequence ?? null,
       taskStatus: progressTaskStatus ?? null,
     });
   }, [
@@ -103,10 +73,8 @@ export const useShapeBuildSessionStartupProgressTerminalLog = ({
     effectiveProgress?.percentage,
     effectiveProgress?.progressTaskDisplay,
     effectiveProgress?.progressTaskId,
-    effectiveProgress?.progressTaskSequence,
     effectiveProgress?.progressTaskStatus,
     effectiveProgress?.progressTaskTitle,
-    completedTaskSequenceById,
     emitBuildSessionTransitionLog,
     progressTerminalLogKeyRef,
     resolvedTaskType,
