@@ -29,7 +29,12 @@ import type {
   RouteMetadataSyncSummary,
   RouteNearestLineResponse,
 } from '@hierarchidb/route-api';
-import { formatDistance, getTransportModeName, useTranslation } from '~/common/i18n/index';
+import {
+  formatDistance,
+  getTransportModeName,
+  type SupportedLocale,
+  useTranslation,
+} from '~/common/i18n/index';
 import {
   LINE_WIDTH_MAX,
   LINE_WIDTH_MIN,
@@ -40,9 +45,15 @@ import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '~/common/datasource/configs';
 import { getDBName } from '@hierarchidb/util';
 import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '~/common/styles/routeStyle';
+import { RoutePreviewHoverMatch } from './RoutePreviewStepElements.js';
 
 type Bounds = { minLon: number; maxLon: number; minLat: number; maxLat: number };
 const HOVER_DISTANCE_PX = 16;
+const MAX_HOVER_MATCHES = 9;
+const MINI_MAP_SIZE = 84;
+const MINI_MAP_CENTER = MINI_MAP_SIZE / 2;
+const MINI_MAP_SCALE = 3.8;
+const HOVER_LABEL_SPACING = 12;
 
 type RouteModeOption = {
   id: RouteMode;
@@ -131,6 +142,74 @@ const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
   return (worldCircumference * latFactor) / scale;
 };
 
+const toDistanceLabel = (value: number, locale: SupportedLocale) => formatDistance(value, locale);
+
+const resolveLabelParts = (parts: Array<string | undefined>) => parts.filter((value): value is string => Boolean(value));
+
+const projectToMiniMap = (point: { x: number; y: number }, cursor: { x: number; y: number }) => ({
+  x: MINI_MAP_CENTER + (point.x - cursor.x) * MINI_MAP_SCALE,
+  y: MINI_MAP_CENTER + (point.y - cursor.y) * MINI_MAP_SCALE,
+});
+
+const clampMiniMapCoordinate = (value: number): number => Math.max(4, Math.min(MINI_MAP_SIZE - 4, value));
+
+const projectSegmentPath = (
+  segmentStart: { x: number; y: number },
+  segmentEnd: { x: number; y: number },
+  segmentNearest: { x: number; y: number },
+  cursor: { x: number; y: number },
+) => {
+  const start = projectToMiniMap(segmentStart, cursor);
+  const end = projectToMiniMap(segmentEnd, cursor);
+  const nearest = projectToMiniMap(segmentNearest, cursor);
+  const points = [
+    `${clampMiniMapCoordinate(start.x)},${clampMiniMapCoordinate(start.y)}`,
+    `${clampMiniMapCoordinate(nearest.x)},${clampMiniMapCoordinate(nearest.y)}`,
+    `${clampMiniMapCoordinate(end.x)},${clampMiniMapCoordinate(end.y)}`,
+  ];
+  return {
+    path: points.join(' '),
+    labelX: clampMiniMapCoordinate(nearest.x),
+    labelY: clampMiniMapCoordinate(nearest.y),
+  };
+};
+
+const buildLabelCandidates = () => [
+  { x: 0, y: 0 },
+  { x: 10, y: -8 },
+  { x: -10, y: -8 },
+  { x: 0, y: -16 },
+  { x: 12, y: 0 },
+  { x: -12, y: 0 },
+  { x: 8, y: 10 },
+  { x: -8, y: 10 },
+  { x: 0, y: 12 },
+];
+
+const projectPointOnSegment = (
+  point: { x: number; y: number },
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+) => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (dx === 0 && dy === 0) {
+    return { x: start.x, y: start.y };
+  }
+  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  return {
+    x: start.x + t * dx,
+    y: start.y + t * dy,
+  };
+};
+
+const toLineSummaryLine = (routeMode: string | undefined, routeName: string | undefined, startLabel: string, endLabel: string) =>
+  [routeMode, routeName, `${startLabel} -> ${endLabel}`].filter(Boolean).join(' / ');
+
+const resolveLineRouteModeLabel = (routeMode: string | undefined, locale: SupportedLocale) => (
+  routeMode ? getTransportModeName(routeMode, locale) : 'Unknown route'
+);
+
 export const useRoutePreviewStep = ({
   draft,
   nodeId,
@@ -140,7 +219,8 @@ export const useRoutePreviewStep = ({
   nodeId?: NodeId;
   onUpdate: (updates: Partial<RouteEntity>) => void;
 }) => {
-  const { t, locale } = useTranslation();
+  const { t, locale: localeFromTranslation } = useTranslation();
+  const locale = localeFromTranslation as SupportedLocale;
   const previewNodeId = nodeId;
   const workerBridgeRef = useRef(getBuildWorkerBridge());
   const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);
@@ -155,11 +235,32 @@ export const useRoutePreviewStep = ({
   const [buildErrors, setBuildErrors] = useState<RouteBuildError[]>([]);
   const [metadataSyncRunning, setMetadataSyncRunning] = useState(false);
   const [metadataSyncError, setMetadataSyncError] = useState<string | null>(null);
-  const [hoverInfo, setHoverInfo] = useState<RouteNearestLineResponse | null>(null);
-  const [hoverOpen, setHoverOpen] = useState(false);
+  const [hoverMatches, setHoverMatches] = useState<RoutePreviewHoverMatch[]>([]);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
-  const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
+  const lastHoverRef = useRef<{
+    longitude: number;
+    latitude: number;
+    zoom: number;
+  } | null>(null);
+  const lineLookup = useMemo(() => new Map(lineStrings.map((line) => [String(line.id), line])), [lineStrings]);
+
+  useEffect(() => {
+    setHoverMatches((current) => {
+      let changed = false;
+      const nextMatches = current.map((match) => {
+        const isSelected = selectedIdSet.has(match.id);
+        if (match.isSelected === isSelected) return match;
+        changed = true;
+        return {
+          ...match,
+          isSelected,
+        };
+      });
+      return changed ? nextMatches : current;
+    });
+  }, [selectedIdSet]);
   const hasGeometry = lineStrings.length > 0;
   const showMissingGeometry = !lineStringsLoading && !hasGeometry && !lineStringsError;
   const lineGeometries = useMemo<[number, number][][]>(() => (
@@ -260,16 +361,160 @@ export const useRoutePreviewStep = ({
     }
   }, [routeModeSelection]);
 
-  const formatTemplate = useCallback(
-    (template: string, values: Record<string, string | number>) =>
-      Object.entries(values).reduce(
-        (acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)),
-        template,
-      ),
-    [],
-  );
+  const buildHoverMatchList = useCallback((
+    queryResponse: RouteNearestLineResponse,
+    cursorPoint: { x: number; y: number },
+    cursor: { longitude: number; latitude: number },
+  ) => {
+    if (!mapInstance) return [];
+    const mapWithProject = mapInstance as MapLibreMapInstance & {
+      project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+    };
+    if (!mapWithProject.project) return [];
+    const mapProject = mapWithProject.project;
+    const placed: Array<{ x: number; y: number }> = [];
+    return queryResponse.matches
+      .map((match, index) => {
+        const line = match.line.lineStringId ? lineLookup.get(match.line.lineStringId) : undefined;
+        if (!line) return null;
+        const pathPoints = normalizeLineCoordinates(line.waypoints ?? []);
+        if (pathPoints.length < 2) return null;
+        const nearestPoint = match.line.nearestPoint ?? [cursor.longitude, cursor.latitude];
+        const nearestProjected = mapProject({ lng: nearestPoint[0], lat: nearestPoint[1] });
+        let best:
+          | { start: { x: number; y: number }; end: { x: number; y: number }; nearest: { x: number; y: number }; distance: number }
+          | undefined;
+        for (let i = 0; i < pathPoints.length - 1; i += 1) {
+          const startPoint = pathPoints[i];
+          const endPoint = pathPoints[i + 1];
+          if (!startPoint || !endPoint) continue;
+          const start = mapProject({ lng: startPoint[0], lat: startPoint[1] });
+          const end = mapProject({ lng: endPoint[0], lat: endPoint[1] });
+          const projectedNearest = projectPointOnSegment(nearestProjected, start, end);
+          const dx = projectedNearest.x - nearestProjected.x;
+          const dy = projectedNearest.y - nearestProjected.y;
+          const distance = Math.hypot(dx, dy);
+          if (!best || distance < best.distance) {
+            best = {
+              start: { x: start.x, y: start.y },
+              end: { x: end.x, y: end.y },
+              nearest: projectedNearest,
+              distance,
+            };
+          }
+        }
+        if (!best) return null;
+        const pathInfo = projectSegmentPath(
+          best.start,
+          best.end,
+          best.nearest,
+          { x: cursorPoint.x, y: cursorPoint.y },
+        );
+        const startParts = resolveLabelParts([
+          match.line.start?.name,
+          match.line.start?.admin2Name,
+          match.line.start?.admin1Name,
+          match.line.start?.admin0Name,
+        ]);
+        const endParts = resolveLabelParts([
+          match.line.end?.name,
+          match.line.end?.admin2Name,
+          match.line.end?.admin1Name,
+          match.line.end?.admin0Name,
+        ]);
+        const startLabel = startParts.length > 0 ? startParts.join(' / ') : t('preview.hoverUnknown', 'Unknown route');
+        const endLabel = endParts.length > 0 ? endParts.join(' / ') : t('preview.hoverUnknown', 'Unknown route');
+        const summaryMode = resolveLineRouteModeLabel(match.line.routeMode, locale);
+        const summaryLine = toLineSummaryLine(summaryMode, match.line.routeName, startLabel, endLabel);
+        const distanceLabel = toDistanceLabel(match.distanceMeters, locale);
+        const colorKey = match.line.routeMode as RouteMode | undefined;
+        const modeColor = colorKey ? routeStyleConfig.modeColors[colorKey] : '#9ca3af';
+        const nearestX = clampMiniMapCoordinate(pathInfo.labelX);
+        const nearestY = clampMiniMapCoordinate(pathInfo.labelY);
+        const candidateCandidates = buildLabelCandidates();
+        const selectedLabel = candidateCandidates
+          .map((candidate) => ({
+            x: clampMiniMapCoordinate(nearestX + candidate.x),
+            y: clampMiniMapCoordinate(nearestY + candidate.y),
+          }))
+          .find((candidate) => {
+            return placed.every((placedEntry) => {
+              const dx = placedEntry.x - candidate.x;
+              const dy = placedEntry.y - candidate.y;
+              return Math.hypot(dx, dy) > HOVER_LABEL_SPACING;
+            });
+          }) ?? { x: nearestX, y: nearestY };
+        const id = match.line.lineStringId ?? `${match.line.routeMode ?? 'route'}-${index}`;
+        placed.push(selectedLabel);
+        return {
+          id,
+          index: index + 1,
+          linePath: pathInfo.path,
+          summaryLine,
+          routeName: match.line.routeName ?? '',
+          distanceLabel,
+          modeColor,
+          isSelected: selectedIdSet.has(id),
+          miniMapLabelX: selectedLabel.x,
+          miniMapLabelY: selectedLabel.y,
+        };
+      })
+      .filter((match): match is RoutePreviewHoverMatch => match !== null)
+      .slice(0, MAX_HOVER_MATCHES);
+  }, [lineLookup, locale, mapInstance, routeStyleConfig.modeColors, selectedIdSet, t]);
 
-  const scheduleHoverLookup = useCallback((longitude: number, latitude: number, zoom: number) => {
+  const toggleHoverMatchSelection = useCallback((matchId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(matchId)) {
+        next.delete(matchId);
+      } else {
+        next.add(matchId);
+      }
+      return Array.from(next);
+    });
+  }, []);
+
+  const toggleHoverMatchSelectionByIndex = useCallback((index: number) => {
+    const matched = hoverMatches.find((match) => match.index === index);
+    if (!matched) return;
+    toggleHoverMatchSelection(matched.id);
+  }, [hoverMatches, toggleHoverMatchSelection]);
+
+  const resolveKeyboardMatchIndex = useCallback((event: KeyboardEvent) => {
+    if (!event.ctrlKey && !event.metaKey) return undefined;
+    if (event.altKey || event.shiftKey) return undefined;
+    const normalized = event.key.startsWith('Numpad') ? event.key.replace('Numpad', '') : event.key;
+    const number = Number(normalized);
+    if (!Number.isInteger(number)) return undefined;
+    if (number >= 1 && number <= hoverMatches.length && number <= MAX_HOVER_MATCHES) {
+      return number;
+    }
+    return undefined;
+  }, [hoverMatches.length]);
+
+  useEffect(() => {
+    if (!hoverMatches.length) return undefined;
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTextInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+      const isContentEditable = Boolean(target?.isContentEditable);
+      if (isTextInput || isContentEditable) return;
+      const asNumber = resolveKeyboardMatchIndex(event);
+      if (asNumber !== undefined) {
+        event.preventDefault();
+        toggleHoverMatchSelectionByIndex(asNumber);
+      }
+    };
+    window.addEventListener('keydown', handleKeydown);
+    return () => {
+      window.removeEventListener('keydown', handleKeydown);
+    };
+  }, [resolveKeyboardMatchIndex, toggleHoverMatchSelectionByIndex, hoverMatches]);
+
+  const scheduleHoverLookup = useCallback((longitude: number, latitude: number, zoom: number, point: { x: number; y: number }) => {
     if (!previewNodeId) return;
     const last = lastHoverRef.current;
     if (last) {
@@ -295,35 +540,37 @@ export const useRoutePreviewStep = ({
             latitude,
             zoom,
             maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
+            maxMatches: MAX_HOVER_MATCHES,
           });
           if (hoverRequestIdRef.current !== requestId) return;
-          setHoverInfo(result);
-          setHoverOpen(result.matches.length > 0);
+          const nextMatches = buildHoverMatchList(result, point, { longitude, latitude });
+          setHoverMatches(nextMatches);
         } catch (error) {
           if (hoverRequestIdRef.current === requestId) {
-            setHoverInfo(null);
-            setHoverOpen(false);
+            setHoverMatches([]);
           }
           console.warn('[RoutePreviewStep] hover lookup failed', error);
         }
       })();
     }, 120);
-  }, [previewNodeId]);
+  }, [buildHoverMatchList, previewNodeId]);
 
   useEffect(() => {
     if (!mapInstance) return;
     const handleMove = (event: unknown) => {
       const lngLat = (event as { lngLat?: { lng: number; lat: number } })?.lngLat;
+      const point = (event as { point?: { x: number; y: number } })?.point;
       if (!lngLat) return;
       const zoom = mapInstance.getZoom();
-      scheduleHoverLookup(lngLat.lng, lngLat.lat, zoom);
+      if (!point) return;
+      scheduleHoverLookup(lngLat.lng, lngLat.lat, zoom, point);
     };
     const handleLeave = () => {
       if (hoverTimerRef.current) {
         window.clearTimeout(hoverTimerRef.current);
         hoverTimerRef.current = null;
       }
-      setHoverOpen(false);
+      setHoverMatches([]);
     };
     mapInstance.on('mousemove', handleMove);
     mapInstance.on('mouseleave', handleLeave);
@@ -332,27 +579,6 @@ export const useRoutePreviewStep = ({
       mapInstance.off('mouseleave', handleLeave);
     };
   }, [mapInstance, scheduleHoverLookup]);
-
-  const hoverMessage = useMemo(() => {
-    const nearest = hoverInfo?.matches?.[0]?.line;
-    if (!nearest) return '';
-    const modeLabel = nearest.routeMode
-      ? getTransportModeName(nearest.routeMode, locale)
-      : t('preview.hoverUnknown', 'Unknown route');
-    const startParts = [nearest.start?.name, nearest.start?.admin1Name, nearest.start?.admin0Name].filter(Boolean);
-    const endParts = [nearest.end?.name, nearest.end?.admin1Name, nearest.end?.admin0Name].filter(Boolean);
-    const startLabel = startParts.join(', ') || t('preview.hoverUnknown', 'Unknown route');
-    const endLabel = endParts.join(', ') || t('preview.hoverUnknown', 'Unknown route');
-    const distanceValue = nearest.routeDistanceMeters ?? hoverInfo?.matches?.[0]?.distanceMeters ?? 0;
-    const distanceLabel = formatDistance(distanceValue, locale);
-    const template = t('preview.hoverTemplate', '{mode} / {start} -> {end} / {distance}');
-    return formatTemplate(template, {
-      mode: modeLabel,
-      start: startLabel,
-      end: endLabel,
-      distance: distanceLabel,
-    });
-  }, [formatTemplate, hoverInfo, locale, t]);
 
   useEffect(() => () => {
     if (hoverTimerRef.current) {
@@ -525,8 +751,8 @@ export const useRoutePreviewStep = ({
   }, [metadataSyncSummary, t]);
 
   const hoverSnackbarProps = {
-    open: hoverOpen && Boolean(hoverMessage),
-    message: hoverMessage ?? '',
+    matches: hoverMatches,
+    onToggleMatchSelection: toggleHoverMatchSelection,
   };
 
   const emptyContentProps = listRows.length === 0 ? {

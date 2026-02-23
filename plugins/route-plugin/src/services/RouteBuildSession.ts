@@ -260,8 +260,10 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     const method = localTask.routeData?.method ?? this.config.routeGeneration.method;
     const options = localTask.routeData?.methodOptions;
     const coordinates = await this.resolveRouteCoordinates(localTask, signal);
+    const startCoordinates = coordinates.startCoordinates;
+    const endCoordinates = coordinates.endCoordinates;
 
-    if (!coordinates.startCoordinates || !coordinates.endCoordinates) {
+    if (!startCoordinates || !endCoordinates) {
       const message = 'Route build task missing coordinates';
       localTask.status = 'failed';
       localTask.error = message;
@@ -269,10 +271,13 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       throw new Error(message);
     }
 
-    const sourceKey = this.buildSourceKey(localTask, coordinates.startCoordinates, coordinates.endCoordinates, method);
-    const result = await this.runRouteTask([coordinates.startCoordinates, coordinates.endCoordinates], method, options, signal);
-    const routeRecord = this.createRouteFeature(localTask, sourceKey, coordinates, method, result);
-    const fetchRecord = this.createFetchCacheRecord(routeRecord, sourceKey, result.lineGeometry, this.config);
+    const sourceKey = this.buildSourceKey(localTask, startCoordinates, endCoordinates, method);
+    const result = await this.runRouteTask([startCoordinates, endCoordinates], method, options, signal);
+    const routeRecord = this.createRouteFeature(localTask, sourceKey, {
+      startCoordinates,
+      endCoordinates,
+    }, method, result);
+    const fetchRecord = this.createFetchCacheRecord(routeRecord, sourceKey, result.lineGeometry);
 
     await this.routeDB.open?.();
     await ephemeralDB.open?.();
@@ -291,8 +296,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     localTask.routeData = {
       ...localTask.routeData,
       sourceKey,
-      startCoordinates: coordinates.startCoordinates,
-      endCoordinates: coordinates.endCoordinates,
+      startCoordinates,
+      endCoordinates,
     };
 
     localTask.status = 'completed';
@@ -425,14 +430,15 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       }
       const original = sourceFeature.coordinates;
       const routeLine = sourceLineId ? routeById.get(sourceLineId) : undefined;
-      const distance = Number.isFinite(sourceFeature.distanceMeters)
+      const distanceRaw = Number.isFinite(sourceFeature.distanceMeters)
         ? sourceFeature.distanceMeters
-        : routeLine?.distance ?? estimateLineDistanceMeters(sourceFeature.coordinates);
-      if (validateDistance && Number.isFinite(maxDistanceMeters) && distance > maxDistanceMeters) {
+        : Number(routeLine?.distance ?? estimateLineDistanceMeters(sourceFeature.coordinates));
+      const routeDistance = Number(distanceRaw);
+      if (validateDistance && Number.isFinite(maxDistanceMeters) && routeDistance > maxDistanceMeters) {
         transformErrors.push(buildRouteBuildErrorRecord({
           nodeId: this.nodeId,
           stage: 'transform',
-          message: `Distance exceeds limit: ${distance.toFixed(0)}m > ${maxDistanceMeters.toFixed(0)}m`,
+          message: `Distance exceeds limit: ${routeDistance.toFixed(0)}m > ${maxDistanceMeters.toFixed(0)}m`,
           sourceKey,
           featureId: lineId,
           sequence: errorSequence,
@@ -443,11 +449,11 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
       for (const band of rangesWithBandIndex) {
         const minDistance = resolveBandValue(minDistanceByBand, band.bandIndex, 0);
-        if (distance < minDistance) {
+        if (routeDistance < minDistance) {
           transformErrors.push(buildRouteBuildErrorRecord({
             nodeId: this.nodeId,
             stage: 'transform',
-            message: `Dropped by minDistance rule: ${distance.toFixed(0)}m < ${minDistance.toFixed(0)}m`,
+            message: `Dropped by minDistance rule: ${routeDistance.toFixed(0)}m < ${minDistance.toFixed(0)}m`,
             sourceKey,
             featureId: lineId,
             sequence: errorSequence,
@@ -481,7 +487,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
               id: sourceLineId,
               sourceKey,
               routeMode: sourceFeature.routeMode,
-              distance,
+              distance: routeDistance,
               startLocationId: sourceFeature.startLocationId,
               endLocationId: sourceFeature.endLocationId,
             },
@@ -543,10 +549,13 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     }
 
     const tileIndexRecords = Array.from(tileIndex.entries()).map(([key, lineIds]) => {
-      const { nodeId, z, x, y } = parseTileKey(key);
+      const [, zRaw, xRaw, yRaw] = key.split(':');
+      const z = Number(zRaw);
+      const x = Number(xRaw);
+      const y = Number(yRaw);
       return {
         id: key,
-        nodeId,
+        nodeId: this.nodeId,
         z,
         x,
         y,
@@ -647,9 +656,10 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
         tileId: bufferId,
         chunkStoreName: 'hidb-chunks',
       });
-      const result = await stageClient.vectortile.generateTiles(bufferId, {
+      const resultCompression = this.config.vtConfig?.compression === 'bz' ? 'gzip' : this.config.vtConfig?.compression;
+      await stageClient.vectortile.generateTiles(bufferId, {
         format: 'mvt',
-        compression: this.config.vtConfig?.compression ?? 'gzip',
+        compression: resultCompression ?? 'none',
         minZoom: band.zMin,
         maxZoom: band.zMax,
         inputFormat: this.config.vtConfig?.inputFormat ?? 'geojson',
@@ -658,7 +668,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
         targetNodeId: this.nodeId,
         targetNodeType: 'route',
       });
-      const _ = await stageClient.vectortile.getSummary(this.nodeId, 'route');
+      await stageClient.vectortile.getSummary(this.nodeId, 'route');
     }
 
     localTask.status = 'completed';
@@ -747,7 +757,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     const startCoords = coordinates.startCoordinates;
     const endCoords = coordinates.endCoordinates;
     return {
-      id: sourceKey,
+      id: sourceKey as NodeId,
       nodeId: this.nodeId,
       type: 'route-line-string',
       version: 1,
@@ -770,7 +780,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
         longitude: endCoords[0],
         name: task.routeData?.endName,
       },
-      waypoints: result.lineGeometry,\n      distance: result.distance,
+      waypoints: result.lineGeometry,
+      distance: result.distance,
       speed: result.duration && result.distance ? result.distance / result.duration : undefined,
       metadata: {
         sourceKey,
@@ -783,7 +794,6 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     routeFeature: RouteFeature,
     sourceKey: string,
     lineGeometry: [number, number][],
-    _config: RouteBuildConfig,
   ): EphemeralFetchCacheRecord {
     const payload = {
       type: 'FeatureCollection' as const,
@@ -814,8 +824,6 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       countryCode: undefined,
       adminLevel: undefined,
       data,
-      format: 'geojson',
-      compression: 'none',
       featureCount: 1,
       inputFeatureCount: 1,
       bbox: computeLineBbox(lineGeometry),
@@ -1094,16 +1102,6 @@ const latToTileY = (lat: number, z: number): number => {
 const clampTileIndex = (value: number, maxIndex: number): number => Math.min(maxIndex, Math.max(0, value));
 
 const buildTileKey = (nodeId: NodeId, z: number, x: number, y: number): string => `${String(nodeId)}:${z}:${x}:${y}`;
-
-const parseTileKey = (key: string): { nodeId: NodeId; z: number; x: number; y: number } => {
-  const [nodeIdRaw, zRaw, xRaw, yRaw] = key.split(':');
-  return {
-    nodeId: nodeIdRaw as NodeId,
-    z: Number(zRaw),
-    x: Number(xRaw),
-    y: Number(yRaw),
-  };
-};
 
 const buildRouteBuildErrorRecord = (params: {
   nodeId: NodeId;
