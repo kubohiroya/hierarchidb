@@ -127,16 +127,16 @@ sequenceDiagram
   UI->>BO: subscribeBuildSession(nodeId, callback)
   UI->>UI: sessionCopy = SubscriptionRequested
   UI->>UI: Show skeleton
-  BO->>DB: Lookup session
-  alt no session
-    BO->>DB: create session(status=idle, stage=idle)
-  else existing session
+  BO->>DB: lookup session
+  alt session exists
     BO->>DB: read current status/stage
     alt status=startAccepted or running
-      BO->>DB: normalize stage=undefined
+      BO->>DB: normalize status=idle, stage=undefined
     end
+    BO-->>UI: initial snapshot from stored session
+  else no session
+    BO-->>UI: initial snapshot = "no session"
   end
-  BO-->>UI: initial snapshot
   UI->>UI: sessionCopy = idle or existing state
   UI->>UI: hide skeleton / show explicit state
 ```
@@ -254,8 +254,17 @@ stateDiagram-v2
 - Heartbeat update triggers:
   - persisted elapsed-time update
   - UI elapsed-time refresh
-- Detailed progress notification contract is intentionally not globally fixed.
-- Stage/task implementations define concrete progress message granularity based on work characteristics.
+- Progress is a two-channel sequence:
+  - `snapshot` channel: initial state transfer for SSOT initialization.
+  - `progress` channel: incremental task updates after subscription.
+- Snapshot is sent once at subscribe start and once at session start (`startBuildSession`) when stage tasks are rebuilt.
+- The `subscribeBuildProgress` callback is wrapped once by the bridge callback proxy and registered for both notifications.
+- Progress events are buffered if snapshot has not been fully applied yet.
+- Task aggregation rules:
+  - latest update wins per task key
+  - terminal state (`Completed`/`Skipped`/`Failed`) is never overwritten by earlier non-terminal states
+- Stage completion in UI SSOT is computed from stream:
+  - if `count(progress[status=100%]) == snapshotTaskCount` for current stage, treat stage complete.
 
 ## 14. Session Reset Scope and Data Deletion
 

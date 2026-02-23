@@ -51,15 +51,15 @@ sequenceDiagram
   UI->>UI: localCopy = SubscriptionRequested
   UI->>UI: show skeleton
   UI->>BO: subscribeBuildSession(nodeId, callback)
-  BO->>DB: lookup/create session
-  alt session not found
-    BO->>DB: create(session={status: idle, stage: idle})
-  else session exists
+  BO->>DB: lookup session
+  alt session exists
     alt status in {startAccepted, running}
       BO->>DB: normalize session.status=idle, stage=undefined
     end
+    BO-->>UI: initial snapshot from stored session
+  else no session
+    BO-->>UI: initial snapshot = "no session"
   end
-  BO-->>UI: initial snapshot
   UI->>UI: localCopy = snapshot status
 ```
 
