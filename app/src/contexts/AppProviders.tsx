@@ -22,11 +22,25 @@ import { AppThemeProvider } from './AppThemeProvider.js';
 import { AppIconRegistryProvider } from './IconRegistryProvider.js';
 import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 
+const resolveCorsProxyBaseURL = (): string => {
+  const fromVite =
+    typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
+      ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
+      : '';
+  if (fromVite) {
+    return fromVite;
+  }
+
+  if (import.meta.env?.DEV) {
+    return 'https://hierarchidb-cors-proxy.kubohiroya.workers.dev';
+  }
+
+  return '';
+};
+
 // UI-thread default CORS proxy (worker側と同等に初期化しておく)
 {
-  const value = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
-    ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
-    : '';
+  const value = resolveCorsProxyBaseURL();
   if (!value) {
     throw new Error('VITE_CORS_PROXY_BASE_URL is required for app startup.');
   }
