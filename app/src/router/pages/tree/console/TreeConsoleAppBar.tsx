@@ -77,7 +77,7 @@ export function TreeConsoleAppBar({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
             <BuildSessionQueueBadgeButton
               nodeType={toNodeType('shape')}
@@ -85,9 +85,7 @@ export function TreeConsoleAppBar({
             />
           ) : null}
           {isUserMenuReady ? (
-            <Box sx={{ ml: '8px' }}>
-              <UserLoginButton onOpenMaintenance={onOpenMaintenance} />
-            </Box>
+            <UserLoginButton onOpenMaintenance={onOpenMaintenance} />
           ) : null}
         </Stack>
       </Toolbar>
