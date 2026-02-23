@@ -58,7 +58,7 @@ export const shouldUpdateElapsedSnapshot = (params: {
 }): boolean => {
   const { snapshot, totalElapsedMs, buildStatus } = params;
   if (!snapshot) return true;
-  if (buildStatus !== 'running' && totalElapsedMs === 0) return false;
+  if (buildStatus !== 'running') return true;
   if (totalElapsedMs === 0) return true;
   return totalElapsedMs > snapshot.elapsedMs;
 };

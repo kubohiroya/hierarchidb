@@ -54,7 +54,12 @@ export const useShapeBuildTaskSyncScheduling = ({
     }
     setTasks(next);
     markTaskStreamSynchronized?.();
-  }, [committedTasksRef, isMountedRef, markTaskStreamSynchronized, setTasks]);
+  }, [
+    committedTasksRef,
+    isMountedRef,
+    markTaskStreamSynchronized,
+    setTasks,
+  ]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
     if (!isMountedRef.current) return;
@@ -183,41 +188,14 @@ export const useShapeBuildTaskSyncScheduling = ({
     const bufferedUpdates = bufferedUpdatesRef.current;
     bufferedSnapshotRef.current = null;
     bufferedUpdatesRef.current = new Map();
-
-    // eslint-disable-next-line no-console
-    console.log('[sync-debug] applyBufferedEvents begin', {
-      snapshotLen: bufferedSnapshot?.length ?? null,
-      bufferedUpdateIds: [...bufferedUpdates.keys()],
-      taskMapSize: tasksMapRef.current.size,
-      committedSize: committedTasksRef.current.length,
-      pendingSize: pendingTasksRef.current?.length ?? null,
-      mapEntries: [...tasksMapRef.current.values()].map((task) => ({
-        taskId: task.taskId,
-        status: task.status,
-        progress: task.progress,
-        message: task.message,
-      })),
-    });
-
     let nextList = bufferedSnapshot
-      ? reconcileSnapshotWithCurrentTasks(bufferedSnapshot, tasksMapRef.current)
+      ? reconcileSnapshotWithCurrentTasks(bufferedSnapshot)
       : (pendingTasksRef.current ?? committedTasksRef.current);
     let changed = bufferedSnapshot !== null;
 
-    // eslint-disable-next-line no-console
-    console.log('[sync-debug] nextList after snapshot', {
-      len: nextList.length,
-      entries: nextList.map((task) => ({
-        taskId: task.taskId,
-        status: task.status,
-        progress: task.progress,
-        message: task.message,
-      })),
-    });
-
     if (bufferedSnapshot) {
       tasksMapRef.current = new Map(nextList.map((task: ShapeBuildTaskSummary) => [task.taskId, task]));
-      const nextCompletedMap = new Map(completedTasksRef.current);
+      const nextCompletedMap = new Map<string, ShapeBuildTaskSummary>();
       nextList.forEach((task: ShapeBuildTaskSummary) => {
         if (isCompletedAtFullProgress(task)) {
           nextCompletedMap.set(task.taskId, task);
@@ -231,24 +209,6 @@ export const useShapeBuildTaskSyncScheduling = ({
       nextList = result.next;
       changed = changed || result.changed;
     });
-    // eslint-disable-next-line no-console
-    console.log('[sync-debug] after buffered updates', {
-      len: nextList.length,
-      entries: nextList.map((task) => ({
-        taskId: task.taskId,
-        status: task.status,
-        progress: task.progress,
-        message: task.message,
-      })),
-      mapSize: tasksMapRef.current.size,
-      mapEntries: [...tasksMapRef.current.values()].map((task) => ({
-        taskId: task.taskId,
-        status: task.status,
-        progress: task.progress,
-        message: task.message,
-      })),
-    });
-
     return { nextList, changed };
   }, [
     bufferedSnapshotRef,

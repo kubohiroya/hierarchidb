@@ -89,7 +89,6 @@ export const useShapeBuildTaskSync = ({
     errorRef,
     handleSnapshot: handlers.handleSnapshot,
     handleUpdate: handlers.handleUpdate,
-    handleDelete: handlers.handleDelete,
     syncTasksRef: handlers.syncTasksRef,
     syncLoadingRef: handlers.syncLoadingRef,
     syncErrorRef: handlers.syncErrorRef,

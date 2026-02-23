@@ -385,8 +385,7 @@ export const shapeBuildAPI = {
     };
     void sendSnapshot();
     const unsubscribeTaskQueue = shapeBuildRuntime.onTaskQueueUpdate(nodeId, (event) => {
-      if (event.type === 'delete') {
-        callback({ type: 'delete', nodeId: event.nodeId, taskId: event.taskId });
+      if (event.type !== 'update') {
         return;
       }
       void (async () => {

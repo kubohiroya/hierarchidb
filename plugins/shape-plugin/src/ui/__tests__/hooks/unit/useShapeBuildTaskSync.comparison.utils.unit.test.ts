@@ -16,20 +16,7 @@ const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSumm
 });
 
 describe('reconcileSnapshotWithCurrentTasks', () => {
-  it('keeps in-flight tasks when an empty snapshot arrives', () => {
-    const currentTasks = new Map<string, ShapeBuildTaskSummary>([
-      ['node:fetch:1', makeTask({ taskId: 'node:fetch:1', status: 'running', progress: 40, index: 1 })],
-      ['node:fetch:2', makeTask({ taskId: 'node:fetch:2', status: 'completed', progress: 100, index: 2 })],
-    ]);
-
-    const next = reconcileSnapshotWithCurrentTasks([], currentTasks);
-
-    expect(next).toHaveLength(2);
-    expect(next.find((item) => item.taskId === 'node:fetch:1')?.status).toBe('running');
-    expect(next.find((item) => item.taskId === 'node:fetch:2')?.status).toBe('completed');
-  });
-
-  it('clears tasks when snapshot is empty and no in-flight tasks remain', () => {
+  it('replaces current tasks with snapshot even when empty', () => {
     const currentTasks = new Map<string, ShapeBuildTaskSummary>([
       ['node:fetch:1', makeTask({ taskId: 'node:fetch:1', status: 'completed', progress: 100, index: 1 })],
       ['node:fetch:2', makeTask({ taskId: 'node:fetch:2', status: 'failed', progress: 100, index: 2 })],
@@ -40,7 +27,7 @@ describe('reconcileSnapshotWithCurrentTasks', () => {
     expect(next).toHaveLength(0);
   });
 
-  it('prefers current in-flight progress over stale snapshot data', () => {
+  it('replaces stale snapshot with incoming snapshot order and data', () => {
     const currentTasks = new Map<string, ShapeBuildTaskSummary>([
       ['node:fetch:1', makeTask({
         taskId: 'node:fetch:1',
@@ -67,8 +54,8 @@ describe('reconcileSnapshotWithCurrentTasks', () => {
       makeTask({
         taskId: 'node:fetch:1',
         status: 'running',
-        progress: 25,
-        message: 'building',
+        progress: 10,
+        message: 'snapshot stale',
         index: 1,
       }),
     ]);

@@ -54,7 +54,6 @@ export function useShapeBuildTasks(
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const handleSnapshotRef = useRef<(tasks: unknown) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
-  const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
@@ -118,7 +117,6 @@ export function useShapeBuildTasks(
     errorRef,
     handleSnapshot,
     handleUpdate,
-    handleDelete,
     syncTasksRef,
     syncLoadingRef,
     syncErrorRef,
@@ -133,6 +131,9 @@ export function useShapeBuildTasks(
     onTaskTerminalProgressUpdate,
   });
 
+  handleSnapshotRef.current = handleSnapshot;
+  handleUpdateRef.current = handleUpdate;
+
   useEffect(() => {
     reportedFailuresRef.current = new Set();
   }, []);
@@ -146,12 +147,6 @@ export function useShapeBuildTasks(
   }, [error, syncErrorRef]);
 
   useEffect(() => {
-    handleSnapshotRef.current = handleSnapshot;
-    handleUpdateRef.current = handleUpdate;
-    handleDeleteRef.current = handleDelete;
-  }, [handleSnapshot, handleUpdate, handleDelete]);
-
-  useEffect(() => {
     if (subscriptionRef.current) {
       subscriptionRef.current();
       subscriptionRef.current = null;
@@ -159,14 +154,11 @@ export function useShapeBuildTasks(
     setIsTaskStreamReady(false);
     resetPending();
     resetSnapshotTaskCounts();
-    const hadTasks = tasksRef.current.length > 0;
     const hadError = errorRef.current !== null;
     const wasLoading = isLoadingRef.current;
     if (!nodeId || !autoSubscribe) {
       syncTasksRef([]);
-      if (hadTasks) {
-        setTasks([]);
-      }
+      setTasks([]);
       if (hadError) {
         setError(null);
       }
@@ -176,9 +168,7 @@ export function useShapeBuildTasks(
       return;
     }
     syncTasksRef([]);
-    if (hadTasks) {
-      setTasks([]);
-    }
+    setTasks([]);
     if (hadError) {
       setError(null);
     }
@@ -195,7 +185,7 @@ export function useShapeBuildTasks(
           nodeId: nodeId ? String(nodeId) : null,
           source: 'subscription',
           eventType: event.type,
-          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          taskId: event.type === 'update' ? event.task.taskId : null,
           reason: 'node_id_mismatch',
         });
         return;
@@ -205,7 +195,7 @@ export function useShapeBuildTasks(
           nodeId: nodeId ? String(nodeId) : null,
           source: 'subscription',
           eventType: event.type,
-          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          taskId: event.type === 'update' ? event.task.taskId : null,
           reason: cancelled ? 'subscription_cancelled' : 'subscription_id_mismatch',
         });
         return;
@@ -217,9 +207,6 @@ export function useShapeBuildTasks(
       if (event.type === 'update') {
         handleUpdateRef.current(event.task as RawTaskSummary);
         return;
-      }
-      if (event.type === 'delete') {
-        handleDeleteRef.current(event.taskId);
       }
     };
 

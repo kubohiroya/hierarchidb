@@ -1,5 +1,5 @@
 import { toNodeType } from '@hierarchidb/core-types';
-import { BuildSessionLauncherPanel } from '../../../../../../../packages/ui/build-sessions';
+import { BuildSessionLauncherPanel } from '@hierarchidb/ui-build-sessions';
 import type { BuildControlMenuItem } from '@hierarchidb/components';
 import {
   type BuildSessionProgressPanelViewModel,

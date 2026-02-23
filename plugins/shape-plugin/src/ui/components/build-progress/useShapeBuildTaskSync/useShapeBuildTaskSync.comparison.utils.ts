@@ -217,30 +217,8 @@ export const shouldPreferNextTask = (
 
 export const reconcileSnapshotWithCurrentTasks = (
   snapshotTasks: ShapeBuildTaskSummary[],
-  currentMap: Map<string, ShapeBuildTaskSummary>,
 ): ShapeBuildTaskSummary[] => {
-  if (snapshotTasks.length === 0) {
-    // If the bridge momentarily emits an empty snapshot while tasks are still in-flight,
-    // keep existing in-progress tasks to avoid a UI flash that clears the task list.
-    const hasInFlightTask = [...currentMap.values()].some(
-      (task) => task.status === 'running' || task.status === 'queued',
-    );
-    if (!hasInFlightTask) return [];
-    const fallback = [...currentMap.values()];
-    fallback.sort(compareTaskOrderByIndexThenId);
-    return fallback;
-  }
-
-  const mergedMap = new Map<string, ShapeBuildTaskSummary>(currentMap);
-  snapshotTasks.forEach((snapshotTask) => {
-    const currentFromMap = currentMap.get(snapshotTask.taskId);
-    if (!currentFromMap || shouldPreferNextTask(currentFromMap, snapshotTask)) {
-      mergedMap.set(snapshotTask.taskId, snapshotTask);
-      return;
-    }
-    mergedMap.set(snapshotTask.taskId, currentFromMap);
-  });
-  const merged = [...mergedMap.values()];
+  const merged = [...snapshotTasks];
   merged.sort(compareTaskOrderByIndexThenId);
   return merged;
 };

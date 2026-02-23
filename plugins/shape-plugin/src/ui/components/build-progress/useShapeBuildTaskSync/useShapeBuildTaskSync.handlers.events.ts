@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
-import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { emitRunningResidueLog, logTaskUpdate100 } from './useShapeBuildTaskSync.debug.js';
+import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+
 import {
   areTasksEquivalentForView,
   isTerminalTask,
-  isCompletedAtFullProgress,
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 
@@ -25,13 +25,10 @@ const normalizeTaskSnapshot = (tasks: unknown): RawTaskSummary[] => {
 
 type EventHandlerRefs = {
   tasksMapRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
-  completedTasksRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
   errorRef: MutableRefObject<Error | null>;
   isLoadingRef: MutableRefObject<boolean>;
   bufferedSnapshotRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
   bufferedUpdatesRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
-  pendingTasksRef: MutableRefObject<ShapeBuildTaskSummary[] | null>;
-  committedTasksRef: MutableRefObject<ShapeBuildTaskSummary[]>;
   isMountedRef: MutableRefObject<boolean>;
   sessionNodeId: string | null;
 };
@@ -43,7 +40,6 @@ type EventHandlerDeps = {
   bufferTaskUpdate: (task: ShapeBuildTaskSummary) => void;
   onTaskSnapshot?: (tasks: ShapeBuildTaskSummary[]) => void;
   onTaskTerminalProgressUpdate?: (task: ShapeBuildTaskSummary) => void;
-  setTasks: (tasks: ShapeBuildTaskSummary[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: Error | null) => void;
   markTaskStreamSynchronized?: () => void;
@@ -60,27 +56,23 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   bufferTaskUpdate,
   onTaskSnapshot,
   onTaskTerminalProgressUpdate,
-  setTasks,
   setIsLoading,
   setError,
   markTaskStreamSynchronized,
 }: EventHandlerDeps) => {
   const {
     tasksMapRef,
-    completedTasksRef,
     errorRef,
     isLoadingRef,
     bufferedSnapshotRef,
     bufferedUpdatesRef,
-    pendingTasksRef,
-    committedTasksRef,
-    isMountedRef,
     sessionNodeId,
   } = refs;
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
     const snapshotTasks = normalizeTaskSnapshot(next).map(resolveTaskSummary);
     bufferedSnapshotRef.current = snapshotTasks;
+    bufferedUpdatesRef.current = new Map();
     onTaskSnapshot?.(snapshotTasks);
     scheduleBufferedFlush();
     if (errorRef.current !== null) {
@@ -147,88 +139,14 @@ export const useShapeBuildTaskSyncEventHandlers = ({
       markTaskStreamSynchronized();
     }
   }, [
-    completedTasksRef,
     tasksMapRef,
     errorRef,
     isLoadingRef,
-    resolveTaskSummary,
     bufferTaskUpdate,
+    sessionNodeId,
+    resolveTaskSummary,
     scheduleBufferedFlush,
     onTaskTerminalProgressUpdate,
-    sessionNodeId,
-    setError,
-    setIsLoading,
-    markTaskStreamSynchronized,
-  ]);
-
-  const handleDelete = useCallback((taskId: string) => {
-    const existing = tasksMapRef.current.get(taskId);
-    if (!existing) {
-      emitRunningResidueLog('STALE_DROP', {
-        nodeId: sessionNodeId,
-        stage: null,
-        taskId,
-        prevStatus: null,
-        nextStatus: null,
-        source: 'event',
-        eventType: 'delete',
-        reason: 'task_not_found',
-      });
-      return;
-    }
-    emitRunningResidueLog('STATUS_TRANSITION', {
-      nodeId: sessionNodeId,
-      source: 'event',
-      eventType: 'delete',
-      taskId,
-      stage: existing.stage,
-      prevStatus: existing.status ?? null,
-      nextStatus: 'deleted',
-    });
-
-    const nextMap = new Map(tasksMapRef.current);
-    nextMap.delete(taskId);
-    tasksMapRef.current = nextMap;
-
-    const nextCompletedMap = new Map(completedTasksRef.current);
-    nextCompletedMap.delete(taskId);
-    completedTasksRef.current = nextCompletedMap;
-
-    bufferedUpdatesRef.current.delete(taskId);
-    if (bufferedSnapshotRef.current) {
-      bufferedSnapshotRef.current = bufferedSnapshotRef.current.filter((item) => item.taskId !== taskId);
-    }
-
-    if (isCompletedAtFullProgress(existing)) {
-      completedTasksRef.current.delete(taskId);
-    }
-
-    const current = pendingTasksRef.current ?? committedTasksRef.current;
-    const next = current.filter((item) => item.taskId !== taskId);
-    if (isMountedRef.current) {
-      setTasks(next);
-    }
-    if (errorRef.current !== null) {
-      setError(null);
-    }
-    if (isLoadingRef.current) {
-      setIsLoading(false);
-    }
-    if (markTaskStreamSynchronized) {
-      markTaskStreamSynchronized();
-    }
-  }, [
-    completedTasksRef,
-    errorRef,
-    bufferedSnapshotRef,
-    bufferedUpdatesRef,
-    isMountedRef,
-    isLoadingRef,
-    pendingTasksRef,
-    tasksMapRef,
-    committedTasksRef,
-    sessionNodeId,
-    setTasks,
     setError,
     setIsLoading,
     markTaskStreamSynchronized,
@@ -237,6 +155,5 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   return {
     handleSnapshot,
     handleUpdate,
-    handleDelete,
   };
 };

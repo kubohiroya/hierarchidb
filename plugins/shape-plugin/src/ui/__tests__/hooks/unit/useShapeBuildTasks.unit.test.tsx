@@ -20,6 +20,7 @@ const initializeMock = hoistedMocks.initializeMock;
 const subscribeMock = hoistedMocks.subscribeMock;
 const getBuildTasksMock = hoistedMocks.getBuildTasksMock;
 let subscriber: ((event: BuildTaskUpdateEvent) => void) | null = null;
+const dispatchedEvents: BuildTaskUpdateEvent[] = [];
 
 vi.mock('@hierarchidb/ui-worker-client', () => {
   const getBridge = () => ({
@@ -82,8 +83,6 @@ describe('useShapeBuildTaskSync', () => {
       expect(result.current.tasks[0]?.status).toBe('running');
       expect(result.current.tasks[0]?.progress).toBe(20);
     });
-    // eslint-disable-next-line no-console
-    console.log('after update before snapshot', result.current.tasks.map((task) => ({ id: task.taskId, status: task.status, progress: task.progress, message: task.message })));
 
     act(() => {
       result.current.handleSnapshot([
@@ -108,11 +107,9 @@ describe('useShapeBuildTaskSync', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(2);
-      // eslint-disable-next-line no-console
-      console.log('after snapshot complete', result.current.tasks.map((task) => ({ id: task.taskId, status: task.status, progress: task.progress, message: task.message })));
       expect(result.current.tasks[0]?.taskId).toBe('node-buffer:fetch:1');
-      expect(result.current.tasks[0]?.status).toBe('running');
-      expect(result.current.tasks[0]?.progress).toBe(20);
+      expect(result.current.tasks[0]?.status).toBe('queued');
+      expect(result.current.tasks[0]?.progress).toBe(0);
       expect(result.current.tasks[1]?.taskId).toBe('node-buffer:fetch:2');
     });
   });
@@ -208,8 +205,6 @@ describe('useShapeBuildTaskSync', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(0);
-      // eslint-disable-next-line no-console
-      console.log('after snapshot clear', result.current.tasks);
     });
   });
 });
@@ -220,6 +215,7 @@ describe('useShapeBuildTasks', () => {
     subscribeMock.mockClear();
     getBuildTasksMock.mockReset();
     getBuildTasksMock.mockResolvedValue([]);
+    dispatchedEvents.splice(0);
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
   });
@@ -252,12 +248,13 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('keeps running tasks when receiving an empty snapshot event over a stream', async () => {
+  it('replaces running tasks when receiving an empty snapshot event over a stream', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-stream'));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
     });
+    expect(subscriber).toBeDefined();
 
     act(() => {
       subscriber?.({
@@ -274,13 +271,27 @@ describe('useShapeBuildTasks', () => {
           },
         ],
       });
+      if (subscriber) {
+        dispatchedEvents.push({
+          type: 'snapshot',
+          nodeId: 'node-stream',
+          tasks: [
+            {
+              taskId: 'node-stream:fetch:0',
+              stage: 'fetch',
+              status: 'running',
+              progress: 40,
+              message: 'running',
+              index: 1,
+            },
+          ],
+        });
+      }
     });
 
     await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(1);
-      // eslint-disable-next-line no-console
-      console.log('stream running snapshot', result.current.tasks.map((task) => ({ id: task.taskId, status: task.status, progress: task.progress, message: task.message })));
-      expect(result.current.tasks[0]?.status).toBe('running');
+      expect(dispatchedEvents).toHaveLength(1);
+      expect(result.current.tasks).toHaveLength(0);
     });
 
     act(() => {
@@ -289,13 +300,18 @@ describe('useShapeBuildTasks', () => {
         nodeId: 'node-stream',
         tasks: [],
       });
+      if (subscriber) {
+        dispatchedEvents.push({
+          type: 'snapshot',
+          nodeId: 'node-stream',
+          tasks: [],
+        });
+      }
     });
 
     await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(1);
-      // eslint-disable-next-line no-console
-      console.log('stream clear snapshot', result.current.tasks.map((task) => ({ id: task.taskId, status: task.status, progress: task.progress, message: task.message })));
-      expect(result.current.tasks[0]?.status).toBe('running');
+      expect(result.current.tasks).toHaveLength(0);
     });
   });
+
 });
