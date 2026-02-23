@@ -58,6 +58,7 @@ describe('LocationResolver', () => {
     expect(a).not.toBeNull();
     expect(b).not.toBeNull();
     expect(a?.coordinates).toEqual([139.7798, 35.5494]);
+    expect(a?.nodeId).toBe('node-1' as NodeId);
     expect(b).toStrictEqual(a);
   });
 
@@ -86,7 +87,36 @@ describe('LocationResolver', () => {
 
     expect(loc).not.toBeNull();
     expect(loc?.name).toBe('Kansai Airport');
-    expect(loc?.nodeId).toBe('loc_kansai' as NodeId);
+    expect(loc?.nodeId).toBe('node-2' as NodeId);
+  });
+
+  it('keeps map keys as requested nodeIds for getLocations', async () => {
+    const rows: LocationFeatureRecord[] = [
+      {
+        id: 'loc_osaka' as NodeId,
+        nodeId: 'node-3' as NodeId,
+        type: 'airport',
+        data: {
+          name: 'Osaka',
+          latitude: 34.7025,
+          longitude: 135.4959,
+          pointId: 'osaka-01',
+        },
+      },
+    ];
+
+    const db = {
+      open: async () => undefined,
+      features: buildMockLocationTable(rows),
+    };
+    const resolver = new LocationResolver({ db });
+
+    const map = await resolver.getLocations(['node-3' as NodeId, 'node-missing' as NodeId]);
+
+    expect(map.size).toBe(1);
+    expect(map.get('node-3' as NodeId)).toBeDefined();
+    expect(map.get('node-3' as NodeId)?.nodeId).toBe('node-3' as NodeId);
+    expect(map.has('node-missing' as NodeId)).toBe(false);
   });
 
   it('searches by name and bounds', async () => {
@@ -168,7 +198,7 @@ describe('LocationResolver', () => {
     });
 
     expect(hits).toHaveLength(1);
-    expect(hits[0]?.nodeId).toBe('loc_partial' as NodeId);
+    expect(hits[0]?.nodeId).toBe('node-6' as NodeId);
     expect(hits[0]?.name).toBe('Airport Center');
   });
 

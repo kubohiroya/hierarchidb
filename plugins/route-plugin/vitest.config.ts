@@ -11,6 +11,8 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, '../../vitest.setup.ts')],
     pool: 'threads',
     include: RUN_ROUTE_TESTS ? [
+      'src/**/*.unit.test.ts',
+      'src/**/*.unit.test.tsx',
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
     ] : [],

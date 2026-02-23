@@ -84,16 +84,7 @@ export class LocationResolver {
       const byNodeId = await this.db.features.where('nodeId').equals(cacheKey).toArray();
       const directMatch = byNodeId.find((item) => item.nodeId === cacheKey);
       if (directMatch) {
-        const location = toLocationData(directMatch.id, directMatch.data);
-        if (location) {
-          this.locationCache.set(cacheKey, location);
-        }
-        return location;
-      }
-
-      const pointIdMatch = byNodeId.find((item) => item.data.pointId === cacheKey);
-      if (pointIdMatch) {
-        const location = toLocationData(pointIdMatch.id, pointIdMatch.data);
+        const location = toLocationData(directMatch.nodeId, directMatch.data);
         if (location) {
           this.locationCache.set(cacheKey, location);
         }
@@ -142,7 +133,7 @@ export class LocationResolver {
       const matches = all
         .filter((feature) => matchesLocationCriteria(feature, criteria));
       return matches
-        .map((feature) => toLocationData(feature.id, feature.data))
+        .map((feature) => toLocationData(feature.nodeId, feature.data))
         .filter((feature): feature is LocationData => feature !== null);
     } catch (error) {
       console.error('Failed to search locations:', error);
@@ -169,7 +160,7 @@ export class LocationResolver {
       || normalizeSearchKey(item.type) === key
     ));
     if (exactMatch) {
-      return toLocationData(exactMatch.id, exactMatch.data);
+      return toLocationData(exactMatch.nodeId, exactMatch.data);
     }
 
     const partialMatch = all.find((item) => (
@@ -179,7 +170,7 @@ export class LocationResolver {
     ));
     if (!partialMatch) return null;
 
-    return toLocationData(partialMatch.id, partialMatch.data);
+    return toLocationData(partialMatch.nodeId, partialMatch.data);
   }
 }
 
@@ -222,6 +213,7 @@ function normalizeCriteria(criteria: {
 function matchesLocationCriteria(
   feature: {
     id: string;
+    nodeId: NodeId;
     type: string;
     data: LocationFeatureData;
   },
@@ -244,14 +236,14 @@ function matchesLocationCriteria(
   return true;
 }
 
-function toLocationData(locationId: LocationIdLike, data: LocationFeatureData): LocationData | null {
+function toLocationData(locationNodeId: NodeId, data: LocationFeatureData): LocationData | null {
   const latitude = Number(data.latitude);
   const longitude = Number(data.longitude);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
   }
   return {
-    nodeId: String(locationId) as NodeId,
+    nodeId: locationNodeId,
     name: data.name,
     coordinates: [longitude, latitude],
     type: data.type,
