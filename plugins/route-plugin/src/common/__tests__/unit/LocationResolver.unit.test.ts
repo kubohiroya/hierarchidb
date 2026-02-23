@@ -58,6 +58,7 @@ describe('LocationResolver', () => {
     expect(a).not.toBeNull();
     expect(b).not.toBeNull();
     expect(a?.coordinates).toEqual([139.7798, 35.5494]);
+    expect(a?.nodeId).toBe('node-1' as NodeId);
     expect(b).toStrictEqual(a);
   });
 
@@ -86,7 +87,7 @@ describe('LocationResolver', () => {
 
     expect(loc).not.toBeNull();
     expect(loc?.name).toBe('Kansai Airport');
-    expect(loc?.nodeId).toBe('loc_kansai' as NodeId);
+    expect(loc?.nodeId).toBe('node-2' as NodeId);
   });
 
   it('searches by name and bounds', async () => {
@@ -168,7 +169,7 @@ describe('LocationResolver', () => {
     });
 
     expect(hits).toHaveLength(1);
-    expect(hits[0]?.nodeId).toBe('loc_partial' as NodeId);
+    expect(hits[0]?.nodeId).toBe('node-6' as NodeId);
     expect(hits[0]?.name).toBe('Airport Center');
   });
 
