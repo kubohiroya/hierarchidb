@@ -6,10 +6,11 @@ describe('shouldReuseTaskQueueOnStart', () => {
     expect(shouldReuseTaskQueueOnStart('completed')).toBe(false);
   });
 
-  it('returns true for non-completed sessions', () => {
-    expect(shouldReuseTaskQueueOnStart('running')).toBe(true);
-    expect(shouldReuseTaskQueueOnStart('paused')).toBe(true);
-    expect(shouldReuseTaskQueueOnStart('failed')).toBe(true);
+  it('returns false for other statuses', () => {
+    expect(shouldReuseTaskQueueOnStart('running')).toBe(false);
+    expect(shouldReuseTaskQueueOnStart('paused')).toBe(false);
+    expect(shouldReuseTaskQueueOnStart('failed')).toBe(false);
+    expect(shouldReuseTaskQueueOnStart('startAccepted')).toBe(false);
     expect(shouldReuseTaskQueueOnStart('idle')).toBe(false);
   });
 

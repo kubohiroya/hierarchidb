@@ -33,9 +33,14 @@ vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', (
   }),
 }));
 
-vi.mock('@hierarchidb/ui-build-progress', () => ({
-  BuildSessionLauncherPanel: () => null,
-}));
+vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@hierarchidb/ui-build-progress')>();
+  return {
+    ...actual,
+    BuildSessionLauncherPanel: () => null,
+    resolveBuildSessionProgressPanelSplitViewProps: () => ({}),
+  };
+});
 
 import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel/ShapeBuildProgressPanel';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
