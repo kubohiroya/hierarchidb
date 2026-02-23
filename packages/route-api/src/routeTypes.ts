@@ -161,18 +161,22 @@ export interface RouteNearestLineQuery {
   latitude: number;
   zoom: number;
   maxDistanceMeters: number;
+  maxMatches?: number;
 }
 
 export interface RouteNearestEndpoint {
   name?: string;
   admin1Name?: string;
   admin0Name?: string;
+  admin2Name?: string;
   pointId?: string;
 }
 
 export interface RouteNearestLine {
-  lineStringId?: string;
+  lineStringId: string;
   featureId?: string;
+  routeName?: string;
+  nearestPoint?: [number, number];
   routeMode?: string;
   routeDistanceMeters?: number;
   start?: RouteNearestEndpoint;

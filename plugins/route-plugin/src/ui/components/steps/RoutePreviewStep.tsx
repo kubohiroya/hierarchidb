@@ -4,6 +4,7 @@
 
 import type React from 'react';
 import {
+  useTheme,
   Alert,
   Box,
   Button,
@@ -37,6 +38,7 @@ interface RoutePreviewStepProps {
 }
 
 export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeId, onUpdate }) => {
+  const isDarkMode = useTheme().palette.mode === 'dark';
   const {
     t,
     mapInstance,
@@ -343,8 +345,14 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   </Box>
                 </Box>
               ) : null}
-              {mapInstance ? <RoutePreviewHoverSnackbar {...hoverSnackbarProps} /> : null}
-            </Box>
+              {mapInstance ? (
+                  <RoutePreviewHoverSnackbar
+                    {...hoverSnackbarProps}
+                    isDarkMode={isDarkMode}
+                    popupHint={t('preview.hoverShortcutHelp', 'Click one of the nearby routes to add/remove selection.')}
+                  />
+                ) : null}
+              </Box>
           </Paper>
         </>
       )}

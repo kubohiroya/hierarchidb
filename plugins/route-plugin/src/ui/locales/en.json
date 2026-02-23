@@ -199,6 +199,7 @@
     "mapTitle": "Map Preview",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
     "hoverUnknown": "Unknown route",
+    "hoverShortcutHelp": "Click nearby routes and use the checkboxes or row click to select multiple routes.",
     "tabs": {
       "map": "Map",
       "metadata": "Metadata"

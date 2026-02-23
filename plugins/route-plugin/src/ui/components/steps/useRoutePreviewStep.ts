@@ -236,14 +236,9 @@ export const useRoutePreviewStep = ({
   const [metadataSyncRunning, setMetadataSyncRunning] = useState(false);
   const [metadataSyncError, setMetadataSyncError] = useState<string | null>(null);
   const [hoverMatches, setHoverMatches] = useState<RoutePreviewHoverMatch[]>([]);
+  const hasHoverMatchesRef = useRef(false);
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
-  const lastHoverRef = useRef<{
-    longitude: number;
-    latitude: number;
-    zoom: number;
-  } | null>(null);
   const lineLookup = useMemo(() => new Map(lineStrings.map((line) => [String(line.id), line])), [lineStrings]);
 
   useEffect(() => {
@@ -375,7 +370,7 @@ export const useRoutePreviewStep = ({
     const placed: Array<{ x: number; y: number }> = [];
     return queryResponse.matches
       .map((match, index) => {
-        const line = match.line.lineStringId ? lineLookup.get(match.line.lineStringId) : undefined;
+        const line = lineLookup.get(match.line.lineStringId);
         if (!line) return null;
         const pathPoints = normalizeLineCoordinates(line.waypoints ?? []);
         if (pathPoints.length < 2) return null;
@@ -444,7 +439,7 @@ export const useRoutePreviewStep = ({
               return Math.hypot(dx, dy) > HOVER_LABEL_SPACING;
             });
           }) ?? { x: nearestX, y: nearestY };
-        const id = match.line.lineStringId ?? `${match.line.routeMode ?? 'route'}-${index}`;
+        const id = match.line.lineStringId;
         placed.push(selectedLabel);
         return {
           id,
@@ -474,117 +469,80 @@ export const useRoutePreviewStep = ({
       return Array.from(next);
     });
   }, []);
+  const closeHoverMatches = useCallback(() => {
+    setHoverMatches([]);
+  }, []);
 
-  const toggleHoverMatchSelectionByIndex = useCallback((index: number) => {
-    const matched = hoverMatches.find((match) => match.index === index);
-    if (!matched) return;
-    toggleHoverMatchSelection(matched.id);
-  }, [hoverMatches, toggleHoverMatchSelection]);
-
-  const resolveKeyboardMatchIndex = useCallback((event: KeyboardEvent) => {
-    if (!event.ctrlKey && !event.metaKey) return undefined;
-    if (event.altKey || event.shiftKey) return undefined;
-    const normalized = event.key.startsWith('Numpad') ? event.key.replace('Numpad', '') : event.key;
-    const number = Number(normalized);
-    if (!Number.isInteger(number)) return undefined;
-    if (number >= 1 && number <= hoverMatches.length && number <= MAX_HOVER_MATCHES) {
-      return number;
-    }
-    return undefined;
-  }, [hoverMatches.length]);
-
-  useEffect(() => {
-    if (!hoverMatches.length) return undefined;
-    const handleKeydown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented) return;
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      const isTextInput = tag === 'input' || tag === 'textarea' || tag === 'select';
-      const isContentEditable = Boolean(target?.isContentEditable);
-      if (isTextInput || isContentEditable) return;
-      const asNumber = resolveKeyboardMatchIndex(event);
-      if (asNumber !== undefined) {
-        event.preventDefault();
-        toggleHoverMatchSelectionByIndex(asNumber);
-      }
-    };
-    window.addEventListener('keydown', handleKeydown);
-    return () => {
-      window.removeEventListener('keydown', handleKeydown);
-    };
-  }, [resolveKeyboardMatchIndex, toggleHoverMatchSelectionByIndex, hoverMatches]);
-
-  const scheduleHoverLookup = useCallback((longitude: number, latitude: number, zoom: number, point: { x: number; y: number }) => {
+  const runHoverLookup = useCallback((longitude: number, latitude: number, zoom: number, point: { x: number; y: number }) => {
     if (!previewNodeId) return;
-    const last = lastHoverRef.current;
-    if (last) {
-      const lonDelta = Math.abs(last.longitude - longitude);
-      const latDelta = Math.abs(last.latitude - latitude);
-      if (last.zoom === zoom && lonDelta < 0.0001 && latDelta < 0.0001) {
-        return;
-      }
-    }
-    lastHoverRef.current = { longitude, latitude, zoom };
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-    }
-    hoverTimerRef.current = window.setTimeout(() => {
-      const requestId = ++hoverRequestIdRef.current;
-      void (async () => {
-        try {
-          const api = await workerBridgeRef.current.getRouteQueryAPI();
-          const metersPerPixel = resolveMetersPerPixel(latitude, zoom);
-          const result = await api.findNearestRouteLine({
-            nodeId: previewNodeId,
-            longitude,
-            latitude,
-            zoom,
-            maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
-            maxMatches: MAX_HOVER_MATCHES,
-          });
-          if (hoverRequestIdRef.current !== requestId) return;
-          const nextMatches = buildHoverMatchList(result, point, { longitude, latitude });
-          setHoverMatches(nextMatches);
-        } catch (error) {
-          if (hoverRequestIdRef.current === requestId) {
-            setHoverMatches([]);
-          }
-          console.warn('[RoutePreviewStep] hover lookup failed', error);
+    const requestId = ++hoverRequestIdRef.current;
+    void (async () => {
+      try {
+        const api = await workerBridgeRef.current.getRouteQueryAPI();
+        const metersPerPixel = resolveMetersPerPixel(latitude, zoom);
+        const result = await api.findNearestRouteLine({
+          nodeId: previewNodeId,
+          longitude,
+          latitude,
+          zoom,
+          maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
+          maxMatches: MAX_HOVER_MATCHES,
+        });
+        if (hoverRequestIdRef.current !== requestId) return;
+        const nextMatches = buildHoverMatchList(result, point, { longitude, latitude });
+        setHoverMatches(nextMatches);
+      } catch (error) {
+        if (hoverRequestIdRef.current === requestId) {
+          setHoverMatches([]);
         }
-      })();
-    }, 120);
+        console.warn('[RoutePreviewStep] hover lookup failed', error);
+      }
+    })();
   }, [buildHoverMatchList, previewNodeId]);
 
   useEffect(() => {
+    hasHoverMatchesRef.current = hoverMatches.length > 0;
+  }, [hoverMatches.length]);
+
+  useEffect(() => {
     if (!mapInstance) return;
-    const handleMove = (event: unknown) => {
+    const mapContainer = (mapInstance as { getContainer?: () => HTMLElement | null }).getContainer?.() ?? null;
+    const handleClick = (event: unknown) => {
       const lngLat = (event as { lngLat?: { lng: number; lat: number } })?.lngLat;
       const point = (event as { point?: { x: number; y: number } })?.point;
       if (!lngLat) return;
       const zoom = mapInstance.getZoom();
       if (!point) return;
-      scheduleHoverLookup(lngLat.lng, lngLat.lat, zoom, point);
+      runHoverLookup(lngLat.lng, lngLat.lat, zoom, point);
     };
     const handleLeave = () => {
-      if (hoverTimerRef.current) {
-        window.clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
       setHoverMatches([]);
     };
-    mapInstance.on('mousemove', handleMove);
-    mapInstance.on('mouseleave', handleLeave);
-    return () => {
-      mapInstance.off('mousemove', handleMove);
-      mapInstance.off('mouseleave', handleLeave);
+    const handleDocumentPointerDown = (event: MouseEvent) => {
+      if (!hasHoverMatchesRef.current) return;
+      if (!mapContainer) return;
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!mapContainer.contains(target)) {
+        closeHoverMatches();
+      }
     };
-  }, [mapInstance, scheduleHoverLookup]);
-
-  useEffect(() => () => {
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-    }
-  }, []);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && hasHoverMatchesRef.current) {
+        closeHoverMatches();
+      }
+    };
+    mapInstance.on('click', handleClick);
+    mapInstance.on('mouseleave', handleLeave);
+    document.addEventListener('pointerdown', handleDocumentPointerDown, true);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      mapInstance.off('click', handleClick);
+      mapInstance.off('mouseleave', handleLeave);
+      document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeHoverMatches, mapInstance, runHoverLookup]);
 
   const routeModeValues = useMemo(
     () => Array.from(new Set(ROUTE_MODE_OPTIONS.flatMap((option) => option.modes))),
