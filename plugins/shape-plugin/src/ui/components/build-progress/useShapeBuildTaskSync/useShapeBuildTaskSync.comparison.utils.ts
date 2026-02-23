@@ -43,11 +43,18 @@ export const areTasksEquivalentForView = (
   && (left.stagePriority ?? null) === (right.stagePriority ?? null)
 );
 
+const isTaskStage = (value: unknown): value is TaskStage => (
+  value === 'fetch' || value === 'transform' || value === 'vt'
+);
+
 export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  const candidates = [task.stage] as Array<unknown>;
-  return candidates.find((candidate) => (
-    candidate === 'fetch' || candidate === 'transform' || candidate === 'vt'
-  )) as TaskStage;
+  if (isTaskStage(task.stage)) {
+    return task.stage;
+  }
+  const taskId = task.taskId;
+  throw new Error(
+    `[ShapeBuildTaskSync] invalid task stage: ${JSON.stringify(task.stage)} (taskId: ${taskId})`,
+  );
 };
 
 export const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => {

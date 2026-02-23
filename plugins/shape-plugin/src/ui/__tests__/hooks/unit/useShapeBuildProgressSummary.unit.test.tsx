@@ -127,4 +127,58 @@ describe('useShapeBuildProgressSummary', () => {
 
     expect(result.current.displayStageId).toBe('transform');
   });
+
+  it('uses task-level progress while running even if no completion counts exist yet', () => {
+    const multiStages: BuildStage[] = [
+      { id: 'fetch', title: 'Fetch', icon: null },
+      { id: 'transform', title: 'Transform', icon: null },
+      { id: 'vt', title: 'VT', icon: null },
+    ];
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'task-fetch-running-1',
+        nodeId: 'node-4',
+        stage: 'fetch',
+        status: 'running',
+        progress: 20,
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'task-fetch-running-2',
+        nodeId: 'node-4',
+        stage: 'fetch',
+        status: 'running',
+        progress: 40,
+      } as ShapeBuildTaskSummary,
+    ];
+
+    const { result } = renderHook(() => useShapeBuildProgressSummary({
+      stages: multiStages,
+      resolvedTaskType: 'fetch',
+      overallProgress: 20,
+      buildStatus: 'running',
+      effectiveProgress: {
+        total: 2,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+        stage: 'fetch',
+        stageTotals: {
+          fetch: { total: 2, completed: 0, failed: 0, skipped: 0 },
+          transform: { total: 0, completed: 0, failed: 0, skipped: 0 },
+          vt: { total: 0, completed: 0, failed: 0, skipped: 0 },
+        },
+      },
+      effectiveStatus: { status: 'processing', progress: 0 },
+      stage: 'fetch',
+      tasks,
+      normalizeStageKey,
+      isSkippedTask: () => false,
+      timingStageMs: 0,
+    }));
+
+    expect(result.current.paneProgress[0]?.progress).toBe(30);
+    expect(result.current.displayCounts.total).toBe(2);
+    expect(result.current.displayCounts.percentage).toBe(30);
+  });
 });

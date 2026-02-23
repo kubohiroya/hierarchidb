@@ -53,6 +53,13 @@ export const makePaneProgress = ({
   const success = hasSummaryData ? stageCounts.completed : (base?.completedCount ?? 0);
   let error = hasSummaryData ? stageCounts.failed : 0;
   const skip = hasSummaryData ? stageCounts.skipped : 0;
+  const completionProgress = total > 0 ? Math.round((success + error + skip) / total * 100) : 0;
+  const runtimeProgress = typeof base?.progress === 'number'
+    ? Math.min(100, Math.max(0, Math.round(base.progress)))
+    : null;
+  const shouldUseTaskProgress = (buildStatus === 'running' || buildStatus === 'paused')
+    && base !== undefined
+    && (base.taskCount ?? 0) > 0;
 
   const shouldForceFailure = buildStatus === 'failed'
     && failureStageId
@@ -66,9 +73,13 @@ export const makePaneProgress = ({
   const done = Math.min(total, success + error + skip);
   const baseStatus = base ? normalizePaneStatus(base.status) : undefined;
   const normalizedBuildStatus = normalizePaneStatus(buildStatus);
+  const progress = hasSummaryData
+    ? shouldUseTaskProgress ? Math.max(completionProgress, runtimeProgress ?? 0) : completionProgress
+    : runtimeProgress ?? 0;
+
   return {
     paneId: stage.id,
-    progress: total > 0 ? Math.round((done / total) * 100) : (base?.progress ?? 0),
+    progress,
     taskCount: total,
     completedCount: success,
     status: error > 0

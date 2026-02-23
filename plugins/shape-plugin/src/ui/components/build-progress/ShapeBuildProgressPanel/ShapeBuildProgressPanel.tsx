@@ -1,6 +1,6 @@
 import { type NodeId } from '@hierarchidb/core-types';
 import { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
-import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.tsx';
+import { useShapeBuildProgressPanelViewModel } from './useShapeBuildProgressPanelViewModel.js';
 import { BuildSessionProgressPanelShell } from '@hierarchidb/ui-build-progress';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 

@@ -15,6 +15,7 @@ import type {
   BuildSessionTransitionState,
 } from '@hierarchidb/components/build-session';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
+import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
 type UseShapeBuildSessionAwaitingFirstTaskDecisionArgs = {
   activeNodeId: string | null;
@@ -98,7 +99,7 @@ const createDecisionTraceKey = (input: {
   sessionProgressTotal: number | undefined;
   sessionStageId: string | null;
 }): string | null => {
-  if (!import.meta.env.DEV) return null;
+  if (!isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')) return null;
   return JSON.stringify({
     phase: input.phase,
     buildStatus: input.buildStatus,
@@ -156,7 +157,7 @@ const handleDecisionSuccess = ({
   } else {
     finishBuildSessionTransition();
   }
-  if (import.meta.env.DEV) {
+  if (isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')) {
     console.log(
       '[ShapeAwaitingFirstTaskDecisionTrace] decision',
       JSON.stringify({
@@ -243,7 +244,11 @@ export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
       sessionProgressTotal: decisionInput.sessionProgressTotal,
       sessionStageId,
     });
-    if (decisionTraceKey && lastAwaitingFirstTaskDecisionTraceKeyRef.current !== decisionTraceKey) {
+    if (
+      decisionTraceKey
+      && isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')
+      && lastAwaitingFirstTaskDecisionTraceKeyRef.current !== decisionTraceKey
+    ) {
       lastAwaitingFirstTaskDecisionTraceKeyRef.current = decisionTraceKey;
       console.log('[ShapeAwaitingFirstTaskDecisionTrace] input', JSON.stringify({
         nodeId: activeNodeId,
@@ -252,7 +257,7 @@ export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
     }
 
     const decision = resolveAwaitingFirstTaskDecision(decisionInput);
-    if (import.meta.env.DEV && decision.kind !== 'continue') {
+    if (isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision') && decision.kind !== 'continue') {
       console.log('[ShapeAwaitingFirstTaskDecisionTrace] decision', JSON.stringify({
         nodeId: activeNodeId,
         decision,

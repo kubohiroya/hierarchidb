@@ -1,6 +1,6 @@
 import type { ShapeBuildProgressPanelControllerBaseResult } from './base/useShapeBuildProgressPanelControllerBaseState.js';
-import { useShapeBuildProgressPanelControllerOverlayDialogs } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlayDialogs.tsx';
-import { useShapeBuildProgressPanelControllerOverlaySections } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlaySections.tsx';
+import { useShapeBuildProgressPanelControllerOverlayDialogs } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlayDialogs.js';
+import { useShapeBuildProgressPanelControllerOverlaySections } from './useShapeBuildProgressPanelControllerOverlay/useShapeBuildProgressPanelControllerOverlaySections.js';
 
 export const useShapeBuildProgressPanelControllerOverlay = (args: ShapeBuildProgressPanelControllerBaseResult) => {
   const { stageProgressContent, stageContents } = useShapeBuildProgressPanelControllerOverlaySections(args);

@@ -451,9 +451,9 @@
       "resume": "Resume Build"
     },
     "timing": {
-      "totalElapsed": "Total elapsed",
-      "stageElapsed": "Stage elapsed",
-      "stageRemaining": "Stage remaining (estimate)",
+      "totalElapsed": "Total elapsed:",
+      "stageElapsed": "Time elapsed",
+      "stageRemaining": "Time left(est)",
       "elapsedLabel": "Elapsed",
       "remainingLabel": "Est. remaining",
       "duration": "{{hours}}h {{minutes}}m {{seconds}}s",

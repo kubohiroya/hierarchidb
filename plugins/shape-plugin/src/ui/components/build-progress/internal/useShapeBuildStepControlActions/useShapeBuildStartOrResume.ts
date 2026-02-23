@@ -3,6 +3,7 @@ import { notify } from '@hierarchidb/components/notify';
 import type { StartOrResumeControlActionsArgs, StartOrResumeOptions } from './types.js';
 import { shouldResumeBuildSession } from '~/ui/components/build-progress/shouldResumeBuildSession';
 import { executeStartOrResumeFlow } from './useShapeBuildStartOrResumeExecution.js';
+import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
 export const useShapeBuildStartOrResume = ({
   activeNodeId,
@@ -85,6 +86,7 @@ export const useShapeBuildStartOrResume = ({
       startupSource,
       shouldResumeSession,
       onTrace: (trace) => {
+        if (!isShapeBuildPanelDebugEnabled('startResume')) return;
         console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
           nodeId: String(activeNodeId),
           elapsedMs: Math.max(0, Date.now() - requestStartedAt),
@@ -95,28 +97,34 @@ export const useShapeBuildStartOrResume = ({
       requestStartedAt,
       runTimedStep: async <T, >(stepName: string, runner: () => Promise<T>): Promise<T> => {
         const stepStartedAt = Date.now();
-        console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-          nodeId: String(activeNodeId),
-          elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-          event: `${stepName}:start`,
-        });
+        if (isShapeBuildPanelDebugEnabled('startResume')) {
+          console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+            nodeId: String(activeNodeId),
+            elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+            event: `${stepName}:start`,
+          });
+        }
         try {
           const result = await runner();
-          console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-            nodeId: String(activeNodeId),
-            elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-            event: `${stepName}:finish`,
-            stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
-          });
+          if (isShapeBuildPanelDebugEnabled('startResume')) {
+            console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+              nodeId: String(activeNodeId),
+              elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+              event: `${stepName}:finish`,
+              stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+            });
+          }
           return result;
         } catch (error) {
-          console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-            nodeId: String(activeNodeId),
-            elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-            event: `${stepName}:error`,
-            stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
-            errorMessage: error instanceof Error ? error.message : String(error),
-          });
+          if (isShapeBuildPanelDebugEnabled('startResume')) {
+            console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+              nodeId: String(activeNodeId),
+              elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+              event: `${stepName}:error`,
+              stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+              errorMessage: error instanceof Error ? error.message : String(error),
+            });
+          }
           throw error;
         }
       },

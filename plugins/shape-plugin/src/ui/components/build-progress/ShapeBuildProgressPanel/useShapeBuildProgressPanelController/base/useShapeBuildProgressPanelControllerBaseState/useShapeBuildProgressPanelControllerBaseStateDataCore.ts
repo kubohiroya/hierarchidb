@@ -1,4 +1,5 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { createElement, type ReactNode, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { Stack, Typography } from '@mui/material';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
@@ -10,6 +11,7 @@ import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
+import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -25,6 +27,34 @@ type FetchRetryConfigPatch = {
   retryDelay: number;
   retryLimit: number;
   retryBackoff: FetchConfig['retryBackoff'];
+};
+
+const formatDuration = (
+  durationMs: number | null | undefined,
+  t: TranslateFn,
+  showZeroAsDash = false,
+): string => {
+  if (durationMs == null || durationMs < 0 || !Number.isFinite(durationMs)) {
+    return t('stage.timing.unknown', '-');
+  }
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  if (totalSeconds === 0) {
+    return showZeroAsDash ? t('stage.timing.unknown', '-') : '0s';
+  }
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts: string[] = [];
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (minutes > 0 || (hours > 0 && seconds > 0)) {
+    parts.push(`${minutes}m`);
+  }
+  if (seconds > 0 || parts.length === 0) {
+    parts.push(`${seconds}s`);
+  }
+  return parts.join(' ');
 };
 
 export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
@@ -368,8 +398,32 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const stageHeaderMeta = useMemo<StageMetadataMap<ReactNode>>(() => {
     const headerMetaByStage: Record<string, ReactNode> = {};
+    for (const stage of stages) {
+      const elapsedValue = formatDuration(
+        summary.completedStageElapsedMs[stage.id]
+          ?? (summary.timingStageId === stage.id ? 0 : undefined),
+        t,
+      );
+      const remainingValue = summary.timingStageId === stage.id
+        ? formatDuration(summary.stageRemainingMs, t, true)
+        : t('stage.timing.unknown', '-');
+      headerMetaByStage[stage.id] = createElement(
+        Stack,
+        { spacing: 0.25, alignItems: 'flex-end' },
+        createElement(
+          Typography,
+          { variant: 'caption', color: 'text.secondary' },
+          `${t('stage.timing.stageElapsed', 'Time elapsed')}: ${elapsedValue}`,
+        ),
+        createElement(
+          Typography,
+          { variant: 'caption', color: 'text.secondary' },
+          `${t('stage.timing.stageRemaining', 'Time left(est)')}: ${remainingValue}`,
+        ),
+      );
+    }
     return headerMetaByStage;
-  }, []);
+  }, [stages, summary.completedStageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
 
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');

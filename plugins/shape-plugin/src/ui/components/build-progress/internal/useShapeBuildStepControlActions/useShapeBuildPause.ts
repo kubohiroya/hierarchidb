@@ -4,6 +4,7 @@ import type { PauseWithCancelHookActionsArgs, ShapeBuildPauseReason } from './ty
 import { runWithTimeout } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 import { PAUSE_COMMAND_TIMEOUT_MS } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/constants';
+import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
 export const useShapeBuildPause = ({
   activeNodeId,
@@ -40,7 +41,9 @@ export const useShapeBuildPause = ({
     }
 
     const pauseRequestedAt = Date.now();
+    const shouldLogPauseTrace = isShapeBuildPanelDebugEnabled('startResume');
     const logPauseTrace = (event: string, payload?: Record<string, unknown>): void => {
+      if (!shouldLogPauseTrace) return;
       console.log('[ShapeBuildPauseTrace] handlePause', {
         nodeId: String(activeNodeId),
         elapsedMs: Math.max(0, Date.now() - pauseRequestedAt),

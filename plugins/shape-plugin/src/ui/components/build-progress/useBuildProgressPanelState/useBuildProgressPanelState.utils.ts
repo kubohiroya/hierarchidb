@@ -7,7 +7,33 @@ export const isDev = import.meta.env.DEV;
 export const START_RESUME_TRACE_PREFIX = '[ShapeBuildStartResumeTrace]';
 export const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 
+type ShapeBuildPanelDebugChannel =
+  | 'startResume'
+  | 'runningResiduePanel'
+  | 'awaitingFirstTaskDecision';
+
+type ShapeBuildPanelDebugConfig = Partial<Record<ShapeBuildPanelDebugChannel | 'all', boolean>>;
+
+const readShapeBuildPanelDebugConfig = (): ShapeBuildPanelDebugConfig | null => {
+  const scope = globalThis as typeof globalThis & {
+    __HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__?: unknown;
+  };
+  const raw = scope.__HDB_SHAPE_BUILD_TASK_SYNC_DEBUG__;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as ShapeBuildPanelDebugConfig;
+};
+
+export const isShapeBuildPanelDebugEnabled = (channel: ShapeBuildPanelDebugChannel): boolean => {
+  if (!isDev) return false;
+  const config = readShapeBuildPanelDebugConfig();
+  if (!config) return false;
+  return Boolean(config.all) || Boolean(config[channel]);
+};
+
 export const logStartResumeTrace = (event: string, payload?: Record<string, unknown>): void => {
+  if (!isShapeBuildPanelDebugEnabled('startResume')) return;
   console.log(`${START_RESUME_TRACE_PREFIX} ${event}`, payload ?? {});
 };
 
@@ -34,7 +60,7 @@ export const logRunningResiduePanel = (
     reasons: string[];
   },
 ): void => {
-  if (!isDev) return;
+  if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;
   const line = `${RUNNING_RESIDUE_LOG_PREFIX} ${keyword}`
     + ` nodeId=${formatRunningResidueValue(payload.nodeId)}`
     + ` stage=${formatRunningResidueValue(payload.stage)}`

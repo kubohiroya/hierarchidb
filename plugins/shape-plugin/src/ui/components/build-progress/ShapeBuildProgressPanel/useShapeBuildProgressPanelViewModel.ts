@@ -1,15 +1,15 @@
-import { toNodeType } from '@hierarchidb/core-types';
-import { BuildSessionLauncherPanel } from '@hierarchidb/ui-build-sessions';
 import type { BuildControlMenuItem } from '@hierarchidb/components';
 import {
   type BuildSessionProgressPanelViewModel,
   resolveBuildSessionProgressPanelSplitViewProps,
 } from '@hierarchidb/ui-build-progress';
-import { Box } from '@mui/material';
-import ConstructionIcon from '@mui/icons-material/Construction';
-import type { ReactElement } from 'react';
+import type { ReactNode } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
+import {
+  renderShapeBuildProgressPanelControlRightContent,
+  renderShapeBuildProgressPanelStartIcon,
+} from './ShapeBuildProgressPanelViewModel.js';
 
 type UseShapeBuildProgressPanelViewModelArgs = {
   coreState: ShapeBuildProgressPanelControllerResult;
@@ -37,7 +37,7 @@ type ShapeBuildProgressPanelViewModel = {
   suppressStatusFallback: true;
   onResume?: (() => void) | undefined;
   onPause?: (() => void) | undefined;
-  startIcon: ReactElement;
+  startIcon: ReactNode;
   controlLabel: string;
   pauseLabel: string;
   cancelLabel: string;
@@ -48,7 +48,7 @@ type ShapeBuildProgressPanelViewModel = {
   resumeLabel: string;
   statusLabel: string;
   controlDetails: ShapeBuildProgressPanelControllerResult['controlDetails'];
-  controlRightContent: ReactElement;
+  controlRightContent: ReactNode;
   controlMenuItems?: BuildControlMenuItem[];
   controlMenuAriaLabel?: string;
   controlMenuDisabled?: boolean;
@@ -117,7 +117,7 @@ export const useShapeBuildProgressPanelViewModel = ({
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : controls.handlePause,
     onCancel: controls.handleCancelQueued,
-    startIcon: <ConstructionIcon fontSize="small" />,
+    startIcon: renderShapeBuildProgressPanelStartIcon(),
     controlLabel: t('stage.controls.title', 'Build controls'),
     controlMenuItems,
     controlMenuAriaLabel,
@@ -132,12 +132,10 @@ export const useShapeBuildProgressPanelViewModel = ({
     resumeLabel: t('stage.controls.resume', 'Resume Build'),
     statusLabel: controls.statusLabel,
     controlDetails,
-    controlRightContent: (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-        <BuildSessionLauncherPanel nodeType={toNodeType('shape')} excludeNodeId={nodeId} />
-        {controlRightContent}
-      </Box>
-    ),
+    controlRightContent: renderShapeBuildProgressPanelControlRightContent({
+      nodeId,
+      controlRightContent,
+    }),
     completionDialog,
     suspendDialog,
     crashDialog,

@@ -4029,6 +4029,9 @@ importers:
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
+      '@hierarchidb/ui-tone-curve-editor':
+        specifier: workspace:*
+        version: link:../../packages/ui/tone-curve-editor
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../../packages/ui/worker-client
