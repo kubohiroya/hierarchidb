@@ -31,8 +31,6 @@ interface TreeConsoleToolbarContentProps {
   onDialogBackdropDismissEnabledChange?: TreeConsoleToolbarProps['onDialogBackdropDismissEnabledChange'];
   zoomBandBoundaries?: TreeConsoleToolbarProps['zoomBandBoundaries'];
   onZoomBandBoundariesChange?: TreeConsoleToolbarProps['onZoomBandBoundariesChange'];
-  buildContinuationPolicy?: TreeConsoleToolbarProps['buildContinuationPolicy'];
-  onBuildContinuationPolicyChange?: TreeConsoleToolbarProps['onBuildContinuationPolicyChange'];
   canUndo: boolean;
   canRedo: boolean;
   canCopy: boolean;
@@ -57,8 +55,6 @@ export function TreeConsoleToolbarContent({
   onDialogBackdropDismissEnabledChange,
   zoomBandBoundaries = TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   onZoomBandBoundariesChange,
-  buildContinuationPolicy = 'finish_all_stages',
-  onBuildContinuationPolicyChange,
   canUndo,
   canRedo,
   canCopy,
@@ -159,20 +155,6 @@ export function TreeConsoleToolbarContent({
       'treeConsole.toolbar.settings.zoomBands.boundariesHelp',
       'Adjust the zoom levels that split each range.',
     ),
-    buildPolicyTitle: tCommon('treeConsole.toolbar.settings.buildPolicy.title', 'Build continuation policy'),
-    buildPolicyHelper: tCommon(
-      'treeConsole.toolbar.settings.buildPolicy.helper',
-      'Controls how builds behave after errors.',
-    ),
-    buildPolicyFinishAll: tCommon(
-      'treeConsole.toolbar.settings.buildPolicy.options.finishAll',
-      'Finish all stages',
-    ),
-    buildPolicyFinishStage: tCommon(
-      'treeConsole.toolbar.settings.buildPolicy.options.finishStage',
-      'Finish stage then stop',
-    ),
-    buildPolicyStop: tCommon('treeConsole.toolbar.settings.buildPolicy.options.stop', 'Stop on first error'),
   } as const;
 
   return (
@@ -220,8 +202,6 @@ export function TreeConsoleToolbarContent({
           onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
           zoomBandBoundaries={zoomBandBoundaries}
           onZoomBandBoundariesChange={onZoomBandBoundariesChange}
-          buildContinuationPolicy={buildContinuationPolicy}
-          onBuildContinuationPolicyChange={onBuildContinuationPolicyChange}
           onAction={handleAction}
           portalContainer={portalContainer}
           labels={{
@@ -238,11 +218,6 @@ export function TreeConsoleToolbarContent({
             zoomBandsRangeCountHelp: labels.zoomBandsRangeCountHelp,
             zoomBandsBoundaries: labels.zoomBandsBoundaries,
             zoomBandsBoundariesHelp: labels.zoomBandsBoundariesHelp,
-            buildPolicyTitle: labels.buildPolicyTitle,
-            buildPolicyHelper: labels.buildPolicyHelper,
-            buildPolicyFinishAll: labels.buildPolicyFinishAll,
-            buildPolicyFinishStage: labels.buildPolicyFinishStage,
-            buildPolicyStop: labels.buildPolicyStop,
           }}
         />
       </Box>
