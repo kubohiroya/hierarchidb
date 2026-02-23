@@ -57,7 +57,11 @@
                   "maxVerticesForFix": 50000,
                   "maxVerticesForSplit": 15000
                 },
-                "tolerance": 0.1,
+                "toleranceByBand": [
+                  0.1,
+                  0.1,
+                  0.1
+                ],
                 "areaThreshold": 1,
                 "ringFixConfig": {
                   "minRingVertices": 4,

@@ -14,18 +14,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Cross-plugin import resolution
-      '@hierarchidb/spreadsheet-plugin/common/constants.js': path.resolve(
-        __dirname,
-        '../spreadsheet-plugin/src/common/constants.ts'
-      ),
-      '../../spreadsheet/src/services/SpreadsheetTabularApiDriver': path.resolve(
-        __dirname,
-        '../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver'
-      ),
       '@hierarchidb/spreadsheet-plugin': path.resolve(
         __dirname,
-        '../spreadsheet-plugin/src/index.ts'
+        './src/common/__tests__/mocks/spreadsheet-plugin-real.ts'
       ),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),

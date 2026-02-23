@@ -95,6 +95,12 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
   protected abstract performSubscribe(nodeId: string, callback: (event: unknown) => void): () => void;
 }
 
+export class TabularDatabaseManager {
+  constructor(_dbName: string) {}
+
+  async forceDelete(_tableId: string): Promise<void> {}
+}
+
 export function createLaneSemaphoreRegistry(options: { defaults: Record<string, number>; fallback?: number }) {
   const defaults = options.defaults ?? {};
   const fallback = Math.max(1, Math.floor(options.fallback ?? 1));

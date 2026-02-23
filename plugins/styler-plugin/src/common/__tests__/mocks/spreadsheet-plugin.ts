@@ -98,6 +98,8 @@ function detectTypes(headers: string[], rows: CSVRow[]): TabularColumnInfo[] {
 
 type TableDataEntry = { rows: CSVRow[]; columns: TabularColumnInfo[] };
 
+export const SPREADSHEET_PLUGIN_ID = '@hierarchidb/spreadsheet-plugin' as const;
+
 export class SpreadsheetTabularApiDriver {
   private static tableData: Map<string, TableDataEntry> = new Map();
 

@@ -22,6 +22,7 @@ import type {
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
 } from '~/common/types/index';
+import { normalizeToleranceByBand } from '~/services/utils/toleranceByBand';
 import {
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,
@@ -393,6 +394,17 @@ export function mergeBuildConfig(
         : base.transformConfig.omitDetailsConfig,
     }
     : base.transformConfig;
+  const transformToleranceFallback = 0.1;
+  const resolvedTransformBandCount = Math.max(0, transformConfig.zoomBandBoundaries.length - 1);
+  const normalizedTransformToleranceByBand = normalizeToleranceByBand(
+    transformConfig.toleranceByBand,
+    resolvedTransformBandCount,
+    transformToleranceFallback,
+  );
+  const normalizedTransformConfig = {
+    ...transformConfig,
+    toleranceByBand: normalizedTransformToleranceByBand,
+  };
 
   const vtConfig = overrides.vtConfig
     ? { ...base.vtConfig, ...overrides.vtConfig }
@@ -406,7 +418,7 @@ export function mergeBuildConfig(
     ...base,
     ...overrides,
     fetchConfig,
-    transformConfig,
+    transformConfig: normalizedTransformConfig,
     vtConfig,
     cleanupConfig,
   };

@@ -36,7 +36,7 @@ interface BuildConfig {
     featureFilterMethod: string;
     hybridFilterConfig?: unknown;
     deleteOnComplete?: boolean;
-    tolerance: number;
+    toleranceByBand: number[];
     areaThreshold: number;
     excludePolygonAreaCoefficient: number;
     omitDetailsConfig: {
@@ -84,7 +84,7 @@ export function createTestBuildConfig(): BuildConfig {
         elongatedShapeCorrectionFactor: 0.7,
       },
       deleteOnComplete: false,
-      tolerance: 0.05,
+      toleranceByBand: [0.05],
       areaThreshold: 0.05,
       excludePolygonAreaCoefficient: 1,
       omitDetailsConfig: {
@@ -131,7 +131,7 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
       ...baseEntity.buildConfig!,
       transformConfig: {
         ...baseEntity.buildConfig!.transformConfig,
-        tolerance: 0.03,
+        toleranceByBand: [0.03],
       },
       vtConfig: {
         ...baseEntity.buildConfig!.vtConfig,

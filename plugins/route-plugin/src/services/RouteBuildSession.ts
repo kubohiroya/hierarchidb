@@ -21,7 +21,7 @@ import { runStageTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskStage } from '../../../../packages/build-api';
 import { LocationResolver } from './LocationResolver.js';
 
-export type RouteBuildTaskStage = 'location-resolution' | 'route-generation' | 'validation' | 'optimization';
+export type RouteBuildTaskStage = 'location-resolution' | 'route-generation' | 'transform' | 'vt';
 
 export type RouteBuildTask = {
   taskId: string;
@@ -149,9 +149,9 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'transform',
-      taskFilter: resolveTaskFilter('validation'),
+      taskFilter: resolveTaskFilter('transform'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleValidationTask(task),
+        this.handleTransformTask(task),
       failureHandling: 'continue',
     } as {
       nodeId: TaskQueueRecord['nodeId'];
@@ -167,14 +167,14 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       };
     });
     ({ completed, failed } = this.countTaskResults());
-    this.updateProgress({ total, completed, failed }, 'validation');
+    this.updateProgress({ total, completed, failed }, 'transform');
 
     await runStageTasks<RouteBuildTaskQueueInput>({
       nodeId: this.nodeId,
       stage: 'vt',
-      taskFilter: resolveTaskFilter('optimization'),
+      taskFilter: resolveTaskFilter('vt'),
       handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleOptimizationTask(task),
+        this.handleVectorTileTask(task),
       failureHandling: 'continue',
     } as {
       nodeId: TaskQueueRecord['nodeId'];
@@ -190,7 +190,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       };
     });
     ({ completed, failed } = this.countTaskResults());
-    this.updateProgress({ total, completed, failed }, 'optimization');
+    this.updateProgress({ total, completed, failed }, 'vt');
 
     if (failed > 0) {
       throw new Error('Route build completed with failures');
@@ -308,18 +308,18 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     };
   }
 
-  private async handleValidationTask(
+  private async handleTransformTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.stage !== 'validation') {
+    if (localTask.stage !== 'transform') {
       localTask.status = 'failed';
-      const message = `Unexpected route task stage. expected=${localTask.stage}, actual=validation`;
+      const message = `Unexpected route task stage. expected=${localTask.stage}, actual=transform`;
       localTask.error = message;
-      this.updateProgressByStage('validation');
+      this.updateProgressByStage('transform');
       throw new Error(message);
     }
 
@@ -594,22 +594,22 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     });
 
     localTask.status = 'completed';
-    this.updateProgressByStage('validation');
+    this.updateProgressByStage('transform');
     return { status: 'completed', progress: 100 };
   }
 
-  private async handleOptimizationTask(
+  private async handleVectorTileTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
       throw new Error(`Unknown route task ${task.taskId}`);
     }
-    if (localTask.stage !== 'optimization') {
+    if (localTask.stage !== 'vt') {
       localTask.status = 'failed';
-      const error = `Unexpected route task stage. expected=${localTask.stage}, actual=optimization`;
+      const error = `Unexpected route task stage. expected=${localTask.stage}, actual=vt`;
       localTask.error = error;
-      this.updateProgressByStage('optimization');
+      this.updateProgressByStage('vt');
       throw new Error(error);
     }
 
@@ -673,7 +673,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     localTask.status = 'completed';
     localTask.error = undefined;
-    this.updateProgressByStage('optimization');
+    this.updateProgressByStage('vt');
     return {
       status: 'completed',
       progress: 100,

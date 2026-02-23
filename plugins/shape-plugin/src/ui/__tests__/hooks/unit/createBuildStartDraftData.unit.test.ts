@@ -52,7 +52,7 @@ describe('createBuildStartDraftData', () => {
       pattern: '.*',
       buildConfig: {
         transformConfig: {
-          tolerance: 0.2,
+          toleranceByBand: [0.2],
         },
       },
     };

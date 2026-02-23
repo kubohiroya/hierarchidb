@@ -24,7 +24,7 @@ import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
 import { hashFile } from './utils/hash.js';
 import { matchesFilters, normalizeValueForResult, prepareFilters, type PreparedFilter, type TabularRow } from './utils/filtering.js';
-import { SPREADSHEET_PLUGIN_ID } from '~/common/constants';
+import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
 
 type RowChunkLike = {
   binaryData: ArrayBuffer;
