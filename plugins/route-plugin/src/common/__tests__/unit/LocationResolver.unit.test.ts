@@ -90,6 +90,35 @@ describe('LocationResolver', () => {
     expect(loc?.nodeId).toBe('node-2' as NodeId);
   });
 
+  it('keeps map keys as requested nodeIds for getLocations', async () => {
+    const rows: LocationFeatureRecord[] = [
+      {
+        id: 'loc_osaka' as NodeId,
+        nodeId: 'node-3' as NodeId,
+        type: 'airport',
+        data: {
+          name: 'Osaka',
+          latitude: 34.7025,
+          longitude: 135.4959,
+          pointId: 'osaka-01',
+        },
+      },
+    ];
+
+    const db = {
+      open: async () => undefined,
+      features: buildMockLocationTable(rows),
+    };
+    const resolver = new LocationResolver({ db });
+
+    const map = await resolver.getLocations(['node-3' as NodeId, 'node-missing' as NodeId]);
+
+    expect(map.size).toBe(1);
+    expect(map.get('node-3' as NodeId)).toBeDefined();
+    expect(map.get('node-3' as NodeId)?.nodeId).toBe('node-3' as NodeId);
+    expect(map.has('node-missing' as NodeId)).toBe(false);
+  });
+
   it('searches by name and bounds', async () => {
     const rows: LocationFeatureRecord[] = [
       {
