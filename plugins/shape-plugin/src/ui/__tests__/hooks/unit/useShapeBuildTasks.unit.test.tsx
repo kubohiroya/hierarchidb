@@ -2,7 +2,13 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
-import { NodeId } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import { getDefaultStore } from 'jotai';
+import {
+  tasksAtom,
+  tasksErrorAtom,
+  tasksLoadingAtom,
+} from '../../../atoms/shapeBuildProgressAtoms';
 
 const hoistedMocks = vi.hoisted(() => ({
   initializeMock: vi.fn(),
@@ -60,6 +66,10 @@ describe('useShapeBuildTasks', () => {
     getBuildTasksMock.mockResolvedValue([]);
     subscriber = null;
     initializeMock.mockResolvedValue(undefined);
+    const store = getDefaultStore();
+    store.set(tasksAtom, []);
+    store.set(tasksLoadingAtom, false);
+    //store.set(tasksErrorAtom, null);
     setTaskSyncDebugConfig(undefined);
     consoleLogSpy?.mockRestore();
     consoleDebugSpy?.mockRestore();
