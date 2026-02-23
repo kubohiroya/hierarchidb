@@ -29,7 +29,6 @@ import {
   normalizeZoomBandBoundaries,
 } from '@hierarchidb/util';
 import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import type { BuildContinuationPolicy } from '../../../../../../build-api';
 import type { TreeConsoleToolbarActionParams } from '~/types';
 
 interface SettingsMenuProps {
@@ -41,8 +40,6 @@ interface SettingsMenuProps {
   onDialogBackdropDismissEnabledChange?: (enabled: boolean) => void;
   zoomBandBoundaries?: number[];
   onZoomBandBoundariesChange?: (boundaries: number[]) => void;
-  buildContinuationPolicy: BuildContinuationPolicy;
-  onBuildContinuationPolicyChange?: (policy: BuildContinuationPolicy) => void;
   onAction: (action: string, params?: TreeConsoleToolbarActionParams) => void;
   portalContainer?: HTMLElement;
   labels: {
@@ -59,11 +56,6 @@ interface SettingsMenuProps {
     zoomBandsRangeCountHelp: string;
     zoomBandsBoundaries: string;
     zoomBandsBoundariesHelp: string;
-    buildPolicyTitle: string;
-    buildPolicyHelper: string;
-    buildPolicyFinishAll: string;
-    buildPolicyFinishStage: string;
-    buildPolicyStop: string;
   };
 }
 
@@ -76,8 +68,6 @@ export function SettingsMenu({
   onDialogBackdropDismissEnabledChange,
   zoomBandBoundaries,
   onZoomBandBoundariesChange,
-  buildContinuationPolicy,
-  onBuildContinuationPolicyChange,
   onAction,
   portalContainer,
   labels,
@@ -164,15 +154,6 @@ export function SettingsMenu({
       currentMax,
     );
     handleZoomBandBoundariesChange(nextBoundaries);
-  };
-
-  const handleBuildContinuationPolicyChange = (nextPolicy: BuildContinuationPolicy) => {
-    if (onBuildContinuationPolicyChange) {
-      onBuildContinuationPolicyChange(nextPolicy);
-    } else {
-      onAction('setBuildContinuationPolicy', nextPolicy);
-    }
-    scheduleCloseSettingsMenu();
   };
 
   const handleBoundariesChange = (_event: Event, value: number | number[]) => {
@@ -318,34 +299,6 @@ export function SettingsMenu({
               </Stack>
             </Stack>
 
-            <Divider sx={{ my: 1.5 }} />
-
-            <Typography variant="subtitle2" gutterBottom>
-              {labels.buildPolicyTitle}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {labels.buildPolicyHelper}
-            </Typography>
-            <RadioGroup
-              value={buildContinuationPolicy}
-              onChange={(e) => handleBuildContinuationPolicyChange(e.target.value as BuildContinuationPolicy)}
-            >
-              <FormControlLabel
-                value="finish_all_stages"
-                control={<Radio size="small" />}
-                label={labels.buildPolicyFinishAll}
-              />
-              <FormControlLabel
-                value="finish_stage_then_stop"
-                control={<Radio size="small" />}
-                label={labels.buildPolicyFinishStage}
-              />
-              <FormControlLabel
-                value="stop_on_first_error"
-                control={<Radio size="small" />}
-                label={labels.buildPolicyStop}
-              />
-            </RadioGroup>
           </Paper>
         </MenuItem>
 

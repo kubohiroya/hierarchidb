@@ -86,7 +86,6 @@ const QUEUE_STATUSES: BuildSessionRuntimeRecord['status'][] = [
   'finalizing',
   'pausing',
   'paused',
-  'idle',
   'failed',
 ];
 
@@ -766,11 +765,18 @@ export function BuildSessionQueueList({
       aria-label={t('buildSessionQueue.openQueueList', 'Open build session queue')}
       onClick={handleOpenAll}
       size="small"
-      sx={{ color: 'text.secondary' }}
+      sx={{
+        color: 'primary.main',
+        p: '8px',
+      }}
     >
-      <Badge badgeContent={rows.length} color="warning" showZero>
+      {rows.length === 0 ? (
         <ConstructionIcon fontSize="small" />
-      </Badge>
+      ) : (
+        <Badge badgeContent={rows.length} color="warning">
+          <ConstructionIcon fontSize="small" />
+        </Badge>
+      )}
     </IconButton>
   ) : (
     <Box
@@ -799,7 +805,7 @@ export function BuildSessionQueueList({
               minWidth: 520,
               p: 1,
               border: 1,
-              borderColor: 'divider',
+              borderColor: 'primary.main',
               boxShadow: 6,
             }}
           >

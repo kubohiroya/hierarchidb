@@ -21,8 +21,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     onDialogBackdropDismissEnabledChange,
     zoomBandBoundaries,
     onZoomBandBoundariesChange,
-    buildContinuationPolicy = 'finish_all_stages',
-    onBuildContinuationPolicyChange,
     canUndo = false,
     canRedo = false,
     canCopy = false,
@@ -69,8 +67,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
         zoomBandBoundaries={zoomBandBoundaries}
         onZoomBandBoundariesChange={onZoomBandBoundariesChange}
-        buildContinuationPolicy={buildContinuationPolicy}
-        onBuildContinuationPolicyChange={onBuildContinuationPolicyChange}
         canUndo={canUndo}
         canRedo={canRedo}
         canCopy={canCopy}
