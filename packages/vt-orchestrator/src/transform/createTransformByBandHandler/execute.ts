@@ -216,9 +216,9 @@ export const createTransformByBandHandler = (
   };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
-  const baseTolerance = transformConfig.tolerance;
-  if (typeof baseTolerance !== 'number') {
-    throw new Error('transform requires tolerance');
+  const toleranceByBand = transformConfig.toleranceByBand;
+  if (!Array.isArray(toleranceByBand) || toleranceByBand.length === 0) {
+    throw new Error('transform requires toleranceByBand');
   }
   const configuredRetryToleranceStep = typeof transformConfig.retryToleranceStep === 'number'
     && Number.isFinite(transformConfig.retryToleranceStep)
@@ -285,8 +285,9 @@ export const createTransformByBandHandler = (
     if (!band) {
       return { status: 'failed', errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})` };
     }
-    const tolerance = resolveTransformTolerance(baseTolerance, band.zMax);
-    if (tolerance !== baseTolerance) {
+    const tolerance = resolveTransformTolerance(toleranceByBand, band.bandIndex, 0.1);
+    const bandTolerance = toleranceByBand[band.bandIndex];
+    if (bandTolerance === undefined || tolerance !== bandTolerance) {
       console.info('[ShapeTransform][Tolerance]', JSON.stringify({
         nodeId: task.nodeId,
         taskId,
@@ -294,7 +295,7 @@ export const createTransformByBandHandler = (
         adminLevel: input.adminLevel,
         bandIndex: input.bandIndex,
         zTarget: band.zMax,
-        baseTolerance,
+        baseTolerance: bandTolerance,
         appliedTolerance: tolerance,
       }));
     }
@@ -469,7 +470,7 @@ export const createTransformByBandHandler = (
           format: fetchCache.format,
           compression: fetchCache.compression,
           zTarget: band.zMax,
-          toleranceK: baseTolerance,
+          toleranceK: tolerance,
           quantize: transformConfig.quantize,
           simplifyAlgorithm,
           skipSimplification: skipDecodeTopojsonSimplify,

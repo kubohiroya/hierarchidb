@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useTabularApi } from '~/context/TabularContext';
-import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '~/types/index';
+import { useTabularApi } from '../context/TabularContext';
+import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '../types/index';
 
 /**
  * Options for useTabularFilter hook

@@ -168,8 +168,8 @@ export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, 
           'processing.urlRules.example',
           `Example:
 [
-  { "key": "default", "matchType": "default", "buildConfig": { "transformConfig": { "tolerance": 0.12 } } },
-  { "key": "russia-coast", "matchType": "regexp", "pattern": "(?i).*russia.*", "buildConfig": { "transformConfig": { "tolerance": 0.3 } }
+  { "key": "default", "matchType": "default", "buildConfig": { "transformConfig": { "toleranceByBand": [0.12, 0.11, 0.1, 0.09, 0.08] } } },
+  { "key": "russia-coast", "matchType": "regexp", "pattern": "(?i).*russia.*", "buildConfig": { "transformConfig": { "toleranceByBand": [0.3, 0.25, 0.2, 0.18, 0.16] } }
 ]`,
         )}
       </Alert>

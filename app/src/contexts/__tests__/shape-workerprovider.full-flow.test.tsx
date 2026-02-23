@@ -152,7 +152,7 @@ describe('Shape WorkerProvider full flow', () => {
         transformConfig: {
           ...DEFAULT_BUILD_CONFIG.transformConfig,
           zoomBandBoundaries: [1, 2, 4],
-          tolerance: 1,
+          toleranceByBand: [1],
         },
       };
       const selectedArrayByCountries: SelectedArrayByCountries = {

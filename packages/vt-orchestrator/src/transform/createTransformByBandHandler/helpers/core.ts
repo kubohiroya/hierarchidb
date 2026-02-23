@@ -383,11 +383,18 @@ export const createGeometryOps = (engine: GeometryEngine): GeometryOps => {
 };
 
 export const resolveTransformTolerance = (
-  baseTolerance: number,
-  _zTarget: number,
+  toleranceByBand: number[] | undefined,
+  bandIndex: number,
+  fallback: number,
 ): number => {
-  if (!Number.isFinite(baseTolerance)) return baseTolerance;
-  return baseTolerance;
+  if (!Array.isArray(toleranceByBand) || toleranceByBand.length === 0) {
+    return fallback;
+  }
+  const normalizedBandIndex = Number.isFinite(bandIndex) ? Math.floor(bandIndex) : 0;
+  const safeIndex = Math.max(0, Math.min(toleranceByBand.length - 1, normalizedBandIndex));
+  const candidate = toleranceByBand[safeIndex];
+  const resolvedCandidate = typeof candidate === 'number' ? candidate : fallback;
+  return Number.isFinite(resolvedCandidate) ? resolvedCandidate : fallback;
 };
 
 export const simplifyTopoJsonByZoom = async (params: {

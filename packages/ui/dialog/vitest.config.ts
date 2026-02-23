@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     passWithNoTests: true,
-    exclude: ['playwright/**'],
+    exclude: ['playwright/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',

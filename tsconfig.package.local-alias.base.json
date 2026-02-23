@@ -14,6 +14,12 @@
       ],
       "~~": [
         "src"
+      ],
+      "@hierarchidb/ui-tone-curve-editor": [
+        "../../packages/ui/tone-curve-editor/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-tone-curve-editor/*": [
+        "../../packages/ui/tone-curve-editor/dist/*"
       ]
     }
   }

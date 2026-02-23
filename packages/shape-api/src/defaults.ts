@@ -1,5 +1,9 @@
 import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
+const DEFAULT_TRANSFORM_TOLERANCE_BY_BAND = DEFAULT_ZOOM_BAND_BOUNDARIES
+  .slice(0, -1)
+  .map(() => 0.1);
+
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',
   fetchConfig: {
@@ -39,7 +43,7 @@ export const DEFAULT_BUILD_CONFIG = {
       elongatedShapeCorrectionFactor: 1.3,
     },
     deleteOnComplete: false,
-    tolerance: 0.1,
+    toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {

@@ -24,7 +24,7 @@ export const resolveToleranceByBand = (
   }
   const normalizedIndex = Number.isFinite(bandIndex) ? Math.floor(bandIndex) : 0;
   const safeIndex = Math.max(0, Math.min(values.length - 1, normalizedIndex));
-  return clampTolerance(values[safeIndex], fallback);
+  return clampTolerance(typeof values[safeIndex] === 'number' ? values[safeIndex] : fallback, fallback);
 };
 
 export const normalizeToleranceByBand = (
@@ -59,7 +59,12 @@ const resolveBandIndexForZoom = (zoomBandBoundaries: number[], zoom: number): nu
 
   const lastBoundary = zoomBandBoundaries[zoomBandBoundaries.length - 1];
   const firstBoundary = zoomBandBoundaries[0];
-  if (!Number.isFinite(firstBoundary) || !Number.isFinite(lastBoundary)) {
+  if (
+    typeof firstBoundary !== 'number'
+    || typeof lastBoundary !== 'number'
+    || !Number.isFinite(firstBoundary)
+    || !Number.isFinite(lastBoundary)
+  ) {
     return 0;
   }
 
@@ -73,7 +78,12 @@ const resolveBandIndexForZoom = (zoomBandBoundaries: number[], zoom: number): nu
   for (let index = 0; index < zoomBandBoundaries.length - 1; index += 1) {
     const left = zoomBandBoundaries[index];
     const right = zoomBandBoundaries[index + 1];
-    if (!Number.isFinite(left) || !Number.isFinite(right)) {
+    if (
+      typeof left !== 'number'
+      || typeof right !== 'number'
+      || !Number.isFinite(left)
+      || !Number.isFinite(right)
+    ) {
       continue;
     }
     if (zoom >= left && zoom < right) {
@@ -102,7 +112,7 @@ export const resampleToleranceByBand = (
   reps.forEach((repZoom) => {
     const bandIndex = resolveBandIndexForZoom(oldZoomBandBoundaries, repZoom);
     const value = normalizedOld[bandIndex];
-    result.push(clampTolerance(value, fallback));
+    result.push(clampTolerance(typeof value === 'number' ? value : fallback, fallback));
   });
 
   return result;
@@ -139,7 +149,7 @@ export const buildToleranceByBandFromToneCurveAnchors = (
     return Array.from({ length: bandCount }, () => fallback);
   }
 
-  const sortedAnchors = [...anchors].sort((left, right) => left.x - right.x);
+  const sortedAnchors = [...anchors].sort((left: ToneCurveAnchor, right: ToneCurveAnchor) => left.x - right.x);
   const reps = resolveBandBoundaryRepValues(zoomBandBoundaries);
   const result: number[] = [];
   let anchorIndex = 0;
@@ -152,8 +162,8 @@ export const buildToleranceByBandFromToneCurveAnchors = (
       anchorIndex += 1;
     }
     const anchor = sortedAnchors[Math.min(anchorIndex, sortedAnchors.length - 1)];
-    const value = anchor?.y;
-    result.push(clampTolerance(typeof value === 'number' ? value : fallback, fallback));
+    const value = typeof anchor?.y === 'number' ? anchor.y : fallback;
+    result.push(clampTolerance(value, fallback));
   }
 
   return result;

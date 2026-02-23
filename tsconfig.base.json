@@ -560,6 +560,12 @@
       "@hierarchidb/ui-tabular/*": [
         "./packages/ui/tabular-extract/dist/*"
       ],
+      "@hierarchidb/ui-tone-curve-editor": [
+        "./packages/ui/tone-curve-editor/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-tone-curve-editor/*": [
+        "./packages/ui/tone-curve-editor/dist/*"
+      ],
       "@hierarchidb/ui-modal-select": [
         "./packages/ui/modal-select/dist/index.d.ts"
       ],

@@ -307,7 +307,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
       transformConfig: {
-        tolerance: 0.12,
+        toleranceByBand: [0.12],
         omitDetailsConfig: { level: 'weak' },
         boundaryDisableAtZoomOrAbove: 5,
       },
@@ -337,7 +337,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
       transformConfig: {
-        tolerance: 0.9,
+        toleranceByBand: [0.9],
         omitDetailsConfig: { level: 'strong' },
         boundaryDisableAtZoomOrAbove: 2,
       },
@@ -367,7 +367,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
     buildConfigPatch: {
       dataSourceName: 'geoboundaries',
       transformConfig: {
-        tolerance: 0.45,
+        toleranceByBand: [0.45],
         omitDetailsConfig: { level: 'medium' },
         boundaryDisableAtZoomOrAbove: 3,
       },

@@ -30,6 +30,7 @@ type RoutePointSummary = {
   name?: string;
   admin1Name?: string;
   admin0Name?: string;
+  admin2Name?: string;
   pointId?: string;
 };
 
@@ -56,10 +57,17 @@ export class RouteQueryService implements RouteQueryAPI {
     const cursor = { longitude: query.longitude, latitude: query.latitude };
     const zoom = clampZoom(query.zoom);
     const maxDistanceMeters = query.maxDistanceMeters;
+    const maxMatches = Number.isFinite(query.maxMatches ?? 12)
+      ? Math.max(1, Math.min(50, Math.floor(query.maxMatches ?? 12)))
+      : 12;
     await this.db.open?.();
     const tile = toTileCoord(cursor.longitude, cursor.latitude, zoom);
     const maxIndex = 2 ** zoom;
-    const candidates = new Map<string, { line: RouteLineStringRecord; distance: number }>();
+    const candidates = new Map<string, {
+      line: RouteLineStringRecord;
+      distance: number;
+      nearestPoint: [number, number];
+    }>();
 
     for (let dx = -1; dx <= 1; dx += 1) {
       for (let dy = -1; dy <= 1; dy += 1) {
@@ -83,9 +91,20 @@ export class RouteQueryService implements RouteQueryAPI {
         );
         for (const match of matches) {
           const key = match.item.line.id;
+          const nearestPoint = findNearestPointOnSegment(
+            cursor.longitude,
+            cursor.latitude,
+            match.item.segmentStart,
+            match.item.segmentEnd,
+          );
+          if (!nearestPoint) continue;
           const existing = candidates.get(key);
           if (!existing || match.distanceMeters < existing.distance) {
-            candidates.set(key, { line: match.item.line, distance: match.distanceMeters });
+            candidates.set(key, {
+              line: match.item.line,
+              distance: match.distanceMeters,
+              nearestPoint,
+            });
           }
         }
       }
@@ -93,8 +112,12 @@ export class RouteQueryService implements RouteQueryAPI {
 
     const matches = Array.from(candidates.values())
       .sort((a, b) => a.distance - b.distance)
+      .slice(0, maxMatches)
       .map((candidate) => ({
-        line: this.toNearestLine(candidate.line),
+        line: {
+          ...this.toNearestLine(candidate.line),
+          nearestPoint: candidate.nearestPoint,
+        },
         distanceMeters: candidate.distance,
       }));
 
@@ -266,6 +289,7 @@ export class RouteQueryService implements RouteQueryAPI {
     return {
       lineStringId: line.id,
       featureId: line.featureId ?? buildFeatureId(line),
+      routeName: line.name,
       routeMode: line.routeMode,
       routeDistanceMeters: line.distance ?? estimateLineDistance(line.waypoints),
       start,
@@ -339,6 +363,38 @@ const distancePointToSegmentMeters = (
   return Math.hypot(x - projX, y - projY);
 };
 
+const findNearestPointOnSegment = (
+  longitude: number,
+  latitude: number,
+  start: [number, number],
+  end: [number, number]
+): [number, number] | null => {
+  const refLat = (latitude + start[1] + end[1]) / 3;
+  const metersPerDegLat = 110_574;
+  const metersPerDegLon = 111_320 * Math.cos((refLat * Math.PI) / 180);
+  if (!Number.isFinite(metersPerDegLon) || !Number.isFinite(metersPerDegLat)) {
+    return null;
+  }
+  const x = longitude * metersPerDegLon;
+  const y = latitude * metersPerDegLat;
+  const x1 = start[0] * metersPerDegLon;
+  const y1 = start[1] * metersPerDegLat;
+  const x2 = end[0] * metersPerDegLon;
+  const y2 = end[1] * metersPerDegLat;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  if (dx === 0 && dy === 0) {
+    return [start[0], start[1]];
+  }
+  const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+  const projX = x1 + t * dx;
+  const projY = y1 + t * dy;
+  const nearestLon = projX / metersPerDegLon;
+  const nearestLat = projY / metersPerDegLat;
+  if (!Number.isFinite(nearestLon) || !Number.isFinite(nearestLat)) return null;
+  return [nearestLon, nearestLat];
+};
+
 const estimateLineDistance = (waypoints?: [number, number][]): number | undefined => {
   if (!waypoints || waypoints.length < 2) return undefined;
   let total = 0;
@@ -356,6 +412,7 @@ const toEndpoint = (point?: RoutePointSummary): RouteNearestEndpoint | undefined
     name: point.name,
     admin1Name: point.admin1Name,
     admin0Name: point.admin0Name,
+    admin2Name: point.admin2Name,
     pointId: point.pointId,
   };
 };

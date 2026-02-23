@@ -26,18 +26,19 @@ interface AuthNotificationRegistry {
 export class OsrmEngine implements RoutingEngine {
   constructor(private readonly net: NetworkPortLike) {}
 
-  async route(points: Coordinate[], options: OsrmOptions) {
-    const base = trimTrailingSlash((options.baseUrl ?? options.osrmBaseUrl ?? '').trim());
+  async route(points: [number, number][], options?: unknown) {
+    const osrmOptions = options as OsrmOptions;
+    const base = trimTrailingSlash((osrmOptions.baseUrl ?? osrmOptions.osrmBaseUrl ?? '').trim());
     if (!base) throw new Error('OSRM baseUrl is required');
 
-    const profile = options.profile || 'car';
+    const profile = osrmOptions.profile || 'car';
     const coordinates = points.map((p) => `${p[0]},${p[1]}`).join(';');
     const params = new URLSearchParams({
-      geometries: options.geometries || 'geojson',
-      overview: options.overview || 'full',
+      geometries: osrmOptions.geometries || 'geojson',
+      overview: osrmOptions.overview || 'full',
     });
     const url = `${base}/route/v1/${profile}/${coordinates}?${params.toString()}`;
-    const res = await this.net.get(url, { headers: options.headers });
+    const res = await this.net.get(url, { headers: osrmOptions.headers });
 
     if (res.status === 401 || res.status === 403) {
       const registry = resolveAuthRegistry();

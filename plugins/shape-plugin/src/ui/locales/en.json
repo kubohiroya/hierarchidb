@@ -214,7 +214,7 @@
       "title": "URL specific build config rules",
       "sectionTitle": "URL-specific rules",
       "description": "Define per-URL overrides in JSON. This JSON is evaluated in order and each entry applies to matching URLs.",
-      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.12 } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"tolerance\": 0.3 } }\n]"
+      "example": "Example:\n[\n  { \"key\": \"default\", \"matchType\": \"default\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.12, 0.11, 0.1, 0.09, 0.08] } } },\n  { \"key\": \"russia-coast\", \"matchType\": \"regexp\", \"pattern\": \"(?i).*russia.*\", \"buildConfig\": { \"transformConfig\": { \"toleranceByBand\": [0.3, 0.25, 0.2, 0.18, 0.16] } }\n]"
     },
     "extract1": {
       "title": "Transform (Filtering)",

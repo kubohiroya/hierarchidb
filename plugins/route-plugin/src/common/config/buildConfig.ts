@@ -39,7 +39,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
       elongatedShapeCorrectionFactor: 1.3,
     },
     deleteOnComplete: false,
-    tolerance: 0.1,
+    toleranceByBand: [0.1],
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {

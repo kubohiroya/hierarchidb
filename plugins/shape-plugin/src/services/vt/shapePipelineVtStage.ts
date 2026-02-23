@@ -24,6 +24,7 @@ import {
   summarizeStageCounts,
 } from './shapePipelineStageHelpers.ts';
 import type { EphemeralDB } from '@hierarchidb/gis-sdk';
+import { resolveToleranceByBand } from '~/services/utils/toleranceByBand';
 
 export type ShapeVtStageParams = {
   nodeId: NodeId;
@@ -172,14 +173,32 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     ? await params.loadContinentLookup()
     : undefined;
   const featureGeojsonByteSizeById = await loadFeatureGeojsonByteSizeById(params.nodeId);
-  const transformTolerance = params.buildConfig.transformConfig.tolerance;
   const transformRetryToleranceStep = params.buildConfig.transformConfig.retryToleranceStep;
   const isTopojsonSource = params.buildConfig.dataSourceName === 'geoboundaries-topojson';
+  const resolvedTopojsonBandIndex = (() => {
+    const [firstBand, ...otherBands] = params.bands;
+
+    if (!firstBand) {
+      return 0;
+    }
+
+    let best = firstBand;
+    for (const currentBand of otherBands) {
+      if (currentBand.zMin < best.zMin) {
+        best = currentBand;
+      }
+    }
+    return best.bandIndex;
+  })();
   const topojsonSimplify = vtConfig.enableTopojsonSimplify
     ? {
       enabled: true,
       sourceKeys: new Set<string>(),
-      toleranceK: transformTolerance,
+      toleranceK: resolveToleranceByBand(
+        params.buildConfig.transformConfig.toleranceByBand,
+        resolvedTopojsonBandIndex,
+        0.1,
+      ),
       retryToleranceStep: typeof transformRetryToleranceStep === 'number'
         ? transformRetryToleranceStep
         : 0.01,

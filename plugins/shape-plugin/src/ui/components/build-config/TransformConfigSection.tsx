@@ -15,8 +15,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  DensityLarge as DensityLargeIcon,
-  DensitySmall as DensitySmallIcon,
   ExpandMore as ExpandMoreIcon,
   InfoOutlined as InfoOutlinedIcon,
   Tune as TuneIcon,
@@ -26,9 +24,11 @@ import {
   BuildConfigSectionTitle,
   getBuildConfigHoverCardSx,
 } from '@hierarchidb/ui-accordion-config';
+import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
+import { buildToleranceByBandFromToneCurveAnchors, buildToneCurveAnchorsFromToleranceByBand } from '~/services/utils/toleranceByBand';
 import type { ChangeEvent } from 'react';
 
 type Props = {
@@ -45,14 +45,19 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
 
   const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
-  const simplifyTolerance = typeof baseTransformConfig.tolerance === 'number'
-    ? clampSliderValue(baseTransformConfig.tolerance)
-    : 0.1;
   const simplifyRetryStep = typeof baseTransformConfig.retryToleranceStep === 'number'
     ? clampSliderValue(baseTransformConfig.retryToleranceStep)
     : 0.5;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
+  const toleranceFallback = 0.1;
+  const toleranceByBandAnchors = buildToneCurveAnchorsFromToleranceByBand(
+    baseTransformConfig.toleranceByBand,
+    baseTransformConfig.zoomBandBoundaries,
+    toleranceFallback
+  );
+  const xMarks = baseTransformConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
+  const toneCurveDefaultAnchors = toleranceByBandAnchors;
 
   const updateTransformConfig = (partial: Partial<ShapeBuildConfig['transformConfig']>) => (
     update({
@@ -140,23 +145,25 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                 <Typography variant="body2" color="text.secondary">
                   {t('processing.transform.simplifyTolerance.label', 'Simplify tolerance')}
                 </Typography>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <DensitySmallIcon fontSize="small" color="action" />
-                  <Slider
-                    sx={{ flex: 1 }}
-                    value={simplifyTolerance}
-                    min={0}
-                    max={2}
-                    step={0.01}
-                    disabled={disabled}
-                    valueLabelDisplay="auto"
-                    onChange={(_event, value) => {
-                      const next = clampSliderValue(resolveSliderNumber(value));
-                      updateTransformConfig({ tolerance: next });
-                    }}
-                  />
-                  <DensityLargeIcon fontSize="small" color="action" />
-                </Stack>
+                <ToneCurveEditor
+                  width={500}
+                  height={180}
+                  xRange={[baseTransformConfig.zoomBandBoundaries[0] ?? 1, baseTransformConfig.zoomBandBoundaries.at(-1) ?? 11]}
+                  yRange={[0, 2]}
+                  xMarks={xMarks}
+                  xFixedValues={toneCurveDefaultAnchors.map((anchor) => anchor.x)}
+                  yFixedValues={toneCurveDefaultAnchors.map((anchor) => anchor.y)}
+                  ySnapStep={0.01}
+                  onChange={(anchors) => {
+                    if (disabled) return;
+                    const next = buildToleranceByBandFromToneCurveAnchors(
+                      anchors,
+                      baseTransformConfig.zoomBandBoundaries,
+                      toleranceFallback,
+                    );
+                    updateTransformConfig({ toleranceByBand: next });
+                  }}
+                />
               </Stack>
 
               <Stack spacing={0.5}>
@@ -164,7 +171,6 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                   {t('processing.transform.retryToleranceStep.label', 'Retry tolerance step')}
                 </Typography>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <DensitySmallIcon fontSize="small" color="action" />
                   <Slider
                     sx={{ flex: 1 }}
                     value={simplifyRetryStep}
@@ -178,7 +184,6 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                       updateTransformConfig({ retryToleranceStep: next });
                     }}
                   />
-                  <DensityLargeIcon fontSize="small" color="action" />
                 </Stack>
               </Stack>
             </Stack>

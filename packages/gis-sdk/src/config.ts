@@ -131,7 +131,7 @@ export interface TransformConfig {
   featureFilterMethod: FeatureFilterMethod;
   hybridFilterConfig: HybridFilterConfig;
   deleteOnComplete: boolean;
-  tolerance: number;
+  toleranceByBand: number[];
   retryToleranceStep?: number;
   quantize?: number;
   areaThreshold: number;
