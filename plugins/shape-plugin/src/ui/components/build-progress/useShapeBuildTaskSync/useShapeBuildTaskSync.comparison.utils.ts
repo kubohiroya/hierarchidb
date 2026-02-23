@@ -215,34 +215,26 @@ export const shouldPreferNextTask = (
   return shouldApplyTaskUpdate(current, next);
 };
 
-export const reconcileSnapshotWithCurrentTasks = (
+export const replaceSnapshotAndPreserveNonIncomingStages = (
   snapshotTasks: ShapeBuildTaskSummary[],
   currentMap: Map<string, ShapeBuildTaskSummary>,
 ): ShapeBuildTaskSummary[] => {
-  if (snapshotTasks.length === 0) {
-    // If the bridge momentarily emits an empty snapshot while tasks are still in-flight,
-    // keep existing in-progress tasks to avoid a UI flash that clears the task list.
-    const hasInFlightTask = [...currentMap.values()].some(
-      (task) => task.status === 'running' || task.status === 'queued',
-    );
-    if (!hasInFlightTask) return [];
-    const fallback = [...currentMap.values()];
-    fallback.sort(compareTaskOrderByIndexThenId);
-    return fallback;
-  }
+  const incomingStages = new Set(snapshotTasks.map((task) => task.stage));
+  const next = [...snapshotTasks];
 
-  const mergedMap = new Map<string, ShapeBuildTaskSummary>(currentMap);
-  snapshotTasks.forEach((snapshotTask) => {
-    const currentFromMap = currentMap.get(snapshotTask.taskId);
-    if (!currentFromMap || shouldPreferNextTask(currentFromMap, snapshotTask)) {
-      mergedMap.set(snapshotTask.taskId, snapshotTask);
+  currentMap.forEach((task) => {
+    if (incomingStages.has(task.stage)) {
       return;
     }
-    mergedMap.set(snapshotTask.taskId, currentFromMap);
+    next.push(task);
   });
-  const merged = [...mergedMap.values()];
-  merged.sort(compareTaskOrderByIndexThenId);
-  return merged;
+
+  const byTaskId = new Map<string, ShapeBuildTaskSummary>();
+  for (const task of next) {
+    byTaskId.set(task.taskId, task);
+  }
+
+  return [...byTaskId.values()].sort(compareTaskOrderByIndexThenId);
 };
 
 export const normalizeTask = (task: RawTaskSummary): ShapeBuildTaskSummary => {

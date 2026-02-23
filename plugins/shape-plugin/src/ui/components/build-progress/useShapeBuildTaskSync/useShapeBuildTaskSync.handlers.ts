@@ -69,14 +69,10 @@ export const useShapeBuildTaskSyncHandlers = ({
   const events = useShapeBuildTaskSyncEventHandlers({
     refs: {
       tasksMapRef,
-      completedTasksRef,
       errorRef,
       isLoadingRef,
       bufferedSnapshotRef,
       bufferedUpdatesRef,
-      pendingTasksRef,
-      committedTasksRef,
-      isMountedRef,
       sessionNodeId,
     },
     resolveTaskSummary: core.resolveTaskSummary,
@@ -84,7 +80,6 @@ export const useShapeBuildTaskSyncHandlers = ({
     bufferTaskUpdate: core.bufferTaskUpdate,
     onTaskSnapshot,
     onTaskTerminalProgressUpdate,
-    setTasks,
     setIsLoading,
     setError,
     markTaskStreamSynchronized,
@@ -97,7 +92,6 @@ export const useShapeBuildTaskSyncHandlers = ({
   return useMemo(() => ({
     handleSnapshot,
     handleUpdate: (task: RawTaskSummary) => events.handleUpdate(task),
-    handleDelete: (taskId: string) => events.handleDelete(taskId),
     syncTasksRef: core.syncTasksRef,
     syncLoadingRef: core.syncLoadingRef,
     syncErrorRef: core.syncErrorRef,
@@ -111,7 +105,6 @@ export const useShapeBuildTaskSyncHandlers = ({
     core.resetPending,
     core.scheduleFlush,
     core.resetDebugCounters,
-    events.handleDelete,
     events.handleUpdate,
     handleSnapshot,
   ]);

@@ -1,15 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BuildTaskUpdateEvent } from 'packages/build-api';
+import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
+import { NodeId } from '@hierarchidb/core-types';
 
 const hoistedMocks = vi.hoisted(() => ({
-  initializeMock: vi.fn<[], Promise<void>>(),
-  subscribeMock: vi.fn<[
-    string,
-    string,
-    (event: BuildTaskUpdateEvent) => void
-  ], Promise<() => void>>(),
+  initializeMock: vi.fn(),
+  subscribeMock: vi.fn(),
   getBuildTasksMock: vi.fn(),
 }));
 
@@ -71,7 +68,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('applies snapshot and update events without polling', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-1'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-1' as NodeId));
     expect(result.current.isTaskStreamReady).toBe(false);
 
     await waitFor(() => {
@@ -81,7 +78,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         tasks: [
           {
             taskId: 'task-1',
@@ -89,7 +86,6 @@ describe('useShapeBuildTasks', () => {
             status: 'queued',
             progress: 0,
             message: 'Queued',
-            index: 1,
           },
         ],
       });
@@ -104,14 +100,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         task: {
           taskId: 'task-1',
           stage: 'fetch',
           status: 'completed',
           progress: 100,
-          message: 'Done',
-          index: 1,
+          message: 'Done'
         },
       });
     });
@@ -123,14 +118,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         task: {
           taskId: 'task-1',
           stage: 'fetch',
           status: 'running',
           progress: 50,
-          message: 'Late',
-          index: 1,
+          message: 'Late'
         },
       });
     });
@@ -149,11 +143,10 @@ describe('useShapeBuildTasks', () => {
         status: 'completed',
         progress: 100,
         message: 'Done',
-        index: 1,
       },
     ]);
 
-    const { result } = renderHook(() => useShapeBuildTasks('node-refresh'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-refresh' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -170,7 +163,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps canonical stage in task records', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-stage-priority'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-stage-priority' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -179,14 +172,14 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-stage-priority',
+        nodeId: 'node-stage-priority' as NodeId,
         tasks: [
           {
             taskId: 'task-stage-priority',
             stage: 'vt',
             status: 'queued',
             progress: 0,
-            index: 1,
+
           },
         ],
       });
@@ -198,7 +191,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps completed 100% when a running 100% update arrives later', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-2' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -207,7 +200,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-2',
+        nodeId: 'node-2' as NodeId,
         tasks: [
           {
             taskId: 'task-2',
@@ -215,7 +208,7 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 100,
             message: 'Cache saving',
-            index: 1,
+
           },
         ],
       });
@@ -229,14 +222,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2',
+        nodeId: 'node-2' as NodeId,
         task: {
           taskId: 'task-2',
           stage: 'vt',
           status: 'completed',
           progress: 100,
-          message: 'Done',
-          index: 1,
+          message: 'Done'
         },
       });
     });
@@ -249,14 +241,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2',
+        nodeId: 'node-2' as NodeId,
         task: {
           taskId: 'task-2',
           stage: 'vt',
           status: 'running',
           progress: 100,
-          message: 'Late running',
-          index: 1,
+          message: 'Late running'
         },
       });
     });
@@ -268,7 +259,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('does not downgrade running status with equal progress from snapshot', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2x'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-2x' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -277,14 +268,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2x',
+        nodeId: 'node-2x' as NodeId,
         task: {
           taskId: 'node-2x:fetch:JP:0',
           stage: 'fetch',
           status: 'running',
           progress: 42,
-          message: 'running',
-          index: 1,
+          message: 'running'
         },
       });
     });
@@ -297,7 +287,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-2x',
+        nodeId: 'node-2x' as NodeId,
         tasks: [
           {
             taskId: 'node-2x:fetch:JP:0',
@@ -305,7 +295,6 @@ describe('useShapeBuildTasks', () => {
             status: 'queued',
             progress: 42,
             message: 'queued',
-            index: 1,
           },
         ],
       });
@@ -319,7 +308,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps completed message stable when late phase updates arrive', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2b'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-2b' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -328,14 +317,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2b',
+        nodeId: 'node-2b' as NodeId,
         task: {
           taskId: 'task-2b',
           stage: 'transform',
           status: 'completed',
           progress: 100,
           message: 'transform done',
-          index: 1,
         },
       });
     });
@@ -348,14 +336,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2b',
+        nodeId: 'node-2b' as NodeId,
         task: {
           taskId: 'task-2b',
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'finalize',
-          index: 1,
+          message: 'finalize'
         },
       });
     });
@@ -367,7 +354,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('ignores later running updates after completed terminal status', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2d'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-2d' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -376,14 +363,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2d',
+        nodeId: 'node-2d' as NodeId,
         task: {
           taskId: 'task-2d',
           stage: 'transform',
           status: 'completed',
           progress: 100,
-          message: 'Cache write done',
-          index: 1,
+          message: 'Cache write done'
         },
       });
     });
@@ -397,14 +383,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2d',
+        nodeId: 'node-2d' as NodeId,
         task: {
           taskId: 'task-2d',
           stage: 'transform',
           status: 'running',
           progress: 97,
-          message: 'Encode start',
-          index: 1,
+          message: 'Encode start'
         },
       });
     });
@@ -417,7 +402,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves completed terminal state against later non-terminal updates', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-8'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-8' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -426,14 +411,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-8',
+        nodeId: 'node-8' as NodeId,
         task: {
           taskId: 'node-8:fetch:US:0',
           stage: 'fetch',
           status: 'completed',
           progress: 100,
-          message: 'Done',
-          index: 1,
+          message: 'Done'
         },
       });
     });
@@ -447,14 +431,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-8',
+        nodeId: 'node-8' as NodeId,
         task: {
           taskId: 'node-8:fetch:US:0',
           stage: 'fetch',
           status: 'running',
           progress: 50,
-          message: 'Recovered',
-          index: 1,
+          message: 'Recovered'
         },
       });
     });
@@ -467,7 +450,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves failed terminal state and keeps failed at 100%', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-9'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-9' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -476,14 +459,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-9',
+        nodeId: 'node-9' as NodeId,
         task: {
           taskId: 'node-9:transform:DE:0',
           stage: 'transform',
           status: 'failed',
           progress: 40,
-          message: 'transform failed',
-          index: 1,
+          message: 'transform failed'
         },
       });
     });
@@ -496,14 +478,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-9',
+        nodeId: 'node-9' as NodeId,
         task: {
           taskId: 'node-9:transform:DE:0',
           stage: 'transform',
           status: 'running',
           progress: 95,
-          message: 'retrying',
-          index: 1,
+          message: 'retrying'
         },
       });
     });
@@ -516,7 +497,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('treats skipped display task as terminal and keeps 100% progress', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-10'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-10' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -525,14 +506,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-10',
+        nodeId: 'node-10' as NodeId,
         task: {
           taskId: 'node-10:vt:BR:0',
           stage: 'vt',
           status: 'running',
           progress: 30,
           message: 'skipped: vt source missing',
-          index: 1,
           display: { kind: 'skip' },
         },
       });
@@ -546,14 +526,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-10',
+        nodeId: 'node-10' as NodeId,
         task: {
           taskId: 'node-10:vt:BR:0',
           stage: 'vt',
           status: 'running',
           progress: 45,
-          message: 'running',
-          index: 1,
+          message: 'running'
         },
       });
     });
@@ -564,8 +543,256 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
+  it('keeps tasks from unrelated stages when stage snapshot arrives', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-stage-multi' as NodeId));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-multi' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-stage-multi:fetch:JP:0',
+            stage: 'fetch',
+            status: 'completed',
+            progress: 100,
+            message: 'Fetch done'
+          },
+          {
+            taskId: 'node-stage-multi:transform:JP:1',
+            stage: 'transform',
+            status: 'running',
+            progress: 10,
+            message: 'Transform running',
+
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(2);
+      expect(result.current.tasks.map((task) => task.taskId)).toEqual([
+        'node-stage-multi:fetch:JP:0',
+        'node-stage-multi:transform:JP:1',
+      ]);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-multi' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-stage-multi:vt:JP:2',
+            stage: 'vt',
+            status: 'running',
+            progress: 0,
+            message: 'VT queued',
+
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks).toHaveLength(3);
+      expect(result.current.tasks.map((task) => task.taskId)).toEqual([
+        'node-stage-multi:fetch:JP:0',
+        'node-stage-multi:transform:JP:1',
+        'node-stage-multi:vt:JP:2',
+      ]);
+    });
+  });
+
+  it('preserves completed stage task counts when stage snapshot changes', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-stage-count-retain' as NodeId));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-count-retain' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-stage-count-retain:fetch:JP:0',
+            stage: 'fetch',
+            status: 'queued',
+            progress: 0,
+            message: 'Queued',
+
+          },
+          {
+            taskId: 'node-stage-count-retain:fetch:JP:1',
+            stage: 'fetch',
+            status: 'queued',
+            progress: 0,
+            message: 'Queued',
+
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({});
+      expect(result.current.tasks).toHaveLength(2);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-stage-count-retain' as NodeId,
+        task: {
+          taskId: 'node-stage-count-retain:fetch:JP:0',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Done'
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 1 });
+      expect(result.current.tasks).toHaveLength(2);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-count-retain' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-stage-count-retain:fetch:JP:1',
+            stage: 'fetch',
+            status: 'running',
+            progress: 10,
+            message: 'Running',
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 1 });
+      expect(result.current.tasks).toHaveLength(2);
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-stage-count-retain' as NodeId,
+        task: {
+          taskId: 'node-stage-count-retain:fetch:JP:1',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Done',
+
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-stage-count-retain' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-stage-count-retain:vt:JP:0',
+            stage: 'vt',
+            status: 'running',
+            progress: 0,
+            message: 'VT queued',
+
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2, vt: 1 });
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.tasks).toHaveLength(3);
+    });
+  });
+
+  it('preserves terminal counts for non-incoming stages when new stage snapshot arrives', async () => {
+    const { result } = renderHook(() => useShapeBuildTasks('node-2e' as NodeId));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-2e' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-2e:fetch:JP:0',
+            stage: 'fetch',
+            status: 'completed',
+            progress: 100,
+            message: 'Fetch done',
+
+          },
+          {
+            taskId: 'node-2e:fetch:JP:1',
+            stage: 'fetch',
+            status: 'completed',
+            progress: 100,
+            message: 'Fetch done',
+
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2 });
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'snapshot',
+        nodeId: 'node-2e' as NodeId,
+        tasks: [
+          {
+            taskId: 'node-2e:vt:JP:0',
+            stage: 'vt',
+            status: 'running',
+            progress: 10,
+            message: 'VT queued',
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.terminalTaskCountByStage).toMatchObject({ fetch: 2 });
+      expect(result.current.snapshotTaskCountByStage).toMatchObject({ fetch: 2, vt: 1 });
+      expect(result.current.tasks).toHaveLength(3);
+    });
+  });
+
   it('promotes completed message from phase marker to concrete completion message once', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2c'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-2c' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -574,14 +801,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2c',
+        nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'encode:start',
-          index: 1,
+          message: 'encode:start'
         },
       });
     });
@@ -594,14 +820,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2c',
+        nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
           stage: 'transform',
           status: 'completed',
           progress: 100,
-          message: 'transform cache stored',
-          index: 1,
+          message: 'transform cache stored'
         },
       });
     });
@@ -614,14 +839,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-2c',
+        nodeId: 'node-2c' as NodeId,
         task: {
           taskId: 'task-2c',
           stage: 'transform',
           status: 'running',
           progress: 100,
-          message: 'post-process',
-          index: 1,
+          message: 'post-process'
         },
       });
     });
@@ -633,7 +857,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('normalizes running 100% to completed across stages', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-3'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-3' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -642,7 +866,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-3',
+        nodeId: 'node-3' as NodeId,
         tasks: [
           {
             taskId: 'task-3',
@@ -650,7 +874,7 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 100,
             message: 'Cache saving',
-            index: 1,
+
           },
           {
             taskId: 'task-4',
@@ -658,7 +882,6 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 100,
             message: 'Cache saving',
-            index: 2,
           },
           {
             taskId: 'task-5',
@@ -666,7 +889,7 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 100,
             message: 'Cache saving',
-            index: 3,
+
           },
         ],
       });
@@ -680,7 +903,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps non-terminal status at less than 100 progress', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-3b'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-3b' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -689,7 +912,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-3b',
+        nodeId: 'node-3b' as NodeId,
         tasks: [
           {
             taskId: 'task-3b',
@@ -697,7 +920,7 @@ describe('useShapeBuildTasks', () => {
             status: 'recycled',
             progress: 100,
             message: 'recycled for retry',
-            index: 1,
+
           },
         ],
       });
@@ -711,14 +934,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-3b',
+        nodeId: 'node-3b' as NodeId,
         task: {
           taskId: 'task-3b',
           stage: 'fetch',
           status: 'running',
           progress: 100,
-          message: 'still active',
-          index: 1,
+          message: 'still active'
         },
       });
     });
@@ -731,7 +953,7 @@ describe('useShapeBuildTasks', () => {
 
   it('logs TaskUpdate100 with parsed scope when update progress reaches 100', async () => {
     setTaskSyncDebugConfig({ taskUpdate100: true });
-    renderHook(() => useShapeBuildTasks('node-4'));
+    renderHook(() => useShapeBuildTasks('node-4' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -740,14 +962,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-4',
+        nodeId: 'node-4' as NodeId,
         task: {
           taskId: 'node-4:fetch:JPN:1',
           stage: 'fetch',
           status: 'completed',
           progress: 100,
-          message: 'Done',
-          index: 1,
+          message: 'Done'
         },
       });
     });
@@ -758,7 +979,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('does not log TaskUpdate100 for non-100 updates', async () => {
-    renderHook(() => useShapeBuildTasks('node-5'));
+    renderHook(() => useShapeBuildTasks('node-5' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -767,14 +988,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-5',
+        nodeId: 'node-5' as NodeId,
         task: {
           taskId: 'node-5:fetch:JPN:1',
           stage: 'fetch',
           status: 'running',
           progress: 99,
-          message: 'Working',
-          index: 1,
+          message: 'Working'
         },
       });
     });
@@ -785,7 +1005,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('ignores task events when nodeId does not match the active subscription', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -794,14 +1014,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-other',
+        nodeId: 'node-other' as NodeId,
         task: {
           taskId: 'node-other:fetch:JP:0',
           stage: 'fetch',
           status: 'running',
           progress: 50,
-          message: 'running',
-          index: 1,
+          message: 'running'
         },
       });
     });
@@ -812,7 +1031,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps terminal status when duplicate updates arrive', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-6'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-6' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -821,14 +1040,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-6',
+        nodeId: 'node-6' as NodeId,
         task: {
           taskId: 'node-6:fetch:BY:0',
           stage: 'fetch',
           status: 'queued',
           progress: 0,
-          message: 'Queued',
-          index: 1,
+          message: 'Queued'
         },
       });
     });
@@ -840,14 +1058,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-6',
+        nodeId: 'node-6' as NodeId,
         task: {
           taskId: 'node-6:fetch:BY:0',
           stage: 'fetch',
           status: 'running',
           progress: 50,
-          message: 'Running',
-          index: 1,
+          message: 'Running'
         },
       });
     });
@@ -859,14 +1076,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-6',
+        nodeId: 'node-6' as NodeId,
         task: {
           taskId: 'node-6:fetch:BY:0',
           stage: 'fetch',
           status: 'queued',
           progress: 0,
-          message: 'Late queued',
-          index: 1,
+          message: 'Late queued'
         },
       });
     });
@@ -878,14 +1094,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-6',
+        nodeId: 'node-6' as NodeId,
         task: {
           taskId: 'node-6:fetch:BY:0',
           stage: 'fetch',
           status: 'completed',
           progress: 100,
-          message: 'Done',
-          index: 1,
+          message: 'Done'
         },
       });
     });
@@ -897,7 +1112,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('drops stale tasks that no longer exist in snapshot', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-7'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-7' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -906,7 +1121,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-7',
+        nodeId: 'node-7' as NodeId,
         tasks: [
           {
             taskId: 'node-7:fetch:ABW:0',
@@ -914,7 +1129,7 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 70,
             message: 'Running',
-            index: 1,
+
           },
           {
             taskId: 'node-7:fetch:ABW:1',
@@ -922,7 +1137,7 @@ describe('useShapeBuildTasks', () => {
             status: 'queued',
             progress: 0,
             message: 'Queued',
-            index: 2,
+
           },
         ],
       });
@@ -935,7 +1150,7 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'snapshot',
-        nodeId: 'node-7',
+        nodeId: 'node-7'  as NodeId,
         tasks: [
           {
             taskId: 'node-7:fetch:ABW:1',
@@ -943,7 +1158,6 @@ describe('useShapeBuildTasks', () => {
             status: 'running',
             progress: 10,
             message: 'Start',
-            index: 2,
           },
         ],
       });
@@ -957,7 +1171,7 @@ describe('useShapeBuildTasks', () => {
 
   it('ignores updates for different nodeId in active subscription', async () => {
     getBuildTasksMock.mockResolvedValue([]);
-    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'  as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -966,14 +1180,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-other',
+        nodeId: 'node-other' as NodeId,
         task: {
           taskId: 'node-other:fetch:JP:0',
           stage: 'fetch',
           status: 'running',
           progress: 15,
-          message: 'foreign',
-          index: 1,
+          message: 'foreign'
         },
       });
     });
@@ -988,7 +1201,7 @@ describe('useShapeBuildTasks', () => {
   it('drops stale subscriber updates after node switch', async () => {
     getBuildTasksMock.mockResolvedValue([]);
     const { result, rerender } = renderHook(
-      ({ nodeId }: { nodeId: string }) => useShapeBuildTasks(nodeId),
+      ({ nodeId }: { nodeId: string }) => useShapeBuildTasks(nodeId as NodeId),
       { initialProps: { nodeId: 'node-old' } },
     );
 
@@ -1006,14 +1219,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       staleSubscriber?.({
         type: 'update',
-        nodeId: 'node-old',
+        nodeId: 'node-old' as NodeId,
         task: {
           taskId: 'node-old:fetch:JP:0',
           stage: 'fetch',
           status: 'running',
           progress: 20,
-          message: 'stale',
-          index: 1,
+          message: 'stale'
         },
       });
     });
@@ -1027,14 +1239,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-new',
+        nodeId: 'node-new' as NodeId,
         task: {
           taskId: 'node-new:fetch:JP:0',
           stage: 'fetch',
           status: 'queued',
           progress: 0,
-          message: 'queued',
-          index: 1,
+          message: 'queued'
         },
       });
     });
@@ -1046,7 +1257,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('composes vt parent input summary metadata into task message', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-vt-meta'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-vt-meta' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1055,14 +1266,13 @@ describe('useShapeBuildTasks', () => {
     act(() => {
       subscriber?.({
         type: 'update',
-        nodeId: 'node-vt-meta',
+        nodeId: 'node-vt-meta' as NodeId,
         task: {
           taskId: 'node-vt-meta:vt:2:6:123',
           stage: 'vt',
           status: 'running',
           progress: 30,
           message: 'tiles 12/40',
-          index: 1,
           metadata: {
             vtParentInputSummary: {
               parentTile: { z: 6, x: 15, y: 23 },
@@ -1089,12 +1299,11 @@ describe('useShapeBuildTasks', () => {
         stage: 'fetch',
         status: 'running',
         progress: 20,
-        message: 'Running',
-        index: 1,
+        message: 'Running'
       },
     ]);
 
-    const { result } = renderHook(() => useShapeBuildTasks('node-refresh-missing'));
+    const { result } = renderHook(() => useShapeBuildTasks('node-refresh-missing' as NodeId));
 
     await act(async () => {
       await Promise.resolve();
@@ -1123,7 +1332,7 @@ describe('useShapeBuildTasks', () => {
     const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 4242);
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     try {
-      const { result } = renderHook(() => useShapeBuildTasks('node-raf-fallback'));
+      const { result } = renderHook(() => useShapeBuildTasks('node-raf-fallback' as NodeId));
 
       await act(async () => {
         await Promise.resolve();
@@ -1134,14 +1343,13 @@ describe('useShapeBuildTasks', () => {
       act(() => {
         subscriber?.({
           type: 'update',
-          nodeId: 'node-raf-fallback',
+          nodeId: 'node-raf-fallback' as NodeId,
           task: {
             taskId: 'node-raf-fallback:fetch:JP:0',
             stage: 'fetch',
             status: 'queued',
             progress: 0,
             message: 'Queued',
-            index: 1,
           },
         });
       });

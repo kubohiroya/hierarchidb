@@ -4,7 +4,7 @@ import {
   areTaskListsEquivalentForView,
   areTasksEquivalentForView,
   isCompletedAtFullProgress,
-  reconcileSnapshotWithCurrentTasks,
+  replaceSnapshotAndPreserveNonIncomingStages,
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -154,7 +154,7 @@ export const useShapeBuildTaskSyncScheduling = ({
     bufferedUpdatesRef.current = new Map();
 
     let nextList = bufferedSnapshot
-      ? reconcileSnapshotWithCurrentTasks(bufferedSnapshot, tasksMapRef.current)
+      ? replaceSnapshotAndPreserveNonIncomingStages(bufferedSnapshot, tasksMapRef.current)
       : (pendingTasksRef.current ?? committedTasksRef.current);
     let changed = bufferedSnapshot !== null;
 

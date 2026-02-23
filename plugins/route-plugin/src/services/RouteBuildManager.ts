@@ -56,6 +56,9 @@ export class RouteBuildManager {
 
     for (let i = 0; i < routes.length; i++) {
       const route = routes[i];
+      if(! route){
+        throw new Error(`Route ${i} is missing coordinates`);
+      }
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
@@ -69,6 +72,9 @@ export class RouteBuildManager {
 
     for (let i = 0; i < routes.length; i++) {
       const route = routes[i];
+      if(! route){
+        throw new Error(`Route ${i} is missing coordinates`);
+      }
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,

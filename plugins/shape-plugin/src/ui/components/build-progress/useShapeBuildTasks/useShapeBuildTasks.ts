@@ -55,7 +55,6 @@ export function useShapeBuildTasks(
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const handleSnapshotRef = useRef<(tasks: unknown) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
-  const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
@@ -71,19 +70,42 @@ export function useShapeBuildTasks(
   }, []);
 
   const onTaskSnapshot = useCallback((nextTasks: ShapeBuildTaskSummary[]) => {
-    const nextSnapshotCounts = new Map<string, number>();
-    const nextTerminalTaskIds = new Map<string, string>();
+    const incomingSnapshotCounts = new Map<string, number>();
+    const nextSnapshotCounts = new Map<string, number>(snapshotTaskCountByStageRef.current);
+    const nextTerminalTaskIds = new Map<string, string>(terminalTaskCountByTaskIdRef.current);
+    const incomingStages = new Set<string>();
     const nextTerminalCounts = new Map<string, number>();
 
     for (const task of nextTasks) {
       const stage = normalizeStageKey(task);
-      nextSnapshotCounts.set(stage, (nextSnapshotCounts.get(stage) ?? 0) + 1);
+      incomingStages.add(stage);
+      incomingSnapshotCounts.set(stage, (incomingSnapshotCounts.get(stage) ?? 0) + 1);
 
       if (!isTerminalForCompletion(task)) {
         continue;
       }
       nextTerminalTaskIds.set(task.taskId, stage);
-      nextTerminalCounts.set(stage, (nextTerminalCounts.get(stage) ?? 0) + 1);
+    }
+
+    for (const terminalTaskStage of nextTerminalTaskIds.values()) {
+      nextTerminalCounts.set(terminalTaskStage, (nextTerminalCounts.get(terminalTaskStage) ?? 0) + 1);
+    }
+
+    for (const [taskId, taskStage] of terminalTaskCountByTaskIdRef.current.entries()) {
+      if (!incomingStages.has(taskStage)) {
+        continue;
+      }
+      nextTerminalTaskIds.delete(taskId);
+    }
+
+    for (const [terminalTaskStage] of nextSnapshotCounts.entries()) {
+      if (!nextTerminalCounts.has(terminalTaskStage)) {
+        nextTerminalCounts.set(terminalTaskStage, 0);
+      }
+    }
+
+    for (const [stage, count] of incomingSnapshotCounts.entries()) {
+      nextSnapshotCounts.set(stage, count);
     }
 
     snapshotTaskCountByStageRef.current = nextSnapshotCounts;
@@ -119,7 +141,6 @@ export function useShapeBuildTasks(
     errorRef,
     handleSnapshot,
     handleUpdate,
-    handleDelete,
     syncTasksRef,
     syncLoadingRef,
     syncErrorRef,
@@ -149,8 +170,7 @@ export function useShapeBuildTasks(
   useEffect(() => {
     handleSnapshotRef.current = handleSnapshot;
     handleUpdateRef.current = handleUpdate;
-    handleDeleteRef.current = handleDelete;
-  }, [handleSnapshot, handleUpdate, handleDelete]);
+  }, [handleSnapshot, handleUpdate]);
 
   useEffect(() => {
     if (subscriptionRef.current) {
@@ -196,7 +216,7 @@ export function useShapeBuildTasks(
           nodeId: nodeId ? String(nodeId) : null,
           source: 'subscription',
           eventType: event.type,
-          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          taskId: event.type === 'update' ? event.task.taskId : null,
           reason: 'node_id_mismatch',
         });
         return;
@@ -206,7 +226,7 @@ export function useShapeBuildTasks(
           nodeId: nodeId ? String(nodeId) : null,
           source: 'subscription',
           eventType: event.type,
-          taskId: event.type === 'update' ? event.task.taskId : event.type === 'delete' ? event.taskId : null,
+          taskId: event.type === 'update' ? event.task.taskId : null,
           reason: cancelled ? 'subscription_cancelled' : 'subscription_id_mismatch',
         });
         return;
@@ -219,9 +239,14 @@ export function useShapeBuildTasks(
         handleUpdateRef.current(event.task as RawTaskSummary);
         return;
       }
-      if (event.type === 'delete') {
-        handleDeleteRef.current(event.taskId);
-      }
+      logRunningResidueDrop({
+        nodeId: nodeId ? String(nodeId) : null,
+        source: 'subscription',
+        eventType: event.type,
+        taskId: null,
+        reason: 'unhandled_task_update_event',
+      });
+      return;
     };
 
     const start = async () => {
