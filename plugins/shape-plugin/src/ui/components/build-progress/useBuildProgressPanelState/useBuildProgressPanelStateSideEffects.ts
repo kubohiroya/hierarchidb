@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { MutableRefObject } from 'react';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import { isDev, logRunningResiduePanel, shouldUpdateElapsedSnapshot } from './useBuildProgressPanelState.utils.js';
@@ -75,6 +75,14 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     mismatchSignatureRef,
   } = args;
 
+  const hasInFlightOrQueuedTasks = useMemo(() => {
+    return Object.values(tasksByStage).some((tasks) =>
+      tasks.some((task) => task.status === 'running' || task.status === 'queued'),
+    );
+  }, [tasksByStage]);
+
+  const shouldRunElapsedTicker = summary.buildStatus === 'running' && hasInFlightOrQueuedTasks;
+
   useEffect(() => {
     if (summary.buildStatus === 'completed') {
       if (!completionSnapshotData.isFinalStageLabel) return;
@@ -120,7 +128,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
 
   useEffect(() => {
     setElapsedTickMs(Date.now());
-    if (summary.buildStatus !== 'running') {
+    if (!shouldRunElapsedTicker) {
       return;
     }
     const timerId = window.setInterval(() => {
@@ -129,7 +137,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     return () => {
       window.clearInterval(timerId);
     };
-  }, [setElapsedTickMs, summary.buildStatus]);
+  }, [setElapsedTickMs, shouldRunElapsedTicker]);
 
   useEffect(() => {
     if (shouldUpdateElapsedSnapshot({
