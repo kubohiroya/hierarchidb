@@ -27,7 +27,7 @@ function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): Ro
     taskId: `${method}-${i}`,
     treeNodeId: nodeId,
     nodeId,
-    stage: 'route-generation',
+    stage: 'fetch',
     status: 'pending',
     index: i,
     routeData: { method, startCoordinates: [0, 0], endCoordinates: [1, 1] },
