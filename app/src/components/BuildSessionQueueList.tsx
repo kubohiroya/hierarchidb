@@ -768,7 +768,7 @@ export function BuildSessionQueueList({
       size="small"
       sx={{ color: 'text.secondary' }}
     >
-      <Badge badgeContent={rows.length} color="primary" showZero>
+      <Badge badgeContent={rows.length} color="warning" showZero>
         <ConstructionIcon fontSize="small" />
       </Badge>
     </IconButton>
