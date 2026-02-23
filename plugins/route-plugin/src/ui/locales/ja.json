@@ -199,6 +199,7 @@
     "vectorLayerLabel": "ルート",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
     "hoverUnknown": "不明なルート",
+    "hoverShortcutHelp": "近傍ルートの行をクリックまたはチェックボックスで、複数選択してください。",
     "tabs": {
       "map": "地図",
       "metadata": "メタデータ"

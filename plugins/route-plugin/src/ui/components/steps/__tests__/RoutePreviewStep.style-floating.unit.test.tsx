@@ -20,7 +20,11 @@ vi.mock('../useRoutePreviewStep.js', () => ({
     attributionItems: [],
     initialViewState: { longitude: 0, latitude: 0, zoom: 2 },
     vectorLayers: [],
-    hoverSnackbarProps: { open: false, message: '' },
+    hoverSnackbarProps: {
+      matches: [],
+      popupHint: undefined,
+      onToggleMatchSelection: vi.fn(),
+    },
     showMissingGeometry: false,
     lineStringsError: null,
     lineStringsLoading: false,

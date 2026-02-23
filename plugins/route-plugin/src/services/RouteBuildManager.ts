@@ -118,17 +118,15 @@ export class RouteBuildManager {
       });
     }
 
-    // Phase 3: Validation tasks
-    if (config.validation && (config.validation.checkDuplicateRoutes || config.validation.validateDistance)) {
-      routeTasks.push({
-        taskId: crypto.randomUUID(),
-        treeNodeId: nodeId,
-        nodeId,
-        stage: 'validation',
-        status: 'queued',
-        index: routeTasks.length,
-      });
-    }
+    // Phase 3: Validation (transform) tasks for simplification & tile indexing
+    routeTasks.push({
+      taskId: crypto.randomUUID(),
+      treeNodeId: nodeId,
+      nodeId,
+      stage: 'validation',
+      status: 'queued',
+      index: routeTasks.length,
+    });
 
     // Phase 4: Optimization tasks (vector tiles for routes)
     routeTasks.push({
@@ -303,7 +301,7 @@ function mapRouteStageToVtStage(stage: RouteBuildTaskStage): TaskStage {
     case 'location-resolution':
       return 'fetch';
     case 'route-generation':
-      return 'transform';
+      return 'fetch';
     case 'validation':
       return 'transform';
     case 'optimization':
