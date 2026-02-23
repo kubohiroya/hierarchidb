@@ -112,8 +112,12 @@ export const useShapeBuildTaskSyncScheduling = ({
     baseList: ShapeBuildTaskSummary[],
   ) => {
     const currentTask = tasksMapRef.current.get(task.taskId);
+    const hasTaskInBase = baseList.some(({ taskId }) => taskId === task.taskId);
     if (currentTask && areTasksEquivalentForView(currentTask, task)) {
-      return { next: baseList, changed: false } as const;
+      if (hasTaskInBase) {
+        return { next: baseList, changed: false } as const;
+      }
+      return { next: upsertTaskInOrder(baseList, task), changed: true } as const;
     }
     if (currentTask && !shouldPreferNextTask(currentTask, task)) {
       return { next: baseList, changed: false } as const;
@@ -130,6 +134,33 @@ export const useShapeBuildTaskSyncScheduling = ({
   }, [completedTasksRef, tasksMapRef]);
 
   const bufferTaskUpdate = useCallback((task: ShapeBuildTaskSummary) => {
+    const current = tasksMapRef.current.get(task.taskId);
+    if (current && !shouldPreferNextTask(current, task)) {
+      emitRunningResidueLog('STALE_DROP', {
+        nodeId: sessionNodeId,
+        stage: task.stage,
+        taskId: task.taskId,
+        prevStatus: current.status ?? null,
+        nextStatus: task.status ?? null,
+        source: 'buffer',
+        eventType: 'update',
+        reason: 'shouldPreferNextTask=false_or_buffered_equivalent',
+      });
+      return;
+    }
+
+    const nextTaskMap = new Map(tasksMapRef.current);
+    nextTaskMap.set(task.taskId, task);
+    tasksMapRef.current = nextTaskMap;
+
+    const nextCompletedMap = new Map(completedTasksRef.current);
+    if (isCompletedAtFullProgress(task)) {
+      nextCompletedMap.set(task.taskId, task);
+    } else {
+      nextCompletedMap.delete(task.taskId);
+    }
+    completedTasksRef.current = nextCompletedMap;
+
     const buffered = bufferedUpdatesRef.current.get(task.taskId);
     if (buffered && !shouldPreferNextTask(buffered, task)) {
       emitRunningResidueLog('STALE_DROP', {
@@ -153,10 +184,36 @@ export const useShapeBuildTaskSyncScheduling = ({
     bufferedSnapshotRef.current = null;
     bufferedUpdatesRef.current = new Map();
 
+    // eslint-disable-next-line no-console
+    console.log('[sync-debug] applyBufferedEvents begin', {
+      snapshotLen: bufferedSnapshot?.length ?? null,
+      bufferedUpdateIds: [...bufferedUpdates.keys()],
+      taskMapSize: tasksMapRef.current.size,
+      committedSize: committedTasksRef.current.length,
+      pendingSize: pendingTasksRef.current?.length ?? null,
+      mapEntries: [...tasksMapRef.current.values()].map((task) => ({
+        taskId: task.taskId,
+        status: task.status,
+        progress: task.progress,
+        message: task.message,
+      })),
+    });
+
     let nextList = bufferedSnapshot
       ? reconcileSnapshotWithCurrentTasks(bufferedSnapshot, tasksMapRef.current)
       : (pendingTasksRef.current ?? committedTasksRef.current);
     let changed = bufferedSnapshot !== null;
+
+    // eslint-disable-next-line no-console
+    console.log('[sync-debug] nextList after snapshot', {
+      len: nextList.length,
+      entries: nextList.map((task) => ({
+        taskId: task.taskId,
+        status: task.status,
+        progress: task.progress,
+        message: task.message,
+      })),
+    });
 
     if (bufferedSnapshot) {
       tasksMapRef.current = new Map(nextList.map((task: ShapeBuildTaskSummary) => [task.taskId, task]));
@@ -173,6 +230,23 @@ export const useShapeBuildTaskSyncScheduling = ({
       const result = mergeTaskWithBase(task, nextList);
       nextList = result.next;
       changed = changed || result.changed;
+    });
+    // eslint-disable-next-line no-console
+    console.log('[sync-debug] after buffered updates', {
+      len: nextList.length,
+      entries: nextList.map((task) => ({
+        taskId: task.taskId,
+        status: task.status,
+        progress: task.progress,
+        message: task.message,
+      })),
+      mapSize: tasksMapRef.current.size,
+      mapEntries: [...tasksMapRef.current.values()].map((task) => ({
+        taskId: task.taskId,
+        status: task.status,
+        progress: task.progress,
+        message: task.message,
+      })),
     });
 
     return { nextList, changed };

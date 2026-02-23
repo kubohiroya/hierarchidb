@@ -60,7 +60,6 @@ export const useShapeBuildStartOrResume = ({
       notify.warning('Build start API is not available.');
       return false;
     }
-    await refreshTasks();
 
     return executeStartOrResumeFlow({
       activeNodeId,

@@ -49,7 +49,6 @@ export function useShapeBuildTasks(
   const [isTaskStreamReady, setIsTaskStreamReady] = useState(false);
   const [snapshotTaskCountByStage, setSnapshotTaskCountByStage] = useState<StageCountByStage>({});
   const [terminalTaskCountByStage, setTerminalTaskCountByStage] = useState<StageCountByStage>({});
-  const [subscriptionEpoch, setSubscriptionEpoch] = useState(0);
   const snapshotTaskCountByStageRef = useRef<Map<string, number>>(new Map());
   const terminalTaskCountByTaskIdRef = useRef<Map<string, string>>(new Map());
   const reportedFailuresRef = useRef<Set<string>>(new Set());
@@ -257,7 +256,6 @@ export function useShapeBuildTasks(
   }, [
     autoSubscribe,
     nodeId,
-    subscriptionEpoch,
     setError,
     setIsLoading,
     setTasks,
@@ -271,11 +269,6 @@ export function useShapeBuildTasks(
 
   const refresh = useCallback(async () => {
     if (!nodeId) return;
-    setSubscriptionEpoch((current) => current + 1);
-    if (subscriptionRef.current) {
-      subscriptionRef.current();
-      subscriptionRef.current = null;
-    }
     const wasLoading = isLoadingRef.current;
     if (!wasLoading) {
       setIsLoading(true);

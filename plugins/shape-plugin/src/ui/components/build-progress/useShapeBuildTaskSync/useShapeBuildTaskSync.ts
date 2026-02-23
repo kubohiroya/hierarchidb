@@ -70,7 +70,7 @@ export const useShapeBuildTaskSync = ({
     handlers.resetDebugCounters();
     handlers.syncTasksRef([]);
     handlers.resetPending();
-  }, [sessionNodeId, handlers]);
+  }, [sessionNodeId]);
 
   useEffect(() => () => {
     if (flushFrameRef.current !== null) {

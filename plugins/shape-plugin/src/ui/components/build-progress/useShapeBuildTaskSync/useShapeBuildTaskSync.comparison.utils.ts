@@ -116,7 +116,7 @@ const shouldApplyTaskUpdate = (
   const nextProgress = resolveProgressValue(next.progress);
   if (nextProgress < currentProgress) return false;
   if (nextProgress === currentProgress) {
-    if (current.status === next.status) return true;
+    if (current.status === next.status) return false;
     const statusRank: Record<ShapeBuildTaskSummary['status'], number> = {
       idle: 0,
       queued: 1,
