@@ -451,9 +451,9 @@
       "resume": "ビルド再開"
     },
     "timing": {
-      "totalElapsed": "総経過時間",
-      "stageElapsed": "このステージの経過時間",
-      "stageRemaining": "このステージの残り時間(概算)",
+      "totalElapsed": "総経過時間:",
+      "stageElapsed": "経過時間",
+      "stageRemaining": "残り時間(概算)",
       "elapsedLabel": "経過",
       "remainingLabel": "推定残り",
       "duration": "{{hours}}時間{{minutes}}分{{seconds}}秒",

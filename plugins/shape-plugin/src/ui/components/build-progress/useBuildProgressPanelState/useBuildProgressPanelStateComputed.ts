@@ -100,14 +100,24 @@ const formatDuration = (durationMs: number | null | undefined, t: TranslateFn): 
     return t('stage.timing.unknown', '-');
   }
   const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  if (totalSeconds === 0) {
+    return '0s';
+  }
+
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return t('stage.timing.duration', '{{hours}}h {{minutes}}m {{seconds}}s', {
-    hours,
-    minutes,
-    seconds,
-  });
+  const parts: string[] = [];
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (minutes > 0 || (hours > 0 && seconds > 0)) {
+    parts.push(`${minutes}m`);
+  }
+  if (seconds > 0 || parts.length === 0) {
+    parts.push(`${seconds}s`);
+  }
+  return parts.join(' ');
 };
 
 const buildFailedTaskInfo = (
@@ -184,7 +194,7 @@ export const useBuildProgressPanelStateComputed = (args: ComputeArgs): BuildProg
   const isBuildStarted = summary.buildStatus !== 'idle' || summary.totalElapsedMs > 0;
 
   const controlDetails = useMemo(() => ([{
-    label: t('stage.timing.totalElapsed', 'Total elapsed'),
+    label: t('stage.timing.totalElapsed', 'Total elapsed:'),
     value: isBuildStarted
       ? formatDuration(summary.totalElapsedMs, t)
       : emptyValue,

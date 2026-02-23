@@ -3,7 +3,10 @@ import type { ShapeBuildTaskSummary } from 'packages/build-api';
 import {
   reconcileSnapshotWithCurrentTasks,
   shouldPreferNextTask,
+  resolveTaskStage,
 } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
+import { normalizeStageKey } from '../../../components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
+import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
 
 const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'task-unknown',
@@ -117,5 +120,33 @@ describe('shouldPreferNextTask', () => {
     const next = makeTask({ status: 'running', progress: 99 });
 
     expect(shouldPreferNextTask(current, next)).toBe(true);
+  });
+});
+
+describe('resolveTaskStage', () => {
+  const buildRawTask = (overrides: Partial<RawTaskSummary>): RawTaskSummary => ({
+    taskId: 'task-unknown',
+    stage: 'fetch',
+    status: 'queued',
+    progress: 0,
+    message: 'queued',
+    index: 0,
+    ...overrides,
+  });
+
+  it('returns valid task stage as is', () => {
+    const task = buildRawTask({ stage: 'transform' });
+    expect(resolveTaskStage(task)).toBe('transform');
+  });
+
+  it('throws on invalid task stage', () => {
+    const task = buildRawTask({ stage: 'invalid' as RawTaskSummary['stage'] });
+    expect(() => resolveTaskStage(task)).toThrow('[ShapeBuildTaskSync] invalid task stage');
+  });
+});
+
+describe('normalizeStageKey', () => {
+  it('returns explicit task stage without defaulting', () => {
+    expect(normalizeStageKey({ stage: 'transform' })).toBe('transform');
   });
 });

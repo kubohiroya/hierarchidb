@@ -1,16 +1,14 @@
 import type { TaskStage } from '../../../../../../../../packages/build-api';
 
 export type StageLikeTask = {
-  stage?: string;
+  stage: TaskStage;
 };
 
 export type StageLikeRunningTask = StageLikeTask & {
   status?: string;
 };
 
-export const normalizeStageKey = (task: StageLikeTask): TaskStage => (
-  (task.stage ?? 'fetch') as TaskStage
-);
+export const normalizeStageKey = (task: StageLikeTask): TaskStage => task.stage;
 
 export const resolveMostAdvancedStageIdByStatus = (params: {
   stages: Array<{ id: string }>;

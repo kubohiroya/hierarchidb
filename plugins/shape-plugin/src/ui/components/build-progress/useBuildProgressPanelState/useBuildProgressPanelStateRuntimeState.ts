@@ -133,12 +133,6 @@ export const useBuildProgressPanelStateRuntimeState = (
     status: summary.buildStatus,
   });
 
-  const hasInFlightOrQueuedTasks = useMemo(() => {
-    return Object.values(tasksByStage).some((tasks) =>
-      tasks.some((task) => task.status === 'running' || task.status === 'queued'),
-    );
-  }, [tasksByStage]);
-
   const computed = useBuildProgressPanelStateComputed({
     data: params.data,
     summary,
@@ -209,7 +203,7 @@ export const useBuildProgressPanelStateRuntimeState = (
     if (!snapshot) {
       return summary.totalElapsedMs;
     }
-    if ((summary.buildStatus === 'running' && hasInFlightOrQueuedTasks) || summary.buildStatus === 'paused') {
+    if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
       const drift = Math.max(0, elapsedTickMs - snapshot.capturedAt);
       return snapshot.elapsedMs + drift;
     }
@@ -217,7 +211,7 @@ export const useBuildProgressPanelStateRuntimeState = (
       return summary.totalElapsedMs;
     }
     return snapshot.elapsedMs;
-  }, [elapsedTickMs, hasInFlightOrQueuedTasks, summary.buildStatus, summary.totalElapsedMs]);
+  }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs]);
 
   return {
     summary: {

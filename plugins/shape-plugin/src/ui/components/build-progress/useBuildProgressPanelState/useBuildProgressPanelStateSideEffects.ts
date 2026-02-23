@@ -1,7 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import type { MutableRefObject } from 'react';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import { isDev, logRunningResiduePanel, shouldUpdateElapsedSnapshot } from './useBuildProgressPanelState.utils.js';
+import {
+  isShapeBuildPanelDebugEnabled,
+  logRunningResiduePanel,
+  shouldUpdateElapsedSnapshot,
+} from './useBuildProgressPanelState.utils.js';
 
 type StageTask = {
   taskId: string;
@@ -75,13 +79,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
     mismatchSignatureRef,
   } = args;
 
-  const hasInFlightOrQueuedTasks = useMemo(() => {
-    return Object.values(tasksByStage).some((tasks) =>
-      tasks.some((task) => task.status === 'running' || task.status === 'queued'),
-    );
-  }, [tasksByStage]);
-
-  const shouldRunElapsedTicker = summary.buildStatus === 'running' && hasInFlightOrQueuedTasks;
+  const shouldRunElapsedTicker = summary.buildStatus === 'running';
 
   useEffect(() => {
     if (summary.buildStatus === 'completed') {
@@ -153,7 +151,7 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   }, [elapsedTickMs, summary.buildStatus, summary.totalElapsedMs, totalElapsedSnapshotRef]);
 
   useEffect(() => {
-    if (!isDev) return;
+    if (!isShapeBuildPanelDebugEnabled('runningResiduePanel')) return;
     const nextSignatures = new Map<string, string>();
     const previousSignatures = mismatchSignatureRef.current;
     const nodeIdForLog = nodeId ? String(nodeId) : null;
