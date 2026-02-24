@@ -125,6 +125,7 @@ export interface FetchOptions {
   geoFilters?: GeographicFilter[];
   cacheKeyMode?: 'url' | 'legacy';
   retryConfig?: RetryConfig;
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
 
   [key: string]: unknown;
 }
