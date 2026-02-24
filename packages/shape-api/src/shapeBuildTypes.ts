@@ -151,6 +151,7 @@ export interface ShapeBuildTaskRecord<
   index: number;
   progress: number;
   message?: string;
+  metadata?: Record<string, unknown>;
   retryCount?: number;
   inputData?: TInput;
   outputData?: TOutput;

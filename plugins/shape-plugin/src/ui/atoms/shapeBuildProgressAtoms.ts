@@ -1,14 +1,15 @@
 import { atom } from 'jotai';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import type { BuildTaskSummary } from '../../../../../packages/build-api';
-import type { TaskStage } from '../../../../../packages/build-api';
+import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 
 export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
   stage: TaskStage;
   index?: number;
   stagePriority?: number;
   metadata?: Record<string, unknown>;
+  retryAttempt?: number;
   title?: string;
   error?: string;
   errorMessage?: string;

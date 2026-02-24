@@ -307,6 +307,11 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   progress: task.progress,
   message: task.message,
   errorMessage: task.errorMessage,
+  metadata: task.metadata,
+  retryAttempt: typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number'
+    && Number.isFinite((task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt ?? NaN)
+      ? Math.max(0, Math.floor((task.metadata as { retryAttempt: number }).retryAttempt))
+      : undefined,
 });
 
 export class ShapeQueryAPIImpl implements ShapeQueryAPI {

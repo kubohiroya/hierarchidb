@@ -118,6 +118,11 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   progress: task.progress,
   message: task.message,
   errorMessage: task.errorMessage,
+  metadata: task.metadata,
+  retryAttempt: typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number'
+    && Number.isFinite((task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt ?? NaN)
+      ? Math.max(0, Math.floor((task.metadata as { retryAttempt: number }).retryAttempt))
+      : undefined,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -232,6 +237,7 @@ const toShapeBuildTaskRecordFromEphemeral = (
     progress: task.progress,
     message: task.message,
     retryCount: task.retryCount,
+    metadata: task.metadata,
     inputData: task.inputData as ShapeBuildTaskRecord['inputData'],
     outputData: task.outputData as ShapeBuildTaskRecord['outputData'],
     errorMessage: task.errorMessage,
