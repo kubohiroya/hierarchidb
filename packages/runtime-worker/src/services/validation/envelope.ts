@@ -53,7 +53,7 @@ export function validateAndNormalizeEnvelope(
   if (!isNonEmptyString(obj.groupId, ID_MAX)) {
     return { ok: false, error: 'Invalid groupId' };
   }
-  const kind = (obj.kind ?? obj.type) as unknown;
+  const kind = obj.kind ?? obj.type;
   if (!isTypeString(kind)) {
     return {
       ok: false,
@@ -98,6 +98,7 @@ export function validateAndNormalizeEnvelope(
   }
 
   const metaSource = obj.meta as Record<string, unknown> | undefined;
+  const resolvedType = isTypeString(obj.type) ? obj.type : kind;
   let normalizedMeta: CommandMeta | undefined;
   if (metaSource) {
     normalizedMeta = {
@@ -121,7 +122,7 @@ export function validateAndNormalizeEnvelope(
     issuedAt: obj.issuedAt as number,
     sourceViewId: typeof obj.sourceViewId === 'string' ? obj.sourceViewId : undefined,
     onNameConflict: obj.onNameConflict as 'error' | 'auto-rename' | 'overwrite' | undefined,
-    type: (obj.type ?? kind) as string,
+    type: resolvedType,
     meta: normalizedMeta,
   };
 

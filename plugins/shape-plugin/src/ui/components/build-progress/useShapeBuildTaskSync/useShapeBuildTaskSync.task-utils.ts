@@ -1,5 +1,5 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import type { RawTaskSummary, VtParentInputSummary } from './useShapeBuildTaskSync.types.js';
+import type { VtParentInputSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 const UNKNOWN_SCOPE_VALUE = 'unknown';
@@ -39,29 +39,29 @@ export const buildVtParentInputSummaryMessage = (summary: VtParentInputSummary):
 );
 
 export const mergeTaskMessage = (base: string | undefined, addition: string): string => {
-  const normalizedBase = typeof base === 'string' ? base.trim() : '';
-  if (normalizedBase.length === 0) return addition;
-  if (normalizedBase.includes(addition)) return normalizedBase;
-  return `${normalizedBase} | ${addition}`;
+  const trimmedBase = typeof base === 'string' ? base.trim() : '';
+  if (trimmedBase.length === 0) return addition;
+  if (trimmedBase.includes(addition)) return trimmedBase;
+  return `${trimmedBase} | ${addition}`;
 };
 
-export const normalizeTaskStatus = (
+export const resolveTaskDisplayStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   progress: number,
   display?: ShapeBuildTaskSummary['display'],
   message?: ShapeBuildTaskSummary['message'],
 ): ShapeBuildTaskSummary['status'] => {
-  const normalized = status ?? 'queued';
-  if (normalized === 'running' && progress >= 100) {
+  const resolvedStatus = status ?? 'queued';
+  if (resolvedStatus === 'running' && progress >= 100) {
     return 'completed';
   }
-  if (normalized === 'running' && isTaskSkipped(display, message)) {
+  if (resolvedStatus === 'running' && isTaskSkipped(display, message)) {
     return 'completed';
   }
-  return normalized;
+  return resolvedStatus;
 };
 
-export const normalizeTaskProgress = (
+export const resolveTaskProgress = (
   status: ShapeBuildTaskSummary['status'],
   progress: number,
   display?: ShapeBuildTaskSummary['display'],
@@ -99,29 +99,5 @@ export const resolveTaskScope = (task: ShapeBuildTaskSummary) => {
   return {
     iso2: UNKNOWN_SCOPE_VALUE,
     adminLevel: UNKNOWN_SCOPE_VALUE,
-  };
-};
-
-export const resolveTaskDisplay = (task: RawTaskSummary): ShapeBuildTaskSummary => {
-  const progress = typeof task.progress === 'number' && Number.isFinite(task.progress)
-    ? task.progress : 0;
-  const normalizedStage = ((): ShapeBuildTaskSummary['stage'] => {
-    const candidates: Array<unknown> = [task.stage];
-    if (candidates.includes('fetch')) return 'fetch';
-    if (candidates.includes('transform')) return 'transform';
-    return 'vt';
-  })();
-
-  const normalizedStatus = normalizeTaskStatus(
-    task.status,
-    progress,
-    task.display,
-    task.message,
-  );
-  return {
-    ...task,
-    stage: normalizedStage,
-    status: normalizedStatus,
-    progress: normalizeTaskProgress(normalizedStatus, progress, task.display, task.message),
   };
 };

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { MutableRefObject } from 'react';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import {
@@ -80,12 +80,69 @@ export const useBuildProgressPanelStateSideEffects = (args: {
   } = args;
 
   const shouldRunElapsedTicker = summary.buildStatus === 'running';
+  const previousBuildStatusRef = useRef<Summary['buildStatus'] | null>(null);
+  const lastNodeIdRef = useRef<string | undefined>(undefined);
+  const hasProgressRef = useRef(false);
+  const isTerminalStatus = (status: Summary['buildStatus'] | null) => status === 'completed' || status === 'failed';
 
   useEffect(() => {
+    if (lastNodeIdRef.current === nodeId) return;
+    lastNodeIdRef.current = nodeId;
+    hasProgressRef.current = false;
+    previousBuildStatusRef.current = null;
+    completionKeyRef.current = null;
+    setCompletionDialogOpen(false);
+    setCompletionSnapshot(null);
+  }, [nodeId, completionKeyRef, setCompletionDialogOpen, setCompletionSnapshot]);
+
+  useEffect(() => {
+    const previousBuildStatus = previousBuildStatusRef.current;
+    const wasTerminal = isTerminalStatus(previousBuildStatus);
+
+    if (previousBuildStatus === null) {
+      hasProgressRef.current = summary.buildStatus === 'running' || summary.buildStatus === 'paused';
+      setCompletionDialogOpen(false);
+      setCompletionSnapshot(null);
+      completionKeyRef.current = null;
+      previousBuildStatusRef.current = summary.buildStatus;
+      return;
+    }
+
+    if (summary.buildStatus === 'running' || summary.buildStatus === 'paused') {
+      hasProgressRef.current = true;
+      completionKeyRef.current = null;
+      previousBuildStatusRef.current = summary.buildStatus;
+      return;
+    }
+
+    if (summary.buildStatus !== 'completed' && summary.buildStatus !== 'failed') {
+      completionKeyRef.current = null;
+      previousBuildStatusRef.current = summary.buildStatus;
+      return;
+    }
+
+    const canAutoOpen = hasProgressRef.current;
+    if (wasTerminal) {
+      previousBuildStatusRef.current = summary.buildStatus;
+      return;
+    }
+
+    if (!canAutoOpen) {
+      previousBuildStatusRef.current = summary.buildStatus;
+      completionKeyRef.current = null;
+      return;
+    }
+
     if (summary.buildStatus === 'completed') {
-      if (!completionSnapshotData.isFinalStageLabel) return;
+      if (!completionSnapshotData.isFinalStageLabel) {
+        previousBuildStatusRef.current = summary.buildStatus;
+        return;
+      }
       const key = `${summary.buildStatus}:${completionSnapshotData.completionStageLabel}`;
-      if (completionKeyRef.current === key) return;
+      if (completionKeyRef.current === key) {
+        previousBuildStatusRef.current = summary.buildStatus;
+        return;
+      }
       completionKeyRef.current = key;
       setCompletionSnapshot({
         status: summary.buildStatus,
@@ -93,12 +150,17 @@ export const useBuildProgressPanelStateSideEffects = (args: {
         reason: completionSnapshotData.completionReason,
       });
       setCompletionDialogOpen(true);
+      previousBuildStatusRef.current = summary.buildStatus;
       return;
     }
+
     if (summary.buildStatus === 'failed' && completionSnapshotData.completionTaskMessage) {
       const key = `${summary.buildStatus}:${completionSnapshotData.completionFailedStageLabel}:`
         + `${completionSnapshotData.completionTaskTitle}:${completionSnapshotData.completionTaskMessage}`;
-      if (completionKeyRef.current === key) return;
+      if (completionKeyRef.current === key) {
+        previousBuildStatusRef.current = summary.buildStatus;
+        return;
+      }
       completionKeyRef.current = key;
       setCompletionSnapshot({
         status: summary.buildStatus,
@@ -107,9 +169,11 @@ export const useBuildProgressPanelStateSideEffects = (args: {
         taskMessage: completionSnapshotData.completionTaskMessage,
       });
       setCompletionDialogOpen(true);
+      previousBuildStatusRef.current = summary.buildStatus;
       return;
     }
-    completionKeyRef.current = null;
+
+    previousBuildStatusRef.current = summary.buildStatus;
   }, [
     completionSnapshotData.completionFailedStageLabel,
     completionSnapshotData.completionReason,

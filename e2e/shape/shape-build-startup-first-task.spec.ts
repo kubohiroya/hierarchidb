@@ -604,12 +604,12 @@ test.describe('Shape build startup first-task UX', () => {
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'domcontentloaded', timeout: 120000 });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
-    await page.waitForFunction(() => Boolean((window as any).__HDB_WORKER_CLIENT_REF__?.client), null, {
+    await page.waitForFunction(() => Boolean((window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client), null, {
       timeout: 20000,
     });
 
     await page.evaluate(async (accessToken: string) => {
-      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+      const ref = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
@@ -709,7 +709,7 @@ test.describe('Shape build startup first-task UX', () => {
     });
 
     const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries }) => {
-      const client = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+      const client = (window as WindowWithWorkerRef).__HDB_WORKER_CLIENT_REF__?.client;
       if (!client) throw new Error('Worker client not ready');
       const queryAPI = await client.getQueryAPI();
       const mutationAPI = await client.getMutationAPI();

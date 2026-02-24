@@ -37,7 +37,7 @@ const createArgs = (overrides: Partial<Parameters<typeof useShapeBuildAutoResume
 
 describe('useShapeBuildAutoResume', () => {
   beforeEach(() => {
-    const storage = window.localStorage as unknown as {
+    const storage = window.localStorage as {
       getItem?: (key: string) => string | null;
       setItem?: (key: string, value: string) => void;
       removeItem?: (key: string) => void;

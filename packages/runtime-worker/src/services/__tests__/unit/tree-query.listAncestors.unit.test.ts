@@ -36,7 +36,7 @@ describe('TreeQueryService.listAncestors', () => {
     nodes = new Map<NodeId, TreeNode>();
     const coreDB = {
       getNode: vi.fn(async (id: NodeId) => nodes.get(id)),
-    } as unknown as CoreDB;
+    } as Partial<CoreDB> as CoreDB;
     service = new TreeQueryService(coreDB);
   });
 

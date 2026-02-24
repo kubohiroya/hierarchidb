@@ -1,11 +1,8 @@
 import { useCallback } from 'react';
-import { emitRunningResidueLog } from './useShapeBuildTaskSync.debug.js';
 import {
   areTaskListsEquivalentForView,
-  areTasksEquivalentForView,
   isCompletedAtFullProgress,
   replaceSnapshotAndPreserveNonIncomingStages,
-  shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { upsertTaskInOrder } from '../../../../../../../packages/ui/build-sessions';
@@ -20,6 +17,7 @@ export const useShapeBuildTaskSyncScheduling = ({
   refs,
   setTasks,
 }: SyncSchedulingArgs): SyncResult => {
+  void sessionNodeId;
   const {
     tasksRef,
     isLoadingRef,
@@ -111,41 +109,49 @@ export const useShapeBuildTaskSyncScheduling = ({
     task: ShapeBuildTaskSummary,
     baseList: ShapeBuildTaskSummary[],
   ) => {
-    const currentTask = tasksMapRef.current.get(task.taskId);
-    if (currentTask && areTasksEquivalentForView(currentTask, task)) {
-      return { next: baseList, changed: false } as const;
-    }
-    if (currentTask && !shouldPreferNextTask(currentTask, task)) {
-      return { next: baseList, changed: false } as const;
-    }
     const nextMap = new Map(tasksMapRef.current);
+    const currentTask = nextMap.get(task.taskId);
+    if (!currentTask) {
+      if (nextMap.size > 0) {
+        return { next: baseList, changed: false } as const;
+      }
+      const nextList = upsertTaskInOrder(baseList, task);
+      nextMap.set(task.taskId, task);
+      if (isCompletedAtFullProgress(task)) {
+        const nextCompletedMap = new Map(completedTasksRef.current);
+        nextCompletedMap.set(task.taskId, task);
+        completedTasksRef.current = nextCompletedMap;
+      }
+      return { next: nextList, changed: true } as const;
+    }
+    if (currentTask.status === task.status
+      && currentTask.progress === task.progress
+      && (currentTask.message ?? null) === (task.message ?? null)) {
+      return { next: baseList, changed: false } as const;
+    }
+    const nextList = [...baseList];
+    const taskIndex = nextList.findIndex((entry) => entry.taskId === task.taskId);
+    if (taskIndex >= 0) {
+      nextList[taskIndex] = task;
+    } else {
+      nextList.push(task);
+    }
     nextMap.set(task.taskId, task);
-    tasksMapRef.current = nextMap;
     if (isCompletedAtFullProgress(task)) {
       const nextCompletedMap = new Map(completedTasksRef.current);
       nextCompletedMap.set(task.taskId, task);
       completedTasksRef.current = nextCompletedMap;
+    } else if (isCompletedAtFullProgress(currentTask)) {
+      const nextCompletedMap = new Map(completedTasksRef.current);
+      nextCompletedMap.delete(task.taskId);
+      completedTasksRef.current = nextCompletedMap;
     }
-    return { next: upsertTaskInOrder(baseList, task), changed: true } as const;
+    return { next: upsertTaskInOrder(nextList, task), changed: true } as const;
   }, [completedTasksRef, tasksMapRef]);
 
   const bufferTaskUpdate = useCallback((task: ShapeBuildTaskSummary) => {
-    const buffered = bufferedUpdatesRef.current.get(task.taskId);
-    if (buffered && !shouldPreferNextTask(buffered, task)) {
-      emitRunningResidueLog('STALE_DROP', {
-        nodeId: sessionNodeId,
-        stage: task.stage,
-        taskId: task.taskId,
-        prevStatus: buffered.status ?? null,
-        nextStatus: task.status ?? null,
-        source: 'buffer',
-        eventType: 'update',
-        reason: 'shouldPreferNextTask=false_or_buffered_equivalent',
-      });
-      return;
-    }
     bufferedUpdatesRef.current.set(task.taskId, task);
-  }, [bufferedUpdatesRef, sessionNodeId]);
+  }, [bufferedUpdatesRef]);
 
   const applyBufferedEvents = useCallback(() => {
     const bufferedSnapshot = bufferedSnapshotRef.current;

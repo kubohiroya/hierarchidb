@@ -1,8 +1,9 @@
 import { useShapeBuildTaskSyncCore } from './useShapeBuildTaskSync.core.js';
 import { useShapeBuildTaskSyncEventHandlers } from './useShapeBuildTaskSync.handlers.events.js';
 import { useMemo } from 'react';
-import type { RawTaskSummary, SyncArgs } from './useShapeBuildTaskSync.types.js';
+import type { SyncArgs } from './useShapeBuildTaskSync.types.js';
 import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
+import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 
 type HandlerDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];
@@ -86,7 +87,7 @@ export const useShapeBuildTaskSyncHandlers = ({
   });
 
   const handleSnapshot = useMemo(() => {
-    return (snapshot: unknown) => events.handleSnapshot(snapshot as RawTaskSummary[]);
+    return (snapshot: RawTaskSummary[]) => events.handleSnapshot(snapshot);
   }, [events.handleSnapshot]);
 
   return useMemo(() => ({

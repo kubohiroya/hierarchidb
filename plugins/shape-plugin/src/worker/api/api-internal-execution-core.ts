@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, TaskStage } from '../../../../../packages/build-api';
+import type { BuildContinuationPolicy, TaskStage } from '@hierarchidb/build-api';
 import type {
   ShapeBuildConfig,
   ShapeRuntimeBuildConfig,
@@ -23,7 +23,7 @@ import {
   requireDataSourceName,
   validateBuildConfig,
 } from '~/common/types/index';
-import type { BuildProgressEvent } from '../../../../../packages/build-api';
+import type { BuildProgressEvent } from '@hierarchidb/build-api';
 
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 import {

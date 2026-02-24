@@ -17,7 +17,7 @@ type FilterResponse = {
   error?: string;
 };
 
-const ctx: DedicatedWorkerGlobalScope = self as unknown as DedicatedWorkerGlobalScope;
+const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
 ctx.onmessage = (event: MessageEvent<FilterRequest>) => {
   const { id, rows, filters, limit = 1000 } = event.data ?? {};

@@ -40,7 +40,7 @@ export function sanitizeRemoteForReact<T>(client: T): T {
       if (typeof prop === 'symbol') {
         return undefined;
       }
-      return sanitizeNestedValue(Reflect.get(target, prop, receiver)) as unknown;
+      return sanitizeNestedValue(Reflect.get(target, prop, receiver));
     },
     has(target, prop) {
       if (typeof prop === 'symbol') {

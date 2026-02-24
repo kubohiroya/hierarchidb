@@ -23,11 +23,11 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
 
 export const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-  return normalizeFeatureCollection(decoded as unknown);
+  return normalizeFeatureCollection(decoded);
 };
 
 export const loadGeojsonVt = async (): Promise<unknown> => {
   const mod = await import('geojson-vt');
-  const candidate = mod as unknown as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
+  const candidate = mod as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
   return candidate.default ?? candidate;
 };

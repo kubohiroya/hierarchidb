@@ -706,7 +706,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                 sxParts.push(...layeredSx);
               }
               const sxValue: SxProps<Theme> | undefined = sxParts.length > 0
-                ? (sxParts as unknown as SxProps<Theme>)
+                ? (sxParts as SxProps<Theme>)
                 : undefined;
 
               const rowInlineStyle = rowStyle?.(state);

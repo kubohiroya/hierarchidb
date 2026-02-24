@@ -15,7 +15,7 @@ export type EncodeMvtOptions = {
 
 const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
   const mod = await import('@maplibre/vt-pbf');
-  const candidate = mod as unknown as { default?: typeof vtPbfNS } & typeof vtPbfNS;
+  const candidate = mod as { default?: typeof vtPbfNS } & typeof vtPbfNS;
   return candidate.default ?? candidate;
 };
 
@@ -30,12 +30,12 @@ export async function encodeMvtFromGeojsonVt(
 ): Promise<Uint8Array> {
   const vtpbf = await loadVtPbf();
   const version = options.version ?? 2;
-  const layersArg = layers as unknown as Parameters<typeof vtpbf.fromGeojsonVt>[0];
+  const layersArg = Object.values(layers);
   const pbf = vtpbf.fromGeojsonVt(layersArg, {
     version,
     extent: 4096,
   });
-  return pbf as Uint8Array;
+  return pbf;
 }
 
 export function normalizeVectorTileFormat(format?: string | null): VectorTileFormat {

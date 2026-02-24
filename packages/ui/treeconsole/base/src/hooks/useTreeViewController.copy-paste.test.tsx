@@ -31,7 +31,7 @@ vi.mock('@hierarchidb/provider', () => ({
 
 describe('useTreeViewController', () => {
   let mockProps: TreeViewControllerProps;
-  let mockStateManager: any;
+  let mockStateManager: Record<string, ReturnType<typeof vi.fn>>;
   let mockOnStateChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('useTreeViewController', () => {
       moveNode: vi.fn(),
       archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
-    } as any;
+    };
 
     mockProps = {
       treeId: 'test-console-id',

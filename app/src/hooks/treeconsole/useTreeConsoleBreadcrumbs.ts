@@ -27,7 +27,7 @@ const DEFAULT_MAX_BREADCRUMBS = 20;
 
 function resolveMaxBreadcrumbs(): number {
   try {
-    const maybeEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
+    const maybeEnv = (import.meta as { env?: Record<string, string> }).env;
     const raw = maybeEnv?.VITE_MAX_BREADCRUMB;
     const parsed = raw ? Number(raw) : NaN;
     return Number.isFinite(parsed) && parsed > 3 ? parsed : DEFAULT_MAX_BREADCRUMBS;

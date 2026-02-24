@@ -6,13 +6,6 @@ import type { LoadAppConfigReturn } from '~/loader';
 import { useAppDocumentTitle } from '~/router/title/pageTitle';
 import { LicenseInfo } from './LicenseInfo.js';
 
-// LicenseInfo temporarily commented out until component is available
-// const LazyLicenseInfo = lazy(() =>
-//   import('../../../../../docs/licenses.json').then((module) => ({
-//     default: () => <LicenseInfo licenseData={module.default} />,
-//   }))
-// );
-
 export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
   const navigate = useNavigate();
   useAppDocumentTitle('Info');
@@ -31,11 +24,11 @@ export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
           <Typography variant="h4" gutterBottom>
             {appConfig.appTitle}
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" >
             {appConfig.appDescription}
           </Typography>
           {appConfig.appDetails && (
-            <Typography variant="body2" paragraph>
+            <Typography variant="body2" >
               {appConfig.appDetails}
             </Typography>
           )}

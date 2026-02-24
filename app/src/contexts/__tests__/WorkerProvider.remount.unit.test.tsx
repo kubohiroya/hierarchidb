@@ -1,9 +1,8 @@
-import React from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { WorkerClientProxy } from '../worker-runtime/WorkerClientProxy';
-import { WorkerProvider } from './WorkerProvider.tsx';
+import { WorkerProvider } from './WorkerProvider';
 
 const ensureInitializedMock = vi.fn(() => new Promise<never>(() => {}));
 let runtimeState: 'uninitialized' | 'initializing' | 'ready' | 'failed' = 'uninitialized';

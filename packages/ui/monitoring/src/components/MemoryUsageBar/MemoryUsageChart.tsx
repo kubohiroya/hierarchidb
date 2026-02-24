@@ -136,7 +136,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
       if ('measureUserAgentSpecificMemory' in performance) {
         const result = await (
-          performance as unknown as {
+          performance as {
             measureUserAgentSpecificMemory: () => Promise<{
               breakdown: Array<{ bytes?: number; types?: string[]; url?: string }>;
             }>;
@@ -150,7 +150,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         let totalMemory = maxMemory;
         if ('memory' in performance) {
           const memory = (
-            performance as unknown as {
+            performance as {
               memory: { jsHeapSizeLimit?: number; usedJSHeapSize?: number };
             }
           ).memory;
@@ -168,7 +168,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         };
       } else if ('memory' in performance) {
         const memory = (
-          performance as unknown as {
+          performance as {
             memory: { jsHeapSizeLimit?: number; usedJSHeapSize?: number };
           }
         ).memory;

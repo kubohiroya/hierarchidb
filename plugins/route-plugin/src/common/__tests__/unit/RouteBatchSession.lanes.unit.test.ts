@@ -5,12 +5,16 @@ import { RouteBuildSession } from '../../../services/RouteBuildSession';
 import type { NodeId } from '@hierarchidb/core-types';
 import { RouteGenerationMethod } from '../../entities/RouteEntity';
 import { VtTaskQueueDb, deleteTasksByNode, putTasks } from '@hierarchidb/vt-orchestrator';
+import type { RouteBuildSessionDeps } from '../../../services/RouteBuildSession';
 
-class TestGenerator {
+class TestGenerator implements RouteBuildSessionDeps['generator'] {
   public activeOsm = 0;
   public maxOsm = 0;
 
-  async generate(points: [number, number][], opts: { method: string; options?: any }): Promise<any> {
+  async generate(
+    points: [number, number][],
+    opts: { method: string; options?: Record<string, unknown> },
+  ): Promise<unknown> {
     if (opts.method === 'osm_route') {
       this.activeOsm++;
       this.maxOsm = Math.max(this.maxOsm, this.activeOsm);
@@ -77,9 +81,9 @@ describe('RouteBuildSession lane gating', () => {
     })));
     const gen = new TestGenerator();
     const s = new RouteBuildSession(nodeId, cfg, tasks, {
-      generator: gen as any,
+      generator: gen,
     });
-    const anySession = s as unknown as {
+    const anySession = s as {
       findTask(taskId: string): RouteBuildTask | undefined;
       handleRouteGenerationTask(task: { taskId: string }): Promise<{ status: 'completed'; progress: number }>;
     };

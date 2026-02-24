@@ -24,7 +24,7 @@ interface Params {
 export function useCommandProcessorTracker({ client, setState, setSSOT }: Params) {
   const refreshUndoRedo = useCallback(async () => {
     try {
-      const getCP = (client as unknown as MaybeCP | undefined)?.getCommandProcessor;
+      const getCP = (client as MaybeCP | undefined)?.getCommandProcessor;
       if (typeof getCP !== 'function') return;
       const cp = await getCP();
       if (!cp) return;
@@ -98,7 +98,7 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
 
     const tick = async () => {
       try {
-        const getCP = (client as unknown as MaybeCP | undefined)?.getCommandProcessor;
+        const getCP = (client as MaybeCP | undefined)?.getCommandProcessor;
         if (typeof getCP !== 'function') return;
         cp = cp || (await getCP());
         if (!cp) return;

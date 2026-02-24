@@ -102,7 +102,7 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, object>()): 
   }
 
   if (Array.isArray(value)) {
-    const array = value as unknown[];
+    const array = value;
     return array.map((entry) => sanitizeForComlink(entry, seen)) as T;
   }
 

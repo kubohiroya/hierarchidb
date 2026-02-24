@@ -2,8 +2,9 @@ import type { TaskCountSummary } from '../../../../../../packages/ui/build-sessi
 import type { BuildProgress } from './shapeBuildProgressMapping.js';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { BuildTaskSummary } from '../../../../../../packages/build-api';
-import type { TaskStageCarrier } from '../../../../../../packages/ui/build-sessions';
+import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
+
+type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
 
 export type StageCountInfo = { counts: TaskCountSummary; hasIncomplete: boolean };
 

@@ -48,9 +48,9 @@ const quantizeCoordinates = <T>(coords: T, quantize: number): T => {
   if (!Array.isArray(coords)) return coords;
   if (coords.length === 0) return coords;
   if (typeof coords[0] === 'number') {
-    return (coords as number[]).map((value) => Math.round(value * quantize) / quantize) as unknown as T;
+    return (coords as number[]).map((value) => Math.round(value * quantize) / quantize) as T;
   }
-  return (coords as unknown[]).map((child) => quantizeCoordinates(child, quantize)) as unknown as T;
+  return (coords as T[]).map((child) => quantizeCoordinates(child, quantize)) as T;
 };
 
 

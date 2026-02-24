@@ -7,10 +7,48 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
 import type { CommandResult, TreeChangeEvent } from '@hierarchidb/tree-api';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import type { AdapterContext } from '../types';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
 
 //  WorkerAPI
-const createMockWorkerAPI = () =>
+type MockWorkerAPI = {
+  observeNode: ReturnType<typeof vi.fn>;
+  observeChildren: ReturnType<typeof vi.fn>;
+  observeSubtree: ReturnType<typeof vi.fn>;
+  observeDrafts: ReturnType<typeof vi.fn>;
+  getActiveSubscriptions: ReturnType<typeof vi.fn>;
+  cleanupOrphanedSubscriptions: ReturnType<typeof vi.fn>;
+  createDraftForCreate: ReturnType<typeof vi.fn>;
+  createDraft: ReturnType<typeof vi.fn>;
+  discardDraftForCreate: ReturnType<typeof vi.fn>;
+  discardDraft: ReturnType<typeof vi.fn>;
+  commitDraftForCreate: ReturnType<typeof vi.fn>;
+  commitDraft: ReturnType<typeof vi.fn>;
+  moveNodes: ReturnType<typeof vi.fn>;
+  duplicateNodes: ReturnType<typeof vi.fn>;
+  pasteNodes: ReturnType<typeof vi.fn>;
+  moveToArchive: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
+  restoreFromArchive: ReturnType<typeof vi.fn>;
+  importNodes: ReturnType<typeof vi.fn>;
+  undo: ReturnType<typeof vi.fn>;
+  redo: ReturnType<typeof vi.fn>;
+  getMutationAPI: ReturnType<typeof vi.fn>;
+  getQueryAPI: ReturnType<typeof vi.fn>;
+  getTreeNodeUpdaterAPI: ReturnType<typeof vi.fn>;
+};
+
+type MockTreeNodeUpdaterAPI = {
+  initTreeNode: ReturnType<typeof vi.fn>;
+  getTreeNode: ReturnType<typeof vi.fn>;
+  updateTreeNodeDraftMetadata: ReturnType<typeof vi.fn>;
+  updateTreeNodeDraftData: ReturnType<typeof vi.fn>;
+  commitDraft: ReturnType<typeof vi.fn>;
+  discardDraft: ReturnType<typeof vi.fn>;
+};
+
+const createMockWorkerAPI = (): MockWorkerAPI =>
   ({
     // TreeObservableService methods
     observeNode: vi.fn(),
@@ -41,12 +79,12 @@ const createMockWorkerAPI = () =>
     // getNode: vi.fn(),
     // getChildren: vi.fn(),
     //  ...
-  }) as any;
+  });
 
 describe('WorkerAPIAdapter', () => {
-  let mockWorkerAPI: any;
+  let mockWorkerAPI: MockWorkerAPI;
   let adapter: WorkerAPIAdapter;
-  let updaterAPI: any;
+  let updaterAPI: MockTreeNodeUpdaterAPI;
 
   beforeEach(() => {
     mockWorkerAPI = createMockWorkerAPI();
@@ -116,7 +154,7 @@ describe('WorkerAPIAdapter', () => {
       let expandedCallbackCalled = false;
       let subtreeCallbackCalled = false;
 
-      const unsubscribe = await adapter.subscribeToSubtree('test-node' as any, () => {
+      const unsubscribe = await adapter.subscribeToSubtree(toNodeId('test-node'), () => {
         expandedCallbackCalled = true;
         subtreeCallbackCalled = true;
       });
@@ -147,7 +185,7 @@ describe('WorkerAPIAdapter', () => {
       const error = new Error('Connection failed');
       mockWorkerAPI.observeSubtree.mockRejectedValue(error);
 
-      await expect(adapter.subscribeToSubtree('test-node' as any, () => {
+      await expect(adapter.subscribeToSubtree(toNodeId('test-node'), () => {
       })).rejects.toThrow();
     });
   });
@@ -161,7 +199,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveNodes.mockResolvedValue(successResult);
 
-      await adapter.moveNodes(['node1', 'node2'] as any, 'target-parent' as any);
+      await adapter.moveNodes([toNodeId('node1'), toNodeId('node2')], toNodeId('target-parent'));
 
       expect(mockWorkerAPI.moveNodes).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -182,7 +220,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveNodes.mockResolvedValue(failureResult);
 
-      await expect(adapter.moveNodes(['node1'] as any, 'invalid-target' as any)).rejects.toThrow(
+      await expect(adapter.moveNodes([toNodeId('node1')], toNodeId('invalid-target'))).rejects.toThrow(
         'Failed to move nodes: Target not found',
       );
     });
@@ -195,7 +233,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveToArchive.mockResolvedValue(successResult);
 
-      await adapter.archiveNodes(['node1', 'node2'] as any);
+      await adapter.archiveNodes([toNodeId('node1'), toNodeId('node2')]);
 
       expect(mockWorkerAPI.moveToArchive).toHaveBeenCalledWith(['node1', 'node2']);
     });
@@ -205,7 +243,7 @@ describe('WorkerAPIAdapter', () => {
     it('should handle startNodeEdit correctly', async () => {
       mockWorkerAPI.createDraft.mockResolvedValue(undefined);
 
-      const editSession = await adapter.startNodeEdit('test-node' as any);
+      const editSession = await adapter.startNodeEdit(toNodeId('test-node'));
 
       expect(editSession).toEqual(
         expect.objectContaining({
@@ -220,11 +258,7 @@ describe('WorkerAPIAdapter', () => {
     });
 
     it('should handle startNodeCreate correctly', async () => {
-      const editSession = await adapter.startNodeCreate(
-        'parent-node' as any,
-        'New Node',
-        'Description',
-      );
+      const editSession = await adapter.startNodeCreate(toNodeId('parent-node'), 'New Node', 'Description');
 
       expect(editSession).toEqual(
         expect.objectContaining({
@@ -242,7 +276,7 @@ describe('WorkerAPIAdapter', () => {
       });
       mockWorkerAPI.observeSubtree.mockResolvedValue(mockObservable);
 
-      await adapter.subscribeToSubtree('test-node' as any, () => {
+      await adapter.subscribeToSubtree(toNodeId('test-node'), () => {
       });
 
       let stats = adapter.getAdapterInfo().subscriptionStats;
@@ -280,15 +314,12 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveNodes.mockResolvedValue(successResult);
 
-      await adapter.moveNodes(
-        ['node1'] as any,
-        'target' as any,
-        {
-          viewId: 'custom-view',
-          groupId: 'custom-group',
-          onNameConflict: 'error',
-        } as any,
-      );
+      const context: Partial<AdapterContext> = {
+        viewId: 'custom-view',
+        groupId: 'custom-group',
+        onNameConflict: 'error',
+      };
+      await adapter.moveNodes([toNodeId('node1')], toNodeId('target'), context);
 
       expect(mockWorkerAPI.moveNodes).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -7,11 +7,11 @@ import {
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import { finalizePendingStageTasks } from '../../services/vt/shapePipelineStageHelpers';
-import type { TaskQueueRecord } from 'packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
 const NODE_ID = 'shape-stage-helper-test-node' as NodeId;
-const createDb = (): VtTaskQueueDb => new VtTaskQueueDb(`hdb-stage-helper-${Date.now()}-${Math.random()}`);
+const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 
 const createTask = (
   taskId: string,

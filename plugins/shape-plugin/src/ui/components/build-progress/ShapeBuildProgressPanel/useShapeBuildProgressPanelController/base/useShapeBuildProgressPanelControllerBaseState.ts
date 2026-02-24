@@ -1,9 +1,9 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import { useShapeBuildProgressPanelControllerBaseStateData } from './useShapeBuildProgressPanelControllerBaseState/useShapeBuildProgressPanelControllerBaseStateData.js';
+import { useShapeBuildProgressPanelControllerBaseStateDataCore } from './useShapeBuildProgressPanelControllerBaseState/useShapeBuildProgressPanelControllerBaseStateDataCore.js';
 
 export type ShapeBuildProgressPanelControllerBaseResult =
-  ReturnType<typeof useShapeBuildProgressPanelControllerBaseStateData>;
+  ReturnType<typeof useShapeBuildProgressPanelControllerBaseStateDataCore>;
 
 type ShapeBuildProgressPanelControllerProps = {
   data?: Partial<ShapeEntity>;
@@ -16,6 +16,5 @@ export const useShapeBuildProgressPanelControllerBase = ({
   nodeId,
   onChange,
 }: ShapeBuildProgressPanelControllerProps) => {
-  const state = useShapeBuildProgressPanelControllerBaseStateData({ data, nodeId, onChange });
-  return state;
+  return useShapeBuildProgressPanelControllerBaseStateDataCore({ data, nodeId, onChange });
 };

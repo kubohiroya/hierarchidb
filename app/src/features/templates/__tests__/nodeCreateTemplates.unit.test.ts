@@ -56,7 +56,7 @@ describe('nodeCreateTemplates', () => {
       json: async () => templateData,
     });
 
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as typeof fetch);
     return fetchMock;
   };
 

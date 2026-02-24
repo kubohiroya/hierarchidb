@@ -6,7 +6,7 @@
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { ShapeFeaturePayload } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type JSZip from 'jszip';
+import JSZip, { type JSZipObject } from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import {
   buildShapeCacheKey,
@@ -155,17 +155,18 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           signal,
         },
         retries,
+        options?.onRetryAttempt,
       );
       const zipBuffer = entry.value;
 
       //  ZIP
-      const JSZipCtor = await ensureJsZip();
+      const JSZipCtor = JSZip;
       const zip = new JSZipCtor();
       const zipData = await zip.loadAsync(zipBuffer);
 
       const files = new Map<string, ArrayBuffer>();
 
-      const entries = Object.entries(zipData.files) as Array<[string, JSZip.JSZipObject]>;
+      const entries = Object.entries(zipData.files) as Array<[string, JSZipObject]>;
       for (const [fileName, fileData] of entries) {
         if (!fileData.dir) {
           const buffer = await fileData.async('arraybuffer');
@@ -269,7 +270,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     if (!files || files.size === 0) {
       throw new Error('No shapefile entries to convert');
     }
-    const JSZipCtor = (await import('jszip')).default;
+    const JSZipCtor = JSZip;
     const zip = new JSZipCtor();
     for (const [name, buf] of files.entries()) {
       zip.file(name, buf);
@@ -309,16 +310,4 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     if (endpoint.includes('cities')) return 2;
     return undefined;
   }
-}
-let jszipModule: Promise<typeof JSZip> | null = null;
-function ensureJsZip(): Promise<typeof JSZip> {
-  if (!jszipModule) {
-    jszipModule = import('jszip').then((mod) => {
-      if ('default' in mod && mod.default) {
-        return mod.default;
-      }
-      return mod as unknown as typeof JSZip;
-    });
-  }
-  return jszipModule;
 }

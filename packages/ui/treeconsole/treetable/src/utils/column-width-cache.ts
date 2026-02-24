@@ -22,7 +22,7 @@ function getStorage(): Storage | null {
   }
   if (typeof globalThis !== 'undefined') {
     try {
-      const candidate = (globalThis as unknown as { localStorage?: Storage }).localStorage;
+      const candidate = (globalThis as { localStorage?: Storage }).localStorage;
       return candidate ?? null;
     } catch {
       return null;
@@ -78,7 +78,7 @@ export function loadCachedColumnWidths(pageNodeId: string | undefined): ColumnWi
   try {
     const raw = storage.getItem(cacheKey(pageNodeId));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed = JSON.parse(raw);
     const sanitized = sanitizeColumnWidths(parsed);
     if (!sanitized) {
       safeRemoveItem(storage, cacheKey(pageNodeId));

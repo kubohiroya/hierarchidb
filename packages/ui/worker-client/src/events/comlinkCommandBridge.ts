@@ -50,7 +50,7 @@ export function createComlinkCommandBridge<
           const transformed = runtimeToUi(command, args);
           return invoker(transformed.command, ...transformed.args);
         }
-        return invoker(command as unknown as keyof TUiMap & string, ...args);
+        return invoker(command as keyof TUiMap & string, ...args);
       }) as RemoteCommandInvoker<TRuntimeMap>;
     },
     toRuntimeInvoker(invoker: RemoteCommandInvoker<TRuntimeMap>): CommandInvoker<TWorkerMap> {
@@ -59,7 +59,7 @@ export function createComlinkCommandBridge<
           const transformed = workerToRuntime(command, args);
           return invoker(transformed.command, ...transformed.args);
         }
-        return invoker(command as unknown as keyof TRuntimeMap & string, ...args);
+        return invoker(command as keyof TRuntimeMap & string, ...args);
       }) as CommandInvoker<TWorkerMap>;
     },
   };

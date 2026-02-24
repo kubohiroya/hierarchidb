@@ -15,6 +15,20 @@ const canonicalLineKey = (coords: number[][]): string => {
   return forward < reverse ? forward : reverse;
 };
 
+type TileLineGeometry = number[][][];
+
+const isTileLineGeometry = (value: unknown): value is TileLineGeometry => (
+  Array.isArray(value)
+  && value.every((line) => (
+    Array.isArray(line)
+    && line.every((point) => (
+      Array.isArray(point)
+      && typeof point[0] === 'number'
+      && typeof point[1] === 'number'
+    ))
+  ))
+);
+
 export const dedupeTileLines = (tile: Tile): Tile => {
   const seen = new Set<string>();
   const out: Tile['features'] = [];
@@ -24,17 +38,23 @@ export const dedupeTileLines = (tile: Tile): Tile => {
       out.push(feature);
       continue;
     }
-    const newGeom: number[][][] = [];
-    const lines = (feature.geometry ?? []) as unknown as number[][][];
+    const lines = feature.geometry;
+    if (!isTileLineGeometry(lines)) {
+      out.push(feature);
+      continue;
+    }
+    let writeIndex = 0;
     for (const line of lines) {
       const key = canonicalLineKey(line);
       if (!seen.has(key)) {
         seen.add(key);
-        newGeom.push(line);
+        lines[writeIndex] = line;
+        writeIndex += 1;
       }
     }
-    if (newGeom.length > 0) {
-      out.push({ ...feature, geometry: newGeom as unknown as Tile['features'][number]['geometry'] });
+    lines.length = writeIndex;
+    if (lines.length > 0) {
+      out.push(feature);
     }
   }
 

@@ -323,7 +323,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
 
   const combinedFrameSx = useMemo<SxProps<Theme>>(
     () => (frameSx
-      ? ([defaultFrameSx, frameSx] as unknown as SxProps<Theme>)
+      ? ([defaultFrameSx, frameSx] as SxProps<Theme>)
       : defaultFrameSx),
     [defaultFrameSx, frameSx],
   );

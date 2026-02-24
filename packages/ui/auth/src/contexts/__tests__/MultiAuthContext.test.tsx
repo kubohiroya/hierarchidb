@@ -130,23 +130,23 @@ describe('MultiAuthProvider', () => {
         replace: vi.fn(),
         toString: () => 'https://app.example.com/test?param=value',
       },
-      localStorage: mockLocalStorage as unknown as Storage,
+      localStorage: mockLocalStorage as Storage,
     });
 
     try {
       Object.defineProperty(globalThis, 'crypto', {
-        value: mockCrypto as unknown as Crypto,
+        value: mockCrypto as Crypto,
         configurable: true,
       });
     } catch {
       // Fallback for environments where property is writable
-      Reflect.set(globalThis, 'crypto', mockCrypto as unknown as Crypto);
+      Reflect.set(globalThis, 'crypto', mockCrypto as Crypto);
     }
-    globalThis.localStorage = mockLocalStorage as unknown as Storage;
+    globalThis.localStorage = mockLocalStorage as Storage;
 
     // Mock fetch for Google userinfo
     fetchMock.mockReset();
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock as typeof fetch;
 
     vi.clearAllMocks();
   });

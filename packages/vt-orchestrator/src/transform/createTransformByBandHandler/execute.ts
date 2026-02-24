@@ -165,6 +165,28 @@ export const createTransformByBandHandler = (
       ...(progress !== undefined ? { progress: normalizePhaseProgress(progress) } : {}),
     }, `phase:update:${phase}`);
   };
+  const updateTaskRetryAttempt = async (taskId: string, retryAttempt: number): Promise<void> => {
+    if (!Number.isFinite(retryAttempt) || retryAttempt < 0) return;
+    try {
+      const currentTask = await taskQueue.tasks.get(taskId);
+      const currentMetadata = currentTask?.metadata;
+      const baseMetadata = typeof currentMetadata === 'object' && currentMetadata !== null
+        ? (currentMetadata as Record<string, unknown>)
+        : {};
+      await updateTaskStrict(taskId, {
+        metadata: {
+          ...baseMetadata,
+          retryAttempt: Math.max(0, Math.floor(retryAttempt)),
+        },
+      }, 'metadata:update:retry-attempt');
+    } catch (error) {
+      console.warn('[ShapeTransform] failed to update task retryAttempt', {
+        taskId,
+        retryAttempt,
+        error,
+      });
+    }
+  };
   const updateSimplifyAttemptPhase = async (
     taskId: string,
     params: {
@@ -213,6 +235,7 @@ export const createTransformByBandHandler = (
         },
       },
     }, 'phase:update:retry-simplify-feature');
+    await updateTaskRetryAttempt(taskId, params.attempt);
   };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
@@ -220,10 +243,12 @@ export const createTransformByBandHandler = (
   if (!Array.isArray(toleranceByBand) || toleranceByBand.length === 0) {
     throw new Error('transform requires toleranceByBand');
   }
-  const configuredRetryToleranceStep = typeof transformConfig.retryToleranceStep === 'number'
-    && Number.isFinite(transformConfig.retryToleranceStep)
-    ? Math.min(2, Math.max(0, transformConfig.retryToleranceStep))
-    : 0.01;
+  const configuredRetryCount = typeof transformConfig.retryCount === 'number' && Number.isFinite(transformConfig.retryCount)
+    ? Math.max(0, Math.min(10, Math.round(transformConfig.retryCount)))
+    : 4;
+  const retryToleranceByBand = Array.isArray(transformConfig.retryToleranceByBand)
+    ? transformConfig.retryToleranceByBand
+    : [];
   const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   const preserveTopology = transformConfig.preserveTopology ?? true;
@@ -245,8 +270,8 @@ export const createTransformByBandHandler = (
   let debugNodeId: NodeId | null = null;
   let debugSelectionLogged = false;
   let firstTaskLogged = false;
-  const RETRY_TOLERANCE_STEP_MULTIPLIER = 4;
-  const MAX_RETRY_STEPS = 12;
+  const DEFAULT_RETRY_TOLERANCE_OFFSET = 1;
+  const MAX_RETRY_ATTEMPTS = 10;
   const debugResetAfterMs = 30000;
   const readHeapUsageRatio = (): number | null => {
     const performance = (globalThis as {
@@ -267,6 +292,7 @@ export const createTransformByBandHandler = (
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
+    void updateTaskRetryAttempt(taskId, 0);
     if (!firstTaskLogged && isTaskDebugLoggingEnabled()) {
       firstTaskLogged = true;
       console.debug('[ShapeTransform][TaskDebug] handler first task', {
@@ -991,9 +1017,13 @@ export const createTransformByBandHandler = (
       }
       if (!shouldDeferSimplifyToVt) {
         await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
-        const maxRetrySteps = MAX_RETRY_STEPS;
-        const resolveRetryToleranceStep = (): number => configuredRetryToleranceStep;
-        const retryToleranceStep = resolveRetryToleranceStep() * RETRY_TOLERANCE_STEP_MULTIPLIER;
+        const maxRetryAttempts = Math.min(MAX_RETRY_ATTEMPTS, configuredRetryCount);
+        const resolveRetryTolerance2 = (): number => {
+          const fallback = Math.min(12, tolerance + DEFAULT_RETRY_TOLERANCE_OFFSET);
+          const candidate = resolveTransformTolerance(retryToleranceByBand, band.bandIndex, fallback);
+          return Number.isFinite(candidate) ? candidate : fallback;
+        };
+        const retryTolerance2 = resolveRetryTolerance2();
 
         const runRetrySimplifyAttempt = async (feature: Feature, nextToleranceValue: number): Promise<Feature | null> => {
           const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () => (
@@ -1028,21 +1058,21 @@ export const createTransformByBandHandler = (
         let maxRetryAttemptsPerFeature = 0;
         let minFinalTolerance = Number.POSITIVE_INFINITY;
         let maxFinalTolerance = Number.NEGATIVE_INFINITY;
-        if (vertexLimitStats.overLimitFeatureCount > 0) {
-          const nextFeatures: Feature[] = [];
+            if (vertexLimitStats.overLimitFeatureCount > 0) {
+              const nextFeatures: Feature[] = [];
           let maxVertexCount = 0;
           let overLimitFeatureCount = 0;
-          for (const [featureIndex, feature] of adjustedSimplified.features.entries()) {
-            if (!feature?.geometry) {
-              nextFeatures.push(feature);
-              continue;
-            }
-            const result = await retrySimplifyFeatureWithinVertexLimit({
-              feature,
-              baseTolerance: tolerance,
-              retryVertexLimit,
-              retryToleranceStep,
-              maxRetrySteps,
+              for (const [featureIndex, feature] of adjustedSimplified.features.entries()) {
+                if (!feature?.geometry) {
+                  nextFeatures.push(feature);
+                  continue;
+                }
+                const result = await retrySimplifyFeatureWithinVertexLimit({
+                  feature,
+                  baseTolerance: tolerance,
+                  retryVertexLimit,
+                  retryToleranceSecond: retryTolerance2,
+                  maxRetryAttempts,
               featureIndex: featureIndex + 1,
               featureTotal: adjustedSimplified.features.length,
               runRetrySimplifyAttempt: (nextTolerance) => runRetrySimplifyAttempt(feature, nextTolerance),
@@ -1060,6 +1090,9 @@ export const createTransformByBandHandler = (
               overLimitFeatureCount += 1;
             }
             retryAttemptsTotal += result.retryAttempts;
+            if (result.retryAttempts > 0) {
+              await updateTaskRetryAttempt(taskId, retryAttemptsTotal);
+            }
             if (result.retryAttempts > 0) {
               retryAttemptedFeatureCount += 1;
             }
@@ -1156,7 +1189,7 @@ export const createTransformByBandHandler = (
             `retryAttemptsTotal=${retryAttemptsTotal}`,
             `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCountForLimit}`,
             `maxRetriesPerFeature=${maxRetryAttemptsPerFeature}`,
-            `retryStep=${formatTolerance(retryToleranceStep)}`,
+            `retryCount=${maxRetryAttempts}`,
             `finalToleranceRange=${formatTolerance(finalToleranceMinValue)}..${formatTolerance(finalToleranceMaxValue)}`,
           ].join(', ');
           if (vertexLimitRecords.length > 0) {

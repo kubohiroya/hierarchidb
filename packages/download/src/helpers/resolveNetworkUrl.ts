@@ -86,7 +86,7 @@ function isBrowserRuntime(): boolean {
 
 function getOrigin(): string | null {
   try {
-    const workerScope = typeof self !== 'undefined' ? (self as unknown as { location?: Location }) : undefined;
+    const workerScope = typeof self !== 'undefined' ? (self as { location?: Location }) : undefined;
     const globalScope = globalThis as { location?: Location };
     const candidate = typeof window !== 'undefined'
       ? window.location

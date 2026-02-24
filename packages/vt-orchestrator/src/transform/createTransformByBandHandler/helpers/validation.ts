@@ -75,7 +75,7 @@ export const validateLineStringCoords = (coords: unknown): number[][] | null => 
 
 export const validatePolygonCoords = (coords: unknown): number[][][] | null => {
   if (!Array.isArray(coords) || coords.length === 0) return null;
-  const rings = coords as unknown[];
+  const rings = coords;
   const out: number[][][] = [];
   for (const ring of rings) {
     if (!Array.isArray(ring) || ring.length < 4) return null;

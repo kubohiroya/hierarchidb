@@ -300,6 +300,15 @@ export class NodeLifecycleManager {
     }
   }
 
+  // Test helpers (exposed intentionally for direct unit test invocation)
+  async _testHandleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
+    return this.handleReferenceCountIncrement(nodeId, nodeType);
+  }
+
+  async _testHandleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
+    return this.handleReferenceCountDecrement(nodeId, nodeType);
+  }
+
   /**
    * Create lifecycle context for hooks
    */

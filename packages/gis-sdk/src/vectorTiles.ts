@@ -252,7 +252,7 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
 const decodeFeatureCollectionFromJsonBuffer = async (buffer: ArrayBuffer): Promise<FeatureCollectionLike | null> => {
   try {
     const text = new TextDecoder().decode(new Uint8Array(buffer));
-    const parsed = JSON.parse(text) as unknown;
+    const parsed = JSON.parse(text);
     return await normalizeFeatureCollection(parsed);
   } catch {
     return null;
@@ -287,13 +287,13 @@ export const encodeFlatGeobufFromFeatureCollection = async (
 
 const loadGeojsonVt = async (): Promise<GeojsonVtModule> => {
   const mod = await import('geojson-vt');
-  const candidate = mod as unknown as { default?: GeojsonVtModule } & GeojsonVtModule;
+  const candidate = mod as { default?: GeojsonVtModule } & GeojsonVtModule;
   return candidate.default ?? candidate;
 };
 
 const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
   const mod = await import('@maplibre/vt-pbf');
-  const candidate = mod as unknown as { default?: typeof vtPbfNS } & typeof vtPbfNS;
+  const candidate = mod as { default?: typeof vtPbfNS } & typeof vtPbfNS;
   return candidate.default ?? candidate;
 };
 
@@ -494,12 +494,12 @@ export const generateVectorTilesFromFeatureCollection = async (
             : null;
         if (layer?.features?.length) {
           const layers: Record<string, Tile> = { layer0: layer };
-          const layersArg = layers as unknown as Parameters<typeof vtpbf.fromGeojsonVt>[0];
+          const layersArg = Object.values(layers);
           const pbf = vtpbf.fromGeojsonVt(layersArg, {
             version: 2,
             extent: 4096,
           });
-          const bytes = pbf as Uint8Array;
+          const bytes = pbf;
           tilesGenerated++;
           tilesWithFeatures++;
           totalBytes += bytes.byteLength;

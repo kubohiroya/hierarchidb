@@ -167,7 +167,7 @@ const getSharedBuildSessionSubscription = (
   api: WorkerApiRemote,
   nodeType: NodeType
 ): SharedBuildSessionSubscription => {
-  const apiKey = api as unknown as object;
+  const apiKey = api as object;
   let subscriptionsByNodeType = sharedSubscriptionsByApi.get(apiKey);
   if (!subscriptionsByNodeType) {
     subscriptionsByNodeType = new Map<string, SharedBuildSessionSubscription>();

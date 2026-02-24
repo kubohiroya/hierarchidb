@@ -9,8 +9,21 @@ import type {
 } from '@hierarchidb/tree-api';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../../services/CommandProcessor';
-import type { CoreDB } from '../../../services/CoreDB';
+import { CommandProcessor } from '../../../services/CommandProcessor';
+import { CoreDB } from '../../../services/CoreDB';
+
+const createCoreStub = () => {
+  const core = CoreDB.createForTest('runtime-worker-lifecycle-notify');
+  core.getNode = vi.fn(async (id: NodeId) => undefined) as CoreDB['getNode'];
+  core.listChildren = vi.fn(async () => []) as CoreDB['listChildren'];
+  core.duplicateSubtreeWithMap = vi.fn(async (src: NodeId, _dst: NodeId) => {
+    const newRoot = `${String(src)}-copy` as NodeId;
+    return { newRootId: newRoot, idMap: new Map<NodeId, NodeId>([[src, newRoot]]) };
+  }) as CoreDB['duplicateSubtreeWithMap'];
+  core.createNode = vi.fn(async (node: { id: NodeId }) => node.id) as CoreDB['createNode'];
+  core.bulkCreateNodes = vi.fn(async () => undefined) as CoreDB['bulkCreateNodes'];
+  return core;
+};
 
 describe('Entity lifecycle notifications from services', () => {
   beforeEach(() => {
@@ -37,66 +50,40 @@ describe('Entity lifecycle notifications from services', () => {
       version: 1,
     });
 
-    const core: Pick<CoreDB, 'getNode' | 'listChildren' | 'duplicateSubtreeWithMap'> = {
-      getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
-      listChildren: vi.fn(async () => []),
-      duplicateSubtreeWithMap: vi.fn(async (src: NodeId, _dst: NodeId) => {
-        const newRoot = `${String(src)}-copy` as NodeId;
-        return {
-          newRootId: newRoot,
-          idMap: new Map<NodeId, NodeId>([[src, newRoot]]),
-        };
-      }),
-    };
+    const core = createCoreStub();
+    core.getNode = vi.fn(async (id: NodeId) => nodeMap.get(id)) as CoreDB['getNode'];
 
-    const lifecycleMock = {
-      handleCommand: vi.fn(async () => undefined),
-    };
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
-    const getSingletonSpy = vi
-      .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(
-        lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>
-      );
-
-    const commandStub: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(),
-    };
+    Reflect.set(EntityLifecycleManager, 'instance', undefined);
+    const lifecycleManager = EntityLifecycleManager.getSingleton(core);
+    const handleCommandSpy = vi.spyOn(lifecycleManager, 'handleCommand').mockResolvedValue(undefined);
 
     const { TreeMutationService } = await import('../../../services/TreeMutationService');
-    const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
+    const commandStub = new CommandProcessor(core);
+    const svc = new TreeMutationService(core, commandStub);
     const duplicatePayload: DuplicateNodesPayload = { nodeIds: [sourceId], toParentId: parentId };
     const result = await svc.duplicateNodes(duplicatePayload);
     expect(result.success).toBe(true);
-    expect(lifecycleMock.handleCommand).toHaveBeenCalled();
+    expect(handleCommandSpy).toHaveBeenCalled();
 
-    getSingletonSpy.mockRestore();
+    handleCommandSpy.mockRestore();
   });
 
   it('pasteNodes notifies lifecycle when flag ON', async () => {
     const folderType = toNodeType('folder');
-    const core: Pick<CoreDB, 'listChildren' | 'createNode' | 'bulkCreateNodes' | 'getNode'> = {
-      listChildren: vi.fn(async () => []),
-      createNode: vi.fn(async (node: TreeNode) => node.id),
-      bulkCreateNodes: vi.fn(async () => undefined),
-      getNode: vi.fn(async () => undefined),
-    };
-    const lifecycleMock = {
-      handleCommand: vi.fn(async () => undefined),
-    };
+    const core = createCoreStub();
+    core.listChildren = vi.fn(async () => []) as CoreDB['listChildren'];
+    core.createNode = vi.fn(async (node: TreeNode) => node.id) as CoreDB['createNode'];
+    core.bulkCreateNodes = vi.fn(async () => undefined) as CoreDB['bulkCreateNodes'];
+    core.getNode = vi.fn(async () => undefined) as CoreDB['getNode'];
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
-    const getSingletonSpy = vi
-      .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(
-        lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>
-      );
-
-    const commandStub: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(),
-    };
+    Reflect.set(EntityLifecycleManager, 'instance', undefined);
+    const lifecycleManager = EntityLifecycleManager.getSingleton(core);
+    const handleCommandSpy = vi.spyOn(lifecycleManager, 'handleCommand').mockResolvedValue(undefined);
 
     const { TreeMutationService } = await import('../../../services/TreeMutationService');
-    const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
+    const commandStub = new CommandProcessor(core);
+    const svc = new TreeMutationService(core, commandStub);
     const payload: PasteNodesPayload = {
       nodes: {
         [toNodeId('a')]: {
@@ -140,38 +127,33 @@ describe('Entity lifecycle notifications from services', () => {
     };
     const result = await svc.pasteNodes(envelope);
     expect(result.success).toBe(true);
-    expect(lifecycleMock.handleCommand).toHaveBeenCalled();
+    expect(handleCommandSpy).toHaveBeenCalled();
 
-    getSingletonSpy.mockRestore();
+    handleCommandSpy.mockRestore();
   });
 
   it('importNodes notifies lifecycle when flag ON', async () => {
     const bulkCreated: NodeId[] = [];
-    const core: Pick<
-      ImportExportDBPort,
-      'bulkCreateNodes' | 'getNode' | 'listChildren' | 'listVectorTileRecords'
-    > & {
-      getCoreDB: () => CoreDB;
-    } = {
+    const coreBase = CoreDB.createForTest('runtime-worker-lifecycle-notify-import');
+    coreBase.getNode = vi.fn(async () => undefined) as CoreDB['getNode'];
+    coreBase.bulkCreateNodes = vi.fn(async () => undefined) as CoreDB['bulkCreateNodes'];
+    coreBase.listChildren = vi.fn(async () => []) as CoreDB['listChildren'];
+    const core: ImportExportDBPort & { getCoreDB: () => CoreDB } = {
+      listVectorTileRecords: vi.fn(async () => []) as ImportExportDBPort['listVectorTileRecords'],
       bulkCreateNodes: vi.fn(async (nodes: TreeNode[]) => {
         nodes.forEach((node) => {
           bulkCreated.push(node.id);
         });
-      }),
-      getNode: vi.fn(async () => undefined),
-      listChildren: vi.fn(async () => []),
-      listVectorTileRecords: vi.fn(async () => []),
-      getCoreDB: () => core as unknown as CoreDB,
-    };
-    const lifecycleMock = {
-      handleCommand: vi.fn(async () => undefined),
+      }) as ImportExportDBPort['bulkCreateNodes'],
+      getNode: coreBase.getNode as ImportExportDBPort['getNode'],
+      listChildren: coreBase.listChildren as ImportExportDBPort['listChildren'],
+      getCoreDB: () => coreBase,
     };
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
-    const getSingletonSpy = vi
-      .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(
-        lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>
-      );
+    Reflect.set(EntityLifecycleManager, 'instance', undefined);
+    const handleCommandSpy = vi
+      .spyOn(EntityLifecycleManager.prototype, 'handleCommand')
+      .mockResolvedValue(undefined);
 
     const { ImportExportLifecycleService } = await import(
       '../../../services/ImportExportLifecycleService'
@@ -191,8 +173,8 @@ describe('Entity lifecycle notifications from services', () => {
     });
     expect(result.success).toBe(true);
     expect(bulkCreated.length).toBe(2);
-    expect(lifecycleMock.handleCommand).toHaveBeenCalled();
+    expect(handleCommandSpy).toHaveBeenCalled();
 
-    getSingletonSpy.mockRestore();
+    handleCommandSpy.mockRestore();
   });
 });

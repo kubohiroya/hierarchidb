@@ -4,7 +4,7 @@ import type {
   BuildProgressEvent,
   BuildUnifiedProgressInfo,
   UseBuildProgressOptions,
-} from '../../../../../packages/build-api';
+} from '@hierarchidb/build-api';
 
 export class BuildService {
   async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {
@@ -229,7 +229,7 @@ export const vtpbf = {
   fromGeojson: () => new Uint8Array(),
 };
 export const geojsonvt = (..._args: unknown[]) => ({
-  getTile: () => ({ features: [] as unknown[] }),
+  getTile: () => ({ features: [] }),
 });
 // Support both default and named import styles
 module.exports = Object.assign(module.exports || {}, { default: vtpbf, geojsonvt });

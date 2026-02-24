@@ -1121,7 +1121,7 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('drops stale tasks that no longer exist in snapshot', async () => {
+  it('keeps existing tasks when a snapshot omits previously seen taskIds', async () => {
     const { result } = renderHook(() => useShapeBuildTasks('node-7' as NodeId));
 
     await waitFor(() => {
@@ -1174,8 +1174,11 @@ describe('useShapeBuildTasks', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.taskId).toBe('node-7:fetch:ABW:1');
+      expect(result.current.tasks).toHaveLength(2);
+      expect(result.current.tasks[0]?.taskId).toBe('node-7:fetch:ABW:0');
+      expect(result.current.tasks[1]?.taskId).toBe('node-7:fetch:ABW:1');
+      expect(result.current.tasks[0]?.progress).toBe(70);
+      expect(result.current.tasks[1]?.progress).toBe(10);
     });
   });
 

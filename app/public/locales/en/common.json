@@ -360,6 +360,13 @@
             "finishStage": "Finish stage then stop",
             "stop": "Stop on first error"
           }
+        },
+        "resumeQueueDialog": {
+          "ariaLabelHome": "Go to HierarchiDB home",
+          "title": "Check build session resume queue",
+          "deleteQueue": "Delete queue",
+          "resumeQueue": "Resume queue execution",
+          "skip": "Skip delete or resume and close this dialog"
         }
       }
     },

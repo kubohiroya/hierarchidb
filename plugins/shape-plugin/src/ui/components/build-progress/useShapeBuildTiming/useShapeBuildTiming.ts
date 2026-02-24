@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 import {
   appendBuildSample,
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
@@ -26,7 +27,7 @@ const INACTIVE_GRACE_MS = 5000;
 
 type Args = {
   buildStatus: BuildStatus;
-  stage?: string;
+  stage?: TaskStage;
   resolvedTaskType?: string;
   nodeId?: NodeId;
   monitorKey: string | null;
@@ -65,7 +66,7 @@ export const useShapeBuildTiming = ({
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: stage as 'fetch' | 'transform' | 'vt' | undefined,
+        stage,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);

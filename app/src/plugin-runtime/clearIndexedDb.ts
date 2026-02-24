@@ -44,7 +44,7 @@ export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
 
   // Best-effort: close any open Dexie connections in this tab before deletion.
   try {
-    const closeAll = (Dexie as unknown as { closeAll?: () => void }).closeAll;
+    const closeAll = (Dexie as { closeAll?: () => void }).closeAll;
     closeAll?.();
   } catch {
     // ignore close failures; delete will attempt to recover

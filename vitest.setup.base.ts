@@ -30,7 +30,7 @@ const comlinkMock = {
   transfer: (obj: any, _transfers?: any[]) => obj,
   transferHandlers: new Map(),
   proxy: <T>(obj: T): T => obj,
-  windowEndpoint: (window: any) => window,
+  windowEndpoint: (globalWindow: Window) => globalWindow,
   createEndpoint: () => ({}),
   releaseProxy: () => {},
 };
@@ -43,7 +43,8 @@ vi.mock('comlink', () => comlinkMock);
 
 // Set up Worker environment globals
 if (typeof globalThis.self === 'undefined') {
-  globalThis.self = globalThis as any;
+  const globalThisWithSelf = globalThis as { self?: unknown };
+  globalThisWithSelf.self = globalThis;
 }
 
 // Mock Web Worker class
@@ -82,7 +83,8 @@ class WorkerMock {
 
 // Set Worker globally if not available
 if (typeof Worker === 'undefined') {
-  (globalThis as any).Worker = WorkerMock;
+  const workerGlobal = globalThis as { Worker: typeof WorkerMock };
+  workerGlobal.Worker = WorkerMock;
 }
 
 // ========================
@@ -111,12 +113,21 @@ try {
   // ignore and fall back to JSON-based clone
 }
 if (!globalThis.structuredClone) {
-  globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+  globalThis.structuredClone = (obj: unknown): unknown => JSON.parse(JSON.stringify(obj));
 }
 
 // crypto.subtle mock for tests that need crypto APIs
 if (!globalThis.crypto) {
-  (globalThis as any).crypto = {
+  const cryptoTarget = globalThis as { crypto?: {
+    subtle: {
+      digest: (...args: unknown[]) => Promise<ArrayBuffer>;
+      encrypt: (...args: unknown[]) => Promise<ArrayBuffer>;
+      decrypt: (...args: unknown[]) => Promise<ArrayBuffer>;
+    };
+    getRandomValues: (arr: ArrayLike<number>) => ArrayLike<number>;
+  };
+
+  cryptoTarget.crypto = {
     subtle: {
       digest: vi.fn(),
       encrypt: vi.fn(),
@@ -126,7 +137,7 @@ if (!globalThis.crypto) {
       for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
       return arr;
     }),
-  } as any;
+  };
 }
 // Ensure window.crypto is writable/configurable for tests that reassign it
 try {
@@ -144,7 +155,7 @@ void (async () => {
   if (typeof globalThis.fetch !== 'function') {
     try {
       const fetchModule = await import('node-fetch');
-      const { default: nodeFetch, Headers, Request, Response, FormData } = fetchModule as unknown as {
+      const { default: nodeFetch, Headers, Request, Response, FormData } = fetchModule as {
         default: typeof fetch;
         Headers: typeof globalThis.Headers;
         Request: typeof globalThis.Request;
@@ -170,7 +181,7 @@ if (!globalThis.CompressionStream) {
     constructor(public format: string) {}
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
-  } as any;
+  } as typeof globalThis.CompressionStream;
 }
 
 if (!globalThis.DecompressionStream) {
@@ -178,23 +189,31 @@ if (!globalThis.DecompressionStream) {
     constructor(public format: string) {}
     writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
     readable = { getReader: () => ({ read: vi.fn() }) };
-  } as any;
+  } as typeof globalThis.DecompressionStream;
 }
 
 // URL.createObjectURL is used in worker bootstrap e2e-style tests
 if (!globalThis.URL?.createObjectURL) {
-  (globalThis.URL as any) = globalThis.URL || {};
-  (globalThis.URL as any).createObjectURL = vi.fn(() => 'blob:mock');
+  const urlGlobal = globalThis.URL ?? ({} as URL);
+  const urlWithCreate = {
+    ...urlGlobal,
+    createObjectURL: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
+  };
+  globalThis.URL = urlWithCreate;
 }
 
 if (!globalThis.URL?.revokeObjectURL) {
-  (globalThis.URL as any) = globalThis.URL || {};
-  (globalThis.URL as any).revokeObjectURL = vi.fn();
+  const urlGlobal = globalThis.URL ?? ({} as URL);
+  const urlWithRevoke = {
+    ...urlGlobal,
+    revokeObjectURL: vi.fn() as URL['revokeObjectURL'],
+  };
+  globalThis.URL = urlWithRevoke;
 }
 
 // Make window.location configurable/writable for tests that override it
 try {
-  const current = globalThis.window?.location ?? ({} as any);
+  const current: Location | Record<string, unknown> = globalThis.window?.location ?? {};
   Object.defineProperty(globalThis.window ?? globalThis, 'location', {
     configurable: true,
     writable: true,

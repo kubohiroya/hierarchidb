@@ -57,7 +57,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
     ref,
   });
   const renderTaskItemCard = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
-    const taskStageId = task.stage ?? stageId;
+    const taskStageId = task.stage;
     const stageIcon = resolveStageIcon(taskStageId);
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>

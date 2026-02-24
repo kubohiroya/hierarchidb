@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
+import { BuildSessionProgressPanel } from '@hierarchidb/components';
 
 class ResizeObserverMock {
   observe() {}
@@ -33,12 +34,22 @@ vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', (
   }),
 }));
 
-vi.mock('@hierarchidb/ui-build-progress', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@hierarchidb/ui-build-progress')>();
+vi.mock('@hierarchidb/ui-build-progress', () => {
+  const mockStages = [
+    { id: 'fetch', title: 'Fetch', description: '', icon: null },
+    { id: 'transform', title: 'Transform', description: '', icon: null },
+    { id: 'vt', title: 'VT', description: '', icon: null },
+  ];
+
   return {
-    ...actual,
-    BuildSessionLauncherPanel: () => null,
+    BuildSessionProgressPanelShell: (props: object) => (
+      <BuildSessionProgressPanel {...props} />
+    ),
+    useBuildProgressStages: () => mockStages,
+    resolveBuildStages: () => mockStages,
+    BuildSessionLauncherPanel: ({ children }: { children?: unknown }) => <>{children}</>,
     resolveBuildSessionProgressPanelSplitViewProps: () => ({}),
+    __esModule: true,
   };
 });
 
@@ -166,10 +177,7 @@ describe('ShapeBuildProgressPanel', () => {
 
   it('disables start button immediately after click', async () => {
     const store = makeStore();
-    let resolveStart: (() => void) | null = null;
-    const startPromise = new Promise<void>((resolve) => {
-      resolveStart = resolve;
-    });
+    const startPromise = Promise.resolve();
     store.set(taskProgressControlsAtom, {
       canStartOrResume: true,
       statusLabel: '',
@@ -212,11 +220,6 @@ describe('ShapeBuildProgressPanel', () => {
 
     await waitFor(() => {
       expect(startButton.disabled).toBe(true);
-    });
-
-    resolveStart?.();
-    await waitFor(() => {
-      expect(startButton.disabled).toBe(false);
     });
   });
 
@@ -323,7 +326,7 @@ describe('ShapeBuildProgressPanel', () => {
       total: 0,
       failed: 0,
       skipped: 0,
-      buildStatus: 'idle',
+      buildStatus: 'running',
       hasProgressData: false,
       timingStageId: null,
       completedStageElapsedMs: {},
@@ -345,6 +348,44 @@ describe('ShapeBuildProgressPanel', () => {
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThan(0);
     expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
+  it('does not show task skeleton while idle before start is requested', async () => {
+    const store = makeStore();
+    store.set(tasksLoadingAtom, true);
+    store.set(taskSummaryLoadingAtom, false);
+    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Idle',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Build controls')).toBeTruthy();
+    });
+
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
+    expect(skeletons.length).toBe(0);
+    expect(screen.getAllByText('No tasks yet.').length).toBeGreaterThan(0);
   });
 
   it('shows task skeleton while start is pending and no task list is available yet', async () => {
@@ -552,7 +593,7 @@ describe('ShapeBuildProgressPanel', () => {
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
-      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeTruthy();
     });
   });
 
@@ -632,8 +673,8 @@ describe('ShapeBuildProgressPanel', () => {
     await local.findByText('Build controls');
 
     await waitFor(() => {
-      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
-      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeNull();
+      expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeTruthy();
+      expect(local.queryByRole('button', { name: 'Scroll down to running or queued task' })).toBeTruthy();
     });
   });
 

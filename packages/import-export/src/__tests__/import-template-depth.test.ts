@@ -105,7 +105,7 @@ describe('Import Template - depth assignment', () => {
     const port = new InMemoryImportExportPort('root' as NodeId, 0);
 
     const { ImportExportService } = await import('../ImportExportService');
-    const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
+    const svc = await ImportExportService.getSingleton(port as ImportExportDBPort);
 
     const result = await svc.importNodes({
       treeId: 'r' as TreeId,
@@ -156,7 +156,7 @@ describe('Import Template - name conflicts', () => {
     };
 
     const { ImportExportService } = await import('../ImportExportService');
-    const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
+    const svc = await ImportExportService.getSingleton(port as ImportExportDBPort);
 
     const result = await svc.importNodes({
       treeId: 'r' as TreeId,

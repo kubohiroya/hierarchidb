@@ -32,8 +32,8 @@ const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
     const rightIsArray = Array.isArray(right);
     if (leftIsArray || rightIsArray) {
       if (!leftIsArray || !rightIsArray) return false;
-      const arrA = left as unknown[];
-      const arrB = right as unknown[];
+      const arrA = left;
+      const arrB = right;
       if (arrA.length !== arrB.length) return false;
       for (let i = 0; i < arrA.length; i += 1) {
         stack.push({ left: arrA[i], right: arrB[i] });

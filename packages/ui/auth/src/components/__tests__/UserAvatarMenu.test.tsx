@@ -177,8 +177,8 @@ describe('UserProfile', () => {
     // Mock browser APIs
     Object.assign(globalThis.window, {
       ...originalWindow,
-      caches: mockCaches as unknown as CacheStorage,
-      indexedDB: mockIndexedDB as unknown as IDBFactory,
+      caches: mockCaches as CacheStorage,
+      indexedDB: mockIndexedDB as IDBFactory,
       location: {
         ...originalWindow.location,
         reload: vi.fn(),

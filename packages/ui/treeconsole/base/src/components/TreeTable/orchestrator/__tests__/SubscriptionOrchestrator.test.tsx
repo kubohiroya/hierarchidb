@@ -43,7 +43,7 @@ describe('useSubscriptionOrchestrator', () => {
 
     const workerAPI = {
       getSubscriptionAPI: vi.fn().mockResolvedValue(subscriptionApi),
-    } as unknown as WorkerAPI;
+    } as WorkerAPI;
 
     return { workerAPI, subscribeSubtree, unsubscribe };
   };

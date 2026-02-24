@@ -6,8 +6,14 @@ import { type ColumnFilter, TabularDatabaseManager, TabularQueryService } from '
 import type { Id } from '~/CrossViewStyles';
 
 export type DataGridPreviewOp = ColumnFilter['op'];
+type DataGridRow = Record<string, unknown> & { id?: string | number };
 
 const isValidId = (value: unknown): value is Id => typeof value === 'string' || typeof value === 'number';
+const isDataGridRow = (value: unknown): value is DataGridRow => (
+  typeof value === 'object'
+  && value !== null
+  && !Array.isArray(value)
+);
 
 export interface UseDataGridPreviewOptions {
   pluginId?: string;
@@ -23,7 +29,7 @@ export const useDataGridPreview = ({
   columns: providedColumns,
 }: UseDataGridPreviewOptions) => {
   const [columns, setColumns] = useState<string[]>([]);
-  const [rows, setRows] = useState<unknown[]>([]);
+  const [rows, setRows] = useState<DataGridRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [filters, setFilters] = useState<Array<{ column: string; op: DataGridPreviewOp; value: string }>>([]);
@@ -46,7 +52,7 @@ export const useDataGridPreview = ({
 
   const detectedNumeric = useMemo(() => {
     const numericSet = new Set<string>();
-    const sampleRows = rows.slice(0, 25) as Array<Record<string, unknown>>;
+    const sampleRows = rows.slice(0, 25);
     const activeCols = visibleCols && visibleCols.length > 0 ? visibleCols : columns;
     activeCols.forEach((col) => {
       const values = sampleRows.map((r) => r?.[col]);
@@ -131,7 +137,7 @@ export const useDataGridPreview = ({
         const svc = new TabularQueryService(pluginId);
         const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({ column, op, value }));
         const data = await svc.query(tableId, filterArgs, 1000);
-        if (!cancelled) setRows(data);
+        if (!cancelled) setRows(data.filter(isDataGridRow));
       } catch (err) {
         if (!cancelled) setError((err as { message: string })?.message || String(err));
       } finally {
@@ -149,8 +155,7 @@ export const useDataGridPreview = ({
     }
     const derived = new Set<Id>();
     rows.forEach((row, index) => {
-      const rowObj = row as Record<string, unknown> | undefined;
-      const identifier = isValidId(rowObj?.id) ? rowObj!.id : (index as Id);
+      const identifier = isValidId(row.id) ? row.id : (index as Id);
       derived.add(identifier);
     });
     return derived;
@@ -163,8 +168,8 @@ export const useDataGridPreview = ({
 
   const sortedRows = useMemo(() => {
     const { column, direction } = sortState;
-    if (!column || !direction) return rows as Array<Record<string, unknown>>;
-    const copy = [...(rows as Array<Record<string, unknown>>)];
+    if (!column || !direction) return rows;
+    const copy = [...rows];
     copy.sort((a, b) => {
       const av = a?.[column];
       const bv = b?.[column];

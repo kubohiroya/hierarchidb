@@ -36,8 +36,7 @@ describe('coalesceBatches edge cases', () => {
       { added: [{ id: 'n', parentId: 'p' }] },
       { removed: ['n'] },
     ]);
-    expect(r.added?.some(a => (a as any).id === 'n')).toBeFalsy();
+    expect(r.added?.some((a) => a.id === 'n')).toBeFalsy();
     expect(r.removed).toEqual(['n']);
   });
 });
-

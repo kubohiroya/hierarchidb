@@ -38,6 +38,23 @@ const defaultDuplicateResolution: DuplicateResolutionStrategy = { strategy: 'ski
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const isResolverEntity = (value: unknown): value is ResolverEntity => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    typeof value.id === 'string' &&
+    typeof value.createdAt === 'number' &&
+    typeof value.updatedAt === 'number' &&
+    typeof value.version === 'number' &&
+    Array.isArray(value.mappingRules) &&
+    Array.isArray(value.validationRules) &&
+    isRecord(value.duplicateResolution) &&
+    typeof value.duplicateResolution.strategy === 'string' &&
+    Array.isArray(value.dataTransformations)
+  );
+};
+
 const mergeMetadata = (base: TreeNodeMetadata, updates?: Partial<TreeNodeMetadata>): TreeNodeMetadata => ({
   ...base,
   ...(updates ?? {}),
@@ -68,12 +85,12 @@ export class ResolverEntityService {
   private toPayload(
     _nodeId: NodeId,
     metadata: TreeNodeMetadata,
-    data: ResolverEntity | null
+    data: unknown
   ): ResolverEntityPayload | null {
-    if (!data || !isRecord(data)) {
+    if (!isResolverEntity(data)) {
       return null;
     }
-    return { ...(data as ResolverEntity), name: metadata.name, description: metadata.description };
+    return { ...data, name: metadata.name, description: metadata.description };
   }
 
   async getEntity(nodeId: NodeId): Promise<ResolverEntityPayload | null> {
@@ -83,7 +100,7 @@ export class ResolverEntityService {
       return null;
     }
     const targetField = this.resolveTargetField(node);
-    const data = (node as unknown as Record<string, unknown>)[targetField] as ResolverEntity | null;
+    const data = targetField === 'draftData' ? node.draftData : node.data;
     return this.toPayload(nodeId, this.resolveMetadata(node), data);
   }
 
@@ -135,8 +152,8 @@ export class ResolverEntityService {
       throw new Error('Entity not found');
     }
     const targetField = this.resolveTargetField(node);
-    const existing = (node as unknown as Record<string, unknown>)[targetField];
-    if (!isRecord(existing)) {
+    const existing = targetField === 'draftData' ? node.draftData : node.data;
+    if (!isResolverEntity(existing)) {
       throw new Error('Entity not found');
     }
     const metadataPatch: Partial<TreeNodeMetadata> = {};
@@ -146,10 +163,9 @@ export class ResolverEntityService {
     if (typeof updates.description === 'string') {
       metadataPatch.description = updates.description;
     }
-    const { name: _name, description: _description, id: _id, ...dataUpdates } =
-      updates as Partial<ResolverEntityPayload> & { id?: NodeId };
+    const { name: _name, description: _description, ...dataUpdates } = updates;
     const nextData: ResolverEntity = {
-      ...(existing as unknown as ResolverEntity),
+      ...existing,
       ...dataUpdates,
       id: nodeId,
       createdAt: node.createdAt,
@@ -192,9 +208,9 @@ export class ResolverEntityService {
     const normalized = criteria.name?.toLowerCase().trim();
     const results: ResolverEntityPayload[] = [];
     for (const node of nodes) {
-      const targetField = this.resolveTargetField(node as TreeNode);
-      const data = (node as unknown as Record<string, unknown>)[targetField] as ResolverEntity | null;
-      const payload = this.toPayload(node.id, this.resolveMetadata(node as TreeNode), data);
+      const targetField = this.resolveTargetField(node);
+      const data = targetField === 'draftData' ? node.draftData : node.data;
+      const payload = this.toPayload(node.id, this.resolveMetadata(node), data);
       if (!payload) {
         continue;
       }

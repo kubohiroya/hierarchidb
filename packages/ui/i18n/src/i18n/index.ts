@@ -29,8 +29,8 @@ const initReactI18nextModule = (ReactI18NextModule as { initReactI18next?: Third
   .initReactI18next;
 
 const i18n: I18nInstance =
-  (i18next as unknown as { default?: I18nInstance }).default ??
-  (i18next as unknown as I18nInstance);
+  (i18next as { default?: I18nInstance }).default ??
+  (i18next as I18nInstance);
 
 const isDevelopment = isDevEnv();
 
@@ -145,7 +145,7 @@ interface FormatterService {
 }
 
 const getFormatterService = (): FormatterService | undefined => {
-  const services = (i18n as unknown as { services?: { formatter?: FormatterService } }).services;
+  const services = (i18n as { services?: { formatter?: FormatterService } }).services;
   return services?.formatter;
 };
 

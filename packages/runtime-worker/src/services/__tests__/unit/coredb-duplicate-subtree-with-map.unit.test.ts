@@ -56,7 +56,7 @@ describe('CoreDB.duplicateSubtreeWithMap', () => {
       bulkCreateNodes(nodes: TreeNode[]): Promise<void>;
     };
 
-    const context = fake as unknown as CoreDB;
+    const context = fake as CoreDB;
     const { idMap, newRootId } = await CoreDB.prototype.duplicateSubtreeWithMap.call(context, a, p);
     expect(newRootId).toBe(idMap.get(a));
     // mapping should contain a and b

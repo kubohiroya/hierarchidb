@@ -36,7 +36,7 @@ describe('EntityLifecycleManager.copyRelationsByMapping', () => {
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
     };
 
-    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton(core as CoreDB);
     EntityLifecycleManager.setIdMapping('cmd-rel', [
       [a1, b1],
       [a2, b2],

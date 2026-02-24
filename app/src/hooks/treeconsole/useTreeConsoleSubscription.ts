@@ -101,7 +101,7 @@ export function useTreeConsoleSubscription({
           const safeEvent = sanitizeForComlink(event);
           if (
             typeof import.meta !== 'undefined' &&
-            (import.meta as unknown as { env?: Record<string, string> }).env
+            (import.meta as { env?: Record<string, string> }).env
               ?.VITE_SUBSCRIPTION_DEBUG === '1'
           ) {
             console.log('[Subscription][page] event', safeEvent);

@@ -1,4 +1,4 @@
-import type { TaskStage } from '../../../../../../../../packages/build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 
 export type StageLikeTask = {
   stage: TaskStage;
@@ -8,8 +8,6 @@ export type StageLikeRunningTask = StageLikeTask & {
   status?: string;
 };
 
-export const normalizeStageKey = (task: StageLikeTask): TaskStage => task.stage;
-
 export const resolveMostAdvancedStageIdByStatus = (params: {
   stages: Array<{ id: string }>;
   tasks: StageLikeRunningTask[];
@@ -18,7 +16,7 @@ export const resolveMostAdvancedStageIdByStatus = (params: {
   const stageIds = new Set<string>();
   params.tasks.forEach((task) => {
     if (!task.status || !params.statuses.has(task.status)) return;
-    stageIds.add(normalizeStageKey(task));
+    stageIds.add(task.stage);
   });
   return resolveMostAdvancedRunningStage(stageIds, params.stages);
 };

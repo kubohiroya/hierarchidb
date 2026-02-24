@@ -479,6 +479,9 @@ importers:
       '@deck.gl/mapbox':
         specifier: ^9.1.14
         version: 9.2.1(@deck.gl/core@9.2.1)(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@math.gl/web-mercator@4.1.0)
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../packages/gis-sdk
       '@hierarchidb/vite-plugin-hierarchidb-plugin-alias':
         specifier: workspace:*
         version: link:vite-plugins/vite-plugin-hierarchidb-plugin-alias
@@ -491,6 +494,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 5.0.1
         version: 5.0.1(rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.2))
+      geojson:
+        specifier: ^0.5.0
+        version: 0.5.0
       gh-pages:
         specifier: ^6.3.0
         version: 6.3.0
@@ -3597,6 +3603,9 @@ importers:
       '@hierarchidb/ui-build-progress':
         specifier: workspace:*
         version: link:../../packages/ui/build-progress
+      '@hierarchidb/ui-build-sessions':
+        specifier: workspace:*
+        version: link:../../packages/ui/build-sessions
       '@hierarchidb/ui-floating-window':
         specifier: workspace:*
         version: link:../../packages/ui/floating-window
@@ -3990,6 +3999,9 @@ importers:
       '@hierarchidb/ui-build-progress':
         specifier: workspace:*
         version: link:../../packages/ui/build-progress
+      '@hierarchidb/ui-build-sessions':
+        specifier: workspace:*
+        version: link:../../packages/ui/build-sessions
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../../packages/ui/country-select
@@ -10409,6 +10421,10 @@ packages:
 
   geojson-vt@4.0.2:
     resolution: {integrity: sha512-AV9ROqlNqoZEIJGfm1ncNjEXfkz2hdFlZf0qkVfmkwdKa8vj7H16YUOT81rJw1rdFhyEDlN2Tds91p/glzbl5A==}
+
+  geojson@0.5.0:
+    resolution: {integrity: sha512-/Bx5lEn+qRF4TfQ5aLu6NH+UKtvIv7Lhc487y/c8BdludrCTpiWf9wyI0RTyqg49MFefIAvFDuEi5Dfd/zgNxQ==}
+    engines: {node: '>= 0.10'}
 
   geotiff@2.1.3:
     resolution: {integrity: sha512-PT6uoF5a1+kbC3tHmZSUsLHBp2QJlHasxxxxPW47QIY1VBKpFB+FcDvX+MxER6UzgLQZ0xDzJ9s48B9JbOCTqA==}
@@ -21447,6 +21463,8 @@ snapshots:
   geojson-vt@3.2.1: {}
 
   geojson-vt@4.0.2: {}
+
+  geojson@0.5.0: {}
 
   geotiff@2.1.3:
     dependencies:

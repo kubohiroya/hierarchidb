@@ -42,7 +42,7 @@ const formatRecordShapeValue = (value: unknown): number | null => {
     return null;
   }
   if (value instanceof ArrayBuffer) return value.byteLength;
-  if (typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(value as ArrayBufferView)) {
+  if (typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(value)) {
     const view = value as ArrayBufferView;
     return view.byteLength;
   }
@@ -118,7 +118,7 @@ export const logCollectRecordSnapshot = (
     const isArrayBufferView = dataIsObject
       && typeof ArrayBuffer !== 'undefined'
       && typeof ArrayBuffer.isView === 'function'
-      ? ArrayBuffer.isView(data as unknown as ArrayBufferView)
+      ? ArrayBuffer.isView(data)
       : null;
     const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer;
 

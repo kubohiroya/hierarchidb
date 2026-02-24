@@ -1,10 +1,10 @@
 import { AbstractBuildSession } from '@hierarchidb/build-runtime-services';
-import type { BuildProgressEvent, TaskStatus } from '../../../../packages/build-api';
+import type { BuildProgressEvent, TaskStatus } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBuildConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
-import type { TaskQueueRecord, TaskStage } from '../../../../packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import { runStageTasks } from '@hierarchidb/vt-orchestrator';
 
 export type RouteBuildTaskStage = 'fetch' | 'transform' | 'vt';
@@ -63,7 +63,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
     const total = this.tasks.length;
     let { completed, failed } = this.countTaskResults();
-    this.updateProgress({ total, completed, failed }, 'idle');
+    this.updateProgress({ total, completed, failed });
 
     const resolveTaskFilter = (routeStage: RouteBuildTaskStage) =>
       (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => task.inputData?.routeStage === routeStage;
@@ -72,8 +72,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       nodeId: this.nodeId,
       stage: 'fetch',
       taskFilter: resolveTaskFilter('fetch'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>, stageSignal: AbortSignal) =>
-        this.handleFetchRouteTask(task, stageSignal),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleFetchRouteTask(task),
       maxConcurrent: this.config.routeGeneration?.parallel ? Math.max(1, this.config.routeGeneration.maxConcurrent) : 1,
       failureHandling: 'continue',
       lanePolicy: {
@@ -84,18 +83,6 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
           return override ?? DEFAULT_LANE_CAPS[lane] ?? 1;
         },
       },
-    } as {
-      nodeId: TaskQueueRecord['nodeId'];
-      stage: TaskStage;
-      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>, signal: AbortSignal) => Promise<{ status: 'completed'; progress: number }>;
-      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
-      maxConcurrent?: number;
-      failureHandling?: 'continue' | 'stop' | 'skip';
-      lanePolicy?: {
-        enabled: boolean;
-        laneOfTask: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => string;
-        maxConcurrentForLane?: (lane: string, task: TaskQueueRecord<RouteBuildTaskQueueInput>) => number;
-      };
     });
     ({ completed, failed } = this.countTaskResults());
     this.updateProgress({ total, completed, failed }, 'fetch');
@@ -104,17 +91,9 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       nodeId: this.nodeId,
       stage: 'transform',
       taskFilter: resolveTaskFilter('transform'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleTransformRouteTask(task),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleTransformRouteTask(task),
       maxConcurrent: this.config.transformConfig?.maxConcurrent ?? 1,
       failureHandling: 'continue',
-    } as {
-      nodeId: TaskQueueRecord['nodeId'];
-      stage: TaskStage;
-      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>, signal?: AbortSignal) => Promise<{ status: 'completed'; progress: number }>;
-      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
-      maxConcurrent?: number;
-      failureHandling?: 'continue' | 'stop' | 'skip';
     });
     ({ completed, failed } = this.countTaskResults());
     this.updateProgress({ total, completed, failed }, 'transform');
@@ -123,16 +102,8 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       nodeId: this.nodeId,
       stage: 'vt',
       taskFilter: resolveTaskFilter('vt'),
-      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) =>
-        this.handleVtRouteTask(task),
+      handler: async (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => this.handleVtRouteTask(task),
       failureHandling: 'continue',
-    } as {
-      nodeId: TaskQueueRecord['nodeId'];
-      stage: TaskStage;
-      handler: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => Promise<{ status: 'completed'; progress: number }>;
-      taskFilter?: (task: TaskQueueRecord<RouteBuildTaskQueueInput>) => boolean;
-      maxConcurrent?: number;
-      failureHandling?: 'continue' | 'stop' | 'skip';
     });
     ({ completed, failed } = this.countTaskResults());
     this.updateProgress({ total, completed, failed }, 'vt');
@@ -146,7 +117,6 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
 
   private async handleFetchRouteTask(
     task: TaskQueueRecord<RouteBuildTaskQueueInput>,
-    signal: AbortSignal,
   ): Promise<{ status: 'completed'; progress: number }> {
     const localTask = this.findTask(task.taskId);
     if (!localTask) {
@@ -169,7 +139,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
       return this.failRouteTask(localTask, 'fetch', message);
     }
 
-    await this.runRouteTask([start, end], method, options, signal);
+    await this.runRouteTask([start, end], method, options);
 
     return this.completeRouteTask(localTask, 'fetch');
   }
@@ -208,9 +178,7 @@ export class RouteBuildSession extends AbstractBuildSession<RouteBuildConfig> {
     points: [number, number][],
     method: RouteGenerationMethod,
     options: RouteGenerationConfig['options'],
-    signal: AbortSignal,
   ): Promise<void> {
-    if (signal.aborted) throw abortError('Route build aborted');
     const config: RouteGenerationConfig = {
       method,
       options,

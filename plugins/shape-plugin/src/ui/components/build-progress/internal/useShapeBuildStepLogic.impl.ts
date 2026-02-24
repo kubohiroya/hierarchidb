@@ -92,7 +92,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     return true;
   }, []);
 
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const sleep = useCallback((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)), []);
 
   const cancelStartRequestRef = useRef(false);
 
@@ -103,7 +103,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
       return true;
     }
     return false;
-  }, [activeNodeId]);
+  }, [activeNodeId, sleep]);
   const crashCheckStartedAtRef = useRef<number>(Date.now());
   const clearStartPendingRef = useRef<(() => void) | null>(null);
   const {

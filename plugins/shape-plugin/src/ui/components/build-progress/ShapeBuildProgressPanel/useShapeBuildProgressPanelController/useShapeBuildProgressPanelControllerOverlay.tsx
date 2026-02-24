@@ -13,32 +13,24 @@ export const useShapeBuildProgressPanelControllerOverlay = (args: ShapeBuildProg
     stageLoadingState,
     stageHeaderMeta,
   } = useShapeBuildProgressPanelControllerOverlayDialogs(args);
+  const { controls, ...baseState } = args;
 
   return {
-    footer,
+    ...baseState,
+    controls,
     stageProgressContent,
     stageContents,
+    footer,
     completionDialog,
     suspendDialog,
     crashDialog,
     controlRightContent,
     stageLoadingState,
     stageHeaderMeta,
-    stageMenus: args.stageMenus,
-    controls: args.controls,
-    stageConcurrencyIndicators: args.stageConcurrencyIndicators,
-    stageConcurrencyIndicatorAriaLabels: args.stageConcurrencyIndicatorAriaLabels,
-    stageLeadingControls: args.stageLeadingControls,
-    onStageConcurrencyIndicatorClick: args.onStageConcurrencyIndicatorClick,
-    controlDetails: args.controlDetails,
-    summary: args.summary,
-    pauseButtonLabel: args.pauseButtonLabel,
-    hasAnyTasks: args.hasAnyTasks,
-    isBuildStartupPending: args.isBuildStartupPending,
     buildStatusAction: {
-      stopRequested: args.controls.stopRequested,
-      startPending: args.controls.startPending,
-      statusLabel: args.controls.statusLabel,
+      stopRequested: controls.stopRequested,
+      startPending: controls.startPending,
+      statusLabel: controls.statusLabel,
     },
-  } as const;
+  };
 };

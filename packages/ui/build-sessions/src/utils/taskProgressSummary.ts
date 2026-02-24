@@ -1,3 +1,5 @@
+import type { TaskStage } from '../../../../build-api';
+
 export type TaskCountSummary = {
   total: number;
   completed: number;
@@ -11,7 +13,7 @@ export type TaskLike = {
 };
 
 export type TaskStageCarrier = TaskLike & {
-  stage?: string;
+  stage: TaskStage;
 };
 
 type TaskCountSummaryOptions<T> = {

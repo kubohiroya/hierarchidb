@@ -28,9 +28,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { useBFFAuthService } from '~/hooks/useAuth';
-import type { AuthProviderType } from '~/types/AuthProviderType';
+import { useAuthRequiredDialog, type AuthProvider } from '../hooks/useAuthRequiredDialog';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
@@ -71,38 +69,11 @@ export interface AuthRequiredDialogProps {
   cancelLabel?: string;
 }
 
-type AuthProvider = 'google' | 'github' | 'microsoft';
-
 export type AuthUserInfo = {
   id?: string;
   email?: string;
   name?: string;
   picture?: string;
-};
-
-type AuthUserPayload = {
-  token: string;
-  expiresAt: number;
-  info: AuthUserInfo;
-};
-
-const createUserPayload = (
-  authUser: ReturnType<typeof useBFFAuthService>['user']
-): AuthUserPayload | null => {
-  if (!authUser?.access_token || !authUser.expires_at) {
-    return null;
-  }
-
-  return {
-    token: authUser.access_token,
-    expiresAt: authUser.expires_at,
-    info: {
-      id: authUser.id,
-      email: authUser.email,
-      name: authUser.name,
-      picture: authUser.picture,
-    },
-  };
 };
 
 interface AuthProviderInfo {
@@ -144,147 +115,37 @@ export function AuthRequiredDialog({
   showSessionDetails = true,
   cancelLabel,
 }: AuthRequiredDialogProps) {
-  const bffAuth = useBFFAuthService();
-  const { signIn, user, isAuthenticated } = bffAuth;
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);
-  const isAuthDebugEnabled = () => {
-    try {
-      return typeof localStorage !== 'undefined' && localStorage.getItem('hidb_auth_debug') === '1';
-    } catch {
-      return false;
-    }
-  };
+  const {
+    dialogTitleId,
+    dialogDescriptionId,
+    isAuthenticating,
+    authError,
+    authStatusMessage,
+    isAuthenticated,
+    user,
+    selectedProvider,
+    retryCount,
+    context,
+    handleSignIn,
+    handleCancel,
+    handleRetry,
+    getErrorSeverity,
+    isMicrosoftProviderDisabled,
+  } = useAuthRequiredDialog({
+    open,
+    notification,
+    onSuccess,
+    onCancel,
+    onRetry,
+  });
 
-  const dialogTitleId = useId();
-  const dialogDescriptionId = useId();
-
-  const { context } = notification;
-  const { url, errorMessage, sessionId, pluginType, retryCount = 0, errorCode } = context;
-
-  const currentUserPayload = useMemo(() => createUserPayload(user), [user]);
-  const tokenExpiresAt = currentUserPayload?.expiresAt;
-  const isTokenExpired = typeof tokenExpiresAt === 'number' && tokenExpiresAt <= Date.now();
-  const shouldAutoResolve = useMemo(() => {
-    if (!isAuthenticated || !user) return false;
-    if (isTokenExpired) return false;
-    if (!errorMessage) return false;
-    return /missing bearer token/i.test(errorMessage);
-  }, [errorMessage, isAuthenticated, isTokenExpired, user]);
-
-  const authStatusMessage = useMemo(() => {
-    if (!isAuthenticated || !user) return null;
-    if (isTokenExpired) {
-      return 'Your current session has expired. Please sign in again to continue.';
-    }
-    if (errorCode === 401) {
-      return 'Your current session token was rejected (HTTP 401). It may be revoked or invalid.';
-    }
-    return null;
-  }, [errorCode, isAuthenticated, isTokenExpired, user]);
-  // Clear error when base-dialog opens/closes
-  useEffect(() => {
-    if (open) {
-      setAuthError(null);
-      setSelectedProvider(null);
-
-      if (isAuthDebugEnabled()) {
-        const details = {
-          requestId: context.requestId,
-          pluginType,
-          retryCount,
-          errorCode,
-          errorMessage,
-          url,
-          ...(sessionId ? { sessionId } : {}),
-        };
-        console.debug('[auth][ui] Authentication required details', details);
-      }
-    }
-  }, [context.requestId, errorCode, errorMessage, open, pluginType, retryCount, sessionId, url]);
-
-  useEffect(() => {
-    if (!open || !shouldAutoResolve) return;
-    const payload = createUserPayload(user) ?? currentUserPayload;
-    if (!payload) return;
-    onSuccess(payload.token, payload.expiresAt, payload.info);
-  }, [currentUserPayload, onSuccess, open, shouldAutoResolve, user]);
-
-  // Keep the dialog visible even when a session exists; user chooses how to proceed.
-
-  const handleSignIn = useCallback(
-    async (provider: AuthProvider) => {
-      setIsAuthenticating(true);
-      setSelectedProvider(provider);
-      setAuthError(null);
-
-      try {
-        console.log(`🔐 Starting ${provider} authentication for batch processing`);
-
-        // Routerに依存しない: その場のURLへ戻れれば十分
-        await signIn({
-          provider: provider as AuthProviderType,
-          returnUrl: typeof window !== 'undefined' ? window.location.href : '/',
-          method: 'redirect',
-        });
-
-        const payload = createUserPayload(bffAuth.user) ?? currentUserPayload ?? null;
-        if (!payload) return;
-
-        console.log(`✅ Authentication successful with ${provider}`);
-        onSuccess(payload.token, payload.expiresAt, payload.info);
-      } catch (error) {
-        console.error(`❌ Authentication failed with ${provider}:`, error);
-        setAuthError(
-          error instanceof Error ? error.message : 'Authentication failed. Please try again.'
-        );
-      } finally {
-        setIsAuthenticating(false);
-        setSelectedProvider(null);
-      }
-    },
-    [bffAuth.user, currentUserPayload, onSuccess, signIn]
-  );
-
-  const handleCancel = useCallback(() => {
-    if (cancelLabel) {
-      console.log('🚫 User cancelled authentication for build processing');
-      onCancel();
-      return;
-    }
-
-    const hasSession = Boolean(sessionId);
-    const confirmMessage = hasSession
-      ? 'Canceling authentication will stop the build processing session. Are you sure?'
-      : 'Are you sure you want to cancel?';
-
-    const confirmed = window.confirm(confirmMessage);
-    if (confirmed) {
-      console.log('🚫 User cancelled authentication for build processing');
-      onCancel();
-    }
-  }, [cancelLabel, sessionId, onCancel]);
-
-  const handleRetry = useCallback(() => {
-    if (onRetry) {
-      console.log('🔄 Retrying request without authentication');
-      onRetry();
-    }
-  }, [onRetry]);
-
-  const getErrorSeverity = (): 'error' | 'warning' | 'info' => {
-    if (errorCode >= 500) return 'error';
-    if (errorCode === 401) return 'warning';
-    return 'info';
-  };
+  const { sessionId, pluginType } = context;
 
   const getProviderButton = (provider: AuthProvider) => {
     const info = AUTH_PROVIDERS[provider];
     const Icon = info.icon;
     const isSelected = selectedProvider === provider;
-    const isMicrosoft = provider === 'microsoft';
-    const isDisabled = isMicrosoft || (isAuthenticating && !isSelected);
+    const isDisabled = isMicrosoftProviderDisabled(provider) || (isAuthenticating && !isSelected);
 
     return (
       <Button
@@ -312,7 +173,7 @@ export function AuthRequiredDialog({
     );
   };
 
-  const cancelButtonLabel = cancelLabel ?? (sessionId ? 'Cancel Processing' : 'Cancel');
+  const cancelButtonLabel = cancelLabel ?? 'Cancel';
 
   return (
     <Dialog

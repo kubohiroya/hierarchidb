@@ -39,7 +39,7 @@ describe('WorkerInitializationChannel', () => {
 
   beforeEach(() => {
     channel = new WorkerInitializationChannel();
-    mockWorker = new MockWorker() as unknown as MockWorker;
+    mockWorker = new MockWorker() as MockWorker;
     vi.useFakeTimers();
   });
 
@@ -52,7 +52,7 @@ describe('WorkerInitializationChannel', () => {
   describe('正常系', () => {
     it('should successfully detect worker initialization completion', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 5000,
       };
 
@@ -72,7 +72,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should handle progress updates during initialization', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 5000,
         debug: true,
       };
@@ -101,7 +101,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should resolve with correct duration on success', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 5000,
       };
 
@@ -119,7 +119,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should respond to ping requests', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
       };
 
       const initPromise = channel.waitForInitialization(config);
@@ -137,7 +137,7 @@ describe('WorkerInitializationChannel', () => {
   describe('異常系', () => {
     it('should timeout after specified duration', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 3000,
       };
 
@@ -156,7 +156,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should handle worker initialization errors', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 5000,
       };
 
@@ -177,7 +177,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should cleanup event listeners on timeout', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
         timeout: 1000,
       };
 
@@ -199,7 +199,7 @@ describe('WorkerInitializationChannel', () => {
   describe('エッジケース', () => {
     it('should prevent multiple simultaneous initialization attempts', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
       };
 
       const promise1 = channel.waitForInitialization(config);
@@ -216,7 +216,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should handle late initialization requests', async () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
       };
 
       const postMessageSpy = vi.spyOn(mockWorker, 'postMessage');
@@ -231,7 +231,7 @@ describe('WorkerInitializationChannel', () => {
 
     it('should properly cleanup on dispose', () => {
       const config: WorkerInitConfig = {
-        worker: mockWorker as unknown as Worker,
+        worker: mockWorker as Worker,
       };
 
       channel.waitForInitialization(config);

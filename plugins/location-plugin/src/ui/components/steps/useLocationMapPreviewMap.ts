@@ -400,7 +400,7 @@ export const useLocationMapPreviewMap = (
     };
     const svg = renderToStaticMarkup(
       createElement(
-        LocationMapPreviewIcon as unknown as ((props: LocationMapPreviewIconProps) => ReactElement),
+        LocationMapPreviewIcon as ((props: LocationMapPreviewIconProps) => ReactElement),
         iconProps as LocationMapPreviewIconProps,
       ),
     );

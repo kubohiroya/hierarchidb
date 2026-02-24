@@ -28,7 +28,7 @@ export const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unkno
   }
 
   if (Array.isArray(value)) {
-    return (value as unknown[]).map((entry) => sanitizeForComlink(entry, seen)) as T;
+    return value.map((entry) => sanitizeForComlink(entry, seen)) as T;
   }
 
   if (seen.has(value as object)) {

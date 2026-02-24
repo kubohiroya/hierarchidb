@@ -87,7 +87,7 @@ type SharedWorkerScope = {
   addEventListener: (type: 'connect', listener: EventListener) => void;
 };
 
-const globalScope = self as unknown as SharedWorkerScope;
+const globalScope = self as SharedWorkerScope;
 
 globalScope.addEventListener('connect', ((event: Event) => {
   const connectEvent = event as SharedWorkerConnectEvent;

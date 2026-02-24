@@ -3,4 +3,4 @@
  * (e.g., during DTS generation).
  */
 export const isDevEnvironment = typeof import.meta !== 'undefined'
-  && ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV ?? false);
+  && ((import.meta as { env?: { DEV?: boolean } }).env?.DEV ?? false);

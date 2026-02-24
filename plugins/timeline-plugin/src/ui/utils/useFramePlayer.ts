@@ -46,7 +46,7 @@ export function useFramePlayer({ length, initialIndex = 0, initialFps = 12, loop
         return nv;
       });
     }, interval);
-    timerRef.current = id as unknown as number;
+    timerRef.current = id as number;
     return () => {
       if (timerRef.current != null) window.clearInterval(timerRef.current);
       timerRef.current = null;

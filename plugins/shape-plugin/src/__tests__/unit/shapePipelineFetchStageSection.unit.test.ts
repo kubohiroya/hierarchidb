@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TaskQueueRecord } from 'packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
@@ -14,7 +14,7 @@ import {
 
 const NODE_ID = 'shape-fetch-stage-section-node' as NodeId;
 
-const createDb = (): VtTaskQueueDb => new VtTaskQueueDb(`hdb-fetch-stage-${Date.now()}-${Math.random()}`);
+const createDb = (): VtTaskQueueDb => new VtTaskQueueDb();
 
 const createRunningFetchTask = (taskId: string): TaskQueueRecord => ({
   taskId,

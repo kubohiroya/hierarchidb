@@ -5,11 +5,11 @@ import {
   buildTaskCountSummary,
   useBuildTaskProgress,
   type TaskCountSummary,
-  type TaskStageCarrier,
   type TaskLike,
 } from '../../../../../../packages/ui/build-sessions';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
-import type { BuildTaskSummary } from '../../../../../../packages/build-api';
+import type { BuildTaskSummary } from '@hierarchidb/build-api';
+import type { TaskStage } from '@hierarchidb/build-api';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import {
   buildStageCountPlan,
@@ -24,10 +24,10 @@ import {
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 
 type ShapeTaskStageCarrier = BuildTaskSummary & TaskLike & {
-  stage?: string;
+  stage: TaskStage;
 };
 
-type ShapeBuildProgressSummaryArgs<T extends BuildTaskSummary & TaskStageCarrier> = {
+type ShapeBuildProgressSummaryArgs<T extends ShapeTaskStageCarrier> = {
   stages: BuildStage[];
   resolvedTaskType?: string;
   overallProgress: number;
@@ -36,12 +36,11 @@ type ShapeBuildProgressSummaryArgs<T extends BuildTaskSummary & TaskStageCarrier
   effectiveStatus: BuildProgressStatus | null;
   stage?: string;
   tasks: T[];
-  normalizeStageKey: (task: T) => string;
   isSkippedTask: (task: T) => boolean;
   timingStageMs: number;
 };
 
-type ShapeBuildProgressSummaryResult<T extends BuildTaskSummary & TaskStageCarrier> = {
+type ShapeBuildProgressSummaryResult<T extends ShapeTaskStageCarrier> = {
   taskSummary: ReturnType<typeof buildStageTaskSummary>;
   aggregatedCounts: ReturnType<typeof buildTaskCountSummary>;
   stageProgress: Record<string, number>;
@@ -65,7 +64,7 @@ type ShapeBuildProgressSummaryResult<T extends BuildTaskSummary & TaskStageCarri
 const MIN_REMAINING_ESTIMATE_ELAPSED_MS = 10_000;
 const MIN_REMAINING_ESTIMATE_DONE_TASKS = 10;
 
-export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSummary & TaskStageCarrier>({
+export const useShapeBuildProgressSummaryComputation = <T extends ShapeTaskStageCarrier>({
   stages,
   resolvedTaskType,
   overallProgress,
@@ -74,16 +73,12 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
   effectiveStatus,
   stage,
   tasks,
-  normalizeStageKey,
   isSkippedTask,
   timingStageMs,
 }: ShapeBuildProgressSummaryArgs<T>): ShapeBuildProgressSummaryResult<T> => {
   const isRecycledTask = useCallback((task: ShapeTaskStageCarrier): boolean => task.status === 'recycled', []);
   const normalizedTasks = useMemo<ShapeTaskStageCarrier[]>(() => tasks as ShapeTaskStageCarrier[], [tasks]);
   const isRecycledTaskForBuild = useCallback((task: T): boolean => isRecycledTask(task), [isRecycledTask]);
-  const normalizeStageKeyForSummary = useCallback((task: ShapeTaskStageCarrier): string => (
-    normalizeStageKey(task as T)
-  ), [normalizeStageKey]);
   const isSkippedTaskForSummary = useCallback((task: ShapeTaskStageCarrier): boolean => (
     isSkippedTask(task as T)
   ), [isSkippedTask]);
@@ -91,11 +86,11 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
   const taskSummary = useMemo(
     () => buildStageTaskSummary(
       normalizedTasks,
-      normalizeStageKeyForSummary,
+      (task: ShapeTaskStageCarrier) => task.stage,
       isSkippedTaskForSummary,
       { isExcluded: isRecycledTask },
     ),
-    [isRecycledTask, isSkippedTaskForSummary, normalizeStageKeyForSummary, normalizedTasks],
+    [isRecycledTask, isSkippedTaskForSummary, normalizedTasks],
   );
 
   const aggregatedCounts = useMemo(
@@ -200,15 +195,22 @@ export const useShapeBuildProgressSummaryComputation = <T extends BuildTaskSumma
     if (!stages.length) {
       return rawDisplayCounts;
     }
-    const total = stages.reduce((sum, stage) => {
-      const value = stageProgressWithSummary[stage.id] ?? 0;
-      return sum + Math.min(100, Math.max(0, value));
-    }, 0);
+    const activeStageIds = stages
+      .map((stage) => stage.id)
+      .filter((id) => tasksByStage[id]?.length)
+      .filter((id) => (stageProgressWithSummary[id] ?? 0) > 0 || rawDisplayCounts.total > 0);
+
+    const values = activeStageIds
+      .map((id) => Math.min(100, Math.max(0, stageProgressWithSummary[id] ?? 0)))
+      .filter((value) => value > 0);
+
+    const valuesToAverage = values.length > 0 ? values : [0];
+    const total = valuesToAverage.reduce((sum, value) => sum + value, 0);
     return {
       ...rawDisplayCounts,
-      percentage: Math.min(100, Math.max(0, Math.round(total / stages.length))),
+      percentage: Math.min(100, Math.max(0, Math.round(total / valuesToAverage.length))),
     };
-  }, [buildStatus, rawDisplayCounts, stageProgressWithSummary, stages]);
+  }, [buildStatus, rawDisplayCounts, stageProgressWithSummary, stages, tasksByStage]);
 
   const stableCountsRef = useRef<number | null>(null);
   useEffect(() => {

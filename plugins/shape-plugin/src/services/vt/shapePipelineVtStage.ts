@@ -1,4 +1,4 @@
-import type { StageHandler, TaskQueueRecord } from '../../../../../packages/build-api';
+import type { StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
@@ -9,7 +9,7 @@ import {
   putTasks,
   runStageTasks,
   updateTask,
-  VtTaskQueueDb,
+  type VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import { buildStableSignature } from './taskSignatures.ts';
@@ -201,7 +201,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
       ),
       retryToleranceStep: typeof transformRetryToleranceStep === 'number'
         ? transformRetryToleranceStep
-        : 0.01,
+        : 0.02,
       quantize: params.buildConfig.transformConfig.quantize,
     }
     : undefined;
@@ -248,7 +248,7 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     await runStageTasks({
       nodeId: params.nodeId,
       stage: 'vt',
-      handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
+      handler: vtHandler as StageHandler<ShapeVtTaskInput>,
       waitIfPaused: params.waitIfPaused,
       maxConcurrent: vtConfig.maxConcurrent,
       dynamicConcurrency: vtConfig.dynamicConcurrency?.enabled

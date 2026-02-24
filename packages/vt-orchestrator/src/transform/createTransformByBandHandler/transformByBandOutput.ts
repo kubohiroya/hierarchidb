@@ -91,7 +91,7 @@ const collectArrayBufferSnapshot = (data: unknown): Record<string, unknown> => {
   const isArrayBufferView = dataIsObject
     && typeof ArrayBuffer !== 'undefined'
     && typeof ArrayBuffer.isView === 'function'
-      ? ArrayBuffer.isView(data as unknown as ArrayBufferView)
+      ? ArrayBuffer.isView(data as ArrayBufferView)
       : null;
   const isUint8Array = typeof Uint8Array !== 'undefined' && data instanceof Uint8Array;
   return {

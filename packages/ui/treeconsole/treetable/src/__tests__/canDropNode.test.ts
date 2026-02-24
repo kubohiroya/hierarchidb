@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { toNodeId } from '@hierarchidb/core-types';
+import { type NodeType } from '@hierarchidb/core-types';
 
 const ROOT_PARENT_ID = toNodeId('__root__');
 import { canDropNode } from '../utils/index';
@@ -8,7 +9,7 @@ import { canDropNode } from '../utils/index';
 const N = (id: string, parentId?: string): TreeNode => ({
   id: toNodeId(id),
   name: id,
-  nodeType: 'folder' as any,
+  nodeType: 'folder' as NodeType,
   depth: 0,
   createdAt: Date.now(),
   updatedAt: Date.now(),

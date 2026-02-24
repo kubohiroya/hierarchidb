@@ -1,35 +1,70 @@
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
-import type { ObserveNodePayload, TreeChangeEvent, TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import type {
+  ObserveNodePayload,
+  Tree,
+  TreeChangeEvent,
+  TreeNode,
+  TreeNodeEvent,
+} from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
+import type { PromiseExtended } from 'dexie';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB';
 import type { CommandEnvelope } from '../../command-types';
 import { TreeSubscriptionService } from '../../TreeSubscriptionService';
 
+type CoreDBForTreeSubscriptionService = {
+  changeSubject: Subject<TreeChangeEvent>;
+  listChildren: CoreDB['listChildren'];
+  getNode: CoreDB['getNode'];
+  getTree: CoreDB['getTree'];
+  listTrees: CoreDB['listTrees'];
+  nodes: {
+    get: CoreDB['nodes']['get'];
+  };
+};
+
+type CoreStub = CoreDBForTreeSubscriptionService & {
+  __store: Map<NodeId, TreeNode>;
+};
+
 function createCoreStub(
   initialNodes: TreeNode[] = []
-): CoreDB & { __store: Map<NodeId, TreeNode> } {
+): CoreStub {
   const changeSubject = new Subject<TreeChangeEvent>();
   const store = new Map<NodeId, TreeNode>(initialNodes.map((node) => [node.id, node]));
 
-  const core = {
+  const toPromiseExtended = <T>(value: T): PromiseExtended<T> => {
+    const promise = Promise.resolve(value) as PromiseExtended<T>;
+    promise.timeout = (_ms: number, _msg?: string) => promise;
+    return promise;
+  };
+
+  const core: CoreStub = {
     changeSubject,
     listChildren: vi.fn(async (parentId: NodeId) =>
       Array.from(store.values()).filter((node) => node.parentId === parentId)
     ),
     getNode: vi.fn(async (id: NodeId) => store.get(id)),
+    listTrees: vi.fn(async () => []),
+    getTree: vi.fn(async (_treeId: TreeId): Promise<Tree> => ({
+      id: _treeId,
+      name: '',
+      rootId: 'r:root' as NodeId,
+      archiveRootId: 'r:archive' as NodeId,
+      superRootId: 'r:super-root' as NodeId,
+    })),
     nodes: {
-      get: vi.fn(async (id: NodeId) => store.get(id)),
-    } as unknown,
-  } as Partial<CoreDB> & { changeSubject: Subject<TreeChangeEvent> };
-
-  return Object.assign(core, { __store: store }) as unknown as CoreDB & {
-    __store: Map<NodeId, TreeNode>;
+      get: (id: NodeId) => toPromiseExtended(store.get(id)),
+    },
+    __store: store,
   };
+
+  return core;
 }
 
-function createTreeQueryStub(core: CoreDB & { __store: Map<NodeId, TreeNode> }): TreeQueryAPI {
+function createTreeQueryStub(core: CoreStub): TreeQueryAPI {
   const listAllNodes = () => Array.from(core.__store.values());
 
   const listDescendants = async (nodeId: NodeId): Promise<TreeNode[]> => {

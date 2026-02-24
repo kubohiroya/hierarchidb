@@ -32,7 +32,7 @@ describe('TreeMutationService bulk paths', () => {
       processCommand: vi.fn(async () => ({ success: true, seq: 1 }) as CommandResult),
     };
     const { TreeMutationService } = await import('../../TreeMutationService');
-    const svc = new TreeMutationService(core as unknown as CoreDB, processor as CommandProcessor);
+    const svc = new TreeMutationService(core as CoreDB, processor as CommandProcessor);
 
     const payload: PasteNodesPayload = {
       nodes: {

@@ -338,4 +338,4 @@ const LicenseInfoImpl = function LicenseInfo({
   );
 };
 
-export const LicenseInfo: React.FC<LicenseInfoProps> = memo(LicenseInfoImpl) as unknown as React.FC<LicenseInfoProps>;
+export const LicenseInfo: React.FC<LicenseInfoProps> = memo(LicenseInfoImpl) as React.FC<LicenseInfoProps>;

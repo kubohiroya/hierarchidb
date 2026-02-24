@@ -7,6 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TreeConsoleHeader } from '../TreeConsoleHeader';
 import type { TreeConsoleHeaderProps, TreeViewController } from '../../types';
+import { type NodeId, type NodeType, toNodeId } from '@hierarchidb/core-types';
+import type { TreeNodeWithChildren } from '../../types';
 
 const mockController: TreeViewController = {
   currentNode: null,
@@ -105,7 +107,7 @@ describe('TreeConsoleHeader', () => {
     const currentNodeInfo = {
       id: 'test-node',
       name: 'Test Node',
-      type: 'folder' as any,
+      type: 'folder' as NodeType,
       hasChildren: true,
     };
 
@@ -117,9 +119,54 @@ describe('TreeConsoleHeader', () => {
 
   it('should not show breadcrumb path when not root node', () => {
     const previousNodePath = [
-      { id: '1', name: 'Root', parentId: null },
-      { id: '2', name: 'Parent', parentId: '1' },
-    ] as any;
+      {
+        id: toNodeId('1') as NodeId,
+        name: 'Root',
+        nodeType: 'folder' as NodeType,
+        parentId: toNodeId('__root__') as NodeId,
+        depth: 0,
+        createdAt: 0,
+        updatedAt: 0,
+        version: 1,
+        metadata: {
+          name: 'Root',
+          description: '',
+          tags: [],
+        },
+        draftMetadata: {
+          name: 'Root',
+          description: '',
+          tags: [],
+        },
+        data: null,
+        draftData: undefined,
+        visible: true,
+        hasChildren: true,
+      } satisfies TreeNodeWithChildren,
+      {
+        id: toNodeId('2') as NodeId,
+        name: 'Parent',
+        nodeType: 'folder' as NodeType,
+        parentId: toNodeId('1') as NodeId,
+        depth: 0,
+        createdAt: 0,
+        updatedAt: 0,
+        version: 1,
+        metadata: {
+          name: 'Parent',
+          description: '',
+          tags: [],
+        },
+        draftMetadata: {
+          name: 'Parent',
+          description: '',
+          tags: [],
+        },
+        data: null,
+        draftData: undefined,
+        visible: true,
+      } satisfies TreeNodeWithChildren,
+    ];
 
     render(
       <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />,

@@ -5,13 +5,15 @@
 import { AuthService } from '@hierarchidb/auth';
 import type {
   BuildProgressEvent,
+  BuildProgress,
+  StageKey,
   BuildSessionRuntimeFilter,
   BuildSessionRuntimeRecord,
   BuildSessionRuntimeStatus,
   BuildSessionStatus,
   BuildTaskSummary,
   BuildTaskUpdateEvent,
-} from 'packages/build-api';
+} from '@hierarchidb/build-api';
 import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
@@ -21,7 +23,11 @@ import {
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import type { ShapeBuildSessionRecord, ShapeDataSourceName } from '@hierarchidb/shape-api';
+import type {
+  ShapeBuildProgressSummary,
+  ShapeBuildSessionRecord,
+  ShapeDataSourceName,
+} from '@hierarchidb/shape-api';
 import {
   configureWorkerContainer,
   getWorkerContainer,
@@ -196,22 +202,39 @@ const resolveShapeBuildAPI = (mod: unknown): ShapeBuildAPI | null => {
   return null;
 };
 
+const isTaskStage = (value: unknown): value is StageKey => (
+  value === 'fetch' || value === 'transform' || value === 'vt'
+);
+
+type BuildProgressLike = {
+  total?: number;
+  completed?: number;
+  failed?: number;
+  skipped?: number;
+  percentage?: number;
+  stage?: StageKey;
+  estimatedTimeRemaining?: number;
+};
+
+const toBuildProgress = (progress: BuildProgressLike | undefined): BuildProgress => ({
+  total: (progress?.total as number | undefined) ?? 0,
+  completed: (progress?.completed as number | undefined) ?? 0,
+  failed: (progress?.failed as number | undefined) ?? 0,
+  skipped: (progress?.skipped as number | undefined) ?? 0,
+  percentage: (progress?.percentage as number | undefined) ?? 0,
+  stage: isTaskStage((progress as { stage?: unknown } | undefined)?.stage) ? (progress?.stage as StageKey) : 'fetch',
+  estimatedTimeRemaining: (progress?.estimatedTimeRemaining as number | undefined),
+});
+
 const toBuildSessionStatus = (
   session: Record<string, unknown> | undefined,
   fallbackNodeId: NodeId
 ): BuildSessionStatus => {
-  const progress = (session?.progress as Record<string, unknown> | undefined) ?? {};
+  const progress = session?.progress as (BuildProgressLike | ShapeBuildProgressSummary | undefined);
   return {
     nodeId: (session?.nodeId as NodeId | undefined) ?? fallbackNodeId,
     status: (session?.status as BuildSessionStatus['status'] | undefined) ?? 'idle',
-    progress: {
-      total: (progress.total as number | undefined) ?? 0,
-      completed: (progress.completed as number | undefined) ?? 0,
-      failed: (progress.failed as number | undefined) ?? 0,
-      skipped: (progress.skipped as number | undefined) ?? 0,
-      percentage: (progress.percentage as number | undefined) ?? 0,
-      stage: progress.stage as string | undefined,
-    },
+    progress: toBuildProgress(progress),
     startedAt: session?.startedAt as number | undefined,
     completedAt: session?.completedAt as number | undefined,
     lastActivity: session?.updatedAt as number | undefined,
@@ -548,13 +571,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           runtimeNodeIndex.set(key, { nodeType, nodeId: session.nodeId });
           const persistedStatus = resolveRuntimeStatusFromShapeRecord(session.status);
           const runtimeStatus = runtimeStatusOverrides.get(key) ?? persistedStatus;
-          const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
-          const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
-          return {
-            nodeId: session.nodeId,
-            status: runtimeStatus,
-            isActive,
-            progress: session.progress,
+        const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
+  const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
+  return {
+    nodeId: session.nodeId,
+    status: runtimeStatus,
+    isActive,
+    progress: toBuildProgress(session.progress),
             startedAt: session.startedAt,
             completedAt: session.completedAt,
             updatedAt: session.updatedAt,
@@ -768,6 +791,100 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           }
         };
 
+        const RESUME_SESSION_FRESHNESS_WINDOW_MS = 5 * 60 * 1000;
+
+        const resolveSessionRecoveryBaselineAt = (session: ShapeBuildSessionRecord): number => {
+          if (typeof session.lastActivity === 'number' && Number.isFinite(session.lastActivity)) {
+            return session.lastActivity;
+          }
+          if (typeof session.stageHeartbeatAt === 'number' && Number.isFinite(session.stageHeartbeatAt)) {
+            return session.stageHeartbeatAt;
+          }
+          if (typeof session.updatedAt === 'number' && Number.isFinite(session.updatedAt)) {
+            return session.updatedAt;
+          }
+          if (typeof session.completedAt === 'number' && Number.isFinite(session.completedAt)) {
+            return session.completedAt;
+          }
+          return 0;
+        };
+
+        const isRecoverableRunningSession = (
+          session: ShapeBuildSessionRecord,
+          now: number,
+        ): boolean => {
+          if (typeof session.expiresAt === 'number' && Number.isFinite(session.expiresAt)) {
+            if (session.expiresAt <= now) return false;
+          }
+
+          const baseline = resolveSessionRecoveryBaselineAt(session);
+          if (!Number.isFinite(baseline) || baseline <= 0) return false;
+          return now - baseline <= RESUME_SESSION_FRESHNESS_WINDOW_MS;
+        };
+
+        const isSessionStaleRunning = (
+          session: ShapeBuildSessionRecord,
+          now: number
+        ): boolean => (
+          !isRecoverableRunningSession(session, now)
+        );
+
+        const recoverBuildSessionFromPersistedState = async (): Promise<void> => {
+          const queryAPI = services.getShapeQueryAPI();
+          const mutationAPI = services.getShapeMutationAPI();
+          const runningSessions = await queryAPI.listBuildSessionRecordsByStatus(['running']);
+          if (runningSessions.length === 0) return;
+
+          const now = Date.now();
+          const staleSessions = runningSessions.filter((session) => isSessionStaleRunning(session, now));
+          const freshSessions = runningSessions
+            .filter((session) => isRecoverableRunningSession(session, now))
+            .sort((a, b) => (
+              resolveSessionRecoveryBaselineAt(b) - resolveSessionRecoveryBaselineAt(a)
+            ));
+          const latestSession = freshSessions[0];
+          if (staleSessions.length > 0) {
+            await Promise.all(staleSessions.map(async (session) => {
+              try {
+                await mutationAPI.updateBuildSession(session.nodeId, {
+                  status: 'paused',
+                  stopReason: 'route-leave',
+                  canResume: true,
+                });
+                console.info('[worker bootstrap][ResumeTrace] mark-stale-running-session-paused', {
+                  nodeId: session.nodeId,
+                  stopReason: 'route-leave',
+                });
+              } catch (error) {
+                const msg = error instanceof Error ? error.message : String(error);
+                console.warn('[worker bootstrap][ResumeTrace] mark-stale-running-session-paused-failed', {
+                  nodeId: session.nodeId,
+                  errorMessage: msg,
+                });
+              }
+            }));
+          }
+
+          if (!latestSession) return;
+
+          try {
+            const sessionNodeId = latestSession.nodeId;
+            console.info('[worker bootstrap][ResumeTrace] resume-cold-start-session', {
+              nodeId: sessionNodeId,
+            });
+            await runResumeBuildSession(SHAPE_NODE_TYPE, sessionNodeId);
+            console.info('[worker bootstrap][ResumeTrace] resume-cold-start-session-success', {
+              nodeId: sessionNodeId,
+            });
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn('[worker bootstrap][ResumeTrace] resume-cold-start-session-failed', {
+              nodeId: latestSession.nodeId,
+              errorMessage: msg,
+            });
+          }
+        };
+
         const startBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId,
@@ -881,10 +998,13 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           getRouteMutationAPI: async () => toComlinkProxy(Comlink, services.getRouteMutationAPI()),
           getImportExportAPI: async () => toComlinkProxy(Comlink, services.getImportExportAPI()),
           getTagAPI: async () => toComlinkProxy(Comlink, services.getTagAPI()),
-          getCommandProcessor: async () =>
-            (toComlinkProxy(Comlink, services.getCommandProcessor()) as unknown as Awaited<
-              ReturnType<BuildWorkerAPI['getCommandProcessor']>
-            >),
+          getCommandProcessor: async () => {
+            const commandProcessor = services.getCommandProcessor();
+            return {
+              canUndo: () => commandProcessor.canUndo(),
+              canRedo: () => commandProcessor.canRedo(),
+            };
+          },
           startBuildSession,
           generateShapeDownloadTaskPayloadsFromSelection: async (
             nodeId: NodeId,
@@ -1059,6 +1179,7 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         };
 
         reporter.reportStepProgress('Create API facade', 100);
+        await recoverBuildSessionFromPersistedState();
 
         return { api, servicesReadyAt };
       } catch (error) {

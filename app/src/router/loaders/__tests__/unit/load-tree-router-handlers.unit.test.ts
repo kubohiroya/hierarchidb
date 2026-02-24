@@ -34,7 +34,7 @@ vi.mock('../../../../loader.js', () => ({
 }));
 
 function createMockClient(): Remote<BuildWorkerAPI> {
-  return {} as unknown as Remote<BuildWorkerAPI>;
+  return {} as Remote<BuildWorkerAPI>;
 }
 
 function createTree(overrides: Partial<Tree> = {}): Tree {

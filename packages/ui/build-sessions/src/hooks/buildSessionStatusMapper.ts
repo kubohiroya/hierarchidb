@@ -69,7 +69,7 @@ export const toBuildSessionStatusFromUnifiedProgress = ({
     failed,
     skipped,
     percentage,
-    stage: info?.stage ?? fallback?.progress?.stage,
+    stage: info?.stage ?? fallback?.progress?.stage ?? 'fetch',
     estimatedTimeRemaining: readOptionalNumber((info as UnifiedProgressInfoLike | null)?.payload?.estimatedTimeRemaining)
       ?? fallback?.progress?.estimatedTimeRemaining,
   };

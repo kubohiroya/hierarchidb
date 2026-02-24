@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { type BuildSessionStatus, type BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
+import type { BuildSessionStatus, BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
 import {
   toBuildSessionStatusFromUnifiedProgress,
   areBuildSessionStatusesEquivalent,
@@ -40,6 +40,15 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
     {
       autoSubscribe: true,
       mapUnifiedToProgress: (info: BuildUnifiedProgressInfo | null) => info ?? null,
+      mapUnifiedToStatus: (info: BuildUnifiedProgressInfo | null) => (
+        nodeId
+          ? toBuildSessionStatusFromUnifiedProgress({
+            nodeId,
+            info,
+            fallback: status,
+          })
+          : null
+      ),
     },
   );
 
@@ -54,11 +63,12 @@ export function useRouteBuildProgress(nodeId: NodeId | null, _deps?: unknown): R
 
   useEffect(() => {
     if (!mappedStatus) return;
-    setStatus((prev: BuildSessionStatus | null) => (
-      prev && areBuildSessionStatusesEquivalent(prev, mappedStatus)
+    setStatus((prev: BuildSessionStatus | null) => {
+      if (!mappedStatus) return prev;
+      return prev && areBuildSessionStatusesEquivalent(prev, mappedStatus)
         ? prev
-        : mappedStatus
-    ));
+        : mappedStatus;
+    });
   }, [mappedStatus]);
 
   const [snapshot, setSnapshot] = useState<BuildUnifiedProgressInfo | null>(null);

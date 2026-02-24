@@ -198,7 +198,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   }, [resolvedShowTileBoundaries, resolvedShowTileCoordinates]);
 
   const handleMapLoad = useCallback((event: MapEvent<unknown>) => {
-    const map = event.target as unknown as MapLibreMapInstance;
+    const map = event.target as MapLibreMapInstance;
     mapRef.current = map;
     normalizePaintArrays(map);
     map.on('styledata', () => normalizePaintArrays(map));

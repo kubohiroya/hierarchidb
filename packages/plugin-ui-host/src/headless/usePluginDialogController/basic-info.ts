@@ -6,7 +6,6 @@ import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toRecord } from '~/headless/controller/step-guards';
 import type { BasicInfoMeta, TreeNodeUpdaterPayload } from './data-types.js';
 
 interface Params {
@@ -35,7 +34,7 @@ export function useBasicInfoState({
   basicInfoMeta: BasicInfoMeta;
   tagSuggestions: string[];
   siblingNames: Set<string>;
-  handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
+  handleBasicInfoBridge: (data: unknown) => void;
 } {
   const [basicInfo, setBasicInfo] = useState<TreeNodeMetadata>({
     name: mode === 'create' ? resolveDefaultNodeName(nodeType) : '',
@@ -98,6 +97,9 @@ export function useBasicInfoState({
 
   const [siblingNames, setSiblingNames] = useState<Set<string>>(() => new Set());
 
+  const toMetadataRecord = (value: unknown): Record<string, unknown> =>
+    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+
   useEffect(() => {
     if (mode !== 'create') {
       setSiblingNames(new Set());
@@ -151,16 +153,12 @@ export function useBasicInfoState({
   );
 
   const handleBasicInfoBridge = useCallback(
-    (data: TreeNodeMetadata) => {
-      const info = toRecord(data) ?? {};
-      const rawName = (info as { name?: unknown }).name;
-      const name: string = typeof rawName === 'string' ? rawName : '';
-      const rawDescription = (info as { description?: unknown }).description;
-      const description: string = typeof rawDescription === 'string' ? rawDescription : '';
-      const tags: string[] = Array.isArray((info as { tags?: unknown }).tags)
-        ? ((info as { tags?: unknown }).tags as unknown[]).filter(
-            (v): v is string => typeof v === 'string'
-          )
+    (data: unknown) => {
+      const info = toMetadataRecord(data);
+      const name = typeof info.name === 'string' ? info.name : '';
+      const description = typeof info.description === 'string' ? info.description : '';
+      const tags = Array.isArray(info.tags)
+        ? info.tags.filter((v: unknown): v is string => typeof v === 'string')
         : [];
       const next: TreeNodeMetadata = { name, description, tags };
       setBasicInfo(next);

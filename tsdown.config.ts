@@ -40,6 +40,8 @@ const DEFAULT_EXTERNAL = [
 
 const cwd = process.cwd();
 const packageJsonPath = path.join(cwd, 'package.json');
+type TsdownConfig = Parameters<typeof defineConfig>[0];
+type TsdownUserConfig = Record<string, unknown>;
 
 let pkg: PackageJson = {};
 try {
@@ -63,14 +65,17 @@ for (const group of [
 const userConfig = pkg.tsdown ?? {};
 
 const baseExternal = Array.from(dependencyNames);
-let mergedExternal: unknown = baseExternal;
+let mergedExternal: string[] = baseExternal;
 
-const userExternal = (userConfig as { external?: unknown }).external;
+const userConfigValues = userConfig as TsdownUserConfig;
+const userExternal = userConfigValues.external;
 if (Array.isArray(userExternal)) {
   const extended = new Set<string>([...baseExternal, ...userExternal]);
   mergedExternal = Array.from(extended);
-} else if (userExternal !== undefined) {
-  mergedExternal = userExternal;
+} else if (typeof userExternal === 'string') {
+  mergedExternal = [userExternal];
+} else if (userExternal && typeof userExternal === 'object') {
+  mergedExternal = Object.keys(userExternal).filter((key): key is string => typeof key === 'string');
 }
 
 const {
@@ -80,10 +85,11 @@ const {
   alias: userAlias,
   ...restUserConfig
 } = userConfig as {
-  external?: unknown;
+  external?: string[] | string | Record<string, unknown>;
   outExtension?: unknown;
   tsconfig?: unknown;
   alias?: Record<string, string>;
+  [key: string]: unknown;
 };
 
 let normalizedOutExtension = rawOutExtension;
@@ -147,7 +153,7 @@ const packageWorkspaceAliasPlugin = {
   },
 };
 
-const baseConfig = {
+const baseConfig: TsdownConfig = {
   name: pkg.name,
   format: ['esm'] as const,
   platform: 'node' as const,
@@ -155,13 +161,13 @@ const baseConfig = {
   sourcemap: true,
   outDir: 'dist',
   dts: true,
-  external: mergedExternal as any,
+  external: mergedExternal,
   outExtension: defaultOutExtension,
   hash: false,
   splitting: false,
 };
 
-const finalConfig: Record<string, unknown> = {
+const finalConfig: TsdownConfig = {
   ...baseConfig,
   ...restUserConfig,
   tsconfig: userTsconfig ?? true,
@@ -215,4 +221,4 @@ if (process.env.TSDOWN_DEBUG === '1') {
   console.log('[tsdown-config]', JSON.stringify(proxiedConfig, null, 2));
 }
 
-export default defineConfig(proxiedConfig as any);
+export default defineConfig(proxiedConfig);

@@ -1,15 +1,12 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { TaskStage } from 'packages/build-api';
+import type { BuildStage } from '@hierarchidb/components';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import { useShapeBuildProgressSummaryComputation as useShapeBuildProgressSummary } from '../../../components/build-progress/shapeBuildProgressSummaryComputation';
 
 const stages: BuildStage[] = [
   { id: 'fetch', title: 'Fetch', icon: null },
 ];
-
-const normalizeStageKey = (task: ShapeBuildTaskSummary): TaskStage => task.stage as TaskStage;
 
 describe('useShapeBuildProgressSummary', () => {
   it('excludes recycled tasks from progress totals and avoids divide-by-zero', () => {
@@ -32,7 +29,6 @@ describe('useShapeBuildProgressSummary', () => {
       effectiveStatus: null,
       stage: undefined,
       tasks,
-      normalizeStageKey,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));
@@ -67,7 +63,6 @@ describe('useShapeBuildProgressSummary', () => {
       effectiveStatus: null,
       stage: 'vt',
       tasks,
-      normalizeStageKey,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));
@@ -120,7 +115,6 @@ describe('useShapeBuildProgressSummary', () => {
       effectiveStatus: { status: 'processing', progress: 12 },
       stage: 'fetch',
       tasks,
-      normalizeStageKey,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));
@@ -172,7 +166,6 @@ describe('useShapeBuildProgressSummary', () => {
       effectiveStatus: { status: 'processing', progress: 0 },
       stage: 'fetch',
       tasks,
-      normalizeStageKey,
       isSkippedTask: () => false,
       timingStageMs: 0,
     }));

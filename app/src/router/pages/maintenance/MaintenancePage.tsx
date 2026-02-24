@@ -205,7 +205,7 @@ export default function MaintenancePage() {
           </Alert>
         ) : null}
 
-        {execution && execution.success ? (
+        {execution?.success ? (
           <Button variant="contained" onClick={() => navigate({ to: '/' })}>
             Return to Home
           </Button>

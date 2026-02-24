@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ShapeBuildTaskSummary } from 'packages/build-api';
+import type { ShapeBuildTaskSummary } from '@hierarchidb/build-api';
 import {
-  reconcileSnapshotWithCurrentTasks,
+  replaceSnapshotTasks,
   shouldPreferNextTask,
-  resolveTaskStage,
+  resolveTaskSummaryFromRaw,
 } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
-import { normalizeStageKey } from '../../../components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
 import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
 
 const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
@@ -19,111 +18,48 @@ const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSumm
 });
 
 describe('reconcileSnapshotWithCurrentTasks', () => {
-  it('replaces current tasks with snapshot even when empty', () => {
-    const currentTasks = new Map<string, ShapeBuildTaskSummary>([
-      ['node:fetch:1', makeTask({ taskId: 'node:fetch:1', status: 'completed', progress: 100, index: 1 })],
-      ['node:fetch:2', makeTask({ taskId: 'node:fetch:2', status: 'failed', progress: 100, index: 2 })],
-    ]);
-
-    const next = reconcileSnapshotWithCurrentTasks([], currentTasks);
-
-    expect(next).toHaveLength(0);
-  });
-
-  it('replaces stale snapshot with incoming snapshot order and data', () => {
-    const currentTasks = new Map<string, ShapeBuildTaskSummary>([
-      ['node:fetch:1', makeTask({
-        taskId: 'node:fetch:1',
-        status: 'running',
-        progress: 25,
-        message: 'building',
-        index: 1,
-      })],
-    ]);
-
+  it('replaces current list with snapshot content only', () => {
     const snapshotTasks = [
-      makeTask({
-        taskId: 'node:fetch:1',
-        status: 'running',
-        progress: 10,
-        message: 'snapshot stale',
-        index: 1,
-      }),
+      makeTask({ taskId: 'task-a', stage: 'transform', progress: 15, index: 1 }),
+      makeTask({ taskId: 'task-b', stage: 'transform', progress: 30, index: 2 }),
     ];
 
-    const next = reconcileSnapshotWithCurrentTasks(snapshotTasks, currentTasks);
+    const next = replaceSnapshotTasks(snapshotTasks);
 
-    expect(next).toEqual([
-      makeTask({
-        taskId: 'node:fetch:1',
-        status: 'running',
-        progress: 10,
-        message: 'snapshot stale',
-        index: 1,
-      }),
-    ]);
-  });
-
-  it('applies snapshot tasks only when they are not stale', () => {
-    const currentTasks = new Map<string, ShapeBuildTaskSummary>([
-      ['node:fetch:1', makeTask({
-        taskId: 'node:fetch:1',
-        status: 'running',
-        progress: 40,
-        message: 'older',
-        index: 1,
-      })],
-    ]);
-
-    const snapshotTasks = [
-      makeTask({
-        taskId: 'node:fetch:1',
-        status: 'running',
-        progress: 70,
-        message: 'newer',
-        index: 1,
-      }),
-      makeTask({
-        taskId: 'node:fetch:2',
-        status: 'queued',
-        progress: 0,
-        message: 'new',
-        index: 2,
-      }),
-    ];
-
-    const next = reconcileSnapshotWithCurrentTasks(snapshotTasks, currentTasks);
-
+    expect(next).toEqual(snapshotTasks);
     expect(next).toHaveLength(2);
-    expect(next.find((item) => item.taskId === 'node:fetch:1')?.progress).toBe(70);
-    expect(next.find((item) => item.taskId === 'node:fetch:2')?.status).toBe('queued');
+  });
+
+  it('keeps snapshot items order as provided', () => {
+    const snapshotTasks = [
+      makeTask({ taskId: 'task-b', progress: 30, index: 2 }),
+      makeTask({ taskId: 'task-a', progress: 10, index: 1 }),
+    ];
+
+    const next = replaceSnapshotTasks(snapshotTasks);
+
+    expect(next[0]?.taskId).toBe('task-b');
+    expect(next[1]?.taskId).toBe('task-a');
   });
 });
 
 describe('shouldPreferNextTask', () => {
-  it('prefers terminal state over non-terminal state', () => {
-    const current = makeTask({ status: 'completed', progress: 100 });
-    const next = makeTask({ status: 'running', progress: 100 });
-
-    expect(shouldPreferNextTask(current, next)).toBe(false);
-  });
-
-  it('rejects task updates that regress progress', () => {
-    const current = makeTask({ status: 'running', progress: 80 });
-    const next = makeTask({ status: 'running', progress: 60 });
-
-    expect(shouldPreferNextTask(current, next)).toBe(false);
+  it('rejects progress regression', () => {
+    expect(shouldPreferNextTask(
+      makeTask({ status: 'running', progress: 80 }),
+      makeTask({ status: 'running', progress: 50 }),
+    )).toBe(false);
   });
 
   it('accepts progress advancement', () => {
-    const current = makeTask({ status: 'running', progress: 80 });
-    const next = makeTask({ status: 'running', progress: 99 });
-
-    expect(shouldPreferNextTask(current, next)).toBe(true);
+    expect(shouldPreferNextTask(
+      makeTask({ status: 'running', progress: 80 }),
+      makeTask({ status: 'running', progress: 90 }),
+    )).toBe(true);
   });
 });
 
-describe('resolveTaskStage', () => {
+describe('resolveTaskSummaryFromRaw', () => {
   const buildRawTask = (overrides: Partial<RawTaskSummary>): RawTaskSummary => ({
     taskId: 'task-unknown',
     stage: 'fetch',
@@ -134,19 +70,12 @@ describe('resolveTaskStage', () => {
     ...overrides,
   });
 
-  it('returns valid task stage as is', () => {
-    const task = buildRawTask({ stage: 'transform' });
-    expect(resolveTaskStage(task)).toBe('transform');
+  it('throws for invalid stage', () => {
+    expect(() => resolveTaskSummaryFromRaw(buildRawTask({ stage: 'invalid' as never }))).toThrow('invalid task stage');
   });
 
-  it('throws on invalid task stage', () => {
-    const task = buildRawTask({ stage: 'invalid' as RawTaskSummary['stage'] });
-    expect(() => resolveTaskStage(task)).toThrow('[ShapeBuildTaskSync] invalid task stage');
-  });
-});
-
-describe('normalizeStageKey', () => {
-  it('returns explicit task stage without defaulting', () => {
-    expect(normalizeStageKey({ stage: 'transform' })).toBe('transform');
+  it('keeps canonical stage', () => {
+    const task = resolveTaskSummaryFromRaw(buildRawTask({ stage: 'transform', progress: 100 }));
+    expect(task.stage).toBe('transform');
   });
 });

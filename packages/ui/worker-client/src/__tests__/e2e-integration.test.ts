@@ -147,7 +147,7 @@ describe('Worker Initialization Integration Tests', () => {
 
       // Start initialization
       const result = await channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: false,
       });
@@ -173,7 +173,7 @@ describe('Worker Initialization Integration Tests', () => {
 
       try {
         await channel.waitForInitialization({
-          worker: slowWorker as unknown as Worker,
+          worker: slowWorker as Worker,
           timeout: 500,
           debug: false,
         });
@@ -198,7 +198,7 @@ describe('Worker Initialization Integration Tests', () => {
 
       try {
         await channel.waitForInitialization({
-          worker: worker as unknown as Worker,
+          worker: worker as Worker,
           timeout: 2000,
           debug: false,
         });
@@ -217,13 +217,13 @@ describe('Worker Initialization Integration Tests', () => {
   describe('Concurrent Operations', () => {
     it('should prevent multiple simultaneous initialization attempts', async () => {
       const promise1 = channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: false,
       });
 
       const promise2 = channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: false,
       });
@@ -241,7 +241,7 @@ describe('Worker Initialization Integration Tests', () => {
     it('should support ping after initialization', async () => {
       // Initialize first
       await channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: false,
       });
@@ -263,7 +263,7 @@ describe('Worker Initialization Integration Tests', () => {
       const removeEventListenerSpy = vi.spyOn(worker, 'removeEventListener');
 
       channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: false,
       });
@@ -276,7 +276,7 @@ describe('Worker Initialization Integration Tests', () => {
     it('should handle dispose during initialization', async () => {
       vi.useFakeTimers();
       const initPromise = channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 200,
         debug: false,
       });
@@ -301,7 +301,7 @@ describe('Worker Initialization Integration Tests', () => {
       const consoleSpy = vi.spyOn(console, 'log');
 
       await channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 5000,
         debug: true,
       });

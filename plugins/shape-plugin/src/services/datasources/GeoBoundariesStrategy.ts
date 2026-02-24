@@ -158,6 +158,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         signal,
         cacheKeyMode,
         retries,
+        options?.onRetryAttempt,
       );
 
       if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
@@ -187,6 +188,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         fetchOptions: options ?? {},
         pipeline,
         retryConfig: retries,
+        onRetryAttempt: options?.onRetryAttempt,
       });
       console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
       return decoded;
@@ -341,6 +343,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     signal?: AbortSignal,
     cacheKeyMode: 'url' | 'legacy' = 'legacy',
     retryConfig?: RetryConfig,
+    onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>,
   ): Promise<GeoBoundariesApiResponse> {
     const url = buildGeoBoundariesMetadataUrl(country, adminLevel);
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
@@ -360,6 +363,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
             signal,
           },
           retryConfig,
+          onRetryAttempt,
         )
         : await store.getOrFetchForNode(nodeId, url, {
           accept: 'application/json',

@@ -39,6 +39,8 @@ const coerceViewport = (value: unknown): MapViewport | undefined => {
   if (!isRecord(value)) return undefined;
   const center = (value as { center?: unknown }).center;
   const zoom = (value as { zoom?: unknown }).zoom;
+  const bearing = (value as { bearing?: unknown }).bearing;
+  const pitch = (value as { pitch?: unknown }).pitch;
   if (
     Array.isArray(center) &&
     center.length === 2 &&
@@ -46,7 +48,12 @@ const coerceViewport = (value: unknown): MapViewport | undefined => {
     typeof center[1] === 'number' &&
     typeof zoom === 'number'
   ) {
-    return { ...(value as unknown as MapViewport) };
+    return {
+      center: [center[0], center[1]],
+      zoom,
+      bearing: typeof bearing === 'number' ? bearing : DEFAULT_VIEWPORT.bearing,
+      pitch: typeof pitch === 'number' ? pitch : DEFAULT_VIEWPORT.pitch,
+    };
   }
   return undefined;
 };
@@ -82,7 +89,7 @@ const readNodeData = (
   node: TreeNode | Record<string, unknown> | null | undefined
 ): Record<string, unknown> => {
   if (!node) return {};
-  const nodeRecord = node as unknown as Record<string, unknown>;
+  const nodeRecord = node as Record<string, unknown>;
   const rawData = nodeRecord.draftData ?? nodeRecord.data;
   return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
 };

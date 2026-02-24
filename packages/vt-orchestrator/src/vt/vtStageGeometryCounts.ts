@@ -1,12 +1,23 @@
 import type { Feature } from 'geojson';
 
-type NumberIndexable = { length: number; [index: number]: number };
+type NumberIndexable = Int8Array | Uint8Array | Uint16Array | Uint32Array | Int16Array | Int32Array
+  | Float32Array | Float64Array | Uint8ClampedArray;
+
+const isNumericArrayView = (value: unknown): value is NumberIndexable => (
+  value instanceof Int8Array
+  || value instanceof Uint8Array
+  || value instanceof Uint16Array
+  || value instanceof Uint32Array
+  || value instanceof Int16Array
+  || value instanceof Int32Array
+  || value instanceof Float32Array
+  || value instanceof Float64Array
+  || value instanceof Uint8ClampedArray
+);
 
 const isNumberArrayView = (value: unknown): value is ArrayBufferView & NumberIndexable => {
-  if (!ArrayBuffer.isView(value)) return false;
-  if (typeof (value as { length?: unknown }).length !== 'number') return false;
-  const view = value as unknown as NumberIndexable;
-  return view.length > 0 && typeof view[0] === 'number';
+  if (!isNumericArrayView(value)) return false;
+  return value.length > 0 && typeof value[0] === 'number';
 };
 
 const countVertices = (coords: unknown): number => {
@@ -75,7 +86,7 @@ const normalizeTileRings = (geometry: unknown): number[][][] => {
   }
   if (Array.isArray(first0) && Array.isArray(first0[0])) {
     const rings: number[][][] = [];
-    (geometry as unknown as number[][][][]).forEach((polygon) => {
+    (geometry as number[][][][]).forEach((polygon) => {
       if (!Array.isArray(polygon)) return;
       polygon.forEach((ring) => {
         if (Array.isArray(ring)) rings.push(ring as number[][]);

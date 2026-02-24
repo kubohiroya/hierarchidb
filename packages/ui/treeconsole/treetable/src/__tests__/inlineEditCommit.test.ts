@@ -132,9 +132,9 @@ function renderCell(params: ColumnBuilderParams, node: TreeNode, columnId: 'name
 
   const cell = targetColumn.cell({
     row: { original: node },
-  } as any);
+  } as { row: { original: TreeNode } });
 
-  render(React.createElement(React.Fragment, null, cell as any));
+  render(React.createElement(React.Fragment, null, cell as React.ReactNode));
 }
 
 describe('TreeTable inline edit commits', () => {

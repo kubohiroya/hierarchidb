@@ -1,4 +1,4 @@
-import type { TaskQueueRecord } from '../../../../../packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import { reconcileByMetadata, type MetadataDescriptor } from '@hierarchidb/build-runtime-services';
 import { resolveTaskCacheIdentity } from './shapeTaskCacheIdentity.ts';
 

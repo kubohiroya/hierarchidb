@@ -104,7 +104,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
       //  API
       if ('measureUserAgentSpecificMemory' in performance) {
         const result = await (
-          performance as unknown as {
+          performance as {
             measureUserAgentSpecificMemory: () => Promise<{ breakdown: Array<{ bytes?: number }> }>;
           }
         ).measureUserAgentSpecificMemory();
@@ -117,7 +117,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
         //  performance.memory
         let totalMemory = maxMemory;
         if ('memory' in performance) {
-          const memory = (performance as unknown as { memory: { jsHeapSizeLimit?: number } })
+          const memory = (performance as { memory: { jsHeapSizeLimit?: number } })
             .memory;
           if (memory.jsHeapSizeLimit) {
             totalMemory = memory.jsHeapSizeLimit;
@@ -135,7 +135,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
       } else if ('memory' in performance) {
         //  : performance.memory API
         const memory = (
-          performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
+          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
         ).memory;
         const used = memory.usedJSHeapSize;
         const total = memory.jsHeapSizeLimit || maxMemory;
@@ -157,7 +157,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
       //  API
       if ('memory' in performance) {
         const memory = (
-          performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
+          performance as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
         ).memory;
         const used = memory.usedJSHeapSize;
         const total = memory.jsHeapSizeLimit || maxMemory;

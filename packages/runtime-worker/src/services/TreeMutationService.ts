@@ -621,7 +621,7 @@ export class TreeMutationService implements TreeMutationAPI {
       const toCreate: TreeNode[] = [];
 
       // Build quick lookup to detect relative parentage within clipboard set
-      const inClipboard = new Set<string>(nodeIds as unknown as string[]);
+      const inClipboard = new Set<string>(nodeIds as string[]);
       // Preload base depth from destination parent
       let baseDepth = 0;
       try {

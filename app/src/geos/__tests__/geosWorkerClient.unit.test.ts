@@ -2,8 +2,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type { Feature, LineString, Polygon } from 'geojson';
 import { geometryArea, geometrySimplify } from '@hierarchidb/gis-sdk';
 
-let geosWorkerClient: typeof import('../geosWorkerClient.ts').geosWorkerClient;
-let setGeosWorkerEndpointFactoryForTests: typeof import('../geosWorkerClient.ts').setGeosWorkerEndpointFactoryForTests;
+let geosWorkerClient: typeof import('../geosWorkerClient').geosWorkerClient;
+let setGeosWorkerEndpointFactoryForTests: typeof import('../geosWorkerClient').setGeosWorkerEndpointFactoryForTests;
 let exposeGeosWorker: typeof import('../geosWorker.entry.ts').exposeGeosWorker;
 
 describe('geosWorkerClient (Comlink worker)', () => {
@@ -13,7 +13,7 @@ describe('geosWorkerClient (Comlink worker)', () => {
   beforeAll(async () => {
     vi.unmock('comlink');
     vi.resetModules();
-    const clientModule = await import('../geosWorkerClient.ts');
+    const clientModule = await import('../geosWorkerClient');
     geosWorkerClient = clientModule.geosWorkerClient;
     setGeosWorkerEndpointFactoryForTests = clientModule.setGeosWorkerEndpointFactoryForTests;
     const workerModule = await import('../geosWorker.entry');
@@ -22,7 +22,7 @@ describe('geosWorkerClient (Comlink worker)', () => {
 
   beforeEach(() => {
     vi.useRealTimers();
-    globalThis.Worker = class {} as unknown as typeof Worker;
+    globalThis.Worker = class {} as typeof Worker;
     channel = new MessageChannel();
     channel.port1.start();
     channel.port2.start();

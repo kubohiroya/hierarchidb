@@ -4,6 +4,8 @@ import ja from '~/ui/locales/ja.json' with { type: 'json' };
 
 type SupportedLocale = 'en' | 'ja';
 
+type DeepPartial<T> = T extends Function ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+
 type TranslationMap = Record<string, string>;
 type SelectionSettingsTranslations = {
   generic?: TranslationMap;
@@ -393,25 +395,25 @@ const baseTranslations: LocationTranslations = {
   },
 };
 
-const bundles: Record<SupportedLocale, Partial<LocationTranslations>> = {
-  en: en as unknown as Partial<LocationTranslations>,
-  ja: ja as unknown as Partial<LocationTranslations>,
+const bundles: Record<SupportedLocale, DeepPartial<LocationTranslations>> = {
+  en,
+  ja,
 };
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-const mergeTranslations = <T extends Record<string, unknown>>(base: T, override?: Partial<T>): T => {
+const mergeTranslations = <T extends Record<string, unknown>>(base: T, override?: DeepPartial<T>): T => {
   const result: Record<string, unknown> = { ...base };
   if (!override) return result as T;
-  Object.entries(override).forEach(([key, value]) => {
+  Object.entries(override as Record<string, unknown>).forEach(([key, value]) => {
     if (value === undefined) return;
     const baseValue = result[key];
     if (isPlainObject(baseValue) && isPlainObject(value)) {
-      result[key] = mergeTranslations(baseValue, value);
+      result[key] = mergeTranslations(baseValue as Record<string, unknown>, value);
       return;
     }
-    result[key] = value as unknown;
+    result[key] = value;
   });
   return result as T;
 };
@@ -424,7 +426,10 @@ const detectLocale = (): SupportedLocale => {
 
 export const useTranslation = (ns: string = 'location-plugin') => {
   const locale = detectLocale();
-  const translations = mergeTranslations(baseTranslations, bundles[locale] ?? bundles.en);
+  const translations = mergeTranslations<LocationTranslations>(
+    baseTranslations,
+    bundles[locale] ?? bundles.en,
+  );
   const t = (key: string, fallback?: string) =>
     String(globalI18n.t(key, { ns, defaultValue: fallback ?? key }));
   return { t, translations, locale };

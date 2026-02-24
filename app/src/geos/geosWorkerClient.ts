@@ -33,7 +33,7 @@ const clearIdleTimer = (): void => {
 const shutdownWorker = (): void => {
   clearIdleTimer();
   if (geosApi) {
-    const releaser = (geosApi as unknown as { [releaseProxy]?: () => void | Promise<void> })[releaseProxy];
+    const releaser = (geosApi as { [releaseProxy]?: () => void | Promise<void> })[releaseProxy];
     if (releaser) {
       void Promise.resolve(releaser());
     }

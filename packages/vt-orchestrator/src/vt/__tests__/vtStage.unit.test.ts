@@ -150,7 +150,7 @@ describe('vtStage summary helpers', () => {
       },
     ];
 
-    const totals = vtStageTestUtils.computeOutputTileTotals(tiles as unknown as Parameters<
+    const totals = vtStageTestUtils.computeOutputTileTotals(tiles as Parameters<
       typeof vtStageTestUtils.computeOutputTileTotals
     >[0]);
 

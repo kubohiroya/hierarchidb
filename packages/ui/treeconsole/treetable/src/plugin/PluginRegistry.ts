@@ -349,9 +349,9 @@ export class PluginRegistry implements IPluginRegistry {
         results.push(result);
 
         if (hookName === 'onBeforeCellRender' && result != null) {
-          (args as unknown as unknown[])[0] = result;
+          args[0] = result as Parameters<NonNullable<TreeTableHooks['onBeforeCellRender']>>[0];
         } else if (hookName === 'onAfterCellRender' && result != null) {
-          (args as unknown as unknown[])[0] = result;
+          args[0] = result as Parameters<NonNullable<TreeTableHooks['onAfterCellRender']>>[0];
         }
 
       } catch (error) {
@@ -394,7 +394,7 @@ export class PluginRegistry implements IPluginRegistry {
     for (const pluginInfo of plugins) {
       try {
         const result = this.executePluginHook(pluginInfo, hookName, args);
-        if (result !== undefined && result !== (false as unknown)) {
+        if (result !== undefined && result !== false) {
           return [result];
         }
       } catch (error) {

@@ -71,12 +71,12 @@ describe('TreeTableExpandedService', () => {
     listDescendants.mockImplementation(async (root: NodeId) => {
       if (root === ('root' as NodeId)) {
         return [
-          { id: 'child-1', parentId: root, metadata: { name: '' } } as unknown as TreeNode,
-          { id: 'child-2', parentId: root, metadata: { name: '' } } as unknown as TreeNode,
+          { id: 'child-1', parentId: root, metadata: { name: '' } } as TreeNode,
+          { id: 'child-2', parentId: root, metadata: { name: '' } } as TreeNode,
         ];
       }
       if (root === ('child-1' as NodeId)) {
-        return [{ id: 'grand-1', parentId: root, metadata: { name: '' } } as unknown as TreeNode];
+        return [{ id: 'grand-1', parentId: root, metadata: { name: '' } } as TreeNode];
       }
       return [];
     });

@@ -4,13 +4,13 @@ import type { CoreDB } from '../../../services/CoreDB';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager';
 
 const makeCore = () => ({
-  getNode: vi.fn(async (_id: NodeId) => undefined) as unknown as CoreDB['getNode'],
+  getNode: vi.fn(async (_id: NodeId) => undefined) as CoreDB['getNode'],
 });
 
 describe('EntityLifecycleManager.setIdMapping', () => {
   it('ignores mappings that cannot be normalized to NodeId pairs', async () => {
     const core = makeCore();
-    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton(core as CoreDB);
 
     const mapping = new Map<NodeId | number | string, NodeId | number | string>([
       [123, 'dest' as NodeId],
@@ -51,7 +51,7 @@ describe('EntityLifecycleManager.setIdMapping', () => {
       version: 1,
     }));
 
-    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton(core as CoreDB);
     const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [[source, target] as const];
     EntityLifecycleManager.setIdMapping('cmd', mapping);
 

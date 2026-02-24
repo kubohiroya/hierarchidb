@@ -1,9 +1,9 @@
-import type { BuildTaskSummary, TaskDisplayPayload, TaskStage } from '../../../../../../../packages/build-api';
+import type { BuildTaskSummary, TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { MutableRefObject } from 'react';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 export type RawTaskSummary = BuildTaskSummary & {
-  stage?: TaskStage;
+  stage: TaskStage;
   title?: string;
   metadata?: Record<string, unknown>;
   error?: string;

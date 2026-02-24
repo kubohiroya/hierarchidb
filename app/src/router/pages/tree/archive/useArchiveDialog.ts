@@ -244,7 +244,7 @@ export function useArchiveDialog(data: ArchiveDialogData, params: ArchiveDialogR
       (data.archiveRootNode?.id as NodeId | undefined) ??
       'archive-root') as NodeId;
     const decorateForIndex = (node: HierarchicalTreeNode): TreeNode => {
-      const source = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
+      const source = nodeMap.get(String(node.id)) ?? (node as TreeNode);
       const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
       const decorated: TreeNode = {
         ...source,

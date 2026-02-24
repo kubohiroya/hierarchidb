@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/core-types';
-import type { TaskDisplayPayload, TaskQueueRecord } from '../../../../../packages/build-api';
+import type { TaskDisplayPayload, TaskQueueRecord } from '@hierarchidb/build-api';
 import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
@@ -31,8 +31,7 @@ import {
   type BuildProgressPayload,
   type BuildTaskSummary,
   type BuildTaskUpdateEvent,
-  type ProgressPhase,
-} from '../../../../../packages/build-api';
+} from '@hierarchidb/build-api';
 import { Dexie } from 'dexie';
 import {
   VtTaskQueueDb,
@@ -222,36 +221,9 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
   return task.progress ?? 0;
 };
 
-const validTaskStages: TaskQueueRecord['stage'][] = ['fetch', 'transform', 'vt'];
-const validTaskStatuses: TaskQueueRecord['status'][] = [
-  'queued',
-  'running',
-  'completed',
-  'failed',
-  'recycled',
-];
-
-const isValidTaskStage = (value: unknown): value is TaskQueueRecord['stage'] => (
-  typeof value === 'string' && validTaskStages.includes(value as TaskQueueRecord['stage'])
-);
-
-const isValidTaskStatus = (value: unknown): value is TaskQueueRecord['status'] => (
-  typeof value === 'string' && validTaskStatuses.includes(value as TaskQueueRecord['status'])
-);
-
-const normalizeTaskPhase = (status: TaskQueueRecord['status']): ProgressPhase => status;
-
-
 type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
 
-const resolveBuildTaskStage = (
-  task: BuildTaskRecordLike
-): TaskQueueRecord['stage'] | undefined => {
-  const stageValue = (task as { stage?: unknown }).stage;
-  return isValidTaskStage(stageValue) ? stageValue : undefined;
-};
-
-const normalizeResumedTaskStatus = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
+const toTaskQueueStatusFromStore = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
   if (status === 'failed' || status === 'running') {
     return 'queued';
   }
@@ -267,11 +239,7 @@ const isStopReason = (value: string): value is ShapeBuildStopReason => (
 );
 
 const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => {
-  const nextStatus = normalizeResumedTaskStatus(task.status);
-  const taskStage = resolveBuildTaskStage(task);
-  if (!taskStage) {
-    throw new Error('[shapeBuildAPI] task stage missing while mapping to queue');
-  }
+  const nextStatus = toTaskQueueStatusFromStore(task.status);
   const shouldKeepOutput = nextStatus === 'completed' || nextStatus === 'recycled';
   const resolvedProgress = shouldKeepOutput
     ? (Number.isFinite(task.progress) ? Math.min(100, Math.max(0, task.progress)) : 100)
@@ -280,7 +248,7 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
-    stage: taskStage,
+    stage: task.stage,
     status: nextStatus,
     index: task.index,
     progress: resolvedProgress,
@@ -298,7 +266,6 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   let scannedCount = 0;
   let queuedCount = 0;
-  let skippedCount = 0;
   let batch: TaskQueueRecord[] = [];
   let writeChain = Promise.resolve();
 
@@ -315,10 +282,6 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     .between([nodeId, Dexie.minKey], [nodeId, Dexie.maxKey])
     .each((task) => {
       scannedCount += 1;
-      if (!resolveBuildTaskStage(task) || !isValidTaskStatus(task.status)) {
-        skippedCount += 1;
-        return;
-      }
       batch.push(mapBuildTaskToQueueTask(task));
       if (batch.length >= BUILD_TASK_SEED_BATCH_SIZE) {
         flushBatch();
@@ -332,31 +295,18 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
     nodeId,
     scannedCount,
     queuedCount,
-    skippedCount,
   }));
 };
 
-const purgeLegacyBuildTasks = async (nodeId: NodeId): Promise<number> => {
-  const invalidTaskIds: string[] = [];
-  await ephemeralDB.buildTasks.where('nodeId').equals(nodeId).each((task) => {
-    if (!isValidTaskStatus(task.status) || !resolveBuildTaskStage(task)) {
-      invalidTaskIds.push(task.taskId);
-    }
-  });
-  if (invalidTaskIds.length === 0) return 0;
-  await ephemeralDB.buildTasks.bulkDelete(invalidTaskIds);
-  console.warn('[shapeBuildAPI] purged legacy build tasks', JSON.stringify({
-    nodeId,
-    removedCount: invalidTaskIds.length,
-  }));
-  return invalidTaskIds.length;
+const purgeLegacyBuildTasks = async (_nodeId: NodeId): Promise<number> => {
+  return 0;
 };
 
 const purgeLegacyTaskQueue = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): Promise<number> => {
   const removedTaskIds: string[] = [];
   const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
   tasks.forEach((task) => {
-    if (!isValidTaskStatus(task.status) || !isValidTaskStage(task.stage)) {
+    if (!task.status) {
       removedTaskIds.push(task.taskId);
       return;
     }
@@ -414,7 +364,7 @@ const mapTaskQueueRecordToTaskSummary = (
   return {
     taskId: task.taskId,
     stage: task.stage,
-    status: normalizeTaskPhase(resolveEffectiveTaskStatus(task)),
+    status: resolveEffectiveTaskStatus(task),
     progress: resolveTaskProgress(task),
     display: task.display,
     message: base.message,
@@ -565,6 +515,18 @@ const buildTaskSummarySnapshot = async (
   taskQueue: VtTaskQueueDb,
 ): Promise<ShapeBuildTaskSummary[]> => {
   const tasks = await listTasks(taskQueue, nodeId);
+  const statusSummary: Record<string, number> = {};
+  const stageSummary: Record<string, number> = {};
+  for (const task of tasks) {
+    statusSummary[task.status] = (statusSummary[task.status] ?? 0) + 1;
+    stageSummary[task.stage] = (stageSummary[task.stage] ?? 0) + 1;
+  }
+  console.log('[shapeBuildAPI] buildTaskSummarySnapshot', JSON.stringify({
+    nodeId,
+    total: tasks.length,
+    statusSummary,
+    stageSummary,
+  }));
   return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task));
 };
 
@@ -617,10 +579,6 @@ const buildProgressPayloadFromTasks = async (
     meta: Object.keys(meta).length > 0 ? meta : undefined,
   };
 };
-
-const isTaskStageValue = (value: unknown): value is TaskQueueRecord['stage'] => (
-  value === 'fetch' || value === 'transform' || value === 'vt'
-);
 
 const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): StageStatus => {
   let completed = 0;
@@ -1014,7 +972,6 @@ export const shapeBuildRuntimeExecutionMetrics = {
   activePipelines,
   activePipelineRuns,
   seedTaskQueueFromBuildTasks,
-  isTaskStageValue,
   isStopReason,
   buildTaskQueueSummary,
   getPauseState,

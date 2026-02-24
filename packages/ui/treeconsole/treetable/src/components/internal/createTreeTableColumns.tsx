@@ -681,7 +681,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       size: columnWidths.removedAt ?? 150,
       enableSorting: true,
       cell: ({ row }) => {
-        const nodeWithDeletion = row.original as unknown as { removedAt?: number; deletedAt?: number };
+        const nodeWithDeletion = row.original as { removedAt?: number; deletedAt?: number };
         const value = nodeWithDeletion.removedAt ?? nodeWithDeletion.deletedAt;
         return formatTimestamp(value);
       },

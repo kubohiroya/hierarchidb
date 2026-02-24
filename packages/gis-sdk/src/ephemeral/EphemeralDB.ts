@@ -18,16 +18,54 @@ import {
   EPHEMERAL_DB_SCHEMA_V2,
 } from './EphemeralBuildState.js';
 
-const applyTopLevelMods = <T extends Record<string, unknown>>(
+const applyTopLevelMods = <T extends object>(
   current: T,
   mods: Record<string, unknown>,
 ): T => {
-  const next = { ...current };
+  const next = { ...current } as Record<string, unknown>;
+  const safeMods: Record<string, unknown> = {};
   Object.entries(mods).forEach(([key, value]) => {
     if (!key || key.includes('.')) return;
-    next[key as keyof T] = value as T[keyof T];
+    safeMods[key] = value;
   });
-  return next;
+  return Object.assign(next, safeMods) as T;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isEphemeralFetchCacheRecord = (value: unknown): value is EphemeralFetchCacheRecord => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.nodeId === 'string' &&
+    typeof value.sourceKey === 'string' &&
+    value.data instanceof ArrayBuffer &&
+    typeof value.featureCount === 'number' &&
+    Array.isArray(value.bbox) &&
+    value.bbox.length === 4 &&
+    value.bbox.every((value) => typeof value === 'number') &&
+    typeof value.downloadTime === 'number' &&
+    typeof value.timestamp === 'number' &&
+    typeof value.size === 'number'
+  );
+};
+
+const isEphemeralTransformCacheRecord = (value: unknown): value is EphemeralTransformCacheRecord => {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === 'string' &&
+    typeof value.nodeId === 'string' &&
+    typeof value.sourceKey === 'string' &&
+    value.data instanceof ArrayBuffer &&
+    typeof value.featureCount === 'number' &&
+    typeof value.vertexCount === 'number' &&
+    typeof value.polygonCount === 'number' &&
+    typeof value.extractionRatio === 'number' &&
+    typeof value.tolerance === 'number' &&
+    typeof value.timestamp === 'number' &&
+    typeof value.bandIndex === 'number'
+  );
 };
 
 const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
@@ -119,11 +157,8 @@ export class EphemeralDB extends Dexie {
       fireAndForgetMetaOperation(() => this.fetchCacheMeta.put(meta), 'fetchCacheMeta:create');
     });
     this.fetchCache.hook('updating', (mods, _primaryKey, record, transaction) => {
-      if (!record) return;
-      const next = applyTopLevelMods(
-        record as unknown as Record<string, unknown>,
-        mods as Record<string, unknown>,
-      ) as unknown as EphemeralFetchCacheRecord;
+      if (!isEphemeralFetchCacheRecord(record) || !isRecord(mods)) return;
+      const next = applyTopLevelMods(record, mods);
       const tx = transaction as HookTransaction;
       const meta = toFetchCacheMeta(next);
       if (hasStore(tx, 'fetchCacheMeta')) {
@@ -157,11 +192,8 @@ export class EphemeralDB extends Dexie {
       fireAndForgetMetaOperation(() => this.transformCacheMeta.put(meta), 'transformCacheMeta:create');
     });
     this.transformCache.hook('updating', (mods, _primaryKey, record, transaction) => {
-      if (!record) return;
-      const next = applyTopLevelMods(
-        record as unknown as Record<string, unknown>,
-        mods as Record<string, unknown>,
-      ) as unknown as EphemeralTransformCacheRecord;
+      if (!isEphemeralTransformCacheRecord(record) || !isRecord(mods)) return;
+      const next = applyTopLevelMods(record, mods);
       const tx = transaction as HookTransaction;
       const meta = toTransformCacheMeta(next);
       if (hasStore(tx, 'transformCacheMeta')) {
@@ -316,7 +348,7 @@ export class EphemeralDB extends Dexie {
     const fullTask: EphemeralBuildTaskRecord = {
       ...task,
       taskId,
-    } as EphemeralBuildTaskRecord;
+    };
     await this.buildTasks.put(fullTask);
     return fullTask;
   }

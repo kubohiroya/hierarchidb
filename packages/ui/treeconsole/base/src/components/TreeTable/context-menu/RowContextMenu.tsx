@@ -408,7 +408,7 @@ export const RowContextMenu = memo(
           {/* Dynamic plugin-driven create menu via global menu-builders */}
           {(() => {
             try {
-              const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
+              const g = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
               const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
               if (typeof builder !== 'function') {
                 return (

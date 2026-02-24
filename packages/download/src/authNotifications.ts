@@ -17,7 +17,7 @@ export function notifyPluginAuthRequired(pluginId: string, info: AuthNotificatio
     handler(info);
     return;
   }
-  const globalScope = globalThis as unknown as {
+  const globalScope = globalThis as {
     AuthNotificationRegistry?: { getInstance?: () => { onAuthRequired?: (payload: AuthNotification) => void } };
     authNotificationRegistry?: { onAuthRequired?: (payload: AuthNotification) => void };
     authRegistry?: { onAuthRequired?: (payload: AuthNotification) => void };

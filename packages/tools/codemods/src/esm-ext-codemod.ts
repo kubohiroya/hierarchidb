@@ -57,7 +57,7 @@ function resolveIndexIfDir(absFrom: string, rel: string): string | null {
       if (idx) return rel.replace(/\/$/, '') + (rel.endsWith('/') ? '' : '/') + 'index.ts';
     }
   } catch (error) {
-    logCodemodWarning(`Failed to resolve directory at ${abs}`, error as unknown);
+    logCodemodWarning(`Failed to resolve directory at ${abs}`, error);
   }
   return null;
 }

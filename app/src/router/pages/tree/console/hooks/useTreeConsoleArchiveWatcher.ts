@@ -9,7 +9,7 @@ import { sanitizeForComlink } from '~/utils/comlinkSanitizer';
 
 export type ArchiveWatcherState = {
   hasArchiveItems: boolean;
-  archiveRootIdRef: React.MutableRefObject<NodeId | null>;
+  archiveRootIdRef: React.RefObject<NodeId | null>;
 };
 
 export function useTreeConsoleArchiveWatcher({

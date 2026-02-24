@@ -534,7 +534,7 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
       if (prop === 'terminate') {
         return () => worker.terminate();
       }
-      return (client as unknown as Record<string | symbol, unknown>)[prop as string | symbol];
+      return Reflect.get(client, prop);
     },
   });
   return proxy as StageProcessingService;

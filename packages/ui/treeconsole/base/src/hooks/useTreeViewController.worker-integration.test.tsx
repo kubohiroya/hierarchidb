@@ -98,7 +98,7 @@ describe('useTreeViewController', () => {
           memory: { used: 0, limit: 0 },
           uptime: 0,
         })),
-      } as unknown as WorkerAPI;
+      } as WorkerAPI;
 
       const mockWorkerClient = {
         getAPI: vi.fn(() => mockWorkerAPI),

@@ -27,7 +27,7 @@ export const xlsxParser: TabularParserPort = {
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
     const xlsxModule = await import('xlsx/xlsx.mjs');
-    const XLSX = ((xlsxModule as unknown as { default?: typeof import('xlsx/xlsx.mjs') }).default ?? xlsxModule) as typeof import('xlsx/xlsx.mjs');
+    const XLSX = ((xlsxModule as { default?: typeof import('xlsx/xlsx.mjs') }).default ?? xlsxModule) as typeof import('xlsx/xlsx.mjs');
 
     // Ensure Node-specific helpers are disabled when running in the browser.
     if (typeof (XLSX as { set_fs?: (fs: unknown) => void }).set_fs === 'function' && (XLSX.utils as { fs_stub?: unknown }).fs_stub) {

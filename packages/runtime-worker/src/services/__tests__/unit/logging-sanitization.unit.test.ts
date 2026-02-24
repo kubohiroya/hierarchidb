@@ -25,7 +25,7 @@ describe('ZE-4: logging and event sanitization', () => {
       groupId: 'g',
       payload: {},
       issuedAt: Date.now(),
-    } as unknown as CommandEnvelope<string, Record<string, never>>;
+    } as CommandEnvelope<string, Record<string, never>>;
     const result = await cp.processCommand(invalid);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -43,7 +43,7 @@ describe('ZE-4: logging and event sanitization', () => {
       kind: 'ping',
       payload: { secret: 'should-not-appear-in-event' },
       issuedAt: Date.now(),
-    } as unknown as CommandEnvelope<'ping', { secret: string }>;
+    } as CommandEnvelope<'ping', { secret: string }>;
     const result = await cp.processCommand(ok);
     expect(result.success).toBe(true);
     const evt = cp.getLastEvent();

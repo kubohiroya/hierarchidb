@@ -422,6 +422,12 @@
       "@hierarchidb/ui-build-progress/*": [
         "./packages/ui/build-progress/dist/*"
       ],
+      "@hierarchidb/ui-build-sessions": [
+        "./packages/ui/build-sessions/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-build-sessions/*": [
+        "./packages/ui/build-sessions/dist/*"
+      ],
       "@hierarchidb/ui-dialog": [
         "./packages/ui/dialog/dist/index.d.ts"
       ],

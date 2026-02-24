@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
+import type { FeatureCollection } from 'geojson';
 import { MapLibreMap } from './MapLibreMap.js';
 import type { MapLibreMapInstance } from '~/types/maplibre-public';
 import type {
@@ -15,7 +16,7 @@ const DEMO_SOURCE_ID = 'demo-click-points';
 const DEMO_LAYER_ID = 'demo-click-points-layer';
 const DEMO_LABEL_LAYER_ID = 'demo-click-points-label';
 
-const DEMO_POINTS_GEOJSON = {
+const DEMO_POINTS_GEOJSON: FeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
@@ -58,8 +59,8 @@ const ensureDemoLayers = (map: MapLibreMapInstance) => {
   if (!map.getSource(DEMO_SOURCE_ID)) {
     map.addSource(DEMO_SOURCE_ID, {
       type: 'geojson',
-      data: DEMO_POINTS_GEOJSON as unknown,
-    } as Record<string, unknown>);
+      data: DEMO_POINTS_GEOJSON,
+    });
   }
 
   if (!map.getLayer(DEMO_LAYER_ID)) {

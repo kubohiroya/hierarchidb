@@ -53,29 +53,32 @@ const runtimeWorkerMocks = vi.hoisted(() => {
     async delete() {}
     close() {}
     async createNode(node: TreeNode) {
-      this.nodes.data.set(node.id as string, node);
+      this.nodes.data.set(node.id, node);
     }
     async getNode(id: NodeId) {
-      return this.nodes.data.get(id as string) ?? null;
+      return this.nodes.data.get(id) ?? null;
     }
     async updateNode(node: Partial<TreeNode> & { id: NodeId }) {
-      const current = this.nodes.data.get(node.id as string);
+      const current = this.nodes.data.get(node.id);
       if (current) {
-        this.nodes.data.set(node.id as string, { ...current, ...node } as TreeNode);
+        this.nodes.data.set(node.id, { ...current, ...node } as TreeNode);
       }
     }
   }
-  const getTreeNode = async (db: CoreDB, id: NodeId) => db.nodes.data.get(id as string) ?? null;
+  const getTreeNode = async (db: CoreDB, id: NodeId) => db.nodes.data.get(id) ?? null;
   const updateTreeNodeDraftMetadata = async (db: CoreDB, id: NodeId, patch: Record<string, unknown>) => {
-    const node = db.nodes.data.get(id as string);
+    const node = db.nodes.data.get(id);
     if (node) db.nodes.data.set(id as string, { ...node, draftMetadata: { ...(node.draftMetadata ?? {}), ...patch } } as TreeNode);
   };
   const updateTreeNodeDraftData = async (db: CoreDB, id: NodeId, patch: Record<string, unknown>) => {
-    const node = db.nodes.data.get(id as string);
-    if (node) db.nodes.data.set(id as string, { ...node, draftData: { ...(node.draftData as any ?? {}), ...patch } } as TreeNode);
+    const node = db.nodes.data.get(id);
+    if (node) {
+      const draftData = node.draftData ?? {};
+      db.nodes.data.set(id, { ...node, draftData: { ...draftData, ...patch } } as TreeNode);
+    }
   };
   const discardTreeNodeDraft = async (db: CoreDB, id: NodeId) => {
-    const node = db.nodes.data.get(id as string);
+    const node = db.nodes.data.get(id);
     if (node) db.nodes.data.set(id as string, { ...node, draftData: undefined, draftMetadata: null } as TreeNode);
   };
   return { CoreDB, getTreeNode, updateTreeNodeDraftData, updateTreeNodeDraftMetadata, discardTreeNodeDraft };

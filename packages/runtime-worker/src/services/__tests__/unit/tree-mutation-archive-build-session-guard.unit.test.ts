@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../CommandProcessor';
+import { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
 
 const sessionsBulkGetMock = vi.hoisted(() => vi.fn());
@@ -79,10 +79,11 @@ const createCoreMock = (nodes: Map<NodeId, TreeNode>) => {
   } satisfies Partial<CoreDB>;
 };
 
-const createCommandProcessorMock = () => ({
-  createEnvelope: vi.fn((kind: string, payload: unknown) => ({ kind, payload })),
-  processCommand: vi.fn(async () => ({ success: true, seq: 1 })),
-});
+const createCommandProcessorMock = (coreDB: CoreDB): CommandProcessor => {
+  const processor = new CommandProcessor(coreDB);
+  vi.spyOn(processor, 'processCommand').mockResolvedValue({ success: true, seq: 1 });
+  return processor;
+};
 
 describe('TreeMutationService moveNodesToArchive running session guard', () => {
   beforeEach(() => {
@@ -99,14 +100,14 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
       [asNodeId('r:root'), createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 })],
       [asNodeId('shape-1'), createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 })],
     ]);
-    const core = createCoreMock(nodes);
-    const processor = createCommandProcessorMock();
+    const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
+    const processor = createCommandProcessorMock(core);
     sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'running' }]);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const service = new TreeMutationService(
-      core as unknown as CoreDB,
-      processor as unknown as CommandProcessor
+      core,
+      processor
     );
 
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);
@@ -121,14 +122,14 @@ describe('TreeMutationService moveNodesToArchive running session guard', () => {
       [asNodeId('r:root'), createNode({ id: 'r:root', parentId: 'r:root', nodeType: 'folder', depth: 0 })],
       [asNodeId('shape-1'), createNode({ id: 'shape-1', parentId: 'r:root', nodeType: 'shape', depth: 1 })],
     ]);
-    const core = createCoreMock(nodes);
-    const processor = createCommandProcessorMock();
+    const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
+    const processor = createCommandProcessorMock(core);
     sessionsBulkGetMock.mockResolvedValue([{ nodeId: 'shape-1', status: 'completed' }]);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const service = new TreeMutationService(
-      core as unknown as CoreDB,
-      processor as unknown as CommandProcessor
+      core,
+      processor
     );
 
     const result = await service.moveNodesToArchive([asNodeId('shape-1')]);

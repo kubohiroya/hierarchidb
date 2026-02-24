@@ -31,7 +31,7 @@ vi.mock('@hierarchidb/provider', () => ({
 
 describe('useTreeViewController', () => {
   let mockProps: TreeViewControllerProps;
-  let mockStateManager: any;
+  let mockStateManager: Record<string, ReturnType<typeof vi.fn>>;
   let mockOnStateChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('useTreeViewController', () => {
       moveNode: vi.fn(),
       archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
-    } as any;
+    };
 
     mockProps = {
       treeId: 'test-console-id',
@@ -248,7 +248,7 @@ describe('useTreeViewController', () => {
       });
 
       // Duplicated node should be selected along with original
-      expect(result.current.selectedNodeIds).toEqual(['node-1', 'node-1-copy'] as unknown as NodeId[]);
+      expect(result.current.selectedNodeIds).toEqual(['node-1', 'node-1-copy'] as NodeId[]);
     });
 
     it('should expand parent of duplicated node', async () => {

@@ -58,7 +58,7 @@ export const createClipboardActions = (deps: TreeConsoleActionDeps) => {
           onNameConflict: 'error',
         });
         if (!('success' in res) || !res.success) {
-          const err = (res as unknown as { error?: string })?.error;
+          const err = (res as { error?: string })?.error;
           if (isNameConflictError(err)) {
             const message = translateError(
               'treeConsole.conflicts.pasteOverwrite',
@@ -74,7 +74,7 @@ export const createClipboardActions = (deps: TreeConsoleActionDeps) => {
               onNameConflict: 'overwrite',
             });
             if (!('success' in overwriteResult) || !overwriteResult.success) {
-              const overwriteErr = (overwriteResult as unknown as { error?: string })?.error;
+              const overwriteErr = (overwriteResult as { error?: string })?.error;
               showCommandError('INVALID_OPERATION', overwriteErr || 'Paste failed');
               return;
             }
@@ -86,7 +86,7 @@ export const createClipboardActions = (deps: TreeConsoleActionDeps) => {
       } else {
         const res = await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
         if (!('success' in res) || !res.success) {
-          const err = (res as unknown as { error?: string })?.error;
+          const err = (res as { error?: string })?.error;
           showCommandError('INVALID_OPERATION', err || 'Paste failed');
           return;
         }

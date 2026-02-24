@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '../../../../../packages/build-api';
+import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata } from '~/common/types/index';
@@ -453,7 +453,7 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         await runStageTasks({
           nodeId: params.nodeId,
           stage: 'transform',
-          handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+          handler: transformByBandHandler as StageHandler<ShapeTransformByBandTaskInput>,
           waitIfPaused: params.waitIfPaused,
           maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
           failureHandling: params.failureHandling,

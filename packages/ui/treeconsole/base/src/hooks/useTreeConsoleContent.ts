@@ -131,7 +131,7 @@ export const useTreeConsoleContent = (
       handleSearchTextChange: controller.handleSearchTextChange,
       onNodeClick: controller.onNodeClick
         ? (nodeId: string, node?: TreeNodeInUI) =>
-            controller.onNodeClick?.(nodeId as NodeId, node as unknown as TreeNode)
+            controller.onNodeClick?.(nodeId as NodeId, node as TreeNode)
         : undefined,
       onNodeExpand: controller.onNodeExpand
         ? (nodeId: string, expanded: boolean) => controller.onNodeExpand?.(nodeId as NodeId, expanded)

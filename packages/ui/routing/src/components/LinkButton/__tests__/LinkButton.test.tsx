@@ -22,7 +22,7 @@ describe('LinkButton Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as unknown as Mock).mockReturnValue(mockNavigate);
+    (useNavigate as Mock).mockReturnValue(mockNavigate);
   });
 
   afterEach(() => {
@@ -463,7 +463,7 @@ describe('useLinkButton Hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as unknown as Mock).mockReturnValue(mockNavigate);
+    (useNavigate as Mock).mockReturnValue(mockNavigate);
   });
 
   it('returns expected interface', () => {

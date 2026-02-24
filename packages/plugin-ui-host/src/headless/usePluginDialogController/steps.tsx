@@ -25,7 +25,28 @@ import {
 } from '~/headless/controller/step-guards';
 import type { BasicInfoMeta, DialogUiState, StepCompositionResult } from './data-types.js';
 
-type PluginDefinedEntity = PeerEntity<TreeNodeData>;
+type PluginDefinedEntity = PeerEntity<TreeNodeData> & Record<string, unknown>;
+
+const toMetadataRecord = (value: unknown): Record<string, unknown> =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+
+const extractMetadata = (value: unknown): TreeNodeMetadata => {
+  const record = toMetadataRecord(value);
+  return {
+    name: typeof record.name === 'string' ? record.name : '',
+    description: typeof record.description === 'string' ? record.description : '',
+    tags: Array.isArray(record.tags)
+      ? record.tags.filter((tag): tag is string => typeof tag === 'string')
+      : [],
+  };
+};
+
+const extractPluginMetadata = (value: unknown): Partial<PluginDefinedEntity> => {
+  const metadata = extractMetadata(value);
+  return {
+    ...metadata,
+  };
+};
 
 type StepContextSnapshot = {
   mode: 'create' | 'edit';
@@ -36,7 +57,7 @@ type StepContextSnapshot = {
   draftData: Partial<PluginDefinedEntity>;
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   updateUiState: (next: DialogUiState) => void;
-  handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
+  handleBasicInfoBridge: (data: unknown) => void;
   onDraftMetadataChange?: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 };
@@ -205,7 +226,7 @@ interface Params {
   pageNodeId: NodeId;
   draftData: Partial<PluginDefinedEntity>;
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
-  handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
+  handleBasicInfoBridge: (data: unknown) => void;
   onDraftMetadataChange?: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
   basicInfoLabel: string;
@@ -341,9 +362,7 @@ export function useDialogSteps({
           if (validateFn) {
             return () =>
               Promise.resolve(
-                validateFn(
-                  basicInfoValidationPayloadRef.current as unknown as Partial<PluginDefinedEntity>
-                )
+                validateFn(extractPluginMetadata(basicInfoValidationPayloadRef.current))
               ).then((valid) => Boolean(valid) && isBasicInfoValid);
           }
           return () => isBasicInfoValid;
@@ -434,7 +453,7 @@ export function useDialogSteps({
           onDataChange={
             cfg.id === 'basic-info'
               ? (data) => {
-                  const metadata = data as TreeNodeMetadata;
+                  const metadata = extractMetadata(data);
                   ctx.handleBasicInfoBridge(metadata);
                   ctx.onDraftMetadataChange?.(metadata);
                 }

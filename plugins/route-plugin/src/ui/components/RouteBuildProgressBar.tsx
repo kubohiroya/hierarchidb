@@ -1,4 +1,4 @@
-import type { BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
+import type { BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
 
 export function RouteBuildProgressBar({ snapshot }: { snapshot?: BuildUnifiedProgressInfo | null }) {
   const percentage = Math.round(snapshot?.percentage ?? 0);

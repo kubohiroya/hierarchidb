@@ -6,6 +6,12 @@ import {
   clearTestData,
 } from '../utils/test-helpers';
 
+type PerformanceWithMemory = Performance & {
+  memory?: {
+    usedJSHeapSize?: number;
+  };
+};
+
 /**
  * TreeTable Basic Display E2E Tests
  *
@@ -171,7 +177,8 @@ test.describe('TreeTable Basic Display', () => {
 
     // メモリリークの基本チェック
     const initialMemory = await page.evaluate(() => {
-      return (performance as any).memory?.usedJSHeapSize || 0;
+      const performanceWithMemory = window.performance as PerformanceWithMemory;
+      return performanceWithMemory.memory?.usedJSHeapSize || 0;
     });
 
     // ページを何度かリロード
@@ -182,7 +189,8 @@ test.describe('TreeTable Basic Display', () => {
     }
 
     const finalMemory = await page.evaluate(() => {
-      return (performance as any).memory?.usedJSHeapSize || 0;
+      const performanceWithMemory = window.performance as PerformanceWithMemory;
+      return performanceWithMemory.memory?.usedJSHeapSize || 0;
     });
 
     // メモリ使用量の異常な増加がないことを確認

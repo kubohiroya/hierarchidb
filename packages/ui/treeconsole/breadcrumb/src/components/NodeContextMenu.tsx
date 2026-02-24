@@ -503,7 +503,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       }));
     }
     try {
-      const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
+      const g = (globalThis as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
       const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
       if (typeof builder === 'function') {
         const items = builder(treeId) as CreateMenuEntry[];

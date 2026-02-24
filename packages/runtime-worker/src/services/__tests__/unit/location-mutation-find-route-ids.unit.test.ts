@@ -200,15 +200,19 @@ describe('route location reference indexing and legacy fallback', () => {
     ];
     await db.features.bulkPut(routes);
 
-    const findRouteIdsReferencingLocationFeatures = (service as unknown as {
-      findRouteIdsReferencingLocationFeatures: (
-        routeDb: ReturnType<typeof getRouteDB>,
-        locationNodeId: NodeId,
-        locationFeatureIds: string[],
-      ) => Promise<NodeId[]>;
-    }).findRouteIdsReferencingLocationFeatures;
+    const findRouteIdsReferencingLocationFeatures = Reflect.get(
+      service as object,
+      'findRouteIdsReferencingLocationFeatures',
+    );
+    if (typeof findRouteIdsReferencingLocationFeatures !== 'function') {
+      throw new Error('findRouteIdsReferencingLocationFeatures is unavailable');
+    }
 
-    const matched = await findRouteIdsReferencingLocationFeatures(
+    const matched = await (findRouteIdsReferencingLocationFeatures as (
+      routeDb: ReturnType<typeof getRouteDB>,
+      locationNodeId: NodeId,
+      locationFeatureIds: string[],
+    ) => Promise<NodeId[]>)(
       db,
       locationNodeId,
       ['feature-1', 'feature-2', 'feature-3'],

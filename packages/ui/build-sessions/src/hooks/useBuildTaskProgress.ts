@@ -3,21 +3,6 @@ import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BuildTaskSummary } from '../../../../build-api';
 import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
 
-type TaskStageCarrier = BuildTaskSummary & { stage?: string };
-
-const resolveTaskStage = (task: TaskStageCarrier): string | undefined => (
-  task.stage
-);
-
-const toStageKey = (task: TaskStageCarrier): string => {
-  const candidate = resolveTaskStage(task);
-  if (!candidate) return 'unknown';
-  if (candidate === 'vectortile') return 'vectorTiles';
-  if (candidate === 'extract1') return 'extract1';
-  if (candidate === 'extract2') return 'extract2';
-  return candidate;
-};
-
 const isSkippedTask = (task: BuildTaskSummary): boolean => {
   const message = task.message;
   if (!message) return false;
@@ -60,7 +45,7 @@ export const useBuildTaskProgress = <T extends BuildTaskSummary>(
   const tasksByStage = useMemo(() => {
     const grouped: Record<string, T[]> = {};
     tasks.forEach((task) => {
-      const key = toStageKey(task);
+      const key = task.stage;
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(task);
     });

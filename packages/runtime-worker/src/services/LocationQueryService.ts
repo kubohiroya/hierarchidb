@@ -115,6 +115,15 @@ const sanitizeGroupItem = (item: LocationGroupItem): LocationGroupItem => {
   return { ...item, data: nextData as LocationGroupItem['data'] };
 };
 
+const cloneToRecord = (value: unknown): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
+  if (!value || typeof value !== 'object') return result;
+  for (const [key, itemValue] of Object.entries(value)) {
+    result[key] = itemValue;
+  }
+  return result;
+};
+
 export class LocationQueryService implements LocationQueryAPI {
   static async getSingleton(): Promise<LocationQueryService> {
     return SingletonMixin.getSingleton(
@@ -307,7 +316,7 @@ export class LocationQueryService implements LocationQueryAPI {
           admin0: (item.data as { admin0?: string } | undefined)?.admin0,
           longitude,
           latitude,
-          properties: item.data as unknown as Record<string, unknown>,
+          properties: cloneToRecord(item.data),
         };
         return { point, distanceMeters };
       })

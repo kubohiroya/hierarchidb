@@ -24,7 +24,7 @@ describe('smartFetch', () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(makeResponse(500))
       .mockResolvedValueOnce(makeResponse(200));
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as typeof fetch);
 
     const res = await smartFetch('https://example.com/resource', {
       auth: { enabled: false },

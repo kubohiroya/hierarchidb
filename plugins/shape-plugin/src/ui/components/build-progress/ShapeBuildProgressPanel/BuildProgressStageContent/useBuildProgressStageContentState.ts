@@ -100,7 +100,6 @@ export const useBuildProgressStageContentState = ({
       cachedTasksByStageRef.current[stage.id] = stageTasks;
     }
   }, [isBuildInProgressState, stage.id, stageTasks]);
-
   const stageTasksForDisplay = useMemo(() => {
     if (isBuildInProgressState && stageTasks.length === 0) {
       return cachedTasksByStageRef.current[stage.id] ?? [];

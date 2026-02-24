@@ -90,7 +90,7 @@ const resolveCommonZoomBounds = () => {
 
 export default function MapPage() {
   const useGeolocation =
-    (useGeolocationImport as unknown as { default?: typeof useGeolocationImport }).default ??
+    (useGeolocationImport as { default?: typeof useGeolocationImport }).default ??
     useGeolocationImport;
   const theme = useTheme();
   const { nodeId } = useParams({ from: '/map/$nodeId' });
@@ -554,7 +554,7 @@ export default function MapPage() {
         ICON_SIZE_MIN,
         LOCATION_MAX_ZOOM,
         ICON_SIZE_AT_MAX,
-      ] as unknown,
+      ],
     []
   );
 

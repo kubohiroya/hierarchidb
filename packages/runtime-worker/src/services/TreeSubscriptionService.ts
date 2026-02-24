@@ -60,7 +60,7 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   }
 
   if (Array.isArray(value)) {
-    const list = value as unknown[];
+    const list = value;
     return list.map((entry) => sanitizeForComlink(entry, seen)) as T;
   }
 
@@ -84,13 +84,19 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   return value;
 };
 
+type TreeSubscriptionCoreDB = Pick<CoreDB, 'changeSubject' | 'listChildren' | 'getNode' | 'getTree' | 'listTrees'> & {
+  nodes: {
+    get: CoreDB['nodes']['get'];
+  };
+};
+
 /**
  * TreeSubscriptionService - Implements TreeSubscriptionAPI
  * Provides real-time subscription functionality for console structure changes
  */
 export class TreeSubscriptionService {
   static async getSingleton(
-    coreDB: CoreDB,
+    coreDB: TreeSubscriptionCoreDB,
     treeQuery?: TreeQueryAPI
   ): Promise<TreeSubscriptionService> {
     return SingletonMixin.getSingleton('TreeSubscriptionService', async () => {
@@ -127,7 +133,7 @@ export class TreeSubscriptionService {
   private readonly searchService: TreeSearchService;
 
   constructor(
-    private coreDB: CoreDB,
+    private coreDB: TreeSubscriptionCoreDB,
     treeQuery: TreeQueryAPI
   ) {
     this.searchService = new TreeSearchService(treeQuery);

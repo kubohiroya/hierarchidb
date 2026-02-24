@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from 'packages/build-api';
+import type { BuildProgressEvent, BuildProgressPayload, BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../../common/types/index';

@@ -49,7 +49,7 @@ const EMPTY_RESPONSE = {
 
 const useDataSourceState = (data: Partial<ShapeEntity>) => {
   return useMemo(() => {
-    const anyData = data as unknown as Record<string, unknown>;
+    const anyData = data as Record<string, unknown>;
     const hasData = Boolean(anyData && typeof anyData === 'object' && Object.keys(anyData).length > 0);
     const draftData = (anyData && typeof anyData === 'object' && 'draftData' in anyData)
       ? (anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined

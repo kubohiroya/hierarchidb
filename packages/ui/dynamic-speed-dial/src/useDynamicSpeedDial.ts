@@ -148,7 +148,7 @@ export function useDynamicSpeedDial<TNode = DynamicSpeedDialNode>({
     };
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
-    intervalId = window.setInterval(measure, 300) as unknown as number;
+    intervalId = window.setInterval(measure, 300) as number;
     measure();
     return () => {
       if (raf) cancelAnimationFrame(raf);

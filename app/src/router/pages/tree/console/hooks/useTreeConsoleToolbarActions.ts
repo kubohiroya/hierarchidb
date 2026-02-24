@@ -1,6 +1,6 @@
 import type {
   BuildContinuationPolicy,
-} from 'packages/build-api';
+} from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
@@ -85,7 +85,7 @@ export function useTreeConsoleToolbarActions({
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
   hasArchiveItems: boolean;
-  archiveRootIdRef: React.MutableRefObject<NodeId | null>;
+  archiveRootIdRef: React.RefObject<NodeId | null>;
   navigate: (args: { to: string; replace?: boolean }) => void;
   actions: IntegrationActions;
   state: IntegrationState;

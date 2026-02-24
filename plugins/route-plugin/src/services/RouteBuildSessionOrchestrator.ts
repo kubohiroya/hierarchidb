@@ -3,7 +3,8 @@ import { RouteBuildManager, type RouteBuildRouteInput, type RouteBuildManagerDep
 import type { RouteBuildSession } from './RouteBuildSession.js';
 import { DEFAULT_ROUTE_BUILD_CONFIG } from '~/common/config/buildConfig';
 import type { RouteBuildConfig } from '@hierarchidb/route-api';
-import type { BuildProgressCallback, BuildSessionStatus } from '../../../../packages/build-api';
+import type { BuildProgressCallback, BuildSessionStatus } from '@hierarchidb/build-api';
+import type { ProgressUpdate } from './RouteBuildManager.js';
 import {
   BaseBuildSessionManager,
   toBuildProgressEventFromUpdate,
@@ -27,7 +28,7 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
   constructor(deps?: RouteBuildManagerDeps) {
     super();
     const emitter = {
-      emit: (update: { jobId: string; progress: number; phase: string; ts: number }) => {
+      emit: (update: ProgressUpdate) => {
         const event = toBuildProgressEventFromUpdate(update);
         this.emitProgress(update.jobId as NodeId, event);
       },

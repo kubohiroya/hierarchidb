@@ -13,7 +13,6 @@ import {
   sumNumberRecord,
 } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed.js';
 import {
-  normalizeStageKey,
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
 } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
@@ -166,7 +165,7 @@ export const useShapeBuildStepProgressState = ({
   const isTimingStageRunning = useMemo(() => {
     if (!timingStageId) return false;
     return displayTasks.some((task) => (
-      normalizeStageKey(task) === timingStageId
+      task.stage === timingStageId
       && task.status === 'running'
     ));
   }, [displayTasks, timingStageId]);
@@ -196,7 +195,7 @@ export const useShapeBuildStepProgressState = ({
   }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
 
   const hasFailedFetchTasks = useMemo(() => (
-    displayTasks.some((task) => task.status === 'failed' && normalizeStageKey(task) === 'fetch')
+    displayTasks.some((task) => task.status === 'failed' && task.stage === 'fetch')
   ), [displayTasks]);
 
   const progressSummary: SummaryResult = useShapeBuildProgressSummaryComputation({
@@ -208,7 +207,6 @@ export const useShapeBuildStepProgressState = ({
     effectiveStatus,
     stage: stageFromState ?? undefined,
     tasks: displayTasks,
-    normalizeStageKey,
     isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, task.message),
     timingStageMs: stageElapsedMs,
   });

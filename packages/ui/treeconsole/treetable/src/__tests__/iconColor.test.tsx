@@ -11,7 +11,7 @@ const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
 const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, ...props }: any) => React.createElement('a', props, children),
+  Link: ({ children, ...props }: React.ComponentProps<'a'>) => React.createElement('a', props, children),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
@@ -29,8 +29,8 @@ vi.mock('../components/TreeTableStyles.js', async () => {
   };
 });
 
-const IconProbe = ({ htmlColor }: { htmlColor?: string }) => (
-  <span data-testid="node-icon" data-color={htmlColor ?? ''} />
+const IconProbe = ({ nodeType, htmlColor }: { nodeType?: string; htmlColor?: string }) => (
+  <span data-testid="node-icon" data-color={htmlColor ?? ''} data-node-type={nodeType ?? ''} />
 );
 
 const defaultParams: ColumnBuilderParams = {
@@ -64,7 +64,7 @@ const defaultParams: ColumnBuilderParams = {
   editingNodeId: null,
   hideDragHandler: true,
   disableDragAndDrop: true,
-  IconComponent: IconProbe as any,
+  IconComponent: IconProbe,
   rowClickAction: 'Select/Navigate',
   selectionMode: 'none',
   controller: {},

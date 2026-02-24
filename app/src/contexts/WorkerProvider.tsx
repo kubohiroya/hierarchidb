@@ -12,7 +12,7 @@ import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client'
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
-import React, {
+import {
   type CSSProperties,
   createContext,
   type ReactNode,
@@ -55,13 +55,18 @@ import {
 } from '~/worker-runtime/workerApiClientLoader';
 import { useOptionalBootProgress } from './BootProgressProvider.js';
 
+const WORKER_PROVIDER_LOG_PREFIX = '[WorkerProvider]';
+
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   if (error === undefined) {
-    console.warn('[WorkerProvider]', message);
+    console.warn(WORKER_PROVIDER_LOG_PREFIX, message);
   } else {
-    console.warn('[WorkerProvider]', message, error);
+    console.warn(WORKER_PROVIDER_LOG_PREFIX, message, error);
   }
+};
+const logWorkerProviderMessage = (message: string): void => {
+  logWorkerProviderWarning(message, undefined);
 };
 
 const getWorkerClientClass = () => getWorkerAPIClientModule()?.WorkerAPIClient ?? null;
@@ -82,7 +87,7 @@ const resetWorkerClient = () => {
       WorkerAPIClient.reset();
     })
     .catch((error) => {
-      logWorkerProviderWarning('Failed to reset WorkerAPIClient (lazy load)', error);
+      logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.resetWorkerApiClientFailed, error);
     });
 };
 
@@ -105,54 +110,50 @@ type WorkerProviderProps = {
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
-const noopAsync = async () => undefined;
-const noopSync = () => undefined;
 const DEFAULT_WORKER_INIT_TIMEOUT_MS = 30_000;
 
-const createFallbackWorkerClient = (): Remote<BuildWorkerAPI> => {
-  const services = {
-    modals: {
-      open: noopAsync,
-      close: noopSync,
-      register: noopSync,
-      unregister: noopSync,
-    },
-  };
-
-  const tagApi = {
-    getAllTags: async () => [],
-    getTag: async () => null,
-    createTag: async () => ({ id: 'stub', name: 'stub' }),
-    updateTag: noopAsync,
-    deleteTag: noopAsync,
-  };
-
-  return {
-    services,
-    getTagAPI: async () => tagApi,
-  } as unknown as Remote<BuildWorkerAPI>;
+const WORKER_UNAVAILABLE_BASE_MESSAGE = `${WORKER_PROVIDER_LOG_PREFIX} Worker API is not available yet`;
+const WORKER_PROVIDER_MESSAGES = {
+  contextMissing: `${WORKER_PROVIDER_LOG_PREFIX} context is not ready.`,
+  initializeNoop: `${WORKER_PROVIDER_LOG_PREFIX} initialize() called without provider; request ignored.`,
+  resetNoop: `${WORKER_PROVIDER_LOG_PREFIX} reset() called without provider; request ignored.`,
+  fallbackContextError: 'WorkerProvider context missing',
+  finalizeInitializedError: `${WORKER_PROVIDER_LOG_PREFIX} finalizeInitialized error`,
+  ensureInitializedDiagnostic: `${WORKER_PROVIDER_LOG_PREFIX} ensureInitialized diagnostic`,
+  ensureInitializedFailed: `${WORKER_PROVIDER_LOG_PREFIX} ensureInitialized failed`,
+} as const;
+const WORKER_PROVIDER_DIAGNOSTIC_MESSAGES = {
+  preloadWorkerApiClientModuleFailed: 'Failed to preload WorkerAPIClient module',
+  resetWorkerApiClientFailed: 'Failed to reset WorkerAPIClient (lazy load)',
+  setInitCompleteFlagFailed: 'Failed to set __HDB_INIT_COMPLETE__ flag',
+  setInitStartedFlagFailed: 'Failed to set __HDB_INIT_STARTED__ flag',
+  pollWorkerReadinessFailed: 'Polling worker readiness failed',
+} as const;
+const WORKER_UNAVAILABLE_REASONS = {
+  providerNotReady: 'Provider context is not initialized',
+  clientNotReady: 'Worker client is not initialized',
+} as const;
+type WorkerUnavailableReason = (typeof WORKER_UNAVAILABLE_REASONS)[keyof typeof WORKER_UNAVAILABLE_REASONS];
+const getWorkerUnavailableMessage = (reason: WorkerUnavailableReason): string =>
+  `${WORKER_UNAVAILABLE_BASE_MESSAGE} (${reason}).`;
+const throwWorkerUnavailable = (reason: WorkerUnavailableReason): Remote<BuildWorkerAPI> => {
+  throw new Error(getWorkerUnavailableMessage(reason));
 };
 
-const noopWorkerClient = createFallbackWorkerClient();
-
 const fallbackWorkerContextValue: WorkerContextValue = {
-  client: noopWorkerClient,
+  client: null,
   isInitialized: false,
   isConnected: false,
   initProgress: 0,
   initMessage: getWorkerInitFallbackMessage(),
-  error: new Error('WorkerProvider context missing'),
+  error: new Error(WORKER_PROVIDER_MESSAGES.fallbackContextError),
   initialize: async () => {
-    if (typeof console !== 'undefined') {
-      console.warn('[WorkerProvider] initialize() called without provider; request ignored.');
-    }
+    logWorkerProviderMessage(WORKER_PROVIDER_MESSAGES.initializeNoop);
   },
   reset: () => {
-    if (typeof console !== 'undefined') {
-      console.warn('[WorkerProvider] reset() called without provider; request ignored.');
-    }
+    logWorkerProviderMessage(WORKER_PROVIDER_MESSAGES.resetNoop);
   },
-  getAPI: () => noopWorkerClient,
+  getAPI: () => throwWorkerUnavailable(WORKER_UNAVAILABLE_REASONS.providerNotReady),
 };
 
 function useBootProgressSafe() {
@@ -461,7 +462,7 @@ export const WorkerProvider = ({
       });
     } catch (error) {
       const normalized = normalizeError(error);
-      console.error('[WorkerProvider] finalizeInitialized error', normalized);
+      console.error(WORKER_PROVIDER_MESSAGES.finalizeInitializedError, normalized);
       setStatus((prev) => ({ ...prev, error: normalized }));
     }
   }, []);
@@ -475,7 +476,7 @@ export const WorkerProvider = ({
         (window as BootWindow).__HDB_INIT_COMPLETE__ = true;
       }
     } catch (error) {
-      logWorkerProviderWarning('Failed to set __HDB_INIT_COMPLETE__ flag', error);
+      logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitCompleteFlagFailed, error);
     }
     bootProgress?.setStepProgress('Worker', 100, readyLabel);
     bootProgress?.markStepDone('Worker', readyLabel);
@@ -525,7 +526,7 @@ export const WorkerProvider = ({
           (window as BootWindow).__HDB_INIT_STARTED__ = true;
         }
       } catch (error) {
-        logWorkerProviderWarning('Failed to set __HDB_INIT_STARTED__ flag', error);
+        logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.setInitStartedFlagFailed, error);
       }
 
       try {
@@ -576,7 +577,7 @@ export const WorkerProvider = ({
           await markComplete();
           return;
         }
-        console.error('[WorkerProvider] ensureInitialized diagnostic', {
+        console.error(WORKER_PROVIDER_MESSAGES.ensureInitializedDiagnostic, {
           timedOut,
           timeoutMs: Math.max(0, Number(timeout) || DEFAULT_WORKER_INIT_TIMEOUT_MS),
           progress: latestProgressRef.current,
@@ -584,7 +585,7 @@ export const WorkerProvider = ({
           proxyState: latestProxyState,
           hasCachedClient,
         });
-        console.error('[WorkerProvider] ensureInitialized failed', normalized);
+        console.error(WORKER_PROVIDER_MESSAGES.ensureInitializedFailed, normalized);
         setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
         const errorLabel = normalized.message || t('workerInit.error.unknown');
         bootProgress?.setStepProgress('Worker', latestProgressRef.current, errorLabel);
@@ -613,7 +614,7 @@ export const WorkerProvider = ({
 
   const getAPI = useCallback((): Remote<BuildWorkerAPI> => {
     if (!safeClient) {
-      throw new Error('Worker client not initialized');
+      return throwWorkerUnavailable(WORKER_UNAVAILABLE_REASONS.clientNotReady);
     }
     return safeClient;
   }, [safeClient]);
@@ -638,7 +639,10 @@ export const WorkerProvider = ({
     let devFallbackTimer: number | null = null;
 
     void loadWorkerAPIClientModule().catch((error) => {
-      logWorkerProviderWarning('Failed to preload WorkerAPIClient module', error);
+      logWorkerProviderWarning(
+        WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.preloadWorkerApiClientModuleFailed,
+        error
+      );
     });
 
     const onInitComplete = () => {
@@ -668,7 +672,7 @@ export const WorkerProvider = ({
           if (pollTimer) window.clearInterval(pollTimer);
         }
       } catch (error) {
-        logWorkerProviderWarning('Polling worker readiness failed', error);
+        logWorkerProviderWarning(WORKER_PROVIDER_DIAGNOSTIC_MESSAGES.pollWorkerReadinessFailed, error);
       }
     };
     pollTimer = window.setInterval(poll, 150);
@@ -706,7 +710,7 @@ export const WorkerProvider = ({
       reset,
       getAPI,
     }),
-    [status, getAPI, initialize, reset]
+    [safeClient, status.isInitialized, status.initProgress, status.initMessage, status.error, initialize, reset, getAPI]
   );
 
   const suspenseFallback = useMemo(() => {
@@ -745,11 +749,7 @@ export const WorkerProvider = ({
 export const useWorker = (): WorkerContextValue => {
   const context = useContext(WorkerContext);
   if (!context) {
-    if (typeof console !== 'undefined') {
-      console.warn(
-        '[WorkerProvider] useWorker invoked outside provider; returning fallback context.'
-      );
-    }
+    logWorkerProviderMessage(WORKER_PROVIDER_MESSAGES.contextMissing);
     return fallbackWorkerContextValue;
   }
   return context;

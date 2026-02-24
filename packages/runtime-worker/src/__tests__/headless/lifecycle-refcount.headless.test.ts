@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { toNodeId, toNodeType } from '@hierarchidb/core-types';
 import { describe, expect, it } from 'vitest';
 import { CoreDB } from '../../services/CoreDB';
@@ -28,12 +28,8 @@ describe('NodeLifecycleManager reference counting port', () => {
     });
 
     const nodeId = toNodeId('x');
-    const internals = nlm as unknown as {
-      handleReferenceCountIncrement(targetNodeId: NodeId, nodeType: NodeType): Promise<void>;
-      handleReferenceCountDecrement(targetNodeId: NodeId, nodeType: NodeType): Promise<void>;
-    };
-    await internals.handleReferenceCountIncrement(nodeId, toNodeType('folder'));
-    await internals.handleReferenceCountDecrement(nodeId, toNodeType('folder'));
+    await nlm._testHandleReferenceCountIncrement(nodeId, toNodeType('folder'));
+    await nlm._testHandleReferenceCountDecrement(nodeId, toNodeType('folder'));
     expect(inc).toBe(1);
     expect(dec).toBe(1);
   });

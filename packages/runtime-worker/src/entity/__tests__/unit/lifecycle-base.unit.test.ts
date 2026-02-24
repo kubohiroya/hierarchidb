@@ -1,8 +1,14 @@
-import type { NodeId, Timestamp } from '@hierarchidb/core-types'; //A
-import type { TreeChangeEvent } from '@hierarchidb/tree-api';
+import { NodeId, Timestamp } from '@hierarchidb/core-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Subject } from 'rxjs';
-import type { CoreDB } from '../../../services/CoreDB';
+import { CoreDB } from '../../../services/CoreDB';
+
+const createCoreStub = () => {
+  const core = CoreDB.createForTest('runtime-worker-lifecycle-base');
+  core.getNode = vi.fn(async () => undefined) as CoreDB['getNode'];
+  core.updateNode = vi.fn(async () => undefined) as CoreDB['updateNode'];
+  core.createNode = vi.fn(async () => undefined) as CoreDB['createNode'];
+  return core;
+};
 
 describe('EntityLifecycleManager integration (base skeleton)', () => {
   beforeEach(() => {
@@ -10,20 +16,14 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
   });
 
   it('notifies lifecycle on commitDraft when flag ON', async () => {
-    const core: Pick<CoreDB, 'getNode' | 'updateNode' | 'createNode'> & { changeSubject: Subject<TreeChangeEvent> } = {
-      getNode: vi.fn(async () => undefined),
-      updateNode: vi.fn(async () => undefined),
-      createNode: vi.fn(async () => undefined),
-      changeSubject: new Subject<TreeChangeEvent>(),
-    };
+    const core = createCoreStub();
+
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager');
-    type LifecycleInstance = ReturnType<typeof EntityLifecycleManager.getSingleton>;
-    const lifecycleMock = {
-      handleCommand: vi.fn(async () => undefined),
-    } satisfies Pick<LifecycleInstance, 'handleCommand'>;
-    const getSingletonSpy = vi
-      .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(lifecycleMock as unknown as LifecycleInstance);
+    Reflect.set(EntityLifecycleManager, 'instance', undefined);
+    const lifecycleManager = EntityLifecycleManager.getSingleton(core);
+    const handleCommandSpy = vi
+      .spyOn(lifecycleManager, 'handleCommand')
+      .mockResolvedValue(undefined);
 
     const { commandRegistry } = await import('../../../services/command/registry');
     commandRegistry.register('commitDraft', {
@@ -31,7 +31,7 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
     });
 
     const { CommandProcessor } = await import('../../../services/CommandProcessor');
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const cp = new CommandProcessor(core);
     const wcId = 'wc1' as NodeId;
     const envelope = cp.createEnvelope('commitDraft', {
       draftId: wcId,
@@ -40,8 +40,8 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
     const result = await cp.processCommand(envelope);
 
     expect(result.success).toBe(true);
-    expect(lifecycleMock.handleCommand).toHaveBeenCalledTimes(1);
+    expect(handleCommandSpy).toHaveBeenCalledTimes(1);
 
-    getSingletonSpy.mockRestore();
+    handleCommandSpy.mockRestore();
   });
 });

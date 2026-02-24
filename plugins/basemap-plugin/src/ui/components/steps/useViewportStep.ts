@@ -115,7 +115,7 @@ export const useViewportStep = ({ value, mapStyle, onChange }: ViewportStepParam
 
   const mapStyleSource = useMemo(() => {
     if (mapStyle) return resolveMapStyleSource(mapStyle);
-    return OSM_RASTER_STYLE as unknown as MapLibreStyle;
+    return OSM_RASTER_STYLE as MapLibreStyle;
   }, [mapStyle]);
 
   const mapStyleProps = useMemo(

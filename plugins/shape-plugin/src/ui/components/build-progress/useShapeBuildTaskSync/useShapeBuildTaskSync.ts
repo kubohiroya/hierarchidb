@@ -63,7 +63,13 @@ export const useShapeBuildTaskSync = ({
       handlers.resetPending();
       vtParentInputDebugLogKeysRef.current.clear();
     };
-  }, [handlers, flushFrameRef, flushTimeoutRef]);
+  }, [
+    flushFrameRef,
+    flushTimeoutRef,
+    handlers.syncTasksRef,
+    handlers.resetPending,
+    vtParentInputDebugLogKeysRef,
+  ]);
 
   useEffect(() => {
     vtParentInputDebugLogKeysRef.current.clear();

@@ -1,7 +1,7 @@
 import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 
 export const shouldReuseTaskQueueOnStart = (
-  previousStatus: ShapeBuildSessionRecord['status'] | null | undefined,
+  _previousStatus: ShapeBuildSessionRecord['status'] | null | undefined,
 ): boolean => (
   false
 );

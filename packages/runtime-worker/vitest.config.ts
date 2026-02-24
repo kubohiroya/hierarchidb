@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import * as path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
@@ -62,7 +62,7 @@ export default defineConfig({
       ),
       '@hierarchidb/build-api': path.resolve(
         workspaceRoot,
-        'packages/build-api/src/index.ts',
+        '@hierarchidb/build-api/src/index.ts',
       ),
       '@hierarchidb/tree-api': path.resolve(
         workspaceRoot,

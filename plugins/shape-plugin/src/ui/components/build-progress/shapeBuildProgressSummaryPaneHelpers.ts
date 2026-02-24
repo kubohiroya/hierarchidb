@@ -1,10 +1,11 @@
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildProgressStatus } from './shapeBuildProgressMapping.js';
 import type { BuildStage } from '@hierarchidb/components/build-stage';
-import type { BuildTaskSummary } from '../../../../../../packages/build-api';
-import type { TaskStageCarrier } from '../../../../../../packages/ui/build-sessions';
+import type { BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { resolveMostAdvancedStageId } from './stagePriority.js';
 import type { StageCountInfo } from './shapeBuildProgressSummaryCountHelpers.js';
+
+type TaskStageCarrier = BuildTaskSummary & { stage: TaskStage };
 
 const normalizePaneStatus = (status: BuildStatus | BuildProgressStatus['status']): BuildProgressStatus['status'] => {
   if (status === 'running') {
@@ -70,7 +71,6 @@ export const makePaneProgress = ({
     total = Math.max(total, error + success + skip);
   }
 
-  const done = Math.min(total, success + error + skip);
   const baseStatus = base ? normalizePaneStatus(base.status) : undefined;
   const normalizedBuildStatus = normalizePaneStatus(buildStatus);
   const progress = hasSummaryData

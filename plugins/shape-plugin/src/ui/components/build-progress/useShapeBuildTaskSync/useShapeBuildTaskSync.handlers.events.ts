@@ -9,19 +9,6 @@ import {
   shouldPreferNextTask,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 
-const normalizeTaskSnapshot = (tasks: unknown): RawTaskSummary[] => {
-  if (!Array.isArray(tasks)) {
-    return [];
-  }
-  const snapshot: RawTaskSummary[] = [];
-  for (const task of tasks) {
-    if (task && typeof task === 'object') {
-      snapshot.push(task as RawTaskSummary);
-    }
-  }
-  return snapshot;
-};
-
 type EventHandlerRefs = {
   tasksMapRef: MutableRefObject<Map<string, ShapeBuildTaskSummary>>;
   errorRef: MutableRefObject<Error | null>;
@@ -63,12 +50,25 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     errorRef,
     isLoadingRef,
     bufferedSnapshotRef,
-    bufferedUpdatesRef,
     sessionNodeId,
   } = refs;
+  const isDev = import.meta.env.DEV;
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
-    const snapshotTasks = normalizeTaskSnapshot(next).map(resolveTaskSummary);
+    const snapshotTasks = next.map((task) => resolveTaskSummary(task));
+    for (const task of snapshotTasks) {
+      const previous = tasksMapRef.current.get(task.taskId);
+      if (!previous) {
+        continue;
+      }
+      if (previous.stage !== task.stage) {
+        const error = new Error(
+          `[ShapeBuildTaskSync] task ${task.taskId} changed stage from ${previous.stage} to ${task.stage}`,
+        );
+        setError(error);
+        throw error;
+      }
+    }
     bufferedSnapshotRef.current = snapshotTasks;
     onTaskSnapshot?.(snapshotTasks);
     scheduleBufferedFlush();
@@ -82,6 +82,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     bufferedSnapshotRef,
     errorRef,
     isLoadingRef,
+    sessionNodeId,
     onTaskSnapshot,
     resolveTaskSummary,
     scheduleBufferedFlush,
@@ -92,9 +93,33 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
     const previous = tasksMapRef.current.get(resolved.taskId);
-    const isEquivalent = previous ? areTasksEquivalentForView(previous, resolved) : false;
-    const shouldPrefer = previous ? shouldPreferNextTask(previous, resolved) : true;
-    if (previous && (isEquivalent || !shouldPrefer)) {
+    if (!previous && tasksMapRef.current.size > 0) {
+      const message = `[ShapeBuildTaskSync] unknown taskId: ${resolved.taskId}`;
+      const error = new Error(message);
+      setError(error);
+      if (isDev) {
+        console.error(message, {
+          nodeId: sessionNodeId,
+          task: resolved,
+          currentTasks: Array.from(tasksMapRef.current.keys()),
+        });
+      }
+      throw error;
+    }
+    if (previous && previous.stage !== resolved.stage) {
+      const message = `[ShapeBuildTaskSync] task ${resolved.taskId} changed stage from ${previous.stage} to ${resolved.stage}`;
+      const error = new Error(message);
+      setError(error);
+      if (isDev) {
+        console.error(message, {
+          nodeId: sessionNodeId,
+          previous,
+          next: resolved,
+        });
+      }
+      throw error;
+    }
+    if (previous && areTasksEquivalentForView(previous, resolved)) {
       emitRunningResidueLog('STALE_DROP', {
         nodeId: sessionNodeId,
         stage: resolved.stage,
@@ -103,7 +128,20 @@ export const useShapeBuildTaskSyncEventHandlers = ({
         nextStatus: resolved.status ?? null,
         source: 'event',
         eventType: 'update',
-        reason: 'shouldPreferNextTask=false_or_equivalent',
+        reason: 'areTasksEquivalentForView=true',
+      });
+      return;
+    }
+    if (previous && !shouldPreferNextTask(previous, resolved)) {
+      emitRunningResidueLog('STALE_DROP', {
+        nodeId: sessionNodeId,
+        stage: resolved.stage,
+        taskId: resolved.taskId,
+        prevStatus: previous.status ?? null,
+        nextStatus: resolved.status ?? null,
+        source: 'event',
+        eventType: 'update',
+        reason: 'shouldPreferNextTask=false',
       });
       return;
     }

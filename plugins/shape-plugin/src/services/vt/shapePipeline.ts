@@ -1,5 +1,6 @@
-import type { BuildContinuationPolicy } from '../../../../../packages/build-api';
+import type { BuildContinuationPolicy } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { TaskStage } from '@hierarchidb/build-api';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '~/common/types/index';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
@@ -374,54 +375,70 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     }).catch(() => {});
   };
 
-  const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => runWithStageCheckpoint({
-    nodeId: params.nodeId,
-    stage,
-    action,
-    runId: params.pipelineRunId,
-    writeHeartbeat: async (checkpointStage, _phase) => {
-      markPipelineCheckpoint(checkpointStage, _phase);
-      return undefined;
-    },
-    logger: {
-      onStart: ({ stage, startedAt, memory }) => {
-        console.warn('[ShapePipeline][Checkpoint] start', JSON.stringify({
-          nodeId: params.nodeId,
-          runId: params.pipelineRunId ?? null,
-          stage,
-          startedAt,
-          memory,
-        }));
+  const resolveProgressStage = (checkpointStage: string): TaskStage => {
+    if (checkpointStage === 'transform-stage') {
+      return 'transform';
+    }
+    if (checkpointStage === 'vt-stage') {
+      return 'vt';
+    }
+    if (checkpointStage === 'fetch-stage') {
+      return 'fetch';
+    }
+    return 'fetch';
+  };
+
+  const checkpoint = async <T>(stage: string, action: () => Promise<T>): Promise<T> => {
+    const progressStage = resolveProgressStage(stage);
+    return runWithStageCheckpoint({
+      nodeId: params.nodeId,
+      stage: progressStage,
+      action,
+      runId: params.pipelineRunId,
+      writeHeartbeat: async (_checkpointStage, phase) => {
+        markPipelineCheckpoint(stage, phase);
+        return undefined;
       },
-      onSuccess: ({ stage, startedAt, elapsedMs, memory }) => {
-        const finishedAt = Date.now();
-        console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
-          nodeId: params.nodeId,
-          runId: params.pipelineRunId ?? null,
-          stage,
-          outcome: 'success',
-          startedAt,
-          finishedAt,
-          elapsedMs,
-          memory,
-        }));
+      logger: {
+        onStart: ({ startedAt, memory }) => {
+          console.warn('[ShapePipeline][Checkpoint] start', JSON.stringify({
+            nodeId: params.nodeId,
+            runId: params.pipelineRunId ?? null,
+            stage,
+            startedAt,
+            memory,
+          }));
+        },
+        onSuccess: ({ startedAt, elapsedMs, memory }) => {
+          const finishedAt = Date.now();
+          console.warn('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+            nodeId: params.nodeId,
+            runId: params.pipelineRunId ?? null,
+            stage,
+            outcome: 'success',
+            startedAt,
+            finishedAt,
+            elapsedMs,
+            memory,
+          }));
+        },
+        onError: ({ startedAt, elapsedMs, errorMessage, memory }) => {
+          const finishedAt = Date.now();
+          console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
+            nodeId: params.nodeId,
+            runId: params.pipelineRunId ?? null,
+            stage,
+            outcome: 'error',
+            startedAt,
+            finishedAt,
+            elapsedMs,
+            errorMessage,
+            memory,
+          }));
+        },
       },
-      onError: ({ stage, startedAt, elapsedMs, errorMessage, memory }) => {
-        const finishedAt = Date.now();
-        console.error('[ShapePipeline][Checkpoint] finish', JSON.stringify({
-          nodeId: params.nodeId,
-          runId: params.pipelineRunId ?? null,
-          stage,
-          outcome: 'error',
-          startedAt,
-          finishedAt,
-          elapsedMs,
-          errorMessage,
-          memory,
-        }));
-      },
-    },
-  });
+    });
+  };
 
   await checkpoint('prepare-pipeline-run', async () => preparePipelineRun(context));
 

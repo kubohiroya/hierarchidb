@@ -40,7 +40,7 @@ export async function shutdownRuntimeHandles(): Promise<RuntimeShutdownResult> {
   }
 
   try {
-    const closeAll = (Dexie as unknown as { closeAll?: () => void }).closeAll;
+    const closeAll = (Dexie as { closeAll?: () => void }).closeAll;
     closeAll?.();
   } catch (error) {
     warnings.push(`dexie-close-failed:${error instanceof Error ? error.message : String(error)}`);

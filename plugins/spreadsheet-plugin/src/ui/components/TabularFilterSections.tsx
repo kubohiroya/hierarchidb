@@ -29,7 +29,7 @@ export const TabularFilterSections: React.FC<TabularFilterSectionsProps> = ({
 }) => {
   const effectiveDialogRef =
     dialogRef ??
-    (menuContainer ? ({ current: menuContainer as unknown as HTMLElement } as React.RefObject<HTMLElement>) : undefined);
+    (menuContainer ? ({ current: menuContainer as HTMLElement } as React.RefObject<HTMLElement>) : undefined);
 
   return (
     <TabularKeyValuePanels

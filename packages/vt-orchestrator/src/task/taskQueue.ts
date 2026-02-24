@@ -9,12 +9,21 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '~/t
 
 export type StoredTaskRecord = EphemeralBuildTaskRecord;
 
+const TASK_STAGES = ['fetch', 'transform', 'vt'] as const;
+
+const isTaskStage = (value: unknown): value is TaskStage => (
+  typeof value === 'string' && TASK_STAGES.includes(value as TaskStage)
+);
+
 export const toTaskQueueRecord = (
   task: StoredTaskRecord
 ): TaskQueueRecord => {
   const { stage } = task;
   if (stage === undefined) {
     throw new Error(`Task ${task.taskId} is missing required stage`);
+  }
+  if (!isTaskStage(stage)) {
+    throw new Error(`Task ${task.taskId} has unsupported stage: ${String(stage)}`);
   }
   return {
     ...task,

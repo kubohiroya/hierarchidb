@@ -8,8 +8,27 @@
  */
 
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { AuthRequiredDialogHost } from '~/contexts/AuthRequiredDialogHost';
 import { setupUIPlugins } from '~/router/loaders/uiPlugins';
+import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { useAuthRequiredDialogHost } from '~/contexts/useAuthRequiredDialogHost';
+
+const AuthRequiredDialogHost = () => {
+  const { notification, handleSuccess, handleCancel } = useAuthRequiredDialogHost();
+
+  if (!notification) {
+    return null;
+  }
+
+  return (
+    <AuthRequiredDialog
+      open
+      notification={notification}
+      onSuccess={handleSuccess}
+      onCancel={handleCancel}
+      cancelLabel="Cancel"
+    />
+  );
+};
 
 interface RootContext {
   uiPluginsReady: boolean;

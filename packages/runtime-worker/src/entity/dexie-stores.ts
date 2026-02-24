@@ -16,7 +16,15 @@ type FeatureRowBase = {
 };
 
 type DexieVectorTileDb<TRecord extends VectorTileRowBase> = {
-  vectorTiles: Table<TRecord, string>;
+  vectorTiles: {
+    where: (index: string) => {
+      equals: (nodeId: NodeId) => {
+        toArray: () => Promise<TRecord[]>;
+      };
+    };
+    bulkPut: (rows: VectorTileItem<TRecord>[]) => Promise<unknown>;
+    bulkDelete: (itemIds: VectorTileItem<TRecord>['id'][]) => Promise<unknown>;
+  };
 };
 
 type DexieFeatureDb<TRecord extends FeatureRowBase> = {
@@ -27,9 +35,13 @@ type VectorTileItem<TRecord extends VectorTileRowBase> = TRecord & {
   id: string;
 };
 
+type TimestampField<TRecord extends VectorTileRowBase> = {
+  [K in keyof TRecord]: TRecord[K] extends number ? K : never;
+}[keyof TRecord];
+
 export type DexieVectorTileStoreOptions<TRecord extends VectorTileRowBase> = {
   buildTileId?: (nodeId: NodeId, z: number, x: number, y: number) => string;
-  timestampField?: keyof TRecord;
+  timestampField?: TimestampField<TRecord>;
 };
 
 export type DexieFeatureStoreOptions = {
@@ -45,6 +57,14 @@ export function createDexieVectorTileStore<TRecord extends VectorTileRowBase>(
 ): VectorTileStore<VectorTileItem<TRecord>> {
   const buildTileId = options.buildTileId ?? defaultBuildTileId;
   const timestampField = options.timestampField;
+  const assignTimestamp = <K extends TimestampField<TRecord>>(
+    row: VectorTileItem<TRecord>,
+    key: K,
+    value: number
+  ): void => {
+    const target = row as Record<TimestampField<TRecord>, number>;
+    target[key] = value;
+  };
 
   return {
     async list(nodeId: NodeId): Promise<VectorTileItem<TRecord>[]> {
@@ -54,22 +74,24 @@ export function createDexieVectorTileStore<TRecord extends VectorTileRowBase>(
     async bulkUpsert(nodeId: NodeId, items: VectorTileItem<TRecord>[]): Promise<void> {
       if (!items.length) return;
       const now = Date.now();
-      const rows = items.map((item) => {
-        const { id: _id, ...rest } = item as VectorTileItem<TRecord> & { id?: string };
+      const rows: VectorTileItem<TRecord>[] = items.map((item) => {
+        const { id: _id, ...rowBase } = item;
+        const tileId = buildTileId(nodeId, item.z, item.x, item.y);
         const row = {
-          ...rest,
-          tileId: buildTileId(nodeId, item.z, item.x, item.y),
+          ...rowBase,
+          id: tileId,
+          tileId,
           nodeId,
-        } as unknown as TRecord;
+        } as VectorTileItem<TRecord>;
         if (timestampField) {
-          (row as Record<string, unknown>)[timestampField as string] = now;
+          assignTimestamp(row, timestampField, now);
         }
         return row;
       });
       await db.vectorTiles.bulkPut(rows);
     },
     async bulkDelete(_nodeId: NodeId, itemIds: Array<VectorTileItem<TRecord>['id']>): Promise<void> {
-      await db.vectorTiles.bulkDelete(itemIds as Array<string>);
+      await db.vectorTiles.bulkDelete(itemIds);
     },
   };
 }

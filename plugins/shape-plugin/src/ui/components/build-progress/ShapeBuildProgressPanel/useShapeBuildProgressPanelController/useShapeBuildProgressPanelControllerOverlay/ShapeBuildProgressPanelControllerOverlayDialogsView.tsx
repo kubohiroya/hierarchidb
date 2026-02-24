@@ -6,10 +6,10 @@ import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/component
 
 type ToLabel = (text: string | null | undefined) => string;
 
-type UseShapeBuildProgressPanelControllerOverlayDialogsArgs = ShapeBuildProgressPanelControllerBaseResult;
+type ShapeBuildProgressPanelControllerOverlayDialogsArgs = ShapeBuildProgressPanelControllerBaseResult;
 
 type ConcurrencyEditorCardArgs = Pick<
-  UseShapeBuildProgressPanelControllerOverlayDialogsArgs,
+  ShapeBuildProgressPanelControllerOverlayDialogsArgs,
   | 't'
   | 'concurrencyEditorStageId'
   | 'processingConfigForEdit'
@@ -20,7 +20,7 @@ type ConcurrencyEditorCardArgs = Pick<
 };
 
 type FetchRetryEditorCardArgs = Pick<
-  UseShapeBuildProgressPanelControllerOverlayDialogsArgs,
+  ShapeBuildProgressPanelControllerOverlayDialogsArgs,
   | 'fetchRetryConfigForEdit'
   | 'applyFetchRetryConfigUpdate'
   | 't'
@@ -29,14 +29,12 @@ type FetchRetryEditorCardArgs = Pick<
 };
 
 type CompletionDialogContentArgs = Pick<
-  UseShapeBuildProgressPanelControllerOverlayDialogsArgs,
+  ShapeBuildProgressPanelControllerOverlayDialogsArgs,
   't' | 'completionSnapshot' | 'completionStageLabel' | 'completionTaskTitle' | 'completionTaskMessage' | 'completionReason'
-> & {
-  toLabel: ToLabel;
-};
+>;
 
 type FooterArgs = Pick<
-  UseShapeBuildProgressPanelControllerOverlayDialogsArgs,
+  ShapeBuildProgressPanelControllerOverlayDialogsArgs,
   | 'isBuildStartupPending'
   | 'startupNoticeDismissed'
   | 'setStartupNoticeDismissed'
@@ -47,9 +45,9 @@ type FooterArgs = Pick<
   | 'startWarning'
   | 'crashHint'
 > & {
-  concurrencyEditorAnchor: UseShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorAnchor'];
-  concurrencyEditorStageId: UseShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorStageId'];
-  fetchRetryEditorAnchor: UseShapeBuildProgressPanelControllerOverlayDialogsArgs['fetchRetryEditorAnchor'];
+  concurrencyEditorAnchor: ShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorAnchor'];
+  concurrencyEditorStageId: ShapeBuildProgressPanelControllerOverlayDialogsArgs['concurrencyEditorStageId'];
+  fetchRetryEditorAnchor: ShapeBuildProgressPanelControllerOverlayDialogsArgs['fetchRetryEditorAnchor'];
   fetchRetryEditorCard: ReactNode;
   concurrencyEditorCard: ReactNode;
   closeConcurrencyEditor: () => void;
@@ -59,16 +57,17 @@ type FooterArgs = Pick<
   sizeWarningOpen: boolean;
   setSizeWarningOpen: (open: boolean) => void;
   handleStartWarningConfirm: () => void;
+  t: ShapeBuildProgressPanelControllerOverlayDialogsArgs['t'];
 };
 
 type ControlRightContentArgs = Pick<
-  UseShapeBuildProgressPanelControllerOverlayDialogsArgs,
+  ShapeBuildProgressPanelControllerOverlayDialogsArgs,
   'taskSearchText' | 'setTaskSearchText' | 't'
 > & {
   toLabel: ToLabel;
 };
 
-export const renderShapeBuildProgressPanelConcurrencyEditorCard = ({
+export const ShapeBuildProgressPanelConcurrencyEditorCard = ({
   t,
   concurrencyEditorStageId,
   disabledEditors,
@@ -168,7 +167,7 @@ export const renderShapeBuildProgressPanelConcurrencyEditorCard = ({
   );
 };
 
-export const renderShapeBuildProgressPanelFetchRetryEditorCard = ({
+export const ShapeBuildProgressPanelFetchRetryEditorCard = ({
   t,
   fetchRetryConfigForEdit,
   applyFetchRetryConfigUpdate,
@@ -183,14 +182,13 @@ export const renderShapeBuildProgressPanelFetchRetryEditorCard = ({
   />
 );
 
-export const renderShapeBuildProgressPanelCompletionDialogContent = ({
+export const ShapeBuildProgressPanelCompletionDialogContent = ({
   t,
   completionSnapshot,
   completionStageLabel,
   completionTaskTitle,
   completionTaskMessage,
   completionReason,
-  toLabel,
 }: CompletionDialogContentArgs): ReactNode => (
   <>
     <Typography variant="body2">
@@ -213,7 +211,7 @@ export const renderShapeBuildProgressPanelCompletionDialogContent = ({
   </>
 );
 
-export const renderShapeBuildProgressPanelOverlayFooter = ({
+export const ShapeBuildProgressPanelOverlayFooter = ({
   isBuildStartupPending,
   fetchRetryEditorAnchor,
   closeFetchRetryEditor,
@@ -316,7 +314,7 @@ export const renderShapeBuildProgressPanelOverlayFooter = ({
   </>
 );
 
-export const renderShapeBuildProgressPanelControlRightContent = ({
+export const ShapeBuildProgressPanelControlRightContent = ({
   taskSearchText,
   setTaskSearchText,
   t,

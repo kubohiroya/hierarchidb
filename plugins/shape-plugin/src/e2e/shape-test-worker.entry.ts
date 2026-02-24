@@ -7,25 +7,25 @@ import type {
   BuildTaskSummary,
   BuildTaskUpdateEvent,
   BuildContinuationPolicy,
-} from 'packages/build-api';
+} from '@hierarchidb/build-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
-import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '~/common/types/index';
+import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries, ShapeBuildConfig, ShapeProcessingConfig } from '../common/types/index';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import { shapeDB } from '@hierarchidb/shape-store';
 import { ephemeralDB } from '@hierarchidb/gis-sdk';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
-import { shapeBuildAPI } from '~/worker/api';
-import { shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '~/services/vt/shapePipelineShared';
-import { runShapeFetchStageSection } from '~/services/vt/shapePipelineFetchStage';
-import { runShapeTransformStageSection } from '~/services/vt/shapePipelineTransformStage';
-import { runShapeVtStageSection } from '~/services/vt/shapePipelineVtStage';
-import { runShapeMetadataStage } from '~/services/vt/shapePipelineMetadataStage';
-import { runShapePipelineCleanup } from '~/services/vt/shapePipelineCleanup';
-import { resolveFailureHandling } from '~/services/vt/shapePipelineStageHelpers';
+import { metadataLoader } from '../../services/metadata/MetadataLoader';
+import { shapeBuildAPI } from '../../worker/api';
+import { shapeMutationAPIImpl } from '../services/build/ShapeBuildAPIClient';
+import { buildBands, buildContinentLookup, buildCountryLookup, hasHighDetailSelection } from '../services/vt/shapePipelineShared';
+import { runShapeFetchStageSection } from '../services/vt/shapePipelineFetchStage';
+import { runShapeTransformStageSection } from '../services/vt/shapePipelineTransformStage';
+import { runShapeVtStageSection } from '../services/vt/shapePipelineVtStage';
+import { runShapeMetadataStage } from '../services/vt/shapePipelineMetadataStage';
+import { runShapePipelineCleanup } from '../services/vt/shapePipelineCleanup';
+import { resolveFailureHandling } from '../services/vt/shapePipelineStageHelpers';
 import { CoreDB, ShapeMutationService, ShapeQueryService } from '@hierarchidb/runtime-worker';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;

@@ -10,11 +10,16 @@ import {
   RouteBuildSession,
   type RouteBuildTask,
 } from './RouteBuildSession.js';
-import type { BuildProgressEvent, TaskStage } from '../../../../packages/build-api';
+import type { BuildProgressEvent, TaskStage, TaskQueueRecord } from '@hierarchidb/build-api';
 import { VtTaskQueueDb, deleteTasksByNode, putTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord } from '../../../../packages/build-api';
 
-export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
+export type ProgressUpdate = {
+  jobId: string;
+  progress: number;
+  stage: TaskStage;
+  phase: string;
+  ts: number;
+};
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
 export type ProgressStore = { upsert?: (nodeId: string, record: ProgressUpdate) => void };
 
@@ -167,6 +172,7 @@ export class RouteBuildManager {
     const update: ProgressUpdate = {
       jobId: event.nodeId,
       progress: percentage,
+      stage: event.stage,
       phase,
       ts,
     };

@@ -15,6 +15,9 @@ import { createCommand } from '~/adapters/utils';
 import { sanitizeForComlink } from './comlinkSanitizer';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
+type LegacyObserveSubtree = (envelope: unknown) => Promise<{
+  subscribe: (cb: (e: TreeNodeEvent) => void) => { unsubscribe: () => void };
+}>;
 
 export class TreeObservableAdapter<T> {
   private subscriptions = new Map<string, () => void>();
@@ -42,11 +45,10 @@ export class TreeObservableAdapter<T> {
         viewId: context.viewId,
       });
       // Prefer legacy observable-style API if present (for tests)
-      const workerRecord = this.workerAPI as unknown as Record<string, unknown>;
+      const workerRecord = this.workerAPI as WorkerAPI<T> & { observeSubtree?: LegacyObserveSubtree };
       const observeCandidate = workerRecord.observeSubtree;
       const maybeObserve = typeof observeCandidate === 'function'
-        ? observeCandidate.bind(this.workerAPI) as
-          (envelope: unknown) => Promise<{ subscribe: (cb: (e: TreeNodeEvent) => void) => { unsubscribe: () => void } }>
+        ? (observeCandidate.bind(workerRecord))
         : undefined;
 
       const internalSubscriptionId = `subtree_${nodeId}_${context.viewId}`;

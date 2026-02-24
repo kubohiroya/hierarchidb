@@ -103,7 +103,7 @@
         "label": "簡略化 tolerance"
       },
       "retryToleranceStep": {
-        "label": "リトライ時 tolerance 増分"
+        "label": "リトライ回数"
       },
       "algorithm": {
         "label": "簡略化アルゴリズム",

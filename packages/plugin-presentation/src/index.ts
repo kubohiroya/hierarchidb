@@ -24,6 +24,13 @@ let activeDefinitions: PluginPresentationDefinition[] | null = null;
 let presentationCache: Map<string, PluginPresentation> | null = null;
 let presentationSignature: string | null = null;
 
+const getGlobalPluginPresentationStore = ():
+  | { __HDB_PLUGIN_DEFS__?: PluginPresentationDefinition[] }
+  | undefined =>
+  typeof globalThis !== 'undefined'
+    ? (globalThis as { __HDB_PLUGIN_DEFS__?: PluginPresentationDefinition[] })
+    : undefined;
+
 function normalizeMuiIconName(name?: string): string | undefined {
   if (!name) return undefined;
   return ICON_NAME_NORMALIZATION_MAP[name] ?? name;
@@ -113,10 +120,7 @@ function createSignature(defs: PluginPresentationDefinition[]): string {
 }
 
 function readGlobalPluginDefinitions(): PluginPresentationDefinition[] {
-  const g = (typeof globalThis !== 'undefined' ? globalThis : ({} as unknown)) as {
-    __HDB_PLUGIN_DEFS__?: PluginPresentationDefinition[];
-  };
-  const defs = g.__HDB_PLUGIN_DEFS__;
+  const defs = getGlobalPluginPresentationStore()?.__HDB_PLUGIN_DEFS__;
   return Array.isArray(defs) ? defs : [];
 }
 
@@ -154,9 +158,8 @@ export function setPluginPresentationDefinitions(defs: PluginPresentationDefinit
 }
 
 export function registerGlobalPluginDefinitions(defs: PluginPresentationDefinition[]): void {
-  const g = (typeof globalThis !== 'undefined' ? globalThis : ({} as unknown)) as {
-    __HDB_PLUGIN_DEFS__?: PluginPresentationDefinition[];
-  };
+  const g = getGlobalPluginPresentationStore();
+  if (!g) return;
   g.__HDB_PLUGIN_DEFS__ = Array.isArray(defs) ? defs.map((def) => ({ ...def })) : [];
   setPluginPresentationDefinitions(g.__HDB_PLUGIN_DEFS__ ?? []);
 }

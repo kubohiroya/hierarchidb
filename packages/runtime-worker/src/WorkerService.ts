@@ -161,7 +161,7 @@ export class WorkerService {
         locationMutation: locationMutationService,
         routeMutation: routeMutationService,
       });
-      await WorkerService.resetBuildSessionsOnWorkerWarmStart();
+      await WorkerService.recoverBuildSessionRuntimeRecordsOnWarmStart();
 
       return new WorkerService(
         coreDB,
@@ -188,36 +188,15 @@ export class WorkerService {
     });
   }
 
-  private static async resetBuildSessionsOnWorkerWarmStart(): Promise<void> {
+  private static async recoverBuildSessionRuntimeRecordsOnWarmStart(): Promise<void> {
     try {
       await ephemeralDB.open?.();
       const sessions = await ephemeralDB.sessions.toArray();
-      const inProgressSessions = sessions.filter(
-        (session) =>
-          session?.nodeId !== undefined && (session.status === 'running' || session.status === 'paused')
-      );
-      if (inProgressSessions.length === 0) return;
-
-      const now = Date.now();
-      await ephemeralDB.transaction('rw', ephemeralDB.sessions, async () => {
-        await Promise.all(
-          inProgressSessions.map((session) =>
-            ephemeralDB.sessions.update(session.nodeId, {
-              status: 'idle',
-              stage: undefined,
-              stopReason: 'unknown',
-              lastHeartbeatAt: undefined,
-              updatedAt: now,
-              stageHeartbeatAt: undefined,
-              stageStartedAt: undefined,
-              stageInactiveMs: undefined,
-              stageId: undefined,
-            })
-          )
-        );
-      });
+      if (sessions.length === 0) return;
+      // Keep session records for resume/recovery flow; runtime state can be reconstructed.
+      return;
     } catch (error) {
-      console.error('[WorkerService] Failed to recover abnormal build sessions', error);
+      console.error('[WorkerService] Failed to recover persisted build sessions', error);
     }
   }
 

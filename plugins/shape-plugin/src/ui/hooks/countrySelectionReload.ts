@@ -13,8 +13,8 @@ export async function invalidateCountrySelectionCaches(dataSource: string, nodeI
   const normalized = (dataSource ?? '').toLowerCase();
 
   // metadataSources.ts uses different serializers per endpoint.
-  const jsonStore = createShapeChunkStore(jsonSerializer, jsonDeserializer) as unknown as DexieChunkStore<unknown>;
-  const textStore = createShapeChunkStore(textSerializer, textDeserializer) as unknown as DexieChunkStore<unknown>;
+  const jsonStore = createShapeChunkStore(jsonSerializer, jsonDeserializer) as DexieChunkStore<unknown>;
+  const textStore = createShapeChunkStore(textSerializer, textDeserializer) as DexieChunkStore<unknown>;
 
   const tasks: Array<Promise<void>> = [];
 

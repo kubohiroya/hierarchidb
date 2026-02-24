@@ -1,4 +1,4 @@
-import type { TaskDisplayMetric, TaskDisplayPayload } from '../../../../../../packages/build-api';
+import type { TaskDisplayMetric, TaskDisplayPayload } from '@hierarchidb/build-api';
 
 type Translate = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 

@@ -440,7 +440,7 @@ describe('Build System', () => {
       for (const config of invalidConfigs) {
         await expect(
           // Cast via unknown to satisfy strict type check for intentional invalid configs
-          batchProcessor.executeBuild(config as unknown as BuildConfig),
+          batchProcessor.executeBuild(config as BuildConfig),
         ).rejects.toThrow();
       }
     });

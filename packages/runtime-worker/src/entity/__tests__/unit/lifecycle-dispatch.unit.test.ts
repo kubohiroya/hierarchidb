@@ -69,28 +69,28 @@ describe('EntityLifecycleManager dispatch', () => {
   }
 
   it('routes commitDraft to onCommitDraft', async () => {
-    const mgr = EntityLifecycleManager.getSingleton({} as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton({} as CoreDB);
     const spy = vi.spyOn(mgr, 'onCommitDraft').mockResolvedValue();
     await mgr.handleCommand(makeCommitEnvelope());
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('routes duplicateNodes to onDuplicateNodes', async () => {
-    const mgr = EntityLifecycleManager.getSingleton({} as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton({} as CoreDB);
     const spy = vi.spyOn(mgr, 'onDuplicateNodes').mockResolvedValue();
     await mgr.handleCommand(makeDuplicateEnvelope());
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('routes pasteNodes to onPasteNodes', async () => {
-    const mgr = EntityLifecycleManager.getSingleton({} as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton({} as CoreDB);
     const spy = vi.spyOn(mgr, 'onPasteNodes').mockResolvedValue();
     await mgr.handleCommand(makePasteEnvelope());
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('routes importNodes to onImportNodes', async () => {
-    const mgr = EntityLifecycleManager.getSingleton({} as unknown as CoreDB);
+    const mgr = EntityLifecycleManager.getSingleton({} as CoreDB);
     const spy = vi.spyOn(mgr, 'onImportNodes').mockResolvedValue();
     await mgr.handleCommand(makeImportEnvelope());
     expect(spy).toHaveBeenCalledOnce();

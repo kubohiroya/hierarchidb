@@ -57,7 +57,7 @@ const runFolderUndoRedoFlow = async () => {
   const { client, port1, port2, terminateAll } = await setupWorker();
 
   const cleanup = async () => {
-    const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[
+    const release = (client as { [Comlink.releaseProxy]?: () => Promise<void> })[
       Comlink.releaseProxy
     ];
     if (release) {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import type { BuildUnifiedProgressInfo } from '../../../../../packages/build-api';
+import type { BuildUnifiedProgressInfo } from '@hierarchidb/build-api';
 import { AuthNotificationRegistry } from '@hierarchidb/auth';
-import { usePluginBuildProgress } from '../../../../../packages/ui/build-sessions';
+import { usePluginBuildProgress } from '@hierarchidb/ui-build-sessions';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -84,7 +84,7 @@ export function useLocationProgress(
 
   useEffect(() => {
     setOverrideProgress(null);
-  }, [nodeId]);
+  }, []);
 
   useEffect(() => {
     if (unifiedProgress) {

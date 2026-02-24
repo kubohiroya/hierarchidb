@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/core-types';
+import { toNodeId, toNodeType, type NodeId } from '@hierarchidb/core-types';
 import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { SubTreeChanges } from '~/components/TreeTable/state/features/subscription.atoms';
 import { coalesceBatches } from './mergeUtils.js';
@@ -16,6 +16,54 @@ import {
 } from '~/components/TreeTable/state/index';
 
 const BATCH_DELAY_MS = 100;
+
+const ensureArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === 'string');
+};
+
+const toNumber = (value: unknown, fallback: number): number => {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+};
+
+const toMetadata = (value: unknown): { name: string; description: string; tags: string[] } => {
+  if (typeof value === 'object' && value !== null) {
+    const metadata = value as { name?: unknown; description?: unknown; tags?: unknown };
+    return {
+      name: typeof metadata.name === 'string' ? metadata.name : '',
+      description: typeof metadata.description === 'string' ? metadata.description : '',
+      tags: ensureArray(metadata.tags),
+    };
+  }
+  return { name: '', description: '', tags: [] };
+};
+
+const toTreeNodeFromRecord = (raw: { [key: string]: unknown; id: string }, fallback: TreeNode | undefined): TreeNode => ({
+  id: String(raw.id) as NodeId,
+  parentId: typeof raw.parentId === 'string' ? toNodeId(raw.parentId) : fallback?.parentId ?? toNodeId(''),
+  nodeType: typeof raw.nodeType === 'string' ? toNodeType(raw.nodeType) : fallback?.nodeType ?? toNodeType('folder'),
+  depth: toNumber(raw.depth, fallback?.depth ?? 1),
+  createdAt: toNumber(raw.createdAt, fallback?.createdAt ?? Date.now()),
+  updatedAt: toNumber(raw.updatedAt, fallback?.updatedAt ?? Date.now()),
+  version: toNumber(raw.version, fallback?.version ?? 0),
+  metadata: {
+    ...toMetadata(fallback?.metadata),
+    ...toMetadata(raw.metadata),
+  },
+  draftMetadata: fallback?.draftMetadata ?? null,
+  data: fallback?.data ?? null,
+  visible: typeof raw.visible === 'boolean' ? raw.visible : fallback?.visible ?? true,
+  ...(raw.hasChildren === undefined ? {} : { hasChildren: Boolean(raw.hasChildren) }),
+  ...(typeof raw.children === 'object' && Array.isArray(raw.children) ? { children: raw.children as NodeId[] } : {}),
+  ...(raw.originalName === undefined ? {} : { originalName: String(raw.originalName) }),
+  ...(raw.originalParentId === undefined ? {} : { originalParentId: String(raw.originalParentId) as NodeId }),
+  ...(raw.removedAt === undefined ? {} : { removedAt: toNumber(raw.removedAt, fallback?.removedAt ?? Date.now()) }),
+  ...(raw.lastTouchedAt === undefined ? {} : { lastTouchedAt: toNumber(raw.lastTouchedAt, fallback?.lastTouchedAt ?? Date.now()) }),
+  ...(typeof raw.map === 'object' && raw.map !== null ? { map: raw.map as TreeNode['map'] } : {}),
+  ...(typeof raw.references === 'object' && raw.references !== null ? { references: raw.references as NodeId[] } : {}),
+  ...(raw.descendantCount === undefined ? {} : { descendantCount: toNumber(raw.descendantCount, fallback?.descendantCount ?? 0) }),
+  ...(raw.isEstimated === undefined ? {} : { isEstimated: Boolean(raw.isEstimated) }),
+});
 
 /**
   * SubTree
@@ -77,7 +125,7 @@ export function useSubscriptionOrchestrator<T>(workerAPI: WorkerAPI<T>): Subscri
           for (const n of update.added) {
             const id = n.id as NodeId;
             const i = idxMap.get(id);
-            const flat = n as unknown as TreeNode;
+            const flat = toTreeNodeFromRecord(n, i != null ? tableData[i] : undefined);
             if (i != null) mergedData[i] = { ...mergedData[i], ...flat } as TreeNode;
             else { mergedData.push(flat); idxMap.set(id, mergedData.length - 1); }
           }

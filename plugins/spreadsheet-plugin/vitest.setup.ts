@@ -2,7 +2,12 @@ import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
 import { Blob, File } from 'node:buffer';
 
-const globalTarget = globalThis as any;
+type GlobalFileTarget = typeof globalThis & {
+  Blob?: typeof Blob;
+  File?: typeof File;
+  window?: { Blob?: typeof Blob; File?: typeof File };
+};
+const globalTarget: GlobalFileTarget = globalThis;
 
 if (typeof globalTarget.Blob === 'undefined') {
   globalTarget.Blob = Blob;

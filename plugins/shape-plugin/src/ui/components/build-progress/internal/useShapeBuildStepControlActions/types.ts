@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
 import type { BuildSessionTransitionLogLevel } from '@hierarchidb/components/build-session';
-import type { BuildSessionStatus } from '../../../../../../../../packages/build-api';
+import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '~/common/types/index';
 import type { BuildWorkerBridge } from '@hierarchidb/ui-worker-client';

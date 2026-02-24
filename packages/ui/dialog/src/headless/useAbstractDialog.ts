@@ -39,8 +39,8 @@ function shallowEqualData(a: unknown, b: unknown): boolean {
     const rightIsArray = Array.isArray(right);
     if (leftIsArray || rightIsArray) {
       if (!leftIsArray || !rightIsArray) return false;
-      const l = left as unknown[];
-      const r = right as unknown[];
+      const l = left;
+      const r = right;
       if (l.length !== r.length) return false;
       for (let i = 0; i < l.length; i += 1) {
         stack.push({ left: l[i], right: r[i] });
@@ -183,4 +183,3 @@ export function useAbstractDialog<TData>(
 
   return { contextValue, headerProps, contentProps, footerProps };
 }
-

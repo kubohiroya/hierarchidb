@@ -60,7 +60,7 @@ export const DataSourceWithLicense = <TAgreedAt,>({
   const handleAgree = () => {
     const buildAgreedAt =
       createAgreedAt ??
-      (() => new Date().toISOString() as unknown as TAgreedAt);
+      (() => new Date().toISOString() as TAgreedAt);
     if (selected?.licenseUrl) {
       window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
     }

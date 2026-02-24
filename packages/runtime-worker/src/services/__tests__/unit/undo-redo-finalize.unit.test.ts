@@ -52,7 +52,7 @@ describe('Undo/Redo finalize: create -> undo -> redo', () => {
   it('removes created node on undo and restores on redo with same id', async () => {
     const core = makeCore();
     const { CommandProcessor } = await import('../../CommandProcessor');
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const cp = new CommandProcessor(core as Partial<CoreDB> as CoreDB);
 
     const parentId = 'p1' as NodeId;
     const env = cp.createEnvelope('createNode', {

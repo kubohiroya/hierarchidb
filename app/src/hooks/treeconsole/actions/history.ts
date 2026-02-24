@@ -17,7 +17,7 @@ export const createHistoryActions = (deps: TreeConsoleActionDeps) => {
 
   const runHistoryAction = async (method: 'undo' | 'redo') => {
     if (!client) return;
-    const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+    const getCP = (client as MaybeCP).getCommandProcessor;
     if (typeof getCP !== 'function') return;
 
     let historyInvoked = false;

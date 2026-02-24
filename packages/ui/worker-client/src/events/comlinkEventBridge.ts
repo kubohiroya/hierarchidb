@@ -30,7 +30,7 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
   }
 
   if (Array.isArray(value)) {
-    const list = value as unknown[];
+    const list = value;
     return list.map((entry) => sanitizeForComlink(entry, seen)) as T;
   }
 
@@ -59,7 +59,11 @@ const sanitizeForComlink = <T>(value: T, seen = new WeakMap<object, unknown>()):
 export type EventListener<TEvent> = (event: TEvent) => void;
 export type RemoteEventListener<TEvent> = EventListener<TEvent>;
 
-export interface ComlinkEventBridgeOptions<TRuntimeEvent, TUiEvent, TWorkerEvent> {
+export interface ComlinkEventBridgeOptions<
+  TRuntimeEvent,
+  TUiEvent extends TRuntimeEvent,
+  TWorkerEvent extends TRuntimeEvent,
+> {
   runtimeToUi?: (event: TRuntimeEvent) => TUiEvent;
   workerToRuntime?: (event: TWorkerEvent) => TRuntimeEvent;
 }
@@ -75,8 +79,8 @@ export type EventTransformer<TInput, TOutput> = (event: TInput) => TOutput;
 
 export function createComlinkEventBridge<
   TRuntimeEvent,
-  TUiEvent = TRuntimeEvent,
-  TWorkerEvent = TRuntimeEvent,
+  TUiEvent extends TRuntimeEvent = TRuntimeEvent,
+  TWorkerEvent extends TRuntimeEvent = TRuntimeEvent,
 >(
   options: ComlinkEventBridgeOptions<TRuntimeEvent, TUiEvent, TWorkerEvent> = {}
 ): ComlinkEventBridge<TRuntimeEvent, TUiEvent, TWorkerEvent> {
@@ -84,11 +88,11 @@ export function createComlinkEventBridge<
 
   const toUi: EventTransformer<TRuntimeEvent, TUiEvent> = runtimeToUi
     ? runtimeToUi
-    : (event: TRuntimeEvent) => event as unknown as TUiEvent;
+    : (event: TRuntimeEvent) => event as TUiEvent;
 
   const toRuntime: EventTransformer<TWorkerEvent, TRuntimeEvent> = workerToRuntime
     ? workerToRuntime
-    : (event: TWorkerEvent) => event as unknown as TRuntimeEvent;
+    : (event: TWorkerEvent) => event;
 
   return {
     createUiProxy(listener: EventListener<TUiEvent>): RemoteEventListener<TRuntimeEvent> {

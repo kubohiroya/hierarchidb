@@ -213,7 +213,7 @@ export class CoreDB extends Dexie {
               draftMetadata: null,
               data: null,
               draftData: undefined,
-            } as unknown as TreeNode,
+            } as TreeNode,
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
               id: getRootNodeId(treeId, 'archive'),
@@ -230,7 +230,7 @@ export class CoreDB extends Dexie {
               draftMetadata: null,
               data: null,
               draftData: undefined,
-            } as unknown as TreeNode,
+            } as TreeNode,
           ])
         );
       }

@@ -1,4 +1,4 @@
-import type { TaskQueueRecord } from '../../../../packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 
 const isFiniteNumber = (value: unknown): value is number => (
   typeof value === 'number' && Number.isFinite(value)

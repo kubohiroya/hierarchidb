@@ -36,7 +36,7 @@ export function useWorkerQueryAPI(): UseWorkerQueryApiResult {
     if (!api) {
       return null;
     }
-    const apiKey = api as unknown as object;
+    const apiKey = api as object;
     const cachedPromise = queryApiPromiseByWorkerApi.get(apiKey);
     if (cachedPromise) {
       try {

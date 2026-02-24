@@ -302,7 +302,7 @@ export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
     activeNodeId,
     buildSessionTransition,
     buildStatus,
-    displayTasks.length,
+    displayTasks,
     hasFirstTaskSignal,
     hasProgressTaskSignal,
     hasStartedTasks,

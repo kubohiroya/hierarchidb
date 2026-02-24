@@ -149,12 +149,36 @@ export const createContextMenuAction = (
             return;
           }
 
-          const markShapeBuildRequired = async (createdNodeId: NodeId) => {
+          const applyDraftMetadata = async (
+            createdNodeId: NodeId,
+            patch: {
+              name?: string;
+              description?: string;
+              buildMetadata?: {
+                buildRequired?: boolean;
+              };
+            }
+          ) => {
             const updaterAPI = await client.getTreeNodeUpdaterAPI();
+            const createdDraft = await updaterAPI.getTreeNode(createdNodeId);
+            const currentMeta =
+              ((createdDraft?.draftMetadata ?? {}) as {
+                name?: string;
+                description?: string;
+                buildMetadata?: {
+                  buildRequired?: boolean;
+                };
+              }) ?? {};
+            const mergedBuildMetadata = patch.buildMetadata
+              ? {
+                  ...(currentMeta.buildMetadata ?? {}),
+                  ...patch.buildMetadata,
+                }
+              : currentMeta.buildMetadata;
             await updaterAPI.updateTreeNodeDraftMetadata(createdNodeId, {
-              buildMetadata: {
-                buildRequired: true,
-              },
+              ...currentMeta,
+              ...patch,
+              ...(mergedBuildMetadata ? { buildMetadata: mergedBuildMetadata } : {}),
             });
           };
 
@@ -194,15 +218,17 @@ export const createContextMenuAction = (
               isTemporary: true,
             });
             if (!res?.success) {
-              const err = (res as unknown as { error?: string })?.error;
+              const err = (res as { error?: string })?.error;
               showCommandError('INVALID_OPERATION', err || 'Create failed');
               return;
             }
             const wcNodeId = res.nodeId as NodeId;
 
-            if (newType === 'shape') {
-              await markShapeBuildRequired(wcNodeId);
-            }
+            await applyDraftMetadata(wcNodeId, {
+              name: resolvedName,
+              description: templateDefaults?.description,
+              buildMetadata: newType === 'shape' ? { buildRequired: true } : undefined,
+            });
 
             if (templateDefaults?.draftPatch) {
               const updaterAPI = await client.getTreeNodeUpdaterAPI();

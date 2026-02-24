@@ -10,6 +10,11 @@ export interface SessionPayload {
   exp?: number;
 }
 
+const isString = (value: unknown): value is string => typeof value === 'string';
+
+const isNumberOrUndefined = (value: unknown): value is number | undefined =>
+  value === undefined || typeof value === 'number';
+
 export async function createSessionToken(
   payload: Omit<SessionPayload, 'iat' | 'exp'>,
   secret: string,
@@ -37,7 +42,30 @@ export async function verifySessionToken(
     issuer: issuer || 'hierarchidb-bff',
   });
 
-  return payload as unknown as SessionPayload;
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !isString(payload.sub) ||
+    !isString(payload.email) ||
+    !isString(payload.name) ||
+    !isString(payload.provider) ||
+    !isNumberOrUndefined(payload.iat) ||
+    !isNumberOrUndefined(payload.exp) ||
+    ('picture' in payload && !isString(payload.picture))
+  ) {
+    throw new Error('Invalid session token payload');
+  }
+  const picture = isString(payload.picture) ? payload.picture : undefined;
+
+  return {
+    sub: payload.sub,
+    email: payload.email,
+    name: payload.name,
+    picture,
+    provider: payload.provider,
+    iat: payload.iat,
+    exp: payload.exp,
+  };
 }
 
 export function extractBearerToken(authHeader: string | undefined): string | null {

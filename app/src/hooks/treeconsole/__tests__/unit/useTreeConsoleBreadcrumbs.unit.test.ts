@@ -35,7 +35,7 @@ function createClient(ancestors: TreeNode[]): Remote<BuildWorkerAPI> {
     getQueryAPI: vi.fn(async () => ({
       listAncestors: vi.fn(async () => ancestors),
     })),
-  } as unknown as Remote<BuildWorkerAPI>;
+  } as Remote<BuildWorkerAPI>;
 }
 
 describe('useTreeConsoleBreadcrumbs', () => {

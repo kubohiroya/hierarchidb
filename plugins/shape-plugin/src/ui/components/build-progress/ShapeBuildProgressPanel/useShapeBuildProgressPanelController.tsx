@@ -15,5 +15,5 @@ export const useShapeBuildProgressPanelController = (props: ShapeBuildProgressPa
   return {
     ...base,
     ...overlay,
-  } as const;
+  };
 };

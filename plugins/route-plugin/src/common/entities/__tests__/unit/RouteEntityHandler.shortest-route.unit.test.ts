@@ -42,12 +42,18 @@ function createRoute({ id, start, end, distance, overrides }: RouteFactoryOption
 }
 
 async function seedRoutes(handler: RouteEntityHandler, routes: RouteEntity[]): Promise<void> {
-  const table = (handler as any).table as Table<RouteEntity, NodeId>;
+  const handlerWithTable = handler as {
+    table: Table<RouteEntity, NodeId>;
+  };
+  const table = handlerWithTable.table;
   await table.bulkAdd(routes);
 }
 
 async function disposeHandler(handler: RouteEntityHandler): Promise<void> {
-  await ((handler as any).routeDB?.close?.() ?? Promise.resolve());
+  const handlerWithDb = handler as {
+    routeDB?: { close?: () => Promise<void> };
+  };
+  await (handlerWithDb.routeDB?.close?.() ?? Promise.resolve());
 }
 
 describe('RouteEntityHandler.getShortestRouteSetBetweenLocations', () => {

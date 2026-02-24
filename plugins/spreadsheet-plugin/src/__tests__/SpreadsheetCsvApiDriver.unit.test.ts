@@ -1,7 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer';
 
-const globalTarget = globalThis as any;
+type GlobalFileTarget = typeof globalThis & {
+  Blob?: typeof Blob;
+  File?: typeof File;
+  window?: { Blob?: typeof Blob; File?: typeof File };
+};
+const globalTarget = globalThis as GlobalFileTarget;
 globalTarget.Blob = NodeBlob;
 globalTarget.File = NodeFile;
 if (globalTarget.window) {
@@ -19,8 +24,7 @@ beforeAll(async () => {
   SpreadsheetMetadataManager = metadataModule.SpreadsheetMetadataManager;
 });
 
-const createFile = (content: string, name = 'test.csv'): File =>
-  new NodeFile([content], name, { type: 'text/csv' }) as unknown as File;
+const createFile = (content: string, name = 'test.csv') => new NodeFile([content], name, { type: 'text/csv' });
 
 describe('SpreadsheetTabularApiDriver', () => {
   let driver: SpreadsheetTabularApiDriver;

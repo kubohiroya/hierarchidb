@@ -1,8 +1,8 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandProcessor } from '../../CommandProcessor';
 import type { CoreDB } from '../../CoreDB';
+import { CommandProcessor } from '../../CommandProcessor';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 const asNodeType = (value: string): NodeType => value as NodeType;
@@ -67,10 +67,11 @@ const createCoreMock = (nodes: Map<NodeId, TreeNode>) => {
   } satisfies Partial<CoreDB>;
 };
 
-const createProcessorMock = () => ({
-  createEnvelope: vi.fn((kind: string, payload: unknown) => ({ kind, payload })),
-  processCommand: vi.fn(async () => ({ success: true, seq: 1 })),
-});
+const createProcessorMock = (coreDB: CoreDB): CommandProcessor => {
+  const processor = new CommandProcessor(coreDB);
+  vi.spyOn(processor, 'processCommand').mockResolvedValue({ success: true, seq: 1 });
+  return processor;
+};
 
 describe('TreeMutationService command processor routing', () => {
   beforeEach(() => {
@@ -83,13 +84,13 @@ describe('TreeMutationService command processor routing', () => {
       [asNodeId('parentB'), createNode('parentB', 'root', 0)],
       [asNodeId('child-1'), createNode('child-1', 'parentA', 1)],
     ]);
-    const core = createCoreMock(nodes);
-    const processor = createProcessorMock();
+    const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
+    const processor = createProcessorMock(core);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const svc = new TreeMutationService(
-      core as unknown as CoreDB,
-      processor as unknown as CommandProcessor
+      core,
+      processor
     );
 
     const outcome = await svc.moveNodes({
@@ -108,13 +109,13 @@ describe('TreeMutationService command processor routing', () => {
       [asNodeId('child-1'), createNode('child-1', 'parentA', 1)],
       [asNodeId('child-2'), createNode('child-2', 'child-1', 2)],
     ]);
-    const core = createCoreMock(nodes);
-    const processor = createProcessorMock();
+    const core = createCoreMock(nodes) as Partial<CoreDB> as CoreDB;
+    const processor = createProcessorMock(core);
 
     const { TreeMutationService } = await import('../../TreeMutationService');
     const svc = new TreeMutationService(
-      core as unknown as CoreDB,
-      processor as unknown as CommandProcessor
+      core,
+      processor
     );
 
     const result = await svc.removeNodes([asNodeId('child-1')]);

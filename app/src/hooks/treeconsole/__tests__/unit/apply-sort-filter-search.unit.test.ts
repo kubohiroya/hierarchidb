@@ -7,7 +7,7 @@
 import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { describe, expect, it } from 'vitest';
-import { applySortFilterSearch } from '../../sortFilter.ts';
+import { applySortFilterSearch } from '../../sortFilter';
 
 const baseNode = (
   id: string,
@@ -15,9 +15,9 @@ const baseNode = (
   nodeType: string,
   description = ''
 ): HierarchicalTreeNode => ({
-  id: id as unknown as NodeId,
-  parentId: 'r:root' as unknown as NodeId,
-  nodeType: nodeType as unknown as NodeType,
+  id: id as NodeId,
+  parentId: 'r:root' as NodeId,
+  nodeType: nodeType as NodeType,
   metadata: { name, description, tags: [] },
   draftMetadata: null,
   data: null,

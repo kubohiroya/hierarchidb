@@ -1,6 +1,4 @@
-import type { BuildSessionStatus } from '../../../../../../../../packages/build-api';
-//import { SHAPE_NODE_TYPE } from '../constants';
-//import { getErrorMessage, summarizeSelectedEntries } from '../errors';
+import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { StartOrResumeExecutionArgs } from './types.js';
 import { getErrorMessage, summarizeSelectedEntries } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/errors';
 import { SHAPE_NODE_TYPE } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';

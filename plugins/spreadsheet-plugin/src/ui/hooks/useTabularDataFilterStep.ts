@@ -145,7 +145,7 @@ export const useTabularDataFilterStep = <T extends SpreadsheetDraft>({
   const panelDialogRef = useMemo<React.RefObject<HTMLElement | null> | undefined>(() => {
     if (dialogRef) return dialogRef;
     if (menuContainer) {
-      return { current: menuContainer as unknown as HTMLElement };
+      return { current: menuContainer as HTMLElement };
     }
     return undefined;
   }, [dialogRef, menuContainer]);

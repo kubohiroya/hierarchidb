@@ -14,7 +14,7 @@ import { I18nextProvider, useTranslation } from 'react-i18next';
 import { i18n as configuredI18n } from '~/i18n/index';
 import { isDevEnv } from '~/utils/env';
 
-const sharedI18n = configuredI18n as unknown as I18nInstance;
+const sharedI18n = configuredI18n as I18nInstance;
 // Avoid hard type dependency on date-fns types during DTS stage
 type Locale = unknown;
 

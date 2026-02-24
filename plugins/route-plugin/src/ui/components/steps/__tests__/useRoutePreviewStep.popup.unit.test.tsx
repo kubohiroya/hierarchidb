@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { RouteLineString } from '@hierarchidb/route-api';
 import { ROUTE_MODES } from '@hierarchidb/route-api';
+import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 
 const listRouteLineStrings = vi.fn(async () => [lineStringFixture]);
 const listRouteBuildErrors = vi.fn(async () => []);
@@ -206,7 +207,7 @@ describe('useRoutePreviewStep hover popup closing', () => {
     expect(result.current.lineStringsLoading).toBe(false);
 
     act(() => {
-      result.current.setMapInstance(map as any);
+      result.current.setMapInstance(map as MapLibreMapInstance);
     });
     act(() => {
       map.trigger('click', {
@@ -246,7 +247,7 @@ describe('useRoutePreviewStep hover popup closing', () => {
     expect(result.current.lineStringsLoading).toBe(false);
 
     act(() => {
-      result.current.setMapInstance(map as any);
+      result.current.setMapInstance(map as MapLibreMapInstance);
     });
     act(() => {
       map.trigger('click', {

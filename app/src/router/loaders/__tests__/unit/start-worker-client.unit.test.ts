@@ -41,7 +41,7 @@ describe('workerClient', () => {
       );
       const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
-      const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
+      const mockClient = { ping: vi.fn() } as Remote<BuildWorkerAPI>;
       vi.mocked(ensureWorkerInitialized).mockResolvedValue(mockClient);
 
       const result = await ensureWorkerStarted();
@@ -56,7 +56,7 @@ describe('workerClient', () => {
       );
       const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
-      const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
+      const mockClient = { ping: vi.fn() } as Remote<BuildWorkerAPI>;
 
       // First call fails, second succeeds
       vi.mocked(ensureWorkerInitialized)
@@ -118,7 +118,7 @@ describe('workerClient', () => {
       );
       const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
-      const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
+      const mockClient = { ping: vi.fn() } as Remote<BuildWorkerAPI>;
       vi.mocked(ensureWorkerInitialized).mockResolvedValue(mockClient);
 
       const result = await ensureWorkerStarted();
@@ -134,7 +134,7 @@ describe('workerClient', () => {
       const { ensureWorkerStarted } = await import('../../workerClient.ts');
 
       const controller = new AbortController();
-      const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
+      const mockClient = { ping: vi.fn() } as Remote<BuildWorkerAPI>;
 
       // Verify signal is passed through
       vi.mocked(ensureWorkerInitialized).mockImplementation(async (options) => {
@@ -168,7 +168,7 @@ describe('workerClient', () => {
       const { getWorkerSnapshot } = await import('../../../../worker-runtime/WorkerStateStore.ts');
       const { getWorkerClient } = await import('../../workerClient.ts');
 
-      const mockClient = { ping: vi.fn() } as unknown as Remote<BuildWorkerAPI>;
+      const mockClient = { ping: vi.fn() } as Remote<BuildWorkerAPI>;
       vi.mocked(getWorkerSnapshot).mockReturnValue({
         state: 'ready',
         client: mockClient,

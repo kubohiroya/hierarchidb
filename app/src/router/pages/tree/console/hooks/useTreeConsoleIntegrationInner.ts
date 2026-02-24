@@ -14,17 +14,17 @@ import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
 import type { BuildWorkerAPI } from '~/types/worker-api';
 import { resolveDeveloperMode } from '~/utils/developerMode';
-import { useIndexedDbReset } from './useIndexedDbReset.js';
-import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog.js';
-import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions.js';
-import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher.js';
+import { useIndexedDbReset } from './useIndexedDbReset';
+import { useTreeConsoleResumeDialog } from './useTreeConsoleResumeDialog';
+import { useTreeConsoleToolbarActions } from './useTreeConsoleToolbarActions';
+import { useTreeConsoleArchiveWatcher } from './useTreeConsoleArchiveWatcher';
 
 type TreeConsolePanelProps = BaseTreeConsolePanelProps;
 type TreeConsoleBreadcrumbProps = React.ComponentProps<
   typeof import('@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb').TreeConsoleBreadcrumb
 >;
 type TreeNodeInfoPanelProps = React.ComponentProps<
-  typeof import('../TreeNodeInfoPanel.js').TreeNodeInfoPanel
+  typeof import('../TreeNodeInfoPanel').TreeNodeInfoPanel
 >;
 
 export type UseTreeConsoleIntegrationInnerArgs = {

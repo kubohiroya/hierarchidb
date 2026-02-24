@@ -33,7 +33,7 @@ export async function materializeRouteSegmentsFromTabular(
     lineGeometry,
     updatedAt: now,
   };
-  await db.routes.update(nodeId as any as string, updated as any);
+  await db.routes.update(nodeId, updated as Partial<RouteEntity>);
 
   if (reportProgress) {
     reportProgress({

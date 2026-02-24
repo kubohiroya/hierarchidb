@@ -9,6 +9,18 @@ import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
 import { type NodeId } from '@hierarchidb/core-types';
 
+type MockStateManager = {
+  [name: string]: ReturnType<typeof vi.fn>;
+  subscribe: ReturnType<typeof vi.fn>;
+  unsubscribe: ReturnType<typeof vi.fn>;
+  getNode: ReturnType<typeof vi.fn>;
+  getChildren: ReturnType<typeof vi.fn>;
+  updateNode: ReturnType<typeof vi.fn>;
+  moveNode: ReturnType<typeof vi.fn>;
+  archiveNode: ReturnType<typeof vi.fn>;
+  duplicateNode: ReturnType<typeof vi.fn>;
+};
+
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,
 }));
@@ -31,7 +43,7 @@ vi.mock('@hierarchidb/provider', () => ({
 
 describe('useTreeViewController', () => {
   let mockProps: TreeViewControllerProps;
-  let mockStateManager: any;
+  let mockStateManager: MockStateManager;
   let mockOnStateChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -45,7 +57,7 @@ describe('useTreeViewController', () => {
       moveNode: vi.fn(),
       archiveNode: vi.fn(),
       duplicateNode: vi.fn(),
-    } as any;
+    };
 
     mockProps = {
       treeId: 'test-console-id',
@@ -125,7 +137,7 @@ describe('useTreeViewController', () => {
         await result.current.selectNode('node-3' as NodeId, { shiftKey: true });
       });
 
-      expect(result.current.selectedNodeIds).toEqual(expect.arrayContaining(['node-1', 'node-2']) as any);
+      expect(result.current.selectedNodeIds).toEqual(expect.arrayContaining(['node-1', 'node-2']));
     });
 
     it('should notify atoms change when selection changes', async () => {

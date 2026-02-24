@@ -153,7 +153,7 @@ export const applySelfIntersectionFix = (
   const splitPolygon = (coords: number[][][]): number[][][][] => {
     const polygon = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: {} } as const;
     const pieces = geometryUnkinkPolygons(polygon, geometryEngine)
-      .map((feature) => (feature as unknown as { coordinates: number[][][] }).coordinates);
+      .map((feature) => (feature as { coordinates: number[][][] }).coordinates);
     if (pieces.length <= 1) return [coords];
     return pieces;
   };

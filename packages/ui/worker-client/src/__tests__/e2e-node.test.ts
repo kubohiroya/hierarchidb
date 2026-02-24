@@ -261,7 +261,7 @@ describe('Worker Initialization Node.js E2E Tests', () => {
 
       // Start initialization
       const result = await channel.waitForInitialization({
-        worker: worker as unknown as globalThis.Worker,
+        worker: worker as globalThis.Worker,
         timeout: 5000,
         debug: true,
       });
@@ -291,7 +291,7 @@ console.log('[SilentWorker] Started but not responding');
 
       try {
         await channel.waitForInitialization({
-          worker: silentWorker as unknown as globalThis.Worker,
+          worker: silentWorker as globalThis.Worker,
           timeout: 500,
           debug: false,
         });
@@ -325,7 +325,7 @@ console.log('[SilentWorker] Started but not responding');
       });
 
       const initPromise = channel.waitForInitialization({
-        worker: worker as unknown as globalThis.Worker,
+        worker: worker as globalThis.Worker,
         timeout: 2000,
         debug: false,
       });
@@ -349,7 +349,7 @@ console.log('[SilentWorker] Started but not responding');
 
       // Initialize first
       await channel.waitForInitialization({
-        worker: worker as unknown as globalThis.Worker,
+        worker: worker as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });
@@ -366,13 +366,13 @@ console.log('[SilentWorker] Started but not responding');
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const promise1 = channel.waitForInitialization({
-        worker: worker as unknown as globalThis.Worker,
+        worker: worker as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });
 
       const promise2 = channel.waitForInitialization({
-        worker: worker as unknown as globalThis.Worker,
+        worker: worker as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });

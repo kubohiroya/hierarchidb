@@ -252,7 +252,7 @@ function normalizeExcludeArg(excludeArg?: string | string[]): string[] {
 }
 
 async function main() {
-  const argv = minimist(process.argv.slice(2)) as unknown as Args;
+  const argv = minimist(process.argv.slice(2)) as Args;
   const ROOT = argv.root ?? 'src';
   const TSCONFIG = argv.tsconfig ?? 'tsconfig.json';
   const DRY = String(argv.dryRun ?? 'true') === 'true';
@@ -336,8 +336,17 @@ async function main() {
       const depsText = deps.map((s) => s.getText()).join('\n\n');
 
       let bodyText = decl.getText();
-      if ('getModifiers' in decl && typeof (decl as any).getModifiers === 'function') {
-        (decl as any).getModifiers().forEach((m: any) => {
+      const getModifiers = (source: Node): Array<{ getText: () => string; remove: () => void }> | null => {
+        const sourceWithModifiers = source as { getModifiers?: () => Array<{ getText: () => string; remove: () => void }> };
+        const modifiersGetter = sourceWithModifiers.getModifiers;
+        if (typeof modifiersGetter === 'function') {
+          return modifiersGetter.call(sourceWithModifiers);
+        }
+        return null;
+      };
+      const modifiers = getModifiers(decl);
+      if (modifiers) {
+        modifiers.forEach((m) => {
           if (m.getText() === 'export' || m.getText() === 'default') m.remove();
         });
       } else {

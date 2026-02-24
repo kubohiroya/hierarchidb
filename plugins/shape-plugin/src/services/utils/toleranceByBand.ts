@@ -1,7 +1,7 @@
 import type { ToneCurveAnchor } from '@hierarchidb/ui-tone-curve-editor';
 
 export const TOLERANCE_MIN = 0;
-export const TOLERANCE_MAX = 2;
+export const TOLERANCE_MAX = 12;
 
 const resolveNumericToleranceValue = (value: unknown, fallback: number): number => (
   typeof value === 'number' && Number.isFinite(value) ? clampTolerance(value, fallback) : fallback
@@ -12,6 +12,13 @@ export const clampTolerance = (value: number, fallback: number): number => {
     return fallback;
   }
   return Math.min(TOLERANCE_MAX, Math.max(TOLERANCE_MIN, value));
+};
+
+const clampInRange = (value: number, min: number, max: number): number => {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
 };
 
 export const resolveToleranceByBand = (
@@ -50,6 +57,10 @@ export const normalizeToleranceByBand = (
 const resolveBandBoundaryRepValues = (zoomBandBoundaries: number[]): number[] => {
   const count = Math.max(0, zoomBandBoundaries.length - 1);
   return zoomBandBoundaries.slice(0, count);
+};
+
+const resolveToneCurveBoundaryRepValues = (zoomBandBoundaries: number[]): number[] => {
+  return [...zoomBandBoundaries];
 };
 
 const resolveBandIndexForZoom = (zoomBandBoundaries: number[], zoom: number): number => {
@@ -122,6 +133,7 @@ export const buildToneCurveAnchorsFromToleranceByBand = (
   toleranceByBand: number[] | undefined,
   zoomBandBoundaries: number[],
   fallback = 0.1,
+  fallbackAnchors?: readonly number[],
 ): ToneCurveAnchor[] => {
   const bandCount = Math.max(0, zoomBandBoundaries.length - 1);
   if (bandCount === 0) {
@@ -131,9 +143,22 @@ export const buildToneCurveAnchorsFromToleranceByBand = (
     ];
   }
 
-  const reps = resolveBandBoundaryRepValues(zoomBandBoundaries);
-  const normalized = normalizeToleranceByBand(toleranceByBand, bandCount, fallback);
-  return reps.map((x, index) => ({ x, y: normalized[index] ?? 0.1 }));
+  const reps = resolveToneCurveBoundaryRepValues(zoomBandBoundaries);
+  const boundaryCount = zoomBandBoundaries.length;
+  const resolvedFallbackAnchors = fallbackAnchors ?? [];
+  const rawNormalized = Array.from({ length: boundaryCount }, (_, index) => (
+    index < reps.length
+      ? resolveNumericToleranceValue(
+        toleranceByBand?.[index],
+        index < resolvedFallbackAnchors.length ? (resolvedFallbackAnchors[index] ?? fallback) : fallback,
+      )
+      : fallback
+  ));
+
+  return reps.map((x, index) => ({
+    x,
+    y: rawNormalized[index] ?? fallback,
+  }));
 };
 
 export const buildToleranceByBandFromToneCurveAnchors = (
@@ -149,21 +174,31 @@ export const buildToleranceByBandFromToneCurveAnchors = (
     return Array.from({ length: bandCount }, () => fallback);
   }
 
-  const sortedAnchors = [...anchors].sort((left: ToneCurveAnchor, right: ToneCurveAnchor) => left.x - right.x);
-  const reps = resolveBandBoundaryRepValues(zoomBandBoundaries);
-  const result: number[] = [];
-  let anchorIndex = 0;
+  const normalizedAnchors = [...anchors]
+    .filter((anchor): anchor is ToneCurveAnchor => Number.isFinite(anchor.x) && Number.isFinite(anchor.y))
+    .sort((left: ToneCurveAnchor, right: ToneCurveAnchor) => left.x - right.x)
+    .map((anchor) => ({
+      x: clampInRange(anchor.x, zoomBandBoundaries[0] ?? 0, zoomBandBoundaries.at(-1) ?? 11),
+      y: clampInRange(anchor.y, TOLERANCE_MIN, TOLERANCE_MAX),
+    }));
 
-  for (const rep of reps) {
-    while (
-      anchorIndex + 1 < sortedAnchors.length
-      && (sortedAnchors[anchorIndex + 1]?.x ?? Number.NEGATIVE_INFINITY) <= rep
-    ) {
-      anchorIndex += 1;
+  if (normalizedAnchors.length === 0) {
+    return Array.from({ length: bandCount }, () => fallback);
+  }
+  if (normalizedAnchors.length === 1) {
+    return Array.from({ length: bandCount }, () => clampTolerance(normalizedAnchors[0]?.y ?? fallback, fallback));
+  }
+
+  const result: number[] = [];
+  const anchorCount = zoomBandBoundaries.length;
+
+  for (let index = 0; index < anchorCount; index += 1) {
+    const anchor = normalizedAnchors[index];
+    if (anchor === undefined) {
+      result.push(fallback);
+      continue;
     }
-    const anchor = sortedAnchors[Math.min(anchorIndex, sortedAnchors.length - 1)];
-    const value = typeof anchor?.y === 'number' ? anchor.y : fallback;
-    result.push(clampTolerance(value, fallback));
+    result.push(clampTolerance(anchor.y, fallback));
   }
 
   return result;

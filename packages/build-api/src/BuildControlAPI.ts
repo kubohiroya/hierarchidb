@@ -8,8 +8,9 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskDisplayPayload } from './task-queue-types.js';
+import type { TaskStage } from './task-queue-types.js';
 
-export type StageKey = string;
+export type StageKey = TaskStage;
 
 export type BuildStatus =
   | 'idle'
@@ -109,7 +110,7 @@ export interface BuildProgress {
   failed: number;
   skipped?: number;
   percentage: number;
-  stage?: string;
+  stage: StageKey;
   estimatedTimeRemaining?: number;
 }
 

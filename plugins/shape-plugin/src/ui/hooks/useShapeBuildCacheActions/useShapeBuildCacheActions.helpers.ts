@@ -1,4 +1,4 @@
-import type { BuildSessionStatus, TaskStage } from '../../../../../../packages/build-api';
+import type { BuildSessionStatus, TaskStage } from '@hierarchidb/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
@@ -35,61 +35,16 @@ export type ResultCounts = {
   transformErrors: number;
 };
 
-export const resolveKnownTaskStage = (task: TaskQueueRecordLike): TaskStage | null => {
-  const candidate = task.stage;
-  if (!candidate) return null;
-  return KNOWN_TASK_STAGES.includes(candidate) ? candidate : null;
-};
-
-export const resolveTaskStage = (task: StageLikeTask): TaskStage =>
-  task.stage ?? 'fetch';
-
 export const isTaskInStages = (task: StageLikeTask, stages: TaskStage[]): boolean =>
-  stages.includes(resolveTaskStage(task));
+  stages.includes(task.stage);
 
-export const normalizeTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
-  const records = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
-  const patches: Array<{ taskId: string; updates: { stage?: TaskStage } }> = [];
-  records.forEach((record) => {
-    if (!record || typeof record !== 'object') return;
-    const taskId = (record as TaskQueueRecordLike).taskId;
-    if (typeof taskId !== 'string' || taskId.length === 0) return;
-    const resolvedStage = resolveKnownTaskStage(record as TaskQueueRecordLike);
-    if (!resolvedStage) return;
-    const currentStage = (record as TaskQueueRecordLike).stage;
-    const updates: { stage?: TaskStage } = {};
-    if (currentStage !== resolvedStage) updates.stage = resolvedStage;
-    if (Object.keys(updates).length > 0) {
-      patches.push({ taskId, updates });
-    }
-  });
-  if (patches.length === 0) return;
-  const debugTag = 'normalize-task-queue-ui-2026-02-09-0334';
-  const startedAt = Date.now();
-  console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages start', {
-    tag: debugTag,
-    nodeId,
-    patchCount: patches.length,
-  });
-  let waitTimer: ReturnType<typeof setInterval> | null = null;
-  waitTimer = setInterval(() => {
-    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages waiting', {
-      tag: debugTag,
+const verifyTaskQueueStages = async (taskQueue: VtTaskQueueDb, nodeId: NodeId): Promise<void> => {
+  const recordCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
+  if (recordCount > 0) {
+    console.debug('[shapeBuildCache][TaskDebug] task queue stage verification', {
       nodeId,
-      elapsedMs: Date.now() - startedAt,
+      recordCount,
     });
-  }, 5000);
-  try {
-    await taskQueue.transaction('rw', taskQueue.tasks, async () => {
-      await Promise.all(patches.map((patch) => taskQueue.tasks.update(patch.taskId, patch.updates)));
-    });
-    console.warn('[shapeBuildCache][TaskDebug] normalizeTaskQueueStages done', {
-      tag: debugTag,
-      nodeId,
-      elapsedMs: Date.now() - startedAt,
-    });
-  } finally {
-    if (waitTimer) clearInterval(waitTimer);
   }
 };
 
@@ -161,7 +116,7 @@ export const clearBuildTasksForStages = async (
   }
 
   if (uniqueTypes.includes('transform')) {
-    await normalizeTaskQueueStages(taskQueue, nodeId);
+    await verifyTaskQueueStages(taskQueue, nodeId);
   }
 
   await Promise.all(
@@ -175,7 +130,7 @@ export const clearBuildTasksForStages = async (
       .where('nodeId')
       .equals(nodeId)
       .and((task) => {
-        const stage = resolveKnownTaskStage(task as TaskQueueRecordLike);
+        const stage = (task as TaskQueueRecordLike).stage;
         if (!stage) return false;
         return !KNOWN_TASK_STAGES.includes(stage);
       })

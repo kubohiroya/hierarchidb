@@ -1221,7 +1221,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
           if (body) {
             const { Readable } = await import('node:stream');
             // Cast to Node's ReadableStream type to satisfy Readable.fromWeb typing.
-            const nodeBody = body as unknown as import('node:stream/web').ReadableStream;
+            const nodeBody = body as import('node:stream/web').ReadableStream;
             Readable.fromWeb(nodeBody).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());

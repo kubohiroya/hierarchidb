@@ -90,7 +90,7 @@ describe('useShapeCountrySelectionStep cache behavior', () => {
     mockWorkerApi.setUiStorageBridge.mockResolvedValue(undefined);
     mockWorkerApi.loadMetadata.mockResolvedValue(baseMetadata);
     mockWorkerApi.loadAvailability.mockResolvedValue(baseAvailability);
-    (globalThis as { Worker?: unknown }).Worker = vi.fn(() => createDummyWorker()) as unknown as typeof Worker;
+    (globalThis as { Worker?: unknown }).Worker = vi.fn(() => createDummyWorker()) as typeof Worker;
   });
 
   it('loads metadata/availability only on first open for same node/dataSource', async () => {

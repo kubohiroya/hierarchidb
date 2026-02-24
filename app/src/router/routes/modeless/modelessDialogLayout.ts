@@ -436,7 +436,7 @@ export function loadLayout(
   try {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed = JSON.parse(raw);
     if (!parsed) return fallback;
     if (isStoredDialogLayout(parsed)) {
       const windows: Record<string, MapDialogWindowState> = {};

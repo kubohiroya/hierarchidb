@@ -1,5 +1,18 @@
 import { test, expect, Page } from '@playwright/test';
 
+type WorkerAPIClientModule = {
+  WorkerAPIClient?: {
+    isReady: () => boolean;
+    getSingleton: () => {
+      ping: () => Promise<{ response: 'pong' }>;
+    };
+  };
+};
+
+type WindowWithWorkerImport = Window & {
+  import?: (url: string) => Promise<WorkerAPIClientModule>;
+};
+
 test.describe('Worker Initialization System', () => {
   let page: Page;
 
@@ -57,13 +70,13 @@ test.describe('Worker Initialization System', () => {
     // Wait for app to be ready
     await page.waitForLoadState('networkidle');
     
-    // Check that Worker API methods are accessible
+        // Check that Worker API methods are accessible
     // This verifies the Comlink connection is established after Worker initialization
     const hasWorkerAPI = await page.evaluate(async () => {
       // Check if WorkerAPIClient is available globally or in window
       try {
         // Try to access the Worker API through a global method if exposed
-        const { WorkerAPIClient } = await (window as any).import?.('/src/WorkerAPIClient.js')?.catch(() => ({ WorkerAPIClient: null })) || {};
+        const { WorkerAPIClient } = await (window as WindowWithWorkerImport).import?.('/src/WorkerAPIClient.js')?.catch(() => ({ WorkerAPIClient: null })) || {};
         
         if (WorkerAPIClient && WorkerAPIClient.isReady()) {
           const client = WorkerAPIClient.getSingleton();
@@ -151,7 +164,7 @@ test.describe('Worker Initialization System', () => {
           console.log(`Allowing Worker to succeed (attempt ${attemptCount})`);
           return new OriginalWorker(scriptURL, options);
         }
-      } as any;
+      } as typeof window.Worker;
     });
 
     await page.goto('/hierarchidb/', {

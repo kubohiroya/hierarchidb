@@ -1,39 +1,63 @@
 import type { ReactNode, MouseEvent } from 'react';
+import type { BuildStage } from '@hierarchidb/components/build-stage';
+import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
+import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeProcessingConfig } from '~/common/types/build';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
-import type { TaskProgressControls } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type {
+  CrashSuspectControls,
+  ShapeBuildTaskSummary,
+  SuspendSuspectControls,
+  TaskProgressControls,
+  TaskProgressSummary,
+} from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import type { BuildProgressPanelStateComputed } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputed';
 import type { StartWarning } from '~/ui/components/build-progress/useBuildProgressPanelState/useShapeBuildProgressWarnings';
+import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
 
 type StageMetadataMap<T> = Record<string, T>;
 
+type CompletionSnapshot = {
+  status: BuildStatus;
+  stageLabel: string;
+  taskTitle?: string;
+  taskMessage?: string;
+  reason?: string;
+} | null;
+
 type StateLike = {
-  t: (key: string, fallback: string) => string;
-  stages: Array<{ id: string; title: string }>;
-  summary: {
+  t: TranslateFn;
+  stages: BuildStage[];
+  summary: TaskProgressSummary & {
     nodeId?: string;
-    buildStatus: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-    timingStageId?: string | null;
-    [key: string]: unknown;
   };
   controls: TaskProgressControls;
-  paneProgress: Array<{
-    paneId: string;
-    progress: number;
-    taskCount?: number;
-    completedCount?: number;
-    status?: string;
-    summary?: unknown;
-  }> | undefined;
+  paneProgress: PaneProgress[];
   isTasksLoading: boolean;
   isTaskSummaryLoading: boolean;
-  tasksByStage: Record<string, TaskItemWithMetadata[]>;
+  tasksByStage: Record<string, ShapeBuildTaskSummary[]>;
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
-  resolveStatusColor: (name: string) => string;
-  resolveStatusLabel: (name: string) => string;
-  controlDetails: unknown;
-  stageConcurrencyIndicators: unknown;
+  resolveStatusColor: BuildProgressPanelStateComputed['resolveStatusColor'];
+  resolveStatusLabel: BuildProgressPanelStateComputed['resolveStatusLabel'];
+  controlDetails: BuildProgressPanelStateComputed['controlDetails'];
+  stageConcurrencyIndicators: BuildProgressPanelStateComputed['stageConcurrencyIndicators'];
+};
+
+type CacheCounts = {
+  fetchApi: number;
+  fetchFiltered: number;
+  transform: number;
+  vt: number;
+  [key: string]: number;
+};
+
+type CacheResultCounts = {
+  tiles: number;
+  featureMetadata: number;
+  transformErrors: number;
+  [key: string]: number;
 };
 
 type DisplayArgs = {
@@ -59,8 +83,8 @@ type DisplayArgs = {
   hasAnySummaryTasks: boolean;
   controlMenuItems: BuildControlMenuItem[];
   controlMenuAriaLabel: string;
-  cacheCounts: unknown;
-  cacheResultCounts: unknown;
+  cacheCounts: CacheCounts;
+  cacheResultCounts: CacheResultCounts;
   cacheDeleteLoading: {
     resetSession: boolean;
     [key: string]: boolean;
@@ -75,7 +99,7 @@ type DisplayArgs = {
   cacheHandleDeleteTransformCache: () => Promise<void>;
   cacheHandleDeleteVTCache: () => Promise<void>;
   cacheHandleDeleteMetadata: () => Promise<void>;
-  stages: Array<{ id: string; title: string }>;
+  stages: BuildStage[];
   summary: StateLike['summary'];
   controls: StateLike['controls'];
   paneProgress: StateLike['paneProgress'];
@@ -128,17 +152,17 @@ type DisplayArgs = {
   setSizeWarningOpen: (open: boolean) => void;
   crashSuspectMessage?: string | null;
   crashSuspectOpen: boolean;
-  crashSuspectControls?: unknown;
+  crashSuspectControls?: CrashSuspectControls;
   suspendSuspectMessage?: string | null;
   suspendSuspectOpen: boolean;
-  suspendSuspectControls?: unknown;
+  suspendSuspectControls?: SuspendSuspectControls;
   completionDialogOpen: boolean;
   setCompletionDialogOpen: (open: boolean) => void;
-  completionSnapshot: unknown;
+  completionSnapshot: CompletionSnapshot;
   completionStageLabel: string;
   completionTaskTitle: string;
   completionTaskMessage: string;
-  completionReason?: string | null;
+  completionReason: string | null | undefined;
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   resolveStatusColor: StateLike['resolveStatusColor'];
   resolveStatusLabel: StateLike['resolveStatusLabel'];

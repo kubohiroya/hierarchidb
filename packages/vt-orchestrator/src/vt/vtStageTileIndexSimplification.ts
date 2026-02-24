@@ -68,7 +68,8 @@ export const simplifyTileFeatureCollectionWithTopojson = async (params: {
     : 0;
 
   const runtime = await getTopojsonRuntime();
-  let topology = runtime.topology({ collection: params.collection as unknown as Record<string, unknown> });
+  const topologyInput: Record<string, unknown> = { collection: params.collection };
+  let topology = runtime.topology(topologyInput);
 
   const configuredQuantize = params.quantize ?? 0;
   if (Number.isFinite(configuredQuantize) && configuredQuantize > 0) {

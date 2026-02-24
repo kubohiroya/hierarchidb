@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { TaskQueueRecord } from 'packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import {
   buildFetchTaskCacheIdentity,
   buildTransformTaskCacheIdentity,
   buildVtTaskCacheIdentity,
   resolveTaskCacheIdentity,
 } from '../../services/vt/shapeTaskCacheIdentity';
+import type { NodeId } from "@hierarchidb/core-types";
 
 describe('shapeTaskCacheIdentity', () => {
   it('uses namespace policy to switch fetch key space', () => {
     const nodeScoped = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
@@ -18,7 +19,7 @@ describe('shapeTaskCacheIdentity', () => {
       namespacePolicy: { fetch: 'node' },
     });
     const globalScoped = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
@@ -31,14 +32,14 @@ describe('shapeTaskCacheIdentity', () => {
 
   it('keeps fetch inputHash stable when cache-key-only fields change', () => {
     const first = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
       configSignature: 'sig-1',
     });
     const second = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:1',
       url: 'https://example.com/b?token=123',
@@ -50,7 +51,7 @@ describe('shapeTaskCacheIdentity', () => {
 
   it('changes transform inputHash when output-affecting payload changes', () => {
     const first = buildTransformTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       sourceKey: 'JP:0',
       bandIndex: 2,
       fetchArtifactHash: 'artifact:a',
@@ -59,7 +60,7 @@ describe('shapeTaskCacheIdentity', () => {
       configSignature: 'sig-1',
     });
     const second = buildTransformTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       sourceKey: 'JP:0',
       bandIndex: 2,
       fetchArtifactHash: 'artifact:b',
@@ -73,7 +74,7 @@ describe('shapeTaskCacheIdentity', () => {
 
   it('changes fetch inputHash when upstreamRevision changes', () => {
     const first = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
@@ -81,7 +82,7 @@ describe('shapeTaskCacheIdentity', () => {
       configSignature: 'sig-1',
     });
     const second = buildFetchTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       dataSource: 'gadm',
       sourceKey: 'JP:0',
       url: 'https://example.com/a',
@@ -94,7 +95,7 @@ describe('shapeTaskCacheIdentity', () => {
 
   it('normalizes vt buffer set for stable inputHash', () => {
     const first = buildVtTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       bandIndex: 3,
       zBase: 6,
       tileId: 123,
@@ -104,7 +105,7 @@ describe('shapeTaskCacheIdentity', () => {
       configSignature: 'sig-1',
     });
     const second = buildVtTaskCacheIdentity({
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       bandIndex: 3,
       zBase: 6,
       tileId: 123,
@@ -119,7 +120,7 @@ describe('shapeTaskCacheIdentity', () => {
   it('prefers persisted cacheKey/inputHash on task inputData', () => {
     const task: TaskQueueRecord = {
       taskId: 'task-1',
-      nodeId: 'node-1',
+      nodeId: 'node-1' as NodeId,
       stage: 'fetch',
       status: 'queued',
       index: 0,

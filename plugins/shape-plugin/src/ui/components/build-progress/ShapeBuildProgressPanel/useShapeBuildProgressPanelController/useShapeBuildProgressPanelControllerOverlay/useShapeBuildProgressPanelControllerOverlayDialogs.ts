@@ -1,12 +1,12 @@
 import { type ReactNode, useMemo } from 'react';
 import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
 import {
-  renderShapeBuildProgressPanelCompletionDialogContent,
-  renderShapeBuildProgressPanelConcurrencyEditorCard,
-  renderShapeBuildProgressPanelControlRightContent,
-  renderShapeBuildProgressPanelFetchRetryEditorCard,
-  renderShapeBuildProgressPanelOverlayFooter,
-} from './useShapeBuildProgressPanelControllerOverlayDialogs.view.js';
+  ShapeBuildProgressPanelCompletionDialogContent,
+  ShapeBuildProgressPanelConcurrencyEditorCard,
+  ShapeBuildProgressPanelControlRightContent,
+  ShapeBuildProgressPanelFetchRetryEditorCard,
+  ShapeBuildProgressPanelOverlayFooter,
+} from './ShapeBuildProgressPanelControllerOverlayDialogsView.js';
 
 type UseShapeBuildProgressPanelControllerOverlayDialogsArgs = ShapeBuildProgressPanelControllerBaseResult;
 
@@ -102,14 +102,16 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     setCompletionDialogOpen(false);
   };
 
-  const concurrencyEditorCard = useMemo(() => renderShapeBuildProgressPanelConcurrencyEditorCard({
-    t,
-    concurrencyEditorStageId,
-    disabledEditors,
-    processingConfigForEdit,
-    applyProcessingConfigUpdate,
-    toLabel,
-  }), [
+  const concurrencyEditorCard = useMemo(() => (
+    ShapeBuildProgressPanelConcurrencyEditorCard({
+      t,
+      concurrencyEditorStageId,
+      disabledEditors,
+      processingConfigForEdit,
+      applyProcessingConfigUpdate,
+      toLabel,
+    })
+  ), [
     concurrencyEditorStageId,
     t,
     disabledEditors,
@@ -117,12 +119,14 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     processingConfigForEdit,
   ]);
 
-  const fetchRetryEditorCard = useMemo(() => renderShapeBuildProgressPanelFetchRetryEditorCard({
-    t,
-    fetchRetryConfigForEdit,
-    applyFetchRetryConfigUpdate,
-    disabledEditors,
-  }), [applyFetchRetryConfigUpdate, disabledEditors, fetchRetryConfigForEdit, t]);
+  const fetchRetryEditorCard = useMemo(() => (
+    ShapeBuildProgressPanelFetchRetryEditorCard({
+      t,
+      fetchRetryConfigForEdit,
+      applyFetchRetryConfigUpdate,
+      disabledEditors,
+    })
+  ), [applyFetchRetryConfigUpdate, disabledEditors, fetchRetryConfigForEdit, t]);
 
   const completionDialog = {
     open: completionDialogOpen,
@@ -131,20 +135,27 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
       ? t('stage.progress.completedTitle', 'Build completed')
       : t('stage.progress.failedTitle', 'Build failed')),
     closeLabel: toLabel(t('common.close', 'Close')),
-    content: renderShapeBuildProgressPanelCompletionDialogContent({
+    content: ShapeBuildProgressPanelCompletionDialogContent({
       t,
       completionSnapshot,
       completionStageLabel,
       completionTaskTitle,
       completionTaskMessage,
       completionReason,
-      toLabel,
     }),
+  };
+
+  const handleSuspendSuspectClose = () => {
+    suspendSuspectControls?.close();
+  };
+
+  const handleCrashSuspectClose = () => {
+    crashSuspectControls?.close();
   };
 
   const suspendDialog = {
     open: suspendSuspectOpen,
-    onClose: () => suspendSuspectControls.close(),
+    onClose: handleSuspendSuspectClose,
     title: toLabel(t('stage.progress.suspendSuspectTitle', 'Build tab suspended')),
     message: toLabel(suspendSuspectMessage ?? t('stage.progress.suspendSuspect', 'Build is paused while another tab is in background.')),
     closeLabel: toLabel(t('common.close', 'Close')),
@@ -152,13 +163,13 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
 
   const crashDialog = {
     open: crashSuspectOpen,
-    onClose: () => crashSuspectControls.close(),
+    onClose: handleCrashSuspectClose,
     title: toLabel(t('stage.progress.crashSuspectTitle', 'Build may have stopped')),
     message: toLabel(crashSuspectMessage ?? t('stage.progress.crashSuspect', 'Build session may have stopped unexpectedly.')),
     closeLabel: toLabel(t('common.close', 'Close')),
   };
 
-  const footer = renderShapeBuildProgressPanelOverlayFooter({
+  const footer = ShapeBuildProgressPanelOverlayFooter({
     isBuildStartupPending,
     fetchRetryEditorAnchor,
     closeFetchRetryEditor,
@@ -183,7 +194,7 @@ export const useShapeBuildProgressPanelControllerOverlayDialogs = (
     handleStartWarningConfirm,
   });
 
-  const controlRightContent = renderShapeBuildProgressPanelControlRightContent({
+  const controlRightContent = ShapeBuildProgressPanelControlRightContent({
     taskSearchText,
     setTaskSearchText,
     t,

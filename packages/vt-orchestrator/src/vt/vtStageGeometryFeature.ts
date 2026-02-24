@@ -1,7 +1,7 @@
 import type { Feature, Geometry, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'geojson';
 import type { TileBBox } from './vtStageGeometryTypes.js';
 
-type NumberIndexable = { length: number; [index: number]: number };
+type NumberIndexable = ArrayBufferView & ArrayLike<number>;
 
 const hasCoordinates = (coords: unknown): boolean => {
   if (!Array.isArray(coords)) return false;
@@ -56,10 +56,21 @@ type BboxVisitContext = {
   hasValue: boolean;
 };
 
+const isNumericArrayView = (value: unknown): value is NumberIndexable => (
+  value instanceof Int8Array
+  || value instanceof Uint8Array
+  || value instanceof Uint16Array
+  || value instanceof Uint32Array
+  || value instanceof Int16Array
+  || value instanceof Int32Array
+  || value instanceof Float32Array
+  || value instanceof Float64Array
+  || value instanceof Uint8ClampedArray
+);
+
 const isNumberArrayView = (value: unknown): value is ArrayBufferView & NumberIndexable => (
-  ArrayBuffer.isView(value)
-  && typeof (value as { length?: unknown }).length === 'number'
-  && (value as unknown as NumberIndexable).length > 0
+  isNumericArrayView(value)
+  && value.length > 0
 );
 
 const isNumberArrayLike = (value: unknown): value is ArrayLike<number> => (
@@ -155,4 +166,3 @@ export const buildFeaturesWithBBox = (features: Feature[]): FeatureWithBBox[] =>
     .map((feature) => ({ feature, bbox: featureBBox(feature) }))
     .filter((entry): entry is FeatureWithBBox => Boolean(entry.bbox))
 );
-

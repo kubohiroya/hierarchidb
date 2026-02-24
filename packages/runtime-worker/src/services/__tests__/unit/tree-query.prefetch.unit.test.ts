@@ -25,7 +25,7 @@ describe('TreeQueryService listChildren prefetch', () => {
 
   const stubCoreDB = {
     listChildren: vi.fn(async (parentId: NodeId) => tree[String(parentId)] || []),
-  } as unknown as CoreDB;
+  } as Partial<CoreDB> as CoreDB;
 
   beforeEach(() => {
     for (const key of Object.keys(tree)) {

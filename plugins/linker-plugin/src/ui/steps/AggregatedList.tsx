@@ -55,7 +55,7 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
           const collectFrom = async (nodes: LinkerNode[]) => {
             for (const ln of nodes) {
               try {
-                const t = (await query.getNode(ln.id)) as unknown as LinkerNode | undefined;
+                const t = (await query.getNode(ln.id)) as LinkerNode | undefined;
                 const liked = t?.data?.likedNodeIdSet;
                 const arr = Array.isArray(liked) ? liked : (liked instanceof Set ? Array.from(liked) : []);
                 for (const id of arr) {

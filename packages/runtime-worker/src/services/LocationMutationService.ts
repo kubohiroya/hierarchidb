@@ -36,6 +36,15 @@ type LocationUpsertDiff = {
   metadataChanged: boolean;
 };
 
+type MutableLocationPointData = LocationPointProperties & {
+  [key: string]: unknown;
+};
+
+const normalizeRecord = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== 'object') return {};
+  return { ...(value as { [key: string]: unknown }) };
+};
+
 export class LocationMutationService implements LocationMutationAPI {
   static async getSingleton(): Promise<LocationMutationService> {
     return SingletonMixin.getSingleton(
@@ -55,7 +64,7 @@ export class LocationMutationService implements LocationMutationAPI {
     const updateDiffs: LocationUpsertDiff[] = [];
     const now = Date.now();
     const rows: LocationFeature[] = items.map((item, index) => {
-      const data = item.data as LocationPointProperties;
+      const data = item.data;
       const existing = existingRows[index];
       const structuralChanged = hasStructuralLocationDiff(existing?.data, data);
       const metadataChanged = hasMetadataLocationDiff(existing?.data, data);
@@ -129,7 +138,7 @@ export class LocationMutationService implements LocationMutationAPI {
     if (!rows.length) return;
     const targetIds = rows
       .filter((row) => {
-        const meta = (row.data?.metadata ?? {}) as Record<string, unknown>;
+        const meta = normalizeRecord(row.data?.metadata);
         const storedKey = typeof meta.sourceKey === 'string' ? meta.sourceKey : '';
         return sourceKey && storedKey === sourceKey;
       })
@@ -152,7 +161,7 @@ export class LocationMutationService implements LocationMutationAPI {
     const updatedItems: LocationGroupItem[] = [];
     let updated = 0;
     items.forEach((item) => {
-      const data = (item.data ?? {}) as Record<string, unknown>;
+      const data: MutableLocationPointData = { ...item.data };
       const legacyCode = typeof data.countryCode === 'string' ? data.countryCode : undefined;
       const legacyName = typeof data.countryName === 'string' ? data.countryName : undefined;
       const legacyAdmin0Name = typeof data.admin0Name === 'string' ? data.admin0Name : undefined;
@@ -165,7 +174,7 @@ export class LocationMutationService implements LocationMutationAPI {
         || legacyName
         || legacyAdmin0Name
       ) {
-        const nextData = { ...data } as Record<string, unknown>;
+        const nextData: MutableLocationPointData = { ...data };
         if (!admin0Code && legacyCode) {
           nextData.admin0Code = legacyCode;
         }
@@ -175,14 +184,14 @@ export class LocationMutationService implements LocationMutationAPI {
         delete nextData.countryCode;
         delete nextData.countryName;
         delete nextData.admin0Name;
-        updatedItems.push({ ...item, data: nextData as unknown as LocationGroupItem['data'], updatedAt: Date.now() });
+        updatedItems.push({ ...item, data: nextData, updatedAt: Date.now() });
         updated += 1;
       }
     });
     if (updatedItems.length > 0) {
       const now = Date.now();
       const rows: LocationFeature[] = updatedItems.map((item) => {
-        const data = item.data as LocationPointProperties;
+        const data = item.data;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
         const mortonKey = typeof longitude === 'number' && Number.isFinite(longitude)

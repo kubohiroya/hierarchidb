@@ -103,7 +103,7 @@
         "label": "Simplify tolerance"
       },
       "retryToleranceStep": {
-        "label": "Retry tolerance step"
+        "label": "Retry count"
       },
       "algorithm": {
         "label": "Simplify algorithm",

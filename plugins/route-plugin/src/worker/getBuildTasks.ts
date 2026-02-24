@@ -1,7 +1,7 @@
-import type { BuildTaskSummary } from '../../../../packages/build-api';
+import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { VtTaskQueueDb, listTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord } from '../../../../packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 
 const mapTaskQueueRecord = (task: TaskQueueRecord): BuildTaskSummary => ({
   taskId: task.taskId,

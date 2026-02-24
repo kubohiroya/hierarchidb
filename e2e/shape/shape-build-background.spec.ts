@@ -8,6 +8,72 @@ import {
   buildAppUrl,
 } from '../utils/test-helpers';
 
+type TreeRecord = {
+  id: string;
+  rootId: string;
+};
+
+type MutationResult = {
+  success: boolean;
+  nodeId?: string;
+  error?: string;
+};
+
+type ShapeWorkerQueryAPI = {
+  listTrees: () => Promise<TreeRecord[]>;
+  getNode: (nodeId: string) => Promise<{ draftData?: { processingStatus?: string } | null; data?: { processingStatus?: string } | null }>;
+};
+
+type ShapeVectorSummary = {
+  tiles?: number;
+};
+
+type ShapeQueryAPI = {
+  getBuildSessionRecord: (nodeId: string) => Promise<{ status?: string } | null>;
+  getVectorTileSummary: (nodeId: string) => Promise<ShapeVectorSummary | null>;
+};
+
+type ShapeWorkerAPI = {
+  setCorsProxyBaseURL?: (value: string) => Promise<void> | void;
+  setAuthToken?: (token: string, scheme?: string) => Promise<void> | void;
+  getQueryAPI?: () => Promise<ShapeWorkerQueryAPI>;
+  getMutationAPI?: () => Promise<{
+    createNode: (input: {
+      nodeType: string;
+      treeId: string;
+      parentId: string;
+      name: string;
+    }) => Promise<MutationResult>;
+  }>;
+  getTreeNodeUpdaterAPI?: () => Promise<{
+    updateTreeNode: (nodeId: string, payload: Record<string, unknown>) => Promise<void>;
+  }>;
+  generateShapeDownloadTaskPayloadsFromSelection?: (
+    nodeId: string,
+    dataSourceName: string,
+    selectedArrayByCountries: Record<string, boolean[]>,
+  ) => Promise<unknown[]>;
+  startBuildSession?: (
+    nodeType: string,
+    nodeId: string,
+    payloads?: unknown[],
+  ) => Promise<{ status?: string }>;
+  getBuildTasks?: (nodeType: string, nodeId: string) => Promise<Array<{ status?: string; [key: string]: unknown }>>;
+  initialize?: () => Promise<void> | void;
+  getShapeQueryAPI?: () => Promise<ShapeQueryAPI>;
+};
+
+type ShapeWorkerClientRef = {
+  client?: ShapeWorkerAPI;
+  getAPI?: () => ShapeWorkerAPI | undefined;
+  initialize?: () => Promise<void> | void;
+};
+
+type ShapeBackgroundWindow = Window & {
+  __HDB_WORKER_CLIENT_REF__?: ShapeWorkerClientRef;
+  __shapeWorkerClient?: ShapeWorkerAPI;
+};
+
 test.describe('Shape build background (real pipeline)', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
@@ -21,10 +87,14 @@ test.describe('Shape build background (real pipeline)', () => {
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
-    await page.waitForFunction(() => Boolean((window as any).__HDB_WORKER_CLIENT_REF__?.client), null, { timeout: 15000 });
+    await page.waitForFunction(
+      () => Boolean((window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client),
+      null,
+      { timeout: 15000 },
+    );
 
     await page.evaluate(async () => {
-      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+      const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (api?.setCorsProxyBaseURL) {
         await api.setCorsProxyBaseURL('');
@@ -106,7 +176,7 @@ test.describe('Shape build background (real pipeline)', () => {
     const selectedArrayByCountries = { JP: [true] };
 
     const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries, nodeType }) => {
-      const client = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+      const client = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client;
       if (!client) {
         throw new Error('Worker client not ready');
       }
@@ -115,7 +185,7 @@ test.describe('Shape build background (real pipeline)', () => {
       const updaterAPI = await client.getTreeNodeUpdaterAPI();
 
       const trees = await queryAPI.listTrees();
-      const tree = trees.find((t) => t.id === ('r' as any)) ?? trees[0];
+      const tree = trees.find((t) => t.id === 'r') ?? trees[0];
       if (!tree) throw new Error('No console available');
       const rootId = tree.rootId;
 
@@ -157,8 +227,8 @@ test.describe('Shape build background (real pipeline)', () => {
     }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
 
     const startResult = await page.evaluate(async ({ nodeId, selectedArrayByCountries, dataSourceName }) => {
-      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
-      const api = ref?.client ?? ref?.getAPI?.();
+      const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
+        const api = ref?.client ?? ref?.getAPI?.();
       if (!api) {
         throw new Error('Worker client not ready');
       }
@@ -196,7 +266,7 @@ test.describe('Shape build background (real pipeline)', () => {
       let lastStatus: { status: string | null; tiles: number; taskSummary: Record<string, number> | null; runningStages: string[]; runningTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null; failedTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null } | null = null;
       while (Date.now() < deadline) {
         const status = await page.evaluate(async (nodeId) => {
-          const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+        const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__;
           const api = ref?.client ?? ref?.getAPI?.();
           if (!api) {
             return {
@@ -298,15 +368,15 @@ test.describe('Shape build background (real pipeline)', () => {
     await expect(summaryCard).toBeVisible({ timeout: 20000 });
 
     const completion = await page.evaluate(async (nodeId) => {
-      const global = window as unknown as { __shapeWorkerClient?: unknown };
+      const global = window as ShapeBackgroundWindow;
       if (!global.__shapeWorkerClient) {
-        const ref = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+        const ref = (window as ShapeBackgroundWindow).__HDB_WORKER_CLIENT_REF__?.client;
         if (!ref) {
           return { status: null, tiles: 0 };
         }
         global.__shapeWorkerClient = ref;
       }
-      const client = global.__shapeWorkerClient as any;
+      const client = global.__shapeWorkerClient;
       const queryAPI = await client.getShapeQueryAPI();
       const session = await queryAPI.getBuildSessionRecord(nodeId);
       const summary = await queryAPI.getVectorTileSummary(nodeId);

@@ -92,7 +92,7 @@ export function useTreeConsoleIntegration({
 
   const columns = useMemo(() => createDefaultColumns({ t, locale }), [locale, t]);
   const breadcrumbItems = useTreeConsoleBreadcrumbs({ client, pageTreeNode });
-  const importExport = useImportExport(client, !!client) as unknown as ImportExportAdapter;
+  const importExport = useImportExport(client, !!client) as ImportExportAdapter;
 
   const nodeIndex = ssot.nodeIndex;
   const nodeIndexSnapshot = useMemo(

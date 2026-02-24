@@ -109,7 +109,7 @@ export class CommandHistoryManager {
       commandId: envelope.commandId,
       timestamp: envelope.issuedAt,
       correlationId: envelope.meta?.correlationId,
-      result: this.sanitizeResultForLogging(result) as unknown as CommandResult,
+      result: this.sanitizeResultForLogging(result) as CommandResult,
     };
 
     if (this.eventHistory.length >= this.deps.maxEventHistorySize) {

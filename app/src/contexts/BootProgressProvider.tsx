@@ -51,13 +51,6 @@ export const useOptionalBootProgress = (): BootProgressContextValue | null => {
 };
 
 export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const formatTimeWithMs = (date: Date) => {
-    const hh = String(date.getHours()).padStart(2, '0');
-    const mm = String(date.getMinutes()).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
-    const ms = String(date.getMilliseconds()).padStart(3, '0');
-    return `${hh}:${mm}:${ss}.${ms}`;
-  };
 
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
     const base = Object.fromEntries(defaultSteps.map((s) => [s.name, { ...s }])) as Record<
@@ -143,25 +136,13 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     if (typeof console === 'undefined') return;
-    const timestamp = formatTimeWithMs(new Date());
     Object.values(steps).forEach((step) => {
       const last = stepProgressLogRef.current[step.name];
       if (last !== step.progress) {
         stepProgressLogRef.current[step.name] = step.progress;
-        /*
-        console.log(
-          '[BootProgress]',
-          timestamp,
-          `step=${step.name}`,
-          `progress=${step.progress}`,
-          step.message ? `message=${step.message}` : undefined,
-          `done=${step.done}`,
-          `overall=${overallProgress}`
-        );
-         */
       }
     });
-  }, [steps, overallProgress]);
+  }, [steps]);
 
   const value: BootProgressContextValue = useMemo(
     () => ({

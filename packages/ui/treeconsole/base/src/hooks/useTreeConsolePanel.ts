@@ -2,8 +2,7 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { NodeId, NodeType } from '@hierarchidb/core-types';
-import { toNodeType } from '@hierarchidb/core-types';
+import { toNodeId, toNodeType, type NodeId, type NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import type { BuildSessionIndicator, TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import type { OpenStepOption, TreeConsoleBreadcrumbProps, TreeConsoleBreadcrumbRendererProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -168,6 +167,43 @@ export function useTreeConsolePanel({
 
     const tableData = data.map((node) => toTreeNodeInUI(node, 1));
 
+    const resolveEditableNode = (nodeId: string, field: 'name' | 'description', newValue: string): HierarchicalTreeNode => {
+      const target = data.find((node) => node.id === nodeId);
+      if (target) {
+        const nextMetadata = {
+          ...target.metadata,
+          name: field === 'name' ? newValue : target.metadata?.name,
+          description: field === 'description' ? newValue : target.metadata?.description,
+        };
+        return {
+          ...target,
+          metadata: {
+            name: nextMetadata.name ?? '',
+            description: nextMetadata.description ?? '',
+            tags: target.metadata?.tags ?? [],
+          },
+        };
+      }
+
+      return {
+        id: toNodeId(nodeId),
+        nodeType: toNodeType('folder'),
+        parentId: toNodeId(''),
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 0,
+        metadata: {
+          name: field === 'name' ? newValue : '',
+          description: field === 'description' ? newValue : '',
+          tags: [],
+        },
+        draftMetadata: null,
+        data: null,
+        visible: true,
+      };
+    };
+
     const rowSelection: Record<string, boolean> = {};
     selectedIds.forEach((id) => {
       rowSelection[id] = true;
@@ -184,9 +220,7 @@ export function useTreeConsolePanel({
       depthOffset,
       startEdit: async (_nodeId: string) => {},
       finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
-        const nodeData: HierarchicalTreeNode = (field === 'name'
-          ? ({ id: nodeId, name: newValue })
-          : ({ id: nodeId, description: newValue })) as unknown as HierarchicalTreeNode;
+        const nodeData = resolveEditableNode(nodeId, field, newValue);
         onContextMenuAction(field === 'name' ? 'rename-inline' : 'update-desc-inline', nodeData);
       },
       cancelEdit: () => {},
@@ -219,7 +253,7 @@ export function useTreeConsolePanel({
         options?: { navigateToParent?: boolean; nextVisible?: boolean }
       ) => {
         const nodeData: HierarchicalTreeNode = {
-          ...(node as unknown as HierarchicalTreeNode),
+          ...(node as HierarchicalTreeNode),
           id: node.id,
           nodeType: (node.nodeType || 'folder') as NodeType,
         };
@@ -253,7 +287,7 @@ export function useTreeConsolePanel({
 
   const defaultBreadcrumbProps = useMemo<DefaultBreadcrumbProps>(
     () => ({
-      nodePath: breadcrumbItems as unknown as readonly DefaultBreadcrumbNode[],
+      nodePath: breadcrumbItems as readonly DefaultBreadcrumbNode[],
       onNodeClick: onBreadcrumbNavigate,
       treeId,
       variant: 'default',

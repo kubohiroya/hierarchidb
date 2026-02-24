@@ -19,7 +19,7 @@ const resolveI18nInstance = (): I18nInstance | null => {
   }
   try {
     if (typeof window !== 'undefined') {
-      const win = window as unknown as GlobalWithI18n;
+      const win = window as GlobalWithI18n;
       if (win.i18next && typeof win.i18next.t === 'function') {
         return win.i18next;
       }

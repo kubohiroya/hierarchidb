@@ -4,6 +4,7 @@ import type {
   BuildProgress,
   BuildProgressEvent,
   BuildProgressPayload,
+  StageKey,
   BuildSessionState,
   ProgressPhase,
   ResourceUsage,
@@ -36,6 +37,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       total: 0,
       completed: 0,
       failed: 0,
+      stage: 'fetch',
       percentage: 0,
     };
   }
@@ -85,7 +87,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       this.state.lastActivity = this.state.completedAt;
       this.emitProgress({
         phase: 'completed',
-        stage: this.progress.stage ?? 'completed',
+        stage: this.progress.stage,
         payload: this.toProgressPayload(),
       });
       await this.onComplete();
@@ -95,7 +97,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
         this.state.error = 'Session aborted';
         this.emitProgress({
           phase: 'failed',
-          stage: this.progress.stage ?? 'failed',
+          stage: this.progress.stage,
           payload: this.toProgressPayload(),
         });
         throw abortError('Session aborted');
@@ -105,7 +107,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
       this.state.completedAt = Date.now();
       this.emitProgress({
         phase: 'failed',
-        stage: this.progress.stage ?? 'failed',
+        stage: this.progress.stage,
         error: formatProgressError(error),
         payload: this.toProgressPayload(),
       });
@@ -123,7 +125,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
     await this.onPause();
-    this.emitProgress({ phase: 'paused', stage: this.progress.stage ?? 'paused', payload: this.toProgressPayload() });
+    this.emitProgress({ phase: 'paused', stage: this.progress.stage, payload: this.toProgressPayload() });
   }
 
   async resume(): Promise<void> {
@@ -133,7 +135,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.state.status = 'running';
     this.state.lastActivity = Date.now();
     await this.onResume();
-    this.emitProgress({ phase: 'running', stage: this.progress.stage ?? 'running', payload: this.toProgressPayload() });
+    this.emitProgress({ phase: 'running', stage: this.progress.stage, payload: this.toProgressPayload() });
   }
 
   addBuildProgressListener(listener: (event: BuildProgressEvent) => void): () => void {
@@ -143,7 +145,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     };
   }
 
-  protected updateProgress(partial: Partial<BuildProgress>, stage?: string): void {
+  protected updateProgress(partial: Partial<BuildProgress>, stage?: StageKey): void {
     const merged: BuildProgress = {
       ...this.progress,
       ...partial,
@@ -159,7 +161,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
     this.progress = merged;
     this.state.lastActivity = Date.now();
     this.emitProgress({
-      stage: merged.stage ?? stage ?? 'unknown',
+      stage: merged.stage ?? this.progress.stage,
       phase: this.state.status === 'running' ? 'running' : (this.state.status as ProgressPhase),
       payload: this.toProgressPayload(),
     });
@@ -178,7 +180,7 @@ export abstract class AbstractBuildSession<TConfig extends BaseBuildConfig = Bas
         : event.error;
     const full: BuildProgressEvent = {
       nodeId: this.nodeId,
-      stage: event.stage ?? this.progress.stage ?? 'unknown',
+      stage: event.stage ?? this.progress.stage,
       phase: event.phase ?? (this.state.status as ProgressPhase),
       timestamp: Date.now(),
       payload: event.payload,

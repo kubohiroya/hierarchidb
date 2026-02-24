@@ -24,7 +24,7 @@ describe('CommandProcessor + envelope validation (ZE-3)', () => {
       issuedAt: Date.now(),
       commandId: 'c',
       groupId: 'g',
-    } as unknown as CommandEnvelope<string, Record<string, never>>; // missing kind/type
+    } as CommandEnvelope<string, Record<string, never>>; // missing kind/type
     const result = await cp.processCommand(invalid);
     assertCommandFailure(result);
     expect(result.code).toBe('VALIDATION_ERROR');

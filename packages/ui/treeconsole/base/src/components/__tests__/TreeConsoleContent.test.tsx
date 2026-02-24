@@ -19,7 +19,7 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
 
 import { TreeConsoleContent } from '../TreeConsoleContent';
 import type { TreeConsoleContentProps, TreeViewController } from '../../types';
-import type { NodeId } from '@hierarchidb/core-types';
+import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/core-types';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { TreeNode } from '@hierarchidb/tree-api';
 
@@ -154,14 +154,29 @@ describe('TreeConsoleContent', () => {
       isLoading: false,
       selectedNodes: ['node1', 'node2'] as NodeId[],
       expandedNodes: ['node1'] as NodeId[],
-      data: [
-        {
-          id: 'node1',
-          name: 'Node 1',
-          nodeType: 'folder',
-          parentId: 'root',
-        } as any,
-      ],
+  data: [ {
+      id: toNodeId('node1'),
+      name: 'Node 1',
+      nodeType: 'folder' as NodeType,
+      parentId: toNodeId('root'),
+      depth: 0,
+      createdAt: 0,
+      updatedAt: 0,
+      version: 1,
+      metadata: {
+        name: 'Node 1',
+        description: '',
+        tags: [],
+      },
+      draftMetadata: {
+        name: 'Node 1',
+        description: '',
+        tags: [],
+      },
+      data: null,
+      draftData: undefined,
+      visible: true,
+    }],
     });
 
     render(

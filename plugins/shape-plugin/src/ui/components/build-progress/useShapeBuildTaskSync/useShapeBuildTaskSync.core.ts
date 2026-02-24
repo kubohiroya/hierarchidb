@@ -1,5 +1,5 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { resolveProgressValue, resolveTaskStage } from './useShapeBuildTaskSync.comparison.utils.js';
+import { resolveProgressValue } from './useShapeBuildTaskSync.comparison.utils.js';
 import { resetTaskSyncDebugLogCounters } from './useShapeBuildTaskSync.debug.js';
 import { useShapeBuildTaskSyncResolver } from './useShapeBuildTaskSync.resolver.js';
 import type { RawTaskSummary, SyncArgs, SyncResult } from './useShapeBuildTaskSync.types.js';
@@ -37,7 +37,6 @@ export const useShapeBuildTaskSyncCore = ({
       completedTasksRef: refs.completedTasksRef,
       vtParentInputDebugLogKeysRef: refs.vtParentInputDebugLogKeysRef,
     },
-    resolveTaskStage,
     resolveProgressValue,
   });
 

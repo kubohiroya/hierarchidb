@@ -100,7 +100,11 @@ describe('Policy C: block move/remove when WC exists', () => {
   });
 
   it('blocks moveNodes when WC under subtree', async () => {
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const coreDB = {
+      ...core,
+      nodes: core.nodes as CoreDB['nodes'],
+    } as Partial<CoreDB> as CoreDB;
+    const cp = new CommandProcessor(coreDB);
     const env = cp.createEnvelope('moveNodes', {
       nodeIds: ['a' as NodeId],
       toParentId: 'root' as NodeId,
@@ -110,7 +114,11 @@ describe('Policy C: block move/remove when WC exists', () => {
   });
 
   it('blocks remove when WC under subtree', async () => {
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const coreDB = {
+      ...core,
+      nodes: core.nodes as CoreDB['nodes'],
+    } as Partial<CoreDB> as CoreDB;
+    const cp = new CommandProcessor(coreDB);
     const env = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId] });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);

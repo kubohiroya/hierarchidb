@@ -177,7 +177,7 @@ export class SpreadsheetTabularApiDriver {
     }
     if (name.endsWith('.zip') || file.type.includes('zip')) {
       if (size > 100 * 1024 * 1024) throw new Error('File size exceeds 100MB limit for ZIP files');
-      const zipModule = JSZipNS as unknown as {
+      const zipModule = JSZipNS as {
         loadAsync?: (buf: ArrayBuffer) => Promise<{ files?: Record<string, ZipFileEntry> }>;
         default?: {
           loadAsync?: (buf: ArrayBuffer) => Promise<{ files?: Record<string, ZipFileEntry> }>;

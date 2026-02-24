@@ -1,8 +1,5 @@
 import type { Feature, FeatureCollection } from 'geojson';
 
-const MAX_BISECTION_STEPS = 8;
-const BISECTION_STEP_DECAY_FACTOR = 2;
-
 export type RetrySimplifyFeatureResult = {
   feature: Feature;
   vertexCount: number;
@@ -28,8 +25,8 @@ export type RetryFeatureParams = {
   feature: Feature;
   baseTolerance: number;
   retryVertexLimit: number;
-  retryToleranceStep: number;
-  maxRetrySteps: number;
+  retryToleranceSecond: number;
+  maxRetryAttempts: number;
   featureIndex: number;
   featureTotal: number;
   runRetrySimplifyAttempt: (tolerance: number) => Promise<Feature | null>;
@@ -64,8 +61,8 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     feature,
     baseTolerance,
     retryVertexLimit,
-    retryToleranceStep,
-    maxRetrySteps,
+    retryToleranceSecond,
+    maxRetryAttempts,
     featureIndex,
     featureTotal,
     runRetrySimplifyAttempt,
@@ -94,18 +91,12 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     };
   }
 
-  let lastFailTolerance = baseTolerance;
-  let successTolerance: number | null = null;
-  let successIndex: number | null = null;
-  let bestFeature: Feature | null = null;
-  let bestTolerance = baseTolerance;
-  let bestVertexCount = baseVertexCount;
   let lastAttemptFeature: Feature = feature;
   let lastAttemptVertexCount = baseVertexCount;
   let lastAttemptTolerance = baseTolerance;
   let retryAttempts = 0;
 
-  if (retryToleranceStep <= 0) {
+  if (maxRetryAttempts <= 0 || !Number.isFinite(retryToleranceSecond)) {
     return {
       feature,
       vertexCount: baseVertexCount,
@@ -115,13 +106,16 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     };
   }
 
-  for (let i = 0; i < maxRetrySteps; i += 1) {
-    const nextToleranceValue = baseTolerance + retryToleranceStep * (i + 1);
+  for (let attempt = 0; attempt < maxRetryAttempts; attempt += 1) {
+    const attemptNumber = attempt + 2;
+    const nextToleranceValue = attemptNumber === 2
+      ? retryToleranceSecond
+      : baseTolerance + (retryToleranceSecond - baseTolerance) * (2 ** (attemptNumber - 2));
     await updateRetrySimplifyAttemptPhase({
       featureIndex,
       featureTotal,
       attempt: retryAttempts + 1,
-      attemptTotal: maxRetrySteps,
+      attemptTotal: maxRetryAttempts,
       tolerance: nextToleranceValue,
     });
     const retryFeature = await runRetrySimplifyAttempt(nextToleranceValue);
@@ -134,56 +128,7 @@ export const retrySimplifyFeatureWithinVertexLimit = async (
     lastAttemptVertexCount = retryVertexCount;
 
     if (retryVertexCount < retryVertexLimit) {
-      successTolerance = nextToleranceValue;
-      successIndex = i;
-      bestFeature = retryFeature;
-      bestTolerance = nextToleranceValue;
-      bestVertexCount = retryVertexCount;
       break;
-    }
-
-    lastFailTolerance = nextToleranceValue;
-  }
-
-  if (bestFeature && successTolerance !== null && successIndex !== null) {
-    const bisectionSteps = Math.max(0, MAX_BISECTION_STEPS - Math.ceil(successIndex / BISECTION_STEP_DECAY_FACTOR));
-    const bisectionAttemptTotal = maxRetrySteps + bisectionSteps;
-    let low = lastFailTolerance;
-    let high = successTolerance;
-
-    for (let stepIndex = 0; stepIndex < bisectionSteps; stepIndex += 1) {
-      const mid = (low + high) / 2;
-      await updateRetrySimplifyAttemptPhase({
-        featureIndex,
-        featureTotal,
-        attempt: retryAttempts + 1,
-        attemptTotal: bisectionAttemptTotal,
-        tolerance: mid,
-      });
-      const midFeature = await runRetrySimplifyAttempt(mid);
-      retryAttempts += 1;
-      lastAttemptTolerance = mid;
-      if (!midFeature?.geometry) break;
-
-      const midVertexCount = countVerticesFromGeometry(midFeature.geometry);
-      if (midVertexCount < retryVertexLimit) {
-        high = mid;
-        bestFeature = midFeature;
-        bestTolerance = mid;
-        bestVertexCount = midVertexCount;
-      } else {
-        low = mid;
-      }
-    }
-
-    if (bestFeature) {
-      return {
-        feature: bestFeature,
-        vertexCount: bestVertexCount,
-        overLimit: false,
-        retryAttempts,
-        finalTolerance: bestTolerance,
-      };
     }
   }
 

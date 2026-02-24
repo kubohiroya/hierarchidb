@@ -156,7 +156,7 @@ const hasGetAlpha3Codes = (value: unknown): value is CountryApiLike => {
 };
 
 const loadIso3166LibraryMap = (): Iso3ToIso2Map => {
-  const countriesApiModule = i18nCountries as unknown as CountryModuleLike;
+  const countriesApiModule = i18nCountries as CountryModuleLike;
 
   const countriesApi = (() => {
     if (hasGetAlpha3Codes(countriesApiModule)) {

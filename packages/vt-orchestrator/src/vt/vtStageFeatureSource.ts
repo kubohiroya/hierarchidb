@@ -3,7 +3,7 @@ import type { FeatureCollection } from 'geojson';
 
 export const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-  return normalizeFeatureCollection(decoded as unknown);
+  return normalizeFeatureCollection(decoded);
 };
 
 export const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
@@ -68,12 +68,12 @@ export const describeBuffer = (buffer: ArrayBuffer): {
 
 export const loadGeojsonVt = async () => {
   const mod = await import('geojson-vt');
-  const candidate = mod as unknown as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
+  const candidate = mod as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
   return candidate.default ?? candidate;
 };
 
 export const loadVtPbf = async () => {
   const mod = await import('@maplibre/vt-pbf');
-  const candidate = mod as unknown as { default?: typeof import('@maplibre/vt-pbf') } & typeof import('@maplibre/vt-pbf');
+  const candidate = mod as { default?: typeof import('@maplibre/vt-pbf') } & typeof import('@maplibre/vt-pbf');
   return candidate.default ?? candidate;
 };

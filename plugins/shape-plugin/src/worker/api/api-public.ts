@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '../../../../../packages/build-api';
+import type { BuildContinuationPolicy, BuildTaskSummary, BuildTaskUpdateEvent, BuildProgressEvent } from '@hierarchidb/build-api';
 import {
   type BuildSession,
   type CountryMetadata,
@@ -367,6 +367,11 @@ export const shapeBuildAPI = {
   subscribeToTasks: (nodeId: NodeId, callback: (event: BuildTaskUpdateEvent) => void): (() => void) => {
     const key = String(nodeId);
     const existing = shapeBuildRuntime.taskCallbacks.get(key);
+    console.log('[shapeBuildAPI] subscribeToTasks start', JSON.stringify({
+      nodeId,
+      hadExisting: Boolean(existing),
+      hasExistingUnsub: typeof existing?.unsubscribe === 'function',
+    }));
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
     let snapshotInFlight = false;
@@ -375,7 +380,12 @@ export const shapeBuildAPI = {
       snapshotInFlight = true;
       try {
         await shapeBuildRuntime.ensureTaskQueueSeeded(nodeId, taskQueue);
-        let tasks = await shapeBuildRuntime.buildTaskSummarySnapshot(nodeId, taskQueue);
+        const tasks = await shapeBuildRuntime.buildTaskSummarySnapshot(nodeId, taskQueue);
+        console.log('[shapeBuildAPI] task snapshot published', JSON.stringify({
+          nodeId,
+          taskCount: tasks.length,
+          snapshotInFlight,
+        }));
         callback({ type: 'snapshot', nodeId, tasks });
       } catch (error) {
         console.error('[shapeBuildAPI] task snapshot failed', error);
@@ -399,6 +409,7 @@ export const shapeBuildAPI = {
     });
     const unsubscribe = () => {
       unsubscribeTaskQueue();
+      console.log('[shapeBuildAPI] task queue unsubscribe triggered', JSON.stringify({ nodeId }));
     };
     shapeBuildRuntime.taskCallbacks.set(key, { unsubscribe, callback });
 
@@ -406,6 +417,7 @@ export const shapeBuildAPI = {
       const active = shapeBuildRuntime.taskCallbacks.get(key);
       if (active?.unsubscribe === unsubscribe) {
         shapeBuildRuntime.taskCallbacks.delete(key);
+        console.log('[shapeBuildAPI] unsubscribeToTasks removed active subscription', JSON.stringify({ nodeId }));
       }
       unsubscribe();
     };

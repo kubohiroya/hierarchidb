@@ -318,6 +318,13 @@
         "clearIndexedDbSuccess": "このアプリが作成したIndexedDBデータを削除しました。",
         "clearIndexedDbEmpty": "削除対象のIndexedDBは見つかりませんでした。",
         "clearIndexedDbFailure": "IndexedDBの削除に失敗しました。詳細はコンソールを確認してください。"
+      },
+      "resumeQueueDialog": {
+        "ariaLabelHome": "HierarchiDB ホームへ移動",
+        "title": "再開待ちセッションを確認",
+        "deleteQueue": "キューを削除する",
+        "resumeQueue": "キューの実行を再開する",
+        "skip": "削除や再開をスキップしてダイアログを閉じる"
       }
     },
     "contextMenu": {

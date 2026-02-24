@@ -9,6 +9,22 @@ import {
   waitForDraftUpdate,
 } from '../utils/test-helpers';
 
+type PerformanceWithMemory = Performance & {
+  memory?: {
+    usedJSHeapSize?: number;
+  };
+};
+
+type TreeMutationWorker = {
+  createFolder?: (payload: { name: string; parentId: string | null }) => Promise<unknown>;
+  updateFolder?: (payload: { id: string; name: string }) => Promise<unknown>;
+  deleteFolder?: (payload: { id: string }) => Promise<unknown>;
+};
+
+type RealtimeSyncWindow = Window & {
+  __hierarchidb_worker__?: Partial<TreeMutationWorker>;
+};
+
 /**
  * TreeTable Real-time Synchronization E2E Tests
  *
@@ -52,9 +68,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // 別のタブ/ウィンドウでの変更をシミュレート
     await page.evaluate(async () => {
       // Worker経由でノード追加をシミュレート
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'Real-time Test Folder',
           parentId: null,
         });
@@ -81,9 +97,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 別セッションでの更新をシミュレート
     await page.evaluate(async (id) => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.updateFolder({
+        await worker.updateFolder?.({
           id: id,
           name: 'Updated Folder Name',
         });
@@ -115,9 +131,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 別セッションでの削除をシミュレート
     await page.evaluate(async (id) => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.deleteFolder({ id: id });
+        await worker.deleteFolder?.({ id: id });
       }
     }, nodeId);
 
@@ -135,13 +151,13 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 複数ノードの同時更新をシミュレート
     await page.evaluate(async () => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
         // バッチ更新を実行
         await Promise.all([
-          worker.updateFolder({ id: 'node1', name: 'Batch Updated 1' }),
-          worker.updateFolder({ id: 'node2', name: 'Batch Updated 2' }),
-          worker.updateFolder({ id: 'node3', name: 'Batch Updated 3' }),
+          worker.updateFolder?.({ id: 'node1', name: 'Batch Updated 1' }),
+          worker.updateFolder?.({ id: 'node2', name: 'Batch Updated 2' }),
+          worker.updateFolder?.({ id: 'node3', name: 'Batch Updated 3' }),
         ]);
       }
     });
@@ -217,9 +233,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 外部変更をシミュレート
     await page.evaluate(async () => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'External Change During Working Copy',
           parentId: null,
         });
@@ -261,9 +277,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // フィルター範囲外での変更をシミュレート
     await page.evaluate(async () => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'Outside Filter Range',
           parentId: null, // ルートレベル
         });
@@ -278,9 +294,9 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // フィルター範囲内での変更をシミュレート
     await page.evaluate(async (id) => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'Inside Filter Range',
           parentId: id,
         });
@@ -304,11 +320,11 @@ test.describe('TreeTable Real-time Synchronization', () => {
   test('高頻度更新時のパフォーマンス制御', async ({ page }) => {
     // 高頻度更新をシミュレート
     await page.evaluate(async () => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
         // 短時間での大量更新
         for (let i = 0; i < 50; i++) {
-          await worker.createFolder({
+          await worker.createFolder?.({
             name: `High Frequency ${i}`,
             parentId: null,
           });
@@ -359,7 +375,8 @@ test.describe('TreeTable Real-time Synchronization', () => {
   test('メモリリーク防止のための購読クリーンアップ', async ({ page }) => {
     // 初期メモリ使用量
     const initialMemory = await page.evaluate(() => {
-      return (performance as any).memory?.usedJSHeapSize || 0;
+      const performanceWithMemory = window.performance as PerformanceWithMemory;
+      return performanceWithMemory.memory?.usedJSHeapSize || 0;
     });
 
     // 複数のページ遷移をシミュレート
@@ -385,7 +402,8 @@ test.describe('TreeTable Real-time Synchronization', () => {
     await waitForTreeTableLoad(page);
 
     const finalMemory = await page.evaluate(() => {
-      return (performance as any).memory?.usedJSHeapSize || 0;
+      const performanceWithMemory = window.performance as PerformanceWithMemory;
+      return performanceWithMemory.memory?.usedJSHeapSize || 0;
     });
 
     // メモリ使用量の異常な増加がないことを確認
@@ -406,13 +424,13 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 停止中に外部変更をシミュレート
     await page.evaluate(async () => {
-      const worker = (window as any).__hierarchidb_worker__;
+      const worker = (window as RealtimeSyncWindow).__hierarchidb_worker__;
       if (worker) {
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'Created While Paused',
           parentId: null,
         });
-        await worker.createFolder({
+        await worker.createFolder?.({
           name: 'Another While Paused',
           parentId: null,
         });

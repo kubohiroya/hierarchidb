@@ -14,14 +14,16 @@ import type {
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 
+type TreeQueryCoreDB = Pick<CoreDB, 'getNode' | 'listChildren' | 'listTrees' | 'getTree'>;
+
 export class TreeQueryService implements TreeQueryAPI {
-  static async getSingleton(coreDB: CoreDB): Promise<TreeQueryService> {
+  static async getSingleton(coreDB: TreeQueryCoreDB): Promise<TreeQueryService> {
     return SingletonMixin.getSingleton('TreeQueryService', () => {
       return new TreeQueryService(coreDB);
     });
   }
 
-  constructor(private coreDB: CoreDB) {}
+  constructor(private coreDB: TreeQueryCoreDB) {}
 
   // Basic Query Operations
 

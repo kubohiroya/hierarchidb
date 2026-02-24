@@ -86,7 +86,7 @@ describe('Undo/Redo for restoreFromArchive', () => {
   });
 
   it('undo/redo restoreFromArchive', async () => {
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const cp = new CommandProcessor(core as Partial<CoreDB> as CoreDB);
     const env = cp.createEnvelope('restoreFromArchive', {
       nodeIds: ['x' as NodeId],
       toParentId: 'r_root' as NodeId,

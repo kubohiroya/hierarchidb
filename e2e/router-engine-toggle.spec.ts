@@ -1,5 +1,9 @@
 import { test, expect, Page } from '@playwright/test';
 
+type RouterWindow = Window & {
+  __HDB_WORKER_READY__?: boolean;
+};
+
 /**
  * E2E Smoke Tests for Router Engine Toggle
  * 
@@ -102,7 +106,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
         }, { once: true });
 
         // If the event already fired, resolve immediately
-        if ((window as any).__HDB_WORKER_READY__) {
+        if ((window as RouterWindow).__HDB_WORKER_READY__) {
           clearTimeout(timeout);
           resolve(true);
         }

@@ -1,4 +1,4 @@
-import type { BuildProgressEvent } from '@hierarchidb/build-api';
+import type { BuildProgressEvent, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 
 type NumericValue = string | number | boolean;
@@ -6,18 +6,18 @@ type NumericValue = string | number | boolean;
 export type ProgressBridgeUpdate = {
   jobId: string;
   progress: number;
-  phase: string;
+  stage: TaskStage;
   ts?: number;
 };
 
 export type StageCheckpointPhase = 'start' | 'success' | 'error';
 
-export type StageHeartbeatWriter = (stage: string, phase: StageCheckpointPhase) => Promise<void>;
+export type StageHeartbeatWriter = (stage: TaskStage, phase: StageCheckpointPhase) => Promise<void>;
 
 export type StageCheckpointContext = {
   nodeId: NodeId;
   runId?: string | null;
-  stage: string;
+  stage: TaskStage;
   startedAt: number;
   errorMessage?: string;
   elapsedMs?: number;
@@ -39,7 +39,7 @@ export function toBuildProgressEventFromUpdate(update: ProgressBridgeUpdate): Bu
   const completed = normalizeProgress(update.progress);
   return {
     nodeId: update.jobId as NodeId,
-    stage: update.phase,
+    stage: update.stage,
     phase: completed >= 100 ? 'completed' : 'running',
     timestamp: update.ts ?? Date.now(),
     payload: {
@@ -76,7 +76,7 @@ export function createMemorySnapshot(): Record<string, NumericValue> | undefined
 export async function runWithStageCheckpoint<T>(
   options: {
     nodeId: NodeId;
-    stage: string;
+    stage: TaskStage;
     action: () => Promise<T>;
     writeHeartbeat: StageHeartbeatWriter;
     runId?: string | null;

@@ -9,6 +9,7 @@ import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildTasks } from '~/ui/components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
 import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
+import { isTerminalTask } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.js';
 
 type StageLike = {
   id: string;
@@ -147,27 +148,33 @@ export const useShapeBuildStepTaskState = ({
     progressTotal: taskProgressTotal,
   });
 
+  const stageTaskGroups = useMemo(() => {
+    const grouped = new Map<string, ShapeBuildTaskSummary[]>();
+    for (const task of displayTasks) {
+      const current = grouped.get(task.stage) ?? [];
+      current.push(task);
+      grouped.set(task.stage, current);
+    }
+    return grouped;
+  }, [displayTasks]);
+
   const stageTaskCompletedById = useMemo(() => {
     const completed: Record<string, boolean> = {};
-    const stageIds = new Set<string>([
-      ...Object.keys(snapshotTaskCountByStage),
-      ...Object.keys(terminalTaskCountByStage),
-    ]);
-    stageIds.forEach((stageId) => {
-      const expected = snapshotTaskCountByStage[stageId];
-      if (typeof expected !== 'number' || expected <= 0) return;
-      const terminalCount = terminalTaskCountByStage[stageId] ?? 0;
-      if (terminalCount >= expected) {
+    stageTaskGroups.forEach((groupTasks, stageId) => {
+      if (groupTasks.length === 0) return;
+      const allTerminal = groupTasks.every((task) => isTerminalTask(task));
+      if (allTerminal) {
         completed[stageId] = true;
       }
     });
     return completed;
-  }, [snapshotTaskCountByStage, terminalTaskCountByStage]);
+  }, [stageTaskGroups]);
 
-  const isVtStageCompleted = useMemo(() => (
-    (terminalTaskCountByStage.vt ?? 0) >= (snapshotTaskCountByStage.vt ?? 0)
-    && (snapshotTaskCountByStage.vt ?? 0) > 0
-  ), [snapshotTaskCountByStage.vt, terminalTaskCountByStage.vt]);
+  const isVtStageCompleted = useMemo(() => {
+    const vtTasks = stageTaskGroups.get('vt') ?? [];
+    if (vtTasks.length === 0) return false;
+    return vtTasks.every((task) => isTerminalTask(task));
+  }, [stageTaskGroups]);
 
   const hasFailedVtTasks = useMemo(() => (
     displayTasks.some((task) => task.status === 'failed' && task.stage === 'vt')

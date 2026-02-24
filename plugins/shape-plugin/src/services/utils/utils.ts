@@ -395,15 +395,23 @@ export function mergeBuildConfig(
     }
     : base.transformConfig;
   const transformToleranceFallback = 0.1;
-  const resolvedTransformBandCount = Math.max(0, transformConfig.zoomBandBoundaries.length - 1);
+  const resolvedTransformBandCount = Math.max(1, transformConfig.zoomBandBoundaries.length);
   const normalizedTransformToleranceByBand = normalizeToleranceByBand(
     transformConfig.toleranceByBand,
     resolvedTransformBandCount,
     transformToleranceFallback,
   );
+  const normalizedRetryToleranceByBand = Array.isArray(transformConfig.retryToleranceByBand)
+    ? normalizeToleranceByBand(
+      transformConfig.retryToleranceByBand,
+      resolvedTransformBandCount,
+      transformToleranceFallback,
+    )
+    : undefined;
   const normalizedTransformConfig = {
     ...transformConfig,
     toleranceByBand: normalizedTransformToleranceByBand,
+    ...(normalizedRetryToleranceByBand ? { retryToleranceByBand: normalizedRetryToleranceByBand } : {}),
   };
 
   const vtConfig = overrides.vtConfig

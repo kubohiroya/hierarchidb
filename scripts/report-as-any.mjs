@@ -75,7 +75,7 @@ function analyzeFile(absPath, relPath) {
   packageTotals.set(key, (packageTotals.get(key) || 0) + count);
 }
 
-console.log('[as-any] scanning workspace for "as any" occurrences...');
+console.log('[as-any] scanning workspace for "as-any" assertions...');
 walk(path.join(ROOT, 'app'), 'app');
 walk(path.join(ROOT, 'packages'), 'packages');
 

@@ -12,7 +12,7 @@ export type FakeTask = VectorTileTask & { index: number };
 export function makeTask(index: number): FakeTask {
   return {
     taskId: `vt:${index}`,
-    nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+    nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
     stage: 'wait',
     status: 'waiting',
     index,

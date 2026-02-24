@@ -201,7 +201,7 @@ describe('TreeTable Draft chip', () => {
       collectDescendantIds: () => ['folder-1', 'child-1'],
       controller: {
         nodeIndex: createNodeIndex([folderNode, descendantNode]),
-      } as unknown as ColumnBuilderParams['controller'],
+      } as ColumnBuilderParams['controller'],
     });
 
     expect(screen.getByText('required')).toBeDefined();
@@ -223,7 +223,7 @@ describe('TreeTable Draft chip', () => {
       collectDescendantIds: () => ['folder-2', 'child-2'],
       controller: {
         nodeIndex: createNodeIndex([folderNode, descendantNode]),
-      } as unknown as ColumnBuilderParams['controller'],
+      } as ColumnBuilderParams['controller'],
     });
 
     expect(screen.getByText('not-required')).toBeDefined();

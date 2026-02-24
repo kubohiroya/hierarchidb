@@ -1,10 +1,10 @@
-import type { BuildSessionStatus } from '../../../../../../packages/build-api';
+import type { BuildSessionStatus } from '@hierarchidb/build-api';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import { notify } from '@hierarchidb/components';
 import { deleteTasksByNode, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { deleteFetchRawCache, resolveKnownTaskStage } from './useShapeBuildCacheActions.helpers.js';
+import { deleteFetchRawCache } from './useShapeBuildCacheActions.helpers.js';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
 type BuildTaskFilterDeps = {
@@ -37,9 +37,7 @@ type ActionDeps = BuildTaskFilterDeps & {
 const filterByStage = (deps: FilterContext, taskTypes: BuildTaskType[]) => {
   const clearFromMemory = async () => {
     const keep = (task: ShapeBuildTaskSummary): boolean => {
-      const stage = resolveKnownTaskStage(task);
-      if (!stage) return true;
-      return !taskTypes.includes(stage);
+      return !taskTypes.includes(task.stage);
     };
     await Promise.all([
       deps.setBuildTasks((prev) => prev.filter(keep)),

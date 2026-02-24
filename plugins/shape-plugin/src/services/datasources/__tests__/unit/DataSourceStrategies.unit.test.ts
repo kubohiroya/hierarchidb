@@ -432,7 +432,7 @@ describe('Integration Tests', () => {
     const saveSpy = vi.spyOn(strategy, 'saveData').mockRejectedValue(new Error('Save failed'));
 
     try {
-      await strategy.saveData([] as unknown as ShapeFeaturePayload[], { type: 'hierarchidb' });
+      await strategy.saveData([] as ShapeFeaturePayload[], { type: 'hierarchidb' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }

@@ -152,7 +152,7 @@ export function DataGridPreview({
       ) : (
         <GenericDataGrid
           columns={gridColumns}
-          rows={sortedRows as unknown[]}
+          rows={sortedRows}
           loading={loading}
           error={error}
           maxHeight={height}

@@ -99,13 +99,14 @@ export const useTabularDataFilter = <T extends SpreadsheetDraft>({
         return;
       }
       const { rows, ...rest } = preview;
+      const rowData = Array.isArray(rows) ? rows : [];
       onChange({
         ...dialogData,
         lastPreview: {
-          ...(rest as Omit<TabularDataResult, 'rows'>),
-          rows: undefined,
-          rowCount: Array.isArray(rows) ? rows.length : (rest as { rowCount?: number }).rowCount ?? 0,
-        } as unknown as TabularDataResult,
+          ...rest,
+          rows: rowData,
+          rowCount: rowData.length,
+        },
       });
     },
     [dialogData, onChange],

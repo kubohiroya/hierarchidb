@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { TaskQueueRecord } from 'packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import { reconcileStageTasksByMetadata } from '../../services/vt/shapeStageReconcile';
+import type { NodeId } from "@hierarchidb/core-types";
 
 type TestInput = {
   value?: string;
@@ -16,7 +17,7 @@ const buildTask = (
   overrides?: Partial<TestInput>,
 ): TestTask => ({
   taskId,
-  nodeId: 'node-1',
+  nodeId: 'node-1' as NodeId,
   stage: 'fetch',
   status: 'queued',
   index: 0,

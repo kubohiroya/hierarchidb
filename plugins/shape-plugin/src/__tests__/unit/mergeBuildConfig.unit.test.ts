@@ -11,7 +11,7 @@ describe('mergeBuildConfig', () => {
         transformConfig: {
           omitDetailsConfig: {},
         },
-      } as unknown as Partial<ShapeBuildConfig>,
+      } as Partial<ShapeBuildConfig>,
     );
 
     expect(merged.transformConfig.omitDetailsConfig.level).toBe(
@@ -40,7 +40,7 @@ describe('mergeBuildConfig', () => {
             level: 'none',
           },
         },
-      } as unknown as Partial<ShapeBuildConfig>,
+      } as Partial<ShapeBuildConfig>,
     );
     const mergedFromModerate = mergeBuildConfig(
       DEFAULT_BUILD_CONFIG,
@@ -50,7 +50,7 @@ describe('mergeBuildConfig', () => {
             level: 'moderate',
           },
         },
-      } as unknown as Partial<ShapeBuildConfig>,
+      } as Partial<ShapeBuildConfig>,
     );
 
     expect(mergedFromNone.transformConfig.omitDetailsConfig.level).toBe('weak');
@@ -67,7 +67,7 @@ describe('mergeBuildConfig', () => {
               level: 'invalid-level',
             },
           },
-        } as unknown as Partial<ShapeBuildConfig>,
+        } as Partial<ShapeBuildConfig>,
       ),
     ).toThrow('unsupported omit-details level: invalid-level');
   });

@@ -17,7 +17,7 @@ export const buildLayerIndexes = async (
   },
 ): Promise<Map<string, GeojsonVtIndex>> => {
   const geojsonvt = await import('geojson-vt');
-  const candidate = geojsonvt as unknown as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
+  const candidate = geojsonvt as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
   const instance = candidate.default ?? candidate;
   const indexes = new Map<string, GeojsonVtIndex>();
   const startAt = Date.now();
@@ -42,7 +42,7 @@ export const buildLayerIndexes = async (
       promoteId: context.vtConfig.promoteId,
       indexMaxPoints: resolveMaxVerticesPerTile(context.vtConfig.indexMaxPoints),
     });
-    indexes.set(layerName, index as unknown as GeojsonVtIndex);
+    indexes.set(layerName, index as GeojsonVtIndex);
   }
 
   if (debugContext) {

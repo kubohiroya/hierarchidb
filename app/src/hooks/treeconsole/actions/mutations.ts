@@ -125,7 +125,7 @@ export const createMutationActions = (
         isTemporary: true,
       });
       if (!res?.success) {
-        const err = (res as unknown as { error?: string })?.error;
+        const err = (res as { error?: string })?.error;
         showCommandError('INVALID_OPERATION', err || 'Create failed');
         return;
       }
@@ -157,7 +157,7 @@ export const createMutationActions = (
       await refreshUndoRedo();
       fireCmdEvent();
 
-      const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+      const getCP = (client as MaybeCP).getCommandProcessor;
       if (typeof getCP === 'function') {
         const cp = await getCP();
         const canUndo = cp && typeof cp.canUndo === 'function' ? cp.canUndo() : false;

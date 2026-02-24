@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection, geometryBbox, type GeometryEngine } from '@hierarchidb/gis-sdk';
-import type { StageHandler, TaskQueueRecord } from '../../../../../packages/build-api';
+import type { StageHandler, TaskQueueRecord } from '@hierarchidb/build-api';
 import type { ShapeRuntimeBuildConfig } from '~/common/types/index';
 import {
   VtTaskQueueDb,
@@ -167,7 +167,7 @@ const mergeTopoJsonCollection = (topology: Topology, properties?: Record<string,
   if (!entry) return null;
   const geometries = (entry.object as { geometries?: unknown[] }).geometries;
   if (!Array.isArray(geometries) || geometries.length === 0) return null;
-  const merged = topojsonMerge(topology, geometries as unknown as Parameters<typeof topojsonMerge>[1]);
+  const merged = topojsonMerge(topology, geometries as Parameters<typeof topojsonMerge>[1]);
   if (!merged) return null;
   return {
     type: 'FeatureCollection',
@@ -233,6 +233,7 @@ const fetchGeoBoundariesApiData = async (params: {
   signal?: AbortSignal;
   cacheKeyMode: 'url' | 'legacy';
   retryConfig?: RetryConfig;
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
 }): Promise<GeoBoundariesApiResponse> => {
   const adminLabel = `ADM${params.adminLevel}`;
   const normalizedCountry = params.country.trim().toUpperCase();
@@ -252,6 +253,7 @@ const fetchGeoBoundariesApiData = async (params: {
         signal: params.signal,
       },
       params.retryConfig,
+      params.onRetryAttempt,
     )
     : await store.getOrFetchForNode(params.nodeId, url, {
       accept: 'application/json',
@@ -269,6 +271,7 @@ const fetchGeoBoundariesTopoJson = async (params: {
   cacheKeyMode: 'url' | 'legacy';
   retryConfig?: RetryConfig;
   timeoutMs?: number;
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
 }): Promise<{ topology: Topology; apiData: GeoBoundariesApiResponse; downloadUrl: string }> => {
   const apiData = await fetchGeoBoundariesApiData({
     nodeId: params.nodeId,
@@ -311,6 +314,7 @@ const fetchGeoBoundariesTopoJson = async (params: {
     },
     pipeline,
     retryConfig: params.retryConfig,
+    onRetryAttempt: params.onRetryAttempt,
   });
   return { topology: decoded, apiData, downloadUrl };
 };
@@ -404,7 +408,7 @@ const decodeFetchCacheData = async (params: {
   }
   try {
     const decoded = geojsonApi.deserialize(new Uint8Array(params.data));
-    return await normalizeFeatureCollection(decoded as unknown);
+    return await normalizeFeatureCollection(decoded);
   } catch {
     return null;
   }
@@ -811,6 +815,22 @@ const createFetchHandler = (params: {
       }
     };
   };
+  const updateRetryAttempt = async (taskId: string, retryAttempt: number): Promise<void> => {
+    try {
+      const record = await taskQueue.tasks.get(taskId);
+      const currentMetadata = isRecord(record?.metadata) ? record.metadata as Record<string, unknown> : {};
+      const nextRetryAttempt = Number.isFinite(retryAttempt) && retryAttempt > 0 ? Math.trunc(retryAttempt) : 0;
+      await updateTask(taskQueue, taskId, {
+        metadata: { ...currentMetadata, retryAttempt: nextRetryAttempt },
+      });
+    } catch (error) {
+      console.warn('[ShapeFetch] failed to update task retryAttempt', {
+        taskId,
+        retryAttempt,
+        error,
+      });
+    }
+  };
   let metadataLookupPromise: Promise<Map<string, CountryMetadata>> | null = null;
   const getMetadataLookup = async (): Promise<Map<string, CountryMetadata>> => {
     if (!metadataLookupPromise) {
@@ -844,6 +864,8 @@ const createFetchHandler = (params: {
         progress.polygonTotal > 0 && progress.polygonIndex >= progress.polygonTotal,
       );
     };
+    const onRetryAttempt = (attempt: number) => updateRetryAttempt(task.taskId, attempt);
+    void updateRetryAttempt(task.taskId, 0);
 
     assertNotAborted(params.abortSignal);
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
@@ -940,6 +962,7 @@ const createFetchHandler = (params: {
         cacheKeyMode: 'url',
         retryConfig,
         timeoutMs: params.buildConfig.fetchConfig.timeoutMs,
+        onRetryAttempt,
       });
       const downloadTime = Date.now() - downloadStart;
 
@@ -1057,6 +1080,7 @@ const createFetchHandler = (params: {
       cacheKeyMode: 'url',
       retryConfig,
       timeout: params.buildConfig.fetchConfig.timeoutMs,
+      onRetryAttempt,
     });
     const downloadTime = Date.now() - downloadStart;
 

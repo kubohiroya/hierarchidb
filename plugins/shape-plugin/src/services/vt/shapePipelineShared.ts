@@ -1,4 +1,4 @@
-import type { TaskQueueRecord } from '../../../../../packages/build-api';
+import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
 import type { Tile } from 'geojson-vt';
@@ -141,7 +141,7 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
 export const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   try {
     const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-    return await normalizeFeatureCollection(decoded as unknown);
+    return await normalizeFeatureCollection(decoded);
   } catch {
     return null;
   }

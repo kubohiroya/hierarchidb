@@ -1,4 +1,4 @@
-import type { TaskDisplayPayload } from '../../../../../packages/build-api';
+import type { TaskDisplayPayload } from '@hierarchidb/build-api';
 
 export const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;

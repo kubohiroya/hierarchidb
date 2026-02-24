@@ -124,11 +124,10 @@ function readLaneLimitsFromEnv(key: string, defaults: LaneLimits): ParsedLaneLim
   let text: string | undefined;
 
   try {
-    const meta = import.meta as unknown as { env?: Record<string, unknown> } & Record<
-      string,
-      unknown
-    >;
-    const candidate = meta?.env?.[key] ?? meta?.[key];
+    const meta = import.meta;
+    const hasEnv = meta && typeof meta === 'object' && 'env' in meta;
+    const envRecord = hasEnv ? (meta as { env?: Record<string, unknown> }).env : undefined;
+    const candidate = envRecord?.[key];
     if (typeof candidate === 'string') text = candidate;
   } catch {
     // ignore

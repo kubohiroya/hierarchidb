@@ -116,7 +116,7 @@ export const mapCoords = (coords: unknown, map: (coord: LonLat) => LonLat): unkn
     const [lon, lat] = coords as LonLat;
     return map([lon, lat]);
   }
-  return (coords as unknown[]).map((child: unknown) => mapCoords(child, map));
+  return coords.map((child: unknown) => mapCoords(child, map));
 };
 
 export const hasNonFiniteCoords = (coords: unknown): boolean => {
@@ -126,7 +126,7 @@ export const hasNonFiniteCoords = (coords: unknown): boolean => {
     const [lon, lat] = coords as number[];
     return !Number.isFinite(lon) || !Number.isFinite(lat);
   }
-  return (coords as unknown[]).some((child: unknown) => hasNonFiniteCoords(child));
+  return coords.some((child: unknown) => hasNonFiniteCoords(child));
 };
 
 export const hasNonFiniteGeometry = (geometry: Geometry): boolean => {
@@ -141,7 +141,7 @@ export const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
   if (coords.length === 0) return 0;
   if (typeof coords[0] === 'number') return 1;
-  return (coords as unknown[]).reduce((sum: number, child: unknown) => sum + countVertices(child), 0);
+  return coords.reduce((sum: number, child: unknown) => sum + countVertices(child), 0);
 };
 
 export const countVerticesFromGeometry = (geometry: Geometry): number => {

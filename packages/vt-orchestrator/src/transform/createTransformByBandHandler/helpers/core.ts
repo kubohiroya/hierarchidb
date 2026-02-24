@@ -131,7 +131,7 @@ export const describeBuffer = (buffer: ArrayBuffer): {
 export const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<void> => {
   try {
     const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-    const normalized = await normalizeFeatureCollection(decoded as unknown);
+    const normalized = await normalizeFeatureCollection(decoded);
     if (!normalized) {
       throw new Error('normalize returned null');
     }
@@ -146,7 +146,7 @@ export const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<vo
 
 export const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-  return normalizeFeatureCollection(decoded as unknown);
+  return normalizeFeatureCollection(decoded);
 };
 
 export const decodeTopoJsonFetchCache = async (params: {

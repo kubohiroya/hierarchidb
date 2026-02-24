@@ -28,7 +28,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const postprocess = makePostprocess();
 
     await runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -85,7 +85,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     });
 
     const taskRegistry = makeTaskRegistry({ runnableTasks: tasks, completedCount: 1, failedCount: 0, total: 3 });
-    (taskRegistry.registerTasks as unknown as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+    (taskRegistry.registerTasks as ReturnType<typeof vi.fn>).mockImplementation(async () => {
       calls.push('taskRegistry.registerTasks');
     });
 
@@ -95,7 +95,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const afterRun = vi.fn(async () => {});
 
     await runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -135,7 +135,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     });
 
     // Intercept controls
-    (adapter.process as unknown as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
+    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
       expect(controls?.maxConcurrent).toBe(7);
       return { processed: _tasks.length, failed: 0 };
     });
@@ -144,7 +144,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const postprocess = makePostprocess();
 
     await runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -176,7 +176,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const adapter = makeAdapter({ allowPause: true, result: { processed: 1, failed: 0 } });
 
     const promise = runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -207,13 +207,13 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       result: { processed: 1, failed: 0 },
     });
 
-    (adapter.process as unknown as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
+    (adapter.process as ReturnType<typeof vi.fn>).mockImplementation(async (_tasks, _report, controls) => {
       expect(controls?.getSignal()).toBe(controller.signal);
       return { processed: 1, failed: 0 };
     });
 
     await runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -247,7 +247,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     const progressCallback = vi.fn();
 
     await runVectorTileStageOrchestrator({
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),
@@ -278,7 +278,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
     // This is a type-level contract test only. Do not execute it at runtime.
     // @ts-expect-error progressFactory is required when progressCallback is provided.
     const _params: RunVectorTileStageOrchestratorParams = {
-      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      nodeId: 'node:test' as RunVectorTileStageOrchestratorParams['nodeId'],
       metadataEnabled: true,
       tasks,
       inputsByTaskId: makeInputs(tasks),

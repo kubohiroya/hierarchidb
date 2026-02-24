@@ -8,7 +8,7 @@ import { useDialogSteps } from '../usePluginDialogController/steps';
 const composedConfigs = {
   hasHostBase: false,
   configs: [],
-} as unknown as ReturnType<typeof composeStepConfigs>;
+} as ReturnType<typeof composeStepConfigs>;
 
 const defaultMetadata: TreeNodeMetadata = { name: '', description: '', tags: [] };
 
@@ -63,7 +63,7 @@ describe('useDialogSteps BasicInfo focus', () => {
           componentFactory: () => <div data-testid="custom-step">Custom</div>,
         },
       ],
-    } as unknown as ReturnType<typeof composeStepConfigs>;
+    } as ReturnType<typeof composeStepConfigs>;
 
     const { result, rerender } = renderHook(
       ({ data }) =>

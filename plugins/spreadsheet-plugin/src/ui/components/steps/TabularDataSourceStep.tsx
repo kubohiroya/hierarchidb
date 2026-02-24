@@ -15,7 +15,7 @@ import { TabularPreviewGrid } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
 import { tabularRowsAtom } from '~/ui/state/tabularKeyValueAtoms';
 
-const TabularDataImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
+const TabularDataImportStep = TabularDataImport as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
 export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetDraft> & { showPreview?: boolean }> = ({
   data,

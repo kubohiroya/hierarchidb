@@ -3,7 +3,6 @@ import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 
-// Re-export types from loader.ts for compatibility
 export type {
   LoadNodeActionArgs,
   LoadNodeActionReturn,

@@ -108,7 +108,7 @@ describe('Worker Initialization E2E Tests', () => {
     };
 
     const initPromise = channel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: true,
     });
@@ -136,7 +136,7 @@ describe('Worker Initialization E2E Tests', () => {
 
     await expect(
       channel.waitForInitialization({
-        worker: worker as unknown as Worker,
+        worker: worker as Worker,
         timeout: 50,
         debug: false,
       })
@@ -158,7 +158,7 @@ describe('Worker Initialization E2E Tests', () => {
 
     await expect(
       channel.waitForInitialization({
-        worker: errorWorker as unknown as Worker,
+        worker: errorWorker as Worker,
         timeout: 5000,
         debug: false,
       })
@@ -181,7 +181,7 @@ describe('Worker Initialization E2E Tests', () => {
     };
 
     await channel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: false,
     });
@@ -198,13 +198,13 @@ describe('Worker Initialization E2E Tests', () => {
     };
 
     const promise1 = channel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: false,
     });
 
     const promise2 = channel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: false,
     });
@@ -226,7 +226,7 @@ describe('Worker Initialization E2E Tests', () => {
     };
 
     void channel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: false,
     });
@@ -247,7 +247,7 @@ describe('Worker Initialization E2E Tests', () => {
     worker.postMessage({ type: 'START_INIT' });
 
     const result = await newChannel.waitForInitialization({
-      worker: worker as unknown as Worker,
+      worker: worker as Worker,
       timeout: 5000,
       debug: false,
     });

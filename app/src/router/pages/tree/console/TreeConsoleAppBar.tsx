@@ -1,15 +1,14 @@
-import { useCallback, useMemo } from 'react';
-import { toNodeType } from '@hierarchidb/core-types';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
-import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
-import { AppBar, Box, IconButton, Stack, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Toolbar, Typography } from '@mui/material';
 import AppLogoIcon from '~/components/AppLogoIcon';
-import { useWorker } from '~/contexts/WorkerProvider';
-import { BuildSessionQueueBadgeButton, type BuildSessionQueueEntry } from '~/components/BuildSessionQueueList';
+import {
+  BuildSessionQueueBadgeButton,
+  BuildSessionQueueList,
+} from '~/components/BuildSessionQueueList';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
+import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
-import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
-import { openInNewTab } from '~/utils/openInNewTab';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
+import { useTreeConsoleAppBar } from './hooks/useTreeConsoleAppBar';
 
 type TreeConsoleAppBarProps = {
   data: LoadPageNodeReturn;
@@ -26,37 +25,20 @@ export function TreeConsoleAppBar({
   onGoHome,
   onOpenMaintenance,
 }: TreeConsoleAppBarProps) {
-  const navigate = useNavigate();
-  const { client: workerClient } = useWorker();
-  const location = useRouterState({ select: (state) => state.location });
-  const returnTo = useMemo(() => `${location.pathname}${location.searchStr ?? ''}`,
-    [location.pathname, location.searchStr]
-  );
-
-  const handleNavigateToBuild = useCallback(async (entry: BuildSessionQueueEntry, options?: { openInNewTab?: boolean }) => {
-    if (!data.tree?.id || !data.pageNodeId || !workerClient) return;
-    const targetNode = entry.node
-      ?? await workerClient.getQueryAPI().then((queryAPI) => queryAPI.getNode(entry.session.nodeId)).catch(() => null);
-
-    if (!targetNode) {
-      return;
-    }
-
-    await startBuildFlow({
-      treeId: data.tree.id,
-      pageNodeId: data.pageNodeId,
-      node: targetNode,
-      returnTo,
-      workerClient,
-      navigate: (to) => {
-        if (options?.openInNewTab) {
-          openInNewTab(to);
-          return;
-        }
-        navigate({ to });
-      },
-    });
-  }, [data.pageNodeId, data.tree?.id, navigate, returnTo, workerClient]);
+  const { t } = useGlobalI18nTranslator();
+  const {
+    resumeSessionNodeType,
+    resumeDialogRows,
+    isResumeDialogOpen,
+    isQueueAutoStartEnabled,
+    isDeletingQueue,
+    isResumingQueue,
+    handleNavigateToBuild,
+    handleResumeDialogEntriesChange,
+    handleResumeQueue,
+    handleDeleteQueue,
+    handleSkipResumeDialog,
+  } = useTreeConsoleAppBar({ data });
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -65,7 +47,7 @@ export function TreeConsoleAppBar({
           onClick={onGoHome}
           edge="start"
           color="primary"
-          aria-label="Go to HierarchiDB home"
+          aria-label={t('treeConsole.toolbar.resumeQueueDialog.ariaLabelHome', 'Go to HierarchiDB home')}
           sx={{ marginLeft: '-20px' }}
         >
           <AppLogoIcon size={28} />
@@ -80,8 +62,10 @@ export function TreeConsoleAppBar({
         <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
             <BuildSessionQueueBadgeButton
-              nodeType={toNodeType('shape')}
+              nodeType={resumeSessionNodeType}
               onNavigateToBuild={handleNavigateToBuild}
+              autoStartTopSession={isQueueAutoStartEnabled}
+              onEntriesChange={handleResumeDialogEntriesChange}
             />
           ) : null}
           {isUserMenuReady ? (
@@ -89,6 +73,42 @@ export function TreeConsoleAppBar({
           ) : null}
         </Stack>
       </Toolbar>
+      <Dialog
+        open={isResumeDialogOpen}
+        onClose={handleSkipResumeDialog}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>{t('treeConsole.toolbar.resumeQueueDialog.title', '再開待ちセッションを確認')}</DialogTitle>
+        <DialogContent dividers>
+          <BuildSessionQueueList
+            nodeType={resumeSessionNodeType}
+            onNavigateToBuild={handleNavigateToBuild}
+            onEntriesChange={handleResumeDialogEntriesChange}
+            autoStartTopSession={isQueueAutoStartEnabled}
+            compact={false}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleDeleteQueue}
+            color="error"
+            disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
+          >
+            {t('treeConsole.toolbar.resumeQueueDialog.deleteQueue', 'キューを削除する')}
+          </Button>
+          <Button
+            onClick={handleResumeQueue}
+            variant="contained"
+            disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
+          >
+            {t('treeConsole.toolbar.resumeQueueDialog.resumeQueue', 'キューの実行を再開する')}
+          </Button>
+          <Button onClick={handleSkipResumeDialog} disabled={isDeletingQueue || isResumingQueue}>
+            {t('treeConsole.toolbar.resumeQueueDialog.skip', '削除や再開をスキップしてダイアログを閉じる')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 }

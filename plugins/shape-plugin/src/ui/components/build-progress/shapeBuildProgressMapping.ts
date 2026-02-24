@@ -1,4 +1,4 @@
-import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '../../../../../../packages/build-api';
+import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/build-api';
 import { toBuildSessionStatusFromUnifiedProgress } from '../../../../../../packages/ui/build-sessions';
 import { computePercentage } from '../../../../../../packages/ui/build-sessions';
 

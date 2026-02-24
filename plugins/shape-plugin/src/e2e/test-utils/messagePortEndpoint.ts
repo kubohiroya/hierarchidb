@@ -14,7 +14,7 @@ function invokeListener(
     return;
   }
   if (handler && typeof (handler as EventListenerObject).handleEvent === 'function') {
-    (handler as EventListenerObject).handleEvent(event as unknown as Event);
+    (handler as EventListenerObject).handleEvent(event as Event);
   }
 }
 

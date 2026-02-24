@@ -11,7 +11,7 @@ import {
   HelpOutline as HelpOutlineIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { Box, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig';
 import { createMaintenanceSessionUrl } from '~/maintenance/maintenanceSession';

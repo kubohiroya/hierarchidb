@@ -14,23 +14,25 @@ export function normalizeIconComponent(
   }
 
   if (typeof value === 'object') {
-    const candidate = value as Record<string, unknown> & {
-      $$typeof?: unknown;
-      render?: unknown;
-      type?: unknown;
-      default?: unknown;
-    };
+    const candidate = value;
 
-    if (typeof candidate.$$typeof === 'symbol' || typeof candidate.render === 'function') {
-      return candidate as unknown as ComponentType<SvgIconProps>;
+    if (
+      typeof Reflect.get(candidate, '$$typeof') === 'symbol'
+      || typeof Reflect.get(candidate, 'render') === 'function'
+    ) {
+      return value as ComponentType<SvgIconProps>;
     }
 
-    if (typeof candidate.type === 'function' || typeof candidate.type === 'object') {
-      return candidate as unknown as ComponentType<SvgIconProps>;
+    if (
+      typeof Reflect.get(candidate, 'type') === 'function'
+      || typeof Reflect.get(candidate, 'type') === 'object'
+    ) {
+      return value as ComponentType<SvgIconProps>;
     }
 
-    if (typeof candidate.default !== 'undefined') {
-      return normalizeIconComponent(candidate.default, seen);
+    const defaultValue = Reflect.get(candidate, 'default');
+    if (typeof defaultValue !== 'undefined') {
+      return normalizeIconComponent(defaultValue, seen);
     }
   }
 

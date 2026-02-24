@@ -140,7 +140,7 @@ export const useTreeConsoleBreadcrumb = (
       event.preventDefault();
       event.stopPropagation();
 
-      const anchorEl = event.currentTarget as unknown as HTMLElement | null;
+      const anchorEl = event.currentTarget as HTMLElement | null;
       openContextMenu(node, anchorEl);
     },
     [openContextMenu]

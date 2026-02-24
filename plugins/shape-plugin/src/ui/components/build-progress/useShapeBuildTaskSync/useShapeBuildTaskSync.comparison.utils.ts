@@ -1,5 +1,4 @@
-import type { TaskDisplayPayload, TaskStage } from '../../../../../../../packages/build-api';
-import { compareTaskOrderByIndexThenId } from '../../../../../../../packages/ui/build-sessions';
+import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
@@ -43,20 +42,6 @@ export const areTasksEquivalentForView = (
   && (left.stagePriority ?? null) === (right.stagePriority ?? null)
 );
 
-const isTaskStage = (value: unknown): value is TaskStage => (
-  value === 'fetch' || value === 'transform' || value === 'vt'
-);
-
-export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
-  if (isTaskStage(task.stage)) {
-    return task.stage;
-  }
-  const taskId = task.taskId;
-  throw new Error(
-    `[ShapeBuildTaskSync] invalid task stage: ${JSON.stringify(task.stage)} (taskId: ${taskId})`,
-  );
-};
-
 export const isCompletedAtFullProgress = (task: ShapeBuildTaskSummary): boolean => {
   if (!isTerminalTask(task)) return false;
   return resolveProgressValue(task.progress) >= 100;
@@ -74,7 +59,7 @@ const isTerminalStatus = (task: ShapeBuildTaskSummary | undefined): boolean => (
   isTerminalTask(task)
 );
 
-export const normalizeTaskProgress = (
+export const resolveTaskProgress = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   display: ShapeBuildTaskSummary['display'],
   message: ShapeBuildTaskSummary['message'],
@@ -95,20 +80,20 @@ export const normalizeTaskProgress = (
   return progress >= 100 ? 99 : progress;
 };
 
-export const normalizeTaskStatus = (
+export const resolveTaskDisplayStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   progress: number,
   display: ShapeBuildTaskSummary['display'],
   message: ShapeBuildTaskSummary['message'],
 ): ShapeBuildTaskSummary['status'] => {
-  const normalizedStatus = status ?? 'queued';
-  if (normalizedStatus === 'running' && progress >= 100) {
+  const resolvedStatus = status ?? 'queued';
+  if (resolvedStatus === 'running' && progress >= 100) {
     return 'completed';
   }
-  if (normalizedStatus === 'running' && isTaskSkipped(display, message)) {
+  if (resolvedStatus === 'running' && isTaskSkipped(display, message)) {
     return 'completed';
   }
-  return normalizedStatus;
+  return resolvedStatus;
 };
 
 const shouldApplyTaskUpdate = (
@@ -226,32 +211,82 @@ export const replaceSnapshotAndPreserveNonIncomingStages = (
   snapshotTasks: ShapeBuildTaskSummary[],
   currentMap: Map<string, ShapeBuildTaskSummary>,
 ): ShapeBuildTaskSummary[] => {
-  const incomingStages = new Set(snapshotTasks.map((task) => task.stage));
-  const next = [...snapshotTasks];
-
-  currentMap.forEach((task) => {
-    if (incomingStages.has(task.stage)) {
-      return;
-    }
-    next.push(task);
-  });
-
-  const byTaskId = new Map<string, ShapeBuildTaskSummary>();
-  for (const task of next) {
-    byTaskId.set(task.taskId, task);
+  if (snapshotTasks.length === 0) {
+    return [...currentMap.values()];
   }
 
-  return [...byTaskId.values()].sort(compareTaskOrderByIndexThenId);
+  const dedupedSnapshot = dedupeTasks(snapshotTasks);
+  const snapshotMap = new Map(dedupedSnapshot.map((task) => [task.taskId, task]));
+  const currentTasks = [...currentMap.values()];
+  const next: ShapeBuildTaskSummary[] = [];
+  const includedTaskIds = new Set<string>();
+
+  currentTasks.forEach((task) => {
+    const nextTask = snapshotMap.get(task.taskId);
+    if (!nextTask) {
+      next.push(task);
+      return;
+    }
+    next.push(nextTask);
+    includedTaskIds.add(task.taskId);
+  });
+
+  dedupedSnapshot.forEach((task) => {
+    if (!currentMap.has(task.taskId) && !includedTaskIds.has(task.taskId)) {
+      next.push(task);
+      includedTaskIds.add(task.taskId);
+    }
+  });
+
+  return next;
 };
 
-export const normalizeTask = (task: RawTaskSummary): ShapeBuildTaskSummary => {
+export const replaceSnapshotTasks = (snapshotTasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => (
+  dedupeTasks(snapshotTasks)
+);
+
+const dedupeTasks = (snapshotTasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
+  const next: ShapeBuildTaskSummary[] = [];
+  const indexByTaskId = new Map<string, number>();
+  snapshotTasks.forEach((task) => {
+    const currentIndex = indexByTaskId.get(task.taskId);
+    if (currentIndex === undefined) {
+      indexByTaskId.set(task.taskId, next.length);
+      next.push(task);
+      return;
+    }
+    next[currentIndex] = task;
+  });
+  return next;
+};
+
+export const replaceSnapshotAndPreserveCurrentTasksByStage = (
+  snapshotTasks: ShapeBuildTaskSummary[],
+  currentTasks: ShapeBuildTaskSummary[],
+): ShapeBuildTaskSummary[] => (
+  replaceSnapshotAndPreserveNonIncomingStages(
+    snapshotTasks,
+    new Map(currentTasks.map((task) => [task.taskId, task])),
+  )
+);
+
+export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
+  if (!isTaskStage(task.stage)) {
+    throw new Error(`[ShapeBuildTaskSync] invalid task stage: ${String(task.stage)}`);
+  }
   const progress = resolveProgressValue(task.progress);
-  const stage = resolveTaskStage(task);
-  const normalizedStatus = normalizeTaskStatus(task.status, progress, task.display, task.message);
+  const stage = task.stage;
+  const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, task.message);
   return {
     ...task,
     stage,
-    status: normalizedStatus,
-    progress: normalizeTaskProgress(normalizedStatus, task.display, task.message, progress),
+    status: resolvedStatus,
+    progress: resolveTaskProgress(resolvedStatus, task.display, task.message, progress),
   };
 };
+
+const taskStages = ['fetch', 'transform', 'vt'] as const;
+
+export const isTaskStage = (value: unknown): value is TaskStage => (
+  typeof value === 'string' && taskStages.includes(value as TaskStage)
+);
