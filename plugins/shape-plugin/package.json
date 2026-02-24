@@ -263,6 +263,7 @@
       "build": {
         "dependsOn": [
           "@hierarchidb/plugin-base#build",
+          "@hierarchidb/ui-tone-curve-editor#build",
           "@hierarchidb/vt-orchestrator#build"
         ]
       }

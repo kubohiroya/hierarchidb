@@ -3769,6 +3769,9 @@ importers:
       '@hierarchidb/ui-build-progress':
         specifier: workspace:*
         version: link:../../packages/ui/build-progress
+      '@hierarchidb/ui-build-sessions':
+        specifier: workspace:*
+        version: link:../../packages/ui/build-sessions
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog

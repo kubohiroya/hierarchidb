@@ -141,8 +141,40 @@ function collectWorkspacePackageNames() {
   return names;
 }
 
+function collectWorkspaceBuildablePkgs() {
+  const buildables = new Set();
+  for (const dir of workspaces) {
+    const pkg = readJSON(path.join(dir, 'package.json'));
+    const scripts = pkg?.scripts || {};
+    if (typeof scripts.build === 'string') {
+      buildables.add(pkg.name);
+    }
+  }
+  return buildables;
+}
+
+function collectInternalWorkspaceDependencies(pkg) {
+  const all = {
+    ...(pkg.dependencies || {}),
+    ...(pkg.devDependencies || {}),
+    ...(pkg.peerDependencies || {}),
+  };
+  return Object.keys(all).filter((dep) => workspacePkgNames.has(dep) && dep !== pkg.name);
+}
+
+function normalizeTurboDependsOn(list) {
+  const normalized = [];
+  for (const item of list) {
+    if (typeof item !== 'string') continue;
+    const atHash = item.indexOf('#');
+    normalized.push(atHash >= 0 ? item.slice(0, atHash) : item);
+  }
+  return normalized;
+}
+
 const workspacePkgNames = collectWorkspacePackageNames();
 const workspaceScopes = Array.isArray(config.workspaceScopes) ? config.workspaceScopes : ['@hierarchidb'];
+const buildableWorkspacePkgs = collectWorkspaceBuildablePkgs();
 
 // Rule A: workspace protocol for internal packages
 for (const dir of workspaces) {
@@ -159,6 +191,36 @@ for (const dir of workspaces) {
     if (!s.startsWith('workspace:')) {
       err(`${pkg.name}: internal dep '${dep}' must use workspace: protocol (found '${s}')`);
     }
+  }
+}
+
+// Rule A.x: plugin/app build tasks should declare inter-workspace build deps in turbo dependsOn
+for (const dir of workspaces) {
+  const pkgPath = path.join(dir, 'package.json');
+  const pkg = readJSON(pkgPath);
+  if (!pkg) continue;
+
+  const relativeDir = path.relative(repoRoot, dir);
+  const isApp = pkg.name === '@hierarchidb/app';
+  const isPlugin = relativeDir.startsWith(`plugins${path.sep}`) && typeof pkg.name === 'string' && pkg.name.endsWith('-plugin');
+
+  if (!isApp && !isPlugin) continue;
+
+  const declared = collectInternalWorkspaceDependencies(pkg)
+    .filter((dep) => buildableWorkspacePkgs.has(dep) && dep !== pkg.name);
+
+  if (declared.length === 0) continue;
+
+  const buildDepends = pkg.turbo?.pipeline?.build?.dependsOn;
+  if (!Array.isArray(buildDepends) || buildDepends.length === 0) {
+    warn(`${pkg.name}: missing turbo.pipeline.build.dependsOn (expected for explicit build-stage dependency governance)`);
+    continue;
+  }
+  const normalized = normalizeTurboDependsOn(buildDepends);
+  const missing = declared.filter((dep) => !normalized.includes(dep));
+  if (missing.length > 0) {
+    const missingMessage = missing.sort().join(', ');
+    warn(`${pkg.name}: build dependsOn is missing inter-workspace deps: ${missingMessage}`);
   }
 }
 

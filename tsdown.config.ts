@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown';
+import { defineConfig, type Options, type OutExtensionFactory, type UserConfig } from 'tsdown';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 
@@ -40,8 +40,14 @@ const DEFAULT_EXTERNAL = [
 
 const cwd = process.cwd();
 const packageJsonPath = path.join(cwd, 'package.json');
-type TsdownConfig = Parameters<typeof defineConfig>[0];
-type TsdownUserConfig = Record<string, unknown>;
+type TsdownWorkspaceConfig = Omit<Options, 'config' | 'filter'> & {
+  outExtensions?: OutExtensionFactory | string;
+  outExtension?: OutExtensionFactory | string;
+  define?: Record<string, string>;
+  inject?: unknown;
+  transform?: Record<string, unknown>;
+  plugins?: Options['plugins'];
+};
 
 let pkg: PackageJson = {};
 try {
@@ -62,13 +68,13 @@ for (const group of [
   }
 }
 
-const userConfig = pkg.tsdown ?? {};
+const userConfig = (pkg.tsdown ?? {}) as Partial<TsdownWorkspaceConfig> & Record<string, unknown>;
 
 const baseExternal = Array.from(dependencyNames);
 let mergedExternal: string[] = baseExternal;
 
-const userConfigValues = userConfig as TsdownUserConfig;
-const userExternal = userConfigValues.external;
+const userConfigValues = userConfig;
+const userExternal = userConfigValues.external as string[] | string | Record<string, unknown> | undefined;
 if (Array.isArray(userExternal)) {
   const extended = new Set<string>([...baseExternal, ...userExternal]);
   mergedExternal = Array.from(extended);
@@ -80,22 +86,24 @@ if (Array.isArray(userExternal)) {
 
 const {
   external: _ignoredExternal,
-  outExtension: rawOutExtension,
+  outExtension: legacyOutExtension,
+  outExtensions: rawOutExtensions,
   tsconfig: userTsconfig,
   alias: userAlias,
   ...restUserConfig
-} = userConfig as {
-  external?: string[] | string | Record<string, unknown>;
-  outExtension?: unknown;
-  tsconfig?: unknown;
-  alias?: Record<string, string>;
-  [key: string]: unknown;
+}: Partial<TsdownWorkspaceConfig> & Record<string, unknown> = userConfig;
+
+const toOutExtension = (value: OutExtensionFactory | string | undefined): OutExtensionFactory | undefined => {
+  if (typeof value === 'undefined') {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    return () => ({ js: value, dts: value.replace(/\.js$/, '.d.ts') });
+  }
+  return value;
 };
 
-let normalizedOutExtension = rawOutExtension;
-if (typeof rawOutExtension === 'string') {
-  normalizedOutExtension = () => ({ js: rawOutExtension });
-}
+const normalizedOutExtension = toOutExtension(rawOutExtensions ?? legacyOutExtension);
 
 const defaultOutExtension = () => ({
   js: '.js',
@@ -153,7 +161,7 @@ const packageWorkspaceAliasPlugin = {
   },
 };
 
-const baseConfig: TsdownConfig = {
+const baseConfig: TsdownWorkspaceConfig = {
   name: pkg.name,
   format: ['esm'] as const,
   platform: 'node' as const,
@@ -162,28 +170,30 @@ const baseConfig: TsdownConfig = {
   outDir: 'dist',
   dts: true,
   external: mergedExternal,
-  outExtension: defaultOutExtension,
+  outExtensions: defaultOutExtension,
   hash: false,
-  splitting: false,
 };
 
-const finalConfig: TsdownConfig = {
+const resolvedUserPlugins = (() => {
+  const userPlugins = restUserConfig.plugins;
+  if (!userPlugins) {
+    return [packageWorkspaceAliasPlugin];
+  }
+  return [...(Array.isArray(userPlugins) ? userPlugins : [userPlugins]), packageWorkspaceAliasPlugin];
+})();
+
+const finalConfig: TsdownWorkspaceConfig = {
   ...baseConfig,
   ...restUserConfig,
-  tsconfig: userTsconfig ?? true,
+  tsconfig: typeof userTsconfig === 'string' || typeof userTsconfig === 'boolean'
+    ? userTsconfig
+    : true,
   alias: mergedAlias,
-  plugins: [
-    ...((() => {
-      const userPlugins = (restUserConfig as { plugins?: unknown }).plugins;
-      if (!userPlugins) return [];
-      return Array.isArray(userPlugins) ? userPlugins : [userPlugins];
-    })() as Array<unknown>),
-    packageWorkspaceAliasPlugin,
-  ],
+  plugins: resolvedUserPlugins as Options['plugins'],
 };
 
 if (normalizedOutExtension !== undefined) {
-  finalConfig.outExtension = normalizedOutExtension;
+  finalConfig.outExtensions = normalizedOutExtension;
 }
 
 const transformConfig: Record<string, unknown> =
@@ -208,7 +218,11 @@ if (Object.keys(transformConfig).length > 0) {
 const proxiedConfig = new Proxy(finalConfig, {
   set(target, prop, value) {
     if (prop === 'define' || prop === 'inject') {
-      const transform = (target.transform ??= {});
+      const currentTransform = target.transform;
+      const transform = currentTransform && typeof currentTransform === 'object'
+        ? currentTransform
+        : {};
+      target.transform = transform as Record<string, unknown>;
       (transform as Record<string, unknown>)[prop as string] = value;
       return true;
     }
@@ -221,4 +235,4 @@ if (process.env.TSDOWN_DEBUG === '1') {
   console.log('[tsdown-config]', JSON.stringify(proxiedConfig, null, 2));
 }
 
-export default defineConfig(proxiedConfig);
+export default defineConfig(proxiedConfig as UserConfig);

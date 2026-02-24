@@ -63,7 +63,8 @@
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-build-progress": "workspace:*",
-    "@hierarchidb/tabular-source-xlsx": "workspace:*"
+    "@hierarchidb/tabular-source-xlsx": "workspace:*",
+    "@hierarchidb/ui-build-sessions": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

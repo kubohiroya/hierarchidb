@@ -6,7 +6,7 @@ import {
   areBuildSessionStatusesEquivalent,
   useBuildSessionMutation,
   usePluginBuildProgress,
-} from '../../../../../packages/ui/build-sessions';
+} from '@hierarchidb/ui-build-sessions';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 

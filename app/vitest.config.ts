@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { defineConfig } from 'vitest/config';
-import { collectAliasEntries } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias.ts';
+import { collectAliasEntries } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
 
 const rootDir = __dirname;
 
