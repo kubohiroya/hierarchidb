@@ -132,6 +132,8 @@ export interface TransformConfig {
   hybridFilterConfig: HybridFilterConfig;
   deleteOnComplete: boolean;
   toleranceByBand: number[];
+  retryCount?: number;
+  retryToleranceByBand?: number[];
   retryToleranceStep?: number;
   quantize?: number;
   areaThreshold: number;

@@ -41,23 +41,65 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const hoverCardSx = getBuildConfigHoverCardSx(disabled);
-  const clampSliderValue = (value: number) => Math.min(2, Math.max(0, value));
+  const clampRetryCount = (value: number): number => Math.min(10, Math.max(0, Math.round(value)));
   const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
+  const retryCountMarks = [
+    0, 2, 4, 6, 8, 10,
+  ].map((value) => ({ value, label: String(value) }));
 
   const simplifyAlgorithm = baseTransformConfig.simplifyAlgorithm ?? 'topojson';
-  const simplifyRetryStep = typeof baseTransformConfig.retryToleranceStep === 'number'
-    ? clampSliderValue(baseTransformConfig.retryToleranceStep)
-    : 0.5;
+  const simplifyRetryCount = typeof baseTransformConfig.retryCount === 'number'
+    && Number.isFinite(baseTransformConfig.retryCount)
+    ? clampRetryCount(baseTransformConfig.retryCount)
+    : 4;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
   const toleranceFallback = 0.1;
-  const toleranceByBandAnchors = buildToneCurveAnchorsFromToleranceByBand(
-    baseTransformConfig.toleranceByBand,
-    baseTransformConfig.zoomBandBoundaries,
-    toleranceFallback
-  );
+  const toneCurveDefaultAnchorValues = [8, 6, 3, 1] as const;
+  const toneCurveRetrySecondDefaultAnchorValues = [9, 7, 4, 2] as const;
+  const toneCurveLineStyles = [
+    {
+      lineColor: '#0b5ed7',
+      anchorPointColor: '#0b5ed7',
+      lineWidth: 2,
+    },
+    {
+      lineColor: '#ef4444',
+      anchorPointColor: '#ef4444',
+      lineWidth: 2,
+      lineDashArray: '6 4',
+    },
+  ] as const;
+  const boundaryCount = baseTransformConfig.zoomBandBoundaries.length;
+  const hasCompleteToleranceByBand = (baseTransformConfig.toleranceByBand?.length ?? 0) === boundaryCount;
+  const resolvedToneCurveAnchors = hasCompleteToleranceByBand
+    ? buildToneCurveAnchorsFromToleranceByBand(
+      baseTransformConfig.toleranceByBand,
+      baseTransformConfig.zoomBandBoundaries,
+      toleranceFallback,
+      toneCurveDefaultAnchorValues,
+    )
+    : buildToneCurveAnchorsFromToleranceByBand(
+      undefined,
+      baseTransformConfig.zoomBandBoundaries,
+      toleranceFallback,
+      toneCurveDefaultAnchorValues,
+    );
+  const hasCompleteRetryToleranceByBand = (baseTransformConfig.retryToleranceByBand?.length ?? 0) === boundaryCount;
+  const resolvedToneCurveRetrySecondAnchors = hasCompleteRetryToleranceByBand
+    ? buildToneCurveAnchorsFromToleranceByBand(
+      baseTransformConfig.retryToleranceByBand,
+      baseTransformConfig.zoomBandBoundaries,
+      toleranceFallback,
+      toneCurveRetrySecondDefaultAnchorValues,
+    )
+    : buildToneCurveAnchorsFromToleranceByBand(
+      undefined,
+      baseTransformConfig.zoomBandBoundaries,
+      toleranceFallback,
+      toneCurveRetrySecondDefaultAnchorValues,
+    );
   const xMarks = baseTransformConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
-  const toneCurveDefaultAnchors = toleranceByBandAnchors;
 
   const updateTransformConfig = (partial: Partial<ShapeBuildConfig['transformConfig']>) => (
     update({
@@ -149,11 +191,32 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                   width={500}
                   height={180}
                   xRange={[baseTransformConfig.zoomBandBoundaries[0] ?? 1, baseTransformConfig.zoomBandBoundaries.at(-1) ?? 11]}
-                  yRange={[0, 2]}
+                  yRange={[0, 12]}
+                  lineStyles={toneCurveLineStyles}
                   xMarks={xMarks}
-                  xFixedValues={toneCurveDefaultAnchors.map((anchor) => anchor.x)}
-                  yFixedValues={toneCurveDefaultAnchors.map((anchor) => anchor.y)}
-                  ySnapStep={0.01}
+                  anchors={resolvedToneCurveAnchors}
+                  xFixedValues={resolvedToneCurveAnchors.map((anchor) => anchor.x)}
+                  allowAnchorCountChange={false}
+                  xSnapStep={0.1}
+                  ySnapStep={0.1}
+                  overlaySeries={[
+                    {
+                      anchors: resolvedToneCurveRetrySecondAnchors,
+                      xFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.x),
+                      yFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.y),
+                      allowAnchorCountChange: false,
+                      editable: true,
+                      onChange: (overlayAnchors) => {
+                        if (disabled) return;
+                        const next = buildToleranceByBandFromToneCurveAnchors(
+                          overlayAnchors,
+                          baseTransformConfig.zoomBandBoundaries,
+                          toleranceFallback,
+                        );
+                        updateTransformConfig({ retryToleranceByBand: next });
+                      },
+                    },
+                  ]}
                   onChange={(anchors) => {
                     if (disabled) return;
                     const next = buildToleranceByBandFromToneCurveAnchors(
@@ -168,20 +231,21 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
 
               <Stack spacing={0.5}>
                 <Typography variant="body2" color="text.secondary">
-                  {t('processing.transform.retryToleranceStep.label', 'Retry tolerance step')}
+                  {t('processing.transform.retryToleranceStep.label', 'Retry count')}
                 </Typography>
-                <Stack direction="row" spacing={2} alignItems="center">
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '32px' }}>
                   <Slider
                     sx={{ flex: 1 }}
-                    value={simplifyRetryStep}
+                    value={simplifyRetryCount}
                     min={0}
-                    max={2}
-                    step={0.01}
+                    max={10}
+                    step={1}
+                    marks={retryCountMarks}
                     disabled={disabled}
-                    valueLabelDisplay="auto"
+                    valueLabelDisplay="on"
                     onChange={(_event, value) => {
-                      const next = clampSliderValue(resolveSliderNumber(value));
-                      updateTransformConfig({ retryToleranceStep: next });
+                      const next = clampRetryCount(resolveSliderNumber(value));
+                      updateTransformConfig({ retryCount: next });
                     }}
                   />
                 </Stack>
