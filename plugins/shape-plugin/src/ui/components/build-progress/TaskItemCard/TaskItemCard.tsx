@@ -59,6 +59,18 @@ export const TaskItemCard = ({
   const detailLines = task.status === 'failed'
     ? (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined)
     : (displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined));
+  const retryAttempt = typeof task.retryAttempt === 'number'
+    ? task.retryAttempt
+    : typeof task.metadata?.retryAttempt === 'number'
+      ? task.metadata.retryAttempt
+      : null;
+  const normalizedRetryAttempt = retryAttempt !== null && Number.isFinite(retryAttempt) && retryAttempt > 0
+    ? Math.floor(retryAttempt)
+    : null;
+  const statusLabel = normalizedRetryAttempt !== null && task.status === 'failed'
+    ? `${statusLabelValue}: retry ${normalizedRetryAttempt}`
+    : statusLabelValue;
+
   let leadingIcon: ReactNode = null;
   if (task.status === 'recycled') {
     leadingIcon = (
@@ -85,7 +97,7 @@ export const TaskItemCard = ({
     <TaskItem
       title={taskTitle}
       leadingIcon={leadingIcon}
-      statusLabel={statusLabelValue}
+      statusLabel={statusLabel}
       statusColor={statusColor}
       isRunning={task.status === 'running'}
       message={taskMessage}
