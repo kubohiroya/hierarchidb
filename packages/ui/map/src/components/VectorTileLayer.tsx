@@ -33,13 +33,6 @@ export interface VectorTileLayerProps extends VectorTileProps {
 
 const defaultPaint = DEFAULT_MAP_CONFIG.vectorTileLayer.paint;
 
-const logLayerEvent = (message: string, details: Record<string, unknown>) => {
-  if (import.meta.env.DEV) {
-    console.debug(`[VectorTileLayer] ${message}`, details);
-  }
-};
-
-
 export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                                                                   map,
                                                                   dbName,
@@ -83,7 +76,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     if (!map || !layerAdded || !layerId || !map.getLayer || !map.getLayer(layerId)) return;
 
-    const changedKeys: string[] = [];
     const allKeys = new Set([...Object.keys(prevPaint), ...Object.keys(nextPaint)]);
     allKeys.forEach((key) => {
       const prev = prevPaint[key];
@@ -91,15 +83,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       if (JSON.stringify(prev) === JSON.stringify(next)) return;
       try {
         map.setPaintProperty(layerId, key, next as never);
-        changedKeys.push(key);
       } catch (error) {
         console.debug('VectorTileLayer paint update skipped:', error);
       }
     });
-
-    if (changedKeys.length) {
-      logLayerEvent('paint updated', { layerId, keys: changedKeys });
-    }
   }, [layerAdded, layerId, map, paint]);
 
 
@@ -155,10 +142,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                   };
                 }
               } catch (error) {
-                console.warn(
-                  `[VectorTileLayer] Tile not found: z=${zInt}, x=${xInt}, y=${yInt}, nodeId=${nodeIdFromUrl}`,
-                  error,
-                );
                 onTileRequestRef.current?.({
                   bytes: 0,
                   dbName: dbNameFromUrl,
@@ -213,10 +196,8 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     if (mapRef.getSource(sourceId)) {
       if (layerId && mapRef.getLayer(layerId)) {
-        logLayerEvent('layer removed (pre-source)', { layerId, sourceId });
         mapRef.removeLayer(layerId);
       }
-      logLayerEvent('source removed (pre-add)', { sourceId });
       mapRef.removeSource(sourceId);
     }
 
@@ -232,7 +213,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     try {
       mapRef.addSource(sourceId, vectorTileSource as SourceSpecification);
-      logLayerEvent('source added', { sourceId, minzoom, maxzoom });
       setSourceAdded(true);
       sourceConfigRef.current = { sourceId, tilesKey, promoteId };
     } catch (error) {
@@ -253,12 +233,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
           }
           if (layerId) {
             if (mapRef.getLayer(layerId)) {
-              logLayerEvent('layer removed (cleanup)', { layerId });
               mapRef.removeLayer(layerId);
             }
           }
           if (mapRef.getSource(sourceId)) {
-            logLayerEvent('source removed (cleanup)', { sourceId });
             mapRef.removeSource(sourceId);
           }
         }
@@ -351,7 +329,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     }
 
     if (mapRef.getLayer(layerId)) {
-      logLayerEvent('layer removed (pre-add)', { layerId });
       mapRef.removeLayer(layerId);
     }
 
@@ -370,7 +347,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       }
 
       mapRef.addLayer(layerConfig);
-      logLayerEvent('layer added', { layerId, sourceId, layerType });
       setLayerAdded(true);
       layerConfigRef.current = layerConfigKey;
     } catch (error) {
@@ -389,7 +365,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         if (layerId && mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
           if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId)) {
-            logLayerEvent('layer removed (cleanup)', { layerId });
             mapRef.removeLayer(layerId);
           }
         }

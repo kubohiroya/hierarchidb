@@ -19,14 +19,21 @@ type QueueRow = {
   nodePath: string;
 };
 
-type BuildSessionQueueListHookProps = {
+type BuildSessionQueuePanelHookProps = {
   nodeType?: NodeType;
   onNavigateToBuild?: (entry: BuildSessionQueueEntry) => void;
   onEntriesChange?: (entries: BuildSessionQueueEntry[]) => void;
   autoStartTopSession?: boolean;
 };
 
-const RUNNING_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
+const SESSION_SORT_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
+  'starting',
+  'running',
+  'resuming',
+  'finalizing',
+]);
+
+const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
   'starting',
   'running',
   'resuming',
@@ -45,13 +52,49 @@ const QUEUE_STATUSES: BuildSessionRuntimeRecord['status'][] = [
   'completed',
 ];
 
-const getNow = (): number => Date.now();
-
 const isSessionStoppedByStatus = (session: BuildSessionRuntimeRecord): boolean =>
   session.status === 'paused' || session.status === 'failed' || session.status === 'completed';
 
 const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =>
-  RUNNING_STATUSES.has(session.status);
+  session.isActive || SESSION_SORT_ACTIVE_STATUSES.has(session.status);
+
+const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
+  session.isActive && SESSION_TIMER_ACTIVE_STATUSES.has(session.status);
+
+const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
+  const progress = session.progress;
+  const progressSignature = progress
+    ? `${progress.stage ?? ''}:${progress.phase ?? ''}:${progress.percentage ?? ''}:${progress.total ?? ''}`
+    : '';
+  const runtimeSignature = isSessionTimerActive(session)
+    ? `${session.revision}|${session.updatedAt ?? ''}|${progressSignature}`
+    : '';
+
+  return [
+    session.nodeId,
+    session.status,
+    session.isActive ? 1 : 0,
+    runtimeSignature,
+  ].join('|');
+};
+
+const createQueueRowSignature = (row: QueueRow): string => (
+  `${createRuntimeRecordSignature(row.session)}|${row.node?.id ?? ''}|${row.nodePath}`
+);
+
+const isSameQueueRows = (left: QueueRow[], right: QueueRow[]): boolean => {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((row, index) => {
+    const other = right[index];
+    if (!other) {
+      return false;
+    }
+    return createQueueRowSignature(row) === createQueueRowSignature(other);
+  });
+};
 
 const normalizeWaitingFirst = (rows: QueueRow[]): QueueRow[] => {
   const running: QueueRow[] = [];
@@ -113,12 +156,11 @@ export function useBuildSessionListQueue({
   onNavigateToBuild,
   onEntriesChange,
   autoStartTopSession = true,
-}: BuildSessionQueueListHookProps) {
+}: BuildSessionQueuePanelHookProps) {
   const { getQueryAPIOrNull } = useWorkerQueryAPI();
   const bridgeRef = useRef<BuildWorkerBridge>(getBuildWorkerBridge());
 
   const [rows, setRows] = useState<QueueRow[]>([]);
-  const [now, setNow] = useState<number>(getNow);
   const [draggingNodeId, setDraggingNodeId] = useState<NodeId | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QueueRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -127,7 +169,6 @@ export function useBuildSessionListQueue({
   const queueStoppedRef = useRef<boolean>(false);
   const autoStartingNodeRef = useRef<NodeId | null>(null);
   const nodeCacheRef = useRef<Map<string, { node: TreeNode | null; nodePath: string }>>(new Map());
-
   const loadSessions = useCallback(async () => {
     try {
       const bridge = bridgeRef.current;
@@ -135,7 +176,10 @@ export function useBuildSessionListQueue({
       const sessions = await bridge.listBuildSessionRuntimes(nodeType, {
         statuses: [...QUEUE_STATUSES],
       });
-      setRows((current) => normalizeWaitingFirst(mergeSessionOrder(current, sessions)));
+      setRows((current) => {
+        const nextRows = normalizeWaitingFirst(mergeSessionOrder(current, sessions));
+        return isSameQueueRows(current, nextRows) ? current : nextRows;
+      });
     } catch (error) {
       console.warn('[BuildSessionQueueList] listBuildSessionRuntimes failed', error);
     }
@@ -159,7 +203,10 @@ export function useBuildSessionListQueue({
               return;
             }
             const filtered = nextSessions.filter((session) => QUEUE_STATUSES.includes(session.status));
-            setRows((current) => normalizeWaitingFirst(mergeSessionOrder(current, filtered)));
+            setRows((current) => {
+              const nextRows = normalizeWaitingFirst(mergeSessionOrder(current, filtered));
+              return isSameQueueRows(current, nextRows) ? current : nextRows;
+            });
           }
         );
       } catch (error) {
@@ -176,16 +223,6 @@ export function useBuildSessionListQueue({
       }
     };
   }, [loadSessions, nodeType]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(getNow());
-    }, 1000);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
 
   useEffect(() => {
     const loadNodeInfo = async () => {
@@ -244,7 +281,7 @@ export function useBuildSessionListQueue({
         return nextRow;
       });
 
-      if (changed) {
+      if (changed && !isSameQueueRows(rows, nextRows)) {
         setRows(nextRows);
       }
     };
@@ -384,7 +421,7 @@ export function useBuildSessionListQueue({
       return;
     }
     const rowIndex = rows.findIndex((item) => String(item.session.nodeId) === String(nodeId));
-    const isRunning = isSessionRunningByStatus(row.session);
+    const isRunning = isSessionTimerActive(row.session);
     if (isRunning || rowIndex === 0) {
       event.preventDefault();
       return;
@@ -436,7 +473,6 @@ export function useBuildSessionListQueue({
 
   return {
     rows,
-    now,
     isDeleting,
     isDialogOpen,
     anchorEl,

@@ -535,6 +535,62 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
     [vectorLayers],
   );
+  const shapePreviewLayerSourceIds = useMemo(
+    () => new Set(
+      vectorLayers
+        .map((layer) => layer.layerConfig?.sourceId)
+        .filter((sourceId): sourceId is string => Boolean(sourceId)),
+    ),
+    [vectorLayers],
+  );
+  const refreshCountsTimeoutRef = useRef<number | null>(null);
+  const sourceLoadStateRef = useRef<Map<string, boolean>>(new Map());
+
+  const visibleLayerIdsByDetail = useMemo(() => {
+    const map = new Map<ShapePreviewLayerDetailId, string[]>();
+    SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
+      map.set(detailId, []);
+    });
+    resolvedLayerSetEntries.forEach((entry) => {
+      if (!entry.sourceLayer || typeof entry.adminLevel !== 'number') return;
+      const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
+      if (!keys) return;
+      const detailId = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
+      const layerId = `${preview.baseLayerId}-${entry.id}`;
+      const existing = map.get(detailId);
+      if (!existing) return;
+      existing.push(layerId);
+    });
+    return map;
+  }, [resolvedLayerSetEntries, preview.baseLayerId, shapePreviewLayerVisibility]);
+
+  const visibleLayerIdsForCounts = useMemo(() => {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    visibleLayerIdsByDetail.forEach((layerIds) => {
+      layerIds.forEach((layerId) => {
+        if (seen.has(layerId)) return;
+        seen.add(layerId);
+        ids.push(layerId);
+      });
+    });
+    return ids;
+  }, [visibleLayerIdsByDetail]);
+
+  const detailIdsByLayerId = useMemo(() => {
+    const map = new Map<string, ShapePreviewLayerDetailId[]>();
+    visibleLayerIdsByDetail.forEach((layerIds, detailId) => {
+      layerIds.forEach((layerId) => {
+        const current = map.get(layerId);
+        if (current) {
+          current.push(detailId);
+          return;
+        }
+        map.set(layerId, [detailId]);
+      });
+    });
+    return map;
+  }, [visibleLayerIdsByDetail]);
 
   const refreshShapePreviewLayerFeatureCounts = useCallback(() => {
     const map = preview.mapInstance;
@@ -547,69 +603,100 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       return;
     }
 
-    const layerIdsByDetail = new Map<ShapePreviewLayerDetailId, string[]>();
+    const layerIdsByDetail = new Map<ShapePreviewLayerDetailId, Set<string>>();
+    const detailIdByLayerId = detailIdsByLayerId;
+    const layerIdsForQuery = visibleLayerIdsForCounts.filter((layerId) => map.getLayer(layerId));
     SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
-      layerIdsByDetail.set(detailId, []);
+      layerIdsByDetail.set(detailId, new Set());
     });
+    if (layerIdsForQuery.length === 0) {
+      setShapePreviewLayerFeatureCounts((current) => (
+        areShapePreviewLayerFeatureCountsEqual(current, SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT)
+          ? current
+          : { ...SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT }
+      ));
+      return;
+    }
 
-    resolvedLayerSetEntries.forEach((entry) => {
-      if (!entry.sourceLayer || typeof entry.adminLevel !== 'number') return;
-      const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
-      if (!keys) return;
-      const detailId = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
-      const layerId = `${preview.baseLayerId}-${entry.id}`;
-      if (!map.getLayer(layerId)) return;
-      const existing = layerIdsByDetail.get(detailId);
-      if (!existing) return;
-      existing.push(layerId);
-    });
+    let features: MapLibreGeoJSONFeature[] = [];
+    try {
+      features = map.queryRenderedFeatures(undefined, { layers: layerIdsForQuery });
+    } catch {
+      // ignore map query errors during style transitions
+      features = [];
+    }
 
-    const featureKeysByDetail = new Map<ShapePreviewLayerDetailId, Set<string>>();
-    SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
-      const layerIds = layerIdsByDetail.get(detailId) ?? [];
-      const featureKeys = new Set<string>();
-      layerIds.forEach((layerId) => {
-        try {
-          const features = map.queryRenderedFeatures(undefined, { layers: [layerId] });
-          features.forEach((feature) => {
-            featureKeys.add(buildFeatureCountKey(feature));
-          });
-        } catch {
-          // ignore map query errors during style transitions
+    features.forEach((feature) => {
+      const layerId = feature.layer?.id;
+      if (!layerId) return;
+      const detailIds = detailIdByLayerId.get(layerId);
+      if (!detailIds || detailIds.length === 0) return;
+      const key = buildFeatureCountKey(feature);
+      detailIds.forEach((detailId) => {
+        const next = layerIdsByDetail.get(detailId);
+        if (next) {
+          next.add(key);
         }
       });
-      featureKeysByDetail.set(detailId, featureKeys);
     });
 
+    const adm0BoundaryFeatures = layerIdsByDetail.get('adm0Boundary') ?? new Set<string>();
+    const adm0FillFeatures = layerIdsByDetail.get('adm0Fill') ?? new Set<string>();
+    const adm1BoundaryFeatures = layerIdsByDetail.get('adm1Boundary') ?? new Set<string>();
+    const adm1FillFeatures = layerIdsByDetail.get('adm1Fill') ?? new Set<string>();
+    const adm2BoundaryFeatures = layerIdsByDetail.get('adm2Boundary') ?? new Set<string>();
+    const adm2FillFeatures = layerIdsByDetail.get('adm2Fill') ?? new Set<string>();
     const adm0Features = new Set<string>([
-      ...(featureKeysByDetail.get('adm0Boundary') ?? new Set<string>()),
-      ...(featureKeysByDetail.get('adm0Fill') ?? new Set<string>()),
+      ...adm0BoundaryFeatures,
+      ...adm0FillFeatures,
     ]);
     const adm1Features = new Set<string>([
-      ...(featureKeysByDetail.get('adm1Boundary') ?? new Set<string>()),
-      ...(featureKeysByDetail.get('adm1Fill') ?? new Set<string>()),
+      ...adm1BoundaryFeatures,
+      ...adm1FillFeatures,
     ]);
     const adm2Features = new Set<string>([
-      ...(featureKeysByDetail.get('adm2Boundary') ?? new Set<string>()),
-      ...(featureKeysByDetail.get('adm2Fill') ?? new Set<string>()),
+      ...adm2BoundaryFeatures,
+      ...adm2FillFeatures,
     ]);
 
     const nextCounts: ShapePreviewLayerFeatureCounts = {
       adm0: adm0Features.size,
-      adm0Boundary: (featureKeysByDetail.get('adm0Boundary') ?? new Set<string>()).size,
-      adm0Fill: (featureKeysByDetail.get('adm0Fill') ?? new Set<string>()).size,
+      adm0Boundary: adm0BoundaryFeatures.size,
+      adm0Fill: adm0FillFeatures.size,
       adm1: adm1Features.size,
-      adm1Boundary: (featureKeysByDetail.get('adm1Boundary') ?? new Set<string>()).size,
-      adm1Fill: (featureKeysByDetail.get('adm1Fill') ?? new Set<string>()).size,
+      adm1Boundary: adm1BoundaryFeatures.size,
+      adm1Fill: adm1FillFeatures.size,
       adm2: adm2Features.size,
-      adm2Boundary: (featureKeysByDetail.get('adm2Boundary') ?? new Set<string>()).size,
-      adm2Fill: (featureKeysByDetail.get('adm2Fill') ?? new Set<string>()).size,
+      adm2Boundary: adm2BoundaryFeatures.size,
+      adm2Fill: adm2FillFeatures.size,
     };
 
     setShapePreviewLayerFeatureCounts((current) => (
       areShapePreviewLayerFeatureCountsEqual(current, nextCounts) ? current : nextCounts
     ));
-  }, [preview.baseLayerId, preview.mapInstance, resolvedLayerSetEntries]);
+  }, [
+    detailIdsByLayerId,
+    preview.mapInstance,
+    visibleLayerIdsForCounts,
+  ]);
+
+  const scheduleRefreshShapePreviewLayerFeatureCounts = useCallback(() => {
+    if (refreshCountsTimeoutRef.current !== null) {
+      return;
+    }
+
+    refreshCountsTimeoutRef.current = window.setTimeout(() => {
+      refreshCountsTimeoutRef.current = null;
+      refreshShapePreviewLayerFeatureCounts();
+    }, 250);
+  }, [refreshShapePreviewLayerFeatureCounts]);
+
+  useEffect(() => () => {
+    if (refreshCountsTimeoutRef.current !== null) {
+      window.clearTimeout(refreshCountsTimeoutRef.current);
+      refreshCountsTimeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     const map = preview.mapInstance;
@@ -628,96 +715,64 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   }, [preview.mapInstance, preview.nodeId, vectorLayerIds]);
 
   useEffect(() => {
-    refreshShapePreviewLayerFeatureCounts();
-  }, [refreshShapePreviewLayerFeatureCounts]);
+    scheduleRefreshShapePreviewLayerFeatureCounts();
+  }, [
+    scheduleRefreshShapePreviewLayerFeatureCounts,
+    visibleLayerIdsForCounts,
+    shapePreviewLayerSourceIds,
+  ]);
+
+  useEffect(() => {
+    sourceLoadStateRef.current.forEach((_loaded, sourceId) => {
+      if (!shapePreviewLayerSourceIds.has(sourceId)) {
+        sourceLoadStateRef.current.delete(sourceId);
+      }
+    });
+    shapePreviewLayerSourceIds.forEach((sourceId) => {
+      if (!sourceLoadStateRef.current.has(sourceId)) {
+        sourceLoadStateRef.current.set(sourceId, false);
+      }
+    });
+  }, [shapePreviewLayerSourceIds]);
 
   useEffect(() => {
     const map = preview.mapInstance;
     if (!map) return;
-    const handleRefresh = () => {
-      refreshShapePreviewLayerFeatureCounts();
+  const handleRefresh = () => {
+      scheduleRefreshShapePreviewLayerFeatureCounts();
+    };
+    const handleSourceData = (event: {
+      sourceId?: string;
+      dataType?: string;
+      sourceDataType?: string;
+      isSourceLoaded?: boolean;
+      tile?: unknown;
+    }) => {
+      if (typeof event.sourceId !== 'string') return;
+      if (!shapePreviewLayerSourceIds.has(event.sourceId)) return;
+      if (event.dataType !== 'source') return;
+      if (Object.prototype.hasOwnProperty.call(event, 'tile')) return;
+
+      const sourceId = event.sourceId;
+      if (event.isSourceLoaded === false) {
+        sourceLoadStateRef.current.set(sourceId, false);
+        return;
+      }
+      if (event.isSourceLoaded !== true) return;
+
+      const alreadyHandled = sourceLoadStateRef.current.get(sourceId) === true;
+      if (alreadyHandled) return;
+
+      sourceLoadStateRef.current.set(sourceId, true);
+      handleRefresh();
     };
     map.on('moveend', handleRefresh);
-    map.on('idle', handleRefresh);
-    map.on('styledata', handleRefresh);
+    map.on('sourcedata', handleSourceData);
     return () => {
       map.off('moveend', handleRefresh);
-      map.off('idle', handleRefresh);
-      map.off('styledata', handleRefresh);
+      map.off('sourcedata', handleSourceData);
     };
-  }, [preview.mapInstance, refreshShapePreviewLayerFeatureCounts]);
-
-  useEffect(() => {
-    const map = preview.mapInstance;
-    if (!map) return;
-
-    const logStartRef = (() => {
-      const start = performance.now();
-      return { value: start };
-    })();
-
-    const buildPayload = (event: unknown) => {
-      const payload = event as {
-        sourceId?: unknown;
-        dataType?: unknown;
-        sourceDataType?: unknown;
-        tile?: { z?: unknown; x?: unknown; y?: unknown; id?: unknown; tileID?: unknown };
-      };
-      const sourceId = typeof payload?.sourceId === 'string' ? payload.sourceId : undefined;
-      const dataType = typeof payload?.dataType === 'string' ? payload.dataType : undefined;
-      const sourceDataType = typeof payload?.sourceDataType === 'string' ? payload.sourceDataType : undefined;
-      const tile = payload?.tile;
-      const tileInfo = tile && typeof tile === 'object'
-        ? {
-          z: typeof tile.z === 'number' ? tile.z : undefined,
-          x: typeof tile.x === 'number' ? tile.x : undefined,
-          y: typeof tile.y === 'number' ? tile.y : undefined,
-          id: typeof tile.id === 'string' || typeof tile.id === 'number' ? tile.id : undefined,
-          tileID: typeof tile.tileID === 'number' ? tile.tileID : undefined,
-        }
-        : undefined;
-      return { sourceId, dataType, sourceDataType, tile: tileInfo };
-    };
-
-    const logEvent = (eventName: string) => (event: unknown) => {
-      const now = performance.now();
-      const elapsedMs = Math.round(now - logStartRef.value);
-      console.log('[ShapePreview][MapEvent]', {
-        event: eventName,
-        elapsedMs,
-        ...buildPayload(event),
-      });
-    };
-
-    const handleSourceDataLoading = logEvent('sourcedataloading');
-    const handleData = logEvent('data');
-    const handleTile = logEvent('tile');
-    const handleIdle = (event: unknown) => {
-      const now = performance.now();
-      const elapsedMs = Math.round(now - logStartRef.value);
-      console.log('[ShapePreview][MapEvent]', {
-        event: 'idle',
-        elapsedMs,
-        ...buildPayload(event),
-      });
-      console.log('[ShapePreview][MapEvent]', {
-        event: 'idle-total',
-        elapsedMs,
-      });
-    };
-
-    map.on('sourcedataloading', handleSourceDataLoading);
-    map.on('data', handleData);
-    map.on('tile', handleTile);
-    map.on('idle', handleIdle);
-
-    return () => {
-      map.off('sourcedataloading', handleSourceDataLoading);
-      map.off('data', handleData);
-      map.off('tile', handleTile);
-      map.off('idle', handleIdle);
-    };
-  }, [preview.mapInstance]);
+  }, [preview.mapInstance, scheduleRefreshShapePreviewLayerFeatureCounts, shapePreviewLayerSourceIds]);
 
   const resolvedLayerNames = useMemo(() => {
     const tileLayerNames = preview.tileLayerNames ?? [];

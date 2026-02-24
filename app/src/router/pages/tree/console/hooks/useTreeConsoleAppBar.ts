@@ -6,7 +6,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useWorker } from '~/contexts/WorkerProvider';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow';
 import { openInNewTab } from '~/utils/openInNewTab';
-import type { BuildSessionQueueEntry } from '~/components/BuildSessionQueueList';
+import type { BuildSessionQueueEntry } from '~/components/BuildSessionQueuePanel';
 import { type BuildWorkerBridge, getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 const runningSessionStatuses = new Set<BuildSessionRuntimeRecord['status']>([

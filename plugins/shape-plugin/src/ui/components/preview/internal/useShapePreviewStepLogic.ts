@@ -405,6 +405,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     () => resolvePersistedViewState(data.previewMapView),
     [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom],
   );
+  const lastAutoFitBounds = useRef<{
+    minLng: number;
+    minLat: number;
+    maxLng: number;
+    maxLat: number;
+  } | null>(null);
 
   const normalizedTransformErrorRows = useMemo(() => transformErrorRows.map((row) => {
     const context = resolveSourceContext({
@@ -452,14 +458,30 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   useEffect(() => {
     if (!mapInstance || !selectionBounds || persistedViewState) return;
+    const prevBounds = lastAutoFitBounds.current;
+    if (
+      prevBounds
+      && Math.abs(prevBounds.minLng - selectionBounds.minLng) < 1e-7
+      && Math.abs(prevBounds.minLat - selectionBounds.minLat) < 1e-7
+      && Math.abs(prevBounds.maxLng - selectionBounds.maxLng) < 1e-7
+      && Math.abs(prevBounds.maxLat - selectionBounds.maxLat) < 1e-7
+    ) {
+      return;
+    }
     const bounds: [[number, number], [number, number]] = [
       [selectionBounds.minLng, selectionBounds.minLat],
       [selectionBounds.maxLng, selectionBounds.maxLat],
     ];
+    lastAutoFitBounds.current = {
+      minLng: selectionBounds.minLng,
+      minLat: selectionBounds.minLat,
+      maxLng: selectionBounds.maxLng,
+      maxLat: selectionBounds.maxLat,
+    };
     mapInstance.fitBounds(bounds, {
       padding: 24,
     });
-  }, [mapInstance, selectionBounds]);
+  }, [mapInstance, selectionBounds, persistedViewState]);
 
   const getRowId = useCallback((row: ShapeDataSourceMetadata) => row.originKey, []);
   const buildSearchText = useCallback((row: ShapeDataSourceMetadata) => {

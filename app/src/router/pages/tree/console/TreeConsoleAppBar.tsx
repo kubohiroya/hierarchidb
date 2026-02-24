@@ -1,9 +1,9 @@
 import { AppBar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Toolbar, Typography } from '@mui/material';
 import AppLogoIcon from '~/components/AppLogoIcon';
 import {
-  BuildSessionQueueBadgeButton,
-  BuildSessionQueueList,
-} from '~/components/BuildSessionQueueList';
+  BuildSessionQueuePanelBadgeButton,
+  BuildSessionQueuePanel,
+} from '~/components/BuildSessionQueuePanel';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import type { OpenMaintenanceContext } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import type { LoadPageNodeReturn } from '~/router/loaders/treeLoaders';
@@ -61,12 +61,12 @@ export function TreeConsoleAppBar({
 
         <Stack direction="row" spacing={2} alignItems="center">
           {data.tree?.id ? (
-            <BuildSessionQueueBadgeButton
-              nodeType={resumeSessionNodeType}
-              onNavigateToBuild={handleNavigateToBuild}
-              autoStartTopSession={isQueueAutoStartEnabled}
-              onEntriesChange={handleResumeDialogEntriesChange}
-            />
+          <BuildSessionQueuePanelBadgeButton
+            nodeType={resumeSessionNodeType}
+            onNavigateToBuild={handleNavigateToBuild}
+            autoStartTopSession={isQueueAutoStartEnabled}
+            onEntriesChange={handleResumeDialogEntriesChange}
+          />
           ) : null}
           {isUserMenuReady ? (
             <UserLoginButton onOpenMaintenance={onOpenMaintenance} />
@@ -81,7 +81,7 @@ export function TreeConsoleAppBar({
       >
         <DialogTitle>{t('treeConsole.toolbar.resumeQueueDialog.title', '再開待ちセッションを確認')}</DialogTitle>
         <DialogContent dividers>
-          <BuildSessionQueueList
+          <BuildSessionQueuePanel
             nodeType={resumeSessionNodeType}
             onNavigateToBuild={handleNavigateToBuild}
             onEntriesChange={handleResumeDialogEntriesChange}
