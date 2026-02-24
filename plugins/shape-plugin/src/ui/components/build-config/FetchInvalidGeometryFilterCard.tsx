@@ -16,7 +16,7 @@ import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { applyBuildConfigPatch } from '~/common/types/index';
 import type { ChangeEvent } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -35,20 +35,22 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
   const guard = config.fetchConfig.geometryIntakeGuard;
 
-  const resolved = {
+  const resolved = useMemo(()=>({
     area: config.fetchConfig.invalidGeometryFilter?.area ?? false,
     lineLength: config.fetchConfig.invalidGeometryFilter?.lineLength ?? false,
     maxEdgeLength: config.fetchConfig.invalidGeometryFilter?.maxEdgeLength ?? false,
     selfIntersection: config.fetchConfig.invalidGeometryFilter?.selfIntersection ?? false,
     triangleRingRatio: config.fetchConfig.invalidGeometryFilter?.triangleRingRatio ?? false,
-  } as const;
-  const resolvedGuard = {
+  } as const),[config.fetchConfig.invalidGeometryFilter?.area, config.fetchConfig.invalidGeometryFilter?.lineLength, config.fetchConfig.invalidGeometryFilter?.maxEdgeLength, config.fetchConfig.invalidGeometryFilter?.selfIntersection, config.fetchConfig.invalidGeometryFilter?.triangleRingRatio]);
+  const resolvedGuard = useMemo(()=>({
     validationLevel: guard?.validationLevel ?? 'off',
     dedupeEpsilon: guard?.dedupeEpsilon ?? 0.000001,
     minRingAreaThreshold: guard?.minRingAreaThreshold ?? 0,
     normalizeRingOrientation: guard?.normalizeRingOrientation ?? true,
     keepBaselineSnapshot: guard?.keepBaselineSnapshot ?? true,
-  } as const;
+  } as const),[
+    guard?.validationLevel, guard?.dedupeEpsilon, guard?.minRingAreaThreshold, guard?.normalizeRingOrientation, guard?.keepBaselineSnapshot
+  ]);
 
   const updateFilter = useCallback((partial: Partial<typeof resolved>): void => {
     onChange((prevConfig) => {
@@ -207,7 +209,7 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
         </Grid>
         <Grid container spacing={1.5}>
           {switchGroups.map((group, groupIndex) => (
-            <Grid size={{ xs: 12, md: 4 }} key={`switch-group-${groupIndex}`}>
+            <Grid size={{ xs: 12, md: 4 }} key={`switch-group-${String(groupIndex)}`}>
               <Stack spacing={0.75}>
                 {group.map((item) => (
                   <FormControlLabel

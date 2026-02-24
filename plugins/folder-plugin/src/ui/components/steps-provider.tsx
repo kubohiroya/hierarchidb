@@ -52,7 +52,6 @@ type FolderExportWindowRef = {
 };
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   var __HDB_WORKER_CLIENT_REF__: FolderExportWorkerRef | undefined;
 }
 

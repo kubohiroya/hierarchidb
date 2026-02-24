@@ -1207,13 +1207,7 @@ export function ToneCurveEditor({
       updateDragPointerLabelFromAnchor(selectedAnchor);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [
-      isDraggable,
-      sortedOverlayPoints,
-      sortedPoints,
-      sortedPoints.length,
-      updateDragPointerLabelFromAnchor,
-    ],
+    [isDraggable, sortedOverlayPoints, sortedPoints, updateDragPointerLabelFromAnchor],
   );
 
   React.useEffect(() => {
