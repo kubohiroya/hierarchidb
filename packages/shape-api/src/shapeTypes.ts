@@ -79,4 +79,6 @@ export interface ShapeBuildTaskSummary {
   progress: number;
   message?: string;
   errorMessage?: string;
+  metadata?: Record<string, unknown>;
+  retryAttempt?: number;
 }
