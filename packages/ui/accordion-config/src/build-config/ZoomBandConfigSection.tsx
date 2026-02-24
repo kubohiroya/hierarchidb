@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  Settings as SettingsIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import {
   areZoomBandBoundariesEqual,
@@ -53,7 +53,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <BuildConfigAccordionSummary
-          icon={<SettingsIcon color="primary" />}
+          icon={<SearchIcon color="primary" />}
           title={t('processing.zoomBandSettings.title', 'Zoom band settings')}
           info={t(
             'processing.tile.zoomBandsSummary',
@@ -66,7 +66,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
           <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
             <ZoomBandRangeCard
               title={t('processing.filter.zoomBandRangesTitle', 'Zoom band settings')}
-              icon={<SettingsIcon fontSize="small" color="primary" />}
+              icon={<SearchIcon fontSize="small" color="primary" />}
               helperText={t(
                 'processing.filter.zoomBandRangesHelp',
                 'Configure the number of zoom ranges and their boundaries.',

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Grid,
   Typography,
   Stack,
   TextField,
@@ -16,7 +17,7 @@ import type {
 
 type Props = {
   config: ShapeBuildConfig;
-  onChange: (next: ShapeBuildConfig) => void;
+  onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
   disabled?: boolean;
 };
 
@@ -95,11 +96,11 @@ export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, 
   }, [normalized]);
 
   const applyRules = useCallback((nextRules?: ShapeBuildUrlRule[]) => {
-    onChange({
-      ...config,
+    onChange((prevConfig) => ({
+      ...prevConfig,
       urlBuildConfigRules: nextRules,
-    });
-  }, [config, onChange]);
+    }));
+  }, [onChange]);
 
   const handleBlur = useCallback(() => {
     const { value, error: nextError } = parseRules(text);
@@ -143,36 +144,45 @@ export const UrlBuildConfigRulesSection: React.FC<Props> = ({ config, onChange, 
         icon={<LinkIcon fontSize="small" color="primary" />}
         title={t('processing.urlRules.sectionTitle', 'URL-specific rules')}
       />
-      <TextField
-        size="small"
-        multiline
-        minRows={10}
-        maxRows={20}
-        value={text}
-        disabled={disabled}
-        onChange={(event) => handleChange(event.target.value)}
-        onBlur={handleBlur}
-        error={Boolean(error)}
-        helperText={error}
-        fullWidth
-        sx={{
-          '& .MuiInputBase-root': {
-            alignItems: 'stretch',
-            lineHeight: 1.5,
-            fontFamily: 'monospace',
-          },
-        }}
-      />
-      <Alert severity="info" sx={{ whiteSpace: 'pre-wrap' }}>
-        {t(
-          'processing.urlRules.example',
-          `Example:
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            size="small"
+            multiline
+            minRows={8}
+            value={text}
+            disabled={disabled}
+            onChange={(event) => handleChange(event.target.value)}
+            onBlur={handleBlur}
+            error={Boolean(error)}
+            helperText={error}
+            fullWidth
+            sx={{
+              '& .MuiInputBase-root': {
+                alignItems: 'stretch',
+                lineHeight: 1.5,
+                fontFamily: 'monospace',
+                overflow: 'auto',
+              },
+              '& textarea': {
+                resize: 'both',
+              },
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Alert severity="info" sx={{ whiteSpace: 'pre-wrap', height: '100%' }}>
+            {t(
+              'processing.urlRules.example',
+              `Example:
 [
   { "key": "default", "matchType": "default", "buildConfig": { "transformConfig": { "toleranceByBand": [0.12, 0.11, 0.1, 0.09, 0.08] } } },
   { "key": "russia-coast", "matchType": "regexp", "pattern": "(?i).*russia.*", "buildConfig": { "transformConfig": { "toleranceByBand": [0.3, 0.25, 0.2, 0.18, 0.16] } }
 ]`,
-        )}
-      </Alert>
+            )}
+          </Alert>
+        </Grid>
+      </Grid>
       <Typography
         variant="body2"
         color="text.secondary"

@@ -105,6 +105,7 @@ type PluginDefinedEntity = PeerEntity<TreeNodeData>;
 type LocalTreeNodeUpdaterState = TreeNodeUpdaterState<PluginDefinedEntity> & {
   dialogUIState?: DialogUIState | null;
 };
+type StepDraftCommitter<TData> = () => Partial<TData> | void | Promise<Partial<TData> | void>;
 
 export interface PluginDialogControllerState {
   headlessProps: HeadlessDialogProps<Partial<PluginDefinedEntity>>;
@@ -339,6 +340,41 @@ export function usePluginDialogController(
     () => draftDataWithoutMeta
   );
   const localDraftDataRef = useRef<Partial<PluginDefinedEntity>>(draftDataWithoutMeta);
+
+  const stepDraftCommittersRef = useRef<Set<StepDraftCommitter<PluginDefinedEntity>>>(new Set());
+  const registerStepDraftCommitter = useCallback(
+    (committer: StepDraftCommitter<PluginDefinedEntity>) => {
+      stepDraftCommittersRef.current.add(committer);
+      return () => {
+        stepDraftCommittersRef.current.delete(committer);
+      };
+    },
+    []
+  );
+
+  const collectStepDraftPatch = useCallback(async () => {
+    const entries = Array.from(stepDraftCommittersRef.current);
+    if (entries.length === 0) {
+      return {};
+    }
+    const patches = await Promise.all(
+      entries.map(async (committer) => {
+        const patch = await committer();
+        if (!patch) return null;
+        if (typeof patch !== 'object' || patch === null) {
+          return null;
+        }
+        return patch;
+      })
+    );
+    return patches.reduce<Partial<PluginDefinedEntity>>((acc: Partial<PluginDefinedEntity>, patch: Partial<PluginDefinedEntity> | null) => {
+      if (patch) {
+        return { ...acc, ...patch };
+      }
+      return acc;
+    }, {});
+  }, []);
+
   const displayModeTransitionRef = useRef(false);
   const setLocalDraftData = useCallback(
     (source: string, next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
@@ -653,6 +689,14 @@ export function usePluginDialogController(
 
   const updateLocalDraft = useCallback(async () => {
     if (!treeUpdater) return;
+    const stepPatch = await collectStepDraftPatch();
+    const mergedDraftData: Partial<PluginDefinedEntity> | undefined = nodeType === 'folder'
+      ? undefined
+      : { ...(localDraftDataRef.current ?? {}), ...(stepPatch ?? {}) };
+    if (nodeType !== 'folder' && mergedDraftData) {
+      localDraftDataRef.current = mergedDraftData;
+      setLocalDraftData('stepDraftCommit', mergedDraftData);
+    }
     const nextPatch: Partial<TreeNodeUpdaterState<PluginDefinedEntity>> = {
       treeNodeId: (treeUpdater.treeNodeId ?? nodeId) as NodeId,
       draftMetadata: {
@@ -661,7 +705,7 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: nodeType === 'folder' ? undefined : { ...(localDraftDataRef.current ?? {}) },
+      draftData: mergedDraftData,
       dialogUIState: getPersistableDialogUIState(),
     };
     if (isSyncDebugActive()) {
@@ -676,9 +720,11 @@ export function usePluginDialogController(
     basicInfo.name,
     basicInfo.tags,
     getPersistableDialogUIState,
+    collectStepDraftPatch,
     nodeId,
     treeUpdater,
     updateTreeNodeUpdater,
+    setLocalDraftData,
     nodeType,
   ]);
 
@@ -854,8 +900,8 @@ export function usePluginDialogController(
       const normalizedData =
         nodeType === 'folder'
           ? null
-          : dialogData && Object.keys(dialogData).length > 0
-            ? (dialogData as Partial<PluginDefinedEntity>)
+          : localDraftDataRef.current && Object.keys(localDraftDataRef.current).length > 0
+            ? (localDraftDataRef.current as Partial<PluginDefinedEntity>)
             : null;
 
       const savePayload: TreeNodeUpdaterState<PluginDefinedEntity> = {
@@ -881,7 +927,6 @@ export function usePluginDialogController(
     activeStepIndex,
     buildDialogUIStateForCommit,
     commitTreeNodeUpdater,
-    dialogData,
     ensureNoConflict,
     navigateToNode,
     nodeType,
@@ -902,9 +947,15 @@ export function usePluginDialogController(
       const ok = await ensureNoConflict();
       if (!ok) return;
       await updateLocalDraft();
+      const draftDataPatch =
+        nodeType === 'folder'
+          ? undefined
+          : localDraftDataRef.current && Object.keys(localDraftDataRef.current).length > 0
+            ? (localDraftDataRef.current as Partial<PluginDefinedEntity>)
+            : undefined;
       const draftPayload: TreeNodeUpdaterState<PluginDefinedEntity> = {
         treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
-        draftData: nodeType === 'folder' ? undefined : (dialogData as Partial<PluginDefinedEntity>),
+        draftData: draftDataPatch,
         draftMetadata: {
           ...(treeUpdater?.draftMetadata ?? {}),
           name: basicInfo.name,
@@ -928,7 +979,6 @@ export function usePluginDialogController(
     buildDialogUIStateForCommit,
     nodeId,
     nodeType,
-    dialogData,
     basicInfo.name,
     basicInfo.description,
     basicInfo.tags,
@@ -1150,6 +1200,7 @@ export function usePluginDialogController(
       onStepDataChange: handleStepDataChange,
       activeStepIndex,
       onStepNavigate: handleNavigation,
+      registerStepDraftCommitter,
       enabledStepIndices: stableEnabledStepIndices,
       validatedStepIndices: stableValidatedStepIndices,
       committableStepIndices: stableCommittableStepIndices,
@@ -1207,7 +1258,7 @@ export function usePluginDialogController(
       ContentComponent,
       FooterComponent,
     }),
-    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, allowFullScreen, options.removePaddingWithFullScreenMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef, nodeType]
+    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, registerStepDraftCommitter, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, allowFullScreen, options.removePaddingWithFullScreenMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef, nodeType]
   );
 
   return {

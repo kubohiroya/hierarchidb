@@ -14,17 +14,47 @@ type LinkerStepProps = PluginStepProps<LinkerStepData>;
 
 const registry = PluginStepRegistry.getInstance();
 
+const createDraftUpdater = (initial: LinkerStepData, onChange: LinkerStepProps['onChange']) => {
+  let latestDraft: LinkerStepData = initial ?? {};
+  const serializeComparable = (value: unknown): string => {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '';
+    }
+  };
+  let latestSignature = serializeComparable(latestDraft);
+
+  return (next: Partial<LinkerStepData>) => {
+    const nextDraft: LinkerStepData = {
+      ...latestDraft,
+      ...next,
+      draftData: {
+        ...(latestDraft.draftData ?? {}),
+        ...(next.draftData ?? {}),
+      },
+    };
+    const nextSignature = serializeComparable(nextDraft);
+    if (nextSignature === latestSignature) {
+      return;
+    }
+    latestDraft = nextDraft;
+    latestSignature = nextSignature;
+    onChange(nextDraft);
+  };
+};
+
 const ResourcesStepWrapper = (props: LinkerStepProps) => {
   const { ensureDraft, toSelectionSet } = useLinkerSteps();
   const draft = ensureDraft(props.data);
   const {t} = useTranslation();
   const selection = toSelectionSet(props.data?.draftData?.linkedNodeIds);
+  const handleUpdate = createDraftUpdater(draft, props.onChange);
   return (
     <ResourcePicker
       value={selection}
       onChange={(nextSet: Set<string>) =>
-        props.onChange({
-          ...(draft ?? {}),
+        handleUpdate({
           draftData: {
             ...(draft?.draftData ?? {}),
             linkedNodeIds: Array.from(nextSet) as NodeId[],

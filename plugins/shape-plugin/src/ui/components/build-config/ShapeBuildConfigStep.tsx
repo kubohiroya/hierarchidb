@@ -26,7 +26,7 @@ import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
   composeRuntimeBuildConfig,
   DEFAULT_PROCESSING_CONFIG,
-  mergeBuildConfig,
+  applyBuildConfigPatch,
   mergeProcessingConfig,
   type ShapeBuildConfig,
   type ShapeEntity,
@@ -79,15 +79,35 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
   onChange,
   disabled,
 }) => {
+  const { registerStepDraftCommitter } = useDialogContext<Partial<ShapeEntity>>();
   const { t } = useTranslation();
-  const { config, handleChange } = useShapeBuildConfigStep({ data, onChange });
+  const { config } = useShapeBuildConfigStep({ data, onChange });
+  const [workingConfig, setWorkingConfig] = useState<ShapeBuildConfig>(config);
+  const workingConfigRef = useRef(config);
+  const syncedConfigRef = useRef(config);
+  const areBuildConfigEqual = useCallback((left: ShapeBuildConfig, right: ShapeBuildConfig): boolean => {
+    try {
+      return JSON.stringify(left) === JSON.stringify(right);
+    } catch {
+      return left === right;
+    }
+  }, []);
+  useEffect(() => {
+    if (areBuildConfigEqual(config, syncedConfigRef.current)) return;
+    syncedConfigRef.current = config;
+    workingConfigRef.current = config;
+    setWorkingConfig(config);
+  }, [areBuildConfigEqual, config]);
+  useEffect(() => {
+    workingConfigRef.current = workingConfig;
+  }, [workingConfig]);
   const processingConfig = useMemo(
     () => mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, data?.processingConfig),
     [data?.processingConfig]
   );
   const runtimeBuildConfig = useMemo(
-    () => composeRuntimeBuildConfig(config, processingConfig),
-    [config, processingConfig]
+    () => composeRuntimeBuildConfig(workingConfig, processingConfig),
+    [workingConfig, processingConfig]
   );
   const { event: heapPressure } = useHeapPressureMonitor();
   const heapWarning = useMemo(() => {
@@ -116,22 +136,32 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     }),
     []
   );
-  const latestConfigRef = useRef(config);
-  useEffect(() => {
-    latestConfigRef.current = config;
-  }, [config]);
+  const updateWorkingConfig = useCallback((next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => {
+    setWorkingConfig((prevConfig) => {
+      const nextConfig = typeof next === 'function' ? next(prevConfig) : next;
+      if (areBuildConfigEqual(prevConfig, nextConfig)) {
+        return prevConfig;
+      }
+      return nextConfig;
+    });
+  }, [areBuildConfigEqual]);
   const updateRuntimeBuildConfig = useCallback(
     (partial: Partial<ShapeRuntimeBuildConfig>) => {
-      const nextBuildConfig = mergeBuildConfig(latestConfigRef.current, toBuildConfigUpdate(partial));
-      handleChange(nextBuildConfig);
+      updateWorkingConfig((prevConfig) => applyBuildConfigPatch(prevConfig, toBuildConfigUpdate(partial)));
     },
-    [handleChange]
+    [updateWorkingConfig]
   );
+  useEffect(() => {
+    if (!registerStepDraftCommitter) return;
+    const unregister = registerStepDraftCommitter(() => ({ buildConfig: workingConfigRef.current }));
+    return unregister;
+  }, [registerStepDraftCommitter]);
+
   const fetchState = useFetchConfigSection({
-    config,
+    config: workingConfig,
     nodeId: nodeId as NodeId,
     disabled,
-    onChange: handleChange,
+    onChange: updateWorkingConfig,
   });
 
   return (
@@ -159,8 +189,8 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
       }
     >
       <ZoomBandConfigSection
-        config={config}
-        onChange={handleChange}
+        config={workingConfig}
+        onChange={updateWorkingConfig}
         disabled={disabled}
         disableHoverLift
       />
@@ -175,16 +205,16 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         disableHoverLift
         additionalCards={
           <FetchInvalidGeometryFilterCard
-            config={config}
-            onChange={handleChange}
+            config={workingConfig}
+            onChange={updateWorkingConfig}
             disabled={disabled}
             disableHoverLift
           />
         }
       />
       <TransformConfigSection
-        config={config}
-        onChange={handleChange}
+        config={workingConfig}
+        onChange={updateWorkingConfig}
         disabled={disabled}
         disableHoverLift
       />
@@ -197,8 +227,8 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         disableHoverLift
       />
       <CacheManagementSection
-        config={config}
-        onChange={handleChange}
+        config={workingConfig}
+        onChange={updateWorkingConfig}
         fetchState={fetchState}
         disabled={disabled}
         disableHoverLift

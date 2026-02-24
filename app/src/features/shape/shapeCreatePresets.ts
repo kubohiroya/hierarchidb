@@ -435,7 +435,7 @@ export function getShapePresetMenuEntries(): readonly ShapePresetMenuEntry[] {
   const defaultEntry: ShapePresetMenuEntry = {
     key: 'shape-preset-default',
     nodeType: 'shape',
-    createType: `shape${SHAPE_PRESET_MARKER}${SHAPE_DEFAULT_PRESET_ID}`,
+    createType: buildCreateType('shape'),
     labelKey: 'treeConsole.shapePresets.default.name',
     label: 'Default',
     descriptionKey: 'treeConsole.shapePresets.default.description',

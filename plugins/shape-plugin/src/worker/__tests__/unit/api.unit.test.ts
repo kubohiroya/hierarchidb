@@ -8,14 +8,14 @@ import type { ShapeBuildConfig, ShapeProcessingConfig } from '../../../common/ty
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
-  mergeBuildConfig,
+  applyBuildConfigPatch,
   mergeProcessingConfig,
 } from '../../../common/types/index';
 import { shapeBuildAPI } from '../../api';
 
 const createBuildConfig = (
   overrides: Partial<ShapeBuildConfig> = {},
-): ShapeBuildConfig => mergeBuildConfig(DEFAULT_BUILD_CONFIG, overrides);
+): ShapeBuildConfig => applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, overrides);
 
 const createProcessingConfig = (
   overrides: Partial<ShapeProcessingConfig> = {},

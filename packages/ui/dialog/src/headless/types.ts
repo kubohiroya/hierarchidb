@@ -1,6 +1,8 @@
 import { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
 import type { ReactNode, ComponentType, PointerEvent as ReactPointerEvent } from 'react';
 
+export type StepDraftCommitter<TData> = () => Partial<TData> | void | Promise<Partial<TData> | void>;
+
 /** Step navigation commands emitted by the dialog shell. */
 export type StepNavigationEvent =
   | { type: 'direct'; targetIndex: number }
@@ -106,6 +108,7 @@ export interface HeadlessDialogProps<TData> extends DialogFrameProps {
   onStepNavigate: (event: StepNavigationEvent) => void;
   onRequestClose: (reason?: 'close' | 'discard') => void;
   onRequestCommit?: () => void;
+  registerStepDraftCommitter?: (committer: StepDraftCommitter<TData>) => void | (() => void);
 
   HeaderComponent?: ComponentType<HeadlessDialogHeaderProps<TData>>;
   ContentComponent?: ComponentType<HeadlessDialogContentProps<TData>>;
@@ -140,4 +143,5 @@ export interface HeadlessDialogContextValue<TData> extends DialogFrameProps {
   onStepNavigate: (event: StepNavigationEvent) => void;
   onRequestClose: (reason?: 'close' | 'discard') => void;
   onRequestCommit?: () => void;
+  registerStepDraftCommitter?: (committer: StepDraftCommitter<TData>) => void | (() => void);
 }

@@ -23,6 +23,36 @@ const mergeData = (
   ...updates,
 });
 
+type DraftNormalizer<TData, TUpdate> = (current: TData, updates: TUpdate) => TData;
+
+const serializeComparable = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+};
+
+const createDraftUpdater = (
+  initial: LocationStepData,
+  onChange: StepProps['onChange'],
+  merge: DraftNormalizer<LocationStepData, Partial<LocationStepData>> = mergeData
+) => {
+  let latestDraft = { ...(initial ?? {}) };
+  let latestSignature = serializeComparable(latestDraft);
+
+  return (updates: Partial<LocationStepData>) => {
+    const nextDraft = merge(latestDraft, updates);
+    const nextSignature = serializeComparable(nextDraft);
+    if (nextSignature === latestSignature) {
+      return;
+    }
+    latestDraft = nextDraft;
+    latestSignature = nextSignature;
+    onChange(nextDraft);
+  };
+};
+
 type StepProps = PluginStepProps<LocationStepData>;
 
 const LICENSE_REQUIRED = false;
@@ -60,10 +90,11 @@ registry.registerConfigProvider<LocationStepData>({
         label: String(i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
+          const handleUpdate = createDraftUpdater(draft, p.onChange);
           return (
             <LocationDataSourceStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
+              onUpdate={handleUpdate}
               licenseRequired={LICENSE_REQUIRED}
               disabled={Boolean(p.disabled)}
               nodeId={resolveNodeId(p.nodeId)}
@@ -79,10 +110,11 @@ registry.registerConfigProvider<LocationStepData>({
         label: String(i18n.t('steps.selection.label', { ns: 'location-plugin', defaultValue: 'Location Selection' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
+          const handleUpdate = createDraftUpdater(draft, p.onChange);
           return (
             <LocationSelectionStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
+              onUpdate={handleUpdate}
             />
           );
         },
@@ -94,11 +126,12 @@ registry.registerConfigProvider<LocationStepData>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
+          const handleUpdate = createDraftUpdater(draft, p.onChange);
           return (
             <LocationMapPreviewStep
               draft={draft}
               nodeId={resolveNodeId(p.nodeId)}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
+              onUpdate={handleUpdate}
             />
           );
         },

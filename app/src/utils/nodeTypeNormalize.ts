@@ -2,6 +2,9 @@ import type { NodeType } from '@hierarchidb/core-types';
 
 export function normalizeNodeType(input: string | undefined | null): NodeType | undefined {
   if (!input) return undefined;
-  const s = String(input);
-  return (s.endsWith('-plugin') ? s.slice(0, -7) : s) as NodeType;
+  const raw = String(input);
+  const base = raw.split('::')[0] ?? '';
+  if (!base) return undefined;
+  const normalized = base.endsWith('-plugin') ? base.slice(0, -7) : base;
+  return normalized ? (normalized as NodeType) : undefined;
 }

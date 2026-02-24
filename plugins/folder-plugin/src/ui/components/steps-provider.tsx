@@ -58,6 +58,37 @@ declare global {
 
 type FolderExportStartContext = StartBuildContext<FolderExportDraftData>;
 
+type FolderExportDataPatch = Partial<FolderExportDraftData>;
+
+const createDraftUpdater = (
+  initial: FolderExportDraftData,
+  onChange: FolderExportStepProps['onChange'],
+) => {
+  let latestDraft = normalizeFolderExportDraft(initial);
+  const serializeComparable = (value: unknown): string => {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '';
+    }
+  };
+  let latestSignature = serializeComparable(latestDraft);
+
+  return (updates: FolderExportDataPatch) => {
+    const nextDraft = {
+      ...latestDraft,
+      ...updates,
+    };
+    const nextSignature = serializeComparable(nextDraft);
+    if (nextSignature === latestSignature) {
+      return;
+    }
+    latestDraft = nextDraft;
+    latestSignature = nextSignature;
+    onChange(nextDraft);
+  };
+};
+
 export const normalizeFolderExportFormat = (data: FolderExportDraftData): 'json' | 'pbf.zip' | 'mvf' => {
   const draft = normalizeFolderExportDraft(data);
   return draft.format;
@@ -202,13 +233,33 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
   {
     id: 'purpose',
     label: 'Export purpose',
-    componentFactory: (props: FolderExportStepProps) => <FolderExportPurposeStep {...props} />,
+    componentFactory: (props: FolderExportStepProps) => {
+      const draft = normalizeFolderExportDraft(props.data);
+      const onUpdate = createDraftUpdater(draft, props.onChange);
+      return (
+        <FolderExportPurposeStep
+          {...props}
+          data={draft}
+          onChange={onUpdate}
+        />
+      );
+    },
     validate: (data) => Boolean(normalizeFolderExportDraft(data).exportMode),
   },
   {
     id: 'target',
     label: 'Target nodes',
-    componentFactory: (props: FolderExportStepProps) => <FolderExportTargetStep {...props} />,
+    componentFactory: (props: FolderExportStepProps) => {
+      const draft = normalizeFolderExportDraft(props.data);
+      const onUpdate = createDraftUpdater(draft, props.onChange);
+      return (
+        <FolderExportTargetStep
+          {...props}
+          data={draft}
+          onChange={onUpdate}
+        />
+      );
+    },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
       return normalized.targetScope === 'all' || normalized.targetScope === 'shapeOnly';
@@ -217,7 +268,17 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
   {
     id: 'format',
     label: 'Output format',
-    componentFactory: (props: FolderExportStepProps) => <FolderExportFormatStep {...props} />,
+    componentFactory: (props: FolderExportStepProps) => {
+      const draft = normalizeFolderExportDraft(props.data);
+      const onUpdate = createDraftUpdater(draft, props.onChange);
+      return (
+        <FolderExportFormatStep
+          {...props}
+          data={draft}
+          onChange={onUpdate}
+        />
+      );
+    },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
       const isContinuity = normalized.exportMode === 'continuity';
@@ -228,7 +289,17 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
   {
     id: 'options',
     label: 'Distribution options',
-    componentFactory: (props: FolderExportStepProps) => <FolderExportOptionsStep {...props} />,
+    componentFactory: (props: FolderExportStepProps) => {
+      const draft = normalizeFolderExportDraft(props.data);
+      const onUpdate = createDraftUpdater(draft, props.onChange);
+      return (
+        <FolderExportOptionsStep
+          {...props}
+          data={draft}
+          onChange={onUpdate}
+        />
+      );
+    },
     validate: (data) => {
       const normalized = normalizeFolderExportDraft(data);
       if (normalized.exportMode === 'continuity') return true;
@@ -245,7 +316,17 @@ const createFolderExportSteps = (): ReadonlyArray<PluginStepConfig<FolderExportD
   {
     id: 'review',
     label: 'Review',
-    componentFactory: (props: FolderExportStepProps) => <FolderExportReviewStep {...props} />,
+    componentFactory: (props: FolderExportStepProps) => {
+      const draft = normalizeFolderExportDraft(props.data);
+      const onUpdate = createDraftUpdater(draft, props.onChange);
+      return (
+        <FolderExportReviewStep
+          {...props}
+          data={draft}
+          onChange={onUpdate}
+        />
+      );
+    },
     validate: (data) => canStartFolderExport(data),
     capabilities: {
       canStartBuild: (data) => canStartFolderExport(data),

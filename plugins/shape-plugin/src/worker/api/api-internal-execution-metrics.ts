@@ -20,7 +20,7 @@ import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   composeRuntimeBuildConfig,
-  mergeBuildConfig,
+  applyBuildConfigPatch,
   mergeProcessingConfig,
   requireDataSourceName,
 } from '~/common/types/index';
@@ -74,7 +74,7 @@ const mapBuildSessionRecordToBuildSession = (
 const resolveBuildSessionConfig = async (nodeId: NodeId): Promise<BuildSessionConfig> => {
   const handler = getShapeEntityHandler();
   const entity = await handler.getEntity(nodeId);
-  const mergedBuildConfig = mergeBuildConfig(
+  const mergedBuildConfig = applyBuildConfigPatch(
     DEFAULT_BUILD_CONFIG,
     entity?.buildConfig ?? {},
   );

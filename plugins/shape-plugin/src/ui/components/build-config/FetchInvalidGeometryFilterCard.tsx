@@ -1,9 +1,10 @@
 import {
   FormControl,
   FormControlLabel,
-  MenuItem,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
   Paper,
-  Select,
   Stack,
   Switch,
   TextField,
@@ -13,12 +14,13 @@ import { Rule as RuleIcon } from '@mui/icons-material';
 import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
-import { mergeBuildConfig } from '~/common/types/index';
-import { useEffect, useRef } from 'react';
+import { applyBuildConfigPatch } from '~/common/types/index';
+import type { ChangeEvent } from 'react';
+import { useCallback } from 'react';
 
 type Props = {
   config: ShapeBuildConfig;
-  onChange: (next: ShapeBuildConfig) => void;
+  onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
   disabled?: boolean;
   disableHoverLift?: boolean;
 };
@@ -31,10 +33,6 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
-  const latestConfigRef = useRef(config);
-  useEffect(() => {
-    latestConfigRef.current = config;
-  }, [config]);
   const guard = config.fetchConfig.geometryIntakeGuard;
 
   const resolved = {
@@ -52,30 +50,91 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
     keepBaselineSnapshot: guard?.keepBaselineSnapshot ?? true,
   } as const;
 
-  const updateFilter = (partial: Partial<typeof resolved>): void => {
-    const latestConfig = latestConfigRef.current;
-    onChange(mergeBuildConfig(latestConfig, {
-      fetchConfig: {
-        ...latestConfig.fetchConfig,
-        invalidGeometryFilter: {
-          ...resolved,
-          ...partial,
+  const updateFilter = useCallback((partial: Partial<typeof resolved>): void => {
+    onChange((prevConfig) => {
+      const current = prevConfig.fetchConfig.invalidGeometryFilter ?? resolved;
+      return applyBuildConfigPatch(prevConfig, {
+        fetchConfig: {
+          ...prevConfig.fetchConfig,
+          invalidGeometryFilter: {
+            ...current,
+            ...partial,
+          },
         },
-      },
-    }));
-  };
-  const updateGuard = (partial: Partial<typeof resolvedGuard>): void => {
-    const latestConfig = latestConfigRef.current;
-    onChange(mergeBuildConfig(latestConfig, {
-      fetchConfig: {
-        ...latestConfig.fetchConfig,
-        geometryIntakeGuard: {
-          ...resolvedGuard,
-          ...partial,
+      });
+    });
+  }, [onChange, resolved]);
+  const updateGuard = useCallback((partial: Partial<typeof resolvedGuard>): void => {
+    onChange((prevConfig) => {
+      const current = prevConfig.fetchConfig.geometryIntakeGuard ?? resolvedGuard;
+      return applyBuildConfigPatch(prevConfig, {
+        fetchConfig: {
+          ...prevConfig.fetchConfig,
+          geometryIntakeGuard: {
+            ...current,
+            ...partial,
+          },
         },
-      },
-    }));
+      });
+    });
+  }, [onChange, resolvedGuard]);
+  type SwitchItem = {
+    checked: boolean;
+    disabled: boolean;
+    label: string;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   };
+  const isDisabled = Boolean(disabled);
+  const switchGroups: Array<Array<SwitchItem>> = [
+    [
+      {
+        checked: resolvedGuard.normalizeRingOrientation,
+        disabled: isDisabled,
+        label: t('processing.fetch.geometryIntakeGuard.normalizeRingOrientation', 'Normalize ring orientation'),
+        onChange: (event) => updateGuard({ normalizeRingOrientation: event.target.checked }),
+      },
+      {
+        checked: resolvedGuard.keepBaselineSnapshot,
+        disabled: isDisabled,
+        label: t('processing.fetch.geometryIntakeGuard.keepBaselineSnapshot', 'Keep baseline snapshot for anomaly scoring'),
+        onChange: (event) => updateGuard({ keepBaselineSnapshot: event.target.checked }),
+      },
+    ],
+    [
+      {
+        checked: resolved.selfIntersection,
+        disabled: isDisabled,
+        label: t('processing.fetch.invalidGeometryFilter.selfIntersection', 'Self intersection'),
+        onChange: (event) => updateFilter({ selfIntersection: event.target.checked }),
+      },
+      {
+        checked: resolved.triangleRingRatio,
+        disabled: isDisabled,
+        label: t('processing.fetch.invalidGeometryFilter.triangleRingRatio', 'Triangle ring ratio'),
+        onChange: (event) => updateFilter({ triangleRingRatio: event.target.checked }),
+      },
+    ],
+    [
+      {
+        checked: resolved.area,
+        disabled: isDisabled,
+        label: t('processing.fetch.invalidGeometryFilter.area', 'Area'),
+        onChange: (event) => updateFilter({ area: event.target.checked }),
+      },
+      {
+        checked: resolved.lineLength,
+        disabled: isDisabled,
+        label: t('processing.fetch.invalidGeometryFilter.lineLength', 'Line length'),
+        onChange: (event) => updateFilter({ lineLength: event.target.checked }),
+      },
+      {
+        checked: resolved.maxEdgeLength,
+        disabled: isDisabled,
+        label: t('processing.fetch.invalidGeometryFilter.maxEdgeLength', 'Max edge length'),
+        onChange: (event) => updateFilter({ maxEdgeLength: event.target.checked }),
+      },
+    ],
+  ];
 
   return (
     <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
@@ -90,118 +149,80 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
             'Run additional invalid-shape checks after small-shape filtering.',
           )}
         </Typography>
-        <FormControl fullWidth disabled={disabled}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {t('processing.fetch.geometryIntakeGuard.validationLevel', 'Validation Level')}
-          </Typography>
-          <Select
-            size="small"
-            value={resolvedGuard.validationLevel}
-            onChange={(event) => {
-              const value = event.target.value;
-              if (value !== 'off' && value !== 'basic' && value !== 'strict') return;
-              updateGuard({ validationLevel: value });
-            }}
-          >
-            <MenuItem value="off">{t('processing.fetch.geometryIntakeGuard.level.off', 'off')}</MenuItem>
-            <MenuItem value="basic">{t('processing.fetch.geometryIntakeGuard.level.basic', 'basic')}</MenuItem>
-            <MenuItem value="strict">{t('processing.fetch.geometryIntakeGuard.level.strict', 'strict')}</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          size="small"
-          type="number"
-          label={t('processing.fetch.geometryIntakeGuard.dedupeEpsilon', 'Duplicate vertex epsilon')}
-          value={resolvedGuard.dedupeEpsilon}
-          disabled={disabled}
-          onChange={(event) => {
-            const value = Number(event.target.value);
-            if (!Number.isFinite(value)) return;
-            updateGuard({ dedupeEpsilon: Math.max(0, value) });
-          }}
-        />
-        <TextField
-          size="small"
-          type="number"
-          label={t('processing.fetch.geometryIntakeGuard.minRingAreaThreshold', 'Minimum ring area threshold')}
-          value={resolvedGuard.minRingAreaThreshold}
-          disabled={disabled}
-          onChange={(event) => {
-            const value = Number(event.target.value);
-            if (!Number.isFinite(value)) return;
-            updateGuard({ minRingAreaThreshold: Math.max(0, value) });
-          }}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolvedGuard.normalizeRingOrientation}
-              onChange={(event) => updateGuard({ normalizeRingOrientation: event.target.checked })}
+        <Grid container spacing={1.5} alignItems="flex-start">
+          <Grid size={{ xs: 12, md: 4 }}>
+            <FormControl fullWidth disabled={disabled}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {t('processing.fetch.geometryIntakeGuard.validationLevel', 'Validation Level')}
+              </Typography>
+              <ToggleButtonGroup
+                size="small"
+                fullWidth
+                exclusive
+                value={resolvedGuard.validationLevel}
+                onChange={(_event, value) => {
+                  if (value === null) {
+                    return;
+                  }
+                  if (value !== 'off' && value !== 'basic' && value !== 'strict') {
+                    return;
+                  }
+                  updateGuard({ validationLevel: value });
+                }}
+              >
+                <ToggleButton value="off">{t('processing.fetch.geometryIntakeGuard.level.off', 'off')}</ToggleButton>
+                <ToggleButton value="basic">{t('processing.fetch.geometryIntakeGuard.level.basic', 'basic')}</ToggleButton>
+                <ToggleButton value="strict">{t('processing.fetch.geometryIntakeGuard.level.strict', 'strict')}</ToggleButton>
+              </ToggleButtonGroup>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.fetch.geometryIntakeGuard.dedupeEpsilon', 'Duplicate vertex epsilon')}
+              value={resolvedGuard.dedupeEpsilon}
+              disabled={disabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ dedupeEpsilon: Math.max(0, value) });
+              }}
             />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.geometryIntakeGuard.normalizeRingOrientation', 'Normalize ring orientation')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolvedGuard.keepBaselineSnapshot}
-              onChange={(event) => updateGuard({ keepBaselineSnapshot: event.target.checked })}
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              size="small"
+              type="number"
+              label={t('processing.fetch.geometryIntakeGuard.minRingAreaThreshold', 'Minimum ring area threshold')}
+              value={resolvedGuard.minRingAreaThreshold}
+              disabled={disabled}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                updateGuard({ minRingAreaThreshold: Math.max(0, value) });
+              }}
             />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.geometryIntakeGuard.keepBaselineSnapshot', 'Keep baseline snapshot for anomaly scoring')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolved.area}
-              onChange={(event) => updateFilter({ area: event.target.checked })}
-            />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.invalidGeometryFilter.area', 'Area')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolved.lineLength}
-              onChange={(event) => updateFilter({ lineLength: event.target.checked })}
-            />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.invalidGeometryFilter.lineLength', 'Line length')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolved.maxEdgeLength}
-              onChange={(event) => updateFilter({ maxEdgeLength: event.target.checked })}
-            />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.invalidGeometryFilter.maxEdgeLength', 'Max edge length')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolved.selfIntersection}
-              onChange={(event) => updateFilter({ selfIntersection: event.target.checked })}
-            />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.invalidGeometryFilter.selfIntersection', 'Self intersection')}
-        />
-        <FormControlLabel
-          control={(
-            <Switch
-              checked={resolved.triangleRingRatio}
-              onChange={(event) => updateFilter({ triangleRingRatio: event.target.checked })}
-            />
-          )}
-          disabled={disabled}
-          label={t('processing.fetch.invalidGeometryFilter.triangleRingRatio', 'Triangle ring ratio')}
-        />
+          </Grid>
+        </Grid>
+        <Grid container spacing={1.5}>
+          {switchGroups.map((group, groupIndex) => (
+            <Grid size={{ xs: 12, md: 4 }} key={`switch-group-${groupIndex}`}>
+              <Stack spacing={0.75}>
+                {group.map((item) => (
+                  <FormControlLabel
+                    key={item.label}
+                    control={(
+                      <Switch checked={item.checked} onChange={item.onChange} />
+                    )}
+                    disabled={item.disabled}
+                    label={item.label}
+                  />
+                ))}
+              </Stack>
+            </Grid>
+          ))}
+        </Grid>
       </Stack>
     </Paper>
   );

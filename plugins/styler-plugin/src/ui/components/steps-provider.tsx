@@ -40,6 +40,56 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   );
 };
 
+const serializeComparable = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+};
+
+const mergeStylerDraft = (
+  current: StylerStepData,
+  updates: Partial<StylerStepData>
+): StylerStepData => {
+  const next: StylerStepData = {
+    ...current,
+    ...updates,
+  };
+  if (Object.prototype.hasOwnProperty.call(updates, 'mapping')) {
+    next.mapping = {
+      ...(current.mapping ?? {}),
+      ...(updates.mapping ?? {}),
+    } as StylerStepData['mapping'];
+  }
+  if (Object.prototype.hasOwnProperty.call(updates, 'stylerConfig')) {
+    next.stylerConfig = {
+      ...(current.stylerConfig ?? {}),
+      ...(updates.stylerConfig ?? {}),
+    } as StylerStepData['stylerConfig'];
+  }
+  return next;
+};
+
+const createDraftUpdater = (
+  initial: StylerStepData,
+  onChange: PluginStepProps<StylerStepData>['onChange'],
+) => {
+  let latestDraft: StylerStepData = { ...(initial ?? {}) };
+  let latestSignature = serializeComparable(latestDraft);
+
+  return (updates: Partial<StylerStepData>) => {
+    const nextDraft = mergeStylerDraft(latestDraft, updates);
+    const nextSignature = serializeComparable(nextDraft);
+    if (nextSignature === latestSignature) {
+      return;
+    }
+    latestDraft = nextDraft;
+    latestSignature = nextSignature;
+    onChange(nextDraft);
+  };
+};
+
 const isUrlSource = (dialogData?: StylerStepData): boolean => {
   const source = dialogData?.dataSource?.source;
   if (dialogData?.dataSource?.type === 'url') return true;
@@ -123,7 +173,10 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
-        componentFactory: DataSourceWithValidation,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => {
+          const draft = p.data ?? ({} as StylerStepData);
+          return <DataSourceWithValidation {...p} data={draft} onChange={createDraftUpdater(draft, p.onChange)} />;
+        },
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
           canStartBuild: canStartStylerAutoBuild,
@@ -133,7 +186,10 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'style-filter',
         label: t('steps.filtering.label', 'Filtering'),
-        componentFactory: FilterWithValidation,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => {
+          const draft = p.data ?? ({} as StylerStepData);
+          return <FilterWithValidation {...p} data={draft} onChange={createDraftUpdater(draft, p.onChange)} />;
+        },
         validate: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
         capabilities: {
           canProceedToNext: ensureLoaded as PluginStepConfig<StylerStepData>['validate'],
@@ -142,7 +198,16 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'mapping-keys',
         label: t('steps.mappingKeys.label', 'Mapping Keys'),
-        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerMappingKeysStep {...p} />,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => {
+          const draft = p.data ?? ({} as StylerStepData);
+          return (
+            <StylerMappingKeysStep
+              {...p}
+              data={draft}
+              onChange={createDraftUpdater(draft, p.onChange)}
+            />
+          );
+        },
         validate: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
@@ -152,7 +217,12 @@ registry.registerConfigProvider<StylerStepData>({
         id: 'target-behavior',
         label: t('steps.target.label', 'Apply Target'),
         componentFactory: (p: PluginStepProps<StylerStepData>) => (
-          <StylerTargetStep {...p} showTargetPanel={false} />
+          <StylerTargetStep
+            {...p}
+            data={p.data ?? ({} as StylerStepData)}
+            onChange={createDraftUpdater(p.data ?? ({} as StylerStepData), p.onChange)}
+            showTargetPanel={false}
+          />
         ),
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
@@ -162,7 +232,11 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'style-scaling',
         label: t('steps.styleAlgorithm.label', 'Palette'),
-        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerAlgorithmStep2 {...p} />,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => {
+          const draft = p.data ?? ({} as StylerStepData);
+          const handleUpdate = createDraftUpdater(draft, p.onChange);
+          return <StylerAlgorithmStep2 {...p} data={draft} onChange={handleUpdate} />;
+        },
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
@@ -171,19 +245,22 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'style-preview',
         label: t('steps.preview.label', 'Preview'),
-        componentFactory: (p: PluginStepProps<StylerStepData>) => (
-          <StylerPreviewStep
-            data={p.data}
-            onChange={p.onChange}
-            nodeId={p.nodeId}
-            onValidate={(valid) => {
-              p.setValid(valid);
-              if (valid) {
-                p.setError(null);
-              }
-            }}
-          />
-        ),
+        componentFactory: (p: PluginStepProps<StylerStepData>) => {
+          const draft = p.data ?? ({} as StylerStepData);
+          return (
+            <StylerPreviewStep
+              data={draft}
+              onChange={createDraftUpdater(draft, p.onChange)}
+              nodeId={p.nodeId}
+              onValidate={(valid) => {
+                p.setValid(valid);
+                if (valid) {
+                  p.setError(null);
+                }
+              }}
+            />
+          );
+        },
         validate: (dialogData?: StylerStepData) => hasMappingBasics(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasMappingBasics(dialogData),

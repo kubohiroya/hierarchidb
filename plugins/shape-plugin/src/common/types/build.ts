@@ -30,6 +30,15 @@ export interface ShapeBuildUrlRule {
 }
 
 export type ShapeBuildUrlConfigPatch = Omit<Partial<ShapeBuildConfig>, 'urlBuildConfigRules'>;
+export type ShapeBuildConfigPatch = Omit<
+  Partial<ShapeBuildConfig>,
+  'fetchConfig' | 'transformConfig' | 'vtConfig' | 'cleanupConfig'
+> & {
+  fetchConfig?: Partial<ShapeBuildConfig['fetchConfig']>;
+  transformConfig?: Partial<ShapeBuildConfig['transformConfig']>;
+  vtConfig?: Partial<ShapeBuildConfig['vtConfig']>;
+  cleanupConfig?: Partial<NonNullable<ShapeBuildConfig['cleanupConfig']>>;
+};
 
 export interface ShapeBuildConfig {
   dataSourceName: DataSourceName;

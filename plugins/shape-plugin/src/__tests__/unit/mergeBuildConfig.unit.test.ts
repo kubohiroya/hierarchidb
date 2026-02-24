@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { mergeBuildConfig } from '../../services/utils/utils';
+import { applyBuildConfigPatch } from '../../services/utils/utils';
 import type { ShapeBuildConfig } from '../../common/types/index';
 
-describe('mergeBuildConfig', () => {
+describe('applyBuildConfigPatch', () => {
   it('preserves omitDetailsConfig.level when override provides empty omitDetailsConfig object', () => {
-    const merged = mergeBuildConfig(
+    const merged = applyBuildConfigPatch(
       DEFAULT_BUILD_CONFIG,
       {
         transformConfig: {
@@ -20,7 +20,7 @@ describe('mergeBuildConfig', () => {
   });
 
   it('applies omitDetailsConfig.level override when a valid level is provided', () => {
-    const merged = mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
       transformConfig: {
         omitDetailsConfig: {
           level: 'weak',
@@ -32,7 +32,7 @@ describe('mergeBuildConfig', () => {
   });
 
   it('normalizes legacy omitDetailsConfig level aliases from persisted drafts', () => {
-    const mergedFromNone = mergeBuildConfig(
+    const mergedFromNone = applyBuildConfigPatch(
       DEFAULT_BUILD_CONFIG,
       {
         transformConfig: {
@@ -42,7 +42,7 @@ describe('mergeBuildConfig', () => {
         },
       } as Partial<ShapeBuildConfig>,
     );
-    const mergedFromModerate = mergeBuildConfig(
+    const mergedFromModerate = applyBuildConfigPatch(
       DEFAULT_BUILD_CONFIG,
       {
         transformConfig: {
@@ -59,7 +59,7 @@ describe('mergeBuildConfig', () => {
 
   it('throws for unsupported omitDetailsConfig level values', () => {
     expect(() =>
-      mergeBuildConfig(
+      applyBuildConfigPatch(
         DEFAULT_BUILD_CONFIG,
         {
           transformConfig: {
@@ -73,7 +73,7 @@ describe('mergeBuildConfig', () => {
   });
 
   it('applies simplify algorithm override', () => {
-    const merged = mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
       transformConfig: {
         simplifyAlgorithm: 'geojson',
       },
@@ -82,8 +82,28 @@ describe('mergeBuildConfig', () => {
     expect(merged.transformConfig.simplifyAlgorithm).toBe('geojson');
   });
 
+  it('normalizes incomplete toleranceByBand with default transform preset values', () => {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      transformConfig: {
+        toleranceByBand: [0.12],
+      },
+    });
+
+    expect(merged.transformConfig.toleranceByBand).toEqual([0.12]);
+  });
+
+  it('normalizes incomplete retryToleranceByBand with default retry preset values', () => {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
+      transformConfig: {
+        retryToleranceByBand: [2.5],
+      },
+    });
+
+    expect(merged.transformConfig.retryToleranceByBand).toEqual([2.5]);
+  });
+
   it('merges intake guard and anomaly guard overrides', () => {
-    const merged = mergeBuildConfig(DEFAULT_BUILD_CONFIG, {
+    const merged = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, {
       fetchConfig: {
         geometryIntakeGuard: {
           validationLevel: 'strict',

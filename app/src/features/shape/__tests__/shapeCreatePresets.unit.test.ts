@@ -16,6 +16,13 @@ describe('shapeCreatePresets', () => {
     });
   });
 
+  it('parses create action with default shape preset marker as plain shape create', () => {
+    const parsed = parseCreateAction('create:shape::preset:default');
+    expect(parsed).toEqual({
+      nodeType: 'shape',
+    });
+  });
+
   it('builds world level1 + CN/IN level2 selection matrix', () => {
     const patch = buildShapePresetDraftDataPatch('world-level1-cn-in-level12');
     const selection = patch.selectedArrayByCountries as Record<string, boolean[]> | undefined;
@@ -36,7 +43,7 @@ describe('shapeCreatePresets', () => {
     const entries = getShapePresetMenuEntries();
     expect(entries[0]).toMatchObject({
       key: 'shape-preset-default',
-      createType: 'shape::preset:default',
+      createType: 'shape',
     });
   });
 

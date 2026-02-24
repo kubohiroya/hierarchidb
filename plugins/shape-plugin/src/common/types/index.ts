@@ -5,6 +5,7 @@ export type {
   ShapeBuildFetchConfig,
   ShapeBuildTransformConfig,
   ShapeBuildVtConfig,
+  ShapeBuildConfigPatch,
   ShapeBuildUrlConfigPatch,
   ShapeBuildUrlRule,
   ShapeUrlMatchType,
@@ -39,7 +40,7 @@ export type {
 } from '@hierarchidb/gis-sdk';
 export {
   composeRuntimeBuildConfig,
-  mergeBuildConfig,
+  applyBuildConfigPatch,
   mergeProcessingConfig,
   summarizeCheckboxState,
   getPreferredCountryCodeFormat,

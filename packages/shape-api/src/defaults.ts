@@ -1,7 +1,7 @@
 import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
-const DEFAULT_TRANSFORM_TOLERANCE_BY_BAND = [8, 6, 3, 1];
-const DEFAULT_RETRY_TOLERANCE_BY_BAND = [9, 7, 4, 2];
+const DEFAULT_TRANSFORM_TOLERANCE_BY_BAND = [0.1, 0.1, 0.1, 0.1];
+const DEFAULT_RETRY_TOLERANCE_BY_BAND = [3.5, 2.5, 1.5, 1];
 
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',

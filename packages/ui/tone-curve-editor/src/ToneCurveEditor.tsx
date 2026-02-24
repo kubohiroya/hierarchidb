@@ -121,13 +121,31 @@ const clampInOrder = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
 };
 
-const snapValue = (value: number, step: number | undefined): number => {
-  const resolvedStep = step ?? 0;
-  if (!Number.isFinite(resolvedStep) || resolvedStep === 0) {
+const ARE_ANCHORS_EQUAL_EPSILON = 1e-9;
+
+const normalizeAnchorValue = (value: number): number => {
+  if (!Number.isFinite(value)) {
     return value;
   }
 
-  return Math.round(value / resolvedStep) * resolvedStep;
+  return Number.parseFloat(value.toFixed(10));
+};
+
+const anchorValueForSignature = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+
+  return normalizeAnchorValue(value).toString();
+};
+
+const snapValue = (value: number, step: number | undefined): number => {
+  const resolvedStep = step ?? 0;
+  if (!Number.isFinite(resolvedStep) || resolvedStep === 0) {
+    return normalizeAnchorValue(value);
+  }
+
+  return normalizeAnchorValue(Math.round(value / resolvedStep) * resolvedStep);
 };
 
 const normalizeAxisMarks = (
@@ -178,18 +196,18 @@ const areAnchorsEqual = (left: ReadonlyArray<ToneCurveAnchor>, right: ReadonlyAr
     return false;
   }
   for (let i = 0; i < left.length; i += 1) {
-    if (left[i]?.x !== right[i]?.x || left[i]?.y !== right[i]?.y) {
+    const leftX = normalizeAnchorValue(left[i]?.x ?? 0);
+    const rightX = normalizeAnchorValue(right[i]?.x ?? 0);
+    const leftY = normalizeAnchorValue(left[i]?.y ?? 0);
+    const rightY = normalizeAnchorValue(right[i]?.y ?? 0);
+    if (Math.abs(leftX - rightX) > ARE_ANCHORS_EQUAL_EPSILON
+      || Math.abs(leftY - rightY) > ARE_ANCHORS_EQUAL_EPSILON
+    ) {
       return false;
     }
   }
   return true;
 };
-
-const getAnchorsSignature = (anchors: ReadonlyArray<ToneCurveAnchor>): string => anchors
-  .map((anchor) => `${Number(anchor.x).toFixed(6)}:${Number(anchor.y).toFixed(6)}`)
-  .join('|');
-
-const ANCHOR_SYNC_SUPPRESSION_MS = 1200;
 
 export function ToneCurveEditor({
   width,
@@ -215,10 +233,19 @@ export function ToneCurveEditor({
   style,
 }: ToneCurveEditorProps): React.JSX.Element {
   const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const dragPointerScreenRef = React.useRef<{ x: number; y: number } | null>(null);
   const activeAnchorRef = React.useRef<{
     type: 'main' | 'overlay';
     curveIndex: number | null;
     anchorIndex: number;
+  } | null>(null);
+  const activeDragSessionRef = React.useRef(0);
+  const [dragPointerLabel, setDragPointerLabel] = React.useState<{
+    x: number;
+    y: number;
+    dataX: number;
+    dataY: number;
   } | null>(null);
 
   const getLineStyle = React.useCallback(
@@ -514,16 +541,11 @@ export function ToneCurveEditor({
 
   const [anchors, setAnchors] = React.useState<ToneCurveAnchor[]>(initialAnchors);
   const previousAnchorsRef = React.useRef<ToneCurveAnchor[]>(initialAnchors);
-  const pendingMainChangeRef = React.useRef<ToneCurveAnchor[] | null>(null);
+  const pendingMainChangeRef = React.useRef<{
+    anchors: ToneCurveAnchor[];
+    dragSession: number;
+  } | null>(null);
   const lastPointerPositionRef = React.useRef<{ x: number; y: number } | null>(null);
-  const ignoreMainExternalUpdateRef = React.useRef<{
-    signature: string;
-    expiresAt: number;
-  } | null>(null);
-  const ignoreOverlayExternalUpdateRef = React.useRef<{
-    signature: string;
-    expiresAt: number;
-  } | null>(null);
   const resolvedOverlaySeries = React.useMemo<ResolvedOverlaySeries[]>(
     () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex): ResolvedOverlaySeries => {
       const safeSeries: ToneCurveOverlaySeries = overlaySeriesItem ?? {};
@@ -562,9 +584,12 @@ export function ToneCurveEditor({
     resolvedOverlaySeries.map((series) => createAnchorsFromInputs(series.anchors, series.xFixedValues, series.yFixedValues)),
   );
   const syncedOverlaySignatureRef = React.useRef<string>('');
+  const previousOverlayAnchorsRef = React.useRef<ToneCurveAnchor[][]>([]);
   const pendingOverlayChangeRef = React.useRef<{
     anchors: ToneCurveAnchor[];
+    overlayIndex: number;
     onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
+    dragSession: number;
   } | null>(null);
 
   const overlaySignature = React.useMemo(
@@ -572,7 +597,7 @@ export function ToneCurveEditor({
       .map((series, index) => {
         const style = getLineStyle(index + 1);
         const anchorsSignature = series.anchors
-          ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchor.x : ''}:${Number.isFinite(anchor.y) ? anchor.y : ''}`)
+          ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchorValueForSignature(anchor.x) : ''}:${Number.isFinite(anchor.y) ? anchorValueForSignature(anchor.y) : ''}`)
           .join('|') ?? '';
         const xFixedValueCount = series.xFixedValues.length;
         const yFixedValueCount = series.yFixedValues.length;
@@ -582,34 +607,28 @@ export function ToneCurveEditor({
       .join('||'),
     [resolvedOverlaySeries, getLineStyle],
   );
-
   React.useEffect(() => {
-    if (activeAnchorRef.current?.type === 'overlay') {
+    if (activeAnchorRef.current) {
       return;
     }
-    if (ignoreOverlayExternalUpdateRef.current) {
-      const now = Date.now();
-      if (ignoreOverlayExternalUpdateRef.current.signature === overlaySignature) {
-        ignoreOverlayExternalUpdateRef.current = null;
-      } else if (ignoreOverlayExternalUpdateRef.current.expiresAt >= now) {
-        return;
-      } else {
-        ignoreOverlayExternalUpdateRef.current = null;
-      }
-    }
+
+    pendingMainChangeRef.current = null;
+    pendingOverlayChangeRef.current = null;
+    lastPointerPositionRef.current = null;
+    dragPointerScreenRef.current = null;
 
     if (overlaySignature === syncedOverlaySignatureRef.current) {
       return;
     }
 
     syncedOverlaySignatureRef.current = overlaySignature;
-    setOverlayAnchors(
-      resolvedOverlaySeries.map((series) => createAnchorsFromInputs(
-        series.anchors,
-        series.xFixedValues,
-        series.yFixedValues,
-      )),
-    );
+    const nextOverlayAnchors = resolvedOverlaySeries.map((series) => createAnchorsFromInputs(
+      series.anchors,
+      series.xFixedValues,
+      series.yFixedValues,
+    ));
+    setOverlayAnchors(nextOverlayAnchors);
+    previousOverlayAnchorsRef.current = nextOverlayAnchors;
   }, [createAnchorsFromInputs, overlaySignature, resolvedOverlaySeries]);
 
   const fixedXSignature = React.useMemo(
@@ -618,7 +637,7 @@ export function ToneCurveEditor({
   );
   const externalAnchorsSignature = React.useMemo(
     () => externalAnchors
-      ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchor.x : ''}:${Number.isFinite(anchor.y) ? anchor.y : ''}`)
+      ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchorValueForSignature(anchor.x) : ''}:${Number.isFinite(anchor.y) ? anchorValueForSignature(anchor.y) : ''}`)
       .join('|') ?? '',
     [externalAnchors],
   );
@@ -630,16 +649,12 @@ export function ToneCurveEditor({
     if (activeAnchorRef.current) {
       return;
     }
-    if (ignoreMainExternalUpdateRef.current) {
-      const now = Date.now();
-      if (ignoreMainExternalUpdateRef.current.signature === externalAnchorsSignature) {
-        ignoreMainExternalUpdateRef.current = null;
-      } else if (ignoreMainExternalUpdateRef.current.expiresAt >= now) {
-        return;
-      } else {
-        ignoreMainExternalUpdateRef.current = null;
-      }
-    }
+
+    pendingMainChangeRef.current = null;
+    pendingOverlayChangeRef.current = null;
+    lastPointerPositionRef.current = null;
+    dragPointerScreenRef.current = null;
+    setDragPointerLabel(null);
 
     if (
       fixedXSignature === syncedFixedSignatureRef.current
@@ -649,63 +664,79 @@ export function ToneCurveEditor({
       return;
     }
 
+    previousAnchorsRef.current = initialAnchors;
     syncedFixedSignatureRef.current = fixedXSignature;
     syncedAnchorsSignatureRef.current = externalAnchorsSignature;
     syncedAnchorCountRef.current = initialAnchors.length;
     setAnchors(initialAnchors);
   }, [externalAnchorsSignature, initialAnchors, fixedXSignature]);
 
-  React.useEffect(() => {
+  const emitMainAnchorsChange = React.useCallback((nextAnchors: ToneCurveAnchor[]) => {
     if (!onChange) {
       return;
     }
-    if (activeAnchorRef.current?.type === 'main') {
+    if (areAnchorsEqual(previousAnchorsRef.current, nextAnchors)) {
       return;
     }
-    if (areAnchorsEqual(previousAnchorsRef.current, anchors)) {
-      return;
-    }
-    previousAnchorsRef.current = anchors;
-    onChange(anchors);
-  }, [anchors, onChange]);
+    previousAnchorsRef.current = nextAnchors;
+    onChange(nextAnchors);
+  }, [onChange]);
 
-  const flushPendingMainChange = React.useCallback(() => {
-    if (!pendingMainChangeRef.current || !onChange) {
+  const flushPendingMainChange = React.useCallback((dragSession?: number) => {
+    if (!pendingMainChangeRef.current) {
+      return;
+    }
+    if (dragSession !== undefined && pendingMainChangeRef.current.dragSession !== dragSession) {
+      pendingMainChangeRef.current = null;
       return;
     }
 
-    const nextAnchors = pendingMainChangeRef.current;
-    ignoreMainExternalUpdateRef.current = {
-      signature: getAnchorsSignature(nextAnchors),
-      expiresAt: Date.now() + ANCHOR_SYNC_SUPPRESSION_MS,
-    };
+    const { anchors: nextAnchors } = pendingMainChangeRef.current;
     if (areAnchorsEqual(previousAnchorsRef.current, nextAnchors)) {
       pendingMainChangeRef.current = null;
       return;
     }
 
     pendingMainChangeRef.current = null;
-    previousAnchorsRef.current = nextAnchors;
-    onChange(nextAnchors);
-  }, [onChange]);
+    emitMainAnchorsChange(nextAnchors);
+  }, [emitMainAnchorsChange]);
 
-  const flushPendingOverlayChange = React.useCallback((): void => {
+  const emitOverlayAnchorsChange = React.useCallback((overlayIndex: number, nextAnchors: ToneCurveAnchor[], onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void) => {
+    if (!onChange) {
+      return;
+    }
+
+    const previousAnchors = previousOverlayAnchorsRef.current[overlayIndex];
+    if (previousAnchors && areAnchorsEqual(previousAnchors, nextAnchors)) {
+      return;
+    }
+
+    const nextPreviousAnchors = [...previousOverlayAnchorsRef.current];
+    nextPreviousAnchors[overlayIndex] = nextAnchors;
+    previousOverlayAnchorsRef.current = nextPreviousAnchors;
+    onChange(nextAnchors);
+  }, []);
+
+  const flushPendingOverlayChange = React.useCallback((dragSession?: number): void => {
     const pending = pendingOverlayChangeRef.current;
     if (!pending) {
       return;
     }
-    pendingOverlayChangeRef.current = null;
-    ignoreOverlayExternalUpdateRef.current = {
-      signature: getAnchorsSignature(pending.anchors),
-      expiresAt: Date.now() + ANCHOR_SYNC_SUPPRESSION_MS,
-    };
-
-    const currentOverlay = pending.onChange;
-    if (!currentOverlay) {
+    if (dragSession !== undefined && pending.dragSession !== dragSession) {
+      pendingOverlayChangeRef.current = null;
       return;
     }
-    currentOverlay(pending.anchors);
-  }, []);
+    pendingOverlayChangeRef.current = null;
+
+    const { anchors: nextAnchors, onChange: currentOverlay, overlayIndex } = pending;
+    if (typeof overlayIndex !== 'number') {
+      return;
+    }
+    if (currentOverlay === undefined) {
+      return;
+    }
+    emitOverlayAnchorsChange(overlayIndex, nextAnchors, currentOverlay);
+  }, [emitOverlayAnchorsChange]);
 
   const sortedPoints = React.useMemo(
     () => [...anchors].sort((a, b) => a.x - b.x),
@@ -739,10 +770,14 @@ export function ToneCurveEditor({
     const uniqueSortedAscending: number[] = [];
     for (let i = 0; i < sortedValues.length; i += 1) {
       const value = sortedValues[i];
+      if (value === undefined) {
+        continue;
+      }
       if (!Number.isFinite(value)) {
         continue;
       }
-      if (value && value > 0 && (i === 0 || Math.abs(sortedValues[i - 1] ?? 0 - value) > dedupeEpsilon)) {
+      const previousValue = sortedValues[i - 1];
+      if (i === 0 || previousValue === undefined || Math.abs(previousValue - value) > dedupeEpsilon) {
         uniqueSortedAscending.push(value);
       }
     }
@@ -836,8 +871,8 @@ export function ToneCurveEditor({
           ? fixedYForOverlayCount(overlayCurve, count)[index]
           : undefined;
 
-      const canMoveX = allowMovement ? true : fixedX === undefined;
-      const canMoveY = allowMovement ? true : fixedY === undefined;
+      const canMoveX = fixedX === undefined ? allowMovement : false;
+      const canMoveY = fixedY === undefined ? allowMovement : false;
 
       if (canMoveX && canMoveY) {
         return 'move';
@@ -881,77 +916,95 @@ export function ToneCurveEditor({
         : overlayCurve
           ? fixedYForOverlayCount(overlayCurve, count)[index]
           : undefined;
-      const canMoveX = allowMovement ? true : fixedX === undefined;
-      const canMoveY = allowMovement ? true : fixedY === undefined;
+      const canMoveX = fixedX === undefined ? allowMovement : false;
+      const canMoveY = fixedY === undefined ? allowMovement : false;
       return canMoveX || canMoveY;
     },
     [fixedXForCount, fixedYForCount, fixedXForOverlayCount, fixedYForOverlayCount, resolvedOverlaySeries],
   );
 
   const addAnchor = React.useCallback(() => {
-    setAnchors((current) => {
-      const list = [...current].sort((a, b) => a.x - b.x);
-      if (list.length < 2) {
-        return current;
-      }
+    const current = anchors;
+    const list = [...current].sort((a, b) => a.x - b.x);
+    if (list.length < 2) {
+      return;
+    }
 
-      let insertIndex = 0;
-      let maxGap = -Infinity;
-
-      for (let i = 0; i < list.length - 1; i += 1) {
-        const left = list[i];
-        const right = list[i + 1];
-        if (!left || !right) {
-          continue;
-        }
-        const gap = right.x - left.x;
-        if (gap > maxGap) {
-          maxGap = gap;
-          insertIndex = i;
-        }
-      }
-
-      const left = list[insertIndex];
-      const right = list[insertIndex + 1];
+    let insertIndex = 0;
+    let maxGap = -Infinity;
+    for (let i = 0; i < list.length - 1; i += 1) {
+      const left = list[i];
+      const right = list[i + 1];
       if (!left || !right) {
-        return current;
+        continue;
       }
+      const gap = right.x - left.x;
+      if (gap > maxGap) {
+        maxGap = gap;
+        insertIndex = i;
+      }
+    }
 
-      const nextX = (left.x + right.x) / 2;
-      const nextY = (left.y + right.y) / 2;
-      const next = [...list];
-      next.splice(insertIndex + 1, 0, { x: nextX, y: nextY });
+    const left = list[insertIndex];
+    const right = list[insertIndex + 1];
+    if (!left || !right) {
+      return;
+    }
 
-      const nextCount = next.length;
-      return normalizeAnchors(
-        next,
-        fixedXForCount(nextCount),
-        fixedYForCount(nextCount),
-      );
-    });
-  }, [fixedXForCount, fixedYForCount, normalizeAnchors]);
+    const nextX = (left.x + right.x) / 2;
+    const nextY = (left.y + right.y) / 2;
+    const next = [...list];
+    next.splice(insertIndex + 1, 0, { x: nextX, y: nextY });
+    const nextCount = next.length;
+    const normalized = normalizeAnchors(
+      next,
+      fixedXForCount(nextCount),
+      fixedYForCount(nextCount),
+    );
+    setAnchors(normalized);
+    emitMainAnchorsChange(normalized);
+  }, [anchors, emitMainAnchorsChange, fixedXForCount, fixedYForCount, normalizeAnchors]);
 
   const removeAnchor = React.useCallback(() => {
-    setAnchors((current) => {
-      if (current.length <= 2) {
-        return current;
-      }
+    const current = anchors;
+    if (current.length <= 2) {
+      return;
+    }
 
-      const index = Math.floor(current.length / 2);
-      if (index <= 0 || index >= current.length - 1) {
-        return current;
-      }
+    const index = Math.floor(current.length / 2);
+    if (index <= 0 || index >= current.length - 1) {
+      return;
+    }
 
-      const next = [...current];
-      next.splice(index, 1);
+    const next = [...current];
+    next.splice(index, 1);
+    const normalized = normalizeAnchors(
+      next,
+      fixedXForCount(next.length),
+      fixedYForCount(next.length),
+    );
+    setAnchors(normalized);
+    emitMainAnchorsChange(normalized);
+  }, [anchors, emitMainAnchorsChange, fixedXForCount, fixedYForCount, normalizeAnchors]);
 
-      return normalizeAnchors(
-        next,
-        fixedXForCount(next.length),
-        fixedYForCount(next.length),
-      );
+  const updateDragPointerLabelFromAnchor = React.useCallback((anchor: ToneCurveAnchor | undefined): void => {
+    if (!activeAnchorRef.current) {
+      return;
+    }
+    const pointer = dragPointerScreenRef.current;
+    const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+    if (!anchor || !pointer || !wrapperRect) {
+      setDragPointerLabel(null);
+      return;
+    }
+
+    setDragPointerLabel({
+      x: pointer.x - wrapperRect.left + 12,
+      y: pointer.y - wrapperRect.top - 22,
+      dataX: anchor.x,
+      dataY: anchor.y,
     });
-  }, [fixedXForCount, fixedYForCount, normalizeAnchors]);
+  }, []);
 
   const updateAnchor = React.useCallback(
     (curveType: 'main' | 'overlay', anchorIndex: number, overlayIndex: number | null, clientX: number, clientY: number) => {
@@ -1001,15 +1054,19 @@ export function ToneCurveEditor({
             ? clamp(point.y, normalizedYRange.min, normalizedYRange.max)
             : normalizedFixedY ?? normalizedYRange.min;
 
-          list[index] = {
-            ...target,
-            x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
-            y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
-          };
-          pendingMainChangeRef.current = list;
+        list[index] = {
+          ...target,
+          x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
+          y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
+        };
+        updateDragPointerLabelFromAnchor(list[index]);
+        pendingMainChangeRef.current = {
+          anchors: list,
+          dragSession: activeDragSessionRef.current,
+        };
 
-          return list;
-        });
+        return list;
+      });
         return;
       }
 
@@ -1045,10 +1102,10 @@ export function ToneCurveEditor({
         const next = index < list.length - 1 ? list[index + 1] : null;
         const isFirst = index === 0;
         const isLast = index === list.length - 1;
-        const fixedX = fixedXForOverlayCount(overlayCurve, list.length)[index];
-        const fixedY = fixedYForOverlayCount(overlayCurve, list.length)[index];
-        const canMoveX = overlayCurve.editable ? true : fixedX === undefined;
-        const canMoveY = overlayCurve.editable ? true : fixedY === undefined;
+      const fixedX = fixedXForOverlayCount(overlayCurve, list.length)[index];
+      const fixedY = fixedYForOverlayCount(overlayCurve, list.length)[index];
+      const canMoveX = fixedX === undefined && overlayCurve.editable;
+      const canMoveY = fixedY === undefined && overlayCurve.editable;
         const minX = isFirst
           ? normalizedXRange.min
           : prev
@@ -1074,20 +1131,23 @@ export function ToneCurveEditor({
           y: canMoveY ? snapValue(clampedY, ySnapStep) : clampedY,
         };
 
-        const editableFixedX = overlayCurve.editable ? [] : fixedXForOverlayCount(overlayCurve, nextCurve.length);
-        const editableFixedY = overlayCurve.editable ? [] : fixedYForOverlayCount(overlayCurve, nextCurve.length);
+        const editableFixedX = fixedXForOverlayCount(overlayCurve, nextCurve.length);
+        const editableFixedY = fixedYForOverlayCount(overlayCurve, nextCurve.length);
 
-      const normalizedCurve = normalizeAnchors(
+        const normalizedCurve = normalizeAnchors(
           nextCurve,
           editableFixedX,
           editableFixedY,
           fallbackAnchors,
         );
+        updateDragPointerLabelFromAnchor(normalizedCurve[index]);
         const nextAnchors = [...current];
         nextAnchors[overlayIndex] = normalizedCurve;
         pendingOverlayChangeRef.current = {
           anchors: normalizedCurve,
+          overlayIndex,
           onChange: overlayCurve.onChange,
+          dragSession: activeDragSessionRef.current,
         };
         return nextAnchors;
       });
@@ -1106,6 +1166,7 @@ export function ToneCurveEditor({
       normalizedYRange.min,
       resolvedOverlaySeries,
       screenToData,
+      updateDragPointerLabelFromAnchor,
       xSnapStep,
       ySnapStep,
     ],
@@ -1113,11 +1174,9 @@ export function ToneCurveEditor({
 
   const handlePointPointerDown = React.useCallback(
     (curveType: 'main' | 'overlay', overlayIndex: number | null, index: number, editable: boolean) => (event: React.PointerEvent<SVGCircleElement>) => {
-      if (curveType === 'overlay') {
-        pendingOverlayChangeRef.current = null;
-      } else {
-        pendingMainChangeRef.current = null;
-      }
+      activeDragSessionRef.current += 1;
+      pendingMainChangeRef.current = null;
+      pendingOverlayChangeRef.current = null;
 
       const count = curveType === 'main'
         ? sortedPoints.length
@@ -1129,6 +1188,10 @@ export function ToneCurveEditor({
       }
 
       event.preventDefault();
+      dragPointerScreenRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
       activeAnchorRef.current = {
         type: curveType,
         curveIndex: overlayIndex,
@@ -1138,9 +1201,19 @@ export function ToneCurveEditor({
         x: event.clientX,
         y: event.clientY,
       };
+      const selectedAnchor = curveType === 'main'
+        ? sortedPoints[index]
+        : sortedOverlayPoints[overlayIndex ?? 0]?.[index];
+      updateDragPointerLabelFromAnchor(selectedAnchor);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [isDraggable, sortedOverlayPoints, sortedPoints.length],
+    [
+      isDraggable,
+      sortedOverlayPoints,
+      sortedPoints,
+      sortedPoints.length,
+      updateDragPointerLabelFromAnchor,
+    ],
   );
 
   React.useEffect(() => {
@@ -1149,20 +1222,15 @@ export function ToneCurveEditor({
       if (!activeAnchor) {
         return;
       }
+      dragPointerScreenRef.current = { x: event.clientX, y: event.clientY };
       lastPointerPositionRef.current = { x: event.clientX, y: event.clientY };
       updateAnchor(activeAnchor.type, activeAnchor.anchorIndex, activeAnchor.curveIndex, event.clientX, event.clientY);
-    };
-
-    const flushPendingChanges = (): void => {
-      flushPendingMainChange();
-      flushPendingOverlayChange();
-      activeAnchorRef.current = null;
-      lastPointerPositionRef.current = null;
     };
 
     const onPointerUp = (): void => {
       const activeAnchor = activeAnchorRef.current;
       if (activeAnchor) {
+        const dragSession = activeDragSessionRef.current;
         const lastPointerPosition = lastPointerPositionRef.current;
         if (lastPointerPosition) {
           updateAnchor(
@@ -1173,15 +1241,30 @@ export function ToneCurveEditor({
             lastPointerPosition.y,
           );
         }
+        if (activeAnchor.type === 'main') {
+          flushPendingMainChange(dragSession);
+        } else {
+          flushPendingOverlayChange(dragSession);
+        }
       }
-      window.requestAnimationFrame(flushPendingChanges);
+      setDragPointerLabel(null);
+      activeAnchorRef.current = null;
+      lastPointerPositionRef.current = null;
     };
 
     const onPointerCancel = (): void => {
-      flushPendingMainChange();
-      flushPendingOverlayChange();
+      const activeAnchor = activeAnchorRef.current;
+      if (activeAnchor) {
+        const dragSession = activeDragSessionRef.current;
+        if (activeAnchor.type === 'main') {
+          flushPendingMainChange(dragSession);
+        } else {
+          flushPendingOverlayChange(dragSession);
+        }
+      }
       activeAnchorRef.current = null;
       lastPointerPositionRef.current = null;
+      setDragPointerLabel(null);
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -1197,7 +1280,11 @@ export function ToneCurveEditor({
   const mainCurveStyle = getLineStyle(0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width, ...style }} className={className}>
+    <div
+      ref={wrapperRef}
+      style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, width, ...style }}
+      className={className}
+    >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {allowAnchorCountChange ? (
           <>
@@ -1217,7 +1304,7 @@ export function ToneCurveEditor({
         role="img"
         aria-label="Tone curve editor"
         style={{ border: '1px solid #d0d7de', borderRadius: 4, touchAction: 'none', backgroundColor: '#ffffff' }}
-      >
+        >
         <line
           x1={inner.paddingLeft}
           y1={inner.paddingTop + inner.height}
@@ -1289,7 +1376,7 @@ export function ToneCurveEditor({
           points={pathPoints}
         />
         {sortedPoints.map((anchor, index) => {
-          const cursor = getAnchorCursor(index, sortedPoints.length, 'main', null, false);
+          const cursor = getAnchorCursor(index, sortedPoints.length, 'main', null, true);
           return (
             <g key={`${String(index)}`}>
               <circle
@@ -1299,7 +1386,7 @@ export function ToneCurveEditor({
                 fill={mainCurveStyle.anchorPointColor}
                 stroke="#fff"
                 strokeWidth={1.5}
-                onPointerDown={handlePointPointerDown('main', null, index, false)}
+                onPointerDown={handlePointPointerDown('main', null, index, true)}
                 style={{ cursor }}
               />
             </g>
@@ -1345,6 +1432,26 @@ export function ToneCurveEditor({
           );
         })}
       </svg>
+      {dragPointerLabel && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${dragPointerLabel.x}px`,
+            top: `${dragPointerLabel.y}px`,
+            pointerEvents: 'none',
+            padding: '4px 8px',
+            background: 'rgba(15, 23, 42, 0.88)',
+            color: '#fff',
+            borderRadius: 4,
+            fontSize: 12,
+            lineHeight: 1.3,
+            whiteSpace: 'nowrap',
+            zIndex: 3,
+          }}
+        >
+          {`(${formatAnchorValueLabel(dragPointerLabel.dataX)}, ${formatAnchorValueLabel(dragPointerLabel.dataY)})`}
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b' }}>
         <span>{`x: [${normalizedXRange.min}, ${normalizedXRange.max}]`}</span>
         <span>{`y: [${normalizedYRange.min}, ${normalizedYRange.max}]`}</span>

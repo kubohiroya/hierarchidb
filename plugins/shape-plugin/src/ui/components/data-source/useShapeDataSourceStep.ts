@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '~/common/types/index';
-import { mergeBuildConfig, mergeProcessingConfig } from '~/services/utils/utils';
+import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
 import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
@@ -44,7 +44,7 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     if (dataSourceId && hasBuildConfig && hasProcessingConfig) return;
 
     const nextBuildConfig = draftData.buildConfig
-      ? mergeBuildConfig(draftData.buildConfig, {
+      ? applyBuildConfigPatch(draftData.buildConfig, {
         dataSourceName: dataSourceId ?? DEFAULT_BUILD_CONFIG.dataSourceName,
       })
       : { ...DEFAULT_BUILD_CONFIG };
@@ -82,8 +82,8 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     const updates: Partial<typeof draftData> = {};
     if (typeof next.dataSourceId !== 'undefined') {
       const nextSource = next.dataSourceId as DataSourceName;
-      updates.buildConfig = draftData.buildConfig
-        ? mergeBuildConfig(draftData.buildConfig, { dataSourceName: nextSource })
+        updates.buildConfig = draftData.buildConfig
+        ? applyBuildConfigPatch(draftData.buildConfig, { dataSourceName: nextSource })
         : { ...DEFAULT_BUILD_CONFIG, dataSourceName: nextSource };
       updates.processingConfig = draftData.processingConfig
         ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftData.processingConfig)

@@ -34,22 +34,46 @@ export const resolveToleranceByBand = (
   return clampTolerance(typeof values[safeIndex] === 'number' ? values[safeIndex] : fallback, fallback);
 };
 
+type ToleranceFallback = number | readonly number[];
+
+const resolveToleranceFallback = (
+  fallback: ToleranceFallback,
+  index: number,
+  fallbackValue: number,
+): number => {
+  if (typeof fallback === 'number') {
+    return fallback;
+  }
+  const item = fallback[index];
+  if (typeof item === 'number' && Number.isFinite(item)) {
+    return item;
+  }
+  if (fallback.length <= 0) {
+    return fallbackValue;
+  }
+  const tail = fallback[fallback.length - 1];
+  return typeof tail === 'number' && Number.isFinite(tail) ? tail : fallbackValue;
+};
+
 export const normalizeToleranceByBand = (
   values: number[] | undefined,
   bandCount: number,
-  fallback: number,
+  fallback: ToleranceFallback,
 ): number[] => {
   if (!Number.isFinite(bandCount) || bandCount < 1) {
     return [];
   }
   const normalizedCount = Math.max(1, Math.floor(bandCount));
   if (!Array.isArray(values) || values.length === 0) {
-    return Array.from({ length: normalizedCount }, () => fallback);
+    return Array.from({ length: normalizedCount }, (_, index) => (
+      resolveToleranceFallback(fallback, index, 0.1)
+    ));
   }
 
   const result: number[] = [];
   for (let index = 0; index < normalizedCount; index += 1) {
-    result[index] = resolveNumericToleranceValue(values[index], fallback);
+    const fallbackValue = resolveToleranceFallback(fallback, index, 0.1);
+    result[index] = resolveNumericToleranceValue(values[index], fallbackValue);
   }
   return result;
 };

@@ -62,6 +62,30 @@ const mergeDraft = (
   } as ResolverData;
 };
 
+const serializeComparable = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+};
+
+const createDraftUpdater = (initial: ResolverData, onChange: ResolverStepProps['onChange']) => {
+  let latestDraft = { ...(initial ?? {}) };
+  let latestSignature = serializeComparable(latestDraft);
+
+  return (updates: Partial<ResolverUpdaterPayload> | Pick<ResolverData, 'lastValidation'>) => {
+    const nextDraft = mergeDraft(latestDraft, updates);
+    const nextSignature = serializeComparable(nextDraft);
+    if (nextSignature === latestSignature) {
+      return;
+    }
+    latestDraft = nextDraft;
+    latestSignature = nextSignature;
+    onChange(nextDraft);
+  };
+};
+
 registry.registerConfigProvider<ResolverUpdaterPayload>({
   nodeType: 'resolver',
   getCreateStepConfigs(): PluginStepConfig<ResolverUpdaterPayload>[] {
@@ -72,18 +96,17 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
+          const handleUpdate = createDraftUpdater(currentData, p.onChange);
           return (
             <SchemaSelectionStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
-                p.onChange(mergeDraft(currentData, updates))
-              }
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) => handleUpdate(updates)}
               onValidationChange={p.setValid}
               onSourceSchemaChange={(schema: SchemaInfo | null) =>
-                p.onChange(mergeDraft(currentData, { draftData: { sourceSchema: schema } }))
+                handleUpdate({ draftData: { sourceSchema: schema } })
               }
               onTargetSchemaChange={(schema: SchemaInfo | null) =>
-                p.onChange(mergeDraft(currentData, { draftData: { targetSchema: schema } }))
+                handleUpdate({ draftData: { targetSchema: schema } })
               }
             />
           );
@@ -95,12 +118,11 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
+          const handleUpdate = createDraftUpdater(currentData, p.onChange);
           return (
             <PropertyMappingStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
-                p.onChange(mergeDraft(currentData, updates))
-              }
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) => handleUpdate(updates)}
               onValidationChange={p.setValid}
               sourceSchema={currentData.draftData?.sourceSchema ?? null}
               targetSchema={currentData.draftData?.targetSchema ?? null}
@@ -114,12 +136,11 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
+          const handleUpdate = createDraftUpdater(currentData, p.onChange);
           return (
             <ValidationConfigStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
-                p.onChange(mergeDraft(currentData, updates))
-              }
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) => handleUpdate(updates)}
               onValidationChange={p.setValid}
               sourceSchema={currentData.draftData?.sourceSchema ?? null}
               targetSchema={currentData.draftData?.targetSchema ?? null}
@@ -133,12 +154,11 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: () => true,
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
+          const handleUpdate = createDraftUpdater(currentData, p.onChange);
           return (
             <DuplicateResolutionStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
-                p.onChange(mergeDraft(currentData, updates))
-              }
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) => handleUpdate(updates)}
               onValidationChange={p.setValid}
             />
           );
@@ -164,17 +184,16 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
+          const handleUpdate = createDraftUpdater(currentData, p.onChange);
           return (
             <PreviewTestStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
-                p.onChange(mergeDraft(currentData, updates))
-              }
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) => handleUpdate(updates)}
               onValidationChange={p.setValid}
               sourceSchema={currentData.draftData?.sourceSchema ?? null}
               targetSchema={currentData.draftData?.targetSchema ?? null}
               onValidationResult={(result: MappingValidationResult | null) =>
-                p.onChange({ ...currentData, lastValidation: result })
+                handleUpdate({ lastValidation: result })
               }
             />
           );

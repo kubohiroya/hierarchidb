@@ -19,10 +19,10 @@ import {
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 import type {
   ShapeBuildConfig,
+  ShapeBuildConfigPatch,
   ShapeProcessingConfig,
   ShapeRuntimeBuildConfig,
 } from '~/common/types/index';
-import { normalizeToleranceByBand } from '~/services/utils/toleranceByBand';
 import {
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,
@@ -96,7 +96,7 @@ export function validateBuildConfig(
 ): ShapeStepValidationResult {
   const errors: string[] = [];
 
-  const mergedBuildConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, buildConfig);
+  const mergedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
   const mergedProcessingConfig = mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, processingConfig);
   const transformConfig = mergedBuildConfig.transformConfig;
 
@@ -333,11 +333,11 @@ function buildDataSourceUrl(
  * Estimate data size based on country and admin level
  */
 /**
- * Merge build config updates
+ * Apply a build config patch over a base config without default-fill logic.
  */
-export function mergeBuildConfig(
+export function applyBuildConfigPatch(
   base: ShapeBuildConfig,
-  overrides?: Partial<ShapeBuildConfig>,
+  overrides?: ShapeBuildConfigPatch,
 ): ShapeBuildConfig {
   if (!overrides) return base;
 
@@ -394,26 +394,6 @@ export function mergeBuildConfig(
         : base.transformConfig.omitDetailsConfig,
     }
     : base.transformConfig;
-  const transformToleranceFallback = 0.1;
-  const resolvedTransformBandCount = Math.max(1, transformConfig.zoomBandBoundaries.length);
-  const normalizedTransformToleranceByBand = normalizeToleranceByBand(
-    transformConfig.toleranceByBand,
-    resolvedTransformBandCount,
-    transformToleranceFallback,
-  );
-  const normalizedRetryToleranceByBand = Array.isArray(transformConfig.retryToleranceByBand)
-    ? normalizeToleranceByBand(
-      transformConfig.retryToleranceByBand,
-      resolvedTransformBandCount,
-      transformToleranceFallback,
-    )
-    : undefined;
-  const normalizedTransformConfig = {
-    ...transformConfig,
-    toleranceByBand: normalizedTransformToleranceByBand,
-    ...(normalizedRetryToleranceByBand ? { retryToleranceByBand: normalizedRetryToleranceByBand } : {}),
-  };
-
   const vtConfig = overrides.vtConfig
     ? { ...base.vtConfig, ...overrides.vtConfig }
     : base.vtConfig;
@@ -426,7 +406,7 @@ export function mergeBuildConfig(
     ...base,
     ...overrides,
     fetchConfig,
-    transformConfig: normalizedTransformConfig,
+    transformConfig,
     vtConfig,
     cleanupConfig,
   };

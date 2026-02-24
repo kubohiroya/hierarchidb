@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useId } from 'react';
-import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '~/common/types/index';
+import { DEFAULT_BUILD_CONFIG, applyBuildConfigPatch } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import type { ShapeBuildConfig, ShapeBuildConfigPatch } from '~/common/types/index';
 import { useTranslation } from '~/ui/i18n';
 import { useShapeBuildCacheActions } from './useShapeBuildCacheActions.ts';
 
@@ -10,7 +10,7 @@ type Args = {
   config: ShapeBuildConfig;
   nodeId: NodeId;
   disabled?: boolean;
-  onChange: (next: ShapeBuildConfig) => void;
+  onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
   onResetSession?: () => void;
 };
 
@@ -85,20 +85,15 @@ export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onRe
     formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete feature metadata'), metadataDeleteCount)
   ), [formatDeleteLabel, metadataDeleteCount, t]);
 
-  const latestConfigRef = useRef(config);
-  useEffect(() => {
-    latestConfigRef.current = config;
-  }, [config]);
-  const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig(latestConfigRef.current, partial));
+  const update = useCallback((partial: ShapeBuildConfigPatch) => {
+    onChange((prevConfig) => applyBuildConfigPatch(prevConfig, partial));
   }, [onChange]);
 
   const handleResetDefaults = useCallback(() => {
-    const latestConfig = latestConfigRef.current;
-    onChange({
+    onChange((prevConfig) => ({
       ...DEFAULT_BUILD_CONFIG,
-      dataSourceName: latestConfig.dataSourceName,
-    });
+      dataSourceName: prevConfig.dataSourceName,
+    }));
   }, [onChange]);
 
   return {

@@ -3,7 +3,7 @@ import { Stack, Typography } from '@mui/material';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/build';
 import { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from '@hierarchidb/shape-api';
-import { mergeBuildConfig, mergeProcessingConfig } from '~/services/utils/utils';
+import { applyBuildConfigPatch, mergeProcessingConfig } from '~/services/utils/utils';
 import { useShapeBuildProgressPanel } from '~/ui/components/build-progress/useShapeBuildProgressPanel/useShapeBuildProgressPanel';
 import { useShapeBuildCacheActions } from '~/ui/hooks/useShapeBuildCacheActions';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
@@ -445,7 +445,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   }, [data]);
 
   const buildConfigForEdit = useMemo(
-    () => mergeBuildConfig(DEFAULT_BUILD_CONFIG, data?.buildConfig),
+    () => applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, data?.buildConfig),
     [data?.buildConfig],
   );
 
@@ -471,7 +471,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const applyFetchRetryConfigUpdate = useCallback((next: FetchRetryConfigPatch) => {
     if (!onChange) return;
-    const nextBuildConfig = mergeBuildConfig(buildConfigForEdit, {
+    const nextBuildConfig = applyBuildConfigPatch(buildConfigForEdit, {
       fetchConfig: {
         ...buildConfigForEdit.fetchConfig,
         timeoutMs: next.timeoutMs,

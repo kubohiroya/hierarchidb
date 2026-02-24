@@ -7,13 +7,15 @@ import { resampleToleranceByBand } from '~/services/utils/toleranceByBand';
 type Props = {
   config: ShapeBuildConfig;
   disabled?: boolean;
-  onChange: (next: ShapeBuildConfig) => void;
+  onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
+  disableHoverLift?: boolean;
 };
 
 export const ZoomBandConfigSection: React.FC<Props> = ({
   config,
   disabled,
   onChange,
+  disableHoverLift = false,
 }) => {
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
@@ -38,7 +40,6 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
         );
         update({
           transformConfig: {
-            ...baseTransformConfig,
             toleranceByBand: nextToleranceByBand,
             retryToleranceByBand: nextRetryToleranceByBand,
             zoomBandBoundaries,
@@ -46,6 +47,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
         });
       }}
       disabled={disabled}
+      disableHoverLift={disableHoverLift}
     />
   );
 };

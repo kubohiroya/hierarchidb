@@ -1,22 +1,20 @@
 import {
+  Grid,
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Switch,
   FormControl,
   FormControlLabel,
-  MenuItem,
   Paper,
   Radio,
   RadioGroup,
-  Select,
   Slider,
   Stack,
   Typography,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  InfoOutlined as InfoOutlinedIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
 import {
@@ -26,14 +24,15 @@ import {
 } from '@hierarchidb/ui-accordion-config';
 import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
 import { useTranslation } from '~/ui/i18n';
-import type { ShapeBuildConfig } from '~/common/types/index';
+import { DEFAULT_BUILD_CONFIG, type ShapeBuildConfig } from '~/common/types/index';
 import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
 import { buildToleranceByBandFromToneCurveAnchors, buildToneCurveAnchorsFromToleranceByBand } from '~/services/utils/toleranceByBand';
 import type { ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
   config: ShapeBuildConfig;
-  onChange: (next: ShapeBuildConfig) => void;
+  onChange: (next: ShapeBuildConfig | ((prev: ShapeBuildConfig) => ShapeBuildConfig)) => void;
   disabled?: boolean;
   disableHoverLift?: boolean;
 };
@@ -47,6 +46,12 @@ export const TransformConfigSection: React.FC<Props> = ({
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
+  const normalizeToleranceValue = useCallback((value: number): number => (
+    Number.parseFloat(value.toFixed(3))
+  ), []);
+  const areToleranceValuesEqual = useCallback((left: number, right: number): boolean => {
+    return Math.abs(normalizeToleranceValue(left) - normalizeToleranceValue(right)) < 1e-9;
+  }, [normalizeToleranceValue]);
   const clampRetryCount = (value: number): number => Math.min(10, Math.max(0, Math.round(value)));
   const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
   const retryCountMarks = [
@@ -59,10 +64,10 @@ export const TransformConfigSection: React.FC<Props> = ({
     ? clampRetryCount(baseTransformConfig.retryCount)
     : 4;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
-  const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
-  const toleranceFallback = 0.1;
-  const toneCurveDefaultAnchorValues = [0.5, 0.5, 0.5, 0.5] as const;
-  const toneCurveRetrySecondDefaultAnchorValues = [2, 1.5, 1, 1] as const;
+  const toneCurveDefaultAnchorValues = DEFAULT_BUILD_CONFIG.transformConfig.toleranceByBand;
+  const toneCurveRetrySecondDefaultAnchorValues = DEFAULT_BUILD_CONFIG.transformConfig.retryToleranceByBand;
+  const toneCurveDefaultFallback = toneCurveDefaultAnchorValues[0] ?? 0.1;
+  const toneCurveRetryFallback = toneCurveRetrySecondDefaultAnchorValues[0] ?? 0.1;
   const toneCurveLineStyles = [
     {
       lineColor: '#0b5ed7',
@@ -82,13 +87,13 @@ export const TransformConfigSection: React.FC<Props> = ({
     ? buildToneCurveAnchorsFromToleranceByBand(
       baseTransformConfig.toleranceByBand,
       baseTransformConfig.zoomBandBoundaries,
-      toleranceFallback,
+      toneCurveDefaultFallback,
       toneCurveDefaultAnchorValues,
     )
     : buildToneCurveAnchorsFromToleranceByBand(
       undefined,
       baseTransformConfig.zoomBandBoundaries,
-      toleranceFallback,
+      toneCurveDefaultFallback,
       toneCurveDefaultAnchorValues,
     );
   const hasCompleteRetryToleranceByBand = (baseTransformConfig.retryToleranceByBand?.length ?? 0) === bandCount;
@@ -96,25 +101,45 @@ export const TransformConfigSection: React.FC<Props> = ({
     ? buildToneCurveAnchorsFromToleranceByBand(
       baseTransformConfig.retryToleranceByBand,
       baseTransformConfig.zoomBandBoundaries,
-      toleranceFallback,
+      toneCurveRetryFallback,
       toneCurveRetrySecondDefaultAnchorValues,
     )
     : buildToneCurveAnchorsFromToleranceByBand(
       undefined,
       baseTransformConfig.zoomBandBoundaries,
-      toleranceFallback,
+      toneCurveRetryFallback,
       toneCurveRetrySecondDefaultAnchorValues,
     );
   const xMarks = baseTransformConfig.zoomBandBoundaries.map((value) => ({ value, label: String(value) }));
 
-  const updateTransformConfig = (partial: Partial<ShapeBuildConfig['transformConfig']>) => (
+  const updateTransformConfig = useCallback((partial: Partial<ShapeBuildConfig['transformConfig']>) => (
     update({
-      transformConfig: {
-        ...baseTransformConfig,
-        ...partial,
-      },
+      transformConfig: partial,
     })
-  );
+  ), [update]);
+  const curveWidthRef = useRef<HTMLDivElement | null>(null);
+  const [simplifyCurveWidth, setSimplifyCurveWidth] = useState(500);
+
+  useEffect(() => {
+    const node = curveWidthRef.current;
+    if (!node) {
+      return;
+    }
+
+    const update = () => {
+      const nextWidth = Math.max(280, node.clientWidth);
+      setSimplifyCurveWidth(nextWidth);
+    };
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const summaryHelp = simplifyAlgorithm === 'topojson'
     ? t(
@@ -143,146 +168,154 @@ export const TransformConfigSection: React.FC<Props> = ({
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.transform.simplifySettings.title', 'Simplify settings')}
               />
-              <FormControl disabled={disabled}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {t('processing.transform.algorithm.label', 'Simplify Algorithm')}
-                </Typography>
-                <RadioGroup
-                  row
-                  value={simplifyAlgorithm}
-                  onChange={(_event, value) => {
-                    if (value !== 'geojson' && value !== 'topojson') return;
-                    updateTransformConfig({ simplifyAlgorithm: value });
-                  }}
-                >
-                  <FormControlLabel
-                    value="topojson"
-                    control={<Radio size="small" />}
-                    label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
-                  />
-                  <FormControlLabel
-                    value="geojson"
-                    control={<Radio size="small" />}
-                    label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
-                  />
-                </RadioGroup>
-              </FormControl>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl disabled={disabled}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {t('processing.transform.algorithm.label', 'Simplify Algorithm')}
+                    </Typography>
+                    <RadioGroup
+                      row
+                      value={simplifyAlgorithm}
+                      onChange={(_event, value) => {
+                        if (value !== 'geojson' && value !== 'topojson') return;
+                        updateTransformConfig({ simplifyAlgorithm: value });
+                      }}
+                    >
+                      <FormControlLabel
+                        value="topojson"
+                        control={<Radio size="small" />}
+                        label={t('processing.transform.algorithm.topojson', 'topojson (topology-preserving)')}
+                      />
+                      <FormControlLabel
+                        value="geojson"
+                        control={<Radio size="small" />}
+                        label={t('processing.transform.algorithm.geojson', 'geojson (turf simplify)')}
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Stack spacing={0.5}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={preserveTopology}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updateTransformConfig({ preserveTopology: event.target.checked });
+                          }}
+                        />
+                      )}
+                      disabled={disabled || simplifyAlgorithm === 'topojson'}
+                      label={t('processing.transform.preserveTopology.label', 'Preserve topology')}
+                    />
+                    {simplifyAlgorithm === 'topojson' ? (
+                      <Typography variant="caption" color="text.secondary">
+                        {t(
+                          'processing.transform.preserveTopology.topojsonHint',
+                          'topojson mode always preserves topology in decode simplify path.',
+                        )}
+                      </Typography>
+                    ) : null}
+                  </Stack>
+                </Grid>
+              </Grid>
 
-              <FormControlLabel
-                control={(
-                  <Switch
-                    checked={preserveTopology}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                      updateTransformConfig({ preserveTopology: event.target.checked });
-                    }}
-                  />
-                )}
-                disabled={disabled || simplifyAlgorithm === 'topojson'}
-                label={t('processing.transform.preserveTopology.label', 'Preserve topology')}
-              />
-              {simplifyAlgorithm === 'topojson' ? (
-                <Typography variant="caption" color="text.secondary">
-                  {t(
-                    'processing.transform.preserveTopology.topojsonHint',
-                    'topojson mode always preserves topology in decode simplify path.',
-                  )}
-                </Typography>
-              ) : null}
-
-              <Stack spacing={0.5}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('processing.transform.simplifyTolerance.label', 'Simplify tolerance')}
-                </Typography>
-                <ToneCurveEditor
-                  width={500}
-                  height={180}
-                  xRange={[baseTransformConfig.zoomBandBoundaries[0] ?? 1, baseTransformConfig.zoomBandBoundaries.at(-1) ?? 11]}
-                  yRange={[0, 12]}
-                  lineStyles={toneCurveLineStyles}
-                  xMarks={xMarks}
-                  anchors={resolvedToneCurveAnchors}
-                  xFixedValues={resolvedToneCurveAnchors.map((anchor) => anchor.x)}
-                  allowAnchorCountChange={false}
-                  xSnapStep={0.1}
-                  ySnapStep={0.1}
-                  overlaySeries={[
-                    {
-                      anchors: resolvedToneCurveRetrySecondAnchors,
-                      xFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.x),
-                      yFixedValues: [],
-                      allowAnchorCountChange: false,
-                      editable: false,
-                      onChange: (overlayAnchors) => {
-                        if (disabled) return;
-                        const next = buildToleranceByBandFromToneCurveAnchors(
-                          overlayAnchors,
-                          baseTransformConfig.zoomBandBoundaries,
-                          toleranceFallback,
-                        );
-                        updateTransformConfig({ retryToleranceByBand: next });
-                      },
-                    },
-                  ]}
-                  onChange={(anchors) => {
-                    if (disabled) return;
-                    const next = buildToleranceByBandFromToneCurveAnchors(
-                      anchors,
-                      baseTransformConfig.zoomBandBoundaries,
-                      toleranceFallback,
-                    );
-                    updateTransformConfig({ toleranceByBand: next });
-                  }}
-                />
-              </Stack>
-
-              <Stack spacing={0.5}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('processing.transform.retryToleranceStep.label', 'Retry count')}
-                </Typography>
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '32px' }}>
-                  <Slider
-                    sx={{ flex: 1 }}
-                    value={simplifyRetryCount}
-                    min={0}
-                    max={10}
-                    step={1}
-                    marks={retryCountMarks}
-                    disabled={disabled}
-                    valueLabelDisplay="on"
-                    onChange={(_event, value) => {
-                      const next = clampRetryCount(resolveSliderNumber(value));
-                      updateTransformConfig({ retryCount: next });
-                    }}
-                  />
-                </Stack>
-              </Stack>
-            </Stack>
-          </Paper>
-
-          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-            <Stack spacing={2}>
-              <BuildConfigSectionTitle
-                icon={<InfoOutlinedIcon fontSize="small" color="primary" />}
-                title={t('processing.transform.logging.title', 'Execution logging')}
-              />
-              <FormControl fullWidth disabled={disabled}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {t('processing.transform.executionLogLevel.label', 'Execution Log Level')}
-                </Typography>
-                <Select
-                  size="small"
-                  value={executionLogLevel}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value !== 'off' && value !== 'summary' && value !== 'verbose') return;
-                    updateTransformConfig({ executionLogLevel: value });
-                  }}
-                >
-                  <MenuItem value="off">{t('processing.transform.executionLogLevel.off', 'off')}</MenuItem>
-                  <MenuItem value="summary">{t('processing.transform.executionLogLevel.summary', 'summary')}</MenuItem>
-                  <MenuItem value="verbose">{t('processing.transform.executionLogLevel.verbose', 'verbose')}</MenuItem>
-                </Select>
-              </FormControl>
+              <Grid container spacing={3} alignItems="flex-start">
+                <Grid size={{ xs: 12, md: 8 }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('processing.transform.simplifyTolerance.label', 'Simplify tolerance')}
+                    </Typography>
+                    <div ref={curveWidthRef} style={{ width: '100%' }}>
+                      <ToneCurveEditor
+                        width={simplifyCurveWidth}
+                        height={180}
+                        xRange={[
+                          baseTransformConfig.zoomBandBoundaries[0] ?? 1,
+                          baseTransformConfig.zoomBandBoundaries.at(-1) ?? 11,
+                        ]}
+                        yRange={[0, 12]}
+                        lineStyles={toneCurveLineStyles}
+                        xMarks={xMarks}
+                        anchors={resolvedToneCurveAnchors}
+                        xFixedValues={resolvedToneCurveAnchors.map((anchor) => anchor.x)}
+                        allowAnchorCountChange={false}
+                        xSnapStep={0.1}
+                        ySnapStep={0.1}
+                        overlaySeries={[
+                          {
+                            anchors: resolvedToneCurveRetrySecondAnchors,
+                            xFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.x),
+                            yFixedValues: [],
+                            allowAnchorCountChange: false,
+                            editable: true,
+                            onChange: (overlayAnchors) => {
+                              if (disabled) return;
+                              const next = buildToleranceByBandFromToneCurveAnchors(
+                                overlayAnchors,
+                                baseTransformConfig.zoomBandBoundaries,
+                                toneCurveRetryFallback,
+                              );
+                              const normalized = next.map((value) => normalizeToleranceValue(value));
+                              if (next.length === (baseTransformConfig.retryToleranceByBand?.length ?? 0)
+                                && next.every((value, index) => areToleranceValuesEqual(
+                                  value,
+                                  baseTransformConfig.retryToleranceByBand?.[index] ?? value,
+                                ))
+                              ) {
+                                return;
+                              }
+                              updateTransformConfig({ retryToleranceByBand: normalized });
+                            },
+                          },
+                        ]}
+                        onChange={(anchors) => {
+                          if (disabled) return;
+                          const next = buildToleranceByBandFromToneCurveAnchors(
+                            anchors,
+                            baseTransformConfig.zoomBandBoundaries,
+                            toneCurveDefaultFallback,
+                          );
+                          const normalized = next.map((value) => normalizeToleranceValue(value));
+                          if (next.length === (baseTransformConfig.toleranceByBand?.length ?? 0)
+                            && next.every((value, index) => areToleranceValuesEqual(
+                              value,
+                              baseTransformConfig.toleranceByBand?.[index] ?? value,
+                            ))
+                          ) {
+                            return;
+                          }
+                          updateTransformConfig({ toleranceByBand: normalized });
+                        }}
+                      />
+                    </div>
+                  </Stack>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Stack spacing={0.5} alignItems="flex-start">
+                    <Typography variant="body2" color="text.secondary">
+                      {t('processing.transform.retryToleranceStep.label', 'Retry count')}
+                    </Typography>
+                    <Stack direction="row" spacing={2} alignItems="center" sx={{ paddingTop: '20px' }}>
+                      <Slider
+                        sx={{ flex: 1, minWidth: 220 }}
+                        value={simplifyRetryCount}
+                        min={0}
+                        max={10}
+                        step={1}
+                        marks={retryCountMarks}
+                        disabled={disabled}
+                        valueLabelDisplay="on"
+                        onChange={(_event, value) => {
+                          const next = clampRetryCount(resolveSliderNumber(value));
+                          updateTransformConfig({ retryCount: next });
+                        }}
+                      />
+                    </Stack>
+                  </Stack>
+                </Grid>
+              </Grid>
             </Stack>
           </Paper>
         </Stack>

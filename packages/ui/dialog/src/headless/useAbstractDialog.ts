@@ -94,6 +94,7 @@ export function useAbstractDialog<TData>(
     onStepNavigate,
     onRequestClose,
     onRequestCommit,
+    registerStepDraftCommitter,
     HeaderComponent: HeaderComponentProp,
     ContentComponent: ContentComponentProp,
     FooterComponent: FooterComponentProp,
@@ -125,6 +126,7 @@ export function useAbstractDialog<TData>(
     onStepNavigate,
     onRequestClose,
     onRequestCommit,
+    registerStepDraftCommitter,
     ...frameProps,
   };
 
@@ -139,6 +141,8 @@ export function useAbstractDialog<TData>(
     if (prev.onStepNavigate !== nextValue.onStepNavigate) return 'onStepNavigate';
     if (prev.onRequestClose !== nextValue.onRequestClose) return 'onRequestClose';
     if (prev.onRequestCommit !== nextValue.onRequestCommit) return 'onRequestCommit';
+    if (prev.registerStepDraftCommitter !== nextValue.registerStepDraftCommitter)
+      return 'registerStepDraftCommitter';
     if (!shallowEqualData(prev.stepComponents, nextValue.stepComponents)) return 'stepComponents';
     if (!shallowEqualData(prev.enabledStepIndices, nextValue.enabledStepIndices))
       return 'enabledStepIndices';

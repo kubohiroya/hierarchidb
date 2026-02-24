@@ -2,7 +2,6 @@ import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { ephemeralShapeAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeBuildConfig } from '~/common/types/build';
-import { mergeBuildConfig } from '~/services/utils/utils';
 
 const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
 
@@ -48,8 +47,8 @@ export function resolveBuildConfigInvalidation(
   if (!prevConfig || !nextConfig) {
     return FULL_INVALIDATION_STAGES;
   }
-  const prev = mergeBuildConfig(prevConfig);
-  const next = mergeBuildConfig(nextConfig);
+  const prev = prevConfig;
+  const next = nextConfig;
 
   const stages = new Set<ShapeBuildStage>();
 

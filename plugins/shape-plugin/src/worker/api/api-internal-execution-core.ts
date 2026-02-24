@@ -18,7 +18,7 @@ import {
   DEFAULT_BUILD_CONFIG,
   DEFAULT_PROCESSING_CONFIG,
   composeRuntimeBuildConfig,
-  mergeBuildConfig,
+  applyBuildConfigPatch,
   mergeProcessingConfig,
   requireDataSourceName,
   validateBuildConfig,
@@ -483,18 +483,18 @@ const startBuildSessionInternal = async (
   const draftBuildConfig = draftEntity?.buildConfig;
   const draftProcessingConfig = draftEntity?.processingConfig;
   const normalizedDraftConfig = draftBuildConfig
-    ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
+    ? applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, draftBuildConfig)
     : null;
   const normalizedDraftProcessingConfig = draftProcessingConfig
     ? mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG, draftProcessingConfig)
     : null;
-  const normalizedBuildConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, buildConfig);
+  const normalizedBuildConfig = applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, buildConfig);
   const normalizedProcessingConfig = mergeProcessingConfig(
     DEFAULT_PROCESSING_CONFIG,
     processingConfig ?? {},
   );
   const mergedBatchConfig = normalizedDraftConfig
-    ? mergeBuildConfig(normalizedDraftConfig, normalizedBuildConfig)
+    ? applyBuildConfigPatch(normalizedDraftConfig, normalizedBuildConfig)
     : normalizedBuildConfig;
   const mergedProcessingConfig = normalizedDraftProcessingConfig
     ? mergeProcessingConfig(normalizedDraftProcessingConfig, normalizedProcessingConfig)
@@ -996,7 +996,7 @@ const invokeShapeBuildCommand = async (
       return;
     }
 
-    const handler = getShapeEntityHandler();
+  const handler = getShapeEntityHandler();
     const draftEntity = await executeResumeStep('load-draft', async () => handler.getEntity(nodeId));
     if (!draftEntity) return;
     if (!sessionRecord) {
@@ -1005,18 +1005,18 @@ const invokeShapeBuildCommand = async (
         async () => shapeQueryAPIImpl.getBuildSessionRecord(nodeId).catch(() => null),
       );
     }
-    const draftBuildConfig = draftEntity.buildConfig;
-    const draftProcessingConfig = draftEntity.processingConfig;
-    const normalizedDraftConfig = draftBuildConfig
-      ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
-      : null;
-    const normalizedPayloadConfig = payloadBuildConfig
-      ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, payloadBuildConfig)
-      : null;
-    const mergedBuildConfig = normalizedDraftConfig
-      ? (normalizedPayloadConfig
-        ? mergeBuildConfig(normalizedDraftConfig, normalizedPayloadConfig)
-        : normalizedDraftConfig)
+  const draftBuildConfig = draftEntity.buildConfig;
+  const draftProcessingConfig = draftEntity.processingConfig;
+  const normalizedDraftConfig = draftBuildConfig
+    ? applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, draftBuildConfig)
+    : null;
+  const normalizedPayloadConfig = payloadBuildConfig
+    ? applyBuildConfigPatch(DEFAULT_BUILD_CONFIG, payloadBuildConfig)
+    : null;
+  const mergedBuildConfig = normalizedDraftConfig
+    ? (normalizedPayloadConfig
+      ? applyBuildConfigPatch(normalizedDraftConfig, normalizedPayloadConfig)
+      : normalizedDraftConfig)
       : normalizedPayloadConfig;
     if (!mergedBuildConfig) {
       throw new Error('[shapeBuildAPI] buildConfig is required to resume build session');
