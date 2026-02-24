@@ -112,6 +112,56 @@ const normalizePropertyValue = (value: unknown): string | undefined => {
   return undefined;
 };
 
+const normalizeLayerName = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.toLowerCase();
+};
+
+const resolveNumericLevel = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+  }
+  return undefined;
+};
+
+const resolveTileLayerName = (
+  feature: FeatureLike,
+  fallbackAdminLevel?: number,
+): string => {
+  const properties = feature.properties ?? {};
+  const explicitLayerName = [
+    properties.layer,
+    properties.LAYER,
+    properties.sourceLayer,
+    properties['source-layer'],
+    properties.source_layer,
+    properties.vectorLayer,
+  ]
+    .map(normalizeLayerName)
+    .find((name): name is string => typeof name === 'string');
+  if (explicitLayerName) return explicitLayerName;
+
+  const candidates = [
+    fallbackAdminLevel,
+    properties.adminLevel,
+    properties.admin_level,
+    properties.ADM_LEVEL,
+    properties.level,
+    properties.admin_lvl,
+    properties.layerLevel,
+    properties.layer_level,
+  ];
+  const adminLevel = candidates
+    .map(resolveNumericLevel)
+    .find((value): value is number => value !== undefined);
+  if (adminLevel === undefined) return 'layer0';
+  return `admin${adminLevel}`;
+};
+
 const ensureMetadataProperties = (
   properties: Record<string, unknown>,
   metadataContext?: VTMetadataContext,
@@ -424,13 +474,31 @@ export const generateVectorTilesFromFeatureCollection = async (
   const targetZooms = Array.from({ length: zoomMax - zoomMin + 1 }, (_, z) => zoomMin + z);
   const indexMaxZoom = targetZooms.length > 0 ? Math.max(...targetZooms) : fallbackMaxZoom;
   const indexStart = Date.now();
-  const index = geojsonvt(geojson as GeojsonVtData, {
-    maxZoom: indexMaxZoom,
-    extent,
-    buffer: bufferValue,
-    indexMaxZoom,
-    promoteId: 'id',
-    indexMaxPoints: 65536,
+  const fallbackLayerAdminLevel = typeof metadataContext.adminLevel === 'number' ? metadataContext.adminLevel : undefined;
+  const featureGroups = new Map<string, FeatureLike[]>();
+  for (const feature of features) {
+    const layerName = resolveTileLayerName(feature, fallbackLayerAdminLevel);
+    const list = featureGroups.get(layerName);
+    if (list) {
+      list.push(feature);
+    } else {
+      featureGroups.set(layerName, [feature]);
+    }
+  }
+  const indexedLayers = new Map<string, ReturnType<typeof geojsonvt>>();
+  featureGroups.forEach((layerFeatures, layerName) => {
+    const groupedCollection = { type: 'FeatureCollection', features: layerFeatures };
+    indexedLayers.set(
+      layerName,
+      geojsonvt(groupedCollection as GeojsonVtData, {
+        maxZoom: indexMaxZoom,
+        extent,
+        buffer: bufferValue,
+        indexMaxZoom,
+        promoteId: 'id',
+        indexMaxPoints: 65536,
+      }),
+    );
   });
   throwIfAborted(config.signal);
   console.debug('[VectorTiles] index built', { ms: Date.now() - indexStart });
@@ -487,15 +555,19 @@ export const generateVectorTilesFromFeatureCollection = async (
       throwIfAborted(config.signal);
       for (let y = y1; y <= y2; y++) {
         throwIfAborted(config.signal);
-        const tile = index.getTile(z, x, y);
-        const layer =
-          tile && Array.isArray((tile as { features?: unknown[] }).features)
-            ? (tile as Tile)
-            : null;
-        if (layer?.features?.length) {
-          const layers: Record<string, Tile> = { layer0: layer };
-          const layersArg = Object.values(layers);
-          const pbf = vtpbf.fromGeojsonVt(layersArg, {
+        const layers: Record<string, Tile> = {};
+        indexedLayers.forEach((layerIndex, layerName) => {
+          const tile = layerIndex.getTile(z, x, y);
+          const matchedLayer =
+            tile && Array.isArray((tile as { features?: unknown[] }).features)
+              ? (tile as Tile)
+              : null;
+          if (matchedLayer?.features?.length) {
+            layers[layerName] = matchedLayer;
+          }
+        });
+        if (Object.keys(layers).length > 0) {
+          const pbf = vtpbf.fromGeojsonVt(layers, {
             version: 2,
             extent: 4096,
           });

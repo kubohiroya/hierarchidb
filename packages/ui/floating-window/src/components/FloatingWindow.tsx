@@ -144,13 +144,13 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
       className={`floating-window ${className || ''}`}
       style={{ ...controller.windowStyle, pointerEvents: 'auto' }}
       elevation={8}
-      onMouseDownCapture={controller.handleWindowMouseDownCapture}
+      onPointerDownCapture={controller.handleWindowMouseDownCapture}
     >
       <TitleBar
         className="title-bar"
-        onMouseDown={controller.handleMouseDown}
+        onPointerDown={controller.handleMouseDown}
         onDoubleClick={controller.handleTitleBarDoubleClick}
-        onMouseDownCapture={controller.handleTitleBarMouseDownCapture}
+        onPointerDownCapture={controller.handleTitleBarMouseDownCapture}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.83rem' }}>
           {titleIcon ?? <WindowIcon sx={{ fontSize: '1rem', ml: 1 }} />}
@@ -191,14 +191,14 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = (props) => {
 
           {resizable && (
             <>
-              <ResizeHandle className="resize-n" onMouseDown={controller.handleResizeMouseDown('n')} />
-              <ResizeHandle className="resize-ne" onMouseDown={controller.handleResizeMouseDown('ne')} />
-              <ResizeHandle className="resize-e" onMouseDown={controller.handleResizeMouseDown('e')} />
-              <ResizeHandle className="resize-se" onMouseDown={controller.handleResizeMouseDown('se')} />
-              <ResizeHandle className="resize-s" onMouseDown={controller.handleResizeMouseDown('s')} />
-              <ResizeHandle className="resize-sw" onMouseDown={controller.handleResizeMouseDown('sw')} />
-              <ResizeHandle className="resize-w" onMouseDown={controller.handleResizeMouseDown('w')} />
-              <ResizeHandle className="resize-nw" onMouseDown={controller.handleResizeMouseDown('nw')} />
+              <ResizeHandle className="resize-n" onPointerDown={controller.handleResizeMouseDown('n')} />
+              <ResizeHandle className="resize-ne" onPointerDown={controller.handleResizeMouseDown('ne')} />
+              <ResizeHandle className="resize-e" onPointerDown={controller.handleResizeMouseDown('e')} />
+              <ResizeHandle className="resize-se" onPointerDown={controller.handleResizeMouseDown('se')} />
+              <ResizeHandle className="resize-s" onPointerDown={controller.handleResizeMouseDown('s')} />
+              <ResizeHandle className="resize-sw" onPointerDown={controller.handleResizeMouseDown('sw')} />
+              <ResizeHandle className="resize-w" onPointerDown={controller.handleResizeMouseDown('w')} />
+              <ResizeHandle className="resize-nw" onPointerDown={controller.handleResizeMouseDown('nw')} />
             </>
           )}
         </>
