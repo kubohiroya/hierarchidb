@@ -496,20 +496,12 @@ export function ToneCurveEditor({
 
   const [anchors, setAnchors] = React.useState<ToneCurveAnchor[]>(initialAnchors);
   const previousAnchorsRef = React.useRef<ToneCurveAnchor[]>(initialAnchors);
-  const resolvedOverlaySeries = React.useMemo(
-    () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex) => {
+  const resolvedOverlaySeries = React.useMemo<ResolvedOverlaySeries[]>(
+    () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex): ResolvedOverlaySeries => {
       const safeSeries: ToneCurveOverlaySeries = overlaySeriesItem ?? {};
       const safeCount = resolveTargetAnchorCount(
         normalizeFixedValueArray(safeSeries.xFixedValues),
         normalizeFixedValueArray(safeSeries.yFixedValues),
-      );
-      const fixedXValues = normalizeAxisValues(
-        normalizeFixedValueArray(safeSeries.xFixedValues),
-        safeCount,
-      );
-      const fixedYValues = normalizeAxisValues(
-        normalizeFixedValueArray(safeSeries.yFixedValues),
-        safeCount,
       );
       const resolvedStyle = getLineStyle(overlayIndex + 1);
       const resolvedLineColor = safeSeries.lineColor ?? resolvedStyle.lineColor;
@@ -519,8 +511,14 @@ export function ToneCurveEditor({
 
       return {
         anchors: safeSeries.anchors ?? [],
-        xFixedValues,
-        yFixedValues,
+        xFixedValues: normalizeAxisValues(
+          normalizeFixedValueArray(safeSeries.xFixedValues),
+          safeCount,
+        ),
+        yFixedValues: normalizeAxisValues(
+          normalizeFixedValueArray(safeSeries.yFixedValues),
+          safeCount,
+        ),
         allowAnchorCountChange: safeSeries.allowAnchorCountChange ?? false,
         lineColor: resolvedLineColor,
         anchorPointColor: resolvedAnchorPointColor,
@@ -544,8 +542,8 @@ export function ToneCurveEditor({
         const anchorsSignature = series.anchors
           ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchor.x : ''}:${Number.isFinite(anchor.y) ? anchor.y : ''}`)
           .join('|') ?? '';
-        const xFixedValueCount = (series.xFixedValues ?? []).length;
-        const yFixedValueCount = (series.yFixedValues ?? []).length;
+        const xFixedValueCount = series.xFixedValues.length;
+        const yFixedValueCount = series.yFixedValues.length;
 
         return `${xFixedValueCount}-${yFixedValueCount}-${series.lineColor ?? style.lineColor}-${series.anchorPointColor ?? style.anchorPointColor}-${series.lineWidth}-${series.lineDashArray ?? style.lineDashArray ?? ''}-${series.editable}-${anchorsSignature}`;
       })

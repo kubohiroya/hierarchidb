@@ -61,12 +61,10 @@ export const TaskItemCard = ({
     : (displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined));
   const retryAttempt = typeof task.retryAttempt === 'number'
     ? task.retryAttempt
-    : typeof (task as { retryAttempt?: number }).retryAttempt === 'number'
-      ? (task as { retryAttempt: number }).retryAttempt
-      : typeof task.metadata?.retryAttempt === 'number'
-        ? task.metadata.retryAttempt
-        : null;
-  const normalizedRetryAttempt = Number.isFinite(retryAttempt) && retryAttempt > 0
+    : typeof task.metadata?.retryAttempt === 'number'
+      ? task.metadata.retryAttempt
+      : null;
+  const normalizedRetryAttempt = retryAttempt !== null && Number.isFinite(retryAttempt) && retryAttempt > 0
     ? Math.floor(retryAttempt)
     : null;
   const statusLabel = normalizedRetryAttempt !== null && task.status === 'failed'
