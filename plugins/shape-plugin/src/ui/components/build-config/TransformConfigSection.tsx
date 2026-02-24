@@ -35,12 +35,18 @@ type Props = {
   config: ShapeBuildConfig;
   onChange: (next: ShapeBuildConfig) => void;
   disabled?: boolean;
+  disableHoverLift?: boolean;
 };
 
-export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disabled }) => {
+export const TransformConfigSection: React.FC<Props> = ({
+  config,
+  onChange,
+  disabled,
+  disableHoverLift = false,
+}) => {
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
   const clampRetryCount = (value: number): number => Math.min(10, Math.max(0, Math.round(value)));
   const resolveSliderNumber = (value: number | number[]) => (Array.isArray(value) ? value[0] ?? 0 : value);
   const retryCountMarks = [

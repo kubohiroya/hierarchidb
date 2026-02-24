@@ -28,6 +28,7 @@ type ZoomBandRangeCardProps = {
   onChange: (boundaries: number[]) => void;
   sliderLayout?: 'vertical' | 'horizontal';
   disabled?: boolean;
+  disableLift?: boolean;
 };
 
 export const ZoomBandRangeCard = ({
@@ -46,6 +47,7 @@ export const ZoomBandRangeCard = ({
   onChange,
   sliderLayout = 'vertical',
   disabled = false,
+  disableLift = false,
 }: ZoomBandRangeCardProps) => {
   const normalizedBoundaries = normalizeZoomBandBoundaries(
     boundaries,
@@ -78,7 +80,7 @@ export const ZoomBandRangeCard = ({
     onChange(nextBoundaries);
   };
 
-  const hoverStyles = getBuildConfigHoverCardSx(disabled);
+  const hoverStyles = getBuildConfigHoverCardSx(disabled, disableLift);
 
   return (
     <Card

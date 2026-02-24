@@ -29,6 +29,7 @@ type Props = {
   onChange: (next: ShapeBuildConfig) => void;
   fetchState: FetchConfigSectionState;
   disabled?: boolean;
+  disableHoverLift?: boolean;
 };
 
 export const CacheManagementSection: React.FC<Props> = ({
@@ -36,6 +37,7 @@ export const CacheManagementSection: React.FC<Props> = ({
   onChange,
   fetchState,
   disabled,
+  disableHoverLift = false,
 }) => {
   const { t } = useTranslation();
   const {
@@ -44,7 +46,7 @@ export const CacheManagementSection: React.FC<Props> = ({
     update,
   } = fetchState;
 
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
   return (
     <Accordion defaultExpanded>

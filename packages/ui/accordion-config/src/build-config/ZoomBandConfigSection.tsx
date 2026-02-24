@@ -28,6 +28,7 @@ export type ZoomBandConfigSectionProps = {
   onBoundariesChange: (boundaries: number[]) => void;
   disabled?: boolean;
   t: (key: string, fallback?: string, options?: Record<string, unknown>) => string;
+  disableHoverLift?: boolean;
 };
 
 export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
@@ -35,6 +36,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
   onBoundariesChange,
   disabled,
   t,
+  disableHoverLift = false,
 }) => {
   const settings = loadTreeConsoleSettings();
   const { boundaries: commonZoomBandBoundaries } = resolveZoomBandSettings({
@@ -87,6 +89,7 @@ export const ZoomBandConfigSection: React.FC<ZoomBandConfigSectionProps> = ({
               onChange={onBoundariesChange}
               sliderLayout="horizontal"
               disabled={disabled}
+              disableLift={disableHoverLift}
             />
             {showApplyCommon ? (
               <Button

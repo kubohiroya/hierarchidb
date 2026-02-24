@@ -14,16 +14,27 @@ import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeBuildConfig } from '~/common/types/index';
 import { mergeBuildConfig } from '~/common/types/index';
+import { useEffect, useRef } from 'react';
 
 type Props = {
   config: ShapeBuildConfig;
   onChange: (next: ShapeBuildConfig) => void;
   disabled?: boolean;
+  disableHoverLift?: boolean;
 };
 
-export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({ config, onChange, disabled }) => {
+export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({
+  config,
+  onChange,
+  disabled,
+  disableHoverLift = false,
+}) => {
   const { t } = useTranslation();
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
+  const latestConfigRef = useRef(config);
+  useEffect(() => {
+    latestConfigRef.current = config;
+  }, [config]);
   const guard = config.fetchConfig.geometryIntakeGuard;
 
   const resolved = {
@@ -42,9 +53,10 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({ config, onChan
   } as const;
 
   const updateFilter = (partial: Partial<typeof resolved>): void => {
-    onChange(mergeBuildConfig(config, {
+    const latestConfig = latestConfigRef.current;
+    onChange(mergeBuildConfig(latestConfig, {
       fetchConfig: {
-        ...config.fetchConfig,
+        ...latestConfig.fetchConfig,
         invalidGeometryFilter: {
           ...resolved,
           ...partial,
@@ -53,9 +65,10 @@ export const FetchInvalidGeometryFilterCard: React.FC<Props> = ({ config, onChan
     }));
   };
   const updateGuard = (partial: Partial<typeof resolvedGuard>): void => {
-    onChange(mergeBuildConfig(config, {
+    const latestConfig = latestConfigRef.current;
+    onChange(mergeBuildConfig(latestConfig, {
       fetchConfig: {
-        ...config.fetchConfig,
+        ...latestConfig.fetchConfig,
         geometryIntakeGuard: {
           ...resolvedGuard,
           ...partial,

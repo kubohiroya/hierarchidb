@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import {
@@ -116,12 +116,16 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     }),
     []
   );
+  const latestConfigRef = useRef(config);
+  useEffect(() => {
+    latestConfigRef.current = config;
+  }, [config]);
   const updateRuntimeBuildConfig = useCallback(
     (partial: Partial<ShapeRuntimeBuildConfig>) => {
-      const nextBuildConfig = mergeBuildConfig(config, toBuildConfigUpdate(partial));
+      const nextBuildConfig = mergeBuildConfig(latestConfigRef.current, toBuildConfigUpdate(partial));
       handleChange(nextBuildConfig);
     },
-    [config, handleChange]
+    [handleChange]
   );
   const fetchState = useFetchConfigSection({
     config,
@@ -134,6 +138,18 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
     <BuildConfigShell
       padding={2}
       spacing={2}
+      sx={{
+        '& .MuiCard-root:hover': {
+          transform: 'none !important',
+          boxShadow: 'none !important',
+          transition: 'none !important',
+        },
+        '& .MuiPaper-root:hover': {
+          transform: 'none !important',
+          boxShadow: 'none !important',
+          transition: 'none !important',
+        },
+      }}
       alert={
         heapWarning ? (
           <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
@@ -142,7 +158,12 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         ) : null
       }
     >
-      <ZoomBandConfigSection config={config} onChange={handleChange} disabled={disabled} />
+      <ZoomBandConfigSection
+        config={config}
+        onChange={handleChange}
+        disabled={disabled}
+        disableHoverLift
+      />
       <FetchConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
@@ -151,27 +172,36 @@ const ShapeBuildConfigContent: React.FC<ShapeDialogStepProps> = ({
         showConcurrencyCard={false}
         showRetryCard={false}
         disabled={disabled}
+        disableHoverLift
         additionalCards={
           <FetchInvalidGeometryFilterCard
             config={config}
             onChange={handleChange}
             disabled={disabled}
+            disableHoverLift
           />
         }
       />
-      <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
+      <TransformConfigSection
+        config={config}
+        onChange={handleChange}
+        disabled={disabled}
+        disableHoverLift
+      />
       <VTConfigSection
         t={t}
         buildConfig={runtimeBuildConfig}
         update={updateRuntimeBuildConfig}
         showConcurrencyCard={false}
         disabled={disabled}
+        disableHoverLift
       />
       <CacheManagementSection
         config={config}
         onChange={handleChange}
         fetchState={fetchState}
         disabled={disabled}
+        disableHoverLift
       />
     </BuildConfigShell>
   );

@@ -39,6 +39,7 @@ type Props<TDataSourceName = unknown> = {
   disabled?: boolean;
   update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
   showConcurrencyCard?: boolean;
+  disableHoverLift?: boolean;
 };
 
 const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
@@ -57,6 +58,7 @@ export const VTConfigSection = <TDataSourceName,>({
   disabled,
   update,
   showConcurrencyCard = true,
+  disableHoverLift = false,
 }: Props<TDataSourceName>) => {
   const resolvedMaxConcurrent = Number.isFinite(buildConfig.vtConfig.maxConcurrent)
     ? buildConfig.vtConfig.maxConcurrent
@@ -68,7 +70,7 @@ export const VTConfigSection = <TDataSourceName,>({
   );
   const dynamicConcurrencyActive = showConcurrencyCard && resolvedMaxConcurrent >= 2;
   const tileToleranceMax = Math.max(10, buildConfig.vtConfig.tolerance);
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
   useEffect(() => {
     if (!showConcurrencyCard) return;
@@ -251,6 +253,7 @@ export const VTConfigSection = <TDataSourceName,>({
                       value={resolvedMaxConcurrent}
                       helperText={t('processing.tile.workersHelp', 'Concurrent workers for VT generation.')}
                       warningText={undefined}
+                      disableHoverEffect={disableHoverLift}
                       onChange={(maxConcurrent) =>
                         update({
                           vtConfig: {

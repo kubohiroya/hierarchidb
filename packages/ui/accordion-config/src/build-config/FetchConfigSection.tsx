@@ -42,6 +42,7 @@ type Props<TDataSourceName = unknown> = {
   fetchRetryConfig?: DownloadRetryConfig;
   onFetchRetryConfigChange?: (next: DownloadRetryConfig) => void;
   additionalCards?: ReactNode;
+  disableHoverLift?: boolean;
 };
 
 const DEFAULT_DETAIL_PRESETS: Record<OmitDetailsLevel, DetailPreset> = {
@@ -64,6 +65,7 @@ export const FetchConfigSection = <TDataSourceName,>({
   fetchRetryConfig,
   onFetchRetryConfigChange,
   additionalCards,
+  disableHoverLift = false,
 }: Props<TDataSourceName>) => {
   const baseFetchConfig = buildConfig.fetchConfig;
   const baseTransformConfig = buildConfig.transformConfig;
@@ -101,7 +103,7 @@ export const FetchConfigSection = <TDataSourceName,>({
     });
   };
 
-  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
 
   return (
     <Accordion defaultExpanded>

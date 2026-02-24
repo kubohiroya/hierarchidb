@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useId } from 'react';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '~/common/types/index';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -85,16 +85,21 @@ export const useFetchConfigSection = ({ config, nodeId, disabled, onChange, onRe
     formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete feature metadata'), metadataDeleteCount)
   ), [formatDeleteLabel, metadataDeleteCount, t]);
 
+  const latestConfigRef = useRef(config);
+  useEffect(() => {
+    latestConfigRef.current = config;
+  }, [config]);
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig(config, partial));
-  }, [config, onChange]);
+    onChange(mergeBuildConfig(latestConfigRef.current, partial));
+  }, [onChange]);
 
   const handleResetDefaults = useCallback(() => {
+    const latestConfig = latestConfigRef.current;
     onChange({
       ...DEFAULT_BUILD_CONFIG,
-      dataSourceName: config.dataSourceName,
+      dataSourceName: latestConfig.dataSourceName,
     });
-  }, [config.dataSourceName, onChange]);
+  }, [onChange]);
 
   return {
     t,

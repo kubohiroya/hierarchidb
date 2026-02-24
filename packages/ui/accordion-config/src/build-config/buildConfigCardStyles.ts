@@ -1,7 +1,11 @@
 import type { SxProps, Theme } from '@mui/material';
 
-export const getBuildConfigHoverCardSx = (disabled?: boolean): SxProps<Theme> => {
+export const getBuildConfigHoverCardSx = (
+  disabled?: boolean,
+  disableLift = false,
+): SxProps<Theme> => {
   if (disabled) return {};
+  if (disableLift) return {};
   return {
     transition: 'all 0.3s ease',
     '&:hover': {
