@@ -27,14 +27,54 @@ const normalizeLayerName = (value: string): string => value.trim().toLowerCase()
 const resolveAdminLayerName = (adminLevel: number, boundary?: boolean): string =>
   boundary ? `admin${adminLevel}-boundary` : `admin${adminLevel}`;
 
+const canonicalizeLayerName = (value: string): string =>
+  normalizeLayerName(value).replace(/[^a-z0-9]/g, '');
+
+const buildExpectedLayerNameAliases = (value: string): string[] => {
+  const raw = canonicalizeLayerName(value);
+  const normalizedVariants = new Set<string>([raw]);
+  if (raw.startsWith('admin')) {
+    normalizedVariants.add(`adm${raw.slice(5)}`);
+  }
+  if (raw.startsWith('adm')) {
+    normalizedVariants.add(`admin${raw.slice(3)}`);
+  }
+  return Array.from(normalizedVariants);
+};
+
+const parseLayerName = (value: string) => {
+  const normalized = normalizeLayerName(value);
+  const match = normalized.match(/(?:admin|adm)(\d+)/);
+  const boundary = normalized.includes('boundary');
+  return {
+    normalized,
+    canonical: canonicalizeLayerName(value),
+    adminLevel: match ? Number(match[1]) : undefined,
+    boundary,
+  };
+};
+
 const findMatchingLayerName = (layerNames: string[], expected: string): string | undefined => {
   if (layerNames.length === 0) return undefined;
-  const expectedLower = normalizeLayerName(expected);
-  const exact = layerNames.find((name) => normalizeLayerName(name) === expectedLower);
-  if (exact) return exact;
-  const endsWith = layerNames.find((name) => normalizeLayerName(name).endsWith(expectedLower));
-  if (endsWith) return endsWith;
-  return layerNames.find((name) => normalizeLayerName(name).includes(expectedLower));
+  const expectedAliases = buildExpectedLayerNameAliases(expected);
+  const expectedInfo = parseLayerName(expected);
+  const expectedSet = new Set(expectedAliases);
+  const normalizedLayers = layerNames.map((name) => ({ name, ...parseLayerName(name) }));
+  const exact = normalizedLayers.find((entry) => expectedSet.has(entry.canonical) || entry.normalized === normalizeLayerName(expected));
+  if (exact) return exact.name;
+  const endsWith = normalizedLayers.find((entry) =>
+    expectedAliases.some((alias) => entry.canonical.endsWith(alias)),
+  );
+  if (endsWith) return endsWith.name;
+  const included = normalizedLayers.find((entry) =>
+    expectedAliases.some((alias) => entry.canonical.includes(alias)),
+  );
+  if (included) return included.name;
+  if (expectedInfo.adminLevel == null) return undefined;
+  const sameAdmin = normalizedLayers.filter((entry) => entry.adminLevel === expectedInfo.adminLevel);
+  const exactBoundary = sameAdmin.find((entry) => entry.boundary === expectedInfo.boundary);
+  if (exactBoundary) return exactBoundary.name;
+  return sameAdmin[0]?.name;
 };
 
 export const DEFAULT_LAYER_SETS: LayerSetDefinition[] = [

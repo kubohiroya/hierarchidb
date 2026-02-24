@@ -837,12 +837,27 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (!resolvedNodeId) return null;
       const data = await fetchTile(resolvedNodeId, z, x, y);
       if (!data) return null;
-      if (!tileLayerNamesRef.current) {
-        const names = parseVectorTileLayerNames(data);
-        if (names.length > 0) {
-          tileLayerNamesRef.current = new Set(names);
-          setTileLayerNames(names);
+      const names = parseVectorTileLayerNames(data);
+      if (names.length === 0) {
+        return data;
+      }
+      const current = tileLayerNamesRef.current;
+      if (!current) {
+        tileLayerNamesRef.current = new Set(names);
+        setTileLayerNames(names);
+        return data;
+      }
+      let changed = false;
+      const next = new Set(current);
+      names.forEach((name) => {
+        if (!next.has(name)) {
+          next.add(name);
+          changed = true;
         }
+      });
+      if (changed) {
+        tileLayerNamesRef.current = next;
+        setTileLayerNames(Array.from(next));
       }
       return data;
     },
