@@ -47,8 +47,15 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
   fetchOptions: FetchOptions;
   pipeline: RawDataPipeline<TRawData>;
   retryConfig?: RetryConfig;
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
 }): Promise<RawDataPipelineResult<TRawData>> => {
-  const { nodeId, fetchOptions, pipeline, retryConfig } = params;
+  const {
+    nodeId,
+    fetchOptions,
+    pipeline,
+    retryConfig,
+    onRetryAttempt,
+  } = params;
   const request = pipeline.prepareRequest(fetchOptions);
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
 
@@ -72,6 +79,7 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
       request,
       retryConfig,
       signal,
+      onRetryAttempt,
     });
     const rawBuffer = await response.arrayBuffer();
     const sourceHash = hashPort.digest(rawBuffer, SOURCE_HASH_ALGORITHM);
@@ -128,6 +136,7 @@ type FetchWithRetryParams = {
   request: { url: string; headers?: Record<string, string>; accept?: string };
   retryConfig?: RetryConfig;
   signal?: AbortSignal;
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>;
 };
 
 const fetchWithRetry = async (params: FetchWithRetryParams) => {
@@ -145,6 +154,13 @@ const fetchWithRetry = async (params: FetchWithRetryParams) => {
     } catch (error) {
       if (signal?.aborted) throw error;
       if (attempt === attempts - 1) throw error;
+      if (params.onRetryAttempt) {
+        try {
+          await params.onRetryAttempt(attempt + 1, error);
+        } catch (callbackError) {
+          console.warn('[ShapeNetwork] retry callback failed', callbackError);
+        }
+      }
       const delay = retryConfig?.delay ?? 0;
       if (delay > 0) {
         await sleep(computeDelay(retryConfig, attempt));

@@ -269,6 +269,7 @@ export const getOrFetchWithRetry = async <T>(
   url: string,
   options: ChunkStoreFetchOptions,
   retries: RetryConfig,
+  onRetryAttempt?: (attempt: number, error: unknown) => void | Promise<void>,
 ): Promise<ChunkStoreEntry<T>> => {
   const attempts = Math.max(1, retries.count);
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -280,6 +281,13 @@ export const getOrFetchWithRetry = async <T>(
       }
       if (attempt === attempts - 1) {
         throw error;
+      }
+      if (onRetryAttempt) {
+        try {
+          await onRetryAttempt(attempt + 1, error);
+        } catch (callbackError) {
+          console.warn('[ShapeChunkStore] retry callback failed', callbackError);
+        }
       }
       const wait = retries.delay <= 0 ? 0 : computeDelay(retries, attempt);
       if (wait > 0) {
