@@ -2,6 +2,9 @@ import React from 'react';
 
 const ANCHOR_EPSILON = 1e-6;
 const DEFAULT_LINE_COLOR = '#0b5ed7';
+const DEFAULT_SECONDARY_LINE_COLOR = '#ef4444';
+const DEFAULT_SECONDARY_LINE_DASH = '6 4';
+const DEFAULT_STROKE_WIDTH = 2;
 
 interface AxisRange {
   min: number;
@@ -23,9 +26,17 @@ export interface ToneCurveAxisRange {
   yRange: [number, number];
 }
 
+export interface ToneCurveLineStyle {
+  lineColor?: string;
+  anchorPointColor?: string;
+  lineWidth?: number;
+  lineDashArray?: string;
+}
+
 export interface ToneCurveEditorProps extends ToneCurveAxisRange {
   width: number;
   height: number;
+  anchors?: ReadonlyArray<ToneCurveAnchor>;
   xFixedValues?: Array<number | undefined>;
   yFixedValues?: Array<number | undefined>;
   xEndpointRange?: [number, number];
@@ -34,12 +45,41 @@ export interface ToneCurveEditorProps extends ToneCurveAxisRange {
   yMarks?: Array<ToneCurveAxisMark>;
   xSnapStep?: number;
   ySnapStep?: number;
+  allowAnchorCountChange?: boolean;
   lineColor?: string;
   anchorPointColor?: string;
   onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
+  lineStyles?: ReadonlyArray<ToneCurveLineStyle>;
+  overlaySeries?: ReadonlyArray<ToneCurveOverlaySeries>;
   className?: string;
   style?: React.CSSProperties;
 }
+
+export interface ToneCurveOverlaySeries {
+  anchors?: ReadonlyArray<ToneCurveAnchor>;
+  xFixedValues?: Array<number | undefined>;
+  yFixedValues?: Array<number | undefined>;
+  allowAnchorCountChange?: boolean;
+  lineColor?: string;
+  anchorPointColor?: string;
+  lineWidth?: number;
+  lineDashArray?: string;
+  editable?: boolean;
+  onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
+}
+
+type ResolvedOverlaySeries = {
+  anchors: ReadonlyArray<ToneCurveAnchor>;
+  xFixedValues: Array<number | undefined>;
+  yFixedValues: Array<number | undefined>;
+  lineColor: string;
+  anchorPointColor: string;
+  lineWidth: number;
+  lineDashArray?: string;
+  editable: boolean;
+  allowAnchorCountChange: boolean;
+  onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
+};
 
 const toAxisRange = (value: [number, number], fallbackMin: number, fallbackMax: number): AxisRange => {
   const [a, b] = value;
@@ -121,9 +161,34 @@ const normalizeAxisValues = (
   return result;
 };
 
+const formatAnchorValueLabel = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+
+  if (Math.abs(value - Math.round(value)) < 1e-9) {
+    return String(Math.round(value));
+  }
+
+  return String(Number.parseFloat(value.toFixed(3)));
+};
+
+const areAnchorsEqual = (left: ReadonlyArray<ToneCurveAnchor>, right: ReadonlyArray<ToneCurveAnchor>): boolean => {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let i = 0; i < left.length; i += 1) {
+    if (left[i]?.x !== right[i]?.x || left[i]?.y !== right[i]?.y) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export function ToneCurveEditor({
   width,
   height,
+  anchors: externalAnchors,
   xRange,
   yRange,
   xFixedValues,
@@ -134,17 +199,53 @@ export function ToneCurveEditor({
   yMarks,
   xSnapStep,
   ySnapStep,
+  allowAnchorCountChange = true,
   lineColor,
   anchorPointColor,
   onChange,
+  lineStyles = [],
+  overlaySeries = [],
   className,
   style,
 }: ToneCurveEditorProps): React.JSX.Element {
   const svgRef = React.useRef<SVGSVGElement | null>(null);
-  const activeAnchorIndexRef = React.useRef<number | null>(null);
+  const activeAnchorRef = React.useRef<{
+    type: 'main' | 'overlay';
+    curveIndex: number | null;
+    anchorIndex: number;
+  } | null>(null);
 
-  const resolvedLineColor = lineColor ?? DEFAULT_LINE_COLOR;
-  const resolvedAnchorPointColor = anchorPointColor ?? DEFAULT_LINE_COLOR;
+  const getLineStyle = React.useCallback(
+    (curveIndex: number): {
+      lineColor: string;
+      anchorPointColor: string;
+      lineWidth: number;
+      lineDashArray?: string;
+    } => {
+      const configured = lineStyles[curveIndex];
+      const isPrimary = curveIndex === 0;
+      const defaultLineColor = isPrimary
+        ? (lineColor ?? DEFAULT_LINE_COLOR)
+        : curveIndex === 1
+          ? DEFAULT_SECONDARY_LINE_COLOR
+          : DEFAULT_LINE_COLOR;
+      const defaultDashArray = isPrimary ? undefined : (curveIndex === 1 ? DEFAULT_SECONDARY_LINE_DASH : undefined);
+      const defaultAnchorColor = isPrimary
+        ? (anchorPointColor ?? DEFAULT_LINE_COLOR)
+        : defaultLineColor;
+
+      const resolvedLineColor = configured?.lineColor ?? defaultLineColor;
+      const resolvedAnchorColor = configured?.anchorPointColor ?? defaultAnchorColor;
+
+      return {
+        lineColor: resolvedLineColor,
+        anchorPointColor: resolvedAnchorColor,
+        lineWidth: configured?.lineWidth ?? DEFAULT_STROKE_WIDTH,
+        lineDashArray: configured?.lineDashArray ?? defaultDashArray,
+      };
+    },
+    [anchorPointColor, lineColor, lineStyles],
+  );
 
   const baseXRange = React.useMemo(
     () => toAxisRange(xRange, 0, 1),
@@ -173,13 +274,32 @@ export function ToneCurveEditor({
     [normalizedYRange.max, normalizedYRange.min, yMarks],
   );
 
-  const targetAnchorCount = React.useMemo(
-    () => Math.max(
+  const resolveTargetAnchorCount = React.useCallback(
+    (xValues: Array<number | undefined> | undefined, yValues: Array<number | undefined> | undefined): number => Math.max(
       2,
-      xFixedValues?.length ?? 0,
-      yFixedValues?.length ?? 0,
+      xValues?.length ?? 0,
+      yValues?.length ?? 0,
     ),
-    [xFixedValues?.length, yFixedValues?.length],
+    [],
+  );
+  const resolvedOverlaySeriesInput = React.useMemo(
+    () => (Array.isArray(overlaySeries) ? overlaySeries : []),
+    [overlaySeries],
+  );
+  const normalizeFixedValueArray = React.useCallback((
+    values: ReadonlyArray<number | undefined> | Array<number | undefined> | undefined,
+  ): Array<number | undefined> => (
+    Array.isArray(values) ? values : []
+  ), []);
+  const normalizeAnchorArray = React.useCallback((
+    points: ReadonlyArray<ToneCurveAnchor> | ToneCurveAnchor[] | undefined,
+  ): ToneCurveAnchor[] => (
+    Array.isArray(points) ? [...points] : []
+  ), []);
+
+  const targetAnchorCount = React.useMemo(
+    () => resolveTargetAnchorCount(xFixedValues, yFixedValues),
+    [resolveTargetAnchorCount, xFixedValues, yFixedValues],
   );
 
   const fixedHorizontalValues = React.useMemo(
@@ -201,35 +321,47 @@ export function ToneCurveEditor({
     return Math.min(max, Math.max(min, value));
   }, []);
 
-  const initialAnchors = React.useMemo(
-    () => {
+  const createAnchorsFromInputs = React.useCallback(
+    (
+      externalAnchors: ReadonlyArray<ToneCurveAnchor> | undefined,
+      fixedXValues: Array<number | undefined> = [],
+      fixedYValues: Array<number | undefined> = [],
+    ): ToneCurveAnchor[] => {
+      const safeFixedXValues = normalizeFixedValueArray(fixedXValues);
+      const safeFixedYValues = normalizeFixedValueArray(fixedYValues);
+      const count = resolveTargetAnchorCount(safeFixedXValues, safeFixedYValues);
+      const normalizedFixedX = normalizeAxisValues(safeFixedXValues, count);
+      const normalizedFixedY = normalizeAxisValues(safeFixedYValues, count);
       const next: ToneCurveAnchor[] = [];
       const widthRange = normalizedXRange.max - normalizedXRange.min;
       const heightRange = normalizedYRange.max - normalizedYRange.min;
 
-      for (let i = 0; i < targetAnchorCount; i += 1) {
+      for (let i = 0; i < count; i += 1) {
+        const externalAnchor = externalAnchors?.[i];
+        const externalAnchorX = externalAnchor && Number.isFinite(externalAnchor.x) ? externalAnchor.x : undefined;
+        const externalAnchorY = externalAnchor && Number.isFinite(externalAnchor.y) ? externalAnchor.y : undefined;
         const isFirst = i === 0;
-        const isLast = i === targetAnchorCount - 1;
+        const isLast = i === count - 1;
         const defaultX = isFirst
           ? normalizedXRange.min
           : isLast
             ? normalizedXRange.max
-            : normalizedXRange.min + (widthRange * i) / (targetAnchorCount - 1 || 1);
+            : normalizedXRange.min + (widthRange * i) / (count - 1 || 1);
         const defaultY = isFirst
           ? normalizedYRange.min
           : isLast
             ? normalizedYRange.max
-            : normalizedYRange.min + (heightRange * i) / (targetAnchorCount - 1 || 1);
+            : normalizedYRange.min + (heightRange * i) / (count - 1 || 1);
 
-        const fixedX = fixedHorizontalValues[i];
-        const fixedY = fixedVerticalValues[i];
+        const fixedX = normalizedFixedX[i];
+        const fixedY = normalizedFixedY[i];
 
         next.push({
           x: fixedX === undefined
-            ? snapValue(defaultX, xSnapStep)
+            ? snapValue(externalAnchorX ?? defaultX, xSnapStep)
             : clamp(fixedX, normalizedXRange.min, normalizedXRange.max),
           y: fixedY === undefined
-            ? snapValue(defaultY, ySnapStep)
+            ? snapValue(externalAnchorY ?? defaultY, ySnapStep)
             : clamp(fixedY, normalizedYRange.min, normalizedYRange.max),
         });
       }
@@ -237,26 +369,30 @@ export function ToneCurveEditor({
       return next;
     },
     [
-      fixedHorizontalValues,
-      fixedVerticalValues,
-      xSnapStep,
-      ySnapStep,
+      clamp,
       normalizedXRange.max,
       normalizedXRange.min,
       normalizedYRange.max,
       normalizedYRange.min,
-      targetAnchorCount,
-      clamp,
+      normalizeFixedValueArray,
+      resolveTargetAnchorCount,
+      xSnapStep,
+      ySnapStep,
     ],
+  );
+
+  const initialAnchors = React.useMemo(
+    () => createAnchorsFromInputs(externalAnchors, fixedHorizontalValues, fixedVerticalValues),
+    [createAnchorsFromInputs, externalAnchors, fixedHorizontalValues, fixedVerticalValues],
   );
 
   const inner = React.useMemo(
     () => ({
-      paddingLeft: 22,
+      paddingLeft: 54,
       paddingRight: 16,
       paddingTop: 12,
       paddingBottom: 22,
-      width: Math.max(width - 38, 80),
+      width: Math.max(width - 70, 80),
       height: Math.max(height - 34, 80),
     }),
     [width, height],
@@ -305,9 +441,10 @@ export function ToneCurveEditor({
       values: ToneCurveAnchor[],
       fixedXValues: Array<number | undefined>,
       fixedYValues: Array<number | undefined>,
+      fallbackAnchors: ToneCurveAnchor[] = initialAnchors,
     ): ToneCurveAnchor[] => {
       if (values.length < 2) {
-        return initialAnchors;
+        return fallbackAnchors;
       }
 
       const count = values.length;
@@ -358,13 +495,115 @@ export function ToneCurveEditor({
   );
 
   const [anchors, setAnchors] = React.useState<ToneCurveAnchor[]>(initialAnchors);
+  const previousAnchorsRef = React.useRef<ToneCurveAnchor[]>(initialAnchors);
+  const resolvedOverlaySeries = React.useMemo<ResolvedOverlaySeries[]>(
+    () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex): ResolvedOverlaySeries => {
+      const safeSeries: ToneCurveOverlaySeries = overlaySeriesItem ?? {};
+      const safeCount = resolveTargetAnchorCount(
+        normalizeFixedValueArray(safeSeries.xFixedValues),
+        normalizeFixedValueArray(safeSeries.yFixedValues),
+      );
+      const resolvedStyle = getLineStyle(overlayIndex + 1);
+      const resolvedLineColor = safeSeries.lineColor ?? resolvedStyle.lineColor;
+      const resolvedAnchorPointColor = safeSeries.anchorPointColor
+        ?? resolvedLineColor
+        ?? resolvedStyle.anchorPointColor;
+
+      return {
+        anchors: safeSeries.anchors ?? [],
+        xFixedValues: normalizeAxisValues(
+          normalizeFixedValueArray(safeSeries.xFixedValues),
+          safeCount,
+        ),
+        yFixedValues: normalizeAxisValues(
+          normalizeFixedValueArray(safeSeries.yFixedValues),
+          safeCount,
+        ),
+        allowAnchorCountChange: safeSeries.allowAnchorCountChange ?? false,
+        lineColor: resolvedLineColor,
+        anchorPointColor: resolvedAnchorPointColor,
+        lineWidth: safeSeries.lineWidth ?? resolvedStyle.lineWidth,
+        lineDashArray: safeSeries.lineDashArray ?? resolvedStyle.lineDashArray,
+        editable: safeSeries.editable ?? true,
+        onChange: safeSeries.onChange,
+      };
+    }),
+    [normalizeFixedValueArray, getLineStyle, resolvedOverlaySeriesInput, resolveTargetAnchorCount],
+  );
+  const [overlayAnchors, setOverlayAnchors] = React.useState<ToneCurveAnchor[][]>(() =>
+    resolvedOverlaySeries.map((series) => createAnchorsFromInputs(series.anchors, series.xFixedValues, series.yFixedValues)),
+  );
+  const syncedOverlaySignatureRef = React.useRef<string>('');
+
+  const overlaySignature = React.useMemo(
+    () => resolvedOverlaySeries
+      .map((series, index) => {
+        const style = getLineStyle(index + 1);
+        const anchorsSignature = series.anchors
+          ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchor.x : ''}:${Number.isFinite(anchor.y) ? anchor.y : ''}`)
+          .join('|') ?? '';
+        const xFixedValueCount = series.xFixedValues.length;
+        const yFixedValueCount = series.yFixedValues.length;
+
+        return `${xFixedValueCount}-${yFixedValueCount}-${series.lineColor ?? style.lineColor}-${series.anchorPointColor ?? style.anchorPointColor}-${series.lineWidth}-${series.lineDashArray ?? style.lineDashArray ?? ''}-${series.editable}-${anchorsSignature}`;
+      })
+      .join('||'),
+    [resolvedOverlaySeries, getLineStyle],
+  );
 
   React.useEffect(() => {
+    if (overlaySignature === syncedOverlaySignatureRef.current) {
+      return;
+    }
+
+    syncedOverlaySignatureRef.current = overlaySignature;
+    setOverlayAnchors(
+      resolvedOverlaySeries.map((series) => createAnchorsFromInputs(
+        series.anchors,
+        series.xFixedValues,
+        series.yFixedValues,
+      )),
+    );
+  }, [createAnchorsFromInputs, overlaySignature, resolvedOverlaySeries]);
+
+  const fixedXSignature = React.useMemo(
+    () => fixedHorizontalValues.map((value) => (Number.isFinite(value) ? `${value}` : '')).join('|'),
+    [fixedHorizontalValues],
+  );
+  const externalAnchorsSignature = React.useMemo(
+    () => externalAnchors
+      ?.map((anchor) => `${Number.isFinite(anchor.x) ? anchor.x : ''}:${Number.isFinite(anchor.y) ? anchor.y : ''}`)
+      .join('|') ?? '',
+    [externalAnchors],
+  );
+  const syncedFixedSignatureRef = React.useRef<string>(fixedXSignature);
+  const syncedAnchorsSignatureRef = React.useRef<string>(externalAnchorsSignature);
+  const syncedAnchorCountRef = React.useRef<number>(initialAnchors.length);
+
+  React.useEffect(() => {
+    if (
+      fixedXSignature === syncedFixedSignatureRef.current
+      && externalAnchorsSignature === syncedAnchorsSignatureRef.current
+      && syncedAnchorCountRef.current === initialAnchors.length
+    ) {
+      return;
+    }
+
+    syncedFixedSignatureRef.current = fixedXSignature;
+    syncedAnchorsSignatureRef.current = externalAnchorsSignature;
+    syncedAnchorCountRef.current = initialAnchors.length;
     setAnchors(initialAnchors);
-  }, [initialAnchors]);
+  }, [externalAnchorsSignature, initialAnchors, fixedXSignature]);
 
   React.useEffect(() => {
-    onChange?.(anchors);
+    if (!onChange) {
+      return;
+    }
+    if (areAnchorsEqual(previousAnchorsRef.current, anchors)) {
+      return;
+    }
+    previousAnchorsRef.current = anchors;
+    onChange(anchors);
   }, [anchors, onChange]);
 
   const sortedPoints = React.useMemo(
@@ -372,10 +611,34 @@ export function ToneCurveEditor({
     [anchors],
   );
 
+  const sortedOverlayPoints = React.useMemo(
+    () => (Array.isArray(overlayAnchors) ? overlayAnchors : [])
+      .map((curveAnchors) => normalizeAnchorArray(curveAnchors).sort((a, b) => a.x - b.x)),
+    [overlayAnchors, normalizeAnchorArray],
+  );
+
   const pathPoints = React.useMemo(
     () => sortedPoints.map((anchor) => `${xToScreen(anchor.x)},${yToScreen(anchor.y)}`).join(' '),
     [sortedPoints, xToScreen, yToScreen],
   );
+  const overlayPathPoints = React.useMemo(
+    () => sortedOverlayPoints.map(
+      (points) => normalizeAnchorArray(points).map((anchor) => `${xToScreen(anchor.x)},${yToScreen(anchor.y)}`).join(' '),
+    ),
+    [normalizeAnchorArray, sortedOverlayPoints, xToScreen, yToScreen],
+  );
+  const anchorYMarks = React.useMemo(() => {
+    const dedupeEpsilon = 1e-9;
+    const raw = anchors.map((anchor) => anchor.y).filter((value) => Number.isFinite(value));
+    const uniqueSorted = raw
+      .filter((value, index, values) => values.findIndex((candidate) => Math.abs(candidate - value) <= dedupeEpsilon) === index)
+      .sort((left, right) => right - left);
+
+    return uniqueSorted.map((value) => ({
+      value,
+      label: formatAnchorValueLabel(value),
+    }));
+  }, [anchors]);
 
   const fixedXForCount = React.useCallback(
     (count: number): Array<number | undefined> => {
@@ -399,10 +662,55 @@ export function ToneCurveEditor({
     [fixedVerticalValues],
   );
 
+  const fixedXForOverlayCount = React.useCallback(
+    (curve: ResolvedOverlaySeries | undefined, count: number): Array<number | undefined> => {
+      const next = new Array<number | undefined>(count).fill(undefined);
+      const fixedValues = curve?.xFixedValues ?? [];
+      for (let i = 0; i < count; i += 1) {
+        next[i] = i < fixedValues.length ? fixedValues[i] : undefined;
+      }
+      return next;
+    },
+    [],
+  );
+
+  const fixedYForOverlayCount = React.useCallback(
+    (curve: ResolvedOverlaySeries | undefined, count: number): Array<number | undefined> => {
+      const next = new Array<number | undefined>(count).fill(undefined);
+      const fixedValues = curve?.yFixedValues ?? [];
+      for (let i = 0; i < count; i += 1) {
+        next[i] = i < fixedValues.length ? fixedValues[i] : undefined;
+      }
+      return next;
+    },
+    [],
+  );
+
   const getAnchorCursor = React.useCallback(
-    (index: number, count: number): string => {
-      const fixedX = fixedXForCount(count)[index];
-      const fixedY = fixedYForCount(count)[index];
+    (
+      index: number,
+      count: number,
+      type: 'main' | 'overlay',
+      overlayIndex: number | null,
+      editable: boolean,
+    ): string => {
+      if (!editable) {
+        return 'not-allowed';
+      }
+      const overlayCurve = overlayIndex === null
+        ? undefined
+        : resolvedOverlaySeries[overlayIndex];
+
+      const fixedX = type === 'main'
+        ? fixedXForCount(count)[index]
+        : overlayCurve
+          ? fixedXForOverlayCount(overlayCurve, count)[index]
+          : undefined;
+      const fixedY = type === 'main'
+        ? fixedYForCount(count)[index]
+        : overlayCurve
+          ? fixedYForOverlayCount(overlayCurve, count)[index]
+          : undefined;
 
       const canMoveX = fixedX === undefined;
       const canMoveY = fixedY === undefined;
@@ -421,16 +729,38 @@ export function ToneCurveEditor({
 
       return 'not-allowed';
     },
-    [fixedXForCount, fixedYForCount],
+    [fixedXForCount, fixedYForCount, fixedXForOverlayCount, fixedYForOverlayCount, resolvedOverlaySeries],
   );
 
   const isDraggable = React.useCallback(
-    (index: number, count: number): boolean => {
-      const fixedX = fixedXForCount(count)[index];
-      const fixedY = fixedYForCount(count)[index];
+    (
+      index: number,
+      count: number,
+      type: 'main' | 'overlay',
+      overlayIndex: number | null,
+      editable: boolean,
+    ): boolean => {
+      if (!editable) {
+        return false;
+      }
+
+      const overlayCurve = overlayIndex === null
+        ? undefined
+        : resolvedOverlaySeries[overlayIndex];
+
+      const fixedX = type === 'main'
+        ? fixedXForCount(count)[index]
+        : overlayCurve
+          ? fixedXForOverlayCount(overlayCurve, count)[index]
+          : undefined;
+      const fixedY = type === 'main'
+        ? fixedYForCount(count)[index]
+        : overlayCurve
+          ? fixedYForOverlayCount(overlayCurve, count)[index]
+          : undefined;
       return fixedX === undefined || fixedY === undefined;
     },
-    [fixedXForCount, fixedYForCount],
+    [fixedXForCount, fixedYForCount, fixedXForOverlayCount, fixedYForOverlayCount, resolvedOverlaySeries],
   );
 
   const addAnchor = React.useCallback(() => {
@@ -499,26 +829,92 @@ export function ToneCurveEditor({
   }, [fixedXForCount, fixedYForCount, normalizeAnchors]);
 
   const updateAnchor = React.useCallback(
-    (index: number, clientX: number, clientY: number) => {
+    (curveType: 'main' | 'overlay', anchorIndex: number, overlayIndex: number | null, clientX: number, clientY: number) => {
       const point = screenToData(clientX, clientY);
       if (!point) {
         return;
       }
 
-      setAnchors((current) => {
-        if (index < 0 || index >= current.length) {
+      if (curveType === 'main') {
+        setAnchors((current) => {
+          const index = anchorIndex;
+          if (index < 0 || index >= current.length) {
+            return current;
+          }
+
+          const list = [...current];
+          const target = list[index];
+          const prev = index > 0 ? list[index - 1] : null;
+          const next = index < list.length - 1 ? list[index + 1] : null;
+          const isFirst = index === 0;
+          const isLast = index === list.length - 1;
+          const fixedX = fixedXForCount(list.length)[index];
+          const fixedY = fixedYForCount(list.length)[index];
+
+          const minX = isFirst
+            ? normalizedXRange.min
+            : prev
+              ? prev.x + ANCHOR_EPSILON
+              : normalizedXRange.min;
+          const maxX = isLast
+            ? normalizedXRange.max
+            : next
+              ? next.x - ANCHOR_EPSILON
+              : normalizedXRange.max;
+
+          const clampedX = fixedX === undefined
+            ? clamp(point.x, minX, maxX)
+            : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
+
+          const clampedY = fixedY === undefined
+            ? clamp(point.y, normalizedYRange.min, normalizedYRange.max)
+            : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
+
+          list[index] = {
+            ...target,
+            x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
+            y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
+          };
+
+          return list;
+        });
+        return;
+      }
+
+      if (overlayIndex === null || overlayIndex < 0 || overlayIndex >= resolvedOverlaySeries.length) {
+        return;
+      }
+
+      const overlayCurve = resolvedOverlaySeries[overlayIndex];
+      if (!overlayCurve) {
+        return;
+      }
+
+      const fallbackAnchors = createAnchorsFromInputs(
+        overlayCurve.anchors,
+        overlayCurve.xFixedValues,
+        overlayCurve.yFixedValues,
+      );
+
+      setOverlayAnchors((current) => {
+        const currentCurve = current[overlayIndex];
+        if (!currentCurve) {
           return current;
         }
 
-        const list = [...current];
+        const list = [...currentCurve].sort((left, right) => left.x - right.x);
+        const index = anchorIndex;
+        if (index < 0 || index >= list.length) {
+          return current;
+        }
+
         const target = list[index];
         const prev = index > 0 ? list[index - 1] : null;
         const next = index < list.length - 1 ? list[index + 1] : null;
         const isFirst = index === 0;
         const isLast = index === list.length - 1;
-        const fixedX = fixedXForCount(list.length)[index];
-        const fixedY = fixedYForCount(list.length)[index];
-
+        const fixedX = fixedXForOverlayCount(overlayCurve, list.length)[index];
+        const fixedY = fixedYForOverlayCount(overlayCurve, list.length)[index];
         const minX = isFirst
           ? normalizedXRange.min
           : prev
@@ -533,48 +929,83 @@ export function ToneCurveEditor({
         const clampedX = fixedX === undefined
           ? clamp(point.x, minX, maxX)
           : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
-
         const clampedY = fixedY === undefined
           ? clamp(point.y, normalizedYRange.min, normalizedYRange.max)
           : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
 
-        list[index] = {
+        const nextCurve = [...list];
+        nextCurve[index] = {
           ...target,
           x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
           y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
         };
 
-        return list;
+        const normalizedCurve = normalizeAnchors(
+          nextCurve,
+          fixedXForOverlayCount(overlayCurve, nextCurve.length),
+          fixedYForOverlayCount(overlayCurve, nextCurve.length),
+          fallbackAnchors,
+        );
+        const nextAnchors = [...current];
+        nextAnchors[overlayIndex] = normalizedCurve;
+        if (overlayCurve.onChange) {
+          overlayCurve.onChange(normalizedCurve);
+        }
+        return nextAnchors;
       });
     },
-    [clamp, fixedXForCount, fixedYForCount, normalizedXRange.max, normalizedXRange.min, normalizedYRange.max, normalizedYRange.min, screenToData, xSnapStep, ySnapStep],
+    [
+      clamp,
+      createAnchorsFromInputs,
+      fixedXForCount,
+      fixedYForCount,
+      fixedXForOverlayCount,
+      fixedYForOverlayCount,
+      normalizeAnchors,
+      normalizedXRange.max,
+      normalizedXRange.min,
+      normalizedYRange.max,
+      normalizedYRange.min,
+      resolvedOverlaySeries,
+      screenToData,
+      xSnapStep,
+      ySnapStep,
+    ],
   );
 
   const handlePointPointerDown = React.useCallback(
-    (index: number) => (event: React.PointerEvent<SVGCircleElement>) => {
-      if (!isDraggable(index, sortedPoints.length)) {
+    (curveType: 'main' | 'overlay', overlayIndex: number | null, index: number, editable: boolean) => (event: React.PointerEvent<SVGCircleElement>) => {
+      const count = curveType === 'main'
+        ? sortedPoints.length
+        : (overlayIndex === null ? 0 : sortedOverlayPoints[overlayIndex]?.length ?? 0);
+
+      if (!isDraggable(index, count, curveType, overlayIndex, editable)) {
         event.preventDefault();
         return;
       }
 
       event.preventDefault();
-      activeAnchorIndexRef.current = index;
+      activeAnchorRef.current = {
+        type: curveType,
+        curveIndex: overlayIndex,
+        anchorIndex: index,
+      };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [isDraggable, sortedPoints.length],
+    [isDraggable, sortedOverlayPoints, sortedPoints.length],
   );
 
   React.useEffect(() => {
     const onPointerMove = (event: PointerEvent): void => {
-      const index = activeAnchorIndexRef.current;
-      if (index === null) {
+      const activeAnchor = activeAnchorRef.current;
+      if (!activeAnchor) {
         return;
       }
-      updateAnchor(index, event.clientX, event.clientY);
+      updateAnchor(activeAnchor.type, activeAnchor.anchorIndex, activeAnchor.curveIndex, event.clientX, event.clientY);
     };
 
     const onPointerUp = (): void => {
-      activeAnchorIndexRef.current = null;
+      activeAnchorRef.current = null;
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -587,16 +1018,21 @@ export function ToneCurveEditor({
     };
   }, [updateAnchor]);
 
+  const mainCurveStyle = getLineStyle(0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width, ...style }} className={className}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button type="button" onClick={addAnchor} aria-label="Add anchor">
-          +
-        </button>
-        <button type="button" onClick={removeAnchor} disabled={anchors.length <= 2} aria-label="Remove anchor">
-          -
-        </button>
-        <span style={{ fontSize: 12 }}>{`Anchors: ${anchors.length}`}</span>
+        {allowAnchorCountChange ? (
+          <>
+            <button type="button" onClick={addAnchor} aria-label="Add anchor">
+              +
+            </button>
+            <button type="button" onClick={removeAnchor} disabled={anchors.length <= 2} aria-label="Remove anchor">
+              -
+            </button>
+          </>
+        ) : null}
       </div>
       <svg
         ref={svgRef}
@@ -645,16 +1081,8 @@ export function ToneCurveEditor({
         ))}
         {normalizedYMarks.map((mark) => (
           <g key={`y-mark-${mark.value}-${mark.label}`}>
-            <line
-              x1={inner.paddingLeft - 6}
-              y1={yToScreen(mark.value)}
-              x2={inner.paddingLeft}
-              y2={yToScreen(mark.value)}
-              stroke="#64748b"
-              strokeWidth={1}
-            />
             <text
-              x={inner.paddingLeft - 10}
+              x={inner.paddingLeft - 18}
               y={yToScreen(mark.value) + 3}
               textAnchor="end"
               fontSize={10}
@@ -664,21 +1092,79 @@ export function ToneCurveEditor({
             </text>
           </g>
         ))}
-        <polyline fill="none" stroke={resolvedLineColor} strokeWidth={2} points={pathPoints} />
+        {anchorYMarks.map((mark) => (
+          <g key={`anchor-y-mark-${mark.value}-${mark.label}`}>
+            <text
+              x={inner.paddingLeft - 18}
+              y={yToScreen(mark.value) + 3}
+              textAnchor="end"
+              fontSize={10}
+              fill="#0f172a"
+            >
+              {mark.label}
+            </text>
+          </g>
+        ))}
+        <polyline
+          fill="none"
+          stroke={mainCurveStyle.lineColor}
+          strokeWidth={mainCurveStyle.lineWidth}
+          strokeDasharray={mainCurveStyle.lineDashArray}
+          points={pathPoints}
+        />
         {sortedPoints.map((anchor, index) => {
-          const cursor = getAnchorCursor(index, sortedPoints.length);
+          const cursor = getAnchorCursor(index, sortedPoints.length, 'main', null, true);
           return (
             <g key={`${index}`}>
               <circle
                 cx={xToScreen(anchor.x)}
                 cy={yToScreen(anchor.y)}
                 r={5}
-                fill={resolvedAnchorPointColor}
+                fill={mainCurveStyle.anchorPointColor}
                 stroke="#fff"
                 strokeWidth={1.5}
-                onPointerDown={handlePointPointerDown(index)}
+                onPointerDown={handlePointPointerDown('main', null, index, true)}
                 style={{ cursor }}
               />
+            </g>
+          );
+        })}
+        {overlayPathPoints.map((points, overlayIndex) => {
+          const overlayCurve = resolvedOverlaySeries[overlayIndex];
+          if (!overlayCurve) {
+            return null;
+          }
+
+          const curvePoints = sortedOverlayPoints[overlayIndex];
+          if (!curvePoints) {
+            return null;
+          }
+
+          return (
+            <g key={`overlay-${overlayIndex}`}>
+              <polyline
+                fill="none"
+                stroke={overlayCurve.lineColor}
+                strokeWidth={overlayCurve.lineWidth}
+                strokeDasharray={overlayCurve.lineDashArray}
+                points={points}
+              />
+              {curvePoints.map((anchor, pointIndex) => {
+                const cursor = getAnchorCursor(pointIndex, curvePoints.length, 'overlay', overlayIndex, overlayCurve.editable);
+                return (
+                  <circle
+                    key={`overlay-${overlayIndex}-anchor-${pointIndex}`}
+                    cx={xToScreen(anchor.x)}
+                    cy={yToScreen(anchor.y)}
+                    r={5}
+                    fill={overlayCurve.anchorPointColor}
+                    stroke="#fff"
+                    strokeWidth={1.5}
+                    onPointerDown={handlePointPointerDown('overlay', overlayIndex, pointIndex, overlayCurve.editable)}
+                    style={{ cursor }}
+                  />
+                );
+              })}
             </g>
           );
         })}

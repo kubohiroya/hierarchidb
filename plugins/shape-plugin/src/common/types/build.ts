@@ -1,4 +1,4 @@
-import type { TaskDisplayPayload, TaskStage } from '../../../../../packages/build-api';
+import type { TaskDisplayPayload, TaskStage } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
   BaseBuildConfig,
@@ -11,10 +11,6 @@ import type {
 } from '@hierarchidb/gis-sdk';
 import type { BuildSessionConfig, ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';
-
-//import type { ObsolateBuildConfig, HybridFilterConfig } from './ObsolateBuildConfig.ts';
-//import type { ObsolateBuildConfig } from './ObsolateBuildConfig.ts';
-//import type { FeatureFilterMethod, ExtractionMode } from './processing.js';
 
 export type ShapeBuildFetchConfig = Omit<
   FetchConfig,
