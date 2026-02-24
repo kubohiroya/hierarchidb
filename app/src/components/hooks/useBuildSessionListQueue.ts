@@ -42,19 +42,23 @@ const QUEUE_STATUSES: BuildSessionRuntimeRecord['status'][] = [
   'pausing',
   'paused',
   'failed',
+  'completed',
 ];
 
 const getNow = (): number => Date.now();
 
-const isRunningSession = (session: BuildSessionRuntimeRecord): boolean =>
-  session.isActive || RUNNING_STATUSES.has(session.status);
+const isSessionStoppedByStatus = (session: BuildSessionRuntimeRecord): boolean =>
+  session.status === 'paused' || session.status === 'failed' || session.status === 'completed';
+
+const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =>
+  RUNNING_STATUSES.has(session.status);
 
 const normalizeWaitingFirst = (rows: QueueRow[]): QueueRow[] => {
   const running: QueueRow[] = [];
   const waiting: QueueRow[] = [];
 
   for (const row of rows) {
-    if (isRunningSession(row.session)) {
+    if (isSessionRunningByStatus(row.session)) {
       running.push(row);
     } else {
       waiting.push(row);
@@ -291,12 +295,12 @@ export function useBuildSessionListQueue({
       return;
     }
 
-    if (headSession.session.status === 'paused' || headSession.session.status === 'pausing' || headSession.session.status === 'failed') {
+    if (isSessionStoppedByStatus(headSession.session) || headSession.session.status === 'pausing') {
       queueStoppedRef.current = true;
       return;
     }
 
-    if (isRunningSession(headSession.session)) {
+    if (isSessionRunningByStatus(headSession.session)) {
       queueStoppedRef.current = false;
       return;
     }
@@ -380,7 +384,7 @@ export function useBuildSessionListQueue({
       return;
     }
     const rowIndex = rows.findIndex((item) => String(item.session.nodeId) === String(nodeId));
-    const isRunning = isRunningSession(row.session);
+    const isRunning = isSessionRunningByStatus(row.session);
     if (isRunning || rowIndex === 0) {
       event.preventDefault();
       return;
@@ -407,7 +411,7 @@ export function useBuildSessionListQueue({
       if (!sourceRow || !targetRow) {
         return current;
       }
-      if (isRunningSession(sourceRow.session) || isRunningSession(targetRow.session)) {
+      if (isSessionRunningByStatus(sourceRow.session) || isSessionRunningByStatus(targetRow.session)) {
         return current;
       }
 
@@ -448,6 +452,5 @@ export function useBuildSessionListQueue({
     handleDragOver,
     handleOpenAll,
     handleCloseAll,
-    isRunningSession,
   };
 }

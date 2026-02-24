@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   Badge,
   Box,
@@ -28,7 +28,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import LayersIcon from '@mui/icons-material/Layers';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PauseCircleIcon from '@mui/icons-material/PauseCircle';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -94,6 +96,17 @@ const resolveStageIcon = (stage: string | undefined) => {
   return null;
 };
 
+const RUNNING_STATUSES = new Set<BuildSessionRuntimeRecord['status']>([
+  'starting',
+  'running',
+  'resuming',
+  'finalizing',
+  'pausing',
+]);
+
+const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =>
+  RUNNING_STATUSES.has(session.status);
+
 export function BuildSessionQueueList({
   nodeType = toNodeType('shape'),
   onNavigateToBuild,
@@ -122,7 +135,6 @@ export function BuildSessionQueueList({
     handleDragOver,
     handleOpenAll,
     handleCloseAll,
-    isRunningSession,
   } = useBuildSessionListQueue({
     nodeType,
     onNavigateToBuild,
@@ -130,8 +142,16 @@ export function BuildSessionQueueList({
     autoStartTopSession,
   });
 
+  const handleConfirmDeleteAutoClose = useCallback(async () => {
+    const shouldCloseQueuePanel = rows.length <= 1;
+    await handleConfirmDelete();
+    if (shouldCloseQueuePanel) {
+      handleCloseAll();
+    }
+  }, [handleConfirmDelete, handleCloseAll, rows.length]);
+
   const toLabel = useCallback((session: BuildSessionRuntimeRecord): BuildSessionStatusView => {
-    const isRunning = isRunningSession(session);
+    const isRunning = isSessionRunningByStatus(session);
     const elapsedBase = isRunning
       ? session.startedAt ?? session.updatedAt ?? now
       : session.updatedAt ?? now;
@@ -150,7 +170,7 @@ export function BuildSessionQueueList({
       mode: 'waiting',
       elapsedText: formatElapsed(elapsed),
     };
-  }, [now, isRunningSession]);
+  }, [now]);
 
   const statusText = useCallback((session: BuildSessionRuntimeRecord, status: BuildSessionStatusView): string => {
     if (status.mode === 'running') {
@@ -161,8 +181,18 @@ export function BuildSessionQueueList({
       return `${t('buildSessionQueue.statusFailed', '失敗')} ${status.elapsedText}経過`;
     }
 
+    if (session.status === 'completed') {
+      return `${t('buildSessionQueue.statusCompleted', '完了')} ${status.elapsedText}経過`;
+    }
+
     return `${t('buildSessionQueue.statusWaiting', '待機中')} ${status.elapsedText}経過`;
   }, [t]);
+
+  useEffect(() => {
+    if (rows.length === 0 && anchorEl) {
+      handleCloseAll();
+    }
+  }, [anchorEl, handleCloseAll, rows.length]);
 
   const renderQueueRow = useCallback((row: BuildSessionQueueEntry, index: number, options?: { compactSummary?: boolean }) => {
     const session = row.session;
@@ -170,8 +200,9 @@ export function BuildSessionQueueList({
     const stageIcon = resolveStageIcon(session.progress?.stage);
     const isRunning = label.mode === 'running';
     const isPaused = session.status === 'paused';
-    const isStopped = isPaused || session.status === 'failed';
-    const isActiveOrPaused = isRunning || isStopped;
+    const isFailed = session.status === 'failed';
+    const isCompleted = session.status === 'completed';
+    const canRestart = isPaused || isFailed || isCompleted;
     const statusLine = isPaused
       ? `${t('buildSessionQueue.statusPaused', '一時停止')} ${label.elapsedText}経過`
       : statusText(session, label);
@@ -247,31 +278,21 @@ export function BuildSessionQueueList({
               sx={{
                 minWidth: isCompactSummary ? 220 : 280,
                 justifyContent: 'flex-end',
-                color: isActiveOrPaused ? 'text.primary' : 'text.secondary',
+                color: isRunning ? 'text.primary' : canRestart ? 'text.secondary' : 'text.secondary',
               }}
             >
-              {isActiveOrPaused ? (
-                index === 0 ? (
-                  isPaused ? (
-                    <PauseCircleIcon fontSize="small" color="action" />
-                  ) : (
-                    <CircularProgress
-                      size={16}
-                      thickness={5}
-                      sx={{ color: 'primary.main' }}
-                    />
-                  )
-                ) : (
-                  <CircularProgress
-                    size={16}
-                    thickness={5}
-                    sx={{ color: 'text.disabled' }}
-                  />
-                )
+              {isRunning ? (
+                <CircularProgress size={16} thickness={5} sx={{ color: 'primary.main' }} />
+              ) : isPaused ? (
+                <PauseCircleIcon fontSize="small" color="action" />
+              ) : isFailed ? (
+                <ErrorOutlineIcon fontSize="small" color="error" />
+              ) : isCompleted ? (
+                <CheckCircleOutlineIcon fontSize="small" color="success" />
               ) : null}
               <Stack direction="row" alignItems="center" spacing={0.5}>
-                {isActiveOrPaused ? stageIcon : null}
-                {isActiveOrPaused && <Typography variant="body2">{label.percentageText ?? ''}</Typography>}
+                {isRunning ? stageIcon : null}
+                {isRunning && <Typography variant="body2">{label.percentageText ?? ''}</Typography>}
               </Stack>
               <Typography variant="body2" sx={{ minWidth: isCompactSummary ? 84 : 100, textAlign: 'right' }}>
                 {`${label.elapsedText}経過`}
@@ -279,11 +300,11 @@ export function BuildSessionQueueList({
               {isCompactSummary ? <MoreVertIcon fontSize="small" /> : null}
             </Stack>
           </ListItemButton>
-          {(!isCompactSummary && index === 0 && isRunning) ? (
+          {(!isCompactSummary && isRunning) ? (
             <Box sx={{ px: 1.5, pb: 1 }}>
               <LinearProgress
                 variant="determinate"
-                value={Math.max(0, Math.min(100, Number(label.percentageText?.replace('%', '') ?? 0)))}
+                value={Math.max(0, Math.min(100, Number.parseFloat(label.percentageText ?? '0')))}
               />
             </Box>
           ) : null}
@@ -306,7 +327,7 @@ export function BuildSessionQueueList({
               <CloseIcon fontSize="small" />
             </IconButton>
           ) : null}
-          {!isCompactSummary && isStopped ? (
+          {!isCompactSummary && canRestart ? (
             <IconButton
               className="queue-action-icon queue-start-icon"
               size="small"
@@ -368,7 +389,7 @@ export function BuildSessionQueueList({
           {t('common.cancel', 'Cancel')}
         </Button>
         <Button
-          onClick={handleConfirmDelete}
+          onClick={handleConfirmDeleteAutoClose}
           color="error"
           variant="contained"
           disabled={isDeleting}
@@ -402,9 +423,13 @@ export function BuildSessionQueueList({
       aria-label={t('buildSessionQueue.openQueueList', 'Open build session queue')}
       onClick={handleOpenAll}
       size="small"
+      disabled={rows.length === 0}
       sx={{
         color: 'primary.main',
         p: '8px',
+        '&:disabled': {
+          color: 'action.disabled',
+        },
       }}
     >
       {rows.length === 0 ? (
@@ -434,7 +459,17 @@ export function BuildSessionQueueList({
       >
         {compactBody}
       </Tooltip>
-      <Popper open={Boolean(anchorEl)} anchorEl={anchorEl} placement="bottom-end" disablePortal={false}>
+      <Popper
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        placement="bottom-end"
+        disablePortal={false}
+        sx={(theme) => ({
+          zIndex: (theme as { zIndex?: { modal?: number } }).zIndex?.modal !== undefined
+            ? theme.zIndex.modal + 10
+            : 1399,
+        })}
+      >
         <ClickAwayListener onClickAway={handleCloseAll}>
           <Paper
             sx={{
