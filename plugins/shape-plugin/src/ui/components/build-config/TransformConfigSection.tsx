@@ -55,8 +55,8 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
   const executionLogLevel = baseTransformConfig.executionLogLevel ?? 'summary';
   const toleranceFallback = 0.1;
-  const toneCurveDefaultAnchorValues = [8, 6, 3, 1] as const;
-  const toneCurveRetrySecondDefaultAnchorValues = [9, 7, 4, 2] as const;
+  const toneCurveDefaultAnchorValues = [0.5, 0.5, 0.5, 0.5] as const;
+  const toneCurveRetrySecondDefaultAnchorValues = [2, 1.5, 1, 1] as const;
   const toneCurveLineStyles = [
     {
       lineColor: '#0b5ed7',
@@ -70,8 +70,8 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
       lineDashArray: '6 4',
     },
   ] as const;
-  const boundaryCount = baseTransformConfig.zoomBandBoundaries.length;
-  const hasCompleteToleranceByBand = (baseTransformConfig.toleranceByBand?.length ?? 0) === boundaryCount;
+  const bandCount = Math.max(1, baseTransformConfig.zoomBandBoundaries.length);
+  const hasCompleteToleranceByBand = (baseTransformConfig.toleranceByBand?.length ?? 0) === bandCount;
   const resolvedToneCurveAnchors = hasCompleteToleranceByBand
     ? buildToneCurveAnchorsFromToleranceByBand(
       baseTransformConfig.toleranceByBand,
@@ -85,7 +85,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
       toleranceFallback,
       toneCurveDefaultAnchorValues,
     );
-  const hasCompleteRetryToleranceByBand = (baseTransformConfig.retryToleranceByBand?.length ?? 0) === boundaryCount;
+  const hasCompleteRetryToleranceByBand = (baseTransformConfig.retryToleranceByBand?.length ?? 0) === bandCount;
   const resolvedToneCurveRetrySecondAnchors = hasCompleteRetryToleranceByBand
     ? buildToneCurveAnchorsFromToleranceByBand(
       baseTransformConfig.retryToleranceByBand,
@@ -203,9 +203,9 @@ export const TransformConfigSection: React.FC<Props> = ({ config, onChange, disa
                     {
                       anchors: resolvedToneCurveRetrySecondAnchors,
                       xFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.x),
-                      yFixedValues: resolvedToneCurveRetrySecondAnchors.map((anchor) => anchor.y),
+                      yFixedValues: [],
                       allowAnchorCountChange: false,
-                      editable: true,
+                      editable: false,
                       onChange: (overlayAnchors) => {
                         if (disabled) return;
                         const next = buildToleranceByBandFromToneCurveAnchors(

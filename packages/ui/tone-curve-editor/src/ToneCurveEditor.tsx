@@ -454,14 +454,20 @@ export function ToneCurveEditor({
       const prepared = values.map((anchor, index) => {
         const fixedX = toFixedNumber(fixedXValues, index);
         const fixedY = toFixedNumber(fixedYValues, index);
+        const clampedFixedX = fixedX === undefined
+          ? undefined
+          : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
+        const clampedFixedY = fixedY === undefined
+          ? undefined
+          : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
 
         return {
           x: fixedX === undefined
             ? snapValue(anchor.x, xSnapStep)
-            : clamp(fixedX, normalizedXRange.min, normalizedXRange.max),
+            : (clampedFixedX ?? normalizedXRange.min),
           y: fixedY === undefined
             ? snapValue(anchor.y, ySnapStep)
-            : clamp(fixedY, normalizedYRange.min, normalizedYRange.max),
+            : (clampedFixedY ?? normalizedYRange.min),
         };
       });
 
@@ -474,20 +480,26 @@ export function ToneCurveEditor({
         .map((anchor, index, list) => {
           const fixedX = toFixedNumber(fixedXValues, index);
           const fixedY = toFixedNumber(fixedYValues, index);
+          const normalizedFixedX = fixedX === undefined
+            ? undefined
+            : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
+          const normalizedFixedY = fixedY === undefined
+            ? undefined
+            : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
           const isFirst = index === 0;
           const isLast = index === count - 1;
 
           const nextX = isFirst
-            ? (fixedX === undefined ? normalizedXRange.min : clamp(fixedX, normalizedXRange.min, normalizedXRange.max))
+            ? (normalizedFixedX === undefined ? normalizedXRange.min : normalizedFixedX)
             : isLast
-              ? (fixedX === undefined ? normalizedXRange.max : clamp(fixedX, normalizedXRange.min, normalizedXRange.max))
+              ? (normalizedFixedX === undefined ? normalizedXRange.max : normalizedFixedX)
               : Math.max(anchor.x, (list[index - 1]?.x ?? normalizedXRange.min) + ANCHOR_EPSILON);
 
           return {
             x: fixedX === undefined ? snapValue(nextX, xSnapStep) : nextX,
             y: fixedY === undefined
               ? snapValue(anchor.y, ySnapStep)
-              : clamp(fixedY, normalizedYRange.min, normalizedYRange.max),
+              : (normalizedFixedY ?? normalizedYRange.min),
           };
         });
     },
@@ -496,6 +508,7 @@ export function ToneCurveEditor({
 
   const [anchors, setAnchors] = React.useState<ToneCurveAnchor[]>(initialAnchors);
   const previousAnchorsRef = React.useRef<ToneCurveAnchor[]>(initialAnchors);
+  const pendingMainChangeRef = React.useRef<ToneCurveAnchor[] | null>(null);
   const resolvedOverlaySeries = React.useMemo<ResolvedOverlaySeries[]>(
     () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex): ResolvedOverlaySeries => {
       const safeSeries: ToneCurveOverlaySeries = overlaySeriesItem ?? {};
@@ -534,6 +547,10 @@ export function ToneCurveEditor({
     resolvedOverlaySeries.map((series) => createAnchorsFromInputs(series.anchors, series.xFixedValues, series.yFixedValues)),
   );
   const syncedOverlaySignatureRef = React.useRef<string>('');
+  const pendingOverlayChangeRef = React.useRef<{
+    anchors: ToneCurveAnchor[];
+    onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
+  } | null>(null);
 
   const overlaySignature = React.useMemo(
     () => resolvedOverlaySeries
@@ -552,6 +569,10 @@ export function ToneCurveEditor({
   );
 
   React.useEffect(() => {
+    if (activeAnchorRef.current?.type === 'overlay') {
+      return;
+    }
+
     if (overlaySignature === syncedOverlaySignatureRef.current) {
       return;
     }
@@ -599,12 +620,40 @@ export function ToneCurveEditor({
     if (!onChange) {
       return;
     }
+    if (activeAnchorRef.current?.type === 'main') {
+      return;
+    }
     if (areAnchorsEqual(previousAnchorsRef.current, anchors)) {
       return;
     }
     previousAnchorsRef.current = anchors;
     onChange(anchors);
   }, [anchors, onChange]);
+
+  const flushPendingMainChange = React.useCallback(() => {
+    if (!pendingMainChangeRef.current || !onChange) {
+      return;
+    }
+
+    const nextAnchors = pendingMainChangeRef.current;
+    pendingMainChangeRef.current = null;
+    previousAnchorsRef.current = nextAnchors;
+    onChange(nextAnchors);
+  }, [onChange]);
+
+  const flushPendingOverlayChange = React.useCallback((): void => {
+    const pending = pendingOverlayChangeRef.current;
+    if (!pending) {
+      return;
+    }
+    pendingOverlayChangeRef.current = null;
+
+    const currentOverlay = pending.onChange;
+    if (!currentOverlay) {
+      return;
+    }
+    currentOverlay(pending.anchors);
+  }, []);
 
   const sortedPoints = React.useMemo(
     () => [...anchors].sort((a, b) => a.x - b.x),
@@ -629,16 +678,33 @@ export function ToneCurveEditor({
   );
   const anchorYMarks = React.useMemo(() => {
     const dedupeEpsilon = 1e-9;
-    const raw = anchors.map((anchor) => anchor.y).filter((value) => Number.isFinite(value));
-    const uniqueSorted = raw
-      .filter((value, index, values) => values.findIndex((candidate) => Math.abs(candidate - value) <= dedupeEpsilon) === index)
-      .sort((left, right) => right - left);
+    const labelFontSize = 10;
+    const rawValues = [
+      ...anchors.map((anchor) => anchor.y),
+      ...overlayAnchors.flatMap((curveAnchors) => curveAnchors.map((anchor) => anchor.y)),
+    ].filter((value) => Number.isFinite(value));
+    const uniqueSortedAscending = rawValues
+      .sort((left, right) => left - right)
+      .filter(
+        (value, index, values) => index === 0 || Math.abs(values[index - 1] - value) > dedupeEpsilon,
+      );
 
-    return uniqueSorted.map((value) => ({
-      value,
-      label: formatAnchorValueLabel(value),
-    }));
-  }, [anchors]);
+    const result: Array<{ value: number; label: string }> = [];
+    let lastVisibleScreenY: number | null = null;
+
+    uniqueSortedAscending.forEach((value) => {
+      const screenY = yToScreen(value);
+      if (lastVisibleScreenY === null || Math.abs(screenY - lastVisibleScreenY) > labelFontSize) {
+        result.push({
+          value,
+          label: formatAnchorValueLabel(value),
+        });
+        lastVisibleScreenY = screenY;
+      }
+    });
+
+    return result;
+  }, [anchors, overlayAnchors, yToScreen]);
 
   const fixedXForCount = React.useCallback(
     (count: number): Array<number | undefined> => {
@@ -694,12 +760,12 @@ export function ToneCurveEditor({
       overlayIndex: number | null,
       editable: boolean,
     ): string => {
-      if (!editable) {
-        return 'not-allowed';
-      }
       const overlayCurve = overlayIndex === null
         ? undefined
         : resolvedOverlaySeries[overlayIndex];
+      const allowMovement = type === 'overlay' && overlayCurve
+        ? overlayCurve.editable
+        : editable;
 
       const fixedX = type === 'main'
         ? fixedXForCount(count)[index]
@@ -712,8 +778,8 @@ export function ToneCurveEditor({
           ? fixedYForOverlayCount(overlayCurve, count)[index]
           : undefined;
 
-      const canMoveX = fixedX === undefined;
-      const canMoveY = fixedY === undefined;
+      const canMoveX = allowMovement ? true : fixedX === undefined;
+      const canMoveY = allowMovement ? true : fixedY === undefined;
 
       if (canMoveX && canMoveY) {
         return 'move';
@@ -740,13 +806,12 @@ export function ToneCurveEditor({
       overlayIndex: number | null,
       editable: boolean,
     ): boolean => {
-      if (!editable) {
-        return false;
-      }
-
       const overlayCurve = overlayIndex === null
         ? undefined
         : resolvedOverlaySeries[overlayIndex];
+      const allowMovement = type === 'overlay' && overlayCurve
+        ? overlayCurve.editable
+        : editable;
 
       const fixedX = type === 'main'
         ? fixedXForCount(count)[index]
@@ -758,7 +823,9 @@ export function ToneCurveEditor({
         : overlayCurve
           ? fixedYForOverlayCount(overlayCurve, count)[index]
           : undefined;
-      return fixedX === undefined || fixedY === undefined;
+      const canMoveX = allowMovement ? true : fixedX === undefined;
+      const canMoveY = allowMovement ? true : fixedY === undefined;
+      return canMoveX || canMoveY;
     },
     [fixedXForCount, fixedYForCount, fixedXForOverlayCount, fixedYForOverlayCount, resolvedOverlaySeries],
   );
@@ -850,6 +917,12 @@ export function ToneCurveEditor({
           const isLast = index === list.length - 1;
           const fixedX = fixedXForCount(list.length)[index];
           const fixedY = fixedYForCount(list.length)[index];
+          const normalizedFixedX = fixedX === undefined
+            ? undefined
+            : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
+          const normalizedFixedY = fixedY === undefined
+            ? undefined
+            : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
 
           const minX = isFirst
             ? normalizedXRange.min
@@ -864,17 +937,18 @@ export function ToneCurveEditor({
 
           const clampedX = fixedX === undefined
             ? clamp(point.x, minX, maxX)
-            : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
+            : normalizedFixedX ?? normalizedXRange.min;
 
           const clampedY = fixedY === undefined
             ? clamp(point.y, normalizedYRange.min, normalizedYRange.max)
-            : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
+            : normalizedFixedY ?? normalizedYRange.min;
 
           list[index] = {
             ...target,
             x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
             y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
           };
+          pendingMainChangeRef.current = list;
 
           return list;
         });
@@ -915,6 +989,8 @@ export function ToneCurveEditor({
         const isLast = index === list.length - 1;
         const fixedX = fixedXForOverlayCount(overlayCurve, list.length)[index];
         const fixedY = fixedYForOverlayCount(overlayCurve, list.length)[index];
+        const canMoveX = overlayCurve.editable ? true : fixedX === undefined;
+        const canMoveY = overlayCurve.editable ? true : fixedY === undefined;
         const minX = isFirst
           ? normalizedXRange.min
           : prev
@@ -926,31 +1002,35 @@ export function ToneCurveEditor({
             ? next.x - ANCHOR_EPSILON
             : normalizedXRange.max;
 
-        const clampedX = fixedX === undefined
+        const clampedX = canMoveX
           ? clamp(point.x, minX, maxX)
-          : clamp(fixedX, normalizedXRange.min, normalizedXRange.max);
-        const clampedY = fixedY === undefined
+          : clamp(fixedX ?? normalizedXRange.min, normalizedXRange.min, normalizedXRange.max);
+        const clampedY = canMoveY
           ? clamp(point.y, normalizedYRange.min, normalizedYRange.max)
-          : clamp(fixedY, normalizedYRange.min, normalizedYRange.max);
+          : clamp(fixedY ?? normalizedYRange.min, normalizedYRange.min, normalizedYRange.max);
 
         const nextCurve = [...list];
         nextCurve[index] = {
           ...target,
-          x: fixedX === undefined ? snapValue(clampedX, xSnapStep) : clampedX,
-          y: fixedY === undefined ? snapValue(clampedY, ySnapStep) : clampedY,
+          x: canMoveX ? snapValue(clampedX, xSnapStep) : clampedX,
+          y: canMoveY ? snapValue(clampedY, ySnapStep) : clampedY,
         };
 
-        const normalizedCurve = normalizeAnchors(
+        const editableFixedX = overlayCurve.editable ? [] : fixedXForOverlayCount(overlayCurve, nextCurve.length);
+        const editableFixedY = overlayCurve.editable ? [] : fixedYForOverlayCount(overlayCurve, nextCurve.length);
+
+      const normalizedCurve = normalizeAnchors(
           nextCurve,
-          fixedXForOverlayCount(overlayCurve, nextCurve.length),
-          fixedYForOverlayCount(overlayCurve, nextCurve.length),
+          editableFixedX,
+          editableFixedY,
           fallbackAnchors,
         );
         const nextAnchors = [...current];
         nextAnchors[overlayIndex] = normalizedCurve;
-        if (overlayCurve.onChange) {
-          overlayCurve.onChange(normalizedCurve);
-        }
+        pendingOverlayChangeRef.current = {
+          anchors: normalizedCurve,
+          onChange: overlayCurve.onChange,
+        };
         return nextAnchors;
       });
     },
@@ -975,6 +1055,12 @@ export function ToneCurveEditor({
 
   const handlePointPointerDown = React.useCallback(
     (curveType: 'main' | 'overlay', overlayIndex: number | null, index: number, editable: boolean) => (event: React.PointerEvent<SVGCircleElement>) => {
+      if (curveType === 'overlay') {
+        pendingOverlayChangeRef.current = null;
+      } else {
+        pendingMainChangeRef.current = null;
+      }
+
       const count = curveType === 'main'
         ? sortedPoints.length
         : (overlayIndex === null ? 0 : sortedOverlayPoints[overlayIndex]?.length ?? 0);
@@ -1005,6 +1091,8 @@ export function ToneCurveEditor({
     };
 
     const onPointerUp = (): void => {
+      flushPendingMainChange();
+      flushPendingOverlayChange();
       activeAnchorRef.current = null;
     };
 
@@ -1016,7 +1104,7 @@ export function ToneCurveEditor({
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [updateAnchor]);
+  }, [flushPendingMainChange, flushPendingOverlayChange, updateAnchor]);
 
   const mainCurveStyle = getLineStyle(0);
 

@@ -1,6 +1,6 @@
 import type { BuildProgressPayload, BuildSessionStatus, BuildUnifiedProgressInfo, TaskDisplayPayload } from '@hierarchidb/build-api';
-import { toBuildSessionStatusFromUnifiedProgress } from '../../../../../../packages/ui/build-sessions';
-import { computePercentage } from '../../../../../../packages/ui/build-sessions';
+import { toBuildSessionStatusFromUnifiedProgress } from '@hierarchidb/ui-build-sessions';
+import { computePercentage } from '@hierarchidb/ui-build-sessions';
 
 export interface BuildProgress {
   total: number;

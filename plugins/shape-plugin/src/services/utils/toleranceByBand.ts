@@ -55,8 +55,7 @@ export const normalizeToleranceByBand = (
 };
 
 const resolveBandBoundaryRepValues = (zoomBandBoundaries: number[]): number[] => {
-  const count = Math.max(0, zoomBandBoundaries.length - 1);
-  return zoomBandBoundaries.slice(0, count);
+  return [...zoomBandBoundaries];
 };
 
 const resolveToneCurveBoundaryRepValues = (zoomBandBoundaries: number[]): number[] => {
@@ -110,8 +109,8 @@ export const resampleToleranceByBand = (
   nextZoomBandBoundaries: number[],
   fallback: number,
 ): number[] => {
-  const oldBandCount = Math.max(0, oldZoomBandBoundaries.length - 1);
-  const nextBandCount = Math.max(0, nextZoomBandBoundaries.length - 1);
+  const oldBandCount = Math.max(0, oldZoomBandBoundaries.length);
+  const nextBandCount = Math.max(0, nextZoomBandBoundaries.length);
   if (nextBandCount < 1) {
     return [];
   }
@@ -135,7 +134,7 @@ export const buildToneCurveAnchorsFromToleranceByBand = (
   fallback = 0.1,
   fallbackAnchors?: readonly number[],
 ): ToneCurveAnchor[] => {
-  const bandCount = Math.max(0, zoomBandBoundaries.length - 1);
+  const bandCount = Math.max(0, zoomBandBoundaries.length);
   if (bandCount === 0) {
     return [
       { x: 0, y: 0 },
@@ -143,10 +142,9 @@ export const buildToneCurveAnchorsFromToleranceByBand = (
     ];
   }
 
-  const reps = resolveToneCurveBoundaryRepValues(zoomBandBoundaries);
-  const boundaryCount = zoomBandBoundaries.length;
+  const reps = resolveToneCurveBoundaryRepValues(zoomBandBoundaries).slice(0, bandCount);
   const resolvedFallbackAnchors = fallbackAnchors ?? [];
-  const rawNormalized = Array.from({ length: boundaryCount }, (_, index) => (
+  const rawNormalized = Array.from({ length: bandCount }, (_, index) => (
     index < reps.length
       ? resolveNumericToleranceValue(
         toleranceByBand?.[index],
@@ -166,7 +164,7 @@ export const buildToleranceByBandFromToneCurveAnchors = (
   zoomBandBoundaries: number[],
   fallback: number,
 ): number[] => {
-  const bandCount = Math.max(0, zoomBandBoundaries.length - 1);
+  const bandCount = Math.max(0, zoomBandBoundaries.length);
   if (bandCount === 0) {
     return [];
   }
