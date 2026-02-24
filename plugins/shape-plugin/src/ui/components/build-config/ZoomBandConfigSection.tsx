@@ -30,10 +30,17 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
           zoomBandBoundaries,
           toleranceFallback,
         );
+        const nextRetryToleranceByBand = resampleToleranceByBand(
+          baseTransformConfig.retryToleranceByBand,
+          baseTransformConfig.zoomBandBoundaries,
+          zoomBandBoundaries,
+          toleranceFallback,
+        );
         update({
           transformConfig: {
             ...baseTransformConfig,
             toleranceByBand: nextToleranceByBand,
+            retryToleranceByBand: nextRetryToleranceByBand,
             zoomBandBoundaries,
           },
         });

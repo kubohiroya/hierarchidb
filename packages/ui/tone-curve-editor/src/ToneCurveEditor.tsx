@@ -185,6 +185,12 @@ const areAnchorsEqual = (left: ReadonlyArray<ToneCurveAnchor>, right: ReadonlyAr
   return true;
 };
 
+const getAnchorsSignature = (anchors: ReadonlyArray<ToneCurveAnchor>): string => anchors
+  .map((anchor) => `${Number(anchor.x).toFixed(6)}:${Number(anchor.y).toFixed(6)}`)
+  .join('|');
+
+const ANCHOR_SYNC_SUPPRESSION_MS = 1200;
+
 export function ToneCurveEditor({
   width,
   height,
@@ -249,29 +255,29 @@ export function ToneCurveEditor({
 
   const baseXRange = React.useMemo(
     () => toAxisRange(xRange, 0, 1),
-    [xRange[0], xRange[1]],
+    [xRange],
   );
   const baseYRange = React.useMemo(
     () => toAxisRange(yRange, 0, 1),
-    [yRange[0], yRange[1]],
+    [yRange],
   );
 
   const normalizedXRange = React.useMemo(
     () => clampRangeInBase(xEndpointRange, baseXRange),
-    [baseXRange.min, baseXRange.max, xEndpointRange?.[0], xEndpointRange?.[1]],
+    [baseXRange, xEndpointRange],
   );
   const normalizedYRange = React.useMemo(
     () => clampRangeInBase(yEndpointRange, baseYRange),
-    [baseYRange.min, baseYRange.max, yEndpointRange?.[0], yEndpointRange?.[1]],
+    [baseYRange, yEndpointRange],
   );
 
   const normalizedXMarks = React.useMemo(
     () => normalizeAxisMarks(xMarks, normalizedXRange),
-    [normalizedXRange.max, normalizedXRange.min, xMarks],
+    [normalizedXRange, xMarks],
   );
   const normalizedYMarks = React.useMemo(
     () => normalizeAxisMarks(yMarks, normalizedYRange),
-    [normalizedYRange.max, normalizedYRange.min, yMarks],
+    [normalizedYRange, yMarks],
   );
 
   const resolveTargetAnchorCount = React.useCallback(
@@ -509,6 +515,15 @@ export function ToneCurveEditor({
   const [anchors, setAnchors] = React.useState<ToneCurveAnchor[]>(initialAnchors);
   const previousAnchorsRef = React.useRef<ToneCurveAnchor[]>(initialAnchors);
   const pendingMainChangeRef = React.useRef<ToneCurveAnchor[] | null>(null);
+  const lastPointerPositionRef = React.useRef<{ x: number; y: number } | null>(null);
+  const ignoreMainExternalUpdateRef = React.useRef<{
+    signature: string;
+    expiresAt: number;
+  } | null>(null);
+  const ignoreOverlayExternalUpdateRef = React.useRef<{
+    signature: string;
+    expiresAt: number;
+  } | null>(null);
   const resolvedOverlaySeries = React.useMemo<ResolvedOverlaySeries[]>(
     () => resolvedOverlaySeriesInput.map((overlaySeriesItem, overlayIndex): ResolvedOverlaySeries => {
       const safeSeries: ToneCurveOverlaySeries = overlaySeriesItem ?? {};
@@ -572,6 +587,16 @@ export function ToneCurveEditor({
     if (activeAnchorRef.current?.type === 'overlay') {
       return;
     }
+    if (ignoreOverlayExternalUpdateRef.current) {
+      const now = Date.now();
+      if (ignoreOverlayExternalUpdateRef.current.signature === overlaySignature) {
+        ignoreOverlayExternalUpdateRef.current = null;
+      } else if (ignoreOverlayExternalUpdateRef.current.expiresAt >= now) {
+        return;
+      } else {
+        ignoreOverlayExternalUpdateRef.current = null;
+      }
+    }
 
     if (overlaySignature === syncedOverlaySignatureRef.current) {
       return;
@@ -602,6 +627,20 @@ export function ToneCurveEditor({
   const syncedAnchorCountRef = React.useRef<number>(initialAnchors.length);
 
   React.useEffect(() => {
+    if (activeAnchorRef.current) {
+      return;
+    }
+    if (ignoreMainExternalUpdateRef.current) {
+      const now = Date.now();
+      if (ignoreMainExternalUpdateRef.current.signature === externalAnchorsSignature) {
+        ignoreMainExternalUpdateRef.current = null;
+      } else if (ignoreMainExternalUpdateRef.current.expiresAt >= now) {
+        return;
+      } else {
+        ignoreMainExternalUpdateRef.current = null;
+      }
+    }
+
     if (
       fixedXSignature === syncedFixedSignatureRef.current
       && externalAnchorsSignature === syncedAnchorsSignatureRef.current
@@ -636,6 +675,15 @@ export function ToneCurveEditor({
     }
 
     const nextAnchors = pendingMainChangeRef.current;
+    ignoreMainExternalUpdateRef.current = {
+      signature: getAnchorsSignature(nextAnchors),
+      expiresAt: Date.now() + ANCHOR_SYNC_SUPPRESSION_MS,
+    };
+    if (areAnchorsEqual(previousAnchorsRef.current, nextAnchors)) {
+      pendingMainChangeRef.current = null;
+      return;
+    }
+
     pendingMainChangeRef.current = null;
     previousAnchorsRef.current = nextAnchors;
     onChange(nextAnchors);
@@ -647,6 +695,10 @@ export function ToneCurveEditor({
       return;
     }
     pendingOverlayChangeRef.current = null;
+    ignoreOverlayExternalUpdateRef.current = {
+      signature: getAnchorsSignature(pending.anchors),
+      expiresAt: Date.now() + ANCHOR_SYNC_SUPPRESSION_MS,
+    };
 
     const currentOverlay = pending.onChange;
     if (!currentOverlay) {
@@ -683,11 +735,17 @@ export function ToneCurveEditor({
       ...anchors.map((anchor) => anchor.y),
       ...overlayAnchors.flatMap((curveAnchors) => curveAnchors.map((anchor) => anchor.y)),
     ].filter((value) => Number.isFinite(value));
-    const uniqueSortedAscending = rawValues
-      .sort((left, right) => left - right)
-      .filter(
-        (value, index, values) => index === 0 || Math.abs(values[index - 1] - value) > dedupeEpsilon,
-      );
+    const sortedValues = rawValues.sort((left, right) => left - right);
+    const uniqueSortedAscending: number[] = [];
+    for (let i = 0; i < sortedValues.length; i += 1) {
+      const value = sortedValues[i];
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+      if (value && value > 0 && (i === 0 || Math.abs(sortedValues[i - 1] ?? 0 - value) > dedupeEpsilon)) {
+        uniqueSortedAscending.push(value);
+      }
+    }
 
     const result: Array<{ value: number; label: string }> = [];
     let lastVisibleScreenY: number | null = null;
@@ -1076,6 +1134,10 @@ export function ToneCurveEditor({
         curveIndex: overlayIndex,
         anchorIndex: index,
       };
+      lastPointerPositionRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
     [isDraggable, sortedOverlayPoints, sortedPoints.length],
@@ -1087,22 +1149,48 @@ export function ToneCurveEditor({
       if (!activeAnchor) {
         return;
       }
+      lastPointerPositionRef.current = { x: event.clientX, y: event.clientY };
       updateAnchor(activeAnchor.type, activeAnchor.anchorIndex, activeAnchor.curveIndex, event.clientX, event.clientY);
     };
 
-    const onPointerUp = (): void => {
+    const flushPendingChanges = (): void => {
       flushPendingMainChange();
       flushPendingOverlayChange();
       activeAnchorRef.current = null;
+      lastPointerPositionRef.current = null;
+    };
+
+    const onPointerUp = (): void => {
+      const activeAnchor = activeAnchorRef.current;
+      if (activeAnchor) {
+        const lastPointerPosition = lastPointerPositionRef.current;
+        if (lastPointerPosition) {
+          updateAnchor(
+            activeAnchor.type,
+            activeAnchor.anchorIndex,
+            activeAnchor.curveIndex,
+            lastPointerPosition.x,
+            lastPointerPosition.y,
+          );
+        }
+      }
+      window.requestAnimationFrame(flushPendingChanges);
+    };
+
+    const onPointerCancel = (): void => {
+      flushPendingMainChange();
+      flushPendingOverlayChange();
+      activeAnchorRef.current = null;
+      lastPointerPositionRef.current = null;
     };
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
     return () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
     };
   }, [flushPendingMainChange, flushPendingOverlayChange, updateAnchor]);
 
@@ -1201,9 +1289,9 @@ export function ToneCurveEditor({
           points={pathPoints}
         />
         {sortedPoints.map((anchor, index) => {
-          const cursor = getAnchorCursor(index, sortedPoints.length, 'main', null, true);
+          const cursor = getAnchorCursor(index, sortedPoints.length, 'main', null, false);
           return (
-            <g key={`${index}`}>
+            <g key={`${String(index)}`}>
               <circle
                 cx={xToScreen(anchor.x)}
                 cy={yToScreen(anchor.y)}
@@ -1211,7 +1299,7 @@ export function ToneCurveEditor({
                 fill={mainCurveStyle.anchorPointColor}
                 stroke="#fff"
                 strokeWidth={1.5}
-                onPointerDown={handlePointPointerDown('main', null, index, true)}
+                onPointerDown={handlePointPointerDown('main', null, index, false)}
                 style={{ cursor }}
               />
             </g>
@@ -1229,7 +1317,7 @@ export function ToneCurveEditor({
           }
 
           return (
-            <g key={`overlay-${overlayIndex}`}>
+            <g key={`overlay-${String(overlayIndex)}`}>
               <polyline
                 fill="none"
                 stroke={overlayCurve.lineColor}
@@ -1241,7 +1329,7 @@ export function ToneCurveEditor({
                 const cursor = getAnchorCursor(pointIndex, curvePoints.length, 'overlay', overlayIndex, overlayCurve.editable);
                 return (
                   <circle
-                    key={`overlay-${overlayIndex}-anchor-${pointIndex}`}
+                    key={`overlay-${overlayIndex}-anchor-${String(pointIndex)}`}
                     cx={xToScreen(anchor.x)}
                     cy={yToScreen(anchor.y)}
                     r={5}

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { mergeBuildConfig } from '~/common/types/index';
 import type { ShapeBuildConfig } from '~/common/types/index';
 
@@ -19,9 +19,16 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
     throw new Error('TransformConfigSection: omitDetailsConfig is not defined');
   }
 
+  const latestConfigRef = useRef(config);
+  useEffect(() => {
+    latestConfigRef.current = config;
+  }, [config]);
+
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig(config, partial));
-  }, [config, onChange]);
+    const nextConfig = mergeBuildConfig(latestConfigRef.current, partial);
+    latestConfigRef.current = nextConfig;
+    onChange(nextConfig);
+  }, [onChange]);
 
   return {
     baseTransformConfig,
