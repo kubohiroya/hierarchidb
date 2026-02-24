@@ -130,7 +130,7 @@ type ShapePreviewLayerDetailId =
 export type ShapePreviewLayerToggleId = ShapePreviewLayerGroupId | ShapePreviewLayerDetailId;
 
 type ShapePreviewLayerVisibility = Record<ShapePreviewLayerToggleId, boolean>;
-type ShapePreviewLayerFeatureCounts = Record<ShapePreviewLayerToggleId, number | null>;
+type ShapePreviewLayerFeatureCounts = Record<ShapePreviewLayerToggleId, number>;
 
 export type ShapePreviewLayerToggleItem = {
   id: ShapePreviewLayerToggleId;
@@ -150,15 +150,15 @@ const SHAPE_PREVIEW_LAYER_VISIBILITY_DEFAULT: ShapePreviewLayerVisibility = {
 };
 
 const SHAPE_PREVIEW_LAYER_FEATURE_COUNTS_DEFAULT: ShapePreviewLayerFeatureCounts = {
-  adm0: null,
-  adm0Boundary: null,
-  adm0Fill: null,
-  adm1: null,
-  adm1Boundary: null,
-  adm1Fill: null,
-  adm2: null,
-  adm2Boundary: null,
-  adm2Fill: null,
+  adm0: 0,
+  adm0Boundary: 0,
+  adm0Fill: 0,
+  adm1: 0,
+  adm1Boundary: 0,
+  adm1Fill: 0,
+  adm2: 0,
+  adm2Boundary: 0,
+  adm2Fill: 0,
 };
 
 const SHAPE_PREVIEW_DETAIL_TOGGLE_IDS: ShapePreviewLayerDetailId[] = [
@@ -375,7 +375,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       (part): part is string => Boolean(part && part.trim().length > 0),
     );
     return { level, label: `${adminLabel}: ${parts.join(' / ')}` };
-  }, [countryByCode]);
+  }, [countryByCode, isoReady, queueCountryCode]);
 
   const hoverSnackbarContent = useCallback((features: MapLibreGeoJSONFeature[]) => {
     if (features.length === 0) return '';
@@ -629,7 +629,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
 
   useEffect(() => {
     refreshShapePreviewLayerFeatureCounts();
-  }, [refreshShapePreviewLayerFeatureCounts, vectorLayerIds]);
+  }, [refreshShapePreviewLayerFeatureCounts]);
 
   useEffect(() => {
     const map = preview.mapInstance;
