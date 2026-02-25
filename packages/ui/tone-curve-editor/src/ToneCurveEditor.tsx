@@ -762,42 +762,77 @@ export function ToneCurveEditor({
   const anchorYMarks = React.useMemo(() => {
     const dedupeEpsilon = 1e-9;
     const labelFontSize = 10;
-    const rawValues = [
-      ...anchors.map((anchor) => anchor.y),
-      ...overlayAnchors.flatMap((curveAnchors) => curveAnchors.map((anchor) => anchor.y)),
-    ].filter((value) => Number.isFinite(value));
-    const sortedValues = rawValues.sort((left, right) => left - right);
-    const uniqueSortedAscending: number[] = [];
-    for (let i = 0; i < sortedValues.length; i += 1) {
-      const value = sortedValues[i];
-      if (value === undefined) {
-        continue;
-      }
+
+    const mergedCandidates = new Map<string, { value: number; label: string; forceDisplay: boolean }>();
+
+    const mergedToKey = (value: number): string => value.toFixed(10);
+    const addCandidate = (
+      value: number,
+      label: string,
+      options?: { forceDisplay?: boolean },
+    ): void => {
       if (!Number.isFinite(value)) {
+        return;
+      }
+
+      const key = mergedToKey(value);
+      const current = mergedCandidates.get(key);
+      if (current === undefined) {
+        mergedCandidates.set(key, { value, label, forceDisplay: options?.forceDisplay ?? false });
+        return;
+      }
+
+      if (options?.forceDisplay === true && !current.forceDisplay) {
+        mergedCandidates.set(key, { value, label: current.label, forceDisplay: true });
+      }
+    };
+
+    normalizedYMarks.forEach((mark) => {
+      addCandidate(mark.value, mark.label);
+    });
+
+    anchors.forEach((anchor) => {
+      addCandidate(anchor.y, formatAnchorValueLabel(anchor.y));
+    });
+
+    overlayAnchors.flatMap((curveAnchors) => curveAnchors.map((anchor) => anchor.y)).forEach((value) => {
+      addCandidate(value, formatAnchorValueLabel(value));
+    });
+
+    addCandidate(normalizedYRange.min, formatAnchorValueLabel(normalizedYRange.min), { forceDisplay: true });
+    addCandidate(normalizedYRange.max, formatAnchorValueLabel(normalizedYRange.max), { forceDisplay: true });
+
+    const sortedUniqueValues = Array.from(mergedCandidates.values())
+      .sort((left, right) => left.value - right.value);
+
+    const dedupedByValue = [];
+    for (let index = 0; index < sortedUniqueValues.length; index += 1) {
+      const current = sortedUniqueValues[index];
+      if (!current) {
         continue;
       }
-      const previousValue = sortedValues[i - 1];
-      if (i === 0 || previousValue === undefined || Math.abs(previousValue - value) > dedupeEpsilon) {
-        uniqueSortedAscending.push(value);
+      const previous = dedupedByValue[dedupedByValue.length - 1];
+      if (!previous || Math.abs(previous.value - current.value) > dedupeEpsilon) {
+        dedupedByValue.push(current);
       }
     }
 
     const result: Array<{ value: number; label: string }> = [];
     let lastVisibleScreenY: number | null = null;
 
-    uniqueSortedAscending.forEach((value) => {
-      const screenY = yToScreen(value);
-      if (lastVisibleScreenY === null || Math.abs(screenY - lastVisibleScreenY) > labelFontSize) {
+    dedupedByValue.forEach((item) => {
+      const screenY = yToScreen(item.value);
+      if (item.forceDisplay || lastVisibleScreenY === null || Math.abs(screenY - lastVisibleScreenY) > labelFontSize) {
         result.push({
-          value,
-          label: formatAnchorValueLabel(value),
+          value: item.value,
+          label: item.label,
         });
         lastVisibleScreenY = screenY;
       }
     });
 
     return result;
-  }, [anchors, overlayAnchors, yToScreen]);
+  }, [anchors, overlayAnchors, normalizedYMarks, normalizedYRange.max, normalizedYRange.min, yToScreen]);
 
   const fixedXForCount = React.useCallback(
     (count: number): Array<number | undefined> => {
@@ -987,23 +1022,53 @@ export function ToneCurveEditor({
     emitMainAnchorsChange(normalized);
   }, [anchors, emitMainAnchorsChange, fixedXForCount, fixedYForCount, normalizeAnchors]);
 
-  const updateDragPointerLabelFromAnchor = React.useCallback((anchor: ToneCurveAnchor | undefined): void => {
-    if (!activeAnchorRef.current) {
-      return;
-    }
-    const pointer = dragPointerScreenRef.current;
+  const updateDragPointerLabelFromAnchor = React.useCallback((
+    anchor: ToneCurveAnchor | undefined,
+    pointerPoint?: { x: number; y: number },
+  ): void => {
     const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-    if (!anchor || !pointer || !wrapperRect) {
+    if (!anchor || !wrapperRect) {
       setDragPointerLabel(null);
       return;
     }
 
+    const pointer = pointerPoint ?? dragPointerScreenRef.current;
+    const fallbackX = xToScreen(anchor.x) + wrapperRect.left;
+    const fallbackY = yToScreen(anchor.y) + wrapperRect.top;
+
     setDragPointerLabel({
-      x: pointer.x - wrapperRect.left + 12,
-      y: pointer.y - wrapperRect.top - 22,
+      x: (pointer?.x ?? fallbackX) - wrapperRect.left + 12,
+      y: (pointer?.y ?? fallbackY) - wrapperRect.top - 22,
       dataX: anchor.x,
       dataY: anchor.y,
     });
+  }, [xToScreen, yToScreen]);
+
+  const handlePointPointerEnter = React.useCallback(
+    (anchor: ToneCurveAnchor | undefined) => (event: React.PointerEvent<SVGCircleElement>) => {
+      if (!anchor || activeAnchorRef.current) {
+        return;
+      }
+      updateDragPointerLabelFromAnchor(anchor, { x: event.clientX, y: event.clientY });
+    },
+    [updateDragPointerLabelFromAnchor],
+  );
+
+  const handlePointPointerMove = React.useCallback(
+    (anchor: ToneCurveAnchor | undefined) => (event: React.PointerEvent<SVGCircleElement>) => {
+      if (!anchor || activeAnchorRef.current) {
+        return;
+      }
+      updateDragPointerLabelFromAnchor(anchor, { x: event.clientX, y: event.clientY });
+    },
+    [updateDragPointerLabelFromAnchor],
+  );
+
+  const hideDragPointerLabel = React.useCallback(() => {
+    if (activeAnchorRef.current) {
+      return;
+    }
+    setDragPointerLabel(null);
   }, []);
 
   const updateAnchor = React.useCallback(
@@ -1336,19 +1401,6 @@ export function ToneCurveEditor({
             </text>
           </g>
         ))}
-        {normalizedYMarks.map((mark) => (
-          <g key={`y-mark-${mark.value}-${mark.label}`}>
-            <text
-              x={inner.paddingLeft - 18}
-              y={yToScreen(mark.value) + 3}
-              textAnchor="end"
-              fontSize={10}
-              fill="#334155"
-            >
-              {mark.label}
-            </text>
-          </g>
-        ))}
         {anchorYMarks.map((mark) => (
           <g key={`anchor-y-mark-${mark.value}-${mark.label}`}>
             <text
@@ -1381,6 +1433,9 @@ export function ToneCurveEditor({
                 stroke="#fff"
                 strokeWidth={1.5}
                 onPointerDown={handlePointPointerDown('main', null, index, true)}
+                onPointerEnter={handlePointPointerEnter(anchor)}
+                onPointerMove={handlePointPointerMove(anchor)}
+                onPointerLeave={hideDragPointerLabel}
                 style={{ cursor }}
               />
             </g>
@@ -1418,6 +1473,9 @@ export function ToneCurveEditor({
                     stroke="#fff"
                     strokeWidth={1.5}
                     onPointerDown={handlePointPointerDown('overlay', overlayIndex, pointIndex, overlayCurve.editable)}
+                    onPointerEnter={handlePointPointerEnter(anchor)}
+                    onPointerMove={handlePointPointerMove(anchor)}
+                    onPointerLeave={hideDragPointerLabel}
                     style={{ cursor }}
                   />
                 );
