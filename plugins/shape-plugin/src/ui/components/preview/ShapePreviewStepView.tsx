@@ -7,6 +7,33 @@ import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-wind
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity, ShapePreviewMapView } from '~/common/types/index';
 
+type ShapePreviewDebugFlags = {
+  hideLayerSetsFloatingWindow: boolean;
+  hideMapPreview: boolean;
+};
+
+const parseDebugFlag = (value: string | null): boolean => {
+  if (value === null) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'yes';
+};
+
+const getShapePreviewDebugFlags = (): ShapePreviewDebugFlags => {
+  if (typeof window === 'undefined') {
+    return { hideLayerSetsFloatingWindow: false, hideMapPreview: false };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const queryValue = params.get('hdbNoShapeLayerSetsWindow');
+  const mapQueryValue = params.get('hdbNoShapePreviewMap');
+  const storageValue = window.localStorage.getItem('hdbNoShapeLayerSetsWindow');
+  const mapStorageValue = window.localStorage.getItem('hdbNoShapePreviewMap');
+  return {
+    hideLayerSetsFloatingWindow: parseDebugFlag(queryValue ?? storageValue),
+    hideMapPreview: parseDebugFlag(mapQueryValue ?? mapStorageValue),
+  };
+};
+
 export type ShapeDialogStepProps = {
   nodeId: string;
   data: Partial<ShapeEntity>;
@@ -41,6 +68,7 @@ const isShapeLayerParentToggle = (toggleId: string): boolean => (
 
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
   const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
+  const debugFlags = React.useMemo(() => getShapePreviewDebugFlags(), []);
   const lastPersistedViewRef = React.useRef<ShapePreviewMapView | null>(data.previewMapView ?? null);
   const {
     t,
@@ -119,10 +147,28 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
       </Box>
     );
   }, [shapePreviewLayerFeatureCounts, t]);
-  const showLayerSetsReopenButton = !layerSetsWindow.windowState.isVisible;
+  const showLayerSetsWindow = !debugFlags.hideLayerSetsFloatingWindow && layerSetsWindow.windowState.isVisible;
+  const showLayerSetsReopenButton = !debugFlags.hideLayerSetsFloatingWindow && !layerSetsWindow.windowState.isVisible;
   const showMetadataReopenButton = !featureWindowOpen;
   const reserveMetadataReopenSlot = showLayerSetsReopenButton && !showMetadataReopenButton;
   const renderMapPreview = () => {
+    if (debugFlags.hideMapPreview) {
+      return (
+        <Box
+          sx={{
+            position: 'relative',
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.9rem',
+            color: 'text.secondary',
+          }}
+        >
+          Shape map preview temporarily disabled by debug flag (hdbNoShapePreviewMap=1).
+        </Box>
+      );
+    }
     return (
       <MapPreviewShell
         containerRef={mapContainerRef}
@@ -133,7 +179,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                 <LinearProgress sx={{ height: 4 }} />
               </Box>
             ) : null}
-            {layerSetsWindow.windowState.isVisible ? (
+            {showLayerSetsWindow ? (
               <FloatingWindow
                 title={t('preview.layerSets.title', 'Layer Sets')}
                 titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
@@ -171,7 +217,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                     color="primary"
                     size="large"
                     aria-label={t('preview.metadata.reopenList', 'Show list')}
-                    onClick={() => setFeatureWindowOpen(true)}
+                    onClick={() => {
+                      setFeatureWindowOpen(true);
+                    }}
                   >
                     <HexagonIcon />
                   </Button>
@@ -264,9 +312,11 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
   const renderFeatureDialog = () => {
     if (!featureWindowOpen) return null;
     return (
-      <ShapePreviewList
+        <ShapePreviewList
         title={t('preview.metadata.title', 'Shape: metadata')}
-        onClose={() => setFeatureWindowOpen(false)}
+        onClose={() => {
+          setFeatureWindowOpen(false);
+        }}
         rows={displayedFeatureRows}
         columnLabels={{
           featureId: t('preview.metadata.columns.featureId', 'Feature ID'),

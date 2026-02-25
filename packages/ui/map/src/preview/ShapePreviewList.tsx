@@ -4,6 +4,7 @@ import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Recycling as RecyclingIcon } from '@mui/icons-material';
 import type { GridColumn, GridGroupingState } from '@hierarchidb/ui-grid';
+import type { WindowState } from '@hierarchidb/ui-floating-window';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
   MapPreviewFloatingTable,
@@ -73,6 +74,7 @@ export type ShapePreviewListProps = {
   maxHeight?: number;
   onClose?: () => void;
   onToggleRecycling?: () => void;
+  onWindowStateChange?: (state: Pick<WindowState, 'isMinimized' | 'isVisible'>) => void;
   rowFilterConfig?: {
     mode: 'all' | 'viewport';
     onModeChange: (mode: 'all' | 'viewport') => void;
@@ -131,6 +133,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   onClose,
   onToggleRecycling,
   rowFilterConfig,
+  onWindowStateChange,
 }) => {
   const theme = useTheme();
   const initialPosition = useMemo(() => ({ x: 80, y: 140 }), []);
@@ -146,6 +149,12 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     show();
   }, [show]);
   const normalizedRef = React.useRef(false);
+  useEffect(() => {
+    onWindowStateChange?.({
+      isMinimized: windowState.isMinimized,
+      isVisible: windowState.isVisible,
+    });
+  }, [onWindowStateChange, windowState.isMinimized, windowState.isVisible]);
   useEffect(() => {
     if (!windowState.isVisible) {
       show();

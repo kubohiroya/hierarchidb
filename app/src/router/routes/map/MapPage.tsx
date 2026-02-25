@@ -67,6 +67,41 @@ const ICON_SIZE_MIN = 0.7;
 const ICON_SIZE_SLOPE = 0.05;
 const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + LOCATION_MAX_ZOOM * ICON_SIZE_SLOPE;
 const FIT_BOUNDS_PADDING_PX = 64;
+
+type MapDebugFlags = {
+  skipModelessDialogs: boolean;
+  skipResourceLayerMap: boolean;
+  skipVectorTileLayers: boolean;
+};
+
+const parseDebugFlag = (value: string | null): boolean => {
+  if (value === null) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'yes';
+};
+
+const getMapDebugFlags = (): MapDebugFlags => {
+  if (typeof window === 'undefined') {
+    return { skipModelessDialogs: false, skipResourceLayerMap: false, skipVectorTileLayers: false };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const resolveFlag = (name: string): boolean => {
+    const queryValue = params.get(name);
+    if (queryValue !== null) {
+      return parseDebugFlag(queryValue);
+    }
+    const storageValue = window.localStorage.getItem(name);
+    return parseDebugFlag(storageValue);
+  };
+
+  return {
+    skipModelessDialogs: resolveFlag('hdbNoModelessDialogs'),
+    skipResourceLayerMap: resolveFlag('hdbNoResourceLayerMap'),
+    skipVectorTileLayers: resolveFlag('hdbNoVectorTileLayers'),
+  };
+};
+
 const resolveCommonZoomBounds = () => {
   const settings = loadTreeConsoleSettings();
   const boundaries = Array.isArray(settings.zoomBandBoundaries)
@@ -94,6 +129,7 @@ export default function MapPage() {
     useGeolocationImport;
   const theme = useTheme();
   const { nodeId } = useParams({ from: '/map/$nodeId' });
+  const debugFlags = useMemo(() => getMapDebugFlags(), []);
   const search = useSearch({ from: '/map/$nodeId' }) as MapSearch;
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
   const geolocation = useGeolocation();
@@ -619,17 +655,21 @@ export default function MapPage() {
     },
     [handleViewStateChange]
   );
+  const effectiveVectorLayers = useMemo(
+    () => (debugFlags.skipVectorTileLayers ? [] : filteredVectorLayers),
+    [debugFlags.skipVectorTileLayers, filteredVectorLayers],
+  );
 
   return (
     <Box
       sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}
     >
-      {nodeId ? (
+      {!debugFlags.skipModelessDialogs && nodeId ? (
         <ModelessDialogManager
           nodeId={nodeId}
           formattedZxy={formattedZxy}
           basemapStyles={basemapStyles}
-          vectorLayers={filteredVectorLayers}
+          vectorLayers={effectiveVectorLayers}
           geoJsonLayers={combinedGeoJsonLayers}
           mapInfo={mapInfo}
           stylerSummaries={stylerSummaries}
@@ -670,59 +710,74 @@ export default function MapPage() {
         </DialogActions>
       </Dialog>
 
-      <ResourceLayerMap
-        initialViewState={initialViewState}
-        width="100%"
-        height="100%"
-        mapStyleUrl={mapStyleUrl}
-        basemapStyles={basemapStyles}
-        vectorLayers={filteredVectorLayers}
-        geoJsonLayers={combinedGeoJsonLayers}
-        attributionItems={attributionItems}
-        styleOverridesByType={styleOverridesByType}
-        highlightOverridesByType={highlightPaintByType}
-        interaction={{
-          enabled: true,
-          highlightLayerIds,
-          buildHighlightEntry,
-          onMissingLayers: (layerIds) => {
-            setMissingLayerIds(layerIds);
-            setMissingLayerDialogOpen(layerIds.length > 0);
-          },
-          search: {
+      {debugFlags.skipResourceLayerMap ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
+          Map rendering temporarily disabled by debug flag (hdbNoResourceLayerMap=1).
+        </Box>
+      ) : (
+        <ResourceLayerMap
+          initialViewState={initialViewState}
+          width="100%"
+          height="100%"
+          mapStyleUrl={mapStyleUrl}
+          basemapStyles={basemapStyles}
+          vectorLayers={effectiveVectorLayers}
+          geoJsonLayers={combinedGeoJsonLayers}
+          attributionItems={attributionItems}
+          styleOverridesByType={styleOverridesByType}
+          highlightOverridesByType={highlightPaintByType}
+          interaction={{
             enabled: true,
-            targetDefinitions: SEARCH_TARGET_DEFINITIONS,
-            targetGroups: SEARCH_TARGET_GROUPS,
-            fitOnSearch: true,
-            fitPadding: FIT_BOUNDS_PADDING_PX,
-          },
-          hover: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
-          selection: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
-          fitSelection: { enabled: true, padding: FIT_BOUNDS_PADDING_PX },
-          snackbar: {
-            position: 'bottom-center',
-          },
-        }}
-        onLoad={handleMapLoad}
-        onViewStateChange={handleMapViewStateChange}
-        onMoveEnd={handleLocationMoveEnd}
-        identifyFeatureOnClick={{
-          layerIds: highlightLayerIds,
-          radius: LOCATION_INTERACTION_RADIUS_PX,
-          disableDefaultSnackbar: true,
-        }}
-        controls={{ navigation: { position: 'top-right' } }}
-        mapOptions={{
-          interactive: true,
-          scrollZoom: true,
-          dragPan: true,
-          dragRotate: true,
-          doubleClickZoom: true,
-          touchZoomRotate: true,
-          minZoom: commonZoomBounds.minZoom,
-          maxZoom: commonZoomBounds.maxZoom,
-        }}
-      />
+            highlightLayerIds,
+            buildHighlightEntry,
+            onMissingLayers: (layerIds) => {
+              setMissingLayerIds(layerIds);
+              setMissingLayerDialogOpen(layerIds.length > 0);
+            },
+            search: {
+              enabled: true,
+              targetDefinitions: SEARCH_TARGET_DEFINITIONS,
+              targetGroups: SEARCH_TARGET_GROUPS,
+              fitOnSearch: true,
+              fitPadding: FIT_BOUNDS_PADDING_PX,
+            },
+            hover: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
+            selection: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
+            fitSelection: { enabled: true, padding: FIT_BOUNDS_PADDING_PX },
+            snackbar: {
+              position: 'bottom-center',
+            },
+          }}
+          onLoad={handleMapLoad}
+          onViewStateChange={handleMapViewStateChange}
+          onMoveEnd={handleLocationMoveEnd}
+          identifyFeatureOnClick={{
+            layerIds: highlightLayerIds,
+            radius: LOCATION_INTERACTION_RADIUS_PX,
+            disableDefaultSnackbar: true,
+          }}
+          controls={{ navigation: { position: 'top-right' } }}
+          mapOptions={{
+            interactive: true,
+            scrollZoom: true,
+            dragPan: true,
+            dragRotate: true,
+            doubleClickZoom: true,
+            touchZoomRotate: true,
+            minZoom: commonZoomBounds.minZoom,
+            maxZoom: commonZoomBounds.maxZoom,
+          }}
+        />
+      )}
       <ScreenCenterSnackbar
         open={zoomSnackbarOpen}
         message={zoomSnackbarMessage}

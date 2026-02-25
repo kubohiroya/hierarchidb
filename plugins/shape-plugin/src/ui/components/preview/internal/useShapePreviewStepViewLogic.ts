@@ -222,7 +222,10 @@ const buildFeatureCountKey = (feature: MapLibreGeoJSONFeature): string => {
   return `${source}:${sourceLayer}:anon:${name}`;
 };
 
-export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
+export const useShapePreviewStepView = (
+  data: Partial<ShapeEntity>,
+  nodeId: string,
+) => {
   const preview = useShapePreviewStep(data, nodeId);
   const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);

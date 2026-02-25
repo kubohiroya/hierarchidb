@@ -61,7 +61,10 @@ import { useShapePreviewFeatureSection } from './useShapePreviewStepFeatureSecti
 
 type ShapePreviewDraft = PreviewDraftType;
 
-export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
+export const useShapePreviewStep = (
+  data: Partial<ShapeEntity>,
+  nodeId?: string,
+) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const metadataEnabled = isShapePreviewMetadataEnabled();
@@ -103,12 +106,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
   const selectionDataSource = previewDraft.buildConfig?.dataSourceName as DataSourceName | undefined;
-
-  const statusForPolling = processingStatus ?? 'processing';
-  const shouldPollMetadata = Boolean(activeNodeId)
-    && metadataEnabled
-    && statusForPolling === 'processing';
-  const metadataPollIntervalMs = shouldPollMetadata ? 2000 : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -167,7 +164,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataEnabled,
     activeNodeId,
     loadDataSourceMetadataRows,
-    metadataPollIntervalMs,
   );
 
   const {
@@ -179,7 +175,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataEnabled,
     activeNodeId,
     loadFeatureMetadataRows,
-    metadataPollIntervalMs,
   );
   const [featureMetadataOverride, setFeatureMetadataOverride] = useState<ShapeFeatureMetadata[] | null>(null);
   useEffect(() => {
@@ -195,7 +190,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataEnabled,
     activeNodeId,
     loadTransformErrorRows,
-    metadataPollIntervalMs,
   );
 
   const selectionFilters = useMemo(() => {
