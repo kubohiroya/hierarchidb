@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #560 / `codex/feat/shape/admin-level-simplify-tolerance-560` / start: 2026-02-25 23:40 JST
 - #559 / `codex/feat/ui/plugin-dialog-stepper-context-menu-559` / start: 2026-02-25 23:16 JST
 - #513 / `fix/shape/initial-build-progress-stability` / start: 2026-02-22 10:40 JST
 - #466 / `feat/shape/url-build-rules-persistence` / start: 2026-02-21 19:02 JST
@@ -117,6 +118,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-25 23:48 JST #560 Step4 に `SimplifyToleranceByAdminLevelCard`（Admin 0/1/2/3+ Tabs、Admin1+ の「前のタブの値を参照して利用」スイッチ/「前のタブの値をコピーして適用」ボタン）を実装し、`ShapeBuildConfig` 型（`TransformConfig.simplifyToleranceByAdminLevel`）・`DEFAULT_BUILD_CONFIG`・`shapeCreatePresets` を拡張。Step5 Transform は `@hierarchidb/vt-orchestrator` の `resolveSimplifyToleranceProfile` で地物 `adminLevel` ごとに tolerance/retryTolerance/retryCount を解決して適用するよう更新。
+- blocked: 2026-02-25 23:48 JST #560 `pnpm -w turbo run typecheck --filter @hierarchidb/gis-sdk --filter @hierarchidb/shape-api --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator --only --output-logs errors-only` は差分外既知ブロッカー `packages/gis-sdk/src/ephemeral/EphemeralDB.ts:87`（TS2352）で exit 2。差分検証は `--only` で `@hierarchidb/shape-plugin` / `@hierarchidb/vt-orchestrator` を個別実行し exit 0 を確認。
+- start: 2026-02-25 23:40 JST #560 を起票（https://github.com/kubohiroya/hierarchidb/issues/560）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/feat/shape/admin-level-simplify-tolerance-560` を作成して着手。
 - update: 2026-02-25 23:37 JST #559 追加要望対応。原因は `packages/plugin-ui-host/src/headless/components/PluginDialogStepper.tsx` の各ステップ番号ボタンが左クリック遷移のみで右クリックアクション未対応だったこと。発生範囲は PluginDialog Header 内 Stepper の `StepButton` 群。修正として `StepButton` へ `onContextMenu` を追加し、有効ステップのみ対象に `Open In New Tab` / `Open In New Window` / `Copy Link URL` のメニューを表示・実行する実装を追加。無効ステップまたは不正ルート時は URL を生成せずメニューを開かない。適用範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogStepper.tsx` と `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx`。
 - update: 2026-02-25 23:37 JST #559 追加分の検証結果: `pnpm -w turbo run build --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run test --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0。
 - update: 2026-02-25 23:25 JST #559 原因は `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` の Back/Next ボタンが `onClick` のみで右クリックアクション未実装だったこと。発生範囲は PluginDialog の Stepper Footer（Back/Next ナビゲーション）に限定。修正として Back/Next に `onContextMenu` を追加し、現在ルート（`/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?`）から対象ステップURLを生成して `Open In New Tab` / `Open In New Window` / `Copy Link URL` を実行するメニューを実装。適用範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と関連テストのみ。
