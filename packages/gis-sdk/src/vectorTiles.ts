@@ -1,10 +1,10 @@
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 import type { Tile } from 'geojson-vt';
-import type vtPbfNS = require('@maplibre/vt-pbf');
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { GeometryEngine } from './config.js';
 import { geometryArea } from './geometryEngine.js';
+import { encodeMvtFromGeojsonVt } from './vectorTileFormats.js';
 
 import {
   latToTileY,
@@ -73,6 +73,35 @@ type FeatureGeometry = Geometry | null;
 
 type FeatureLike = Feature<Geometry, GeoJsonProperties>;
 
+type LayerNameBoundaryMode = 'fill' | 'boundary';
+
+const SHAPE_LAYER_NAME_RE = /^(?:shape[-_])?(?:admin|adm)(\d+)(?:[-_](boundary|fill))?$/i;
+
+const normalizeLayerName = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.toLowerCase();
+};
+
+const parseCanonicalShapeLayerName = (value: unknown): string | undefined => {
+  const normalized = normalizeLayerName(value);
+  if (!normalized) return undefined;
+  const match = SHAPE_LAYER_NAME_RE.exec(normalized);
+  if (!match) return undefined;
+  const adminLevel = Number(match[1]);
+  if (!Number.isInteger(adminLevel) || adminLevel < 0) return undefined;
+  const boundary = match[2]?.toLowerCase() === 'boundary' ? 'boundary' : 'fill';
+  return `admin${adminLevel}${boundary === 'boundary' ? '-boundary' : ''}`;
+};
+
+const toCanonicalBoundaryMode = (value: unknown): LayerNameBoundaryMode => {
+  if (typeof value === 'string' && value.trim().toLowerCase() === 'boundary') {
+    return 'boundary';
+  }
+  return 'fill';
+};
+
 function buildUniqueFeatureId(
   feature: FeatureLike,
   index: number,
@@ -112,13 +141,6 @@ const normalizePropertyValue = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const normalizeLayerName = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return trimmed.toLowerCase();
-};
-
 const resolveNumericLevel = (value: unknown): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
   if (typeof value === 'string') {
@@ -141,7 +163,7 @@ const resolveTileLayerName = (
     properties.source_layer,
     properties.vectorLayer,
   ]
-    .map(normalizeLayerName)
+    .map(parseCanonicalShapeLayerName)
     .find((name): name is string => typeof name === 'string');
   if (explicitLayerName) return explicitLayerName;
 
@@ -159,7 +181,10 @@ const resolveTileLayerName = (
     .map(resolveNumericLevel)
     .find((value): value is number => value !== undefined);
   if (adminLevel === undefined) return 'layer0';
-  return `admin${adminLevel}`;
+  const boundary = toCanonicalBoundaryMode(properties.boundary);
+  return boundary === 'boundary'
+    ? `admin${adminLevel}-boundary`
+    : `admin${adminLevel}`;
 };
 
 const ensureMetadataProperties = (
@@ -341,12 +366,6 @@ const loadGeojsonVt = async (): Promise<GeojsonVtModule> => {
   return candidate.default ?? candidate;
 };
 
-const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
-  const mod = await import('@maplibre/vt-pbf');
-  const candidate = mod as { default?: typeof vtPbfNS } & typeof vtPbfNS;
-  return candidate.default ?? candidate;
-};
-
 export const generateVectorTilesFromJsonBuffer = async (
   nodeId: NodeId,
   buffer: ArrayBuffer,
@@ -462,7 +481,6 @@ export const generateVectorTilesFromFeatureCollection = async (
 
   const moduleStart = Date.now();
   const geojsonvt = await loadGeojsonVt();
-  const vtpbf = await loadVtPbf();
   console.debug('[VectorTiles] modules loaded', { ms: Date.now() - moduleStart });
   const extent = 4096;
   const bufferValue = typeof config.buffer === 'number' ? config.buffer : 64;
@@ -567,9 +585,8 @@ export const generateVectorTilesFromFeatureCollection = async (
           }
         });
         if (Object.keys(layers).length > 0) {
-          const pbf = vtpbf.fromGeojsonVt(layers, {
+          const pbf = await encodeMvtFromGeojsonVt(layers, {
             version: 2,
-            extent: 4096,
           });
           const bytes = pbf;
           tilesGenerated++;

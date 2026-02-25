@@ -12,14 +12,16 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import LayersIcon from '@mui/icons-material/Layers';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseCircleIcon from '@mui/icons-material/PauseCircle';
+import ReplayIcon from '@mui/icons-material/Replay';
 import TuneIcon from '@mui/icons-material/Tune';
 import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
@@ -84,24 +86,65 @@ const resolveStageIcon = (stage: string | undefined) => {
   return null;
 };
 
+const formatTemplate = (text: string, values: Record<string, string>): string => (
+  Object.entries(values).reduce((next, [key, value]) => next.replaceAll(`{{${key}}}`, value), text)
+);
+
+const getTotalElapsedText = (
+  t: (key: string, fallback: string) => string,
+  elapsedText: string,
+): string => {
+  return formatTemplate(t('buildSessionQueue.totalElapsed', '(総経過時間 {{elapsed}})'), {
+    elapsed: elapsedText,
+  });
+};
+
 const resolveStatusText = (
   t: (key: string, fallback: string) => string,
   session: BuildSessionRuntimeRecord,
   status: BuildSessionStatusView,
 ): string => {
   if (status.mode === 'running') {
-    return `${t('buildSessionQueue.statusRunning', '実行中')} (${status.percentageText ?? '0%'}) / ${status.elapsedText}経過`;
+    return t('buildSessionQueue.statusRunning', '実行中');
   }
 
   if (session.status === 'failed') {
-    return `${t('buildSessionQueue.statusFailed', '失敗')} ${status.elapsedText}経過`;
+    return t('buildSessionQueue.statusFailed', '失敗');
   }
 
   if (session.status === 'completed') {
-    return `${t('buildSessionQueue.statusCompleted', '完了')} ${status.elapsedText}経過`;
+    return t('buildSessionQueue.statusCompleted', '完了');
   }
 
-  return `${t('buildSessionQueue.statusWaiting', '待機中')} ${status.elapsedText}経過`;
+  return t('buildSessionQueue.statusWaiting', '待機中');
+};
+
+const resolveStatusCaptionText = (
+  t: (key: string, fallback: string) => string,
+  session: BuildSessionRuntimeRecord,
+  isRunning: boolean,
+): string => {
+  if (isRunning) {
+    return t('buildSessionQueue.statusRunning', 'Running');
+  }
+
+  if (session.status === 'failed') {
+    return t('buildSessionQueue.statusFailedCaption', 'Failed');
+  }
+
+  if (session.status === 'completed') {
+    return t('buildSessionQueue.statusCompletedCaption', 'Completed');
+  }
+
+  if (session.status === 'paused') {
+    return t('buildSessionQueue.statusPaused', 'Paused');
+  }
+
+  if (session.status === 'running') {
+    return t('buildSessionQueue.statusRunning', 'Running');
+  }
+
+  return t('buildSessionQueue.statusWaitingCaption', 'Waiting');
 };
 
 const BuildSessionQueueSessionRowInner = ({
@@ -120,24 +163,33 @@ const BuildSessionQueueSessionRowInner = ({
   const { t } = useGlobalI18nTranslator();
   const [runningNow, setRunningNow] = useState<number>(() => Date.now());
   const { session, node } = row;
-  const now = isRunning ? runningNow : row.session.updatedAt ?? row.session.startedAt ?? Date.now();
-  const elapsedBase = isRunning
-    ? session.startedAt ?? session.updatedAt ?? now
-    : session.updatedAt ?? session.startedAt ?? now;
-  const elapsed = formatElapsed(now - elapsedBase);
+  const isTerminalStatus = session.status === 'completed' || session.status === 'failed';
+  const isActiveRuntimeStatus = session.status === 'starting' || session.status === 'running'
+    || session.status === 'resuming' || session.status === 'finalizing';
+  const inactiveMs = session.inactiveMs ?? 0;
+  const startedAt = session.startedAt ?? session.updatedAt ?? runningNow;
+  const baseEndAt = isActiveRuntimeStatus
+    ? runningNow
+    : session.status === 'paused'
+      ? session.lastHeartbeatAt ?? session.updatedAt ?? runningNow
+      : isTerminalStatus
+        ? session.completedAt ?? session.updatedAt ?? runningNow
+        : session.updatedAt ?? startedAt;
+  const elapsed = formatElapsed(Math.max(0, baseEndAt - startedAt - inactiveMs));
   const isPaused = session.status === 'paused';
   const isFailed = session.status === 'failed';
   const isCompleted = session.status === 'completed';
   const canRestart = isPaused || isFailed || isCompleted;
   const stageIcon = resolveStageIcon(session.progress?.stage);
   const percentageText = isRunning ? `${Math.round(session.progress?.percentage ?? 0)}%` : undefined;
-  const statusLine = isPaused
-    ? `${t('buildSessionQueue.statusPaused', '一時停止')} ${elapsed}経過`
-    : resolveStatusText(t, session, {
-      mode: isRunning ? 'running' : 'waiting',
+  const statusLine = isRunning
+    ? resolveStatusText(t, session, {
+      mode: 'running',
       elapsedText: elapsed,
       percentageText,
-    });
+    })
+    : '';
+  const statusCaption = resolveStatusCaptionText(t, session, isRunning);
   const status: BuildSessionStatusView = {
     mode: isRunning ? 'running' : 'waiting',
     elapsedText: elapsed,
@@ -243,10 +295,11 @@ const BuildSessionQueueSessionRowInner = ({
             ) : null}
             <Stack direction="row" alignItems="center" spacing={0.5}>
               {isRunning ? stageIcon : null}
+              <Typography variant="body2">{statusCaption}</Typography>
               {isRunning ? <Typography variant="body2">{status.percentageText ?? ''}</Typography> : null}
             </Stack>
             <Typography variant="body2" sx={{ minWidth: compactSummary ? 84 : 100, textAlign: 'right' }}>
-              {`${status.elapsedText}経過`}
+              {getTotalElapsedText(t, status.elapsedText)}
             </Typography>
             {compactSummary ? <MoreVertIcon fontSize="small" /> : null}
           </Stack>
@@ -260,39 +313,49 @@ const BuildSessionQueueSessionRowInner = ({
           </Box>
         ) : null}
         {!compactSummary ? (
-          <IconButton
-            className="queue-action-icon queue-delete-icon"
-            size="small"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDeleteRequest(row);
-            }}
-            sx={{
-              opacity: 0,
-              transition: 'opacity 120ms ease',
-              color: 'error.main',
-              mr: 1,
-            }}
-            aria-label={t('buildSessionQueue.delete', 'Delete session')}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title={t('buildSessionQueue.removeFromQueue', 'このセッションをキューから削除')}>
+            <IconButton
+              className="queue-action-icon queue-delete-icon"
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteRequest(row);
+              }}
+              sx={{
+                opacity: 0,
+                transition: 'opacity 120ms ease',
+                color: 'error.main',
+                mr: 1,
+              }}
+              aria-label={t('buildSessionQueue.removeFromQueue', 'このセッションをキューから削除')}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         ) : null}
         {!compactSummary && canRestart ? (
-          <IconButton
-            className="queue-action-icon queue-start-icon"
-            size="small"
-            onClick={(event) => onStartStoppedSession(row, event)}
-            sx={{
-              opacity: 0,
-              transition: 'opacity 120ms ease',
-              color: 'primary.main',
-              mr: 1,
-            }}
-            aria-label={t('buildSessionQueue.start', 'Start session')}
+          <Tooltip
+            title={index === 0
+              ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
+              : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')}
           >
-            <span style={{ lineHeight: 1 }}>▶︎</span>
-          </IconButton>
+            <IconButton
+              className="queue-action-icon queue-start-icon"
+              size="small"
+              onClick={(event) => onStartStoppedSession(row, event)}
+              sx={{
+                opacity: 0,
+                transition: 'opacity 120ms ease',
+                color: 'primary.main',
+                mr: 1,
+              }}
+              aria-label={index === 0
+                ? t('buildSessionQueue.resumeSession', 'このセッションの実行を再開')
+                : t('buildSessionQueue.prioritizeSession', 'このセッションを優先して実行')}
+            >
+              {index === 0 ? <ReplayIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
         ) : null}
       </ListItem>
     </Tooltip>

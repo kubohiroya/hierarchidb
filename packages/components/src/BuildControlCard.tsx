@@ -104,6 +104,8 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
+        outline: '1px solid',
+        outlineColor: 'divider',
         backgroundColor: 'background.paper',
         display: 'flex',
         flexDirection: 'row',
@@ -158,6 +160,14 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
             disabled={menuDisabled}
             aria-label={controlMenuAriaLabel ?? 'Build control menu'}
             data-testid="build-control-menu-button"
+            sx={{
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              p: 0.5,
+              bgcolor: 'transparent',
+              '&:hover': { borderColor: 'text.secondary' },
+            }}
           >
             <ArrowDropDownIcon fontSize="small" />
           </IconButton>

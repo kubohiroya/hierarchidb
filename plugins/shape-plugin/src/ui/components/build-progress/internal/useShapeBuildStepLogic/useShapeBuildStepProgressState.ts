@@ -21,6 +21,14 @@ type SessionRecordLike = {
   elapsedByStage?: Record<string, number> | null;
   elapsedMs?: number | null;
   stageId?: string | null;
+  startedAt?: number | null;
+  completedAt?: number | null;
+  updatedAt?: number | null;
+  inactiveMs?: number | null;
+  lastHeartbeatAt?: number | null;
+  stageStartedAt?: number | null;
+  stageHeartbeatAt?: number | null;
+  stageInactiveMs?: number | null;
 };
 
 type SummaryResult = ReturnType<typeof useShapeBuildProgressSummaryComputation<ShapeBuildTaskSummary>>;
@@ -136,7 +144,62 @@ export const useShapeBuildStepProgressState = ({
   const resolvedStageFromState = stageFromState ?? resolvedStage ?? stages[0]?.id;
 
   const stageElapsedMs = timingStageId ? (completedStageElapsedMs[timingStageId] ?? 0) : 0;
-  const totalElapsedMs = useMemo(() => sumNumberRecord(completedStageElapsedMs), [completedStageElapsedMs]);
+  const resolvedStageElapsedMs = useMemo(() => {
+    if (!timingStageId) {
+      return 0;
+    }
+    if (timingStageId !== persistedStageElapsedStageId || !sessionRecord?.stageStartedAt) {
+      return stageElapsedMs;
+    }
+    const stageBaseTime = buildStatus === 'running'
+      ? Date.now()
+      : sessionRecord.stageHeartbeatAt ?? sessionRecord.lastHeartbeatAt ?? Date.now();
+    const activeStageElapsedMs = Math.max(
+      0,
+      stageBaseTime - sessionRecord.stageStartedAt - (sessionRecord.stageInactiveMs ?? 0),
+    );
+    return Math.max(stageElapsedMs, activeStageElapsedMs);
+  }, [
+    buildStatus,
+    persistedStageElapsedStageId,
+    sessionRecord?.lastHeartbeatAt,
+    sessionRecord?.stageHeartbeatAt,
+    sessionRecord?.stageInactiveMs,
+    sessionRecord?.stageStartedAt,
+    stageElapsedMs,
+    timingStageId,
+  ]);
+
+  const stageTotalElapsedMs = useMemo(
+    () => sumNumberRecord(completedStageElapsedMs),
+    [completedStageElapsedMs],
+  );
+  const resolvedSessionElapsedMs = useMemo(() => {
+    if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) {
+      return sessionRecord.elapsedMs;
+    }
+    const startedAt = sessionRecord?.startedAt;
+    if (typeof startedAt !== 'number' || Number.isNaN(startedAt) || startedAt <= 0) {
+      return 0;
+    }
+    const inactiveMs = sessionRecord?.inactiveMs ?? 0;
+    const endAt = buildStatus === 'running'
+      ? Date.now()
+      : (sessionRecord?.lastHeartbeatAt ?? sessionRecord?.completedAt ?? sessionRecord?.updatedAt ?? Date.now());
+    return Math.max(0, endAt - startedAt - inactiveMs);
+  }, [
+    buildStatus,
+    sessionRecord?.completedAt,
+    sessionRecord?.inactiveMs,
+    sessionRecord?.lastHeartbeatAt,
+    sessionRecord?.startedAt,
+    sessionRecord?.updatedAt,
+  ]);
+
+  const totalElapsedMs = useMemo(() => Math.max(stageTotalElapsedMs, resolvedSessionElapsedMs), [
+    resolvedSessionElapsedMs,
+    stageTotalElapsedMs,
+  ]);
 
   useEffect(() => {
     if (isElapsedResetState) {
@@ -208,7 +271,7 @@ export const useShapeBuildStepProgressState = ({
     stage: stageFromState ?? undefined,
     tasks: displayTasks,
     isSkippedTask: (task: ShapeBuildTaskSummary) => isTaskSkipped(task.display, task.message),
-    timingStageMs: stageElapsedMs,
+    timingStageMs: resolvedStageElapsedMs,
   });
 
   useEffect(() => {
@@ -295,7 +358,7 @@ export const useShapeBuildStepProgressState = ({
     persistedStageElapsedStageId,
     completedStageElapsedMs,
     timingStageId,
-    stageElapsedMs,
+    stageElapsedMs: resolvedStageElapsedMs,
     totalElapsedMs,
     displayStageRemainingMs,
     progressSummary,

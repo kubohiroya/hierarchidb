@@ -12,6 +12,10 @@ import type {
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { DEFAULT_LAYER_SETS } from '@hierarchidb/ui-plugin-shell/ui-map';
+import {
+  buildRouteSourceLayerName,
+  parseSourceLayerName,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import { useEffect, useState } from 'react';
@@ -296,10 +300,24 @@ export const useFolderLayers = ({
         const resolvedShapeLayerById = new Map<string, string | undefined>();
         const pickPreferredShapeLayer = (names: string[]): string | undefined => {
           if (names.length === 0) return undefined;
-          const admin0 = names.find((name) => name.toLowerCase() === 'admin0');
-          if (admin0) return admin0;
-          const nonBoundary = names.find((name) => !name.toLowerCase().endsWith('-boundary'));
-          return nonBoundary ?? names[0];
+          const withLevel = names
+            .map((name) => parseSourceLayerName(name))
+            .filter((entry): entry is NonNullable<ReturnType<typeof parseSourceLayerName>> => entry != null);
+
+          if (withLevel.length === 0) return undefined;
+          const sortedLevels = [
+            ...new Set(withLevel.map((entry) => entry.adminLevel).filter((level): level is number => Number.isFinite(level))),
+          ].sort((a, b) => a - b);
+          const pickFromOrderedLevels = (levels: Array<number>): string | undefined => {
+            for (const level of levels) {
+              const levelEntries = withLevel.filter((entry) => entry.adminLevel === level);
+              if (levelEntries.length === 0) continue;
+              const nonBoundary = levelEntries.find((entry) => entry.layerBoundary === 'f');
+              return nonBoundary?.sourceLayerName ?? levelEntries[0]?.sourceLayerName;
+            }
+            return undefined;
+          };
+          return pickFromOrderedLevels(sortedLevels);
         };
         const resolveShapeSourceLayer = async (shapeNodeId: string): Promise<string | undefined> => {
           if (resolvedShapeLayerById.has(shapeNodeId)) {
@@ -312,16 +330,37 @@ export const useFolderLayers = ({
               resolvedShapeLayerById.set(shapeNodeId, undefined);
               return undefined;
             }
-            const firstTile = tiles[0];
-            if (!firstTile) {
-              resolvedShapeLayerById.set(shapeNodeId, undefined);
-              return undefined;
+            const prioritizedTiles = [...tiles].sort(
+              (a, b) => (b.size - a.size) || (b.z - a.z) || (a.x - b.x) || (a.y - b.y),
+            );
+            const sample = prioritizedTiles.slice(0, 24);
+            const allLayerNames: string[] = [];
+            const nameSet = new Set<string>();
+            for (const tile of sample) {
+              try {
+                const tileInfo = await query.getVectorTileInfo(shapeNodeId as NodeId, tile.z, tile.x, tile.y);
+                const names = (tileInfo?.layers ?? [])
+                  .map((layer) => layer.name)
+                  .filter((name): name is string => Boolean(name));
+                if (names.length > 0) {
+                  names.forEach((name) => {
+                    const normalized = name.trim();
+                    if (!normalized || nameSet.has(normalized)) return;
+                    nameSet.add(normalized);
+                    allLayerNames.push(normalized);
+                  });
+                }
+              } catch (tileError) {
+                console.debug('[MapPage] Failed to inspect vector tile for shape source layer', {
+                  nodeId: shapeNodeId,
+                  z: tile.z,
+                  x: tile.x,
+                  y: tile.y,
+                  error: tileError,
+                });
+              }
             }
-            const info = await query.getVectorTileInfo(shapeNodeId as NodeId, firstTile.z, firstTile.x, firstTile.y);
-            const infoNames = (info?.layers ?? [])
-              .map((layer) => layer.name)
-              .filter((name): name is string => Boolean(name));
-            const resolved = pickPreferredShapeLayer(infoNames);
+            const resolved = pickPreferredShapeLayer(allLayerNames);
             resolvedShapeLayerById.set(shapeNodeId, resolved);
             return resolved;
           } catch (error) {
@@ -352,6 +391,22 @@ export const useFolderLayers = ({
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
             const resolvedSourceLayer = await resolveShapeSourceLayer(String(node.id));
+            if (!resolvedSourceLayer) {
+              console.debug('[MapPage] Failed to resolve canonical shape source layer for map rendering', {
+                nodeId: String(node.id),
+                sourceLayer: resolvedSourceLayer,
+              });
+              continue;
+            }
+            const parsedResolvedSourceLayer = parseSourceLayerName(resolvedSourceLayer);
+            if (!parsedResolvedSourceLayer) {
+              console.debug('[MapPage] Skipped non-canonical shape source layer for map rendering', {
+                nodeId: String(node.id),
+                sourceLayer: resolvedSourceLayer,
+              });
+              continue;
+            }
+            const sourceLayerIsBoundary = parsedResolvedSourceLayer.layerBoundary === 'b';
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
@@ -369,14 +424,15 @@ export const useFolderLayers = ({
                 return tile.buffer.slice(tile.byteOffset, tile.byteOffset + tile.byteLength);
               },
               layerConfig: {
-                layerType: 'fill',
-                sourceLayer: resolvedSourceLayer ?? 'admin0',
+                layerType: sourceLayerIsBoundary ? 'line' : 'fill',
+                sourceLayer: resolvedSourceLayer,
                 layerId,
                 sourceId,
               },
               promoteId: featureState?.featureIdProperty,
               featureState: featureState?.entries,
             });
+            continue;
           }
 
           if (node.nodeType === 'location') {
@@ -416,7 +472,7 @@ export const useFolderLayers = ({
                 },
                 layerConfig: {
                   layerType: 'line',
-                  sourceLayer: 'layer0',
+                  sourceLayer: buildRouteSourceLayerName(),
                   layerId,
                   sourceId,
                   paint: {

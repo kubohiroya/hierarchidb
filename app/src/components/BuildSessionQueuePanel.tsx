@@ -18,6 +18,8 @@ import {
   Typography,
 } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ReplayIcon from '@mui/icons-material/Replay';
 import type { BuildSessionRuntimeRecord } from '@hierarchidb/build-api';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
@@ -50,6 +52,10 @@ const SESSION_TIMER_ACTIVE_STATUSES = new Set<BuildSessionRuntimeRecord['status'
 const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive && SESSION_TIMER_ACTIVE_STATUSES.has(session.status);
 
+const formatTemplate = (text: string, values: Record<string, string>): string => (
+  Object.entries(values).reduce((next, [key, value]) => next.replaceAll(`{{${key}}}`, value), text)
+);
+
 export function BuildSessionQueuePanel({
   nodeType = toNodeType('shape'),
   onNavigateToBuild,
@@ -77,12 +83,20 @@ export function BuildSessionQueuePanel({
     handleDragOver,
     handleOpenAll,
     handleCloseAll,
+    handleDeleteAll,
+    handleResumeFirstSession,
   } = useBuildSessionListQueue({
     nodeType,
     onNavigateToBuild,
     onEntriesChange,
     autoStartTopSession,
   });
+
+  const popperTitle = t('buildSessionQueue.popperTitle', 'Session queue');
+  const popperCountText = rows.length === 1
+    ? t('buildSessionQueue.popperCountOne', '{{count}} item', { count: rows.length })
+    : t('buildSessionQueue.popperCountOther', '{{count}} items', { count: rows.length });
+  const isDialogQueueActionDisabled = isDeleting || rows.length === 0;
 
   const handleConfirmDeleteAutoClose = useCallback(async () => {
     const shouldCloseQueuePanel = rows.length <= 1;
@@ -185,9 +199,11 @@ export function BuildSessionQueuePanel({
       <DialogContent>
         <DialogContentText>
           {deleteTarget
-            ? t(
-              'buildSessionQueue.deleteDescription',
-              `Delete "${deleteTarget.node?.metadata?.name ?? String(deleteTarget.session.nodeId)}" from queue?`
+            ? formatTemplate(
+              t('buildSessionQueue.deleteDescription', 'Delete "{{nodeName}}" from queue?'),
+              {
+                nodeName: deleteTarget.node?.metadata?.name ?? String(deleteTarget.session.nodeId),
+              },
             )
             : ''}
         </DialogContentText>
@@ -291,10 +307,30 @@ export function BuildSessionQueuePanel({
               boxShadow: 6,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, justifyContent: 'space-between', gap: 1 }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {t('buildSessionQueue.popperTitle', 'Build session queue')}
+                {`${popperTitle}: ${popperCountText}`}
               </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                <Button
+                  onClick={handleDeleteAll}
+                  color="error"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  disabled={isDialogQueueActionDisabled}
+                >
+                  {t('buildSessionQueue.deleteQueue', '削除')}
+                </Button>
+                <Button
+                  onClick={handleResumeFirstSession}
+                  size="small"
+                  variant="contained"
+                  startIcon={<ReplayIcon />}
+                  disabled={isDialogQueueActionDisabled}
+                >
+                  {t('buildSessionQueue.resumeQueue', '再開')}
+                </Button>
+              </Box>
             </Box>
             <Divider sx={{ my: 0.5 }} />
             {queueList}

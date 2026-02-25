@@ -1,3 +1,4 @@
+import { formatAdminLevelLabel } from '../../preview/layerSetDefinitions.js';
 import type React from 'react';
 import { isValidElement } from 'react';
 import type { LayerStyleOverrides, MapLayerType } from './ResourceLayerMap.types';
@@ -225,7 +226,6 @@ const buildAdminHoverCandidate = (
 ): { level: number; label: string } | null => {
   const level = resolveAdminLevel(properties);
   if (level == null) return null;
-  const adminLabel = `ADM${level}`;
   const adminName = pickFirstString(properties, [
     'name',
     'NAME',
@@ -259,6 +259,7 @@ const buildAdminHoverCandidate = (
     'shapeISO',
   ]);
   const countrySuffix = countryCode ? ` (${countryCode})` : '';
+  const adminLabel = formatAdminLevelLabel(level);
 
   if (level <= 0) {
     const label = countryName ? `${adminLabel}: ${countryName}${countrySuffix}` : `${adminLabel}: Unknown`;

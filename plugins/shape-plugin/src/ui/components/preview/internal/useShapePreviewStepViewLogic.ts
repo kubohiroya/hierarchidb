@@ -7,7 +7,12 @@ import type {
   ResolvedLayerSetEntry,
 } from '@hierarchidb/ui-map';
 import type { MapLibreGeoJSONFeature } from '@hierarchidb/ui-map';
-import { getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
+import {
+  buildShapeLayerEntryId,
+  formatAdminLevelLabel,
+  getLayerSetDefinition,
+  resolveLayerSetEntries,
+} from '@hierarchidb/ui-map';
 import {
   loadTreeConsoleSettings,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
@@ -307,7 +312,7 @@ export const useShapePreviewStepView = (
   const buildAdminHoverCandidate = useCallback((properties: Record<string, unknown>) => {
     const level = resolveAdminLevel(properties);
     if (level == null) return null;
-    const adminLabel = `ADM${level}`;
+    const adminLabel = formatAdminLevelLabel(level);
     const adminName = pickFirstString(properties, [
       'name',
       'NAME',
@@ -468,15 +473,33 @@ export const useShapePreviewStepView = (
 
   const shapePreviewLayerToggleItems = useMemo<ShapePreviewLayerToggleItem[]>(
     () => [
-      { id: 'adm0', label: preview.t('preview.layerSets.adm0', 'ADM0') },
-      { id: 'adm0Boundary', label: preview.t('preview.layerSets.adm0Boundary', 'ADM0 Boundary') },
-      { id: 'adm0Fill', label: preview.t('preview.layerSets.adm0Fill', 'ADM0 Fill') },
-      { id: 'adm1', label: preview.t('preview.layerSets.adm1', 'ADM1') },
-      { id: 'adm1Boundary', label: preview.t('preview.layerSets.adm1Boundary', 'ADM1 Boundary') },
-      { id: 'adm1Fill', label: preview.t('preview.layerSets.adm1Fill', 'ADM1 Fill') },
-      { id: 'adm2', label: preview.t('preview.layerSets.adm2', 'ADM2') },
-      { id: 'adm2Boundary', label: preview.t('preview.layerSets.adm2Boundary', 'ADM2 Boundary') },
-      { id: 'adm2Fill', label: preview.t('preview.layerSets.adm2Fill', 'ADM2 Fill') },
+      { id: 'adm0', label: preview.t('preview.layerSets.adm0', formatAdminLevelLabel(0)) },
+      {
+        id: 'adm0Boundary',
+        label: preview.t('preview.layerSets.adm0Boundary', `${formatAdminLevelLabel(0)} Boundary`),
+      },
+      {
+        id: 'adm0Fill',
+        label: preview.t('preview.layerSets.adm0Fill', `${formatAdminLevelLabel(0)} Fill`),
+      },
+      { id: 'adm1', label: preview.t('preview.layerSets.adm1', formatAdminLevelLabel(1)) },
+      {
+        id: 'adm1Boundary',
+        label: preview.t('preview.layerSets.adm1Boundary', `${formatAdminLevelLabel(1)} Boundary`),
+      },
+      {
+        id: 'adm1Fill',
+        label: preview.t('preview.layerSets.adm1Fill', `${formatAdminLevelLabel(1)} Fill`),
+      },
+      { id: 'adm2', label: preview.t('preview.layerSets.adm2', formatAdminLevelLabel(2)) },
+      {
+        id: 'adm2Boundary',
+        label: preview.t('preview.layerSets.adm2Boundary', `${formatAdminLevelLabel(2)} Boundary`),
+      },
+      {
+        id: 'adm2Fill',
+        label: preview.t('preview.layerSets.adm2Fill', `${formatAdminLevelLabel(2)} Fill`),
+      },
     ],
     [preview.t],
   );
@@ -505,8 +528,9 @@ export const useShapePreviewStepView = (
       'line-width': 1.5,
     };
     return resolvedLayerSetEntries
-      .filter((entry) => Boolean(entry.sourceLayer))
       .filter((entry) => isResolvedLayerEntryVisible(entry, shapePreviewLayerVisibility))
+      .filter((entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
+        typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0)
       .map((entry) => ({
         ...baseLayer,
         layerPriority: entry.priority,
@@ -554,8 +578,12 @@ export const useShapePreviewStepView = (
     SHAPE_PREVIEW_DETAIL_TOGGLE_IDS.forEach((detailId) => {
       map.set(detailId, []);
     });
-    resolvedLayerSetEntries.forEach((entry) => {
-      if (!entry.sourceLayer || typeof entry.adminLevel !== 'number') return;
+    resolvedLayerSetEntries
+      .filter((entry): entry is ResolvedLayerSetEntry & { sourceLayer: string } =>
+        typeof entry.sourceLayer === 'string' && entry.sourceLayer.length > 0,
+      )
+      .forEach((entry) => {
+      if (typeof entry.adminLevel !== 'number') return;
       const keys = SHAPE_LAYER_VISIBILITY_KEYS_BY_LEVEL[entry.adminLevel];
       if (!keys) return;
       const detailId = (entry.boundary === true || entry.layerType === 'line') ? keys.boundary : keys.fill;
@@ -744,13 +772,17 @@ export const useShapePreviewStepView = (
   const handleRefresh = () => {
       scheduleRefreshShapePreviewLayerFeatureCounts();
     };
-    const handleSourceData = (event: {
-      sourceId?: string;
-      dataType?: string;
-      sourceDataType?: string;
-      isSourceLoaded?: boolean;
-      tile?: unknown;
-    }) => {
+    const handleSourceData = (...args: unknown[]) => {
+      const event = args[0] as
+        | {
+            sourceId?: string;
+            dataType?: string;
+            sourceDataType?: string;
+            isSourceLoaded?: boolean;
+            tile?: unknown;
+          }
+        | undefined;
+      if (!event) return;
       if (typeof event.sourceId !== 'string') return;
       if (!shapePreviewLayerSourceIds.has(event.sourceId)) return;
       if (event.dataType !== 'source') return;
@@ -780,10 +812,10 @@ export const useShapePreviewStepView = (
   const resolvedLayerNames = useMemo(() => {
     const tileLayerNames = preview.tileLayerNames ?? [];
     const lookup = new Map(resolvedLayerSetEntries.map((entry) => [entry.id, entry]));
-    const admin0Boundary = lookup.get('shape-adm0-boundary');
-    const admin0Fill = lookup.get('shape-adm0-fill');
-    const admin1Boundary = lookup.get('shape-adm1-boundary');
-    const admin1Fill = lookup.get('shape-adm1-fill');
+    const admin0Boundary = lookup.get(buildShapeLayerEntryId(0, true));
+    const admin0Fill = lookup.get(buildShapeLayerEntryId(0, false));
+    const admin1Boundary = lookup.get(buildShapeLayerEntryId(1, true));
+    const admin1Fill = lookup.get(buildShapeLayerEntryId(1, false));
     return {
       available: tileLayerNames,
       admin0: admin0Fill?.sourceLayer ?? admin0Boundary?.sourceLayer ?? null,

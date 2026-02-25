@@ -571,16 +571,18 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           runtimeNodeIndex.set(key, { nodeType, nodeId: session.nodeId });
           const persistedStatus = resolveRuntimeStatusFromShapeRecord(session.status);
           const runtimeStatus = runtimeStatusOverrides.get(key) ?? persistedStatus;
-        const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
-  const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
-  return {
-    nodeId: session.nodeId,
-    status: runtimeStatus,
-    isActive,
-    progress: toBuildProgress(session.progress),
+          const isActive = probeRuntimeActive(nodeType, session.nodeId, runtimeStatus);
+          const revision = runtimeRevisions.get(key) ?? Number(session.updatedAt ?? 0);
+          return {
+            nodeId: session.nodeId,
+            status: runtimeStatus,
+            isActive,
+            progress: toBuildProgress(session.progress),
             startedAt: session.startedAt,
             completedAt: session.completedAt,
             updatedAt: session.updatedAt,
+            inactiveMs: session.inactiveMs,
+            lastHeartbeatAt: session.lastHeartbeatAt,
             error: session.status === 'failed' ? 'failed' : undefined,
             revision,
           };
@@ -794,6 +796,9 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
         const RESUME_SESSION_FRESHNESS_WINDOW_MS = 5 * 60 * 1000;
 
         const resolveSessionRecoveryBaselineAt = (session: ShapeBuildSessionRecord): number => {
+          if (typeof session.lastHeartbeatAt === 'number' && Number.isFinite(session.lastHeartbeatAt)) {
+            return session.lastHeartbeatAt;
+          }
           if (typeof session.lastActivity === 'number' && Number.isFinite(session.lastActivity)) {
             return session.lastActivity;
           }
@@ -846,14 +851,20 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           if (staleSessions.length > 0) {
             await Promise.all(staleSessions.map(async (session) => {
               try {
+                const inactiveAt = resolveSessionRecoveryBaselineAt(session);
+                const inactiveDeltaMs = Math.max(0, now - inactiveAt);
+                const inactiveMs = (session.inactiveMs ?? 0) + inactiveDeltaMs;
                 await mutationAPI.updateBuildSession(session.nodeId, {
                   status: 'paused',
                   stopReason: 'route-leave',
                   canResume: true,
+                  inactiveMs,
+                  lastHeartbeatAt: now,
                 });
                 console.info('[worker bootstrap][ResumeTrace] mark-stale-running-session-paused', {
                   nodeId: session.nodeId,
                   stopReason: 'route-leave',
+                  inactiveMs,
                 });
               } catch (error) {
                 const msg = error instanceof Error ? error.message : String(error);

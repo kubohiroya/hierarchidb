@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, FormControlLabel, List, ListItem, ListItemText, Stack, Switch, Typography } from '@mui/material';
+import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 import type { LayerSetDefinition, LayerSetId, ResolvedLayerSetEntry } from './layerSetDefinitions.js';
 
 export type LayerSetVisibility = Record<LayerSetId, boolean>;
@@ -13,7 +14,7 @@ export type LayerSetListItem = {
 };
 
 const formatHierarchyLabel = (value?: string | number): string => {
-  if (typeof value === 'number' && Number.isFinite(value)) return `ADM${value}`;
+  if (typeof value === 'number' && Number.isFinite(value)) return formatAdminLevelLabel(value);
   if (typeof value === 'string' && value.trim().length > 0) return value;
   return 'Base';
 };

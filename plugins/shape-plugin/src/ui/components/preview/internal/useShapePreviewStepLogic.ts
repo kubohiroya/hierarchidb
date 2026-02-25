@@ -26,8 +26,10 @@ import type {
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildHighlightKey,
+  formatAdminLevelLabel,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
+  parseSourceLayerName,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
@@ -86,8 +88,9 @@ export const useShapePreviewStep = (
   const viewportFeatureIdsByLayer = useAtomValue(mapViewportFeatureIdsAtom);
 
   const previewDraft = data as ShapePreviewDraft;
-  const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
-  const tilesLayer = previewDraft.tilesLayer ?? 'admin0';
+  const tilesEndpoint = previewDraft.tilesEndpoint ?? '';
+  const tilesUrl = previewDraft.tilesUrl ?? tilesEndpoint;
+  const tilesLayer = previewDraft.tilesLayer?.trim() ?? '';
   const activeNodeId = nodeId ? toNodeId(String(nodeId)) : null;
   const nodeKey = activeNodeId;
   const processingStatus = data?.processingStatus ?? null;
@@ -252,6 +255,29 @@ export const useShapePreviewStep = (
   const dataSourceMetadataRows = filteredMetadataRows;
   const featureMetadataRows = featureMetadataOverride ?? rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
+
+  const applyTileLayerNames = useCallback((nextNames: string[]) => {
+    const names = Array.from(new Set(nextNames.map((name) => name.trim()).filter(Boolean)));
+    if (names.length === 0) return;
+    const current = tileLayerNamesRef.current;
+    if (!current) {
+      tileLayerNamesRef.current = new Set(names);
+      setTileLayerNames(names);
+      return;
+    }
+    const merged = new Set(current);
+    let changed = false;
+    names.forEach((name) => {
+      if (!merged.has(name)) {
+        merged.add(name);
+        changed = true;
+      }
+    });
+    if (!changed) return;
+    const next = Array.from(merged);
+    tileLayerNamesRef.current = merged;
+    setTileLayerNames(next);
+  }, []);
 
   const dataSourceMetadataLookup = useMemo(() => {
     const bySourceKey = new Map<string, ShapeDataSourceMetadata>();
@@ -418,7 +444,7 @@ export const useShapePreviewStep = (
     const normalizedFeatureId = !rawFeatureId || isNumericId(rawFeatureId)
       ? [
         context.countryCode ?? 'XX',
-        context.adminLevel != null ? `ADM${context.adminLevel}` : 'ADM?',
+        context.adminLevel != null ? formatAdminLevelLabel(context.adminLevel) : 'Base',
         context.sourceKey,
         row.featureIndex != null ? String(row.featureIndex) : fallbackId ?? rawFeatureId ?? '0',
       ].filter(Boolean).join(':')
@@ -732,8 +758,10 @@ export const useShapePreviewStep = (
 
   const buildMapEntries = useCallback((id: string): MapHighlightEntry[] => {
     const adminLevel = featureAdminLevelById.get(id);
-    const entries = typeof adminLevel === 'number' ? layerEntriesByAdminLevel.get(adminLevel) : undefined;
-    const effectiveEntries = entries && entries.length > 0 ? entries : resolvedLayerSetEntries.slice(0, 1);
+    const entries = typeof adminLevel === 'number'
+      ? layerEntriesByAdminLevel.get(adminLevel)?.filter((entry) => typeof entry.sourceLayer === 'string')
+      : undefined;
+    const effectiveEntries = entries && entries.length > 0 ? entries : [];
     if (effectiveEntries.length > 0) {
       return effectiveEntries.map((entry) => ({
         source: `${baseSourceId}-${entry.id}`,
@@ -847,6 +875,44 @@ export const useShapePreviewStep = (
     setTileLayerNames([]);
   }, [activeNodeId, tilesUrl]);
 
+  useEffect(() => {
+    if (!activeNodeId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const tiles = await shapeQueryAPIImpl.listVectorTiles(activeNodeId as NodeId);
+        if (cancelled || !tiles.length) return;
+        const prioritizedTiles = [...tiles].sort((a, b) => (b.z - a.z) || (a.x - b.x) || (a.y - b.y));
+        const sampleTiles = prioritizedTiles.slice(0, 12);
+        for (const tile of sampleTiles) {
+          const tileInfo = await shapeQueryAPIImpl.getVectorTileInfo(activeNodeId, tile.z, tile.x, tile.y);
+          if (cancelled) return;
+          const tileLayers = (tileInfo?.layers ?? [])
+            .map((layer) => layer.name)
+            .filter((layerName): layerName is string => Boolean(layerName));
+          if (tileLayers.length === 0) continue;
+          applyTileLayerNames(tileLayers);
+        }
+      } catch (error) {
+        console.debug('[ShapePreviewStep] Failed to infer tile layer names from persisted tiles', {
+          nodeId: activeNodeId,
+          error,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNodeId, tilesEndpoint, tilesUrl, applyTileLayerNames]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    const fallbackLayer = tilesLayer.trim();
+    const parsedFallbackLayer = parseSourceLayerName(fallbackLayer);
+    if (!parsedFallbackLayer) return;
+    applyTileLayerNames([parsedFallbackLayer.sourceLayerName]);
+  }, [activeNodeId, tilesEndpoint, tilesUrl, tilesLayer, applyTileLayerNames]);
+
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
     async (z: number, x: number, y: number, nodeId?: string) => {
       const resolvedNodeId = nodeId ?? (activeNodeId ? String(activeNodeId) : undefined);
@@ -857,27 +923,10 @@ export const useShapePreviewStep = (
       if (names.length === 0) {
         return data;
       }
-      const current = tileLayerNamesRef.current;
-      if (!current) {
-        tileLayerNamesRef.current = new Set(names);
-        setTileLayerNames(names);
-        return data;
-      }
-      let changed = false;
-      const next = new Set(current);
-      names.forEach((name) => {
-        if (!next.has(name)) {
-          next.add(name);
-          changed = true;
-        }
-      });
-      if (changed) {
-        tileLayerNamesRef.current = next;
-        setTileLayerNames(Array.from(next));
-      }
+      applyTileLayerNames(names);
       return data;
     },
-    [activeNodeId],
+    [activeNodeId, applyTileLayerNames],
   );
 
   useEffect(() => {

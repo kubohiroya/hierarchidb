@@ -3,7 +3,7 @@ import Pbf from 'pbf';
 import { toNodeId } from '@hierarchidb/core-types';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeDataSourceMetadata, ShapeFeatureMetadata } from '@hierarchidb/shape-api';
-import type { MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import { formatAdminLevelLabel, type MapWithVectorTilesProps } from '@hierarchidb/ui-map';
 import { isShapePreviewMetadataEnabled } from '~/common/config/previewFlags';
 import type { DataSourceName, ShapePreviewMapView } from '~/common/types/index';
 import type { ShapeEntity } from '~/common/types/index';
@@ -129,12 +129,13 @@ export const buildHoverLabel = (
   const flagEmoji = hasCountryName ? buildFlagEmoji(countryCode) : null;
   const countryLabel = flagEmoji ? `${flagEmoji} ${countryName}` : countryName;
   const countrySuffix = countryCode ? ` (${countryCode})` : '';
+  const adminLabel = formatAdminLevelLabel(adminLevel);
   if (adminLevel <= 0) {
-    return `ADM0: ${countryLabel}${countrySuffix}`;
+    return `${adminLabel}: ${countryLabel}${countrySuffix}`;
   }
   if (adminLevel === 1) {
     const admin1 = pickAdminNameByLevel(properties, 1) ?? countryName;
-    return `ADM1: ${admin1} / ${countryLabel}${countrySuffix}`;
+    return `${adminLabel}: ${admin1} / ${countryLabel}${countrySuffix}`;
   }
   if (adminLevel === 2) {
     const admin2 = pickAdminNameByLevel(properties, 2) ?? pickAdminNameByLevel(properties, 1);
@@ -143,10 +144,10 @@ export const buildHoverLabel = (
       if (!part) return false;
       return arr.indexOf(part) === index;
     });
-    return `ADM2: ${parts.join(' / ')}${countrySuffix}`;
+    return `${adminLabel}: ${parts.join(' / ')}${countrySuffix}`;
   }
   const adminName = pickAdminNameByLevel(properties, adminLevel) ?? countryName;
-  return `ADM${adminLevel}: ${adminName} / ${countryLabel}${countrySuffix}`;
+  return `${adminLabel}: ${adminName} / ${countryLabel}${countrySuffix}`;
 };
 
 export const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {

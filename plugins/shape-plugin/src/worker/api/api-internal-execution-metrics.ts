@@ -706,6 +706,17 @@ const upsertBuildSessionSnapshot = async (
 ): Promise<void> => {
   const now = Date.now();
   const existing = await shapeQueryAPIImpl.getBuildSessionRecord(input.nodeId).catch(() => null);
+  const previousStatus = existing?.status;
+  const isTransitionToPaused = input.status === 'paused' && previousStatus === 'running';
+  const lastHeartbeatAt = typeof existing?.lastHeartbeatAt === 'number'
+    ? existing.lastHeartbeatAt
+    : typeof existing?.updatedAt === 'number'
+      ? existing.updatedAt
+      : now;
+  const pauseDeltaMs = isTransitionToPaused
+    ? Math.max(0, now - lastHeartbeatAt)
+    : 0;
+  const inactiveMs = Math.max(0, (existing?.inactiveMs ?? 0) + pauseDeltaMs);
   const progress = input.tasks
     ? await summarizeTaskQueueProgress(input.nodeId, input.tasks, resolveTaskType(input.tasks))
     : (existing?.progress ?? {
@@ -736,8 +747,8 @@ const upsertBuildSessionSnapshot = async (
     canResume: input.canResume,
     lastActivity,
     expiresAt,
-    inactiveMs: existing?.inactiveMs,
-    lastHeartbeatAt: existing?.lastHeartbeatAt,
+    inactiveMs,
+    lastHeartbeatAt: now,
     stageInactiveMs: existing?.stageInactiveMs,
     stageStartedAt: existing?.stageStartedAt,
     stageHeartbeatAt: existing?.stageHeartbeatAt,

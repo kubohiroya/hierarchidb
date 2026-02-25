@@ -30,8 +30,9 @@ export async function encodeMvtFromGeojsonVt(
 ): Promise<Uint8Array> {
   const vtpbf = await loadVtPbf();
   const version = options.version ?? 2;
-  const layersArg = Object.values(layers);
-  const pbf = vtpbf.fromGeojsonVt(layersArg, {
+  const layersArg = layers;
+  const typedLayers = layersArg as unknown as Tile[];
+  const pbf = vtpbf.fromGeojsonVt(typedLayers, {
     version,
     extent: 4096,
   });

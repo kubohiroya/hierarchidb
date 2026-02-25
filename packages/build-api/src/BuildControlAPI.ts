@@ -169,6 +169,8 @@ export interface BuildSessionRuntimeRecord {
   startedAt?: number;
   completedAt?: number;
   updatedAt?: number;
+  inactiveMs?: number;
+  lastHeartbeatAt?: number;
   error?: string;
   revision: number;
 }

@@ -4,6 +4,7 @@ export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed'
 
 export type BuildSessionTimingRecord = {
   startedAt?: number;
+  completedAt?: number;
   lastHeartbeatAt?: number;
   inactiveMs?: number;
   stageId?: string | null;
@@ -49,7 +50,9 @@ const computeTimingSnapshot = (
   }
   const baseTime = buildStatus === 'running'
     ? now
-    : session.lastHeartbeatAt ?? now;
+    : buildStatus === 'completed' || buildStatus === 'failed'
+      ? session.completedAt ?? now
+      : session.lastHeartbeatAt ?? now;
   const totalMs = Math.max(0, baseTime - session.startedAt - (session.inactiveMs ?? 0));
   const stageId = typeof session.stageId === 'string' ? session.stageId : null;
   if (!stageId || !session.stageStartedAt) {
@@ -57,7 +60,9 @@ const computeTimingSnapshot = (
   }
   const stageBaseTime = buildStatus === 'running'
     ? now
-    : session.stageHeartbeatAt ?? session.lastHeartbeatAt ?? now;
+    : buildStatus === 'completed' || buildStatus === 'failed'
+      ? session.completedAt ?? now
+      : session.stageHeartbeatAt ?? session.lastHeartbeatAt ?? now;
   const stageMs = Math.max(
     0,
     stageBaseTime - session.stageStartedAt - (session.stageInactiveMs ?? 0),

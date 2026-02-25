@@ -389,6 +389,31 @@ export function useBuildSessionListQueue({
     }
   }, [deleteTarget, nodeType]);
 
+  const handleDeleteAll = useCallback(async () => {
+    if (rows.length === 0) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const bridge = bridgeRef.current;
+      await Promise.allSettled(rows.map((row) => bridge.deleteBuildSession(nodeType, row.session.nodeId)));
+    } catch (error) {
+      console.error('[BuildSessionQueueList] delete all sessions failed', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [nodeType, rows]);
+
+  const handleResumeFirstSession = useCallback(() => {
+    const firstSession = rows[0];
+    if (!firstSession) {
+      return;
+    }
+
+    void startTopSession(firstSession.session.nodeId);
+  }, [rows, startTopSession]);
+
   const handleStartStoppedSession = useCallback((row: QueueRow, event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     const nodeId = String(row.session.nodeId);
@@ -488,5 +513,7 @@ export function useBuildSessionListQueue({
     handleDragOver,
     handleOpenAll,
     handleCloseAll,
+    handleDeleteAll,
+    handleResumeFirstSession,
   };
 }

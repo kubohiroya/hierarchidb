@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeDataSourceMetadata } from '@hierarchidb/shape-api';
+import { formatAdminLevelLabel } from '@hierarchidb/ui-map';
 import { Typography } from '@mui/material';
 
 type PreviewMetadataRow = ShapeDataSourceMetadata;
@@ -39,7 +40,7 @@ export const useVectorTilePreviewTable = (
       rawOriginKey: row.originKey,
       originLabel: row.originLabel ?? '',
       countryCode: row.countryCode ?? '',
-      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+      adminLevel: row.adminLevel != null ? formatAdminLevelLabel(row.adminLevel) : '',
       dataSource: row.dataSource ?? '',
       createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
       fetchVertexCount: normalizeCount(row.fetchVertexCount),

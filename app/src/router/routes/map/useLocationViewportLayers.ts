@@ -3,12 +3,17 @@ import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type { LocationType } from '@hierarchidb/location-store';
 import type {
   LayerSetId,
+  LayerSetEntryId,
   LayerSetVisibility,
   MapLibreMapInstance,
   MapViewState,
   ResourceGeoJsonLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { DEFAULT_LAYER_SETS } from '@hierarchidb/ui-plugin-shell/ui-map';
+import {
+  DEFAULT_LAYER_SETS,
+  LOCATION_POINTS_ENTRY_ID,
+  LOCATION_SYMBOLS_ENTRY_ID,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { createElement } from 'react';
@@ -29,7 +34,7 @@ import { LOCATION_TYPE_COLORS } from './constants.js';
 
 const PREFETCH_MARGIN_PX = 64;
 
-const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: string): number => {
+const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: LayerSetEntryId): number => {
   const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
   if (!layerSet) return 0;
   if (!entryId) return layerSet.priority * 100;
@@ -168,7 +173,7 @@ export const useLocationViewportLayers = (
           layerType: 'circle',
           paint: locationCirclePaint,
           layerSetId: 'location',
-          layerPriority: resolveLayerSetEntryPriority('location', 'location-points'),
+          layerPriority: resolveLayerSetEntryPriority('location', LOCATION_POINTS_ENTRY_ID),
           layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
         },
@@ -183,7 +188,7 @@ export const useLocationViewportLayers = (
             'icon-ignore-placement': true,
           },
           layerSetId: 'location',
-          layerPriority: resolveLayerSetEntryPriority('location', 'location-symbols'),
+          layerPriority: resolveLayerSetEntryPriority('location', LOCATION_SYMBOLS_ENTRY_ID),
           layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
         },

@@ -1,5 +1,7 @@
 import { AppBar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Toolbar, Typography } from '@mui/material';
 import AppLogoIcon from '~/components/AppLogoIcon';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ReplayIcon from '@mui/icons-material/Replay';
 import {
   BuildSessionQueuePanelBadgeButton,
   BuildSessionQueuePanel,
@@ -79,7 +81,9 @@ export function TreeConsoleAppBar({
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle>{t('treeConsole.toolbar.resumeQueueDialog.title', '再開待ちセッションを確認')}</DialogTitle>
+        <DialogTitle>
+          {t('treeConsole.toolbar.resumeQueueDialog.title', 'Build sessions: {{count}} sessions', { count: resumeDialogRows.length })}
+        </DialogTitle>
         <DialogContent dividers>
           <BuildSessionQueuePanel
             nodeType={resumeSessionNodeType}
@@ -89,23 +93,22 @@ export function TreeConsoleAppBar({
             compact={false}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ width: '100%', justifyContent: 'flex-end' }}>
           <Button
             onClick={handleDeleteQueue}
             color="error"
+            startIcon={<DeleteIcon />}
             disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
           >
-            {t('treeConsole.toolbar.resumeQueueDialog.deleteQueue', 'キューを削除する')}
+            {t('treeConsole.toolbar.resumeQueueDialog.deleteQueue', 'Delete all sessions')}
           </Button>
           <Button
             onClick={handleResumeQueue}
             variant="contained"
+            startIcon={<ReplayIcon />}
             disabled={resumeDialogRows.length === 0 || isDeletingQueue || isResumingQueue}
           >
-            {t('treeConsole.toolbar.resumeQueueDialog.resumeQueue', 'キューの実行を再開する')}
-          </Button>
-          <Button onClick={handleSkipResumeDialog} disabled={isDeletingQueue || isResumingQueue}>
-            {t('treeConsole.toolbar.resumeQueueDialog.skip', '削除や再開をスキップしてダイアログを閉じる')}
+            {t('treeConsole.toolbar.resumeQueueDialog.resumeQueue', 'Resume execution of the first session')}
           </Button>
         </DialogActions>
       </Dialog>

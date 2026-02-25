@@ -13,6 +13,7 @@ import {
   type MapPreviewStatusLabels,
 } from './MapPreviewFloatingTable.js';
 import type { FeatureTableSearchConfig } from './FeatureTableToolbar.js';
+import { formatAdminLevelLabel } from './layerSetDefinitions.js';
 
 type ShapePreviewRowBase = {
   recycling?: boolean;
@@ -206,7 +207,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       countryName: row.countryName ?? '',
       countryCode: row.countryCode ?? '',
       adminName: row.adminName ?? '',
-      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+      adminLevel: row.adminLevel != null ? formatAdminLevelLabel(row.adminLevel) : '',
       adminCode: row.adminCode ?? '',
       dataSource: row.dataSource ?? '',
       createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',

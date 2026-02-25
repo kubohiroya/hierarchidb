@@ -256,7 +256,15 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                   size="small"
                   onClick={handleMenuOpen}
                   disabled={menuDisabled}
-                  sx={{ ml: 2 }}
+                  sx={{
+                    ml: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 0.5,
+                    bgcolor: 'transparent',
+                    '&:hover': { borderColor: 'text.secondary' },
+                  }}
                 >
                   <ArrowDropDownIcon fontSize="small" />
                 </IconButton>

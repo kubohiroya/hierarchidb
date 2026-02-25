@@ -35,13 +35,17 @@ export function useGlobalI18nTranslator(options: TranslatorOptions = {}) {
   }, [i18n]);
 
   const translator = useCallback(
-    (key: string, fallback: string): string => {
+    (key: string, fallback: string, interpolateOptions: TOptions | undefined = undefined): string => {
       if (typeof i18n.t !== 'function') {
         return fallback;
       }
 
       const t = i18n.t as TFunction;
-      const value = t(key, { defaultValue: fallback, ...baseOptions });
+      const value = t(key, {
+        defaultValue: fallback,
+        ...baseOptions,
+        ...interpolateOptions,
+      });
 
       if (typeof value === 'string') {
         if (value === key && fallback) {
