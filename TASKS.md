@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #559 / `codex/feat/ui/plugin-dialog-stepper-context-menu-559` / start: 2026-02-25 23:16 JST
 - #513 / `fix/shape/initial-build-progress-stability` / start: 2026-02-22 10:40 JST
 - #466 / `feat/shape/url-build-rules-persistence` / start: 2026-02-21 19:02 JST
 - #344 / `codex/refactor/build-session/residual-unification-344` / start: 2026-02-17 16:52 JST
@@ -116,6 +117,12 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-25 23:37 JST #559 追加要望対応。原因は `packages/plugin-ui-host/src/headless/components/PluginDialogStepper.tsx` の各ステップ番号ボタンが左クリック遷移のみで右クリックアクション未対応だったこと。発生範囲は PluginDialog Header 内 Stepper の `StepButton` 群。修正として `StepButton` へ `onContextMenu` を追加し、有効ステップのみ対象に `Open In New Tab` / `Open In New Window` / `Copy Link URL` のメニューを表示・実行する実装を追加。無効ステップまたは不正ルート時は URL を生成せずメニューを開かない。適用範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogStepper.tsx` と `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx`。
+- update: 2026-02-25 23:37 JST #559 追加分の検証結果: `pnpm -w turbo run build --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run test --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0。
+- update: 2026-02-25 23:25 JST #559 原因は `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` の Back/Next ボタンが `onClick` のみで右クリックアクション未実装だったこと。発生範囲は PluginDialog の Stepper Footer（Back/Next ナビゲーション）に限定。修正として Back/Next に `onContextMenu` を追加し、現在ルート（`/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?`）から対象ステップURLを生成して `Open In New Tab` / `Open In New Window` / `Copy Link URL` を実行するメニューを実装。適用範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と関連テストのみ。
+- blocked: 2026-02-25 23:19 JST #559 `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host` は差分外既知ブロッカー `@hierarchidb/gis-sdk` (`packages/gis-sdk/src/ephemeral/EphemeralDB.ts:87`, TS2352) で exit 2。
+- update: 2026-02-25 23:25 JST #559 対象限定検証で解消確認: `pnpm -w turbo run build --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0, `pnpm -w turbo run test --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` exit 0。
+- start: 2026-02-25 23:16 JST #559 を起票（https://github.com/kubohiroya/hierarchidb/issues/559）し、Project `hierarchidb` へ追加後に Status を `In Progress` へ設定。ブランチ `codex/feat/ui/plugin-dialog-stepper-context-menu-559` を作成して着手。
 - start: 2026-02-21 19:02 JST #466 Issue #466 を起票（https://github.com/kubohiroya/hierarchidb/issues/466）し、ブランチ `feat/shape/url-build-rules-persistence` を作成して着手。
 - update: 2026-02-17 17:12 JST #344 Issue DoD チェックを更新（全項目 `[x]`）し、コミット `8f7f8a299`（`refactor(build-session): drop shape UI coordinator control path`）を作成。
 - update: 2026-02-17 17:13 JST #344 ブランチ `codex/refactor/build-session/residual-unification-344` を push し、PR #345（https://github.com/kubohiroya/hierarchidb/pull/345, base: `main`）を作成。
