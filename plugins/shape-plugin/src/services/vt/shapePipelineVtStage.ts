@@ -232,6 +232,21 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
       layers: Record<string, Tile>;
       bufferSetHash: string;
     }) => {
+      const layerFeatureCounts = Object.entries(layers).map(([name, tile]) => ({
+        name,
+        featureCount: Array.isArray(tile.features) ? tile.features.length : 0,
+      }));
+      const featureCount = layerFeatureCounts.reduce((sum, item) => sum + item.featureCount, 0);
+      console.info('[ShapeVtTilePersisted]', JSON.stringify({
+        nodeId: params.nodeId,
+        tileId,
+        z,
+        x,
+        y,
+        layerCount: layerFeatureCounts.length,
+        featureCount,
+        layerFeatureCounts: layerFeatureCounts.sort((a, b) => a.name.localeCompare(b.name)),
+      }));
       await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
         nodeId: params.nodeId,
         tileId,

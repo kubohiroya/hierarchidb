@@ -1,7 +1,13 @@
 import type { Tile } from 'geojson-vt';
 import type { Feature, Geometry } from 'geojson';
+import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 import { dedupeTileLines } from './vtStageTileLineUtils.js';
 import { type GeojsonVtIndex } from './vtStageTileIndex.js';
+
+const isBoundaryLayerName = (value: string): boolean => {
+  const parsed = parseShapeSourceLayerName(value);
+  return parsed?.boundary === 'b';
+};
 
 export const collectLayerForTile = (
   index: GeojsonVtIndex,
@@ -13,7 +19,7 @@ export const collectLayerForTile = (
 ): Tile | null => {
   const tile = index.getTile(z, x, y) as Tile | null;
   if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) return null;
-  const finalTile = vtConfigBoundaryDedupe && layerName.endsWith('-boundary')
+  const finalTile = vtConfigBoundaryDedupe && isBoundaryLayerName(layerName)
     ? dedupeTileLines(tile)
     : tile;
   if (!Array.isArray(finalTile.features) || finalTile.features.length === 0) return null;

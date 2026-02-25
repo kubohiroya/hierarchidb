@@ -72,6 +72,44 @@ const safeQuerySourceFeatures = (
   }
 };
 
+type VectorLayerFeatureCounterEntry = {
+  id: string;
+  sourceId?: string;
+  sourceLayer?: string;
+};
+
+type VectorLayerFeatureCounts = Record<string, number>;
+
+export const resolveVectorLayerFeatureCounts = (
+  map: MapLibreMapInstance,
+  vectorLayerEntries: VectorLayerFeatureCounterEntry[],
+): VectorLayerFeatureCounts => {
+  const nextCounts: VectorLayerFeatureCounts = {};
+  vectorLayerEntries.forEach((entry) => {
+    nextCounts[entry.id] = 0;
+  });
+  vectorLayerEntries.forEach((entry) => {
+    if (!entry.sourceId || !entry.sourceLayer) return;
+    if (!map.getSource(entry.sourceId)) return;
+    const features = safeQuerySourceFeatures(map, entry.sourceId, entry.sourceLayer);
+    nextCounts[entry.id] = features.length;
+  });
+  const hasMissing = vectorLayerEntries.some((entry) => !entry.sourceLayer);
+  if (hasMissing) {
+    try {
+      const features = map.queryRenderedFeatures();
+      features.forEach((feature) => {
+        const layerId = feature.layer?.id;
+        if (!layerId || !(layerId in nextCounts)) return;
+        nextCounts[layerId] = (nextCounts[layerId] ?? 0) + 1;
+      });
+    } catch {
+      // Keep zeroed counts if queryRenderedFeatures fails.
+    }
+  }
+  return nextCounts;
+};
+
 export const useResourceLayerMapStats = (
   args: UseResourceLayerMapStatsArgs,
 ): UseResourceLayerMapStatsResult => {
@@ -177,29 +215,7 @@ export const useResourceLayerMapStats = (
     let frameId: number | null = null;
     const updateCounts = () => {
       frameId = null;
-      const nextCounts: Record<string, number> = {};
-      vectorLayerEntries.forEach((entry) => {
-        nextCounts[entry.id] = 0;
-      });
-      vectorLayerEntries.forEach((entry) => {
-        if (!entry.sourceId || !entry.sourceLayer) return;
-        if (!mapInstance.getSource(entry.sourceId)) return;
-        const features = safeQuerySourceFeatures(mapInstance, entry.sourceId, entry.sourceLayer);
-        nextCounts[entry.id] = features.length;
-      });
-      const hasMissing = vectorLayerEntries.some((entry) => !entry.sourceLayer);
-      if (hasMissing) {
-        try {
-          const features = mapInstance.queryRenderedFeatures();
-          features.forEach((feature) => {
-            const layerId = feature.layer?.id;
-            if (!layerId || !(layerId in nextCounts)) return;
-            nextCounts[layerId] = (nextCounts[layerId] ?? 0) + 1;
-          });
-        } catch {
-          // Keep zeroed counts if queryRenderedFeatures fails.
-        }
-      }
+      const nextCounts = resolveVectorLayerFeatureCounts(mapInstance, vectorLayerEntries);
       setFeatureCountsIfChanged(nextCounts);
     };
     const scheduleUpdate = () => {

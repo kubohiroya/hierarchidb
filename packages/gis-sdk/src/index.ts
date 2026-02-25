@@ -9,7 +9,7 @@ export {
   type VTMetadataContext,
   type VectorTileProgress,
   type VectorTileRow,
-} from './vectorTiles.js';
+} from './vectorTiles';
 export {
   lonToTileX,
   latToTileY,
@@ -23,7 +23,7 @@ export {
   pickAdminLevel,
   type BoundingBox,
   type TileXYZ,
-} from './vectorTileUtils.js';
+} from './vectorTileUtils';
 export {
   encodeMvtFromGeojsonVt,
   normalizeVectorTileFormat,
@@ -31,20 +31,27 @@ export {
   type EncodeMvtOptions,
   type VectorTileContent,
   type VectorTileFormat,
-} from './vectorTileFormats.js';
+} from './vectorTileFormats';
 export type {
   VectorTileStore,
   TileKey,
   TileSummary,
   StoredTile,
-} from './tileStore.js';
+} from './tileStore';
 export {
   applyFeatureFiltering,
   type FeatureFilterMethod,
   type FeatureFilterSettings,
   type HybridFilterConfig,
-} from './processing/featureFiltering.js';
-export { extractGeoJson, type ExtractOptions } from './processing/geometryExtract.js';
+} from './processing/featureFiltering';
+export {
+  buildShapeSourceLayerName,
+  parseShapeSourceLayerName,
+  type LayerNameBoundaryMode,
+  type ShapeLayerBoundarySymbol,
+  type ShapeSourceLayerName,
+} from './shapeLayerNames';
+export { extractGeoJson, type ExtractOptions } from './processing/geometryExtract';
 export {
   createVectorTileGeocodeCache,
   geocodePointInShapeTiles,
@@ -52,11 +59,11 @@ export {
   type VectorTileGeocodeMatch,
   type VectorTileGeocodeOptions,
   type VectorTileLayerCache,
-} from './geocoding.js';
+} from './geocoding';
 export {
   EphemeralDB,
   ephemeralDB,
-} from './ephemeral/EphemeralDB.js';
+} from './ephemeral/EphemeralDB';
 export {
   EPHEMERAL_DB_SCHEMA,
   type BuildStage,
@@ -72,7 +79,7 @@ export {
   type EphemeralTransformErrorRecord,
   type EphemeralTileIdToBufferRelation,
   type StopReason,
-} from './ephemeral/EphemeralBuildState.js';
-export * from './config.js';
-export * from './geos/index.js';
-export * from './geometryEngine.js';
+} from './ephemeral/EphemeralBuildState';
+export * from './config';
+export * from './geos/index';
+export * from './geometryEngine';

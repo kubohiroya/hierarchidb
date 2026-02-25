@@ -5,6 +5,7 @@ import {
   type TileBBox,
   type VtParentInputSummaryMetadata,
 } from './vtStageGeometryTypes.js';
+import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 import { bboxIntersects } from './vtStageGeometryTile.js';
 import {
   countTileLineStrings,
@@ -24,12 +25,13 @@ export type GeojsonVtEmptyTileDetail = {
 
 const resolveAdminLevel = (feature: Feature): number | null => {
   const props = feature.properties as Record<string, unknown> | undefined;
-  const layer = typeof props?.layer === 'string' ? props.layer : '';
-  if (layer.endsWith('-boundary')) return null;
+  const layer = parseShapeSourceLayerName(props?.layer);
+  if (layer) {
+    return layer.boundary === 'f' ? layer.adminLevel : null;
+  }
   const level = typeof props?.level === 'number' ? props.level : null;
   if (typeof level === 'number' && Number.isFinite(level)) return level;
-  const match = layer.match(/^admin(\d+)/);
-  return match ? Number(match[1]) : null;
+  return null;
 };
 
 export const buildAdminFeatureSummary = (collection: FeatureCollection): string => {

@@ -1,5 +1,5 @@
 import type { Tile } from 'geojson-vt';
-import { buildTileProgressMessage } from './vtStageTaskOutputLogging.js';
+import { buildTileProgressMessage, buildTileLayerFeatureCounts } from './vtStageTaskOutputLogging.js';
 import { processTileForVtOutput } from './vtStageTaskOutputTileProcessor.js';
 import type { VtTileOutputWriterInput } from './vtStageTaskOutputTypes.js';
 
@@ -86,6 +86,7 @@ export const handleTileWithLayers = async ({
   if (zoomCounts) {
     zoomCounts.generated += 1;
   }
+  const layerFeatureCounts = buildTileLayerFeatureCounts(layers);
 
   const message = buildTileProgressMessage({
     processedTiles,
@@ -95,7 +96,15 @@ export const handleTileWithLayers = async ({
     y,
     inputStats,
     outputStats,
+    layerFeatureCounts,
   });
+  console.debug('[vt] tile persisted', JSON.stringify({
+    ...taskContext,
+    z,
+    x,
+    y,
+    layerFeatureCounts,
+  }));
   await reportTileProgress({
     processedTiles,
     generatedTiles: generatedTiles + 1,

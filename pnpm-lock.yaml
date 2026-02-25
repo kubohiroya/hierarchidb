@@ -2149,6 +2149,9 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../../core-types
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../../gis-sdk
       '@hierarchidb/ui-floating-window':
         specifier: workspace:*
         version: link:../floating-window

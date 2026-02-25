@@ -15,6 +15,11 @@ import {
   pickCountryCode,
   pickCountryName,
 } from './vectorTileUtils.js';
+import {
+  buildShapeSourceLayerName,
+  parseShapeSourceLayerName,
+  type LayerNameBoundaryMode,
+} from './shapeLayerNames';
 
 type GeojsonVtModule = typeof import('geojson-vt');
 type GeojsonVtData = Parameters<GeojsonVtModule>[0];
@@ -72,28 +77,6 @@ export type FeatureCollectionLike = FeatureCollection<Geometry, GeoJsonPropertie
 type FeatureGeometry = Geometry | null;
 
 type FeatureLike = Feature<Geometry, GeoJsonProperties>;
-
-type LayerNameBoundaryMode = 'fill' | 'boundary';
-
-const SHAPE_LAYER_NAME_RE = /^(?:shape[-_])?(?:admin|adm)(\d+)(?:[-_](boundary|fill))?$/i;
-
-const normalizeLayerName = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return trimmed.toLowerCase();
-};
-
-const parseCanonicalShapeLayerName = (value: unknown): string | undefined => {
-  const normalized = normalizeLayerName(value);
-  if (!normalized) return undefined;
-  const match = SHAPE_LAYER_NAME_RE.exec(normalized);
-  if (!match) return undefined;
-  const adminLevel = Number(match[1]);
-  if (!Number.isInteger(adminLevel) || adminLevel < 0) return undefined;
-  const boundary = match[2]?.toLowerCase() === 'boundary' ? 'boundary' : 'fill';
-  return `admin${adminLevel}${boundary === 'boundary' ? '-boundary' : ''}`;
-};
 
 const toCanonicalBoundaryMode = (value: unknown): LayerNameBoundaryMode => {
   if (typeof value === 'string' && value.trim().toLowerCase() === 'boundary') {
@@ -163,9 +146,14 @@ const resolveTileLayerName = (
     properties.source_layer,
     properties.vectorLayer,
   ]
-    .map(parseCanonicalShapeLayerName)
-    .find((name): name is string => typeof name === 'string');
-  if (explicitLayerName) return explicitLayerName;
+    .map((name) => parseShapeSourceLayerName(name))
+    .find((parsed): parsed is NonNullable<ReturnType<typeof parseShapeSourceLayerName>> => parsed != null);
+  if (explicitLayerName) {
+    return buildShapeSourceLayerName(
+      explicitLayerName.adminLevel,
+      explicitLayerName.boundary === 'b' ? 'boundary' : 'fill',
+    );
+  }
 
   const candidates = [
     fallbackAdminLevel,
@@ -182,9 +170,7 @@ const resolveTileLayerName = (
     .find((value): value is number => value !== undefined);
   if (adminLevel === undefined) return 'layer0';
   const boundary = toCanonicalBoundaryMode(properties.boundary);
-  return boundary === 'boundary'
-    ? `admin${adminLevel}-boundary`
-    : `admin${adminLevel}`;
+  return String(buildShapeSourceLayerName(adminLevel, boundary));
 };
 
 const ensureMetadataProperties = (

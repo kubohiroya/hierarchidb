@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import type { GeometryOps } from './core.js';
 import { latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
+import { parseShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 import { packTileId } from '~/tiles/tileId';
 import type { GeojsonValidationIssue } from './validation.js';
 import { countVerticesFromGeometry, validateGeometryForVt } from './validation.js';
@@ -19,6 +20,11 @@ export type BoundaryDiagnostics = {
   layers: Record<string, BoundaryLayerSummary>;
 };
 
+const isBoundaryLayerName = (value: string): boolean => {
+  const parsed = parseShapeSourceLayerName(value);
+  return parsed?.boundary === 'b';
+};
+
 export const buildBoundaryDiagnostics = (collection: FeatureCollection): BoundaryDiagnostics | null => {
   const layers: Record<string, BoundaryLayerSummary> = {};
   let totalFeatures = 0;
@@ -28,7 +34,7 @@ export const buildBoundaryDiagnostics = (collection: FeatureCollection): Boundar
     if (!feature) continue;
     const props = feature.properties as Record<string, unknown> | undefined;
     const layer = typeof props?.layer === 'string' ? props.layer : 'unknown';
-    if (!layer.endsWith('-boundary')) continue;
+    if (!isBoundaryLayerName(layer)) continue;
     const geometryType = feature.geometry?.type ?? 'unknown';
     const vertexCount = countVerticesFromGeometry(feature.geometry);
     totalFeatures += 1;

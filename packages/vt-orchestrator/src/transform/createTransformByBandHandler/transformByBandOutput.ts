@@ -23,6 +23,7 @@ import {
   countVerticesFromGeometry,
 } from './helpers/validation.js';
 import { runStageWithLabel } from './helpers/runtime.js';
+import { buildShapeSourceLayerName } from '@hierarchidb/gis-sdk';
 
 
 type UpdateTaskStrict = (taskId: string, updates: Record<string, unknown>, operation: string) => Promise<void>;
@@ -142,10 +143,9 @@ export const runTransformByBandOutputPhase = async (
     0,
   );
   const adminLevel = input.adminLevel;
-  const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
-  const boundaryLayerName = typeof adminLevel === 'number'
-    ? `admin${adminLevel}-boundary`
-    : 'admin0-boundary';
+  const resolvedAdminLevel = typeof adminLevel === 'number' ? adminLevel : 0;
+  const layerName = buildShapeSourceLayerName(resolvedAdminLevel, 'fill');
+  const boundaryLayerName = buildShapeSourceLayerName(resolvedAdminLevel, 'boundary');
   const shouldBuildBoundary = typeof boundaryDisableAtZoomOrAbove === 'number'
     ? band.zMax < boundaryDisableAtZoomOrAbove
     : true;

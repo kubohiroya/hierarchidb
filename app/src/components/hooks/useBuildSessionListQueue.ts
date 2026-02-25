@@ -61,10 +61,10 @@ const isSessionRunningByStatus = (session: BuildSessionRuntimeRecord): boolean =
 const isSessionTimerActive = (session: BuildSessionRuntimeRecord): boolean =>
   session.isActive && SESSION_TIMER_ACTIVE_STATUSES.has(session.status);
 
-const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
+  const createRuntimeRecordSignature = (session: BuildSessionRuntimeRecord): string => {
   const progress = session.progress;
   const progressSignature = progress
-    ? `${progress.stage ?? ''}:${progress.phase ?? ''}:${progress.percentage ?? ''}:${progress.total ?? ''}`
+    ? `${progress.stage ?? ''}:${progress.percentage ?? ''}:${progress.total ?? ''}`
     : '';
   const runtimeSignature = isSessionTimerActive(session)
     ? `${session.revision}|${session.updatedAt ?? ''}|${progressSignature}`

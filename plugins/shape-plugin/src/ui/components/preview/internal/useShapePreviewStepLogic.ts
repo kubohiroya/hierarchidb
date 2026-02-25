@@ -10,6 +10,7 @@ import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '~/ui/i18n';
 import type { ShapeFeatureMetadata, ShapeDataSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { parseAdminLevelValue } from './adminLevel';
 import {
   shapePreviewSearchAtom,
   shapePreviewMatchedIdsAtom,
@@ -27,9 +28,10 @@ import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildHighlightKey,
   formatAdminLevelLabel,
+  buildShapeSourceLayerName,
+  parseShapeSourceLayerName,
   getLayerSetDefinition,
   mapHoverCandidatesAtom,
-  parseSourceLayerName,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
@@ -53,6 +55,7 @@ import {
   isNumericId,
   normalizeCountryCodeValue,
   normalizeText,
+  collectShapeLayerAdminLevels,
   parseSourceKey,
   parseVectorTileLayerNames,
   fetchTile,
@@ -77,8 +80,10 @@ export const useShapePreviewStep = (
   const [selectionContext, setSelectionContext] = useAtom(shapePreviewSelectionContextAtom);
   const hoverCandidates = useAtomValue(mapHoverCandidatesAtom);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  type TileLayerNameSource = 'discovered' | 'fallback';
+  type TileLayerNameRecord = { name: string; source: TileLayerNameSource };
   const [tileLayerNames, setTileLayerNames] = useState<string[]>([]);
-  const tileLayerNamesRef = useRef<Set<string> | null>(null);
+  const tileLayerNamesRef = useRef<Map<string, TileLayerNameRecord> | null>(null);
   const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([]);
@@ -202,7 +207,7 @@ export const useShapePreviewStep = (
     selectionMetadata.forEach((entry) => {
       const code = entry.countryCode?.trim().toUpperCase();
       const name = entry.countryName?.trim().toLowerCase();
-      const level = entry.adminLevel;
+      const level = parseAdminLevelValue(entry.adminLevel);
       if (code) {
         const levels = byCode.get(code) ?? new Set<number>();
         if (typeof level === 'number') {
@@ -237,7 +242,7 @@ export const useShapePreviewStep = (
   const filteredMetadataRows = useMemo(() => {
     if (!selectionFilters) return rawDataSourceMetadataRows;
     return rawDataSourceMetadataRows.filter((row) => {
-      const rowLevel = row.adminLevel;
+      const rowLevel = parseAdminLevelValue(row.adminLevel);
       const rowCode = row.countryCode?.trim().toUpperCase();
       const rowName = row.countryName?.trim().toLowerCase();
       const matchesFilter = (key: string | undefined, source: Map<string, Set<number>>) => {
@@ -256,26 +261,49 @@ export const useShapePreviewStep = (
   const featureMetadataRows = featureMetadataOverride ?? rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
 
-  const applyTileLayerNames = useCallback((nextNames: string[]) => {
-    const names = Array.from(new Set(nextNames.map((name) => name.trim()).filter(Boolean)));
-    if (names.length === 0) return;
-    const current = tileLayerNamesRef.current;
-    if (!current) {
-      tileLayerNamesRef.current = new Set(names);
-      setTileLayerNames(names);
-      return;
-    }
-    const merged = new Set(current);
+  const applyTileLayerNames = useCallback((nextNames: string[], source: TileLayerNameSource = 'discovered') => {
+      const parsedNames = nextNames
+        .map((name) => typeof name === 'string' ? name.trim() : '')
+        .filter(Boolean)
+      .map((name) => {
+        const parsed = parseShapeSourceLayerName(name);
+        if (!parsed) {
+          return { raw: name, canonical: undefined as string | undefined };
+        }
+        return {
+          raw: name,
+          canonical: buildShapeSourceLayerName(parsed.adminLevel, parsed.boundary === 'b' ? 'boundary' : 'fill'),
+        };
+      })
+      .filter((entry): entry is { raw: string; canonical: string } => Boolean(entry.canonical));
+    if (!parsedNames.length) return;
+
+    const nextMap = new Map(tileLayerNamesRef.current ?? new Map<string, TileLayerNameRecord>());
     let changed = false;
-    names.forEach((name) => {
-      if (!merged.has(name)) {
-        merged.add(name);
+
+    parsedNames.forEach(({ raw, canonical }) => {
+      const existing = nextMap.get(canonical);
+      if (!existing) {
+        nextMap.set(canonical, { name: raw, source });
+        changed = true;
+        return;
+      }
+      if (existing.source === source) {
+        if (existing.name !== raw) {
+          nextMap.set(canonical, { name: raw, source });
+          changed = true;
+        }
+        return;
+      }
+      if (source === 'discovered' && existing.source === 'fallback') {
+        nextMap.set(canonical, { name: raw, source });
         changed = true;
       }
     });
+
     if (!changed) return;
-    const next = Array.from(merged);
-    tileLayerNamesRef.current = merged;
+    const next = Array.from(nextMap.values(), ({ name }) => name);
+    tileLayerNamesRef.current = nextMap;
     setTileLayerNames(next);
   }, []);
 
@@ -285,7 +313,7 @@ export const useShapePreviewStep = (
     const byCountryCode = new Map<string, ShapeDataSourceMetadata>();
     dataSourceMetadataRows.forEach((row) => {
       const code = normalizeCountryCodeValue(row.countryCode);
-      const level = row.adminLevel;
+      const level = parseAdminLevelValue(row.adminLevel);
       const name = normalizeText(row.countryName)?.toLowerCase();
       if (code && level != null) {
         bySourceKey.set(`${code}:${level}`, row);
@@ -308,7 +336,7 @@ export const useShapePreviewStep = (
     dataSource?: string;
   }) => {
     const parsedSourceKey = parseSourceKey(input.sourceKey);
-    const candidateAdminLevel = input.adminLevel ?? parsedSourceKey.adminLevel;
+    const candidateAdminLevel = parseAdminLevelValue(input.adminLevel) ?? parsedSourceKey.adminLevel;
     const candidateCode = normalizeCountryCodeValue(input.countryCode) ?? parsedSourceKey.countryCode;
     const candidateNameInput = normalizeText(input.countryName);
     const selectionByCode = candidateCode ? selectionLookup.byCode.get(candidateCode) : undefined;
@@ -330,7 +358,7 @@ export const useShapePreviewStep = (
       ?? normalizeCountryCodeValue(selectionByCode?.countryCode)
       ?? normalizeCountryCodeValue(selectionByName?.countryCode);
     const countryName = normalizeText(sourceRow?.countryName) ?? candidateName ?? candidateNameInput;
-    const adminLevel = sourceRow?.adminLevel ?? candidateAdminLevel;
+    const adminLevel = parseAdminLevelValue(sourceRow?.adminLevel ?? candidateAdminLevel);
     const dataSource = sourceRow?.dataSource ?? input.dataSource ?? selectionDataSource;
     return {
       countryCode,
@@ -454,9 +482,18 @@ export const useShapePreviewStep = (
       featureId: normalizedFeatureId,
       countryName: context.countryName ?? row.countryName,
       countryCode: context.countryCode ?? row.countryCode,
-      adminLevel: context.adminLevel ?? row.adminLevel,
+      adminLevel: parseAdminLevelValue(context.adminLevel ?? row.adminLevel),
     };
   }), [resolveSourceContext, transformErrorRows]);
+
+  const shapeLayerAdminLevels = useMemo(() => {
+    return collectShapeLayerAdminLevels(
+      dataSourceMetadataRows,
+      featureMetadataRows,
+      normalizedTransformErrorRows,
+      selectionMetadata,
+    );
+  }, [dataSourceMetadataRows, featureMetadataRows, normalizedTransformErrorRows, selectionMetadata]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (persistedViewState) {
@@ -536,11 +573,15 @@ export const useShapePreviewStep = (
     const selectedRows = rows.filter((row) => ids.includes(row.originKey));
     const first = selectedRows[0];
     if (!first) return null;
+    const firstLevel = parseAdminLevelValue(first.adminLevel);
+    const firstCountryCode = normalizeCountryCodeValue(first.countryCode);
+    if (!firstCountryCode) return null;
     const consistent = selectedRows.every(
-      (row) => row.countryCode === first.countryCode && row.adminLevel === first.adminLevel,
+      (row) => normalizeCountryCodeValue(row.countryCode) === firstCountryCode
+        && parseAdminLevelValue(row.adminLevel) === firstLevel,
     );
-    return consistent && first.countryCode != null && first.adminLevel != null
-      ? { countryCode: first.countryCode, adminLevel: first.adminLevel }
+    return consistent && firstLevel != null
+      ? { countryCode: firstCountryCode, adminLevel: firstLevel }
       : null;
   }, []);
 
@@ -549,13 +590,13 @@ export const useShapePreviewStep = (
     current: typeof selectionContext,
     rows: ShapeDataSourceMetadata[],
   ) => {
-    const adminLevel = row.adminLevel ?? 0;
-    const countryCode = row.countryCode ?? '';
+    const adminLevel = parseAdminLevelValue(row.adminLevel) ?? 0;
+    const countryCode = normalizeCountryCodeValue(row.countryCode);
     if (!countryCode) {
       return { nextContext: null, selectedIds: [] as string[] };
     }
     const isSameCountry = current?.countryCode === countryCode;
-    const currentLevel = isSameCountry ? current?.adminLevel : null;
+    const currentLevel = isSameCountry ? parseAdminLevelValue(current.adminLevel) : null;
     const nextLevel = currentLevel != null
       ? currentLevel > 0
         ? currentLevel - 1
@@ -565,7 +606,10 @@ export const useShapePreviewStep = (
       return { nextContext: null, selectedIds: [] as string[] };
     }
     const selectedIds = rows
-      .filter((item) => item.countryCode === countryCode && item.adminLevel === nextLevel)
+      .filter((item) => (
+        normalizeCountryCodeValue(item.countryCode) === countryCode
+        && parseAdminLevelValue(item.adminLevel) === nextLevel
+      ))
       .map((item) => item.originKey);
     return {
       nextContext: selectedIds.length ? { countryCode, adminLevel: nextLevel } : null,
@@ -726,8 +770,10 @@ export const useShapePreviewStep = (
   const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     const definition = getLayerSetDefinition(layerSetName);
     if (!definition) return [];
-    return resolveLayerSetEntries(tileLayerNames, definition);
-  }, [layerSetName, tileLayerNames]);
+    return resolveLayerSetEntries(tileLayerNames, definition, {
+      allowedAdminLevels: shapeLayerAdminLevels,
+    });
+  }, [layerSetName, tileLayerNames, shapeLayerAdminLevels]);
 
   const layerEntriesByAdminLevel = useMemo(() => {
     const map = new Map<number, ResolvedLayerSetEntry[]>();
@@ -744,12 +790,12 @@ export const useShapePreviewStep = (
   const featureAdminLevelById = useMemo(() => {
     const map = new Map<string, number>();
     featureMetadataRows.forEach((row) => {
-      const adminLevel = row.adminLevel;
+      const adminLevel = parseAdminLevelValue(row.adminLevel);
       if (!row.featureId || adminLevel == null) return;
       map.set(String(row.featureId), adminLevel);
     });
     normalizedTransformErrorRows.forEach((row) => {
-      const adminLevel = row.adminLevel;
+      const adminLevel = parseAdminLevelValue(row.adminLevel);
       if (!row.featureId || adminLevel == null) return;
       map.set(String(row.featureId), adminLevel);
     });
@@ -891,7 +937,7 @@ export const useShapePreviewStep = (
             .map((layer) => layer.name)
             .filter((layerName): layerName is string => Boolean(layerName));
           if (tileLayers.length === 0) continue;
-          applyTileLayerNames(tileLayers);
+          applyTileLayerNames(tileLayers, 'discovered');
         }
       } catch (error) {
         console.debug('[ShapePreviewStep] Failed to infer tile layer names from persisted tiles', {
@@ -908,9 +954,9 @@ export const useShapePreviewStep = (
   useEffect(() => {
     if (!activeNodeId) return;
     const fallbackLayer = tilesLayer.trim();
-    const parsedFallbackLayer = parseSourceLayerName(fallbackLayer);
-    if (!parsedFallbackLayer) return;
-    applyTileLayerNames([parsedFallbackLayer.sourceLayerName]);
+    const canonicalFallback = parseShapeSourceLayerName(fallbackLayer);
+    if (!canonicalFallback) return;
+    applyTileLayerNames([fallbackLayer], 'fallback');
   }, [activeNodeId, tilesEndpoint, tilesUrl, tilesLayer, applyTileLayerNames]);
 
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
@@ -923,7 +969,7 @@ export const useShapePreviewStep = (
       if (names.length === 0) {
         return data;
       }
-      applyTileLayerNames(names);
+      applyTileLayerNames(names, 'discovered');
       return data;
     },
     [activeNodeId, applyTileLayerNames],
@@ -995,6 +1041,7 @@ export const useShapePreviewStep = (
     tileDbName,
     tileDataProvider,
     tileLayerNames,
+    shapeLayerAdminLevels,
     baseLayerId,
     baseSourceId,
     mapInstance,

@@ -7,9 +7,9 @@ describe('vtStage summary helpers', () => {
     const collection: FeatureCollection = {
       type: 'FeatureCollection',
       features: [
-        { type: 'Feature', geometry: null, properties: { level: 0, layer: 'admin0' } },
-        { type: 'Feature', geometry: null, properties: { layer: 'admin1' } },
-        { type: 'Feature', geometry: null, properties: { layer: 'admin1-boundary' } },
+        { type: 'Feature', geometry: null, properties: { level: 0, layer: '0' } },
+        { type: 'Feature', geometry: null, properties: { layer: '1' } },
+        { type: 'Feature', geometry: null, properties: { layer: '1-b' } },
       ],
     };
 
@@ -95,7 +95,7 @@ describe('vtStage summary helpers', () => {
       z: 6,
       x: 58,
       y: 20,
-      layerName: 'admin0',
+      layerName: '0',
       clippedFeatureCount: 1,
       featureCount: 3,
     };

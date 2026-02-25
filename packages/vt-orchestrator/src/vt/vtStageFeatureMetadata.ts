@@ -36,7 +36,7 @@ export const buildLayerMap = (collection: FeatureCollection): Map<string, Featur
   for (const feature of collection.features) {
     if (!feature) continue;
     const props = feature.properties ?? {};
-    const layer = typeof props.layer === 'string' ? props.layer : 'admin0';
+    const layer = typeof props.layer === 'string' ? props.layer : '0';
     const bucket = map.get(layer);
     if (bucket) {
       bucket.push(feature);

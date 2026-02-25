@@ -1,5 +1,6 @@
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
+import { parseAdminLevelValue } from './adminLevel';
 import { toNodeId } from '@hierarchidb/core-types';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { ShapeDataSourceMetadata, ShapeFeatureMetadata } from '@hierarchidb/shape-api';
@@ -69,16 +70,17 @@ export const resolveAdminLevelFromProps = (
       properties.ADM_LEVEL,
       properties.level,
       properties.admin_lvl,
+      properties.ADMIN0,
+      properties.ADMIN1,
+      properties.ADMIN2,
+      properties.ADMIN3,
     ];
     for (const value of candidates) {
-      if (typeof value === 'number' && Number.isFinite(value)) return value;
-      if (typeof value === 'string') {
-        const parsed = Number(value);
-        if (Number.isFinite(parsed)) return parsed;
-      }
+      const parsed = parseAdminLevelValue(value);
+      if (parsed != null) return parsed;
     }
   }
-  return fallback;
+  return parseAdminLevelValue(fallback);
 };
 
 export const pickCountryNameFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
@@ -154,7 +156,7 @@ export const parseSourceKey = (sourceKey?: string): { countryCode?: string; admi
   const trimmed = normalizeText(sourceKey);
   if (!trimmed) return {};
   const [countryCodeRaw, adminLevelRaw] = trimmed.split(':');
-  const adminLevel = adminLevelRaw != null ? Number(adminLevelRaw) : undefined;
+  const adminLevel = parseAdminLevelValue(adminLevelRaw);
   return {
     countryCode: normalizeCountryCodeValue(countryCodeRaw),
     adminLevel: Number.isFinite(adminLevel) ? adminLevel : undefined,
@@ -277,3 +279,49 @@ export const getPreviewMetadataEnabled = (): boolean => isShapePreviewMetadataEn
 export const getPreviewDataSource = (
   buildConfigDataSource?: string,
 ): DataSourceName | undefined => buildConfigDataSource as DataSourceName | undefined;
+
+type ShapeLayerAdminLevelRow = {
+  adminLevel?: unknown;
+};
+
+export const collectShapeLayerAdminLevels = (
+  dataSourceMetadataRows: ShapeLayerAdminLevelRow[],
+  featureMetadataRows: ShapeLayerAdminLevelRow[],
+  transformErrorRows: ShapeLayerAdminLevelRow[],
+  selectionMetadataRows: ShapeLayerAdminLevelRow[] = [],
+): number[] => {
+  const selectedLevels = new Set<number>();
+
+  dataSourceMetadataRows.forEach((row) => {
+    const level = parseAdminLevelValue(row.adminLevel);
+    if (level != null) {
+      selectedLevels.add(level);
+    }
+  });
+
+  if (selectedLevels.size === 0) {
+    selectionMetadataRows.forEach((row) => {
+      const level = parseAdminLevelValue(row.adminLevel);
+      if (level != null) {
+        selectedLevels.add(level);
+      }
+    });
+  }
+
+  const hasSelectionLevels = selectedLevels.size > 0;
+  const levels = new Set<number>();
+
+  const collect = (rows: ShapeLayerAdminLevelRow[]) => {
+    rows.forEach((row) => {
+      const level = parseAdminLevelValue(row.adminLevel);
+      if (level == null) return;
+      if (hasSelectionLevels && !selectedLevels.has(level)) return;
+      levels.add(level);
+    });
+  };
+
+  collect(featureMetadataRows);
+  collect(transformErrorRows);
+
+  return Array.from(levels).sort((a, b) => a - b);
+};

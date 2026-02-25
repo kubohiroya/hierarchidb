@@ -468,8 +468,12 @@ export const useShapePreviewStepView = (
 
   const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     if (!layerSetDefinition) return [];
-    return resolveLayerSetEntries(preview.tileLayerNames ?? [], layerSetDefinition);
-  }, [layerSetDefinition, preview.tileLayerNames]);
+    return resolveLayerSetEntries(
+      preview.tileLayerNames ?? [],
+      layerSetDefinition,
+      { allowedAdminLevels: preview.shapeLayerAdminLevels },
+    );
+  }, [layerSetDefinition, preview.tileLayerNames, preview.shapeLayerAdminLevels]);
 
   const shapePreviewLayerToggleItems = useMemo<ShapePreviewLayerToggleItem[]>(
     () => [

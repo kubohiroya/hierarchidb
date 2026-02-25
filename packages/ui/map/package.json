@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
+    "@hierarchidb/gis-sdk": "workspace:*",
     "@deck.gl/core": "^9.1.14",
     "@deck.gl/geo-layers": "^9.1.14",
     "@deck.gl/layers": "^9.1.14",
@@ -35,6 +36,7 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
+    "@hierarchidb/gis-sdk": "workspace:*",
     "@deck.gl/core": "^9.1.14",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
