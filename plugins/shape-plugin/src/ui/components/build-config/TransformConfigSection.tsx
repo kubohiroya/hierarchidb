@@ -11,6 +11,7 @@ import {
   RadioGroup,
   Slider,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -24,7 +25,7 @@ import {
 } from '@hierarchidb/ui-accordion-config';
 import { ToneCurveEditor } from '@hierarchidb/ui-tone-curve-editor';
 import { useTranslation } from '~/ui/i18n';
-import { DEFAULT_BUILD_CONFIG, type ShapeBuildConfig } from '~/common/types/index';
+import { type ShapeBuildConfig } from '~/common/types/index';
 import { useTransformConfigSection } from '~/ui/hooks/useTransformConfigSection';
 import { buildToleranceByBandFromToneCurveAnchors, buildToneCurveAnchorsFromToleranceByBand } from '~/services/utils/toleranceByBand';
 import type { ChangeEvent } from 'react';
@@ -37,6 +38,8 @@ type Props = {
   disableHoverLift?: boolean;
 };
 
+const CURVE_Y_RANGE: [number, number] = [0, 12];
+
 export const TransformConfigSection: React.FC<Props> = ({
   config,
   onChange,
@@ -48,6 +51,9 @@ export const TransformConfigSection: React.FC<Props> = ({
   const hoverCardSx = getBuildConfigHoverCardSx(disabled, disableHoverLift);
   const normalizeToleranceValue = useCallback((value: number): number => (
     Number.parseFloat(value.toFixed(3))
+  ), []);
+  const clampToCurveYRange = useCallback((value: number) => (
+    Math.max(CURVE_Y_RANGE[0], Math.min(CURVE_Y_RANGE[1], value))
   ), []);
   const areToleranceValuesEqual = useCallback((left: number, right: number): boolean => {
     return Math.abs(normalizeToleranceValue(left) - normalizeToleranceValue(right)) < 1e-9;
@@ -64,8 +70,8 @@ export const TransformConfigSection: React.FC<Props> = ({
     ? clampRetryCount(baseTransformConfig.retryCount)
     : 4;
   const preserveTopology = baseTransformConfig.preserveTopology ?? true;
-  const toneCurveDefaultAnchorValues = DEFAULT_BUILD_CONFIG.transformConfig.toleranceByBand;
-  const toneCurveRetrySecondDefaultAnchorValues = DEFAULT_BUILD_CONFIG.transformConfig.retryToleranceByBand;
+  const toneCurveDefaultAnchorValues = [0.1, 0.1, 0.1, 0.1] as const;
+  const toneCurveRetrySecondDefaultAnchorValues = [0.2, 0.2, 0.3, 0.4] as const;
   const toneCurveDefaultFallback = toneCurveDefaultAnchorValues[0] ?? 0.1;
   const toneCurveRetryFallback = toneCurveRetrySecondDefaultAnchorValues[0] ?? 0.1;
   const toneCurveLineStyles = [
@@ -117,6 +123,84 @@ export const TransformConfigSection: React.FC<Props> = ({
       transformConfig: partial,
     })
   ), [update]);
+  const handleMainAnchorYChange = useCallback((index: number, rawValue: number) => {
+    if (disabled || !Number.isFinite(rawValue)) {
+      return;
+    }
+
+    const nextAnchors = resolvedToneCurveAnchors.map((anchor, anchorIndex) => (
+      anchorIndex === index ? { ...anchor, y: clampToCurveYRange(rawValue) } : anchor
+    ));
+    const next = buildToleranceByBandFromToneCurveAnchors(
+      nextAnchors,
+      baseTransformConfig.zoomBandBoundaries,
+      toneCurveDefaultFallback,
+    );
+    const normalized = next.map((value) => normalizeToleranceValue(value));
+
+    if (next.length === (baseTransformConfig.toleranceByBand?.length ?? 0)
+      && next.every((value, toleranceIndex) => areToleranceValuesEqual(
+        value,
+        baseTransformConfig.toleranceByBand?.[toleranceIndex] ?? value,
+      ))
+    ) {
+      return;
+    }
+    updateTransformConfig({ toleranceByBand: normalized });
+  }, [
+    baseTransformConfig.toleranceByBand,
+    baseTransformConfig.zoomBandBoundaries,
+    clampToCurveYRange,
+    disabled,
+    resolvedToneCurveAnchors,
+    normalizeToleranceValue,
+    toneCurveDefaultFallback,
+    areToleranceValuesEqual,
+    updateTransformConfig,
+  ]);
+
+  const handleRetryAnchorYChange = useCallback((index: number, rawValue: number) => {
+    if (disabled || !Number.isFinite(rawValue)) {
+      return;
+    }
+
+    const nextAnchors = resolvedToneCurveRetrySecondAnchors.map((anchor, anchorIndex) => (
+      anchorIndex === index ? { ...anchor, y: clampToCurveYRange(rawValue) } : anchor
+    ));
+    const next = buildToleranceByBandFromToneCurveAnchors(
+      nextAnchors,
+      baseTransformConfig.zoomBandBoundaries,
+      toneCurveRetryFallback,
+    );
+    const normalized = next.map((value) => normalizeToleranceValue(value));
+
+    if (next.length === (baseTransformConfig.retryToleranceByBand?.length ?? 0)
+      && next.every((value, toleranceIndex) => areToleranceValuesEqual(
+        value,
+        baseTransformConfig.retryToleranceByBand?.[toleranceIndex] ?? value,
+      ))
+    ) {
+      return;
+    }
+    updateTransformConfig({ retryToleranceByBand: normalized });
+  }, [
+    baseTransformConfig.retryToleranceByBand,
+    baseTransformConfig.zoomBandBoundaries,
+    clampToCurveYRange,
+    disabled,
+    resolvedToneCurveRetrySecondAnchors,
+    normalizeToleranceValue,
+    toneCurveRetryFallback,
+    areToleranceValuesEqual,
+    updateTransformConfig,
+  ]);
+  const spinnerTextFieldSx = {
+    width: 160,
+    '& .MuiInputLabel-root': {
+      whiteSpace: 'nowrap',
+    },
+  } as const;
+
   const curveWidthRef = useRef<HTMLDivElement | null>(null);
   const [simplifyCurveWidth, setSimplifyCurveWidth] = useState(500);
 
@@ -235,12 +319,14 @@ export const TransformConfigSection: React.FC<Props> = ({
                           baseTransformConfig.zoomBandBoundaries[0] ?? 1,
                           baseTransformConfig.zoomBandBoundaries.at(-1) ?? 11,
                         ]}
-                        yRange={[0, 12]}
+                        yRange={CURVE_Y_RANGE}
                         lineStyles={toneCurveLineStyles}
                         xMarks={xMarks}
                         anchors={resolvedToneCurveAnchors}
                         xFixedValues={resolvedToneCurveAnchors.map((anchor) => anchor.x)}
                         allowAnchorCountChange={false}
+                        horizontalZoom={false}
+                        verticalZoom
                         xSnapStep={0.1}
                         ySnapStep={0.1}
                         overlaySeries={[
@@ -290,6 +376,72 @@ export const TransformConfigSection: React.FC<Props> = ({
                         }}
                       />
                     </div>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        mt: 1.5,
+                        p: 1,
+                        borderColor: '#ef4444',
+                        width: '100%',
+                        overflow: 'visible',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                        {resolvedToneCurveRetrySecondAnchors.map((anchor, index) => (
+                          <TextField
+                            key={`retry-anchor-${index}`}
+                            label={String(normalizeToleranceValue(anchor.x))}
+                            type="number"
+                            size="small"
+                            value={normalizeToleranceValue(anchor.y)}
+                            inputProps={{
+                              step: 0.1,
+                              min: CURVE_Y_RANGE[0],
+                              max: CURVE_Y_RANGE[1],
+                            }}
+                            disabled={disabled}
+                            onChange={(event) => {
+                              const nextValue = Number.parseFloat(event.target.value);
+                              handleRetryAnchorYChange(index, nextValue);
+                            }}
+                            sx={spinnerTextFieldSx}
+                          />
+                        ))}
+                      </Stack>
+                    </Paper>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        mt: 1,
+                        p: 1,
+                        borderColor: '#0b5ed7',
+                        width: '100%',
+                        overflow: 'visible',
+                      }}
+                    >
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'nowrap', overflowX: 'auto', pt: 1 }}>
+                        {resolvedToneCurveAnchors.map((anchor, index) => (
+                          <TextField
+                            key={`anchor-${index}`}
+                            label={String(normalizeToleranceValue(anchor.x))}
+                            type="number"
+                            size="small"
+                            value={normalizeToleranceValue(anchor.y)}
+                            inputProps={{
+                              step: 0.1,
+                              min: CURVE_Y_RANGE[0],
+                              max: CURVE_Y_RANGE[1],
+                            }}
+                            disabled={disabled}
+                            onChange={(event) => {
+                              const nextValue = Number.parseFloat(event.target.value);
+                              handleMainAnchorYChange(index, nextValue);
+                            }}
+                            sx={spinnerTextFieldSx}
+                          />
+                        ))}
+                      </Stack>
+                    </Paper>
                   </Stack>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>

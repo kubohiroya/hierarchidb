@@ -5,6 +5,8 @@ const DEFAULT_LINE_COLOR = '#0b5ed7';
 const DEFAULT_SECONDARY_LINE_COLOR = '#ef4444';
 const DEFAULT_SECONDARY_LINE_DASH = '6 4';
 const DEFAULT_STROKE_WIDTH = 2;
+const ZOOM_RATIO_STEP = 0.12;
+const MIN_RANGE_SPAN = 1e-6;
 
 interface AxisRange {
   min: number;
@@ -51,6 +53,8 @@ export interface ToneCurveEditorProps extends ToneCurveAxisRange {
   onChange?: (anchors: ReadonlyArray<ToneCurveAnchor>) => void;
   lineStyles?: ReadonlyArray<ToneCurveLineStyle>;
   overlaySeries?: ReadonlyArray<ToneCurveOverlaySeries>;
+  horizontalZoom?: boolean;
+  verticalZoom?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -229,6 +233,8 @@ export function ToneCurveEditor({
   onChange,
   lineStyles = [],
   overlaySeries = [],
+  horizontalZoom = true,
+  verticalZoom = true,
   className,
   style,
 }: ToneCurveEditorProps): React.JSX.Element {
@@ -240,7 +246,14 @@ export function ToneCurveEditor({
     curveIndex: number | null;
     anchorIndex: number;
   } | null>(null);
+  const activePanRef = React.useRef<{
+    startX: number;
+    startY: number;
+    startXRange: AxisRange;
+    startYRange: AxisRange;
+  } | null>(null);
   const activeDragSessionRef = React.useRef(0);
+  const [isPanning, setIsPanning] = React.useState(false);
   const [dragPointerLabel, setDragPointerLabel] = React.useState<{
     x: number;
     y: number;
@@ -297,6 +310,17 @@ export function ToneCurveEditor({
     () => clampRangeInBase(yEndpointRange, baseYRange),
     [baseYRange, yEndpointRange],
   );
+
+  const [viewXRange, setViewXRange] = React.useState<AxisRange>(normalizedXRange);
+  const [viewYRange, setViewYRange] = React.useState<AxisRange>(normalizedYRange);
+
+  React.useEffect(() => {
+    setViewXRange(normalizedXRange);
+  }, [normalizedXRange.max, normalizedXRange.min]);
+
+  React.useEffect(() => {
+    setViewYRange(normalizedYRange);
+  }, [normalizedYRange.max, normalizedYRange.min]);
 
   const normalizedXMarks = React.useMemo(
     () => normalizeAxisMarks(xMarks, normalizedXRange),
@@ -433,26 +457,26 @@ export function ToneCurveEditor({
 
   const xToScreen = React.useCallback(
     (x: number) => {
-      const range = normalizedXRange.max - normalizedXRange.min;
+      const range = viewXRange.max - viewXRange.min;
       if (range === 0) {
         return inner.paddingLeft;
       }
-      const ratio = (x - normalizedXRange.min) / range;
+      const ratio = (x - viewXRange.min) / range;
       return inner.paddingLeft + ratio * inner.width;
     },
-    [normalizedXRange.max, normalizedXRange.min, inner],
+    [inner, viewXRange.max, viewXRange.min],
   );
 
   const yToScreen = React.useCallback(
     (y: number) => {
-      const range = normalizedYRange.max - normalizedYRange.min;
+      const range = viewYRange.max - viewYRange.min;
       if (range === 0) {
         return inner.paddingTop;
       }
-      const ratio = (y - normalizedYRange.min) / range;
+      const ratio = (y - viewYRange.min) / range;
       return inner.paddingTop + (1 - ratio) * inner.height;
     },
-    [normalizedYRange.max, normalizedYRange.min, inner],
+    [inner, viewYRange.max, viewYRange.min],
   );
 
   const screenToData = React.useCallback(
@@ -462,11 +486,11 @@ export function ToneCurveEditor({
         return null;
       }
 
-      const x = normalizedXRange.min + ((clientX - svgRect.left - inner.paddingLeft) / inner.width) * (normalizedXRange.max - normalizedXRange.min);
-      const y = normalizedYRange.max - ((clientY - svgRect.top - inner.paddingTop) / inner.height) * (normalizedYRange.max - normalizedYRange.min);
+      const x = viewXRange.min + ((clientX - svgRect.left - inner.paddingLeft) / inner.width) * (viewXRange.max - viewXRange.min);
+      const y = viewYRange.max - ((clientY - svgRect.top - inner.paddingTop) / inner.height) * (viewYRange.max - viewYRange.min);
       return { x, y };
     },
-    [inner, normalizedXRange.max, normalizedXRange.min, normalizedYRange.max, normalizedYRange.min],
+    [inner, viewXRange.max, viewXRange.min, viewYRange.max, viewYRange.min],
   );
 
   const normalizeAnchors = React.useCallback(
@@ -801,6 +825,8 @@ export function ToneCurveEditor({
 
     addCandidate(normalizedYRange.min, formatAnchorValueLabel(normalizedYRange.min), { forceDisplay: true });
     addCandidate(normalizedYRange.max, formatAnchorValueLabel(normalizedYRange.max), { forceDisplay: true });
+    addCandidate(viewYRange.min, formatAnchorValueLabel(viewYRange.min), { forceDisplay: true });
+    addCandidate(viewYRange.max, formatAnchorValueLabel(viewYRange.max), { forceDisplay: true });
 
     const sortedUniqueValues = Array.from(mergedCandidates.values())
       .sort((left, right) => left.value - right.value);
@@ -832,7 +858,16 @@ export function ToneCurveEditor({
     });
 
     return result;
-  }, [anchors, overlayAnchors, normalizedYMarks, normalizedYRange.max, normalizedYRange.min, yToScreen]);
+  }, [
+    anchors,
+    overlayAnchors,
+    normalizedYMarks,
+    normalizedYRange.max,
+    normalizedYRange.min,
+    viewYRange.max,
+    viewYRange.min,
+    yToScreen,
+  ]);
 
   const fixedXForCount = React.useCallback(
     (count: number): Array<number | undefined> => {
@@ -1275,10 +1310,162 @@ export function ToneCurveEditor({
     [isDraggable, sortedOverlayPoints, sortedPoints, updateDragPointerLabelFromAnchor],
   );
 
+  const translateRange = React.useCallback((range: AxisRange, delta: number, bounds: AxisRange): AxisRange => {
+    const span = range.max - range.min;
+    const boundsSpan = bounds.max - bounds.min;
+
+    if (span >= boundsSpan) {
+      return { min: bounds.min, max: bounds.max };
+    }
+
+    let min = range.min + delta;
+    let max = range.max + delta;
+
+    if (min < bounds.min) {
+      const adjust = bounds.min - min;
+      min += adjust;
+      max += adjust;
+    }
+
+    if (max > bounds.max) {
+      const adjust = max - bounds.max;
+      min -= adjust;
+      max -= adjust;
+    }
+
+    return { min, max };
+  }, []);
+
+  const handleBackgroundPointerDown = React.useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    const target = event.target as Element | null;
+    const tagName = target?.tagName?.toLowerCase();
+    if (tagName === 'circle') {
+      return;
+    }
+    if (activeAnchorRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    activePanRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startXRange: viewXRange,
+      startYRange: viewYRange,
+    };
+    setIsPanning(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [viewXRange, viewYRange]);
+
+  const clampRange = React.useCallback((range: AxisRange, baseRange: AxisRange): AxisRange => {
+    const span = range.max - range.min;
+    const clampedMin = clampInOrder(range.min, baseRange.min, baseRange.max);
+    const clampedMax = clampInOrder(range.max, baseRange.min, baseRange.max);
+    if (clampedMax > clampedMin) {
+      return { min: clampedMin, max: clampedMax };
+    }
+
+    return {
+      min: Math.max(baseRange.min, Math.min(baseRange.max - MIN_RANGE_SPAN, clampedMin)),
+      max: Math.min(baseRange.max, clampedMin + MIN_RANGE_SPAN),
+    };
+  }, []);
+
+  const zoomRangeAroundPoint = React.useCallback((
+    range: AxisRange,
+    center: number,
+    scale: number,
+    baseRange: AxisRange,
+  ): AxisRange => {
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return clampRange(range, baseRange);
+    }
+
+    const currentSpan = range.max - range.min;
+    const safeSpan = currentSpan > MIN_RANGE_SPAN ? currentSpan : MIN_RANGE_SPAN;
+    const nextSpan = safeSpan * scale;
+    const clampedSpan = Math.max(nextSpan, MIN_RANGE_SPAN);
+    const centerInRange = clampInOrder(center, range.min, range.max);
+
+    let min = centerInRange - (centerInRange - range.min) * (clampedSpan / safeSpan);
+    let max = centerInRange + (range.max - centerInRange) * (clampedSpan / safeSpan);
+
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      return clampRange(range, baseRange);
+    }
+
+    const clamped = clampRange({ min, max }, baseRange);
+    if (clamped.max - clamped.min >= MIN_RANGE_SPAN) {
+      return clamped;
+    }
+
+    return {
+      min: centerInRange - clampedSpan / 2,
+      max: centerInRange + clampedSpan / 2,
+    };
+  }, [clampRange]);
+
+  const handleWheel = React.useCallback((event: WheelEvent) => {
+    if (!svgRef.current) {
+      return;
+    }
+
+    const point = screenToData(event.clientX, event.clientY);
+    if (!point) {
+      return;
+    }
+
+    const zoomRatio = 1 + ZOOM_RATIO_STEP * (event.deltaY > 0 ? 1 : -1);
+    const scale = clampInOrder(zoomRatio, 0.2, 5);
+    const canZoomHorizontally = horizontalZoom;
+    const canZoomVertically = verticalZoom;
+
+    if (!canZoomHorizontally && !canZoomVertically) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (canZoomHorizontally) {
+      setViewXRange((current) => zoomRangeAroundPoint(current, point.x, scale, normalizedXRange));
+    }
+
+    if (canZoomVertically) {
+      setViewYRange((current) => zoomRangeAroundPoint(current, point.y, scale, normalizedYRange));
+    }
+  }, [horizontalZoom, normalizedXRange, normalizedYRange, screenToData, verticalZoom, zoomRangeAroundPoint]);
+
+  React.useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) {
+      return;
+    }
+
+    svg.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      svg.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
+
   React.useEffect(() => {
     const onPointerMove = (event: PointerEvent): void => {
       const activeAnchor = activeAnchorRef.current;
       if (!activeAnchor) {
+        const activePan = activePanRef.current;
+        if (!activePan) {
+          return;
+        }
+
+        const dx = event.clientX - activePan.startX;
+        const dy = event.clientY - activePan.startY;
+
+        const startXSpan = activePan.startXRange.max - activePan.startXRange.min;
+        const startYSpan = activePan.startYRange.max - activePan.startYRange.min;
+        const deltaX = inner.width === 0 ? 0 : -(dx / inner.width) * startXSpan;
+        const deltaY = inner.height === 0 ? 0 : (dy / inner.height) * startYSpan;
+
+        setViewXRange(translateRange(activePan.startXRange, deltaX, normalizedXRange));
+        setViewYRange(translateRange(activePan.startYRange, deltaY, normalizedYRange));
         return;
       }
       dragPointerScreenRef.current = { x: event.clientX, y: event.clientY };
@@ -1309,6 +1496,8 @@ export function ToneCurveEditor({
       setDragPointerLabel(null);
       activeAnchorRef.current = null;
       lastPointerPositionRef.current = null;
+      activePanRef.current = null;
+      setIsPanning(false);
     };
 
     const onPointerCancel = (): void => {
@@ -1324,6 +1513,8 @@ export function ToneCurveEditor({
       activeAnchorRef.current = null;
       lastPointerPositionRef.current = null;
       setDragPointerLabel(null);
+      activePanRef.current = null;
+      setIsPanning(false);
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -1334,7 +1525,16 @@ export function ToneCurveEditor({
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerCancel);
     };
-  }, [flushPendingMainChange, flushPendingOverlayChange, updateAnchor]);
+  }, [
+    flushPendingMainChange,
+    flushPendingOverlayChange,
+    inner.height,
+    inner.width,
+    normalizedXRange,
+    normalizedYRange,
+    translateRange,
+    updateAnchor,
+  ]);
 
   const mainCurveStyle = getLineStyle(0);
 
@@ -1362,7 +1562,14 @@ export function ToneCurveEditor({
         height={height}
         role="img"
         aria-label="Tone curve editor"
-        style={{ border: '1px solid #d0d7de', borderRadius: 4, touchAction: 'none', backgroundColor: '#ffffff' }}
+        style={{
+          border: '1px solid #d0d7de',
+          borderRadius: 4,
+          touchAction: 'none',
+          backgroundColor: '#ffffff',
+          cursor: isPanning ? 'grabbing' : 'grab',
+        }}
+        onPointerDown={handleBackgroundPointerDown}
         >
         <line
           x1={inner.paddingLeft}
