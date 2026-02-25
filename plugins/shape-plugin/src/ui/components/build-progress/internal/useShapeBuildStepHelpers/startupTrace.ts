@@ -8,7 +8,7 @@ export type BuildSessionTransitionPhase =
   | 'initializing-worker'
   | 'building-payloads'
   | 'starting-session'
-  | 'awaiting-first-task';
+  | 'receiving-task-snapshot';
 
 export type BuildStartupStep =
   | 'lock-acquire'
@@ -19,7 +19,7 @@ export type BuildStartupStep =
   | 'session-resume-request'
   | 'session-start-request'
   | 'session-status-persist'
-  | 'awaiting-first-task';
+  | 'receiving-task-snapshot';
 
 export type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
 
@@ -95,8 +95,8 @@ export const getBuildSessionTransitionStatusLabel = (
       return t('stage.status.startingPayload', 'Starting build (preparing tasks)...');
     case 'starting-session':
       return t('stage.status.startingSession', 'Starting build (launching session)...');
-    case 'awaiting-first-task':
-      return t('stage.status.startingAwaitElapsed', `Build requested; waiting for first task (${elapsedSeconds}s)...`);
+    case 'receiving-task-snapshot':
+      return t('stage.status.startingAwaitElapsed', `Build requested; waiting for receiving-task-snapshot (${elapsedSeconds}s)...`);
     default:
       return t('stage.status.starting', 'Starting stage...');
   }

@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import {
-  resolveAwaitingFirstTaskDecision,
-  type AwaitingFirstTaskDecision,
-  type AwaitingFirstTaskSuccessDecision,
-} from '~/ui/components/build-progress/resolveAwaitingFirstTaskDecision';
+  resolveReceivingTaskSnapshotDecision,
+  type ReceivingTaskSnapshotDecision,
+  type ReceivingTaskSnapshotSuccessDecision,
+} from '~/ui/components/build-progress/resolveReceivingTaskSnapshotDecision';
 import type { BuildSessionTransitionNotificationLevel } from '@hierarchidb/components/build-session';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type {
@@ -17,19 +17,19 @@ import type {
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { isShapeBuildPanelDebugEnabled } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelState.utils.js';
 
-type UseShapeBuildSessionAwaitingFirstTaskDecisionArgs = {
+type UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs = {
   activeNodeId: string | null;
   buildSessionTransition: BuildSessionTransitionState<BuildSessionTransitionPhase>;
   buildStatus: BuildStatusSource;
   displayTasks: ShapeBuildTaskSummary[];
-  hasFirstTaskSignal: boolean;
+  hasReceivingTaskSnapshotSignal: boolean;
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
-  isTaskStreamReady: boolean;
+  isTaskSnapshotProgressConnected: boolean;
   sessionProgressTotal?: number;
   sessionStageId: string | null;
-  awaitingFirstTaskExpectationRef: { current: boolean };
-  lastAwaitingFirstTaskDecisionTraceKeyRef: { current: string | null };
+  receivingTaskSnapshotExpectationRef: { current: boolean };
+  lastReceivingTaskSnapshotDecisionTraceKeyRef: { current: string | null };
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
   emitBuildSessionTransitionLog: (
     level: 'info' | 'warn' | 'error',
@@ -51,38 +51,38 @@ type UseShapeBuildSessionAwaitingFirstTaskDecisionArgs = {
   }) => void;
 };
 
-type SuccessDecision = AwaitingFirstTaskSuccessDecision;
-type ErrorDecision = Extract<AwaitingFirstTaskDecision, { kind: 'error' }>;
-type CancelledDecision = Extract<AwaitingFirstTaskDecision, { kind: 'cancelled' }>;
+type SuccessDecision = ReceivingTaskSnapshotSuccessDecision;
+type ErrorDecision = Extract<ReceivingTaskSnapshotDecision, { kind: 'error' }>;
+type CancelledDecision = Extract<ReceivingTaskSnapshotDecision, { kind: 'cancelled' }>;
 
 const resolveDecisionInput = ({
-  hasFirstTaskSignal,
+  hasReceivingTaskSnapshotSignal,
   hasStartedTasks,
   hasProgressTaskSignal,
   buildStatus,
-  isTaskStreamReady,
-  awaitingFirstTaskExpectationRef,
+  isTaskSnapshotProgressConnected,
+  receivingTaskSnapshotExpectationRef,
   sessionProgressTotal,
   sessionStageId,
   displayTasks,
 }: {
-  hasFirstTaskSignal: boolean;
+  hasReceivingTaskSnapshotSignal: boolean;
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
   buildStatus: BuildStatusSource;
-  isTaskStreamReady: boolean;
-  awaitingFirstTaskExpectationRef: { current: boolean };
+  isTaskSnapshotProgressConnected: boolean;
+  receivingTaskSnapshotExpectationRef: { current: boolean };
   sessionProgressTotal?: number;
   sessionStageId: string | null;
   displayTasks: ShapeBuildTaskSummary[];
-}): Parameters<typeof resolveAwaitingFirstTaskDecision>[0] => ({
-  hasFirstTaskSignal,
+}): Parameters<typeof resolveReceivingTaskSnapshotDecision>[0] => ({
+  hasReceivingTaskSnapshotSignal,
   hasStartedTasks,
   hasProgressTaskSignal,
   buildStatus,
-  taskCount: isTaskStreamReady ? displayTasks.length : undefined,
-  isTaskStreamReady,
-  expectTaskGeneration: awaitingFirstTaskExpectationRef.current,
+  taskCount: isTaskSnapshotProgressConnected ? displayTasks.length : undefined,
+  isTaskSnapshotProgressConnected,
+  expectTaskGeneration: receivingTaskSnapshotExpectationRef.current,
   sessionProgressTotal,
   sessionStageId,
 });
@@ -90,24 +90,24 @@ const resolveDecisionInput = ({
 const createDecisionTraceKey = (input: {
   phase: BuildSessionTransitionPhase;
   buildStatus: BuildStatusSource;
-  hasFirstTaskSignal: boolean;
+  hasReceivingTaskSnapshotSignal: boolean;
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
   taskCount: number | undefined;
-  isTaskStreamReady: boolean;
+  isTaskSnapshotProgressConnected: boolean;
   expectTaskGeneration: boolean;
   sessionProgressTotal: number | undefined;
   sessionStageId: string | null;
 }): string | null => {
-  if (!isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')) return null;
+  if (!isShapeBuildPanelDebugEnabled('receivingTaskSnapshotDecision')) return null;
   return JSON.stringify({
     phase: input.phase,
     buildStatus: input.buildStatus,
-    hasFirstTaskSignal: input.hasFirstTaskSignal,
+    hasReceivingTaskSnapshotSignal: input.hasReceivingTaskSnapshotSignal,
     hasStartedTasks: input.hasStartedTasks,
     hasProgressTaskSignal: input.hasProgressTaskSignal,
     taskCount: input.taskCount,
-    isTaskStreamReady: input.isTaskStreamReady,
+    isTaskSnapshotProgressConnected: input.isTaskSnapshotProgressConnected,
     expectTaskGeneration: input.expectTaskGeneration,
     sessionProgressTotal: input.sessionProgressTotal ?? null,
     sessionStageId: input.sessionStageId ?? null,
@@ -130,10 +130,10 @@ const handleDecisionSuccess = ({
   hasProgressTaskSignal: boolean;
   activeNodeId: string | null;
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
-  emitBuildSessionTransitionLog: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['emitBuildSessionTransitionLog'];
-  pushBuildSessionTransitionNotification: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['pushBuildSessionTransitionNotification'];
-  finishBuildStartupStep: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildStartupStep'];
-  finishBuildSessionTransition: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildSessionTransition'];
+  emitBuildSessionTransitionLog: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['emitBuildSessionTransitionLog'];
+  pushBuildSessionTransitionNotification: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['pushBuildSessionTransitionNotification'];
+  finishBuildStartupStep: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildStartupStep'];
+  finishBuildSessionTransition: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildSessionTransition'];
 }): void => {
   if (!buildSessionTransitionTaskStartNotifiedRef.current) {
     buildSessionTransitionTaskStartNotifiedRef.current = true;
@@ -147,7 +147,7 @@ const handleDecisionSuccess = ({
       decision.notification.message,
     );
   }
-  finishBuildStartupStep('awaiting-first-task', 'success', {
+  finishBuildStartupStep('receiving-task-snapshot', 'success', {
     reason: decision.reason,
     tasks: displayTasks.length,
     hasProgressTaskSignal,
@@ -157,9 +157,9 @@ const handleDecisionSuccess = ({
   } else {
     finishBuildSessionTransition();
   }
-  if (isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')) {
+  if (isShapeBuildPanelDebugEnabled('receivingTaskSnapshotDecision')) {
     console.log(
-      '[ShapeAwaitingFirstTaskDecisionTrace] decision',
+      '[ShapeReceivingTaskSnapshotDecisionTrace] decision',
       JSON.stringify({
         nodeId: activeNodeId,
         decision,
@@ -174,10 +174,10 @@ const handleDecisionFailure = ({
   finishBuildSessionTransition,
 }: {
   decision: ErrorDecision;
-  finishBuildStartupStep: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildStartupStep'];
-  finishBuildSessionTransition: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildSessionTransition'];
+  finishBuildStartupStep: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildStartupStep'];
+  finishBuildSessionTransition: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildSessionTransition'];
 }): void => {
-  finishBuildStartupStep('awaiting-first-task', 'error', {
+  finishBuildStartupStep('receiving-task-snapshot', 'error', {
     reason: decision.reason,
   });
   finishBuildSessionTransition(decision.transitionFinish);
@@ -189,45 +189,45 @@ const handleDecisionCancelled = ({
   finishBuildSessionTransition,
 }: {
   decision: CancelledDecision;
-  finishBuildStartupStep: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildStartupStep'];
-  finishBuildSessionTransition: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs['finishBuildSessionTransition'];
+  finishBuildStartupStep: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildStartupStep'];
+  finishBuildSessionTransition: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs['finishBuildSessionTransition'];
 }): void => {
-  finishBuildStartupStep('awaiting-first-task', 'cancelled', {
+  finishBuildStartupStep('receiving-task-snapshot', 'cancelled', {
     reason: decision.reason,
   });
   finishBuildSessionTransition(decision.transitionFinish);
 };
 
-export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
+export const useShapeBuildSessionReceivingTaskSnapshotDecision = ({
   activeNodeId,
   buildSessionTransition,
   buildStatus,
   displayTasks,
-  hasFirstTaskSignal,
+  hasReceivingTaskSnapshotSignal,
   hasStartedTasks,
   hasProgressTaskSignal,
-  isTaskStreamReady,
+  isTaskSnapshotProgressConnected,
   sessionProgressTotal,
   sessionStageId,
-  awaitingFirstTaskExpectationRef,
-  lastAwaitingFirstTaskDecisionTraceKeyRef,
+  receivingTaskSnapshotExpectationRef,
+  lastReceivingTaskSnapshotDecisionTraceKeyRef,
   buildSessionTransitionTaskStartNotifiedRef,
   emitBuildSessionTransitionLog,
   pushBuildSessionTransitionNotification,
   finishBuildStartupStep,
   finishBuildSessionTransition,
-}: UseShapeBuildSessionAwaitingFirstTaskDecisionArgs): void => {
+}: UseShapeBuildSessionReceivingTaskSnapshotDecisionArgs): void => {
   useEffect(() => {
     if (!buildSessionTransition.active) return;
-    if (buildSessionTransition.phase !== 'awaiting-first-task') return;
+    if (buildSessionTransition.phase !== 'receiving-task-snapshot') return;
 
     const decisionInput = resolveDecisionInput({
-      hasFirstTaskSignal,
+      hasReceivingTaskSnapshotSignal,
       hasStartedTasks,
       hasProgressTaskSignal,
       buildStatus,
-      isTaskStreamReady,
-      awaitingFirstTaskExpectationRef,
+      isTaskSnapshotProgressConnected,
+      receivingTaskSnapshotExpectationRef,
       sessionProgressTotal,
       sessionStageId,
       displayTasks,
@@ -235,30 +235,30 @@ export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
     const decisionTraceKey = createDecisionTraceKey({
       phase: buildSessionTransition.phase,
       buildStatus,
-      hasFirstTaskSignal: decisionInput.hasFirstTaskSignal,
+      hasReceivingTaskSnapshotSignal: decisionInput.hasReceivingTaskSnapshotSignal,
       hasStartedTasks: decisionInput.hasStartedTasks,
       hasProgressTaskSignal: decisionInput.hasProgressTaskSignal,
       taskCount: decisionInput.taskCount,
-      isTaskStreamReady: decisionInput.isTaskStreamReady,
+      isTaskSnapshotProgressConnected: decisionInput.isTaskSnapshotProgressConnected,
       expectTaskGeneration: decisionInput.expectTaskGeneration,
       sessionProgressTotal: decisionInput.sessionProgressTotal,
       sessionStageId,
     });
     if (
       decisionTraceKey
-      && isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision')
-      && lastAwaitingFirstTaskDecisionTraceKeyRef.current !== decisionTraceKey
+      && isShapeBuildPanelDebugEnabled('receivingTaskSnapshotDecision')
+      && lastReceivingTaskSnapshotDecisionTraceKeyRef.current !== decisionTraceKey
     ) {
-      lastAwaitingFirstTaskDecisionTraceKeyRef.current = decisionTraceKey;
-      console.log('[ShapeAwaitingFirstTaskDecisionTrace] input', JSON.stringify({
+      lastReceivingTaskSnapshotDecisionTraceKeyRef.current = decisionTraceKey;
+      console.log('[ShapeReceivingTaskSnapshotDecisionTrace] input', JSON.stringify({
         nodeId: activeNodeId,
         ...decisionInput,
       }));
     }
 
-    const decision = resolveAwaitingFirstTaskDecision(decisionInput);
-    if (isShapeBuildPanelDebugEnabled('awaitingFirstTaskDecision') && decision.kind !== 'continue') {
-      console.log('[ShapeAwaitingFirstTaskDecisionTrace] decision', JSON.stringify({
+    const decision = resolveReceivingTaskSnapshotDecision(decisionInput);
+    if (isShapeBuildPanelDebugEnabled('receivingTaskSnapshotDecision') && decision.kind !== 'continue') {
+      console.log('[ShapeReceivingTaskSnapshotDecisionTrace] decision', JSON.stringify({
         nodeId: activeNodeId,
         decision,
       }));
@@ -303,14 +303,14 @@ export const useShapeBuildSessionAwaitingFirstTaskDecision = ({
     buildSessionTransition,
     buildStatus,
     displayTasks,
-    hasFirstTaskSignal,
+    hasReceivingTaskSnapshotSignal,
     hasProgressTaskSignal,
     hasStartedTasks,
-    isTaskStreamReady,
+  isTaskSnapshotProgressConnected,
     sessionProgressTotal,
     sessionStageId,
-    awaitingFirstTaskExpectationRef,
-    lastAwaitingFirstTaskDecisionTraceKeyRef,
+    receivingTaskSnapshotExpectationRef,
+    lastReceivingTaskSnapshotDecisionTraceKeyRef,
     buildSessionTransitionTaskStartNotifiedRef,
     emitBuildSessionTransitionLog,
     pushBuildSessionTransitionNotification,

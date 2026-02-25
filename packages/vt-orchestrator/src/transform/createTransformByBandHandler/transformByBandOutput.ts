@@ -279,12 +279,13 @@ export const runTransformByBandOutputPhase = async (
   assertNotAborted(abortSignal);
   await updateTaskPhase(taskId, 'cache:put:start', taskProgressRange.cachePutStart);
   logDebugPhase('cache-put:start', { cacheId });
+  const cacheRecordDomainType = input.domainType as EphemeralTransformCacheRecord['domainType'];
 
   const cacheRecord: Omit<EphemeralTransformCacheRecord, 'timestamp'> = {
     id: cacheId,
     nodeId,
     bandIndex: input.bandIndex,
-    domainType: input.domainType,
+    domainType: cacheRecordDomainType,
     sourceKey: input.sourceKey,
     countryCode: input.countryCode,
     adminLevel: input.adminLevel,

@@ -22,6 +22,20 @@ export const areTaskListsEquivalentForView = (
   return true;
 };
 
+const areMetadataEquivalentForView = (
+  left: Record<string, unknown> | undefined,
+  right: Record<string, unknown> | undefined,
+): boolean => {
+  if (left === right) return true;
+  if (!left || !right) {
+    return left === undefined && right === undefined;
+  }
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every((key) => Object.hasOwn(right, key) && right[key] === left[key]);
+};
+
 export const areTasksEquivalentForView = (
   left: ShapeBuildTaskSummary,
   right: ShapeBuildTaskSummary,
@@ -35,9 +49,11 @@ export const areTasksEquivalentForView = (
   && left.display?.phaseCode === right.display?.phaseCode
   && left.display?.phaseState === right.display?.phaseState
   && (left.message ?? null) === (right.message ?? null)
+  && (left.retryAttempt ?? null) === (right.retryAttempt ?? null)
   && (left.title ?? null) === (right.title ?? null)
   && (left.error ?? null) === (right.error ?? null)
   && (left.errorMessage ?? null) === (right.errorMessage ?? null)
+  && areMetadataEquivalentForView(left.metadata, right.metadata)
   && (left.index ?? null) === (right.index ?? null)
   && (left.stagePriority ?? null) === (right.stagePriority ?? null)
 );
@@ -173,6 +189,7 @@ const shouldPromoteCompletedMessage = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (!areMetadataEquivalentForView(current.metadata, next.metadata)) return true;
   if (shouldPromoteCompletedDisplay(current, next)) return true;
   if (current.status === 'failed' && next.status === 'failed') {
     return shouldPromoteFailedMessage(current, next);
@@ -271,11 +288,8 @@ export const replaceSnapshotAndPreserveCurrentTasksByStage = (
 );
 
 export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
-  if (!isTaskStage(task.stage)) {
-    throw new Error(`[ShapeBuildTaskSync] invalid task stage: ${String(task.stage)}`);
-  }
+  const stage = resolveTaskStage(task);
   const progress = resolveProgressValue(task.progress);
-  const stage = task.stage;
   const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, task.message);
   return {
     ...task,
@@ -285,7 +299,43 @@ export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskS
   };
 };
 
+export const resolveTaskStageFromRaw = (task: RawTaskSummary): TaskStage => resolveTaskStage(task);
+
 const taskStages = ['fetch', 'transform', 'vt'] as const;
+
+export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
+  if (isTaskStage(task.stage)) {
+    return task.stage;
+  }
+
+  const taskId = typeof task.taskId === 'string' ? task.taskId : '';
+  const [, taskIdStage] = taskId.split(':');
+  if (isTaskStage(taskIdStage)) {
+    if (task.stage !== taskIdStage) {
+      console.warn('[ShapeBuildTaskSync] normalize task stage from taskId', {
+        taskId,
+        stage: task.stage,
+        resolvedStage: taskIdStage,
+      });
+    }
+    return taskIdStage;
+  }
+
+  const fallbackStage = typeof task.stage === 'string'
+    ? task.stage.toLowerCase()
+    : '';
+  if (fallbackStage.includes('fetch')) {
+    return 'fetch';
+  }
+  if (fallbackStage.includes('transform')) {
+    return 'transform';
+  }
+  if (fallbackStage.includes('vt')) {
+    return 'vt';
+  }
+
+  return 'fetch';
+};
 
 export const isTaskStage = (value: unknown): value is TaskStage => (
   typeof value === 'string' && taskStages.includes(value as TaskStage)

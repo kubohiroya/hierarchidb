@@ -16,6 +16,7 @@ import {
   resolveMostAdvancedInFlightStageId,
   resolveMostAdvancedRunningStageId,
 } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage.js';
+import type { StageId } from '~/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
 
 type SessionRecordLike = {
   elapsedByStage?: Record<string, number> | null;
@@ -257,9 +258,15 @@ export const useShapeBuildStepProgressState = ({
     ));
   }, [buildStatus, persistedStageElapsedByStage, sessionRecord?.elapsedMs]);
 
-  const hasFailedFetchTasks = useMemo(() => (
-    displayTasks.some((task) => task.status === 'failed' && task.stage === 'fetch')
-  ), [displayTasks]);
+  const failedProbeStageId = useMemo<StageId | null>(() => (
+    stages[0]?.id ?? null
+  ), [stages]);
+  const hasFailedFetchTasks = useMemo(() => {
+    if (!failedProbeStageId) {
+      return false;
+    }
+    return displayTasks.some((task) => task.status === 'failed' && task.stage === failedProbeStageId);
+  }, [displayTasks, failedProbeStageId]);
 
   const progressSummary: SummaryResult = useShapeBuildProgressSummaryComputation({
     stages,

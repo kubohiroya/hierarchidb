@@ -27,7 +27,7 @@ type EventHandlerDeps = {
   onTaskTerminalProgressUpdate?: (task: ShapeBuildTaskSummary) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: Error | null) => void;
-  markTaskStreamSynchronized?: () => void;
+  markTaskSnapshotProgressSynchronized?: () => void;
 };
 
 const isTerminalTaskLike = (task: ShapeBuildTaskSummary): boolean => (
@@ -43,7 +43,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
   onTaskTerminalProgressUpdate,
   setIsLoading,
   setError,
-  markTaskStreamSynchronized,
+  markTaskSnapshotProgressSynchronized,
 }: EventHandlerDeps) => {
   const {
     tasksMapRef,
@@ -95,8 +95,6 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     const previous = tasksMapRef.current.get(resolved.taskId);
     if (!previous && tasksMapRef.current.size > 0) {
       const message = `[ShapeBuildTaskSync] unknown taskId: ${resolved.taskId}`;
-      const error = new Error(message);
-      setError(error);
       if (isDev) {
         console.error(message, {
           nodeId: sessionNodeId,
@@ -104,7 +102,25 @@ export const useShapeBuildTaskSyncEventHandlers = ({
           currentTasks: Array.from(tasksMapRef.current.keys()),
         });
       }
-      throw error;
+      emitRunningResidueLog('STALE_DROP', {
+        nodeId: sessionNodeId,
+        stage: resolved.stage,
+        taskId: resolved.taskId,
+        prevStatus: null,
+        nextStatus: resolved.status ?? null,
+        source: 'event',
+        eventType: 'update',
+        reason: 'unknown_task_inserted',
+      });
+      bufferTaskUpdate(resolved);
+      scheduleBufferedFlush();
+      if (isLoadingRef.current) {
+        setIsLoading(false);
+      }
+      if (sessionNodeId && markTaskSnapshotProgressSynchronized) {
+        markTaskSnapshotProgressSynchronized();
+      }
+      return;
     }
     if (previous && previous.stage !== resolved.stage) {
       const message = `[ShapeBuildTaskSync] task ${resolved.taskId} changed stage from ${previous.stage} to ${resolved.stage}`;
@@ -168,8 +184,8 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     if (isLoadingRef.current) {
       setIsLoading(false);
     }
-    if (sessionNodeId && markTaskStreamSynchronized) {
-      markTaskStreamSynchronized();
+    if (sessionNodeId && markTaskSnapshotProgressSynchronized) {
+      markTaskSnapshotProgressSynchronized();
     }
   }, [
     tasksMapRef,
@@ -182,7 +198,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     sessionNodeId,
     setError,
     setIsLoading,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
   ]);
 
   return {

@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAwaitingFirstTaskDecision } from '../../../components/build-progress/resolveAwaitingFirstTaskDecision';
+import { resolveReceivingTaskSnapshotDecision } from '../../../components/build-progress/resolveReceivingTaskSnapshotDecision';
 
-describe('resolveAwaitingFirstTaskDecision', () => {
+describe('resolveReceivingTaskSnapshotDecision', () => {
   it('returns success with task execution start when started tasks exist', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: true,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: true,
       hasStartedTasks: true,
       hasProgressTaskSignal: true,
       buildStatus: 'running',
       taskCount: 3,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
@@ -25,14 +25,42 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
+  it('returns success with no-task-completion when snapshot is already received and empty', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: true,
+      hasStartedTasks: false,
+      hasProgressTaskSignal: false,
+      buildStatus: 'running',
+      taskCount: 0,
+      isTaskSnapshotProgressConnected: true,
+      expectTaskGeneration: true,
+    });
+    expect(decision).toMatchObject({
+      kind: 'success',
+      reason: 'completed-without-generating-tasks',
+      taskExecutionStarted: {
+        queuedOnly: false,
+        hasProgressTaskSignal: false,
+      },
+      notification: {
+        level: 'info',
+        message: 'Build completed without generating tasks.',
+      },
+      transitionFinish: {
+        level: 'info',
+        message: 'Build completed without generating tasks.',
+      },
+    });
+  });
+
   it('returns success with queue observed when only queued tasks exist', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: true,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: true,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'running',
       taskCount: 1,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
     });
     expect(decision).toMatchObject({
@@ -48,55 +76,40 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
-  it('returns success with info transition when completed without tasks', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues waiting when completed without tasks but snapshot has not been received', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 0,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: false,
     });
-    expect(decision).toMatchObject({
-      kind: 'success',
-      reason: 'completed-without-generating-tasks',
-      transitionFinish: {
-        level: 'info',
-        message: 'Build completed without generating tasks.',
-      },
-      taskExecutionStarted: {
-        queuedOnly: false,
-        hasProgressTaskSignal: false,
-      },
-      notification: {
-        level: 'info',
-        message: 'Build completed without generating tasks.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('continues waiting when completed without tasks but task generation is expected', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 0,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns error when build fails before first task start', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('returns error when build fails before receiving-task-snapshot start', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({
@@ -110,13 +123,13 @@ describe('resolveAwaitingFirstTaskDecision', () => {
   });
 
   it('includes worker stageId in failure message when available', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionStageId: 'pipeline:fetch-stage:error',
     });
@@ -131,13 +144,13 @@ describe('resolveAwaitingFirstTaskDecision', () => {
   });
 
   it('continues when build failed but session progress evidence exists', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: undefined,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 2,
       sessionStageId: 'pipeline:fetch-stage:error',
@@ -146,26 +159,26 @@ describe('resolveAwaitingFirstTaskDecision', () => {
   });
 
   it('continues when build failed but progress-task signal exists', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: true,
       buildStatus: 'failed',
       taskCount: undefined,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('continues waiting when status is failed but startup stage is still progressing', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionStageId: 'startup:plan-fetch-total:start',
     });
@@ -173,13 +186,13 @@ describe('resolveAwaitingFirstTaskDecision', () => {
   });
 
   it('continues waiting when status is failed and task progress total is already known', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'failed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 2,
     });
@@ -187,26 +200,26 @@ describe('resolveAwaitingFirstTaskDecision', () => {
   });
 
   it('continues waiting when status is failed and progress task signal is present', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: true,
       buildStatus: 'failed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns cancelled when paused before first task start and pause is not pending', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('returns cancelled when paused before receiving-task-snapshot start and pause is not pending', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'paused',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({
@@ -219,151 +232,109 @@ describe('resolveAwaitingFirstTaskDecision', () => {
     });
   });
 
-  it('continues waiting while task stream is not ready even if status is completed', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues waiting while task snapshot progress is not connected even if status is completed', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('continues when stream is not ready and only session progress is known', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues when task snapshot progress is not connected and only session progress is known', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: undefined,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('continues waiting while task count is still unknown after stream becomes ready', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues waiting while task snapshot progress is still unknown after snapshot progress is connected', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: undefined,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
   it('continues when session progress exists but progress-task signal is still unknown', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: undefined,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
     expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns success when completed after at least one task record is observed', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues when completed and receiving task snapshot signal has not been received yet', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 2,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
     });
-    expect(decision).toMatchObject({
-      kind: 'success',
-      reason: 'completed-before-first-task-update',
-      transitionFinish: undefined,
-      taskExecutionStarted: {
-        queuedOnly: false,
-        hasProgressTaskSignal: false,
-      },
-      notification: {
-        level: 'info',
-        message: 'Build completed before first task update.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns success when completed with zero UI tasks and progress signal exists', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues when completed with zero UI tasks but receiving task snapshot signal has not been received', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: true,
       buildStatus: 'completed',
       taskCount: 0,
-      isTaskStreamReady: true,
+      isTaskSnapshotProgressConnected: true,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toMatchObject({
-      kind: 'success',
-      reason: 'completed-with-session-progress-evidence',
-      transitionFinish: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-      taskExecutionStarted: {
-        queuedOnly: false,
-        hasProgressTaskSignal: true,
-      },
-      notification: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('returns success when completed and started task is observed', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues when completed and task record exists but snapshot is still not received', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: true,
       hasProgressTaskSignal: false,
       buildStatus: 'completed',
       taskCount: 0,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
       sessionProgressTotal: 5,
     });
-    expect(decision).toMatchObject({
-      kind: 'success',
-      reason: 'completed-with-session-progress-evidence',
-      transitionFinish: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-      taskExecutionStarted: {
-        queuedOnly: false,
-        hasProgressTaskSignal: false,
-      },
-      notification: {
-        level: 'info',
-        message: 'Build completed before task stream synchronization.',
-      },
-    });
+    expect(decision).toEqual({ kind: 'continue' });
   });
 
-  it('continues waiting while build is still running and no first-task signal exists', () => {
-    const decision = resolveAwaitingFirstTaskDecision({
-      hasFirstTaskSignal: false,
+  it('continues waiting while build is still running and no receiving task snapshot signal exists', () => {
+    const decision = resolveReceivingTaskSnapshotDecision({
+      hasReceivingTaskSnapshotSignal: false,
       hasStartedTasks: false,
       hasProgressTaskSignal: false,
       buildStatus: 'running',
       taskCount: undefined,
-      isTaskStreamReady: false,
+      isTaskSnapshotProgressConnected: false,
       expectTaskGeneration: true,
     });
     expect(decision).toEqual({ kind: 'continue' });

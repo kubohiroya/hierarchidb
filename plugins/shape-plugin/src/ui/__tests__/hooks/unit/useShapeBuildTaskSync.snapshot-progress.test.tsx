@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent, BuildTaskSummary, TaskStage } from '@hierarchidb/build-api';
 import { useShapeBuildTaskSync } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync';
-import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
+import { useShapeBuildTaskSnapshotProgressState } from '../../../components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
 import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
 import type {ShapeBuildTaskSummary} from '@hierarchidb/shape-api';
 import { NodeId } from "@hierarchidb/core-types";
@@ -215,7 +215,7 @@ describe('useShapeBuildTaskSync', () => {
 
 });
 
-describe('useShapeBuildTasks', () => {
+describe('useShapeBuildTaskSnapshotProgressState', () => {
   beforeEach(() => {
     initializeMock.mockReset();
     subscribeMock.mockClear();
@@ -226,7 +226,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('updates task state from initial snapshot and terminal-progress updates', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-progress' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
     });
@@ -267,8 +267,8 @@ describe('useShapeBuildTasks', () => {
     });
   });
 
-  it('rejects task updates for unknown taskId', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-progress' as NodeId));
+  it('accepts task updates for unknown taskId', async () => {
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
     });
@@ -288,26 +288,24 @@ describe('useShapeBuildTasks', () => {
       expect(result.current.tasks[0]?.progress).toBe(20);
     });
 
-    expect(() => {
-      emitEvent('node-progress', {
-        type: 'update',
-        nodeId: 'node-progress' as NodeId,
-        task: makeTaskSummary('node-progress:fetch:unknown', {
-          status: 'running',
-          progress: 50,
-          message: 'invalid',
-          index: 0,
-        }),
-      });
-    }).toThrow('unknown taskId');
+    emitEvent('node-progress', {
+      type: 'update',
+      nodeId: 'node-progress' as NodeId,
+      task: makeTaskSummary('node-progress:fetch:unknown', {
+        status: 'running',
+        progress: 50,
+        message: 'invalid',
+        index: 0,
+      }),
+    });
 
     await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(2);
+      expect(result.current.tasks).toHaveLength(3);
     });
   });
 
   it('keeps update target semantics for known tasks', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-progress' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
     });

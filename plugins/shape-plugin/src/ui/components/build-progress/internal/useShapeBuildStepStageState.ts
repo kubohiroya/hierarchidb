@@ -3,13 +3,16 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useMemo, useRef } from 'react';
 import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBuildProgressMapping';
-import { hasAwaitingFirstTaskSignal } from '~/ui/components/build-progress/awaitingFirstTaskSignal';
+import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/receivingTaskSnapshotSignal';
 import { persistedTasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { useShapeBuildTasks } from '~/ui/components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
+import {
+  useShapeBuildTaskSnapshotProgressState,
+  type StageId,
+  type BuildStageStateById,
+} from '~/ui/components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
 import { resolveMostAdvancedInFlightStageId, resolveMostAdvancedRunningStageId } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/stage';
 import { resolveDisplayBuildStatus } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/status';
-import { isTerminalTask } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.js';
 
 type StageLike = {
   id: string;
@@ -38,25 +41,26 @@ type Args = {
   reportFailures: boolean;
   baseBuildStatus: BuildStatus;
   hasNodeId: boolean;
-  onVtStageCompletion?: (options: {
+  onTerminalStageCompletion?: (options: {
     completed: boolean;
-    hasFailedVtTasks: boolean;
+    hasFailedTerminalTasks: boolean;
   }) => void;
 };
 
-export type UseShapeBuildStepTaskStateReturn = {
+export type UseShapeBuildStepStageStateReturn = {
   tasks: ShapeBuildTaskSummary[];
   isLoading: boolean;
-  isTaskStreamReady: boolean;
+  isTaskSnapshotProgressConnected: boolean;
   stageFromState: string | null;
   liveStageFromState: string | undefined;
   resolvedStageFromState: string | undefined;
   buildStatus: BuildStatus;
-  hasFirstTaskSignal: boolean;
+  hasReceivingTaskSnapshotSignal: boolean;
   hasProgressTaskSignal: boolean;
   hasInFlightTasks: boolean;
   hasStartedTasks: boolean;
   hasQueuedTasks: boolean;
+  stageOrder: StageId[];
   runningStageIdFromTasks: string | null;
   inFlightStageIdFromTasks: string | null;
   snapshotTaskCountByStage: Record<string, number>;
@@ -67,10 +71,13 @@ export type UseShapeBuildStepTaskStateReturn = {
   refreshTasks: () => void;
   tasksCompletionStatus: BuildStatus | null;
   stageTaskCompletedById: Record<string, boolean>;
-  isVtStageCompleted: boolean;
+  hasTaskSnapshotByStage: Record<string, boolean>;
+  stageBuildStateById: BuildStageStateById;
+  isTerminalStageCompleted: boolean;
+  terminalStageId: StageId | null;
 };
 
-export const useShapeBuildStepTaskState = ({
+export const useShapeBuildStepStageState = ({
   activeNodeId,
   isSessionStopping,
   stages,
@@ -78,17 +85,35 @@ export const useShapeBuildStepTaskState = ({
   sessionProgressTotal,
   reportFailures,
   baseBuildStatus,
-  onVtStageCompletion,
-}: Args): UseShapeBuildStepTaskStateReturn => {
+  onTerminalStageCompletion,
+}: Args): UseShapeBuildStepStageStateReturn => {
+  const configuredStageOrder = useMemo(() => stages.map((stage) => stage.id), [stages]);
+  const terminalStageId = useMemo<StageId | null>(() => {
+    if (configuredStageOrder.length <= 0) {
+      return null;
+    }
+    return configuredStageOrder[configuredStageOrder.length - 1] as StageId;
+  }, [configuredStageOrder]);
+  const restartFailureStageId = useMemo<StageId | null>(() => {
+    if (configuredStageOrder.length <= 0) {
+      return null;
+    }
+    return configuredStageOrder[0] as StageId;
+  }, [configuredStageOrder]);
   const {
     tasks,
     isLoading,
-    isTaskStreamReady,
-    refresh,
+    isTaskSnapshotProgressConnected,
+    hasAnyTaskSnapshot,
+    hasTaskSnapshotByStage,
+    stageOrder: resolvedStageOrder,
+    stageBuildStateById,
     snapshotTaskCountByStage,
     terminalTaskCountByStage,
-  } = useShapeBuildTasks(activeNodeId, {
+    refresh,
+  } = useShapeBuildTaskSnapshotProgressState(activeNodeId, {
     reportFailures,
+    stageOrder: configuredStageOrder,
   });
 
   const persistedTasks = useAtomValue(persistedTasksAtom);
@@ -135,65 +160,68 @@ export const useShapeBuildStepTaskState = ({
   ), [displayTasks]);
 
   const taskProgressTotal = effectiveProgress?.status?.progress ?? sessionProgressTotal;
-  const hasProgressTaskSignal = hasAwaitingFirstTaskSignal({
+  const hasProgressTaskSignal = detectTaskSnapshotSignal({
     hasStartedTasks,
     hasQueuedTasks,
     progressTaskId: effectiveProgress?.progressTaskId ?? null,
     progressTotal: taskProgressTotal,
   });
-  const hasFirstTaskSignal = hasAwaitingFirstTaskSignal({
-    hasStartedTasks,
-    hasQueuedTasks,
-    progressTaskId: effectiveProgress?.progressTaskId ?? null,
-    progressTotal: taskProgressTotal,
-  });
-
-  const stageTaskGroups = useMemo(() => {
-    const grouped = new Map<string, ShapeBuildTaskSummary[]>();
-    for (const task of displayTasks) {
-      const current = grouped.get(task.stage) ?? [];
-      current.push(task);
-      grouped.set(task.stage, current);
-    }
-    return grouped;
-  }, [displayTasks]);
+  const hasReceivingTaskSnapshotSignal = isTaskSnapshotProgressConnected && hasAnyTaskSnapshot;
 
   const stageTaskCompletedById = useMemo(() => {
     const completed: Record<string, boolean> = {};
-    stageTaskGroups.forEach((groupTasks, stageId) => {
-      if (groupTasks.length === 0) return;
-      const allTerminal = groupTasks.every((task) => isTerminalTask(task));
-      if (allTerminal) {
+    stageBuildStateById.forEach((state, stageId) => {
+      if (state.isCompleted) {
         completed[stageId] = true;
       }
     });
     return completed;
-  }, [stageTaskGroups]);
+  }, [stageBuildStateById]);
 
-  const isVtStageCompleted = useMemo(() => {
-    const vtTasks = stageTaskGroups.get('vt') ?? [];
-    if (vtTasks.length === 0) return false;
-    return vtTasks.every((task) => isTerminalTask(task));
-  }, [stageTaskGroups]);
+  const isTerminalStageCompleted = useMemo(() => {
+    if (!terminalStageId) {
+      return false;
+    }
+    const terminalTaskState = stageBuildStateById.get(terminalStageId);
+    if (!terminalTaskState || terminalTaskState.stageTask.length === 0) {
+      return false;
+    }
+    return terminalTaskState.isCompleted;
+  }, [stageBuildStateById, terminalStageId]);
 
-  const hasFailedVtTasks = useMemo(() => (
-    displayTasks.some((task) => task.status === 'failed' && task.stage === 'vt')
-  ), [displayTasks]);
+  const hasFailedRestartStageTasks = useMemo(() => {
+    if (!restartFailureStageId) {
+      return false;
+    }
+    return displayTasks.some((task) => task.status === 'failed' && task.stage === restartFailureStageId);
+  }, [displayTasks, restartFailureStageId]);
 
-  const vtCompletionNotifiedRef = useRef(false);
+  const hasFailedTerminalTasks = useMemo(() => (
+    displayTasks.some((task) => (
+      task.status === 'failed'
+      && terminalStageId !== null
+      && task.stage === terminalStageId
+    ))
+  ), [displayTasks, terminalStageId]);
+
+  const terminalCompletionNotifiedRef = useRef(false);
   useEffect(() => {
-    if (!onVtStageCompletion) return;
-    if (!isVtStageCompleted) {
-      vtCompletionNotifiedRef.current = false;
+    if (!onTerminalStageCompletion) return;
+    if (!isTerminalStageCompleted) {
+      terminalCompletionNotifiedRef.current = false;
       return;
     }
-    if (vtCompletionNotifiedRef.current) return;
-    vtCompletionNotifiedRef.current = true;
-    onVtStageCompletion({
+    if (terminalCompletionNotifiedRef.current) return;
+    terminalCompletionNotifiedRef.current = true;
+    onTerminalStageCompletion({
       completed: true,
-      hasFailedVtTasks,
+      hasFailedTerminalTasks,
     });
-  }, [isVtStageCompleted, hasFailedVtTasks, onVtStageCompletion]);
+  }, [
+    hasFailedTerminalTasks,
+    isTerminalStageCompleted,
+    onTerminalStageCompletion,
+  ]);
 
   const tasksCompletionStatus = useMemo<BuildStatus | null>(() => {
     if (displayTasks.length === 0) return null;
@@ -224,26 +252,30 @@ export const useShapeBuildStepTaskState = ({
   return {
     tasks: displayTasks,
     isLoading,
-    isTaskStreamReady,
+    isTaskSnapshotProgressConnected,
     stageFromState: stageFromState ?? null,
     liveStageFromState,
     resolvedStageFromState,
     buildStatus,
-    hasFirstTaskSignal,
+    hasReceivingTaskSnapshotSignal,
     hasProgressTaskSignal,
     hasInFlightTasks,
     hasStartedTasks,
     hasQueuedTasks,
+    stageOrder: resolvedStageOrder,
     runningStageIdFromTasks,
     inFlightStageIdFromTasks,
     snapshotTaskCountByStage,
     terminalTaskCountByStage,
-    hasFailedFetchTasks: displayTasks.some((task) => task.status === 'failed' && (task.stage === 'fetch')),
+    hasTaskSnapshotByStage,
+    stageBuildStateById,
+    hasFailedFetchTasks: hasFailedRestartStageTasks,
+    isTerminalStageCompleted,
+    terminalStageId,
     taskProgressTotal,
     sessionProgressTotal,
     refreshTasks: refresh,
     tasksCompletionStatus,
     stageTaskCompletedById,
-    isVtStageCompleted,
   };
 };

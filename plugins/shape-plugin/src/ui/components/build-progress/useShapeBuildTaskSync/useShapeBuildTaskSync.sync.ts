@@ -13,7 +13,7 @@ const TASK_FLUSH_FALLBACK_TIMEOUT_MS = 120;
 
 export const useShapeBuildTaskSyncScheduling = ({
   sessionNodeId,
-  markTaskStreamSynchronized,
+  markTaskSnapshotProgressSynchronized,
   refs,
   setTasks,
 }: SyncSchedulingArgs): SyncResult => {
@@ -37,22 +37,20 @@ export const useShapeBuildTaskSyncScheduling = ({
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[], dirty: boolean) => {
     if (!dirty) {
-      markTaskStreamSynchronized?.();
-      return;
-    }
-    if (areTaskListsEquivalentForView(committedTasksRef.current, next)) {
-      committedTasksRef.current = next;
-      markTaskStreamSynchronized?.();
+      markTaskSnapshotProgressSynchronized?.();
       return;
     }
     committedTasksRef.current = next;
+    const shouldUpdateTasks = next.length === 0 || !areTaskListsEquivalentForView(tasksRef.current, next);
     if (!isMountedRef.current) {
-      markTaskStreamSynchronized?.();
+      markTaskSnapshotProgressSynchronized?.();
       return;
     }
-    setTasks(next);
-    markTaskStreamSynchronized?.();
-  }, [committedTasksRef, isMountedRef, markTaskStreamSynchronized, setTasks]);
+    if (shouldUpdateTasks) {
+      setTasks(next);
+    }
+    markTaskSnapshotProgressSynchronized?.();
+    }, [committedTasksRef, isMountedRef, markTaskSnapshotProgressSynchronized, setTasks, tasksRef]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[], dirty = true) => {
     if (!isMountedRef.current) return;
@@ -112,9 +110,6 @@ export const useShapeBuildTaskSyncScheduling = ({
     const nextMap = new Map(tasksMapRef.current);
     const currentTask = nextMap.get(task.taskId);
     if (!currentTask) {
-      if (nextMap.size > 0) {
-        return { next: baseList, changed: false } as const;
-      }
       const nextList = upsertTaskInOrder(baseList, task);
       nextMap.set(task.taskId, task);
       if (isCompletedAtFullProgress(task)) {

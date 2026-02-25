@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
-import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
+import { useShapeBuildTaskSnapshotProgressState } from '../../../components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getDefaultStore } from 'jotai';
 import {
@@ -58,7 +58,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => {
   };
 });
 
-describe('useShapeBuildTasks', () => {
+describe('useShapeBuildTaskSnapshotProgressState', () => {
   beforeEach(() => {
     initializeMock.mockReset();
     subscribeMock.mockClear();
@@ -78,8 +78,8 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('applies snapshot and update events without polling', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-1' as NodeId));
-    expect(result.current.isTaskStreamReady).toBe(false);
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-1' as NodeId));
+    expect(result.current.isTaskSnapshotProgressConnected).toBe(false);
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe('useShapeBuildTasks', () => {
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.isTaskStreamReady).toBe(true);
+      expect(result.current.isTaskSnapshotProgressConnected).toBe(true);
     });
 
     act(() => {
@@ -156,7 +156,7 @@ describe('useShapeBuildTasks', () => {
       },
     ]);
 
-    const { result } = renderHook(() => useShapeBuildTasks('node-refresh' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-refresh' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -173,7 +173,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps canonical stage in task records', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-stage-priority' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-stage-priority' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps completed 100% when a running 100% update arrives later', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -269,7 +269,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('does not downgrade running status with equal progress from snapshot', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2x' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2x' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -318,7 +318,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps completed message stable when late phase updates arrive', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2b' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2b' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -364,7 +364,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('ignores later running updates after completed terminal status', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2d' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2d' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -412,7 +412,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves completed terminal state against later non-terminal updates', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-8' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-8' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -460,7 +460,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves failed terminal state and keeps failed at 100%', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-9' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-9' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -507,7 +507,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('treats skipped display task as terminal and keeps 100% progress', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-10' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-10' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -554,7 +554,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps tasks from unrelated stages when stage snapshot arrives', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-stage-multi' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-stage-multi' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -620,7 +620,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves completed stage task counts when stage snapshot changes', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-stage-count-retain' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-stage-count-retain' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -742,7 +742,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('preserves terminal counts for non-incoming stages when new stage snapshot arrives', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2e' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2e' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -802,7 +802,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('promotes completed message from phase marker to concrete completion message once', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-2c' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2c' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -867,7 +867,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('normalizes running 100% to completed across stages', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-3' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-3' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -913,7 +913,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps non-terminal status at less than 100 progress', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-3b' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-3b' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -963,7 +963,7 @@ describe('useShapeBuildTasks', () => {
 
   it('logs TaskUpdate100 with parsed scope when update progress reaches 100', async () => {
     setTaskSyncDebugConfig({ taskUpdate100: true });
-    renderHook(() => useShapeBuildTasks('node-4' as NodeId));
+    renderHook(() => useShapeBuildTaskSnapshotProgressState('node-4' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -989,7 +989,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('does not log TaskUpdate100 for non-100 updates', async () => {
-    renderHook(() => useShapeBuildTasks('node-5' as NodeId));
+    renderHook(() => useShapeBuildTaskSnapshotProgressState('node-5' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1015,7 +1015,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('ignores task events when nodeId does not match the active subscription', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-mismatch' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1041,7 +1041,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps terminal status when duplicate updates arrive', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-6' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-6' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1122,7 +1122,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('keeps existing tasks when a snapshot omits previously seen taskIds', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-7' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-7' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1184,7 +1184,7 @@ describe('useShapeBuildTasks', () => {
 
   it('ignores updates for different nodeId in active subscription', async () => {
     getBuildTasksMock.mockResolvedValue([]);
-    const { result } = renderHook(() => useShapeBuildTasks('node-mismatch'  as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-mismatch'  as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1214,7 +1214,7 @@ describe('useShapeBuildTasks', () => {
   it('drops stale subscriber updates after node switch', async () => {
     getBuildTasksMock.mockResolvedValue([]);
     const { result, rerender } = renderHook(
-      ({ nodeId }: { nodeId: string }) => useShapeBuildTasks(nodeId as NodeId),
+      ({ nodeId }: { nodeId: string }) => useShapeBuildTaskSnapshotProgressState(nodeId as NodeId),
       { initialProps: { nodeId: 'node-old' } },
     );
 
@@ -1270,7 +1270,7 @@ describe('useShapeBuildTasks', () => {
   });
 
   it('composes vt parent input summary metadata into task message', async () => {
-    const { result } = renderHook(() => useShapeBuildTasks('node-vt-meta' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-vt-meta' as NodeId));
 
     await waitFor(() => {
       expect(subscribeMock).toHaveBeenCalled();
@@ -1316,7 +1316,7 @@ describe('useShapeBuildTasks', () => {
       },
     ]);
 
-    const { result } = renderHook(() => useShapeBuildTasks('node-refresh-missing' as NodeId));
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-refresh-missing' as NodeId));
 
     await act(async () => {
       await Promise.resolve();
@@ -1345,7 +1345,7 @@ describe('useShapeBuildTasks', () => {
     const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 4242);
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     try {
-      const { result } = renderHook(() => useShapeBuildTasks('node-raf-fallback' as NodeId));
+      const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-raf-fallback' as NodeId));
 
       await act(async () => {
         await Promise.resolve();

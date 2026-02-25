@@ -1,5 +1,8 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { EphemeralDB } from '@hierarchidb/gis-sdk';
+import type {
+  EphemeralDB,
+  EphemeralTransformCacheRecord,
+} from '@hierarchidb/gis-sdk';
 import { logDebug } from '~/debug/persistentDebugLog';
 import {
   TASKDEBUG_BUILD_TAG,
@@ -14,7 +17,7 @@ type TransformCacheRecord = {
   id: string;
   nodeId: NodeId;
   bandIndex: number;
-  domainType: 'shape' | 'route';
+  domainType: EphemeralTransformCacheRecord['domainType'];
   sourceKey: string;
   countryCode?: string;
   adminLevel?: number;

@@ -43,7 +43,7 @@ type UseShapeBuildStepTransitionControllerResult = {
   buildSessionTransitionWarnStepRef: { current: BuildStartupTransitionWarnStep };
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
   buildSessionTransitionWaitLogStepRef: { current: number };
-  awaitingFirstTaskExpectationRef: { current: boolean };
+  receivingTaskSnapshotExpectationRef: { current: boolean };
   progressTerminalLogKeyRef: { current: string | null };
 };
 
@@ -56,7 +56,7 @@ export const useShapeBuildStepTransitionController = ({
   const buildSessionTransitionWarnStepRef = useRef<BuildStartupTransitionWarnStep>(0);
   const buildSessionTransitionTaskStartNotifiedRef = useRef(false);
   const buildSessionTransitionWaitLogStepRef = useRef(-1);
-  const awaitingFirstTaskExpectationRef = useRef(false);
+  const receivingTaskSnapshotExpectationRef = useRef(false);
   const progressTerminalLogKeyRef = useRef<string | null>(null);
   const previousTransitionActiveRef = useRef(false);
   const buildStartupStepStartedAtRef = useRef<Map<BuildStartupStep, number>>(new Map());
@@ -87,7 +87,7 @@ export const useShapeBuildStepTransitionController = ({
     buildSessionTransitionWarnStepRef.current = 0;
     buildSessionTransitionTaskStartNotifiedRef.current = false;
     buildSessionTransitionWaitLogStepRef.current = -1;
-    awaitingFirstTaskExpectationRef.current = false;
+    receivingTaskSnapshotExpectationRef.current = false;
     progressTerminalLogKeyRef.current = null;
   }, [clearStartPendingRef]);
 
@@ -197,7 +197,7 @@ export const useShapeBuildStepTransitionController = ({
     buildSessionTransitionWarnStepRef,
     buildSessionTransitionTaskStartNotifiedRef,
     buildSessionTransitionWaitLogStepRef,
-    awaitingFirstTaskExpectationRef,
+    receivingTaskSnapshotExpectationRef,
     progressTerminalLogKeyRef,
   };
 };

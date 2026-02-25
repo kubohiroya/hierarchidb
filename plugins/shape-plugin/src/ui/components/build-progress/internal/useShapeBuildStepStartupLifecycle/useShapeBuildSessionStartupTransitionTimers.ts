@@ -47,8 +47,8 @@ const handleTimeout = (
     phase,
     elapsedMs,
   });
-  if (phase === 'awaiting-first-task') {
-    finishBuildStartupStep('awaiting-first-task', 'error', {
+  if (phase === 'receiving-task-snapshot') {
+    finishBuildStartupStep('receiving-task-snapshot', 'error', {
       reason: 'timeout-before-task-start',
       elapsedMs,
     });

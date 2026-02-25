@@ -218,13 +218,13 @@ const collectWorkerDiagnostics = async (page: Page, nodeId: string): Promise<Wor
   }, nodeId);
 };
 
-test.describe('Shape build startup first-task UX', () => {
+test.describe('Shape build startup receiving-task-snapshot UX', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
   });
 
-  test('does not hit awaiting-first-task 45s timeout after build start and observes first-task evidence', async ({ page }) => {
+  test('does not hit receiving-task-snapshot timeout after build start and observes receiving-task-snapshot evidence', async ({ page }) => {
     test.setTimeout(180000);
     const authSeed = readE2EAuthSeed();
     if (!authSeed.accessToken) {
@@ -376,7 +376,7 @@ test.describe('Shape build startup first-task UX', () => {
       const nodeId = createResult.nodeId;
       const draftPayload = {
         name: `Shape Startup ${Date.now()}`,
-        description: 'E2E startup first-task test',
+        description: 'E2E startup receiving-task-snapshot test',
         buildConfig,
         selectedArrayByCountries,
         processingStatus: 'idle',
@@ -402,8 +402,8 @@ test.describe('Shape build startup first-task UX', () => {
     await shapeNodeLink.click();
 
     const startupTimeoutLogs: string[] = [];
-    const firstTaskSuccessLogs: string[] = [];
-    const firstTaskFailureLogs: string[] = [];
+    const receivingTaskSnapshotSuccessLogs: string[] = [];
+    const receivingTaskSnapshotFailureLogs: string[] = [];
     const authRequiredLogs: string[] = [];
     const workerStartupLogs: string[] = [];
     const startupTrace: string[] = [];
@@ -420,7 +420,7 @@ test.describe('Shape build startup first-task UX', () => {
         if (
           text.includes('[ShapeBuildProgressStep]')
           || text.includes('[ShapeBuildStartResumeTrace]')
-          || text.includes('[ShapeAwaitingFirstTaskDecisionTrace]')
+          || text.includes('[ShapeReceivingTaskSnapshotDecisionTrace]')
           || text.includes('[ShapeBuildWorkerStageTrace]')
         ) {
           pushStartupTrace(text);
@@ -449,26 +449,26 @@ test.describe('Shape build startup first-task UX', () => {
 
         if (text.includes('build session transition finish')) {
           const message = readString(payload, 'message');
-          if (message?.includes('Build did not start task processing (awaiting-first-task')) {
+          if (message?.includes('Build did not start task processing (receiving-task-snapshot')) {
             startupTimeoutLogs.push(message);
             return;
           }
           if (message?.includes('Build completed without generating tasks.')) {
-            firstTaskSuccessLogs.push(JSON.stringify(payload));
+            receivingTaskSnapshotSuccessLogs.push(JSON.stringify(payload));
           }
           return;
         }
 
         if (text.includes('build startup step finish')) {
           const step = readString(payload, 'step');
-          if (step !== 'awaiting-first-task') return;
+          if (step !== 'receiving-task-snapshot') return;
           const outcome = readString(payload, 'outcome');
           if (outcome === 'success') {
-            firstTaskSuccessLogs.push(JSON.stringify(payload));
+            receivingTaskSnapshotSuccessLogs.push(JSON.stringify(payload));
             return;
           }
           if (outcome === 'error' || outcome === 'cancelled' || outcome === 'failed') {
-            firstTaskFailureLogs.push(JSON.stringify(payload));
+            receivingTaskSnapshotFailureLogs.push(JSON.stringify(payload));
           }
         }
       })();
@@ -544,22 +544,22 @@ test.describe('Shape build startup first-task UX', () => {
             + `\nWorker diagnostics:\n${JSON.stringify(workerDiagnostics)}`
           );
         }
-        if (firstTaskFailureLogs.length > 0) {
+        if (receivingTaskSnapshotFailureLogs.length > 0) {
           const workerDiagnostics = await collectWorkerDiagnostics(page, String(shapeNode.nodeId));
           const recentTrace = startupTrace.slice(-25).join('\n');
           throw new Error(
-            `Startup failed before first-task signal: ${firstTaskFailureLogs[0]}`
+            `Startup failed before receiving-task-snapshot signal: ${receivingTaskSnapshotFailureLogs[0]}`
             + `\nRecent startup trace:\n${recentTrace || '(none)'}`
             + `\nRecent worker startup trace:\n${workerTrace || '(none)'}`
             + `\nWorker diagnostics:\n${JSON.stringify(workerDiagnostics)}`
           );
         }
-        if (firstTaskSuccessLogs.length > 0) {
+        if (receivingTaskSnapshotSuccessLogs.length > 0) {
           break;
         }
         await page.waitForTimeout(250);
       }
-      if (firstTaskSuccessLogs.length === 0) {
+      if (receivingTaskSnapshotSuccessLogs.length === 0) {
         const recentTrace = startupTrace.slice(-15).join('\n');
         const workerTrace = workerStartupLogs.slice(-20).join('\n');
         throw new Error(
@@ -570,8 +570,8 @@ test.describe('Shape build startup first-task UX', () => {
 
       expect(authRequiredLogs).toHaveLength(0);
       expect(startupTimeoutLogs).toHaveLength(0);
-      expect(firstTaskFailureLogs).toHaveLength(0);
-      expect(firstTaskSuccessLogs.length).toBeGreaterThan(0);
+      expect(receivingTaskSnapshotFailureLogs).toHaveLength(0);
+      expect(receivingTaskSnapshotSuccessLogs.length).toBeGreaterThan(0);
     } finally {
       page.off('worker', attachWorkerConsole);
       detachWorkerConsoles();

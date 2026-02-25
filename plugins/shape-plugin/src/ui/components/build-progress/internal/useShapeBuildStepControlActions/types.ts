@@ -16,7 +16,7 @@ export type BuildSessionTransitionPhase =
   | 'initializing-worker'
   | 'building-payloads'
   | 'starting-session'
-  | 'awaiting-first-task';
+  | 'receiving-task-snapshot';
 
 export type BuildStartupStep =
   | 'lock-acquire'
@@ -27,7 +27,7 @@ export type BuildStartupStep =
   | 'session-resume-request'
   | 'session-start-request'
   | 'session-status-persist'
-  | 'awaiting-first-task';
+  | 'receiving-task-snapshot';
 
 export type BuildStartupStepOutcome = 'success' | 'error' | 'cancelled' | 'aborted';
 

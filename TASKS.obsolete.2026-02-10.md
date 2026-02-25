@@ -252,7 +252,7 @@
 2671) fix/ui/shape-step5-start-does-not-trigger-fetch-when-draft-paused (P1) — 完了 (2026-02-10)
 - ブランチ名: ERIA-Cartograph
 - 依存: 2658) fix/ui/shape-build-start-pending-and-progress-scope-stability
-- 受け入れ基準: shape step5 で `Build start` 押下後に Fetch タスクが確実に `queued/running` へ遷移する／`draftData.processingStatus: paused` が残存していても開始フローを阻害しない／開始遷移ログ（`starting-session`→`awaiting-first-task`）後に実タスク開始が観測できる／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
+- 受け入れ基準: shape step5 で `Build start` 押下後に Fetch タスクが確実に `queued/running` へ遷移する／`draftData.processingStatus: paused` が残存していても開始フローを阻害しない／開始遷移ログ（`starting-session`→`receiving-task-snapshot`）後に実タスク開始が観測できる／影響範囲の typecheck/build（対象限定）が exit 0／原因・発生範囲・修正方法と適用範囲を TASKS.md に記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**` / `plugins/shape-plugin/src/worker/**`（必要に応じて追加）
 - ロールバック手順: 本タスク差分を revert し、従来の step5 開始フローへ戻す
 - チェックリスト:
@@ -264,7 +264,7 @@
 - 運用ログ:
   - start: 2026-02-10 19:43 JST shape step5 で `Build start` 押下後に Fetch タスクが起動しない不具合（開始遷移は完了するが実タスク未開始）の調査と修正に着手。
   - update: 2026-02-10 19:50 JST 原因は `useShapeBuildStep.ts` の手動 Start/Resume 経路（`handleStartOrResume`）が `buildStatus=paused` でも常に `startBuildSession` を実行し、`resumeBuildSession` を呼ばない点。これにより user-pause で停止中の既存セッションを再開できず、開始遷移ログだけ進んで Fetch 実行が始まらない経路が発生。発生範囲は `useShapeBuildStep.ts` の start/resume 分岐。
-  - update: 2026-02-10 19:52 JST 修正として `shouldResumeBuildSession` 判定を追加し、`paused` かつ `forceRestart` でない場合は `resumeBuildSession` を優先実行するよう変更。resume 成功時に `processingStatus: 'processing'` と `stopReason: undefined` を永続化し、`awaiting-first-task` へ遷移。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` と新規 `shouldResumeBuildSession.ts`、およびユニットテスト追加。
+  - update: 2026-02-10 19:52 JST 修正として `shouldResumeBuildSession` 判定を追加し、`paused` かつ `forceRestart` でない場合は `resumeBuildSession` を優先実行するよう変更。resume 成功時に `processingStatus: 'processing'` と `stopReason: undefined` を永続化し、`receiving-task-snapshot` へ遷移。適用範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` と新規 `shouldResumeBuildSession.ts`、およびユニットテスト追加。
   - done: 2026-02-10 19:54 JST `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/shouldResumeBuildSession.unit.test.ts` / `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はすべて exit 0。
 
 2670) fix/location/preview-ide-gsm-import-rerun-loop-on-map-preview (P1) — 完了 (2026-02-10)
@@ -464,7 +464,7 @@
 - 運用ログ:
   - start: 2026-02-10 23:20 JST `Build start is taking longer than expected` 表示中に待機理由と進行が見えない問題の修正に着手。ロック待機・開始遷移ログの可視化改善を実施する。
   - update: 2026-02-10 23:28 JST 原因は `useShapeBuildStep.ts` の開始遷移ラベルが phase 固定文言で経過時間を持たず、`waiting-lock` 中は 10/20/45 秒の診断通知まで追加情報が出ない点。加えてロック待機ループは heartbeat 更新中心で、待機中の継続ログが出ない。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`。
-  - update: 2026-02-10 23:31 JST 修正として (1) 開始遷移状態に elapsed ミリ秒 state を追加し `waiting-lock` / `awaiting-first-task` ラベルへ秒数表示を反映、(2) `waiting-lock` 中に poll interval ごとの `build session waiting for lock` 診断ログを追加、(3) lock 取得完了時と transition finish 時に `queueRequestedAtRef` を明示クリアして stale 待機情報の残留を防止。適用範囲は同ファイルのみ。
+  - update: 2026-02-10 23:31 JST 修正として (1) 開始遷移状態に elapsed ミリ秒 state を追加し `waiting-lock` / `receiving-task-snapshot` ラベルへ秒数表示を反映、(2) `waiting-lock` 中に poll interval ごとの `build session waiting for lock` 診断ログを追加、(3) lock 取得完了時と transition finish 時に `queueRequestedAtRef` を明示クリアして stale 待機情報の残留を防止。適用範囲は同ファイルのみ。
   - blocked: 2026-02-10 23:34 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` は依存先 `@hierarchidb/vt-orchestrator` の既存エラー（`createTransformByBandHandler.ts` TS2322）で exit 2。今回差分外のため、対象限定検証へ切り替え。
   - done: 2026-02-10 23:36 JST `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` / `pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` はいずれも exit 0。
 
@@ -19216,7 +19216,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
   - start: 2026-02-10 22:48 JST build 再開時クラッシュ切り分けのため、開始ボタン押下から初回task開始までの各段階で start/finish ログを追加する作業に着手。
-  - update: 2026-02-10 22:52 JST `useShapeBuildStep.ts` に初期化ステップ（lock/draft/worker/payload/session/awaiting-first-task）の start/finish ログ出力を追加。中断時の `aborted`、失敗時の `error`、pause 時の `cancelled` を出力するように実装。
+  - update: 2026-02-10 22:52 JST `useShapeBuildStep.ts` に初期化ステップ（lock/draft/worker/payload/session/receiving-task-snapshot）の start/finish ログ出力を追加。中断時の `aborted`、失敗時の `error`、pause 時の `cancelled` を出力するように実装。
   - update: 2026-02-10 22:54 JST `useShapeBuildStep` の新規依存 `useBuildSessionTransition` に合わせて `useShapeBuildStep.unit.test.tsx` の `@hierarchidb/components` モックを部分モック化し、同 hook のダミー実装を追加。
   - update: 2026-02-10 23:09 JST `useShapeBuildStep.unit.test.tsx` の `@hierarchidb/components` モックから `importOriginal('@hierarchidb/components')` を撤去し、`executePauseBuildFlow`/`notify`/`useBuildSessionTransition` の完全手書きモックへ置換。
   - done: 2026-02-10 23:00 JST `pnpm -w turbo run build --filter @hierarchidb/shape-plugin` exit 0。

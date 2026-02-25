@@ -1,4 +1,4 @@
-export const hasAwaitingFirstTaskSignal = (input: {
+export const hasReceivingTaskSnapshotSignal = (input: {
   hasStartedTasks: boolean;
   hasQueuedTasks: boolean;
   progressTaskId?: string | null;

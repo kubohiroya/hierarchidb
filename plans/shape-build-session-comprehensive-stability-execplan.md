@@ -6,45 +6,45 @@ This document is maintained in accordance with `PLANS.md` from the repository ro
 
 ## Purpose / Big Picture
 
-After this change, a user can clear IndexedDB, re-authenticate, start a Shape build from Step 5, and see startup transition into task processing without getting stuck in `awaiting-first-task` and timing out at 45 seconds. The system will also have stronger automated coverage: unit tests for startup signal detection, integration-level hook coverage for task subscription behavior, and a reproducible E2E path for UX validation.
+After this change, a user can clear IndexedDB, re-authenticate, start a Shape build from Step 5, and see startup transition into task processing without getting stuck in `receiving-task-snapshot` and timing out at 45 seconds. The system will also have stronger automated coverage: unit tests for startup signal detection, integration-level hook coverage for task subscription behavior, and a reproducible E2E path for UX validation.
 
 ## Progress
 
 - [x] (2026-02-13 08:56 JST) Created GitHub Issue #238 and moved it to Project `hierarchidb` status `In Progress`.
 - [x] (2026-02-13 08:56 JST) Created branch `codex/fix/shape/build-session-comprehensive-stability` and updated `TASKS.md`.
-- [x] (2026-02-13 09:10 JST) Identified startup-risk points: `awaiting-first-task` signal criteria and `requestAnimationFrame`-only flush path in task sync.
+- [x] (2026-02-13 09:10 JST) Identified startup-risk points: `receiving-task-snapshot` signal criteria and `requestAnimationFrame`-only flush path in task sync.
 - [x] (2026-02-13 09:17 JST) Implemented task flush fallback timer in `useShapeBuildTaskSync.ts`.
-- [x] (2026-02-13 09:20 JST) Implemented broader first-task signal handling in `useShapeBuildStep.ts`.
-- [x] (2026-02-13 09:23 JST) Added/updated unit tests for first-task signal and flush fallback.
+- [x] (2026-02-13 09:20 JST) Implemented broader receiving-task-snapshot signal handling in `useShapeBuildStep.ts`.
+- [x] (2026-02-13 09:23 JST) Added/updated unit tests for receiving-task-snapshot signal and flush fallback.
 - [x] (2026-02-13 11:20 JST) Added decision-function unit tests and stale-subscriber race tests; ran target shape-plugin tests (24 passed).
 - [x] (2026-02-17 16:22 JST) Ran target package typecheck/build and collected evidence in #340 logs.
-- [x] (2026-02-13 11:20 JST) Added integration harness around build start transition and first-task observation.
+- [x] (2026-02-13 11:20 JST) Added integration harness around build start transition and receiving-task-snapshot observation.
 - [x] (2026-02-13 12:00 JST) Validated Create Shape Step5 startup path with Chrome DevTools MCP (`localhost:4200`) and captured payload evidence.
 - [x] (2026-02-13 12:14 JST) Ran Playwright E2E with explicit auth seed (`E2E_AUTH_ACCESS_TOKEN`) and `/auth/verify` precheck; scenario passed without startup timeout.
 - [x] (2026-02-13 12:50 JST) Added `pnpm e2e:shape-startup` wrapper and local auth-seed file support (`e2e/.auth/auth.json`), including fail-fast checks for missing seed.
-- [x] (2026-02-13 15:20 JST) Added `task stream ready` gating so `awaiting-first-task` does not finalize on uninitialized `taskCount` (undefined), and updated unit/integration coverage.
+- [x] (2026-02-13 15:20 JST) Added `task stream ready` gating so `receiving-task-snapshot` does not finalize on uninitialized `taskCount` (undefined), and updated unit/integration coverage.
 - [x] (2026-02-17 16:37 JST) Updated outcomes/retrospective and linked current runtime-worker state-transition docs.
 
 ## Surprises & Discoveries
 
 - Observation: Startup timeout detection depends on UI-observable task/progress signals, not only worker session start response.
-  Evidence: `useShapeBuildStep.ts` transitions to `awaiting-first-task` after successful `session-start-request` and times out if no qualifying signal appears.
+  Evidence: `useShapeBuildStep.ts` transitions to `receiving-task-snapshot` after successful `session-start-request` and times out if no qualifying signal appears.
 
 - Observation: Task UI commit used `requestAnimationFrame` only, which can delay or suppress state propagation under frame throttling.
   Evidence: `useShapeBuildTaskSync.ts` had no timeout fallback path before this change.
 
 - Observation: Playwright isolated context does not reuse the already-authenticated local browser session in this environment.
-  Evidence: `e2e/shape/shape-build-startup-first-task.spec.ts` failed at startup with `Authentication required`, while the same scenario in MCP real browser succeeded.
+  Evidence: `e2e/shape/shape-build-startup-receiving-task-snapshot.spec.ts` failed at startup with `Authentication required`, while the same scenario in MCP real browser succeeded.
 
 - Observation: Playwright can validate the startup path reliably when a real session token is injected explicitly.
-  Evidence: Running the E2E with `E2E_AUTH_ACCESS_TOKEN` + `/auth/verify` precheck passed and confirmed no `awaiting-first-task` timeout.
+  Evidence: Running the E2E with `E2E_AUTH_ACCESS_TOKEN` + `/auth/verify` precheck passed and confirmed no `receiving-task-snapshot` timeout.
 
 - Observation: Raw token copy/paste is error-prone (character corruption), which can produce false `401` failures.
   Evidence: A malformed copied token failed `/auth/verify`; switching to base64 seed fields removed transfer errors.
 
 ## Decision Log
 
-- Decision: Treat queued-task visibility and progress meta (`progressTaskId` or `total > 0`) as valid “first task observed” signals.
+- Decision: Treat queued-task visibility and progress meta (`progressTaskId` or `total > 0`) as valid “receiving-task-snapshot observed” signals.
   Rationale: Prevent false startup timeout when worker has already created/queued tasks but no running/completed task has arrived yet.
   Date/Author: 2026-02-13 / Codex
 
@@ -54,12 +54,12 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 
 ## Outcomes & Retrospective
 
-- Startup decision logic for `awaiting-first-task` is now testable as a pure function and covered by unit tests.
+- Startup decision logic for `receiving-task-snapshot` is now testable as a pure function and covered by unit tests.
 - Subscription race cases (node mismatch and stale subscriber after node switch) are now covered by unit tests.
 - Build-session state transition contract is now maintained at `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md` with terminology SSOT in `packages/runtime-worker/docs/build-session-terminology-ssot.md`.
-- MCP real-browser verification on `localhost:4200` confirmed one run with no `awaiting-first-task` timeout:
+- MCP real-browser verification on `localhost:4200` confirmed one run with no `receiving-task-snapshot` timeout:
   - `start session response` reported `running`.
-  - `awaiting-first-task` finished with `success` (`completed-without-generating-tasks`, 48ms).
+  - `receiving-task-snapshot` finished with `success` (`completed-without-generating-tasks`, 48ms).
   - No `build session transition timeout` log in that run.
 - Remaining risk: automated Playwright E2E cannot yet assert the same path due to auth isolation (`Authentication required`).
 - Remaining risk: local/CI environments need explicit auth-seed provisioning (`E2E_AUTH_ACCESS_TOKEN`, optional userinfo/id token) because browser-session reuse is unavailable by default.
@@ -69,7 +69,7 @@ After this change, a user can clear IndexedDB, re-authenticate, start a Shape bu
 
 The startup and progress path is split across three layers.
 
-`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` controls startup transition phases such as lock acquisition, worker initialization, session start request, and `awaiting-first-task` timeout logic.
+`plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts` controls startup transition phases such as lock acquisition, worker initialization, session start request, and `receiving-task-snapshot` timeout logic.
 
 `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts` subscribes to worker task events and periodically reconciles snapshots.
 
@@ -79,7 +79,7 @@ Worker task subscriptions are provided by `plugins/shape-plugin/src/worker/api.t
 
 ## Plan of Work
 
-Keep startup resilient by changing only two behavior pivots. First, broaden first-task observation rules so startup exits `awaiting-first-task` when the build queue is demonstrably alive (queued task or progress task metadata), not only when running/completed tasks appear. Second, make task-state commit independent from frame cadence by adding a timer fallback to the existing frame-based batching.
+Keep startup resilient by changing only two behavior pivots. First, broaden receiving-task-snapshot observation rules so startup exits `receiving-task-snapshot` when the build queue is demonstrably alive (queued task or progress task metadata), not only when running/completed tasks appear. Second, make task-state commit independent from frame cadence by adding a timer fallback to the existing frame-based batching.
 
 Then lock these behaviors with tests:
 
@@ -93,7 +93,7 @@ Finally, keep state-transition documentation synchronized with test reality by m
 
 Run from repository root (`/Users/hiroya/WebstormProjects/hierarchidb`):
 
-    pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx
+    pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/hooks/unit/receivingTaskSnapshotSignal.unit.test.ts src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx
     pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/app
     pnpm -w turbo run build --filter @hierarchidb/shape-plugin --filter @hierarchidb/app
 
@@ -105,7 +105,7 @@ E2E path (after adding/refreshing spec):
 
 Acceptance is behavior-first:
 
-1. Startup no longer fails with `Build did not start task processing (awaiting-first-task, 45s)` under the repro path.
+1. Startup no longer fails with `Build did not start task processing (receiving-task-snapshot, 45s)` under the repro path.
 2. Progress panel receives task/progress signals and stays in processing flow.
 3. New unit tests pass and prevent regression of startup-signal and task-flush behavior.
 4. State transition document reflects tested/untested edges with `✅/❌/❓`.
@@ -116,7 +116,7 @@ All code changes are additive and safe to re-run tests repeatedly. If regression
 
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`
-- `plugins/shape-plugin/src/ui/components/build-progress/awaitingFirstTaskSignal.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/receivingTaskSnapshotSignal.ts`
 - related test files
 
 Rollback restores prior startup behavior while preserving issue-level traceability.
@@ -127,14 +127,14 @@ Current implementation files changed in this milestone:
 
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
 - `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`
-- `plugins/shape-plugin/src/ui/components/build-progress/awaitingFirstTaskSignal.ts`
-- `plugins/shape-plugin/src/ui/__tests__/hooks/unit/awaitingFirstTaskSignal.unit.test.ts`
+- `plugins/shape-plugin/src/ui/components/build-progress/receivingTaskSnapshotSignal.ts`
+- `plugins/shape-plugin/src/ui/__tests__/hooks/unit/receivingTaskSnapshotSignal.unit.test.ts`
 - `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildTasks.unit.test.tsx`
 - `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
 
 ## Interfaces and Dependencies
 
-`hasAwaitingFirstTaskSignal` now acts as the startup-signal policy boundary for `awaiting-first-task` handling.
+`hasReceivingTaskSnapshotSignal` now acts as the startup-signal policy boundary for `receiving-task-snapshot` handling.
 
 Task flush scheduling in `useShapeBuildTaskSync.ts` now uses both frame and timer channels. Frame path remains primary for smooth batching; timer path guarantees forward progress when frame callbacks are unavailable.
 

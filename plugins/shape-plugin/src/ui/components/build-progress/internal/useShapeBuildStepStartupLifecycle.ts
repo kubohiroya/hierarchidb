@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useShapeBuildSessionStartupTrace } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupTrace';
 import { useShapeBuildSessionStartupProgressTerminalLog } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupProgressTerminalLog';
 import { useShapeBuildSessionStartupTransitionTimers } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionStartupTransitionTimers';
-import { useShapeBuildSessionAwaitingFirstTaskDecision } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionAwaitingFirstTaskDecision';
+import { useShapeBuildSessionReceivingTaskSnapshotDecision } from './useShapeBuildStepStartupLifecycle/useShapeBuildSessionReceivingTaskSnapshotDecision';
 import type {
   BuildSessionTransitionNotificationLevel,
   BuildSessionTransitionState,
@@ -25,16 +25,16 @@ type UseShapeBuildSessionStartupLifecycleArgs = {
   resolveStage: string | null;
   effectiveProgress: BuildProgress | null;
   displayTasks: ShapeBuildTaskSummary[];
-  hasFirstTaskSignal: boolean;
+  hasReceivingTaskSnapshotSignal: boolean;
   hasStartedTasks: boolean;
   hasProgressTaskSignal: boolean;
-  isTaskStreamReady: boolean;
+  isTaskSnapshotProgressConnected: boolean;
   runtimeStatus: BuildProgressStatus['status'];
   sessionProgressTotal?: number;
   sessionStageId: string | null;
-  awaitingFirstTaskExpectationRef: { current: boolean };
+  receivingTaskSnapshotExpectationRef: { current: boolean };
   resolvedStage: string | undefined;
-  lastAwaitingFirstTaskDecisionTraceKeyRef: { current: string | null };
+  lastReceivingTaskSnapshotDecisionTraceKeyRef: { current: string | null };
   buildSessionTransitionTaskStartNotifiedRef: { current: boolean };
   progressTerminalLogKeyRef: { current: string | null };
   buildSessionTransitionWarnStepRef: { current: 0 | 1 | 2 | 3 };
@@ -66,16 +66,16 @@ export const useShapeBuildSessionStartupLifecycle = ({
   resolveStage,
   effectiveProgress,
   displayTasks,
-  hasFirstTaskSignal,
+  hasReceivingTaskSnapshotSignal,
   hasStartedTasks,
   hasProgressTaskSignal,
-  isTaskStreamReady,
+  isTaskSnapshotProgressConnected,
   runtimeStatus,
   sessionProgressTotal,
   sessionStageId,
-  awaitingFirstTaskExpectationRef,
+  receivingTaskSnapshotExpectationRef,
   resolvedStage,
-  lastAwaitingFirstTaskDecisionTraceKeyRef,
+  lastReceivingTaskSnapshotDecisionTraceKeyRef,
   buildSessionTransitionTaskStartNotifiedRef,
   progressTerminalLogKeyRef,
   buildSessionTransitionWarnStepRef,
@@ -115,19 +115,19 @@ export const useShapeBuildSessionStartupLifecycle = ({
     finishBuildSessionTransition,
   });
 
-  useShapeBuildSessionAwaitingFirstTaskDecision({
+  useShapeBuildSessionReceivingTaskSnapshotDecision({
     activeNodeId,
     buildSessionTransition,
     buildStatus,
     displayTasks,
-    hasFirstTaskSignal,
+    hasReceivingTaskSnapshotSignal,
     hasStartedTasks,
     hasProgressTaskSignal,
-    isTaskStreamReady,
+    isTaskSnapshotProgressConnected,
     sessionProgressTotal,
     sessionStageId,
-    awaitingFirstTaskExpectationRef,
-    lastAwaitingFirstTaskDecisionTraceKeyRef,
+    receivingTaskSnapshotExpectationRef,
+    lastReceivingTaskSnapshotDecisionTraceKeyRef,
     buildSessionTransitionTaskStartNotifiedRef,
     emitBuildSessionTransitionLog,
     pushBuildSessionTransitionNotification,

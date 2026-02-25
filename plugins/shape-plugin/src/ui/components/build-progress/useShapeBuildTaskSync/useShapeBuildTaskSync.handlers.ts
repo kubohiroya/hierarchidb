@@ -7,7 +7,7 @@ import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 
 type HandlerDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];
-  markTaskStreamSynchronized?: SyncArgs['markTaskStreamSynchronized'];
+  markTaskSnapshotProgressSynchronized?: SyncArgs['markTaskSnapshotProgressSynchronized'];
   onTaskSnapshot?: SyncArgs['onTaskSnapshot'];
   onTaskTerminalProgressUpdate?: SyncArgs['onTaskTerminalProgressUpdate'];
   refs: HandlerRefs;
@@ -18,7 +18,7 @@ type HandlerDeps = {
 
 export const useShapeBuildTaskSyncHandlers = ({
   sessionNodeId,
-  markTaskStreamSynchronized,
+  markTaskSnapshotProgressSynchronized,
   onTaskSnapshot,
   onTaskTerminalProgressUpdate,
   refs,
@@ -46,7 +46,7 @@ export const useShapeBuildTaskSyncHandlers = ({
 
   const core = useShapeBuildTaskSyncCore({
     sessionNodeId,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
     refs: {
       tasksRef,
       isLoadingRef,
@@ -83,7 +83,7 @@ export const useShapeBuildTaskSyncHandlers = ({
     onTaskTerminalProgressUpdate,
     setIsLoading,
     setError,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
   });
 
   const handleSnapshot = useMemo(() => {

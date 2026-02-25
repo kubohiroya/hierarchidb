@@ -15,18 +15,36 @@ import type { RawTaskSummary } from '~/ui/components/build-progress/useShapeBuil
 import { SHAPE_NODE_TYPE, logRunningResidueDrop } from '~/ui/components/build-progress/shapeBuildTaskSyncDebug';
 import { isTerminalTask } from '~/ui/components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils.js';
 
-type StageCountByStage = Record<string, number>;
+export type StageId = string;
+type StageCountByStage = Record<StageId, number>;
+export type StageOrder = readonly StageId[];
 
-export interface UseShapeBuildTasksOptions {
+export type BuildStageState = {
+  stage: StageId;
+  stageTask: ShapeBuildTaskSummary[];
+  stageTaskCompletedById: Map<string, ShapeBuildTaskSummary>;
+  isCompleted: boolean;
+  hasSnapshot: boolean;
+};
+
+export type BuildStageStateById = Map<StageId, BuildStageState>;
+
+export interface UseShapeBuildTaskSnapshotProgressOptions {
   autoSubscribe?: boolean;
   reportFailures?: boolean;
+  onTaskSnapshot?: (tasks: ShapeBuildTaskSummary[]) => void;
+  stageOrder?: StageOrder;
 }
 
-export interface UseShapeBuildTasksState {
+export interface UseShapeBuildTaskSnapshotProgressState {
   tasks: ShapeBuildTaskSummary[];
   isLoading: boolean;
   error: Error | null;
-  isTaskStreamReady: boolean;
+  isTaskSnapshotProgressConnected: boolean;
+  hasAnyTaskSnapshot: boolean;
+  hasTaskSnapshotByStage: Record<StageId, boolean>;
+  stageOrder: StageId[];
+  stageBuildStateById: BuildStageStateById;
   refresh: () => Promise<void>;
   snapshotTaskCountByStage: StageCountByStage;
   terminalTaskCountByStage: StageCountByStage;
@@ -44,43 +62,140 @@ const toRawTaskSummary = (task: BuildTaskSummary): RawTaskSummary => {
   };
 };
 
-export function useShapeBuildTasks(
+const createBuildStageState = (stage: StageId, hasSnapshot: boolean): BuildStageState => ({
+  stage,
+  stageTask: [],
+  stageTaskCompletedById: new Map<string, ShapeBuildTaskSummary>(),
+  isCompleted: false,
+  hasSnapshot,
+});
+
+const markSnapshotReceivedByStage = (
+  snapshotTasks: ShapeBuildTaskSummary[],
+  previous: Record<StageId, boolean>,
+): Record<StageId, boolean> => {
+  if (snapshotTasks.length === 0) {
+    return previous;
+  }
+  const next: Record<StageId, boolean> = { ...previous };
+  let updated = false;
+  for (const task of snapshotTasks) {
+    if (next[task.stage]) {
+      continue;
+    }
+    next[task.stage] = true;
+    updated = true;
+  }
+  return updated ? next : previous;
+};
+
+const normalizeStageOrder = (
+  stageOrder: StageOrder | undefined,
+  tasks: ShapeBuildTaskSummary[],
+): StageId[] => {
+  const normalized: StageId[] = [];
+  const seen = new Set<StageId>();
+  const append = (stageId: string) => {
+    if (seen.has(stageId)) {
+      return;
+    }
+    seen.add(stageId);
+    normalized.push(stageId);
+  };
+  for (const stageId of stageOrder ?? []) {
+    append(stageId);
+  }
+  for (const task of tasks) {
+    append(task.stage);
+  }
+  return normalized;
+};
+
+const buildStageTaskStateById = (
+  tasks: ShapeBuildTaskSummary[],
+  stageOrder: StageOrder,
+  snapshotReceivedByStage: Record<StageId, boolean>,
+): BuildStageStateById => {
+  const next = new Map<StageId, BuildStageState>(
+    stageOrder.map((stageId) => [stageId, createBuildStageState(stageId, Boolean(snapshotReceivedByStage[stageId]))]),
+  );
+  for (const task of tasks) {
+    const stage = task.stage;
+    const current = next.get(stage) ?? createBuildStageState(stage, Boolean(snapshotReceivedByStage[stage]));
+    if (current.stageTask.length === 0) {
+      current.isCompleted = true;
+    }
+    current.stageTask.push(task);
+    if (isTerminalForCompletion(task)) {
+      current.stageTaskCompletedById.set(task.taskId, task);
+    } else {
+      current.isCompleted = false;
+    }
+    next.set(stage, current);
+  }
+  return next;
+};
+
+const buildTaskCountByStage = (stageBuildStateById: BuildStageStateById): StageCountByStage => {
+  const next: StageCountByStage = {};
+  stageBuildStateById.forEach((state, stageId) => {
+    if (state.stageTask.length > 0) {
+      next[stageId] = state.stageTask.length;
+    }
+  });
+  return next;
+};
+
+const buildTerminalTaskCountByStage = (
+  stageBuildStateById: BuildStageStateById,
+): StageCountByStage => {
+  const next: StageCountByStage = {};
+  stageBuildStateById.forEach((state, stageId) => {
+    const completedCount = state.stageTaskCompletedById.size;
+    if (completedCount > 0) {
+      next[stageId] = completedCount;
+    }
+  });
+  return next;
+};
+
+export function useShapeBuildTaskSnapshotProgressState(
   nodeId: NodeId | null,
-  options: UseShapeBuildTasksOptions = {},
-): UseShapeBuildTasksState {
-  const { autoSubscribe = true, reportFailures = true } = options;
+  options: UseShapeBuildTaskSnapshotProgressOptions = {},
+): UseShapeBuildTaskSnapshotProgressState {
+  const {
+    autoSubscribe = true,
+    reportFailures = true,
+    onTaskSnapshot,
+    stageOrder: stageOrderOverride,
+  } = options;
   const bridgeRef = useRef(getBuildWorkerBridge());
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
-  const [isTaskStreamReady, setIsTaskStreamReady] = useState(false);
-  const snapshotTaskCountByStage = useMemo<StageCountByStage>(() => {
-    const next: StageCountByStage = {};
-    for (const task of tasks) {
-      const stage = task.stage;
-      next[stage] = (next[stage] ?? 0) + 1;
-    }
-    return next;
-  }, [tasks]);
-  const terminalTaskCountByStage = useMemo<StageCountByStage>(() => {
-    const next: StageCountByStage = {};
-    for (const task of tasks) {
-      if (!isTerminalForCompletion(task)) {
-        continue;
-      }
-      const stage = task.stage;
-      next[stage] = (next[stage] ?? 0) + 1;
-    }
-    return next;
-  }, [tasks]);
+  const [isTaskSnapshotProgressConnected, setIsTaskSnapshotProgressConnected] = useState(false);
+  const [hasAnyTaskSnapshot, setHasAnyTaskSnapshot] = useState(false);
+  const [hasTaskSnapshotByStage, setHasTaskSnapshotByStage] = useState<Record<StageId, boolean>>({});
+  const stageOrder = useMemo<StageId[]>(() => (
+    normalizeStageOrder(stageOrderOverride, tasks)
+  ), [tasks, stageOrderOverride]);
+  const stageBuildStateById = useMemo<BuildStageStateById>(() => (
+    buildStageTaskStateById(tasks, stageOrder, hasTaskSnapshotByStage)
+  ), [tasks, stageOrder, hasTaskSnapshotByStage]);
+  const snapshotTaskCountByStage = useMemo<StageCountByStage>(() => (
+    buildTaskCountByStage(stageBuildStateById)
+  ), [stageBuildStateById]);
+  const terminalTaskCountByStage = useMemo<StageCountByStage>(() => (
+    buildTerminalTaskCountByStage(stageBuildStateById)
+  ), [stageBuildStateById]);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const handleSnapshotRef = useRef<(tasks: ShapeBuildTaskSummary[]) => void>(() => {});
   const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
-  const markTaskStreamSynchronized = useCallback(() => {
-    setIsTaskStreamReady((current) => (current ? current : true));
+  const markTaskSnapshotProgressSynchronized = useCallback(() => {
+    setIsTaskSnapshotProgressConnected((current) => (current ? current : true));
   }, []);
 
   const {
@@ -98,7 +213,12 @@ export function useShapeBuildTasks(
     setTasks,
     setIsLoading,
     setError,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
+    onTaskSnapshot: (snapshotTasks) => {
+      setHasAnyTaskSnapshot(true);
+      setHasTaskSnapshotByStage((prev) => markSnapshotReceivedByStage(snapshotTasks, prev));
+      onTaskSnapshot?.(snapshotTasks);
+    },
   });
 
   useEffect(() => {
@@ -123,7 +243,9 @@ export function useShapeBuildTasks(
       subscriptionRef.current();
       subscriptionRef.current = null;
     }
-    setIsTaskStreamReady(false);
+    setIsTaskSnapshotProgressConnected(false);
+    setHasAnyTaskSnapshot(false);
+    setHasTaskSnapshotByStage({});
     resetPending();
     const hadTasks = tasksRef.current.length > 0;
     const hadError = errorRef.current !== null;
@@ -307,7 +429,11 @@ export function useShapeBuildTasks(
       tasks,
       isLoading,
       error,
-      isTaskStreamReady,
+      isTaskSnapshotProgressConnected,
+      hasAnyTaskSnapshot,
+      hasTaskSnapshotByStage,
+      stageOrder,
+      stageBuildStateById,
       refresh,
       snapshotTaskCountByStage,
       terminalTaskCountByStage,
@@ -315,8 +441,12 @@ export function useShapeBuildTasks(
     [
       error,
       isLoading,
-      isTaskStreamReady,
+      isTaskSnapshotProgressConnected,
+      hasAnyTaskSnapshot,
+      stageOrder,
       refresh,
+      hasTaskSnapshotByStage,
+      stageBuildStateById,
       snapshotTaskCountByStage,
       terminalTaskCountByStage,
       tasks,

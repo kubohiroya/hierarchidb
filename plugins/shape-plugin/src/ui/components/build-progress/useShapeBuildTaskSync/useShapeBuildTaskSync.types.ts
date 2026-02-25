@@ -18,14 +18,14 @@ export type SyncArgs = {
   setTasks: (tasks: ShapeBuildTaskSummary[]) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
-  markTaskStreamSynchronized?: () => void;
+  markTaskSnapshotProgressSynchronized?: () => void;
   onTaskSnapshot?: (tasks: ShapeBuildTaskSummary[]) => void;
   onTaskTerminalProgressUpdate?: (task: ShapeBuildTaskSummary) => void;
 };
 
 export type SyncSchedulingArgs = Pick<
   SyncArgs,
-  'sessionNodeId' | 'markTaskStreamSynchronized' | 'setTasks'
+  'sessionNodeId' | 'markTaskSnapshotProgressSynchronized' | 'setTasks'
 > & {
   refs: HandlerRefs;
 };

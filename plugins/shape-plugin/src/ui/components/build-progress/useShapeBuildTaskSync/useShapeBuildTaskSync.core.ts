@@ -8,7 +8,7 @@ import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 
 type CoreDeps = {
   sessionNodeId: SyncArgs['sessionNodeId'];
-  markTaskStreamSynchronized?: SyncArgs['markTaskStreamSynchronized'];
+  markTaskSnapshotProgressSynchronized?: SyncArgs['markTaskSnapshotProgressSynchronized'];
   refs: HandlerRefs;
   setTasks: SyncArgs['setTasks'];
 };
@@ -27,7 +27,7 @@ type CoreResult = {
 
 export const useShapeBuildTaskSyncCore = ({
   sessionNodeId,
-  markTaskStreamSynchronized,
+  markTaskSnapshotProgressSynchronized,
   refs,
   setTasks,
 }: CoreDeps): CoreResult => {
@@ -42,7 +42,7 @@ export const useShapeBuildTaskSyncCore = ({
 
   const scheduling = useShapeBuildTaskSyncScheduling({
     sessionNodeId,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
     refs,
     setTasks,
   });

@@ -292,7 +292,35 @@ export const createTransformByBandHandler = (
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
+    let retryAttemptForTask = 0;
+    let finalEffectiveToleranceForTask = tolerance;
+    const formatToleranceForMessage = (value: number): string => {
+      if (!Number.isFinite(value)) return '-';
+      return `${Number.parseFloat(value.toFixed(6))}`;
+    };
+    let finalToleranceSummary: number | undefined;
+    const toResultMetadata = (
+      effectiveTolerance: number,
+      retryAttempt: number,
+    ): { metadata: { effectiveTolerance?: number; retryAttempt?: number } } | { metadata?: undefined } => {
+      const metadata: { effectiveTolerance?: number; retryAttempt?: number } = {};
+      if (Number.isFinite(effectiveTolerance)) {
+        metadata.effectiveTolerance = effectiveTolerance;
+      }
+      if (Number.isFinite(retryAttempt) && retryAttempt >= 0) {
+        metadata.retryAttempt = Math.max(0, Math.floor(retryAttempt));
+      }
+      return Object.keys(metadata).length > 0 ? { metadata } : {};
+    };
+    const resolveResultMetadata = (effectiveTolerance: number): ReturnType<typeof toResultMetadata> => (
+      toResultMetadata(effectiveTolerance, retryAttemptForTask)
+    );
+    const updateFinalEffectiveTolerance = (candidate: number): void => {
+      if (!Number.isFinite(candidate)) return;
+      finalEffectiveToleranceForTask = Math.max(finalEffectiveToleranceForTask, candidate);
+    };
     void updateTaskRetryAttempt(taskId, 0);
+    retryAttemptForTask = 0;
     if (!firstTaskLogged && isTaskDebugLoggingEnabled()) {
       firstTaskLogged = true;
       console.debug('[ShapeTransform][TaskDebug] handler first task', {
@@ -312,6 +340,9 @@ export const createTransformByBandHandler = (
       return { status: 'failed', errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})` };
     }
     const tolerance = resolveTransformTolerance(toleranceByBand, band.bandIndex, 0.1);
+      finalToleranceSummary = tolerance;
+      updateFinalEffectiveTolerance(tolerance);
+    const retryVertexLimit = resolveRetryVertexLimit(input.countryCode);
     const bandTolerance = toleranceByBand[band.bandIndex];
     if (bandTolerance === undefined || tolerance !== bandTolerance) {
       console.info('[ShapeTransform][Tolerance]', JSON.stringify({
@@ -445,7 +476,7 @@ export const createTransformByBandHandler = (
         return {
           status: 'completed',
           progress: 100,
-          message: `skipped: topojson band0 no-op (zMin=${band.zMin})`,
+          ...resolveResultMetadata(tolerance),
           display: {
             kind: 'skip',
             key: 'stage.taskSkip.noOp',
@@ -536,14 +567,15 @@ export const createTransformByBandHandler = (
             return {
               status: 'completed',
               progress: 100,
-              display: {
-                kind: 'skip',
-                key: 'stage.taskSkip.noRecyclingFeatures',
-                params: {},
-              },
-              outputData: {
-                processedPolygons: 0,
-                totalPolygons: 0,
+            display: {
+              kind: 'skip',
+              key: 'stage.taskSkip.noRecyclingFeatures',
+              params: {},
+            },
+            ...resolveResultMetadata(tolerance),
+            outputData: {
+              processedPolygons: 0,
+              totalPolygons: 0,
               },
             };
           }
@@ -674,8 +706,6 @@ export const createTransformByBandHandler = (
           limit: memory.jsHeapSizeLimit ?? null,
         };
       };
-      const retryVertexLimit = resolveRetryVertexLimit(input.countryCode);
-      const formatTolerance = (value: number): string => Number.isFinite(value) ? value.toFixed(6) : '-';
       const summarizeVertexLimit = (collection: FeatureCollection | null): {
         featureCount: number;
         overLimitFeatureCount: number;
@@ -848,16 +878,17 @@ export const createTransformByBandHandler = (
           }
           await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
           return {
-            status: 'completed',
-            progress: 100,
-            display: {
-              kind: 'skip',
+          status: 'completed',
+          progress: 100,
+          display: {
+            kind: 'skip',
               key: 'stage.taskSkip.emptyAfterSimplify',
               params: {
                 inputFeatures: inputFeatureCount,
                 inputPolygons: inputPolygonCount,
               },
             },
+            ...resolveResultMetadata(tolerance),
             outputData: {
               processedPolygons: inputPolygonCount,
               totalPolygons: inputPolygonCount,
@@ -1007,16 +1038,17 @@ export const createTransformByBandHandler = (
         const analysisNote = analysisErrors.length ? ` (analysisErrors=${analysisErrors.join(' | ')})` : '';
         const vertexLimitSnapshot = summarizeVertexLimit(simplified);
         const simplifySummary = vertexLimitSnapshot
-          ? ` (finalVertexCount=${vertexLimitSnapshot.maxVertexCount}, overLimit=${vertexLimitSnapshot.overLimitFeatureCount}/${vertexLimitSnapshot.featureCount}, finalRetryAttempts=0, finalTolerance=${formatTolerance(tolerance)})`
-          : ` (finalVertexCount=-, overLimit=-, finalRetryAttempts=0, finalTolerance=${formatTolerance(tolerance)})`;
+          ? ` (finalVertexCount=${vertexLimitSnapshot.maxVertexCount}, overLimit=${vertexLimitSnapshot.overLimitFeatureCount}/${vertexLimitSnapshot.featureCount}, finalRetryAttempts=0, finalTolerance=${formatToleranceForMessage(tolerance)})`
+          : ` (finalVertexCount=-, overLimit=-, finalRetryAttempts=0, finalTolerance=${formatToleranceForMessage(tolerance)})`;
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
         return {
           status: 'failed',
+          ...resolveResultMetadata(finalEffectiveToleranceForTask),
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)}) (simplifyAttempt=${simplifyAttempt})${simplifySummary}${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
       if (!shouldDeferSimplifyToVt) {
-        await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
+      await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
         const maxRetryAttempts = Math.min(MAX_RETRY_ATTEMPTS, configuredRetryCount);
         const resolveRetryTolerance2 = (): number => {
           const fallback = Math.min(12, tolerance + DEFAULT_RETRY_TOLERANCE_OFFSET);
@@ -1084,6 +1116,7 @@ export const createTransformByBandHandler = (
               finalTolerance: result.finalTolerance,
               finalVertexCount: result.vertexCount,
             });
+            updateFinalEffectiveTolerance(result.finalTolerance);
             nextFeatures.push(result.feature);
             maxVertexCount = Math.max(maxVertexCount, result.vertexCount);
             if (result.overLimit) {
@@ -1092,6 +1125,7 @@ export const createTransformByBandHandler = (
             retryAttemptsTotal += result.retryAttempts;
             if (result.retryAttempts > 0) {
               await updateTaskRetryAttempt(taskId, retryAttemptsTotal);
+              retryAttemptForTask = Math.max(retryAttemptForTask, Math.max(0, Math.floor(retryAttemptsTotal)));
             }
             if (result.retryAttempts > 0) {
               retryAttemptedFeatureCount += 1;
@@ -1131,7 +1165,6 @@ export const createTransformByBandHandler = (
         let overLimitFeatureCount = 0;
         let finalVertexCountSummary = 0;
         let finalRetryAttemptsSummary = 0;
-        let finalToleranceSummary = tolerance;
         const vertexLimitRecords: ShapeTransformErrorRecord[] = [];
         const vertexRecordLimit = 200;
         for (const [featureIndex, feature] of simplified.features.entries()) {
@@ -1171,7 +1204,7 @@ export const createTransformByBandHandler = (
             ringCount: summary.ringCount,
             polygonErrorCount: summary.polygonCount,
             ringErrorCount: summary.ringCount,
-            message: `max vertices per feature exceeded (vertexCount=${vertexCount} finalVertexCount=${finalVertexCount} limit=${retryVertexLimit} retryAttempts=${retryAttempts} finalTolerance=${formatTolerance(finalTolerance)})`,
+            message: `max vertices per feature exceeded (vertexCount=${vertexCount} finalVertexCount=${finalVertexCount} limit=${retryVertexLimit} retryAttempts=${retryAttempts} finalTolerance=${formatToleranceForMessage(finalTolerance)})`,
             createdAt: Date.now(),
             lineFeatures: {
               type: 'FeatureCollection',
@@ -1184,13 +1217,13 @@ export const createTransformByBandHandler = (
           const finalToleranceMaxValue = Number.isFinite(maxFinalTolerance) ? maxFinalTolerance : tolerance;
           const finalVertexCount = finalVertexCountSummary > 0 ? finalVertexCountSummary : maxVertexCount;
           const finalRetryAttempts = finalVertexCountSummary > 0 ? finalRetryAttemptsSummary : maxRetryAttemptsPerFeature;
-          const finalTolerance = Number.isFinite(finalToleranceSummary) ? finalToleranceSummary : tolerance;
+          const finalTolerance = Number.isFinite(finalToleranceSummary) ? finalToleranceSummary : finalEffectiveToleranceForTask;
           const retrySummary = [
             `retryAttemptsTotal=${retryAttemptsTotal}`,
             `retriedFeatures=${retryAttemptedFeatureCount}/${simplifiedFeatureCountForLimit}`,
             `maxRetriesPerFeature=${maxRetryAttemptsPerFeature}`,
             `retryCount=${maxRetryAttempts}`,
-            `finalToleranceRange=${formatTolerance(finalToleranceMinValue)}..${formatTolerance(finalToleranceMaxValue)}`,
+            `finalToleranceRange=${formatToleranceForMessage(finalToleranceMinValue)}..${formatToleranceForMessage(finalToleranceMaxValue)}`,
           ].join(', ');
           if (vertexLimitRecords.length > 0) {
             try {
@@ -1210,14 +1243,14 @@ export const createTransformByBandHandler = (
           await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
           return {
             status: 'failed',
-            errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCountForLimit}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatTolerance(finalTolerance)}, ${retrySummary})`,
+            ...resolveResultMetadata(finalEffectiveToleranceForTask),
+            errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCountForLimit}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatToleranceForMessage(finalTolerance)}, ${retrySummary})`,
           };
         }
-
       }
 
-        await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
-      return runTransformByBandOutputPhase({
+      await updateTaskPhase(taskId, 'vertex-limit-validate:done', taskProgressRange.simplifyEnd);
+      const outputResult = await runTransformByBandOutputPhase({
         taskId,
         nodeId: task.nodeId,
         input,
@@ -1259,6 +1292,10 @@ export const createTransformByBandHandler = (
         updateTaskStrict,
         ephemeralDB,
       });
+      return {
+        ...outputResult,
+        ...resolveResultMetadata(finalEffectiveToleranceForTask),
+      };
     } catch (error) {
       if (abortSignal?.aborted) {
         throw error;
@@ -1283,6 +1320,7 @@ export const createTransformByBandHandler = (
       }
       return {
         status: 'failed',
+        ...resolveResultMetadata(finalEffectiveToleranceForTask),
         errorMessage: `transform failed: ${stagedError}${diagnostics ? ` | diagnostics: ${diagnostics}` : ''}${progressUpdateError ? ` | progressUpdateError: ${progressUpdateError}` : ''}`,
       };
     } finally {

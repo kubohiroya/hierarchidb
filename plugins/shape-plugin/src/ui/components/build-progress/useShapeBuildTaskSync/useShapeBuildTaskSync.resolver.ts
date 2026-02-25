@@ -8,7 +8,10 @@ import {
 } from './useShapeBuildTaskSync.task-utils.js';
 import type { HandlerRefs } from './useShapeBuildTaskSync.types.js';
 import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
-import { isCompletedAtFullProgress } from './useShapeBuildTaskSync.comparison.utils.js';
+import {
+  isCompletedAtFullProgress,
+  resolveTaskSummaryFromRaw,
+} from './useShapeBuildTaskSync.comparison.utils.js';
 
 type ResolverDeps = {
   sessionNodeId: string | null;
@@ -27,17 +30,35 @@ export const useShapeBuildTaskSyncResolver = ({
   resolveProgressValue,
 }: ResolverDeps) => {
   const { completedTasksRef, vtParentInputDebugLogKeysRef } = refs;
+  const resolveNumberFromMetadata = (rawValue: unknown): number | null => {
+    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+      return rawValue;
+    }
+    if (typeof rawValue === 'string') {
+      const parsed = Number.parseFloat(rawValue);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
 
   return (task: RawTaskSummary): ShapeBuildTaskSummary => {
-    const progress = resolveProgressValue(task.progress);
-    const stage = task.stage;
-    const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, task.message);
+    const normalizedTask = resolveTaskSummaryFromRaw(task);
+    const progress = resolveProgressValue(normalizedTask.progress);
+    const resolvedStatus = resolveTaskDisplayStatus(
+      normalizedTask.status,
+      progress,
+      normalizedTask.display,
+      normalizedTask.message,
+    );
     const resolvedTask: ShapeBuildTaskSummary = {
-      ...task,
-      stage,
+      ...normalizedTask,
       status: resolvedStatus,
-      progress: resolveTaskProgress(resolvedStatus, progress, task.display, task.message),
+      progress: resolveTaskProgress(resolvedStatus, progress, normalizedTask.display, normalizedTask.message),
     };
+    const rawRetryAttempt = resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt);
+    if (rawRetryAttempt !== null && Number.isFinite(rawRetryAttempt) && rawRetryAttempt >= 0) {
+      resolvedTask.retryAttempt = Math.floor(rawRetryAttempt);
+    }
 
     if (resolvedTask.stage === 'vt') {
       const parentInputSummary = readVtParentInputSummary(resolvedTask.metadata);

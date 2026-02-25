@@ -84,11 +84,11 @@ export const runResumeSessionRequest = async (context: BaseRequestContext): Prom
     canResume: false,
   });
 
-  advanceBuildSessionTransitionPhase('awaiting-first-task', {
+  advanceBuildSessionTransitionPhase('receiving-task-snapshot', {
     level: 'info',
     message: 'Build resumed. Waiting for worker task updates...',
   });
-  beginBuildStartupStep('awaiting-first-task', {
+  beginBuildStartupStep('receiving-task-snapshot', {
     source: startupSource,
     mode: 'resume',
   });

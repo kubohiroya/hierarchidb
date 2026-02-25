@@ -38,7 +38,7 @@ import {
 import { useShapeBuildStepControlActions } from './useShapeBuildStepControlActions.js';
 import { useShapeBuildSessionStartupLifecycle } from './useShapeBuildStepStartupLifecycle.js';
 import { useShapeBuildStepTransitionController } from './useShapeBuildStepLogic/useShapeBuildStepTransitionController.js';
-import { useShapeBuildStepTaskState } from './useShapeBuildStepTaskState.js';
+import { useShapeBuildStepStageState } from './useShapeBuildStepStageState.js';
 import { useShapeBuildStepProgressState } from './useShapeBuildStepLogic/useShapeBuildStepProgressState.js';
 import type { BuildStatusSource } from '~/ui/components/build-progress/resolveBuildStatusSource';
 import { notify } from '@hierarchidb/components/notify';
@@ -112,7 +112,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   } = useShapeBuildSessionRecord({
     activeNodeId,
   });
-  const lastAwaitingFirstTaskDecisionTraceKeyRef = useRef<string | null>(null);
+  const lastReceivingTaskSnapshotDecisionTraceKeyRef = useRef<string | null>(null);
   const {
     isStopRequestedInFlight,
     isSessionStopping,
@@ -131,7 +131,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildSessionTransitionWarnStepRef,
     buildSessionTransitionTaskStartNotifiedRef,
     buildSessionTransitionWaitLogStepRef,
-    awaitingFirstTaskExpectationRef,
+    receivingTaskSnapshotExpectationRef,
     progressTerminalLogKeyRef,
   } = useShapeBuildStepTransitionController({
     activeNodeId,
@@ -165,7 +165,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(effectiveStatusSource)
   ), [effectiveStatusSource]);
-  const taskState = useShapeBuildStepTaskState({
+  const stageState = useShapeBuildStepStageState({
     activeNodeId,
     isSessionStopping,
     stages,
@@ -183,11 +183,11 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasNodeId,
     reportFailures: reportTaskFailures,
     baseBuildStatus,
-    onVtStageCompletion: async ({ completed, hasFailedVtTasks }) => {
+    onTerminalStageCompletion: async ({ completed, hasFailedTerminalTasks }) => {
       if (!completed || sessionRecord?.status === 'completed' || sessionRecord?.status === 'failed') {
         return;
       }
-      const status = hasFailedVtTasks ? 'failed' : 'completed';
+      const status = hasFailedTerminalTasks ? 'failed' : 'completed';
       const stopReason: ShapeBuildStopReason = status === 'failed' ? 'failed' : 'completed';
       await updateSessionRecord({
         status,
@@ -200,7 +200,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
   const {
     tasks: displayTasks,
     isLoading: isTasksLoading,
-    isTaskStreamReady,
+    isTaskSnapshotProgressConnected,
     refreshTasks,
     stageFromState,
     liveStageFromState,
@@ -208,8 +208,8 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     hasStartedTasks,
     buildStatus,
     hasProgressTaskSignal,
-    hasFirstTaskSignal,
-  } = taskState;
+    hasReceivingTaskSnapshotSignal,
+  } = stageState;
 
   const {
     completedStageElapsedMs,
@@ -245,16 +245,16 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     resolveStage: effectiveProgress?.progressTaskStage ?? null,
     effectiveProgress,
     displayTasks,
-    hasFirstTaskSignal,
+    hasReceivingTaskSnapshotSignal,
     hasStartedTasks,
     hasProgressTaskSignal,
-    isTaskStreamReady,
+    isTaskSnapshotProgressConnected,
     runtimeStatus: runtimeStatus === 'running' ? 'processing' : runtimeStatus,
     sessionProgressTotal: sessionRecord?.progress?.total,
     sessionStageId: sessionRecord?.stageId ?? null,
-    awaitingFirstTaskExpectationRef,
+    receivingTaskSnapshotExpectationRef,
     resolvedStage: resolvedStageFromState,
-    lastAwaitingFirstTaskDecisionTraceKeyRef,
+    lastReceivingTaskSnapshotDecisionTraceKeyRef,
     buildSessionTransitionTaskStartNotifiedRef,
     progressTerminalLogKeyRef,
     buildSessionTransitionWarnStepRef,

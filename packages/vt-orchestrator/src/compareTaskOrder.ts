@@ -165,12 +165,17 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     }
   };
 
-  const markTaskFailed = async (taskId: string, errorMessage: string): Promise<void> => {
+  const markTaskFailed = async (
+    taskId: string,
+    errorMessage: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> => {
     await updateTask(db, taskId, {
       status: 'failed',
       errorMessage,
       message: errorMessage,
       display: undefined,
+      metadata,
       completedAt: Date.now(),
     });
   };
@@ -303,7 +308,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             await markTaskSkipped(task.taskId, errorMessage);
             continue;
           }
-          await markTaskFailed(task.taskId, errorMessage);
+          await markTaskFailed(task.taskId, errorMessage, result.metadata);
           if (stopOnFailure) {
             abortAll(new Error(errorMessage), task.taskId);
             return;
@@ -311,6 +316,11 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
           continue;
         }
         if (taskUpdated) {
+          if (result.metadata) {
+            await updateTask(db, task.taskId, {
+              metadata: result.metadata,
+            });
+          }
           continue;
         }
         await updateTask(db, task.taskId, {

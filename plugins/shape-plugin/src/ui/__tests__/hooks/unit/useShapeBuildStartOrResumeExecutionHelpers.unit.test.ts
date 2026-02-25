@@ -118,7 +118,7 @@ describe('useShapeBuildStartOrResumeExecutionHelpers', () => {
       canResume: false,
     });
     expect(advanceBuildSessionTransitionPhase).toHaveBeenCalledWith(
-      'awaiting-first-task',
+      'receiving-task-snapshot',
       expect.objectContaining({ level: 'info' }),
     );
     expect(onTrace).toHaveBeenCalledWith(expect.objectContaining({

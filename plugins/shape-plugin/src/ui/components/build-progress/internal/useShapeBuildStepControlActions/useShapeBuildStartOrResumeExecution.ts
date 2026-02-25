@@ -234,11 +234,11 @@ export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs)
         message: 'Build completed immediately after start.',
       });
     } else {
-      advanceBuildSessionTransitionPhase('awaiting-first-task', {
+      advanceBuildSessionTransitionPhase('receiving-task-snapshot', {
         level: 'info',
         message: 'Build requested. Waiting for worker task updates...',
       });
-      beginBuildStartupStep('awaiting-first-task', {
+      beginBuildStartupStep('receiving-task-snapshot', {
         source: startupSource,
         mode: 'start',
       });

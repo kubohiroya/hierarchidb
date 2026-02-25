@@ -130,5 +130,5 @@ sequenceDiagram
 
 - ✅ `startBuildSession`, `pauseBuildSession`, `cancelQueuedBuildSession` wired at worker runtime API level.
 - ✅ Shape-side control states follow `StartRequested -> StartAccepted -> running -> StopRequested -> (StopAccepted) -> idle` path.
-- ✅ Awaiting first task / startup timeout behavior is covered by existing unit/integration/e2e tests.
+- ✅ Receiving task snapshot / startup timeout behavior is covered by existing unit/integration/e2e tests.
 - ⚠️ Route plugin orchestration is still on its own implementation surface; cross-plugin commonization is intentionally tracked in runtime-worker workstreams.

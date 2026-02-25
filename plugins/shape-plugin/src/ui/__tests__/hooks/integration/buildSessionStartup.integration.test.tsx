@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
-import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks/useShapeBuildTasks';
-import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal';
+import { useShapeBuildTaskSnapshotProgressState } from '../../../components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
+import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/receivingTaskSnapshotSignal';
 
 const hoistedMocks = vi.hoisted(() => ({
   initializeMock: vi.fn<[], Promise<void>>(),
@@ -47,13 +47,13 @@ describe('buildSessionStartup integration baseline', () => {
     initializeMock.mockResolvedValue(undefined);
   });
 
-  it('observes queued first task signal with rAF fallback flush', async () => {
+  it('observes queued receiving task snapshot signal with rAF fallback flush', async () => {
     vi.useFakeTimers();
     const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 7777);
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     try {
-      const { result } = renderHook(() => useShapeBuildTasks('node-integration'));
-      expect(result.current.isTaskStreamReady).toBe(false);
+      const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-integration'));
+      expect(result.current.isTaskSnapshotProgressConnected).toBe(false);
 
       await act(async () => {
         await Promise.resolve();
@@ -81,7 +81,7 @@ describe('buildSessionStartup integration baseline', () => {
       });
 
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.isTaskStreamReady).toBe(true);
+      expect(result.current.isTaskSnapshotProgressConnected).toBe(true);
 
       const hasQueuedTasks = result.current.tasks.some((task) => task.status === 'queued');
       const hasStartedTasks = result.current.tasks.some((task) => (
@@ -90,7 +90,7 @@ describe('buildSessionStartup integration baseline', () => {
         || task.status === 'recycled'
         || task.status === 'failed'
       ));
-      expect(hasAwaitingFirstTaskSignal({
+      expect(hasReceivingTaskSnapshotSignal({
         hasStartedTasks,
         hasQueuedTasks,
         progressTaskId: null,

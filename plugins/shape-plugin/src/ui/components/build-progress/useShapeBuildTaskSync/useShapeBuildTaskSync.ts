@@ -8,7 +8,7 @@ export const useShapeBuildTaskSync = ({
   setTasks,
   setIsLoading,
   setError,
-  markTaskStreamSynchronized,
+  markTaskSnapshotProgressSynchronized,
   onTaskSnapshot,
   onTaskTerminalProgressUpdate,
 }: SyncArgs) => {
@@ -30,7 +30,7 @@ export const useShapeBuildTaskSync = ({
 
   const handlers = useShapeBuildTaskSyncHandlers({
     sessionNodeId,
-    markTaskStreamSynchronized,
+    markTaskSnapshotProgressSynchronized,
     refs: {
       tasksRef,
       isLoadingRef,

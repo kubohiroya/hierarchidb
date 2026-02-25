@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { hasAwaitingFirstTaskSignal } from '../../../components/build-progress/awaitingFirstTaskSignal';
+import { hasReceivingTaskSnapshotSignal } from '../../../components/build-progress/receivingTaskSnapshotSignal';
 
-describe('hasAwaitingFirstTaskSignal', () => {
+describe('hasReceivingTaskSnapshotSignal', () => {
   it('returns true when started task exists', () => {
-    expect(hasAwaitingFirstTaskSignal({
+    expect(hasReceivingTaskSnapshotSignal({
       hasStartedTasks: true,
       hasQueuedTasks: false,
       progressTaskId: null,
@@ -12,7 +12,7 @@ describe('hasAwaitingFirstTaskSignal', () => {
   });
 
   it('returns true when queued task exists', () => {
-    expect(hasAwaitingFirstTaskSignal({
+    expect(hasReceivingTaskSnapshotSignal({
       hasStartedTasks: false,
       hasQueuedTasks: true,
       progressTaskId: null,
@@ -21,7 +21,7 @@ describe('hasAwaitingFirstTaskSignal', () => {
   });
 
   it('returns true when progress task id is present', () => {
-    expect(hasAwaitingFirstTaskSignal({
+    expect(hasReceivingTaskSnapshotSignal({
       hasStartedTasks: false,
       hasQueuedTasks: false,
       progressTaskId: 'task-1',
@@ -30,7 +30,7 @@ describe('hasAwaitingFirstTaskSignal', () => {
   });
 
   it('returns true when progress total is positive', () => {
-    expect(hasAwaitingFirstTaskSignal({
+    expect(hasReceivingTaskSnapshotSignal({
       hasStartedTasks: false,
       hasQueuedTasks: false,
       progressTaskId: null,
@@ -39,7 +39,7 @@ describe('hasAwaitingFirstTaskSignal', () => {
   });
 
   it('returns false when no signal exists', () => {
-    expect(hasAwaitingFirstTaskSignal({
+    expect(hasReceivingTaskSnapshotSignal({
       hasStartedTasks: false,
       hasQueuedTasks: false,
       progressTaskId: null,

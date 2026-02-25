@@ -229,7 +229,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                     variant="contained"
                     color="primary"
                     size="large"
-                    aria-hidden
+                    disabled
+                    tabIndex={-1}
                     sx={{ visibility: 'hidden', pointerEvents: 'none' }}
                   >
                     <HexagonIcon />

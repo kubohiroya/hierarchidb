@@ -1,4 +1,12 @@
-import { type FC, memo, type ReactNode, useState, type MouseEvent } from 'react';
+import {
+  memo,
+  type FC,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { Box, Chip, CircularProgress, IconButton, LinearProgress, Menu, MenuItem, Skeleton, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -137,9 +145,22 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
     setMenuAnchorEl(event.currentTarget);
   };
-  const handleMenuClose = () => {
+  const blurActiveElement = useCallback(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) {
+      active.blur();
+    }
+  }, []);
+  const handleMenuClose = useCallback(() => {
     setMenuAnchorEl(null);
-  };
+    blurActiveElement();
+  }, [blurActiveElement]);
+
+  useEffect(() => {
+    if (menuDisabled && menuAnchorEl) {
+      handleMenuClose();
+    }
+  }, [menuDisabled, menuAnchorEl, handleMenuClose]);
   const handleMenuItemClick = (item: BuildStepStageMenuItem) => {
     item.onClick();
     handleMenuClose();
@@ -272,6 +293,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                   anchorEl={menuAnchorEl}
                   open={isMenuOpen}
                   onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   {menuItems?.map((item) => (
                     <MenuItem

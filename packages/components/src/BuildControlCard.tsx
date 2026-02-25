@@ -1,5 +1,11 @@
 import { Box, Button, CircularProgress, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
-import { useState, type MouseEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -86,9 +92,22 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
     setMenuAnchorEl(event.currentTarget);
   };
-  const handleMenuClose = () => {
+  const blurActiveElement = useCallback(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) {
+      active.blur();
+    }
+  }, []);
+  const handleMenuClose = useCallback(() => {
     setMenuAnchorEl(null);
-  };
+    blurActiveElement();
+  }, [blurActiveElement]);
+
+  useEffect(() => {
+    if (menuDisabled && menuAnchorEl) {
+      handleMenuClose();
+    }
+  }, [menuAnchorEl, menuDisabled, handleMenuClose]);
   const handleMenuItemClick = (item: BuildControlMenuItem) => {
     item.onClick();
     handleMenuClose();

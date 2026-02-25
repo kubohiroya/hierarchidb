@@ -45,6 +45,8 @@ export type BandConfig = {
   zBase: number;
 };
 
+export type DomainType = 'shape' | 'route';
+
 /*
 export type TransformByBandStageConfig = {
   toleranceK: number;
@@ -82,7 +84,7 @@ export type TransformByBandTaskInput = {
   bandMaxZoom?: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
-  domainType: 'shape' | 'route';
+  domainType: DomainType;
   sourceKey: string;
   stagePriority?: number;
   countryCode?: string;
@@ -94,7 +96,7 @@ export type VtTaskInput = {
   zBase: number;
   tileId: number;
   bufferIds: string[];
-  domainType: 'shape' | 'route';
+  domainType: DomainType;
   sourceKey: string;
 };
 

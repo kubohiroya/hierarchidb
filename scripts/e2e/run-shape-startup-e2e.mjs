@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const DEFAULT_AUTH_SEED_FILE = 'e2e/.auth/auth.json';
-const PLAYWRIGHT_TARGET = 'e2e/shape/shape-build-startup-first-task.spec.ts';
+const PLAYWRIGHT_TARGET = 'e2e/shape/shape-build-startup-receiving-task-snapshot.spec.ts';
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 const decodeBase64Utf8 = (value) => Buffer.from(value, 'base64').toString('utf8').trim();

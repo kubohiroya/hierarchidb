@@ -70,6 +70,12 @@ function emitTaskDeleteEvent(nodeId: NodeId, taskId: string): void {
   });
 }
 
+const asRecord = (value: unknown): Record<string, unknown> | undefined => (
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+);
+
 export function emitTaskUpdate(task: TaskQueueRecord): void {
   emitTaskEvent(task.nodeId, task);
 }
@@ -121,6 +127,11 @@ export async function updateTask(
   const current = await db.tasks.get(taskId);
   const currentStatus = current?.status;
   const nextStatusCandidate = updates.status;
+  const currentMetadata = asRecord(current?.metadata);
+  const updatesMetadata = asRecord(updates.metadata);
+  const mergedMetadata = updatesMetadata
+    ? { ...(currentMetadata ?? {}), ...updatesMetadata }
+    : currentMetadata;
   const lockedStatus = (currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'recycled')
     && !options?.allowTerminalStatusTransition;
   const blocksStatusRegression = lockedStatus
@@ -130,11 +141,13 @@ export async function updateTask(
     ? {
       status: currentStatus,
       updatedAt: now,
+      ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
     }
     : {
       ...updates,
       status: nextStatusCandidate ?? currentStatus,
       updatedAt: now,
+      ...(mergedMetadata !== undefined ? { metadata: mergedMetadata } : {}),
     };
   await db.tasks.update(taskId, payload);
   const task = await db.tasks.get(taskId);

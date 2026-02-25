@@ -32,7 +32,7 @@ export const TaskItemCard = ({
   translate,
 }: TaskItemCardProps) => {
   const statusValue = task.status;
-  const isSkipped = isTaskSkipped(task.display, task.message);
+  const isSkipped = isTaskSkipped(task.display);
   const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
   const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
   const statusColor = resolveStatusColor(statusValue, isSkipped);
@@ -41,34 +41,61 @@ export const TaskItemCard = ({
   const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
   const fallbackError = typeof task.error === 'string' ? task.error.trim() : '';
   const failedMessage = errorMessage || fallbackError;
-  const geometryDetails = parseGeometrySimplifyError(task.message);
-  const baseMessage = task.message?.split(' (')[0];
-  const taskMessage = task.status === 'failed'
-    ? (
-      failedMessage
-      || (task.message && task.message !== taskTitle
-        ? (geometryDetails ? baseMessage : task.message)
-        : undefined)
-    )
-    : (
-      displayMessage
-      ?? (task.message && task.message !== taskTitle
-        ? (geometryDetails ? baseMessage : task.message)
-        : undefined)
-    );
+  const geometrySourceMessage = failedMessage || undefined;
+  const geometryDetails = parseGeometrySimplifyError(geometrySourceMessage);
+  const geometryBaseMessage = geometrySourceMessage?.split(' (')[0];
+  const readNumberFromMetadata = (rawValue: unknown): number | null => {
+    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+      return rawValue;
+    }
+    if (typeof rawValue === 'string') {
+      const parsed = Number.parseFloat(rawValue);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+  const stripMetadataSuffixFromMessage = (message?: string): string | undefined => {
+    if (!message) return undefined;
+    const trimmed = message.trim();
+    if (!trimmed) return undefined;
+    return geometryDetails ? trimmed.split(' (')[0] : trimmed;
+  };
+  const formatToleranceValue = (value: number): string => (
+    Number.isFinite(value) ? `${Number.parseFloat(value.toFixed(6))}` : '-'
+  );
+  const metadataEffectiveTolerance = (() => {
+    const rawTolerance = readNumberFromMetadata(task.metadata?.effectiveTolerance);
+    if (rawTolerance === null) return '-';
+    return formatToleranceValue(rawTolerance);
+  })();
+  const resolvedRetryAttempt = (() => {
+    const rawRetryAttempt = readNumberFromMetadata(task.retryAttempt ?? task.metadata?.retryAttempt);
+    if (rawRetryAttempt === null) return null;
+    const rounded = Math.floor(rawRetryAttempt);
+    return rounded >= 0 ? rounded : null;
+  })();
+  const messageSourceText = task.status === 'failed'
+    ? failedMessage || displayMessage || geometryBaseMessage
+    : displayMessage || geometryBaseMessage;
+  const messageText = stripMetadataSuffixFromMessage(messageSourceText) ?? taskTitle;
+  const resolvedRetryAttemptText = resolvedRetryAttempt === null ? '-' : `${resolvedRetryAttempt}`;
+  const transformMessageSuffix = stageId === 'transform'
+    ? ` (effectiveTolerance=${metadataEffectiveTolerance} retryAttempt=${resolvedRetryAttemptText})`
+    : '';
+  const taskMessage = transformMessageSuffix
+    ? `${messageText}${transformMessageSuffix}`
+    : messageText;
   const detailLines = task.status === 'failed'
     ? (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined)
     : (displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined));
-  const retryAttempt = typeof task.retryAttempt === 'number'
-    ? task.retryAttempt
-    : typeof task.metadata?.retryAttempt === 'number'
-      ? task.metadata.retryAttempt
-      : null;
-  const normalizedRetryAttempt = retryAttempt !== null && Number.isFinite(retryAttempt) && retryAttempt > 0
-    ? Math.floor(retryAttempt)
+  const normalizedRetryAttempt = resolvedRetryAttempt !== null && resolvedRetryAttempt >= 0
+    ? resolvedRetryAttempt
     : null;
-  const statusLabel = normalizedRetryAttempt !== null && task.status === 'failed'
-    ? `${statusLabelValue}: retry ${normalizedRetryAttempt}`
+  const normalizedStatusLabel = statusLabelValue.replace(/\s*\(line\s+\d+\)\s*$/i, '');
+  const statusLabel = stageId === 'transform'
+    && normalizedRetryAttempt !== null
+    && (task.status === 'completed' || task.status === 'failed')
+    ? (normalizedRetryAttempt > 0 ? `(Retry ${normalizedRetryAttempt})` : `(${normalizedStatusLabel})`)
     : statusLabelValue;
 
   let leadingIcon: ReactNode = null;

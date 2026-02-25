@@ -10,7 +10,7 @@ export const RUNNING_RESIDUE_LOG_PREFIX = '[ShapeRunningResidue]';
 type ShapeBuildPanelDebugChannel =
   | 'startResume'
   | 'runningResiduePanel'
-  | 'awaitingFirstTaskDecision';
+  | 'receivingTaskSnapshotDecision';
 
 type ShapeBuildPanelDebugConfig = Partial<Record<ShapeBuildPanelDebugChannel | 'all', boolean>>;
 

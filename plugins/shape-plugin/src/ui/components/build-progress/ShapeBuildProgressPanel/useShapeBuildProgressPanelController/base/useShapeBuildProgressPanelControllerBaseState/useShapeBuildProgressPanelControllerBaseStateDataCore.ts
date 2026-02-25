@@ -296,7 +296,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const stageMenus = useMemo<StageMetadataMap<BuildStepStageMenu>>(() => {
     const menusByStage: Record<string, BuildStepStageMenu> = {};
     menusByStage.fetch = {
-      disabled: isResetSessionLoading,
+      disabled: isResetSessionLoading || isBuildSessionStarted,
       items: [
         {
           id: 'delete-fetch-api-cache',
@@ -314,7 +314,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       ariaLabel: controlMenuAriaLabel,
     };
     menusByStage.transform = {
-      disabled: isResetSessionLoading,
+      disabled: isResetSessionLoading || isBuildSessionStarted,
       items: [
         {
           id: 'delete-transform-cache',
@@ -326,7 +326,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       ariaLabel: controlMenuAriaLabel,
     };
     menusByStage.vt = {
-      disabled: isResetSessionLoading,
+      disabled: isResetSessionLoading || isBuildSessionStarted,
       items: [
         {
           id: 'delete-vt-cache',
