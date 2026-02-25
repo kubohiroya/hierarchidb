@@ -208,10 +208,16 @@ describe('TreeTable inline edit commits', () => {
 
     renderCell(params, baseNode);
 
-    const input = document.querySelector('input') as HTMLInputElement;
+    const input = document.getElementById('node-1-edit-name') as HTMLInputElement;
     expect(input).toBeTruthy();
 
-    fireEvent.keyDown(input, { key: 'Escape', bubbles: true });
+    fireEvent.keyDown(input, {
+      key: 'Escape',
+      code: 'Escape',
+      keyCode: 27,
+      which: 27,
+      bubbles: true,
+    });
     expect(finishEdit).not.toHaveBeenCalled();
     expect(cancelEdit).toHaveBeenCalledTimes(1);
   });

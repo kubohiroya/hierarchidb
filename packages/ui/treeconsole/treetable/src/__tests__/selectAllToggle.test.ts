@@ -14,10 +14,7 @@ describe('useTreeTableSelectionOverlay', () => {
       nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
     };
 
-    const data: TreeNode[] = [
-      { id: 'alpha' },
-      { id: 'beta' },
-    ].map((id) => ({
+    const data: TreeNode[] = ['alpha', 'beta'].map((id) => ({
       id: toNodeId(id),
       name: id,
       nodeType: 'folder',
@@ -71,6 +68,11 @@ describe('useTreeTableSelectionOverlay', () => {
     rerender({
       selectAll: false,
       rowSelection: initialRowSelection,
+      setSelectAll: vi.fn(),
+      selectAllHydrated: true,
+      controller,
+      visibleData: data,
+      getDescendants: () => new Set(),
     });
 
     expect(onNodeSelect).toHaveBeenCalledWith(['alpha', 'beta'], false);

@@ -321,9 +321,7 @@ export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
     return taskIdStage;
   }
 
-  const fallbackStage = typeof task.stage === 'string'
-    ? task.stage.toLowerCase()
-    : '';
+  const fallbackStage = String(task.stage).toLowerCase();
   if (fallbackStage.includes('fetch')) {
     return 'fetch';
   }

@@ -154,7 +154,7 @@ describe('TreeTable icon colors', () => {
     renderNameCell(node);
 
     const icon = screen.getByTestId('node-icon');
-    expect(icon).toHaveAttribute('data-color', '#123456');
+    expect(icon.getAttribute('data-color')).toBe('#123456');
     expect(mockGetPluginIconColor).toHaveBeenCalledWith('location');
     expect(mockIsFolderNodeType).toHaveBeenCalledWith('location');
   });
@@ -179,6 +179,6 @@ describe('TreeTable icon colors', () => {
     renderNameCell(node);
 
     const icon = screen.getByTestId('node-icon');
-    expect(icon).toHaveAttribute('data-color', expectedColor);
+    expect(icon.getAttribute('data-color')).toBe(expectedColor);
   });
 });

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, defineProject } from 'vitest/config';
 import * as path from 'path';
 import { collectAliasEntries } from './app/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
 
@@ -13,6 +13,44 @@ const nodeTypeSrcAliases = Object.fromEntries(
     .filter(({ kind }) => kind === 'root')
     .map(({ find, replacement }) => [`${find}/src`, path.dirname(replacement)]),
 );
+
+const packagesProject = defineProject({
+  name: 'packages',
+  test: {
+    root: path.resolve(__dirname, 'packages'),
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
+    exclude: ['**/node_modules/**', 'vt-orchestrator/**', '**/@hierarchidb/vt-orchestrator/**'],
+    passWithNoTests: true,
+  },
+});
+
+const vtOrchestratorProject = defineProject({
+  name: 'vt-orchestrator',
+  test: {
+    root: path.resolve(__dirname, 'packages/vt-orchestrator'),
+    environment: 'node',
+    setupFiles: [],
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.unit.test.ts',
+      'src/**/__tests__/**/*.ts',
+    ],
+    passWithNoTests: true,
+  },
+  resolve: {
+    alias: {
+      '~': path.resolve(__dirname, 'packages/vt-orchestrator/src'),
+      '@hierarchidb/core-types': path.resolve(__dirname, 'packages/core-types/dist/index.js'),
+      '@hierarchidb/build-api': path.resolve(__dirname, 'packages/build-api/dist/index.js'),
+      '@hierarchidb/gis-sdk': path.resolve(__dirname, 'packages/gis-sdk/dist/index.js'),
+      '@hierarchidb/shape-api': path.resolve(__dirname, 'packages/shape-api/dist/index.js'),
+      '@hierarchidb/chunk-store': path.resolve(__dirname, 'packages/chunk-store/dist/index.js'),
+    },
+  },
+});
 
 
 // Root Vitest config orchestrates per-package projects so each package's
@@ -30,7 +68,6 @@ const projectRoots = [
   'packages/ui/dialog',
   'packages/ui/treeconsole/base',
   'packages/ui/treeconsole/treetable',
-  'packages/',
   'plugins/basemap-plugin',
   'plugins/folder-plugin',
   'plugins/location-plugin',
@@ -80,7 +117,7 @@ export default defineConfig({
       thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 },
     },
     // Delegate to package-level configs
-    projects: resolvedProjects,
+    projects: [packagesProject, ...resolvedProjects, vtOrchestratorProject],
   },
   resolve: {
     alias: {

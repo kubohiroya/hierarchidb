@@ -1,9 +1,5 @@
 /**
- * base-dialog Test Setup
- * Uses base vitest setup configuration
+ * Package-specific test setup for ui-dialog
  */
 
-// Import base setup (includes _obsolate_common mocks and utilities)
-import '../../../vitest.setup.base';
-
-// Package-specific setup can be added here if needed
+// No package-specific global setup is required at this time.

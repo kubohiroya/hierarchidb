@@ -345,7 +345,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 color="primary"
                 onClick={handleNextOrSave}
                 onPointerDown={stopPointerPropagation}
-                disabled={disableRightPrimary || !canCommit || !allStepsValidated}
+                disabled={disableRightPrimary || !canCommit || !allStepsValidated || !isDirty}
                 loading={pendingAction?.type === rightActionType}
                 endIcon={<CheckIcon fontSize="small" />}
               >

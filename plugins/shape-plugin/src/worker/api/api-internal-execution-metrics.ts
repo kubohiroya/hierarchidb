@@ -223,6 +223,17 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
 
 type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
 
+const resolveBuildTaskMetadata = (task: BuildTaskRecordLike): Record<string, unknown> | undefined => {
+  if (
+    'metadata' in task
+    && typeof task.metadata === 'object'
+    && task.metadata !== null
+  ) {
+    return task.metadata;
+  }
+  return undefined;
+};
+
 const toTaskQueueStatusFromStore = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
   if (status === 'failed' || status === 'running') {
     return 'queued';
@@ -257,7 +268,7 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
     inputData: task.inputData,
     outputData: shouldKeepOutput ? task.outputData : undefined,
     errorMessage: undefined,
-    metadata: task.metadata,
+    metadata: resolveBuildTaskMetadata(task),
   };
 };
 

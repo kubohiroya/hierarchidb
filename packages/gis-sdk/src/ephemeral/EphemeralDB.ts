@@ -68,16 +68,23 @@ const isEphemeralTransformCacheRecord = (value: unknown): value is EphemeralTran
   );
 };
 
-const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
-  const { data, ...meta } = record;
-  void data;
+const stripLegacyCacheMetaFields = (record: Record<string, unknown>): Record<string, unknown> => {
+  const { message: _message, tolerance: _tolerance, ...meta } = record;
+  void _message;
+  void _tolerance;
   return meta;
 };
 
-const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralTransformCacheMetaRecord => {
-  const { data, ...meta } = record;
+const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
+  const { data, ...meta } = record as Record<string, unknown> & EphemeralFetchCacheRecord;
   void data;
-  return meta;
+  return stripLegacyCacheMetaFields(meta) as EphemeralFetchCacheMetaRecord;
+};
+
+const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralTransformCacheMetaRecord => {
+  const { data, ...meta } = record as Record<string, unknown> & EphemeralTransformCacheRecord;
+  void data;
+  return stripLegacyCacheMetaFields(meta) as EphemeralTransformCacheMetaRecord;
 };
 
 type HookTransaction = {

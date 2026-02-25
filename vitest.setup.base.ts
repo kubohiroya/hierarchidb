@@ -118,15 +118,9 @@ if (!globalThis.structuredClone) {
 
 // crypto.subtle mock for tests that need crypto APIs
 if (!globalThis.crypto) {
-  const cryptoTarget = globalThis as { crypto?: {
-    subtle: {
-      digest: (...args: unknown[]) => Promise<ArrayBuffer>;
-      encrypt: (...args: unknown[]) => Promise<ArrayBuffer>;
-      decrypt: (...args: unknown[]) => Promise<ArrayBuffer>;
-    };
-    getRandomValues: (arr: ArrayLike<number>) => ArrayLike<number>;
-  };
+  const cryptoTarget = globalThis;
 
+  // @ts-ignore
   cryptoTarget.crypto = {
     subtle: {
       digest: vi.fn(),
@@ -194,21 +188,31 @@ if (!globalThis.DecompressionStream) {
 
 // URL.createObjectURL is used in worker bootstrap e2e-style tests
 if (!globalThis.URL?.createObjectURL) {
-  const urlGlobal = globalThis.URL ?? ({} as URL);
-  const urlWithCreate = {
-    ...urlGlobal,
-    createObjectURL: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
-  };
-  globalThis.URL = urlWithCreate;
+  if (typeof globalThis.URL === 'function') {
+    Object.defineProperty(globalThis.URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
+    });
+  } else {
+    globalThis.URL = Object.assign(({} as unknown as URL), {
+      createObjectURL: vi.fn(() => 'blob:mock') as URL['createObjectURL'],
+    });
+  }
 }
 
 if (!globalThis.URL?.revokeObjectURL) {
-  const urlGlobal = globalThis.URL ?? ({} as URL);
-  const urlWithRevoke = {
-    ...urlGlobal,
-    revokeObjectURL: vi.fn() as URL['revokeObjectURL'],
-  };
-  globalThis.URL = urlWithRevoke;
+  if (typeof globalThis.URL === 'function') {
+    Object.defineProperty(globalThis.URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn() as URL['revokeObjectURL'],
+    });
+  } else {
+    globalThis.URL = Object.assign(({} as unknown as URL), {
+      revokeObjectURL: vi.fn() as URL['revokeObjectURL'],
+    });
+  }
 }
 
 // Make window.location configurable/writable for tests that override it

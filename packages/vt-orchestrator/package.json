@@ -16,6 +16,7 @@
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {

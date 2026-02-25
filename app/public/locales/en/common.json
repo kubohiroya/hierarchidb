@@ -366,7 +366,8 @@
           "title": "Build sessions: {{count}} sessions",
           "deleteQueue": "Delete all sessions",
           "resumeQueue": "Resume execution of the first session",
-          "skip": "Skip delete or resume and close this dialog"
+          "skip": "Skip delete or resume and close this dialog",
+          "close": "× Close"
         }
       }
     },

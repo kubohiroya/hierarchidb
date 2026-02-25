@@ -110,6 +110,9 @@ export function TreeConsoleAppBar({
           >
             {t('treeConsole.toolbar.resumeQueueDialog.resumeQueue', 'Resume execution of the first session')}
           </Button>
+          <Button onClick={handleSkipResumeDialog}>
+            {t('treeConsole.toolbar.resumeQueueDialog.close', '× Close')}
+          </Button>
         </DialogActions>
       </Dialog>
     </AppBar>

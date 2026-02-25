@@ -297,19 +297,10 @@ export const createTransformByBandHandler = (
     const taskId = task.taskId;
     let retryAttemptForTask = 0;
     let finalEffectiveToleranceForTask = Number.NaN;
+    let inputFeatureCount = 0;
     const formatToleranceForMessage = (value: number): string => {
       if (!Number.isFinite(value)) return '-';
       return `${Number.parseFloat(value.toFixed(6))}`;
-    };
-    const parseNumericValue = (value: unknown): number | null => {
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return value;
-      }
-      if (typeof value === 'string') {
-        const parsed = Number.parseFloat(value);
-        return Number.isFinite(parsed) ? parsed : null;
-      }
-      return null;
     };
     let finalToleranceSummary: number | undefined;
     const toResultMetadata = (
@@ -351,12 +342,6 @@ export const createTransformByBandHandler = (
     ): Promise<void> => {
       if (!input) return;
       const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
-      const resolvedEffectiveTolerance = parseNumericValue(metadata.effectiveTolerance);
-      const recordTolerance = Number.isFinite(resolvedEffectiveTolerance)
-        ? resolvedEffectiveTolerance
-        : Number.isFinite(finalEffectiveToleranceForTask)
-          ? finalEffectiveToleranceForTask
-          : undefined;
       const record: EphemeralTransformCacheMetaRecord = {
         id: cacheId,
         nodeId: task.nodeId,
@@ -369,7 +354,6 @@ export const createTransformByBandHandler = (
         vertexCount: counts?.vertexCount,
         polygonCount: counts?.polygonCount,
         extractionRatio: Number.isFinite(extractionRatio) ? extractionRatio : undefined,
-        tolerance: Number.isFinite(recordTolerance) ? recordTolerance : undefined,
         metadata: {
           ...metadata,
           status: (typeof metadata.status === 'string' && metadata.status.length > 0)
@@ -744,7 +728,7 @@ export const createTransformByBandHandler = (
           errorMessage: 'transform failed: empty working collection',
         };
       }
-      const inputFeatureCount = inputCollection.features.length;
+      inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
       const readNonNegativeCount = (value: unknown): number | null => {
         if (typeof value !== 'number' || !Number.isFinite(value)) return null;
@@ -1441,19 +1425,19 @@ export const createTransformByBandHandler = (
         resultMetadata: resolveResultMetadata(
           'completed',
           finalEffectiveToleranceForTask,
-          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
         ).metadata,
         persistTransformCacheMetadata: (metadata) => persistTransformCacheMetadata(
           'completed',
           metadata,
-          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
           {
             featureCount: outputCollection?.features.length,
-            vertexCount: outputCollection?.features.reduce(
+            vertexCount: (outputCollection?.features ?? []).reduce<number>(
               (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
               0,
             ),
-            polygonCount: outputCollection?.features.reduce(
+            polygonCount: (outputCollection?.features ?? []).reduce<number>(
               (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
               0,
             ),
@@ -1465,7 +1449,7 @@ export const createTransformByBandHandler = (
         ...resolveResultMetadata(
           'completed',
           finalEffectiveToleranceForTask,
-          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+          simplified?.features ? simplified.features.length / inputFeatureCount : Number.NaN,
         ),
       };
     } catch (error) {
@@ -1494,9 +1478,15 @@ export const createTransformByBandHandler = (
         'failed',
         inputFeatureCount > 0 ? (simplified?.features.length ?? 0) / inputFeatureCount : Number.NaN,
         {
-          featureCount: outputCollection?.features.length,
-          vertexCount: outputCollection?.features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0),
-          polygonCount: outputCollection?.features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0),
+          featureCount: ((outputCollection as FeatureCollection | null)?.features ?? []).length,
+          vertexCount: ((outputCollection as FeatureCollection | null)?.features ?? []).reduce<number>(
+            (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+            0,
+          ),
+          polygonCount: ((outputCollection as FeatureCollection | null)?.features ?? []).reduce<number>(
+            (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+            0,
+          ),
         },
       );
       return {

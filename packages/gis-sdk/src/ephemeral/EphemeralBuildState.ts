@@ -143,7 +143,6 @@ export interface EphemeralTransformCacheMetaRecord {
   vertexCount?: number;
   polygonCount?: number;
   extractionRatio?: number;
-  tolerance?: number;
   metadata?: Record<string, unknown>;
   timestamp: number;
 }

@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+export type CreateMenuMatcher = string | RegExp;
 const normalizeBasePath = (value: string | undefined): string => {
   if (!value) return '';
   return value.replace(/^\/+|\/+$/g, '');
@@ -112,6 +113,153 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
   );
 }
 
+function resolveCreateMenuButton(page: Page) {
+  return page.getByRole('button', { name: /^作成$/ }).or(page.getByRole('button', { name: /Create new item/i }));
+}
+
+async function findActiveMenuItems(page: Page) {
+  const menuContainer = page.locator('[role="menu"]');
+  const menuCount = await menuContainer.count();
+  const itemSelectors = '[role="menuitem"], [role="option"], [role="presentation"] button, button';
+  if (menuCount === 0) {
+    return page.locator(itemSelectors);
+  }
+  return menuContainer.nth(Math.max(menuCount - 1, 0)).locator(itemSelectors);
+}
+
+function resolveSubmenuTrigger(item: Locator) {
+  return item.locator('button[aria-label*="submenu trigger" i]').or(item.locator('[data-testid$="-submenu-trigger"]'));
+}
+
+async function drillCreateMenu(
+  page: Page,
+  currentMenuItem: Locator,
+  options: {
+    label: CreateMenuMatcher;
+    maxDepth: number;
+  }
+): Promise<void> {
+  const { label, maxDepth } = options;
+
+  for (let depth = 0; depth < maxDepth; depth += 1) {
+    const trigger = resolveSubmenuTrigger(currentMenuItem).first();
+    const hasSubmenuTrigger = await trigger.isVisible().catch(() => false);
+
+    if (!hasSubmenuTrigger) {
+      await currentMenuItem.click();
+      return;
+    }
+
+    await trigger.dispatchEvent('mouseenter');
+    await trigger.dispatchEvent('mouseover');
+    await page.waitForTimeout(200);
+
+    const subMenuItems = await findActiveMenuItems(page);
+    const nextMenuItem = subMenuItems.filter({ hasText: label }).first();
+    if (await nextMenuItem.isVisible().catch(() => false)) {
+      currentMenuItem = nextMenuItem;
+      continue;
+    }
+
+    const fallbackItem = subMenuItems.first();
+    if (await fallbackItem.isVisible().catch(() => false)) {
+      currentMenuItem = fallbackItem;
+      continue;
+    }
+
+    await currentMenuItem.click();
+    return;
+  }
+
+  await currentMenuItem.click();
+}
+
+/**
+ * Open nested create menu items from SpeedDial / create FAB and drill into
+ * submenu nodes up to the provided depth.
+ */
+export async function openCreateMenuNode(
+  page: Page,
+  options: {
+    /** Label of the target node in current menu level */
+    label: CreateMenuMatcher;
+    /** How many nested submenu levels to try (defaults to 3). */
+    maxDepth?: number;
+  }
+): Promise<void> {
+  const { label, maxDepth = 3 } = options;
+
+  const createMenuButton = resolveCreateMenuButton(page);
+  await expect(createMenuButton).toBeVisible({ timeout: 5000 });
+  await createMenuButton.first().click();
+
+  const initialMenuItems = await findActiveMenuItems(page);
+  let currentMenuItem = initialMenuItems.filter({ hasText: label }).first();
+  if (!(await currentMenuItem.isVisible().catch(() => false))) {
+    const anyMenuItem = initialMenuItems.first();
+    if (await anyMenuItem.isVisible().catch(() => false)) {
+      currentMenuItem = anyMenuItem;
+    }
+  }
+  await expect(currentMenuItem).toBeVisible({ timeout: 5000 });
+
+  await drillCreateMenu(page, currentMenuItem, { label, maxDepth });
+}
+
+/**
+ * Open the create flow for Folder nodes from nested create menu.
+ */
+export async function openFolderCreateDialog(page: Page): Promise<void> {
+  await openCreateMenuNode(page, { label: /^フォルダー|^Folder|^folder/i });
+}
+
+/**
+ * Open nested create menu items from a context menu.
+ */
+export async function openContextCreateMenuNode(
+  page: Page,
+  parentNode: Locator,
+  options: {
+    /** Label of the target node in current menu level */
+    label: CreateMenuMatcher;
+    /** How many nested submenu levels to try (defaults to 3). */
+    maxDepth?: number;
+  }
+): Promise<void> {
+  const { label, maxDepth = 3 } = options;
+
+  await parentNode.click({ button: 'right' });
+  const contextMenu = page.locator('[data-testid="context-menu"]').or(page.locator('[role="menu"]'));
+  await expect(contextMenu).toBeVisible({ timeout: 5000 });
+
+  const createTrigger = page
+    .locator('[data-testid="context-menu-create"]')
+    .or(page.locator('[role="menuitem"]').filter({ hasText: /^作成|^Create/ }))
+    .or(page.locator('[role="menu"] button').filter({ hasText: /^作成|^Create/ }))
+    .first();
+  await expect(createTrigger).toBeVisible({ timeout: 5000 });
+
+  const submenuTrigger = resolveSubmenuTrigger(createTrigger);
+  const hasSubmenu = await submenuTrigger.first().isVisible().catch(() => false);
+  if (!hasSubmenu) {
+    await createTrigger.click();
+    return;
+  }
+
+  await submenuTrigger.first().dispatchEvent('mouseenter');
+  await submenuTrigger.first().dispatchEvent('mouseover');
+  await page.waitForTimeout(200);
+
+  const subMenuItems = await findActiveMenuItems(page);
+  let targetMenuItem = subMenuItems.filter({ hasText: label }).first();
+  if (!(await targetMenuItem.isVisible().catch(() => false))) {
+    targetMenuItem = subMenuItems.first();
+  }
+  await expect(targetMenuItem).toBeVisible({ timeout: 5000 });
+
+  await drillCreateMenu(page, targetMenuItem, { label, maxDepth });
+}
+
 /**
  * Creates a test folder-plugin with a unique name
  */
@@ -123,31 +271,26 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   // Ensure main console is ready
   await waitForTreeTableLoad(page);
 
-  // Open SpeedDial menu (Floating Action Button labelled "Create new item")
-  const speedDialButton = page.getByRole('button', { name: /Create new item/i });
-  if (!(await speedDialButton.isVisible())) {
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(250);
-  }
-  await speedDialButton.click({ force: true });
+  await openFolderCreateDialog(page);
 
-  // Select "Create Folder" SpeedDial action
-  const createFolderAction = page.getByRole('button', { name: /Create Folder/i });
-  await expect(createFolderAction).toBeVisible({ timeout: 5000 });
-  await createFolderAction.click();
-
-  // Interact with the folder creation dialog
-  const dialog = page.getByRole('dialog', { name: /Create New Folder/i });
+  const dialog = page
+    .locator('dialog')
+    .filter({
+      has: page.getByRole('heading', { name: /Folderの作成|Folderの新規作成|Create Folder|Create New Folder/ }),
+    });
   await expect(dialog).toBeVisible({ timeout: 5000 });
 
-  await dialog.getByLabel(/Folder Name/i).fill(folderName);
+  await dialog
+    .getByLabel(/Folder Name|名称|Name/)
+    .or(dialog.locator('[data-testid="folder-plugin-name-input"]'))
+    .fill(folderName);
 
   const descriptionField = dialog.getByLabel(/Description/i);
-  if (await descriptionField.isVisible()) {
+  if (await descriptionField.isVisible().catch(() => false)) {
     await descriptionField.fill(folderDescription);
   }
 
-  const createButton = dialog.getByRole('button', { name: /Create Folder/i });
+  const createButton = dialog.getByRole('button', { name: /Create Folder|Create|作成|保存/ });
   await expect(createButton).toBeEnabled();
   await createButton.click();
 
@@ -186,16 +329,9 @@ export async function createChildFolder(
   const timestamp = Date.now();
   const folderName = `${baseName} ${timestamp}`;
 
-  // Right-click on parent to open context menu
-  await parentNode.click({ button: 'right' });
-  await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
-
-  // Navigate to Create submenu
-  await page.locator('[data-testid="context-menu-create"]').hover();
-  await expect(page.locator('[data-testid="create-submenu"]')).toBeVisible();
-
-  // Click folder-plugin creation
-  await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
+  await openContextCreateMenuNode(page, parentNode, {
+    label: /^フォルダー|^Folder|^folder/i,
+  });
 
   // Fill base-dialog
   await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
