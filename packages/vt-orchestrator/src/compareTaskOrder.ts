@@ -173,18 +173,27 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     await updateTask(db, taskId, {
       status: 'failed',
       errorMessage,
-      message: errorMessage,
       display: undefined,
       metadata,
       completedAt: Date.now(),
     });
   };
 
-  const markTaskSkipped = async (taskId: string, reason: string): Promise<void> => {
+  const markTaskSkipped = async (
+    taskId: string,
+    reason: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> => {
+    const skippedMetadata = {
+      ...(metadata ? { ...metadata } : {}),
+      status: 'Skipped',
+      reason,
+    };
     await updateTask(db, taskId, {
       status: 'completed',
       progress: 100,
-      message: `skipped: ${reason}`,
+      errorMessage: reason,
+      metadata: skippedMetadata,
       completedAt: Date.now(),
     });
   };
@@ -305,7 +314,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         if (nextStatus === 'failed') {
           const errorMessage = result.errorMessage ?? 'stage task failed';
           if (skipOnFailure) {
-            await markTaskSkipped(task.taskId, errorMessage);
+            await markTaskSkipped(task.taskId, errorMessage, result.metadata);
             continue;
           }
           await markTaskFailed(task.taskId, errorMessage, result.metadata);
@@ -326,7 +335,6 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
         await updateTask(db, task.taskId, {
           status: nextStatus,
           progress: result.progress ?? 100,
-          message: result.message,
           metadata: result.metadata,
           outputData: result.outputData,
           errorMessage: result.errorMessage,

@@ -247,6 +247,17 @@ export class RouteMutationService implements RouteMutationAPI {
           polygonCount: 0,
           inputVertexCount: coordinates.length,
           inputPolygonCount: 0,
+          metadata: {
+            stage: 'fetch',
+            status: 'completed',
+            sourceKey,
+            featureCount: 1,
+            inputFeatureCount: 1,
+            vertexCount: coordinates.length,
+            polygonCount: 0,
+            inputVertexCount: coordinates.length,
+            inputPolygonCount: 0,
+          },
           timestamp: now,
         };
         fetchCacheRecords.push(record);

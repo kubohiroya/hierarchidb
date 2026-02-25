@@ -190,6 +190,7 @@ export interface ShapeTransformCache {
   polygonCount: number;
   extractionRatio: number;
   tolerance: number;
+  metadata?: Record<string, unknown>;
   timestamp: number;
   countryCode?: string;
   adminLevel?: number;

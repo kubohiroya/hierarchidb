@@ -27,6 +27,7 @@ type TransformCacheRecord = {
   polygonCount: number;
   extractionRatio: number;
   tolerance: number;
+  metadata?: Record<string, unknown>;
 };
 
 type TransformCompletionMetrics = {
@@ -47,6 +48,7 @@ export const finalizeTransformByBandCache = async (params: {
   cacheRecord: TransformCacheRecord;
   metrics: TransformCompletionMetrics;
   outputData: TransformCompletionOutputData;
+  metadata?: Record<string, unknown>;
 }): Promise<void> => {
   const completedAt = Date.now();
   if ((globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true) {
@@ -149,6 +151,7 @@ export const finalizeTransformByBandCache = async (params: {
       key: 'stage.taskSummary.metrics',
       metrics: params.metrics,
     },
+    metadata: params.metadata ?? params.cacheRecord.metadata,
     outputData: params.outputData,
     completedAt,
   }, 'task:complete');

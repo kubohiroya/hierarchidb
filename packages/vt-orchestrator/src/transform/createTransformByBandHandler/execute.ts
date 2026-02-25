@@ -1,7 +1,10 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskDisplayPayload } from '../../../../build-api';
-import { applyFeatureFiltering } from '@hierarchidb/gis-sdk';
+import {
+  applyFeatureFiltering,
+  type EphemeralTransformCacheMetaRecord,
+} from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import type { TransformByBandStageContext } from '~/contexts';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '~/types/types';
@@ -293,28 +296,113 @@ export const createTransformByBandHandler = (
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
     let retryAttemptForTask = 0;
-    let finalEffectiveToleranceForTask = tolerance;
+    let finalEffectiveToleranceForTask = Number.NaN;
     const formatToleranceForMessage = (value: number): string => {
       if (!Number.isFinite(value)) return '-';
       return `${Number.parseFloat(value.toFixed(6))}`;
     };
+    const parseNumericValue = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      return null;
+    };
     let finalToleranceSummary: number | undefined;
     const toResultMetadata = (
+      status: 'completed' | 'failed' | 'skipped',
       effectiveTolerance: number,
+      extractionRatio: number,
       retryAttempt: number,
-    ): { metadata: { effectiveTolerance?: number; retryAttempt?: number } } | { metadata?: undefined } => {
-      const metadata: { effectiveTolerance?: number; retryAttempt?: number } = {};
+    ): { metadata: Record<string, unknown> } => {
+      const metadata: Record<string, unknown> = {
+        status: `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+      };
       if (Number.isFinite(effectiveTolerance)) {
         metadata.effectiveTolerance = effectiveTolerance;
       }
       if (Number.isFinite(retryAttempt) && retryAttempt >= 0) {
         metadata.retryAttempt = Math.max(0, Math.floor(retryAttempt));
       }
-      return Object.keys(metadata).length > 0 ? { metadata } : {};
+      if (Number.isFinite(extractionRatio)) {
+        metadata.extractionRatio = extractionRatio;
+      }
+      return { metadata };
     };
-    const resolveResultMetadata = (effectiveTolerance: number): ReturnType<typeof toResultMetadata> => (
-      toResultMetadata(effectiveTolerance, retryAttemptForTask)
+    const resolveResultMetadata = (
+      status: 'completed' | 'failed' | 'skipped',
+      effectiveTolerance: number,
+      extractionRatio = Number.NaN,
+    ): ReturnType<typeof toResultMetadata> => (
+      toResultMetadata(status, effectiveTolerance, extractionRatio, retryAttemptForTask)
     );
+    const persistTransformCacheMetadata = async (
+      status: 'completed' | 'failed' | 'skipped',
+      metadata: Record<string, unknown>,
+      extractionRatio = Number.NaN,
+      counts?: {
+        featureCount?: number;
+        vertexCount?: number;
+        polygonCount?: number;
+      },
+    ): Promise<void> => {
+      if (!input) return;
+      const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
+      const resolvedEffectiveTolerance = parseNumericValue(metadata.effectiveTolerance);
+      const recordTolerance = Number.isFinite(resolvedEffectiveTolerance)
+        ? resolvedEffectiveTolerance
+        : Number.isFinite(finalEffectiveToleranceForTask)
+          ? finalEffectiveToleranceForTask
+          : undefined;
+      const record: EphemeralTransformCacheMetaRecord = {
+        id: cacheId,
+        nodeId: task.nodeId,
+        domainType: input.domainType,
+        bandIndex: input.bandIndex,
+        sourceKey: input.sourceKey,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
+        featureCount: counts?.featureCount,
+        vertexCount: counts?.vertexCount,
+        polygonCount: counts?.polygonCount,
+        extractionRatio: Number.isFinite(extractionRatio) ? extractionRatio : undefined,
+        tolerance: Number.isFinite(recordTolerance) ? recordTolerance : undefined,
+        metadata: {
+          ...metadata,
+          status: (typeof metadata.status === 'string' && metadata.status.length > 0)
+            ? metadata.status
+            : `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+        },
+        timestamp: Date.now(),
+      };
+      try {
+        await ephemeralDB.transformCacheMeta.put(record);
+      } catch (error) {
+        console.error('[ShapeTransform] failed to persist transformCacheMeta', {
+          taskId,
+          status,
+          domainType: input.domainType,
+          sourceKey: input.sourceKey,
+          error,
+        });
+      }
+    };
+    const persistResultMetadata = async (
+      status: 'completed' | 'failed' | 'skipped',
+      extractionRatio = Number.NaN,
+      counts?: {
+        featureCount?: number;
+        vertexCount?: number;
+        polygonCount?: number;
+      },
+    ): Promise<ReturnType<typeof resolveResultMetadata>> => {
+      const resultMetadata = resolveResultMetadata(status, finalEffectiveToleranceForTask, extractionRatio);
+      await persistTransformCacheMetadata(status, resultMetadata.metadata, extractionRatio, counts);
+      return resultMetadata;
+    };
     const updateFinalEffectiveTolerance = (candidate: number): void => {
       if (!Number.isFinite(candidate)) return;
       finalEffectiveToleranceForTask = Math.max(finalEffectiveToleranceForTask, candidate);
@@ -333,15 +421,25 @@ export const createTransformByBandHandler = (
     }
     const input = task.inputData;
     if (!input) {
-      return { status: 'failed', errorMessage: 'transform failed: task input is missing' };
+      const resultMetadata = resolveResultMetadata('failed', finalEffectiveToleranceForTask);
+      return {
+        status: 'failed',
+        ...resultMetadata,
+        errorMessage: 'transform failed: task input is missing',
+      };
     }
     const band = bandMap.get(input.bandIndex);
     if (!band) {
-      return { status: 'failed', errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})` };
+      const resultMetadata = await persistResultMetadata('failed');
+      return {
+        status: 'failed',
+        ...resultMetadata,
+        errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})`,
+      };
     }
     const tolerance = resolveTransformTolerance(toleranceByBand, band.bandIndex, 0.1);
-      finalToleranceSummary = tolerance;
-      updateFinalEffectiveTolerance(tolerance);
+    finalToleranceSummary = tolerance;
+    updateFinalEffectiveTolerance(tolerance);
     const retryVertexLimit = resolveRetryVertexLimit(input.countryCode);
     const bandTolerance = toleranceByBand[band.bandIndex];
     if (bandTolerance === undefined || tolerance !== bandTolerance) {
@@ -458,7 +556,12 @@ export const createTransformByBandHandler = (
         clearInterval(fetchWaitTimer);
       }
       if (!fetchCache) {
-        return { status: 'failed', errorMessage: 'transform failed: fetch cache not found' };
+        const metadataResult = await persistResultMetadata('failed');
+        return {
+          status: 'failed',
+          ...metadataResult,
+          errorMessage: 'transform failed: fetch cache not found',
+        };
       }
       const noOpBand0Topojson = input.bandIndex === 0 && band.zMin <= 2
         && fetchCache.format === 'topojson'
@@ -473,10 +576,14 @@ export const createTransformByBandHandler = (
             : 0;
           return fetchCachePolygonCount > 0 ? fetchCachePolygonCount : 0;
         })();
+        const resultMetadata = await persistResultMetadata('completed', 1, {
+          featureCount: fallbackPolygonCount,
+          polygonCount: fallbackPolygonCount,
+        });
         return {
           status: 'completed',
           progress: 100,
-          ...resolveResultMetadata(tolerance),
+          ...resultMetadata,
           display: {
             kind: 'skip',
             key: 'stage.taskSkip.noOp',
@@ -537,7 +644,12 @@ export const createTransformByBandHandler = (
         clearInterval(decodeProgressTimer);
       }
       if (!collection || collection.features.length === 0) {
-        return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
+        const metadataResult = await persistResultMetadata('failed');
+        return {
+          status: 'failed',
+          ...metadataResult,
+          errorMessage: 'transform failed: empty fetch cache',
+        };
       }
       logDebugPhase('decode:done', { featureCount: collection.features.length });
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
@@ -564,18 +676,19 @@ export const createTransformByBandHandler = (
           if (filteredFeatures.length === 0) {
             await updateTaskPhase(taskId, 'recycling-filter:done', taskProgressRange.prepareStart);
             await reportPolygonProgress(taskId, 0, 0);
+            const resultMetadata = await persistResultMetadata('completed');
             return {
               status: 'completed',
               progress: 100,
-            display: {
-              kind: 'skip',
-              key: 'stage.taskSkip.noRecyclingFeatures',
-              params: {},
-            },
-            ...resolveResultMetadata(tolerance),
-            outputData: {
-              processedPolygons: 0,
-              totalPolygons: 0,
+              display: {
+                kind: 'skip',
+                key: 'stage.taskSkip.noRecyclingFeatures',
+                params: {},
+              },
+              ...resultMetadata,
+              outputData: {
+                processedPolygons: 0,
+                totalPolygons: 0,
               },
             };
           }
@@ -603,7 +716,12 @@ export const createTransformByBandHandler = (
         }
         const filterTarget = workingCollection;
         if (!filterTarget) {
-          return { status: 'failed', errorMessage: 'transform failed: empty working collection before filters' };
+          const metadataResult = await persistResultMetadata('failed');
+          return {
+            status: 'failed',
+            ...metadataResult,
+            errorMessage: 'transform failed: empty working collection before filters',
+          };
         }
         stageLabel = 'filter:aspectArea';
         const filteredFeatures = await runStageWithLabel('filter:aspectArea', () => filterFeaturesByAspectRatioAndArea(
@@ -619,7 +737,12 @@ export const createTransformByBandHandler = (
       assertNotAborted(abortSignal);
       const inputCollection = workingCollection;
       if (!inputCollection) {
-        return { status: 'failed', errorMessage: 'transform failed: empty working collection' };
+        const metadataResult = await persistResultMetadata('failed');
+        return {
+          status: 'failed',
+          ...metadataResult,
+          errorMessage: 'transform failed: empty working collection',
+        };
       }
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
@@ -877,18 +1000,23 @@ export const createTransformByBandHandler = (
             }
           }
           await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
+          const extractionRatio = inputFeatureCount > 0 ? inputCollection.features.length / inputFeatureCount : Number.NaN;
+          const resultMetadata = await persistResultMetadata('completed', extractionRatio, {
+            featureCount: inputCollection.features.length,
+            polygonCount: inputCollection.features.length,
+          });
           return {
-          status: 'completed',
-          progress: 100,
-          display: {
-            kind: 'skip',
+            status: 'completed',
+            progress: 100,
+            display: {
+              kind: 'skip',
               key: 'stage.taskSkip.emptyAfterSimplify',
               params: {
                 inputFeatures: inputFeatureCount,
                 inputPolygons: inputPolygonCount,
               },
             },
-            ...resolveResultMetadata(tolerance),
+            ...resultMetadata,
             outputData: {
               processedPolygons: inputPolygonCount,
               totalPolygons: inputPolygonCount,
@@ -1041,14 +1169,15 @@ export const createTransformByBandHandler = (
           ? ` (finalVertexCount=${vertexLimitSnapshot.maxVertexCount}, overLimit=${vertexLimitSnapshot.overLimitFeatureCount}/${vertexLimitSnapshot.featureCount}, finalRetryAttempts=0, finalTolerance=${formatToleranceForMessage(tolerance)})`
           : ` (finalVertexCount=-, overLimit=-, finalRetryAttempts=0, finalTolerance=${formatToleranceForMessage(tolerance)})`;
         await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+        const resultMetadata = await persistResultMetadata('failed');
         return {
           status: 'failed',
-          ...resolveResultMetadata(finalEffectiveToleranceForTask),
+          ...resultMetadata,
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)}) (simplifyAttempt=${simplifyAttempt})${simplifySummary}${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
       if (!shouldDeferSimplifyToVt) {
-      await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
+        await updateTaskPhase(taskId, 'vertex-limit-retry:start', taskProgressRange.simplifyEnd);
         const maxRetryAttempts = Math.min(MAX_RETRY_ATTEMPTS, configuredRetryCount);
         const resolveRetryTolerance2 = (): number => {
           const fallback = Math.min(12, tolerance + DEFAULT_RETRY_TOLERANCE_OFFSET);
@@ -1241,9 +1370,27 @@ export const createTransformByBandHandler = (
             }
           }
           await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+          const simplifiedFeatureCountForCache = simplified.features.length;
+          const simplifiedVertexCountForCache = simplified.features.reduce(
+            (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+            0,
+          );
+          const simplifiedPolygonCountForCache = simplified.features.reduce(
+            (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+            0,
+          );
+          const resultMetadata = await persistResultMetadata(
+            'failed',
+            inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+            {
+              featureCount: simplifiedFeatureCountForCache,
+              vertexCount: simplifiedVertexCountForCache,
+              polygonCount: simplifiedPolygonCountForCache,
+            },
+          );
           return {
             status: 'failed',
-            ...resolveResultMetadata(finalEffectiveToleranceForTask),
+            ...resultMetadata,
             errorMessage: `transform failed: max vertices per feature exceeded (limit=${retryVertexLimit}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCountForLimit}, maxVertices=${maxVertexCount}, finalVertexCount=${finalVertexCount}, finalRetryAttempts=${finalRetryAttempts}, finalTolerance=${formatToleranceForMessage(finalTolerance)}, ${retrySummary})`,
           };
         }
@@ -1291,10 +1438,35 @@ export const createTransformByBandHandler = (
         assertNotAborted,
         updateTaskStrict,
         ephemeralDB,
+        resultMetadata: resolveResultMetadata(
+          'completed',
+          finalEffectiveToleranceForTask,
+          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+        ).metadata,
+        persistTransformCacheMetadata: (metadata) => persistTransformCacheMetadata(
+          'completed',
+          metadata,
+          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+          {
+            featureCount: outputCollection?.features.length,
+            vertexCount: outputCollection?.features.reduce(
+              (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+              0,
+            ),
+            polygonCount: outputCollection?.features.reduce(
+              (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+              0,
+            ),
+          },
+        ),
       });
       return {
         ...outputResult,
-        ...resolveResultMetadata(finalEffectiveToleranceForTask),
+        ...resolveResultMetadata(
+          'completed',
+          finalEffectiveToleranceForTask,
+          inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : Number.NaN,
+        ),
       };
     } catch (error) {
       if (abortSignal?.aborted) {
@@ -1318,9 +1490,18 @@ export const createTransformByBandHandler = (
           progressUpdateError,
         });
       }
+      const resultMetadata = await persistResultMetadata(
+        'failed',
+        inputFeatureCount > 0 ? (simplified?.features.length ?? 0) / inputFeatureCount : Number.NaN,
+        {
+          featureCount: outputCollection?.features.length,
+          vertexCount: outputCollection?.features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0),
+          polygonCount: outputCollection?.features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0),
+        },
+      );
       return {
         status: 'failed',
-        ...resolveResultMetadata(finalEffectiveToleranceForTask),
+        ...resultMetadata,
         errorMessage: `transform failed: ${stagedError}${diagnostics ? ` | diagnostics: ${diagnostics}` : ''}${progressUpdateError ? ` | progressUpdateError: ${progressUpdateError}` : ''}`,
       };
     } finally {

@@ -421,6 +421,37 @@ const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
     .first()
 );
 
+const buildFetchCacheMetadata = (params: {
+  status: 'completed' | 'failed' | 'skipped';
+  dataSource: DataSourceName;
+  sourceKey: string;
+  countryCode: ISO2;
+  adminLevel?: number;
+  featureCount: number;
+  inputFeatureCount?: number;
+  vertexCount: number;
+  polygonCount: number;
+  inputVertexCount?: number;
+  inputPolygonCount?: number;
+  retryAttempt?: number;
+}): Record<string, unknown> => ({
+  stage: 'fetch',
+  status: params.status,
+  dataSource: params.dataSource,
+  sourceKey: params.sourceKey,
+  countryCode: params.countryCode,
+  adminLevel: params.adminLevel,
+  featureCount: params.featureCount,
+  inputFeatureCount: params.inputFeatureCount,
+  vertexCount: params.vertexCount,
+  polygonCount: params.polygonCount,
+  inputVertexCount: params.inputVertexCount,
+  inputPolygonCount: params.inputPolygonCount,
+  retryAttempt: Number.isFinite(params.retryAttempt ?? NaN)
+    ? Math.trunc(params.retryAttempt!)
+    : undefined,
+});
+
 const putFetchCache = async (params: {
   nodeId: NodeId;
   sourceKey: string;
@@ -437,6 +468,7 @@ const putFetchCache = async (params: {
   polygonCount: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
+  metadata?: Record<string, unknown>;
 }): Promise<{ id: string; contentHash: string }> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
   const contentHash = hashFetchArtifact(params.data);
@@ -459,6 +491,7 @@ const putFetchCache = async (params: {
     polygonCount: params.polygonCount,
     inputVertexCount: params.inputVertexCount,
     inputPolygonCount: params.inputPolygonCount,
+    metadata: params.metadata,
     contentHash,
     timestamp: Date.now(),
   });
@@ -877,6 +910,19 @@ const createFetchHandler = (params: {
         format: existing.format,
         compression: existing.compression,
       });
+      const fetchMetadata = buildFetchCacheMetadata({
+        status: 'completed',
+        dataSource: input.dataSource,
+        sourceKey: input.sourceKey,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
+        featureCount: existing.featureCount,
+        inputFeatureCount: existing.inputFeatureCount ?? existing.featureCount,
+        vertexCount: existing.vertexCount ?? 0,
+        polygonCount: existing.polygonCount ?? 0,
+        inputVertexCount: existing.inputVertexCount ?? 0,
+        inputPolygonCount: existing.inputPolygonCount ?? 0,
+      });
       if (cachedCollection && cachedCollection.features.length > 0) {
         const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
           const props = feature?.properties as Record<string, unknown> | undefined;
@@ -913,8 +959,13 @@ const createFetchHandler = (params: {
               size: data.byteLength,
               contentHash: fetchArtifactHash,
               timestamp: Date.now(),
+              metadata: fetchMetadata,
             });
           }
+        } else if (existing.metadata?.status !== 'completed') {
+          await ephemeralDB.fetchCache.update(existing.id, {
+            metadata: fetchMetadata,
+          });
         }
       } else if (existing.featureCount === 0) {
         const emptyMetadata = buildEmptyFeatureMetadata({
@@ -927,6 +978,12 @@ const createFetchHandler = (params: {
           recyclingByFeatureId: params.recyclingByFeatureId,
         });
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+        await ephemeralDB.fetchCache.update(existing.id, {
+          metadata: {
+            ...fetchMetadata,
+            status: 'completed',
+          },
+        });
       }
       const cachedVertexCount = existing.vertexCount ?? 0;
       const cachedPolygonCount = existing.polygonCount ?? 0;
@@ -1168,6 +1225,19 @@ const createFetchHandler = (params: {
       polygonCount,
       inputVertexCount: inputSummary.vertexCount,
       inputPolygonCount: inputSummary.polygonCount,
+      metadata: buildFetchCacheMetadata({
+        status: 'completed',
+        dataSource: input.dataSource,
+        sourceKey: input.sourceKey,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
+        featureCount,
+        inputFeatureCount: inputSummary.featureCount,
+        vertexCount,
+        polygonCount,
+        inputVertexCount: inputSummary.vertexCount,
+        inputPolygonCount: inputSummary.polygonCount,
+      }),
     });
     const reductionSummary = [
       formatChangeSummary('features', inputSummary.featureCount, featureCount),

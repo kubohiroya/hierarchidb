@@ -107,6 +107,7 @@ export interface EphemeralFetchCacheRecord {
   polygonCount?: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
+  metadata?: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -127,9 +128,25 @@ export interface EphemeralTransformCacheRecord {
   extractionRatio: number;
   tolerance: number;
   timestamp: number;
+  metadata?: Record<string, unknown>;
 }
 
-export type EphemeralTransformCacheMetaRecord = Omit<EphemeralTransformCacheRecord, 'data'>;
+export interface EphemeralTransformCacheMetaRecord {
+  id: string;
+  nodeId: NodeId;
+  domainType: 'shape' | 'route';
+  bandIndex: number;
+  sourceKey: string;
+  countryCode?: string;
+  adminLevel?: number;
+  featureCount?: number;
+  vertexCount?: number;
+  polygonCount?: number;
+  extractionRatio?: number;
+  tolerance?: number;
+  metadata?: Record<string, unknown>;
+  timestamp: number;
+}
 
 export interface EphemeralTransformErrorRecord extends ShapeTransformErrorRecord {
   domainType?: EphemeralDomainType;

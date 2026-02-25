@@ -257,6 +257,7 @@ const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => 
     inputData: task.inputData,
     outputData: shouldKeepOutput ? task.outputData : undefined,
     errorMessage: undefined,
+    metadata: task.metadata,
   };
 };
 

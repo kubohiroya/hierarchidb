@@ -75,6 +75,8 @@ type TransformByBandOutputParams = {
   assertNotAborted: (signal?: AbortSignal) => void;
   updateTaskStrict: UpdateTaskStrict;
   ephemeralDB: EphemeralDB;
+  resultMetadata: Record<string, unknown>;
+  persistTransformCacheMetadata?: (metadata: Record<string, unknown>) => Promise<void>;
 };
 
 const collectArrayBufferSnapshot = (data: unknown): Record<string, unknown> => {
@@ -131,6 +133,8 @@ export const runTransformByBandOutputPhase = async (
     assertNotAborted,
     updateTaskStrict,
     ephemeralDB,
+    resultMetadata,
+    persistTransformCacheMetadata,
   } = params;
 
   const simplifiedFeatureCount = simplified.features.length;
@@ -194,6 +198,19 @@ export const runTransformByBandOutputPhase = async (
   logDebugPhase('output-build:done', { featureCount: outputCollectionValue.features.length });
   if (outputCollectionValue.features.length === 0) {
     await reportPolygonProgress(taskId, inputPolygonCount, inputPolygonCount);
+    if (persistTransformCacheMetadata) {
+      const skippedMetadata = {
+        ...resultMetadata,
+        status: 'Skipped',
+      };
+      await persistTransformCacheMetadata(skippedMetadata).catch((error) => {
+        console.error('[ShapeTransform] failed to persist skipped transform cache metadata', {
+          taskId,
+          nodeId,
+          error,
+        });
+      });
+    }
     return {
       status: 'completed',
       progress: 100,
@@ -208,6 +225,7 @@ export const runTransformByBandOutputPhase = async (
         processedPolygons: inputPolygonCount,
         totalPolygons: inputPolygonCount,
       },
+      metadata: resultMetadata,
     };
   }
 
@@ -295,6 +313,7 @@ export const runTransformByBandOutputPhase = async (
     polygonCount,
     extractionRatio,
     tolerance,
+    metadata: resultMetadata,
   };
 
   await finalizeTransformByBandCache({
@@ -302,6 +321,7 @@ export const runTransformByBandOutputPhase = async (
     ephemeralDB,
     updateTaskStrict,
     cacheRecord,
+    metadata: resultMetadata,
     metrics: {
       features: { input: inputFeatureCount, output: simplifiedFeatureCount },
       polygons: { input: inputPolygonCount, output: simplifiedPolygonCount },
@@ -370,6 +390,16 @@ export const runTransformByBandOutputPhase = async (
     }
   }
 
+  if (persistTransformCacheMetadata) {
+    await persistTransformCacheMetadata(resultMetadata).catch((error) => {
+      console.error('[ShapeTransform] failed to persist completed transform cache metadata', {
+        taskId,
+        nodeId,
+        error,
+      });
+    });
+  }
+
   return {
     status: 'completed',
     progress: 100,
@@ -386,6 +416,7 @@ export const runTransformByBandOutputPhase = async (
       processedPolygons: inputPolygonCount,
       totalPolygons: inputPolygonCount,
     },
+    metadata: resultMetadata,
     taskUpdated: true,
   };
 };
