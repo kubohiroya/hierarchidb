@@ -10,6 +10,7 @@ type Props = {
   isRunning?: boolean;
   message?: string;
   detailLines?: string[];
+  tooltipContent?: React.ReactNode;
   progress?: number;
   fallbackProgress: number;
 };
@@ -22,10 +23,15 @@ export const TaskItem: React.FC<Props> = ({
   isRunning = false,
   message,
   detailLines,
+  tooltipContent,
   progress,
   fallbackProgress,
 }) => {
   const displayMessage = message ?? detailLines?.[0] ?? '';
+  const resolvedTooltipContent = tooltipContent ?? displayMessage;
+  const hasTooltip = typeof resolvedTooltipContent === 'string'
+    ? resolvedTooltipContent.trim().length > 0
+    : Boolean(resolvedTooltipContent);
   const progressValue = Math.min(100, Math.max(0, progress ?? fallbackProgress));
   const showRunningOverlay = isRunning && progressValue < 100;
 
@@ -72,11 +78,11 @@ export const TaskItem: React.FC<Props> = ({
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <Tooltip
-          title={displayMessage}
+          title={resolvedTooltipContent}
           placement="top-start"
-          disableHoverListener={!displayMessage}
-          disableFocusListener={!displayMessage}
-          disableTouchListener={!displayMessage}
+          disableHoverListener={!hasTooltip}
+          disableFocusListener={!hasTooltip}
+          disableTouchListener={!hasTooltip}
         >
           <Typography
             variant="caption"

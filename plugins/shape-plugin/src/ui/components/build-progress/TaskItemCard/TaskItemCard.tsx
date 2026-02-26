@@ -4,9 +4,10 @@ import RecyclingIcon from '@mui/icons-material/Recycling';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
-import { formatTaskDisplayMessage } from '~/ui/components/build-progress/taskDisplayText';
+import { formatTaskDisplayMessage, resolveTaskSummaryMetrics } from '~/ui/components/build-progress/taskDisplayText';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import { TaskItem } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import { TaskMetricRatioDetails } from './TaskMetricRatioDetails';
 
 type Translate = (key: string, fallback?: string) => string;
 
@@ -97,6 +98,17 @@ export const TaskItemCard = ({
     && (task.status === 'completed' || task.status === 'failed')
     ? (normalizedRetryAttempt > 0 ? `(Retry ${normalizedRetryAttempt})` : `(${normalizedStatusLabel})`)
     : statusLabelValue;
+  const summaryMetrics = resolveTaskSummaryMetrics(task.display)
+    .filter(({ key }) => key === 'features' || key === 'polygons');
+  const showMetricRatios = (stageId === 'fetch' || stageId === 'transform') && summaryMetrics.length > 0;
+  const tooltipContent = showMetricRatios
+    ? (
+      <TaskMetricRatioDetails
+        metrics={summaryMetrics}
+        t={translate}
+      />
+    )
+    : undefined;
 
   let leadingIcon: ReactNode = null;
   if (task.status === 'recycled') {
@@ -129,6 +141,7 @@ export const TaskItemCard = ({
       isRunning={task.status === 'running'}
       message={taskMessage}
       detailLines={detailLines}
+      tooltipContent={tooltipContent}
       progress={displayProgress}
       fallbackProgress={stageValue}
     />

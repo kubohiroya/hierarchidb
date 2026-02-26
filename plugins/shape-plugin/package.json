@@ -99,6 +99,7 @@
     "@hierarchidb/ui-monitoring": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-search-input": "workspace:*",
+    "@hierarchidb/ui-stacked-barchart": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
@@ -161,6 +162,7 @@
     "@hierarchidb/ui-memory": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-search-input": "workspace:*",
+    "@hierarchidb/ui-stacked-barchart": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
@@ -263,6 +265,8 @@
       "build": {
         "dependsOn": [
           "@hierarchidb/plugin-base#build",
+          "@hierarchidb/ui-build-sessions#build",
+          "@hierarchidb/ui-stacked-barchart#build",
           "@hierarchidb/ui-tone-curve-editor#build",
           "@hierarchidb/vt-orchestrator#build"
         ]

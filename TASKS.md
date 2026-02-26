@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #565 / `codex/feat/ui/stacked-barchart-snackbar-ratios-565` / start: 2026-02-26 11:45 JST
 - #513 / `fix/shape/initial-build-progress-stability` / start: 2026-02-22 10:40 JST
 - #466 / `feat/shape/url-build-rules-persistence` / start: 2026-02-21 19:02 JST
 - #344 / `codex/refactor/build-session/residual-unification-344` / start: 2026-02-17 16:52 JST
@@ -116,6 +117,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-26 12:05 JST #565 `@hierarchidb/ui-stacked-barchart` を新規追加し、Fetch/Transform の TaskItemCard hover Snackbar 詳細に Feature/Polygon の `処理後/元データ(割合%)` を 100%積み上げ棒表示する `TaskMetricRatioDetails` を実装。`TaskItem` は `tooltipContent` を受け取れるよう拡張し、`TaskItemCard` で metrics 抽出時のみ stacked-barchart を表示する構成へ変更。適用範囲は `packages/ui/stacked-barchart` と `plugins/shape-plugin/src/ui/components/build-progress/*`。
+- blocked: 2026-02-26 12:06 JST #565 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only --output-logs errors-only` は差分外既知ブロッカー `@hierarchidb/ui-monitoring` 型解決エラー（TS2307, 5件）で exit 2。`pnpm -w turbo run build --filter @hierarchidb/ui-stacked-barchart --only --output-logs errors-only` exit 0、`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only --output-logs errors-only` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` exit 0 を確認。
+- start: 2026-02-26 11:45 JST #565 を起票（https://github.com/kubohiroya/hierarchidb/issues/565）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-issue-565-stacked-barchart` とブランチ `codex/feat/ui/stacked-barchart-snackbar-ratios-565` を `origin/main` 起点で作成して着手。
 - start: 2026-02-21 19:02 JST #466 Issue #466 を起票（https://github.com/kubohiroya/hierarchidb/issues/466）し、ブランチ `feat/shape/url-build-rules-persistence` を作成して着手。
 - update: 2026-02-17 17:12 JST #344 Issue DoD チェックを更新（全項目 `[x]`）し、コミット `8f7f8a299`（`refactor(build-session): drop shape UI coordinator control path`）を作成。
 - update: 2026-02-17 17:13 JST #344 ブランチ `codex/refactor/build-session/residual-unification-344` を push し、PR #345（https://github.com/kubohiroya/hierarchidb/pull/345, base: `main`）を作成。

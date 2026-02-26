@@ -49,6 +49,13 @@ const formatMetric = (label: string, metric: TaskDisplayMetric): string => (
   `${label}: ${formatInt(metric.input)} -> ${formatInt(metric.output)}${formatRate(metric)}`
 );
 
+export type TaskSummaryMetricKey = 'features' | 'polygons' | 'vertices';
+
+export type TaskSummaryMetricEntry = {
+  key: TaskSummaryMetricKey;
+  metric: TaskDisplayMetric;
+};
+
 const formatSummary = (
   metrics: TaskDisplayPayload['metrics'],
   t: Translate,
@@ -87,4 +94,18 @@ export const formatTaskDisplayMessage = (
     return t(display.key ?? 'stage.taskError.generic', 'Failed', display.params);
   }
   return t(display.key ?? 'stage.taskInfo.generic', 'Working', display.params);
+};
+
+export const resolveTaskSummaryMetrics = (
+  display: TaskDisplayPayload | undefined,
+): TaskSummaryMetricEntry[] => {
+  if (!display || display.kind !== 'summary' || !display.metrics) return [];
+  const ordered: TaskSummaryMetricKey[] = ['features', 'polygons', 'vertices'];
+  const result: TaskSummaryMetricEntry[] = [];
+  ordered.forEach((key) => {
+    const metric = display.metrics?.[key];
+    if (!metric) return;
+    result.push({ key, metric });
+  });
+  return result;
 };
