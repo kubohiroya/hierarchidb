@@ -54,7 +54,6 @@ export const TaskItemCard = ({
   const statusLabelValue = resolveStatusLabel(statusValue, skipped);
   const statusColor = resolveStatusColor(statusValue, skipped);
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
-
   const builder = summaryBuilder
     ?? (
       stageId === 'transform'
