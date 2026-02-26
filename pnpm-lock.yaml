@@ -2546,6 +2546,27 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/ui/stacked-barchart:
+    devDependencies:
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@19.2.14)(react@19.2.4)
+      '@emotion/styled':
+        specifier: 11.14.0
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/ui/tabular-extract:
     dependencies:
       '@emotion/react':
@@ -4044,6 +4065,9 @@ importers:
       '@hierarchidb/ui-search-input':
         specifier: workspace:*
         version: link:../../packages/ui/search-input
+      '@hierarchidb/ui-stacked-barchart':
+        specifier: workspace:*
+        version: link:../../packages/ui/stacked-barchart
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
