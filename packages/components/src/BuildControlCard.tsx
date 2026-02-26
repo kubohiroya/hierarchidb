@@ -92,16 +92,9 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
   const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
     setMenuAnchorEl(event.currentTarget);
   };
-  const blurActiveElement = useCallback(() => {
-    const active = document.activeElement;
-    if (active instanceof HTMLElement) {
-      active.blur();
-    }
-  }, []);
   const handleMenuClose = useCallback(() => {
     setMenuAnchorEl(null);
-    blurActiveElement();
-  }, [blurActiveElement]);
+  }, []);
 
   useEffect(() => {
     if (menuDisabled && menuAnchorEl) {
