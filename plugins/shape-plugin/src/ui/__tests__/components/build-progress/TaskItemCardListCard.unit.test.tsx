@@ -214,7 +214,9 @@ describe('TaskItemCardListCard', () => {
     fireEvent.mouseEnter(summary);
 
     expect(screen.getByText('URL: https://example.com/jp/adm0.geojson')).toBeTruthy();
-    expect(screen.getByText('Features: 5,000 / 10,000 (50%)')).toBeTruthy();
-    expect(screen.getByText('Polygons: 10,000 / 25,000 (40%)')).toBeTruthy();
+    expect(screen.getByText('Features')).toBeTruthy();
+    expect(screen.getByText('5,000 / 10,000 (50%)')).toBeTruthy();
+    expect(screen.getByText('Polygons')).toBeTruthy();
+    expect(screen.getByText('10,000 / 25,000 (40%)')).toBeTruthy();
   });
 });
