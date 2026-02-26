@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, forwardRef, useCallback, useMemo } from 'react';
+import { type CSSProperties, type ReactNode, forwardRef, useCallback, useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
@@ -11,6 +11,15 @@ import { TaskItemCard } from '~/ui/components/build-progress/TaskItemCard/TaskIt
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
+import {
+  type TaskOutcomeSummaryBuilder,
+  buildSimpleTaskOutcomeSummary,
+  buildTransformTaskOutcomeSummary,
+} from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
+import { TaskItemDetailSnackbar } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailSnackbar';
+import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
+
+type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
 
 type TaskItemCardListCardProps = {
   stageId: string;
@@ -22,6 +31,7 @@ type TaskItemCardListCardProps = {
   scrollToTaskId?: string;
   scrollRequestId?: number;
   virtualize?: boolean;
+  summaryBuilders?: TaskStageSummaryBuilderMap;
 };
 
 export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCardListCardProps>(({
@@ -34,7 +44,9 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   scrollToTaskId,
   scrollRequestId,
   virtualize = true,
+  summaryBuilders,
 }: TaskItemCardListCardProps, ref) => {
+  const [hoveredDetail, setHoveredDetail] = useState<{ title: string; summary: TaskOutcomeSummary } | null>(null);
   const { t } = useTranslation();
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => {
@@ -59,6 +71,11 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   const renderTaskItemCard = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const taskStageId = task.stage;
     const stageIcon = resolveStageIcon(taskStageId);
+    const injectedBuilder = (taskStageId === 'transform'
+      ? summaryBuilders?.transform
+      : (taskStageId === 'fetch' ? summaryBuilders?.fetch : summaryBuilders?.vt));
+    const summaryBuilder = injectedBuilder
+      ?? (taskStageId === 'transform' ? buildTransformTaskOutcomeSummary : buildSimpleTaskOutcomeSummary);
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItemCard
@@ -70,10 +87,12 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           resolveTaskTitle={resolveTaskTitle}
           stageIcon={stageIcon}
           translate={t}
+          summaryBuilder={summaryBuilder}
+          onDetailHoverChange={setHoveredDetail}
         />
       </Box>
     );
-  }, [resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageId, stageValue, t]);
+  }, [resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageId, stageValue, summaryBuilders, t]);
 
   return (
     <Box
@@ -108,6 +127,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           })}
         </Box>
       )}
+      <TaskItemDetailSnackbar detail={hoveredDetail} />
     </Box>
   );
 });

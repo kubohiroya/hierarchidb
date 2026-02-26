@@ -1,4 +1,4 @@
-import { memo, useCallback, useId, type ChangeEvent, type FocusEvent, type KeyboardEvent, type InputHTMLAttributes } from 'react';
+import { memo, useCallback, useId, useRef, type ChangeEvent, type FocusEvent, type KeyboardEvent, type InputHTMLAttributes } from 'react';
 import { TextField, InputAdornment, IconButton, type SxProps, type Theme } from '@mui/material';
 import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
 
@@ -115,6 +115,7 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
   const resolvedClearHandler = isLegacyProps ? undefined : onClear;
   const inputName = isLegacyProps ? 'hdb-search' : 'tree-table-search';
   const shouldShowClearButton = resolvedValue.length > 0 && resolvedClearHandler !== undefined;
+  const inputElementRef = useRef<HTMLInputElement | null>(null);
 
   const mergedInputProps = {
     ...SEARCH_INPUT_DEFAULT_AUTOCOMPLETE_PROPS,
@@ -188,6 +189,14 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
     [resolvedCommitMode, resolvedOnCommit],
   );
 
+  const focusInputElement = useCallback(() => {
+    if (resolvedDisabled) return;
+    const inputElement = inputElementRef.current;
+    if (!inputElement) return;
+    if (document.activeElement === inputElement) return;
+    inputElement.focus({ preventScroll: true });
+  }, [resolvedDisabled]);
+
   return (
     <TextField
       id={controlId}
@@ -200,6 +209,23 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput({
       onKeyDown={handleKeyDown}
       autoFocus={resolvedAutoFocus}
       disabled={resolvedDisabled}
+      onMouseDownCapture={(event) => {
+        event.stopPropagation();
+        if (event.button === 0) {
+          queueMicrotask(() => {
+            focusInputElement();
+          });
+        }
+      }}
+      onPointerDownCapture={(event) => {
+        event.stopPropagation();
+        if (event.button === 0) {
+          queueMicrotask(() => {
+            focusInputElement();
+          });
+        }
+      }}
+      inputRef={inputElementRef}
       InputProps={{
         inputProps: mergedInputProps,
         style: {
