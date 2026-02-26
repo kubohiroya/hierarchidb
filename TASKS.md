@@ -39,6 +39,7 @@
 
 ### Doing
 - #567 / `codex/fix/shape-plugin-build-sessions-import-567` / start: 2026-02-26 17:30 JST
+- #572 / `codex/fix/plugin-dialog-input-caret-572` / start: 2026-02-26 12:00 JST
 - #560 / `codex/feat/shape/admin-level-simplify-tolerance-560` / start: 2026-02-25 23:40 JST
 - #559 / `codex/feat/ui/plugin-dialog-stepper-context-menu-559` / start: 2026-02-25 23:16 JST
 - #513 / `fix/shape/initial-build-progress-stability` / start: 2026-02-22 10:40 JST
@@ -119,6 +120,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-26 17:24 JST #572 追加調査。原因は PluginDialog 内の一部 `Menu`（`PluginDialogFooter` と `PluginDialogStepper`）で `disableRestoreFocus` が未設定のまま残り、メニュー操作後にトリガー要素へフォーカス復元が走って入力キャレットが失われること。発生範囲は Step フッターのコンテキストメニュー、ヘッダーステッパーのコンテキストメニュー、および BuildControl/StageSummary のメニュー遷移。修正方法は `packages/components/src/BuildControlCard.tsx`、`packages/components/src/BuildStepStagePanel.tsx`、`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`、`packages/plugin-ui-host/src/headless/components/PluginDialogStepper.tsx` の `Menu` に `disableRestoreFocus` を統一適用。適用範囲はメニュー close 時のフォーカス復元挙動のみ。検証: `TURBO_FORCE=true pnpm -w turbo run test --filter @hierarchidb/ui-dialog --only -- --run src/headless/PluginDialogFrame.inputFocus.unit.test.tsx` exit 0。`pnpm -w turbo run typecheck --filter @hierarchidb/plugin-ui-host --only --output-logs errors-only` は差分外既知依存欠落（多数 TS2307）で exit 2。
+- start: 2026-02-26 12:00 JST #572 を起票（https://github.com/kubohiroya/hierarchidb/issues/572）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ワークツリー `/Users/hiroya/WebstormProjects/hierarchidb-issue-572-caret` とブランチ `codex/fix/plugin-dialog-input-caret-572` を作成して着手。
 - update: 2026-02-26 11:56 JST #561 追加調査。`BuildControlCard` と `BuildStepStagePanel` のメニュークローズ処理で `document.activeElement.blur()` を実行しており、メニュー操作後に入力欄キャレットが消える不具合を誘発していた。発生範囲は Step5 Build controls の▼メニューと各ステージサマリー▼メニュー経由のフォーカス遷移。修正方法として `packages/components/src/BuildControlCard.tsx` と `packages/components/src/BuildStepStagePanel.tsx` から `blurActiveElement` 呼び出しを削除し、`handleMenuClose` は anchor 解放のみへ変更。適用範囲はメニュー close 時のフォーカス制御のみ。検証: `pnpm -w turbo run typecheck --filter @hierarchidb/components --filter @hierarchidb/shape-plugin --filter @hierarchidb/ui-dialog --filter @hierarchidb/ui-search-input --only --output-logs errors-only` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin --only -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` exit 0。
 - update: 2026-02-26 17:44 JST #567 原因は `plugins/shape-plugin/src/ui/components/build-progress/*` に `../../../../../../packages/ui/build-sessions` への不正相対importが残っていたこと。発生範囲は build-progress 関連 7 ファイル。修正として全参照を `@hierarchidb/ui-build-sessions` へ統一し、`plugins/shape-plugin/package.json` の `turbo.pipeline.build.dependsOn` に `@hierarchidb/ui-build-sessions#build` を追加して依存順を保証。適用範囲は shape-plugin の当該 import と turbo 設定のみ。
 - blocked: 2026-02-26 17:45 JST #567 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only --output-logs errors-only` は差分外既知ブロッカー（多数の TS2307/TS7006）で exit 2。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only --output-logs errors-only` は exit 0（本件の import 解決エラー再発なし）。
