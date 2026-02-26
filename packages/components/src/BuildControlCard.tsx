@@ -188,6 +188,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           anchorEl={menuAnchorEl}
           open={isMenuOpen}
           onClose={handleMenuClose}
+          disableRestoreFocus
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >

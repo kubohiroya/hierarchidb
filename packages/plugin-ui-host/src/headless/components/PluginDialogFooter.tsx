@@ -481,6 +481,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
       <Menu
         open={Boolean(contextMenuState)}
         onClose={closeContextMenu}
+        disableRestoreFocus
         anchorReference="anchorPosition"
         anchorPosition={
           contextMenuState
