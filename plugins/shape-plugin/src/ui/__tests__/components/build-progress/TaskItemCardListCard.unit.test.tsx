@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai/vanilla';
@@ -171,5 +171,50 @@ describe('TaskItemCardListCard', () => {
     );
 
     expect(screen.getByText('Injected fetch summary')).toBeTruthy();
+  });
+
+  it('shows fetch detail snackbar with url and reduced counts', () => {
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'fetch-task-snackbar-1',
+        nodeId: 'node-1',
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'completed',
+        progress: 100,
+        metadata: {
+          fetchDetail: {
+            countryCode: 'JP',
+            countryName: 'Japan',
+            adminLevel: 0,
+            url: 'https://example.com/jp/adm0.geojson',
+            features: { input: 10000, output: 5000 },
+            polygons: { input: 25000, output: 10000 },
+          },
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    render(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="fetch"
+          tasks={tasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Completed'}
+          resolveStatusColor={() => 'success'}
+          resolveTaskTitle={() => 'Japan (JP) 0'}
+          virtualize={false}
+        />
+      </Provider>
+    );
+
+    const summary = screen.getByTestId('task-inline-summary');
+    fireEvent.mouseEnter(summary);
+
+    expect(screen.getByText('URL: https://example.com/jp/adm0.geojson')).toBeTruthy();
+    expect(screen.getByText('Features: 5,000 / 10,000 (50%)')).toBeTruthy();
+    expect(screen.getByText('Polygons: 10,000 / 25,000 (40%)')).toBeTruthy();
   });
 });

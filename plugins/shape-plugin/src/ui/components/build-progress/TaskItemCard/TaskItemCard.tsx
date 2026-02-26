@@ -7,6 +7,7 @@ import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 import {
   type TaskOutcomeSummaryBuilder,
+  buildFetchTaskOutcomeSummary,
   buildSimpleTaskOutcomeSummary,
   buildTransformTaskOutcomeSummary,
 } from './taskOutcomeSummaryBuilders';
@@ -55,7 +56,11 @@ export const TaskItemCard = ({
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
 
   const builder = summaryBuilder
-    ?? (stageId === 'transform' ? buildTransformTaskOutcomeSummary : buildSimpleTaskOutcomeSummary);
+    ?? (
+      stageId === 'transform'
+        ? buildTransformTaskOutcomeSummary
+        : (stageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
+    );
   const summary = builder({
     task,
     stageId,

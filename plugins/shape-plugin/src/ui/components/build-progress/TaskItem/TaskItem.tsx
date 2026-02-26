@@ -10,7 +10,7 @@ type TaskMetric = {
 
 export type TaskOutcomeSummary = {
   kind: 'completed' | 'failed' | 'skipped' | 'other';
-  visualization?: 'none' | 'transformMetrics';
+  visualization?: 'none' | 'transformMetrics' | 'fetchMetrics';
   summaryLine: string;
   detailLines?: string[];
   effectiveTolerance?: number | null;
@@ -23,6 +23,14 @@ export type TaskOutcomeSummary = {
     vertices: TaskMetric;
   };
   vertexLimit?: number | null;
+  fetchDetails?: {
+    countryName: string | null;
+    countryCode: string | null;
+    adminLevel: number | null;
+    url: string | null;
+    features: TaskMetric;
+    polygons: TaskMetric;
+  };
 };
 
 type Props = {

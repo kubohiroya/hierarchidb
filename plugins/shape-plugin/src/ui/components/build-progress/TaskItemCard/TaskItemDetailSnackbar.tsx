@@ -108,9 +108,11 @@ const renderVolumeRow = (
 export const TaskItemDetailSnackbar = ({ detail }: Props) => {
   const summary = detail?.summary;
   const title = detail?.title ?? '';
-  const countryFlag = toFlagEmoji(extractCountryCodeFromTitle(title));
+  const countryFlag = toFlagEmoji(summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title));
   const detailColor = summary?.kind === 'failed' ? 'error.main' : 'text.secondary';
   const chartColor = summary?.kind === 'failed' ? 'error.main' : 'primary.main';
+  const fetchFeaturesRatio = resolveRatio(summary?.fetchDetails?.features.output, summary?.fetchDetails?.features.input);
+  const fetchPolygonsRatio = resolveRatio(summary?.fetchDetails?.polygons.output, summary?.fetchDetails?.polygons.input);
 
   return (
     <Snackbar
@@ -175,6 +177,19 @@ export const TaskItemDetailSnackbar = ({ detail }: Props) => {
               chartColor,
               true,
             )}
+          </Stack>
+        ) : null}
+        {summary?.visualization === 'fetchMetrics' ? (
+          <Stack spacing={0.5} sx={{ mt: 0.75 }}>
+            <Typography variant="caption" color={detailColor} sx={{ fontWeight: 600 }}>
+              URL: {summary.fetchDetails?.url ?? 'N/A'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Features: {formatNumber(summary.fetchDetails?.features.output)} / {formatNumber(summary.fetchDetails?.features.input)} ({formatPercent(fetchFeaturesRatio)})
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Polygons: {formatNumber(summary.fetchDetails?.polygons.output)} / {formatNumber(summary.fetchDetails?.polygons.input)} ({formatPercent(fetchPolygonsRatio)})
+            </Typography>
           </Stack>
         ) : null}
       </Box>

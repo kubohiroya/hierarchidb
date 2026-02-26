@@ -1,0 +1,54 @@
+import 'fake-indexeddb/auto';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { NodeId } from '@hierarchidb/core-types';
+import { putTasks, listTasksByStageAndStatus, VtTaskQueueDb } from '../task/taskQueue';
+import { runStageTasks } from '../compareTaskOrder';
+
+const NODE_ID = 'vt-orchestrator-auth-pending-node' as NodeId;
+
+describe('runStageTasks auth required handling', () => {
+  const db = new VtTaskQueueDb();
+
+  afterEach(async () => {
+    await db.tasks.clear();
+  });
+
+  it('requeues auth-required task without marking it failed', async () => {
+    const taskId = 'fetch-auth-1';
+    await putTasks(db, [{
+      taskId,
+      nodeId: NODE_ID,
+      stage: 'fetch',
+      status: 'queued',
+      index: 0,
+      progress: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      inputData: { url: 'https://example.com/data.geojson' },
+    }]);
+
+    const handler = vi.fn(async () => {
+      const error = new Error('Authentication required');
+      error.name = 'AuthRequiredError';
+      throw error;
+    });
+
+    await runStageTasks({
+      nodeId: NODE_ID,
+      stage: 'fetch',
+      handler,
+      maxConcurrent: 1,
+      failureHandling: 'continue',
+    });
+
+    const [queued, failed] = await Promise.all([
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
+    ]);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(failed).toHaveLength(0);
+    expect(queued).toHaveLength(1);
+    expect((queued[0]?.metadata as { authState?: string } | undefined)?.authState).toBe('required');
+  });
+});

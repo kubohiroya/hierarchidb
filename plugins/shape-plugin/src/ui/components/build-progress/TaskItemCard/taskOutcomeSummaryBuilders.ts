@@ -128,6 +128,128 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   };
 };
 
+const readMetadataString = (metadata: Record<string, unknown> | undefined, keys: string[]): string | null => {
+  for (const key of keys) {
+    const rawValue = key.split('.').reduce<unknown>((current, segment) => {
+      if (!current || typeof current !== 'object') {
+        return undefined;
+      }
+      return (current as Record<string, unknown>)[segment];
+    }, metadata);
+    if (typeof rawValue !== 'string') continue;
+    const trimmed = rawValue.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return null;
+};
+
+const resolveRatio = (output: number | null, input: number | null): number | null => {
+  if (output === null || input === null || input <= 0) return null;
+  return Math.max(0, Math.min(1, output / input));
+};
+
+export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
+  const kind = resolveSummaryKind(task);
+  const displayMessage = formatTaskDisplayMessage(task.display, translate);
+  const failedMessage = resolveFailedMessage(task);
+
+  const countryName = readMetadataString(task.metadata, [
+    'fetchDetail.countryName',
+  ]);
+  const countryCode = readMetadataString(task.metadata, [
+    'fetchDetail.countryCode',
+  ]);
+  const adminLevelRaw = readMetadataNumber(task.metadata, [
+    'fetchDetail.adminLevel',
+  ]);
+  const adminLevel = adminLevelRaw !== null ? Math.floor(adminLevelRaw) : null;
+  const url = readMetadataString(task.metadata, [
+    'fetchDetail.url',
+  ]);
+
+  const featuresInput = readMetadataNumber(task.metadata, [
+    'fetchDetail.features.input',
+  ]);
+  const featuresOutput = readMetadataNumber(task.metadata, [
+    'fetchDetail.features.output',
+  ]);
+  const polygonsInput = readMetadataNumber(task.metadata, [
+    'fetchDetail.polygons.input',
+  ]);
+  const polygonsOutput = readMetadataNumber(task.metadata, [
+    'fetchDetail.polygons.output',
+  ]);
+  const featuresRatio = resolveRatio(featuresOutput, featuresInput);
+  const polygonsRatio = resolveRatio(polygonsOutput, polygonsInput);
+  const hasFetchDetails = url !== null
+    || featuresInput !== null
+    || featuresOutput !== null
+    || polygonsInput !== null
+    || polygonsOutput !== null;
+
+  if (kind === 'skipped') {
+    const reason = (displayMessage || task.message || taskTitle).trim();
+    return {
+      kind,
+      visualization: 'none',
+      summaryLine: `Skipped: ${compact(reason)}`,
+      detailLines: [`Reason: ${reason}`],
+    };
+  }
+
+  if (kind === 'failed') {
+    const reason = failedMessage || displayMessage || taskTitle;
+    return {
+      kind,
+      visualization: 'none',
+      summaryLine: `Failed: ${compact(reason)}`,
+      detailLines: [`Failure: ${reason}`],
+    };
+  }
+
+  if (kind === 'completed') {
+    const summaryLine = (
+      featuresInput !== null
+      && featuresOutput !== null
+      && polygonsInput !== null
+      && polygonsOutput !== null
+    )
+      ? `F ${formatInt(featuresOutput)}/${formatInt(featuresInput)} (${formatPercent(featuresRatio)}), `
+        + `P ${formatInt(polygonsOutput)}/${formatInt(polygonsInput)} (${formatPercent(polygonsRatio)})`
+      : (displayMessage || 'Completed');
+    return {
+      kind,
+      visualization: hasFetchDetails ? 'fetchMetrics' : 'none',
+      summaryLine,
+      detailLines: [summaryLine],
+      fetchDetails: {
+        countryName,
+        countryCode,
+        adminLevel,
+        url,
+        features: { input: featuresInput, output: featuresOutput },
+        polygons: { input: polygonsInput, output: polygonsOutput },
+      },
+    };
+  }
+
+  const info = displayMessage || task.message || taskTitle;
+  return {
+    kind,
+    visualization: hasFetchDetails ? 'fetchMetrics' : 'none',
+    summaryLine: info,
+    detailLines: [info],
+    fetchDetails: {
+      countryName,
+      countryCode,
+      adminLevel,
+      url,
+      features: { input: featuresInput, output: featuresOutput },
+      polygons: { input: polygonsInput, output: polygonsOutput },
+    },
+  };
+};
+
 export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, taskTitle, translate }) => {
   const kind = resolveSummaryKind(task);
   const displayMessage = formatTaskDisplayMessage(task.display, translate);

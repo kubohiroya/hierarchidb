@@ -12,6 +12,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useShapeBuildStages } from '~/ui/components/build-progress/useShapeBuildStages/useShapeBuildStages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 import {
+  buildFetchTaskOutcomeSummary,
   type TaskOutcomeSummaryBuilder,
   buildSimpleTaskOutcomeSummary,
   buildTransformTaskOutcomeSummary,
@@ -75,7 +76,11 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
       ? summaryBuilders?.transform
       : (taskStageId === 'fetch' ? summaryBuilders?.fetch : summaryBuilders?.vt));
     const summaryBuilder = injectedBuilder
-      ?? (taskStageId === 'transform' ? buildTransformTaskOutcomeSummary : buildSimpleTaskOutcomeSummary);
+      ?? (
+        taskStageId === 'transform'
+          ? buildTransformTaskOutcomeSummary
+          : (taskStageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
+      );
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItemCard

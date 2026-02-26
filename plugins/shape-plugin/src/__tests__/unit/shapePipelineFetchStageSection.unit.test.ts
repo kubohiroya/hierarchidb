@@ -4,7 +4,7 @@ import type { TaskQueueRecord } from '@hierarchidb/build-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants';
-import { runShapeFetchStageSection } from '../../services/vt/shapePipelineFetchStage';
+import { FetchStageAuthPendingError, runShapeFetchStageSection } from '../../services/vt/shapePipelineFetchStage';
 import * as shapeFetchStageModule from '../../services/vt/shapeFetchStage';
 import {
   listTasksByStageAndStatus,
@@ -39,6 +39,18 @@ const createFailedFetchTask = (taskId: string): TaskQueueRecord => ({
   createdAt: Date.now(),
   updatedAt: Date.now(),
   completedAt: Date.now(),
+});
+
+const createAuthPendingFetchTask = (taskId: string): TaskQueueRecord => ({
+  taskId,
+  nodeId: NODE_ID,
+  stage: 'fetch',
+  index: 0,
+  status: 'queued',
+  progress: 0,
+  metadata: { authState: 'required' },
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 });
 
 describe('runShapeFetchStageSection', () => {
@@ -105,5 +117,36 @@ describe('runShapeFetchStageSection', () => {
     } finally {
       runShapeFetchStageSpy.mockRestore();
     }
+  });
+
+  it('throws auth-pending error without failing auth-pending fetch tasks', async () => {
+    db = createDb();
+    await putTasks(db, [createAuthPendingFetchTask('fetch-auth-pending-1')]);
+
+    const runShapeFetchStageSpy = vi
+      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+      .mockResolvedValue(undefined);
+
+    try {
+      await expect(runShapeFetchStageSection({
+        nodeId: NODE_ID,
+        dataSource: 'geoboundaries',
+        buildConfig: DEFAULT_BUILD_CONFIG,
+        taskQueue: db,
+        resumeExistingTasks: true,
+        failureHandling: 'continue',
+        buildContinuationPolicy: 'finish_all_stages',
+        pipelineRunId: 'test-run-auth',
+      })).rejects.toBeInstanceOf(FetchStageAuthPendingError);
+    } finally {
+      runShapeFetchStageSpy.mockRestore();
+    }
+
+    const [failed, queued] = await Promise.all([
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+    ]);
+    expect(failed).toHaveLength(0);
+    expect(queued).toHaveLength(1);
   });
 });
