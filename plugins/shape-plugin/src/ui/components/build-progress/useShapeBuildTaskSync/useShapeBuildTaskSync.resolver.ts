@@ -12,6 +12,7 @@ import {
   isCompletedAtFullProgress,
   resolveTaskSummaryFromRaw,
 } from './useShapeBuildTaskSync.comparison.utils.js';
+import { isTaskSkipped } from '~/common/utils/taskMessages';
 
 type ResolverDeps = {
   sessionNodeId: string | null;
@@ -85,6 +86,11 @@ export const useShapeBuildTaskSyncResolver = ({
       return resolvedTask;
     }
     if (resolvedTask.status === 'running' || resolvedTask.status === 'queued') {
+      const isRetryableCompletedTask = completedTask.status === 'failed'
+        || isTaskSkipped(completedTask.display, completedTask.message);
+      if (isRetryableCompletedTask) {
+        return resolvedTask;
+      }
       return completedTask;
     }
     if (!isCompletedAtFullProgress(resolvedTask)) {
