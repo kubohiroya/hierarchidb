@@ -54,6 +54,27 @@ export const TaskItemCard = ({
     }
     return null;
   };
+  const readNumericFromMetadataKeys = (keys: string[]): number | null => {
+    for (const key of keys) {
+      const rawValue = (key.split('.').reduce<unknown>((current, segment) => {
+        if (!current || typeof current !== 'object') {
+          return undefined;
+        }
+        return (current as Record<string, unknown>)[segment];
+      }, task.metadata) as unknown);
+      const parsed = readNumberFromMetadata(rawValue);
+      if (parsed !== null) return parsed;
+    }
+    return null;
+  };
+  const readNumericFromMessage = (name: string): number | null => {
+    if (!geometryBaseMessage && !failedMessage && !displayMessage) return null;
+    const text = [geometryBaseMessage, failedMessage, displayMessage].filter(Boolean).join(' ');
+    const match = new RegExp(`\\b${name}=(-?\\d+(?:\\.\\d+)?)`, 'i').exec(text);
+    if (!match || !match[1]) return null;
+    const parsed = Number.parseFloat(match[1]);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
   const stripMetadataSuffixFromMessage = (message?: string): string | undefined => {
     if (!message) return undefined;
     const trimmed = message.trim();
@@ -64,12 +85,20 @@ export const TaskItemCard = ({
     Number.isFinite(value) ? `${Number.parseFloat(value.toFixed(6))}` : '-'
   );
   const metadataEffectiveTolerance = (() => {
-    const rawTolerance = readNumberFromMetadata(task.metadata?.effectiveTolerance);
+    const rawTolerance = readNumericFromMetadataKeys([
+      'effectiveTolerance',
+      'effective_tolerance',
+      'finalTolerance',
+      'finalEffectiveTolerance',
+      'tolerance',
+    ]) ?? readNumericFromMessage('effectiveTolerance');
     if (rawTolerance === null) return '-';
     return formatToleranceValue(rawTolerance);
   })();
   const resolvedRetryAttempt = (() => {
-    const rawRetryAttempt = readNumberFromMetadata(task.retryAttempt ?? task.metadata?.retryAttempt);
+    const rawRetryAttempt = readNumberFromMetadata(
+      task.retryAttempt ?? task.metadata?.retryAttempt ?? task.metadata?.retries ?? task.metadata?.attempts,
+    );
     if (rawRetryAttempt === null) return null;
     const rounded = Math.floor(rawRetryAttempt);
     return rounded >= 0 ? rounded : null;

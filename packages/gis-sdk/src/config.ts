@@ -117,6 +117,20 @@ export type VTOutputQualityGuardConfig = {
   minBoundaryVertexCount: number;
 };
 
+export type SimplifyToleranceAdminLevelKey = 'admin0' | 'admin1' | 'admin2' | 'admin3Plus';
+
+export interface TransformSimplifyAdminLevelProfile {
+  usePrevious?: boolean;
+  toleranceByBand?: number[];
+  retryToleranceByBand?: number[];
+  retryCount?: number;
+}
+
+export type TransformSimplifyToleranceByAdminLevelConfig = Record<
+  SimplifyToleranceAdminLevelKey,
+  TransformSimplifyAdminLevelProfile
+>;
+
 export interface TransformConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
@@ -134,6 +148,7 @@ export interface TransformConfig {
   toleranceByBand: number[];
   retryCount?: number;
   retryToleranceByBand?: number[];
+  simplifyToleranceByAdminLevel?: TransformSimplifyToleranceByAdminLevelConfig;
   retryToleranceStep?: number;
   quantize?: number;
   areaThreshold: number;

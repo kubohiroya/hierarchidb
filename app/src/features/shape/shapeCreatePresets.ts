@@ -276,6 +276,25 @@ const createSelectionRow = (
   level2 = false
 ): boolean[] => [level0, level1, level2];
 
+const createSimplifyToleranceByAdminLevelPatch = (toleranceByBand: number[]) => ({
+  admin0: {
+    usePrevious: false,
+    toleranceByBand,
+  },
+  admin1: {
+    usePrevious: true,
+    toleranceByBand,
+  },
+  admin2: {
+    usePrevious: true,
+    toleranceByBand,
+  },
+  admin3Plus: {
+    usePrevious: true,
+    toleranceByBand,
+  },
+});
+
 const buildJapanLevel01Selection = (): Record<string, boolean[]> => ({
   JP: createSelectionRow(true, true, false),
 });
@@ -308,6 +327,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       dataSourceName: 'geoboundaries',
       transformConfig: {
         toleranceByBand: [0.12],
+        simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.12]),
         omitDetailsConfig: { level: 'weak' },
         boundaryDisableAtZoomOrAbove: 5,
       },
@@ -338,6 +358,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       dataSourceName: 'geoboundaries',
       transformConfig: {
         toleranceByBand: [0.9],
+        simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.9]),
         omitDetailsConfig: { level: 'strong' },
         boundaryDisableAtZoomOrAbove: 2,
       },
@@ -368,6 +389,7 @@ const SHAPE_CREATE_PRESET_DEFINITIONS: readonly ShapeCreatePresetDefinition[] = 
       dataSourceName: 'geoboundaries',
       transformConfig: {
         toleranceByBand: [0.45],
+        simplifyToleranceByAdminLevel: createSimplifyToleranceByAdminLevelPatch([0.45]),
         omitDetailsConfig: { level: 'medium' },
         boundaryDisableAtZoomOrAbove: 3,
       },
