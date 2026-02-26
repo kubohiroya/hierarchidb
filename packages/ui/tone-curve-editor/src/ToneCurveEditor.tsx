@@ -1358,7 +1358,6 @@ export function ToneCurveEditor({
   }, [viewXRange, viewYRange]);
 
   const clampRange = React.useCallback((range: AxisRange, baseRange: AxisRange): AxisRange => {
-    const span = range.max - range.min;
     const clampedMin = clampInOrder(range.min, baseRange.min, baseRange.max);
     const clampedMax = clampInOrder(range.max, baseRange.min, baseRange.max);
     if (clampedMax > clampedMin) {
