@@ -6,7 +6,7 @@ import {
   useBuildTaskProgress,
   type TaskCountSummary,
   type TaskLike,
-} from '../../../../../../packages/ui/build-sessions';
+} from '@hierarchidb/ui-build-sessions';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { TaskStage } from '@hierarchidb/build-api';
