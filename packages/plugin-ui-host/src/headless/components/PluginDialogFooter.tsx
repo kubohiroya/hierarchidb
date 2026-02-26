@@ -11,10 +11,14 @@ import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import OpenInNewOffIcon from '@mui/icons-material/OpenInNewOff';
 import type { ButtonProps } from '@mui/material';
-import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
+import { Box, Button, CircularProgress, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Tooltip } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { useLocation } from '@tanstack/react-router';
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DialogActionInFlight } from '~/headless/types';
@@ -45,6 +49,7 @@ const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) =>
 };
 
 const FOOTER_HOVER_ZONE_HEIGHT = 24;
+const STEP_ROUTE_BASE_SEGMENTS = 6;
 
 type LoadingButtonProps = ButtonProps & { loading?: boolean };
 
@@ -82,6 +87,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
 }) => {
   // console.count('PluginDialogFooter render');
   const { t } = useTranslation('common');
+  const location = useLocation();
   const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
   const {
     ctx,
@@ -204,6 +210,117 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction;
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
+  const currentStepNumber = ctx.activeStepIndex + 1;
+  const backStepNumber = isFirstStep ? null : currentStepNumber - 1;
+  const nextStepNumber = shouldRenderNextButton && canNavigateNext ? currentStepNumber + 1 : null;
+  const [contextMenuState, setContextMenuState] = useState<{
+    mouseX: number;
+    mouseY: number;
+    url: string;
+  } | null>(null);
+
+  const toModeSegment = useCallback((value: 'normal' | 'maximize' | 'full-screen'): string => {
+    switch (value) {
+      case 'full-screen':
+        return 'full';
+      case 'maximize':
+        return 'maximize';
+      default:
+        return 'normal';
+    }
+  }, []);
+
+  const toAbsoluteStepUrl = useCallback(
+    (targetStep: number): string | null => {
+      if (targetStep < 1 || !Number.isFinite(targetStep)) {
+        return null;
+      }
+      const fallbackOrigin =
+        typeof window !== 'undefined' && window.location?.origin
+          ? window.location.origin
+          : 'http://localhost';
+      const candidate = new URL(
+        `${location.pathname}${location.searchStr ?? ''}${location.hash ?? ''}`,
+        fallbackOrigin
+      );
+      const segments = candidate.pathname.split('/').filter(Boolean);
+      if (segments[0] !== 't' || segments.length < STEP_ROUTE_BASE_SEGMENTS) {
+        return null;
+      }
+      const nextModeSegment = segments[6] ?? toModeSegment(ctx.displayMode ?? 'normal');
+      const nextPathSegments = [
+        ...segments.slice(0, STEP_ROUTE_BASE_SEGMENTS),
+        nextModeSegment,
+        String(targetStep),
+      ];
+      candidate.pathname = `/${nextPathSegments.join('/')}`;
+      return candidate.toString();
+    },
+    [ctx.displayMode, location.hash, location.pathname, location.searchStr, toModeSegment]
+  );
+
+  const openContextMenuForStep = useCallback(
+    (event: React.MouseEvent, targetStep: number | null, disabled: boolean) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (disabled || targetStep === null) {
+        setContextMenuState(null);
+        return;
+      }
+      const url = toAbsoluteStepUrl(targetStep);
+      if (!url) {
+        setContextMenuState(null);
+        return;
+      }
+      setContextMenuState({
+        mouseX: event.clientX + 2,
+        mouseY: event.clientY - 6,
+        url,
+      });
+    },
+    [toAbsoluteStepUrl]
+  );
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenuState(null);
+  }, []);
+
+  const openInNewTab = useCallback(() => {
+    if (!contextMenuState?.url) return;
+    if (typeof window !== 'undefined') {
+      window.open(contextMenuState.url, '_blank', 'noopener,noreferrer');
+    }
+    closeContextMenu();
+  }, [closeContextMenu, contextMenuState?.url]);
+
+  const openInNewWindow = useCallback(() => {
+    if (!contextMenuState?.url) return;
+    if (typeof window !== 'undefined') {
+      window.open(contextMenuState.url, '_blank', 'noopener,noreferrer,popup=yes');
+    }
+    closeContextMenu();
+  }, [closeContextMenu, contextMenuState?.url]);
+
+  const copyLinkUrl = useCallback(async () => {
+    if (!contextMenuState?.url) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(contextMenuState.url);
+      } else if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.value = contextMenuState.url;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    } finally {
+      closeContextMenu();
+    }
+  }, [closeContextMenu, contextMenuState?.url]);
 
   return (
     <>
@@ -242,6 +359,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 size="large"
                 color={isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary'}
                 onClick={handleBackOrCancel}
+                onContextMenu={(event) =>
+                  openContextMenuForStep(event, backStepNumber, disableLeftPrimary || isFirstStep)
+                }
                 onPointerDown={stopPointerPropagation}
                 disabled={disableLeftPrimary}
                 loading={pendingAction?.type === leftActionType}
@@ -330,6 +450,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
                 size="large"
                 color="primary"
                 onClick={handleNextOrSave}
+                onContextMenu={(event) =>
+                  openContextMenuForStep(event, nextStepNumber, disableRightPrimary)
+                }
                 onPointerDown={stopPointerPropagation}
                 disabled={disableRightPrimary}
                 loading={pendingAction?.type === rightActionType}
@@ -355,6 +478,35 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           </Stack>
         </Stack>
       </Box>
+      <Menu
+        open={Boolean(contextMenuState)}
+        onClose={closeContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenuState
+            ? { top: contextMenuState.mouseY, left: contextMenuState.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={openInNewTab}>
+          <ListItemIcon>
+            <OpenInNewIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Open In New Tab</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={openInNewWindow}>
+          <ListItemIcon>
+            <OpenInNewOffIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Open In New Window</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={copyLinkUrl}>
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Copy Link URL</ListItemText>
+        </MenuItem>
+      </Menu>
     </>
   );
 };

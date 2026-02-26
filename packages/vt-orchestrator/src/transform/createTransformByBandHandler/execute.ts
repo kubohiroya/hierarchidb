@@ -50,6 +50,7 @@ import {
   countVertexLimitOverages,
   retrySimplifyFeatureWithinVertexLimit,
 } from './transformByBandRetrySimplify.js';
+import { resolveSimplifyToleranceProfile } from './helpers/simplifyProfile.js';
 
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
@@ -242,16 +243,6 @@ export const createTransformByBandHandler = (
   };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
-  const toleranceByBand = transformConfig.toleranceByBand;
-  if (!Array.isArray(toleranceByBand) || toleranceByBand.length === 0) {
-    throw new Error('transform requires toleranceByBand');
-  }
-  const configuredRetryCount = typeof transformConfig.retryCount === 'number' && Number.isFinite(transformConfig.retryCount)
-    ? Math.max(0, Math.min(10, Math.round(transformConfig.retryCount)))
-    : 4;
-  const retryToleranceByBand = Array.isArray(transformConfig.retryToleranceByBand)
-    ? transformConfig.retryToleranceByBand
-    : [];
   const simplifyAlgorithm = resolveSimplifyAlgorithm(transformConfig.simplifyAlgorithm);
   const geometryEngine = transformConfig.geometryEngine ?? 'turf';
   const preserveTopology = transformConfig.preserveTopology ?? true;
@@ -421,6 +412,20 @@ export const createTransformByBandHandler = (
         errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})`,
       };
     }
+    const simplifyProfile = resolveSimplifyToleranceProfile(transformConfig, input.adminLevel);
+    if (!Array.isArray(simplifyProfile.toleranceByBand) || simplifyProfile.toleranceByBand.length === 0) {
+      const resultMetadata = await persistResultMetadata('failed');
+      return {
+        status: 'failed',
+        ...resultMetadata,
+        errorMessage: 'transform failed: simplify tolerance by band is missing',
+      };
+    }
+    const toleranceByBand = simplifyProfile.toleranceByBand;
+    const retryToleranceByBand = Array.isArray(simplifyProfile.retryToleranceByBand)
+      ? simplifyProfile.retryToleranceByBand
+      : [];
+    const configuredRetryCount = simplifyProfile.retryCount;
     const tolerance = resolveTransformTolerance(toleranceByBand, band.bandIndex, 0.1);
     finalToleranceSummary = tolerance;
     updateFinalEffectiveTolerance(tolerance);

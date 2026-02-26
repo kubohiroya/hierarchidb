@@ -116,17 +116,25 @@ export const finalizePendingStageTasks = async (
   errorMessage: string,
   logLabel: string,
   pipelineRunId?: string,
-): Promise<{ queued: number; running: number }> => {
+): Promise<{ queued: number; running: number; authPending: number }> => {
   const [queuedTasks, runningTasks] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
   ]);
   if (queuedTasks.length === 0 && runningTasks.length === 0) {
-    return { queued: 0, running: 0 };
+    return { queued: 0, running: 0, authPending: 0 };
   }
+  const pendingTasks = [...queuedTasks, ...runningTasks];
+  const authPendingTasks = pendingTasks.filter((task) => {
+    const metadata = task.metadata;
+    if (!metadata || typeof metadata !== 'object') return false;
+    const authState = (metadata as { authState?: unknown }).authState;
+    return authState === 'required';
+  });
+  const finalizeTargets = pendingTasks.filter((task) => !authPendingTasks.includes(task));
   const now = Date.now();
   await Promise.all(
-    [...queuedTasks, ...runningTasks].map((task) => (
+    finalizeTargets.map((task) => (
       updateTask(taskQueue, task.taskId, {
         status: 'failed',
         message: errorMessage,
@@ -138,8 +146,13 @@ export const finalizePendingStageTasks = async (
   console.warn(logLabel, JSON.stringify({
     nodeId,
     runId: pipelineRunId ?? null,
-    queued: queuedTasks.length,
-    running: runningTasks.length,
+    queued: finalizeTargets.filter((task) => task.status === 'queued').length,
+    running: finalizeTargets.filter((task) => task.status === 'running').length,
+    authPending: authPendingTasks.length,
   }));
-  return { queued: queuedTasks.length, running: runningTasks.length };
+  return {
+    queued: finalizeTargets.filter((task) => task.status === 'queued').length,
+    running: finalizeTargets.filter((task) => task.status === 'running').length,
+    authPending: authPendingTasks.length,
+  };
 };

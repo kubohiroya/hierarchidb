@@ -4,7 +4,7 @@ import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader';
 import '@testing-library/jest-dom/vitest';
 
@@ -32,6 +32,13 @@ vi.mock('@tanstack/react-router', () => {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+  headerLocationRef.pathname = '/dialog';
+  headerLocationRef.searchStr = '';
+  headerLocationRef.hash = '';
 });
 
 describe('PluginDialogHeader', () => {
@@ -291,5 +298,85 @@ describe('PluginDialogHeader', () => {
     const buildIconContainer = screen.getByTestId('plugin-dialog-step-icon-2');
     expect(buildIconContainer.getAttribute('data-in-progress')).toBe('true');
     expect(within(buildIconContainer).getByTestId('ConstructionIcon')).toBeInTheDocument();
+  });
+
+  it('opens step context menu and opens selected step URL in new tab', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    headerLocationRef.pathname = '/t/r/page-node/target-node/shape/edit/normal/1';
+
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'basic', label: 'Step One', component: () => null },
+        { id: 'details', label: 'Step Two', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0, 1],
+      validatedStepIndices: [],
+      committableStepIndices: [1],
+      invalidMessageMap: {},
+      isDirty: true,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Create Folder" />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    const detailsStepButton = screen.getByRole('button', { name: /Step Two/i });
+    fireEvent.contextMenu(detailsStepButton, { clientX: 100, clientY: 120 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open In New Tab' }));
+
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    expect(openSpy.mock.calls[0]?.[0]).toMatch('/t/r/page-node/target-node/shape/edit/normal/2');
+  });
+
+  it('does not open step context menu for disabled steps', () => {
+    headerLocationRef.pathname = '/t/r/page-node/target-node/shape/edit/normal/1';
+
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'basic', label: 'Step One', component: () => null },
+        { id: 'details', label: 'Step Two', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: true,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <PluginDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Create Folder" />
+        </PluginDialogProvider>
+      </ThemeProvider>
+    );
+
+    const detailsStepButton = screen.getByRole('button', { name: /Step Two/i });
+    fireEvent.contextMenu(detailsStepButton, { clientX: 100, clientY: 120 });
+    expect(screen.queryByRole('menuitem', { name: 'Open In New Tab' })).toBeNull();
   });
 });

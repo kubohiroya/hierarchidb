@@ -105,10 +105,18 @@
       "retryToleranceStep": {
         "label": "リトライ回数"
       },
+      "algorithmSettings": {
+        "title": "アルゴリズム設定"
+      },
       "algorithm": {
         "label": "簡略化アルゴリズム",
         "topojson": "topojson（トポロジー保持）",
         "geojson": "geojson（turf simplify）"
+      },
+      "adminLevel": {
+        "usePrevious": "前のタブの値を参照して利用",
+        "copyPrevious": "前のタブの値をコピーして適用",
+        "description": "Admin Level ごとに簡略化 tolerance を設定します。Admin 1 以降は前のタブの値を参照できます。"
       },
       "preserveTopology": {
         "label": "トポロジーを保持",

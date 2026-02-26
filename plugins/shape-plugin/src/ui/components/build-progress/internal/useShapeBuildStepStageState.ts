@@ -207,7 +207,7 @@ export const useShapeBuildStepStageState = ({
   const terminalCompletionNotifiedRef = useRef(false);
   useEffect(() => {
     if (!onTerminalStageCompletion) return;
-    if (!isTerminalStageCompleted) {
+    if (!isTerminalStageCompleted || hasInFlightTasks) {
       terminalCompletionNotifiedRef.current = false;
       return;
     }
@@ -219,6 +219,7 @@ export const useShapeBuildStepStageState = ({
     });
   }, [
     hasFailedTerminalTasks,
+    hasInFlightTasks,
     isTerminalStageCompleted,
     onTerminalStageCompletion,
   ]);

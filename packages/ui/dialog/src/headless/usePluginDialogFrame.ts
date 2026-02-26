@@ -53,6 +53,28 @@ type PluginDialogFrameState<TData> = {
   isBrowser: boolean;
 };
 
+const TEXT_EDITABLE_SELECTOR = [
+  'input',
+  'textarea',
+  '[contenteditable="true"]',
+  '[contenteditable=""]',
+  '[role="textbox"]',
+].join(', ');
+
+function resolveTextEditableTarget(event: React.PointerEvent<HTMLDivElement>): HTMLElement | null {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return null;
+  const candidate = target.closest<HTMLElement>(TEXT_EDITABLE_SELECTOR);
+  if (!candidate) return null;
+  if (candidate instanceof HTMLInputElement && (candidate.disabled || candidate.readOnly)) {
+    return null;
+  }
+  if (candidate instanceof HTMLTextAreaElement && (candidate.disabled || candidate.readOnly)) {
+    return null;
+  }
+  return candidate;
+}
+
 export function usePluginDialogFrame<TData>(
   props: PluginDialogFrameComponentProps<TData>
 ): PluginDialogFrameState<TData> {
@@ -522,10 +544,23 @@ export function usePluginDialogFrame<TData>(
   }, [frameless]);
 
   const handleFramePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const textEditableTarget = resolveTextEditableTarget(event);
+    if (textEditableTarget && !isInteracting) {
+      queueMicrotask(() => {
+        if (!textEditableTarget.isConnected) return;
+        if (document.activeElement === textEditableTarget) return;
+        try {
+          textEditableTarget.focus({ preventScroll: true });
+        } catch {
+          textEditableTarget.focus();
+        }
+      });
+    }
+
     if (frameless && event.button === 2) {
       handleDragPointerDown(event);
     }
-  }, [frameless, handleDragPointerDown]);
+  }, [frameless, handleDragPointerDown, isInteracting]);
 
   const handleBackdropPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;

@@ -74,6 +74,30 @@ describe('shapePipelineStageHelpers', () => {
     expect(failed[0]?.errorMessage).toBe(failureReason);
   });
 
+  it('keeps auth-pending tasks queued when finalizing pending tasks', async () => {
+    db = createDb();
+    await putTasks(db, [createTask('fetch-auth-pending-1', 'queued')]);
+    await updateTask(db, 'fetch-auth-pending-1', {
+      metadata: { authState: 'required' },
+    });
+
+    const failureReason = 'aborted: fetch stage completed with pending tasks';
+    const finalized = await finalizePendingStageTasks(
+      db,
+      NODE_ID,
+      'fetch',
+      failureReason,
+      '[test] finalizePendingStageTasks',
+      'run-auth-pending',
+    );
+
+    const failed = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed');
+    const queued = await listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued');
+    expect(finalized.authPending).toBe(1);
+    expect(failed).toHaveLength(0);
+    expect(queued).toHaveLength(1);
+  });
+
   it('does not let late running updates overwrite completed message', async () => {
     db = createDb();
     const taskId = 'fetch-completed-1';

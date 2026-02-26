@@ -2,6 +2,7 @@ import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
 const DEFAULT_TRANSFORM_TOLERANCE_BY_BAND = [0.1, 0.1, 0.1, 0.1];
 const DEFAULT_RETRY_TOLERANCE_BY_BAND = [3.5, 2.5, 1.5, 1];
+const DEFAULT_SIMPLIFY_RETRY_COUNT = 4;
 
 export const DEFAULT_BUILD_CONFIG = {
   dataSourceName: 'geoboundaries',
@@ -43,8 +44,34 @@ export const DEFAULT_BUILD_CONFIG = {
     },
     deleteOnComplete: false,
     toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
-    retryCount: 4,
+    retryCount: DEFAULT_SIMPLIFY_RETRY_COUNT,
     retryToleranceByBand: DEFAULT_RETRY_TOLERANCE_BY_BAND,
+    simplifyToleranceByAdminLevel: {
+      admin0: {
+        usePrevious: false,
+        toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
+        retryToleranceByBand: DEFAULT_RETRY_TOLERANCE_BY_BAND,
+        retryCount: DEFAULT_SIMPLIFY_RETRY_COUNT,
+      },
+      admin1: {
+        usePrevious: true,
+        toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
+        retryToleranceByBand: DEFAULT_RETRY_TOLERANCE_BY_BAND,
+        retryCount: DEFAULT_SIMPLIFY_RETRY_COUNT,
+      },
+      admin2: {
+        usePrevious: true,
+        toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
+        retryToleranceByBand: DEFAULT_RETRY_TOLERANCE_BY_BAND,
+        retryCount: DEFAULT_SIMPLIFY_RETRY_COUNT,
+      },
+      admin3Plus: {
+        usePrevious: true,
+        toleranceByBand: DEFAULT_TRANSFORM_TOLERANCE_BY_BAND,
+        retryToleranceByBand: DEFAULT_RETRY_TOLERANCE_BY_BAND,
+        retryCount: DEFAULT_SIMPLIFY_RETRY_COUNT,
+      },
+    },
     retryToleranceStep: 0.02,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,

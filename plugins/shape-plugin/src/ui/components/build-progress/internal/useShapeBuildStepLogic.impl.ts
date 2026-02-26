@@ -184,6 +184,9 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     reportFailures: reportTaskFailures,
     baseBuildStatus,
     onTerminalStageCompletion: async ({ completed, hasFailedTerminalTasks }) => {
+      if (buildSessionTransition.active) {
+        return;
+      }
       if (!completed || sessionRecord?.status === 'completed' || sessionRecord?.status === 'failed') {
         return;
       }

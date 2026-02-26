@@ -1,5 +1,5 @@
 import { ArrowCircleDown as ArrowCircleDownIcon, ArrowCircleUp as ArrowCircleUpIcon } from '@mui/icons-material';
-import { Box, Skeleton, Stack, Tooltip, Typography, IconButton } from '@mui/material';
+import { Box, Skeleton, Stack, Typography, IconButton } from '@mui/material';
 import type { BuildProgressStageContentState } from './useBuildProgressStageContentState.js';
 import { TaskItemCardListCard } from '~/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 
@@ -84,58 +84,54 @@ export const BuildProgressStageContentView = ({
           virtualize={!disableVirtualization}
         />
         {showUpArrow ? (
-          <Tooltip title={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}>
-            <IconButton
-              aria-label={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}
-              color="primary"
-              onClick={() => handleScrollToDirection('up')}
-              sx={{
-                position: 'absolute',
-                left: '50%',
-                top: 0,
-                transform: 'translateX(-50%)',
-                bgcolor: 'background.paper',
-                boxShadow: 3,
-                border: 1,
-                borderColor: 'divider',
-                p: 1,
-                zIndex: 2,
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                '&:hover': { bgcolor: 'transparent' },
-              }}
-            >
-              <ArrowCircleUpIcon sx={{ fontSize: 48 }} />
-            </IconButton>
-          </Tooltip>
+          <IconButton
+            aria-label={t('stage.progress.scrollToRunningUp', 'Scroll up to running or queued task')}
+            color="primary"
+            onClick={() => handleScrollToDirection('up')}
+            sx={{
+              position: 'absolute',
+              left: '50%',
+              top: 0,
+              transform: 'translateX(-50%)',
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+              border: 1,
+              borderColor: 'divider',
+              p: 1,
+              zIndex: 2,
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              '&:hover': { bgcolor: 'transparent' },
+            }}
+          >
+            <ArrowCircleUpIcon sx={{ fontSize: 48 }} />
+          </IconButton>
         ) : null}
         {showDownArrow ? (
-          <Tooltip title={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}>
-            <IconButton
-              aria-label={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}
-              color="primary"
-              onClick={() => handleScrollToDirection('down')}
-              sx={{
-                position: 'absolute',
-                left: '50%',
-                bottom: 0,
-                transform: 'translateX(-50%)',
-                bgcolor: 'background.paper',
-                boxShadow: 3,
-                border: 1,
-                borderColor: 'divider',
-                p: 1,
-                zIndex: 2,
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                '&:hover': { bgcolor: 'transparent' },
-              }}
-            >
-              <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
-            </IconButton>
-          </Tooltip>
+          <IconButton
+            aria-label={t('stage.progress.scrollToRunningDown', 'Scroll down to running or queued task')}
+            color="primary"
+            onClick={() => handleScrollToDirection('down')}
+            sx={{
+              position: 'absolute',
+              left: '50%',
+              bottom: 0,
+              transform: 'translateX(-50%)',
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+              border: 1,
+              borderColor: 'divider',
+              p: 1,
+              zIndex: 2,
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              '&:hover': { bgcolor: 'transparent' },
+            }}
+          >
+            <ArrowCircleDownIcon sx={{ fontSize: 48 }} />
+          </IconButton>
         ) : null}
       </Box>
     )}
