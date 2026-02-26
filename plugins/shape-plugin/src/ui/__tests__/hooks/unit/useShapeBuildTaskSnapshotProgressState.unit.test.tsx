@@ -363,6 +363,97 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
     });
   });
 
+  it('allows retry queue updates after failed terminal tasks', async () => {
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-retry-failed' as NodeId));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-retry-failed' as NodeId,
+        task: {
+          taskId: 'node-retry-failed:fetch:JP:0',
+          stage: 'fetch',
+          status: 'failed',
+          progress: 100,
+          message: 'Failed',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('failed');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-retry-failed' as NodeId,
+        task: {
+          taskId: 'node-retry-failed:fetch:JP:0',
+          stage: 'fetch',
+          status: 'queued',
+          progress: 0,
+          message: 'Queued',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('queued');
+      expect(result.current.tasks[0]?.progress).toBe(0);
+    });
+  });
+
+  it('allows retry queue updates after skipped terminal tasks', async () => {
+    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-retry-skipped' as NodeId));
+
+    await waitFor(() => {
+      expect(subscribeMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-retry-skipped' as NodeId,
+        task: {
+          taskId: 'node-retry-skipped:fetch:JP:0',
+          stage: 'fetch',
+          status: 'completed',
+          progress: 100,
+          message: 'Skipped: retryable',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+      expect(result.current.tasks[0]?.message).toContain('Skipped');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-retry-skipped' as NodeId,
+        task: {
+          taskId: 'node-retry-skipped:fetch:JP:0',
+          stage: 'fetch',
+          status: 'queued',
+          progress: 0,
+          message: 'Queued',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('queued');
+      expect(result.current.tasks[0]?.progress).toBe(0);
+    });
+  });
+
   it('ignores later running updates after completed terminal status', async () => {
     const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-2d' as NodeId));
 

@@ -874,6 +874,35 @@ const createFetchHandler = (params: {
     return metadataLookupPromise;
   };
 
+  const normalizeCount = (value: number | null | undefined): number | null => (
+    typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : null
+  );
+
+  const buildFetchDetailMetadata = (
+    input: ShapeFetchTaskInput,
+    counts: {
+      inputFeatureCount?: number | null;
+      featureCount?: number | null;
+      inputPolygonCount?: number | null;
+      polygonCount?: number | null;
+    },
+  ): Record<string, unknown> => ({
+    fetchDetail: {
+      countryCode: input.countryCode,
+      countryName: input.countryName ?? null,
+      adminLevel: input.adminLevel,
+      url: input.url,
+      features: {
+        input: normalizeCount(counts.inputFeatureCount),
+        output: normalizeCount(counts.featureCount),
+      },
+      polygons: {
+        input: normalizeCount(counts.inputPolygonCount),
+        output: normalizeCount(counts.polygonCount),
+      },
+    },
+  });
+
   return async (task) => {
     const input = task.inputData;
     if (!input) {
@@ -995,6 +1024,12 @@ const createFetchHandler = (params: {
       return {
         status: 'completed',
         message: `reused: fetch cache exists (${cachedSummary})`,
+        metadata: buildFetchDetailMetadata(input, {
+          inputFeatureCount: existing.inputFeatureCount ?? existing.featureCount,
+          featureCount: existing.featureCount,
+          inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
+          polygonCount: cachedPolygonCount,
+        }),
         outputData: {
           fetchCacheId: existing.id,
           fetchArtifactHash,
@@ -1065,6 +1100,12 @@ const createFetchHandler = (params: {
         return {
           status: 'completed',
           message: buildFetchFilterReductionSummary(inputSummary),
+          metadata: buildFetchDetailMetadata(input, {
+            inputFeatureCount: inputSummary.featureCount,
+            featureCount: 0,
+            inputPolygonCount: inputSummary.polygonCount,
+            polygonCount: 0,
+          }),
         };
       }
 
@@ -1118,6 +1159,12 @@ const createFetchHandler = (params: {
       return {
         status: 'completed',
         message: reductionSummary,
+        metadata: buildFetchDetailMetadata(input, {
+          inputFeatureCount: inputSummary.featureCount,
+          featureCount: outputSummary.featureCount,
+          inputPolygonCount: inputSummary.polygonCount,
+          polygonCount: outputSummary.polygonCount,
+        }),
         outputData: {
           fetchCacheId: fetchCacheRecord.id,
           fetchArtifactHash: fetchCacheRecord.contentHash,
@@ -1185,6 +1232,12 @@ const createFetchHandler = (params: {
       return {
         status: 'completed',
         message: buildFetchFilterReductionSummary(inputSummary),
+        metadata: buildFetchDetailMetadata(input, {
+          inputFeatureCount: inputSummary.featureCount,
+          featureCount: 0,
+          inputPolygonCount: inputSummary.polygonCount,
+          polygonCount: 0,
+        }),
       };
     }
 
@@ -1248,6 +1301,12 @@ const createFetchHandler = (params: {
     return {
       status: 'completed',
       message: reductionSummary,
+      metadata: buildFetchDetailMetadata(input, {
+        inputFeatureCount: inputSummary.featureCount,
+        featureCount,
+        inputPolygonCount: inputSummary.polygonCount,
+        polygonCount,
+      }),
       outputData: {
         fetchCacheId: fetchCacheRecord.id,
         fetchArtifactHash: fetchCacheRecord.contentHash,

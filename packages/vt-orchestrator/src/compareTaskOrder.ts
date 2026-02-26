@@ -68,6 +68,14 @@ const buildLanePolicy = <TInput = unknown, TOutput = unknown>(
   };
 };
 
+const isAuthRequiredError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  const name = error.name.trim().toLowerCase();
+  const message = error.message.trim().toLowerCase();
+  if (name === 'authrequirederror') return true;
+  return message === 'authentication required' || message.includes('auth required');
+};
+
 export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   options: RunStageOptions<TInput, TOutput>
 ): Promise<void> {
@@ -351,6 +359,21 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
             + ` taskId=${task.taskId}`
             + ` error=${errorMessage}`,
           );
+        }
+        if (isAuthRequiredError(error)) {
+          await updateTask(db, task.taskId, {
+            status: 'queued',
+            progress: 0,
+            startedAt: undefined,
+            completedAt: undefined,
+            errorMessage: undefined,
+            message: 'Authentication required. Waiting for sign-in.',
+            metadata: {
+              authState: 'required',
+              authRequiredAt: Date.now(),
+            },
+          }, { allowTerminalStatusTransition: true });
+          continue;
         }
         const err = normalizeErrorMessage(error);
         if (skipOnFailure) {

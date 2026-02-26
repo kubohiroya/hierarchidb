@@ -32,6 +32,13 @@ export type ShapeFetchStageParams = {
   }) => Promise<void> | void;
 };
 
+export class FetchStageAuthPendingError extends Error {
+  constructor(message = 'fetch stage paused: authentication required') {
+    super(message);
+    this.name = 'FetchStageAuthPendingError';
+  }
+}
+
 export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): Promise<boolean> => {
   const fetchAbortController = new AbortController();
   await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
@@ -68,13 +75,13 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     );
     throw error;
   }
-  const stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+  let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
   console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     counts: stageCounts,
   }));
-  await finalizePendingStageTasks(
+  const finalizedPending = await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,
     'fetch',
@@ -82,6 +89,12 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     '[ShapeFetch][PipelineDiagnostics] fetch stage finalized pending tasks',
     params.pipelineRunId,
   );
+  if (finalizedPending.authPending > 0) {
+    throw new FetchStageAuthPendingError();
+  }
+  if (finalizedPending.queued > 0 || finalizedPending.running > 0) {
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+  }
   if (stageCounts.failed > 0 && stageCounts.completed === 0) {
     return true;
   }

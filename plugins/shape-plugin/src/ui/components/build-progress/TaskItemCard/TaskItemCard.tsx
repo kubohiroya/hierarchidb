@@ -3,10 +3,14 @@ import { Box } from '@mui/material';
 import RecyclingIcon from '@mui/icons-material/Recycling';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
-import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
-import { formatTaskDisplayMessage } from '~/ui/components/build-progress/taskDisplayText';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
-import { TaskItem } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import { TaskItem, type TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import {
+  type TaskOutcomeSummaryBuilder,
+  buildFetchTaskOutcomeSummary,
+  buildSimpleTaskOutcomeSummary,
+  buildTransformTaskOutcomeSummary,
+} from './taskOutcomeSummaryBuilders';
 
 type Translate = (key: string, fallback?: string) => string;
 
@@ -19,6 +23,17 @@ type TaskItemCardProps = {
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   stageIcon?: ReactNode | null;
   translate: Translate;
+  summaryBuilder?: TaskOutcomeSummaryBuilder;
+  onDetailHoverChange?: (value: { title: string; summary: TaskOutcomeSummary } | null) => void;
+};
+
+const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary): number | null => {
+  const rawValue = task.retryAttempt ?? task.metadata?.retryAttempt ?? task.metadata?.retries ?? task.metadata?.attempts;
+  if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+    return null;
+  }
+  const rounded = Math.floor(rawValue);
+  return rounded >= 0 ? rounded : null;
 };
 
 export const TaskItemCard = ({
@@ -30,96 +45,29 @@ export const TaskItemCard = ({
   resolveTaskTitle,
   stageIcon,
   translate,
+  summaryBuilder,
+  onDetailHoverChange,
 }: TaskItemCardProps) => {
   const statusValue = task.status;
-  const isSkipped = isTaskSkipped(task.display);
+  const skipped = isTaskSkipped(task.display);
   const displayProgress = Math.min(100, Math.max(0, task.progress ?? stageValue));
-  const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
-  const statusColor = resolveStatusColor(statusValue, isSkipped);
+  const statusLabelValue = resolveStatusLabel(statusValue, skipped);
+  const statusColor = resolveStatusColor(statusValue, skipped);
   const taskTitle = resolveTaskTitle(task as TaskItemWithMetadata);
-  const displayMessage = formatTaskDisplayMessage(task.display, translate);
-  const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
-  const fallbackError = typeof task.error === 'string' ? task.error.trim() : '';
-  const failedMessage = errorMessage || fallbackError;
-  const geometrySourceMessage = failedMessage || undefined;
-  const geometryDetails = parseGeometrySimplifyError(geometrySourceMessage);
-  const geometryBaseMessage = geometrySourceMessage?.split(' (')[0];
-  const readNumberFromMetadata = (rawValue: unknown): number | null => {
-    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
-      return rawValue;
-    }
-    if (typeof rawValue === 'string') {
-      const parsed = Number.parseFloat(rawValue);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-    return null;
-  };
-  const readNumericFromMetadataKeys = (keys: string[]): number | null => {
-    for (const key of keys) {
-      const rawValue = (key.split('.').reduce<unknown>((current, segment) => {
-        if (!current || typeof current !== 'object') {
-          return undefined;
-        }
-        return (current as Record<string, unknown>)[segment];
-      }, task.metadata) as unknown);
-      const parsed = readNumberFromMetadata(rawValue);
-      if (parsed !== null) return parsed;
-    }
-    return null;
-  };
-  const readNumericFromMessage = (name: string): number | null => {
-    if (!geometryBaseMessage && !failedMessage && !displayMessage) return null;
-    const text = [geometryBaseMessage, failedMessage, displayMessage].filter(Boolean).join(' ');
-    const match = new RegExp(`\\b${name}=(-?\\d+(?:\\.\\d+)?)`, 'i').exec(text);
-    if (!match || !match[1]) return null;
-    const parsed = Number.parseFloat(match[1]);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-  const stripMetadataSuffixFromMessage = (message?: string): string | undefined => {
-    if (!message) return undefined;
-    const trimmed = message.trim();
-    if (!trimmed) return undefined;
-    return geometryDetails ? trimmed.split(' (')[0] : trimmed;
-  };
-  const formatToleranceValue = (value: number): string => (
-    Number.isFinite(value) ? `${Number.parseFloat(value.toFixed(6))}` : '-'
-  );
-  const metadataEffectiveTolerance = (() => {
-    const rawTolerance = readNumericFromMetadataKeys([
-      'effectiveTolerance',
-      'effective_tolerance',
-      'finalTolerance',
-      'finalEffectiveTolerance',
-      'tolerance',
-    ]) ?? readNumericFromMessage('effectiveTolerance');
-    if (rawTolerance === null) return '-';
-    return formatToleranceValue(rawTolerance);
-  })();
-  const resolvedRetryAttempt = (() => {
-    const rawRetryAttempt = readNumberFromMetadata(
-      task.retryAttempt ?? task.metadata?.retryAttempt ?? task.metadata?.retries ?? task.metadata?.attempts,
+  const builder = summaryBuilder
+    ?? (
+      stageId === 'transform'
+        ? buildTransformTaskOutcomeSummary
+        : (stageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
     );
-    if (rawRetryAttempt === null) return null;
-    const rounded = Math.floor(rawRetryAttempt);
-    return rounded >= 0 ? rounded : null;
-  })();
-  const messageSourceText = task.status === 'failed'
-    ? failedMessage || displayMessage || geometryBaseMessage
-    : displayMessage || geometryBaseMessage;
-  const messageText = stripMetadataSuffixFromMessage(messageSourceText) ?? taskTitle;
-  const resolvedRetryAttemptText = resolvedRetryAttempt === null ? '-' : `${resolvedRetryAttempt}`;
-  const transformMessageSuffix = stageId === 'transform'
-    ? ` (effectiveTolerance=${metadataEffectiveTolerance} retryAttempt=${resolvedRetryAttemptText})`
-    : '';
-  const taskMessage = transformMessageSuffix
-    ? `${messageText}${transformMessageSuffix}`
-    : messageText;
-  const detailLines = task.status === 'failed'
-    ? (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined)
-    : (displayMessage ? undefined : (geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined));
-  const normalizedRetryAttempt = resolvedRetryAttempt !== null && resolvedRetryAttempt >= 0
-    ? resolvedRetryAttempt
-    : null;
+  const summary = builder({
+    task,
+    stageId,
+    taskTitle,
+    translate,
+  });
+
+  const normalizedRetryAttempt = resolveRetryAttemptFromTask(task);
   const normalizedStatusLabel = statusLabelValue.replace(/\s*\(line\s+\d+\)\s*$/i, '');
   const statusLabel = stageId === 'transform'
     && normalizedRetryAttempt !== null
@@ -156,10 +104,10 @@ export const TaskItemCard = ({
       statusLabel={statusLabel}
       statusColor={statusColor}
       isRunning={task.status === 'running'}
-      message={taskMessage}
-      detailLines={detailLines}
+      summary={summary}
       progress={displayProgress}
       fallbackProgress={stageValue}
+      onDetailHoverChange={onDetailHoverChange}
     />
   );
 };

@@ -710,6 +710,15 @@ const startBuildSessionInternal = async (
     }).catch(async (error) => {
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
+      if (isAuthPendingPipelineError(error)) {
+        terminalProgressMessage = 'Authentication required. Build paused. Resume after sign-in.';
+        await updateBuildSessionFromTasks(nodeForSession, {
+          status: 'paused',
+          stopReason: 'user-pause',
+          canResume: true,
+        });
+        return;
+      }
       console.error('[shapeBuildAPI] vt pipeline failed', error);
       console.error('[shapeBuildAPI] startup', JSON.stringify({
         scope: startupScope,
@@ -1182,6 +1191,15 @@ const invokeShapeBuildCommand = async (
     }).catch(async (error) => {
       const failedAt = Date.now();
       const diagnostics = toErrorDiagnostics(error);
+      if (isAuthPendingPipelineError(error)) {
+        terminalProgressMessage = 'Authentication required. Build paused. Resume after sign-in.';
+        await updateBuildSessionFromTasks(nodeId, {
+          status: 'paused',
+          stopReason: 'user-pause',
+          canResume: true,
+        });
+        return;
+      }
       console.error('[shapeBuildAPI] vt pipeline failed', error);
       console.error('[shapeBuildAPI] startup', JSON.stringify({
         scope: resumeScope,
@@ -1234,6 +1252,11 @@ const toErrorDiagnostics = (error: unknown): {
   return {
     errorMessage: String(error),
   };
+};
+
+const isAuthPendingPipelineError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  return error.name === 'FetchStageAuthPendingError';
 };
 
 export const shapeBuildRuntimeExecutionControl = {
