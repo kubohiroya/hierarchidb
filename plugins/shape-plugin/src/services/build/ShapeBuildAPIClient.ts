@@ -43,6 +43,7 @@ import { shapeDB } from '@hierarchidb/shape-store';
 import type {
   BuildSessionRecord,
   BuildTaskType,
+  FetchStageMaxima,
   ResourceUsage,
   StageStatus,
   VectorTileRecord,
@@ -128,6 +129,16 @@ const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
   };
 };
 
+const readFetchStageMaxima = (value: unknown): FetchStageMaxima | undefined => {
+  if (!isRecord(value)) return undefined;
+  if (!isNumber(value.featureMax) || !isNumber(value.polygonMax)) return undefined;
+  if (value.featureMax < 0 || value.polygonMax < 0) return undefined;
+  return {
+    featureMax: value.featureMax,
+    polygonMax: value.polygonMax,
+  };
+};
+
 const normalizeBuildSessionStatus = (status: string | undefined): BuildSessionRecord['status'] => {
   if (status === 'idle'
     || status === 'running'
@@ -173,6 +184,7 @@ const toBuildSessionRecordFromEphemeral = (
     stageId: session.stageId,
     elapsedMs: session.elapsedMs,
     elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
+    fetchStageMaxima: readFetchStageMaxima(session.fetchStageMaxima),
   };
 };
 

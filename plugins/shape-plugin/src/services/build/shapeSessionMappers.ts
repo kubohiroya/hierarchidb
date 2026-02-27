@@ -7,6 +7,7 @@ import type { EphemeralBuildSessionRecord } from '@hierarchidb/gis-sdk';
 import type {
   BuildSessionConfig,
   BuildSessionRecord,
+  FetchStageMaxima,
   BuildTaskType,
   LayerInfo,
   ProgressInfo,
@@ -24,6 +25,14 @@ const isNumber = (value: unknown): value is number =>
 const isNumberRecord = (value: unknown): value is Record<string, number> => {
   if (!isRecord(value)) return false;
   return Object.values(value).every((entry) => isNumber(entry));
+};
+
+const isFetchStageMaxima = (value: unknown): value is FetchStageMaxima => {
+  if (!isRecord(value)) return false;
+  return isNumber(value.featureMax)
+    && isNumber(value.polygonMax)
+    && value.featureMax >= 0
+    && value.polygonMax >= 0;
 };
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
@@ -102,6 +111,7 @@ export const toEphemeralBuildSessionRecord = (session: ShapeBuildSessionRecord):
   stageId: session.stageId,
   elapsedMs: session.elapsedMs,
   elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
+  fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
 });
 
 const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTaskType, StageStatus> => {
@@ -168,6 +178,7 @@ export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSes
     stageId: session.stageId,
     elapsedMs: session.elapsedMs,
     elapsedByStage: isNumberRecord(session.elapsedByStage) ? session.elapsedByStage : undefined,
+    fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
   };
 };
 
@@ -199,6 +210,10 @@ export const toBuildSessionUpdates = (
   if (updates.elapsedByStage !== undefined) {
     if (!isNumberRecord(updates.elapsedByStage)) return null;
     next.elapsedByStage = updates.elapsedByStage;
+  }
+  if (updates.fetchStageMaxima !== undefined) {
+    if (!isFetchStageMaxima(updates.fetchStageMaxima)) return null;
+    next.fetchStageMaxima = updates.fetchStageMaxima;
   }
   return next;
 };
@@ -236,6 +251,10 @@ export const toEphemeralBuildSessionUpdates = (
     if (!isNumberRecord(updates.elapsedByStage)) return null;
     next.elapsedByStage = updates.elapsedByStage;
   }
+  if (updates.fetchStageMaxima !== undefined) {
+    if (!isFetchStageMaxima(updates.fetchStageMaxima)) return null;
+    next.fetchStageMaxima = updates.fetchStageMaxima;
+  }
   return next;
 };
 
@@ -261,6 +280,7 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   stageId: session.stageId,
   elapsedMs: session.elapsedMs,
   elapsedByStage: session.elapsedByStage,
+  fetchStageMaxima: isFetchStageMaxima(session.fetchStageMaxima) ? session.fetchStageMaxima : undefined,
 });
 
 export const toShapeBuildSessionUpdates = (
@@ -289,6 +309,7 @@ export const toShapeBuildSessionUpdates = (
   if (updates.stageId !== undefined) next.stageId = updates.stageId;
   if (updates.elapsedMs !== undefined) next.elapsedMs = updates.elapsedMs;
   if (updates.elapsedByStage !== undefined) next.elapsedByStage = updates.elapsedByStage;
+  if (updates.fetchStageMaxima !== undefined) next.fetchStageMaxima = updates.fetchStageMaxima;
   return next;
 };
 

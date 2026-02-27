@@ -35,6 +35,12 @@ export type StageContentArgs = {
   resolveTaskTitle: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['resolveTaskTitle'];
   t: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['t'];
   matchesSearchQuery: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['matchesSearchQuery'];
+  isDetailFloatingWindowOpen: boolean;
+  isOpeningPending?: boolean;
+  onOpenDetailFloatingWindow: () => void;
+  onCloseDetailFloatingWindow: () => void;
+  floatingWindowZIndex: number;
+  onRequestBringFloatingWindowToFront: () => void;
 };
 
 const ShapeBuildProgressPanelStageProgressContent = ({
@@ -63,6 +69,12 @@ const ShapeBuildProgressPanelStageContent = ({
   resolveTaskTitle,
   t,
   matchesSearchQuery,
+  isDetailFloatingWindowOpen,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex,
+  onRequestBringFloatingWindowToFront,
+  isOpeningPending = false,
 }: StageContentArgs): ReactNode =>
   ShapeBuildProgressPanelOverlaySectionContent({
     paneProgress,
@@ -77,6 +89,12 @@ const ShapeBuildProgressPanelStageContent = ({
     resolveTaskTitle,
     t,
     matchesSearchQuery,
+    isDetailFloatingWindowOpen,
+    isOpeningPending,
+    onOpenDetailFloatingWindow,
+    onCloseDetailFloatingWindow,
+    floatingWindowZIndex,
+    onRequestBringFloatingWindowToFront,
   });
 
 export const useShapeBuildProgressPanelControllerOverlaySections = ({
@@ -92,6 +110,12 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
   resolveTaskTitle,
   t,
   matchesSearchQuery,
+  stagePreviewWindowOpenMap,
+  stagePreviewWindowPendingMap,
+  stagePreviewWindowZIndexMap,
+  openStagePreviewWindow,
+  bringStagePreviewWindowToFront,
+  closeStagePreviewWindow,
 }: UseShapeBuildProgressPanelControllerOverlaySectionsArgs): UseShapeBuildProgressPanelControllerOverlaySectionsResult => {
   const stageProgressContent = stages.reduce<StageRecord>((acc: StageRecord, stage: BuildStage) => {
     const stageTasks = tasksByStageForDisplay[stage.id] ?? [];
@@ -118,6 +142,12 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
       resolveTaskTitle,
       t,
       matchesSearchQuery,
+      isDetailFloatingWindowOpen: (stagePreviewWindowOpenMap[stage.id] ?? true) === false,
+      onOpenDetailFloatingWindow: () => openStagePreviewWindow(stage.id),
+      onCloseDetailFloatingWindow: () => closeStagePreviewWindow(stage.id),
+      floatingWindowZIndex: stagePreviewWindowZIndexMap[stage.id] ?? 1,
+      onRequestBringFloatingWindowToFront: () => bringStagePreviewWindowToFront(stage.id),
+      isOpeningPending: Boolean(stagePreviewWindowPendingMap[stage.id]),
     });
     return acc;
   }, {} as StageRecord);

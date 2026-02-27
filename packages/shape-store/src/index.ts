@@ -3,6 +3,7 @@ export {
   type BuildProcessConfig,
   type BuildSessionConfig,
   type BuildSessionRecord,
+  type FetchStageMaxima,
   type FetchTaskPayload,
   type FetchTaskResult,
   type TransformByBandTaskPayload,

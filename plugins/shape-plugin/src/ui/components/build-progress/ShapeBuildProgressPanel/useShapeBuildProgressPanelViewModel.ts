@@ -1,9 +1,11 @@
 import type { BuildControlMenuItem } from '@hierarchidb/components';
+import { IconButton } from '@mui/material';
 import {
   type BuildSessionProgressPanelViewModel,
   resolveBuildSessionProgressPanelSplitViewProps,
 } from '@hierarchidb/ui-build-progress';
 import type { ReactNode } from 'react';
+import { createElement } from 'react';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
@@ -77,6 +79,9 @@ export const useShapeBuildProgressPanelViewModel = ({
     stageHeaderMeta,
     stageContents,
     stageProgressContent,
+    stagePreviewWindowOpenMap,
+    stagePreviewWindowPendingMap,
+    toggleStagePreviewWindow,
     stageConcurrencyIndicators,
     onStageConcurrencyIndicatorClick,
     stageConcurrencyIndicatorAriaLabels,
@@ -95,15 +100,33 @@ export const useShapeBuildProgressPanelViewModel = ({
     handleStartClickWithHold,
   } = coreState;
 
+  const stagesWithPreviewTrigger = stages.map((stage) => (
+    {
+      ...stage,
+      icon: createElement(
+        IconButton,
+        {
+          size: 'small',
+          onClick: () => toggleStagePreviewWindow(stage.id),
+          color: (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'default' : 'primary',
+          sx: { cursor: stagePreviewWindowPendingMap[stage.id] ? 'wait' : 'pointer' },
+          'aria-label': `Toggle ${stage.title} preview window`,
+          'aria-pressed': (stagePreviewWindowOpenMap[stage.id] ?? true) ? 'true' : 'false',
+        },
+        stage.icon,
+      ),
+    }
+  ));
+
   return {
     status: summary.buildStatus,
     overallProgress: summary.overallProgress,
-    stages,
+    stages: stagesWithPreviewTrigger,
     stageProgress: stageProgressForDisplay,
     paneProgress: paneProgressForDisplay,
     tasksByStageForDisplay,
     stageLoadingState,
-    ...resolveBuildSessionProgressPanelSplitViewProps({ stagesLength: stages.length, splitViewPanelSize: 250 }),
+    ...resolveBuildSessionProgressPanelSplitViewProps({ stagesLength: stagesWithPreviewTrigger.length, splitViewPanelSize: 250 }),
     stageContents,
     stageProgressContent,
     stageConcurrencyIndicators,

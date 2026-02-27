@@ -175,9 +175,11 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
     'fetchDetail.features.output',
   ]);
   const polygonsInput = readMetadataNumber(task.metadata, [
+    'fetchDetail.polygonsPerFeature.input',
     'fetchDetail.polygons.input',
   ]);
   const polygonsOutput = readMetadataNumber(task.metadata, [
+    'fetchDetail.polygonsPerFeature.output',
     'fetchDetail.polygons.output',
   ]);
   const featuresRatio = resolveRatio(featuresOutput, featuresInput);

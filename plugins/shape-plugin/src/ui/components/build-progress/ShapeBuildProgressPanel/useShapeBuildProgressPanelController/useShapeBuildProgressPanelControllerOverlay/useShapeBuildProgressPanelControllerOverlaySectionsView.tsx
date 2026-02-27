@@ -24,6 +24,12 @@ type StageContentArgs = {
   resolveTaskTitle: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['resolveTaskTitle'];
   t: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['t'];
   matchesSearchQuery: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['matchesSearchQuery'];
+  isDetailFloatingWindowOpen: boolean;
+  isOpeningPending?: boolean;
+  onOpenDetailFloatingWindow: () => void;
+  onCloseDetailFloatingWindow: () => void;
+  floatingWindowZIndex: number;
+  onRequestBringFloatingWindowToFront: () => void;
 };
 
 export const ShapeBuildProgressPanelOverlaySectionProgressContent = ({
@@ -55,6 +61,12 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
   resolveTaskTitle,
   t,
   matchesSearchQuery,
+  isDetailFloatingWindowOpen,
+  isOpeningPending = false,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex,
+  onRequestBringFloatingWindowToFront,
 }: StageContentArgs): ReactElement => (
   <BuildProgressStageContent
     stage={stage}
@@ -69,6 +81,12 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
     resolveTaskTitle={resolveTaskTitle}
     t={t}
     matchesSearchQuery={matchesSearchQuery}
+    isDetailFloatingWindowOpen={isDetailFloatingWindowOpen}
+    isOpeningPending={isOpeningPending}
+    onOpenDetailFloatingWindow={onOpenDetailFloatingWindow}
+    onCloseDetailFloatingWindow={onCloseDetailFloatingWindow}
+    floatingWindowZIndex={floatingWindowZIndex}
+    onRequestBringFloatingWindowToFront={onRequestBringFloatingWindowToFront}
     showHeader={false}
   />
 );

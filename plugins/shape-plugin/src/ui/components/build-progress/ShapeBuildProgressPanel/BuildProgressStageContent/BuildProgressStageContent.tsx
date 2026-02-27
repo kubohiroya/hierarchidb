@@ -26,6 +26,12 @@ type BuildProgressStageContentProps = {
   resolveTaskTitle: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
   matchesSearchQuery: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => boolean;
+  isDetailFloatingWindowOpen: boolean;
+  isOpeningPending?: boolean;
+  onOpenDetailFloatingWindow: () => void;
+  onCloseDetailFloatingWindow: () => void;
+  floatingWindowZIndex: number;
+  onRequestBringFloatingWindowToFront: () => void;
 };
 
 export const BuildProgressStageContent = ({
@@ -42,6 +48,12 @@ export const BuildProgressStageContent = ({
   resolveTaskTitle,
   t,
   matchesSearchQuery,
+  isDetailFloatingWindowOpen,
+  isOpeningPending = false,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex,
+  onRequestBringFloatingWindowToFront,
 }: BuildProgressStageContentProps) => {
   const state = useBuildProgressStageContentState({
     stage,
@@ -56,6 +68,12 @@ export const BuildProgressStageContent = ({
     resolveTaskTitle,
     t,
     matchesSearchQuery,
+    isDetailFloatingWindowOpen,
+    isOpeningPending,
+    onOpenDetailFloatingWindow,
+    onCloseDetailFloatingWindow,
+    floatingWindowZIndex,
+    onRequestBringFloatingWindowToFront,
   });
 
   return (

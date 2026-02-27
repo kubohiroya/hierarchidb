@@ -28,6 +28,12 @@ export const BuildProgressStageContentView = ({
   listScrollRef,
   handleScrollToDirection,
   disableVirtualization,
+  isDetailFloatingWindowOpen,
+  isOpeningPending,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex,
+  onRequestBringFloatingWindowToFront,
 }: BuildProgressStageContentViewProps) => (
   <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
     {showSummarySkeleton ? (
@@ -82,6 +88,12 @@ export const BuildProgressStageContentView = ({
           scrollToTaskId={scrollTargetTaskId}
           scrollRequestId={scrollRequestId}
           virtualize={!disableVirtualization}
+          isDetailFloatingWindowOpen={isDetailFloatingWindowOpen}
+          isOpeningPending={isOpeningPending}
+          onOpenDetailFloatingWindow={onOpenDetailFloatingWindow}
+          onCloseDetailFloatingWindow={onCloseDetailFloatingWindow}
+          floatingWindowZIndex={floatingWindowZIndex}
+          onRequestBringFloatingWindowToFront={onRequestBringFloatingWindowToFront}
         />
         {showUpArrow ? (
           <IconButton

@@ -1,6 +1,5 @@
 import { type ReactNode } from 'react';
 import { Box } from '@mui/material';
-import RecyclingIcon from '@mui/icons-material/Recycling';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
@@ -24,7 +23,10 @@ type TaskItemCardProps = {
   stageIcon?: ReactNode | null;
   translate: Translate;
   summaryBuilder?: TaskOutcomeSummaryBuilder;
-  onDetailHoverChange?: (value: { title: string; summary: TaskOutcomeSummary } | null) => void;
+  isDetailSelected?: boolean;
+  isDetailHoverPreviewActive?: boolean;
+  onDetailHoverChange?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary } | null) => void;
+  onDetailClick?: (value: { title: string; summary: TaskOutcomeSummary; task: ShapeBuildTaskSummary }) => void;
 };
 
 const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary): number | null => {
@@ -34,6 +36,44 @@ const resolveRetryAttemptFromTask = (task: ShapeBuildTaskSummary): number | null
   }
   const rounded = Math.floor(rawValue);
   return rounded >= 0 ? rounded : null;
+};
+
+const readString = (value: unknown): string | null => (
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+);
+
+const resolveCountryCodeFromTask = (task: ShapeBuildTaskSummary, taskTitle: string): string | null => {
+  const metadata = (task.metadata && typeof task.metadata === 'object')
+    ? task.metadata as Record<string, unknown>
+    : null;
+  const fetchDetail = (metadata?.fetchDetail && typeof metadata.fetchDetail === 'object')
+    ? metadata.fetchDetail as Record<string, unknown>
+    : null;
+  const preview = (metadata?.preview && typeof metadata.preview === 'object')
+    ? metadata.preview as Record<string, unknown>
+    : null;
+  const candidates = [
+    readString(fetchDetail?.countryCode),
+    readString(preview?.sourceCountryCode),
+    readString(preview?.countryCode),
+  ];
+  for (const candidate of candidates) {
+    if (candidate && /^[A-Za-z]{2}$/.test(candidate)) return candidate.toUpperCase();
+  }
+  const titleMatch = taskTitle.match(/\(([A-Za-z]{2})\)/);
+  if (titleMatch?.[1]) return titleMatch[1].toUpperCase();
+  const taskIdMatch = task.taskId.match(/:([A-Za-z]{2}):\d+$/);
+  if (taskIdMatch?.[1]) return taskIdMatch[1].toUpperCase();
+  return null;
+};
+
+const toFlagEmoji = (countryCode: string | null): string | null => {
+  if (!countryCode) return null;
+  if (!/^[A-Z]{2}$/.test(countryCode)) return null;
+  const base = 0x1f1e6;
+  const first = countryCode.charCodeAt(0) - 65 + base;
+  const second = countryCode.charCodeAt(1) - 65 + base;
+  return String.fromCodePoint(first, second);
 };
 
 export const TaskItemCard = ({
@@ -46,7 +86,10 @@ export const TaskItemCard = ({
   stageIcon,
   translate,
   summaryBuilder,
+  isDetailSelected = false,
+  isDetailHoverPreviewActive = false,
   onDetailHoverChange,
+  onDetailClick,
 }: TaskItemCardProps) => {
   const statusValue = task.status;
   const skipped = isTaskSkipped(task.display);
@@ -68,37 +111,39 @@ export const TaskItemCard = ({
   });
 
   const normalizedRetryAttempt = resolveRetryAttemptFromTask(task);
-  const normalizedStatusLabel = statusLabelValue.replace(/\s*\(line\s+\d+\)\s*$/i, '');
   const statusLabel = stageId === 'transform'
-    && normalizedRetryAttempt !== null
     && (task.status === 'completed' || task.status === 'failed')
-    ? (normalizedRetryAttempt > 0 ? `(Retry ${normalizedRetryAttempt})` : `(${normalizedStatusLabel})`)
+    ? (
+      normalizedRetryAttempt !== null && normalizedRetryAttempt > 0
+        ? `${task.status === 'failed' ? 'Failed' : 'Completed'}: retry ${normalizedRetryAttempt}`
+        : (task.status === 'failed' ? 'Failed' : 'Completed')
+    )
     : statusLabelValue;
 
-  let leadingIcon: ReactNode = null;
-  if (task.status === 'recycled') {
-    leadingIcon = (
-      <RecyclingIcon data-testid="task-icon-recycling" sx={{ fontSize: 16, color: 'text.secondary' }} />
-    );
-  } else if (stageIcon) {
-    leadingIcon = (
+  const countryCode = resolveCountryCodeFromTask(task, taskTitle);
+  const flag = toFlagEmoji(countryCode);
+  const leadingIcon: ReactNode = flag
+    ? (
       <Box
-        data-testid={`task-icon-stage-${stageId}`}
+        data-testid="task-icon-flag"
         sx={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          '& .MuiSvgIcon-root': {
-            fontSize: 16,
-          },
+          justifyContent: 'center',
+          fontSize: 16,
+          lineHeight: 1,
+          width: 18,
+          opacity: task.status === 'recycled' ? 0.5 : 1,
         }}
       >
-        {stageIcon}
+        <span aria-label={countryCode ?? 'country-flag'}>{flag}</span>
       </Box>
-    );
-  }
+    )
+    : null;
 
   return (
     <TaskItem
+      task={task}
       title={taskTitle}
       leadingIcon={leadingIcon}
       statusLabel={statusLabel}
@@ -107,7 +152,10 @@ export const TaskItemCard = ({
       summary={summary}
       progress={displayProgress}
       fallbackProgress={stageValue}
+      isDetailSelected={isDetailSelected}
+      isDetailHoverPreviewActive={isDetailHoverPreviewActive}
       onDetailHoverChange={onDetailHoverChange}
+      onDetailClick={onDetailClick}
     />
   );
 };

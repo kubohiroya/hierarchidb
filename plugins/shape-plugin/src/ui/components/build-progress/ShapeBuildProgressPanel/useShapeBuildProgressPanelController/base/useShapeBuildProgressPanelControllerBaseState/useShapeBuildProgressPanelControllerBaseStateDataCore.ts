@@ -1,4 +1,4 @@
-import { createElement, type ReactNode, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { createElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Stack, Typography } from '@mui/material';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeProcessingConfig } from '~/common/types/build';
@@ -127,6 +127,14 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const [startPendingHold, setStartPendingHold] = useState(false);
   const [taskSearchText, setTaskSearchText] = useState('');
+  const [stagePreviewWindowPendingMap, setStagePreviewWindowPendingMap] = useState<Record<string, boolean>>({});
+  const [stagePreviewWindowOpenMap, setStagePreviewWindowOpenMap] = useState<Record<string, boolean>>({});
+  const [stagePreviewWindowZIndexMap, setStagePreviewWindowZIndexMap] = useState<Record<string, number>>({
+    fetch: 1,
+    transform: 2,
+    vt: 3,
+  });
+  const stagePreviewWindowZCounterRef = useRef(4);
   const [concurrencyEditorAnchor, setConcurrencyEditorAnchor] = useState<HTMLElement | null>(null);
   const [concurrencyEditorStageId, setConcurrencyEditorStageId] = useState<'fetch' | 'transform' | 'vt' | null>(null);
   const [fetchRetryEditorAnchor, setFetchRetryEditorAnchor] = useState<HTMLElement | null>(null);
@@ -140,6 +148,17 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
 
   const isResetSessionLoading = isResetSessionPending || cacheDeleteLoading.resetSession;
   const isTerminalStatus = summary.buildStatus === 'completed' || summary.buildStatus === 'failed';
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const hasPending = Object.values(stagePreviewWindowPendingMap).some(Boolean);
+    if (!hasPending) return;
+    const previousCursor = document.body.style.cursor;
+    document.body.style.cursor = 'wait';
+    return () => {
+      document.body.style.cursor = previousCursor;
+    };
+  }, [stagePreviewWindowPendingMap]);
 
   useEffect(() => {
     if (controls.startPending) {
@@ -243,6 +262,64 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const stageLeadingControls = useMemo<StageMetadataMap<ReactNode>>(() => {
     const controlsByStage: Record<string, ReactNode> = {};
     return controlsByStage;
+  }, []);
+  const bringStagePreviewWindowToFront = useCallback((stageId: string) => {
+    setStagePreviewWindowZIndexMap((prev) => {
+      const nextZIndex = stagePreviewWindowZCounterRef.current;
+      stagePreviewWindowZCounterRef.current += 1;
+      if (prev[stageId] === nextZIndex) return prev;
+      return {
+        ...prev,
+        [stageId]: nextZIndex,
+      };
+    });
+  }, []);
+  const openStagePreviewWindow = useCallback((stageId: string) => {
+    let changedToVisible = false;
+    setStagePreviewWindowOpenMap((prev) => {
+      if ((prev[stageId] ?? true) === false) return prev;
+      changedToVisible = true;
+      return {
+        ...prev,
+        [stageId]: false,
+      };
+    });
+    if (changedToVisible) {
+      setStagePreviewWindowPendingMap((prev) => ({
+        ...prev,
+        [stageId]: true,
+      }));
+      requestAnimationFrame(() => {
+        setStagePreviewWindowPendingMap((prev) => ({
+          ...prev,
+          [stageId]: false,
+        }));
+      });
+    }
+    bringStagePreviewWindowToFront(stageId);
+  }, [bringStagePreviewWindowToFront]);
+  const toggleStagePreviewWindow = useCallback((stageId: string) => {
+    let shouldBringToFront = false;
+    setStagePreviewWindowOpenMap((prev) => {
+      const isToggleOn = prev[stageId] ?? true;
+      shouldBringToFront = isToggleOn;
+      return {
+        ...prev,
+        [stageId]: !isToggleOn,
+      };
+    });
+    if (shouldBringToFront) {
+      bringStagePreviewWindowToFront(stageId);
+    }
+  }, [bringStagePreviewWindowToFront]);
+  const closeStagePreviewWindow = useCallback((stageId: string) => {
+    setStagePreviewWindowOpenMap((prev) => {
+      if ((prev[stageId] ?? true) === true) return prev;
+      return {
+        ...prev,
+        [stageId]: true,
+      };
+    });
   }, []);
 
   const deleteCountUnit = t('processing.download.countUnit', ' items');
@@ -572,6 +649,13 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     paneProgressForDisplay,
     stageProgressForDisplay,
     stageLoadingState,
+    stagePreviewWindowOpenMap,
+    stagePreviewWindowPendingMap,
+    stagePreviewWindowZIndexMap,
+    openStagePreviewWindow,
+    toggleStagePreviewWindow,
+    bringStagePreviewWindowToFront,
+    closeStagePreviewWindow,
     stageConcurrencyIndicatorAriaLabels,
     stageLeadingControls,
     stageMenus,

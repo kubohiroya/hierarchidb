@@ -384,12 +384,98 @@ const buildTaskSummaryFields = (
   metadata: task.metadata,
 });
 
+const asRecord = (value: unknown): Record<string, unknown> | null => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+);
+
+const readString = (value: unknown): string | null => (
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+);
+
+const readNumber = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const buildPreviewMetadataFromTask = (task: TaskQueueRecord): Record<string, unknown> | null => {
+  const metadata = asRecord(task.metadata);
+  const preview = asRecord(metadata?.preview);
+  const input = asRecord(task.inputData);
+  const output = asRecord(task.outputData);
+
+  if (task.stage === 'fetch') {
+    const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
+    const fetchCacheId = readString(preview?.fetchCacheId)
+      ?? readString(output?.fetchCacheId)
+      ?? (sourceKey ? `${String(task.nodeId)}-shape-${sourceKey}` : null);
+    const dataSource = readString(preview?.dataSource) ?? readString(input?.dataSource);
+    const sourceUrl = readString(preview?.sourceUrl) ?? readString(input?.url);
+    const sourceCountryCode = readString(preview?.sourceCountryCode)
+      ?? readString(input?.urlCountryCode)
+      ?? readString(input?.countryCode);
+    const adminLevel = readNumber(preview?.adminLevel) ?? readNumber(input?.adminLevel);
+
+    if (!fetchCacheId && !sourceKey && !sourceUrl) return preview;
+    return {
+      stage: 'fetch',
+      sourceKey: sourceKey ?? null,
+      dataSource: dataSource ?? null,
+      sourceUrl: sourceUrl ?? null,
+      sourceCountryCode: sourceCountryCode ?? null,
+      adminLevel: adminLevel ?? null,
+      fetchCacheId: fetchCacheId ?? null,
+      fetchCacheFormat: readString(preview?.fetchCacheFormat) ?? 'flatgeobuf',
+      fetchCacheCompression: readString(preview?.fetchCacheCompression) ?? 'none',
+    };
+  }
+
+  if (task.stage === 'transform') {
+    const sourceKey = readString(preview?.sourceKey) ?? readString(input?.sourceKey);
+    const bandIndex = readNumber(preview?.bandIndex) ?? readNumber(input?.bandIndex);
+    const domainType = readString(input?.domainType) ?? 'shape';
+    const fetchCacheId = readString(preview?.fetchCacheId) ?? readString(input?.fetchCacheId);
+    const transformCacheId = readString(preview?.transformCacheId)
+      ?? readString(output?.transformCacheId)
+      ?? (sourceKey && bandIndex !== null
+        ? `${String(task.nodeId)}-b${Math.floor(bandIndex)}-${domainType}-${sourceKey}`
+        : null);
+    const sourceCountryCode = readString(preview?.sourceCountryCode)
+      ?? readString(input?.sourceCountryCode)
+      ?? readString(input?.countryCode);
+    const adminLevel = readNumber(preview?.adminLevel) ?? readNumber(input?.adminLevel);
+
+    if (!fetchCacheId && !transformCacheId && !sourceKey) return preview;
+    return {
+      stage: 'transform',
+      sourceKey: sourceKey ?? null,
+      bandIndex: bandIndex ?? null,
+      dataSource: readString(preview?.dataSource) ?? readString(input?.dataSource) ?? null,
+      sourceUrl: readString(preview?.sourceUrl) ?? readString(input?.sourceUrl) ?? null,
+      sourceCountryCode: sourceCountryCode ?? null,
+      adminLevel: adminLevel ?? null,
+      fetchCacheId: fetchCacheId ?? null,
+      fetchCacheFormat: readString(preview?.fetchCacheFormat) ?? readString(input?.fetchCacheFormat) ?? 'flatgeobuf',
+      fetchCacheCompression: readString(preview?.fetchCacheCompression) ?? readString(input?.fetchCacheCompression) ?? 'none',
+      transformCacheId: transformCacheId ?? null,
+    };
+  }
+
+  return preview;
+};
+
 const mapTaskQueueRecordToTaskSummary = (
   task: TaskQueueRecord,
 ): ShapeBuildTaskSummary => {
   const base = buildTaskSummaryFields(task);
+  const preview = buildPreviewMetadataFromTask(task);
+  const metadata = {
+    ...(base.metadata ?? {}),
+    ...(preview ? { preview } : {}),
+  };
   return {
     taskId: task.taskId,
+    nodeId: task.nodeId,
     stage: task.stage,
     status: resolveEffectiveTaskStatus(task),
     progress: resolveTaskProgress(task),
@@ -399,11 +485,12 @@ const mapTaskQueueRecordToTaskSummary = (
     errorMessage: base.errorMessage,
     index: base.index,
     stagePriority: base.stagePriority,
-    metadata: base.metadata,
+    metadata,
   };
 };
 
 type ShapeBuildTaskSummary = BuildTaskSummary & {
+  nodeId?: NodeId;
   title?: string;
   error?: string;
   errorMessage?: string;
@@ -779,6 +866,7 @@ const upsertBuildSessionSnapshot = async (
     stageStartedAt: existing?.stageStartedAt,
     stageHeartbeatAt: existing?.stageHeartbeatAt,
     stageId: existing?.stageId,
+    fetchStageMaxima: existing?.fetchStageMaxima,
   };
   await shapeMutationAPIImpl.upsertBuildSession(record);
 };

@@ -100,6 +100,11 @@ export interface LayerInfo {
   fields: string[];
 }
 
+export interface FetchStageMaxima {
+  featureMax: number;
+  polygonMax: number;
+}
+
 export interface BuildSessionRecord {
   nodeId: ShapeContainerNodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
@@ -122,6 +127,7 @@ export interface BuildSessionRecord {
   stageId?: string;
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
+  fetchStageMaxima?: FetchStageMaxima;
 }
 
 export type FetchTaskPayload = {

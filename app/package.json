@@ -81,6 +81,7 @@
     "inversify": "^6.0.2",
     "isbot": "^5",
     "jotai": "^2.16.0",
+    "leaflet": "^1.9.4",
     "maplibre-gl": "^5.7.3",
     "react-draggable": "^4.5.0",
     "react-hook-geolocation": "^1.1.0",

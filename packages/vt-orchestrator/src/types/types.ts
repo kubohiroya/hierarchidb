@@ -79,6 +79,8 @@ export const DEFAULT_TASK_SPLIT = {
 
 export type TransformByBandTaskInput = {
   fetchCacheId: string;
+  fetchCacheFormat?: 'flatgeobuf' | 'topojson';
+  fetchCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -89,6 +91,9 @@ export type TransformByBandTaskInput = {
   stagePriority?: number;
   countryCode?: string;
   adminLevel?: number;
+  dataSource?: string;
+  sourceUrl?: string;
+  sourceCountryCode?: string;
 };
 
 export type VtTaskInput = {
