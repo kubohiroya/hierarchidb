@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Box, Snackbar, Stack, Typography } from '@mui/material';
+import { StackedBarChart100 } from '@hierarchidb/ui-stacked-barchart';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
 
 type TaskDetailPayload = {
@@ -105,14 +106,64 @@ const renderVolumeRow = (
   );
 };
 
+const renderStackedRatioRow = (
+  label: string,
+  output: number | null | undefined,
+  input: number | null | undefined,
+  colorToken: string,
+): React.ReactNode => {
+  const ratio = resolveRatio(output, input);
+  const text = `${formatNumber(output)} / ${formatNumber(input)} (${formatPercent(ratio)})`;
+  const safeInput = typeof input === 'number' && Number.isFinite(input) && input > 0 ? input : null;
+  const safeOutput = typeof output === 'number' && Number.isFinite(output) && output >= 0 ? output : null;
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="caption" sx={{ width: 56, color: 'text.secondary' }}>
+        {label}
+      </Typography>
+      <Box sx={{ flex: 1 }}>
+        <StackedBarChart100
+          segments={safeInput !== null && safeOutput !== null
+            ? [
+              {
+                id: `${label}-processed`,
+                value: safeOutput,
+                color: colorToken,
+                title: text,
+              },
+            ]
+            : []
+          }
+          total={safeInput ?? 1}
+          height={20}
+          borderRadius={6}
+          ariaLabel={`${label} ratio`}
+          endAdornment={(
+            <Typography
+              variant="caption"
+              sx={{
+                minWidth: 160,
+                textAlign: 'right',
+                color: 'text.secondary',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {text}
+            </Typography>
+          )}
+        />
+      </Box>
+    </Box>
+  );
+};
+
 export const TaskItemDetailSnackbar = ({ detail }: Props) => {
   const summary = detail?.summary;
   const title = detail?.title ?? '';
   const countryFlag = toFlagEmoji(summary?.fetchDetails?.countryCode ?? extractCountryCodeFromTitle(title));
   const detailColor = summary?.kind === 'failed' ? 'error.main' : 'text.secondary';
   const chartColor = summary?.kind === 'failed' ? 'error.main' : 'primary.main';
-  const fetchFeaturesRatio = resolveRatio(summary?.fetchDetails?.features.output, summary?.fetchDetails?.features.input);
-  const fetchPolygonsRatio = resolveRatio(summary?.fetchDetails?.polygons.output, summary?.fetchDetails?.polygons.input);
 
   return (
     <Snackbar
@@ -156,19 +207,17 @@ export const TaskItemDetailSnackbar = ({ detail }: Props) => {
             <Typography variant="caption" color="text.secondary">
               Retry attempts: {summary.retryAttempt ?? 'N/A'} / {summary.retryMax ?? 'N/A'}
             </Typography>
-            {renderVolumeRow(
+            {renderStackedRatioRow(
               'Features',
               summary.metrics?.features.output,
               summary.metrics?.features.input,
               chartColor,
-              false,
             )}
-            {renderVolumeRow(
+            {renderStackedRatioRow(
               'Polygons',
               summary.metrics?.polygons.output,
               summary.metrics?.polygons.input,
               chartColor,
-              false,
             )}
             {renderVolumeRow(
               'Vertices',
@@ -184,12 +233,18 @@ export const TaskItemDetailSnackbar = ({ detail }: Props) => {
             <Typography variant="caption" color={detailColor} sx={{ fontWeight: 600 }}>
               URL: {summary.fetchDetails?.url ?? 'N/A'}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Features: {formatNumber(summary.fetchDetails?.features.output)} / {formatNumber(summary.fetchDetails?.features.input)} ({formatPercent(fetchFeaturesRatio)})
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Polygons: {formatNumber(summary.fetchDetails?.polygons.output)} / {formatNumber(summary.fetchDetails?.polygons.input)} ({formatPercent(fetchPolygonsRatio)})
-            </Typography>
+            {renderStackedRatioRow(
+              'Features',
+              summary.fetchDetails?.features.output,
+              summary.fetchDetails?.features.input,
+              chartColor,
+            )}
+            {renderStackedRatioRow(
+              'Polygons',
+              summary.fetchDetails?.polygons.output,
+              summary.fetchDetails?.polygons.input,
+              chartColor,
+            )}
           </Stack>
         ) : null}
       </Box>

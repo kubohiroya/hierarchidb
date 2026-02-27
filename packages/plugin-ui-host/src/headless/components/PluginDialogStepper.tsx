@@ -231,6 +231,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
       <Menu
         open={Boolean(contextMenuState)}
         onClose={closeContextMenu}
+        disableRestoreFocus
         anchorReference="anchorPosition"
         anchorPosition={
           contextMenuState
