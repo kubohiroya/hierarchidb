@@ -380,6 +380,10 @@ export const createTransformByBandHandler = (
     };
     const updateFinalEffectiveTolerance = (candidate: number): void => {
       if (!Number.isFinite(candidate)) return;
+      if (!Number.isFinite(finalEffectiveToleranceForTask)) {
+        finalEffectiveToleranceForTask = candidate;
+        return;
+      }
       finalEffectiveToleranceForTask = Math.max(finalEffectiveToleranceForTask, candidate);
     };
     void updateTaskRetryAttempt(taskId, 0);

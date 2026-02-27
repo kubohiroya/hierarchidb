@@ -1,5 +1,6 @@
 import type { BuildStage } from '@hierarchidb/components/build-stage';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
 
@@ -138,7 +139,7 @@ export const buildTaskProgressSegments = (params: TaskProgressComputeInput) => {
 
     orderedTasks.forEach((task) => {
       const statusValue = (task.status ?? '').toString().toLowerCase();
-      const isSkipped = isTaskSkipped(task.display, task.message);
+      const isSkipped = isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata));
       const fill = resolveStatusColor({
         taskStatus: statusValue,
         isSkipped,

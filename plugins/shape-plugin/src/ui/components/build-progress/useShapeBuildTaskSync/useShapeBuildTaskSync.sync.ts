@@ -7,6 +7,7 @@ import {
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { upsertTaskInOrder } from '@hierarchidb/ui-build-sessions';
 import { useShapeBuildTaskSyncState } from './useShapeBuildTaskSync.state.js';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import type { SyncResult, SyncSchedulingArgs } from './useShapeBuildTaskSync.types.js';
 
 const TASK_FLUSH_FALLBACK_TIMEOUT_MS = 120;
@@ -107,6 +108,7 @@ export const useShapeBuildTaskSyncScheduling = ({
     task: ShapeBuildTaskSummary,
     baseList: ShapeBuildTaskSummary[],
   ) => {
+    const taskMetadataMessage = resolveTaskMetadataMessage(task.metadata)?.trim() ?? '';
     const nextMap = new Map(tasksMapRef.current);
     const currentTask = nextMap.get(task.taskId);
     if (!currentTask) {
@@ -121,7 +123,7 @@ export const useShapeBuildTaskSyncScheduling = ({
     }
     if (currentTask.status === task.status
       && currentTask.progress === task.progress
-      && (currentTask.message ?? null) === (task.message ?? null)) {
+      && (resolveTaskMetadataMessage(currentTask.metadata) ?? '') === taskMetadataMessage) {
       return { next: baseList, changed: false } as const;
     }
     const nextList = [...baseList];

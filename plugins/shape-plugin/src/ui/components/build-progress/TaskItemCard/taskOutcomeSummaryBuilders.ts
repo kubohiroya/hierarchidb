@@ -1,5 +1,5 @@
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from '~/ui/components/build-progress/geometrySimplifyError';
 import { formatTaskDisplayMessage } from '~/ui/components/build-progress/taskDisplayText';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
@@ -71,7 +71,8 @@ const readDisplayMetric = (
 const resolveFailedMessage = (task: ShapeBuildTaskSummary): string | null => {
   const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
   const fallbackError = typeof task.error === 'string' ? task.error.trim() : '';
-  const failed = errorMessage || fallbackError || task.message?.trim() || '';
+  const metadataMessage = resolveTaskMetadataMessage(task.metadata) ?? '';
+  const failed = errorMessage || fallbackError || metadataMessage || '';
   return failed.length > 0 ? failed : null;
 };
 
@@ -90,7 +91,7 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
   const failedMessage = resolveFailedMessage(task);
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || task.message || taskTitle).trim();
+    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
     return {
       kind,
       visualization: 'none',
@@ -119,7 +120,7 @@ export const buildSimpleTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task,
     };
   }
 
-  const info = displayMessage || task.message || taskTitle;
+  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
   return {
     kind,
     visualization: 'none',
@@ -188,7 +189,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
     || polygonsOutput !== null;
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || task.message || taskTitle).trim();
+    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
     return {
       kind,
       visualization: 'none',
@@ -233,7 +234,7 @@ export const buildFetchTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ task, 
     };
   }
 
-  const info = displayMessage || task.message || taskTitle;
+  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
   return {
     kind,
     visualization: hasFetchDetails ? 'fetchMetrics' : 'none',
@@ -312,7 +313,7 @@ export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ ta
       'metadata.maxVerticesPerFeature',
     ]);
     if (metadataLimit !== null && metadataLimit > 0) return metadataLimit;
-    const source = failedMessage || task.message || '';
+    const source = failedMessage || resolveTaskMetadataMessage(task.metadata) || '';
     const match = source.match(/limit=(\d+)/i);
     if (!match) return null;
     const parsed = Number.parseInt(match[1] ?? '', 10);
@@ -320,7 +321,7 @@ export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ ta
   })();
 
   if (kind === 'skipped') {
-    const reason = (displayMessage || task.message || taskTitle).trim();
+    const reason = (displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle).trim();
     return {
       kind,
       visualization: 'none',
@@ -368,7 +369,7 @@ export const buildTransformTaskOutcomeSummary: TaskOutcomeSummaryBuilder = ({ ta
     };
   }
 
-  const info = displayMessage || task.message || taskTitle;
+  const info = displayMessage || resolveTaskMetadataMessage(task.metadata) || taskTitle;
   return {
     kind,
     visualization: 'none',

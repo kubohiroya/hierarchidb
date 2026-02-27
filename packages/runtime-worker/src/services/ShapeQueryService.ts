@@ -116,7 +116,6 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   status: task.status,
   index: task.index,
   progress: task.progress,
-  message: task.message,
   errorMessage: task.errorMessage,
   metadata: task.metadata,
   retryAttempt: typeof (task.metadata as { retryAttempt?: unknown } | undefined)?.retryAttempt === 'number'
@@ -235,7 +234,6 @@ const toShapeBuildTaskRecordFromEphemeral = (
     status: task.status,
     index: task.index,
     progress: task.progress,
-    message: task.message,
     retryCount: task.retryCount,
     metadata: task.metadata,
     inputData: task.inputData as ShapeBuildTaskRecord['inputData'],

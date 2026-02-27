@@ -12,7 +12,11 @@ import {
   isCompletedAtFullProgress,
   resolveTaskSummaryFromRaw,
 } from './useShapeBuildTaskSync.comparison.utils.js';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+
+const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => (
+  resolveTaskMetadataMessage(task.metadata)?.trim() ?? ''
+);
 
 type ResolverDeps = {
   sessionNodeId: string | null;
@@ -45,16 +49,17 @@ export const useShapeBuildTaskSyncResolver = ({
   return (task: RawTaskSummary): ShapeBuildTaskSummary => {
     const normalizedTask = resolveTaskSummaryFromRaw(task);
     const progress = resolveProgressValue(normalizedTask.progress);
+    const metadataMessage = resolveTaskMetadataText(normalizedTask);
     const resolvedStatus = resolveTaskDisplayStatus(
       normalizedTask.status,
       progress,
       normalizedTask.display,
-      normalizedTask.message,
+      metadataMessage,
     );
     const resolvedTask: ShapeBuildTaskSummary = {
       ...normalizedTask,
       status: resolvedStatus,
-      progress: resolveTaskProgress(resolvedStatus, progress, normalizedTask.display, normalizedTask.message),
+      progress: resolveTaskProgress(resolvedStatus, normalizedTask.display, metadataMessage, progress),
     };
     const rawRetryAttempt = resolveNumberFromMetadata(resolvedTask.metadata?.retryAttempt);
     if (rawRetryAttempt !== null && Number.isFinite(rawRetryAttempt) && rawRetryAttempt >= 0) {
@@ -65,7 +70,11 @@ export const useShapeBuildTaskSyncResolver = ({
       const parentInputSummary = readVtParentInputSummary(resolvedTask.metadata);
       if (parentInputSummary) {
         const parentInputMessage = buildVtParentInputSummaryMessage(parentInputSummary);
-        resolvedTask.message = mergeTaskMessage(resolvedTask.message, parentInputMessage);
+        const baseMessage = resolveTaskMetadataText(resolvedTask);
+        resolvedTask.metadata = {
+          ...(resolvedTask.metadata ?? {}),
+          message: mergeTaskMessage(baseMessage, parentInputMessage),
+        };
         if (isDev) {
           const logKey = `${resolvedTask.taskId}:${parentInputMessage}`;
           if (!vtParentInputDebugLogKeysRef.current.has(logKey)) {
@@ -87,7 +96,7 @@ export const useShapeBuildTaskSyncResolver = ({
     }
     if (resolvedTask.status === 'running' || resolvedTask.status === 'queued') {
       const isRetryableCompletedTask = completedTask.status === 'failed'
-        || isTaskSkipped(completedTask.display, completedTask.message);
+        || isTaskSkipped(completedTask.display, resolveTaskMetadataMessage(completedTask.metadata) ?? null);
       if (isRetryableCompletedTask) {
         return resolvedTask;
       }

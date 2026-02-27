@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getBuildWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import { useAtom } from 'jotai';
 import {
   type ShapeBuildTaskSummary,
@@ -409,7 +410,7 @@ export function useShapeBuildTaskSnapshotProgressState(
       if (task.status !== 'failed') return;
       if (reported.has(task.taskId)) return;
       reported.add(task.taskId);
-      const message = task.message ?? 'Task failed';
+      const message = resolveTaskMetadataMessage(task.metadata) ?? 'Task failed';
       const geometryDetails = parseGeometrySimplifyError(message);
       if (geometryDetails) {
         console.warn('[ShapeBuildStep] task failed:geometrySimplify', {

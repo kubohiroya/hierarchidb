@@ -3,8 +3,32 @@ import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BuildTaskSummary } from '../../../../build-api';
 import { buildTaskCountSummary } from '~/utils/taskProgressSummary';
 
+const resolveTaskMetadataMessage = (metadata: Record<string, unknown> | undefined): string | undefined => {
+  if (!metadata) return undefined;
+  const keys = [
+    'message',
+    'statusMessage',
+    'errorMessage',
+    'detail.message',
+    'result.message',
+    'summary.message',
+    'completionMessage',
+  ];
+  for (const path of keys) {
+    const value = path.split('.').reduce<unknown>((current, segment) => {
+      if (!current || typeof current !== 'object') return undefined;
+      return (current as Record<string, unknown>)[segment];
+    }, metadata);
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return undefined;
+};
+
 const isSkippedTask = (task: BuildTaskSummary): boolean => {
-  const message = task.message;
+  if (task.display?.kind === 'skip') return true;
+  const message = resolveTaskMetadataMessage(task.metadata);
   if (!message) return false;
   const normalized = message.trim().toLowerCase();
   return normalized === 'skipped' || normalized.startsWith('skipped:');

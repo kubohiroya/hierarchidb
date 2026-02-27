@@ -103,7 +103,9 @@ describe('TaskItemCardListCard', () => {
         taskType: 'fetch',
         status: 'completed',
         progress: 100,
-        message: 'Fetched data',
+        metadata: {
+          message: 'Fetched data',
+        },
       } as ShapeBuildTaskSummary,
       {
         taskId: 'vt-task-1',

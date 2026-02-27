@@ -49,7 +49,7 @@ export const resolveTaskDisplayStatus = (
   status: ShapeBuildTaskSummary['status'] | undefined,
   progress: number,
   display?: ShapeBuildTaskSummary['display'],
-  message?: ShapeBuildTaskSummary['message'],
+  message?: string | null,
 ): ShapeBuildTaskSummary['status'] => {
   const resolvedStatus = status ?? 'queued';
   if (resolvedStatus === 'running' && progress >= 100) {
@@ -63,9 +63,9 @@ export const resolveTaskDisplayStatus = (
 
 export const resolveTaskProgress = (
   status: ShapeBuildTaskSummary['status'],
-  progress: number,
   display?: ShapeBuildTaskSummary['display'],
-  message?: ShapeBuildTaskSummary['message'],
+  message?: string | null,
+  progress?: number,
 ): ShapeBuildTaskSummary['progress'] => {
   const safeProgress = Number.isFinite(progress) ? progress : 0;
   if (status === 'completed' || status === 'failed' || isTaskSkipped(display, message)) {

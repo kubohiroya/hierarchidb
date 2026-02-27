@@ -12,6 +12,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildControlMenuItem, BuildStepStageMenu } from '@hierarchidb/components';
 import { useShapeBuildProgressPanelControllerBaseStateDataDisplay } from './useShapeBuildProgressPanelControllerBaseStateDataDisplay.js';
 import type { TranslateFn } from '~/ui/components/build-progress/useBuildProgressPanelState/useBuildProgressPanelStateComputedHelpers';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 
 type StageMetadataMap<T> = Record<string, T>;
 
@@ -435,7 +436,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const matchesSearchQuery = useCallback((task: TaskItemWithMetadata) => {
     if (taskSearchQuery.length === 0) return true;
     const title = resolveTaskTitle(task).toLowerCase();
-    const message = typeof task.message === 'string' ? task.message.toLowerCase() : '';
+    const message = resolveTaskMetadataMessage(task.metadata)?.toLowerCase() ?? '';
     return title.includes(taskSearchQuery) || message.includes(taskSearchQuery);
   }, [resolveTaskTitle, taskSearchQuery]);
 

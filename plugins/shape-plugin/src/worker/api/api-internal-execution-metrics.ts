@@ -44,7 +44,10 @@ import {
 import type { BuildSessionConfig, BuildSessionRecord, BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { ephemeralDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
-import { isTaskSkipped } from '~/common/utils/taskMessages';
+import {
+  isTaskSkipped,
+  resolveTaskMetadataMessage,
+} from '~/common/utils/taskMessages';
 import { buildShapeTaskTitle } from '~/common/utils/taskTitles';
 import {
   resolveTaskActivityTimestamp,
@@ -234,6 +237,18 @@ const resolveBuildTaskMetadata = (task: BuildTaskRecordLike): Record<string, unk
   return undefined;
 };
 
+const resolveTaskMetadataText = (metadata: Record<string, unknown> | undefined): string | null => (
+  resolveTaskMetadataMessage(metadata)
+);
+
+const resolveBuildTaskRecordMetadataMessage = (task: BuildTaskRecordLike): string | null => (
+  resolveTaskMetadataText(resolveBuildTaskMetadata(task))
+);
+
+const resolveQueueRecordMetadataMessage = (task: TaskQueueRecord): string | null => (
+  resolveTaskMetadataText(task.metadata)
+);
+
 const toTaskQueueStatusFromStore = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
   if (status === 'failed' || status === 'running') {
     return 'queued';
@@ -252,10 +267,12 @@ const isStopReason = (value: string): value is ShapeBuildStopReason => (
 const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => {
   const nextStatus = toTaskQueueStatusFromStore(task.status);
   const shouldKeepOutput = nextStatus === 'completed' || nextStatus === 'recycled';
+  const keepMessage = shouldKeepOutput
+    ? (resolveBuildTaskRecordMetadataMessage(task) ?? task.errorMessage)
+    : undefined;
   const resolvedProgress = shouldKeepOutput
     ? (Number.isFinite(task.progress) ? Math.min(100, Math.max(0, task.progress)) : 100)
     : 0;
-  const keepMessage = shouldKeepOutput ? task.message : undefined;
   return {
     taskId: task.taskId,
     nodeId: task.nodeId,
@@ -352,7 +369,6 @@ const ensureTaskQueueSeeded = async (nodeId: NodeId, taskQueue: VtTaskQueueDb): 
 const buildTaskSummaryFields = (
   task: TaskQueueRecord,
 ): {
-  message?: string;
   title?: string;
   error?: string;
   errorMessage?: string;
@@ -360,7 +376,6 @@ const buildTaskSummaryFields = (
   stagePriority?: number;
   metadata?: Record<string, unknown>;
 } => ({
-  message: task.message ?? task.errorMessage,
   title: buildShapeTaskTitle(task),
   error: task.errorMessage,
   errorMessage: task.errorMessage,
@@ -379,7 +394,6 @@ const mapTaskQueueRecordToTaskSummary = (
     status: resolveEffectiveTaskStatus(task),
     progress: resolveTaskProgress(task),
     display: task.display,
-    message: base.message,
     title: base.title,
     error: base.error,
     errorMessage: base.errorMessage,
@@ -422,10 +436,10 @@ const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
   const total = nonRecycled.length;
   const completed = nonRecycled.filter((task) => {
     const status = resolveEffectiveTaskStatus(task);
-    return status === 'completed' && !isTaskSkipped(task.display, task.message);
+    return status === 'completed' && !isTaskSkipped(task.display, resolveQueueRecordMetadataMessage(task));
   }).length;
   const failed = nonRecycled.filter((task) => resolveEffectiveTaskStatus(task) === 'failed').length;
-  const skipped = nonRecycled.filter((task) => isTaskSkipped(task.display, task.message)).length;
+  const skipped = nonRecycled.filter((task) => isTaskSkipped(task.display, resolveQueueRecordMetadataMessage(task))).length;
   const doneCount = Math.min(total, completed + skipped + failed);
   const hasRecycled = tasks.length > total;
   const status: BuildTask['status'] = failed > 0
@@ -467,7 +481,7 @@ const summarizeTaskQueueProgress = async (
       return;
     }
     bucket.total += 1;
-    if (isTaskSkipped(task.display, task.message)) {
+    if (isTaskSkipped(task.display, resolveQueueRecordMetadataMessage(task))) {
       bucket.skipped += 1;
       return;
     }
@@ -611,7 +625,7 @@ const buildStageStatus = (tasks: TaskQueueRecord[], plannedTotal?: number): Stag
       return;
     }
     if (status === 'completed') {
-      if (isTaskSkipped(task.display, task.message)) {
+      if (isTaskSkipped(task.display, resolveQueueRecordMetadataMessage(task))) {
         skipped += 1;
       } else {
         completed += 1;

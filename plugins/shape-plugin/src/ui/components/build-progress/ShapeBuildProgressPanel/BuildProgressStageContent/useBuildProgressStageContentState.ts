@@ -6,6 +6,7 @@ import { type TaskItemWithMetadata } from '~/ui/components/build-progress/taskIt
 import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-progress/taskItemCardList/useTaskItemCardList';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 
 type BuildProgressStageContentStateArgs = {
   stage: {
@@ -118,7 +119,7 @@ export const useBuildProgressStageContentState = ({
 
   const filteredTasks = useMemo(() => stageTasksForDisplay.filter((task) => {
     if (!matchesSearchQuery(task)) return false;
-    if (isTaskSkipped(task.display, task.message)) return filter.skippedMode;
+    if (isTaskSkipped(task.display, resolveTaskMetadataMessage(task.metadata))) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed' || task.status === 'recycled') return filter.completedMode;
     return true;

@@ -68,23 +68,38 @@ const isEphemeralTransformCacheRecord = (value: unknown): value is EphemeralTran
   );
 };
 
-const stripLegacyCacheMetaFields = (record: Record<string, unknown>): Record<string, unknown> => {
-  const { message: _message, tolerance: _tolerance, ...meta } = record;
-  void _message;
-  void _tolerance;
-  return meta;
-};
-
 const toFetchCacheMeta = (record: EphemeralFetchCacheRecord): EphemeralFetchCacheMetaRecord => {
-  const { data, ...meta } = record as Record<string, unknown> & EphemeralFetchCacheRecord;
-  void data;
-  return stripLegacyCacheMetaFields(meta) as EphemeralFetchCacheMetaRecord;
+  return {
+    id: record.id,
+    nodeId: record.nodeId,
+    sourceKey: record.sourceKey,
+    countryCode: record.countryCode,
+    adminLevel: record.adminLevel,
+    featureCount: record.featureCount,
+    bbox: record.bbox,
+    downloadTime: record.downloadTime,
+    size: record.size,
+    metadata: record.metadata,
+    timestamp: record.timestamp,
+  };
 };
 
 const toTransformCacheMeta = (record: EphemeralTransformCacheRecord): EphemeralTransformCacheMetaRecord => {
-  const { data, ...meta } = record as Record<string, unknown> & EphemeralTransformCacheRecord;
-  void data;
-  return stripLegacyCacheMetaFields(meta) as EphemeralTransformCacheMetaRecord;
+  return {
+    id: record.id,
+    nodeId: record.nodeId,
+    domainType: record.domainType,
+    bandIndex: record.bandIndex,
+    sourceKey: record.sourceKey,
+    countryCode: record.countryCode,
+    adminLevel: record.adminLevel,
+    featureCount: record.featureCount,
+    vertexCount: record.vertexCount,
+    polygonCount: record.polygonCount,
+    extractionRatio: record.extractionRatio,
+    metadata: record.metadata,
+    timestamp: record.timestamp,
+  };
 };
 
 type HookTransaction = {

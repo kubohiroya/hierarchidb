@@ -8,7 +8,7 @@ const mapTaskQueueRecord = (task: TaskQueueRecord): BuildTaskSummary => ({
   stage: task.stage,
   status: task.status as BuildTaskSummary['status'],
   progress: task.progress,
-  message: task.message ?? task.errorMessage,
+  metadata: task.metadata,
 });
 
 export async function getBuildTasks(nodeId: NodeId): Promise<BuildTaskSummary[]> {

@@ -1,4 +1,7 @@
-import { isTaskPhaseDisplay } from '~/common/utils/taskMessages';
+import {
+  isTaskPhaseDisplay,
+  resolveTaskMetadataMessage,
+} from '~/common/utils/taskMessages';
 import type {
   RunningResidueLogPayload,
   TaskSyncDebugChannel,
@@ -105,8 +108,8 @@ export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   const indexValue = taskIdParts.length >= 4 ? taskIdParts[3] : taskIdParts[2];
   const resolvedCountry = countryIndex || 'unknown';
   const resolvedIndex = typeof indexValue === 'string' && indexValue.length > 0 ? indexValue : '0';
-  const message = task.message ?? task.status;
+  const resolvedMessage = resolveTaskMetadataMessage(task.metadata) || task.status;
   console.log(
-    `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${message}, ${task.status}`,
+    `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${resolvedMessage}, ${task.status}`,
   );
 };
