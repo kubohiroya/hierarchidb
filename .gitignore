@@ -195,6 +195,7 @@ app/.generated/
 app/src/generated/
 app/.generated/
 packages/plugin-registry/src/generated/
+packages/plugin-registry/generated/
 packages/ui/dialog/storybook-static/
 eria-cartograph/
 dist-types
