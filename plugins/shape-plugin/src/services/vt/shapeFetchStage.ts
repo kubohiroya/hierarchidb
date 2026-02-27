@@ -433,6 +433,8 @@ const buildFetchCacheMetadata = (params: {
   polygonCount: number;
   inputVertexCount?: number;
   inputPolygonCount?: number;
+  polygonPerFeatureMax?: number;
+  inputPolygonPerFeatureMax?: number;
   retryAttempt?: number;
 }): Record<string, unknown> => ({
   stage: 'fetch',
@@ -447,6 +449,8 @@ const buildFetchCacheMetadata = (params: {
   polygonCount: params.polygonCount,
   inputVertexCount: params.inputVertexCount,
   inputPolygonCount: params.inputPolygonCount,
+  polygonPerFeatureMax: params.polygonPerFeatureMax,
+  inputPolygonPerFeatureMax: params.inputPolygonPerFeatureMax,
   retryAttempt: Number.isFinite(params.retryAttempt ?? NaN)
     ? Math.trunc(params.retryAttempt!)
     : undefined,
@@ -724,17 +728,23 @@ const summarizeFeatureCollection = async (
   featureCount: number;
   vertexCount: number;
   polygonCount: number;
+  maxPolygonPerFeature: number;
   bbox: [number, number, number, number];
 }> => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
   let polygonCount = 0;
+  let maxPolygonPerFeature = 0;
   for (let featureIndex = 0; featureIndex < collection.features.length; featureIndex += 1) {
     await options?.onFeatureCountProgress?.(featureIndex + 1, featureCount);
     const feature = collection.features[featureIndex];
     if (!feature) continue;
     vertexCount += countVerticesFromGeometry(feature.geometry);
-    polygonCount += countPolygonsFromGeometry(feature.geometry);
+    const polygonCountPerFeature = countPolygonsFromGeometry(feature.geometry);
+    polygonCount += polygonCountPerFeature;
+    if (polygonCountPerFeature > maxPolygonPerFeature) {
+      maxPolygonPerFeature = polygonCountPerFeature;
+    }
   }
   let bbox: [number, number, number, number] = [0, 0, 0, 0];
   {
@@ -744,7 +754,7 @@ const summarizeFeatureCollection = async (
       bbox = [minX, minY, maxX, maxY];
     }
   }
-  return { featureCount, vertexCount, polygonCount, bbox };
+  return { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, bbox };
 };
 
 const buildFetchTasks = (
@@ -885,6 +895,13 @@ const createFetchHandler = (params: {
       featureCount?: number | null;
       inputPolygonCount?: number | null;
       polygonCount?: number | null;
+      inputPolygonPerFeatureMax?: number | null;
+      polygonPerFeatureMax?: number | null;
+    },
+    preview?: {
+      fetchCacheId?: string | null;
+      fetchCacheFormat?: 'flatgeobuf' | 'topojson';
+      fetchCacheCompression?: 'gzip' | 'none';
     },
   ): Record<string, unknown> => ({
     fetchDetail: {
@@ -900,6 +917,27 @@ const createFetchHandler = (params: {
         input: normalizeCount(counts.inputPolygonCount),
         output: normalizeCount(counts.polygonCount),
       },
+      polygonsPerFeature: {
+        input: normalizeCount(counts.inputPolygonPerFeatureMax),
+        output: normalizeCount(counts.polygonPerFeatureMax),
+      },
+    },
+    preview: {
+      stage: 'fetch',
+      sourceKey: input.sourceKey,
+      dataSource: input.dataSource,
+      sourceUrl: input.url,
+      sourceCountryCode: input.urlCountryCode || input.countryCode,
+      adminLevel: input.adminLevel,
+      rawSourceCacheKey: buildRawDataDataSourceCacheKey({
+        dataSource: input.dataSource,
+        countryCode: input.urlCountryCode,
+        adminLevel: input.adminLevel,
+        url: input.url,
+      }),
+      fetchCacheId: preview?.fetchCacheId ?? null,
+      fetchCacheFormat: preview?.fetchCacheFormat ?? 'flatgeobuf',
+      fetchCacheCompression: preview?.fetchCacheCompression ?? 'none',
     },
   });
 
@@ -934,6 +972,17 @@ const createFetchHandler = (params: {
     if (existing) {
       const createdAt = Date.now();
       let fetchArtifactHash = await resolveFetchArtifactHashFromRecord(ephemeralDB.fetchCache, existing);
+      const existingMetadata = isRecord(existing.metadata) ? existing.metadata : {};
+      const existingInputFeatureCount = existing.inputFeatureCount ?? existing.featureCount;
+      const existingOutputFeatureCount = existing.featureCount;
+      const cachedPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'polygonPerFeatureMax')
+        ?? (existingOutputFeatureCount > 0
+          ? (existing.polygonCount ?? 0) / existingOutputFeatureCount
+          : 0);
+      const cachedInputPolygonPerFeatureMax = readNumericProperty(existingMetadata, 'inputPolygonPerFeatureMax')
+        ?? (existingInputFeatureCount > 0
+          ? (existing.inputPolygonCount ?? existing.polygonCount ?? 0) / existingInputFeatureCount
+          : 0);
       const cachedCollection = await decodeFetchCacheData({
         data: existing.data,
         format: existing.format,
@@ -946,11 +995,13 @@ const createFetchHandler = (params: {
         countryCode: input.countryCode,
         adminLevel: input.adminLevel,
         featureCount: existing.featureCount,
-        inputFeatureCount: existing.inputFeatureCount ?? existing.featureCount,
+        inputFeatureCount: existingInputFeatureCount,
         vertexCount: existing.vertexCount ?? 0,
         polygonCount: existing.polygonCount ?? 0,
         inputVertexCount: existing.inputVertexCount ?? 0,
         inputPolygonCount: existing.inputPolygonCount ?? 0,
+        polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+        inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
       });
       if (cachedCollection && cachedCollection.features.length > 0) {
         const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
@@ -1025,10 +1076,16 @@ const createFetchHandler = (params: {
         status: 'completed',
         message: `reused: fetch cache exists (${cachedSummary})`,
         metadata: buildFetchDetailMetadata(input, {
-          inputFeatureCount: existing.inputFeatureCount ?? existing.featureCount,
+          inputFeatureCount: existingInputFeatureCount,
           featureCount: existing.featureCount,
           inputPolygonCount: existing.inputPolygonCount ?? cachedPolygonCount,
           polygonCount: cachedPolygonCount,
+          inputPolygonPerFeatureMax: cachedInputPolygonPerFeatureMax,
+          polygonPerFeatureMax: cachedPolygonPerFeatureMax,
+        }, {
+          fetchCacheId: existing.id,
+          fetchCacheFormat: existing.format === 'topojson' ? 'topojson' : 'flatgeobuf',
+          fetchCacheCompression: existing.compression === 'gzip' ? 'gzip' : 'none',
         }),
         outputData: {
           fetchCacheId: existing.id,
@@ -1105,6 +1162,8 @@ const createFetchHandler = (params: {
             featureCount: 0,
             inputPolygonCount: inputSummary.polygonCount,
             polygonCount: 0,
+            inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+            polygonPerFeatureMax: 0,
           }),
         };
       }
@@ -1149,6 +1208,21 @@ const createFetchHandler = (params: {
         polygonCount: outputSummary.polygonCount,
         inputVertexCount: inputSummary.vertexCount,
         inputPolygonCount: inputSummary.polygonCount,
+        metadata: buildFetchCacheMetadata({
+          status: 'completed',
+          dataSource: input.dataSource,
+          sourceKey: input.sourceKey,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          featureCount: outputSummary.featureCount,
+          inputFeatureCount: inputSummary.featureCount,
+          vertexCount: outputSummary.vertexCount,
+          polygonCount: outputSummary.polygonCount,
+          inputVertexCount: inputSummary.vertexCount,
+          inputPolygonCount: inputSummary.polygonCount,
+          polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
+          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+        }),
       });
       const reductionSummary = [
         formatChangeSummary('features', inputSummary.featureCount, outputSummary.featureCount),
@@ -1164,6 +1238,12 @@ const createFetchHandler = (params: {
           featureCount: outputSummary.featureCount,
           inputPolygonCount: inputSummary.polygonCount,
           polygonCount: outputSummary.polygonCount,
+          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+          polygonPerFeatureMax: outputSummary.maxPolygonPerFeature,
+        }, {
+          fetchCacheId: fetchCacheRecord.id,
+          fetchCacheFormat: 'topojson',
+          fetchCacheCompression: 'gzip',
         }),
         outputData: {
           fetchCacheId: fetchCacheRecord.id,
@@ -1237,6 +1317,8 @@ const createFetchHandler = (params: {
           featureCount: 0,
           inputPolygonCount: inputSummary.polygonCount,
           polygonCount: 0,
+          inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+          polygonPerFeatureMax: 0,
         }),
       };
     }
@@ -1257,7 +1339,7 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
+    const { featureCount, vertexCount, polygonCount, maxPolygonPerFeature, bbox } = await summarizeFeatureCollection(filteredCollection, geometryEngine, {
       onFeatureCountProgress,
     });
     const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
@@ -1290,6 +1372,8 @@ const createFetchHandler = (params: {
         polygonCount,
         inputVertexCount: inputSummary.vertexCount,
         inputPolygonCount: inputSummary.polygonCount,
+        polygonPerFeatureMax: maxPolygonPerFeature,
+        inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
       }),
     });
     const reductionSummary = [
@@ -1306,6 +1390,12 @@ const createFetchHandler = (params: {
         featureCount,
         inputPolygonCount: inputSummary.polygonCount,
         polygonCount,
+        inputPolygonPerFeatureMax: inputSummary.maxPolygonPerFeature,
+        polygonPerFeatureMax: maxPolygonPerFeature,
+      }, {
+        fetchCacheId: fetchCacheRecord.id,
+        fetchCacheFormat: 'flatgeobuf',
+        fetchCacheCompression: 'none',
       }),
       outputData: {
         fetchCacheId: fetchCacheRecord.id,
