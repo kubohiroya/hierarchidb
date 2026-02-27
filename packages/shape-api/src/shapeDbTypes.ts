@@ -4,6 +4,11 @@ export type ShapeBuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'co
 
 import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
+export interface ShapeFetchStageMaxima {
+  featureMax: number;
+  polygonMax: number;
+}
+
 export interface ShapeBuildSessionRecord<
   Progress = ShapeBuildProgressSummary,
   StageMap = Record<string, unknown>,
@@ -30,6 +35,7 @@ export interface ShapeBuildSessionRecord<
   stageId?: string;
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
+  fetchStageMaxima?: ShapeFetchStageMaxima;
 }
 
 export interface ShapeFeatureRecord {

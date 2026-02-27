@@ -351,8 +351,8 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI<TreeNodeData> 
   async getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = await this.coreDB.nodes.get(nodeId);
     if (!node) return undefined;
-    const withMeta = await this.ensureDraftMetadata(node ?? undefined, undefined, true);
-    const withDraft = await this.ensureDraftData(withMeta ?? node ?? undefined, true);
+    const withMeta = await this.ensureDraftMetadata(node ?? undefined, undefined, false);
+    const withDraft = await this.ensureDraftData(withMeta ?? node ?? undefined, false);
     const withUi = await this.ensureDialogUIState(withDraft ?? withMeta ?? node ?? undefined, false);
     return this.normalizeForUpdater(withUi ?? withDraft ?? withMeta ?? node ?? undefined);
   }

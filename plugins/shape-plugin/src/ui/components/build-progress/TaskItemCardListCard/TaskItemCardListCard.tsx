@@ -17,8 +17,10 @@ import {
   buildSimpleTaskOutcomeSummary,
   buildTransformTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
-import { TaskItemDetailSnackbar } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailSnackbar';
-import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import {
+  TaskItemDetailFloatingWindow,
+  type TaskDetailSelection,
+} from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailSnackbar';
 
 type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
 
@@ -33,6 +35,12 @@ type TaskItemCardListCardProps = {
   scrollRequestId?: number;
   virtualize?: boolean;
   summaryBuilders?: TaskStageSummaryBuilderMap;
+  isDetailFloatingWindowOpen?: boolean;
+  isOpeningPending?: boolean;
+  onOpenDetailFloatingWindow?: () => void;
+  onCloseDetailFloatingWindow?: () => void;
+  floatingWindowZIndex?: number;
+  onRequestBringFloatingWindowToFront?: () => void;
 };
 
 export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCardListCardProps>(({
@@ -46,8 +54,15 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   scrollRequestId,
   virtualize = true,
   summaryBuilders,
+  isDetailFloatingWindowOpen = false,
+  isOpeningPending = false,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex = 1,
+  onRequestBringFloatingWindowToFront,
 }: TaskItemCardListCardProps, ref) => {
-  const [hoveredDetail, setHoveredDetail] = useState<{ title: string; summary: TaskOutcomeSummary } | null>(null);
+  const [hoveredDetail, setHoveredDetail] = useState<TaskDetailSelection | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<TaskDetailSelection | null>(null);
   const { t } = useTranslation();
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => {
@@ -81,6 +96,11 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           ? buildTransformTaskOutcomeSummary
           : (taskStageId === 'fetch' ? buildFetchTaskOutcomeSummary : buildSimpleTaskOutcomeSummary)
       );
+    const currentTaskDetailId = task.taskId ?? resolveTaskTitle(task as TaskItemWithMetadata);
+    const selectedTaskDetailId = selectedDetail?.task.taskId ?? selectedDetail?.title;
+    const hoveredTaskDetailId = hoveredDetail?.task.taskId ?? hoveredDetail?.title;
+    const isDetailSelected = selectedTaskDetailId === currentTaskDetailId;
+    const isDetailHoverPreviewActive = !selectedDetail && hoveredTaskDetailId === currentTaskDetailId;
     return (
       <Box key={key} sx={style} data-task-id={task.taskId ?? undefined}>
         <TaskItemCard
@@ -93,17 +113,41 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           stageIcon={stageIcon}
           translate={t}
           summaryBuilder={summaryBuilder}
-          onDetailHoverChange={setHoveredDetail}
+          isDetailSelected={isDetailSelected}
+          isDetailHoverPreviewActive={isDetailHoverPreviewActive}
+          onDetailHoverChange={(value) => {
+            if (selectedDetail) return;
+            setHoveredDetail(value);
+          }}
+          onDetailClick={(value) => {
+            setHoveredDetail(null);
+            setSelectedDetail((previous) => {
+              const previousId = previous?.task.taskId ?? previous?.title;
+              const clickedId = value.task.taskId ?? value.title;
+              if (previousId === clickedId) return null;
+              if (!previous && !isDetailFloatingWindowOpen) {
+                onOpenDetailFloatingWindow?.();
+              }
+              return value;
+            });
+          }}
         />
       </Box>
     );
-  }, [resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageId, stageValue, summaryBuilders, t]);
+  }, [hoveredDetail, isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, resolveStageIcon, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, selectedDetail, stageId, stageValue, summaryBuilders, t]);
 
   return (
     <Box
       ref={setRefs}
       onWheel={(event) => event.stopPropagation()}
-      sx={{ flex: 1, minHeight: 0, height: '100%', overflow: 'auto' }}
+      sx={{
+        position: 'relative',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        overflow: 'auto',
+        cursor: isOpeningPending ? 'wait' : 'default',
+      }}
     >
       {shouldVirtualize ? (
         <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
@@ -132,7 +176,14 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           })}
         </Box>
       )}
-      <TaskItemDetailSnackbar detail={hoveredDetail} />
+      <TaskItemDetailFloatingWindow
+        open={isDetailFloatingWindowOpen}
+        detail={selectedDetail ?? hoveredDetail}
+        onClose={onCloseDetailFloatingWindow ?? (() => {})}
+        zIndex={floatingWindowZIndex}
+        onRequestBringToFront={onRequestBringFloatingWindowToFront}
+        stageId={stageId}
+      />
     </Box>
   );
 });

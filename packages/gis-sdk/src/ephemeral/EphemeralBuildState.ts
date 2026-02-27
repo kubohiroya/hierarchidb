@@ -39,6 +39,11 @@ export interface EphemeralStageStatus {
   message?: string;
 }
 
+export interface EphemeralFetchStageMaxima {
+  featureMax: number;
+  polygonMax: number;
+}
+
 export interface EphemeralBuildSessionRecord {
   nodeId: NodeId;
   domainType?: EphemeralDomainType;
@@ -63,6 +68,7 @@ export interface EphemeralBuildSessionRecord {
   stageId?: string;
   elapsedMs?: number;
   elapsedByStage?: Record<string, number>;
+  fetchStageMaxima?: EphemeralFetchStageMaxima;
 }
 
 export interface EphemeralBuildTaskRecord<TInput = unknown, TOutput = unknown> {

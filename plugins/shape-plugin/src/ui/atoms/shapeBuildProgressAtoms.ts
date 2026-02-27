@@ -1,10 +1,12 @@
 import { atom } from 'jotai';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { BuildTaskSummary } from '@hierarchidb/build-api';
 import type { TaskStage } from '@hierarchidb/build-api';
 
 export type ShapeBuildTaskSummary = Omit<BuildTaskSummary, 'stage'> & {
+  nodeId?: NodeId;
   stage: TaskStage;
   index?: number;
   stagePriority?: number;

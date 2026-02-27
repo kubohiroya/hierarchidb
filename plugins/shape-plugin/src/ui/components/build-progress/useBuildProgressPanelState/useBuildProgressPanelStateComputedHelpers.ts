@@ -16,10 +16,12 @@ export const isGenericFailureMessage = (
   message: string | null | undefined,
   display?: ShapeBuildTaskSummary['display'],
 ): boolean => {
+  if (!message) {
+    return true;
+  }
   const normalized = message.toLowerCase();
   return (
-    !message
-    || normalized === 'failed'
+    normalized === 'failed'
     || normalized === 'stage task failed'
     || isTaskPhaseMessage(message)
     || isTaskPhaseDisplay(display)

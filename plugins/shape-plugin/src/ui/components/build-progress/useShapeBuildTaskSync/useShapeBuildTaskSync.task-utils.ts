@@ -67,7 +67,7 @@ export const resolveTaskProgress = (
   message?: string | null,
   progress?: number,
 ): ShapeBuildTaskSummary['progress'] => {
-  const safeProgress = Number.isFinite(progress) ? progress : 0;
+  const safeProgress = typeof progress === 'number' && Number.isFinite(progress) ? progress : 0;
   if (status === 'completed' || status === 'failed' || isTaskSkipped(display, message)) {
     return 100;
   }

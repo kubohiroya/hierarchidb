@@ -34,6 +34,12 @@ type BuildProgressStageContentStateArgs = {
   resolveTaskTitle: (task: TaskItemWithMetadata) => string;
   t: (key: string, fallback: string) => string;
   matchesSearchQuery: (task: TaskItemWithMetadata) => boolean;
+  isDetailFloatingWindowOpen: boolean;
+  isOpeningPending?: boolean;
+  onOpenDetailFloatingWindow: () => void;
+  onCloseDetailFloatingWindow: () => void;
+  floatingWindowZIndex: number;
+  onRequestBringFloatingWindowToFront: () => void;
 };
 
 export type BuildProgressStageContentState = {
@@ -62,6 +68,12 @@ export type BuildProgressStageContentState = {
   handleScrollToDirection: (direction: 'up' | 'down') => void;
   setAriaScrollToTaskId: (taskId: string) => void;
   disableVirtualization: boolean;
+  isDetailFloatingWindowOpen: boolean;
+  isOpeningPending: boolean;
+  onOpenDetailFloatingWindow: () => void;
+  onCloseDetailFloatingWindow: () => void;
+  floatingWindowZIndex: number;
+  onRequestBringFloatingWindowToFront: () => void;
 };
 
 export const useBuildProgressStageContentState = ({
@@ -77,6 +89,12 @@ export const useBuildProgressStageContentState = ({
   resolveTaskTitle,
   t,
   matchesSearchQuery,
+  isDetailFloatingWindowOpen,
+  isOpeningPending = false,
+  onOpenDetailFloatingWindow,
+  onCloseDetailFloatingWindow,
+  floatingWindowZIndex,
+  onRequestBringFloatingWindowToFront,
 }: BuildProgressStageContentStateArgs): BuildProgressStageContentState => {
   const filter = useBuildStageFilter();
   const stageTasks = tasksByStage[stage.id] ?? [];
@@ -272,5 +290,11 @@ export const useBuildProgressStageContentState = ({
     handleScrollToDirection,
     setAriaScrollToTaskId,
     disableVirtualization,
+    isDetailFloatingWindowOpen,
+    isOpeningPending,
+    onOpenDetailFloatingWindow,
+    onCloseDetailFloatingWindow,
+    floatingWindowZIndex,
+    onRequestBringFloatingWindowToFront,
   };
 };

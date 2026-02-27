@@ -37,6 +37,7 @@ export type {
 export { DEFAULT_BUILD_CONFIG, DEFAULT_PROCESSING_CONFIG } from './defaults.js';
 export type {
   ShapeBuildStopReason,
+  ShapeFetchStageMaxima,
   ShapeBuildSessionRecord,
   ShapeFeatureRecord,
   ShapeVectorTileRecord,

@@ -283,9 +283,30 @@ export const createTransformByBandHandler = (
     if (!Number.isFinite(used) || !Number.isFinite(limit)) return null;
     return Math.round((used / limit) * 1000) / 1000;
   };
+  const buildTransformPreviewMetadata = (
+    nodeId: NodeId,
+    input: TransformByBandTaskInput | null,
+  ): Record<string, unknown> | null => {
+    if (!input) return null;
+    const transformCacheId = `${nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
+    return {
+      stage: 'transform',
+      fetchCacheId: input.fetchCacheId,
+      fetchCacheFormat: input.fetchCacheFormat ?? 'flatgeobuf',
+      fetchCacheCompression: input.fetchCacheCompression ?? 'none',
+      transformCacheId,
+      sourceKey: input.sourceKey,
+      bandIndex: input.bandIndex,
+      dataSource: input.dataSource ?? null,
+      sourceUrl: input.sourceUrl ?? null,
+      sourceCountryCode: input.sourceCountryCode ?? input.countryCode ?? null,
+      adminLevel: input.adminLevel ?? null,
+    };
+  };
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
+    let currentInputForMetadata: TransformByBandTaskInput | null = null;
     let retryAttemptForTask = 0;
     let finalEffectiveToleranceForTask = Number.NaN;
     let inputFeatureCount = 0;
@@ -303,6 +324,10 @@ export const createTransformByBandHandler = (
       const metadata: Record<string, unknown> = {
         status: `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
       };
+      const preview = buildTransformPreviewMetadata(task.nodeId, currentInputForMetadata);
+      if (preview) {
+        metadata.preview = preview;
+      }
       if (Number.isFinite(effectiveTolerance)) {
         metadata.effectiveTolerance = effectiveTolerance;
       }
@@ -399,6 +424,7 @@ export const createTransformByBandHandler = (
       });
     }
     const input = task.inputData;
+    currentInputForMetadata = input ?? null;
     if (!input) {
       const resultMetadata = resolveResultMetadata('failed', finalEffectiveToleranceForTask);
       return {

@@ -48,8 +48,13 @@ type TransformBufferMeta = {
   id: string;
   sourceKey: string;
   fetchArtifactHash: string;
+  fetchCacheFormat?: 'flatgeobuf' | 'topojson';
+  fetchCacheCompression?: 'gzip' | 'none';
   adminLevel?: number;
   countryCode?: string;
+  dataSource?: string;
+  sourceUrl?: string;
+  sourceCountryCode?: string;
   featureCount: number;
   inputPolygonCount?: number;
   polygonCount?: number;
@@ -209,12 +214,20 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
       const input = isRecord(task.inputData) ? task.inputData : null;
       const sourceKey = readString(input?.sourceKey);
       if (!sourceKey) continue;
+      const preview = isRecord(task.metadata?.preview) ? task.metadata.preview : null;
+      const fetchCacheFormat = readString(preview?.fetchCacheFormat);
+      const fetchCacheCompression = readString(preview?.fetchCacheCompression);
       next.push({
         id: fetchCacheId,
         sourceKey,
         fetchArtifactHash,
+        fetchCacheFormat: fetchCacheFormat === 'topojson' ? 'topojson' : 'flatgeobuf',
+        fetchCacheCompression: fetchCacheCompression === 'gzip' ? 'gzip' : 'none',
         adminLevel: readNumber(input?.adminLevel) ?? undefined,
         countryCode: readString(input?.countryCode) ?? undefined,
+        dataSource: readString(input?.dataSource) ?? undefined,
+        sourceUrl: readString(input?.url) ?? undefined,
+        sourceCountryCode: readString(input?.urlCountryCode) ?? readString(input?.countryCode) ?? undefined,
         featureCount: readNumber(output?.featureCount) ?? 0,
         inputPolygonCount: readNumber(output?.polygonCount) ?? undefined,
         polygonCount: readNumber(output?.polygonCount) ?? undefined,
@@ -309,6 +322,8 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
         inputData: {
           fetchCacheId: buffer.id,
           fetchArtifactHash: buffer.fetchArtifactHash,
+          fetchCacheFormat: buffer.fetchCacheFormat,
+          fetchCacheCompression: buffer.fetchCacheCompression,
           bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
@@ -320,6 +335,9 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
           countryCode: buffer.countryCode?.trim().toUpperCase(),
           countryName,
           adminLevel: buffer.adminLevel,
+          dataSource: buffer.dataSource,
+          sourceUrl: buffer.sourceUrl,
+          sourceCountryCode: buffer.sourceCountryCode,
           configSignature: transformConfigSignature,
           cacheKey: cacheIdentity.cacheKey,
           inputHash: cacheIdentity.inputHash,

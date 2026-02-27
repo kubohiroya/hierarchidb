@@ -24,10 +24,9 @@ export const useShapeBuildDraftSaver = ({ activeNodeId, data, workerClient }: Ar
     try {
       const api = workerClient.getAPI();
       const updater = await api.getTreeNodeUpdaterAPI();
-      const node = await updater.getTreeNode(activeNodeId);
       const currentDraftData = (
-        node?.draftData && typeof node.draftData === 'object'
-          ? (node.draftData as Record<string, unknown>)
+        data && typeof data === 'object'
+          ? (data as unknown as Record<string, unknown>)
           : {}
       );
       await updater.updateTreeNode(activeNodeId, {
@@ -50,4 +49,3 @@ export const useShapeBuildDraftSaver = ({ activeNodeId, data, workerClient }: Ar
     saveDraftBeforeBuild,
   };
 };
-

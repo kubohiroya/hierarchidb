@@ -27,7 +27,7 @@ const createRootNode = async (core: CoreDB) => {
   });
 };
 
-describe('TreeNodeUpdaterService draft initialization (shape)', () => {
+describe('TreeNodeUpdaterService getTreeNode normalization (shape)', () => {
   let core: CoreDB;
   let drafts: TreeNodeUpdaterService;
 
@@ -42,7 +42,7 @@ describe('TreeNodeUpdaterService draft initialization (shape)', () => {
     CoreDB.resetInstance();
   });
 
-  it('seeds draftData from data when draftData is undefined', async () => {
+  it('returns draftData from data when draftData is undefined without persisting', async () => {
     const now = Date.now();
     const nodeId = `${TREE_ID}:shape-1` as NodeId;
     const data = {
@@ -79,10 +79,10 @@ describe('TreeNodeUpdaterService draft initialization (shape)', () => {
     expect(node?.draftData).toEqual(data);
 
     const stored = await core.nodes.get(nodeId);
-    expect((stored as { draftData?: unknown }).draftData).toEqual(data);
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
   });
 
-  it('seeds draftData from defaults when data and draftData are undefined', async () => {
+  it('returns default draftData when data and draftData are undefined without persisting', async () => {
     const now = Date.now();
     const nodeId = `${TREE_ID}:shape-2` as NodeId;
     await core.nodes.put({
@@ -110,11 +110,6 @@ describe('TreeNodeUpdaterService draft initialization (shape)', () => {
     );
 
     const stored = await core.nodes.get(nodeId);
-    expect((stored as { draftData?: { buildConfig?: unknown } }).draftData?.buildConfig).toEqual(
-      DEFAULT_BUILD_CONFIG
-    );
-    expect((stored as { draftData?: { processingConfig?: unknown } }).draftData?.processingConfig).toEqual(
-      DEFAULT_PROCESSING_CONFIG
-    );
+    expect((stored as { draftData?: unknown }).draftData).toBeUndefined();
   });
 });

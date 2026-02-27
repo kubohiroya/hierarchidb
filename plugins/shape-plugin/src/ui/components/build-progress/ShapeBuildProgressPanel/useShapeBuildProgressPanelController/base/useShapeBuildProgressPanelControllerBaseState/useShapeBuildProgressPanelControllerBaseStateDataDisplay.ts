@@ -109,6 +109,13 @@ type DisplayArgs = {
   paneProgressForDisplay: StateLike['paneProgress'];
   stageProgressForDisplay: Record<string, number>;
   stageLoadingState: StageMetadataMap<boolean>;
+  stagePreviewWindowOpenMap: StageMetadataMap<boolean>;
+  stagePreviewWindowPendingMap: StageMetadataMap<boolean>;
+  stagePreviewWindowZIndexMap: StageMetadataMap<number>;
+  openStagePreviewWindow: (stageId: string) => void;
+  toggleStagePreviewWindow: (stageId: string) => void;
+  bringStagePreviewWindowToFront: (stageId: string) => void;
+  closeStagePreviewWindow: (stageId: string) => void;
   stageConcurrencyIndicatorAriaLabels: StageMetadataMap<string>;
   stageLeadingControls: StageMetadataMap<ReactNode>;
   stageMenus: StageMetadataMap<BuildStepStageMenu>;
@@ -216,6 +223,13 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     paneProgressForDisplay,
     stageProgressForDisplay,
     stageLoadingState,
+    stagePreviewWindowOpenMap,
+    stagePreviewWindowPendingMap,
+    stagePreviewWindowZIndexMap,
+    openStagePreviewWindow,
+    toggleStagePreviewWindow,
+    bringStagePreviewWindowToFront,
+    closeStagePreviewWindow,
     stageConcurrencyIndicatorAriaLabels,
     stageLeadingControls,
     stageMenus,
@@ -340,6 +354,13 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     handleFetchRetryIndicatorClick,
     handleStageConcurrencyIndicatorClick,
     stageLoadingState,
+    stagePreviewWindowOpenMap,
+    stagePreviewWindowPendingMap,
+    stagePreviewWindowZIndexMap,
+    openStagePreviewWindow,
+    toggleStagePreviewWindow,
+    bringStagePreviewWindowToFront,
+    closeStagePreviewWindow,
     stageConcurrencyIndicatorAriaLabels,
     stageLeadingControls,
     stageMenus,

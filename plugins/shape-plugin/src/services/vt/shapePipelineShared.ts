@@ -30,6 +30,8 @@ import { resolveFetchArtifactHashFromRecord } from './shapeFetchArtifactHash.ts'
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
   fetchArtifactHash: string;
+  fetchCacheFormat?: 'flatgeobuf' | 'topojson';
+  fetchCacheCompression?: 'gzip' | 'none';
   bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
@@ -41,6 +43,9 @@ export type ShapeTransformByBandTaskInput = {
   countryCode?: string;
   countryName?: string;
   adminLevel?: number;
+  dataSource?: string;
+  sourceUrl?: string;
+  sourceCountryCode?: string;
   configSignature?: string;
   cacheKey?: string;
   inputHash?: string;
