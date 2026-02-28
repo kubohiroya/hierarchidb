@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #626 / `codex/feat/ui/flag-overlay-package` / start: 2026-02-28 17:48 JST
 - #623 / `codex/fix/app/plugin-registry-derivations-623` / start: 2026-02-28 17:15 JST
 - #621 / `codex/fix/app/build-session-queue-update-depth-621` / start: 2026-02-28 17:05 JST
 - #618 / `codex/feat/shape/vt-stage-visualization-and-fixes` / start: 2026-02-28 14:10 JST
@@ -132,6 +133,10 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-28 17:53 JST #626 `packages/ui/flag-overlay` を新規追加し、`FlagOverlay`（ISOコード + x,y 配列で国旗重ね描き）と `flagEmoji` ユーティリティ、単体テスト（6件）を実装。`pnpm -w turbo run format --filter @hierarchidb/ui-flag-overlay` / `build` / `typecheck` / `test` はすべて exit 0。
+- blocked: 2026-02-28 17:53 JST #626 ルート検証 `pnpm format` は差分外既知違反（`@hierarchidb/plugin-base` の Biome lint: `noExplicitAny` 等）で exit 1。副作用の自動整形差分は破棄済み。
+- blocked: 2026-02-28 17:53 JST #626 ルート検証 `pnpm typecheck` は差分外既知不整合（`packages/tools/build-scripts`: TS6133 / TS2307）で exit 2。`pnpm test` は差分外既知不整合（`packages/vt-orchestrator`: `@hierarchidb/gis-sdk` 解決失敗）で exit 1。
+- start: 2026-02-28 17:48 JST #626 を起票（https://github.com/kubohiroya/hierarchidb/issues/626）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-626` とブランチ `codex/feat/ui/flag-overlay-package` を `main` 起点で作成して着手。
 - start: 2026-02-28 17:15 JST #623 を起票（https://github.com/kubohiroya/hierarchidb/issues/623）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/plugin-registry-derivations-623` を作成して着手。
 - start: 2026-02-28 17:05 JST #621 を起票（https://github.com/kubohiroya/hierarchidb/issues/621）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/build-session-queue-update-depth-621` を作成して着手。
 - start: 2026-02-28 14:10 JST #618 を起票（https://github.com/kubohiroya/hierarchidb/issues/618）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/feat/shape/vt-stage-visualization-and-fixes` を作成して着手。
