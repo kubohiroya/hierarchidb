@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #604 / `codex/fix/plugin-dialog-safe-menu-popover-604` / start: 2026-02-28 10:38 JST
 - #601 / `codex/fix/plugin-registry-build-owned-generation-601` / start: 2026-02-28 10:28 JST
 - #597 / `codex/fix/shape/step6-preview-max-update-depth` / start: 2026-02-28 10:00 JST
 - #589 / `codex/fix/shape/step5-rebuild-fetch-preview` / start: 2026-02-28 08:06 JST
@@ -126,6 +127,10 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-28 10:45 JST #604 検証: `pnpm -w turbo run build --filter @hierarchidb/ui-dialog --filter @hierarchidb/components --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --only --output-logs errors-only` exit 0。`HIERARCHIDB_E2E=1 node_modules/.bin/playwright test e2e/shape/plugin-dialog-caret.spec.ts --project=chromium` exit 0（1 passed）。
+- blocked: 2026-02-28 10:45 JST #604 `pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/components --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --only --output-logs errors-only` は差分外既知依存欠落（`@hierarchidb/ui-dialog` で `@hierarchidb/tree-api` 解決不可 TS2307）により exit 2。
+- update: 2026-02-28 10:45 JST #604 原因は PluginDialog 内に散在する `Menu/Popover` ごとのフォーカス復元設定が局所実装で漏れやすく、新規 UI 追加時にキャレット回帰が再発していたこと。発生範囲は `plugin-ui-host`（Stepper/Footer）、`components`（BuildControlCard/BuildStepStagePanel/共通メニュー）、`shape-plugin`（overlay Popover）、および dialog 内利用可能な plugin UI（location/resolver のメニュー）。修正として `@hierarchidb/ui-dialog` に `DialogSafeMenu` / `DialogSafePopover` を新設し、対象箇所の `Menu/Popover` を共通ラッパーへ置換。さらに `eslint.config.js` に `packages/components`・`packages/plugin-ui-host`・`plugins/**/src/ui` で生の `Menu/Popover` import を禁止するガードを追加。適用範囲は上記 UI コンポーネント群と lint 設定。
+- start: 2026-02-28 10:38 JST #604 を起票（https://github.com/kubohiroya/hierarchidb/issues/604）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-604` とブランチ `codex/fix/plugin-dialog-safe-menu-popover-604` を `origin/main` 起点で作成して着手。
 - done: 2026-02-28 10:32 JST #601 検証: `pnpm -w turbo run build --filter @hierarchidb/plugin-registry` exit 0、`pnpm --filter @hierarchidb/app build` exit 0。`app build` で `generate-plugin-registry` ログが出ないことを確認。
 - update: 2026-02-28 10:32 JST #601 原因は `packages/tools/build-scripts/src/gen-plugin-registry.ts` が import 時にも実行される条件式（`import.meta.url === pathToFileURL(fileURLToPath(import.meta.url)).href`）になっており、`app/vite.config.ts` から関数 import しただけで再生成が走っていたこと。発生範囲は `app build` と `vite config load` 経路。修正として 1) `@hierarchidb/plugin-registry` の build 前段で `tools:gen-plugin-registry` を実行し責務を集約 2) `app/package.json` build から直接再生成を削除 3) `app/vite.config.ts` で generator plugin を `command === 'serve'` 限定化 4) `gen-plugin-registry.ts` の entry 判定を `process.argv[1]` ベースへ修正。適用範囲は `packages/plugin-registry/package.json`, `app/package.json`, `app/vite.config.ts`, `packages/tools/build-scripts/src/gen-plugin-registry.ts`。
 - start: 2026-02-28 10:28 JST #601 を起票（https://github.com/kubohiroya/hierarchidb/issues/601）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/plugin-registry-build-owned-generation-601` を作成して着手。

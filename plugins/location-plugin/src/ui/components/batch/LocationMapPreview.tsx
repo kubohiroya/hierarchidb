@@ -2,6 +2,7 @@
   * Location Map Preview Component
    */
 
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import {
   Box,
   Button,
@@ -10,7 +11,6 @@ import {
   DialogContent,
   DialogTitle,
   Fab,
-  Menu,
   MenuItem,
   MenuList,
   Paper,
@@ -368,7 +368,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
 
       {/*
 */}
-      <Menu
+      <DialogSafeMenu
         anchorEl={settingsAnchor}
         open={Boolean(settingsAnchor)}
         onClose={() => setSettingsAnchor(null)}
@@ -383,7 +383,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             {translations.mapPreview.menuAnalytics}
           </MenuItem>
         </MenuList>
-      </Menu>
+      </DialogSafeMenu>
 
       {/*
 */}

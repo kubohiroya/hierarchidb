@@ -1,7 +1,7 @@
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import {
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   Stack,
   Step,
@@ -228,10 +228,9 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           );
         })}
       </Stepper>
-      <Menu
+      <DialogSafeMenu
         open={Boolean(contextMenuState)}
         onClose={closeContextMenu}
-        disableRestoreFocus
         anchorReference="anchorPosition"
         anchorPosition={
           contextMenuState
@@ -257,7 +256,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           </ListItemIcon>
           <ListItemText>Copy Link URL</ListItemText>
         </MenuItem>
-      </Menu>
+      </DialogSafeMenu>
     </>
   );
 };

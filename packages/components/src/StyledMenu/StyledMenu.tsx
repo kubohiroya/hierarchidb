@@ -1,9 +1,10 @@
 import { alpha, styled } from '@mui/material/styles';
-import Menu, { type MenuProps } from '@mui/material/Menu';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { type MenuProps } from '@mui/material';
 import type { StyledComponent } from '@emotion/styled';
 
 export const StyledMenu: StyledComponent<MenuProps> = styled((props: MenuProps) => (
-  <Menu
+  <DialogSafeMenu
     elevation={0}
     anchorOrigin={{
       vertical: 'bottom',

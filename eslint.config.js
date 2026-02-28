@@ -184,4 +184,30 @@ export default [// Ignore _obsolate_common stage artifacts across the monorepo
     }],
   },
 },
+{
+  files: [
+    'packages/plugin-ui-host/src/**/*.{ts,tsx}',
+    'packages/components/src/**/*.{ts,tsx}',
+    'plugins/**/src/ui/**/*.{ts,tsx}',
+  ],
+  rules: {
+    'no-restricted-imports': ['error', {
+      paths: [
+        {
+          name: '@mui/material',
+          importNames: ['Menu', 'Popover'],
+          message: 'Use DialogSafeMenu / DialogSafePopover from @hierarchidb/ui-dialog for dialog-safe focus behavior.',
+        },
+        {
+          name: '@mui/material/Menu',
+          message: 'Use DialogSafeMenu from @hierarchidb/ui-dialog for dialog-safe focus behavior.',
+        },
+        {
+          name: '@mui/material/Popover',
+          message: 'Use DialogSafePopover from @hierarchidb/ui-dialog for dialog-safe focus behavior.',
+        },
+      ],
+    }],
+  },
+},
 ];

@@ -1,4 +1,5 @@
-import { Box, Button, CircularProgress, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { Box, Button, CircularProgress, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import {
   useCallback,
   useEffect,
@@ -184,11 +185,10 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
             <ArrowDropDownIcon fontSize="small" />
           </IconButton>
         ) : null}
-        <Menu
+        <DialogSafeMenu
           anchorEl={menuAnchorEl}
           open={isMenuOpen}
           onClose={handleMenuClose}
-          disableRestoreFocus
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
@@ -201,7 +201,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
               {item.label}
             </MenuItem>
           ))}
-        </Menu>
+        </DialogSafeMenu>
       </Stack>
       {details && details.length > 0 ? (
         <Stack direction="row" spacing={2} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
