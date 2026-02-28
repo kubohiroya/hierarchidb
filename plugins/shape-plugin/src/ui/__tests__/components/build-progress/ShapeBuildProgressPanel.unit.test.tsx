@@ -409,6 +409,67 @@ describe('ShapeBuildProgressPanel', () => {
     expect(screen.queryByText('No tasks yet.')).toBeNull();
   });
 
+  it('keeps VT stage in skeleton while transform tasks are running', async () => {
+    const store = makeStore();
+    const fetchCompletedTask: ShapeBuildTaskSummary = {
+      taskId: 'task-fetch-completed',
+      nodeId: 'node-1',
+      stage: 'fetch',
+      taskType: 'fetch',
+      status: 'completed',
+      progress: 100,
+      message: 'fetch completed',
+    } as ShapeBuildTaskSummary;
+    const transformRunningTask: ShapeBuildTaskSummary = {
+      taskId: 'task-transform-running',
+      nodeId: 'node-1',
+      stage: 'transform',
+      taskType: 'transform',
+      status: 'running',
+      progress: 45,
+      message: 'transform running',
+    } as ShapeBuildTaskSummary;
+    store.set(tasksLoadingAtom, false);
+    store.set(taskSummaryLoadingAtom, false);
+    store.set(taskListViewPhaseAtom, 'streaming');
+    store.set(tasksByStageAtom, {
+      fetch: [fetchCompletedTask],
+      transform: [transformRunningTask],
+      vt: [],
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Transform',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 45,
+      completed: 1,
+      total: 2,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: 'transform',
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Build controls')).toBeTruthy();
+    });
+
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
+    expect(skeletons.length).toBeGreaterThan(0);
+    expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
   it('shows pausing label while pause request is in-flight', async () => {
     const store = makeStore();
     store.set(taskProgressControlsAtom, {
