@@ -56,15 +56,30 @@ export const buildVtParentInputSummary = (params: {
 }): VtParentInputSummaryMetadata => {
   let intersectingFeatureCount = 0;
   let intersectingGeojsonByteSize = 0;
+  const intersectingAreaByCountry = new Map<string, number>();
   params.featureStats.forEach((stats) => {
     if (!bboxIntersects(stats.bbox, params.parentBBox)) return;
     intersectingFeatureCount += 1;
     intersectingGeojsonByteSize += stats.geojsonByteSize ?? 0;
+    const countryCode = typeof stats.countryCode === 'string' ? stats.countryCode.trim().toUpperCase() : '';
+    const area = typeof stats.featureAreaSqMeters === 'number' && Number.isFinite(stats.featureAreaSqMeters)
+      ? Math.max(0, stats.featureAreaSqMeters)
+      : 0;
+    if (!countryCode || area <= 0) return;
+    intersectingAreaByCountry.set(countryCode, (intersectingAreaByCountry.get(countryCode) ?? 0) + area);
   });
+  const topCountriesByIntersectingArea = Array.from(intersectingAreaByCountry.entries())
+    .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+    .slice(0, 2)
+    .map(([countryCode, intersectingAreaSqMeters]) => ({
+      countryCode,
+      intersectingAreaSqMeters,
+    }));
   return {
     parentTile: params.parentTile,
     intersectingFeatureCount,
     intersectingGeojsonByteSize,
+    topCountriesByIntersectingArea,
   };
 };
 

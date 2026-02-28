@@ -1155,6 +1155,7 @@ export const TaskItemDetailWindow = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, open]);
+
   useEffect(() => {
     if (open) {
       show();

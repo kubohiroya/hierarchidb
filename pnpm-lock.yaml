@@ -1979,6 +1979,15 @@ importers:
         specifier: ^19.0.0
         version: 19.2.4
 
+  packages/ui/flag-overlay:
+    devDependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
+
   packages/ui/floating-window:
     dependencies:
       '@emotion/react':
@@ -4042,6 +4051,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-flag-overlay':
+        specifier: workspace:*
+        version: link:../../packages/ui/flag-overlay
       '@hierarchidb/ui-floating-window':
         specifier: workspace:*
         version: link:../../packages/ui/floating-window

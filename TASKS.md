@@ -39,6 +39,7 @@
 
 ### Doing
 - #636 / `codex/chore/cleanup/stashed-formatting-and-typedefs-636` / start: 2026-02-28 19:02 JST
+- #639 / `codex/feat/shape/step5-vt-task-flag-overlay-icon` / start: 2026-02-28 18:25 JST
 - #634 / `codex/fix/shape/vt-fit-button-move-left-2px-634` / start: 2026-02-28 18:52 JST
 - #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
 - #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
@@ -141,6 +142,10 @@
 ## 今日の運用ログ
 - start: 2026-02-28 19:02 JST #636 を起票（https://github.com/kubohiroya/hierarchidb/issues/636）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/chore/cleanup/stashed-formatting-and-typedefs-636` を作成して着手。
 - update: 2026-02-28 19:04 JST #636 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- update: 2026-02-28 18:34 JST #639 PR https://github.com/kubohiroya/hierarchidb/pull/640 を `main` 向けに作成し、Issue #639 へ実装要点・検証結果をコメント連携。
+- update: 2026-02-28 18:32 JST #639 原因は `vtStageFeatureCollectorRecordProcessor.ts` で `geometryArea` 呼び出し時に `geometryEngine` 引数が不足していたこと（TS2554）。発生範囲は `@hierarchidb/vt-orchestrator` の VT ステージ地物集計処理。修正として `geometryArea(feature, context.geometryEngine)` に変更し、面積集計メタデータの追加実装と整合させた。適用範囲は `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorRecordProcessor.ts`。
+- update: 2026-02-28 18:32 JST #639 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run` exit 0、`pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator -- --run src/vt/__tests__/vtStage.unit.test.ts` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator --output-logs errors-only` exit 0、`pnpm -w turbo run build --filter @hierarchidb/ui-flag-overlay --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0。
+- start: 2026-02-28 18:25 JST #639 を起票（https://github.com/kubohiroya/hierarchidb/issues/639）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-639` とブランチ `codex/feat/shape/step5-vt-task-flag-overlay-icon` を `main` 起点で作成して着手。
 - start: 2026-02-28 18:52 JST #634 を起票（https://github.com/kubohiroya/hierarchidb/issues/634）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-move-left-2px-634` を作成して着手。
 - update: 2026-02-28 18:54 JST #634 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - start: 2026-02-28 18:30 JST #632 を起票（https://github.com/kubohiroya/hierarchidb/issues/632）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-size-adjust-632` を作成して着手。

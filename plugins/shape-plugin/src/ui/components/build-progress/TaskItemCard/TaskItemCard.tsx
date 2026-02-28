@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { Box } from '@mui/material';
+import { FlagOverlay } from '@hierarchidb/ui-flag-overlay';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import type { TaskItemWithMetadata } from '~/ui/components/build-progress/taskItemCardList/types';
@@ -76,6 +77,27 @@ const toFlagEmoji = (countryCode: string | null): string | null => {
   return String.fromCodePoint(first, second);
 };
 
+const resolveVtTopCountryCodes = (task: ShapeBuildTaskSummary): string[] => {
+  if (task.stage !== 'vt') return [];
+  const metadata = (task.metadata && typeof task.metadata === 'object')
+    ? task.metadata as Record<string, unknown>
+    : null;
+  const summary = (metadata?.vtParentInputSummary && typeof metadata.vtParentInputSummary === 'object')
+    ? metadata.vtParentInputSummary as Record<string, unknown>
+    : null;
+  const rows = Array.isArray(summary?.topCountriesByIntersectingArea)
+    ? summary.topCountriesByIntersectingArea as unknown[]
+    : [];
+  return rows
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const code = (row as Record<string, unknown>).countryCode;
+      return typeof code === 'string' ? code.trim().toUpperCase() : null;
+    })
+    .filter((value): value is string => Boolean(value && /^[A-Z]{2}$/.test(value)))
+    .slice(0, 2);
+};
+
 export const TaskItemCard = ({
   task,
   stageId,
@@ -122,8 +144,34 @@ export const TaskItemCard = ({
 
   const countryCode = resolveCountryCodeFromTask(task, taskTitle);
   const flag = toFlagEmoji(countryCode);
-  const leadingIcon: ReactNode = flag
+  const vtTopCountryCodes = resolveVtTopCountryCodes(task);
+  const leadingIcon: ReactNode = vtTopCountryCodes.length > 0
     ? (
+      <Box
+        data-testid="task-icon-vt-flag-overlay"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 22,
+          height: 16,
+          opacity: task.status === 'recycled' ? 0.5 : 1,
+        }}
+      >
+        <FlagOverlay
+          width={22}
+          height={16}
+          defaultFlagSize={12}
+          items={vtTopCountryCodes.map((isoCode, index) => ({
+            isoCode,
+            x: index === 0 ? 8 : 13,
+            y: index === 0 ? 8 : 9,
+          }))}
+        />
+      </Box>
+    )
+    : flag
+      ? (
       <Box
         data-testid="task-icon-flag"
         sx={{
@@ -138,8 +186,8 @@ export const TaskItemCard = ({
       >
         <span aria-label={countryCode ?? 'country-flag'}>{flag}</span>
       </Box>
-    )
-    : (stageIcon ?? null);
+      )
+      : (stageIcon ?? null);
 
   return (
     <TaskItem
