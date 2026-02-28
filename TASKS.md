@@ -38,7 +38,6 @@
 ## Kanban
 
 ### Doing
-- #599 / `codex/fix/shape/step5-chip-window-sync-599` / start: 2026-02-28 10:14 JST
 - #597 / `codex/fix/shape/step6-preview-max-update-depth` / start: 2026-02-28 10:00 JST
 - #589 / `codex/fix/shape/step5-rebuild-fetch-preview` / start: 2026-02-28 08:06 JST
 - #576 / `codex/chore/plugin-registry-ignore-generated-dir` / start: 2026-02-27 20:53 JST
