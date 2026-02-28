@@ -43,7 +43,6 @@
 - #618 / `codex/feat/shape/vt-stage-visualization-and-fixes` / start: 2026-02-28 14:10 JST
 - #615 / `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` / start: 2026-02-28 13:45 JST
 - #617 / `codex/refactor/shape/rename-task-item-detail-window-617` / start: 2026-02-28 14:03 JST
-- #615 / `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` / start: 2026-02-28 13:45 JST
 - #613 / `codex/fix/shape/ingest-main-diff-613` / start: 2026-02-28 12:55 JST
 - #611 / `codex/fix/build/ts2307-shape-tests-611` / start: 2026-02-28 12:28 JST
 - #604 / `codex/fix/plugin-dialog-safe-menu-popover-604` / start: 2026-02-28 10:38 JST
