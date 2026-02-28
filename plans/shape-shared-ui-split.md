@@ -36,7 +36,7 @@ Preview/build/progress logic and large processing panels were decomposed into fo
 The shape plugin’s Step UI lives under `plugins/shape-plugin/src/ui/components/steps` and uses hooks under `plugins/shape-plugin/src/ui/hooks`. Several files are large and mix multiple responsibilities:
 
 * `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` handles preview metadata loading, search/filtering, selection context, table rows/columns, and MapLibre layer management.
-* `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts` handles progress status, stage definitions, task grouping, and start/resume/pause actions.
+* `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts` handles progress status, stage definitions, task grouping, and start/pause/cancel actions.
 * `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` mixes subscription wiring, polling, and progress/status mapping.
 * `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` and `DownloadConfigSection.tsx` render multiple distinct UI panels in a single file.
 

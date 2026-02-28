@@ -47,60 +47,6 @@ export const onTraceFailure = (
   });
 };
 
-export const runResumeSessionRequest = async (context: BaseRequestContext): Promise<void> => {
-  const {
-    activeNodeId,
-    bridgeRef,
-    startupSource,
-    onTrace,
-    requestStartedAt,
-    advanceBuildSessionTransitionPhase,
-    beginBuildStartupStep,
-    finishBuildStartupStep,
-    emitBuildSessionTransitionLog,
-    runTimedStep,
-    updateSessionRecord,
-  } = context;
-
-  const bridgeApi = bridgeRef.current;
-  if (!bridgeApi || !activeNodeId) {
-    return;
-  }
-
-  advanceBuildSessionTransitionPhase('starting-session');
-  beginBuildStartupStep('session-resume-request', { source: startupSource });
-  await runTimedStep('session-resume-request', () => bridgeApi.resumeBuildSession(
-    SHAPE_NODE_TYPE,
-    activeNodeId,
-  ));
-  finishBuildStartupStep('session-resume-request', 'success');
-  emitBuildSessionTransitionLog('info', 'resume session requested', {
-    source: startupSource,
-  });
-
-  void updateSessionRecord({
-    status: 'running',
-    stopReason: undefined,
-    canResume: false,
-  });
-
-  advanceBuildSessionTransitionPhase('receiving-task-snapshot', {
-    level: 'info',
-    message: 'Build resumed. Waiting for worker task updates...',
-  });
-  beginBuildStartupStep('receiving-task-snapshot', {
-    source: startupSource,
-    mode: 'resume',
-  });
-  onTrace({
-    event: 'request-finished:success',
-    payload: {
-      nextStatus: 'processing',
-      elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-    },
-  });
-};
-
 export const runStartSessionRequest = async (context: StartSessionRequestContext): Promise<StartSessionResult> => {
   const {
     activeNodeId,

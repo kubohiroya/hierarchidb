@@ -24,10 +24,6 @@ export interface BuildWorkerBridge {
   getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
-  resumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId
-  ): Promise<void>;
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
   subscribeBuildTasks(
     nodeType: NodeType,
@@ -186,14 +182,6 @@ class WorkerBridgeImpl implements BuildWorkerBridge {
   async cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.cancelQueuedBuildSession(nodeType, nodeId, reason);
-  }
-
-  async resumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId
-  ): Promise<void> {
-    const api = await ensureWorkerAPI();
-    await api.resumeBuildSession(nodeType, nodeId);
   }
 
   async getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]> {

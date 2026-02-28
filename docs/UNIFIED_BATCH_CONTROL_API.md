@@ -7,7 +7,7 @@ Runtime-level `Batch*` compatibility aliases are removed; only canonical `Build*
 
 - Node types: shape, location, route (and future plugins)
 - Execution host: SharedWorker runtime
-- Session semantics: start/resume share one incremental execution path
+- Session semantics: `startBuildSession` is the single incremental execution entry
 
 ## 2. Canonical API Names
 
@@ -15,7 +15,6 @@ Runtime-level `Batch*` compatibility aliases are removed; only canonical `Build*
 startBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
 getBuildSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BuildSessionStatus>
 pauseBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
-resumeBuildSession(nodeType: NodeType, nodeId: NodeId): Promise<void>
 cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>
 getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>
 subscribeBuildTasks(
@@ -35,6 +34,7 @@ subscribeBuildProgress(
 - `Batch*` API names are retained only as historical references in migration material.
 - New code must call `Build*` APIs.
 - Compatibility at runtime should not introduce new `Batch*` usage.
+- New code must use `startBuildSession` for Start semantics (including prior Resume-labeled UI actions).
 
 ## 4. Event Vocabulary
 
@@ -44,7 +44,7 @@ subscribeBuildProgress(
 
 ## 5. Runtime Rules
 
-- `start` and `resume` are the same incremental pipeline path.
+- `startBuildSession` is the single incremental pipeline path.
 - `cancelQueuedBuildSession`:
   - If target is queued: remove from queue.
   - If target is already running: treat as stop/pause semantics.
@@ -66,7 +66,6 @@ subscribeBuildProgress(
   - `startBuildSession`
   - `getBuildSessionStatus`
   - `pauseBuildSession`
-  - `resumeBuildSession`
   - `cancelQueuedBuildSession`
   - `getBuildTasks`
   - `subscribeBuildTasks`

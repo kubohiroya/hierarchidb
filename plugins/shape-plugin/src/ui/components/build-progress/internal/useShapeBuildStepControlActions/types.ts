@@ -24,7 +24,6 @@ export type BuildStartupStep =
   | 'draft-save'
   | 'worker-initialize'
   | 'payload-build'
-  | 'session-resume-request'
   | 'session-start-request'
   | 'session-status-persist'
   | 'receiving-task-snapshot';
@@ -54,7 +53,7 @@ export type ShapeBuildSessionPatch = Partial<ShapeBuildSessionRecord> & {
 
 export type BridgeApi = Pick<
   BuildWorkerBridge,
-  'initialize' | 'startBuildSession' | 'resumeBuildSession' | 'pauseBuildSession' | 'cancelQueuedBuildSession'
+  'initialize' | 'startBuildSession' | 'pauseBuildSession' | 'cancelQueuedBuildSession'
 >;
 
 export type ControlActionsArgs = {
@@ -85,8 +84,8 @@ export type ControlActionsArgs = {
   tryAcquireBuildLock: (options?: { notifyOnFailure?: boolean }) => Promise<boolean>;
   waitForBuildLock: (requestedAt: number) => Promise<boolean>;
   cancelStartRequestRef: React.MutableRefObject<boolean>;
+  setRequestedControlAction: (next: 'none' | 'start' | 'pause' | 'cancel') => void;
   saveDraftBeforeBuild: () => Promise<boolean>;
-  refreshTasks: () => void | Promise<void>;
   updateSessionRecord: (patch: ShapeBuildSessionPatch) => Promise<boolean>;
   setIsStopRequested: (next: boolean) => void;
   setIsStopAccepted: (next: boolean) => void;
@@ -109,8 +108,8 @@ export type StartOrResumeControlActionsArgs = Pick<
   | 'tryAcquireBuildLock'
   | 'waitForBuildLock'
   | 'cancelStartRequestRef'
+  | 'setRequestedControlAction'
   | 'saveDraftBeforeBuild'
-  | 'refreshTasks'
   | 'updateSessionRecord'
   | 'setIsStopRequested'
   | 'setIsStopAccepted'
@@ -136,6 +135,7 @@ export type PauseControlActionsArgs = Pick<
   | 'isStopRequestedInFlight'
   | 'bridgeRef'
   | 'clearStartPendingRef'
+  | 'setRequestedControlAction'
   | 'setIsStopRequested'
   | 'setIsStopAccepted'
 >;
@@ -151,6 +151,7 @@ export type CancelQueuedControlActionsArgs = Pick<
   | 'clearStartPendingRef'
   | 'buildSessionTransitionActive'
   | 'cancelStartRequestRef'
+  | 'setRequestedControlAction'
   | 'releaseBuildLock'
   | 'finishBuildSessionTransition'
   | 'isStopRequestedInFlight'

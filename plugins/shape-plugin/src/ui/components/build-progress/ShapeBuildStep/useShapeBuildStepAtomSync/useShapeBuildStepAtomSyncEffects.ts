@@ -3,6 +3,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { TaskProgressAuthState, TaskProgressControls, TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { shallowEqualRecord, shallowEqualTaskProgressSummary } from '~/ui/components/build-progress/shapeBuildStepAtomSyncEquality';
 
 type StageTotalMap = Record<
@@ -35,12 +36,15 @@ type UseShapeBuildStepAtomSyncAtomEffectsParams = {
   setSummary: Dispatch<SetStateAction<TaskProgressSummary>>;
   setTaskSummaryLoading: Dispatch<SetStateAction<boolean>>;
   isTaskSummaryLoading: boolean;
+  setTaskListViewPhase: Dispatch<SetStateAction<TaskListViewPhase>>;
+  taskListViewPhase: TaskListViewPhase;
   setControls: Dispatch<SetStateAction<TaskProgressControls>>;
   setAuth: Dispatch<SetStateAction<TaskProgressAuthState>>;
   canStartOrResume: boolean | undefined;
   statusLabel: string;
   showResumeLabel: boolean | undefined;
   isStartPending: boolean | undefined;
+  requestedControlAction: 'none' | 'start' | 'pause' | 'cancel' | undefined;
   stopRequested: boolean | undefined;
   stableHandleStartOrResume: () => Promise<void>;
   stableHandlePause: () => void;
@@ -50,6 +54,7 @@ type UseShapeBuildStepAtomSyncAtomEffectsParams = {
   stableHandleProviderSelect: (provider: AuthProviderType) => void;
   summaryRef: MutableRefObject<TaskProgressSummary | null>;
   taskSummaryLoadingRef: MutableRefObject<boolean | null>;
+  taskListViewPhaseRef: MutableRefObject<TaskListViewPhase | null>;
   controlsRef: MutableRefObject<TaskProgressControls | null>;
   authRef: MutableRefObject<TaskProgressAuthState | null>;
 };
@@ -74,12 +79,15 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   setSummary,
   setTaskSummaryLoading,
   isTaskSummaryLoading,
+  setTaskListViewPhase,
+  taskListViewPhase,
   setControls,
   setAuth,
   canStartOrResume,
   statusLabel,
   showResumeLabel,
   isStartPending,
+  requestedControlAction,
   stopRequested,
   stableHandleStartOrResume,
   stableHandlePause,
@@ -89,6 +97,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   stableHandleProviderSelect,
   summaryRef,
   taskSummaryLoadingRef,
+  taskListViewPhaseRef,
   controlsRef,
   authRef,
 }: UseShapeBuildStepAtomSyncAtomEffectsParams): void => {
@@ -142,11 +151,18 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   }, [isTaskSummaryLoading, setTaskSummaryLoading, taskSummaryLoadingRef]);
 
   useEffect(() => {
+    if (taskListViewPhaseRef.current === taskListViewPhase) return;
+    taskListViewPhaseRef.current = taskListViewPhase;
+    setTaskListViewPhase(taskListViewPhase);
+  }, [setTaskListViewPhase, taskListViewPhase, taskListViewPhaseRef]);
+
+  useEffect(() => {
     const nextControls: TaskProgressControls = {
       canStartOrResume: Boolean(canStartOrResume),
       statusLabel,
       showResumeLabel: Boolean(showResumeLabel),
       startPending: Boolean(isStartPending),
+      requestedControlAction: requestedControlAction ?? 'none',
       handleStartOrResume: stableHandleStartOrResume,
       handlePause: stableHandlePause,
       handleCancelQueued: stableHandleCancelQueued,
@@ -158,6 +174,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
   }, [
     canStartOrResume,
     isStartPending,
+    requestedControlAction,
     stopRequested,
     setControls,
     showResumeLabel,

@@ -117,6 +117,13 @@ export const useShapeBuildProgressPanelViewModel = ({
       ),
     }
   ));
+  const requestedControlAction = controls.requestedControlAction ?? 'none';
+  const pauseLabel = controls.stopRequested && requestedControlAction === 'pause'
+    ? t('stage.controls.pausing', 'Pausing...')
+    : t('stage.controls.pause', 'Pause');
+  const cancelLabel = controls.stopRequested && requestedControlAction === 'cancel'
+    ? t('stage.controls.cancelling', 'Cancelling...')
+    : t('cancel', 'Cancel');
 
   return {
     status: summary.buildStatus,
@@ -145,8 +152,8 @@ export const useShapeBuildProgressPanelViewModel = ({
     controlMenuItems,
     controlMenuAriaLabel,
     controlMenuDisabled: isControlMenuDisabled,
-    pauseLabel: t('stage.controls.pause', 'Pause'),
-    cancelLabel: t('cancel', 'Cancel'),
+    pauseLabel,
+    cancelLabel,
     stopRequested: controls.stopRequested ?? false,
     startPending: controls.startPending || startPendingHold || isResetSessionLoading,
     startLoading: isStartButtonLoading,

@@ -14,6 +14,7 @@ export const useShapeBuildPause = ({
   isStopRequestedInFlight,
   bridgeRef,
   clearStartPendingRef,
+  setRequestedControlAction,
   setIsStopRequested,
   setIsStopAccepted,
   handleCancelQueued,
@@ -56,6 +57,7 @@ export const useShapeBuildPause = ({
     };
 
     logPauseTrace('request-received');
+    setRequestedControlAction('pause');
     setIsStopRequested(true);
     clearStartPendingRef.current?.();
 
@@ -71,6 +73,7 @@ export const useShapeBuildPause = ({
     } catch (error) {
       setIsStopRequested(false);
       setIsStopAccepted(false);
+      setRequestedControlAction('none');
       notify.error('Failed to pause build.');
       console.error('[ShapeBuildProgressStep] pause failed', error);
       logPauseTrace('request-failed', {
@@ -85,6 +88,7 @@ export const useShapeBuildPause = ({
     isStopRequestedInFlight,
     bridgeRef,
     clearStartPendingRef,
+    setRequestedControlAction,
     handleCancelQueued,
     setIsStopRequested,
     setIsStopAccepted,

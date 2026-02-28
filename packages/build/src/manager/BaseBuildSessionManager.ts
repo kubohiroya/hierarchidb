@@ -36,15 +36,6 @@ export abstract class BaseBuildSessionManager implements IBuildSessionManager {
     await this.onSessionStatusChange(session);
   }
 
-  async resumeBuildSession(nodeId: NodeId): Promise<void> {
-    const session = this.sessions.get(nodeId);
-    if (!session) {
-      throw new Error(`Session ${nodeId} not found`);
-    }
-    await session.resume();
-    await this.onSessionStatusChange(session);
-  }
-
   async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const session = this.sessions.get(nodeId);
     if (!session) {

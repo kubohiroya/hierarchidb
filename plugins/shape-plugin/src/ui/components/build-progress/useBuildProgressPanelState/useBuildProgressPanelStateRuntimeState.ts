@@ -8,6 +8,7 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import {
+  taskListViewPhaseAtom,
   taskProgressControlsAtom,
   buildStageProgressAtom,
   buildStagesAtom,
@@ -26,6 +27,7 @@ import {
 } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type {
   ShapeBuildTaskSummary,
+  TaskListViewPhase,
   TaskProgressControls,
   TaskProgressSummary,
 } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -46,6 +48,7 @@ export type UseBuildProgressPanelStateRuntimeState = {
   paneProgress: PaneProgress[];
   isTasksLoading: boolean;
   isTaskSummaryLoading: boolean;
+  taskListViewPhase: TaskListViewPhase;
   tasksByStage: Record<string, ShapeBuildTaskSummary[]>;
   controls: TaskProgressControls;
   warningMessage: string | null;
@@ -100,6 +103,7 @@ export const useBuildProgressPanelStateRuntimeState = (
   const paneProgress = useAtomValue(taskPaneProgressAtom);
   const isTasksLoading = useAtomValue(tasksLoadingAtom);
   const isTaskSummaryLoading = useAtomValue(taskSummaryLoadingAtom);
+  const taskListViewPhase = useAtomValue(taskListViewPhaseAtom);
   const tasksByStage = useAtomValue(tasksByStageAtom);
   const summary = useAtomValue(taskProgressSummaryAtom);
   const controls = useAtomValue(taskProgressControlsAtom);
@@ -223,6 +227,7 @@ export const useBuildProgressPanelStateRuntimeState = (
     paneProgress,
     isTasksLoading,
     isTaskSummaryLoading,
+    taskListViewPhase,
     tasksByStage,
     controls,
     warningMessage,

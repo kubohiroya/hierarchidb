@@ -1,4 +1,4 @@
-import { onTraceFailure, runResumeSessionRequest, runStartSessionRequest } from './useShapeBuildStartOrResumeExecutionHelpers.js';
+import { onTraceFailure, runStartSessionRequest } from './useShapeBuildStartOrResumeExecutionHelpers.js';
 import type { StartOrResumeExecutionArgs } from './types.js';
 import { getErrorMessage, summarizeSelectedEntries, toTransitionErrorMessage } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/errors';
 
@@ -151,23 +151,6 @@ export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs)
       return false;
     }
 
-    if (shouldResumeSession) {
-    await runResumeSessionRequest({
-      activeNodeId,
-      bridgeRef,
-      updateSessionRecord,
-      onTrace,
-      emitBuildSessionTransitionLog,
-      runTimedStep,
-      startupSource,
-      requestStartedAt,
-      advanceBuildSessionTransitionPhase,
-      beginBuildStartupStep,
-      finishBuildStartupStep,
-    });
-      return true;
-    }
-
     if (!resolvedDataSource) {
       finishBuildStartupStep('payload-build', 'error', {
         reason: 'missing-data-source',
@@ -240,7 +223,7 @@ export const executeStartOrResumeFlow = async (args: StartOrResumeExecutionArgs)
       });
       beginBuildStartupStep('receiving-task-snapshot', {
         source: startupSource,
-        mode: 'start',
+        mode: shouldResumeSession ? 'resume' : 'start',
       });
     }
 

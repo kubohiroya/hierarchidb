@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  runResumeSessionRequest,
   runStartSessionRequest,
 } from '../../../components/build-progress/internal/useShapeBuildStepControlActions/useShapeBuildStartOrResumeExecutionHelpers';
 
@@ -12,12 +11,7 @@ describe('useShapeBuildStartOrResumeExecutionHelpers', () => {
   let advanceBuildSessionTransitionPhase: ReturnType<typeof vi.fn>;
   let updateSessionRecord: ReturnType<typeof vi.fn>;
   let runTimedStep: ReturnType<typeof vi.fn>;
-  let bridgeRef: { current: { startBuildSession: ReturnType<typeof vi.fn>; resumeBuildSession: ReturnType<typeof vi.fn> } };
-
-  const createRunTimedStep = () => (stepName: string, runner: () => Promise<unknown>) => {
-    runTimedStep(stepName, runner);
-    return runner();
-  };
+  let bridgeRef: { current: { startBuildSession: ReturnType<typeof vi.fn> } };
 
   beforeEach(() => {
     onTrace = vi.fn();
@@ -30,7 +24,6 @@ describe('useShapeBuildStartOrResumeExecutionHelpers', () => {
     bridgeRef = {
       current: {
         startBuildSession: vi.fn(async () => ({ status: 'running' as const })),
-        resumeBuildSession: vi.fn(async () => {}),
       },
     };
   });
@@ -85,9 +78,9 @@ describe('useShapeBuildStartOrResumeExecutionHelpers', () => {
     expect(result.statusResult.status).toBe('running');
   });
 
-  it('runResumeSessionRequest sends a worker resume request and updates local session state', async () => {
-    await runResumeSessionRequest({
-      activeNodeId: 'node-resume-test',
+  it('runStartSessionRequest uses startBuildSession for resume semantics as well', async () => {
+    const result = await runStartSessionRequest({
+      activeNodeId: 'node-resume-label-test',
       bridgeRef,
       onTrace,
       startupSource: 'manual',
@@ -96,34 +89,19 @@ describe('useShapeBuildStartOrResumeExecutionHelpers', () => {
       finishBuildStartupStep,
       emitBuildSessionTransitionLog,
       runTimedStep,
+      data: {
+        buildConfig: { dataSourceName: 'resume-like-ds' },
+        selectedArrayByCountries: [],
+      },
       advanceBuildSessionTransitionPhase,
       updateSessionRecord,
     });
 
-    expect(bridgeRef.current.resumeBuildSession).toHaveBeenCalledWith(
+    expect(bridgeRef.current.startBuildSession).toHaveBeenCalledWith(
       'shape',
-      'node-resume-test',
+      'node-resume-label-test',
+      undefined,
     );
-    expect(beginBuildStartupStep).toHaveBeenCalledWith(
-      'session-resume-request',
-      expect.objectContaining({ source: 'manual' }),
-    );
-    expect(finishBuildStartupStep).toHaveBeenCalledWith(
-      'session-resume-request',
-      'success',
-    );
-    expect(updateSessionRecord).toHaveBeenCalledWith({
-      status: 'running',
-      stopReason: undefined,
-      canResume: false,
-    });
-    expect(advanceBuildSessionTransitionPhase).toHaveBeenCalledWith(
-      'receiving-task-snapshot',
-      expect.objectContaining({ level: 'info' }),
-    );
-    expect(onTrace).toHaveBeenCalledWith(expect.objectContaining({
-      event: 'request-finished:success',
-      payload: expect.objectContaining({ nextStatus: 'processing' }),
-    }));
+    expect(result.statusResult.status).toBe('running');
   });
 });

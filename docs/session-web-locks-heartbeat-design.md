@@ -156,14 +156,14 @@ type BuildSessionTimingRecord = {
 ## 追加仕様（運用で詰まらないために明文化すべき項目）
 
 ### 1. Lock 競合とリカバリ規約
-- **ロック取得失敗時の UI**: Start/Resume を無効化し、「別タブでビルド実行中」メッセージを表示。
+- **ロック取得失敗時の UI**: Start を無効化し、「別タブでビルド実行中」メッセージを表示。
 - **ロック free + heartbeat stale**: unexpected の判定候補。`quietThresholdTimeout` を過ぎても lock free なら unexpected を表示。
 - **ロック free + heartbeat fresh（ghost session）**: unexpected を出さず、表示は「再同期中」扱いにして短時間保持（`ghostGraceMs = quietThresholdTimeout`）。
 - **ロック解放の責務**: owner は `completed/failed/paused` のタイミングで release。タブクラッシュは自然解放に依存。
 - **復旧猶予**: unexpected 表示前に `quietThresholdTimeout` の猶予を置く。
 
 ### 2. Web Locks 非対応環境の扱い（フォールバック禁止）
-- **動作禁止**: Web Locks がない場合、Start/Resume を disabled。
+- **動作禁止**: Web Locks がない場合、Start を disabled。
 - **通知**: 「このブラウザは Build を実行できません（Web Locks API 未対応）」を表示。
 - **記録**: 失敗理由をログに残す（console.warn）。
 

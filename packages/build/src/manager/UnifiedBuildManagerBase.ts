@@ -70,11 +70,6 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildS
     await this.notifyStatus(nodeId);
   }
 
-  async resumeBuildSession(nodeId: NodeId): Promise<void> {
-    await this.performResume(nodeId);
-    await this.notifyStatus(nodeId);
-  }
-
   async getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus> {
     const status = await this.performStatus(nodeId);
     if (!status.nodeId) status.nodeId = nodeId;
@@ -103,7 +98,6 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> implements IBuildS
   }
   protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BuildSessionStatus>;
   protected abstract performPause(nodeId: NodeId): Promise<void>;
-  protected abstract performResume(nodeId: NodeId): Promise<void>;
   protected abstract performStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
   protected abstract performSubscribe(nodeId: NodeId, callback: BuildProgressCallback): () => void;
 

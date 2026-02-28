@@ -6,6 +6,7 @@ import type { BuildProgressStatus } from '~/ui/components/build-progress/shapeBu
 import { hasReceivingTaskSnapshotSignal as detectTaskSnapshotSignal } from '~/ui/components/build-progress/receivingTaskSnapshotSignal';
 import { persistedTasksAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
+import type { TaskListViewPhase } from '~/ui/atoms/shapeBuildProgressAtoms';
 import {
   useShapeBuildTaskSnapshotProgressState,
   type StageId,
@@ -66,15 +67,39 @@ export type UseShapeBuildStepStageStateReturn = {
   snapshotTaskCountByStage: Record<string, number>;
   terminalTaskCountByStage: Record<string, number>;
   hasFailedFetchTasks: boolean;
+  taskListViewPhase: TaskListViewPhase;
   taskProgressTotal: number | undefined;
   sessionProgressTotal: number | undefined;
-  refreshTasks: () => void;
   tasksCompletionStatus: BuildStatus | null;
   stageTaskCompletedById: Record<string, boolean>;
   hasTaskSnapshotByStage: Record<string, boolean>;
   stageBuildStateById: BuildStageStateById;
   isTerminalStageCompleted: boolean;
   terminalStageId: StageId | null;
+};
+
+const resolveTaskListViewPhase = (input: {
+  baseBuildStatus: BuildStatus;
+  displayTaskCount: number;
+  isLoading: boolean;
+  hasProgressTaskSignal: boolean;
+  hasAnyTaskSnapshot: boolean;
+}): TaskListViewPhase => {
+  if (input.displayTaskCount > 0) {
+    return 'streaming';
+  }
+  if (
+    input.isLoading
+    || input.baseBuildStatus === 'running'
+    || input.hasProgressTaskSignal
+    || (input.baseBuildStatus === 'paused' && !input.hasAnyTaskSnapshot)
+  ) {
+    return 'awaitingSnapshot';
+  }
+  if (input.baseBuildStatus === 'idle') {
+    return 'idle';
+  }
+  return 'settledEmpty';
 };
 
 export const useShapeBuildStepStageState = ({
@@ -110,7 +135,6 @@ export const useShapeBuildStepStageState = ({
     stageBuildStateById,
     snapshotTaskCountByStage,
     terminalTaskCountByStage,
-    refresh,
   } = useShapeBuildTaskSnapshotProgressState(activeNodeId, {
     reportFailures,
     stageOrder: configuredStageOrder,
@@ -167,6 +191,21 @@ export const useShapeBuildStepStageState = ({
     progressTotal: taskProgressTotal,
   });
   const hasReceivingTaskSnapshotSignal = isTaskSnapshotProgressConnected && hasAnyTaskSnapshot;
+  const taskListViewPhase = useMemo<TaskListViewPhase>(() => (
+    resolveTaskListViewPhase({
+      baseBuildStatus,
+      displayTaskCount: displayTasks.length,
+      isLoading,
+      hasProgressTaskSignal,
+      hasAnyTaskSnapshot,
+    })
+  ), [
+    baseBuildStatus,
+    displayTasks.length,
+    hasAnyTaskSnapshot,
+    hasProgressTaskSignal,
+    isLoading,
+  ]);
 
   const stageTaskCompletedById = useMemo(() => {
     const completed: Record<string, boolean> = {};
@@ -271,11 +310,11 @@ export const useShapeBuildStepStageState = ({
     hasTaskSnapshotByStage,
     stageBuildStateById,
     hasFailedFetchTasks: hasFailedRestartStageTasks,
+    taskListViewPhase,
     isTerminalStageCompleted,
     terminalStageId,
     taskProgressTotal,
     sessionProgressTotal,
-    refreshTasks: refresh,
     tasksCompletionStatus,
     stageTaskCompletedById,
   };

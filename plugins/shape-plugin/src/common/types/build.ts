@@ -228,7 +228,6 @@ export interface BuildSession {
 
 export type ShapeBuildCommandMap = {
   'session/pause': { nodeId: NodeId };
-  'session/resume': { nodeId: NodeId };
   'stage/pause': { nodeId: NodeId; stage: BuildTaskType };
   'stage/resume': { nodeId: NodeId; stage: BuildTaskType };
 };

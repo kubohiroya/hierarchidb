@@ -17,6 +17,7 @@ import {
   suspendSuspectMessageAtom,
   suspendSuspectOpenAtom,
   suspendSuspectControlsAtom,
+  taskListViewPhaseAtom,
   buildStageProgressAtom,
   buildStagesAtom,
 } from '~/ui/atoms/shapeBuildProgressAtoms';
@@ -37,6 +38,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stageLabel,
     taskLabel,
     taskUnitLabel,
+    taskListViewPhase,
     statusLabel,
     completed,
     total,
@@ -63,6 +65,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     handlePause,
     handleCancelQueued,
     isStartPending,
+    requestedControlAction,
     stopRequested,
     authDialogOpen,
     closeAuthDialog,
@@ -83,6 +86,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
   const setSuspendSuspectMessage = useSetAtom(suspendSuspectMessageAtom);
   const setSuspendSuspectOpen = useSetAtom(suspendSuspectOpenAtom);
   const setSuspendSuspectControls = useSetAtom(suspendSuspectControlsAtom);
+  const setTaskListViewPhase = useSetAtom(taskListViewPhaseAtom);
   const setControls = useSetAtom(taskProgressControlsAtom);
   const setAuth = useSetAtom(taskProgressAuthAtom);
 
@@ -110,6 +114,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stageTotals: typeof stageTotals;
   } | null>(null);
   const taskSummaryLoadingRef = useRef<boolean | null>(null);
+  const taskListViewPhaseRef = useRef<typeof taskListViewPhase | null>(null);
   const warningMessageRef = useRef<string | null>(null);
   const crashSuspectMessageRef = useRef<string | null>(null);
   const crashSuspectOpenRef = useRef<boolean | null>(null);
@@ -122,6 +127,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     statusLabel: string;
     showResumeLabel?: boolean;
     startPending?: boolean;
+    requestedControlAction?: 'none' | 'start' | 'pause' | 'cancel';
     handleStartOrResume?: () => Promise<void>;
     handlePause?: () => void;
     handleCancelQueued?: () => Promise<void> | void;
@@ -202,12 +208,15 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     setSummary,
     setTaskSummaryLoading,
     isTaskSummaryLoading,
+    setTaskListViewPhase,
+    taskListViewPhase,
     setControls,
     setAuth,
     canStartOrResume,
     statusLabel,
     showResumeLabel,
     isStartPending,
+    requestedControlAction,
     stopRequested,
     stableHandleStartOrResume,
     stableHandlePause,
@@ -217,6 +226,7 @@ export const useShapeBuildStepAtomSync = ({ data, onChange, nodeId }: ShapeDialo
     stableHandleProviderSelect,
     summaryRef,
     taskSummaryLoadingRef,
+    taskListViewPhaseRef,
     controlsRef,
     authRef,
   });

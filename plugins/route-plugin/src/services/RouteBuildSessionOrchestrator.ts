@@ -70,12 +70,6 @@ export class RouteBuildSessionOrchestrator extends BaseBuildSessionManager {
     }
   }
 
-  async resumeBuildSession(nodeId: NodeId): Promise<void> {
-    if (this.sessions.has(nodeId)) {
-      await super.resumeBuildSession(nodeId);
-    }
-  }
-
   onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void {
     return super.onBuildProgress(nodeId, callback);
   }

@@ -21,14 +21,15 @@ export const useShapeBuildStartOrResume = ({
   tryAcquireBuildLock,
   waitForBuildLock,
   cancelStartRequestRef,
+  setRequestedControlAction,
   saveDraftBeforeBuild,
-  refreshTasks,
   updateSessionRecord,
   setIsStopRequested,
   setIsStopAccepted,
 }: StartOrResumeControlActionsArgs) => {
   const handleStartOrResume = useCallback(async (options?: StartOrResumeOptions): Promise<boolean> => {
     const requestStartedAt = Date.now();
+    setRequestedControlAction('start');
     setIsStopRequested(false);
     setIsStopAccepted(false);
     cancelStartRequestRef.current = false;
@@ -53,83 +54,83 @@ export const useShapeBuildStartOrResume = ({
       notify.warning('NodeId is missing.');
       return false;
     }
-    if (shouldResumeSession && !bridgeApi.resumeBuildSession) {
-      notify.warning('Build resume API is not available.');
-      return false;
-    }
-    if (!shouldResumeSession && !bridgeApi.startBuildSession) {
+    if (!bridgeApi.startBuildSession) {
       notify.warning('Build start API is not available.');
       return false;
     }
 
-    return executeStartOrResumeFlow({
-      activeNodeId,
-      data,
-      buildStatus,
-      runtimeStatus,
-      beginBuildSessionTransition,
-      advanceBuildSessionTransitionPhase,
-      finishBuildSessionTransition,
-      beginBuildStartupStep,
-      finishBuildStartupStep,
-      emitBuildSessionTransitionLog,
-      releaseBuildLock,
-      tryAcquireBuildLock,
-      waitForBuildLock,
-      cancelStartRequestRef,
-      saveDraftBeforeBuild,
-      updateSessionRecord,
-      refreshTasks,
-      setIsStopRequested,
-      setIsStopAccepted,
-      options,
-      startupSource,
-      shouldResumeSession,
-      onTrace: (trace) => {
-        if (!isShapeBuildPanelDebugEnabled('startResume')) return;
-        console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-          nodeId: String(activeNodeId),
-          elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-          event: trace.event,
-          ...(trace.payload ?? {}),
-        });
-      },
-      requestStartedAt,
-      runTimedStep: async <T, >(stepName: string, runner: () => Promise<T>): Promise<T> => {
-        const stepStartedAt = Date.now();
-        if (isShapeBuildPanelDebugEnabled('startResume')) {
+    try {
+      return executeStartOrResumeFlow({
+        activeNodeId,
+        data,
+        buildStatus,
+        runtimeStatus,
+        beginBuildSessionTransition,
+        advanceBuildSessionTransitionPhase,
+        finishBuildSessionTransition,
+        beginBuildStartupStep,
+        finishBuildStartupStep,
+        emitBuildSessionTransitionLog,
+        releaseBuildLock,
+        tryAcquireBuildLock,
+        waitForBuildLock,
+        cancelStartRequestRef,
+        setRequestedControlAction,
+        saveDraftBeforeBuild,
+        updateSessionRecord,
+        setIsStopRequested,
+        setIsStopAccepted,
+        options,
+        startupSource,
+        shouldResumeSession,
+        onTrace: (trace) => {
+          if (!isShapeBuildPanelDebugEnabled('startResume')) return;
           console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
             nodeId: String(activeNodeId),
             elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-            event: `${stepName}:start`,
+            event: trace.event,
+            ...(trace.payload ?? {}),
           });
-        }
-        try {
-          const result = await runner();
+        },
+        requestStartedAt,
+        runTimedStep: async <T, >(stepName: string, runner: () => Promise<T>): Promise<T> => {
+          const stepStartedAt = Date.now();
           if (isShapeBuildPanelDebugEnabled('startResume')) {
             console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
               nodeId: String(activeNodeId),
               elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-              event: `${stepName}:finish`,
-              stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+              event: `${stepName}:start`,
             });
           }
-          return result;
-        } catch (error) {
-          if (isShapeBuildPanelDebugEnabled('startResume')) {
-            console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
-              nodeId: String(activeNodeId),
-              elapsedMs: Math.max(0, Date.now() - requestStartedAt),
-              event: `${stepName}:error`,
-              stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
-              errorMessage: error instanceof Error ? error.message : String(error),
-            });
+          try {
+            const result = await runner();
+            if (isShapeBuildPanelDebugEnabled('startResume')) {
+              console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+                nodeId: String(activeNodeId),
+                elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+                event: `${stepName}:finish`,
+                stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+              });
+            }
+            return result;
+          } catch (error) {
+            if (isShapeBuildPanelDebugEnabled('startResume')) {
+              console.log('[ShapeBuildStartResumeTrace] handleStartOrResume', {
+                nodeId: String(activeNodeId),
+                elapsedMs: Math.max(0, Date.now() - requestStartedAt),
+                event: `${stepName}:error`,
+                stepElapsedMs: Math.max(0, Date.now() - stepStartedAt),
+                errorMessage: error instanceof Error ? error.message : String(error),
+              });
+            }
+            throw error;
           }
-          throw error;
-        }
-      },
-      bridgeRef,
-    });
+        },
+        bridgeRef,
+      });
+    } finally {
+      setRequestedControlAction('none');
+    }
   }, [
     data,
     activeNodeId,
@@ -146,8 +147,8 @@ export const useShapeBuildStartOrResume = ({
     tryAcquireBuildLock,
     waitForBuildLock,
     cancelStartRequestRef,
+    setRequestedControlAction,
     saveDraftBeforeBuild,
-    refreshTasks,
     updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
