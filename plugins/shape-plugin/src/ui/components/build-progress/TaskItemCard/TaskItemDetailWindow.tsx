@@ -20,6 +20,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFetchCache } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { DataSourceName } from '~/common/types';
+import { FloatingWindow, type WindowState } from '@hierarchidb/ui-floating-window';
 import {
   buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
@@ -27,12 +28,13 @@ import {
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { buildStagesAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
-import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
-import type { ShapeBuildConfig } from '~/common/types/build';
-import { VTTaskItemDetailWindow } from '~/ui/components/build-progress/vt/VTTaskItemDetailWindow';
-import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 
-export type { TaskDetailSelection };
+type TaskDetailPayload = {
+  title: string;
+  summary: TaskOutcomeSummary;
+  task: ShapeBuildTaskSummary;
+};
+export type TaskDetailSelection = TaskDetailPayload;
 
 type PreviewData = {
   original: FeatureCollection | null;
@@ -1042,7 +1044,6 @@ type TaskItemDetailWindowProps = {
   onClose: () => void;
   zIndex: number;
   stageId?: string;
-  buildConfig?: ShapeBuildConfig;
   onRequestBringToFront?: () => void;
 };
 
@@ -1052,7 +1053,6 @@ export const TaskItemDetailWindow = ({
   onClose,
   zIndex,
   stageId,
-  buildConfig,
   onRequestBringToFront,
 }: TaskItemDetailWindowProps) => {
   const theme = useTheme();
@@ -1072,17 +1072,14 @@ export const TaskItemDetailWindow = ({
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [fetchStageMaxima, setFetchStageMaxima] = useState<FetchStageMaxima | null>(null);
-  const floatingWindow = useFloatingWindow({
-    persistKey: 'hierarchidb:ui:floating-window:shape:task-detail',
-    initialPosition: { x: 8, y: 8 },
-    initialSize: { width: 450, height: 450 },
+  const [windowState, setWindowState] = useState<WindowState>({
+    position: { x: 8, y: 8 },
+    size: { width: 580, height: 420 },
+    isMinimized: false,
+    isFullscreen: false,
+    isVisible: true,
+    zIndex: 1000 + zIndex,
   });
-  const { windowState, handlers } = floatingWindow;
-  const { show, hide, onStateChange, onClose: handleFloatingClose } = handlers;
-  const initialWindowState = useMemo(() => ({
-    ...windowState,
-    zIndex,
-  }), [windowState, zIndex]);
 
   useEffect(() => {
     if (!activeDetail) {
@@ -1156,12 +1153,15 @@ export const TaskItemDetailWindow = ({
     };
   }, [onClose, open]);
   useEffect(() => {
-    if (open) {
-      show();
-      return;
-    }
-    hide();
-  }, [hide, open, show]);
+    setWindowState((prev) => {
+      const nextZIndex = 1000 + zIndex;
+      if (prev.zIndex === nextZIndex) return prev;
+      return {
+        ...prev,
+        zIndex: nextZIndex,
+      };
+    });
+  }, [zIndex]);
 
   const resultColor = useMemo(() => {
     if (!summary) return theme.palette.info.main;
@@ -1221,10 +1221,7 @@ export const TaskItemDetailWindow = ({
     URL.revokeObjectURL(url);
   };
 
-  const isVtTask = activeDetail?.task.stage === 'vt';
-  const content = isVtTask && activeDetail ? (
-    <VTTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
-  ) : (summary ? TaskDetailContent({
+  const content = summary ? TaskDetailContent({
     title,
     summary,
     detailColor,
@@ -1253,42 +1250,25 @@ export const TaskItemDetailWindow = ({
         Hover a task status chip to preview source and result geometry.
       </Typography>
     </Box>
-  ));
+  );
 
-  const handleWindowClose = useCallback(() => {
-    handleFloatingClose();
-    onClose();
-  }, [handleFloatingClose, onClose]);
-
-  if (!open || !windowState.isVisible) return null;
+  const handleWindowStateChange = useCallback((nextState: WindowState) => {
+    setWindowState(nextState);
+  }, []);
+  if (!open) return null;
   const stageLabel = effectiveStageId === 'fetch'
     ? 'Fetch'
     : (effectiveStageId === 'transform' ? 'Transform' : (effectiveStageId === 'vt' ? 'VT' : effectiveStageId));
   const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
-  const buildVtBandLabel = (taskId: string | undefined): string => {
-    if (!taskId) return 'band ? z?';
-    const parts = taskId.split(':');
-    if (parts.length < 5) return 'band ? z?';
-    const bandIndex = Number.parseInt(parts[2] ?? '', 10);
-    const zBase = Number.parseInt(parts[3] ?? '', 10);
-    if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase)) return 'band ? z?';
-    return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
-  };
-  const windowTitle = isVtTask
-    ? `VT Geometry Preview: ${buildVtBandLabel(activeDetail?.task.taskId)}`
-    : (effectiveStageId === 'vt' ? 'VT Geometry Preview' : `Geometry Preview: ${stageLabel}`);
+  const windowTitle = `Geometry Preview: ${stageLabel}`;
 
   return (
     <FloatingWindow
       title={windowTitle}
-      titleIcon={stageIcon ? (
-        <Box sx={{ color: 'black', display: 'inline-flex', alignItems: 'center' }}>
-          {stageIcon}
-        </Box>
-      ) : undefined}
-      initialState={initialWindowState}
-      onStateChange={onStateChange}
-      onClose={handleWindowClose}
+      titleIcon={stageIcon}
+      initialState={windowState}
+      onStateChange={handleWindowStateChange}
+      onClose={onClose}
       onRequestFocus={onRequestBringToFront}
       resizable
       minWidth={420}
