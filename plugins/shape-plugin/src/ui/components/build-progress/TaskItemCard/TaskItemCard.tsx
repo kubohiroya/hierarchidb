@@ -159,13 +159,13 @@ export const TaskItemCard = ({
         }}
       >
         <FlagOverlay
-          width={22}
-          height={16}
-          defaultFlagSize={12}
+          width={29}
+          height={21}
+          defaultFlagSize={17}
           items={vtTopCountryCodes.map((isoCode, index) => ({
             isoCode,
-            x: index === 0 ? 8 : 13,
-            y: index === 0 ? 8 : 9,
+            x: index === 0 ? 0 : 9,
+            y: index === 0 ? 0 : 3,
           }))}
         />
       </Box>
@@ -184,7 +184,7 @@ export const TaskItemCard = ({
           opacity: task.status === 'recycled' ? 0.5 : 1,
         }}
       >
-        <span aria-label={countryCode ?? 'country-flag'}>{flag}</span>
+        <span title={countryCode ?? 'country-flag'}>{flag}</span>
       </Box>
       )
       : (stageIcon ?? null);

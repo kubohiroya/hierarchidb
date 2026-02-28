@@ -39,7 +39,7 @@
 
 ### Doing
 - #636 / `codex/chore/cleanup/stashed-formatting-and-typedefs-636` / start: 2026-02-28 19:02 JST
-- #639 / `codex/feat/shape/step5-vt-task-flag-overlay-icon` / start: 2026-02-28 18:25 JST
+- #639 / `codex/fix/shape/step5-vt-flag-overlay-main-639` / start: 2026-02-28 18:56 JST
 - #634 / `codex/fix/shape/vt-fit-button-move-left-2px-634` / start: 2026-02-28 18:52 JST
 - #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
 - #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
@@ -140,6 +140,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-28 18:58 JST #639 `pnpm install --no-frozen-lockfile` により `plugins/shape-plugin/node_modules/@hierarchidb/ui-flag-overlay` の workspace リンクを再構築し、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` と `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator --output-logs errors-only` がともに exit 0。コード修正は不要（既存実装で要件充足）。
+- start: 2026-02-28 18:56 JST #639 フォローアップとしてブランチ `codex/fix/shape/step5-vt-flag-overlay-main-639` を作成し再着手。
+- update: 2026-02-28 18:56 JST #639 現行 `main` の検証で `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` が `@hierarchidb/ui-flag-overlay` 解決失敗で exit 1。実装コードは存在するため、ワークスペース解決設定の不足を修正する。
 - start: 2026-02-28 19:02 JST #636 を起票（https://github.com/kubohiroya/hierarchidb/issues/636）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/chore/cleanup/stashed-formatting-and-typedefs-636` を作成して着手。
 - update: 2026-02-28 19:04 JST #636 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - update: 2026-02-28 18:34 JST #639 PR https://github.com/kubohiroya/hierarchidb/pull/640 を `main` 向けに作成し、Issue #639 へ実装要点・検証結果をコメント連携。
