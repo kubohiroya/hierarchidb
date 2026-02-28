@@ -38,6 +38,9 @@
 ## Kanban
 
 ### Doing
+- #632 / `codex/fix/shape/vt-fit-button-size-adjust-632` / start: 2026-02-28 18:30 JST
+- #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
+- #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
 - #628 / `codex/fix/shape/vt-fit-button-tweak-628` / start: 2026-02-28 17:28 JST
 - #623 / `codex/fix/app/plugin-registry-derivations-623` / start: 2026-02-28 17:15 JST
 - #621 / `codex/fix/app/build-session-queue-update-depth-621` / start: 2026-02-28 17:05 JST
@@ -135,6 +138,11 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-28 18:30 JST #632 を起票（https://github.com/kubohiroya/hierarchidb/issues/632）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-size-adjust-632` を作成して着手。
+- update: 2026-02-28 18:38 JST #632 `TaskItemDetailWindow.tsx` の `handleWindowStateChange` 未定義エラーを本Issueのスコープへ追加。
+- update: 2026-02-28 18:45 JST #632 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- start: 2026-02-28 17:43 JST #631 を起票（https://github.com/kubohiroya/hierarchidb/issues/631）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-move-right-631` を作成して着手。
+- start: 2026-02-28 17:35 JST #630 を起票（https://github.com/kubohiroya/hierarchidb/issues/630）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/task-detail-window-handler-630` を作成して着手。
 - start: 2026-02-28 17:28 JST #628 を起票（https://github.com/kubohiroya/hierarchidb/issues/628）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-tweak-628` を作成して着手。
 - start: 2026-02-28 17:15 JST #623 を起票（https://github.com/kubohiroya/hierarchidb/issues/623）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/plugin-registry-derivations-623` を作成して着手。
 - start: 2026-02-28 17:05 JST #621 を起票（https://github.com/kubohiroya/hierarchidb/issues/621）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/build-session-queue-update-depth-621` を作成して着手。
