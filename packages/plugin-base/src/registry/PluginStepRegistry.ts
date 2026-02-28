@@ -58,7 +58,10 @@ export interface PluginStepProvider<TData extends StepData = StepData> {
 export interface PluginStepConfigProvider<TData extends StepData = StepData, TUiState = unknown> {
   nodeType: string;
   getCreateStepConfigs(): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
-  getEditStepConfigs(nodeId: string, data?: TData): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
+  getEditStepConfigs(
+    nodeId: string,
+    data?: TData
+  ): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
   validateAccess?(nodeId?: string): Promise<boolean>;
 }
 

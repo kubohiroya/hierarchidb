@@ -1,1 +1,1 @@
-export interface PluginDBQueryAPI {}
+export type PluginDBQueryAPI = {};

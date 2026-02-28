@@ -91,9 +91,8 @@ export const useUserMenu = (): UserMenuState => {
         setAvatarUrl(undefined);
         return;
       }
-      const storageAny = (
-        navigator as { storage?: { getDirectory?: () => Promise<unknown> } }
-      ).storage;
+      const storageAny = (navigator as { storage?: { getDirectory?: () => Promise<unknown> } })
+        .storage;
       if (!storageAny?.getDirectory) {
         setAvatarUrl(pictureUrl);
         return;

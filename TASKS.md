@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #636 / `codex/chore/cleanup/stashed-formatting-and-typedefs-636` / start: 2026-02-28 19:02 JST
 - #634 / `codex/fix/shape/vt-fit-button-move-left-2px-634` / start: 2026-02-28 18:52 JST
 - #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
 - #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
@@ -138,6 +139,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-28 19:02 JST #636 を起票（https://github.com/kubohiroya/hierarchidb/issues/636）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/chore/cleanup/stashed-formatting-and-typedefs-636` を作成して着手。
+- update: 2026-02-28 19:04 JST #636 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - start: 2026-02-28 18:52 JST #634 を起票（https://github.com/kubohiroya/hierarchidb/issues/634）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-move-left-2px-634` を作成して着手。
 - update: 2026-02-28 18:54 JST #634 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - start: 2026-02-28 18:30 JST #632 を起票（https://github.com/kubohiroya/hierarchidb/issues/632）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-size-adjust-632` を作成して着手。

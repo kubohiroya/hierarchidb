@@ -153,9 +153,17 @@ export interface MetricOptions {
  */
 export interface PluginTreeAPI {
   getPluginsForTree(request: GetPluginsForTreeRequest): Promise<GetPluginsForTreeResponse>;
-  getPluginUsageStats(treeId: TreeId, nodeType: NodeType, period?: TimePeriod): Promise<PluginUsageStats>;
+  getPluginUsageStats(
+    treeId: TreeId,
+    nodeType: NodeType,
+    period?: TimePeriod
+  ): Promise<PluginUsageStats>;
   getPluginCompatibility(treeId: TreeId, nodeTypes: NodeType[]): Promise<CompatibilityResult>;
   optimizePluginConfiguration(treeId: TreeId): Promise<OptimizationResult>;
   getPluginDependencyGraph(treeId: TreeId, options?: GraphOptions): Promise<DependencyGraph>;
-  getPluginMetrics(treeId: TreeId, nodeType: NodeType, options?: MetricOptions): Promise<PluginMetrics>;
+  getPluginMetrics(
+    treeId: TreeId,
+    nodeType: NodeType,
+    options?: MetricOptions
+  ): Promise<PluginMetrics>;
 }

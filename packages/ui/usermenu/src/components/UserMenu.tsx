@@ -1,8 +1,8 @@
 import type { ThemeMode } from '@hierarchidb/ui-theme';
 import {
   DarkMode as DarkModeIcon,
-  Engineering as EngineeringIcon,
   DeleteForever as DeleteForeverIcon,
+  Engineering as EngineeringIcon,
   Language as LanguageIcon,
   LightMode as LightModeIcon,
   Login as LoginIcon,
@@ -157,9 +157,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           <ListItemIcon>
             <EngineeringIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>
-            {t('userMenu.maintenance.label', 'IndexedDB Maintenance')}
-          </ListItemText>
+          <ListItemText>{t('userMenu.maintenance.label', 'IndexedDB Maintenance')}</ListItemText>
         </MenuItem>
       ) : null}
 
