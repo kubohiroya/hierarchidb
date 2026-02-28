@@ -243,7 +243,7 @@ export const VtGeometryPreviewMap = ({
         sx={{
           position: 'absolute',
           top: 72,
-          right: 10,
+          right: 12,
           zIndex: 1200,
           bgcolor: 'common.white',
           border: '1px solid',
