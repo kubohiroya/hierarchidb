@@ -1,6 +1,7 @@
 import { useBuildProgressStageContentState } from './useBuildProgressStageContentState.js';
 import { BuildProgressStageContentView } from './BuildProgressStageContentView.tsx';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
+import type { ShapeBuildConfig } from '~/common/types/build';
 
 type BuildProgressStageContentProps = {
   showHeader?: boolean;
@@ -29,6 +30,7 @@ type BuildProgressStageContentProps = {
   matchesSearchQuery: (task: import('../../taskItemCardList/types.js').TaskItemWithMetadata) => boolean;
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending?: boolean;
+  buildConfig?: ShapeBuildConfig;
   onOpenDetailFloatingWindow: () => void;
   onCloseDetailFloatingWindow: () => void;
   floatingWindowZIndex: number;
@@ -52,6 +54,7 @@ export const BuildProgressStageContent = ({
   matchesSearchQuery,
   isDetailFloatingWindowOpen,
   isOpeningPending = false,
+  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
@@ -73,6 +76,7 @@ export const BuildProgressStageContent = ({
     matchesSearchQuery,
     isDetailFloatingWindowOpen,
     isOpeningPending,
+    buildConfig,
     onOpenDetailFloatingWindow,
     onCloseDetailFloatingWindow,
     floatingWindowZIndex,

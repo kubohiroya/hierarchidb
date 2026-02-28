@@ -82,7 +82,7 @@ export const DEFAULT_BUILD_CONFIG = {
     boundaryDisableAtZoomOrAbove: 3,
   },
   vtConfig: {
-    enableTopojsonSimplify: true,
+    enableTopojsonSimplify: false,
     tolerance: 0,
     extent: 4096,
     bufferSize: 256,

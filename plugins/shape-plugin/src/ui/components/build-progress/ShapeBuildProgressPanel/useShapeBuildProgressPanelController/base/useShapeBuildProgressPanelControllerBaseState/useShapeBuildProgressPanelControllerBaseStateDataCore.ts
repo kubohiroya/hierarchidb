@@ -663,6 +663,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     stageMenus,
     stageHeaderMeta,
     matchesSearchQuery,
+    buildConfigForDisplay: buildConfigForEdit,
     processingConfigForEdit,
     fetchRetryConfigForEdit,
     applyProcessingConfigUpdate,
