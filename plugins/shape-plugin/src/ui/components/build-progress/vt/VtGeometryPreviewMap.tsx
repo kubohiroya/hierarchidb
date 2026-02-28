@@ -242,15 +242,15 @@ export const VtGeometryPreviewMap = ({
         onClick={handleFitClick}
         sx={{
           position: 'absolute',
-          top: 72,
-          right: 12,
+          top: 62,
+          right: 10,
           zIndex: 1200,
           bgcolor: 'common.white',
           border: '1px solid',
           borderColor: 'divider',
           boxShadow: 1,
-          width: 26,
-          height: 26,
+          width: 20,
+          height: 20,
           p: 0,
           borderRadius: '4px',
           color: 'grey.600',
@@ -258,7 +258,7 @@ export const VtGeometryPreviewMap = ({
             bgcolor: 'grey.50',
           },
           '& svg': {
-            fontSize: 16,
+            fontSize: 12,
           },
         }}
       >
