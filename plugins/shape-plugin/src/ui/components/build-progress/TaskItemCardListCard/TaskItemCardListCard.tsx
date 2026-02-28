@@ -17,8 +17,10 @@ import {
   buildSimpleTaskOutcomeSummary,
   buildTransformTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
-import { TaskItemDetailWindow } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
-import type { TaskDetailSelection } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailTypes';
+import {
+  TaskItemDetailWindow,
+  type TaskDetailSelection,
+} from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
 import type { ShapeBuildConfig } from '~/common/types/build';
 
 type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
