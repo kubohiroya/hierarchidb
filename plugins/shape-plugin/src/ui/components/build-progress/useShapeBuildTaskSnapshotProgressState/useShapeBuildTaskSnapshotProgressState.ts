@@ -410,7 +410,10 @@ export function useShapeBuildTaskSnapshotProgressState(
       if (task.status !== 'failed') return;
       if (reported.has(task.taskId)) return;
       reported.add(task.taskId);
-      const message = resolveTaskMetadataMessage(task.metadata) ?? 'Task failed';
+      const message = resolveTaskMetadataMessage(task.metadata)
+        ?? task.errorMessage
+        ?? task.message
+        ?? 'Task failed';
       const geometryDetails = parseGeometrySimplifyError(message);
       if (geometryDetails) {
         console.warn('[ShapeBuildStep] task failed:geometrySimplify', {

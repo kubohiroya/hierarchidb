@@ -3,7 +3,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { AuthProviderType } from '@hierarchidb/ui-auth';
 import type { BuildStatus } from '@hierarchidb/components/build-status';
 import type { TaskProgressAuthState, TaskProgressControls, TaskProgressSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
-import { shallowEqualRecord } from '~/ui/components/build-progress/shapeBuildStepAtomSyncEquality';
+import { shallowEqualRecord, shallowEqualTaskProgressSummary } from '~/ui/components/build-progress/shapeBuildStepAtomSyncEquality';
 
 type StageTotalMap = Record<
   string,
@@ -111,7 +111,7 @@ export const useShapeBuildStepAtomSyncAtomEffects = ({
       stageRemainingMs,
       stageTotals,
     };
-    if (shallowEqualRecord(summaryRef.current, nextSummary)) return;
+    if (shallowEqualTaskProgressSummary(summaryRef.current, nextSummary)) return;
     summaryRef.current = nextSummary;
     setSummary(nextSummary);
   }, [
