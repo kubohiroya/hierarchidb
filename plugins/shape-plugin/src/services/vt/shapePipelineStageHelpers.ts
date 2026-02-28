@@ -116,6 +116,9 @@ export const finalizePendingStageTasks = async (
   errorMessage: string,
   logLabel: string,
   pipelineRunId?: string,
+  options?: {
+    markFailed?: boolean;
+  },
 ): Promise<{ queued: number; running: number; authPending: number }> => {
   const [queuedTasks, runningTasks] = await Promise.all([
     listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
@@ -132,23 +135,27 @@ export const finalizePendingStageTasks = async (
     return authState === 'required';
   });
   const finalizeTargets = pendingTasks.filter((task) => !authPendingTasks.includes(task));
+  const shouldMarkFailed = options?.markFailed ?? true;
   const now = Date.now();
-  await Promise.all(
-    finalizeTargets.map((task) => (
-      updateTask(taskQueue, task.taskId, {
-        status: 'failed',
-        message: errorMessage,
-        errorMessage,
-        completedAt: now,
-      })
-    )),
-  );
+  if (shouldMarkFailed) {
+    await Promise.all(
+      finalizeTargets.map((task) => (
+        updateTask(taskQueue, task.taskId, {
+          status: 'failed',
+          message: errorMessage,
+          errorMessage,
+          completedAt: now,
+        })
+      )),
+    );
+  }
   console.warn(logLabel, JSON.stringify({
     nodeId,
     runId: pipelineRunId ?? null,
     queued: finalizeTargets.filter((task) => task.status === 'queued').length,
     running: finalizeTargets.filter((task) => task.status === 'running').length,
     authPending: authPendingTasks.length,
+    markFailed: shouldMarkFailed,
   }));
   return {
     queued: finalizeTargets.filter((task) => task.status === 'queued').length,

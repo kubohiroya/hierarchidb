@@ -53,6 +53,17 @@ const createAuthPendingFetchTask = (taskId: string): TaskQueueRecord => ({
   updatedAt: Date.now(),
 });
 
+const createQueuedFetchTask = (taskId: string): TaskQueueRecord => ({
+  taskId,
+  nodeId: NODE_ID,
+  stage: 'fetch',
+  index: 0,
+  status: 'queued',
+  progress: 0,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
+
 describe('runShapeFetchStageSection', () => {
   let db: VtTaskQueueDb | null = null;
 
@@ -148,5 +159,39 @@ describe('runShapeFetchStageSection', () => {
     ]);
     expect(failed).toHaveLength(0);
     expect(queued).toHaveLength(1);
+  });
+
+  it('keeps queued fetch tasks as queued during resume runs instead of marking them failed', async () => {
+    db = createDb();
+    await putTasks(db, [createQueuedFetchTask('fetch-queued-1')]);
+
+    const runShapeFetchStageSpy = vi
+      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+      .mockResolvedValue(undefined);
+
+    try {
+      const stopAfterStage = await runShapeFetchStageSection({
+        nodeId: NODE_ID,
+        dataSource: 'geoboundaries',
+        buildConfig: DEFAULT_BUILD_CONFIG,
+        taskQueue: db,
+        resumeExistingTasks: true,
+        failureHandling: 'continue',
+        buildContinuationPolicy: 'finish_all_stages',
+        pipelineRunId: 'test-run-resume-pending',
+      });
+      expect(stopAfterStage).toBe(false);
+    } finally {
+      runShapeFetchStageSpy.mockRestore();
+    }
+
+    const [failed, queued] = await Promise.all([
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+    ]);
+    expect(failed).toHaveLength(0);
+    expect(queued).toHaveLength(1);
+    expect(queued[0]?.message ?? null).toBeNull();
+    expect(queued[0]?.errorMessage ?? null).toBeNull();
   });
 });
