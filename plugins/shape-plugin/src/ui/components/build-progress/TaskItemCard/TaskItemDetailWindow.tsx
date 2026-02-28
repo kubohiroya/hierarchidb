@@ -1265,35 +1265,35 @@ export const TaskItemDetailWindow = ({
     ? 'Fetch'
     : (effectiveStageId === 'transform' ? 'Transform' : (effectiveStageId === 'vt' ? 'VT' : effectiveStageId));
   const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
-  const buildVtBandLabel = (taskId: string | undefined): string => {
-    if (!taskId) return 'band ? z?';
-    const parts = taskId.split(':');
-    if (parts.length < 5) return 'band ? z?';
-    const bandIndex = Number.parseInt(parts[2] ?? '', 10);
-    const zBase = Number.parseInt(parts[3] ?? '', 10);
-    if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase)) return 'band ? z?';
-    return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
-  };
-  const windowTitle = isVtTask
-    ? `VT Geometry Preview: ${buildVtBandLabel(activeDetail?.task.taskId)}`
-    : (effectiveStageId === 'vt' ? 'VT Geometry Preview' : `Geometry Preview: ${stageLabel}`);
+const buildVtBandLabel = (taskId: string | undefined): string => {
+  if (!taskId) return 'band ? z?';
+  const parts = taskId.split(':');
+  if (parts.length < 5) return 'band ? z?';
+  const bandIndex = Number.parseInt(parts[2] ?? '', 10);
+  const zBase = Number.parseInt(parts[3] ?? '', 10);
+  if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase)) return 'band ? z?';
+  return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
+};
+const windowTitle = isVtTask
+  ? `VT Geometry Preview: ${buildVtBandLabel(activeDetail?.task.taskId)}`
+  : (effectiveStageId === 'vt' ? 'VT Geometry Preview' : `Geometry Preview: ${stageLabel}`);
 
   return (
-    <FloatingWindow
-      title={windowTitle}
-      titleIcon={stageIcon ? (
-        <Box sx={{ color: 'black', display: 'inline-flex', alignItems: 'center' }}>
-          {stageIcon}
-        </Box>
-      ) : undefined}
-      initialState={initialWindowState}
-      onStateChange={onStateChange}
-      onClose={handleWindowClose}
-      onRequestFocus={onRequestBringToFront}
-      resizable
-      minWidth={420}
-      minHeight={280}
-    >
+<FloatingWindow
+  title={windowTitle}
+  titleIcon={stageIcon ? (
+    <Box sx={{ color: 'black', display: 'inline-flex', alignItems: 'center' }}>
+      {stageIcon}
+    </Box>
+  ) : undefined}
+  initialState={windowState}
+  onStateChange={handleWindowStateChange}
+  onClose={onClose}
+  onRequestFocus={onRequestBringToFront}
+  resizable
+  minWidth={420}
+  minHeight={280}
+>
       <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
         {content}
       </Box>
