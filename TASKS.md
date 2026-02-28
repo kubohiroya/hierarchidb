@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #618 / `codex/feat/shape/vt-stage-visualization-and-fixes` / start: 2026-02-28 14:10 JST
 - #613 / `codex/fix/shape/ingest-main-diff-613` / start: 2026-02-28 12:55 JST
 - #611 / `codex/fix/build/ts2307-shape-tests-611` / start: 2026-02-28 12:28 JST
 - #604 / `codex/fix/plugin-dialog-safe-menu-popover-604` / start: 2026-02-28 10:38 JST
@@ -129,6 +130,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-28 14:10 JST #618 を起票（https://github.com/kubohiroya/hierarchidb/issues/618）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/feat/shape/vt-stage-visualization-and-fixes` を作成して着手。
 - start: 2026-02-28 12:28 JST #611 を起票（https://github.com/kubohiroya/hierarchidb/issues/611）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/build/ts2307-shape-tests-611` を作成し、worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-611` で着手。
 - start: 2026-02-28 12:55 JST #613 を起票（https://github.com/kubohiroya/hierarchidb/issues/613）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/ingest-main-diff-613` を作成して着手。
 - update: 2026-02-28 13:23 JST #613 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。依存更新のため `pnpm install` 実行（exit 0）。
