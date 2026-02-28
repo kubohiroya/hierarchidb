@@ -300,6 +300,21 @@ const resolveSourcePreviewParams = (nodeId: NodeId, preview: Record<string, unkn
   };
 };
 
+const resolveCacheId = (
+  preview: Record<string, unknown> | null,
+  task: ShapeBuildTaskSummary,
+  key: 'fetchCacheId' | 'transformCacheId',
+): string | null => {
+  const taskRecord = task as unknown as Record<string, unknown>;
+  const previewId = readString(preview?.[key]);
+  if (previewId) return previewId;
+  const outputId = readString(asRecord(taskRecord.outputData)?.[key]);
+  if (outputId) return outputId;
+  const inputId = readString(asRecord(taskRecord.inputData)?.[key]);
+  if (inputId) return inputId;
+  return null;
+};
+
 const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> => {
   const preview = asRecord(detail.task.metadata?.preview);
   const nodeId = resolveNodeIdFromTask(detail.task);
@@ -315,7 +330,7 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
   const sourceParams = resolveSourcePreviewParams(nodeId, preview);
 
   if (detail.task.stage === 'fetch') {
-    const fetchCacheId = readString(preview?.fetchCacheId);
+    const fetchCacheId = resolveCacheId(preview, detail.task, 'fetchCacheId');
     const fetchCacheFormat = readString(preview?.fetchCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
     const fetchCacheCompression = readString(preview?.fetchCacheCompression) === 'gzip' ? 'gzip' : 'none';
     const [sourceCollection, fetchCache] = await Promise.all([
@@ -330,15 +345,17 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       result: resultCollection,
       previousOriginal: null,
       originalBytes: measureCollectionBytes(sourceCollection),
-      resultBytes: fetchCache?.size ?? 0,
+      resultBytes: (fetchCache?.size && fetchCache.size > 0)
+        ? fetchCache.size
+        : measureCollectionBytes(resultCollection),
     };
   }
 
   if (detail.task.stage === 'transform') {
-    const fetchCacheId = readString(preview?.fetchCacheId);
+    const fetchCacheId = resolveCacheId(preview, detail.task, 'fetchCacheId');
     const fetchCacheFormat = readString(preview?.fetchCacheFormat) === 'topojson' ? 'topojson' : 'flatgeobuf';
     const fetchCacheCompression = readString(preview?.fetchCacheCompression) === 'gzip' ? 'gzip' : 'none';
-    const transformCacheId = readString(preview?.transformCacheId);
+    const transformCacheId = resolveCacheId(preview, detail.task, 'transformCacheId');
 
     const [sourceCollection, fetchCache, transformCache] = await Promise.all([
       loadSourceCollectionFromCache(nodeId, sourceParams, preview).catch(() => null),
@@ -357,8 +374,12 @@ const loadPreviewData = async (detail: TaskDetailPayload): Promise<PreviewData> 
       original: originalCollection,
       result: resultCollection,
       previousOriginal: sourceCollection,
-      originalBytes: fetchCache?.size ?? 0,
-      resultBytes: transformCache?.data.byteLength ?? 0,
+      originalBytes: (fetchCache?.size && fetchCache.size > 0)
+        ? fetchCache.size
+        : measureCollectionBytes(originalCollection),
+      resultBytes: (transformCache?.data.byteLength && transformCache.data.byteLength > 0)
+        ? transformCache.data.byteLength
+        : measureCollectionBytes(resultCollection),
     };
   }
 
@@ -743,13 +764,11 @@ const GeometryPreviewMap = ({
             background: 'transparent',
           },
           '& .shape-preview-tile-label': {
-            background: 'rgba(255,255,255,0.9)',
-            borderRadius: '2px',
             color: 'rgba(0,0,0,0.7)',
             fontSize: '10px',
             lineHeight: 1.2,
-            padding: '1px 3px',
             whiteSpace: 'nowrap',
+            textShadow: '0 0 2px rgba(255,255,255,0.85)',
           },
           '& .leaflet-control-zoom': {
             transform: 'scale(0.85)',
@@ -974,7 +993,14 @@ const TaskDetailContent = ({
         {(summary.visualization !== 'fetchMetrics' && summary.visualization !== 'transformMetrics') ? (
           <Stack spacing={0.25}>
             <Typography variant="caption" color="text.secondary">{summary.summaryLine ?? '-'}</Typography>
-            {(summary.detailLines ?? []).map((line, index) => (
+            {(summary.detailLines ?? [])
+              .filter((line) => {
+                if (summary.kind !== 'failed') return true;
+                const normalized = line.trim().replace(/^Failure:\s*/i, '');
+                const summaryNormalized = (summary.summaryLine ?? '').trim().replace(/^Failed:\s*/i, '');
+                return normalized.length > 0 && normalized !== summaryNormalized;
+              })
+              .map((line, index) => (
               <Typography key={`${line}-${index}`} variant="caption" color="text.secondary">{line}</Typography>
             ))}
           </Stack>
