@@ -73,6 +73,7 @@ type DisplayArgs = {
   startPendingHold: boolean;
   isTasksLoadingForDisplay: boolean;
   isTaskSummaryLoadingForDisplay: boolean;
+  isStartupPendingForDisplay: boolean;
   taskSearchText: string;
   setTaskSearchText: (next: string) => void;
   startupNoticeDismissed: boolean;
@@ -190,6 +191,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     startPendingHold,
     isTasksLoadingForDisplay,
     isTaskSummaryLoadingForDisplay,
+    isStartupPendingForDisplay,
     taskSearchText,
     setTaskSearchText,
     startupNoticeDismissed,
@@ -293,6 +295,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataDisplay = (args: D
     isResetSessionLoading,
     isResetSessionPending,
     startPendingHold,
+    isStartupPendingForDisplay,
     isControlMenuDisabled,
     isStartButtonLoading,
     isBuildSessionStarted,

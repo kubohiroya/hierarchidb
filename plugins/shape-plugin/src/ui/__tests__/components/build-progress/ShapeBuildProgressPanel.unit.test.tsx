@@ -109,6 +109,23 @@ describe('ShapeBuildProgressPanel', () => {
     store.set(tasksByStageAtom, { transform: [failedTask] });
     store.set(taskProgressSummaryAtom, {
       stageLabel: 'Transform',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 50,
+      completed: 0,
+      total: 1,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+    const failedSummary = {
+      stageLabel: 'Transform',
       taskLabel: 'Failed',
       taskUnitLabel: 'Tasks',
       overallProgress: 50,
@@ -123,7 +140,7 @@ describe('ShapeBuildProgressPanel', () => {
       totalElapsedMs: 0,
       stageElapsedMs: 0,
       stageRemainingMs: null,
-    });
+    };
 
     const view = render(
       <Provider store={store}>
@@ -132,6 +149,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await within(view.container).findByText('Build controls');
+    store.set(taskProgressSummaryAtom, failedSummary);
     await waitFor(() => {
       expect(document.body.textContent).toContain('transform failed: max vertices per feature exceeded');
     });

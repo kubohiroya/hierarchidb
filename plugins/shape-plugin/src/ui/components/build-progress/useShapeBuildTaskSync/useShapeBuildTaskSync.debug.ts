@@ -108,7 +108,9 @@ export const logTaskUpdate100 = (task: ShapeBuildTaskSummary): void => {
   const indexValue = taskIdParts.length >= 4 ? taskIdParts[3] : taskIdParts[2];
   const resolvedCountry = countryIndex || 'unknown';
   const resolvedIndex = typeof indexValue === 'string' && indexValue.length > 0 ? indexValue : '0';
-  const resolvedMessage = resolveTaskMetadataMessage(task.metadata) || task.status;
+  const resolvedMessage = resolveTaskMetadataMessage(task.metadata)
+    || task.errorMessage
+    || task.status;
   console.log(
     `[TaskUpdate100] ${resolvedCountry}, ${resolvedIndex}, ${resolvedMessage}, ${task.status}`,
   );

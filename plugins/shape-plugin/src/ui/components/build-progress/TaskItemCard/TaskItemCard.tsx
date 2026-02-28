@@ -139,7 +139,7 @@ export const TaskItemCard = ({
         <span aria-label={countryCode ?? 'country-flag'}>{flag}</span>
       </Box>
     )
-    : null;
+    : (stageIcon ?? null);
 
   return (
     <TaskItem

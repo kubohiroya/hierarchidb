@@ -119,9 +119,11 @@ export const resolveReceivingTaskSnapshotDecision = (
   }
 
   if (input.buildStatus === 'failed') {
+    const hasSessionProgressEvidence = typeof input.sessionProgressTotal === 'number'
+      && input.sessionProgressTotal > 0;
     // During resume/startup, build status can remain "failed" briefly while worker stage
     // has already moved into startup:*:start/finish. Avoid premature failure finalization.
-    if (isTransientStartupStage(input.sessionStageId) || input.hasProgressTaskSignal) {
+    if (isTransientStartupStage(input.sessionStageId) || input.hasProgressTaskSignal || hasSessionProgressEvidence) {
       return { kind: 'continue' };
     }
     return {

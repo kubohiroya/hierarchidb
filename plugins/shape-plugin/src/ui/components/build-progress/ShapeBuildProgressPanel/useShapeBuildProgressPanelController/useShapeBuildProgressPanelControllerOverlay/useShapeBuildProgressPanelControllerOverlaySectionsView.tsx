@@ -18,6 +18,7 @@ type StageContentArgs = {
   tasksByStageForDisplay: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['tasksByStageForDisplay'];
   isTasksLoadingForDisplay: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['isTasksLoadingForDisplay'];
   isTaskSummaryLoadingForDisplay: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['isTaskSummaryLoadingForDisplay'];
+  isStartupPendingForDisplay: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['isStartupPendingForDisplay'];
   summary: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['summary'];
   resolveStatusLabel: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['resolveStatusLabel'];
   resolveStatusColor: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['resolveStatusColor'];
@@ -55,6 +56,7 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
   tasksByStageForDisplay,
   isTasksLoadingForDisplay,
   isTaskSummaryLoadingForDisplay,
+  isStartupPendingForDisplay,
   summary,
   resolveStatusLabel,
   resolveStatusColor,
@@ -75,6 +77,7 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
     paneProgress={paneProgress ?? []}
     isTasksLoading={isTasksLoadingForDisplay}
     isTaskSummaryLoading={isTaskSummaryLoadingForDisplay}
+    isStartupPending={isStartupPendingForDisplay}
     buildStatus={summary.buildStatus}
     resolveStatusLabel={resolveStatusLabel}
     resolveStatusColor={resolveStatusColor}
