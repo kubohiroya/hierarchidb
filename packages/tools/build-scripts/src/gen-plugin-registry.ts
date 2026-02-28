@@ -17,6 +17,7 @@ import type { GeneratePluginRegistryOptions, PluginSpecifierMode } from './plugi
 import { collectManifests } from './plugin-registry/manifest-collector.js';
 import {
   generateDatabaseLoadersSource,
+  generateDerivationsSource,
   generateIconLoadersSource,
   generateModuleDeclarationSource,
   generatePluginDefinitionsSource,
@@ -28,6 +29,7 @@ import { removeLegacyArtifacts, writeFileIfChanged } from './plugin-registry/fs-
 import {
   registryDatabaseLoadersFile,
   registryDeclarationsFile,
+  registryDerivationsFile,
   registryGeneratedDir,
   registryIconLoadersFile,
   registryOutputFile,
@@ -49,6 +51,7 @@ export async function generatePluginRegistry(options: GeneratePluginRegistryOpti
   const iconLoadersSource = generateIconLoadersSource(summaries);
   const databaseLoadersSource = generateDatabaseLoadersSource(summaries, requestedMode);
   const pluginDefinitionsSource = generatePluginDefinitionsSource();
+  const derivationsSource = generateDerivationsSource();
   await fs.mkdir(registryGeneratedDir, { recursive: true });
   const registryChanged = await writeFileIfChanged(registryOutputFile, registrySource);
   const declarationsChanged = await writeFileIfChanged(registryDeclarationsFile, declarationSource);
@@ -56,6 +59,7 @@ export async function generatePluginRegistry(options: GeneratePluginRegistryOpti
   const workerLoadersChanged = await writeFileIfChanged(registryWorkerLoadersFile, workerLoadersSource);
   const iconLoadersChanged = await writeFileIfChanged(registryIconLoadersFile, iconLoadersSource);
   const databaseLoadersChanged = await writeFileIfChanged(registryDatabaseLoadersFile, databaseLoadersSource);
+  const derivationsChanged = await writeFileIfChanged(registryDerivationsFile, derivationsSource);
   const pluginDefinitionsChanged = await writeFileIfChanged(
     registryPluginDefinitionsFile,
     pluginDefinitionsSource
@@ -69,6 +73,7 @@ export async function generatePluginRegistry(options: GeneratePluginRegistryOpti
     workerLoaders: workerLoadersChanged,
     iconLoaders: iconLoadersChanged,
     databaseLoaders: databaseLoadersChanged,
+    derivations: derivationsChanged,
     pluginDefinitions: pluginDefinitionsChanged,
   });
 }
