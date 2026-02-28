@@ -210,4 +210,36 @@ describe('useShapeBuildCacheActions', () => {
     expect(mocks.clearShapeArtifacts).toHaveBeenCalledWith('node-1');
     expect(mocks.deleteBuildSession).toHaveBeenCalledWith('node-1');
   });
+
+  it('reloads counts when refreshKey changes and enables VT deletion after build completion', async () => {
+    mocks.countRawDataDataSourceBuffersForNode.mockResolvedValue(0);
+    mocks.countFetchCaches.mockResolvedValue(0);
+    mocks.countTransformCaches.mockResolvedValue(0);
+    mocks.getVectorTileSummary
+      .mockResolvedValueOnce({ tiles: 0 })
+      .mockResolvedValueOnce({ tiles: 12 });
+
+    const { result, rerender } = renderHook(
+      ({ refreshKey }: { refreshKey: unknown }) => useShapeBuildCacheActions({
+        nodeId: 'node-1',
+        refreshKey,
+      }),
+      {
+        wrapper,
+        initialProps: { refreshKey: 'running' },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.counts.vt).toBe(0);
+      expect(result.current.canDeleteVTCache).toBe(false);
+    });
+
+    rerender({ refreshKey: 'completed' });
+
+    await waitFor(() => {
+      expect(result.current.counts.vt).toBe(12);
+      expect(result.current.canDeleteVTCache).toBe(true);
+    });
+  });
 });
