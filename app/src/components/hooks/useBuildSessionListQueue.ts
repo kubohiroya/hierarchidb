@@ -297,10 +297,20 @@ export function useBuildSessionListQueue({
     }) satisfies BuildSessionQueueEntry),
     [rows]
   );
+  const entriesSignature = useMemo(
+    () => rows.map(createQueueRowSignature).join('||'),
+    [rows]
+  );
+  const lastEntriesSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    onEntriesChange?.(entries);
-  }, [entries, onEntriesChange]);
+    if (!onEntriesChange) return;
+    if (lastEntriesSignatureRef.current === entriesSignature) {
+      return;
+    }
+    lastEntriesSignatureRef.current = entriesSignature;
+    onEntriesChange(entries);
+  }, [entries, entriesSignature, onEntriesChange]);
 
   const startTopSession = useCallback(async (nodeId: NodeId) => {
     if (autoStartingNodeRef.current === nodeId) {

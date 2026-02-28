@@ -38,6 +38,7 @@ export type StageContentArgs = {
   matchesSearchQuery: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['matchesSearchQuery'];
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending?: boolean;
+  buildConfig: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['buildConfigForDisplay'];
   onOpenDetailFloatingWindow: () => void;
   onCloseDetailFloatingWindow: () => void;
   floatingWindowZIndex: number;
@@ -72,6 +73,7 @@ const ShapeBuildProgressPanelStageContent = ({
   t,
   matchesSearchQuery,
   isDetailFloatingWindowOpen,
+  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
@@ -94,6 +96,7 @@ const ShapeBuildProgressPanelStageContent = ({
     matchesSearchQuery,
     isDetailFloatingWindowOpen,
     isOpeningPending,
+    buildConfig,
     onOpenDetailFloatingWindow,
     onCloseDetailFloatingWindow,
     floatingWindowZIndex,
@@ -120,6 +123,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
   openStagePreviewWindow,
   bringStagePreviewWindowToFront,
   closeStagePreviewWindow,
+  buildConfigForDisplay,
 }: UseShapeBuildProgressPanelControllerOverlaySectionsArgs): UseShapeBuildProgressPanelControllerOverlaySectionsResult => {
   const stageProgressContent = stages.reduce<StageRecord>((acc: StageRecord, stage: BuildStage) => {
     const stageTasks = tasksByStageForDisplay[stage.id] ?? [];
@@ -153,6 +157,7 @@ export const useShapeBuildProgressPanelControllerOverlaySections = ({
       floatingWindowZIndex: stagePreviewWindowZIndexMap[stage.id] ?? 1,
       onRequestBringFloatingWindowToFront: () => bringStagePreviewWindowToFront(stage.id),
       isOpeningPending: Boolean(stagePreviewWindowPendingMap[stage.id]),
+      buildConfig: buildConfigForDisplay,
     });
     return acc;
   }, {} as StageRecord);
