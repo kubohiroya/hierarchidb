@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #597 / `codex/fix/shape/step6-preview-max-update-depth` / start: 2026-02-28 10:00 JST
 - #589 / `codex/fix/shape/step5-rebuild-fetch-preview` / start: 2026-02-28 08:06 JST
 - #576 / `codex/chore/plugin-registry-ignore-generated-dir` / start: 2026-02-27 20:53 JST
 - #565 / `codex/feat/ui/stacked-barchart-snackbar-ratios-565` / start: 2026-02-26 11:45 JST
@@ -124,6 +125,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- blocked: 2026-02-28 10:02 JST #597 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` は差分外既知失敗（`src/ui/components/build-progress/TaskItemCard/TaskItemCard.tsx:86` の `stageIcon` 未使用 TS6133）で exit 2。`pnpm -w turbo run test --filter @hierarchidb/shape-plugin --only` も差分外既知の複数失敗（既存ユニットテスト群）で exit 1。
+- update: 2026-02-28 10:02 JST #597 原因は `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStepView.tsx` で `selectedRows={new Set(selectedFeatureIds)}` を毎レンダー生成し、`packages/ui/data-grid/src/TanstackDataGrid.tsx` の `selectedRows` 同期 `useEffect` が毎回 `setInternalSelectedRows` を実行して再レンダーが連鎖したこと。発生範囲は Shape Step6 Preview の metadata list（DataGrid）表示経路。修正方法は `selectedFeatureIdSet` を `React.useMemo` で安定化し `selectedRows` に渡す変更。適用範囲は `ShapePreviewStepView.tsx` のみ。`pnpm -w turbo run build --filter @hierarchidb/shape-plugin --only` は exit 0。
+- start: 2026-02-28 10:00 JST #597 を起票（https://github.com/kubohiroya/hierarchidb/issues/597）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/step6-preview-max-update-depth` を作成して着手。
 - blocked: 2026-02-28 08:13 JST #589 `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` は差分外既知失敗（`src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx:57` で `task-icon-recycling` 未検出）で exit 1。
 - blocked: 2026-02-28 08:13 JST #589 `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` は差分外既知失敗（`src/ui/components/build-progress/TaskItemCard/TaskItemCard.tsx:86` の `stageIcon` 未使用 TS6133）で exit 2。
 - update: 2026-02-28 08:13 JST #589 DoD2/3/4 を先行修正。`shapePipelineFetchStage.ts` で再ビルド時 pending task を failed 化しない分岐を追加、`shapePipelineStageHelpers.ts` に pending finalization の `markFailed` オプションを追加、`TaskItemDetailSnackbar.tsx` で `Failed/Failure` 重複表示抑止・cacheId 解決フォールバック・結果サイズ算出フォールバック・タイル座標ラベル背景撤去を適用。`shapePipelineFetchStageSection.unit.test.ts` に再ビルド時 pending 維持の回帰テストを追加。

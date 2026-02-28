@@ -110,6 +110,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     toggleShapePreviewLayerVisibility,
     shapePreviewLayerToggleItems,
   } = useShapePreviewStepView(data ?? {}, nodeId);
+  const selectedFeatureIdSet = React.useMemo(
+    () => new Set(selectedFeatureIds),
+    [selectedFeatureIds],
+  );
   React.useEffect(() => {
     setFeatureWindowOpen(true);
   }, []);
@@ -346,7 +350,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         loading={featureMetadataLoading && !featureMetadataLoaded}
         error={featureMetadataError ?? undefined}
         matchedRows={matchedFeatureIdSet}
-        selectedRows={new Set(selectedFeatureIds)}
+        selectedRows={selectedFeatureIdSet}
         onSelectionChange={(next) => {
           setSelectedFeatureIds(Array.from(next).map(String));
         }}
