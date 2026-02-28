@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #611 / `codex/fix/build/ts2307-shape-tests-611` / start: 2026-02-28 12:28 JST
 - #604 / `codex/fix/plugin-dialog-safe-menu-popover-604` / start: 2026-02-28 10:38 JST
 - #601 / `codex/fix/plugin-registry-build-owned-generation-601` / start: 2026-02-28 10:28 JST
 - #597 / `codex/fix/shape/step6-preview-max-update-depth` / start: 2026-02-28 10:00 JST
@@ -127,6 +128,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-28 12:28 JST #611 を起票（https://github.com/kubohiroya/hierarchidb/issues/611）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/build/ts2307-shape-tests-611` を作成し、worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-611` で着手。
+- update: 2026-02-28 12:50 JST #611 `@hierarchidb/ui-dialog` の d.ts に残っていた `~/headless/types` 参照を相対 import に修正し、TS2307 を解消。
+- done: 2026-02-28 12:50 JST #611 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - done: 2026-02-28 10:45 JST #604 検証: `pnpm -w turbo run build --filter @hierarchidb/ui-dialog --filter @hierarchidb/components --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --only --output-logs errors-only` exit 0。`HIERARCHIDB_E2E=1 node_modules/.bin/playwright test e2e/shape/plugin-dialog-caret.spec.ts --project=chromium` exit 0（1 passed）。
 - blocked: 2026-02-28 10:45 JST #604 `pnpm -w turbo run typecheck --filter @hierarchidb/ui-dialog --filter @hierarchidb/components --filter @hierarchidb/plugin-ui-host --filter @hierarchidb/shape-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --only --output-logs errors-only` は差分外既知依存欠落（`@hierarchidb/ui-dialog` で `@hierarchidb/tree-api` 解決不可 TS2307）により exit 2。
 - update: 2026-02-28 10:45 JST #604 原因は PluginDialog 内に散在する `Menu/Popover` ごとのフォーカス復元設定が局所実装で漏れやすく、新規 UI 追加時にキャレット回帰が再発していたこと。発生範囲は `plugin-ui-host`（Stepper/Footer）、`components`（BuildControlCard/BuildStepStagePanel/共通メニュー）、`shape-plugin`（overlay Popover）、および dialog 内利用可能な plugin UI（location/resolver のメニュー）。修正として `@hierarchidb/ui-dialog` に `DialogSafeMenu` / `DialogSafePopover` を新設し、対象箇所の `Menu/Popover` を共通ラッパーへ置換。さらに `eslint.config.js` に `packages/components`・`packages/plugin-ui-host`・`plugins/**/src/ui` で生の `Menu/Popover` import を禁止するガードを追加。適用範囲は上記 UI コンポーネント群と lint 設定。

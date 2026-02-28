@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseAdminLevelValue } from '../adminLevel';
 import { collectShapeLayerAdminLevels } from '../useShapePreviewStepUtils';
 import { parseSourceKey } from '../useShapePreviewStepUtils';
+
+vi.mock('@hierarchidb/ui-map', () => ({
+  formatAdminLevelLabel: (value?: number) => (
+    typeof value === 'number' && Number.isFinite(value) ? `ADM${value}` : 'Base'
+  ),
+}));
 
 describe('parseAdminLevelValue', () => {
   it('normalizes numeric and ADM-level values', () => {

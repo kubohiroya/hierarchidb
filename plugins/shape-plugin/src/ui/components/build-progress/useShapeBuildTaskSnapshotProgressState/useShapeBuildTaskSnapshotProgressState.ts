@@ -412,7 +412,6 @@ export function useShapeBuildTaskSnapshotProgressState(
       reported.add(task.taskId);
       const message = resolveTaskMetadataMessage(task.metadata)
         ?? task.errorMessage
-        ?? task.message
         ?? 'Task failed';
       const geometryDetails = parseGeometrySimplifyError(message);
       if (geometryDetails) {

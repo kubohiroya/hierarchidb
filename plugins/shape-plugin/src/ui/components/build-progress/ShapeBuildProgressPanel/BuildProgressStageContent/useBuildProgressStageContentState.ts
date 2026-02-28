@@ -25,6 +25,7 @@ type BuildProgressStageContentStateArgs = {
   }>;
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
+  isStartupPending: boolean;
   buildStatus: BuildStatus;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (
@@ -83,6 +84,7 @@ export const useBuildProgressStageContentState = ({
   paneProgress,
   isTaskSummaryLoading,
   isTasksLoading,
+  isStartupPending,
   buildStatus,
   resolveStatusLabel,
   resolveStatusColor,
@@ -153,7 +155,10 @@ export const useBuildProgressStageContentState = ({
   const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
-  const showTaskSkeleton = !hasTasks && !showSummarySkeleton && isTasksLoading;
+  const showTaskSkeleton = !hasTasks
+    && !showSummarySkeleton
+    && isTasksLoading
+    && (isBuildInProgressState || isStartupPending);
 
   const requestedTargetIndex = useMemo(() => {
     if (!scrollToTaskId) return null;

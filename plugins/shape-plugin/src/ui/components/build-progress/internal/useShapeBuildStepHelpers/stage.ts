@@ -1,4 +1,5 @@
 import type { TaskStage } from '@hierarchidb/build-api';
+import { resolveMostAdvancedStageId } from '~/ui/components/build-progress/stagePriority';
 
 export type StageLikeTask = {
   stage: TaskStage;
@@ -47,14 +48,5 @@ const resolveMostAdvancedRunningStage = (
   stageIds: Set<string>,
   stages: Array<{ id: string }>,
 ): string | null => {
-  const stageOrder = stages.map((stage) => stage.id);
-  for (let index = stageOrder.length - 1; index >= 0; index -= 1) {
-    const stage = stageOrder[index];
-    if (typeof stage !== 'string') {
-      continue;
-    }
-    if (!stageIds.has(stage)) continue;
-    return stage;
-  }
-  return null;
+  return resolveMostAdvancedStageId(stageIds, stages);
 };

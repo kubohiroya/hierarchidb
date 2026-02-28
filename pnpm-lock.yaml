@@ -3911,9 +3911,6 @@ importers:
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../../packages/shape-store
-      '@hierarchidb/ui-monitoring':
-        specifier: workspace:*
-        version: link:../../packages/ui/monitoring
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -4065,6 +4062,9 @@ importers:
       '@hierarchidb/ui-memory':
         specifier: workspace:*
         version: link:../../packages/ui/memory
+      '@hierarchidb/ui-monitoring':
+        specifier: workspace:*
+        version: link:../../packages/ui/monitoring
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
