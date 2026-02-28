@@ -41,7 +41,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -75,7 +75,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="transform"
@@ -119,7 +119,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -134,8 +134,10 @@ describe('TaskItemCardListCard', () => {
     );
 
     expect(screen.queryByText('N/A')).toBeNull();
-    expect(screen.getByText(/Completed|Fetched data/)).toBeTruthy();
-    expect(screen.getByText(/Failed:/)).toBeTruthy();
+    const summaries = screen.getAllByTestId('task-inline-summary')
+      .map((element) => element.textContent ?? '');
+    expect(summaries.some((text) => /Completed|Fetched data/.test(text))).toBe(true);
+    expect(summaries.some((text) => /Failed:/.test(text))).toBe(true);
   });
 
   it('accepts injected summary builder for fetch stage', () => {
@@ -157,7 +159,7 @@ describe('TaskItemCardListCard', () => {
       detailLines: ['Injected fetch detail'],
     });
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -198,7 +200,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -213,11 +215,14 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    const chip = screen.getByText('Completed').closest('.MuiChip-root');
-    expect(chip).toBeTruthy();
-    if (chip) {
-      fireEvent.mouseEnter(chip);
-    }
+    const chips = Array.from(new Set(
+      screen.getAllByText('Completed')
+        .map((element) => element.closest('.MuiChip-root'))
+        .filter((element): element is HTMLElement => Boolean(element))
+        .filter((element) => element.closest('[data-task-id]')),
+    ));
+    expect(chips.length).toBe(1);
+    fireEvent.mouseEnter(chips[0]);
 
     expect(screen.getByText('URL: https://example.com/jp/adm0.geojson')).toBeTruthy();
     expect(screen.getByText('Features')).toBeTruthy();
@@ -267,7 +272,7 @@ describe('TaskItemCardListCard', () => {
     ];
     const store = createStore();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -282,9 +287,7 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    const chips = screen.getAllByText('Completed')
-      .map((element) => element.closest('.MuiChip-root'))
-      .filter(Boolean) as HTMLElement[];
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
     expect(chips.length).toBe(2);
 
     fireEvent.mouseEnter(chips[0]);
@@ -323,7 +326,7 @@ describe('TaskItemCardListCard', () => {
     const store = createStore();
     const onOpenDetailFloatingWindow = vi.fn();
 
-    render(
+    const view = render(
       <Provider store={store}>
         <TaskItemCardListCard
           stageId="fetch"
@@ -339,11 +342,9 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    const chip = screen.getByText('Completed').closest('.MuiChip-root');
-    expect(chip).toBeTruthy();
-    if (chip) {
-      fireEvent.click(chip);
-    }
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
+    expect(chips.length).toBe(1);
+    fireEvent.click(chips[0]);
     expect(onOpenDetailFloatingWindow).toHaveBeenCalledTimes(1);
   });
 
@@ -408,21 +409,22 @@ describe('TaskItemCardListCard', () => {
       );
     };
 
-    render(
+    const view = render(
       <Provider store={store}>
         <Harness />
       </Provider>
     );
 
-    const chips = screen.getAllByText('Completed')
-      .map((element) => element.closest('.MuiChip-root'))
-      .filter(Boolean) as HTMLElement[];
+    const chips = Array.from(view.container.querySelectorAll('[data-task-id] .MuiChip-root'));
     expect(chips.length).toBe(2);
 
     fireEvent.click(chips[0]);
     expect(screen.getByText('URL: https://example.com/jp/close-sync.geojson')).toBeTruthy();
 
-    fireEvent.click(screen.getByLabelText('Close preview'));
+    const closeButtons = view.container.querySelectorAll('[aria-label="Close preview"]');
+    const closeButton = closeButtons[0] as HTMLElement | undefined;
+    expect(closeButton).toBeTruthy();
+    fireEvent.click(closeButton as HTMLElement);
     fireEvent.click(screen.getByRole('button', { name: 'Reopen preview' }));
     fireEvent.mouseEnter(chips[1]);
 

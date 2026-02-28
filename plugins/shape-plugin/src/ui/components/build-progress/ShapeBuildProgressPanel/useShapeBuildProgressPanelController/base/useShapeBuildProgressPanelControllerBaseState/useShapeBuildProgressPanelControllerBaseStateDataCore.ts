@@ -212,6 +212,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     || controls.startPending
     || startPendingHold;
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
+  const isStartupPendingForDisplay = isBuildStartupPending || startPendingHold;
   const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';
   const isStartButtonLoading = isResetSessionLoading
     ? false
@@ -616,6 +617,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     startPendingHold,
     isTasksLoadingForDisplay,
     isTaskSummaryLoadingForDisplay,
+    isStartupPendingForDisplay,
     taskSearchText,
     setTaskSearchText,
     startupNoticeDismissed,

@@ -20,6 +20,7 @@ type BuildProgressStageContentProps = {
   }>;
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
+  isStartupPending: boolean;
   buildStatus: BuildStatus;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
@@ -42,6 +43,7 @@ export const BuildProgressStageContent = ({
   paneProgress,
   isTaskSummaryLoading,
   isTasksLoading,
+  isStartupPending,
   buildStatus,
   resolveStatusLabel,
   resolveStatusColor,
@@ -62,6 +64,7 @@ export const BuildProgressStageContent = ({
     paneProgress,
     isTaskSummaryLoading,
     isTasksLoading,
+    isStartupPending,
     buildStatus,
     resolveStatusLabel,
     resolveStatusColor,

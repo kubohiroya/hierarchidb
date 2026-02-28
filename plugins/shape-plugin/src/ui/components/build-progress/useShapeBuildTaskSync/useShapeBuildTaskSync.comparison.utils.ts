@@ -41,6 +41,24 @@ const resolveTaskMetadataText = (task: ShapeBuildTaskSummary): string => (
   resolveTaskMetadataMessage(task.metadata)?.trim() ?? ''
 );
 
+const normalizeTaskMetadata = (
+  metadata: Record<string, unknown> | undefined,
+  message: unknown,
+): Record<string, unknown> | undefined => {
+  if (typeof message !== 'string' || message.trim().length === 0) {
+    return metadata;
+  }
+  const trimmed = message.trim();
+  if (metadata && typeof metadata === 'object') {
+    const existing = typeof metadata.message === 'string' ? metadata.message.trim() : '';
+    if (existing.length > 0) {
+      return metadata;
+    }
+    return { ...metadata, message: trimmed };
+  }
+  return { message: trimmed };
+};
+
 export const areTasksEquivalentForView = (
   left: ShapeBuildTaskSummary,
   right: ShapeBuildTaskSummary,
@@ -211,10 +229,18 @@ const shouldPromoteCompletedMessage = (
   return false;
 };
 
+const isRetryableTerminalTask = (task: ShapeBuildTaskSummary): boolean => (
+  task.status === 'failed'
+  || isTaskSkipped(task.display, resolveTaskMetadataText(task))
+);
+
 export const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (isRetryableTerminalTask(current) && (next.status === 'queued' || next.status === 'running')) {
+    return true;
+  }
   if (isCompletedAtFullProgress(current) && isCompletedAtFullProgress(next)) {
     return shouldPromoteCompletedMessage(current, next);
   }
@@ -294,14 +320,16 @@ export const replaceSnapshotAndPreserveCurrentTasksByStage = (
 
 export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   const stage = resolveTaskStage(task);
+  const normalizedMetadata = normalizeTaskMetadata(task.metadata, undefined);
   const progress = resolveProgressValue(task.progress);
-  const metadataMessage = resolveTaskMetadataMessage(task.metadata) ?? '';
+  const metadataMessage = resolveTaskMetadataMessage(normalizedMetadata) ?? '';
   const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, metadataMessage);
   return {
     ...task,
     stage,
     status: resolvedStatus,
     progress: resolveTaskProgress(resolvedStatus, task.display, metadataMessage, progress),
+    metadata: normalizedMetadata,
   };
 };
 
@@ -327,18 +355,7 @@ export const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
     return taskIdStage;
   }
 
-  const fallbackStage = String(task.stage).toLowerCase();
-  if (fallbackStage.includes('fetch')) {
-    return 'fetch';
-  }
-  if (fallbackStage.includes('transform')) {
-    return 'transform';
-  }
-  if (fallbackStage.includes('vt')) {
-    return 'vt';
-  }
-
-  return 'fetch';
+  throw new Error('invalid task stage');
 };
 
 export const isTaskStage = (value: unknown): value is TaskStage => (

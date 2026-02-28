@@ -161,6 +161,7 @@
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-memory": "workspace:*",
+    "@hierarchidb/ui-monitoring": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-search-input": "workspace:*",
     "@hierarchidb/ui-stacked-barchart": "workspace:*",

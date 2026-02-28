@@ -71,9 +71,10 @@ export const useShapeBuildTaskSyncResolver = ({
       if (parentInputSummary) {
         const parentInputMessage = buildVtParentInputSummaryMessage(parentInputSummary);
         const baseMessage = resolveTaskMetadataText(resolvedTask);
+        const mergedMessage = mergeTaskMessage(baseMessage, parentInputMessage);
         resolvedTask.metadata = {
           ...(resolvedTask.metadata ?? {}),
-          message: mergeTaskMessage(baseMessage, parentInputMessage),
+          message: mergedMessage,
         };
         if (isDev) {
           const logKey = `${resolvedTask.taskId}:${parentInputMessage}`;
