@@ -139,6 +139,7 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-28 18:34 JST #639 PR https://github.com/kubohiroya/hierarchidb/pull/640 を `main` 向けに作成し、Issue #639 へ実装要点・検証結果をコメント連携。
 - update: 2026-02-28 18:32 JST #639 原因は `vtStageFeatureCollectorRecordProcessor.ts` で `geometryArea` 呼び出し時に `geometryEngine` 引数が不足していたこと（TS2554）。発生範囲は `@hierarchidb/vt-orchestrator` の VT ステージ地物集計処理。修正として `geometryArea(feature, context.geometryEngine)` に変更し、面積集計メタデータの追加実装と整合させた。適用範囲は `packages/vt-orchestrator/src/vt/vtStageFeatureCollectorRecordProcessor.ts`。
 - update: 2026-02-28 18:32 JST #639 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run` exit 0、`pnpm -w turbo run test --filter @hierarchidb/vt-orchestrator -- --run src/vt/__tests__/vtStage.unit.test.ts` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --filter @hierarchidb/vt-orchestrator --output-logs errors-only` exit 0、`pnpm -w turbo run build --filter @hierarchidb/ui-flag-overlay --filter @hierarchidb/vt-orchestrator --filter @hierarchidb/shape-plugin --output-logs errors-only` exit 0。
 - start: 2026-02-28 18:25 JST #639 を起票（https://github.com/kubohiroya/hierarchidb/issues/639）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-639` とブランチ `codex/feat/shape/step5-vt-task-flag-overlay-icon` を `main` 起点で作成して着手。
