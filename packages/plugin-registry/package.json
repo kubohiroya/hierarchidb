@@ -74,7 +74,7 @@
   "peerDependencies": {},
   "peerDependenciesMeta": {},
   "scripts": {
-    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts generated/ui-loaders.ts generated/worker-loaders.ts generated/icon-loaders.ts generated/database-loaders.ts generated/plugin-definitions.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
+    "build": "pnpm --workspace-root run tools:gen-plugin-registry && pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts generated/ui-loaders.ts generated/worker-loaders.ts generated/icon-loaders.ts generated/database-loaders.ts generated/plugin-definitions.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
@@ -94,7 +94,8 @@
           "@hierarchidb/timeline-plugin#build"
         ],
         "outputs": [
-          "dist/**"
+          "dist/**",
+          "generated/**"
         ]
       }
     }

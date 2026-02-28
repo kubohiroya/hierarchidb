@@ -73,6 +73,12 @@ export async function generatePluginRegistry(options: GeneratePluginRegistryOpti
   });
 }
 
-if (import.meta.url === pathToFileURL(fileURLToPath(import.meta.url)).href) {
+const isExecutedAsEntry = (() => {
+  const entryPath = process.argv[1];
+  if (!entryPath) return false;
+  return pathToFileURL(entryPath).href === import.meta.url;
+})();
+
+if (isExecutedAsEntry) {
   await generatePluginRegistry();
 }

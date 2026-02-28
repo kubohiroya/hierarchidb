@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #601 / `codex/fix/plugin-registry-build-owned-generation-601` / start: 2026-02-28 10:28 JST
 - #597 / `codex/fix/shape/step6-preview-max-update-depth` / start: 2026-02-28 10:00 JST
 - #589 / `codex/fix/shape/step5-rebuild-fetch-preview` / start: 2026-02-28 08:06 JST
 - #576 / `codex/chore/plugin-registry-ignore-generated-dir` / start: 2026-02-27 20:53 JST
@@ -125,6 +126,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-28 10:32 JST #601 検証: `pnpm -w turbo run build --filter @hierarchidb/plugin-registry` exit 0、`pnpm --filter @hierarchidb/app build` exit 0。`app build` で `generate-plugin-registry` ログが出ないことを確認。
+- update: 2026-02-28 10:32 JST #601 原因は `packages/tools/build-scripts/src/gen-plugin-registry.ts` が import 時にも実行される条件式（`import.meta.url === pathToFileURL(fileURLToPath(import.meta.url)).href`）になっており、`app/vite.config.ts` から関数 import しただけで再生成が走っていたこと。発生範囲は `app build` と `vite config load` 経路。修正として 1) `@hierarchidb/plugin-registry` の build 前段で `tools:gen-plugin-registry` を実行し責務を集約 2) `app/package.json` build から直接再生成を削除 3) `app/vite.config.ts` で generator plugin を `command === 'serve'` 限定化 4) `gen-plugin-registry.ts` の entry 判定を `process.argv[1]` ベースへ修正。適用範囲は `packages/plugin-registry/package.json`, `app/package.json`, `app/vite.config.ts`, `packages/tools/build-scripts/src/gen-plugin-registry.ts`。
+- start: 2026-02-28 10:28 JST #601 を起票（https://github.com/kubohiroya/hierarchidb/issues/601）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/plugin-registry-build-owned-generation-601` を作成して着手。
 - start: 2026-02-28 10:14 JST #599 を起票（https://github.com/kubohiroya/hierarchidb/issues/599）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/step5-chip-window-sync-599` を作成して着手。
 - update: 2026-02-28 10:21 JST #599 原因は `TaskItemCardListCard` が `selectedDetail` をローカル保持しており、Geometry Preview Floating Window の `onClose`（×ボタン）で親のウィンドウ開閉状態だけが閉じても `selectedDetail` が残存すること。発生範囲は `plugins/shape-plugin/src/ui/components/build-progress/TaskItemCardListCard/TaskItemCardListCard.tsx` の Chip選択状態と Floating Window 表示状態の同期経路。
 - update: 2026-02-28 10:21 JST #599 修正として `TaskItemCardListCard.tsx` に open→closed 遷移検知 (`wasDetailFloatingWindowOpenRef` + `useEffect`) を追加し、遷移時に `selectedDetail` / `hoveredDetail` をクリアして Chip のトグル見た目を強制同期。適用範囲は同ファイルのみ。回帰防止として `plugins/shape-plugin/src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` に「×で閉じた後に再表示しても前回選択Chipが残らない」テストを追加。
