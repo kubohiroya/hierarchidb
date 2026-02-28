@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, forwardRef, useCallback, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 
@@ -63,6 +63,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
 }: TaskItemCardListCardProps, ref) => {
   const [hoveredDetail, setHoveredDetail] = useState<TaskDetailSelection | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<TaskDetailSelection | null>(null);
+  const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
   const { t } = useTranslation();
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => {
@@ -71,6 +72,14 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   const resolveStageIcon = useCallback((taskStageId: string): ReactNode | null => (
     stageIconById.get(taskStageId) ?? null
   ), [stageIconById]);
+  useEffect(() => {
+    const wasOpen = wasDetailFloatingWindowOpenRef.current;
+    if (wasOpen && !isDetailFloatingWindowOpen) {
+      setSelectedDetail(null);
+      setHoveredDetail(null);
+    }
+    wasDetailFloatingWindowOpenRef.current = isDetailFloatingWindowOpen;
+  }, [isDetailFloatingWindowOpen]);
   const {
     orderedTasks,
     shouldVirtualize,
