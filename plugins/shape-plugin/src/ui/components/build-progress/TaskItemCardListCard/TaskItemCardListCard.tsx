@@ -18,7 +18,7 @@ import {
   buildTransformTaskOutcomeSummary,
 } from '~/ui/components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import {
-  TaskItemDetailFloatingWindow,
+  TaskItemDetailWindow,
   type TaskDetailSelection,
 } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailSnackbar';
 
@@ -185,7 +185,7 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
           })}
         </Box>
       )}
-      <TaskItemDetailFloatingWindow
+      <TaskItemDetailWindow
         open={isDetailFloatingWindowOpen}
         detail={selectedDetail ?? hoveredDetail}
         onClose={onCloseDetailFloatingWindow ?? (() => {})}
