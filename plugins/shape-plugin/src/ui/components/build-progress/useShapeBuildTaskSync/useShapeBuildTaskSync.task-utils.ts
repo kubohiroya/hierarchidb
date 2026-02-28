@@ -13,6 +13,28 @@ const readNumber = (value: unknown): number | null => (
   typeof value === 'number' && Number.isFinite(value) ? value : null
 );
 
+const parseTopCountriesByIntersectingArea = (
+  value: unknown,
+): Array<{ countryCode: string; intersectingAreaSqMeters: number }> => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const record = row as Record<string, unknown>;
+      const countryCode = typeof record.countryCode === 'string'
+        ? record.countryCode.trim().toUpperCase()
+        : '';
+      const area = readNumber(record.intersectingAreaSqMeters);
+      if (!/^[A-Z]{2}$/.test(countryCode) || area === null || area <= 0) return null;
+      return {
+        countryCode,
+        intersectingAreaSqMeters: area,
+      };
+    })
+    .filter((row): row is { countryCode: string; intersectingAreaSqMeters: number } => row !== null)
+    .slice(0, 2);
+};
+
 export const readVtParentInputSummary = (metadata: Record<string, unknown> | undefined): VtParentInputSummary | null => {
   const summaryRecord = asRecord(metadata?.[VT_PARENT_INPUT_SUMMARY_METADATA_KEY]);
   if (!summaryRecord) return null;
@@ -30,6 +52,7 @@ export const readVtParentInputSummary = (metadata: Record<string, unknown> | und
     parentTile: { z, x, y },
     intersectingFeatureCount: Math.max(0, Math.round(intersectingFeatureCount)),
     intersectingGeojsonByteSize: Math.max(0, Math.round(intersectingGeojsonByteSize)),
+    topCountriesByIntersectingArea: parseTopCountriesByIntersectingArea(summaryRecord.topCountriesByIntersectingArea),
   };
 };
 

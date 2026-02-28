@@ -56,6 +56,10 @@ export type VtParentInputSummary = {
   };
   intersectingFeatureCount: number;
   intersectingGeojsonByteSize: number;
+  topCountriesByIntersectingArea?: Array<{
+    countryCode: string;
+    intersectingAreaSqMeters: number;
+  }>;
 };
 
 export type ScopeFromTaskId = {
