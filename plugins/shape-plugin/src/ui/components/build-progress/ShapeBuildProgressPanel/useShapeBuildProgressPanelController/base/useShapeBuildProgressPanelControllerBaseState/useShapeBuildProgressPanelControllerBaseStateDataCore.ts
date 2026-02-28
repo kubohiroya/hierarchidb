@@ -123,7 +123,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     handleDeleteTransposeIndex: cacheHandleDeleteTransposeIndex,
     handleDeleteMetadata: cacheHandleDeleteMetadata,
     handleResetSession: cacheHandleResetSession,
-  } = useShapeBuildCacheActions({ nodeId });
+  } = useShapeBuildCacheActions({ nodeId, refreshKey: summary.buildStatus });
 
   const [isResetSessionPending, setIsResetSessionPending] = useState(false);
   const [startPendingHold, setStartPendingHold] = useState(false);

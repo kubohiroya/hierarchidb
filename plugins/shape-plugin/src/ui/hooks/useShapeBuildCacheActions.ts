@@ -43,6 +43,7 @@ type Args = {
   nodeId?: NodeId;
   disabled?: boolean;
   onResetSession?: () => void;
+  refreshKey?: unknown;
 };
 
 const initialCounts: CacheCounts = {
@@ -72,7 +73,7 @@ type ActionDeps = {
   runClearTaskQueueStages: (taskTypes: Parameters<typeof clearBuildTasksForStages>[2]) => Promise<void>;
 };
 
-export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: Args) => {
+export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession, refreshKey }: Args) => {
   const bridgeRef = useMemo<BuildBridge>(() => getBuildWorkerBridge(), []);
   const [countsLoading, setCountsLoading] = useState(false);
   const [counts, setCounts] = useState(initialCounts);
@@ -131,7 +132,7 @@ export const useShapeBuildCacheActions = ({ nodeId, disabled, onResetSession }: 
     return () => {
       cancelled = true;
     };
-  }, [loadCounts]);
+  }, [loadCounts, refreshKey]);
 
   const runDelete = useCallback(
     async (key: CacheActionKey, action: () => Promise<void>): Promise<void> => {
