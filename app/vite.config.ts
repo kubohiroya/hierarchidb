@@ -869,7 +869,7 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, command: _, isSsrBuild }) => {
+export default defineConfig(({ mode, command, isSsrBuild }) => {
   const env = loadEnv(mode, __dirname, '');
   // Use VITE_APP_NAME as the only base selector; default to root '/'
   const appName = (env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
@@ -987,10 +987,14 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
   //  main thread
   const plugins = [
     specialPrefixRewritePlugin(base),
-    pluginRegistryGeneratorPlugin({
-      rootDir: repoRoot,
-      mode: pluginRegistryMode,
-    }),
+    ...(command === 'serve'
+      ? [
+          pluginRegistryGeneratorPlugin({
+            rootDir: repoRoot,
+            mode: pluginRegistryMode,
+          }),
+        ]
+      : []),
     createIso3166Plugin({
       outputDir: 'public',
       outputFile: 'iso3166-2-level1.csv',

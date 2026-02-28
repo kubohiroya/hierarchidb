@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #601 / `codex/fix/plugin-registry-build-owned-generation-601` / start: 2026-02-28 10:28 JST
 - #576 / `codex/chore/plugin-registry-ignore-generated-dir` / start: 2026-02-27 20:53 JST
 - #565 / `codex/feat/ui/stacked-barchart-snackbar-ratios-565` / start: 2026-02-26 11:45 JST
 - #567 / `codex/fix/shape-plugin-build-sessions-import-567` / start: 2026-02-26 17:30 JST
@@ -123,6 +124,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-28 10:32 JST #601 検証: `pnpm -w turbo run build --filter @hierarchidb/plugin-registry` exit 0、`pnpm --filter @hierarchidb/app build` exit 0。`app build` で `generate-plugin-registry` ログが出ないことを確認。
+- update: 2026-02-28 10:32 JST #601 原因は `packages/tools/build-scripts/src/gen-plugin-registry.ts` が import 時にも実行される条件式（`import.meta.url === pathToFileURL(fileURLToPath(import.meta.url)).href`）になっており、`app/vite.config.ts` から関数 import しただけで再生成が走っていたこと。発生範囲は `app build` と `vite config load` 経路。修正として 1) `@hierarchidb/plugin-registry` の build 前段で `tools:gen-plugin-registry` を実行し責務を集約 2) `app/package.json` build から直接再生成を削除 3) `app/vite.config.ts` で generator plugin を `command === 'serve'` 限定化 4) `gen-plugin-registry.ts` の entry 判定を `process.argv[1]` ベースへ修正。適用範囲は `packages/plugin-registry/package.json`, `app/package.json`, `app/vite.config.ts`, `packages/tools/build-scripts/src/gen-plugin-registry.ts`。
+- start: 2026-02-28 10:28 JST #601 を起票（https://github.com/kubohiroya/hierarchidb/issues/601）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/plugin-registry-build-owned-generation-601` を作成して着手。
 - start: 2026-02-27 20:53 JST #576 を起票（https://github.com/kubohiroya/hierarchidb/issues/576）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-576` とブランチ `codex/chore/plugin-registry-ignore-generated-dir` を `origin/main` 起点で作成して着手。
 - update: 2026-02-27 20:46 JST #574 原因は入力キャレット回帰の検証が手動確認に依存し、メニュー開閉後フォーカス復元経路を継続的に監視できていなかったこと。発生範囲は PluginDialog Step1（name/description）および Step5（Search tasks, BuildControl/Stepper/Footer メニュー遷移）で、環境により Step5 が非表示構成となるケースを含む。修正方法として `e2e/shape/plugin-dialog-caret.spec.ts` を追加し、Step1 のクリック入力可否を必須検証、Step5 は表示時にメニュー開閉後の再入力まで検証し、非表示時は注記付きでスキップする構成へ変更。適用範囲はE2Eテストのみ。検証: `HIERARCHIDB_E2E=1 node_modules/.bin/playwright test e2e/shape/plugin-dialog-caret.spec.ts --project=chromium` exit 0（1 passed）。
 - start: 2026-02-27 18:00 JST #574 を起票（https://github.com/kubohiroya/hierarchidb/issues/574）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-issue-574-caret-e2e` とブランチ `codex/fix/plugin-dialog-caret-e2e-574` を `origin/main` 起点で作成して着手。
