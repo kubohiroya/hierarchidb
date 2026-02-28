@@ -47,7 +47,7 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
   if (params.resumeExistingTasks) {
     await markStageTasksRecycled(params.taskQueue, params.nodeId, 'fetch');
   }
-  try {
+  const runFetchPass = async (resumeExistingTasks: boolean): Promise<void> => {
     await runShapeFetchStage({
       nodeId: params.nodeId,
       dataSource: params.dataSource,
@@ -56,11 +56,14 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
       buildConfig: params.buildConfig,
       taskQueue: params.taskQueue,
       waitIfPaused: params.waitIfPaused,
-      resumeExistingTasks: params.resumeExistingTasks,
+      resumeExistingTasks,
       abortController: fetchAbortController,
       failureHandling: params.failureHandling,
       onTasksEnqueued: params.onTasksEnqueued,
     });
+  };
+  try {
+    await runFetchPass(params.resumeExistingTasks);
   } catch (error) {
     const baseMessage = error instanceof Error ? error.message : String(error);
     const failedTaskId = error && typeof error === 'object'
@@ -78,11 +81,21 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     throw error;
   }
   let stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
-  console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', JSON.stringify({
+  console.warn('[ShapeFetch][PipelineDiagnostics] stage fetch completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
     counts: stageCounts,
   }));
+  if (!params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
+    console.warn('[ShapeFetch][PipelineDiagnostics] fetch stage left pending tasks on fresh run; retrying queued drain once', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      counts: stageCounts,
+    }));
+    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
+    await runFetchPass(true);
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+  }
   if (params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
     await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
     stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');

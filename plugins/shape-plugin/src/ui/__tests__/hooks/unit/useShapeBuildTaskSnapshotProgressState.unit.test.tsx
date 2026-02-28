@@ -4,6 +4,7 @@ import type { BuildTaskUpdateEvent } from '@hierarchidb/build-api';
 import { useShapeBuildTaskSnapshotProgressState } from '../../../components/build-progress/useShapeBuildTaskSnapshotProgressState/useShapeBuildTaskSnapshotProgressState';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getDefaultStore } from 'jotai';
+import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 import {
   tasksAtom,
   tasksErrorAtom,
@@ -1390,7 +1391,8 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
 
     await waitFor(() => {
       expect(result.current.tasks).toHaveLength(1);
-      expect(result.current.tasks[0]?.message).toBe(
+      const message = resolveTaskMetadataMessage(result.current.tasks[0]?.metadata);
+      expect(message).toBe(
         'tiles 12/40 | vt parent input z=6 x=15 y=23 intersects(features=9, geojsonBytes=2316360)',
       );
     });

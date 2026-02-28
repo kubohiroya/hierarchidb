@@ -96,7 +96,7 @@ export const useShapeBuildTaskSyncEventHandlers = ({
     if (!previous && tasksMapRef.current.size > 0) {
       const message = `[ShapeBuildTaskSync] unknown taskId: ${resolved.taskId}`;
       if (isDev) {
-        console.error(message, {
+        console.debug(`${message} (accepted as late update)`, {
           nodeId: sessionNodeId,
           task: resolved,
           currentTasks: Array.from(tasksMapRef.current.keys()),

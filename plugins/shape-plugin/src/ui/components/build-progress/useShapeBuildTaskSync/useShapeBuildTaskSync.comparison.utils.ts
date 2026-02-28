@@ -37,9 +37,16 @@ const areMetadataEquivalentForView = (
   return leftKeys.every((key) => Object.hasOwn(right, key) && right[key] === left[key]);
 };
 
-const resolveTaskMetadataText = (task: ShapeBuildTaskSummary): string => (
-  resolveTaskMetadataMessage(task.metadata)?.trim() ?? ''
-);
+const resolveTaskMetadataText = (task: ShapeBuildTaskSummary): string => {
+  const metadataMessage = resolveTaskMetadataMessage(task.metadata)?.trim();
+  if (metadataMessage) return metadataMessage;
+  const rawMessage = (task as { message?: unknown }).message;
+  if (typeof rawMessage === 'string') {
+    const trimmed = rawMessage.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return '';
+};
 
 const normalizeTaskMetadata = (
   metadata: Record<string, unknown> | undefined,
@@ -320,7 +327,8 @@ export const replaceSnapshotAndPreserveCurrentTasksByStage = (
 
 export const resolveTaskSummaryFromRaw = (task: RawTaskSummary): ShapeBuildTaskSummary => {
   const stage = resolveTaskStage(task);
-  const normalizedMetadata = normalizeTaskMetadata(task.metadata, undefined);
+  const rawMessage = (task as { message?: unknown }).message;
+  const normalizedMetadata = normalizeTaskMetadata(task.metadata, rawMessage);
   const progress = resolveProgressValue(task.progress);
   const metadataMessage = resolveTaskMetadataMessage(normalizedMetadata) ?? '';
   const resolvedStatus = resolveTaskDisplayStatus(task.status, progress, task.display, metadataMessage);

@@ -69,7 +69,6 @@ const {
   getShapeEntityHandler,
   activePipelines,
   activePipelineRuns,
-  seedTaskQueueFromBuildTasks,
   isStopReason,
 } = shapeBuildRuntimeExecutionMetrics;
 
@@ -598,6 +597,10 @@ const startBuildSessionInternal = async (
       'config-invalidation',
       async () => applyConfigInvalidation(nodeForSession, null, mergedRuntimeConfig),
     );
+    await executeStartupStep(
+      'clear-build-task-history',
+      async () => clearBuildTasksByStage(nodeForSession, ['fetch', 'transform', 'vt']),
+    );
     let existingTaskCount = await executeStartupStep(
       'count-existing-tasks',
       async () => taskQueue.tasks.where('nodeId').equals(nodeForSession).count(),
@@ -613,15 +616,6 @@ const startBuildSessionInternal = async (
         {
           existingTaskCount,
           previousSessionStatus: previousSession?.status ?? null,
-        },
-      );
-    }
-    if (existingTaskCount === 0) {
-      await executeStartupStep(
-        'seed-task-queue',
-        async () => {
-          await seedTaskQueueFromBuildTasks(nodeForSession);
-          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeForSession).count();
         },
       );
     }
@@ -987,19 +981,14 @@ const invokeShapeBuildCommand = async (
         clearActivePipelineRuntimeState(nodeId);
       }
     });
+    await executeResumeStep(
+      'clear-build-task-history',
+      async () => clearBuildTasksByStage(nodeId, ['fetch', 'transform', 'vt']),
+    );
     let existingTaskCount = await executeResumeStep(
       'count-existing-tasks',
       async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
     );
-    if (existingTaskCount === 0) {
-      await executeResumeStep(
-        'seed-task-queue',
-        async () => {
-          await seedTaskQueueFromBuildTasks(nodeId);
-          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
-        },
-      );
-    }
     if (activePipelines.has(pipelineKey)) {
       await emitProgressSnapshot(nodeId, 'resumeBuildSession ignored: pipeline already active');
       return;
@@ -1099,15 +1088,6 @@ const invokeShapeBuildCommand = async (
       'count-existing-tasks-after-invalidation',
       async () => taskQueue.tasks.where('nodeId').equals(nodeId).count(),
     );
-    if (existingTaskCount === 0) {
-      await executeResumeStep(
-        'seed-task-queue-after-invalidation',
-        async () => {
-          await seedTaskQueueFromBuildTasks(nodeId);
-          existingTaskCount = await taskQueue.tasks.where('nodeId').equals(nodeId).count();
-        },
-      );
-    }
     const existingFetchTaskCount = await executeResumeStep(
       'count-existing-fetch-tasks-after-invalidation',
       async () => taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'fetch']).count(),

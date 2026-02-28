@@ -39,7 +39,9 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/ui-dialog": "workspace:*"
+  },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
