@@ -3,13 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   IconButton,
-  Paper,
   Stack,
   Typography,
   useTheme,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import CloseIcon from '@mui/icons-material/Close';
 import LayersIcon from '@mui/icons-material/Layers';
 import { useAtomValue } from 'jotai';
 import type { Feature, FeatureCollection } from 'geojson';
@@ -29,13 +27,12 @@ import {
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { buildStagesAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import type { TaskOutcomeSummary } from '~/ui/components/build-progress/TaskItem/TaskItem';
+import type { TaskDetailPayload, TaskDetailSelection } from './TaskItemDetailTypes';
+import type { ShapeBuildConfig } from '~/common/types/build';
+import { VTTaskItemDetailWindow } from '~/ui/components/build-progress/vt/VTTaskItemDetailWindow';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 
-type TaskDetailPayload = {
-  title: string;
-  summary: TaskOutcomeSummary;
-  task: ShapeBuildTaskSummary;
-};
-export type TaskDetailSelection = TaskDetailPayload;
+export type { TaskDetailSelection };
 
 type PreviewData = {
   original: FeatureCollection | null;
@@ -1039,25 +1036,25 @@ const TaskDetailContent = ({
   );
 };
 
-type TaskItemDetailFloatingWindowProps = {
+type TaskItemDetailWindowProps = {
   open: boolean;
   detail: TaskDetailSelection | null;
   onClose: () => void;
   zIndex: number;
   stageId?: string;
+  buildConfig?: ShapeBuildConfig;
   onRequestBringToFront?: () => void;
 };
 
-type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
-
-export const TaskItemDetailFloatingWindow = ({
+export const TaskItemDetailWindow = ({
   open,
   detail,
   onClose,
   zIndex,
   stageId,
+  buildConfig,
   onRequestBringToFront,
-}: TaskItemDetailFloatingWindowProps) => {
+}: TaskItemDetailWindowProps) => {
   const theme = useTheme();
   const stages = useAtomValue(buildStagesAtom);
   const activeDetail = detail;
@@ -1075,19 +1072,17 @@ export const TaskItemDetailFloatingWindow = ({
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [fetchStageMaxima, setFetchStageMaxima] = useState<FetchStageMaxima | null>(null);
-  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 8, y: 8 });
-  const [windowSize, setWindowSize] = useState<{ width: number; height: number }>({ width: 580, height: 420 });
-  const [resizeActive, setResizeActive] = useState(false);
-  const dragStateRef = useRef<{ startClientX: number; startClientY: number; startX: number; startY: number } | null>(null);
-  const resizeStateRef = useRef<{
-    direction: ResizeDirection;
-    startClientX: number;
-    startClientY: number;
-    startX: number;
-    startY: number;
-    startWidth: number;
-    startHeight: number;
-  } | null>(null);
+  const floatingWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:shape:task-detail',
+    initialPosition: { x: 8, y: 8 },
+    initialSize: { width: 450, height: 450 },
+  });
+  const { windowState, handlers } = floatingWindow;
+  const { show, hide, onStateChange, onClose: handleFloatingClose } = handlers;
+  const initialWindowState = useMemo(() => ({
+    ...windowState,
+    zIndex,
+  }), [windowState, zIndex]);
 
   useEffect(() => {
     if (!activeDetail) {
@@ -1160,63 +1155,13 @@ export const TaskItemDetailFloatingWindow = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, open]);
-
   useEffect(() => {
-    if (!open) return;
-    const handleWindowMouseMove = (event: MouseEvent) => {
-      const dragging = dragStateRef.current;
-      const resizing = resizeStateRef.current;
-      if (dragging) {
-        const nextX = dragging.startX + (event.clientX - dragging.startClientX);
-        const nextY = dragging.startY + (event.clientY - dragging.startClientY);
-        setPosition({
-          x: Math.max(0, Math.round(nextX)),
-          y: Math.max(0, Math.round(nextY)),
-        });
-      }
-      if (resizing) {
-        const minWidth = 420;
-        const minHeight = 280;
-        const deltaX = event.clientX - resizing.startClientX;
-        const deltaY = event.clientY - resizing.startClientY;
-        let nextX = resizing.startX;
-        let nextY = resizing.startY;
-        let nextWidth = resizing.startWidth;
-        let nextHeight = resizing.startHeight;
-
-        if (resizing.direction.includes('e')) {
-          nextWidth = Math.max(minWidth, Math.round(resizing.startWidth + deltaX));
-        }
-        if (resizing.direction.includes('s')) {
-          nextHeight = Math.max(minHeight, Math.round(resizing.startHeight + deltaY));
-        }
-        if (resizing.direction.includes('w')) {
-          const candidateWidth = Math.max(minWidth, Math.round(resizing.startWidth - deltaX));
-          nextX = Math.max(0, Math.round(resizing.startX + (resizing.startWidth - candidateWidth)));
-          nextWidth = candidateWidth;
-        }
-        if (resizing.direction.includes('n')) {
-          const candidateHeight = Math.max(minHeight, Math.round(resizing.startHeight - deltaY));
-          nextY = Math.max(0, Math.round(resizing.startY + (resizing.startHeight - candidateHeight)));
-          nextHeight = candidateHeight;
-        }
-
-        setPosition({ x: nextX, y: nextY });
-        setWindowSize({ width: nextWidth, height: nextHeight });
-      }
-    };
-    const handleWindowMouseUp = () => {
-      dragStateRef.current = null;
-      resizeStateRef.current = null;
-      setResizeActive(false);
-    };
-    window.addEventListener('mousemove', handleWindowMouseMove);
-    window.addEventListener('mouseup', handleWindowMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleWindowMouseMove);
-      window.removeEventListener('mouseup', handleWindowMouseUp);
-    };
-  }, [open]);
+    if (open) {
+      show();
+      return;
+    }
+    hide();
+  }, [hide, open, show]);
 
   const resultColor = useMemo(() => {
     if (!summary) return theme.palette.info.main;
@@ -1276,7 +1221,10 @@ export const TaskItemDetailFloatingWindow = ({
     URL.revokeObjectURL(url);
   };
 
-  const content = summary ? TaskDetailContent({
+  const isVtTask = activeDetail?.task.stage === 'vt';
+  const content = isVtTask && activeDetail ? (
+    <VTTaskItemDetailWindow detail={activeDetail} buildConfig={buildConfig} />
+  ) : (summary ? TaskDetailContent({
     title,
     summary,
     detailColor,
@@ -1287,7 +1235,7 @@ export const TaskItemDetailFloatingWindow = ({
     overlays,
     sizeAccentColor: theme.palette.success.main,
     fetchStageMaxima,
-    previewBoxHeight: Math.max(140, Math.floor(windowSize.height * 0.45)),
+    previewBoxHeight: Math.max(140, Math.floor(windowState.size.height * 0.45)),
     withDownloadButton: true,
     onDownload: handleDownload,
   }) : (
@@ -1305,109 +1253,50 @@ export const TaskItemDetailFloatingWindow = ({
         Hover a task status chip to preview source and result geometry.
       </Typography>
     </Box>
-  );
+  ));
 
-  if (!open) return null;
+  const handleWindowClose = useCallback(() => {
+    handleFloatingClose();
+    onClose();
+  }, [handleFloatingClose, onClose]);
+
+  if (!open || !windowState.isVisible) return null;
   const stageLabel = effectiveStageId === 'fetch'
     ? 'Fetch'
     : (effectiveStageId === 'transform' ? 'Transform' : (effectiveStageId === 'vt' ? 'VT' : effectiveStageId));
   const stageIcon = stageIconMap.get(effectiveStageId) ?? <LayersIcon fontSize="small" />;
-
-  const handleTitleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    dragStateRef.current = {
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startX: position.x,
-      startY: position.y,
-    };
+  const buildVtBandLabel = (taskId: string | undefined): string => {
+    if (!taskId) return 'band ? z?';
+    const parts = taskId.split(':');
+    if (parts.length < 5) return 'band ? z?';
+    const bandIndex = Number.parseInt(parts[2] ?? '', 10);
+    const zBase = Number.parseInt(parts[3] ?? '', 10);
+    if (!Number.isFinite(bandIndex) || !Number.isFinite(zBase)) return 'band ? z?';
+    return `band ${bandIndex} z${zBase}/z${zBase + 1}/z${zBase + 2}`;
   };
-  const handleResizeMouseDown = (event: React.MouseEvent<HTMLDivElement>, direction: ResizeDirection) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resizeStateRef.current = {
-      direction,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startX: position.x,
-      startY: position.y,
-      startWidth: windowSize.width,
-      startHeight: windowSize.height,
-    };
-    setResizeActive(true);
-  };
+  const windowTitle = isVtTask
+    ? `VT Geometry Preview: ${buildVtBandLabel(activeDetail?.task.taskId)}`
+    : (effectiveStageId === 'vt' ? 'VT Geometry Preview' : `Geometry Preview: ${stageLabel}`);
 
   return (
-    <Paper
-      elevation={8}
-      onMouseDown={() => onRequestBringToFront?.()}
-      sx={{
-        position: 'fixed',
-        top: position.y,
-        left: position.x,
-        zIndex: (zTheme) => zTheme.zIndex.modal + zIndex,
-        background: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        width: windowSize.width,
-        minWidth: 420,
-        minHeight: 280,
-        height: windowSize.height,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      <Box
-        onMouseDown={handleTitleMouseDown}
-        sx={{
-          px: 1,
-          py: 0.5,
-          cursor: 'move',
-          userSelect: 'none',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          bgcolor: 'background.default',
-        }}
-      >
-        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', color: 'text.secondary' }}>
-            {stageIcon}
-          </Box>
-          <Typography variant="caption" sx={{ fontWeight: 700 }}>
-            {`Geometry Preview: ${stageLabel}`}
-          </Typography>
+    <FloatingWindow
+      title={windowTitle}
+      titleIcon={stageIcon ? (
+        <Box sx={{ color: 'black', display: 'inline-flex', alignItems: 'center' }}>
+          {stageIcon}
         </Box>
-        <IconButton size="small" aria-label="Close preview" onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
+      ) : undefined}
+      initialState={initialWindowState}
+      onStateChange={onStateChange}
+      onClose={handleWindowClose}
+      onRequestFocus={onRequestBringToFront}
+      resizable
+      minWidth={420}
+      minHeight={280}
+    >
       <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
         {content}
       </Box>
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'e')} sx={{ position: 'absolute', top: 8, bottom: 8, right: -3, width: 8, cursor: 'ew-resize' }} />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'w')} sx={{ position: 'absolute', top: 8, bottom: 8, left: -3, width: 8, cursor: 'ew-resize' }} />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 's')} sx={{ position: 'absolute', left: 8, right: 8, bottom: -3, height: 8, cursor: 'ns-resize' }} />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'n')} sx={{ position: 'absolute', left: 8, right: 8, top: -3, height: 8, cursor: 'ns-resize' }} />
-      <Box
-        onMouseDown={(event) => handleResizeMouseDown(event, 'se')}
-        sx={{
-          position: 'absolute',
-          right: -2,
-          bottom: -2,
-          width: 12,
-          height: 12,
-          cursor: 'nwse-resize',
-          background: resizeActive ? 'action.selected' : 'transparent',
-          borderTopLeftRadius: 2,
-        }}
-      />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'sw')} sx={{ position: 'absolute', left: -2, bottom: -2, width: 12, height: 12, cursor: 'nesw-resize' }} />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'ne')} sx={{ position: 'absolute', right: -2, top: -2, width: 12, height: 12, cursor: 'nesw-resize' }} />
-      <Box onMouseDown={(event) => handleResizeMouseDown(event, 'nw')} sx={{ position: 'absolute', left: -2, top: -2, width: 12, height: 12, cursor: 'nwse-resize' }} />
-    </Paper>
+    </FloatingWindow>
   );
 };

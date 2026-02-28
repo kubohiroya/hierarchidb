@@ -7,6 +7,7 @@ import { sortTransformTasks, sortVectorTileTasks } from '~/ui/components/build-p
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { isTaskSkipped } from '~/common/utils/taskMessages';
 import { resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
+import type { ShapeBuildConfig } from '~/common/types/build';
 
 type BuildProgressStageContentStateArgs = {
   stage: {
@@ -37,6 +38,7 @@ type BuildProgressStageContentStateArgs = {
   matchesSearchQuery: (task: TaskItemWithMetadata) => boolean;
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending?: boolean;
+  buildConfig?: ShapeBuildConfig;
   onOpenDetailFloatingWindow: () => void;
   onCloseDetailFloatingWindow: () => void;
   floatingWindowZIndex: number;
@@ -71,6 +73,7 @@ export type BuildProgressStageContentState = {
   disableVirtualization: boolean;
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending: boolean;
+  buildConfig?: ShapeBuildConfig;
   onOpenDetailFloatingWindow: () => void;
   onCloseDetailFloatingWindow: () => void;
   floatingWindowZIndex: number;
@@ -93,6 +96,7 @@ export const useBuildProgressStageContentState = ({
   matchesSearchQuery,
   isDetailFloatingWindowOpen,
   isOpeningPending = false,
+  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
@@ -297,6 +301,7 @@ export const useBuildProgressStageContentState = ({
     disableVirtualization,
     isDetailFloatingWindowOpen,
     isOpeningPending,
+    buildConfig,
     onOpenDetailFloatingWindow,
     onCloseDetailFloatingWindow,
     floatingWindowZIndex,

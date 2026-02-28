@@ -49,7 +49,7 @@ export const DEFAULT_ROUTE_BUILD_CONFIG: RouteBuildConfig = {
     boundaryDisableAtZoomOrAbove: 3,
   },
   vtConfig: {
-    enableTopojsonSimplify: true,
+    enableTopojsonSimplify: false,
     maxConcurrent: 1,
     dynamicConcurrency: {
       enabled: true,

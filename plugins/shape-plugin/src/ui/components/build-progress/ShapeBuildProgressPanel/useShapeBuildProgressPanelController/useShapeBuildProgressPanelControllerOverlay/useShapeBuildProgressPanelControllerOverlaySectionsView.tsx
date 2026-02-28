@@ -27,6 +27,7 @@ type StageContentArgs = {
   matchesSearchQuery: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['matchesSearchQuery'];
   isDetailFloatingWindowOpen: boolean;
   isOpeningPending?: boolean;
+  buildConfig: UseShapeBuildProgressPanelControllerOverlaySectionsArgs['buildConfigForDisplay'];
   onOpenDetailFloatingWindow: () => void;
   onCloseDetailFloatingWindow: () => void;
   floatingWindowZIndex: number;
@@ -65,6 +66,7 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
   matchesSearchQuery,
   isDetailFloatingWindowOpen,
   isOpeningPending = false,
+  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
@@ -86,6 +88,7 @@ export const ShapeBuildProgressPanelOverlaySectionContent = ({
     matchesSearchQuery={matchesSearchQuery}
     isDetailFloatingWindowOpen={isDetailFloatingWindowOpen}
     isOpeningPending={isOpeningPending}
+    buildConfig={buildConfig}
     onOpenDetailFloatingWindow={onOpenDetailFloatingWindow}
     onCloseDetailFloatingWindow={onCloseDetailFloatingWindow}
     floatingWindowZIndex={floatingWindowZIndex}

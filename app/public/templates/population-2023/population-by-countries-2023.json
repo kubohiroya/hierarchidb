@@ -84,7 +84,7 @@
                 }
               },
               "vtConfig": {
-                "enableTopojsonSimplify": true,
+                "enableTopojsonSimplify": false,
                 "maxConcurrent": 1,
                 "tolerance": 1,
                 "extent": 0,

@@ -30,6 +30,7 @@ export const BuildProgressStageContentView = ({
   disableVirtualization,
   isDetailFloatingWindowOpen,
   isOpeningPending,
+  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex,
@@ -90,6 +91,7 @@ export const BuildProgressStageContentView = ({
           virtualize={!disableVirtualization}
           isDetailFloatingWindowOpen={isDetailFloatingWindowOpen}
           isOpeningPending={isOpeningPending}
+          buildConfig={buildConfig}
           onOpenDetailFloatingWindow={onOpenDetailFloatingWindow}
           onCloseDetailFloatingWindow={onCloseDetailFloatingWindow}
           floatingWindowZIndex={floatingWindowZIndex}
