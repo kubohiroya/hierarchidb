@@ -421,8 +421,8 @@ describe('TaskItemCardListCard', () => {
     fireEvent.click(chips[0]);
     expect(screen.getByText('URL: https://example.com/jp/close-sync.geojson')).toBeTruthy();
 
-    const closeButtons = view.container.querySelectorAll('[aria-label="Close preview"]');
-    const closeButton = closeButtons[0] as HTMLElement | undefined;
+    const titleBarButtons = Array.from(document.querySelectorAll('.floating-window .title-bar button')) as HTMLElement[];
+    const closeButton = titleBarButtons.at(-1);
     expect(closeButton).toBeTruthy();
     fireEvent.click(closeButton as HTMLElement);
     fireEvent.click(screen.getByRole('button', { name: 'Reopen preview' }));

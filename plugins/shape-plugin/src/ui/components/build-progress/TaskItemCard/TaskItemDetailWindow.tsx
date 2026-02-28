@@ -20,6 +20,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFetchCache } from '@hierarchidb/shape-api';
 import { shapeQueryAPIImpl } from '~/services/build/ShapeBuildAPIClient';
 import type { DataSourceName } from '~/common/types';
+import { FloatingWindow, type WindowState } from '@hierarchidb/ui-floating-window';
 import {
   buildRawDataDataSourceCacheKey,
   readRawDataDataSourceBuffer,
@@ -1155,7 +1156,6 @@ export const TaskItemDetailWindow = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, open]);
-
   useEffect(() => {
     if (open) {
       show();
