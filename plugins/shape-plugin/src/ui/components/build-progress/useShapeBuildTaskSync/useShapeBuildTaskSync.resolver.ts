@@ -14,9 +14,16 @@ import {
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 
-const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => (
-  resolveTaskMetadataMessage(task.metadata)?.trim() ?? ''
-);
+const resolveTaskMetadataText = (task: ReturnType<typeof resolveTaskSummaryFromRaw>): string => {
+  const metadataMessage = resolveTaskMetadataMessage(task.metadata)?.trim();
+  if (metadataMessage) return metadataMessage;
+  const rawMessage = (task as { message?: unknown }).message;
+  if (typeof rawMessage === 'string') {
+    const trimmed = rawMessage.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return '';
+};
 
 type ResolverDeps = {
   sessionNodeId: string | null;

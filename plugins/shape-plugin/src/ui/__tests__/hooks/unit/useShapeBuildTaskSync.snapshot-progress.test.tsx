@@ -307,40 +307,46 @@ describe('useShapeBuildTaskSnapshotProgressState', () => {
   });
 
   it('accepts task updates for unknown taskId', async () => {
-    const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
-    await waitFor(() => {
-      expect(subscribeMock).toHaveBeenCalled();
-    });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { result } = renderHook(() => useShapeBuildTaskSnapshotProgressState('node-progress' as NodeId));
+      await waitFor(() => {
+        expect(subscribeMock).toHaveBeenCalled();
+      });
 
-    emitEvent('node-progress', {
-      type: 'snapshot',
-      nodeId: 'node-progress' as NodeId,
-      tasks: [
-        makeTaskSummary('node-progress:fetch:0', { status: 'running', progress: 20, index: 1 }),
-        makeTaskSummary('node-progress:fetch:1', { status: 'running', progress: 10, index: 2 }),
-      ],
-    });
+      emitEvent('node-progress', {
+        type: 'snapshot',
+        nodeId: 'node-progress' as NodeId,
+        tasks: [
+          makeTaskSummary('node-progress:fetch:0', { status: 'running', progress: 20, index: 1 }),
+          makeTaskSummary('node-progress:fetch:1', { status: 'running', progress: 10, index: 2 }),
+        ],
+      });
 
-    await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(2);
-      expect(result.current.tasks[0]?.status).toBe('running');
-      expect(result.current.tasks[0]?.progress).toBe(20);
-    });
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(2);
+        expect(result.current.tasks[0]?.status).toBe('running');
+        expect(result.current.tasks[0]?.progress).toBe(20);
+      });
 
-    emitEvent('node-progress', {
-      type: 'update',
-      nodeId: 'node-progress' as NodeId,
-      task: makeTaskSummary('node-progress:fetch:unknown', {
-        status: 'running',
-        progress: 50,
-        message: 'invalid',
-        index: 0,
-      }),
-    });
+      emitEvent('node-progress', {
+        type: 'update',
+        nodeId: 'node-progress' as NodeId,
+        task: makeTaskSummary('node-progress:fetch:unknown', {
+          status: 'running',
+          progress: 50,
+          message: 'invalid',
+          index: 0,
+        }),
+      });
 
-    await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(3);
-    });
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(3);
+      });
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('keeps update target semantics for known tasks', async () => {

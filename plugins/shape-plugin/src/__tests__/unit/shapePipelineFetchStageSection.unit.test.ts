@@ -9,6 +9,7 @@ import * as shapeFetchStageModule from '../../services/vt/shapeFetchStage';
 import {
   listTasksByStageAndStatus,
   putTasks,
+  updateTask,
   VtTaskQueueDb,
 } from '@hierarchidb/vt-orchestrator';
 
@@ -193,5 +194,51 @@ describe('runShapeFetchStageSection', () => {
     expect(queued).toHaveLength(1);
     expect(queued[0]?.message ?? null).toBeNull();
     expect(queued[0]?.errorMessage ?? null).toBeNull();
+  });
+
+  it('retries queued drain once on fresh runs before finalizing pending tasks', async () => {
+    db = createDb();
+    await putTasks(db, [createQueuedFetchTask('fetch-queued-drain-1')]);
+
+    const runShapeFetchStageSpy = vi
+      .spyOn(shapeFetchStageModule, 'runShapeFetchStage')
+      .mockImplementationOnce(async () => {})
+      .mockImplementationOnce(async () => {
+        await updateTask(db!, 'fetch-queued-drain-1', {
+          status: 'completed',
+          progress: 100,
+          completedAt: Date.now(),
+          message: 'completed on recovery pass',
+          errorMessage: undefined,
+        });
+      });
+
+    try {
+      const stopAfterStage = await runShapeFetchStageSection({
+        nodeId: NODE_ID,
+        dataSource: 'geoboundaries',
+        buildConfig: DEFAULT_BUILD_CONFIG,
+        taskQueue: db,
+        resumeExistingTasks: false,
+        failureHandling: 'continue',
+        buildContinuationPolicy: 'finish_all_stages',
+        pipelineRunId: 'test-run-fresh-pending-drain',
+      });
+      expect(stopAfterStage).toBe(false);
+      expect(runShapeFetchStageSpy).toHaveBeenCalledTimes(2);
+      expect(runShapeFetchStageSpy.mock.calls[0]?.[0]?.resumeExistingTasks).toBe(false);
+      expect(runShapeFetchStageSpy.mock.calls[1]?.[0]?.resumeExistingTasks).toBe(true);
+    } finally {
+      runShapeFetchStageSpy.mockRestore();
+    }
+
+    const [failed, completed, queued] = await Promise.all([
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'failed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'completed'),
+      listTasksByStageAndStatus(db, NODE_ID, 'fetch', 'queued'),
+    ]);
+    expect(failed).toHaveLength(0);
+    expect(completed).toHaveLength(1);
+    expect(queued).toHaveLength(0);
   });
 });
