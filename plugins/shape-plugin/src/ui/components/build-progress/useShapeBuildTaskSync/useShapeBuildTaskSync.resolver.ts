@@ -11,7 +11,6 @@ import type { RawTaskSummary } from './useShapeBuildTaskSync.types.js';
 import {
   isCompletedAtFullProgress,
   resolveTaskSummaryFromRaw,
-  shouldAcceptRestartedTaskTransition,
 } from './useShapeBuildTaskSync.comparison.utils.js';
 import { isTaskSkipped, resolveTaskMetadataMessage } from '~/common/utils/taskMessages';
 
@@ -106,7 +105,7 @@ export const useShapeBuildTaskSyncResolver = ({
     if (resolvedTask.status === 'running' || resolvedTask.status === 'queued') {
       const isRetryableCompletedTask = completedTask.status === 'failed'
         || isTaskSkipped(completedTask.display, resolveTaskMetadataMessage(completedTask.metadata) ?? null);
-      if (isRetryableCompletedTask || shouldAcceptRestartedTaskTransition(completedTask, resolvedTask)) {
+      if (isRetryableCompletedTask) {
         return resolvedTask;
       }
       return completedTask;

@@ -159,16 +159,10 @@ export const useBuildProgressStageContentState = ({
   const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
   const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
-  const showPendingStageSkeleton = isBuildInProgressState
-    && !hasTasks
-    && !hasSummaryTasks
-    && stageValue <= 0;
   const showTaskSkeleton = !hasTasks
     && !showSummarySkeleton
-    && (
-      (isTasksLoading && (isBuildInProgressState || isStartupPending))
-      || showPendingStageSkeleton
-    );
+    && isTasksLoading
+    && (isBuildInProgressState || isStartupPending);
 
   const requestedTargetIndex = useMemo(() => {
     if (!scrollToTaskId) return null;

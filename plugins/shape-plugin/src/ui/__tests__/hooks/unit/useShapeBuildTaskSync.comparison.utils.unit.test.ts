@@ -4,13 +4,10 @@ import {
   replaceSnapshotTasks,
   shouldPreferNextTask,
   resolveTaskSummaryFromRaw,
-  shouldAcceptRestartedTaskTransition,
 } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.comparison.utils';
 import type { RawTaskSummary } from '../../../components/build-progress/useShapeBuildTaskSync/useShapeBuildTaskSync.types';
 
-type TestTask = ShapeBuildTaskSummary & { updatedAt?: number };
-
-const makeTask = (overrides: Partial<TestTask>): TestTask => ({
+const makeTask = (overrides: Partial<ShapeBuildTaskSummary>): ShapeBuildTaskSummary => ({
   taskId: 'task-unknown',
   stage: 'fetch',
   status: 'queued',
@@ -59,36 +56,6 @@ describe('shouldPreferNextTask', () => {
       makeTask({ status: 'running', progress: 80 }),
       makeTask({ status: 'running', progress: 90 }),
     )).toBe(true);
-  });
-
-  it('accepts restarted running task when updatedAt is newer than completed record', () => {
-    expect(shouldPreferNextTask(
-      makeTask({ status: 'completed', progress: 100, updatedAt: 100 }),
-      makeTask({ status: 'running', progress: 0, updatedAt: 200 }),
-    )).toBe(true);
-  });
-
-  it('rejects restarted running task when updatedAt is missing', () => {
-    expect(shouldPreferNextTask(
-      makeTask({ status: 'completed', progress: 100 }),
-      makeTask({ status: 'running', progress: 0 }),
-    )).toBe(false);
-  });
-});
-
-describe('shouldAcceptRestartedTaskTransition', () => {
-  it('accepts terminal -> running only when next updatedAt is newer', () => {
-    expect(shouldAcceptRestartedTaskTransition(
-      makeTask({ status: 'completed', progress: 100, updatedAt: 100 }),
-      makeTask({ status: 'running', progress: 0, updatedAt: 101 }),
-    )).toBe(true);
-  });
-
-  it('rejects transition when next updatedAt is not newer', () => {
-    expect(shouldAcceptRestartedTaskTransition(
-      makeTask({ status: 'completed', progress: 100, updatedAt: 100 }),
-      makeTask({ status: 'running', progress: 0, updatedAt: 100 }),
-    )).toBe(false);
   });
 });
 
