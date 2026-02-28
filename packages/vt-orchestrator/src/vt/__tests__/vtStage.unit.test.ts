@@ -45,6 +45,8 @@ describe('vtStage summary helpers', () => {
           lineStringCount: 0,
           bufferId: 'buffer-a',
           geojsonByteSize: 123,
+          countryCode: 'JP',
+          featureAreaSqMeters: 300,
         },
         {
           bbox: { minX: 20, minY: 20, maxX: 25, maxY: 25 },
@@ -53,6 +55,8 @@ describe('vtStage summary helpers', () => {
           lineStringCount: 0,
           bufferId: 'buffer-b',
           geojsonByteSize: 999,
+          countryCode: 'US',
+          featureAreaSqMeters: 1000,
         },
         {
           bbox: { minX: 4, minY: 4, maxX: 10, maxY: 10 },
@@ -61,6 +65,18 @@ describe('vtStage summary helpers', () => {
           lineStringCount: 0,
           bufferId: 'buffer-c',
           geojsonByteSize: 77,
+          countryCode: 'US',
+          featureAreaSqMeters: 200,
+        },
+        {
+          bbox: { minX: 3, minY: 3, maxX: 8, maxY: 8 },
+          vertexCount: 10,
+          polygonCount: 1,
+          lineStringCount: 0,
+          bufferId: 'buffer-d',
+          geojsonByteSize: 22,
+          countryCode: 'CA',
+          featureAreaSqMeters: 700,
         },
       ],
       parentBBox: { minX: -1, minY: -1, maxX: 10, maxY: 10 },
@@ -68,8 +84,12 @@ describe('vtStage summary helpers', () => {
     });
 
     expect(summary.parentTile).toEqual({ z: 6, x: 15, y: 23 });
-    expect(summary.intersectingFeatureCount).toBe(2);
-    expect(summary.intersectingGeojsonByteSize).toBe(200);
+    expect(summary.intersectingFeatureCount).toBe(3);
+    expect(summary.intersectingGeojsonByteSize).toBe(222);
+    expect(summary.topCountriesByIntersectingArea).toEqual([
+      { countryCode: 'CA', intersectingAreaSqMeters: 700 },
+      { countryCode: 'JP', intersectingAreaSqMeters: 300 },
+    ]);
   });
 
   it('normalizes debug focus config and matches tile/feature filters', () => {

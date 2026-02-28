@@ -4051,6 +4051,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-flag-overlay':
+        specifier: workspace:*
+        version: link:../../packages/ui/flag-overlay
       '@hierarchidb/ui-floating-window':
         specifier: workspace:*
         version: link:../../packages/ui/floating-window

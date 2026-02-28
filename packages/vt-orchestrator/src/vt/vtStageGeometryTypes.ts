@@ -13,6 +13,8 @@ export type InputFeatureStats = {
   bufferId: string;
   featureId?: string;
   geojsonByteSize?: number;
+  countryCode?: string;
+  featureAreaSqMeters?: number;
 };
 
 export const VT_PARENT_INPUT_SUMMARY_METADATA_KEY = 'vtParentInputSummary';
@@ -25,5 +27,8 @@ export type VtParentInputSummaryMetadata = {
   };
   intersectingFeatureCount: number;
   intersectingGeojsonByteSize: number;
+  topCountriesByIntersectingArea: Array<{
+    countryCode: string;
+    intersectingAreaSqMeters: number;
+  }>;
 };
-
