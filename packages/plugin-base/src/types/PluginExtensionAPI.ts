@@ -6,7 +6,10 @@ import type { APIMethodArgs, APIMethodReturn, WorkerAPIMethod } from './api-type
  */
 export interface PluginExtensionAPI<
   PeerEntity,
-  TMethods extends Record<string, WorkerAPIMethod<PeerEntity>> = Record<string, WorkerAPIMethod<PeerEntity>>,
+  TMethods extends Record<string, WorkerAPIMethod<PeerEntity>> = Record<
+    string,
+    WorkerAPIMethod<PeerEntity>
+  >,
 > {
   readonly nodeType: NodeType;
   readonly methods: TMethods;

@@ -14,8 +14,8 @@ export interface PluginDefinition<T> {
 
   // Visibility configuration
   readonly visibility?: {
-    showInCreateMenu?: boolean;  // Show in "Create new node" menu (default: true)
-    showInPluginList?: boolean;  // Show in plugin list/settings (default: true)
+    showInCreateMenu?: boolean; // Show in "Create new node" menu (default: true)
+    showInPluginList?: boolean; // Show in plugin list/settings (default: true)
   };
 
   // i18n configuration

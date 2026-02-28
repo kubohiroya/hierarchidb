@@ -1,4 +1,4 @@
-import type { GroupEntity, RelationalEntity, NodeId } from '@hierarchidb/core-types';
+import type { GroupEntity, NodeId, RelationalEntity } from '@hierarchidb/core-types';
 
 //  API
 export type APIMethodArgs = readonly [NodeId, ...unknown[]];
