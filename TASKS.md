@@ -38,7 +38,6 @@
 ## Kanban
 
 ### Doing
-- #636 / `codex/chore/cleanup/stashed-formatting-and-typedefs-636` / start: 2026-02-28 19:02 JST
 - #634 / `codex/fix/shape/vt-fit-button-move-left-2px-634` / start: 2026-02-28 18:52 JST
 - #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
 - #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
