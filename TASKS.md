@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #617 / `codex/refactor/shape/rename-task-item-detail-window-617` / start: 2026-02-28 14:03 JST
 - #615 / `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` / start: 2026-02-28 13:45 JST
 - #613 / `codex/fix/shape/ingest-main-diff-613` / start: 2026-02-28 12:55 JST
 - #611 / `codex/fix/build/ts2307-shape-tests-611` / start: 2026-02-28 12:28 JST
@@ -130,6 +131,9 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- done: 2026-02-28 14:04 JST #617 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` exit 0。
+- update: 2026-02-28 14:04 JST #617 `TaskItemDetailSnackbar` 命名を `TaskItemDetailWindow` へ統一。`TaskItemDetailSnackbar.tsx` を `TaskItemDetailWindow.tsx` へリネームし、`TaskItemCardListCard.tsx` の import パスを更新。UI 挙動変更なし（命名・参照のみ）。
+- start: 2026-02-28 14:03 JST #617 を起票（https://github.com/kubohiroya/hierarchidb/issues/617）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/refactor/shape/rename-task-item-detail-window-617` を `origin/main` 起点で作成して着手。
 - start: 2026-02-28 13:45 JST #615 を起票（https://github.com/kubohiroya/hierarchidb/issues/615）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` を `origin/main` 起点で作成して着手。
 - start: 2026-02-28 12:28 JST #611 を起票（https://github.com/kubohiroya/hierarchidb/issues/611）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/build/ts2307-shape-tests-611` を作成し、worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-611` で着手。
 - start: 2026-02-28 12:55 JST #613 を起票（https://github.com/kubohiroya/hierarchidb/issues/613）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/ingest-main-diff-613` を作成して着手。

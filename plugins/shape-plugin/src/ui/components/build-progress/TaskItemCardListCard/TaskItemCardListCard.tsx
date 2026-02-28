@@ -20,7 +20,7 @@ import {
 import {
   TaskItemDetailWindow,
   type TaskDetailSelection,
-} from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailSnackbar';
+} from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
 
 type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
 
