@@ -5,7 +5,7 @@ import { createStore } from 'jotai/vanilla';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms';
 import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
-import { createElement } from 'react';
+import { createElement, useState } from 'react';
 import { NodeId } from "@hierarchidb/core-types";
 
 vi.mock('../../../i18n.js', () => ({
@@ -345,5 +345,87 @@ describe('TaskItemCardListCard', () => {
       fireEvent.click(chip);
     }
     expect(onOpenDetailFloatingWindow).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears selected chip when floating window is closed from close button', () => {
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'fetch-task-close-sync-1',
+        nodeId: 'node-1' as NodeId,
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'completed',
+        progress: 100,
+        metadata: {
+          fetchDetail: {
+            countryCode: 'JP',
+            countryName: 'Japan',
+            adminLevel: 0,
+            url: 'https://example.com/jp/close-sync.geojson',
+            features: { input: 100, output: 50 },
+            polygons: { input: 100, output: 50 },
+          },
+        },
+      } as ShapeBuildTaskSummary,
+      {
+        taskId: 'fetch-task-close-sync-2',
+        nodeId: 'node-1' as NodeId,
+        stage: 'fetch',
+        taskType: 'fetch',
+        status: 'completed',
+        progress: 100,
+        metadata: {
+          fetchDetail: {
+            countryCode: 'US',
+            countryName: 'United States',
+            adminLevel: 0,
+            url: 'https://example.com/us/close-sync.geojson',
+            features: { input: 200, output: 100 },
+            polygons: { input: 200, output: 100 },
+          },
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    const Harness = () => {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>Reopen preview</button>
+          <TaskItemCardListCard
+            stageId="fetch"
+            tasks={tasks}
+            stageValue={0}
+            resolveStatusLabel={() => 'Completed'}
+            resolveStatusColor={() => 'success'}
+            resolveTaskTitle={(task) => task.taskId}
+            virtualize={false}
+            isDetailFloatingWindowOpen={open}
+            onCloseDetailFloatingWindow={() => setOpen(false)}
+          />
+        </>
+      );
+    };
+
+    render(
+      <Provider store={store}>
+        <Harness />
+      </Provider>
+    );
+
+    const chips = screen.getAllByText('Completed')
+      .map((element) => element.closest('.MuiChip-root'))
+      .filter(Boolean) as HTMLElement[];
+    expect(chips.length).toBe(2);
+
+    fireEvent.click(chips[0]);
+    expect(screen.getByText('URL: https://example.com/jp/close-sync.geojson')).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText('Close preview'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen preview' }));
+    fireEvent.mouseEnter(chips[1]);
+
+    expect(screen.getByText('URL: https://example.com/us/close-sync.geojson')).toBeTruthy();
   });
 });
