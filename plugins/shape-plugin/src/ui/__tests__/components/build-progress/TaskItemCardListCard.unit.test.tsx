@@ -6,6 +6,7 @@ import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAto
 import { TaskItemCardListCard } from '../../../components/build-progress/TaskItemCardListCard/TaskItemCardListCard';
 import type { TaskOutcomeSummaryBuilder } from '../../../components/build-progress/TaskItemCard/taskOutcomeSummaryBuilders';
 import { createElement } from 'react';
+import { NodeId } from "@hierarchidb/core-types";
 
 vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
@@ -19,11 +20,11 @@ vi.mock('../../../components/build-progress/useShapeBuildStages/useShapeBuildSta
 }));
 
 describe('TaskItemCardListCard', () => {
-  it('renders recycled and stage task icons', () => {
+  it('renders country flag icon when country code is available', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
-        taskId: 'task-1',
-        nodeId: 'node-1',
+        taskId: 'fetch:JP:0',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'recycled',
@@ -31,7 +32,7 @@ describe('TaskItemCardListCard', () => {
       } as ShapeBuildTaskSummary,
       {
         taskId: 'task-2',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -54,15 +55,14 @@ describe('TaskItemCardListCard', () => {
       </Provider>
     );
 
-    expect(screen.getAllByTestId('task-icon-recycling')).toHaveLength(1);
-    expect(screen.getAllByTestId('task-icon-stage-fetch')).toHaveLength(1);
+    expect(screen.getAllByTestId('task-icon-flag')).toHaveLength(1);
   });
 
   it('shows compact transform summary from metadata', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'transform-task-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'transform',
         taskType: 'transform',
         status: 'failed',
@@ -98,7 +98,7 @@ describe('TaskItemCardListCard', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'fetch-task-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -109,7 +109,7 @@ describe('TaskItemCardListCard', () => {
       } as ShapeBuildTaskSummary,
       {
         taskId: 'vt-task-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'vt',
         taskType: 'vt',
         status: 'failed',
@@ -142,7 +142,7 @@ describe('TaskItemCardListCard', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'fetch-task-2',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -179,7 +179,7 @@ describe('TaskItemCardListCard', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'fetch-task-snackbar-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -230,7 +230,7 @@ describe('TaskItemCardListCard', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'fetch-task-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -248,7 +248,7 @@ describe('TaskItemCardListCard', () => {
       } as ShapeBuildTaskSummary,
       {
         taskId: 'fetch-task-2',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
@@ -303,7 +303,7 @@ describe('TaskItemCardListCard', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {
         taskId: 'fetch-task-auto-open-1',
-        nodeId: 'node-1',
+        nodeId: 'node-1' as NodeId,
         stage: 'fetch',
         taskType: 'fetch',
         status: 'completed',
