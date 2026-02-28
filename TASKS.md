@@ -38,7 +38,7 @@
 ## Kanban
 
 ### Doing
-- #632 / `codex/fix/shape/vt-fit-button-size-adjust-632` / start: 2026-02-28 18:30 JST
+- #634 / `codex/fix/shape/vt-fit-button-move-left-2px-634` / start: 2026-02-28 18:52 JST
 - #631 / `codex/fix/shape/vt-fit-button-move-right-631` / start: 2026-02-28 17:43 JST
 - #630 / `codex/fix/shape/task-detail-window-handler-630` / start: 2026-02-28 17:35 JST
 - #628 / `codex/fix/shape/vt-fit-button-tweak-628` / start: 2026-02-28 17:28 JST
@@ -138,9 +138,12 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- start: 2026-02-28 18:52 JST #634 を起票（https://github.com/kubohiroya/hierarchidb/issues/634）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-move-left-2px-634` を作成して着手。
+- update: 2026-02-28 18:54 JST #634 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
 - start: 2026-02-28 18:30 JST #632 を起票（https://github.com/kubohiroya/hierarchidb/issues/632）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-size-adjust-632` を作成して着手。
 - update: 2026-02-28 18:38 JST #632 `TaskItemDetailWindow.tsx` の `handleWindowStateChange` 未定義エラーを本Issueのスコープへ追加。
 - update: 2026-02-28 18:45 JST #632 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- done: 2026-02-28 18:47 JST #632 PR https://github.com/kubohiroya/hierarchidb/pull/633 を Squash Merge。Issue クローズ・Project を Done に更新。
 - start: 2026-02-28 17:43 JST #631 を起票（https://github.com/kubohiroya/hierarchidb/issues/631）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-move-right-631` を作成して着手。
 - start: 2026-02-28 17:35 JST #630 を起票（https://github.com/kubohiroya/hierarchidb/issues/630）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/task-detail-window-handler-630` を作成して着手。
 - start: 2026-02-28 17:28 JST #628 を起票（https://github.com/kubohiroya/hierarchidb/issues/628）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-tweak-628` を作成して着手。
