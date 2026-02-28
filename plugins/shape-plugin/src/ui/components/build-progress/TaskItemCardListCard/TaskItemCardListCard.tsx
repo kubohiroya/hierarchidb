@@ -21,7 +21,6 @@ import {
   TaskItemDetailWindow,
   type TaskDetailSelection,
 } from '~/ui/components/build-progress/TaskItemCard/TaskItemDetailWindow';
-import type { ShapeBuildConfig } from '~/common/types/build';
 
 type TaskStageSummaryBuilderMap = Partial<Record<'fetch' | 'transform' | 'vt', TaskOutcomeSummaryBuilder>>;
 
@@ -38,7 +37,6 @@ type TaskItemCardListCardProps = {
   summaryBuilders?: TaskStageSummaryBuilderMap;
   isDetailFloatingWindowOpen?: boolean;
   isOpeningPending?: boolean;
-  buildConfig?: ShapeBuildConfig;
   onOpenDetailFloatingWindow?: () => void;
   onCloseDetailFloatingWindow?: () => void;
   floatingWindowZIndex?: number;
@@ -58,7 +56,6 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   summaryBuilders,
   isDetailFloatingWindowOpen = false,
   isOpeningPending = false,
-  buildConfig,
   onOpenDetailFloatingWindow,
   onCloseDetailFloatingWindow,
   floatingWindowZIndex = 1,
@@ -67,8 +64,6 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
   const [hoveredDetail, setHoveredDetail] = useState<TaskDetailSelection | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<TaskDetailSelection | null>(null);
   const wasDetailFloatingWindowOpenRef = useRef(isDetailFloatingWindowOpen);
-  const openRequestRef = useRef<string | null>(null);
-  const suppressOpenRef = useRef(false);
   const { t } = useTranslation();
   const stages = useShapeBuildStages({ t: (key, fallback): string => String(t(key, fallback ?? key)) });
   const stageIconById = useMemo(() => {
@@ -82,26 +77,9 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
     if (wasOpen && !isDetailFloatingWindowOpen) {
       setSelectedDetail(null);
       setHoveredDetail(null);
-      openRequestRef.current = null;
-      suppressOpenRef.current = false;
     }
     wasDetailFloatingWindowOpenRef.current = isDetailFloatingWindowOpen;
   }, [isDetailFloatingWindowOpen]);
-  useEffect(() => {
-    if (!selectedDetail || isDetailFloatingWindowOpen) return;
-    if (suppressOpenRef.current) return;
-    const selectedId = selectedDetail.task.taskId ?? selectedDetail.title;
-    if (openRequestRef.current === selectedId) return;
-    openRequestRef.current = selectedId;
-    onOpenDetailFloatingWindow?.();
-  }, [isDetailFloatingWindowOpen, onOpenDetailFloatingWindow, selectedDetail]);
-  const handleCloseDetail = useCallback(() => {
-    suppressOpenRef.current = true;
-    setSelectedDetail(null);
-    setHoveredDetail(null);
-    openRequestRef.current = null;
-    onCloseDetailFloatingWindow?.();
-  }, [onCloseDetailFloatingWindow]);
   const {
     orderedTasks,
     shouldVirtualize,
@@ -156,6 +134,9 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
               const previousId = previous?.task.taskId ?? previous?.title;
               const clickedId = value.task.taskId ?? value.title;
               if (previousId === clickedId) return null;
+              if (!previous && !isDetailFloatingWindowOpen) {
+                onOpenDetailFloatingWindow?.();
+              }
               return value;
             });
           }}
@@ -207,11 +188,10 @@ export const TaskItemCardListCard = forwardRef<HTMLDivElement|null, TaskItemCard
       <TaskItemDetailWindow
         open={isDetailFloatingWindowOpen}
         detail={selectedDetail ?? hoveredDetail}
-        onClose={handleCloseDetail}
+        onClose={onCloseDetailFloatingWindow ?? (() => {})}
         zIndex={floatingWindowZIndex}
         onRequestBringToFront={onRequestBringFloatingWindowToFront}
         stageId={stageId}
-        buildConfig={buildConfig}
       />
     </Box>
   );
