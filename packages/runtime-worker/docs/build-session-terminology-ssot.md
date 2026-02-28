@@ -55,9 +55,13 @@ used across runtime, worker API, UI, and plugin implementations.
 
 - `startBuildSession`
 - `pauseBuildSession`
-- `resumeBuildSession`
 - `cancelQueuedBuildSession`
 - `subscribeBuildProgress`
+
+Compatibility note:
+
+- New UI/runtime code must use `startBuildSession` for both Start/Resume semantics.
+- `resumeBuildSession` is removed from active build-session control interfaces.
 
 ### 3.2 Legacy Batch Aliases
 
@@ -68,8 +72,23 @@ used across runtime, worker API, UI, and plugin implementations.
 ## 4. Execution Semantics
 
 - `Start` and `Resume` are a single execution path.
-- There is no `resumeMode: full|incremental`.
+- There is no legacy "full vs incremental" mode split.
 - Runtime behavior is always incremental re-evaluation from persisted state.
+
+### 4.1 Control Vocabulary Constraints
+
+- Canonical UI control intents are `start`, `pause`, and `cancel`.
+- `Start` and `Resume` labels both map to `startBuildSession`.
+- `Pause` and `Cancel` are distinct UI actions:
+  - `Pause` -> `pauseBuildSession`
+  - `Cancel` -> `cancelQueuedBuildSession` (runtime may treat running case as pause fallback).
+- `retry` is not a build-session control command in this context.
+
+### 4.2 Progress Stream Contract
+
+- Build progress uses `snapshot` + `progress` channels as the UI SSOT.
+- `progress=100%` is treated as terminal update signal for the task/session scope.
+- The current contract does not require event sequence numbering.
 
 ## 5. Migration Status (Current)
 

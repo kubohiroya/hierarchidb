@@ -46,6 +46,7 @@ export type TaskProgressControls = {
   statusLabel: string;
   showResumeLabel?: boolean;
   startPending?: boolean;
+  requestedControlAction?: 'none' | 'start' | 'pause' | 'cancel';
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void;
   handleCancelQueued?: () => Promise<void> | void;
@@ -73,10 +74,16 @@ export type TaskProgressAuthState = {
   closeAuthDialog: () => void;
   handleProviderSelect: (provider: import('@hierarchidb/ui-auth').AuthProviderType) => void;
 };
+export type TaskListViewPhase =
+  | 'idle'
+  | 'awaitingSnapshot'
+  | 'streaming'
+  | 'settledEmpty';
 export const persistedTasksAtom = atom<ShapeBuildTaskSummary[]>([]);
 export const tasksAtom = atom<ShapeBuildTaskSummary[]>([]);
 export const tasksLoadingAtom = atom(false);
 export const taskSummaryLoadingAtom = atom(false);
+export const taskListViewPhaseAtom = atom<TaskListViewPhase>('idle');
 export const tasksErrorAtom = atom<Error | null>(null);
 export const buildStagesAtom = atom<BuildStage[]>([]);
 export const buildStageProgressAtom = atom<Record<string, number>>({});
@@ -124,6 +131,7 @@ export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,
   statusLabel: '',
   startPending: false,
+  requestedControlAction: 'none',
   handleStartOrResume: async () => {},
   handlePause: () => {},
   handleCancelQueued: async () => {},

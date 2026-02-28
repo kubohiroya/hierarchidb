@@ -41,7 +41,7 @@ This specification is shared by shape/route and future build-session plugins.
   - UI-visible accepted state label. Corresponding persisted value is `startAccepted`.
 - `Build request`:
   - UI labels may be `Start` or `Resume`, but runtime semantics are identical.
-  - There is no `full|incremental` mode split.
+  - There is no legacy "full vs incremental" mode split.
 - `StartRequested` / `StopRequested`:
   - UI-local transient states only.
   - Not persisted to `sessions`.
@@ -76,6 +76,14 @@ On SharedWorker/Session initialization:
   1. Re-evaluate persisted session/task/cache/artifact state
   2. Derive runnable delta tasks
   3. Execute stage pipeline on derived deltas
+
+### 4.4 Control Intent Separation
+
+- UI controls must keep `Pause` and `Cancel` as separate actions.
+- `Pause` targets active execution (`pauseBuildSession`).
+- `Cancel` targets queued execution (`cancelQueuedBuildSession`).
+- If `Cancel` arrives after activation, runtime fallback may apply pause semantics.
+- `retry` is not part of this control contract.
 
 ## 5. State Models
 
@@ -258,6 +266,7 @@ stateDiagram-v2
   - `snapshot` channel: initial state transfer for SSOT initialization.
   - `progress` channel: incremental task updates after subscription.
 - Snapshot is sent once at subscribe start and once at session start (`startBuildSession`) when stage tasks are rebuilt.
+- `progress=100%` is treated as terminal update signal; explicit event sequence numbers are not required by this contract.
 - The `subscribeBuildProgress` callback is wrapped once by the bridge callback proxy and registered for both notifications.
 - Progress events are buffered if snapshot has not been fully applied yet.
 - Task aggregation rules:

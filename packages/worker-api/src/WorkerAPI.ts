@@ -100,11 +100,6 @@ export interface WorkerAPI<T> {
   /** Canonical build API. */
   cancelQueuedBuildSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   /** Canonical build API. */
-  resumeBuildSession(
-    nodeType: NodeType,
-    nodeId: NodeId,
-  ): Promise<void>;
-  /** Canonical build API. */
   getBuildTasks(nodeType: NodeType, nodeId: NodeId): Promise<BuildTaskSummary[]>;
   /** Canonical build API. */
   subscribeBuildTasks(

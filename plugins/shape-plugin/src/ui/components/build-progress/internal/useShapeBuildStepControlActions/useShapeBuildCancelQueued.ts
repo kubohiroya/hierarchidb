@@ -10,6 +10,7 @@ export const useShapeBuildCancelQueued = ({
   clearStartPendingRef,
   buildSessionTransitionActive,
   cancelStartRequestRef,
+  setRequestedControlAction,
   releaseBuildLock,
   finishBuildSessionTransition,
   isStopRequestedInFlight,
@@ -19,6 +20,7 @@ export const useShapeBuildCancelQueued = ({
   const handleCancelQueued = useCallback(async (reason: ShapeBuildPauseReason = 'user-pause'): Promise<void> => {
     const bridgeApi = bridgeRef.current;
     if (!activeNodeId || isStopRequestedInFlight || !bridgeApi) return;
+    setRequestedControlAction('cancel');
     cancelStartRequestRef.current = true;
     clearStartPendingRef.current?.();
     setIsStopRequested(true);
@@ -31,6 +33,7 @@ export const useShapeBuildCancelQueued = ({
       );
       setIsStopAccepted(true);
       setIsStopRequested(false);
+      setRequestedControlAction('none');
       releaseBuildLock();
       if (buildSessionTransitionActive) {
         finishBuildSessionTransition({
@@ -42,6 +45,7 @@ export const useShapeBuildCancelQueued = ({
       console.error('[ShapeBuildProgressStep] cancel queued failed', error);
       setIsStopRequested(false);
       setIsStopAccepted(false);
+      setRequestedControlAction('none');
     }
   }, [
     activeNodeId,
@@ -51,6 +55,7 @@ export const useShapeBuildCancelQueued = ({
     finishBuildSessionTransition,
     isStopRequestedInFlight,
     releaseBuildLock,
+    setRequestedControlAction,
     setIsStopAccepted,
     setIsStopRequested,
     cancelStartRequestRef,

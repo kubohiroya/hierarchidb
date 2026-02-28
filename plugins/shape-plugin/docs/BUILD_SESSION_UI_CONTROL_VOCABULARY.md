@@ -1,0 +1,48 @@
+# Shape Build Session UI Control Vocabulary
+
+This note defines UI control vocabulary for Shape Build Step.
+It is aligned with runtime-worker SSOT documents:
+
+- `packages/runtime-worker/docs/build-session-terminology-ssot.md`
+- `packages/runtime-worker/docs/build-session-orchestrator-state-transitions.md`
+
+## Canonical control commands (runtime API)
+
+- `startBuildSession`
+- `pauseBuildSession`
+- `cancelQueuedBuildSession`
+
+## UI wording policy
+
+- `Start` and `Resume` are the same runtime command path (`startBuildSession`).
+- `Pause` and `Cancel` are different user intentions and must be shown as separate actions.
+- `retry` is not a control command in this context.
+
+## UI intent state
+
+The build progress UI tracks requested control intent as:
+
+- `none`
+- `start`
+- `pause`
+- `cancel`
+
+This intent is UI-only metadata for rendering and must not redefine runtime semantics.
+
+## Mapping notes
+
+- `Pause` action maps to `pauseBuildSession`.
+- `Cancel` action maps to:
+  - `cancelQueuedBuildSession` when queued.
+  - Runtime fallback behavior for running sessions is defined by orchestrator contract.
+
+## Non-goals
+
+- Do not introduce additional control aliases.
+- Do not add independent `retry` command without SSOT update.
+
+## Progress update handling
+
+- Task/session progress visibility is driven by Worker `snapshot` + `progress`.
+- `progress=100%` is treated as terminal update signal.
+- Additional event sequence numbers are out of scope for this UI contract.

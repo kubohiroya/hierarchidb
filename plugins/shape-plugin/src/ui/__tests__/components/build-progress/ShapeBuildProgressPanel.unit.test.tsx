@@ -62,6 +62,7 @@ import {
   taskProgressControlsAtom,
   taskScrollTargetAtom,
   taskProgressSummaryAtom,
+  taskListViewPhaseAtom,
   taskSummaryLoadingAtom,
   taskViewportRangeAtom,
   tasksLoadingAtom,
@@ -80,6 +81,7 @@ const makeStore = () => {
   store.set(taskPaneProgressAtom, []);
   store.set(tasksLoadingAtom, false);
   store.set(taskSummaryLoadingAtom, false);
+  store.set(taskListViewPhaseAtom, 'idle');
   store.set(taskWarningMessageAtom, null);
   store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
   store.set(taskProgressControlsAtom, {
@@ -366,6 +368,122 @@ describe('ShapeBuildProgressPanel', () => {
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThan(0);
     expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
+  it('shows task skeleton while awaiting first snapshot in running state', async () => {
+    const store = makeStore();
+    store.set(tasksLoadingAtom, false);
+    store.set(taskSummaryLoadingAtom, false);
+    store.set(taskListViewPhaseAtom, 'awaitingSnapshot');
+    store.set(tasksByStageAtom, { fetch: [], transform: [], vt: [] });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 0,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Build controls')).toBeTruthy();
+    });
+
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
+    expect(skeletons.length).toBeGreaterThan(0);
+    expect(screen.queryByText('No tasks yet.')).toBeNull();
+  });
+
+  it('shows pausing label while pause request is in-flight', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: false,
+      statusLabel: 'pause-requested',
+      stopRequested: true,
+      requestedControlAction: 'pause',
+      handlePause: vi.fn(),
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Transform',
+      taskLabel: 'Running',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 45,
+      completed: 3,
+      total: 10,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'running',
+      hasProgressData: true,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Pausing...')).toBeTruthy();
+    });
+  });
+
+  it('shows cancelling label while cancel request is in-flight', async () => {
+    const store = makeStore();
+    store.set(taskProgressControlsAtom, {
+      canStartOrResume: false,
+      statusLabel: 'cancel-requested',
+      startPending: true,
+      stopRequested: true,
+      requestedControlAction: 'cancel',
+      handleCancelQueued: vi.fn(),
+    });
+    store.set(taskProgressSummaryAtom, {
+      stageLabel: 'Fetch',
+      taskLabel: 'Queued',
+      taskUnitLabel: 'Tasks',
+      overallProgress: 0,
+      completed: 0,
+      total: 10,
+      failed: 0,
+      skipped: 0,
+      buildStatus: 'idle',
+      hasProgressData: false,
+      timingStageId: null,
+      completedStageElapsedMs: {},
+      totalElapsedMs: 0,
+      stageElapsedMs: 0,
+      stageRemainingMs: null,
+    });
+
+    render(
+      <Provider store={store}>
+        <ShapeBuildProgressPanel data={{}} />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Cancelling...')).toBeTruthy();
+    });
   });
 
   it('does not show task skeleton while idle before start is requested', async () => {

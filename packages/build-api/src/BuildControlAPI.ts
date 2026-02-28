@@ -138,7 +138,6 @@ export interface IBuildSessionManager<TConfig = unknown, TData = unknown> {
   prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
   startBuildSession(nodeId: NodeId): Promise<BuildSessionStatus>;
   pauseBuildSession(nodeId: NodeId): Promise<void>;
-  resumeBuildSession(nodeId: NodeId): Promise<void>;
   getBuildSessionStatus(nodeId: NodeId): Promise<BuildSessionStatus>;
   onBuildProgress(nodeId: NodeId, callback: BuildProgressCallback): () => void;
 }

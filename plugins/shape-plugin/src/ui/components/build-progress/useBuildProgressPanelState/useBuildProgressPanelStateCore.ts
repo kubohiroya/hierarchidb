@@ -82,6 +82,7 @@ export const useBuildProgressPanelState = (params: {
     paneProgress: runtimeState.paneProgress,
     isTasksLoading: runtimeState.isTasksLoading,
     isTaskSummaryLoading: runtimeState.isTaskSummaryLoading,
+    taskListViewPhase: runtimeState.taskListViewPhase,
     tasksByStage: runtimeState.tasksByStage,
     summary: {
       ...runtimeState.summary,

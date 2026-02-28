@@ -46,6 +46,10 @@ export interface UseShapeBuildTaskSnapshotProgressState {
   hasTaskSnapshotByStage: Record<StageId, boolean>;
   stageOrder: StageId[];
   stageBuildStateById: BuildStageStateById;
+  /**
+   * @deprecated UI runtime flow must rely on subscribed snapshot/progress events.
+   * Keep only for focused tests and emergency diagnostics.
+   */
   refresh: () => Promise<void>;
   snapshotTaskCountByStage: StageCountByStage;
   terminalTaskCountByStage: StageCountByStage;

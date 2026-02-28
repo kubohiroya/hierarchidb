@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
 import { useBuildProgress } from '~/ui/components/build-progress/useBuildProgress/useBuildProgress';
 import { useTranslation } from '~/ui/i18n';
@@ -119,6 +119,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     setIsStopRequested,
     setIsStopAccepted,
   } = useShapeBuildStopState({ sessionRecord });
+  const [requestedControlAction, setRequestedControlAction] = useState<'none' | 'start' | 'pause' | 'cancel'>('none');
   const {
     buildSessionTransition,
     beginBuildSessionTransition,
@@ -204,7 +205,6 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     tasks: displayTasks,
     isLoading: isTasksLoading,
     isTaskSnapshotProgressConnected,
-    refreshTasks,
     stageFromState,
     liveStageFromState,
     resolvedStageFromState,
@@ -212,6 +212,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     buildStatus,
     hasProgressTaskSignal,
     hasReceivingTaskSnapshotSignal,
+    taskListViewPhase,
   } = stageState;
 
   const {
@@ -364,12 +365,19 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     tryAcquireBuildLock,
     waitForBuildLock,
     cancelStartRequestRef,
+    setRequestedControlAction,
     saveDraftBeforeBuild,
-    refreshTasks,
     updateSessionRecord,
     setIsStopRequested,
     setIsStopAccepted,
   });
+
+  useEffect(() => {
+    if (isStopRequestedInFlight) return;
+    if (requestedControlAction === 'pause' || requestedControlAction === 'cancel') {
+      setRequestedControlAction('none');
+    }
+  }, [isStopRequestedInFlight, requestedControlAction]);
 
   const { canStartOrResume, isStartPending, startOrResume, clearStartPending } = useShapeBuildAutoResume({
     activeNodeId,
@@ -413,6 +421,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     failed: progressSummary.displayCounts.failed,
     skipped: progressSummary.displayCounts.skipped,
     hasProgressData: progressSummary.hasProgressData,
+    taskListViewPhase,
     stageTotals: progressSummary.stageTotals,
     timingStageId,
     completedStageElapsedMs,
@@ -423,6 +432,7 @@ export const useShapeBuildStep = ({ data, nodeId }: Args) => {
     handlePause,
     handleCancelQueued,
     isStartPending,
+    requestedControlAction,
     stopRequested: isStopRequestedInFlight,
     authDialogOpen,
     closeAuthDialog,

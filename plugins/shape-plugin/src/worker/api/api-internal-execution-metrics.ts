@@ -966,7 +966,7 @@ const clearActivePipelineRuntimeState = (nodeId: NodeId): void => {
 const clearStalePipelineStateIfInactive = async (
   nodeId: NodeId,
   sessionRecord: ShapeBuildSessionRecord | null,
-  source: 'startBuildSession' | 'resumeBuildSession',
+  source: 'startBuildSession',
 ): Promise<boolean> => {
   const pipelineKey = String(nodeId);
   if (!activePipelines.has(pipelineKey)) return false;

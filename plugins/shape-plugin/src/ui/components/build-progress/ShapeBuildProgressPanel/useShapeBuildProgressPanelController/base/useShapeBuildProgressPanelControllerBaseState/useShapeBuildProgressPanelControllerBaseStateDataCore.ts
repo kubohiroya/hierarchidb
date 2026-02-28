@@ -72,6 +72,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     t,
     isTasksLoading,
     isTaskSummaryLoading,
+    taskListViewPhase,
     stageProgress,
     paneProgress,
     resolveTaskTitle,
@@ -210,7 +211,8 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
   const isTasksLoadingForDisplay = isTasksLoading
     || isResetSessionLoading
     || controls.startPending
-    || startPendingHold;
+    || startPendingHold
+    || taskListViewPhase === 'awaitingSnapshot';
   const isTaskSummaryLoadingForDisplay = isTaskSummaryLoading || isResetSessionLoading;
   const isStartupPendingForDisplay = isBuildStartupPending || startPendingHold;
   const isControlMenuDisabled = isResetSessionLoading || summary.buildStatus === 'idle';

@@ -16,7 +16,6 @@ export type BuildStartupStep =
   | 'draft-save'
   | 'worker-initialize'
   | 'payload-build'
-  | 'session-resume-request'
   | 'session-start-request'
   | 'session-status-persist'
   | 'receiving-task-snapshot';

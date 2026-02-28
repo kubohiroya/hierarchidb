@@ -114,9 +114,9 @@ export function useAuthRequiredDialogHost(): AuthRequiredDialogHostState {
             const nodeType = toNodeType(sessionKey.slice(0, separator));
             const nodeId = toNodeId(sessionKey.slice(separator + 1));
             try {
-              await workerBridgeRef.current.resumeBuildSession(nodeType, nodeId);
+              await workerBridgeRef.current.startBuildSession(nodeType, nodeId, undefined);
             } catch (error) {
-              console.warn('[auth][ui] failed to resume build session on auth success', error);
+              console.warn('[auth][ui] failed to restart build session on auth success', error);
             }
           } else {
             pendingCountBySessionRef.current.set(sessionKey, nextCount);

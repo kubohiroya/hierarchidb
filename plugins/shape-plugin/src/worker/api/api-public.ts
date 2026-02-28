@@ -133,19 +133,6 @@ export const shapeBuildAPI = {
       stopReason: reason,
     });
   },
-  resumeBuildSession: async (
-    draftId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy,
-    buildConfig?: ShapeBuildConfig,
-    processingConfig?: ShapeProcessingConfig,
-  ): Promise<void> => {
-    await shapeBuildAPI.invokeBuildCommand('session/resume', {
-      nodeId: draftId,
-      buildContinuationPolicy,
-      buildConfig,
-      processingConfig,
-    });
-  },
   cancelQueuedBuildSession: async (draftId: NodeId, reason?: string): Promise<void> => {
     await shapeBuildAPI.invokeBuildCommand('session/cancel-queued', {
       nodeId: draftId,

@@ -11,7 +11,7 @@ Users can choose a build continuation policy in the TreeConsole settings (finish
 ## Progress
 
 - [x] (2026-01-17 20:00 JST) Confirm where buildContinuationPolicy is stored and where batch execution is triggered.
-- [x] Extend Worker API start/resume calls to carry buildContinuationPolicy.
+- [x] Extend Worker API start calls to carry buildContinuationPolicy.
 - [x] Update Shape batch worker to accept the policy and apply it to pipeline execution.
 - [x] Apply policy to stage failure handling and stage-to-stage continuation logic.
 - [x] Run pnpm typecheck and capture results in TASKS.md.
@@ -46,7 +46,7 @@ TreeConsole settings persist buildContinuationPolicy in localStorage and the too
 
 Key files to modify:
 
-- `packages/common/api/src/WorkerAPI.ts` for start/resume signatures.
+- `packages/common/api/src/WorkerAPI.ts` for start signatures.
 - `packages/ui/worker-client/src/workerBridge.ts` for forwarding the policy.
 - `app/src/worker-runtime/worker.ts` for passing policy into shape batch API.
 - `plugins/shape-plugin/src/ui/components/step5/useBatchSessionActions.ts` for retrieving the policy and calling Worker API.
@@ -55,7 +55,7 @@ Key files to modify:
 
 ## Plan of Work
 
-First, extend the Worker API and worker bridge functions to accept an optional BuildContinuationPolicy parameter. Then, when the Shape build UI starts or resumes a batch session, load the current TreeConsole setting and include it in the Worker API call. Next, adjust the Shape worker’s startBatchProcess and resume pipeline to pass the policy into `runShapePipeline`. Finally, in the pipeline, map the policy to `failureHandling` and add explicit logic to stop before the next stage when failures are present and the policy demands it.
+First, extend the Worker API and worker bridge functions to accept an optional BuildContinuationPolicy parameter. Then, when the Shape build UI starts a batch session, load the current TreeConsole setting and include it in the Worker API call. Next, adjust the Shape worker’s startBatchProcess path to pass the policy into `runShapePipeline`. Finally, in the pipeline, map the policy to `failureHandling` and add explicit logic to stop before the next stage when failures are present and the policy demands it.
 
 ## Concrete Steps
 

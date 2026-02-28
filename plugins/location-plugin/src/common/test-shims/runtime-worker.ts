@@ -16,7 +16,6 @@ export const workerAPI = {
     status: 'running' as const,
   }),
   pauseBuildSession: async () => undefined,
-  resumeBuildSession: async () => undefined,
   subscribeBuildProgress: async () => () => undefined,
 };
 

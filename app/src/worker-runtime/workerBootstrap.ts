@@ -87,7 +87,6 @@ type ShapeBuildAPI = {
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBuildSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBuildSession?: (draftId: NodeId) => Promise<void>;
-  resumeBuildSession?: (draftId: NodeId) => Promise<void>;
   invokeBuildCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BuildProgressSubscriber;
   subscribeToTasks?: BuildTaskSubscriber;
@@ -743,54 +742,11 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           await runPauseBuildSession(nodeType, nodeId, reason);
         };
 
-        const runResumeBuildSession = async (
+        const runRestartBuildSession = async (
           nodeType: NodeType,
           nodeId: NodeId
         ): Promise<void> => {
-          const buildApi = resolveShapeBuildApiOrThrow(nodeType);
-          setRuntimeTransientStatus(nodeType, nodeId, 'resuming', true);
-          try {
-            if (buildApi.invokeBuildCommand) {
-              const draft = buildApi.getDraft ? await buildApi.getDraft(nodeId) : undefined;
-              const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
-              const draftData = coerceRecord(
-                (draft as { draftData?: unknown } | undefined)?.draftData ??
-                  (fallbackNode as { draftData?: unknown } | undefined)?.draftData
-              );
-              const buildConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
-              const processingConfig = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
-              const processingConfigRecord = coerceRecord(processingConfig);
-              const transformConfigRecord = coerceRecord(
-                (processingConfigRecord as { transform?: unknown }).transform
-              );
-              const transformMaxConcurrent = transformConfigRecord.maxConcurrent;
-              console.warn('[worker bootstrap][ResumeTrace] resume-request-config', {
-                nodeType,
-                nodeId,
-                transformMaxConcurrent: typeof transformMaxConcurrent === 'number'
-                  ? transformMaxConcurrent
-                  : transformMaxConcurrent ?? null,
-              });
-              await buildApi.invokeBuildCommand('session/resume', {
-                nodeId,
-                buildConfig: buildConfig,
-                processingConfig,
-              });
-              setHeapContext({ nodeType, nodeId });
-              clearRuntimeTransientStatus(nodeType, nodeId, true);
-              return;
-            }
-            const session = await getSessionSnapshot(buildApi, nodeId);
-            const nodeIdForCommand = (session as { nodeId?: NodeId } | undefined)?.nodeId ?? nodeId;
-            if (buildApi.resumeBuildSession) {
-              await buildApi.resumeBuildSession(nodeIdForCommand);
-            }
-            setHeapContext({ nodeType, nodeId });
-            clearRuntimeTransientStatus(nodeType, nodeId, true);
-          } catch (error) {
-            clearRuntimeTransientStatus(nodeType, nodeId, false);
-            throw error;
-          }
+          await runStartBuildSession(nodeType, nodeId, []);
         };
 
         const RESUME_SESSION_FRESHNESS_WINDOW_MS = 5 * 60 * 1000;
@@ -880,16 +836,16 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
 
           try {
             const sessionNodeId = latestSession.nodeId;
-            console.info('[worker bootstrap][ResumeTrace] resume-cold-start-session', {
+            console.info('[worker bootstrap][ResumeTrace] restart-cold-start-session', {
               nodeId: sessionNodeId,
             });
-            await runResumeBuildSession(SHAPE_NODE_TYPE, sessionNodeId);
-            console.info('[worker bootstrap][ResumeTrace] resume-cold-start-session-success', {
+            await runRestartBuildSession(SHAPE_NODE_TYPE, sessionNodeId);
+            console.info('[worker bootstrap][ResumeTrace] restart-cold-start-session-success', {
               nodeId: sessionNodeId,
             });
           } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.warn('[worker bootstrap][ResumeTrace] resume-cold-start-session-failed', {
+            console.warn('[worker bootstrap][ResumeTrace] restart-cold-start-session-failed', {
               nodeId: latestSession.nodeId,
               errorMessage: msg,
             });
@@ -926,11 +882,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           nodeId: NodeId,
           reason?: string
         ): Promise<void> => runCancelQueuedBuildSession(nodeType, nodeId, reason);
-
-        const resumeBuildSession = async (
-          nodeType: NodeType,
-          nodeId: NodeId
-        ): Promise<void> => runResumeBuildSession(nodeType, nodeId);
 
         const subscribeBuildProgress = async (
           nodeType: NodeType,
@@ -1038,7 +989,6 @@ export const ensureRuntimeWorkerBootstrap = async (options: {
           getBuildSessionStatus,
           pauseBuildSession,
           cancelQueuedBuildSession,
-          resumeBuildSession,
           subscribeBuildProgress,
           subscribeBuildTasks,
           subscribeHeapPressure: async (

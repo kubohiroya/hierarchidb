@@ -77,10 +77,6 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
     await this.performPause(nodeId);
   }
 
-  async resumeBuildSession(nodeId: string): Promise<void> {
-    await this.performResume(nodeId);
-  }
-
   async getBuildSessionStatus(nodeId: string): Promise<unknown> {
     return this.performStatus(nodeId);
   }
@@ -90,7 +86,6 @@ export abstract class UnifiedBuildManagerBase<TConfig, TData> {
 
   protected abstract performStart(nodeId: string, config: TConfig, data: TData): Promise<string>;
   protected abstract performPause(nodeId: string): Promise<void>;
-  protected abstract performResume(nodeId: string): Promise<void>;
   protected abstract performStatus(nodeId: string): Promise<unknown>;
   protected abstract performSubscribe(nodeId: string, callback: (event: unknown) => void): () => void;
 }
