@@ -241,10 +241,36 @@ const isRetryableTerminalTask = (task: ShapeBuildTaskSummary): boolean => (
   || isTaskSkipped(task.display, resolveTaskMetadataText(task))
 );
 
+const resolveTaskUpdatedAt = (task: ShapeBuildTaskSummary): number | null => {
+  const rawUpdatedAt = (task as { updatedAt?: unknown }).updatedAt;
+  return typeof rawUpdatedAt === 'number' && Number.isFinite(rawUpdatedAt) ? rawUpdatedAt : null;
+};
+
+export const shouldAcceptRestartedTaskTransition = (
+  current: ShapeBuildTaskSummary,
+  next: ShapeBuildTaskSummary,
+): boolean => {
+  if (!(next.status === 'queued' || next.status === 'running')) {
+    return false;
+  }
+  if (!isTerminalTask(current)) {
+    return false;
+  }
+  const currentUpdatedAt = resolveTaskUpdatedAt(current);
+  const nextUpdatedAt = resolveTaskUpdatedAt(next);
+  if (currentUpdatedAt === null || nextUpdatedAt === null) {
+    return false;
+  }
+  return nextUpdatedAt > currentUpdatedAt;
+};
+
 export const shouldPreferNextTask = (
   current: ShapeBuildTaskSummary,
   next: ShapeBuildTaskSummary,
 ): boolean => {
+  if (shouldAcceptRestartedTaskTransition(current, next)) {
+    return true;
+  }
   if (isRetryableTerminalTask(current) && (next.status === 'queued' || next.status === 'running')) {
     return true;
   }
