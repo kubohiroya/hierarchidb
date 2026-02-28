@@ -7,7 +7,8 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Box, Chip, CircularProgress, IconButton, LinearProgress, Menu, MenuItem, Skeleton, Stack, Typography, useTheme } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { Box, Chip, CircularProgress, IconButton, LinearProgress, MenuItem, Skeleton, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
@@ -282,11 +283,10 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                 >
                   <ArrowDropDownIcon fontSize="small" />
                 </IconButton>
-                <Menu
+                <DialogSafeMenu
                   anchorEl={menuAnchorEl}
                   open={isMenuOpen}
                   onClose={handleMenuClose}
-                  disableRestoreFocus
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
@@ -299,7 +299,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                       {item.label}
                     </MenuItem>
                   ))}
-                </Menu>
+                </DialogSafeMenu>
               </>
             ) : null}
           </Stack>

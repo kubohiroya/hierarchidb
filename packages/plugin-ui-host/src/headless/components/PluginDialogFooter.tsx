@@ -6,7 +6,7 @@
  * controller layer.
  */
 
-import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
+import { DialogSafeMenu, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -16,7 +16,7 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import OpenInNewOffIcon from '@mui/icons-material/OpenInNewOff';
 import type { ButtonProps } from '@mui/material';
-import { Box, Button, CircularProgress, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Tooltip } from '@mui/material';
+import { Box, Button, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Tooltip } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { useLocation } from '@tanstack/react-router';
 import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
@@ -478,10 +478,9 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           </Stack>
         </Stack>
       </Box>
-      <Menu
+      <DialogSafeMenu
         open={Boolean(contextMenuState)}
         onClose={closeContextMenu}
-        disableRestoreFocus
         anchorReference="anchorPosition"
         anchorPosition={
           contextMenuState
@@ -507,7 +506,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           </ListItemIcon>
           <ListItemText>Copy Link URL</ListItemText>
         </MenuItem>
-      </Menu>
+      </DialogSafeMenu>
     </>
   );
 };

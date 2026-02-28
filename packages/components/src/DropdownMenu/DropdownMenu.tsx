@@ -17,7 +17,8 @@
  * - DropdownMenuItemType: Menu item configuration type
  */
 
-import { Box, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { Box, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
 import { type MouseEvent, type ReactElement, type ReactNode, useCallback, useState } from 'react';
 import type { DropdownMenuItemType } from './DropdownMenuItemType.js';
 
@@ -58,7 +59,7 @@ export const DropdownMenu = ({
       <Box style={{ marginTop: '-1.775px' }} onClick={handleMenuOpenButtonClick}>
         {children}
       </Box>
-      <Menu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
+      <DialogSafeMenu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
         {items.map((item: DropdownMenuItemType | null, index: number) =>
           item ? (
             <MenuItem
@@ -84,7 +85,7 @@ export const DropdownMenu = ({
             <MenuItem key={index} divider />
           ),
         )}
-      </Menu>
+      </DialogSafeMenu>
     </>
   );
 };

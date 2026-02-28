@@ -1,4 +1,5 @@
-import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, SpeedDialIcon } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { IconButton, ListItemIcon, ListItemText, MenuItem, SpeedDialIcon } from '@mui/material';
 import { type CSSProperties, type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 
@@ -46,7 +47,7 @@ export const MenuListItemLinkButton = ({
       >
         <SpeedDialIcon />
       </IconButton>
-      <Menu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
+      <DialogSafeMenu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
         {items.map((item: MenuItemLinkType | null, index: number) =>
           item ? (
             <MenuItem
@@ -63,7 +64,7 @@ export const MenuListItemLinkButton = ({
             <MenuItem key={index} divider />
           ),
         )}
-      </Menu>
+      </DialogSafeMenu>
     </>
   );
 };

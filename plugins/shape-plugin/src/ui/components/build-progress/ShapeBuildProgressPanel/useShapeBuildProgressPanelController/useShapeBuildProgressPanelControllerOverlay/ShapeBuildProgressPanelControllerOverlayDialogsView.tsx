@@ -1,5 +1,6 @@
+import { DialogSafePopover } from '@hierarchidb/ui-dialog';
 import { type ReactNode } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Alert, Popover, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Alert, Typography } from '@mui/material';
 import { DownloadRetryControls, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { TreeTableSearchInput } from '@hierarchidb/ui-search-input';
 import type { ShapeBuildProgressPanelControllerBaseResult } from '~/ui/components/build-progress/ShapeBuildProgressPanel/useShapeBuildProgressPanelController/base/useShapeBuildProgressPanelControllerBaseState';
@@ -236,7 +237,7 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
   handleStartWarningConfirm,
 }: FooterArgs): ReactNode => (
   <>
-    <Popover
+    <DialogSafePopover
       open={Boolean(fetchRetryEditorAnchor)}
       anchorEl={fetchRetryEditorAnchor}
       onClose={closeFetchRetryEditor}
@@ -246,8 +247,8 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
       <Box sx={{ p: 2, width: 820, maxWidth: 'calc(100vw - 24px)' }}>
         {fetchRetryEditorCard}
       </Box>
-    </Popover>
-    <Popover
+    </DialogSafePopover>
+    <DialogSafePopover
       open={Boolean(concurrencyEditorAnchor && concurrencyEditorStageId)}
       anchorEl={concurrencyEditorAnchor}
       onClose={closeConcurrencyEditor}
@@ -257,7 +258,7 @@ export const ShapeBuildProgressPanelOverlayFooter = ({
       <Box sx={{ p: 2, width: 360, maxWidth: 'calc(100vw - 24px)' }}>
         {concurrencyEditorCard}
       </Box>
-    </Popover>
+    </DialogSafePopover>
     <Snackbar
       open={isBuildStartupPending && !startupNoticeDismissed}
       onClose={(_event, reason) => {

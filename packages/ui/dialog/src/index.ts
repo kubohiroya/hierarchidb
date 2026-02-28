@@ -3,6 +3,8 @@ export * from './components/CommonDialog.js';
 export * from './components/CommonDialogTitle.js';
 export * from './components/CommonDialogActions.js';
 export * from './components/UnsavedChangesDialog.js';
+export * from './components/DialogSafeMenu.js';
+export * from './components/DialogSafePopover.js';
 export * from './types/PluginDialog.types.js';
 export * from './headless/AbstractDialog.js';
 export * from './headless/PluginDialogContent.js';

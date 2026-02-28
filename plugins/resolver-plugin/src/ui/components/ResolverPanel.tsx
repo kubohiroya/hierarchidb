@@ -11,11 +11,11 @@ import {
   List,
   ListItem,
   ListItemText,
-  Menu,
   MenuItem,
   Paper,
   Typography,
 } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
 import Grid from '@mui/material/Grid';
 import {
   Cached as CachedIcon,
@@ -319,7 +319,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       )}
 
       {/* Context Menu */}
-      <Menu
+      <DialogSafeMenu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
@@ -361,7 +361,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
           <DeleteIcon sx={{ mr: 1 }} fontSize="small" color="error" />
           Delete
         </MenuItem>
-      </Menu>
+      </DialogSafeMenu>
     </Box>
   );
 };

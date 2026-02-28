@@ -705,6 +705,9 @@ importers:
       '@hierarchidb/core-types':
         specifier: workspace:*
         version: link:../core-types
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../ui/dialog
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../ui/lru-splitview
