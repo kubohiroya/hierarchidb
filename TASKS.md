@@ -38,10 +38,12 @@
 ## Kanban
 
 ### Doing
-- #626 / `codex/feat/ui/flag-overlay-package` / start: 2026-02-28 17:48 JST
+- #628 / `codex/fix/shape/vt-fit-button-tweak-628` / start: 2026-02-28 17:28 JST
 - #623 / `codex/fix/app/plugin-registry-derivations-623` / start: 2026-02-28 17:15 JST
 - #621 / `codex/fix/app/build-session-queue-update-depth-621` / start: 2026-02-28 17:05 JST
 - #618 / `codex/feat/shape/vt-stage-visualization-and-fixes` / start: 2026-02-28 14:10 JST
+- #615 / `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` / start: 2026-02-28 13:45 JST
+- #617 / `codex/refactor/shape/rename-task-item-detail-window-617` / start: 2026-02-28 14:03 JST
 - #613 / `codex/fix/shape/ingest-main-diff-613` / start: 2026-02-28 12:55 JST
 - #611 / `codex/fix/build/ts2307-shape-tests-611` / start: 2026-02-28 12:28 JST
 - #604 / `codex/fix/plugin-dialog-safe-menu-popover-604` / start: 2026-02-28 10:38 JST
@@ -133,14 +135,14 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
-- done: 2026-02-28 17:54 JST #626 コミット `feat(ui-flag-overlay): add overlay component package` を push し、PR #627（https://github.com/kubohiroya/hierarchidb/pull/627）を `main` 向けに作成。
-- update: 2026-02-28 17:53 JST #626 `packages/ui/flag-overlay` を新規追加し、`FlagOverlay`（ISOコード + x,y 配列で国旗重ね描き）と `flagEmoji` ユーティリティ、単体テスト（6件）を実装。`pnpm -w turbo run format --filter @hierarchidb/ui-flag-overlay` / `build` / `typecheck` / `test` はすべて exit 0。
-- blocked: 2026-02-28 17:53 JST #626 ルート検証 `pnpm format` は差分外既知違反（`@hierarchidb/plugin-base` の Biome lint: `noExplicitAny` 等）で exit 1。副作用の自動整形差分は破棄済み。
-- blocked: 2026-02-28 17:53 JST #626 ルート検証 `pnpm typecheck` は差分外既知不整合（`packages/tools/build-scripts`: TS6133 / TS2307）で exit 2。`pnpm test` は差分外既知不整合（`packages/vt-orchestrator`: `@hierarchidb/gis-sdk` 解決失敗）で exit 1。
-- start: 2026-02-28 17:48 JST #626 を起票（https://github.com/kubohiroya/hierarchidb/issues/626）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。専用 worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-626` とブランチ `codex/feat/ui/flag-overlay-package` を `main` 起点で作成して着手。
+- start: 2026-02-28 17:28 JST #628 を起票（https://github.com/kubohiroya/hierarchidb/issues/628）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-fit-button-tweak-628` を作成して着手。
 - start: 2026-02-28 17:15 JST #623 を起票（https://github.com/kubohiroya/hierarchidb/issues/623）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/plugin-registry-derivations-623` を作成して着手。
 - start: 2026-02-28 17:05 JST #621 を起票（https://github.com/kubohiroya/hierarchidb/issues/621）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/app/build-session-queue-update-depth-621` を作成して着手。
 - start: 2026-02-28 14:10 JST #618 を起票（https://github.com/kubohiroya/hierarchidb/issues/618）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/feat/shape/vt-stage-visualization-and-fixes` を作成して着手。
+- done: 2026-02-28 14:04 JST #617 検証: `pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin --only` exit 0、`pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/TaskItemCardListCard.unit.test.tsx` exit 0。
+- update: 2026-02-28 14:04 JST #617 `TaskItemDetailSnackbar` 命名を `TaskItemDetailWindow` へ統一。`TaskItemDetailSnackbar.tsx` を `TaskItemDetailWindow.tsx` へリネームし、`TaskItemCardListCard.tsx` の import パスを更新。UI 挙動変更なし（命名・参照のみ）。
+- start: 2026-02-28 14:03 JST #617 を起票（https://github.com/kubohiroya/hierarchidb/issues/617）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/refactor/shape/rename-task-item-detail-window-617` を `origin/main` 起点で作成して着手。
+- start: 2026-02-28 13:45 JST #615 を起票（https://github.com/kubohiroya/hierarchidb/issues/615）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/refactor/shape/step5-task-detail-use-shared-floating-window-615` を `origin/main` 起点で作成して着手。
 - start: 2026-02-28 12:28 JST #611 を起票（https://github.com/kubohiroya/hierarchidb/issues/611）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/build/ts2307-shape-tests-611` を作成し、worktree `/Users/hiroya/WebstormProjects/hierarchidb-codex-611` で着手。
 - start: 2026-02-28 12:55 JST #613 を起票（https://github.com/kubohiroya/hierarchidb/issues/613）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/ingest-main-diff-613` を作成して着手。
 - update: 2026-02-28 13:23 JST #613 検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。依存更新のため `pnpm install` 実行（exit 0）。
