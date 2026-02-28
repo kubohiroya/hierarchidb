@@ -58,6 +58,48 @@ describe('TaskItemCardListCard', () => {
     expect(screen.getAllByTestId('task-icon-flag')).toHaveLength(1);
   });
 
+  it('renders vt flag overlay from parent tile intersecting countries', () => {
+    const tasks: ShapeBuildTaskSummary[] = [
+      {
+        taskId: 'node-1:vt:2:6:123',
+        nodeId: 'node-1' as NodeId,
+        stage: 'vt',
+        taskType: 'vt',
+        status: 'running',
+        progress: 40,
+        metadata: {
+          vtParentInputSummary: {
+            parentTile: { z: 6, x: 10, y: 20 },
+            intersectingFeatureCount: 3,
+            intersectingGeojsonByteSize: 1024,
+            topCountriesByIntersectingArea: [
+              { countryCode: 'JP', intersectingAreaSqMeters: 1200 },
+              { countryCode: 'US', intersectingAreaSqMeters: 800 },
+            ],
+          },
+        },
+      } as ShapeBuildTaskSummary,
+    ];
+    const store = createStore();
+
+    render(
+      <Provider store={store}>
+        <TaskItemCardListCard
+          stageId="vt"
+          tasks={tasks}
+          stageValue={0}
+          resolveStatusLabel={() => 'Running'}
+          resolveStatusColor={() => 'info'}
+          resolveTaskTitle={(task) => task.taskId}
+          virtualize={false}
+        />
+      </Provider>
+    );
+
+    expect(screen.getByTestId('task-icon-vt-flag-overlay')).toBeTruthy();
+    expect(screen.queryByTestId('task-icon-flag')).toBeNull();
+  });
+
   it('shows compact transform summary from metadata', () => {
     const tasks: ShapeBuildTaskSummary[] = [
       {

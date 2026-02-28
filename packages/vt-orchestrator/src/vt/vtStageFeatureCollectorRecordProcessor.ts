@@ -1,5 +1,5 @@
 import type { Feature } from 'geojson';
-import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import { geometryArea, type EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
 import type { VTStageContext } from '~/contexts';
 import type { InputFeatureStats } from './vtStageGeometryTypes.js';
 import {
@@ -106,6 +106,18 @@ export const collectFeaturesFromRecord = async (
     const geojsonByteSize = featureId
       ? normalizeGeojsonByteSize(context.featureGeojsonByteSizeById?.get(featureId))
       : undefined;
+    const normalizedCountryCode = typeof record.countryCode === 'string'
+      ? record.countryCode.trim().toUpperCase()
+      : '';
+    const featureAreaSqMeters = (() => {
+      if (!feature.geometry) return undefined;
+      try {
+        const area = Math.abs(geometryArea(feature, context.geometryEngine));
+        return Number.isFinite(area) ? area : undefined;
+      } catch {
+        return undefined;
+      }
+    })();
     featureStats.push({
       bbox,
       vertexCount: countVerticesFromGeometry(feature.geometry),
@@ -114,6 +126,8 @@ export const collectFeaturesFromRecord = async (
       bufferId: record.id,
       featureId,
       geojsonByteSize,
+      countryCode: normalizedCountryCode.length > 0 ? normalizedCountryCode : undefined,
+      featureAreaSqMeters,
     });
   });
 };
