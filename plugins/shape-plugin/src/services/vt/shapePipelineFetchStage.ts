@@ -83,6 +83,18 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     runId: params.pipelineRunId ?? null,
     counts: stageCounts,
   }));
+  if (params.resumeExistingTasks && (stageCounts.queued > 0 || stageCounts.running > 0)) {
+    await resetStageRunningTasks(params.taskQueue, params.nodeId, 'fetch');
+    stageCounts = await summarizeStageCounts(params.taskQueue, params.nodeId, 'fetch');
+    if (stageCounts.queued > 0 || stageCounts.running > 0) {
+      console.warn('[ShapeFetch][PipelineDiagnostics] fetch stage left pending tasks during resume; keep queued for next retry', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: stageCounts,
+      }));
+    }
+  }
+  const shouldFinalizePending = !params.resumeExistingTasks || (stageCounts.queued === 0 && stageCounts.running === 0);
   const finalizedPending = await finalizePendingStageTasks(
     params.taskQueue,
     params.nodeId,
@@ -90,6 +102,9 @@ export const runShapeFetchStageSection = async (params: ShapeFetchStageParams): 
     'aborted: fetch stage completed with pending tasks',
     '[ShapeFetch][PipelineDiagnostics] fetch stage finalized pending tasks',
     params.pipelineRunId,
+    {
+      markFailed: shouldFinalizePending,
+    },
   );
   if (finalizedPending.authPending > 0) {
     throw new FetchStageAuthPendingError();
