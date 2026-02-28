@@ -38,6 +38,7 @@
 ## Kanban
 
 ### Doing
+- #647 / `codex/fix/shape/vt-stage-skeleton-during-transform-647` / start: 2026-02-28 22:34 JST
 - #643 / `codex/docs/shape/scenario-driven-vt-guideline-643` / start: 2026-02-28 20:57 JST
 - #642 / `codex/refactor/shape/build-session-ssot-state-machine-642` / start: 2026-02-28 20:05 JST
 - #641 / `codex/fix/shape/step5-vt-skeleton-snapshot-641` / start: 2026-02-28 19:51 JST
@@ -143,6 +144,8 @@
 - #225 / `codex/fix/shape/session-reset-init-log-flood` / blocked: 2026-02-12 22:05 JST (`@hierarchidb/vt-orchestrator` の既知 TS7016: `topojson-simplify` / `topojson-server`)
 
 ## 今日の運用ログ
+- update: 2026-02-28 22:37 JST #647 原因は Stage表示が全体 `taskListViewPhase` に依存しており、Transform タスク出現で全体が `streaming` になると、VT未着手ステージでも `No tasks yet.` 分岐へ落ちていたこと。発生範囲は `BuildProgressStageContent/useBuildProgressStageContentState.ts`。修正として `showPendingStageSkeleton` を追加し、`buildStatus in (running,paused)` かつ当該ステージが `task=0 && summary=0 && stageValue<=0` の間は Skeleton を優先表示するよう変更。回帰テストを `ShapeBuildProgressPanel.unit.test.tsx` に追加し、Transform running + VT empty で `No tasks yet.` 非表示/Skeleton 表示を検証。検証: `pnpm -w turbo run test --filter @hierarchidb/shape-plugin -- --run src/ui/__tests__/components/build-progress/ShapeBuildProgressPanel.unit.test.tsx` exit 0、`pnpm -w turbo run typecheck --filter @hierarchidb/shape-plugin` exit 0。
+- start: 2026-02-28 22:34 JST #647 を起票（https://github.com/kubohiroya/hierarchidb/issues/647）し、Project `hierarchidb` へ追加後 Status を `In Progress` に設定。ブランチ `codex/fix/shape/vt-stage-skeleton-during-transform-647` を `origin/main` 起点で作成して着手。
 - update: 2026-02-28 21:52 JST #643 さらに継続し、実コードの stage キーワード依存を削減するための優先度付き移行バックログ `plans/shape-stage-keyword-removal-backlog.md` を新規作成。`rg` 集計に基づき P0/P1/P2/P3 を定義し、P0 に orchestrator/shape pipeline の制御真実源に関わるファイルを割当。`plans/shape-graph-5stage-pipeline-plan.md` に同バックログへの参照を追加。検証: `test -f plans/shape-stage-keyword-removal-backlog.md` exit 0、`rg -n "shape-stage-keyword-removal-backlog|P0|P1|P2|P3|descriptor/capability" plans/shape-stage-keyword-removal-backlog.md plans/shape-graph-5stage-pipeline-plan.md` exit 0。
 - update: 2026-02-28 21:44 JST #643 互換投影不要の方針を反映。`plans/shape-graph-5stage-pipeline-plan.md` から `sessions.stage` 互換投影前提（derived projection）を削除し、実行真実源を `stepId + capability + persistedStatus/runtimeStatus/phase` に統一。`plans/shape-5stage-pure-function-spec.md` では `projectSessionStageForCompatibility` を削除し、`deriveBootstrapNormalization` を stage非依存仕様へ更新。検証: `rg -n "projectSessionStageForCompatibility|compatibility projection|sessions\\.stage" plans/shape-graph-5stage-pipeline-plan.md plans/shape-5stage-pure-function-spec.md` exit 0（残件は「非権威legacy字段として扱う」方針記述のみ）。
 - update: 2026-02-28 21:34 JST #643 `plans/shape-5stage-pure-function-spec.md` を増補し、関数ごとの引数/返値仕様を詳細化。各関数に入力制約・出力セマンティクス・失敗コード・決定性/冪等性条件を追記し、代表的な success/failure 例（`deriveFetchTaskInputs`, `deriveScenarioStepPlan`）と遷移規則（`deriveNextTaskState`）・互換投影規則（`projectSessionStageForCompatibility`）を追加。重複見出し `buildTileKey` も解消。検証: `rg -n "Input fields|Output value fields|Failure|Determinism|Example success|Example failure|Mapping rules|Transition rules|Revision Note" plans/shape-5stage-pure-function-spec.md` exit 0。
