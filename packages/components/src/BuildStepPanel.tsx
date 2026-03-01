@@ -1,5 +1,7 @@
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { DialogSafeMenu } from '@hierarchidb/ui-dialog';
+import { Box, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { BuildStepStagePanel } from './BuildStepStagePanel.tsx';
 import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.tsx';
@@ -51,6 +53,7 @@ export interface BuildStepPanelProps {
   onResume?: () => void;
   onCancel?: () => void;
   onComplete?: () => void;
+  controlHeaderIcon?: ReactNode;
   controlLabel?: string;
   pauseLabel?: string;
   cancelLabel?: string;
@@ -96,6 +99,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   onResume,
   onCancel,
   onComplete,
+  controlHeaderIcon,
   controlLabel,
   pauseLabel,
   cancelLabel,
@@ -119,6 +123,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   void onComplete;
 
   const [stageFilters, setStageFilters] = useState<Record<string, BuildStageFilter>>({});
+  const [controlMenuAnchorEl, setControlMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   const resolveStageFilter = useCallback((stageId: string): BuildStageFilter => (
     stageFilters[stageId] ?? { failedMode: true, completedMode: true, skippedMode: true }
@@ -272,17 +277,75 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         return 'Ready to start stage';
     }
   })();
+  const hasControlMenuItems = (controlMenuItems?.length ?? 0) > 0;
+  const controlMenuOpen = Boolean(controlMenuAnchorEl);
+  const controlMenuDisabledState = Boolean(controlMenuDisabled) || !hasControlMenuItems;
+  const handleControlMenuOpen = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    setControlMenuAnchorEl(event.currentTarget);
+  };
+  const handleControlMenuClose = () => {
+    setControlMenuAnchorEl(null);
+  };
+  const handleControlMenuItemClick = (item: BuildControlMenuItem) => {
+    item.onClick();
+    handleControlMenuClose();
+  };
 
   return (
     <Box display="flex" flexDirection="column" gap={1} height="100%" minHeight={0}>
 
       <Stack direction="row" spacing={2} alignItems="center" justifyContent="center" flexShrink={0}>
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
+          {controlHeaderIcon ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+              {controlHeaderIcon}
+            </Box>
+          ) : null}
+          <Typography variant="subtitle2" sx={{ fontSize: 'calc(1rem + 2px)' }}>
+            {controlLabel ?? 'Build Session'}
+          </Typography>
+          {hasControlMenuItems ? (
+            <IconButton
+              size="small"
+              onClick={handleControlMenuOpen}
+              disabled={controlMenuDisabledState}
+              aria-label={controlMenuAriaLabel ?? 'Build session menu'}
+              data-testid="build-session-menu-button"
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                p: 0.5,
+                bgcolor: 'transparent',
+                '&:hover': { borderColor: 'text.secondary' },
+              }}
+            >
+              <ArrowDropDownIcon fontSize="small" />
+            </IconButton>
+          ) : null}
+          <DialogSafeMenu
+            anchorEl={controlMenuAnchorEl}
+            open={controlMenuOpen}
+            onClose={handleControlMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            {controlMenuItems?.map((item) => (
+              <MenuItem
+                key={item.id}
+                onClick={() => handleControlMenuItemClick(item)}
+                disabled={item.disabled}
+              >
+                {item.label}
+              </MenuItem>
+            ))}
+          </DialogSafeMenu>
+        </Stack>
         <BuildControlCard
           status={status}
           onPause={onPause}
           onResume={onResume}
           onCancel={onCancel}
-          controlLabel={controlLabel}
           pauseLabel={pauseLabel}
           cancelLabel={cancelLabel}
           stopRequested={stopRequested}
@@ -293,12 +356,13 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           startIcon={startIcon}
           resumeIcon={resumeIcon}
           details={controlDetails}
-          controlMenuItems={controlMenuItems}
-          controlMenuAriaLabel={controlMenuAriaLabel}
-          controlMenuDisabled={controlMenuDisabled}
           startLoading={startLoading}
-          rightContent={controlRightContent}
         />
+        {controlRightContent ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            {controlRightContent}
+          </Box>
+        ) : null}
         {statusContent ? (
           <Box minWidth={0}>
             {statusContent}
