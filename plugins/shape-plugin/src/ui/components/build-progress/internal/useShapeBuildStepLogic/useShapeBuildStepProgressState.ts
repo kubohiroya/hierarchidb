@@ -7,11 +7,12 @@ import type { BuildStage } from '@hierarchidb/components/build-stage';
 import type { ShapeBuildTaskSummary } from '~/ui/atoms/shapeBuildProgressAtoms';
 import { useShapeBuildProgressSummaryComputation } from '~/ui/components/build-progress/shapeBuildProgressSummaryComputation.js';
 import {
+  buildElapsedByStageWithActiveStage,
   hasPositiveElapsed,
   mergeElapsedByStage,
+  resolveTotalElapsedMs,
   shallowEqualNumberRecord,
   shouldResetElapsedState,
-  sumNumberRecord,
 } from '~/ui/components/build-progress/internal/useShapeBuildStepHelpers/elapsed.js';
 import {
   resolveMostAdvancedInFlightStageId,
@@ -172,10 +173,14 @@ export const useShapeBuildStepProgressState = ({
     timingStageId,
   ]);
 
-  const stageTotalElapsedMs = useMemo(
-    () => sumNumberRecord(completedStageElapsedMs),
-    [completedStageElapsedMs],
-  );
+  const stageElapsedByStage = useMemo<Record<string, number>>(() => (
+    buildElapsedByStageWithActiveStage({
+      elapsedByStage: completedStageElapsedMs,
+      timingStageId,
+      timingStageElapsedMs: resolvedStageElapsedMs,
+    })
+  ), [completedStageElapsedMs, resolvedStageElapsedMs, timingStageId]);
+
   const resolvedSessionElapsedMs = useMemo(() => {
     if (typeof sessionRecord?.elapsedMs === 'number' && sessionRecord.elapsedMs > 0) {
       return sessionRecord.elapsedMs;
@@ -198,10 +203,11 @@ export const useShapeBuildStepProgressState = ({
     sessionRecord?.updatedAt,
   ]);
 
-  const totalElapsedMs = useMemo(() => Math.max(stageTotalElapsedMs, resolvedSessionElapsedMs), [
-    resolvedSessionElapsedMs,
-    stageTotalElapsedMs,
-  ]);
+  const totalElapsedMs = useMemo(() => resolveTotalElapsedMs({
+    buildStatus,
+    elapsedByStage: stageElapsedByStage,
+    sessionElapsedMs: resolvedSessionElapsedMs,
+  }), [buildStatus, resolvedSessionElapsedMs, stageElapsedByStage]);
 
   useEffect(() => {
     if (isElapsedResetState) {
@@ -234,11 +240,18 @@ export const useShapeBuildStepProgressState = ({
       && task.status === 'running'
     ));
   }, [displayTasks, timingStageId]);
+  const isTimingStageSessionActive = useMemo(() => (
+    timingStageId !== null
+    && timingStageId === persistedStageElapsedStageId
+    && typeof sessionRecord?.stageStartedAt === 'number'
+    && sessionRecord.stageStartedAt > 0
+  ), [persistedStageElapsedStageId, sessionRecord?.stageStartedAt, timingStageId]);
+  const isTimingStageActive = isTimingStageRunning || isTimingStageSessionActive;
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
     if (!timingStageId) return;
-    if (!isTimingStageRunning) return;
+    if (!isTimingStageActive) return;
     const intervalId = window.setInterval(() => {
       setCompletedStageElapsedMs((current) => ({
         ...current,
@@ -248,7 +261,7 @@ export const useShapeBuildStepProgressState = ({
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [buildStatus, isTimingStageRunning, timingStageId]);
+  }, [buildStatus, isTimingStageActive, timingStageId]);
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
@@ -325,37 +338,37 @@ export const useShapeBuildStepProgressState = ({
       return;
     }
 
-    const merged = mergeElapsedByStage(completedStageElapsedMs, persistedStageElapsedByStage);
-    if (!shallowEqualNumberRecord(completedStageElapsedMs, merged)) {
+    const merged = mergeElapsedByStage(stageElapsedByStage, persistedStageElapsedByStage);
+    if (!shallowEqualNumberRecord(stageElapsedByStage, merged)) {
       setCompletedStageElapsedMs(merged);
       return;
     }
 
     const stageId = timingStageId ?? null;
-    const mapUnchanged = shallowEqualNumberRecord(completedStageElapsedMs, persistedStageElapsedByStage);
+    const mapUnchanged = shallowEqualNumberRecord(stageElapsedByStage, persistedStageElapsedByStage);
     const stageUnchanged = lastPersistedStageIdRef.current === stageId;
     if (mapUnchanged && stageUnchanged) return;
     if (
       lastPersistedStageMapRef.current
-      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, completedStageElapsedMs)
+      && shallowEqualNumberRecord(lastPersistedStageMapRef.current, stageElapsedByStage)
       && stageUnchanged
     ) {
       return;
     }
 
-    lastPersistedStageMapRef.current = completedStageElapsedMs;
+    lastPersistedStageMapRef.current = stageElapsedByStage;
     lastPersistedStageIdRef.current = stageId;
 
     void updateSessionRecord({
-      elapsedByStage: completedStageElapsedMs,
+      elapsedByStage: stageElapsedByStage,
       elapsedMs: totalElapsedMs,
       stageId: stageId ?? undefined,
     });
   }, [
     activeNodeId,
-    completedStageElapsedMs,
     isElapsedResetState,
     persistedStageElapsedByStage,
+    stageElapsedByStage,
     timingStageId,
     totalElapsedMs,
     updateSessionRecord,
@@ -364,7 +377,7 @@ export const useShapeBuildStepProgressState = ({
   return {
     persistedStageElapsedByStage,
     persistedStageElapsedStageId,
-    completedStageElapsedMs,
+    completedStageElapsedMs: stageElapsedByStage,
     timingStageId,
     stageElapsedMs: resolvedStageElapsedMs,
     totalElapsedMs,

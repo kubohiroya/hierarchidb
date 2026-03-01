@@ -491,7 +491,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
     for (const stage of stages) {
       const elapsedValue = formatDuration(
         summary.completedStageElapsedMs[stage.id]
-          ?? (summary.timingStageId === stage.id ? 0 : undefined),
+          ?? (summary.timingStageId === stage.id ? summary.stageElapsedMs : undefined),
         t,
       );
       const remainingValue = summary.timingStageId === stage.id
@@ -513,7 +513,7 @@ export const useShapeBuildProgressPanelControllerBaseStateDataCore = ({
       );
     }
     return headerMetaByStage;
-  }, [stages, summary.completedStageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
+  }, [stages, summary.completedStageElapsedMs, summary.stageElapsedMs, summary.stageRemainingMs, summary.timingStageId, t]);
 
   const startupStatusMessage = controls.statusLabel?.trim()
     || t('stage.progress.startupPending', 'Preparing build session. Please wait...');

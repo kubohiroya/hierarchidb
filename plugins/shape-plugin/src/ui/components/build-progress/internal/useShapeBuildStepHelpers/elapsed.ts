@@ -30,6 +30,38 @@ export const sumNumberRecord = (values: Record<string, number>): number => (
   Object.values(values).reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0)
 );
 
+export const buildElapsedByStageWithActiveStage = (params: {
+  elapsedByStage: Record<string, number>;
+  timingStageId: string | null;
+  timingStageElapsedMs: number;
+}): Record<string, number> => {
+  const { elapsedByStage, timingStageId, timingStageElapsedMs } = params;
+  if (!timingStageId) {
+    return elapsedByStage;
+  }
+  const currentElapsedMs = elapsedByStage[timingStageId] ?? 0;
+  const nextElapsedMs = Math.max(currentElapsedMs, timingStageElapsedMs);
+  if (nextElapsedMs === currentElapsedMs) {
+    return elapsedByStage;
+  }
+  return {
+    ...elapsedByStage,
+    [timingStageId]: nextElapsedMs,
+  };
+};
+
+export const resolveTotalElapsedMs = (params: {
+  buildStatus: import('@hierarchidb/components/build-status').BuildStatus;
+  elapsedByStage: Record<string, number>;
+  sessionElapsedMs: number;
+}): number => {
+  const stageTotalElapsedMs = sumNumberRecord(params.elapsedByStage);
+  if (params.buildStatus === 'running') {
+    return stageTotalElapsedMs;
+  }
+  return Math.max(stageTotalElapsedMs, params.sessionElapsedMs);
+};
+
 export const hasPositiveElapsed = (values: Record<string, number>): boolean => (
   Object.values(values).some((value) => Number.isFinite(value) && value > 0)
 );
