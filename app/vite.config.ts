@@ -430,7 +430,7 @@ function pluginTildeRootAliasPlugin(): Plugin {
               pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : cursor;
               break;
             }
-          } catch (error) {
+          } catch {
             // Ignore malformed package.json and continue searching parent directories.
           }
         }
@@ -448,7 +448,7 @@ function pluginTildeRootAliasPlugin(): Plugin {
         const packagesMatch = importerWithoutFsPrefix.match(/(.*\/packages\/[^/]+)(?:\/|$)/);
         const pluginsMatch = importerWithoutFsPrefix.match(/(.*\/plugins\/[^/]+)(?:\/|$)/);
         const match = packagesMatch || pluginsMatch;
-        if (match && match[1]) {
+        if (match?.[1]) {
           pluginRoot = match[1];
           const candidateSrcRoot = path.join(pluginRoot, 'src');
           pluginSrcRoot = fs.existsSync(candidateSrcRoot) ? candidateSrcRoot : pluginRoot;
@@ -517,7 +517,6 @@ function pluginTildeRootAliasPlugin(): Plugin {
         const exists = fs.existsSync(normalizedCandidate);
         if (!exists) continue;
         if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1') {
-          // eslint-disable-next-line no-console
           console.log(
             '[plugin-tilde-root-alias] resolved',
             source,
@@ -533,7 +532,6 @@ function pluginTildeRootAliasPlugin(): Plugin {
       }
 
       if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1') {
-        // eslint-disable-next-line no-console
         console.log(
           '[plugin-tilde-root-alias] unresolved',
           source,
@@ -550,7 +548,6 @@ function pluginTildeRootAliasPlugin(): Plugin {
     },
     async load(id) {
       if (process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1' && id.includes('/plugins/shape-plugin/src/common/types/metadata.ts')) {
-        // eslint-disable-next-line no-console
         console.log('[plugin-tilde-root-alias] load metadata', id);
       }
 
@@ -558,7 +555,6 @@ function pluginTildeRootAliasPlugin(): Plugin {
         process.env.DEBUG_PLUGIN_TILDE_ROOT_ALIAS === '1'
         && id.includes('/plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts')
       ) {
-        // eslint-disable-next-line no-console
         console.log('[plugin-tilde-root-alias] load resolver', id);
       }
 
@@ -1423,8 +1419,6 @@ export default defineConfig(({ mode, command, isSsrBuild }) => {
       entries: [
         'index.html',
         'src/**/*.{ts,tsx}',
-        '../packages/**/src/**/*.{ts,tsx}',
-        '../plugins/*-plugin/src/**/*.{ts,tsx}',
       ],
       include: [
         'react',

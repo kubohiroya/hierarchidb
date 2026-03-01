@@ -314,9 +314,12 @@ if (!globalShim.process.env) {
   globalShim.process.env = {};
 }
 {
-  const value = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
+  const fromVite = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
     ? import.meta.env.VITE_CORS_PROXY_BASE_URL.trim()
     : '';
+  const value = fromVite || (import.meta.env?.DEV
+    ? 'https://hierarchidb-cors-proxy.kubohiroya.workers.dev'
+    : '');
   if (!value) {
     throw new Error('VITE_CORS_PROXY_BASE_URL is required for worker startup.');
   }
