@@ -11,7 +11,7 @@
  */
 import { promises as fs } from 'node:fs';
 import process from 'node:process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
 import type { GeneratePluginRegistryOptions, PluginSpecifierMode } from './plugin-registry/types.js';
 import { collectManifests } from './plugin-registry/manifest-collector.js';
