@@ -21,7 +21,6 @@ import {
   ArrowUpward as ArrowUpwardIcon,
   DensityLarge as DensityLargeIcon,
   DensitySmall as DensitySmallIcon,
-  SquareFoot as SquareFootIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
 import { useEffect, useMemo } from 'react';
@@ -138,36 +137,6 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.tile.tileSize', 'Tile size')}
-                    value={buildConfig.tileEmitConfig.tileSize}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SquareFootIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                    onChange={(event) => {
-                      const tileSize = Number(event.target.value);
-                      update({
-                        tileEmitConfig: {
-                          ...buildConfig.tileEmitConfig,
-                          tileSize,
-                        },
-                      });
-                    }}
-                    helperText={t(
-                      'processing.tile.tileSizeHelp',
-                      'Base tile size used for extent calculations.',
-                    )}
-                    inputProps={{ min: 0 }}
-                    disabled={disabled}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
                   <Stack spacing={1}>
                     <Typography variant="body2" fontWeight={600}>
                       {t('processing.tile.tolerance', 'Tile tolerance')}
@@ -208,8 +177,8 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                   <TextField
                     fullWidth
                     type="number"
-                    label={t('processing.tile.bufferSize', 'Tile margin (px)')}
-                    value={buildConfig.tileEmitConfig.bufferSize}
+                    label={t('processing.tile.buffer', 'Tile buffer (px)')}
+                    value={buildConfig.tileEmitConfig.buffer ?? buildConfig.tileEmitConfig.bufferSize ?? 64}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -218,19 +187,43 @@ export const TileEmitConfigSection = <TDataSourceName,>({
                       ),
                     }}
                     onChange={(event) => {
-                      const bufferSize = Number(event.target.value);
+                      const buffer = Number(event.target.value);
                       update({
                         tileEmitConfig: {
                           ...buildConfig.tileEmitConfig,
-                          bufferSize,
+                          buffer,
+                          bufferSize: buffer,
                         },
                       });
                     }}
                     helperText={t(
-                      'processing.tile.bufferSizeHelp',
-                      '0 disables the margin. Larger values reduce seams but increase overlap.',
+                      'processing.tile.bufferHelp',
+                      'Tile buffer on each side in px.',
                     )}
                     inputProps={{ min: 0, max: 512 }}
+                    disabled={disabled}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={t('processing.tile.indexMaxPoints', 'Index max points')}
+                    value={buildConfig.tileEmitConfig.indexMaxPoints}
+                    onChange={(event) => {
+                      const indexMaxPoints = Number(event.target.value);
+                      update({
+                        tileEmitConfig: {
+                          ...buildConfig.tileEmitConfig,
+                          indexMaxPoints,
+                        },
+                      });
+                    }}
+                    helperText={t(
+                      'processing.tile.indexMaxPointsHelp',
+                      'Maximum number of points per tile in the initial index.',
+                    )}
+                    inputProps={{ min: 1 }}
                     disabled={disabled}
                   />
                 </Grid>
@@ -384,35 +377,6 @@ export const TileEmitConfigSection = <TDataSourceName,>({
             </Paper>
           ) : null}
 
-          <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
-            <Stack spacing={2}>
-              <BuildConfigSectionTitle
-                icon={<TuneIcon fontSize="small" color="primary" />}
-                title={t('processing.tile.memoryOverflowTitle', 'Memory Overflow Prevenstions')}
-              />
-              <TextField
-                fullWidth
-                type="number"
-                label={t('processing.tile.indexMaxPoints', 'Index max points')}
-                value={buildConfig.tileEmitConfig.indexMaxPoints}
-                onChange={(event) => {
-                  const indexMaxPoints = Number(event.target.value);
-                  update({
-                    tileEmitConfig: {
-                      ...buildConfig.tileEmitConfig,
-                      indexMaxPoints,
-                    },
-                  });
-                }}
-                helperText={t(
-                  'processing.tile.indexMaxPointsHelp',
-                  '0 disables the limit. When exceeded, extra points are skipped from the tile index.',
-                )}
-                inputProps={{ min: 0 }}
-                disabled={disabled}
-              />
-            </Stack>
-          </Paper>
         </Stack>
       </AccordionDetails>
     </Accordion>

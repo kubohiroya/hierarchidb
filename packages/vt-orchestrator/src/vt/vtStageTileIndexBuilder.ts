@@ -2,7 +2,7 @@ import type { FeatureCollection } from 'geojson';
 import type { BandConfig } from '~/types/types';
 import type { VTStageContext } from '~/contexts';
 import type { GeojsonVtIndex } from './vtStageTileIndex.js';
-import { resolveMaxVerticesPerTile } from './vtStageGeometryTile.js';
+import { resolveMaxVerticesPerTile, resolveTileBufferPx } from './vtStageGeometryTile.js';
 
 export const buildLayerIndexes = async (
   context: VTStageContext,
@@ -33,11 +33,12 @@ export const buildLayerIndexes = async (
   for (const [layerName, features] of layers.entries()) {
     if (features.length === 0) continue;
     const collection: FeatureCollection = { type: 'FeatureCollection', features };
+    const tileBuffer = resolveTileBufferPx(context.tileEmitConfig);
     const index = instance(collection, {
       maxZoom: band.zMax,
       indexMaxZoom: band.zMax,
       extent: context.tileEmitConfig.extent,
-      buffer: context.tileEmitConfig.bufferSize,
+      buffer: tileBuffer,
       tolerance: context.tileEmitConfig.tolerance,
       promoteId: context.tileEmitConfig.promoteId,
       indexMaxPoints: resolveMaxVerticesPerTile(context.tileEmitConfig.indexMaxPoints),

@@ -59,6 +59,7 @@ export const buildLayerBuildExecutionContext = async (
   const geojsonvt = await loadGeojsonVt();
   const buildLayerIndexForTile = createLayerIndexForTile({
     context,
+    bandMaxZoom: band.zMax,
     geojsonVt: geojsonvt,
     useTopojsonTileSimplify,
     topojsonSimplify,

@@ -1,5 +1,5 @@
 import type { Tile } from 'geojson-vt';
-import { expandTileBBox, tileToBBox } from './vtStageGeometryTile.js';
+import { expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
 import type { InputFeatureStats } from './vtStageGeometryTypes.js';
 import { packTileId } from '~/tiles/tileId';
 import type { VtTileTaskContext } from './vtStageTaskOutputTypes.js';
@@ -53,10 +53,11 @@ export const processTileForVtOutput = async (
   } = input;
   const tileId = packTileId(x, y, z);
   const tileBBox = tileToBBox(z, x, y);
+  const tileBuffer = resolveTileBufferPx(tileEmitConfig);
   const inputStats = calculateInputTileStats(
     featureStats,
     bufferSizes,
-    expandTileBBox(tileBBox, tileEmitConfig.bufferSize, tileEmitConfig.extent),
+    expandTileBBox(tileBBox, tileBuffer, tileEmitConfig.extent),
   );
   const outputStats = calculateOutputTileStats(layers);
 
