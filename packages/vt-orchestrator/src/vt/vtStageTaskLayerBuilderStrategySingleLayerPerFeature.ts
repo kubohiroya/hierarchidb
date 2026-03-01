@@ -7,7 +7,7 @@ import { parentToChildRange, packTileId } from '~/tiles/tileId';
 import { featureBBox, isEmptyGeometry } from './vtStageGeometryFeature.js';
 import { clipFeatureForTile } from './vtStageGeometryClipping.js';
 import { countVerticesFromGeometry } from './vtStageGeometryCounts.js';
-import { bboxIntersects, expandTileBBox, tileToBBox } from './vtStageGeometryTile.js';
+import { bboxIntersects, expandTileBBox, resolveTileBufferPx, tileToBBox } from './vtStageGeometryTile.js';
 import { mergeLayerTiles } from './vtStageTaskLayerBuilderHelpers.js';
 import type { BuildLayerIndexForTile } from './vtStageTaskLayerBuilderTypes.js';
 import { logSingleLayerPerFeatureNoResult } from './vtStageTaskLayerBuilderStrategySingleLayerLog.js';
@@ -43,7 +43,8 @@ export const buildLayerByFeatureIndex = async ({
   assertNotAborted,
   buildLayerIndexForTile,
 }: SingleLayerPerFeatureInput): Promise<Map<number, Record<string, Tile>>> => {
-  const { bufferSize, extent } = context.tileEmitConfig;
+  const { extent } = context.tileEmitConfig;
+  const tileBuffer = resolveTileBufferPx(context.tileEmitConfig);
   const aggregatedLayersByTileId = new Map<number, Record<string, Tile>>();
   for (const feature of features) {
     assertNotAborted(context.abortSignal);
@@ -56,7 +57,7 @@ export const buildLayerByFeatureIndex = async ({
         assertNotAborted(context.abortSignal);
         for (let y = yStart; y <= yEnd; y++) {
           assertNotAborted(context.abortSignal);
-          const tileBBox = expandTileBBox(tileToBBox(z, x, y), bufferSize, extent);
+          const tileBBox = expandTileBBox(tileToBBox(z, x, y), tileBuffer, extent);
           if (!bboxIntersects(featureBox, tileBBox)) continue;
           const clipped = clipFeatureForTile(feature, tileBBox);
           if (!clipped || isEmptyGeometry(clipped.geometry)) continue;

@@ -174,7 +174,9 @@ export interface TileEmitConfig {
   dynamicConcurrency?: DynamicConcurrencyConfig;
   tolerance: number;
   extent: number;
-  bufferSize: number;
+  buffer?: number;
+  /** @deprecated Use `buffer`. */
+  bufferSize?: number;
   boundaryDedupe: boolean;
   indexMaxPoints: number;
   layerSetName: string;

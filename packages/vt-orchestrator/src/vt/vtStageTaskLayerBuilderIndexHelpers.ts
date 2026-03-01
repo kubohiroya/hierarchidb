@@ -17,6 +17,7 @@ export type GeojsonVtIndexFactory = (
 
 export type LayerIndexParams = {
   context: VTStageContext;
+  bandMaxZoom: number;
   geojsonVt: (
     collection: FeatureCollectionLike,
     options: {
@@ -42,6 +43,7 @@ export type LayerIndexParams = {
 export const createLayerIndexForTile = (params: LayerIndexParams): GeojsonVtIndexFactory => {
   const {
     context,
+    bandMaxZoom,
     geojsonVt,
     useTopojsonTileSimplify,
     topojsonSimplify,
@@ -54,6 +56,7 @@ export const createLayerIndexForTile = (params: LayerIndexParams): GeojsonVtInde
     z,
     x,
     y,
+    bandMaxZoom,
     context,
     geojsonVt,
     topojsonSimplify: useTopojsonTileSimplify && topojsonSimplify

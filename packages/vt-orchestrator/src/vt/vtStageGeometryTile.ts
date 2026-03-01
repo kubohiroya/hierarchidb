@@ -39,3 +39,12 @@ export const resolveMaxVerticesPerTile = (indexMaxPoints: number): number => (
   Number.isFinite(indexMaxPoints) && indexMaxPoints > 0 ? indexMaxPoints : 100000
 );
 
+export const resolveTileBufferPx = (config: { buffer?: number; bufferSize?: number }): number => {
+  if (Number.isFinite(config.buffer) && (config.buffer as number) >= 0) {
+    return config.buffer as number;
+  }
+  if (Number.isFinite(config.bufferSize) && (config.bufferSize as number) >= 0) {
+    return config.bufferSize as number;
+  }
+  return 64;
+};
