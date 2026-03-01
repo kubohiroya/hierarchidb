@@ -18,8 +18,8 @@
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "peerDependencies": {
-    "maplibre-gl": "^4.7.1",
-    "deck.gl": "^9.1.14",
+    "maplibre-gl": "^5.19.0",
+    "deck.gl": "^9.2.10",
     "@hierarchidb/map-source": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
