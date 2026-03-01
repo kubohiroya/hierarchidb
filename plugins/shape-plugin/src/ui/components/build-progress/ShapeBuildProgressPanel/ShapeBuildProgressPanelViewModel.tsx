@@ -9,6 +9,10 @@ export const renderShapeBuildProgressPanelStartIcon = (): ReactNode => (
   <ConstructionIcon fontSize="small" />
 );
 
+export const renderShapeBuildProgressPanelHeaderIcon = (): ReactNode => (
+  <ConstructionIcon fontSize="small" />
+);
+
 type ShapeBuildProgressPanelControlRightContentProps = {
   nodeId?: ShapeEntity['id'];
   controlRightContent: ReactNode;

@@ -10,6 +10,7 @@ import type { ShapeEntity } from '~/common/types/ShapeEntity';
 import type { useShapeBuildProgressPanelController } from './useShapeBuildProgressPanelController.js';
 import {
   renderShapeBuildProgressPanelControlRightContent,
+  renderShapeBuildProgressPanelHeaderIcon,
   renderShapeBuildProgressPanelStartIcon,
 } from './ShapeBuildProgressPanelViewModel.js';
 
@@ -39,6 +40,7 @@ type ShapeBuildProgressPanelViewModel = {
   suppressStatusFallback: true;
   onResume?: (() => void) | undefined;
   onPause?: (() => void) | undefined;
+  controlHeaderIcon: ReactNode;
   startIcon: ReactNode;
   controlLabel: string;
   pauseLabel: string;
@@ -147,8 +149,9 @@ export const useShapeBuildProgressPanelViewModel = ({
     onResume: controls.canStartOrResume ? handleStartClickWithHold : undefined,
     onPause: controls.stopRequested ? undefined : controls.handlePause,
     onCancel: controls.handleCancelQueued,
+    controlHeaderIcon: renderShapeBuildProgressPanelHeaderIcon(),
     startIcon: renderShapeBuildProgressPanelStartIcon(),
-    controlLabel: t('stage.controls.title', 'Build controls'),
+    controlLabel: t('stage.controls.sessionTitle', 'Build Session'),
     controlMenuItems,
     controlMenuAriaLabel,
     controlMenuDisabled: isControlMenuDisabled,

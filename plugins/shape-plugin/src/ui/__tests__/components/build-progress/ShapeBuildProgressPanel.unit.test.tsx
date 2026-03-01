@@ -150,7 +150,7 @@ describe('ShapeBuildProgressPanel', () => {
       </Provider>
     );
 
-    await within(view.container).findByText('Build controls');
+    await within(view.container).findByText('Build Session');
     store.set(taskProgressSummaryAtom, failedSummary);
     await waitFor(() => {
       expect(document.body.textContent).toContain('geometry failed: max vertices per feature exceeded');
@@ -189,7 +189,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
     await waitFor(() => {
       expect(local.getByText('Start Build')).toBeTruthy();
     });
@@ -230,7 +230,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
     const startButton = await local.findByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
     await waitFor(() => {
       expect(startButton.disabled).toBe(false);
@@ -284,7 +284,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
     const startButton = await local.findByRole('button', { name: 'Start Build' }) as HTMLButtonElement;
     fireEvent.click(startButton);
     resolveStart?.();
@@ -362,7 +362,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Build controls')).toBeTruthy();
+      expect(screen.getByText('Build Session')).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -401,7 +401,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Build controls')).toBeTruthy();
+      expect(screen.getByText('Build Session')).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -516,7 +516,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Build controls')).toBeTruthy();
+      expect(screen.getByText('Build Session')).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -560,7 +560,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Build controls')).toBeTruthy();
+      expect(screen.getByText('Build Session')).toBeTruthy();
     });
 
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
@@ -665,7 +665,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
     const scrollButton = await local.findByRole('button', {
       name: 'Scroll down to running or queued task',
     });
@@ -725,7 +725,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
@@ -806,7 +806,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeTruthy();
@@ -926,7 +926,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
@@ -994,7 +994,7 @@ describe('ShapeBuildProgressPanel', () => {
     );
 
     const local = within(view.container);
-    await local.findByText('Build controls');
+    await local.findByText('Build Session');
 
     await waitFor(() => {
       expect(local.queryByRole('button', { name: 'Scroll up to running or queued task' })).toBeNull();
