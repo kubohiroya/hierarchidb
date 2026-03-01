@@ -64,16 +64,16 @@ type Result<T> = { ok: true; value: T } | { ok: false; error: DeterministicError
 
 ## 4. Function Contracts by Stage
 
-## 4.1 Stage1 Fetch (planning/filter metadata domain)
+## 4.1 Stage1 Source (planning/filter metadata domain)
 
-### `deriveFetchTaskInputs`
+### `deriveSourceTaskInputs`
 
-Purpose: normalize selected country/adminLevel/source config into canonical fetch task inputs.
+Purpose: normalize selected country/adminLevel/source config into canonical source task inputs.
 
 Signature:
 
 ```ts
-function deriveFetchTaskInputs(input: {
+function deriveSourceTaskInputs(input: {
   nodeId: NodeId;
   selectedCountries: readonly string[];
   adminLevels: readonly number[];
@@ -136,14 +136,14 @@ Example failure:
 }
 ```
 
-### `buildFetchCacheKey`
+### `buildSourceCacheKey`
 
-Purpose: deterministic fetch cache key generation.
+Purpose: deterministic source cache key generation.
 
 Signature:
 
 ```ts
-function buildFetchCacheKey(input: {
+function buildSourceCacheKey(input: {
   nodeId: NodeId;
   sourceKey: string;
   sourceConfigHash: string;
@@ -259,7 +259,7 @@ Failure:
 
 - `E_VALIDATION` if candidate rows are malformed.
 
-## 4.3 Stage3 PlanTransform
+## 4.3 Stage3 PlanGeometry
 
 ### `deriveScenarioStepPlan`
 
@@ -314,14 +314,14 @@ Example cycle failure:
 }
 ```
 
-### `deriveTransformTasks`
+### `deriveGeometryTasks`
 
 Purpose: expand country x band tasks deterministically.
 
 Signature:
 
 ```ts
-function deriveTransformTasks(input: {
+function deriveGeometryTasks(input: {
   nodeId: NodeId;
   graphVersion: string;
   countries: readonly string[];
@@ -349,7 +349,7 @@ Failure:
 - `E_CONFIG`: empty inputs or missing graphVersion/hash.
 - `E_RANGE`: invalid band index.
 
-## 4.4 Stage4 GeometryTransform
+## 4.4 Stage4 Geometry
 
 ### `selectToleranceProfile`
 
@@ -379,15 +379,15 @@ Failure:
 - `E_RANGE`: `attempt < 1`
 - `E_CONFIG`: any policy field empty
 
-### `validateGeometryTransformResult`
+### `validateGeometryResult`
 
-Purpose: pure validation of transformed geometry outputs.
+Purpose: pure validation of geometry stage outputs.
 
 Signature:
 
 ```ts
-function validateGeometryTransformResult(input: {
-  transformedFeatures: readonly unknown[];
+function validateGeometryResult(input: {
+  geometryFeatures: readonly unknown[];
 }): Result<{
   featureCount: number;
   invalidCount: number;
@@ -397,7 +397,7 @@ function validateGeometryTransformResult(input: {
 
 Output semantics:
 
-- `featureCount`: total transformed features scanned.
+- `featureCount`: total geometry features scanned.
 - `invalidCount`: validation failures.
 - `invalidFeatureIds`: deterministic sorted ids.
 
@@ -405,14 +405,14 @@ Failure:
 
 - `E_VALIDATION`: topology/geometry invalid according to policy.
 
-### `buildTransformCacheKey`
+### `buildGeometryCacheKey`
 
-Purpose: deterministic transform cache identity.
+Purpose: deterministic geometry cache identity.
 
 Signature:
 
 ```ts
-function buildTransformCacheKey(input: {
+function buildGeometryCacheKey(input: {
   nodeId: NodeId;
   logicalTaskKey: string;
   toleranceProfile: string;
@@ -423,11 +423,11 @@ Output:
 
 - canonical key string (recommended: `t:<nodeId>:<logicalTaskKey>:<toleranceProfile>`).
 
-## 4.5 Stage5 VT
+## 4.5 Stage5 TileEmit
 
 ### `deriveTileTaskInputs`
 
-Purpose: deterministic tile task expansion from transform artifacts.
+Purpose: deterministic tile task expansion from geometry artifacts.
 
 Signature:
 
@@ -435,7 +435,7 @@ Signature:
 function deriveTileTaskInputs(input: {
   nodeId: NodeId;
   bands: readonly number[];
-  transformArtifactRefs: readonly {
+  geometryArtifactRefs: readonly {
     band: number;
     artifactId: string;
     tileIds: readonly string[];
